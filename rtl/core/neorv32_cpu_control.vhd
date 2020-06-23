@@ -614,6 +614,7 @@ begin
 
       when LOADSTORE_0 => -- memory latency
       -- ------------------------------------------------------------
+        ctrl_nxt(ctrl_bus_mdi_we_c) <= '1'; -- write input data to MDI (only relevant for LOAD)
         state_nxt <= LOADSTORE_1;
 
       when LOADSTORE_1 => -- wait for bus transaction to finish
