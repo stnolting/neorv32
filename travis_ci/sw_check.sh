@@ -7,7 +7,7 @@ set -e
 homedir="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 homedir=$homedir/..
 
-# The directories of the sw source files
+# The directories of the SW source files
 srcdir_examples=$homedir/sw/example
 srcdir_bootloader=$homedir/sw/bootloader
 test_app_dir=$homedir/sw/example/blink_led
@@ -19,7 +19,7 @@ ls -al $srcdir_bootloader
 # check toolchain
 make -C $srcdir_examples/blink_led check
 
-# Try to compile all examples
+# Compile all example projects
 make -C $srcdir_examples clean_all info compile
 
 # Compile and install bootloader
