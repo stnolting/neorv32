@@ -1,0 +1,27 @@
+dist: bionic
+
+services:
+  - docker
+
+env:
+  - PATH=$PATH:$(pwd)/riscv/bin
+
+script:
+
+  # Get tools
+  - docker pull ghdl/ghdl:buster-gcc-8.3.0
+
+  # SW check
+  - /bin/bash -c "chmod u+x travis_ci/install.sh && travis_ci/install.sh"
+  - /bin/bash -c "riscv32-unknown-elf-gcc -v"
+  - /bin/bash -c "chmod u+x travis_ci/sw_check.sh && travis_ci/sw_check.sh"
+
+  # HW check
+  - >
+    docker run -t -v `pwd`:/mnt/data ghdl/ghdl:buster-gcc-8.3.0
+    /bin/bash -c "chmod u+x /mnt/data/travis_ci/hw_check.sh && /mnt/data/travis_ci/hw_check.sh"
+
+notifications:
+  email:
+    on_success: never
+    on_failure: always
