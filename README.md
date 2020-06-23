@@ -13,8 +13,7 @@
 ## Table of Content
 
 * [Introduction](#Introduction)
-* [Processor Features](#Processor-Features)
-* [CPU Features](#CPU-Features)
+* [Features](#Features)
 * [FPGA Implementation Results](#FPGA-Implementation-Results)
 * [Performance](#Performance)
 * [Top Entity](#Top-Entity)
@@ -72,9 +71,11 @@ For more information take a look a the [![NEORV32 datasheet](https://raw.githubu
 
 
 
-## Processor Features
+## Features
 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_overview.png)
+
+### Processor
 
   - RISC-V-compliant `rv32i` or `rv32e` CPU with optional `C`, `E`, `M` and `Zicsr` extensions
   - GCC-based toolchain ([pre-compiled rv32i and rv32 etoolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
@@ -98,7 +99,7 @@ For more information take a look a the [![NEORV32 datasheet](https://raw.githubu
   - Optional core-local interrupt controller with 8 channels (CLIC)
 
 
-## CPU Features
+### CPU
 
 The CPU is compliant to the [official RISC-V specifications](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf) including a subset of the 
 [RISC-V privileged architecture specifications](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf).
@@ -113,7 +114,7 @@ The CPU is compliant to the [official RISC-V specifications](https://raw.githubu
  * Integer multiplication and division hardware (__`M` Extension__):
    * Instructions: `MUL` `MULH` `MULHSU` `MULHU` `DIV` `DIVU` `REM` `REMU`
  * Privileged Architecture (__`Zicsr` Extension__):
-   * Privilege levels: Machine mode (´M-mode´)
+   * Privilege levels: Machine mode (`M-mode`)
    * Instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI` `ECALL` `EBREAK` `MRET` `WFI`
    * Counter CSRs: `cycle` `cycleh` `time` `timeh` `instret` `instreth` `mcycle` `mcycleh` `minstret` `minstreth`
    * Machine CSRs: `mstatus` `misa` `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mtinst` `mimpid` `mhartid`
@@ -126,8 +127,8 @@ The CPU is compliant to the [official RISC-V specifications](https://raw.githubu
 
 ## FPGA Implementation Results
 
-This chapter shows exemplary implementation results of the NEORV32 processor for an Intel Cyclone IV EP4CE22F17C6N FPGA on
-a DE0-nano board. The design was synthesized using Intel Quartus Prime Lite 19.1 ("balanced implementation"). The timing
+This chapter shows exemplary implementation results of the NEORV32 processor for an **Intel Cyclone IV EP4CE22F17C6N FPGA** on
+a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 19.1** ("balanced implementation"). The timing
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not other specified, the default configuration
 of the processor's generics is assumed. No constraints were used.
 
@@ -167,10 +168,10 @@ Results generated for hardware version: `0.0.2.3`
 
 The following table shows the hardware utilization for a [iCE40 UP5K](http://www.latticesemi.com/en/Products/FPGAandCPLD/iCE40UltraPlus) FPGA.
 The setup uses all provided peripherals, all CPU extensions (except for the `E` extension), no external memory interface and internal
-instruction and data memoryies (each 64kB) based on SPRAM primitives. The FPGA-specific memory comopnents can be found in the
+instruction and data memoryies (each 64kB) based on SPRAM primitives. The FPGA-specific memory components can be found in the
 [`rtl/fpga_specific`](https://github.com/stnolting/neorv32/blob/master/rtl/fpga_specific/lattice_ice40up) folder.
 
-Place & route reports generated with Lattice Radiant 1.1. The clock frequency is constrained and generated via the
+Place & route reports generated with **Lattice Radiant 1.1. Synplify**. The clock frequency is constrained and generated via the
 PLL from the internal HF oscillator running at 12 MHz.
 
 | CPU Configuration   | Slices     | LUT        | REG        | DSPs   | SRAM     | EBR      | f         |
@@ -365,7 +366,7 @@ After a while (hours!) you will get `riscv32-unknown-elf-gcc` and all of its fri
 ### Using a Prebuilt Toolchain
 
 Alternatively, you can download a prebuilt toolchain. I have uploaded the toolchain I am using to GitHub. This toolchain
-has been compiled on a 64-bit x86 Ubuntu (actually, Ubuntu on Windows). Download the toolchain of choice:
+has been compiled on a 64-bit x86 Ubuntu (Ubuntu on Windows). Download the toolchain of choice:
 
 [https://github.com/stnolting/riscv_gcc_prebuilt](https://github.com/stnolting/riscv_gcc_prebuilt)
 
@@ -378,7 +379,7 @@ Now its time to get the most recent version the NEORV32 Processor project from G
     $ git clone https://github.com/stnolting/neorv32.git
 
 Create a new HW project with your FPGA synthesis tool of choice. Add all files from the [`rtl/core`](https://github.com/stnolting/neorv32/blob/master/rtl)
-folder to this project (and add them to a **new library** called `neorv32`).
+folder to this project and add them to a **new library** called `neorv32`.
 
 You can either instantiate the [processor's top entity](https://github.com/stnolting/neorv32#top-entity) in you own project, or you
 can use a simple [test setup](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd) as top entity. This test
@@ -429,12 +430,13 @@ Use the bootloader console to upload and execute your application image.
 ```
   << NEORV32 Bootloader >>
   
-  BLDV: Jun 17 2020
+  BLDV: Jun 22 2020
   HWV:  0.0.2.3
-  CLK:  0x05F5E100 Hz
+  CLK:  0x0134FD90 Hz
   MISA: 0x42801104
   CONF: 0x01FF0015
-  IMEM: 0x00008000 bytes @ 0x00000000
+  IMEM: 0x00010000 bytes @ 0x00000000
+  DMEM: 0x00010000 bytes @ 0x80000000
   
   Autoboot in 8s. Press key to abort.
   Aborted.
