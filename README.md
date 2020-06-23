@@ -74,7 +74,7 @@ by yourself, you can also download [pre-compiled toolchain](https://github.com/s
 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_overview.png)
 
-  - RISC-V-compliant `rv32i/e` CPU (with optional `C`, `E`, `M` and `Zicsr` extensions)
+  - RISC-V-compliant `rv32i` or `rv32e` CPU with optional `C`, `E`, `M` and `Zicsr` extensions
   - GCC-based toolchain ([pre-compiled rv32i and rv32 etoolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
   - Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/Makefile)
   - [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doygen_makefile_sw) documentation of the software framework

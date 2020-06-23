@@ -84,7 +84,7 @@ int main() {
 
   while (1) {
     neorv32_gpio_port_set(cnt & 0xFF); // mask for lowest 8 bit
-    neorv32_cpu_delay_ms(250); // wait 0.25s using busy wait
+    neorv32_cpu_delay_ms(200); // wait 0.2s using busy wait
     cnt++; // increment counter
   }
 
