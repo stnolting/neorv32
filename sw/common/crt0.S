@@ -119,7 +119,7 @@ __crt0_stack_pointer_init:
   csrrw x12, CSR_MDSPACESIZE, zero // data memory space size
   add   sp, x11, x12
   addi  sp, sp, -4 // stack pointer = last entry
-  addi  x8, sp, 0  // frame pointer = stack pointer
+  addi  fp, sp, 0  // frame pointer = stack pointer
 
 
 // *********************************************************
