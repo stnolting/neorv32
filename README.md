@@ -44,6 +44,8 @@ The project is intended to work "out of the box". Just synthesize the test setup
 it to your FPGA board of choice and start playing with the NEORV32. If you do not want to [compile the GCC toolchain](https://github.com/riscv/riscv-gnu-toolchain)
 by yourself, you can also download [pre-compiled toolchain](https://github.com/stnolting/riscv_gcc_prebuilt) for Linux.
 
+For more information take a look a the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+
 
 ### Design Principles
 
@@ -331,7 +333,8 @@ end neorv32_top;
 ## Getting Started
 
 This overview is just a short excerpt from the *Let's Get It Started* section of the NEORV32 documentary:
-[NEORV32 Datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/neorv32.pdf)
+
+[![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
 
 
 ### Building the Toolchain
