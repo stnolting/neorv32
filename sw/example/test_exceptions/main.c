@@ -143,7 +143,11 @@ int main() {
   uint64_t mtime_cmp_max = 0xFFFFFFFFFFFFFFFFL;
   neorv32_mtime_set_timecmp(mtime_cmp_max);
 
-  neorv32_uart_printf("NEORV32 Exception Tests\n");
+#if (DETAILED_EXCEPTION_DEBUG==1)
+  // detailed intro
+  neorv32_uart_printf("NEORV32 exceptions and interrupts test program: ");
+#endif
+  neorv32_uart_printf("NEORV32 EXC TESTS\n");
 
 
   // install exception handler functions
@@ -162,7 +166,7 @@ int main() {
 //install_err += neorv32_rte_exception_install(EXCID_MEI,          -); done by neorv32_clic_handler_install
 
   if (install_err) {
-    neorv32_uart_printf("EXC install error!\n");
+    neorv32_uart_printf("install error!\n");
     return 0;
   }
 
@@ -193,7 +197,7 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned instruction address
   // ----------------------------------------------------------
-  neorv32_uart_printf("EXC I_ALIGN: ");
+  neorv32_uart_printf("I_ALIGN: ");
   cnt_test++;
 
   // call unaligned address
@@ -215,7 +219,7 @@ int main() {
   // ----------------------------------------------------------
   // Instruction access fault
   // ----------------------------------------------------------
-  neorv32_uart_printf("EXC I_ACC:   ");
+  neorv32_uart_printf("I_ACC: ");
   cnt_test++;
 
   // call unreachable aligned address
@@ -237,7 +241,7 @@ int main() {
   // ----------------------------------------------------------
   // Illegal instruction
   // ----------------------------------------------------------
-  neorv32_uart_printf("EXC I_ILLEG: ");
+  neorv32_uart_printf("I_ILLEG: ");
   cnt_test++;
 
   // create mini program in RAM
@@ -265,7 +269,7 @@ int main() {
   // ----------------------------------------------------------
   // Breakpoint instruction
   // ----------------------------------------------------------
-  neorv32_uart_printf("EXC BREAK:   ");
+  neorv32_uart_printf("BREAK: ");
   cnt_test++;
 
   asm volatile("EBREAK");
@@ -286,7 +290,7 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned load address
   // ----------------------------------------------------------
-  neorv32_uart_printf("EXC L_ALIGN: ");
+  neorv32_uart_printf("L_ALIGN: ");
   cnt_test++;
 
   // load from unaligned address
@@ -308,7 +312,7 @@ int main() {
   // ----------------------------------------------------------
   // Load access fault
   // ----------------------------------------------------------
-  neorv32_uart_printf("EXC L_ACC:   ");
+  neorv32_uart_printf("L_ACC: ");
   cnt_test++;
 
   // load from unreachable aligned address
@@ -330,7 +334,7 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned store address
   // ----------------------------------------------------------
-  neorv32_uart_printf("EXC S_ALIGN: ");
+  neorv32_uart_printf("S_ALIGN: ");
   cnt_test++;
 
   // store to unaligned address
@@ -352,7 +356,7 @@ int main() {
   // ----------------------------------------------------------
   // Store access fault
   // ----------------------------------------------------------
-  neorv32_uart_printf("EXC S_ACC:   ");
+  neorv32_uart_printf("S_ACC: ");
   cnt_test++;
 
   // store to unreachable aligned address
@@ -374,7 +378,7 @@ int main() {
   // ----------------------------------------------------------
   // Environment call
   // ----------------------------------------------------------
-  neorv32_uart_printf("EXC ENVCALL: ");
+  neorv32_uart_printf("ENVCALL: ");
   cnt_test++;
 
   asm volatile("ECALL");
@@ -395,7 +399,7 @@ int main() {
   // ----------------------------------------------------------
   // Machine software interrupt
   // ----------------------------------------------------------
-  neorv32_uart_printf("EXC MSI:     ");
+  neorv32_uart_printf("MSI: ");
   cnt_test++;
 
   // trigger machine software interrupt
@@ -417,7 +421,7 @@ int main() {
   // ----------------------------------------------------------
   // Machine timer interrupt (MTIME)
   // ----------------------------------------------------------
-  neorv32_uart_printf("EXC MTI:     ");
+  neorv32_uart_printf("MTI: ");
   cnt_test++;
 
   // force MTIME IRQ
@@ -445,7 +449,7 @@ int main() {
   // ----------------------------------------------------------
   // Machine external interrupt (via CLIC)
   // ----------------------------------------------------------
-  neorv32_uart_printf("EXC MEI:     ");
+  neorv32_uart_printf("MEI: ");
   cnt_test++;
 
   // manually trigger CLIC channel (watchdog interrupt)
@@ -470,10 +474,10 @@ int main() {
 #endif
 
 
-
-
+#if (DETAILED_EXCEPTION_DEBUG==1)
   // error report
   neorv32_uart_printf("\n\nTests: %i\nOK:    %i\nFAIL:  %i\n\n", cnt_test, cnt_ok, cnt_fail);
+#endif
 
   // final result
   if (cnt_fail == 0) {

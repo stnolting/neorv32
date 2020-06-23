@@ -56,11 +56,13 @@ ghdl -e --work=neorv32 neorv32_top
 touch neorv32.sim_uart.out
 chmod 777 neorv32.sim_uart.out
 ghdl -e --work=neorv32 neorv32_tb
-ghdl -r --work=neorv32 neorv32_tb --stop-time=25ms --ieee-asserts=disable-at-0 --assert-level=error
+ghdl -r --work=neorv32 neorv32_tb --stop-time=100ms --ieee-asserts=disable-at-0 --assert-level=error
 
 # Check output
-uart_res_reference="Blinking LED demo program"
-echo "Checking UART output. Should be:" $uart_res_reference
+uart_res_reference="TEST OK!"
+echo "Checking UART output. Should contain:"; cat reference.out
 echo "UART output is:"
 cat neorv32.sim_uart.out
-grep -q "$uart_res_reference" neorv32.sim_uart.out
+
+# Compare output with reference
+grep -qf reference.out neorv32.sim_uart.out
