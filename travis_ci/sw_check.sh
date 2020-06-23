@@ -10,6 +10,7 @@ homedir=$homedir/..
 # The directories of the sw source files
 srcdir_examples=$homedir/sw/example
 srcdir_bootloader=$homedir/sw/bootloader
+test_app_dir=$homedir/sw/example/blink_led
 
 # List files
 ls -al $srcdir_examples
@@ -18,6 +19,12 @@ ls -al $srcdir_bootloader
 # check toolchain
 make -C $srcdir_examples/blink_led check
 
-# Try to compile all example + bootloader
+# Try to compile all examples
 make -C $srcdir_examples clean_all info compile
-make -C $srcdir_bootloader clean_all info all
+
+# Compile and install bootloader
+make -C $srcdir_bootloader clean_all info bootloader
+
+# Compile and install test application
+echo "Installing test application"
+make -C $test_app_dir clean_all info all

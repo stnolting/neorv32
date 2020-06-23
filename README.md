@@ -98,8 +98,8 @@ by yourself, you can also download [pre-compiled toolchain](https://github.com/s
 
 ## CPU Features
 
-The CPU is compliant to the [official RISC-V specifications](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf) including a subset of the 
-[RISC-V privileged architecture specifications](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf).
+The CPU is compliant to the [official RISC-V specifications](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf) including a subset of the 
+[RISC-V privileged architecture specifications](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf).
 
  * RV32I base instruction set (__`I` extension__):
    * Base instructions: `LUI` `AUIPC` `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` `LB` `LH` `LW` `LBU` `LHU` `SB` `SH` `SW` `ADDI` `SLTI` `SLTIU` `XORI` `ORI` `ANDI` `SLLI` `SRLI` `SRAI` `ADD` `SUB` `SLL` `SLT` `SLTU` `XOR` `SRL` `SRA` `OR` `AND`
@@ -249,7 +249,7 @@ Just instantiate this file in your project and you are ready to go! All signals 
 (except for the TWI signals, which are of type *std_logic*).
 
 Use the generics to configure the processor according to your needs. Each generics is initilized with the default configuration.
-More information can be found in the [NEORV32 documentary](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/neorv32.pdf).
+More information can be found in the [NEORV32 documentary](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 ```vhdl
 entity neorv32_top is
