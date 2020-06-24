@@ -25,10 +25,14 @@ make -C $srcdir_examples clean_all info compile
 # Compile and install bootloader
 make -C $srcdir_bootloader clean_all info bootloader
 
-
 # Compile and install test application
 echo "Installing test application"
 make -C $test_app_dir clean_all MARCH=-march=rv32imc info all
-# Reference verification string
+
+# Verification reference string
 rm -f reference.out
+touch reference.out
 echo "TEST OK!" > reference.out
+
+pwd
+ls -al

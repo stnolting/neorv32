@@ -61,7 +61,8 @@ ghdl -r --work=neorv32 neorv32_tb --stop-time=100ms --ieee-asserts=disable-at-0 
 # Check output
 uart_res_reference="TEST OK!"
 echo "Checking UART output. Should contain:"; cat reference.out
-echo "UART output is:"
+echo " :"
+echo "Checking UART output. UART output is:"
 cat neorv32.sim_uart.out
 
 # Compare output with reference
