@@ -46,28 +46,26 @@ ghdl -a --work=neorv32 $srcdir_core/neorv32_twi.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_uart.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_wdt.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_wishbone.vhd
-
-ghdl -a --work=neorv32 $srcdir_top_templates/*.vhd $srcdir_sim/*.vhd
-
-# Elaborate top entity
-#ghdl -e --work=neorv32 neorv32_top
+#
+ghdl -a --work=neorv32 $srcdir_top_templates/*.vhd
+#
+ghdl -a --work=neorv32 $srcdir_sim/*.vhd
 
 # Prepare UART tx output log file and run simulation
 touch neorv32.sim_uart.out
 chmod 777 neorv32.sim_uart.out
 ghdl -e --work=neorv32 neorv32_tb
-ghdl -r --work=neorv32 neorv32_tb --stop-time=100ms --ieee-asserts=disable-at-0 --assert-level=error
-
-# Check output
-uart_res_reference="TEST OK!"
-echo "Checking UART output. Should contain:"; cat reference.out
-echo " :"
-echo "Checking UART output. UART output is:"
-cat neorv32.sim_uart.out
+#ghdl -r --work=neorv32 neorv32_tb --stop-time=100ms --ieee-asserts=disable-at-0 --assert-level=error
 
 # DEBUGGING
 pwd
 ls -al
+
+# Check output
+echo "Checking UART output. Should contain:"; cat reference.out
+echo " :"
+echo "Checking UART output. UART output is:"
+cat neorv32.sim_uart.out
 
 # Compare output with reference
 grep -qf reference.out neorv32.sim_uart.out

@@ -30,8 +30,8 @@ echo "Installing test application"
 make -C $test_app_dir clean_all MARCH=-march=rv32imc info all
 
 # Verification reference string
-rm -f reference.out
 touch reference.out
+chmod 777 reference.out
 echo "TEST OK!" > reference.out
 
 # DEBUGGING
