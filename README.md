@@ -19,15 +19,14 @@
 * [Top Entity](#Top-Entity)
 * [**Getting Started**](#Getting-Started)
 * [Contact](#Contact)
-* [Citation](#Citation)
 * [Legal](#Legal)
 
 
 
 ## Introduction
 
-The NEORV321 is a customizable mikrocontroller-like processor system based on a RISC-V `rv32i` or `rv32e` CPU with optional
-`M`, `E`, `C` and `Zicsr` extensions. The CPU was built from scratch and is compliant to the **Unprivileged
+The NEORV32 is a customizable mikrocontroller-like processor system based on a RISC-V `rv32i` or `rv32e` CPU with optional
+`M`, `C` and `Zicsr` extensions. The CPU was built from scratch and is compliant to the **Unprivileged
 ISA Specification Version 2.1** and the **Privileged Architecture Specification Version 1.12**. The NEORV32 is intended
 as auxiliary processor within a larger SoC designs or as stand-alone custom microcontroller.
 
@@ -59,23 +58,11 @@ For more information take a look a the [![NEORV32 datasheet](https://raw.githubu
 ![processor status](https://img.shields.io/badge/processor%20status-beta-orange)
 
 
-### To-Do / Wish List
-
-- Testing, testing and even more testing
-- Port official [RISC-V compliance test](https://github.com/riscv/riscv-compliance)
-- Maybe port an RTOS (like [freeRTOS](https://www.freertos.org/) or [RIOT](https://www.riot-os.org/))
-- Implement atomic extensions (`A` extension)
-- Implement co-processor for single-precision floating-point (`F` extension)
-- Implement user mode (`U` extension)
-- Make a 64-bit branch
-
-
-
 ## Features
 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_overview.png)
 
-### Processor
+### Processor Features
 
   - RISC-V-compliant `rv32i` or `rv32e` CPU with optional `C`, `E`, `M` and `Zicsr` extensions
   - GCC-based toolchain ([pre-compiled rv32i and rv32 etoolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
@@ -99,7 +86,7 @@ For more information take a look a the [![NEORV32 datasheet](https://raw.githubu
   - Optional core-local interrupt controller with 8 channels (CLIC)
 
 
-### CPU
+### CPU Features
 
 The CPU is compliant to the [official RISC-V specifications](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf) including a subset of the 
 [RISC-V privileged architecture specifications](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf).
@@ -122,6 +109,17 @@ The CPU is compliant to the [official RISC-V specifications](https://raw.githubu
    * Exceptions/interrupts: Misaligned instruction address, instruction access fault, illegal instruction, breakpoint, load address misaligned, load access fault, store address misaligned, store access fault, environment call from M-mode, machine software instrrupt, machine timer interrupt (from MTIME), machine external interrupt (via CLIC)
  * No hardware support of unaligned accesses (except for instructions in `C` extension that still have to be aligned on 16-bit boundaries)
  * Multi-cycle in-order instruction execution
+
+
+### To-Do / Wish List
+
+- Testing, testing and even more testing
+- Port official [RISC-V compliance test](https://github.com/riscv/riscv-compliance)
+- Maybe port an RTOS (like [freeRTOS](https://www.freertos.org/) or [RIOT](https://www.riot-os.org/))
+- Implement atomic extensions (`A` extension)
+- Implement co-processor for single-precision floating-point (`F` extension)
+- Implement user mode (`U` extension)
+- Make a 64-bit branch
 
 
 
@@ -252,7 +250,7 @@ Just instantiate this file in your project and you are ready to go! All signals 
 (except for the TWI signals, which are of type *std_logic*).
 
 Use the generics to configure the processor according to your needs. Each generics is initilized with the default configuration.
-More information can be found in the [NEORV32 documentary](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+Detailed information regarding the signals and configuration generics can be found in the [NEORV32 documentary](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 ```vhdl
 entity neorv32_top is
@@ -280,7 +278,7 @@ entity neorv32_top is
     -- Memory configuration: External memory interface --
     MEM_EXT_USE               : boolean := false;   -- implement external memory bus interface?
     MEM_EXT_REG_STAGES        : natural := 2;       -- number of interface register stages (0,1,2)
-    MEM_EXT_TIMEOUT           : natural := 15;     -- cycles after which a valid bus access will timeout (>=1)
+    MEM_EXT_TIMEOUT           : natural := 15;      -- cycles after which a valid bus access will timeout (>=1)
     -- Processor peripherals --
     IO_GPIO_USE               : boolean := true;    -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE              : boolean := true;    -- implement machine system timer (MTIME)?
@@ -406,9 +404,12 @@ This test setup is intended as quick and easy "hello world" test setup to get in
 
 ### Compiling and Uploading One of the Example Projects
 
-Make sure `GNU Make` and a native `GCC` compiler are installed.
+Make sure `GNU Make` and a native `GCC` compiler are installed. To test the installation of the RISC-V toolchain, navigate to an example project like
+`sw/example/blink_led` and run:
 
-The NEORV32 project also includes some example programs from which you can start your own application:
+    neorv32/sw/example/blink_led$ make check
+
+The NEORV32 project includes some example programs from which you can start your own application:
 [SW example projects](https://github.com/stnolting/neorv32/tree/master/sw/example)
 
 Simply compile one of these projects. This will create a NEORV32 executable `neorv32_exe.bin` in the same folder.
@@ -416,7 +417,7 @@ Simply compile one of these projects. This will create a NEORV32 executable `neo
     neorv32/sw/example/blink_led$ make clean_all compile
 
 Connect your FPGA board via UART to you computer and open the according port to interface with the NEORV32 bootloader. The bootloader
-uses the following default configuration:
+uses the following default UART configuration:
 
 - 19200 Baud
 - 8 data bits
@@ -450,6 +451,10 @@ Use the bootloader console to upload and execute your application image.
   e: Execute
   CMD:> 
 ```
+
+Going further: Take a look at the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+
+
 
 
 ## Contact
