@@ -91,35 +91,64 @@ For more information take a look a the [![NEORV32 datasheet](https://raw.githubu
 The CPU is compliant to the [official RISC-V specifications](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf) including a subset of the 
 [RISC-V privileged architecture specifications](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf).
 
- * RV32I base instruction set (__`I` extension__):
-   * Base instructions: `LUI` `AUIPC` `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` `LB` `LH` `LW` `LBU` `LHU` `SB` `SH` `SW` `ADDI` `SLTI` `SLTIU` `XORI` `ORI` `ANDI` `SLLI` `SRLI` `SRAI` `ADD` `SUB` `SLL` `SLT` `SLTU` `XOR` `SRL` `SRA` `OR` `AND`
- * Compressed instructions (__`C` extension__):
-   * Instructions: `C.ADDI4SPN` `C.LW` `C.SW` `C.NOP` `C.ADDI` `C.JAL` `C.LI` `C.ADDI16SP` `C.LUI` `C.SRLI` `C.SRAI` `C.ANDI` `C.SUB` `C.XOR` `C.OR` `C.AND` `C.J` `C.BEQZ` `C.BNEZ` `C.SLLI` `C.LWSP` `C.JR` `C.MV` `C.EBREAK` `C.JALR` `C.ADD` `C.SWSP`
- * Embedded CPU version (__`E` extension__):
-   * Reduced register file (only the 16 lowest registers)
-   * No performance counter CSRs
- * Integer multiplication and division hardware (__`M` Extension__):
-   * Instructions: `MUL` `MULH` `MULHSU` `MULHU` `DIV` `DIVU` `REM` `REMU`
- * Privileged Architecture (__`Zicsr` Extension__):
-   * Privilege levels: Machine mode (`M-mode`)
-   * Instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI` `ECALL` `EBREAK` `MRET` `WFI`
-   * Counter CSRs: `cycle` `cycleh` `time` `timeh` `instret` `instreth` `mcycle` `mcycleh` `minstret` `minstreth`
-   * Machine CSRs: `mstatus` `misa` `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mtinst` `mimpid` `mhartid`
-   * Custom CSRs: `mfeatures` `mclock` `mispacebase` `mdspacebase` `mispacesize` `mdspacesize`
-   * Exceptions/interrupts: Misaligned instruction address, instruction access fault, illegal instruction, breakpoint, load address misaligned, load access fault, store address misaligned, store access fault, environment call from M-mode, machine software instrrupt, machine timer interrupt (from MTIME), machine external interrupt (via CLIC)
- * No hardware support of unaligned accesses (except for instructions in `C` extension that still have to be aligned on 16-bit boundaries)
- * Multi-cycle in-order instruction execution
+RV32I base instruction set (**`I` extension**):
+  * ALU instructions: `LUI` `AUIPC` `ADDI` `SLTI` `SLTIU` `XORI` `ORI` `ANDI` `SLLI` `SRLI` `SRAI` `ADD` `SUB` `SLL` `SLT` `SLTU` `XOR` `SRL` `SRA` `OR` `AND`
+  * Branches instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
+  * Memory instructions: `LB` `LH` `LW` `LBU` `LHU` `SB` `SH` `SW`
+
+Compressed instructions (**`C` extension**):
+  * ALU instructions: `C.ADDI4SPN` `C.ADDI` `C.ADD` `C.ADDI16SP` `C.LI` `C.LUI` `C.SLLI` `C.SRLI` `C.SRAI` `C.ANDI` `C.SUB` `C.XOR` `C.OR` `C.AND` `C.MV` `C.NOP`
+  * Branches instructions: `C.J` `C.JAL` `C.JR` `C.JALR` `C.BEQZ` `C.BNEZ`
+  * Memory instructions: `C.LW` `C.SW` `C.LWSP` `C.SWSP`
+  * Misc instructions: `C.EBREAK` (only with `Zicsr` extension)
+
+Embedded CPU version (**`E` extension**):
+  * Reduced register file (only the 16 lowest registers)
+  * No performance counter CSRs
+
+Integer multiplication and division hardware (**`M` extension**):
+  * Multiplication instructions: `MUL` `MULH` `MULHSU` `MULHU`
+  * Division instructions: `DIV` `DIVU` `REM` `REMU`
+
+Privileged architecture (**`Zicsr` extension**):
+  * Privilege levels: `M-mode` (Machine mode)
+  * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
+  * System instructions: `ECALL` `EBREAK` `MRET` `WFI`
+  * Counter CSRs: `cycle` `cycleh` `time` `timeh` `instret` `instreth` `mcycle` `mcycleh` `minstret` `minstreth`
+  * Machine CSRs: `mstatus` `misa` `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mtinst` `mimpid` `mhartid`
+  * Custom CSRs: `mfeatures` `mclock` `mispacebase` `mdspacebase` `mispacesize` `mdspacesize`
+  * Supported exceptions and interrupts:
+    * Misaligned instruction address
+    * Instruction access fault
+    * Illegal instruction
+    * Breakpoint
+    * Load address misaligned
+    * Load access fault
+    * Sore address misaligned
+    * Store access fault
+    * Environment call from M-mode
+    * Machine software instrrupt
+    * Machine timer interrupt (from MTIME)
+    * Machine external interrupt (via CLIC)
+
+General:
+  * No hardware support of unaligned accesses (except for instructions in `C` extension that still have to be aligned on 16-bit boundaries)
+  * Multi-cycle in-order instruction execution
+
+More information including a detailed list of the available CSRs can be found in
+the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 
 ### To-Do / Wish List
 
 - Testing, testing and even more testing
 - Port official [RISC-V compliance test](https://github.com/riscv/riscv-compliance)
-- Maybe port an RTOS (like [freeRTOS](https://www.freertos.org/) or [RIOT](https://www.riot-os.org/))
+- Port Dhrystone benchmark
 - Implement atomic extensions (`A` extension)
 - Implement co-processor for single-precision floating-point (`F` extension)
 - Implement user mode (`U` extension)
 - Make a 64-bit branch
+- Maybe port an RTOS (like [freeRTOS](https://www.freertos.org/) or [RIOT](https://www.riot-os.org/))
 
 
 
@@ -134,16 +163,16 @@ Results generated for hardware version: `0.0.2.3`
 
 ### CPU
 
-| CPU Configuration   | LEs         | FFs        | Memory bits   | DSPs   | f_max   |
-|:--------------------|:-----------:|:----------:|:-------------:|:------:|:-------:|
-| `rv32i`             |   852  (4%) |   326 (1%) |    2048 (>1%) | 0 (0%) | 111 MHz |
-| `rv32i` + `Zicsr`   |  1488  (7%) |   694 (3%) |    2048 (>1%) | 0 (0%) | 107 MHz |
-| `rv32im` + `Zicsr`  |  2057  (9%) |   941 (4%) |    2048 (>1%) | 0 (0%) | 102 MHz |
-| `rv32imc` + `Zicsr` |  2209 (10%) |   958 (4%) |    2048 (>1%) | 0 (0%) | 102 MHz |
-| `rv32e`             |   848  (4%) |   326 (1%) |    1024 (>1%) | 0 (0%) | 111 MHz |
-| `rv32e` + `Zicsr`   |  1316  (6%) |   594 (3%) |    1024 (>1%) | 0 (0%) | 106 MHz |
-| `rv32em` + `Zicsr`  |  1879  (8%) |   841 (4%) |    1024 (>1%) | 0 (0%) | 101 MHz |
-| `rv32emc` + `Zicsr` |  2065  (9%) |   858 (4%) |    1024 (>1%) | 0 (0%) | 100 MHz |
+| CPU Configuration   | LEs        | FFs      | Memory bits | DSPs   | f_max   |
+|:--------------------|:----------:|:--------:|:-----------:|:------:|:-------:|
+| `rv32i`             |  852  (4%) | 326 (1%) |  2048 (>1%) | 0 (0%) | 111 MHz |
+| `rv32i` + `Zicsr`   | 1488  (7%) | 694 (3%) |  2048 (>1%) | 0 (0%) | 107 MHz |
+| `rv32im` + `Zicsr`  | 2057  (9%) | 941 (4%) |  2048 (>1%) | 0 (0%) | 102 MHz |
+| `rv32imc` + `Zicsr` | 2209 (10%) | 958 (4%) |  2048 (>1%) | 0 (0%) | 102 MHz |
+| `rv32e`             |  848  (4%) | 326 (1%) |  1024 (>1%) | 0 (0%) | 111 MHz |
+| `rv32e` + `Zicsr`   | 1316  (6%) | 594 (3%) |  1024 (>1%) | 0 (0%) | 106 MHz |
+| `rv32em` + `Zicsr`  | 1879  (8%) | 841 (4%) |  1024 (>1%) | 0 (0%) | 101 MHz |
+| `rv32emc` + `Zicsr` | 2065  (9%) | 858 (4%) |  1024 (>1%) | 0 (0%) | 100 MHz |
 
 ### Peripherals / Others
 
@@ -197,12 +226,12 @@ Used peripherals: MTIME for time measurement, UART for printing the results
 
 | __Configuration__ | __Optimization__ | __Executable Size__ | __CoreMark Score__ | __CoreMarks/MHz__ |
 |:------------------|:----------------:|:-------------------:|:------------------:|:-----------------:|
-| `rv32i`           | `-Os`            |     17 944 bytes    |        23.26       |       0.232       |
-| `rv32i`           | `-O2`            |     20 264 bytes    |        25.64       |       0.256       |
-| `rv32im`          | `-Os`            |     16 880 bytes    |        40.81       |       0.408       |
-| `rv32im`          | `-O2`            |     19 312 bytes    |        47.62       |       0.476       |
-| `rv32imc`         | `-Os`            |     13 000 bytes    |        32.78       |       0.327       |
-| `rv32imc`         | `-O2`            |     15 004 bytes    |        37.04       |       0.370       |
+| `rv32i`           |      `-Os`       |     17 944 bytes    |        23.26       |       0.232       |
+| `rv32i`           |      `-O2`       |     20 264 bytes    |        25.64       |       0.256       |
+| `rv32im`          |      `-Os`       |     16 880 bytes    |        40.81       |       0.408       |
+| `rv32im`          |      `-O2`       |     19 312 bytes    |        47.62       |       0.476       |
+| `rv32imc`         |      `-Os`       |     13 000 bytes    |        32.78       |       0.327       |
+| `rv32imc`         |      `-O2`       |     15 004 bytes    |        37.04       |       0.370       |
 
 
 ### Instruction Cycles
@@ -233,7 +262,7 @@ Based on the provided performance measurement and the hardware utilization for t
 different CPU configurations, the following configurations are suggested:
 
 
-| Design goal                    | NEORV32 CPU Config. |
+| Design Goal                    | NEORV32 CPU Config. |
 |:-------------------------------|:--------------------|
 | Highest performance:           | `rv32im`            |
 | Lowest memory requirements:    | `rv32imc`           |
@@ -453,7 +482,6 @@ Use the bootloader console to upload and execute your application image.
 ```
 
 Going further: Take a look at the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
-
 
 
 
