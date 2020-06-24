@@ -34,5 +34,6 @@ rm -f reference.out
 touch reference.out
 echo "TEST OK!" > reference.out
 
+# DEBUGGING
 pwd
 ls -al

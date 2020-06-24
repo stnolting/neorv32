@@ -50,7 +50,7 @@ ghdl -a --work=neorv32 $srcdir_core/neorv32_wishbone.vhd
 ghdl -a --work=neorv32 $srcdir_top_templates/*.vhd $srcdir_sim/*.vhd
 
 # Elaborate top entity
-ghdl -e --work=neorv32 neorv32_top
+#ghdl -e --work=neorv32 neorv32_top
 
 # Prepare UART tx output log file and run simulation
 touch neorv32.sim_uart.out
@@ -64,6 +64,10 @@ echo "Checking UART output. Should contain:"; cat reference.out
 echo " :"
 echo "Checking UART output. UART output is:"
 cat neorv32.sim_uart.out
+
+# DEBUGGING
+pwd
+ls -al
 
 # Compare output with reference
 grep -qf reference.out neorv32.sim_uart.out
