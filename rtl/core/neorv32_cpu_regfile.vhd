@@ -1,7 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - CPU Register File >>                                                             #
 -- # ********************************************************************************************* #
--- # General purpose data registers. 32 entries for normal mode, 16 entries for embedd mode - when #
+-- # General purpose data registers. 32 entries for normal mode, 16 entries for embedded mode when #
 -- # RISC-V M extension is enabled. R0 output is hardwired to zero.                                #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #

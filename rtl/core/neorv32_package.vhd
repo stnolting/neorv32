@@ -149,7 +149,7 @@ package neorv32_package is
   constant ctrl_rf_rd_adr4_c      : natural := 16; -- destiantion register address bit 4
   constant ctrl_rf_wb_en_c        : natural := 17; -- write back enable
   constant ctrl_rf_clear_rs1_c    : natural := 18; -- force rs1=r0
-  constant ctrl_rf_clear_rs2_c    : natural := 19; -- force r21=r0
+  constant ctrl_rf_clear_rs2_c    : natural := 19; -- force rs2=r0
   -- alu --
   constant ctrl_alu_cmd0_c        : natural := 20; -- ALU command bit 0
   constant ctrl_alu_cmd1_c        : natural := 21; -- ALU command bit 1
@@ -229,6 +229,7 @@ package neorv32_package is
   constant opcode_load_c   : std_ulogic_vector(6 downto 0) := "0000011"; -- load (data type via funct3)
   constant opcode_store_c  : std_ulogic_vector(6 downto 0) := "0100011"; -- store (data type via funct3)
   -- system/csr --
+  constant opcode_fence_c  : std_ulogic_vector(6 downto 0) := "0001111"; -- fence
   constant opcode_syscsr_c : std_ulogic_vector(6 downto 0) := "1110011"; -- system/csr access (type via funct3)
 
   -- RISC-V Funct3 --------------------------------------------------------------------------

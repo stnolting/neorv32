@@ -141,7 +141,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- less than (x < y) --
   cmp_opx  <= (rs1_i(rs1_i'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs1_i;
-  cmp_opy  <= (opc(opc'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opc;
+  cmp_opy  <= (opc(opc'left)     and (not ctrl_i(ctrl_alu_unsigned_c))) & opc;
   cmp_sub  <= std_ulogic_vector(signed(cmp_opx) - signed(cmp_opy));
   cmp_less <= cmp_sub(cmp_sub'left); -- carry (borrow) indicates a less
   sub_res  <= cmp_sub(data_width_c-1 downto 0); -- use the less-comparator also for SUB operations
@@ -177,10 +177,8 @@ begin
         shift_cnt <= std_ulogic_vector(unsigned(shift_cnt) - 1);
         if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- SLL: shift left logical
           shift_sreg <= shift_sreg(shift_sreg'left-1 downto 0) & '0';
-        elsif (ctrl_i(ctrl_alu_shift_ar_c) = '0') then -- SRL: shift right logical
-          shift_sreg <= '0' & shift_sreg(shift_sreg'left downto 1);
-        else -- SRA: shift right arithmetical
-          shift_sreg <= shift_sreg(shift_sreg'left) & shift_sreg(shift_sreg'left downto 1);
+        else -- SRL: shift right logical / SRA: shift right arithmetical
+          shift_sreg <= (shift_sreg(shift_sreg'left) and ctrl_i(ctrl_alu_shift_ar_c)) & shift_sreg(shift_sreg'left downto 1);
         end if;
       end if;
     end if;
@@ -194,7 +192,7 @@ begin
   shift_run <= '1' when (shift_cnt /= "00000") or (shift_start = '1') else '0';
 
 
-  -- Corprocessor Interface -----------------------------------------------------------------
+  -- Coprocessor Interface ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   cp_interface: process(rstn_i, clk_i)
   begin
@@ -229,14 +227,13 @@ begin
   -- co-processor operation running? --
   cp_run <= cp_busy or cp_start;
 
---FIXME: insert cp result into alu stream
 
   -- ALU Function Select --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   alu_function_mux: process(ctrl_i, opa, opb, add_res, sub_res, cmp_less, shift_sreg)
   begin
     case ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) is
-      when alu_cmd_bitc_c  => alu_res <= opa and (not opb); -- bit clear (for CSR modification)
+      when alu_cmd_bitc_c  => alu_res <= opa and (not opb); -- bit clear (for CSR modification only)
       when alu_cmd_sub_c   => alu_res <= sub_res;
       when alu_cmd_add_c   => alu_res <= add_res;
       when alu_cmd_xor_c   => alu_res <= opa xor opb;

@@ -70,10 +70,10 @@ int main() {
   // check if UART unit is implemented at all
   if (neorv32_uart_available() == 0) {
     return 0; // nope, no UART unit synthesized :(
+  }
 
   // init UART at default baud rate, no rx interrupt, no tx interrupt
   neorv32_uart_setup(BAUD_RATE, 0, 0);
-  }
 
 
   // capture all exceptions and give debug info via UART
