@@ -8,12 +8,11 @@ env:
 
 script:
 
-  # Get tools
+  # Get simulator tools
   - docker pull ghdl/ghdl:buster-gcc-8.3.0
 
-  # SW check
+  # Get toolchain SW check
   - /bin/bash -c "chmod u+x .ci/install.sh && .ci/install.sh"
-  - /bin/bash -c "riscv32-unknown-elf-gcc -v"
   - /bin/bash -c "chmod u+x .ci/sw_check.sh && .ci/sw_check.sh"
 
   # HW check
