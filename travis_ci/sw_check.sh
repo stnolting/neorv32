@@ -33,7 +33,3 @@ make -C $test_app_dir clean_all MARCH=-march=rv32imc info all
 touch $homedir/reference.out
 chmod 777 $homedir/reference.out
 echo "TEST OK!" > $homedir/reference.out
-
-# DEBUGGING
-pwd
-ls -al $homedir

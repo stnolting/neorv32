@@ -55,11 +55,7 @@ ghdl -a --work=neorv32 $srcdir_sim/*.vhd
 touch neorv32.sim_uart.out
 chmod 777 neorv32.sim_uart.out
 ghdl -e --work=neorv32 neorv32_tb
-#ghdl -r --work=neorv32 neorv32_tb --stop-time=100ms --ieee-asserts=disable-at-0 --assert-level=error
-
-# DEBUGGING
-pwd
-ls -al $homedir/
+ghdl -r --work=neorv32 neorv32_tb --stop-time=100ms --ieee-asserts=disable-at-0 --assert-level=error
 
 # Check output
 echo "Checking UART output. Should contain:"; cat $homedir/reference.out
