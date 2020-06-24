@@ -59,13 +59,13 @@ ghdl -e --work=neorv32 neorv32_tb
 
 # DEBUGGING
 pwd
-ls -al
+ls -al $homedir/
 
 # Check output
-echo "Checking UART output. Should contain:"; cat reference.out
+echo "Checking UART output. Should contain:"; cat $homedir/reference.out
 echo " :"
 echo "Checking UART output. UART output is:"
 cat neorv32.sim_uart.out
 
 # Compare output with reference
-grep -qf reference.out neorv32.sim_uart.out
+grep -qf $homedir/reference.out neorv32.sim_uart.out

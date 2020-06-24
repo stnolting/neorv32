@@ -30,10 +30,10 @@ echo "Installing test application"
 make -C $test_app_dir clean_all MARCH=-march=rv32imc info all
 
 # Verification reference string
-touch reference.out
-chmod 777 reference.out
-echo "TEST OK!" > reference.out
+touch $homedir/reference.out
+chmod 777 $homedir/reference.out
+echo "TEST OK!" > $homedir/reference.out
 
 # DEBUGGING
 pwd
-ls -al
+ls -al $homedir
