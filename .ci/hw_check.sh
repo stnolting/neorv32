@@ -16,6 +16,8 @@ srcdir_sim=$homedir/sim
 ghdl -v
 
 # List files
+echo ""
+echo "Simulation source files:"
 ls -al $srcdir_core
 ls -al $srcdir_top_templates
 ls -al $srcdir_sim
@@ -34,6 +36,7 @@ ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_control.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_cp_muldiv.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_decompressor.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_regfile.vhd
+ghdl -a --work=neorv32 $srcdir_core/neorv32_devnull.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_dmem.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_gpio.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_imem.vhd
@@ -51,17 +54,21 @@ ghdl -a --work=neorv32 $srcdir_top_templates/*.vhd
 #
 ghdl -a --work=neorv32 $srcdir_sim/*.vhd
 
-# Prepare UART tx output log file and run simulation
-touch neorv32.sim_uart.out
-chmod 777 neorv32.sim_uart.out
+# Prepare simulation output files
+touch neorv32.testbench_uart.out
+chmod 777 neorv32.testbench_uart.out
+touch neorv32.devnull.out
+chmod 777 neorv32.devnull.out
+
+# Run simulation
 ghdl -e --work=neorv32 neorv32_tb
-ghdl -r --work=neorv32 neorv32_tb --stop-time=100ms --ieee-asserts=disable-at-0 --assert-level=error
+ghdl -r --work=neorv32 neorv32_tb --stop-time=5ms --ieee-asserts=disable --assert-level=error
 
 # Check output
-echo "Checking UART output. Should contain:"; cat $homedir/reference.out
+echo "Checking NEORV32.DEVNULL output. Should contain:"; cat $homedir/check_reference.out
 echo ""
-echo "Checking UART output. UART output is:"
-cat neorv32.sim_uart.out
+echo "Checking NEORV32.DEVNULL output. NEORV32.DEVNULL output is:"
+cat neorv32.devnull.out
 
-# Compare output with reference
-grep -qf $homedir/reference.out neorv32.sim_uart.out
+# Check if reference can be found in output
+grep -qf $homedir/check_reference.out neorv32.devnull.out
