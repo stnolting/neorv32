@@ -27,7 +27,7 @@
 
 The NEORV32 is a customizable mikrocontroller-like processor system based on a RISC-V `rv32i` or `rv32e` CPU with optional
 `M`, `C` and `Zicsr` extensions. The CPU was built from scratch and is compliant to the **Unprivileged
-ISA Specification Version 2.1** and the **Privileged Architecture Specification Version 1.12**. The NEORV32 is intended
+ISA Specification Version 2.1** and a subset of the **Privileged Architecture Specification Version 1.12**. The NEORV32 is intended
 as auxiliary processor within a larger SoC designs or as stand-alone custom microcontroller.
 
 The processor provides common peripherals and interfaces like input and output ports, serial interfaces for UART, I²C and SPI,
@@ -55,8 +55,10 @@ For more information take a look a the [![NEORV32 datasheet](https://raw.githubu
 
 
 ### Status
+
 ![processor status](https://img.shields.io/badge/processor%20status-beta-orange)
 
+The processor is synthesizable (tested with Intel Quartus Prime and Lattice Radiant/Synplify) and can successfully execute all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example).
 
 ## Features
 
@@ -66,8 +68,8 @@ For more information take a look a the [![NEORV32 datasheet](https://raw.githubu
 
   - RISC-V-compliant `rv32i` or `rv32e` CPU with optional `C`, `E`, `M` and `Zicsr` extensions
   - GCC-based toolchain ([pre-compiled rv32i and rv32 etoolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
-  - Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/Makefile)
-  - [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doygen_makefile_sw) documentation of the software framework
+  - Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
+  - [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework
   - Completely described in behavioral, platform-independent VHDL – no primitives, macros, etc.
   - Fully synchronous design, no latches, no gated clocks
   - Small hardware footprint and high operating frequency
@@ -84,6 +86,7 @@ For more information take a look a the [![NEORV32 datasheet](https://raw.githubu
   - Optional PWM controller with 4 channels and 8-bit duty cycle resolution (PWM)
   - Optional GARO-based true random number generator (TRNG)
   - Optional core-local interrupt controller with 8 channels (CLIC)
+  - Optional dummy device (DEVNULL) (can be used for *fast* simulation console output)
 
 
 ### CPU Features
@@ -91,26 +94,26 @@ For more information take a look a the [![NEORV32 datasheet](https://raw.githubu
 The CPU is compliant to the [official RISC-V specifications](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf) including a subset of the 
 [RISC-V privileged architecture specifications](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf).
 
-RV32I base instruction set (**`I` extension**):
+**RV32I base instruction set** (`I` extension):
   * ALU instructions: `LUI` `AUIPC` `ADDI` `SLTI` `SLTIU` `XORI` `ORI` `ANDI` `SLLI` `SRLI` `SRAI` `ADD` `SUB` `SLL` `SLT` `SLTU` `XOR` `SRL` `SRA` `OR` `AND`
   * Branches instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
   * Memory instructions: `LB` `LH` `LW` `LBU` `LHU` `SB` `SH` `SW`
 
-Compressed instructions (**`C` extension**):
+**Compressed instructions** (`C` extension):
   * ALU instructions: `C.ADDI4SPN` `C.ADDI` `C.ADD` `C.ADDI16SP` `C.LI` `C.LUI` `C.SLLI` `C.SRLI` `C.SRAI` `C.ANDI` `C.SUB` `C.XOR` `C.OR` `C.AND` `C.MV` `C.NOP`
   * Branches instructions: `C.J` `C.JAL` `C.JR` `C.JALR` `C.BEQZ` `C.BNEZ`
   * Memory instructions: `C.LW` `C.SW` `C.LWSP` `C.SWSP`
   * Misc instructions: `C.EBREAK` (only with `Zicsr` extension)
 
-Embedded CPU version (**`E` extension**):
+**Embedded CPU version** (`E` extension):
   * Reduced register file (only the 16 lowest registers)
   * No performance counter CSRs
 
-Integer multiplication and division hardware (**`M` extension**):
+**Integer multiplication and division hardware** (`M` extension):
   * Multiplication instructions: `MUL` `MULH` `MULHSU` `MULHU`
   * Division instructions: `DIV` `DIVU` `REM` `REMU`
 
-Privileged architecture (**`Zicsr` extension**):
+**Privileged architecture** (`Zicsr` extension):
   * Privilege levels: `M-mode` (Machine mode)
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
   * System instructions: `ECALL` `EBREAK` `MRET` `WFI`
@@ -131,7 +134,7 @@ Privileged architecture (**`Zicsr` extension**):
     * Machine timer interrupt (from MTIME)
     * Machine external interrupt (via CLIC)
 
-General:
+**General**:
   * No hardware support of unaligned accesses (except for instructions in `C` extension that still have to be aligned on 16-bit boundaries)
   * Multi-cycle in-order instruction execution
 
@@ -179,6 +182,7 @@ Results generated for hardware version: `0.0.2.3`
 | Module   | Description                                     | LEs | FFs | Memory bits | DSPs |
 |:---------|:------------------------------------------------|:---:|:---:|:-----------:|:----:|
 | Boot ROM | Bootloader ROM (4kB)                            |   3 |   1 |      32 768 |    0 |
+| DEVNULL  | Dummy device                                    |   2 |   1 |           0 |    0 |
 | DMEM     | Processor-internal data memory (8kB)            |  12 |   2 |      65 536 |    0 |
 | GPIO     | General purpose input/output ports              |  37 |  33 |           0 |    0 |
 | IMEM     | Processor-internal instruction memory (16kb)    |   7 |   2 |     131 072 |    0 |
@@ -317,7 +321,8 @@ entity neorv32_top is
     IO_PWM_USE                : boolean := true;    -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                : boolean := true;    -- implement watch dog timer (WDT)?
     IO_CLIC_USE               : boolean := true;    -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE               : boolean := false    -- implement true random number generator (TRNG)?
+    IO_TRNG_USE               : boolean := false;   -- implement true random number generator (TRNG)?
+    IO_DEVNULL_USE            : boolean := true     -- implement dummy device (DEVNULL)?
   );
   port (
     -- Global control --
@@ -487,7 +492,7 @@ Going further: Take a look at the [![NEORV32 datasheet](https://raw.githubuserco
 
 ## Contact
 
-If you have any questions, bug reports, ideas or if you are facing problems with the NEORV32 or want to give some kinf of feedback, open a
+If you have any questions, bug reports, ideas or if you are facing problems with the NEORV32 or want to give some kind of feedback, open a
 [new issue](https://github.com/stnolting/neorv32/issues) or directly drop me a line:
 
   stnolting@gmail.com
