@@ -10,6 +10,7 @@
 
 # no executables
 sw/image_gen/image_gen
+sw/image_gen/image_gen.exe
 
 # no temp/legacy files/folders
 ~*

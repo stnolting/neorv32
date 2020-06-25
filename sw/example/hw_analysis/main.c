@@ -150,32 +150,35 @@ int main() {
   neorv32_uart_printf("\n-- Peripherals --\n");
   tmp = neorv32_cpu_csr_read(CSR_MFEATURES);
 
-  neorv32_uart_printf("GPIO:  ");
+  neorv32_uart_printf("GPIO:    ");
   print_true_false(tmp & (1 << CPU_MFEATURES_IO_GPIO));
 
-  neorv32_uart_printf("MTIME: ");
+  neorv32_uart_printf("MTIME:   ");
   print_true_false(tmp & (1 << CPU_MFEATURES_IO_MTIME));
 
-  neorv32_uart_printf("UART:  ");
+  neorv32_uart_printf("UART:    ");
   print_true_false(tmp & (1 << CPU_MFEATURES_IO_UART));
 
-  neorv32_uart_printf("SPI:   ");
+  neorv32_uart_printf("SPI:     ");
   print_true_false(tmp & (1 << CPU_MFEATURES_IO_SPI));
 
-  neorv32_uart_printf("TWI:   ");
+  neorv32_uart_printf("TWI:     ");
   print_true_false(tmp & (1 << CPU_MFEATURES_IO_TWI));
 
-  neorv32_uart_printf("PWM:   ");
+  neorv32_uart_printf("PWM:     ");
   print_true_false(tmp & (1 << CPU_MFEATURES_IO_PWM));
 
-  neorv32_uart_printf("WDT:   ");
+  neorv32_uart_printf("WDT:     ");
   print_true_false(tmp & (1 << CPU_MFEATURES_IO_WDT));
 
-  neorv32_uart_printf("CLIC:  ");
+  neorv32_uart_printf("CLIC:    ");
   print_true_false(tmp & (1 << CPU_MFEATURES_IO_CLIC));
 
-  neorv32_uart_printf("TRNG:  ");
+  neorv32_uart_printf("TRNG:    ");
   print_true_false(tmp & (1 << CPU_MFEATURES_IO_TRNG));
+
+  neorv32_uart_printf("DEVNULL: ");
+  print_true_false(tmp & (1 << CPU_MFEATURES_IO_DEVNULL));
 
   return 0;
 }

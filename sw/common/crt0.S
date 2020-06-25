@@ -84,6 +84,8 @@ __crt0_reg_file_init:
   addi x15, x14, 0
 
 // the following registers do not exist in rv32e
+// "__RISCV_EMBEDDED_CPU__" is automatically defined by the makefiles when
+// compiling for a rv32e architecture
 #ifndef __RISCV_EMBEDDED_CPU__
   addi x16, x15, 0
   addi x17, x16, 0
