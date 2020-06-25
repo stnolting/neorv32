@@ -1,5 +1,10 @@
 -- #################################################################################################
--- # << NEORV32 - Simple Testbench with UART-to-Console module >>                                  #
+-- # << NEORV32 - Simple Testbench >>                                                              #
+-- # ********************************************************************************************* #
+-- # This testbench provides a virtual UART receiver connected to the processor's uart_txd_o       #
+-- # signals. The received chars are shown in the simulator console and also written to a file     #
+-- # ("neorv32.testbench_uart.out").                                                               #
+-- # Futhermore, this testbench provides a simple RAM connected to the external Wishbone bus.      #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -52,24 +57,16 @@ architecture neorv32_tb_rtl of neorv32_tb is
   constant f_clock_c          : real := 100000000.0; -- main clock in Hz
   constant f_clock_nat_c      : natural := 100000000; -- main clock in Hz
   constant baud_rate_c        : real := 19200.0; -- standard UART baudrate
-  constant wb_mem_size_c      : natural := 256; -- wishbone memory size in bytes
   constant wb_mem_base_addr_c : std_ulogic_vector(31 downto 0) := x"F0000000"; -- wishbone memory base address
+  constant wb_mem_size_c      : natural := 256; -- wishbone memory size in bytes
   -- -------------------------------------------------------------------------------------------
 
-  -- textio --
-  file file_uart_tx_out : text open write_mode is "neorv32.sim_uart.out";
+  -- text.io --
+  file file_uart_tx_out : text open write_mode is "neorv32.testbench_uart.out";
 
   -- internal configuration --
   constant baud_val_c : real    := f_clock_c / baud_rate_c;
   constant f_clk_c    : natural := natural(f_clock_c);
-
-  -- reduced ASCII table --
-  type ascii_t is array (0 to 94) of character;
-  constant ascii_lut : ascii_t := (' ', '!', '"', '#', '$', '%', '&', ''', '(', ')', '*', '+', ',', '-',
-  '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?', '@', 'A',
-  'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U',
-  'V', 'W', 'X', 'Y', 'Z', '[', '\', ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-  'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '|', '}', '~');
 
   -- generators --
   signal clk_gen, rst_gen : std_ulogic := '0';
@@ -106,12 +103,14 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal wb_cpu : wishbone_t;
 
 
-  -- Wishbone memory --
+  -- Wishbone memory, SimCom --
   type wb_mem_file_t is array (0 to wb_mem_size_c/4-1) of std_ulogic_vector(31 downto 0);
-  signal wb_mem_file : wb_mem_file_t := (others => (others => '0'));
-  signal rb_en       : std_ulogic;
-  signal r_data      : std_ulogic_vector(31 downto 0);
-  signal wb_acc_en   : std_ulogic;
+  signal wb_mem_file  : wb_mem_file_t := (others => (others => '0'));
+  signal rb_en        : std_ulogic;
+  signal r_data       : std_ulogic_vector(31 downto 0);
+  signal wb_acc_en    : std_ulogic;
+  signal wb_mem_rdata : std_ulogic_vector(31 downto 0);
+  signal wb_mem_ack   : std_ulogic;
 
 begin
 
@@ -158,7 +157,8 @@ begin
     IO_PWM_USE                => true,          -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                => true,          -- implement watch dog timer (WDT)?
     IO_CLIC_USE               => true,          -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE               => false          -- implement true random number generator (TRNG)?
+    IO_TRNG_USE               => false,         -- implement true random number generator (TRNG)?
+    IO_DEVNULL_USE            => true           -- implement dummy device (DEVNULL)?
   )
   port map (
     -- Global control --
@@ -195,18 +195,22 @@ begin
     ext_ack_o  => open             -- external interrupt request acknowledge
   );
 
-  -- twi termination --
+  -- TWI termination --
   twi_scl <= 'H';
   twi_sda <= 'H';
+
+  -- Wishbone read-back --
+  wb_cpu.rdata <= wb_mem_rdata;
+  wb_cpu.ack   <= wb_mem_ack;
+  wb_cpu.err   <= '0';
 
 
   -- Console UART Receiver ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   uart_rx_console: process(clk_gen)
-    variable i, j     : integer;
-    variable line_tmp : line;
+    variable i : integer;
+    variable l : line;
   begin
-
     -- "UART" --
     if rising_edge(clk_gen) then
       -- synchronizer --
@@ -221,7 +225,6 @@ begin
         end if;
       else
         if (uart_rx_baud_cnt = 0.0) then
-          -- adapt to the inter-frame pause - which is not implemented in the neo430 uart ;)
           if (uart_rx_bitcnt = 1) then
             uart_rx_baud_cnt <= round(0.5 * baud_val_c);
           else
@@ -230,21 +233,17 @@ begin
           if (uart_rx_bitcnt = 0) then
             uart_rx_busy <= '0'; -- done
             i := to_integer(unsigned(uart_rx_sreg(8 downto 1)));
-            j := i - 32;
-            if (j < 0) or (j > 95) then
-              j := 0; -- undefined = SPACE
-            end if;
 
-            if (i < 32) or (j > 32+95) then
-              report "UART TX: (" & integer'image(i) & ")"; -- print code
+            if (i < 32) or (i > 32+95) then -- printable char?
+              report "SIM_UART TX: (" & integer'image(i) & ")"; -- print code
             else
-              report "UART TX: " & ascii_lut(j); -- print ASCII
+              report "SIM_UART TX: " & character'val(i); -- print ASCII
             end if;
 
             if (i = 10) then -- Linux line break
-              writeline(file_uart_tx_out, line_tmp);
+              writeline(file_uart_tx_out, l);
             elsif (i /= 13) then -- Remove additional carriage return
-              write(line_tmp, ascii_lut(j));
+              write(l, character'val(i));
             end if;
           else
             uart_rx_sreg   <= uart_rx_sync(4) & uart_rx_sreg(8 downto 1);
@@ -264,7 +263,7 @@ begin
     begin
       if rising_edge(clk_gen) then
         rb_en <= wb_cpu.cyc and wb_cpu.stb and wb_acc_en and (not wb_cpu.we); -- read-back control
-        wb_cpu.ack <= wb_cpu.cyc and wb_cpu.stb and wb_acc_en; -- wishbone acknowledge
+        wb_mem_ack <= wb_cpu.cyc and wb_cpu.stb and wb_acc_en; -- wishbone acknowledge
         if ((wb_cpu.cyc and wb_cpu.stb and wb_acc_en and wb_cpu.we) = '1') then -- valid write access
           for i in 0 to 3 loop
             if (wb_cpu.sel(i) = '1') then
@@ -280,7 +279,7 @@ begin
   wb_acc_en <= '1' when (wb_cpu.addr >= wb_mem_base_addr_c) and (wb_cpu.addr < std_ulogic_vector(unsigned(wb_mem_base_addr_c) + wb_mem_size_c)) else '0';
 
   -- output gate --
-  wb_cpu.rdata <= r_data when (rb_en = '1') else (others=> '0');
-  wb_cpu.err <= '0';
+  wb_mem_rdata <= r_data when (rb_en = '1') else (others=> '0');
+
 
 end neorv32_tb_rtl;

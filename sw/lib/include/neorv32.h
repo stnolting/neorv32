@@ -144,7 +144,8 @@ enum NEORV32_CPU_MIP_enum {
   CPU_MFEATURES_IO_PWM           = 21, /**< CPU mfeatures CSR (21) (r/-): Pulse-width modulation unit implemented when 1 (via IO_PWM_USE generic) */
   CPU_MFEATURES_IO_WDT           = 22, /**< CPU mfeatures CSR (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_USE generic) */
   CPU_MFEATURES_IO_CLIC          = 23, /**< CPU mfeatures CSR (23) (r/-): Core-local interrupt controller implemented when 1 (via IO_CLIC_USE generic) */
-  CPU_MFEATURES_IO_TRNG          = 24  /**< CPU mfeatures CSR (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_USE generic) */
+  CPU_MFEATURES_IO_TRNG          = 24, /**< CPU mfeatures CSR (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_USE generic) */
+  CPU_MFEATURES_IO_DEVNULL       = 25  /**< CPU mfeatures CSR (24) (r/-): Dummy device implemented when 1 (via IO_DEVNULL_USE generic) */
 };
 
 
@@ -488,6 +489,15 @@ enum NEORV32_TRNG_DUTY_enum {
   TRNG_DATA_MSB   = 15, /**< TRNG data register(15) (r/-): Random data (16-bit) MSB */
   TRNG_DATA_VALID = 31  /**< TRNG data register(31) (r/-): Random data output valid */
 };
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: Dummy Device (DEVNULL)
+ **************************************************************************/
+/**@{*/
+/** TRNG data register (r/w) */
+#define DEVNULL_DATA (*(IO_REG32 0xFFFFFFFC))
 /**@}*/
 
 

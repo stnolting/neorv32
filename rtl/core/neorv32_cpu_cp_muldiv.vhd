@@ -95,12 +95,12 @@ begin
     if (rstn_i = '0') then
       state        <= IDLE;
       cp_op        <= (others => '0');
-      opx          <= (others => '-');
-      opy          <= (others => '-');
-      cnt          <= (others => '-');
-      start        <= '-';
+      opx          <= (others => '0');
+      opy          <= (others => '0');
+      cnt          <= (others => '0');
+      start        <= '0';
       valid_o      <= '0';
-      div_res_corr <= '-';
+      div_res_corr <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
       start   <= '0';
@@ -254,7 +254,7 @@ begin
         when cp_op_remu_c =>
           res_o <= remainder;
         when others => -- undefined
-          res_o <= (others => '-');
+          res_o <= (others => '0');
       end case;
     end if;
   end process operation_result;

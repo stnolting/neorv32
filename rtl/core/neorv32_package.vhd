@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - FIXED!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"00000203"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"00000204"; -- no touchy!
 
   -- Internal Functions ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -125,7 +125,12 @@ package neorv32_package is
 
   -- RESERVED --
 --constant ???_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC8"; -- base address, fixed!
---constant ???_size_c           : natural := 14*4; -- bytes, fixed!
+--constant ???_size_c           : natural := 13*4; -- bytes, fixed!
+
+  -- Dummy Device (with SIM output) (DEVNULL) --
+  constant devnull_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFFC"; -- base address, fixed!
+  constant devnull_size_c       : natural := 1*4; -- bytes, fixed!
+  constant devnull_data_addr_c  : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(devnull_base_c) + x"00000000");
 
   -- Main Control Bus -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -361,7 +366,8 @@ package neorv32_package is
       IO_PWM_USE                : boolean := true;   -- implement pulse-width modulation unit (PWM)?
       IO_WDT_USE                : boolean := true;   -- implement watch dog timer (WDT)?
       IO_CLIC_USE               : boolean := true;   -- implement core local interrupt controller (CLIC)?
-      IO_TRNG_USE               : boolean := false   -- implement true random number generator (TRNG)?
+      IO_TRNG_USE               : boolean := false;  -- implement true random number generator (TRNG)?
+      IO_DEVNULL_USE            : boolean := true    -- implement dummy device (DEVNULL)?
     );
     port (
       -- Global control --
@@ -434,7 +440,8 @@ package neorv32_package is
       IO_PWM_USE                : boolean := true;   -- implement pulse-width modulation unit (PWM)?
       IO_WDT_USE                : boolean := true;   -- implement watch dog timer (WDT)?
       IO_CLIC_USE               : boolean := true;   -- implement core local interrupt controller (CLIC)?
-      IO_TRNG_USE               : boolean := true    -- implement true random number generator (TRNG)?
+      IO_TRNG_USE               : boolean := true;   -- implement true random number generator (TRNG)?
+      IO_DEVNULL_USE            : boolean := true    -- implement dummy device (DEVNULL)?
     );
     port (
       -- global control --
@@ -631,7 +638,8 @@ package neorv32_package is
       IO_PWM_USE                : boolean := true;   -- implement pulse-width modulation unit (PWM)?
       IO_WDT_USE                : boolean := true;   -- implement watch dog timer (WDT)?
       IO_CLIC_USE               : boolean := true;   -- implement core local interrupt controller (CLIC)?
-      IO_TRNG_USE               : boolean := true    -- implement true random number generator (TRNG)?
+      IO_TRNG_USE               : boolean := true;   -- implement true random number generator (TRNG)?
+      IO_DEVNULL_USE            : boolean := true    -- implement dummy device (DEVNULL)?
     );
     port (
       -- global control --
@@ -938,6 +946,22 @@ package neorv32_package is
       wb_cyc_o : out std_ulogic; -- valid cycle
       wb_ack_i : in  std_ulogic; -- transfer acknowledge
       wb_err_i : in  std_ulogic  -- transfer error
+    );
+  end component;
+
+  -- Component: Dummy Device with SIM Output (DEVNULL) -------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_devnull
+    port (
+      -- host access --
+      clk_i  : in  std_ulogic; -- global clock line
+      addr_i : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i : in  std_ulogic; -- read enable
+      wren_i : in  std_ulogic; -- write enable
+      ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
+      data_i : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o  : out std_ulogic  -- transfer acknowledge
     );
   end component;
 

@@ -79,7 +79,8 @@ entity neorv32_top is
     IO_PWM_USE                : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                : boolean := true;   -- implement watch dog timer (WDT)?
     IO_CLIC_USE               : boolean := true;   -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE               : boolean := false   -- implement true random number generator (TRNG)?
+    IO_TRNG_USE               : boolean := false;  -- implement true random number generator (TRNG)?
+    IO_DEVNULL_USE            : boolean := true    -- implement dummy device (DEVNULL)?
   );
   port (
     -- Global control --
@@ -181,6 +182,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal clic_ack       : std_ulogic;
   signal trng_rdata     : std_ulogic_vector(data_width_c-1 downto 0);
   signal trng_ack       : std_ulogic;
+  signal devnull_rdata  : std_ulogic_vector(data_width_c-1 downto 0);
+  signal devnull_ack    : std_ulogic;
 
   -- IRQs --
   signal mtime_irq : std_ulogic;
@@ -340,7 +343,8 @@ begin
     IO_PWM_USE                => IO_PWM_USE,        -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                => IO_WDT_USE,        -- implement watch dog timer (WDT)?
     IO_CLIC_USE               => IO_CLIC_USE,       -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE               => IO_TRNG_USE        -- implement true random number generator (TRNG)?
+    IO_TRNG_USE               => IO_TRNG_USE,       -- implement true random number generator (TRNG)?
+    IO_DEVNULL_USE            => IO_DEVNULL_USE     -- implement dummy device (DEVNULL)?
   )
   port map (
     -- global control --
@@ -362,11 +366,11 @@ begin
 
   -- CPU data input --
   cpu_rdata <= (imem_rdata or dmem_rdata or bootrom_rdata) or wishbone_rdata or (gpio_rdata or mtime_rdata or
-               uart_rdata or spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or clic_rdata or trng_rdata);
+               uart_rdata or spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or clic_rdata or trng_rdata or devnull_rdata);
 
   -- CPU ACK input --
   cpu_ack <= (imem_ack or dmem_ack or bootrom_ack) or wishbone_ack or (gpio_ack or mtime_ack or
-              uart_ack or spi_ack or twi_ack or pwm_ack or wdt_ack or clic_ack or trng_ack);
+              uart_ack or spi_ack or twi_ack or pwm_ack or wdt_ack or clic_ack or trng_ack or devnull_ack);
 
   -- CPU bus error input --
   cpu_err <= wishbone_err;
@@ -824,6 +828,31 @@ begin
   if (IO_TRNG_USE = false) generate
     trng_rdata <= (others => '0');
     trng_ack   <= '0';
+  end generate;
+
+
+  -- Dummy Device (DEVNULL) -----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_devnull_inst_true:
+  if (IO_DEVNULL_USE = true) generate
+    neorv32_devnull_inst: neorv32_devnull
+    port map (
+      -- host access --
+      clk_i  => clk_i,         -- global clock line
+      addr_i => cpu_addr,      -- address
+      rden_i => io_rden,       -- read enable
+      wren_i => io_wren,       -- write enable
+      ben_i  => cpu_ben,       -- byte write enable
+      data_i => cpu_wdata,     -- data in
+      data_o => devnull_rdata, -- data out
+      ack_o  => devnull_ack    -- transfer acknowledge
+    );
+  end generate;
+
+  neorv32_devnull_inst_false:
+  if (IO_DEVNULL_USE = false) generate
+    devnull_rdata <= (others => '0');
+    devnull_ack   <= '0';
   end generate;
 
 

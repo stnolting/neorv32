@@ -75,7 +75,8 @@ entity neorv32_cpu_control is
     IO_PWM_USE                : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                : boolean := true;   -- implement watch dog timer (WDT)?
     IO_CLIC_USE               : boolean := true;   -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE               : boolean := true    -- implement true random number generator (TRNG)?
+    IO_TRNG_USE               : boolean := true;   -- implement true random number generator (TRNG)?
+    IO_DEVNULL_USE            : boolean := true    -- implement dummy device (DEVNULL)?
   );
   port (
     -- global control --
@@ -388,7 +389,7 @@ begin
       when funct3_sr_c   => alu_operation_v := alu_cmd_shift_c; -- SRL(I) / SRA(I)
       when funct3_or_c   => alu_operation_v := alu_cmd_or_c; -- OR(I)
       when funct3_and_c  => alu_operation_v := alu_cmd_and_c; -- AND(I)
-      when others        => alu_operation_v := (others => '-'); -- undefined
+      when others        => alu_operation_v := (others => '0'); -- undefined
     end case;
 
     -- is rs1 = r0? --
@@ -903,10 +904,10 @@ begin
       irq_buf       <= (others => '0');
       exc_ack       <= (others => '0');
       irq_ack       <= (others => '0');
-      exc_src       <= (others => '-');
+      exc_src       <= (others => '0');
       exc_cpu_start <= '0';
       exc_cause     <= (others => '0');
-      mtinst        <= (others => '-');
+      mtinst        <= (others => '0');
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
         -- exception buffer: misaligned load/store/instruction address
@@ -1092,10 +1093,10 @@ begin
       mie_msie     <= '0';
       mie_meie     <= '0';
       mie_mtie     <= '0';
-      mtvec        <= (others => '-');
-      mtval        <= (others => '-');
-      mepc         <= (others => '-');
-      mip_msip     <= '-';
+      mtvec        <= (others => '0');
+      mtval        <= (others => '0');
+      mepc         <= (others => '0');
+      mip_msip     <= '0';
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
         mip_msip <= '0';
@@ -1134,7 +1135,7 @@ begin
           if (exc_cpu_ack = '1') then -- exception start?
             if (exc_cause(exc_cause_nxt'left) = '1') then -- for INTERRUPTs: mepc = address of next (unclompeted) instruction
               mepc  <= pc_reg;
-              mtval <= (others => '-'); -- not specified
+              mtval <= (others => '0'); -- not specified
             else -- for EXCEPTIONs: mepc = address of next (unclompeted) instruction
               mepc <= pc_backup2_reg;
               if ((exc_src(exception_iaccess_c) or exc_src(exception_ialign_c)) = '1') then -- instruction access error OR misaligned instruction
@@ -1243,15 +1244,16 @@ begin
               csr_rdata_o(03) <= bool_to_ulogic_f(MEM_INT_IMEM_ROM); -- implement processor-internal instruction memory as ROM
               csr_rdata_o(04) <= bool_to_ulogic_f(MEM_INT_DMEM_USE); -- implement processor-internal data memory
               --
-              csr_rdata_o(16) <= bool_to_ulogic_f(IO_GPIO_USE);  -- implement general purpose input/output port unit (GPIO)?
-              csr_rdata_o(17) <= bool_to_ulogic_f(IO_MTIME_USE); -- implement machine system timer (MTIME)?
-              csr_rdata_o(18) <= bool_to_ulogic_f(IO_UART_USE);  -- implement universal asynchronous receiver/transmitter (UART)?
-              csr_rdata_o(19) <= bool_to_ulogic_f(IO_SPI_USE);   -- implement serial peripheral interface (SPI)?
-              csr_rdata_o(20) <= bool_to_ulogic_f(IO_TWI_USE);   -- implement two-wire interface (TWI)?
-              csr_rdata_o(21) <= bool_to_ulogic_f(IO_PWM_USE);   -- implement pulse-width modulation unit (PWM)?
-              csr_rdata_o(22) <= bool_to_ulogic_f(IO_WDT_USE);   -- implement watch dog timer (WDT)?
-              csr_rdata_o(23) <= bool_to_ulogic_f(IO_CLIC_USE);  -- implement core local interrupt controller (CLIC)?
-              csr_rdata_o(24) <= bool_to_ulogic_f(IO_TRNG_USE);  -- implement true random number generator (TRNG)?
+              csr_rdata_o(16) <= bool_to_ulogic_f(IO_GPIO_USE);      -- implement general purpose input/output port unit (GPIO)?
+              csr_rdata_o(17) <= bool_to_ulogic_f(IO_MTIME_USE);     -- implement machine system timer (MTIME)?
+              csr_rdata_o(18) <= bool_to_ulogic_f(IO_UART_USE);      -- implement universal asynchronous receiver/transmitter (UART)?
+              csr_rdata_o(19) <= bool_to_ulogic_f(IO_SPI_USE);       -- implement serial peripheral interface (SPI)?
+              csr_rdata_o(20) <= bool_to_ulogic_f(IO_TWI_USE);       -- implement two-wire interface (TWI)?
+              csr_rdata_o(21) <= bool_to_ulogic_f(IO_PWM_USE);       -- implement pulse-width modulation unit (PWM)?
+              csr_rdata_o(22) <= bool_to_ulogic_f(IO_WDT_USE);       -- implement watch dog timer (WDT)?
+              csr_rdata_o(23) <= bool_to_ulogic_f(IO_CLIC_USE);      -- implement core local interrupt controller (CLIC)?
+              csr_rdata_o(24) <= bool_to_ulogic_f(IO_TRNG_USE);      -- implement true random number generator (TRNG)?
+              csr_rdata_o(25) <= bool_to_ulogic_f(IO_DEVNULL_USE);   -- implement dummy device (DEVNULL)?
             when x"fc1" => -- R/-: mclock - processor clock speed
               csr_rdata_o <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
             when x"fc4" => -- R/-: mispacebase - Base address of instruction memory space

@@ -165,7 +165,7 @@ begin
   shifter_unit: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      shift_sreg   <= (others => '-');
+      shift_sreg   <= (others => '0');
       shift_cnt    <= (others => '0');
       shift_cmd_ff <= '0';
     elsif rising_edge(clk_i) then
@@ -241,7 +241,7 @@ begin
       when alu_cmd_and_c   => alu_res <= opa and opb;
       when alu_cmd_shift_c => alu_res <= shift_sreg;
       when alu_cmd_slt_c   => alu_res <= (others => '0'); alu_res(0) <= cmp_less;
-      when others          => alu_res <= (others => '-'); -- undefined
+      when others          => alu_res <= (others => '0'); -- undefined
     end case;
   end process alu_function_mux;
 

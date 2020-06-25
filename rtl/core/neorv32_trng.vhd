@@ -250,7 +250,7 @@ begin
     case tmp_v is
       when "101"  => db_enable <= '1'; db_data <= '1'; -- rising edge  -> '1'
       when "110"  => db_enable <= '1'; db_data <= '0'; -- falling edge -> '0'
-      when others => db_enable <= '0'; db_data <= '-'; -- invalid
+      when others => db_enable <= '0'; db_data <= '0'; -- invalid
     end case;
   end process debiasing;
 

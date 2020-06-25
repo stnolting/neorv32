@@ -81,7 +81,8 @@ entity neorv32_cpu is
     IO_PWM_USE                : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                : boolean := true;   -- implement watch dog timer (WDT)?
     IO_CLIC_USE               : boolean := true;   -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE               : boolean := true    -- implement true random number generator (TRNG)?
+    IO_TRNG_USE               : boolean := true;   -- implement true random number generator (TRNG)?
+    IO_DEVNULL_USE            : boolean := true    -- implement dummy device (DEVNULL)?
   );
   port (
     -- global control --
@@ -168,7 +169,8 @@ begin
     IO_PWM_USE                => IO_PWM_USE,        -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                => IO_WDT_USE,        -- implement watch dog timer (WDT)?
     IO_CLIC_USE               => IO_CLIC_USE,       -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE               => IO_TRNG_USE        -- implement true random number generator (TRNG)?
+    IO_TRNG_USE               => IO_TRNG_USE,       -- implement true random number generator (TRNG)?
+    IO_DEVNULL_USE            => IO_DEVNULL_USE     -- implement dummy device (DEVNULL)?
   )
   port map (
     -- global control --
