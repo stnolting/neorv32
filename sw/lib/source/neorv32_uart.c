@@ -130,7 +130,7 @@ void neorv32_uart_disable(void) {
  * Send single char via UART.
  *
  * @note This function is blocking.
- * @warning The 'SIMCOM_UART_OVERRIDE' compiler user flag will forward all UART TX data to the SIMCOM simulation console output.
+ * @warning The 'DEVNULL_UART_OVERRIDE' compiler user flag will forward all UART TX data to the DEVNULL simulation console output.
  *
  * @param[in] c Char to be send.
  **************************************************************************/
