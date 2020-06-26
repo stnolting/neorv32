@@ -71,4 +71,4 @@ echo "Checking NEORV32.DEVNULL output. NEORV32.DEVNULL output is:"
 cat neorv32.devnull.out
 
 # Check if reference can be found in output
-grep -qf $homedir/check_reference.out neorv32.devnull.out
+grep -qf $homedir/check_reference.out neorv32.devnull.out && echo "Test successfully completed!"
