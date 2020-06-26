@@ -185,7 +185,7 @@ begin
   end process multiplier_core;
 
   -- MUL: do another addition --
-  mul_update: process(mul_product, mul_sign_cycle, mul_p_sext, opy_is_signed, opx)
+  mul_update: process(mul_product, mul_sign_cycle, mul_p_sext, opx_is_signed, opx)
   begin
     if (mul_product(0) = '1') then
       if (mul_sign_cycle = '1') then -- for signed operation only: take care of negative weighted MSB
