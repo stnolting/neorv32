@@ -172,7 +172,7 @@ package neorv32_package is
   constant ctrl_bus_size_msb_c    : natural := 32; -- transfer size msb (10=word, 11=?)
   constant ctrl_bus_rd_c          : natural := 33; -- read data request
   constant ctrl_bus_wr_c          : natural := 34; -- write data request
-  constant ctrl_bus_if_c          : natural := 35; -- instruction fetch request (output PC, otherwise output MAR)
+  constant ctrl_bus_if_c          : natural := 35; -- instruction fetch request (1: output PC, 0: output MAR)
   constant ctrl_bus_mar_we_c      : natural := 36; -- memory address register write enable
   constant ctrl_bus_mdo_we_c      : natural := 37; -- memory data out register write enable
   constant ctrl_bus_mdi_we_c      : natural := 38; -- memory data in register write enable
@@ -405,6 +405,64 @@ package neorv32_package is
     );
   end component;
 
+  -- Component: CPU Top Entity --------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_cpu
+    generic (
+      -- General --
+      CLOCK_FREQUENCY           : natural := 0; -- clock frequency of clk_i in Hz
+      HART_ID                   : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
+      BOOTLOADER_USE            : boolean := true;   -- implement processor-internal bootloader?
+      -- RISC-V CPU Extensions --
+      CPU_EXTENSION_RISCV_C     : boolean := false;  -- implement compressed extension?
+      CPU_EXTENSION_RISCV_E     : boolean := false;  -- implement embedded RF extension?
+      CPU_EXTENSION_RISCV_M     : boolean := false;  -- implement muld/div extension?
+      CPU_EXTENSION_RISCV_Zicsr : boolean := true;   -- implement CSR system?
+      -- Memory configuration: Instruction memory --
+      MEM_ISPACE_BASE           : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
+      MEM_ISPACE_SIZE           : natural := 8*1024; -- total size of instruction memory space in byte
+      MEM_INT_IMEM_USE          : boolean := true;   -- implement processor-internal instruction memory
+      MEM_INT_IMEM_SIZE         : natural := 8*1024; -- size of processor-internal instruction memory in bytes
+      MEM_INT_IMEM_ROM          : boolean := false;  -- implement processor-internal instruction memory as ROM
+      -- Memory configuration: Data memory --
+      MEM_DSPACE_BASE           : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
+      MEM_DSPACE_SIZE           : natural := 4*1024; -- total size of data memory space in byte
+      MEM_INT_DMEM_USE          : boolean := true;   -- implement processor-internal data memory
+      MEM_INT_DMEM_SIZE         : natural := 4*1024; -- size of processor-internal data memory in bytes
+      -- Memory configuration: External memory interface --
+      MEM_EXT_USE               : boolean := false;  -- implement external memory bus interface?
+      MEM_EXT_TIMEOUT           : natural := 15;     -- cycles after which a valid bus access will timeout
+      -- Processor peripherals --
+      IO_GPIO_USE               : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+      IO_MTIME_USE              : boolean := true;   -- implement machine system timer (MTIME)?
+      IO_UART_USE               : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+      IO_SPI_USE                : boolean := true;   -- implement serial peripheral interface (SPI)?
+      IO_TWI_USE                : boolean := true;   -- implement two-wire interface (TWI)?
+      IO_PWM_USE                : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+      IO_WDT_USE                : boolean := true;   -- implement watch dog timer (WDT)?
+      IO_CLIC_USE               : boolean := true;   -- implement core local interrupt controller (CLIC)?
+      IO_TRNG_USE               : boolean := true;   -- implement true random number generator (TRNG)?
+      IO_DEVNULL_USE            : boolean := true    -- implement dummy device (DEVNULL)?
+    );
+    port (
+      -- global control --
+      clk_i       : in  std_ulogic; -- global clock, rising edge
+      rstn_i      : in  std_ulogic; -- global reset, low-active, async
+      -- bus interface --
+      bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+      bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+      bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+      bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
+      bus_we_o    : out std_ulogic; -- write enable
+      bus_re_o    : out std_ulogic; -- read enable
+      bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
+      bus_err_i   : in  std_ulogic; -- bus transfer error
+      -- external interrupts --
+      clic_irq_i  : in  std_ulogic; -- CLIC interrupt request
+      mtime_irq_i : in  std_ulogic  -- machine timer interrupt
+    );
+  end component;
+
   -- Component: CPU Control -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_control
@@ -599,64 +657,6 @@ package neorv32_package is
       ci_valid_o   : out std_ulogic; -- is a compressed instruction
       ci_illegal_o : out std_ulogic; -- is an illegal compressed instruction
       ci_instr32_o : out std_ulogic_vector(31 downto 0)  -- 32-bit decompressed instruction
-    );
-  end component;
-
-  -- Component: CPU Top Entity --------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu
-    generic (
-      -- General --
-      CLOCK_FREQUENCY           : natural := 0; -- clock frequency of clk_i in Hz
-      HART_ID                   : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
-      BOOTLOADER_USE            : boolean := true;   -- implement processor-internal bootloader?
-      -- RISC-V CPU Extensions --
-      CPU_EXTENSION_RISCV_C     : boolean := false;  -- implement compressed extension?
-      CPU_EXTENSION_RISCV_E     : boolean := false;  -- implement embedded RF extension?
-      CPU_EXTENSION_RISCV_M     : boolean := false;  -- implement muld/div extension?
-      CPU_EXTENSION_RISCV_Zicsr : boolean := true;   -- implement CSR system?
-      -- Memory configuration: Instruction memory --
-      MEM_ISPACE_BASE           : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
-      MEM_ISPACE_SIZE           : natural := 8*1024; -- total size of instruction memory space in byte
-      MEM_INT_IMEM_USE          : boolean := true;   -- implement processor-internal instruction memory
-      MEM_INT_IMEM_SIZE         : natural := 8*1024; -- size of processor-internal instruction memory in bytes
-      MEM_INT_IMEM_ROM          : boolean := false;  -- implement processor-internal instruction memory as ROM
-      -- Memory configuration: Data memory --
-      MEM_DSPACE_BASE           : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
-      MEM_DSPACE_SIZE           : natural := 4*1024; -- total size of data memory space in byte
-      MEM_INT_DMEM_USE          : boolean := true;   -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE         : natural := 4*1024; -- size of processor-internal data memory in bytes
-      -- Memory configuration: External memory interface --
-      MEM_EXT_USE               : boolean := false;  -- implement external memory bus interface?
-      MEM_EXT_TIMEOUT           : natural := 15;     -- cycles after which a valid bus access will timeout
-      -- Processor peripherals --
-      IO_GPIO_USE               : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-      IO_MTIME_USE              : boolean := true;   -- implement machine system timer (MTIME)?
-      IO_UART_USE               : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-      IO_SPI_USE                : boolean := true;   -- implement serial peripheral interface (SPI)?
-      IO_TWI_USE                : boolean := true;   -- implement two-wire interface (TWI)?
-      IO_PWM_USE                : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-      IO_WDT_USE                : boolean := true;   -- implement watch dog timer (WDT)?
-      IO_CLIC_USE               : boolean := true;   -- implement core local interrupt controller (CLIC)?
-      IO_TRNG_USE               : boolean := true;   -- implement true random number generator (TRNG)?
-      IO_DEVNULL_USE            : boolean := true    -- implement dummy device (DEVNULL)?
-    );
-    port (
-      -- global control --
-      clk_i       : in  std_ulogic; -- global clock, rising edge
-      rstn_i      : in  std_ulogic; -- global reset, low-active, async
-      -- bus interface --
-      bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-      bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-      bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-      bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-      bus_we_o    : out std_ulogic; -- write enable
-      bus_re_o    : out std_ulogic; -- read enable
-      bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
-      bus_err_i   : in  std_ulogic; -- bus transfer error
-      -- external interrupts --
-      clic_irq_i  : in  std_ulogic; -- CLIC interrupt request
-      mtime_irq_i : in  std_ulogic  -- machine timer interrupt
     );
   end component;
 
@@ -949,8 +949,8 @@ package neorv32_package is
     );
   end component;
 
-  -- Component: Dummy Device with SIM Output (DEVNULL) -------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  ---- Component: Dummy Device with SIM Output (DEVNULL) -------------------------------------
+  ---- -------------------------------------------------------------------------------------------
   component neorv32_devnull
     port (
       -- host access --

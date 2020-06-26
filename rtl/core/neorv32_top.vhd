@@ -587,7 +587,9 @@ begin
   clic_xirq(6) <= ext_irq_i(0);
   clic_xirq(7) <= ext_irq_i(1); -- lowest priority
 
-  ext_ack_o <= clic_xirq(7 downto 6); -- external interrupt request acknowledge
+  -- external interrupt request acknowledge --
+  ext_ack_o(0) <= clic_xack(6);
+  ext_ack_o(1) <= clic_xack(7);
 
   neorv32_clic_inst_false:
   if (IO_CLIC_USE = false) generate
@@ -848,7 +850,7 @@ begin
       ack_o  => devnull_ack    -- transfer acknowledge
     );
   end generate;
-
+  
   neorv32_devnull_inst_false:
   if (IO_DEVNULL_USE = false) generate
     devnull_rdata <= (others => '0');
