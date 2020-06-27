@@ -111,18 +111,18 @@ begin
         when IDLE =>
           opx   <= rs1_i;
           opy   <= rs2_i;
+          cp_op <= ctrl_i(ctrl_cp_cmd2_c downto ctrl_cp_cmd0_c);
           if (ctrl_i(ctrl_cp_use_c) = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = cp_sel_muldiv_c) then
-            cp_op <= ctrl_i(ctrl_cp_cmd2_c downto ctrl_cp_cmd0_c);
             state <= DECODE;
           end if;
 
         when DECODE =>
+          cnt <= "11111";
           if (cp_op = cp_op_div_c) or (cp_op = cp_op_rem_c) then -- result sign compensation for div?
             div_res_corr <= opx(opx'left) xor opy(opy'left);
           else
             div_res_corr <= '0';
           end if;
-          cnt <= "11111";
           if (operation = '1') then -- division
             state <= INIT_OPX;
           else -- multiplication

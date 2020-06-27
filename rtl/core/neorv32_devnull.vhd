@@ -61,7 +61,7 @@ end neorv32_devnull;
 architecture neorv32_devnull_rtl of neorv32_devnull is
 
   -- configuration --
-  constant sim_output_en_c : boolean := true; -- output lowest byte as char to simulator
+  constant sim_output_en_c : boolean := true; -- output lowest byte as char to simulator when enabled
 
   -- IO space: module base address --
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
@@ -86,21 +86,19 @@ begin
   begin
     if rising_edge(clk_i) then
       ack_o <= acc_en and (wren_i or rden_i);
-      if ((acc_en and wren_i and ben_i(0)) = '1') then
+      if ((acc_en and wren_i and ben_i(0)) = '1') and (sim_output_en_c = true) then
         -- print lowest byte as ASCII to console --
-        if (sim_output_en_c = true) then
-          i := to_integer(unsigned(data_i(7 downto 0)));
-          if (i >= 128) then -- out of range?
-            i := 0;
-          end if;
-          if (i /= 10) and (i /= 13) then -- skip line breaks - they are issued via "writeline"
-            write(la, character'val(i));
-            write(lb, character'val(i));
-          end if;
-          if (i = 10) then -- line break: write to screen and file
-            writeline(output, la);
-            writeline(file_devnull_out, lb);
-          end if;
+        i := to_integer(unsigned(data_i(7 downto 0)));
+        if (i >= 128) then -- out of range?
+          i := 0;
+        end if;
+        if (i /= 10) and (i /= 13) then -- skip line breaks - they are issued via "writeline"
+          write(la, character'val(i));
+          write(lb, character'val(i));
+        end if;
+        if (i = 10) then -- line break: write to screen and file
+          writeline(output, la);
+          writeline(file_devnull_out, lb);
         end if;
       end if;
     end if;
