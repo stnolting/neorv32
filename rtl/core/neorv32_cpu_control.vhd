@@ -149,8 +149,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- irq controller --
   signal exc_buf       : std_ulogic_vector(exception_width_c-1 downto 0);
-  signal exc_ack       : std_ulogic_vector(exception_width_c-1 downto 0);
-  signal exc_ack_nxt   : std_ulogic_vector(exception_width_c-1 downto 0);
+  signal exc_ack       : std_ulogic;
   signal exc_src       : std_ulogic_vector(exception_width_c-1 downto 0);
   signal exc_fire      : std_ulogic;
   signal irq_buf       : std_ulogic_vector(interrupt_width_c-1 downto 0);
@@ -324,11 +323,10 @@ begin
   -- Arbiter State Machine Comb -----------------------------------------------
   -- -----------------------------------------------------------------------------
   arbiter_comb: process(state, ctrl, i_reg, alu_wait_i, bus_wait_i, exc_cpu_start, ma_load_i, be_load_i, ma_store_i, be_store_i,
-                        i_reg, ci_reg, i_buf, instr_i, is_ci, iavail, pc_backup_reg, ci_valid, ci_instr32)
+                        ci_reg, i_buf, instr_i, is_ci, iavail, pc_backup_reg, ci_valid, ci_instr32)
     variable alu_immediate_v : std_ulogic;
     variable alu_operation_v : std_ulogic_vector(2 downto 0);
     variable rs1_is_r0_v     : std_ulogic;
-    variable rd_is_r0_v      : std_ulogic;
   begin
     -- arbiter defaults --
     state_nxt     <= state;
@@ -396,12 +394,6 @@ begin
     rs1_is_r0_v := '0';
     if (i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") then
       rs1_is_r0_v := '1';
-    end if;
-
-    -- is rd = r0? --
-    rd_is_r0_v := '0';
-    if (i_reg(instr_rd_msb_c downto instr_rd_lsb_c) = "00000") then
-      rd_is_r0_v := '1';
     end if;
 
 
@@ -573,7 +565,7 @@ begin
 
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_csr_re_c) <= '1'; -- ALWAYS READ CSR!!! (OLD: not rd_is_r0_v; -- valid CSR read if rd is not r0)
+            ctrl_nxt(ctrl_csr_re_c) <= '1'; -- ALWAYS READ CSR!!! (OLD: valid CSR read if rd is not r0)
             if (i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system
               case i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
                 when x"000" => env_call    <= '1'; state_nxt <= IFETCH_0; -- ECALL
@@ -690,7 +682,7 @@ begin
 
   -- Illegal Instruction Check --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  illegal_instruction_check: process(i_reg, state, ctrl_nxt)
+  illegal_instruction_check: process(i_reg, state, ctrl_nxt, ci_valid, ci_illegal)
   begin
     if (state = EXECUTE) then
       -- defaults --
@@ -902,7 +894,7 @@ begin
     if (rstn_i = '0') then
       exc_buf       <= (others => '0');
       irq_buf       <= (others => '0');
-      exc_ack       <= (others => '0');
+      exc_ack       <= '0';
       irq_ack       <= (others => '0');
       exc_src       <= (others => '0');
       exc_cpu_start <= '0';
@@ -911,29 +903,21 @@ begin
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
         -- exception buffer: misaligned load/store/instruction address
-        exc_buf(exception_lalign_c) <= (exc_buf(exception_lalign_c) or ma_load_i)  and (not exc_ack(exception_lalign_c));
-        exc_buf(exception_salign_c) <= (exc_buf(exception_salign_c) or ma_store_i) and (not exc_ack(exception_salign_c));
-        exc_buf(exception_ialign_c) <= (exc_buf(exception_ialign_c) or ma_instr_i) and (not exc_ack(exception_ialign_c));
+        exc_buf(exception_lalign_c)    <= (exc_buf(exception_lalign_c)    or ma_load_i)         and (not exc_ack);
+        exc_buf(exception_salign_c)    <= (exc_buf(exception_salign_c)    or ma_store_i)        and (not exc_ack);
+        exc_buf(exception_ialign_c)    <= (exc_buf(exception_ialign_c)    or ma_instr_i)        and (not exc_ack);
         -- exception buffer: load/store/instruction bus access error
-        exc_buf(exception_laccess_c) <= (exc_buf(exception_laccess_c) or be_load_i)  and (not exc_ack(exception_laccess_c));
-        exc_buf(exception_saccess_c) <= (exc_buf(exception_saccess_c) or be_store_i) and (not exc_ack(exception_saccess_c));
-        exc_buf(exception_iaccess_c) <= (exc_buf(exception_iaccess_c) or be_instr_i) and (not exc_ack(exception_iaccess_c));
+        exc_buf(exception_laccess_c)   <= (exc_buf(exception_laccess_c)   or be_load_i)         and (not exc_ack);
+        exc_buf(exception_saccess_c)   <= (exc_buf(exception_saccess_c)   or be_store_i)        and (not exc_ack);
+        exc_buf(exception_iaccess_c)   <= (exc_buf(exception_iaccess_c)   or be_instr_i)        and (not exc_ack);
         -- exception buffer: illegal instruction / env call / break point
-        exc_buf(exception_iillegal_c)  <= (exc_buf(exception_iillegal_c)  or illegal_instr_exc) and (not exc_ack(exception_iillegal_c));
-        exc_buf(exception_m_envcall_c) <= (exc_buf(exception_m_envcall_c) or env_call)          and (not exc_ack(exception_m_envcall_c));
-        exc_buf(exception_break_c)     <= (exc_buf(exception_break_c)     or break_point)       and (not exc_ack(exception_break_c));
+        exc_buf(exception_iillegal_c)  <= (exc_buf(exception_iillegal_c)  or illegal_instr_exc) and (not exc_ack);
+        exc_buf(exception_m_envcall_c) <= (exc_buf(exception_m_envcall_c) or env_call)          and (not exc_ack);
+        exc_buf(exception_break_c)     <= (exc_buf(exception_break_c)     or break_point)       and (not exc_ack);
         -- interrupt buffer: machine software/external/timer interrupt
-        irq_buf(interrupt_msw_irq_c) <= mie_msie and (irq_buf(interrupt_msw_irq_c) or mip_msip) and (not irq_ack(interrupt_msw_irq_c));
-        if (IO_CLIC_USE = true) then
-          irq_buf(interrupt_mext_irq_c) <= mie_meie and (irq_buf(interrupt_mext_irq_c) or clic_irq_i) and (not irq_ack(interrupt_mext_irq_c));
-        else
-          irq_buf(interrupt_mext_irq_c) <= '0';
-        end if;
-        if (IO_MTIME_USE = true) then
-          irq_buf(interrupt_mtime_irq_c) <= mie_mtie and (irq_buf(interrupt_mtime_irq_c) or mtime_irq_i) and (not irq_ack(interrupt_mtime_irq_c));
-        else
-          irq_buf(interrupt_mtime_irq_c) <= '0';
-        end if;
+        irq_buf(interrupt_msw_irq_c)   <= mie_msie and (irq_buf(interrupt_msw_irq_c)   or mip_msip)    and (not irq_ack(interrupt_msw_irq_c));
+        irq_buf(interrupt_mext_irq_c)  <= mie_meie and (irq_buf(interrupt_mext_irq_c)  or clic_irq_i)  and (not irq_ack(interrupt_mext_irq_c));
+        irq_buf(interrupt_mtime_irq_c) <= mie_mtie and (irq_buf(interrupt_mtime_irq_c) or mtime_irq_i) and (not irq_ack(interrupt_mtime_irq_c));
 
         -- exception control --
         if (exc_cpu_start = '0') then -- 
@@ -943,13 +927,13 @@ begin
             mtinst        <= i_reg; -- MTINST NOT FOULLY IMPLEMENTED YET! FIXME
             mtinst(1)     <= not is_ci; -- bit is set for uncompressed instruction
             exc_src       <= exc_buf; -- capture source for hardware
-            exc_ack       <= exc_ack_nxt; -- capture and clear with exception ACK mask
+            exc_ack       <= '1'; -- clear execption
             irq_ack       <= irq_ack_nxt; -- capture and clear with interrupt ACK mask
             exc_cpu_start <= '1';
           end if;
         else -- waiting for exception handler to get started
           if (exc_cpu_ack = '1') then -- handler started?
-            exc_ack <= (others => '0');
+            exc_ack <= '0';
             irq_ack <= (others => '0');
             exc_cpu_start <= '0';
           end if;
@@ -957,7 +941,7 @@ begin
       else -- (CPU_EXTENSION_RISCV_Zicsr = false)
         exc_buf       <= (others => '0');
         irq_buf       <= (others => '0');
-        exc_ack       <= (others => '0');
+        exc_ack       <= '0';
         irq_ack       <= (others => '0');
         exc_src       <= (others => '0');
         exc_cpu_start <= '0';
@@ -979,7 +963,6 @@ begin
   begin
     -- defaults --
     exc_cause_nxt <= (others => '0');
-    exc_ack_nxt   <= (others => '0');
     irq_ack_nxt   <= (others => '0');
 
     -- interrupt: 1.11 machine external interrupt --
@@ -1001,84 +984,60 @@ begin
       irq_ack_nxt(interrupt_msw_irq_c) <= '1';
 
 
+    -- the following traps are caused by synchronous exceptions
+    -- here we do not need an acknowledge mask since only one exception can trigger at the same time
+
     -- trap/fault: 0.0 instruction address misaligned --
     elsif (exc_buf(exception_ialign_c) = '1') then
       exc_cause_nxt(exc_cause_nxt'left) <= '0';
       exc_cause_nxt(3 downto 0) <= "0000";
-      exc_ack_nxt(exception_ialign_c)   <= '1';
-      exc_ack_nxt(exception_iaccess_c)  <= '1';
-      exc_ack_nxt(exception_iillegal_c) <= '1';
 
     -- trap/fault: 0.1 instruction access fault --
     elsif (exc_buf(exception_iaccess_c) = '1') then
       exc_cause_nxt(exc_cause_nxt'left) <= '0';
       exc_cause_nxt(3 downto 0) <= "0001";
-      exc_ack_nxt(exception_ialign_c)   <= '1';
-      exc_ack_nxt(exception_iaccess_c)  <= '1';
-      exc_ack_nxt(exception_iillegal_c) <= '1';
 
     -- trap/fault: 0.2 illegal instruction --
     elsif (exc_buf(exception_iillegal_c) = '1') then
       exc_cause_nxt(exc_cause_nxt'left) <= '0';
       exc_cause_nxt(3 downto 0) <= "0010";
-      exc_ack_nxt(exception_ialign_c)   <= '1';
-      exc_ack_nxt(exception_iaccess_c)  <= '1';
-      exc_ack_nxt(exception_iillegal_c) <= '1';
 
 
     -- trap/fault: 0.11 environment call from M-mode --
     elsif (exc_buf(exception_m_envcall_c) = '1') then
       exc_cause_nxt(exc_cause_nxt'left) <= '0';
       exc_cause_nxt(3 downto 0) <= "1011";
-      exc_ack_nxt(exception_m_envcall_c) <= '1';
 
     -- trap/fault: 0.3 breakpoint --
     elsif (exc_buf(exception_break_c) = '1') then
       exc_cause_nxt(exc_cause_nxt'left) <= '0';
       exc_cause_nxt(3 downto 0) <= "0011";
-      exc_ack_nxt(exception_break_c) <= '1';
 
 
     -- trap/fault: 0.6 store address misaligned -
     elsif (exc_buf(exception_salign_c) = '1') then
       exc_cause_nxt(exc_cause_nxt'left) <= '0';
       exc_cause_nxt(3 downto 0) <= "0110";
-      exc_ack_nxt(exception_salign_c)  <= '1';
-      exc_ack_nxt(exception_lalign_c)  <= '1';
-      exc_ack_nxt(exception_saccess_c) <= '1';
-      exc_ack_nxt(exception_laccess_c) <= '1';
 
     -- trap/fault: 0.4 load address misaligned --
     elsif (exc_buf(exception_lalign_c) = '1') then
       exc_cause_nxt(exc_cause_nxt'left) <= '0';
       exc_cause_nxt(3 downto 0) <= "0100";
-      exc_ack_nxt(exception_salign_c)  <= '1';
-      exc_ack_nxt(exception_lalign_c)  <= '1';
-      exc_ack_nxt(exception_saccess_c) <= '1';
-      exc_ack_nxt(exception_laccess_c) <= '1';
 
     -- trap/fault: 0.7 store access fault --
     elsif (exc_buf(exception_saccess_c) = '1') then
       exc_cause_nxt(exc_cause_nxt'left) <= '0';
       exc_cause_nxt(3 downto 0) <= "0111";
-      exc_ack_nxt(exception_salign_c)  <= '1';
-      exc_ack_nxt(exception_lalign_c)  <= '1';
-      exc_ack_nxt(exception_saccess_c) <= '1';
-      exc_ack_nxt(exception_laccess_c) <= '1';
 
     -- trap/fault: 0.5 load access fault --
     elsif (exc_buf(exception_laccess_c) = '1') then
       exc_cause_nxt(exc_cause_nxt'left) <= '0';
       exc_cause_nxt(3 downto 0) <= "0101";
-      exc_ack_nxt(exception_salign_c)  <= '1';
-      exc_ack_nxt(exception_lalign_c)  <= '1';
-      exc_ack_nxt(exception_saccess_c) <= '1';
-      exc_ack_nxt(exception_laccess_c) <= '1';
 
     -- undefined / not implemented --
     else
-      exc_cause_nxt <= (others => '0'); -- default
-      exc_ack_nxt   <= (others => '0'); -- default
+      exc_cause_nxt <= (others => '0');
+      irq_ack_nxt   <= (others => '0');
     end if;
   end process exc_priority;
 
@@ -1100,35 +1059,38 @@ begin
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
         mip_msip <= '0';
+
         -- register that can be modified by user --
         if (ctrl(ctrl_csr_we_c) = '1') then -- manual update
-          case i_reg(31 downto 20) is
-            -- machine trap setup --
-            when x"300" => -- R/W: mstatus - machine status register
+
+          -- machine trap setup --
+          if (i_reg(31 downto 24) = x"30") then
+            if (i_reg(23 downto 20) = x"0") then -- R/W: mstatus - machine status register
               mstatus_mie  <= csr_wdata_i(03);
               mstatus_mpie <= csr_wdata_i(07);
-            when x"304" => -- R/W: mie - machine interrupt-enable register
+            end if;
+            if (i_reg(23 downto 20) = x"4") then -- R/W: mie - machine interrupt-enable register
               mie_msie <= csr_wdata_i(03); -- SW IRQ enable
-              if (IO_MTIME_USE = true) then
-                mie_mtie <= csr_wdata_i(07); -- TIMER IRQ enable
-              end if;
-              if (IO_CLIC_USE = true) then
-                mie_meie <= csr_wdata_i(11); -- EXT IRQ enable
-              end if;
-            when x"305" => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
+              mie_mtie <= csr_wdata_i(07); -- TIMER IRQ enable
+              mie_meie <= csr_wdata_i(11); -- EXT IRQ enable
+            end if;
+            if (i_reg(23 downto 20) = x"5") then -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
               mtvec <= csr_wdata_i;
-            -- machine trap handling --
-            when x"340" => -- R/W: mscratch - machine scratch register
+            end if;
+          end if;
+
+          -- machine trap handling --
+          if (i_reg(31 downto 24) = x"34") then
+            if (i_reg(23 downto 20) = x"0") then -- R/W: mscratch - machine scratch register
               mscratch <= csr_wdata_i;
-            when x"344" => -- R/W: mip - machine interrupt pending
-              mip_msip <= csr_wdata_i(03); -- manual SW IRQ trigger
-            -- machine trap handling --
-            when x"341" => -- R/W: mepc - machine exception program counter
+            end if;
+            if (i_reg(23 downto 20) = x"1") then-- R/W: mepc - machine exception program counter
               mepc <= csr_wdata_i;
-            -- undefined/unavailable --
-            when others =>
-              NULL;
-          end case;
+            end if;
+            if (i_reg(23 downto 20) = x"4") then -- R/W: mip - machine interrupt pending
+              mip_msip <= csr_wdata_i(03); -- manual SW IRQ trigger
+            end if;
+          end if;
 
         else -- automatic update by hardware
           -- machine exception PC & exception value register --
