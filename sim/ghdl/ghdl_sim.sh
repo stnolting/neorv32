@@ -19,6 +19,11 @@ echo "Simulation source files:"
 ls -al $srcdir_core
 ls -al $srcdir_sim
 
+# Just a hint
+echo ""
+echo "Compile application with USER_FLAGS+=-DDEVNULL_UART_OVERRIDE to have faster UART/console output."
+echo ""
+
 # Analyse sources; libs and images at first!
 ghdl -a --work=neorv32 $srcdir_core/neorv32_package.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_application_image.vhd
