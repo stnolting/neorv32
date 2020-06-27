@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - FIXED!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"00000204"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"00000206"; -- no touchy!
 
   -- Internal Functions ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -49,9 +49,9 @@ package neorv32_package is
   function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural;
   function cond_sel_stdulogicvector_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector;
   function bool_to_ulogic_f(cond : boolean) return std_ulogic;
-  function or_all_f(a : std_ulogic_vector) return std_ulogic;
-  function and_all_f(a : std_ulogic_vector) return std_ulogic;
-  function xor_all_f(a : std_ulogic_vector) return std_ulogic;
+  function or_all_f(  a : std_ulogic_vector) return std_ulogic;
+  function and_all_f( a : std_ulogic_vector) return std_ulogic;
+  function xor_all_f( a : std_ulogic_vector) return std_ulogic;
   function xnor_all_f(a : std_ulogic_vector) return std_ulogic;
 
   -- Processor-internal Address Space Layout ------------------------------------------------
@@ -719,6 +719,7 @@ package neorv32_package is
     port (
       -- host access --
       clk_i     : in  std_ulogic; -- global clock line
+      rstn_i    : in  std_ulogic := '0'; -- global reset, low-active, async
       addr_i    : in  std_ulogic_vector(31 downto 0); -- address
       rden_i    : in  std_ulogic; -- read enable
       wren_i    : in  std_ulogic; -- write enable

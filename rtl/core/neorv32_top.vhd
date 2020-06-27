@@ -643,6 +643,7 @@ begin
     port map (
       -- host access --
       clk_i     => clk_i,        -- global clock line
+      rstn_i    => sys_rstn,     -- global reset, low-active, async
       addr_i    => cpu_addr,     -- address
       rden_i    => io_rden,      -- read enable
       wren_i    => io_wren,      -- write enable

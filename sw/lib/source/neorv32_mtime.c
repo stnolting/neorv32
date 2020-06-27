@@ -62,19 +62,6 @@ int neorv32_mtime_available(void) {
 
 
 /**********************************************************************//**
- * Set new system time.
- *
- * @note The MTIME timer increments with the primary processor clock.
- *
- * @param[in] time New system time (uint64_t)
- **************************************************************************/
-void neorv32_mtime_set_time(uint64_t time) {
-
-  MTIME = time;
-}
-
-
-/**********************************************************************//**
  * Get current system time since reset.
  *
  * @note The MTIME timer increments with the primary processor clock.
@@ -83,23 +70,7 @@ void neorv32_mtime_set_time(uint64_t time) {
  **************************************************************************/
 uint64_t neorv32_mtime_get_time(void) {
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/2];
-  } sys_mtime;
-  uint32_t tmp;
-
-  // make sure there is no overflow in mtime_lo during read
-  while (1) {
-    sys_mtime.uint32[1] = MTIME_HI;
-    sys_mtime.uint32[0] = MTIME_LO;
-    tmp = MTIME_HI;
-    if (sys_mtime.uint32[1] == tmp) {
-      break;
-    }
-  }
-
-  return sys_mtime.uint64;
+  return MTIME;
 }
 
 
@@ -115,7 +86,7 @@ uint64_t neorv32_mtime_get_time(void) {
  **************************************************************************/
 void neorv32_mtime_set_timecmp(uint64_t timecmp) {
 
-  MTIMECMP_LO = 0xFFFFFFFF; // prevent mtimecmp from temporarily becoming smaller than the lesser of the old and new values
+  MTIMECMP_LO = -1; // prevent mtimecmp from temporarily becoming smaller than the lesser of the old and new values
   MTIMECMP = timecmp;
 }
 
