@@ -158,7 +158,8 @@ void spi_flash_write_word(uint32_t addr, uint32_t wdata);
 void spi_flash_erase_sector(uint32_t addr);
 uint8_t spi_flash_read_status(void);
 uint8_t spi_flash_read_1st_id(void);
-void spi_flash_write_cmd(uint8_t cmd);
+void spi_flash_write_enable(void);
+void spi_flash_write_addr(uint32_t addr);
 
 
 /**********************************************************************//**
@@ -311,6 +312,12 @@ void print_help(void) {
  * Start application program at the beginning of instruction space.
  **************************************************************************/
 void start_app(void) {
+
+  // executable available?
+  if (neorv32_cpu_csr_read(CSR_MSCRATCH) == 0) {
+    neorv32_uart_print("No executable available.");
+    return;
+  }
 
   // no need to shutdown or reset the used peripherals
   // -> this will be done by application's crt0
@@ -623,19 +630,10 @@ void print_proc_version(void) {
  **************************************************************************/
 uint8_t spi_flash_read_byte(uint32_t addr) {
 
-  union {
-    uint32_t uint32;
-    uint8_t  uint8[sizeof(uint32_t)];
-  } address;
-
-  address.uint32 = addr;
-
   neorv32_spi_cs_en(SPI_FLASH_CS);
 
   neorv32_spi_trans(SPI_FLASH_CMD_READ);
-  neorv32_spi_trans(address.uint8[2]);
-  neorv32_spi_trans(address.uint8[1]);
-  neorv32_spi_trans(address.uint8[0]);
+  spi_flash_write_addr(addr);
   uint8_t rdata = (uint8_t)neorv32_spi_trans(0);
 
   neorv32_spi_cs_dis(SPI_FLASH_CS);
@@ -652,21 +650,12 @@ uint8_t spi_flash_read_byte(uint32_t addr) {
  **************************************************************************/
 void spi_flash_write_byte(uint32_t addr, uint8_t wdata) {
 
-  union {
-    uint32_t uint32;
-    uint8_t  uint8[sizeof(uint32_t)];
-  } address;
-
-  address.uint32 = addr;
-
-  spi_flash_write_cmd(SPI_FLASH_CMD_WRITE_ENABLE); // allow write-access
+  spi_flash_write_enable(); // allow write-access
 
   neorv32_spi_cs_en(SPI_FLASH_CS);
 
   neorv32_spi_trans(SPI_FLASH_CMD_PAGE_PROGRAM);
-  neorv32_spi_trans(address.uint8[2]);
-  neorv32_spi_trans(address.uint8[1]);
-  neorv32_spi_trans(address.uint8[0]);
+  spi_flash_write_addr(addr);
   neorv32_spi_trans(wdata);
 
   neorv32_spi_cs_dis(SPI_FLASH_CS);
@@ -709,21 +698,12 @@ void spi_flash_write_word(uint32_t addr, uint32_t wdata) {
  **************************************************************************/
 void spi_flash_erase_sector(uint32_t addr) {
 
-  union {
-    uint32_t uint32;
-    uint8_t  uint8[sizeof(uint32_t)];
-  } address;
-
-  address.uint32 = addr;
-
-  spi_flash_write_cmd(SPI_FLASH_CMD_WRITE_ENABLE); // allow write-access
+  spi_flash_write_enable(); // allow write-access
 
   neorv32_spi_cs_en(SPI_FLASH_CS);
 
   neorv32_spi_trans(SPI_FLASH_CMD_SECTOR_ERASE);
-  neorv32_spi_trans(address.uint8[2]);
-  neorv32_spi_trans(address.uint8[1]);
-  neorv32_spi_trans(address.uint8[0]);
+  spi_flash_write_addr(addr);
 
   neorv32_spi_cs_dis(SPI_FLASH_CS);
 
@@ -775,16 +755,32 @@ uint8_t spi_flash_read_1st_id(void) {
 
 
 /**********************************************************************//**
- * Write command to flash.
- *
- * @param[in] cmd Command byte.
+ * Enable flash write access.
  **************************************************************************/
-void spi_flash_write_cmd(uint8_t cmd) {
+void spi_flash_write_enable(void) {
 
   neorv32_spi_cs_en(SPI_FLASH_CS);
-
-  neorv32_spi_trans(cmd);
-
+  neorv32_spi_trans(SPI_FLASH_CMD_WRITE_ENABLE);
   neorv32_spi_cs_dis(SPI_FLASH_CS);
+}
+
+
+/**********************************************************************//**
+ * Send address word to flash.
+ *
+ * @param[in] addr Address word.
+ **************************************************************************/
+void spi_flash_write_addr(uint32_t addr) {
+
+  union {
+    uint32_t uint32;
+    uint8_t  uint8[sizeof(uint32_t)];
+  } address;
+
+  address.uint32 = addr;
+
+  neorv32_spi_trans(address.uint8[2]);
+  neorv32_spi_trans(address.uint8[1]);
+  neorv32_spi_trans(address.uint8[0]);
 }
 
