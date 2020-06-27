@@ -193,9 +193,6 @@ int main(void) {
   // init UART (no interrupts)
   neorv32_uart_setup(BAUD_RATE, 0, 0);
 
-  // reset system time
-  neorv32_mtime_set_time(0);
-
   // Configure machine system timer interrupt for ~2Hz
   neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (clock_speed/4));
 
