@@ -31,7 +31,7 @@ ISA Specification Version 2.1** and a subset of the **Privileged Architecture Sp
 as auxiliary processor within a larger SoC designs or as stand-alone custom microcontroller.
 
 The processor provides common peripherals and interfaces like input and output ports, serial interfaces for UART, I²C and SPI,
-interrupt controller, timers and embedded memories. External memories peripherals and custom IP can be attached via a
+interrupt controller, timers and embedded memories. External memories, peripherals and custom IP can be attached via a
 Wishbone-based external memory interface. All optional features beyond the base CPU can be enabled configured via VHDL generics.
 
 This project comes with a complete software ecosystem that features core libraries for high-level usage of the
@@ -39,7 +39,7 @@ provided functions and peripherals, application makefiles and example programs. 
 provide a doxygen-based documentary.
 
 The project is intended to work "out of the box". Just synthesize the test setup from this project, upload
-it to your FPGA board of choice and start playing with the NEORV32. If you do not want to [compile the GCC toolchain](https://github.com/riscv/riscv-gnu-toolchain)
+it to your FPGA board of choice and start playing with the NEORV32. If you do not want to [compile the GCC toolchains](https://github.com/riscv/riscv-gnu-toolchain)
 by yourself, you can also download [pre-compiled toolchain](https://github.com/stnolting/riscv_gcc_prebuilt) for Linux.
 
 For more information take a look a the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
@@ -124,15 +124,15 @@ The CPU is compliant to the [official RISC-V specifications](https://raw.githubu
     * Misaligned instruction address
     * Instruction access fault
     * Illegal instruction
-    * Breakpoint
+    * Breakpoint (via `ebreak` instruction)
     * Load address misaligned
     * Load access fault
-    * Sore address misaligned
+    * Store address misaligned
     * Store access fault
-    * Environment call from M-mode
+    * Environment call from M-mode (via `ecall` instruction)
     * Machine software instrrupt
-    * Machine timer interrupt (from MTIME)
-    * Machine external interrupt (via CLIC)
+    * Machine timer interrupt (via `MTIME` unit)
+    * Machine external interrupt (via `CLIC` unit)
 
 **General**:
   * No hardware support of unaligned accesses (except for instructions in `C` extension that still have to be aligned on 16-bit boundaries)
@@ -159,7 +159,7 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
 
 This chapter shows exemplary implementation results of the NEORV32 processor for an **Intel Cyclone IV EP4CE22F17C6N FPGA** on
 a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 19.1** ("balanced implementation"). The timing
-information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not other specified, the default configuration
+information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
 of the processor's generics is assumed. No constraints were used.
 
 Results generated for hardware version: `0.0.2.3`
@@ -181,7 +181,7 @@ Results generated for hardware version: `0.0.2.3`
 
 | Module   | Description                                     | LEs | FFs | Memory bits | DSPs |
 |:---------|:------------------------------------------------|:---:|:---:|:-----------:|:----:|
-| Boot ROM | Bootloader ROM (4kB)                            |   3 |   1 |      32 768 |    0 |
+| BOOT ROM | Bootloader ROM (4kB)                            |   3 |   1 |      32 768 |    0 |
 | DEVNULL  | Dummy device                                    |   2 |   1 |           0 |    0 |
 | DMEM     | Processor-internal data memory (8kB)            |  12 |   2 |      65 536 |    0 |
 | GPIO     | General purpose input/output ports              |  37 |  33 |           0 |    0 |
@@ -199,15 +199,17 @@ Results generated for hardware version: `0.0.2.3`
 
 The following table shows the hardware utilization for a [iCE40 UP5K](http://www.latticesemi.com/en/Products/FPGAandCPLD/iCE40UltraPlus) FPGA.
 The setup uses all provided peripherals, all CPU extensions (except for the `E` extension), no external memory interface and internal
-instruction and data memoryies (each 64kB) based on SPRAM primitives. The FPGA-specific memory components can be found in the
+instruction and data memories (each 64kB) based on SPRAM primitives. The FPGA-specific memory components can be found in the
 [`rtl/fpga_specific`](https://github.com/stnolting/neorv32/blob/master/rtl/fpga_specific/lattice_ice40up) folder.
 
-Place & route reports generated with **Lattice Radiant 1.1. Synplify**. The clock frequency is constrained and generated via the
-PLL from the internal HF oscillator running at 12 MHz.
+Place & route reports generated with **Lattice Radiant 2.1** using Lattice LSE. The clock frequency
+is constrained and generated via the PLL from the internal HF oscillator running at 12 MHz.
 
-| CPU Configuration   | Slices     | LUT        | REG        | DSPs   | SRAM     | EBR      | f         |
+Results generated for hardware version: `0.0.2.5`
+
+| CPU Configuration   | Slices     | LUT        | REG        | DSPs   | SPRAM    | EBR      | f         |
 |:--------------------|:----------:|:----------:|:----------:|:------:|:--------:|:--------:|:---------:|
-| `rv32imc`           | 2593 (98%) | 5059 (95%) | 1776 (33%) | 0 (0%) | 4 (100%) | 12 (40%) | 20.25 MHz |
+| `rv32imc` + `Zicsr` | 2405 (91%) | 4642 (87%) | 1810 (34%) | 0 (0%) | 4 (100%) | 12 (40%) | 20.25 MHz |
 
 
 ## Performance
