@@ -3,6 +3,7 @@
 -- # ********************************************************************************************* #
 -- # In simulation:    This unit will output the lowest 8 bit of the written data as ASCII chars   #
 -- #                   to the simulator console and to a text file ("neorv32.devnull.out").        #
+-- #                   The complete data 32-bit data word is dumped to "neorv32.devnull.data.out". #
 -- # In real hardware: This unit implements a "/dev/null" device.                                  #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
@@ -61,7 +62,8 @@ end neorv32_devnull;
 architecture neorv32_devnull_rtl of neorv32_devnull is
 
   -- configuration --
-  constant sim_output_en_c : boolean := true; -- output lowest byte as char to simulator when enabled
+  constant sim_text_output_en_c : boolean := true; -- output lowest byte as char to simulator and file when enabled
+  constant sim_data_output_en_c : boolean := true; -- dump 32-word to file when enabled
 
   -- IO space: module base address --
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
@@ -80,25 +82,35 @@ begin
   -- Read/Write Access ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   rw_access: process(clk_i)
-    file file_devnull_out : text open write_mode is "neorv32.devnull.out";
+    file file_devnull_text_out : text open write_mode is "neorv32.devnull.out";
+    file file_devnull_data_out : text open write_mode is "neorv32.devnull.data.out";
     variable i : integer;
-    variable la, lb : line; -- we need to variables here since "writeline" seems to flush the source variable
+    variable la, lb, lc : line; -- we need several variables here since "writeline" seems to flush the source variable
   begin
     if rising_edge(clk_i) then
       ack_o <= acc_en and (wren_i or rden_i);
-      if ((acc_en and wren_i and ben_i(0)) = '1') and (sim_output_en_c = true) then
-        -- print lowest byte as ASCII to console --
-        i := to_integer(unsigned(data_i(7 downto 0)));
-        if (i >= 128) then -- out of range?
-          i := 0;
+      if (acc_en = '1') and (wren_i = '1') then
+        if (sim_text_output_en_c = true) and (ben_i(0) = '1') then
+          -- print lowest byte as ASCII to console --
+          i := to_integer(unsigned(data_i(7 downto 0)));
+          if (i >= 128) then -- out of range?
+            i := 0;
+          end if;
+          if (i /= 10) and (i /= 13) then -- skip line breaks - they are issued via "writeline"
+            write(la, character'val(i));
+            write(lb, character'val(i));
+          end if;
+          if (i = 10) then -- line break: write to screen and file
+            writeline(output, la);
+            writeline(file_devnull_text_out, lb);
+          end if;
         end if;
-        if (i /= 10) and (i /= 13) then -- skip line breaks - they are issued via "writeline"
-          write(la, character'val(i));
-          write(lb, character'val(i));
-        end if;
-        if (i = 10) then -- line break: write to screen and file
-          writeline(output, la);
-          writeline(file_devnull_out, lb);
+        if (sim_data_output_en_c = true) then
+          -- dump raw data
+          for x in 7 downto 0 loop
+            write(lc, to_hexchar_f(data_i(3+x*4 downto 0+x*4))); -- write in hex form
+          end loop; -- x
+          writeline(file_devnull_data_out, lc);
         end if;
       end if;
     end if;

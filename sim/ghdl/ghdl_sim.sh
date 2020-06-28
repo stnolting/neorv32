@@ -59,6 +59,8 @@ touch neorv32.testbench_uart.out
 chmod 777 neorv32.testbench_uart.out
 touch neorv32.devnull.out
 chmod 777 neorv32.devnull.out
+touch neorv32.devnull.data.out
+chmod 777 neorv32.devnull.data.out
 
 # Run simulation
 ghdl -e --work=neorv32 neorv32_tb

@@ -59,15 +59,17 @@ touch neorv32.testbench_uart.out
 chmod 777 neorv32.testbench_uart.out
 touch neorv32.devnull.out
 chmod 777 neorv32.devnull.out
+touch neorv32.devnull.data.out
+chmod 777 neorv32.devnull.data.out
 
 # Run simulation
 ghdl -e --work=neorv32 neorv32_tb
 ghdl -r --work=neorv32 neorv32_tb --stop-time=5ms --ieee-asserts=disable --assert-level=error
 
 # Check output
-echo "Checking NEORV32.DEVNULL output. Should contain:"; cat $homedir/check_reference.out
+echo "Checking NEORV32.DEVNULL text output. Should contain:"; cat $homedir/check_reference.out
 echo ""
-echo "Checking NEORV32.DEVNULL output. NEORV32.DEVNULL output is:"
+echo "Checking NEORV32.DEVNULL text output. NEORV32.DEVNULL text output is:"
 cat neorv32.devnull.out
 
 # Check if reference can be found in output

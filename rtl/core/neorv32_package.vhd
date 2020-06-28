@@ -53,6 +53,7 @@ package neorv32_package is
   function and_all_f( a : std_ulogic_vector) return std_ulogic;
   function xor_all_f( a : std_ulogic_vector) return std_ulogic;
   function xnor_all_f(a : std_ulogic_vector) return std_ulogic;
+  function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
 
   -- Processor-internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1062,5 +1063,32 @@ package body neorv32_package is
     end loop; -- i
     return tmp_v;
   end function xnor_all_f;
+
+  -- Function: Convert to hex char ----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character is
+    variable output_v : character;
+  begin
+    case (input) is
+      when x"0" => output_v := '0';
+      when x"1" => output_v := '1';
+      when x"2" => output_v := '2';
+      when x"3" => output_v := '3';
+      when x"4" => output_v := '4';
+      when x"5" => output_v := '5';
+      when x"6" => output_v := '6';
+      when x"7" => output_v := '7';
+      when x"8" => output_v := '8';
+      when x"9" => output_v := '9';
+      when x"a" => output_v := 'a';
+      when x"b" => output_v := 'b';
+      when x"c" => output_v := 'c';
+      when x"d" => output_v := 'd';
+      when x"e" => output_v := 'e';
+      when x"f" => output_v := 'f';
+      when others => output_v := '?';
+    end case;
+    return output_v;
+  end function to_hexchar_f;
 
 end neorv32_package;
