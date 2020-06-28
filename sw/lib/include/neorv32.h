@@ -211,13 +211,13 @@ enum NEORV32_CLOCK_PRSC_enum {
  **************************************************************************/
 /**@{*/
 /** instruction memory base address (r/w/x) */
-#define INSTR_MEM_BASE_ADDR 0x00000000
+// -> use value from MEM_ISPACE_BASE CSR
 /** data memory base address (r/w/x) */
-#define DATA_MEM_BASE_ADDR 0x80000000
+// -> use value from MEM_DSPACE_BASE CSR
 /** bootloader memory base address (r/-/x) */
-#define BOOTLOADER_BASE_ADDRESS 0xFFFF0000
+#define BOOTLOADER_BASE_ADDRESS (0xFFFF0000UL)
 /** peripheral/IO devices memory base address (r/w/x) */
-#define IO_BASE_ADDRESS 0xFFFFFF80
+#define IO_BASE_ADDRESS (0xFFFFFF80UL)
 /**@}*/
 
 
@@ -226,9 +226,9 @@ enum NEORV32_CLOCK_PRSC_enum {
  **************************************************************************/
 /**@{*/
 /** GPIO parallel input port (r/-) */
-#define GPIO_INPUT  (*(IO_ROM32 0xFFFFFF80))
+#define GPIO_INPUT  (*(IO_ROM32 0xFFFFFF80UL))
 /** GPIO parallel output port (r/w) */
-#define GPIO_OUTPUT (*(IO_REG32 0xFFFFFF84))
+#define GPIO_OUTPUT (*(IO_REG32 0xFFFFFF84UL))
 /**@}*/
 
 
@@ -237,7 +237,7 @@ enum NEORV32_CLOCK_PRSC_enum {
  **************************************************************************/
 /**@{*/
 /** CLIC control register (r/w) */
-#define CLIC_CT (*(IO_REG32 0xFFFFFF88))
+#define CLIC_CT (*(IO_REG32 0xFFFFFF88UL))
 
 /** CLIC control register bits */
 enum NEORV32_CLIC_CT_enum {
@@ -284,7 +284,7 @@ enum NEORV32_CLIC_CHANNELS_enum {
  **************************************************************************/
 /**@{*/
 /** Watchdog control register (r/w) */
-#define WDT_CT (*(IO_REG32 0xFFFFFF8C))
+#define WDT_CT (*(IO_REG32 0xFFFFFF8CUL))
 
 /** WTD control register bits */
 enum NEORV32_WDT_CT_enum {
@@ -310,13 +310,13 @@ enum NEORV32_WDT_CT_enum {
  **************************************************************************/
 /**@{*/
 /** MTIME (time register) low word (r/-) */
-#define MTIME_LO     (*(IO_ROM32 0xFFFFFF90))
+#define MTIME_LO     (*(IO_ROM32 0xFFFFFF90UL))
 /** MTIME (time register) high word (r/-) */
-#define MTIME_HI     (*(IO_ROM32 0xFFFFFF94))
+#define MTIME_HI     (*(IO_ROM32 0xFFFFFF94UL))
 /** MTIMECMP (time compare register) low word (r/w) */
-#define MTIMECMP_LO  (*(IO_REG32 0xFFFFFF98))
+#define MTIMECMP_LO  (*(IO_REG32 0xFFFFFF98UL))
 /** MTIMECMP (time register) high word (r/w) */
-#define MTIMECMP_HI  (*(IO_REG32 0xFFFFFF9C))
+#define MTIMECMP_HI  (*(IO_REG32 0xFFFFFF9CUL))
 
 /** MTIME (time register) 64-bit access (r/-) */
 #define MTIME        (*(IO_ROM64 (&MTIME_LO)))
@@ -330,9 +330,9 @@ enum NEORV32_WDT_CT_enum {
  **************************************************************************/
 /**@{*/
 /** UART control register (r/w) */
-#define UART_CT  (*(IO_REG32 0xFFFFFFA0))
+#define UART_CT  (*(IO_REG32 0xFFFFFFA0UL))
 /** UART receive/transmit data register (r/w) */
-#define UART_DATA (*(IO_REG32 0xFFFFFFA4))
+#define UART_DATA (*(IO_REG32 0xFFFFFFA4UL))
 
 /** UART control register bits */
 enum NEORV32_UART_CT_enum {
@@ -373,9 +373,9 @@ enum NEORV32_UART_DATA_enum {
  **************************************************************************/
 /**@{*/
 /** SPI control register (r/w) */
-#define SPI_CT  (*(IO_REG32 0xFFFFFFA8))
+#define SPI_CT  (*(IO_REG32 0xFFFFFFA8UL))
 /** SPI receive/transmit data register (r/w) */
-#define SPI_DATA (*(IO_REG32 0xFFFFFFAC))
+#define SPI_DATA (*(IO_REG32 0xFFFFFFACUL))
 
 /** SPI control register bits */
 enum NEORV32_SPI_CT_enum {
@@ -409,9 +409,9 @@ enum NEORV32_SPI_CT_enum {
  **************************************************************************/
 /**@{*/
 /** TWI control register (r/w) */
-#define TWI_CT   (*(IO_REG32 0xFFFFFFB0))
+#define TWI_CT   (*(IO_REG32 0xFFFFFFB0UL))
 /** TWI receive/transmit data register (r/w) */
-#define TWI_DATA (*(IO_REG32 0xFFFFFFB4))
+#define TWI_DATA (*(IO_REG32 0xFFFFFFB4UL))
 
 /** TWI control register bits */
 enum NEORV32_TWI_CT_enum {
@@ -441,9 +441,9 @@ enum NEORV32_TWI_DATA_enum {
  **************************************************************************/
 /**@{*/
 /** PWM control register (r/w) */
-#define PWM_CT   (*(IO_REG32 0xFFFFFFB8)) // r/w: control register
+#define PWM_CT   (*(IO_REG32 0xFFFFFFB8UL)) // r/w: control register
 /** PWM duty cycle register (4-channels) (r/w) */
-#define PWM_DUTY (*(IO_REG32 0xFFFFFFBC)) // r/w: duty cycle channel 1 and 0
+#define PWM_DUTY (*(IO_REG32 0xFFFFFFBCUL)) // r/w: duty cycle channel 1 and 0
 
 /** PWM control register bits */
 enum NEORV32_PWM_CT_enum {
@@ -472,9 +472,9 @@ enum NEORV32_PWM_DUTY_enum {
  **************************************************************************/
 /**@{*/
 /** TRNG control register (r/w) */
-#define TRNG_CT   (*(IO_REG32 0xFFFFFFC0))
+#define TRNG_CT   (*(IO_REG32 0xFFFFFFC0UL))
 /** TRNG data register (r/-) */
-#define TRNG_DATA (*(IO_ROM32 0xFFFFFFC4))
+#define TRNG_DATA (*(IO_ROM32 0xFFFFFFC4UL))
 
 /** TRNG control register bits */
 enum NEORV32_TRNG_CT_enum {
@@ -496,8 +496,8 @@ enum NEORV32_TRNG_DUTY_enum {
  * @name IO Device: Dummy Device (DEVNULL)
  **************************************************************************/
 /**@{*/
-/** TRNG data register (r/w) */
-#define DEVNULL_DATA (*(IO_REG32 0xFFFFFFFC))
+/** DEVNULL data register (r/w) */
+#define DEVNULL_DATA (*(IO_REG32 0xFFFFFFFCUL))
 /**@}*/
 
 
