@@ -64,4 +64,4 @@ chmod 777 neorv32.devnull.data.out
 
 # Run simulation
 ghdl -e --work=neorv32 neorv32_tb
-ghdl -r --work=neorv32 neorv32_tb --stop-time=4ms --ieee-asserts=disable --assert-level=error
+ghdl -r --work=neorv32 neorv32_tb --stop-time=5ms --ieee-asserts=disable --assert-level=error
