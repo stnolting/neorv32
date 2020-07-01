@@ -21,7 +21,7 @@ ls -al $srcdir_sim
 
 # Just a hint
 echo ""
-echo "Compile application with USER_FLAGS+=-DDEVNULL_UART_OVERRIDE to have faster UART/console output."
+echo "Tip: Compile application with USER_FLAGS+=-DDEVNULL_UART_OVERRIDE to have faster UART/console output."
 echo ""
 
 # Analyse sources; libs and images at first!
