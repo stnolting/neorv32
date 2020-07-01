@@ -242,9 +242,9 @@ int main() {
   neorv32_uart_printf("EXC I_ILLEG: ");
   cnt_test++;
 
-  // create mini program in RAM
+  // create test program in RAM
   static const uint32_t dummy_sub_program[2] = {
-    0x0000007F, // undefined 32-bit opcode -> illegal instruction exception
+    0xDEAD007F, // undefined 32-bit opcode -> illegal instruction exception
     0x00008067  // ret (32-bit)
   };
 

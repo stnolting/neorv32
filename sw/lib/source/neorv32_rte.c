@@ -193,11 +193,8 @@ static void __neorv32_rte_debug_exc_handler(void) {
   uint32_t trans_cmd = neorv32_cpu_csr_read(CSR_MTINST);
   neorv32_uart_printf("Transf. instruction: 0x%x ", trans_cmd);
 
-  if (trans_cmd & (1 << 1)) {
-    neorv32_uart_printf("(uncompr.)\n");
-  }
-  else {
-    neorv32_uart_printf("(compr.)\n");
+  if ((trans_cmd & (1 << 1)) == 0) {
+    neorv32_uart_printf("(decompressed)\n");
   }
 
   neorv32_uart_printf("Trying to resume application @ 0x%x...", neorv32_cpu_csr_read(CSR_MSCRATCH));
