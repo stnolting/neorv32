@@ -108,6 +108,7 @@ begin
       else
         -- mtime low --
         mtime_lo <= std_ulogic_vector(unsigned(mtime_lo) + 1);
+        mtime_lo_msb_ff <= mtime_lo(mtime_lo'left);
         -- mtime high --
         if ((mtime_lo_msb_ff xor mtime_lo(mtime_lo'left)) = '1') then -- mtime_lo carry?
           mtime_hi <= std_ulogic_vector(unsigned(mtime_hi) + 1);
