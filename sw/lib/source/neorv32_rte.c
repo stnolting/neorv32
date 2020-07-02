@@ -43,8 +43,10 @@
 #include "neorv32_rte.h"
 
 // Privates
-static void __neorv32_rte_dummy_exc_handler(void) __attribute__((unused));
-static void __neorv32_rte_debug_exc_handler(void) __attribute__((unused));
+static void __neorv32_rte_dummy_exc_handler(void)     __attribute__((unused));
+static void __neorv32_rte_debug_exc_handler(void)     __attribute__((unused));
+static void __neorv32_rte_print_true_false(int state) __attribute__((unused));
+static void __neorv32_rte_print_hw_version(void)      __attribute__((unused));
 
 
 /**********************************************************************//**
@@ -151,19 +153,27 @@ static void __neorv32_rte_dummy_exc_handler(void) {
  **************************************************************************/
 static void __neorv32_rte_debug_exc_handler(void) {
 
-  neorv32_uart_printf("\n\n\n<<< NEORV32 Runtime Environment >>>\n");
+  neorv32_uart_printf("\n\n<< NEORV32 Runtime Environment >>\n");
 
   neorv32_uart_printf("System time: 0x%x_%x\n", neorv32_cpu_csr_read(CSR_TIMEH), neorv32_cpu_csr_read(CSR_TIME));
 
-  uint32_t exc_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
+  register uint32_t exc_cause   = neorv32_cpu_csr_read(CSR_MCAUSE);
+  register uint32_t return_addr = neorv32_cpu_csr_read(CSR_MEPC);
+  register uint32_t trans_cmd   = neorv32_cpu_csr_read(CSR_MTINST);
 
   if (exc_cause & 0x80000000) {
     neorv32_uart_printf("INTERRUPT");
   }
   else {
     neorv32_uart_printf("EXCEPTION");
+    if ((trans_cmd & (1 << 1)) == 0) {
+      return_addr -= 4;
+    }
+    else {
+      return_addr -= 2;
+    }
   }
-  neorv32_uart_printf(" at instruction address: 0x%x\n", neorv32_cpu_csr_read(CSR_MEPC));
+  neorv32_uart_printf(" at instruction address: 0x%x\n", return_addr);
 
   neorv32_uart_printf("Cause: ");
   switch (exc_cause) {
@@ -190,15 +200,176 @@ static void __neorv32_rte_debug_exc_handler(void) {
     neorv32_uart_printf("\nFaulting address");
   }
   neorv32_uart_printf(": 0x%x\n", neorv32_cpu_csr_read(CSR_MTVAL));
-  uint32_t trans_cmd = neorv32_cpu_csr_read(CSR_MTINST);
   neorv32_uart_printf("Transf. instruction: 0x%x ", trans_cmd);
 
   if ((trans_cmd & (1 << 1)) == 0) {
     neorv32_uart_printf("(decompressed)\n");
   }
 
-  neorv32_uart_printf("Trying to resume application @ 0x%x...", neorv32_cpu_csr_read(CSR_MSCRATCH));
+  neorv32_uart_printf("Trying to resume application @ 0x%x...", neorv32_cpu_csr_read(CSR_MEPC));
 
-  neorv32_uart_printf("\n<<</NEORV32 Runtime Environment >>>\n\n\n");
+  neorv32_uart_printf("\n<</NEORV32 Runtime Environment >>\n\n");
 }
 
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Print hardware configuration information via UART
+ **************************************************************************/
+void neorv32_rte_print_hw_config(void) {
+
+  uint32_t tmp;
+  int i;
+  char c;
+
+  neorv32_uart_printf("\n\n<< NEORV32 Hardware Configuration Overview >>\n");
+
+  // CPU configuration
+  neorv32_uart_printf("\n-- Central Processing Unit --\n");
+
+  // HW version
+  neorv32_uart_printf("Hardware version: ");
+  __neorv32_rte_print_hw_version();
+  neorv32_uart_printf(" (0x%x)\n", neorv32_cpu_csr_read(CSR_MIMPID));
+
+  // CPU architecture
+  neorv32_uart_printf("Architecture:     ");
+  tmp = neorv32_cpu_csr_read(CSR_MISA);
+  tmp = (tmp >> 30) & 0x03;
+  if (tmp == 0) {
+    neorv32_uart_printf("unknown");
+  }
+  if (tmp == 1) {
+    neorv32_uart_printf("RV32");
+  }
+  if (tmp == 2) {
+    neorv32_uart_printf("RV64");
+  }
+  if (tmp == 3) {
+    neorv32_uart_printf("RV128");
+  }
+  
+  // CPU extensions
+  neorv32_uart_printf("\nCPU extensions:   ");
+  tmp = neorv32_cpu_csr_read(CSR_MISA);
+  for (i=0; i<26; i++) {
+    if (tmp & (1 << i)) {
+      c = (char)('A' + i);
+      neorv32_uart_putc(c);
+      neorv32_uart_putc(' ');
+    }
+  }
+  neorv32_uart_printf("(0x%x)\n", tmp);
+
+  // Performance counters
+  neorv32_uart_printf("CNT & time CSRs:  ");
+  __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_CSR_COUNTERS));
+
+  // Clock speed
+  neorv32_uart_printf("Clock speed:      %u Hz\n", neorv32_cpu_csr_read(CSR_MCLOCK));
+
+  // Memory configuration
+  neorv32_uart_printf("\n-- Memory Configuration --\n");
+
+  uint32_t size = neorv32_cpu_csr_read(CSR_MISPACESIZE);
+  uint32_t base = neorv32_cpu_csr_read(CSR_MISPACEBASE);
+  neorv32_uart_printf("Instruction memory:   %u bytes @ 0x%x\n", size, base);
+  neorv32_uart_printf("Internal IMEM:        ");
+  __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_MEM_INT_IMEM));
+  neorv32_uart_printf("Internal IMEM as ROM: ");
+  __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_MEM_INT_IMEM_ROM));
+
+  size = neorv32_cpu_csr_read(CSR_MDSPACESIZE);
+  base = neorv32_cpu_csr_read(CSR_MDSPACEBASE);
+  neorv32_uart_printf("Data memory:          %u bytes @ 0x%x\n", size, base);
+  neorv32_uart_printf("Internal DMEM:        ");
+  __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_MEM_INT_DMEM));
+
+  neorv32_uart_printf("Bootloader:           ");
+  __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_BOOTLOADER));
+
+  neorv32_uart_printf("External interface:   ");
+  __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_MEM_EXT));
+
+  // peripherals
+  neorv32_uart_printf("\n-- Peripherals --\n");
+  tmp = neorv32_cpu_csr_read(CSR_MFEATURES);
+
+  neorv32_uart_printf("GPIO:    ");
+  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_GPIO));
+
+  neorv32_uart_printf("MTIME:   ");
+  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_MTIME));
+
+  neorv32_uart_printf("UART:    ");
+  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_UART));
+
+  neorv32_uart_printf("SPI:     ");
+  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_SPI));
+
+  neorv32_uart_printf("TWI:     ");
+  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_TWI));
+
+  neorv32_uart_printf("PWM:     ");
+  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_PWM));
+
+  neorv32_uart_printf("WDT:     ");
+  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_WDT));
+
+  neorv32_uart_printf("CLIC:    ");
+  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_CLIC));
+
+  neorv32_uart_printf("TRNG:    ");
+  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_TRNG));
+
+  neorv32_uart_printf("DEVNULL: ");
+  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_DEVNULL));
+}
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Private function to print true or false.
+ * @note This function is used by neorv32_rte_print_hw_config(void) only.
+ *
+ * @param[in] state Print TRUE when !=0, print FALSE when 0
+ **************************************************************************/
+static void __neorv32_rte_print_true_false(int state) {
+
+  if (state) {
+    neorv32_uart_printf("True\n");
+  }
+  else {
+    neorv32_uart_printf("False\n");
+  }
+}
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Private function to show the processor version in human-readable format.
+ * @note This function is used by neorv32_rte_print_hw_config(void) only.
+ **************************************************************************/
+static void __neorv32_rte_print_hw_version(void) {
+
+  uint32_t i;
+  char tmp, cnt;
+  uint32_t version = neorv32_cpu_csr_read(CSR_MIMPID);
+
+  for (i=0; i<4; i++) {
+
+    tmp = (char)(version >> (24 - 8*i));
+
+    // serial division
+    cnt = 0;
+    while (tmp >= 10) {
+      tmp = tmp - 10;
+      cnt++;
+    }
+
+    if (cnt) {
+      neorv32_uart_putc('0' + cnt);
+    }
+    neorv32_uart_putc('0' + tmp);
+    if (i < 3) {
+      neorv32_uart_putc('.');
+    }
+  }
+}

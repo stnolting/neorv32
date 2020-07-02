@@ -1,7 +1,7 @@
 /* ################################################################################################# */
-/* # << NEORV32 - crt0.S - Application Start-Up Code >>                                            # */
+/* # << NEORV32 - crt0.S - Application Start-Up Code & Minimal Runtime Environment >>              # */
 /* # ********************************************************************************************* # */
-/* # The start-up code provides a minimal runtime environment that catches all exceptions/         # */
+/* # The start-up code provides a minimal runtime environment that catches all exceptions and      # */
 /* # interrupts and delegates them to the handler functions (installed by user via dedicated       # */
 /* # install function from the neorv32 runtime environment library).                               # */
 /* # ********************************************************************************************* # */
@@ -320,7 +320,6 @@ __crt0_neorv32_rte_execute:
   // push ra
   addi	sp, sp, -4
   sw    ra, 0(sp)
-csrrw zero, mscratch, ra
 
   jalr  ra, t0          // call second-level handler
 
