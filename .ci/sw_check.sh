@@ -10,7 +10,7 @@ homedir=$homedir/..
 # The directories of the SW source files
 srcdir_examples=$homedir/sw/example
 srcdir_bootloader=$homedir/sw/bootloader
-test_app_dir=$homedir/sw/example/test_exceptions
+test_app_dir=$homedir/sw/example/cpu_test
 
 # List files
 ls -al $srcdir_examples
