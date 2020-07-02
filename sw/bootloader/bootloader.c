@@ -218,7 +218,9 @@ int main(void) {
   print_proc_version();
   neorv32_uart_print("\nCLK:  ");
   print_hex_word(neorv32_cpu_csr_read(CSR_MCLOCK));
-  neorv32_uart_print(" Hz\nMISA: ");
+  neorv32_uart_print(" Hz\nMHID: ");
+  print_hex_word(neorv32_cpu_csr_read(CSR_MHARTID));
+  neorv32_uart_print("\nMISA: ");
   print_hex_word(neorv32_cpu_csr_read(CSR_MISA));
   neorv32_uart_print("\nCONF: ");
   print_hex_word(neorv32_cpu_csr_read(CSR_MFEATURES));
