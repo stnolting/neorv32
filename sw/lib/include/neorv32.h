@@ -135,6 +135,7 @@ enum NEORV32_CPU_MIP_enum {
   CPU_MFEATURES_MEM_INT_IMEM     =  2, /**< CPU mfeatures CSR (2) (r/-): Processor-internal instruction memory implemented when 1 (via MEM_INT_IMEM_USE generic) */
   CPU_MFEATURES_MEM_INT_IMEM_ROM =  3, /**< CPU mfeatures CSR (3) (r/-): Processor-internal instruction memory implemented as ROM when 1 (via MEM_INT_IMEM_ROM generic) */
   CPU_MFEATURES_MEM_INT_DMEM     =  4, /**< CPU mfeatures CSR (4) (r/-): Processor-internal data memory implemented when 1 (via MEM_INT_DMEM_USE generic) */
+  CPU_MFEATURES_CSR_COUNTERS     =  5, /**< CPU mfeatures CSR (5) (r/-): RISC-V performance counters implemented when 1 (via CSR_COUNTERS_USE generic) */
 
   CPU_MFEATURES_IO_GPIO          = 16, /**< CPU mfeatures CSR (16) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_USE generic) */
   CPU_MFEATURES_IO_MTIME         = 17, /**< CPU mfeatures CSR (17) (r/-): Machine system timer implemented when 1 (via IO_MTIME_USE generic) */
