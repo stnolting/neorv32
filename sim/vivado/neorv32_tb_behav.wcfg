@@ -1,0 +1,746 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="neorv32_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="neorv32_application_image" />
+            <top_module name="neorv32_package" />
+            <top_module name="neorv32_tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="29417100fs"></ZoomStartTime>
+      <ZoomEndTime time="29440001fs"></ZoomEndTime>
+      <Cursor1Time time="29450500fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="183"></NameColumnWidth>
+      <ValueColumnWidth column_width="65"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="131" />
+   <wvobject type="divider" fp_name="divider273">
+      <obj_property name="label">CPU: Control.FETCH</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/clk_i" type="logic">
+      <obj_property name="ElementShortName">clk_i</obj_property>
+      <obj_property name="ObjectShortName">clk_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/rstn_i" type="logic">
+      <obj_property name="ElementShortName">rstn_i</obj_property>
+      <obj_property name="ObjectShortName">rstn_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/bus_wait_i" type="logic">
+      <obj_property name="ElementShortName">bus_wait_i</obj_property>
+      <obj_property name="ObjectShortName">bus_wait_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/bus_fast_ir" type="logic">
+      <obj_property name="ElementShortName">bus_fast_ir</obj_property>
+      <obj_property name="ObjectShortName">bus_fast_ir</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ma_instr_i" type="logic">
+      <obj_property name="ElementShortName">ma_instr_i</obj_property>
+      <obj_property name="ObjectShortName">ma_instr_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/be_instr_i" type="logic">
+      <obj_property name="ElementShortName">be_instr_i</obj_property>
+      <obj_property name="ObjectShortName">be_instr_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/instr_i" type="array">
+      <obj_property name="ElementShortName">instr_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">instr_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ci_instr32" type="array">
+      <obj_property name="ElementShortName">ci_instr32[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ci_instr32[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ci_illegal" type="logic">
+      <obj_property name="ElementShortName">ci_illegal</obj_property>
+      <obj_property name="ObjectShortName">ci_illegal</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine" type="array">
+      <obj_property name="ElementShortName">fetch_engine</obj_property>
+      <obj_property name="ObjectShortName">fetch_engine</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.state" type="other">
+         <obj_property name="ElementShortName">.state</obj_property>
+         <obj_property name="ObjectShortName">.state</obj_property>
+         <obj_property name="CustomSignalColor">#FFD700</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.state_nxt" type="other">
+         <obj_property name="ElementShortName">.state_nxt</obj_property>
+         <obj_property name="ObjectShortName">.state_nxt</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.i_buf" type="array">
+         <obj_property name="ElementShortName">.i_buf[33:0]</obj_property>
+         <obj_property name="ObjectShortName">.i_buf[33:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.i_buf_nxt" type="array">
+         <obj_property name="ElementShortName">.i_buf_nxt[33:0]</obj_property>
+         <obj_property name="ObjectShortName">.i_buf_nxt[33:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.i_buf2" type="array">
+         <obj_property name="ElementShortName">.i_buf2[33:0]</obj_property>
+         <obj_property name="ObjectShortName">.i_buf2[33:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.i_buf2_nxt" type="array">
+         <obj_property name="ElementShortName">.i_buf2_nxt[33:0]</obj_property>
+         <obj_property name="ObjectShortName">.i_buf2_nxt[33:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.ci_reg" type="array">
+         <obj_property name="ElementShortName">.ci_reg[17:0]</obj_property>
+         <obj_property name="ObjectShortName">.ci_reg[17:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.ci_reg_nxt" type="array">
+         <obj_property name="ElementShortName">.ci_reg_nxt[17:0]</obj_property>
+         <obj_property name="ObjectShortName">.ci_reg_nxt[17:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.i_buf_state" type="array">
+         <obj_property name="ElementShortName">.i_buf_state[1:0]</obj_property>
+         <obj_property name="ObjectShortName">.i_buf_state[1:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.i_buf_state_nxt" type="array">
+         <obj_property name="ElementShortName">.i_buf_state_nxt[1:0]</obj_property>
+         <obj_property name="ObjectShortName">.i_buf_state_nxt[1:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.pc_real" type="array">
+         <obj_property name="ElementShortName">.pc_real[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.pc_real[31:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.pc_real_add" type="array">
+         <obj_property name="ElementShortName">.pc_real_add[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.pc_real_add[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.pc_fetch" type="array">
+         <obj_property name="ElementShortName">.pc_fetch[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.pc_fetch[31:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.pc_fetch_add" type="array">
+         <obj_property name="ElementShortName">.pc_fetch_add[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.pc_fetch_add[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.ci_return" type="logic">
+         <obj_property name="ElementShortName">.ci_return</obj_property>
+         <obj_property name="ObjectShortName">.ci_return</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.ci_return_nxt" type="logic">
+         <obj_property name="ElementShortName">.ci_return_nxt</obj_property>
+         <obj_property name="ObjectShortName">.ci_return_nxt</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.reset" type="logic">
+         <obj_property name="ElementShortName">.reset</obj_property>
+         <obj_property name="ObjectShortName">.reset</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_engine.bus_err_ack" type="logic">
+         <obj_property name="ElementShortName">.bus_err_ack</obj_property>
+         <obj_property name="ObjectShortName">.bus_err_ack</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider273">
+      <obj_property name="label">CPU: Control.IPB</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ipb" type="array">
+      <obj_property name="ElementShortName">ipb</obj_property>
+      <obj_property name="ObjectShortName">ipb</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider273">
+      <obj_property name="label">CPU: Control.EXE</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/alu_wait_i" type="logic">
+      <obj_property name="ElementShortName">alu_wait_i</obj_property>
+      <obj_property name="ObjectShortName">alu_wait_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/bus_wait_i" type="logic">
+      <obj_property name="ElementShortName">bus_wait_i</obj_property>
+      <obj_property name="ObjectShortName">bus_wait_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/instr_i" type="array">
+      <obj_property name="ElementShortName">instr_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">instr_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/cmp_i" type="array">
+      <obj_property name="ElementShortName">cmp_i[1:0]</obj_property>
+      <obj_property name="ObjectShortName">cmp_i[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/alu_add_i" type="array">
+      <obj_property name="ElementShortName">alu_add_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">alu_add_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/imm_o" type="array">
+      <obj_property name="ElementShortName">imm_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">imm_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/csr_wdata_i" type="array">
+      <obj_property name="ElementShortName">csr_wdata_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">csr_wdata_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/csr_rdata_o" type="array">
+      <obj_property name="ElementShortName">csr_rdata_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">csr_rdata_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/clic_irq_i" type="logic">
+      <obj_property name="ElementShortName">clic_irq_i</obj_property>
+      <obj_property name="ObjectShortName">clic_irq_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/mtime_irq_i" type="logic">
+      <obj_property name="ElementShortName">mtime_irq_i</obj_property>
+      <obj_property name="ObjectShortName">mtime_irq_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/mar_i" type="array">
+      <obj_property name="ElementShortName">mar_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mar_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ma_load_i" type="logic">
+      <obj_property name="ElementShortName">ma_load_i</obj_property>
+      <obj_property name="ObjectShortName">ma_load_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ma_store_i" type="logic">
+      <obj_property name="ElementShortName">ma_store_i</obj_property>
+      <obj_property name="ObjectShortName">ma_store_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/be_load_i" type="logic">
+      <obj_property name="ElementShortName">be_load_i</obj_property>
+      <obj_property name="ObjectShortName">be_load_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/be_store_i" type="logic">
+      <obj_property name="ElementShortName">be_store_i</obj_property>
+      <obj_property name="ObjectShortName">be_store_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/bus_exc_ack_o" type="logic">
+      <obj_property name="ElementShortName">bus_exc_ack_o</obj_property>
+      <obj_property name="ObjectShortName">bus_exc_ack_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ctrl" type="array">
+      <obj_property name="ElementShortName">ctrl[47:0]</obj_property>
+      <obj_property name="ObjectShortName">ctrl[47:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ctrl_o" type="array">
+      <obj_property name="ElementShortName">ctrl_o[47:0]</obj_property>
+      <obj_property name="ObjectShortName">ctrl_o[47:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/bus_fast_rd" type="logic">
+      <obj_property name="ElementShortName">bus_fast_rd</obj_property>
+      <obj_property name="ObjectShortName">bus_fast_rd</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/bus_fast_wr" type="logic">
+      <obj_property name="ElementShortName">bus_fast_wr</obj_property>
+      <obj_property name="ObjectShortName">bus_fast_wr</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ci_instr32" type="array">
+      <obj_property name="ElementShortName">ci_instr32[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ci_instr32[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ci_illegal" type="logic">
+      <obj_property name="ElementShortName">ci_illegal</obj_property>
+      <obj_property name="ObjectShortName">ci_illegal</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/fetch_pc_o" type="array">
+      <obj_property name="ElementShortName">fetch_pc_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">fetch_pc_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/curr_pc_o" type="array">
+      <obj_property name="ElementShortName">curr_pc_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">curr_pc_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/next_pc_o" type="array">
+      <obj_property name="ElementShortName">next_pc_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">next_pc_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/illegal_instruction" type="logic">
+      <obj_property name="ElementShortName">illegal_instruction</obj_property>
+      <obj_property name="ObjectShortName">illegal_instruction</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/illegal_register" type="logic">
+      <obj_property name="ElementShortName">illegal_register</obj_property>
+      <obj_property name="ObjectShortName">illegal_register</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/illegal_compressed" type="logic">
+      <obj_property name="ElementShortName">illegal_compressed</obj_property>
+      <obj_property name="ObjectShortName">illegal_compressed</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine" type="array">
+      <obj_property name="ElementShortName">execute_engine</obj_property>
+      <obj_property name="ObjectShortName">execute_engine</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.state" type="other">
+         <obj_property name="ElementShortName">.state</obj_property>
+         <obj_property name="ObjectShortName">.state</obj_property>
+         <obj_property name="CustomSignalColor">#FFD700</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.state_nxt" type="other">
+         <obj_property name="ElementShortName">.state_nxt</obj_property>
+         <obj_property name="ObjectShortName">.state_nxt</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.i_reg" type="array">
+         <obj_property name="ElementShortName">.i_reg[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.i_reg[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.i_reg_nxt" type="array">
+         <obj_property name="ElementShortName">.i_reg_nxt[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.i_reg_nxt[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.is_ci" type="logic">
+         <obj_property name="ElementShortName">.is_ci</obj_property>
+         <obj_property name="ObjectShortName">.is_ci</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.is_ci_nxt" type="logic">
+         <obj_property name="ElementShortName">.is_ci_nxt</obj_property>
+         <obj_property name="ObjectShortName">.is_ci_nxt</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.is_jump" type="logic">
+         <obj_property name="ElementShortName">.is_jump</obj_property>
+         <obj_property name="ObjectShortName">.is_jump</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.is_jump_nxt" type="logic">
+         <obj_property name="ElementShortName">.is_jump_nxt</obj_property>
+         <obj_property name="ObjectShortName">.is_jump_nxt</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.branch_taken" type="logic">
+         <obj_property name="ElementShortName">.branch_taken</obj_property>
+         <obj_property name="ObjectShortName">.branch_taken</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.pc" type="array">
+         <obj_property name="ElementShortName">.pc[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.pc[31:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.pc_nxt" type="array">
+         <obj_property name="ElementShortName">.pc_nxt[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.pc_nxt[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.next_pc" type="array">
+         <obj_property name="ElementShortName">.next_pc[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.next_pc[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.last_pc" type="array">
+         <obj_property name="ElementShortName">.last_pc[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.last_pc[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.pc_we" type="logic">
+         <obj_property name="ElementShortName">.pc_we</obj_property>
+         <obj_property name="ObjectShortName">.pc_we</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.state" type="other">
+         <obj_property name="ElementShortName">.state</obj_property>
+         <obj_property name="ObjectShortName">.state</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.state_nxt" type="other">
+         <obj_property name="ElementShortName">.state_nxt</obj_property>
+         <obj_property name="ObjectShortName">.state_nxt</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.i_reg" type="array">
+         <obj_property name="ElementShortName">.i_reg[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.i_reg[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.i_reg_nxt" type="array">
+         <obj_property name="ElementShortName">.i_reg_nxt[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.i_reg_nxt[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.is_ci" type="logic">
+         <obj_property name="ElementShortName">.is_ci</obj_property>
+         <obj_property name="ObjectShortName">.is_ci</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.is_ci_nxt" type="logic">
+         <obj_property name="ElementShortName">.is_ci_nxt</obj_property>
+         <obj_property name="ObjectShortName">.is_ci_nxt</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.is_jump" type="logic">
+         <obj_property name="ElementShortName">.is_jump</obj_property>
+         <obj_property name="ObjectShortName">.is_jump</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.is_jump_nxt" type="logic">
+         <obj_property name="ElementShortName">.is_jump_nxt</obj_property>
+         <obj_property name="ObjectShortName">.is_jump_nxt</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.branch_taken" type="logic">
+         <obj_property name="ElementShortName">.branch_taken</obj_property>
+         <obj_property name="ObjectShortName">.branch_taken</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.pc" type="array">
+         <obj_property name="ElementShortName">.pc[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.pc[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.pc_nxt" type="array">
+         <obj_property name="ElementShortName">.pc_nxt[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.pc_nxt[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.next_pc" type="array">
+         <obj_property name="ElementShortName">.next_pc[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.next_pc[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.last_pc" type="array">
+         <obj_property name="ElementShortName">.last_pc[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.last_pc[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.pc_we" type="logic">
+         <obj_property name="ElementShortName">.pc_we</obj_property>
+         <obj_property name="ObjectShortName">.pc_we</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider139">
+      <obj_property name="label">CPU: Control.TRAP</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/trap_ctrl" type="array">
+      <obj_property name="ElementShortName">trap_ctrl</obj_property>
+      <obj_property name="ObjectShortName">trap_ctrl</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider139">
+      <obj_property name="label">CPU: Control.CSR</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/csr" type="array">
+      <obj_property name="ElementShortName">csr</obj_property>
+      <obj_property name="ObjectShortName">csr</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider139">
+      <obj_property name="label">CPU: RegFile</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_regfile_inst/reg_file" type="array">
+      <obj_property name="ElementShortName">reg_file[31:0][31:0]</obj_property>
+      <obj_property name="ObjectShortName">reg_file[31:0][31:0]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider367">
+      <obj_property name="label">CPU: ALU</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/clk_i" type="logic">
+      <obj_property name="ElementShortName">clk_i</obj_property>
+      <obj_property name="ObjectShortName">clk_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/rstn_i" type="logic">
+      <obj_property name="ElementShortName">rstn_i</obj_property>
+      <obj_property name="ObjectShortName">rstn_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/ctrl_i" type="array">
+      <obj_property name="ElementShortName">ctrl_i[47:0]</obj_property>
+      <obj_property name="ObjectShortName">ctrl_i[47:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/rs1_i" type="array">
+      <obj_property name="ElementShortName">rs1_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rs1_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/rs2_i" type="array">
+      <obj_property name="ElementShortName">rs2_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rs2_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/pc2_i" type="array">
+      <obj_property name="ElementShortName">pc2_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">pc2_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/imm_i" type="array">
+      <obj_property name="ElementShortName">imm_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">imm_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/csr_i" type="array">
+      <obj_property name="ElementShortName">csr_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">csr_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cmp_o" type="array">
+      <obj_property name="ElementShortName">cmp_o[1:0]</obj_property>
+      <obj_property name="ObjectShortName">cmp_o[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/add_o" type="array">
+      <obj_property name="ElementShortName">add_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">add_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/res_o" type="array">
+      <obj_property name="ElementShortName">res_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">res_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cp0_data_i" type="array">
+      <obj_property name="ElementShortName">cp0_data_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">cp0_data_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cp0_valid_i" type="logic">
+      <obj_property name="ElementShortName">cp0_valid_i</obj_property>
+      <obj_property name="ObjectShortName">cp0_valid_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cp1_data_i" type="array">
+      <obj_property name="ElementShortName">cp1_data_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">cp1_data_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cp1_valid_i" type="logic">
+      <obj_property name="ElementShortName">cp1_valid_i</obj_property>
+      <obj_property name="ObjectShortName">cp1_valid_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/wait_o" type="logic">
+      <obj_property name="ElementShortName">wait_o</obj_property>
+      <obj_property name="ObjectShortName">wait_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/opa" type="array">
+      <obj_property name="ElementShortName">opa[31:0]</obj_property>
+      <obj_property name="ObjectShortName">opa[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/opb" type="array">
+      <obj_property name="ElementShortName">opb[31:0]</obj_property>
+      <obj_property name="ObjectShortName">opb[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/opc" type="array">
+      <obj_property name="ElementShortName">opc[31:0]</obj_property>
+      <obj_property name="ObjectShortName">opc[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/add_res" type="array">
+      <obj_property name="ElementShortName">add_res[31:0]</obj_property>
+      <obj_property name="ObjectShortName">add_res[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/alu_res" type="array">
+      <obj_property name="ElementShortName">alu_res[31:0]</obj_property>
+      <obj_property name="ObjectShortName">alu_res[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cmp_opx" type="array">
+      <obj_property name="ElementShortName">cmp_opx[32:0]</obj_property>
+      <obj_property name="ObjectShortName">cmp_opx[32:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cmp_opy" type="array">
+      <obj_property name="ElementShortName">cmp_opy[32:0]</obj_property>
+      <obj_property name="ObjectShortName">cmp_opy[32:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cmp_sub" type="array">
+      <obj_property name="ElementShortName">cmp_sub[32:0]</obj_property>
+      <obj_property name="ObjectShortName">cmp_sub[32:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/sub_res" type="array">
+      <obj_property name="ElementShortName">sub_res[31:0]</obj_property>
+      <obj_property name="ObjectShortName">sub_res[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cmp_equal" type="logic">
+      <obj_property name="ElementShortName">cmp_equal</obj_property>
+      <obj_property name="ObjectShortName">cmp_equal</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cmp_less" type="logic">
+      <obj_property name="ElementShortName">cmp_less</obj_property>
+      <obj_property name="ObjectShortName">cmp_less</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/shift_cmd" type="logic">
+      <obj_property name="ElementShortName">shift_cmd</obj_property>
+      <obj_property name="ObjectShortName">shift_cmd</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/shift_cmd_ff" type="logic">
+      <obj_property name="ElementShortName">shift_cmd_ff</obj_property>
+      <obj_property name="ObjectShortName">shift_cmd_ff</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/shift_start" type="logic">
+      <obj_property name="ElementShortName">shift_start</obj_property>
+      <obj_property name="ObjectShortName">shift_start</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/shift_run" type="logic">
+      <obj_property name="ElementShortName">shift_run</obj_property>
+      <obj_property name="ObjectShortName">shift_run</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/shift_cnt" type="array">
+      <obj_property name="ElementShortName">shift_cnt[4:0]</obj_property>
+      <obj_property name="ObjectShortName">shift_cnt[4:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/shift_sreg" type="array">
+      <obj_property name="ElementShortName">shift_sreg[31:0]</obj_property>
+      <obj_property name="ObjectShortName">shift_sreg[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cp_cmd_ff" type="logic">
+      <obj_property name="ElementShortName">cp_cmd_ff</obj_property>
+      <obj_property name="ObjectShortName">cp_cmd_ff</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cp_run" type="logic">
+      <obj_property name="ElementShortName">cp_run</obj_property>
+      <obj_property name="ObjectShortName">cp_run</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cp_start" type="logic">
+      <obj_property name="ElementShortName">cp_start</obj_property>
+      <obj_property name="ObjectShortName">cp_start</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cp_busy" type="logic">
+      <obj_property name="ElementShortName">cp_busy</obj_property>
+      <obj_property name="ObjectShortName">cp_busy</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cp_rb_ff0" type="logic">
+      <obj_property name="ElementShortName">cp_rb_ff0</obj_property>
+      <obj_property name="ObjectShortName">cp_rb_ff0</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/cp_rb_ff1" type="logic">
+      <obj_property name="ElementShortName">cp_rb_ff1</obj_property>
+      <obj_property name="ObjectShortName">cp_rb_ff1</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/CPU_EXTENSION_RISCV_C" type="other">
+      <obj_property name="ElementShortName">CPU_EXTENSION_RISCV_C</obj_property>
+      <obj_property name="ObjectShortName">CPU_EXTENSION_RISCV_C</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_alu_inst/CPU_EXTENSION_RISCV_M" type="other">
+      <obj_property name="ElementShortName">CPU_EXTENSION_RISCV_M</obj_property>
+      <obj_property name="ObjectShortName">CPU_EXTENSION_RISCV_M</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider367">
+      <obj_property name="label">CPU: BUS_UNIT</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/rstn_i" type="logic">
+      <obj_property name="ElementShortName">rstn_i</obj_property>
+      <obj_property name="ObjectShortName">rstn_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/clk_i" type="logic">
+      <obj_property name="ElementShortName">clk_i</obj_property>
+      <obj_property name="ObjectShortName">clk_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/ctrl_i" type="array">
+      <obj_property name="ElementShortName">ctrl_i[47:0]</obj_property>
+      <obj_property name="ObjectShortName">ctrl_i[47:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/wdata_i" type="array">
+      <obj_property name="ElementShortName">wdata_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">wdata_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/pc_i" type="array">
+      <obj_property name="ElementShortName">pc_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">pc_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/alu_i" type="array">
+      <obj_property name="ElementShortName">alu_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">alu_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/instr_o" type="array">
+      <obj_property name="ElementShortName">instr_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">instr_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/rdata_o" type="array">
+      <obj_property name="ElementShortName">rdata_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rdata_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/mar_o" type="array">
+      <obj_property name="ElementShortName">mar_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mar_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/ma_instr_o" type="logic">
+      <obj_property name="ElementShortName">ma_instr_o</obj_property>
+      <obj_property name="ObjectShortName">ma_instr_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/ma_load_o" type="logic">
+      <obj_property name="ElementShortName">ma_load_o</obj_property>
+      <obj_property name="ObjectShortName">ma_load_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/ma_store_o" type="logic">
+      <obj_property name="ElementShortName">ma_store_o</obj_property>
+      <obj_property name="ObjectShortName">ma_store_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/be_instr_o" type="logic">
+      <obj_property name="ElementShortName">be_instr_o</obj_property>
+      <obj_property name="ObjectShortName">be_instr_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/be_load_o" type="logic">
+      <obj_property name="ElementShortName">be_load_o</obj_property>
+      <obj_property name="ObjectShortName">be_load_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/be_store_o" type="logic">
+      <obj_property name="ElementShortName">be_store_o</obj_property>
+      <obj_property name="ObjectShortName">be_store_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_wait_o" type="logic">
+      <obj_property name="ElementShortName">bus_wait_o</obj_property>
+      <obj_property name="ObjectShortName">bus_wait_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/exc_ack_i" type="logic">
+      <obj_property name="ElementShortName">exc_ack_i</obj_property>
+      <obj_property name="ObjectShortName">exc_ack_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_addr_o" type="array">
+      <obj_property name="ElementShortName">bus_addr_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bus_addr_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_rdata_i" type="array">
+      <obj_property name="ElementShortName">bus_rdata_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bus_rdata_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_wdata_o" type="array">
+      <obj_property name="ElementShortName">bus_wdata_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bus_wdata_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_ben_o" type="array">
+      <obj_property name="ElementShortName">bus_ben_o[3:0]</obj_property>
+      <obj_property name="ObjectShortName">bus_ben_o[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_we_o" type="logic">
+      <obj_property name="ElementShortName">bus_we_o</obj_property>
+      <obj_property name="ObjectShortName">bus_we_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_re_o" type="logic">
+      <obj_property name="ElementShortName">bus_re_o</obj_property>
+      <obj_property name="ObjectShortName">bus_re_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_ack_i" type="logic">
+      <obj_property name="ElementShortName">bus_ack_i</obj_property>
+      <obj_property name="ObjectShortName">bus_ack_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_err_i" type="logic">
+      <obj_property name="ElementShortName">bus_err_i</obj_property>
+      <obj_property name="ObjectShortName">bus_err_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/mar" type="array">
+      <obj_property name="ElementShortName">mar[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mar[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/mdo" type="array">
+      <obj_property name="ElementShortName">mdo[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mdo[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/mdi" type="array">
+      <obj_property name="ElementShortName">mdi[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mdi[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_busy" type="logic">
+      <obj_property name="ElementShortName">bus_busy</obj_property>
+      <obj_property name="ObjectShortName">bus_busy</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_if_req" type="logic">
+      <obj_property name="ElementShortName">bus_if_req</obj_property>
+      <obj_property name="ObjectShortName">bus_if_req</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_rd_req" type="logic">
+      <obj_property name="ElementShortName">bus_rd_req</obj_property>
+      <obj_property name="ObjectShortName">bus_rd_req</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_wr_req" type="logic">
+      <obj_property name="ElementShortName">bus_wr_req</obj_property>
+      <obj_property name="ObjectShortName">bus_wr_req</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/access_err" type="logic">
+      <obj_property name="ElementShortName">access_err</obj_property>
+      <obj_property name="ObjectShortName">access_err</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/align_err" type="logic">
+      <obj_property name="ElementShortName">align_err</obj_property>
+      <obj_property name="ObjectShortName">align_err</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/bus_timeout" type="array">
+      <obj_property name="ElementShortName">bus_timeout[3:0]</obj_property>
+      <obj_property name="ObjectShortName">bus_timeout[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/misaligned_data" type="logic">
+      <obj_property name="ElementShortName">misaligned_data</obj_property>
+      <obj_property name="ObjectShortName">misaligned_data</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/misaligned_instr" type="logic">
+      <obj_property name="ElementShortName">misaligned_instr</obj_property>
+      <obj_property name="ObjectShortName">misaligned_instr</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/CPU_EXTENSION_RISCV_C" type="other">
+      <obj_property name="ElementShortName">CPU_EXTENSION_RISCV_C</obj_property>
+      <obj_property name="ObjectShortName">CPU_EXTENSION_RISCV_C</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/MEM_EXT_TIMEOUT" type="other">
+      <obj_property name="ElementShortName">MEM_EXT_TIMEOUT</obj_property>
+      <obj_property name="ObjectShortName">MEM_EXT_TIMEOUT</obj_property>
+   </wvobject>
+</wave_config>
