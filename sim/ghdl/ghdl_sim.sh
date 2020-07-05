@@ -3,6 +3,9 @@
 # Abort if any command returns != 0
 set -e
 
+# Simulation config
+SIM_CONFIG=--stop-time=5ms
+
 # Project home folder
 homedir="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 homedir=$homedir/../..
@@ -10,6 +13,9 @@ homedir=$homedir/../..
 # The directories of the hw source files
 srcdir_core=$homedir/rtl/core
 srcdir_sim=$homedir/sim
+
+# Simulation time define by user?
+if [ -z ${1} ]; then echo "Using default simulation config: $SIM_CONFIG"; else SIM_CONFIG=$1; echo "Using user simulation config: $SIM_CONFIG"; fi
 
 # Show GHDL version
 ghdl -v
@@ -64,4 +70,4 @@ chmod 777 neorv32.devnull.data.out
 
 # Run simulation
 ghdl -e --work=neorv32 neorv32_tb
-ghdl -r --work=neorv32 neorv32_tb --stop-time=5ms --ieee-asserts=disable --assert-level=error
+ghdl -r --work=neorv32 neorv32_tb --ieee-asserts=disable --assert-level=error
