@@ -64,7 +64,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int c
 
   register uint32_t csr_data;
 
-  asm volatile ("csrrw %[result], %[input_i], zero" : [result] "=r" (csr_data) : [input_i] "i" (csr_id));
+  asm volatile ("csrr %[result], %[input_i]" : [result] "=r" (csr_data) : [input_i] "i" (csr_id));
   
   return csr_data;
 }
@@ -80,7 +80,7 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_write(const int csr_
 
   register uint32_t csr_data = data;
 
-  asm volatile ("csrrw zero, %[input_i], %[input_j]" :  : [input_i] "i" (csr_id), [input_j] "r" (csr_data));
+  asm volatile ("csrw %[input_i], %[input_j]" :  : [input_i] "i" (csr_id), [input_j] "r" (csr_data));
 }
 
 #endif // neorv32_cpu_h
