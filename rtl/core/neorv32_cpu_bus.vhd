@@ -43,8 +43,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_bus is
   generic (
-    CPU_EXTENSION_RISCV_C : boolean := false; -- implement compressed extension?
-    MEM_EXT_TIMEOUT       : natural := 15     -- cycles after which a valid bus access will timeout
+    MEM_EXT_TIMEOUT : natural := 15 -- cycles after which a valid bus access will timeout
   );
   port (
     -- global control --
@@ -67,6 +66,7 @@ entity neorv32_cpu_bus is
     be_load_o   : out std_ulogic; -- bus error on load data access
     be_store_o  : out std_ulogic; -- bus error on store data access
     bus_wait_o  : out std_ulogic; -- wait for bus operation to finish
+    bus_busy_o  : out std_ulogic; -- bus unit is busy
     exc_ack_i   : in  std_ulogic; -- exception controller ACK
     -- bus system --
     bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
@@ -113,14 +113,14 @@ begin
   end process mem_adr_reg;
 
   -- address output --
-  bus_addr_o <= pc_i when (ctrl_i(ctrl_bus_if_c) = '1') else mar; -- is instruction fetch?
+  bus_addr_o <= pc_i when ((bus_if_req or ctrl_i(ctrl_bus_if_c)) = '1') else mar; -- is instruction fetch?
   mar_o      <= mar;
 
   -- write request output --
   bus_we_o <= ctrl_i(ctrl_bus_wr_c) and (not misaligned_data);
 
   -- read request output (also used for instruction fetch) --
-  bus_re_o <= (ctrl_i(ctrl_bus_rd_c) and (not misaligned_data)) or (ctrl_i(ctrl_bus_if_c) and (not misaligned_instr));
+  bus_re_o <= (ctrl_i(ctrl_bus_rd_c) and (not misaligned_data)) or ((bus_if_req or ctrl_i(ctrl_bus_if_c)) and (not misaligned_instr));
 
 
   -- Write Data -----------------------------------------------------------------------------
@@ -263,6 +263,7 @@ begin
   ma_store_o <= bus_wr_req and align_err;
 
   -- wait for bus --
+  bus_busy_o <= bus_busy;
   bus_wait_o <= bus_busy and (not bus_ack_i); -- FIXME: 'async' ack
 
 
@@ -290,11 +291,9 @@ begin
   begin
     -- check instruction access --
     misaligned_instr <= '0'; -- default
-    if (CPU_EXTENSION_RISCV_C = true) then -- 16-bit instruction access only
-      if (pc_i(0) /= '0') then
-        misaligned_instr <= '1';
-      end if; 
-    else -- 32-bit instruction access only
+    if (ctrl_i(ctrl_sys_c_ext_en_c) = '1') then -- 16-bit and 32-bit instruction accesses
+      misaligned_instr <= '0';
+    else -- 32-bit instruction accesses only
       if (pc_i(1 downto 0) /= "00") then
         misaligned_instr <= '1';
       end if; 

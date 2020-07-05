@@ -44,7 +44,6 @@ entity neorv32_cpu_decompressor is
     -- instruction input --
     ci_instr16_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction input
     -- instruction output --
-    ci_valid_o   : out std_ulogic; -- is a compressed instruction
     ci_illegal_o : out std_ulogic; -- is an illegal compressed instruction
     ci_instr32_o : out std_ulogic_vector(31 downto 0)  -- 32-bit decompressed instruction
   );
@@ -147,7 +146,7 @@ begin
             ci_instr32_o(24)                                           <= ci_instr16_i(11);
             ci_instr32_o(25)                                           <= ci_instr16_i(12);
             ci_instr32_o(26)                                           <= ci_instr16_i(5);
-            ci_instr32_o(31 downto 26)                                 <= (others => '0');
+            ci_instr32_o(31 downto 27)                                 <= (others => '0');
             ci_instr32_o(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_lw_c;
             ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "01" & ci_instr16_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c); -- x8 - x15
             ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c)         <= "01" & ci_instr16_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c);   -- x8 - x15
@@ -431,9 +430,6 @@ begin
 
     end case;
   end process decompressor;
-
-  -- is compressed instruction at all? --
-  ci_valid_o <= '0' when (ci_instr16_i(ci_opcode_msb_c downto ci_opcode_lsb_c) = "11") else '1';
 
 
 end neorv32_cpu_decompressor_rtl;

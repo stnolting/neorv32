@@ -42,10 +42,6 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_alu is
-  generic (
-    CPU_EXTENSION_RISCV_C : boolean := false; -- implement compressed extension?
-    CPU_EXTENSION_RISCV_M : boolean := false  -- implement mul/div extension?
-  );
   port (
     -- global control --
     clk_i       : in  std_ulogic; -- global clock, rising edge
@@ -54,7 +50,6 @@ entity neorv32_cpu_alu is
     -- data input --
     rs1_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
     rs2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
-    pc_i        : in  std_ulogic_vector(data_width_c-1 downto 0); -- current PC
     pc2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- delayed PC
     imm_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
     csr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
@@ -75,7 +70,7 @@ end neorv32_cpu_alu;
 architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
 
   -- operands --
-  signal opa, opb, opc, pc_inc : std_ulogic_vector(data_width_c-1 downto 0);
+  signal opa, opb, opc : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- results --
   signal add_res : std_ulogic_vector(data_width_c-1 downto 0);
@@ -109,22 +104,28 @@ begin
 
   -- Operand Mux ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  input_op_mux: process(ctrl_i, csr_i, pc2_i, pc_i, rs1_i, rs2_i, imm_i, pc_inc)
+  input_op_mux: process(ctrl_i, csr_i, pc2_i, rs1_i, rs2_i, imm_i)
   begin
     -- opa (first ALU input operand) --
-    case ctrl_i(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) is
-      when "00"   => opa <= rs1_i;
-      when "01"   => opa <= pc2_i;
-      when "10"   => opa <= csr_i;
-      when others => opa <= pc_i;
-    end case;
+    if (ctrl_i(ctrl_alu_opa_mux_msb_c) = '0') then
+      if (ctrl_i(ctrl_alu_opa_mux_lsb_c) = '0') then
+        opa <= rs1_i;
+      else
+        opa <= pc2_i;
+      end if;
+    else
+      opa <= csr_i;
+    end if;
     -- opb (second ALU input operand) --
-    case ctrl_i(ctrl_alu_opb_mux_msb_c downto ctrl_alu_opb_mux_lsb_c) is
-      when "00"   => opb <= rs2_i;
-      when "01"   => opb <= imm_i;
-      when "10"   => opb <= rs1_i;
-      when others => opb <= pc_inc;
-    end case;
+    if (ctrl_i(ctrl_alu_opb_mux_msb_c) = '0') then
+      if (ctrl_i(ctrl_alu_opb_mux_lsb_c) = '0') then
+        opb <= rs2_i;
+      else
+        opb <= imm_i;
+      end if;
+    else
+      opb <= rs1_i;
+    end if;
     -- opc (second operand for comparison (and SUB)) --
     if (ctrl_i(ctrl_alu_opc_mux_c) = '0') then
       opc <= imm_i;
@@ -132,9 +133,6 @@ begin
       opc <= rs2_i;
     end if;
   end process input_op_mux;
-
-  -- PC increment --
-  pc_inc <= x"00000002" when (CPU_EXTENSION_RISCV_C = true) else x"00000004";
 
 
   -- Comparator Unit ------------------------------------------------------------------------
@@ -202,7 +200,7 @@ begin
       cp_rb_ff0 <= '0';
       cp_rb_ff1 <= '0';
     elsif rising_edge(clk_i) then
-      if (CPU_EXTENSION_RISCV_M = true) then
+      if (ctrl_i(ctrl_sys_m_ext_en_c) = '1') then
         cp_cmd_ff <= ctrl_i(ctrl_cp_use_c);
         cp_rb_ff0 <= '0';
         cp_rb_ff1 <= cp_rb_ff0;

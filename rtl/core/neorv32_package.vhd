@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - FIXED!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"00000206"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01000000"; -- no touchy!
 
   -- Internal Functions ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -161,9 +161,9 @@ package neorv32_package is
   constant ctrl_alu_cmd1_c        : natural := 21; -- ALU command bit 1
   constant ctrl_alu_cmd2_c        : natural := 22; -- ALU command bit 2
   constant ctrl_alu_opa_mux_lsb_c : natural := 23; -- operand A select lsb (00=rs1, 01=PC)
-  constant ctrl_alu_opa_mux_msb_c : natural := 24; -- operand A select msb (10=CSR, 11=CSR)
-  constant ctrl_alu_opb_mux_lsb_c : natural := 25; -- operand B select lsb (00=rs2, 01=PC)
-  constant ctrl_alu_opb_mux_msb_c : natural := 26; -- operand B select msb (10=rs1, 11=PC_increment(2/4))
+  constant ctrl_alu_opa_mux_msb_c : natural := 24; -- operand A select msb (10=CSR, 11=?)
+  constant ctrl_alu_opb_mux_lsb_c : natural := 25; -- operand B select lsb (00=rs2, 01=IMM)
+  constant ctrl_alu_opb_mux_msb_c : natural := 26; -- operand B select msb (10=rs1, 11=?)
   constant ctrl_alu_opc_mux_c     : natural := 27; -- operand C select (0=IMM, 1=rs2)
   constant ctrl_alu_unsigned_c    : natural := 28; -- is unsigned ALU operation
   constant ctrl_alu_shift_dir_c   : natural := 29; -- shift direction (0=left, 1=right)
@@ -178,24 +178,23 @@ package neorv32_package is
   constant ctrl_bus_mdo_we_c      : natural := 37; -- memory data out register write enable
   constant ctrl_bus_mdi_we_c      : natural := 38; -- memory data in register write enable
   constant ctrl_bus_unsigned_c    : natural := 39; -- is unsigned load
-  -- csr/system --
-  constant ctrl_csr_pc_we_c       : natural := 40; -- PC write enable
-  constant ctrl_csr_re_c          : natural := 41; -- valid CSR read
-  constant ctrl_csr_we_c          : natural := 42; -- valid CSR write
   -- co-processor --
-  constant ctrl_cp_use_c          : natural := 43; -- is cp operation
-  constant ctrl_cp_id_lsb_c       : natural := 44; -- cp select lsb
-  constant ctrl_cp_id_msb_c       : natural := 45; -- cp select msb
-  constant ctrl_cp_cmd0_c         : natural := 46; -- cp command bit 0
-  constant ctrl_cp_cmd1_c         : natural := 47; -- cp command bit 1
-  constant ctrl_cp_cmd2_c         : natural := 48; -- cp command bit 2
+  constant ctrl_cp_use_c          : natural := 40; -- is cp operation
+  constant ctrl_cp_id_lsb_c       : natural := 41; -- cp select lsb
+  constant ctrl_cp_id_msb_c       : natural := 42; -- cp select msb
+  constant ctrl_cp_cmd0_c         : natural := 43; -- cp command bit 0
+  constant ctrl_cp_cmd1_c         : natural := 44; -- cp command bit 1
+  constant ctrl_cp_cmd2_c         : natural := 45; -- cp command bit 2
+  -- system --
+  constant ctrl_sys_c_ext_en_c    : natural := 46; -- CPU C extension enabled
+  constant ctrl_sys_m_ext_en_c    : natural := 47; -- CPU M extension enabled
   -- control bus size --
-  constant ctrl_width_c           : natural := 49; -- control bus size
+  constant ctrl_width_c           : natural := 48; -- control bus size
 
   -- ALU Comparator Bus ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant alu_cmp_equal_c : natural := 0;
-  constant alu_cmp_less_c  : natural := 1; -- for signed and unsigned
+  constant alu_cmp_less_c  : natural := 1; -- for signed and unsigned comparisons
 
   -- RISC-V Opcode Layout -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -280,14 +279,14 @@ package neorv32_package is
   -- cp ids --
   constant cp_sel_muldiv_c : std_ulogic_vector(1 downto 0) := "00"; -- MULDIV CP
   -- muldiv cp --
-  constant cp_op_mul_c    : std_ulogic_vector(2 downto 0) := "000"; -- mul
-  constant cp_op_mulh_c   : std_ulogic_vector(2 downto 0) := "001"; -- mulh
-  constant cp_op_mulhsu_c : std_ulogic_vector(2 downto 0) := "010"; -- mulhsu
-  constant cp_op_mulhu_c  : std_ulogic_vector(2 downto 0) := "011"; -- mulhu
-  constant cp_op_div_c    : std_ulogic_vector(2 downto 0) := "100"; -- div
-  constant cp_op_divu_c   : std_ulogic_vector(2 downto 0) := "101"; -- divu
-  constant cp_op_rem_c    : std_ulogic_vector(2 downto 0) := "110"; -- rem
-  constant cp_op_remu_c   : std_ulogic_vector(2 downto 0) := "111"; -- remu
+  constant cp_op_mul_c     : std_ulogic_vector(2 downto 0) := "000"; -- mul
+  constant cp_op_mulh_c    : std_ulogic_vector(2 downto 0) := "001"; -- mulh
+  constant cp_op_mulhsu_c  : std_ulogic_vector(2 downto 0) := "010"; -- mulhsu
+  constant cp_op_mulhu_c   : std_ulogic_vector(2 downto 0) := "011"; -- mulhu
+  constant cp_op_div_c     : std_ulogic_vector(2 downto 0) := "100"; -- div
+  constant cp_op_divu_c    : std_ulogic_vector(2 downto 0) := "101"; -- divu
+  constant cp_op_rem_c     : std_ulogic_vector(2 downto 0) := "110"; -- rem
+  constant cp_op_remu_c    : std_ulogic_vector(2 downto 0) := "111"; -- remu
 
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -338,6 +337,7 @@ package neorv32_package is
       CLOCK_FREQUENCY           : natural := 0; -- clock frequency of clk_i in Hz
       HART_ID                   : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
       BOOTLOADER_USE            : boolean := true;   -- implement processor-internal bootloader?
+      CSR_COUNTERS_USE          : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_C     : boolean := false;  -- implement compressed extension?
       CPU_EXTENSION_RISCV_E     : boolean := false;  -- implement embedded RF extension?
@@ -391,9 +391,9 @@ package neorv32_package is
       uart_txd_o : out std_ulogic; -- UART send data
       uart_rxd_i : in  std_ulogic := '0'; -- UART receive data
       -- SPI --
-      spi_sclk_o : out std_ulogic; -- serial clock line
-      spi_mosi_o : out std_ulogic; -- serial data line out
-      spi_miso_i : in  std_ulogic := '0'; -- serial data line in
+      spi_sck_o  : out std_ulogic; -- SPI serial clock
+      spi_sdo_o  : out std_ulogic; -- controller data out, peripheral data in
+      spi_sdi_i  : in  std_ulogic; -- controller data in, peripheral data out
       spi_csn_o  : out std_ulogic_vector(07 downto 0); -- SPI CS
       -- TWI --
       twi_sda_io : inout std_logic := 'H'; -- twi serial data line
@@ -414,6 +414,7 @@ package neorv32_package is
       CLOCK_FREQUENCY           : natural := 0; -- clock frequency of clk_i in Hz
       HART_ID                   : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
       BOOTLOADER_USE            : boolean := true;   -- implement processor-internal bootloader?
+      CSR_COUNTERS_USE          : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_C     : boolean := false;  -- implement compressed extension?
       CPU_EXTENSION_RISCV_E     : boolean := false;  -- implement embedded RF extension?
@@ -472,6 +473,7 @@ package neorv32_package is
       CLOCK_FREQUENCY           : natural := 0; -- clock frequency of clk_i in Hz
       HART_ID                   : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
       BOOTLOADER_USE            : boolean := true;   -- implement processor-internal bootloader?
+      CSR_COUNTERS_USE          : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_C     : boolean := false;  -- implement compressed extension?
       CPU_EXTENSION_RISCV_E     : boolean := false;  -- implement embedded RF extension?
@@ -516,8 +518,9 @@ package neorv32_package is
       alu_add_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU.add result
       -- data output --
       imm_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- immediate
-      pc_o          : out std_ulogic_vector(data_width_c-1 downto 0); -- current PC
-      alu_pc_o      : out std_ulogic_vector(data_width_c-1 downto 0); -- delayed PC for ALU
+      fetch_pc_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
+      curr_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- current PC (corresponding to current instruction)
+      next_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- next PC (corresponding to current instruction)
       -- csr interface --
       csr_wdata_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR write data
       csr_rdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
@@ -532,7 +535,8 @@ package neorv32_package is
       be_instr_i    : in  std_ulogic; -- bus error on instruction access
       be_load_i     : in  std_ulogic; -- bus error on load data access
       be_store_i    : in  std_ulogic; -- bus error on store data access
-      bus_exc_ack_o : out std_ulogic  -- bus exception error acknowledge
+      bus_exc_ack_o : out std_ulogic; -- bus exception error acknowledge
+      bus_busy_i    : in  std_ulogic  -- bus unit is busy
     );
   end component;
 
@@ -560,10 +564,6 @@ package neorv32_package is
   -- Component: CPU ALU ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_alu
-    generic (
-      CPU_EXTENSION_RISCV_C : boolean := false; -- implement compressed extension?
-      CPU_EXTENSION_RISCV_M : boolean := false  -- implement mul/div extension?
-    );
     port (
       -- global control --
       clk_i       : in  std_ulogic; -- global clock, rising edge
@@ -572,7 +572,6 @@ package neorv32_package is
       -- data input --
       rs1_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
       rs2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
-      pc_i        : in  std_ulogic_vector(data_width_c-1 downto 0); -- current PC
       pc2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- delayed PC
       imm_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
       csr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
@@ -611,8 +610,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_bus
     generic (
-      CPU_EXTENSION_RISCV_C : boolean := false; -- implement compressed extension?
-      MEM_EXT_TIMEOUT       : natural := 15     -- cycles after which a valid bus access will timeout
+      MEM_EXT_TIMEOUT : natural := 15 -- cycles after which a valid bus access will timeout
     );
     port (
       -- global control --
@@ -635,6 +633,7 @@ package neorv32_package is
       be_load_o   : out std_ulogic; -- bus error on load data access
       be_store_o  : out std_ulogic; -- bus error on store data 
       bus_wait_o  : out std_ulogic; -- wait for bus operation to finish
+      bus_busy_o  : out std_ulogic; -- bus unit is busy
       exc_ack_i   : in  std_ulogic; -- exception controller ACK
       -- bus system --
       bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
@@ -655,7 +654,6 @@ package neorv32_package is
       -- instruction input --
       ci_instr16_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction input
       -- instruction output --
-      ci_valid_o   : out std_ulogic; -- is a compressed instruction
       ci_illegal_o : out std_ulogic; -- is an illegal compressed instruction
       ci_instr32_o : out std_ulogic_vector(31 downto 0)  -- 32-bit decompressed instruction
     );
@@ -839,9 +837,9 @@ package neorv32_package is
       clkgen_en_o : out std_ulogic; -- enable clock generator
       clkgen_i    : in  std_ulogic_vector(07 downto 0);
       -- com lines --
-      spi_sclk_o  : out std_ulogic; -- SPI serial clock
-      spi_mosi_o  : out std_ulogic; -- SPI master out, slave in
-      spi_miso_i  : in  std_ulogic; -- SPI master in, slave out
+      spi_sck_o   : out std_ulogic; -- SPI serial clock
+      spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
+      spi_sdi_i   : in  std_ulogic; -- controller data in, peripheral data out
       spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
       -- interrupt --
       spi_irq_o   : out std_ulogic -- transmission done interrupt
@@ -1069,7 +1067,7 @@ package body neorv32_package is
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character is
     variable output_v : character;
   begin
-    case (input) is
+    case input is
       when x"0" => output_v := '0';
       when x"1" => output_v := '1';
       when x"2" => output_v := '2';

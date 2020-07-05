@@ -53,6 +53,7 @@ entity neorv32_cpu is
     CLOCK_FREQUENCY           : natural := 0; -- clock frequency of clk_i in Hz
     HART_ID                   : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
     BOOTLOADER_USE            : boolean := true;   -- implement processor-internal bootloader?
+    CSR_COUNTERS_USE          : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C     : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E     : boolean := false;  -- implement embedded RF extension?
@@ -109,8 +110,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal ctrl        : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
   signal alu_cmp     : std_ulogic_vector(1 downto 0); -- alu comparator result
   signal imm         : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
-  signal pc          : std_ulogic_vector(data_width_c-1 downto 0); -- current program counter
-  signal pc_delayed  : std_ulogic_vector(data_width_c-1 downto 0); -- delayed program counter
   signal instr       : std_ulogic_vector(data_width_c-1 downto 0); -- new instruction
   signal rs1, rs2    : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
   signal alu_res     : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
@@ -127,6 +126,10 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal be_load     : std_ulogic; -- bus error on load data access
   signal be_store    : std_ulogic; -- bus error on store data access
   signal bus_exc_ack : std_ulogic; -- bus exception error acknowledge
+  signal bus_busy    : std_ulogic; -- bus unit is busy
+  signal fetch_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
+  signal curr_pc     : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
+  signal next_pc     : std_ulogic_vector(data_width_c-1 downto 0); -- next pc (for current executed instruction)
 
   -- co-processor interface --
   signal cp0_data,  cp1_data  : std_ulogic_vector(data_width_c-1 downto 0);
@@ -139,9 +142,10 @@ begin
   neorv32_cpu_control_inst: neorv32_cpu_control
   generic map (
     -- General --
-    CLOCK_FREQUENCY           => CLOCK_FREQUENCY, -- clock frequency of clk_i in Hz
-    HART_ID                   => HART_ID,         -- custom hardware thread ID
-    BOOTLOADER_USE            => BOOTLOADER_USE,  -- implement processor-internal bootloader?
+    CLOCK_FREQUENCY           => CLOCK_FREQUENCY,  -- clock frequency of clk_i in Hz
+    HART_ID                   => HART_ID,          -- custom hardware thread ID
+    BOOTLOADER_USE            => BOOTLOADER_USE,   -- implement processor-internal bootloader?
+    CSR_COUNTERS_USE          => CSR_COUNTERS_USE, -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C     => CPU_EXTENSION_RISCV_C,     -- implement compressed extension?
     CPU_EXTENSION_RISCV_E     => CPU_EXTENSION_RISCV_E,     -- implement embedded RF extension?
@@ -186,8 +190,9 @@ begin
     alu_add_i     => alu_add,     -- ALU.add result
     -- data output --
     imm_o         => imm,         -- immediate
-    pc_o          => pc,          -- current PC
-    alu_pc_o      => pc_delayed,  -- delayed PC for ALU
+    fetch_pc_o    => fetch_pc,    -- PC for instruction fetch
+    curr_pc_o     => curr_pc,     -- current PC (corresponding to current instruction)
+    next_pc_o     => next_pc,     -- next PC (corresponding to current instruction)
     -- csr interface --
     csr_wdata_i   => alu_res,     -- CSR write data
     csr_rdata_o   => csr_rdata,   -- CSR read data
@@ -202,7 +207,8 @@ begin
     be_instr_i    => be_instr,    -- bus error on instruction access
     be_load_i     => be_load,     -- bus error on load data access
     be_store_i    => be_store,    -- bus error on store data access
-    bus_exc_ack_o => bus_exc_ack  -- bus exception error acknowledge
+    bus_exc_ack_o => bus_exc_ack, -- bus exception error acknowledge
+    bus_busy_i    => bus_busy     -- bus unit is busy
   );
 
 
@@ -220,7 +226,7 @@ begin
     mem_i  => rdata,              -- memory read data
     alu_i  => alu_res,            -- ALU result
     csr_i  => csr_rdata,          -- CSR read data
-    pc_i   => pc,                 -- current pc
+    pc_i   => next_pc,            -- next pc
     -- data output --
     rs1_o  => rs1,                -- operand 1
     rs2_o  => rs2                 -- operand 2
@@ -230,10 +236,6 @@ begin
   -- ALU ------------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_inst: neorv32_cpu_alu
-  generic map (
-    CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
-    CPU_EXTENSION_RISCV_M => CPU_EXTENSION_RISCV_M  -- implement mul/div extension?
-  )
   port map (
     -- global control --
     clk_i       => clk_i,         -- global clock, rising edge
@@ -242,8 +244,7 @@ begin
     -- data input --
     rs1_i       => rs1,           -- rf source 1
     rs2_i       => rs2,           -- rf source 2
-    pc_i        => pc,            -- current PC
-    pc2_i       => pc_delayed,    -- delayed PC
+    pc2_i       => curr_pc,       -- delayed PC
     imm_i       => imm,           -- immediate
     csr_i       => csr_rdata,     -- csr read data
     -- data output --
@@ -296,8 +297,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_bus_inst: neorv32_cpu_bus
   generic map (
-    CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
-    MEM_EXT_TIMEOUT       => MEM_EXT_TIMEOUT        -- cycles after which a valid bus access will timeout
+    MEM_EXT_TIMEOUT => MEM_EXT_TIMEOUT -- cycles after which a valid bus access will timeout
   )
   port map (
     -- global control --
@@ -306,7 +306,7 @@ begin
     ctrl_i      => ctrl,          -- main control bus
     -- data input --
     wdata_i     => rs2,           -- write data
-    pc_i        => pc,            -- current PC
+    pc_i        => fetch_pc,      -- current PC for instruction fetch
     alu_i       => alu_res,       -- ALU result
     -- data output --
     instr_o     => instr,         -- instruction
@@ -320,6 +320,7 @@ begin
     be_load_o   => be_load,       -- bus error on load data access
     be_store_o  => be_store,      -- bus error on store data access
     bus_wait_o  => bus_wait,      -- wait for bus operation to finish
+    bus_busy_o  => bus_busy,      -- bus unit is busy
     exc_ack_i   => bus_exc_ack,   -- exception controller ACK
     -- bus system --
     bus_addr_o  => bus_addr_o,    -- bus access address
