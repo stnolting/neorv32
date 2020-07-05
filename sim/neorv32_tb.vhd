@@ -126,7 +126,7 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY           => f_clock_nat_c, -- clock frequency of clk_i in Hz
-    HART_ID                   => x"ABCD1234",   -- custom hardware thread ID
+    HART_ID                   => x"00000000",   -- custom hardware thread ID
     BOOTLOADER_USE            => false,         -- implement processor-internal bootloader?
     CSR_COUNTERS_USE          => true,          -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     -- RISC-V CPU Extensions --
@@ -182,9 +182,9 @@ begin
     uart_txd_o => uart_txd,        -- UART send data
     uart_rxd_i => uart_txd,        -- UART receive data
     -- SPI --
-    spi_sclk_o => open,            -- serial clock line
-    spi_mosi_o => spi_data,        -- serial data line out
-    spi_miso_i => spi_data,        -- serial data line in
+    spi_sck_o  => open,            -- SPI serial clock
+    spi_sdo_o  => spi_data,        -- controller data out, peripheral data in
+    spi_sdi_i  => spi_data,        -- controller data in, peripheral data out
     spi_csn_o  => open,            -- SPI CS
     -- TWI --
     twi_sda_io => twi_sda,         -- twi serial data line

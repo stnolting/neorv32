@@ -126,9 +126,9 @@ begin
     uart_txd_o => uart_txd_o,      -- UART send data
     uart_rxd_i => uart_rxd_i,      -- UART receive data
     -- SPI --
-    spi_sclk_o => open,            -- serial clock line
-    spi_mosi_o => open,            -- serial data line out
-    spi_miso_i => '0',             -- serial data line in
+    spi_sck_o  => open,            -- SPI serial clock
+    spi_sdo_o  => open,            -- controller data out, peripheral data in
+    spi_sdi_i  => '0',             -- controller data in, peripheral data out
     spi_csn_o  => open,            -- SPI CS
     -- TWI --
     twi_sda_io => open,            -- twi serial data line

@@ -104,9 +104,9 @@ entity neorv32_top is
     uart_txd_o : out std_ulogic; -- UART send data
     uart_rxd_i : in  std_ulogic := '0'; -- UART receive data
     -- SPI (available if IO_SPI_USE = true) --
-    spi_sclk_o : out std_ulogic; -- serial clock line
-    spi_mosi_o : out std_ulogic; -- serial data line out
-    spi_miso_i : in  std_ulogic := '0'; -- serial data line in
+    spi_sck_o  : out std_ulogic; -- SPI serial clock
+    spi_sdo_o  : out std_ulogic; -- controller data out, peripheral data in
+    spi_sdi_i  : in  std_ulogic; -- controller data in, peripheral data out
     spi_csn_o  : out std_ulogic_vector(07 downto 0); -- SPI CS
     -- TWI (available if IO_TWI_USE = true) --
     twi_sda_io : inout std_logic := 'H'; -- twi serial data line
@@ -721,9 +721,9 @@ begin
       clkgen_en_o => spi_cg_en,  -- enable clock generator
       clkgen_i    => clk_gen,
       -- com lines --
-      spi_sclk_o  => spi_sclk_o, -- SPI serial clock
-      spi_mosi_o  => spi_mosi_o, -- SPI master out, slave in
-      spi_miso_i  => spi_miso_i, -- SPI master in, slave out
+      spi_sck_o   => spi_sck_o,  -- SPI serial clock
+      spi_sdo_o   => spi_sdo_o,  -- controller data out, peripheral data in
+      spi_sdi_i   => spi_sdi_i,  -- controller data in, peripheral data out
       spi_csn_o   => spi_csn_o,  -- SPI CS
       -- interrupt --
       spi_irq_o   => spi_irq     -- transmission done interrupt
@@ -734,8 +734,8 @@ begin
   if (IO_SPI_USE = false) generate
     spi_rdata  <= (others => '0');
     spi_ack    <= '0';
-    spi_sclk_o <= '0';
-    spi_mosi_o <= '0';
+    spi_sck_o  <= '0';
+    spi_sdo_o  <= '0';
     spi_csn_o  <= (others => '1'); -- CSn lines are low-active
     spi_cg_en  <= '0';
     spi_irq    <= '0';
