@@ -51,7 +51,7 @@
 //** Set 1 for detailed exception debug information */
 #define DETAILED_EXCEPTION_DEBUG 0
 //** Reachable unaligned address */
-#define ADDR_UNALIGNED   0x00000001
+#define ADDR_UNALIGNED   0x00000002
 //** Unreachable aligned address */
 #define ADDR_UNREACHABLE 0xFFFFFF00
 /**@}*/
@@ -144,7 +144,7 @@ int main() {
   neorv32_mtime_set_timecmp(mtime_cmp_max);
 
   // intro
-  neorv32_uart_printf("\n\n------ CPU TEST ------n\n");
+  neorv32_uart_printf("\n\n------ CPU TEST ------\n\n");
 
   // show full HW config report
   neorv32_rte_print_hw_config();
@@ -202,6 +202,9 @@ int main() {
   neorv32_uart_printf("EXC I_ALIGN: ");
   cnt_test++;
 
+  // disable C mode
+  neorv32_cpu_csr_write(CSR_MISA, neorv32_cpu_csr_read(CSR_MISA) & (~(1<<CPU_MISA_C_EXT)));
+
   // call unaligned address
   ((void (*)(void))ADDR_UNALIGNED)();
 
@@ -216,6 +219,9 @@ int main() {
   }
   exception_handler_answer = 0;
 #endif
+
+  // re-enable C mode
+  neorv32_cpu_csr_write(CSR_MISA, neorv32_cpu_csr_read(CSR_MISA) | (1<<CPU_MISA_C_EXT));
 
 
   // ----------------------------------------------------------
@@ -296,7 +302,7 @@ int main() {
   cnt_test++;
 
   // load from unaligned address
-  asm volatile ("lh zero, %[input_i](zero)" :  : [input_i] "i" (ADDR_UNALIGNED));
+  asm volatile ("lw zero, %[input_i](zero)" :  : [input_i] "i" (ADDR_UNALIGNED));
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == ANSWER_L_MISALIGN) {
@@ -340,7 +346,7 @@ int main() {
   cnt_test++;
 
   // store to unaligned address
-  asm volatile ("sh zero, %[input_i](zero)" :  : [input_i] "i" (ADDR_UNALIGNED));
+  asm volatile ("sw zero, %[input_i](zero)" :  : [input_i] "i" (ADDR_UNALIGNED));
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == ANSWER_S_MISALIGN) {
