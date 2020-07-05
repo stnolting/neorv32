@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - Serial Peripheral Interface Master (SPI) >>                                      #
+-- # << NEORV32 - Serial Peripheral Interface Controller (SPI) >>                                  #
 -- # ********************************************************************************************* #
 -- # Frame format: 8/16/24/32-bit RTX, MSB or LSB first, 2 clock modes, 8 clock speeds,            #
 -- # 8 dedicated CS lines (low-active). Interrupt: SPI_transfer_done                               #
@@ -57,9 +57,9 @@ entity neorv32_spi is
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(07 downto 0);
     -- com lines --
-    spi_sclk_o  : out std_ulogic; -- SPI serial clock
-    spi_mosi_o  : out std_ulogic; -- SPI master out, slave in
-    spi_miso_i  : in  std_ulogic; -- SPI master in, slave out
+    spi_sck_o   : out std_ulogic; -- SPI serial clock
+    spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
+    spi_sdi_i   : in  std_ulogic; -- controller data in, peripheral data out
     spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
     -- interrupt --
     spi_irq_o   : out std_ulogic -- transmission done interrupt
@@ -116,8 +116,8 @@ architecture neorv32_spi_rtl of neorv32_spi is
   signal spi_rtx_sreg : std_ulogic_vector(31 downto 0);
   signal spi_rx_data  : std_ulogic_vector(31 downto 0);
   signal spi_bitcnt   : std_ulogic_vector(05 downto 0);
-  signal spi_miso_ff0 : std_ulogic;
-  signal spi_miso_ff1 : std_ulogic;
+  signal spi_sdi_ff0  : std_ulogic;
+  signal spi_sdi_ff1  : std_ulogic;
 
 begin
 
@@ -217,9 +217,9 @@ begin
   spi_rtx_unit: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- input (MISO) synchronizer --
-      spi_miso_ff0 <= spi_miso_i;
-      spi_miso_ff1 <= spi_miso_ff0;
+      -- input (sdi) synchronizer --
+      spi_sdi_ff0 <= spi_sdi_i;
+      spi_sdi_ff1 <= spi_sdi_ff0;
 
       -- serial engine --
       spi_irq_o <= '0';
@@ -231,8 +231,8 @@ begin
           when others => spi_bitcnt <= "100000"; -- 32-bit mode
         end case;
         spi_state1 <= '0';
-        spi_mosi_o <= '0';
-        spi_sclk_o <= '0';
+        spi_sdo_o <= '0';
+        spi_sck_o <= '0';
         if (ctrl(ctrl_spi_en_c) = '0') then -- disabled
           spi_busy <= '0';
         elsif (spi_start = '1') then -- start new transmission
@@ -249,33 +249,33 @@ begin
       else -- transmission in progress
         if (spi_state1 = '0') then -- first half of transmission
 
-          spi_sclk_o <= ctrl(ctrl_spi_cpha_c);
+          spi_sck_o <= ctrl(ctrl_spi_cpha_c);
           if (ctrl(ctrl_spi_dir_c) = '0') then
-            spi_mosi_o <= spi_rtx_sreg(31); -- MSB first
+            spi_sdo_o <= spi_rtx_sreg(31); -- MSB first
           else
-            spi_mosi_o <= spi_rtx_sreg(0); -- LSB first
+            spi_sdo_o <= spi_rtx_sreg(0); -- LSB first
           end if;
           if (spi_clk = '1') then
             spi_state1 <= '1';
             if (ctrl(ctrl_spi_cpha_c) = '0') then
               if (ctrl(ctrl_spi_dir_c) = '0') then
-                spi_rtx_sreg <= spi_rtx_sreg(30 downto 0) & spi_miso_ff1; -- MSB first
+                spi_rtx_sreg <= spi_rtx_sreg(30 downto 0) & spi_sdi_ff1; -- MSB first
               else
-                spi_rtx_sreg <= spi_miso_ff1 & spi_rtx_sreg(31 downto 1); -- LSB first
+                spi_rtx_sreg <= spi_sdi_ff1 & spi_rtx_sreg(31 downto 1); -- LSB first
               end if;
             end if;
             spi_bitcnt <= std_ulogic_vector(unsigned(spi_bitcnt) - 1);
           end if;
         else -- second half of transmission
 
-          spi_sclk_o <= not ctrl(ctrl_spi_cpha_c);
+          spi_sck_o <= not ctrl(ctrl_spi_cpha_c);
           if (spi_clk = '1') then
             spi_state1 <= '0';
             if (ctrl(ctrl_spi_cpha_c) = '1') then
               if (ctrl(ctrl_spi_dir_c) = '0') then
-                spi_rtx_sreg <= spi_rtx_sreg(30 downto 0) & spi_miso_ff1; -- MSB first
+                spi_rtx_sreg <= spi_rtx_sreg(30 downto 0) & spi_sdi_ff1; -- MSB first
               else
-                spi_rtx_sreg <= spi_miso_ff1 & spi_rtx_sreg(31 downto 1); -- LSB first
+                spi_rtx_sreg <= spi_sdi_ff1 & spi_rtx_sreg(31 downto 1); -- LSB first
               end if;
             end if;
             if (spi_bitcnt = "000000") then
