@@ -202,26 +202,27 @@ int main() {
   neorv32_uart_printf("EXC I_ALIGN: ");
   cnt_test++;
 
-  // disable C mode
-  neorv32_cpu_csr_write(CSR_MISA, neorv32_cpu_csr_read(CSR_MISA) & (~(1<<CPU_MISA_C_EXT)));
+  // skip if C-mode is not implemented
+  if ((neorv32_cpu_csr_read(CSR_MISA) | (1<<CPU_MISA_C_EXT)) == 0) {
 
-  // call unaligned address
-  ((void (*)(void))ADDR_UNALIGNED)();
+    // call unaligned address
+    ((void (*)(void))ADDR_UNALIGNED)();
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == ANSWER_I_MISALIGN) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    if (exception_handler_answer == ANSWER_I_MISALIGN) {
+      neorv32_uart_printf("ok\n");
+      cnt_ok++;
+    }
+    else {
+      neorv32_uart_printf("fail\n");
+      cnt_fail++;
+    }
+    exception_handler_answer = 0;
+#endif
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    neorv32_uart_printf("skipped (no EXC I_ALIGN possible in C-mode)\n");
   }
-  exception_handler_answer = 0;
-#endif
-
-  // re-enable C mode
-  neorv32_cpu_csr_write(CSR_MISA, neorv32_cpu_csr_read(CSR_MISA) | (1<<CPU_MISA_C_EXT));
 
 
   // ----------------------------------------------------------
