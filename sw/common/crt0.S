@@ -117,8 +117,8 @@ __crt0_tests:
 // Setup stack pointer
 // *********************************************************
 __crt0_stack_pointer_init:
-  csrrw x11, CSR_MDSPACEBASE, zero // data memory space base address
-  csrrw x12, CSR_MDSPACESIZE, zero // data memory space size
+  csrr  x11, CSR_MDSPACEBASE // data memory space base address
+  csrr  x12, CSR_MDSPACESIZE // data memory space size
   add   sp, x11, x12
   addi  sp, sp, -4 // stack pointer = last entry
   addi  fp, sp, 0  // frame pointer = stack pointer
@@ -139,9 +139,9 @@ __crt0_global_pointer_init:
 // *********************************************************
 __crt0_neorv32_rte_init:
   la    x11, __crt0_neorv32_rte
-  csrrw zero, mtvec, x11 // set address of first-level exception handler
+  csrw  mtvec, x11 // set address of first-level exception handler
 
-  csrrw x11, CSR_MDSPACEBASE, zero // data memory space base address
+  csrr  x11, CSR_MDSPACEBASE // data memory space base address
   la    x12, __crt0_neorv32_rte_dummy_hanlder
   li    x13, 2*16  // number of entries (16xEXC, 16xIRQ)
 
@@ -278,14 +278,14 @@ __crt0_neorv32_rte:
   // --------------------------------------------
   // get cause and prepare jump into vector table
   // --------------------------------------------
-  csrrw t0, mcause, zero  // get cause code
+  csrr  t0, mcause        // get cause code
 
   andi  t1, t0, 0x0f      // isolate cause ID
   slli  t1, t1, 2         // make address offset
-  csrrw ra, CSR_MDSPACEBASE, zero  // data memory space base address
+  csrr  ra, CSR_MDSPACEBASE  // data memory space base address
   add   t1, t1, ra        // get vetor table entry address (EXC vectors)
 
-  csrrw ra, mepc, zero    // get return address
+  csrr  ra, mepc          // get return address
 
   blt   t0, zero, __crt0_neorv32_rte_is_irq  // branch if this is an INTERRUPT
 
@@ -296,11 +296,11 @@ __crt0_neorv32_rte:
 __crt0_neorv32_rte_is_exc:
 
   // is faulting instruction compressed?
-  csrrw t0, mtinst, zero
-  andi  t0, t0, 2   // get compression flag (bit #1): 0=compressed, 2=uncompressed
+  csrr  t0, mtinst
+  andi  t0, t0, 2   // get compression flag (bit #1): 0=compressed, 1=uncompressed
 
-  addi  ra, ra, +2  // only this for compressed instr
-  add   ra, ra, t0  // add another 2 (0+4) for uncompressed instr
+  addi  ra, ra, +2  // only this for compressed instructions
+  add   ra, ra, t0  // add another 2 (making +4) for uncompressed instructions
   j __crt0_neorv32_rte_execute
 
 
@@ -327,7 +327,7 @@ __crt0_neorv32_rte_execute:
   lw    ra, 0(sp)
   addi	sp, sp, +4
 
-  csrrw zero, mepc, ra
+  csrw  mepc, ra
 
 
   // --------------------------------------------
