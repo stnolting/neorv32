@@ -82,16 +82,14 @@ NEORV32_HOME_MARKER=$(NEORV32_INC_PATH)/neorv32.h
 
 
 # -----------------------------------------------------------------------------
-# Add NEORV32 sources to input SRCs
+# NEORV32 core sources
 # -----------------------------------------------------------------------------
-APP_SRC += $(wildcard $(NEORV32_SRC_PATH)/*.c)
+CORE_SRC = $(wildcard $(NEORV32_SRC_PATH)/*.c)
 
 
 # -----------------------------------------------------------------------------
 # Make defaults
 # -----------------------------------------------------------------------------
-.SUFFIXES:
-.PHONY: all
 .DEFAULT_GOAL := help
 
 
@@ -106,7 +104,8 @@ install: $(APP_ASM) neorv32_application_image.vhd
 all:     $(APP_ASM) $(APP_EXE) neorv32_application_image.vhd
 
 # define all object files
-OBJ = $(APP_SRC:.c=.o)
+OBJ  = $(APP_SRC:.c=.o)
+OBJ += $(CORE_SRC:.c=.o)
 
 
 # -----------------------------------------------------------------------------
@@ -259,13 +258,18 @@ endif
 # -----------------------------------------------------------------------------
 info:
 	@echo "---------------- Info: Project ----------------"
-	@echo "Project: $(shell basename $(CURDIR))"
-	@echo "Project source files: $(APP_SRC)"
-	@echo "Project include folders: $(NEORV32_INC_PATH) $(APP_INC)"
-	@echo "Project object files: $(OBJ)"
+	@echo "Project folder:    $(shell basename $(CURDIR))"
+	@echo "Source files:      $(APP_SRC)"
+	@echo "Include folder(s): $(APP_INC)"
 	@echo "---------------- Info: NEORV32 ----------------"
 	@echo "NEORV32 home folder (NEORV32_HOME): $(NEORV32_HOME)"
 	@echo "IMAGE_GEN: $(IMAGE_GEN)"
+	@echo "Core source files:"
+	@echo "$(CORE_SRC)"
+	@echo "Core include folder:"
+	@echo "$(NEORV32_INC_PATH)"
+	@echo "Project object files:"
+	@echo "$(OBJ)"
 	@echo "---------------- Info: RISC-V CPU ----------------"
 	@echo "MARCH:     $(MARCH)"
 	@echo "MABI:      $(MABI)"
