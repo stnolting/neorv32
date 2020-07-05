@@ -56,9 +56,14 @@ For more information take a look a the [![NEORV32 datasheet](https://raw.githubu
 
 ### Status
 
-![processor status](https://img.shields.io/badge/processor%20status-beta-orange)
+The processor is synthesizable (tested with Intel Quartus Prime, Xilinx Vivado and Lattice Radiant/LSE) and can successfully execute
+all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the CoreMark benchmark.
 
-The processor is synthesizable (tested with Intel Quartus Prime and Lattice Radiant/Synplify) and can successfully execute all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example).
+The processor passes the `rv32i`, `rv32im`, `rv32imc` and `rv32Zicsr` *RISC-V compliance tests*.
+
+[RISC-V compliance test](https://github.com/stnolting/neorv32_compliance_test): 
+[![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance)
+
 
 ## Features
 
@@ -73,7 +78,7 @@ The processor is synthesizable (tested with Intel Quartus Prime and Lattice Radi
   - Completely described in behavioral, platform-independent VHDL – no primitives, macros, etc.
   - Fully synchronous design, no latches, no gated clocks
   - Small hardware footprint and high operating frequency
-  - Highly customizable processor configuration
+  - Customizable processor configuration
   - Optional processor-internal data and instruction memories (DMEM/IMEM)
   - Optional internal bootloader with UART console and automatic SPI flash boot option
   - Optional machine system timer (MTIME), RISC-V-compliant
@@ -135,8 +140,8 @@ The CPU is compliant to the [official RISC-V specifications](https://raw.githubu
     * Machine external interrupt (via `CLIC` unit)
 
 **General**:
-  * No hardware support of unaligned accesses (except for instructions in `C` extension that still have to be aligned on 16-bit boundaries)
-  * Multi-cycle in-order instruction execution
+  * No hardware support of unaligned accesses - they will trigger and exception
+  * Two stages in-order pipeline (FETCH, EXECUTE); each stage uses a multi-cycle execution
 
 More information including a detailed list of the available CSRs can be found in
 the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
@@ -144,11 +149,11 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
 
 ### To-Do / Wish List
 
-- Testing, testing and even more testing
-- Port official [RISC-V compliance test](https://github.com/riscv/riscv-compliance)
+- No exception is triggered in `E`-mode when using reg >x15 yet
 - Port Dhrystone benchmark
-- Implement atomic extensions (`A` extension)
-- Implement co-processor for single-precision floating-point (`F` extension)
+- Implement atomic operations (`A` extension)
+- Implement `Zifence` extension
+- Implement co-processor for single-precision floating-point operations (`F` extension)
 - Implement user mode (`U` extension)
 - Make a 64-bit branch
 - Maybe port an RTOS (like [freeRTOS](https://www.freertos.org/) or [RIOT](https://www.riot-os.org/))
@@ -162,37 +167,44 @@ a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 19
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
 of the processor's generics is assumed. No constraints were used.
 
-Results generated for hardware version: `0.0.2.3`
+Results generated for hardware version: `1.0.0.0`
 
 ### CPU
 
 | CPU Configuration   | LEs        | FFs      | Memory bits | DSPs   | f_max   |
 |:--------------------|:----------:|:--------:|:-----------:|:------:|:-------:|
-| `rv32i`             |  852  (4%) | 326 (1%) |  2048 (>1%) | 0 (0%) | 111 MHz |
-| `rv32i` + `Zicsr`   | 1488  (7%) | 694 (3%) |  2048 (>1%) | 0 (0%) | 107 MHz |
-| `rv32im` + `Zicsr`  | 2057  (9%) | 941 (4%) |  2048 (>1%) | 0 (0%) | 102 MHz |
-| `rv32imc` + `Zicsr` | 2209 (10%) | 958 (4%) |  2048 (>1%) | 0 (0%) | 102 MHz |
-| `rv32e`             |  848  (4%) | 326 (1%) |  1024 (>1%) | 0 (0%) | 111 MHz |
-| `rv32e` + `Zicsr`   | 1316  (6%) | 594 (3%) |  1024 (>1%) | 0 (0%) | 106 MHz |
-| `rv32em` + `Zicsr`  | 1879  (8%) | 841 (4%) |  1024 (>1%) | 0 (0%) | 101 MHz |
-| `rv32emc` + `Zicsr` | 2065  (9%) | 858 (4%) |  1024 (>1%) | 0 (0%) | 100 MHz |
+| `rv32i`             |       1027 |      474 |       2048  | 0 (0%) | 111 MHz |
+| `rv32i` + `Zicsr`   |       1721 |      868 |       2048  | 0 (0%) | 104 MHz |
+| `rv32im` + `Zicsr`  |       2298 |     1115 |       2048  | 0 (0%) | 103 MHz |
+| `rv32imc` + `Zicsr` |       2557 |     1138 |       2048  | 0 (0%) | 103 MHz |
+| `rv32emc` + `Zicsr` |       2342 |     1005 |       1024  | 0 (0%) | 100 MHz |
 
-### Peripherals / Others
+### Processor-Internal Peripherals and Memories
 
 | Module   | Description                                     | LEs | FFs | Memory bits | DSPs |
 |:---------|:------------------------------------------------|:---:|:---:|:-----------:|:----:|
 | BOOT ROM | Bootloader ROM (4kB)                            |   3 |   1 |      32 768 |    0 |
-| DEVNULL  | Dummy device                                    |   2 |   1 |           0 |    0 |
+| DEVNULL  | Dummy device                                    |   3 |   1 |           0 |    0 |
 | DMEM     | Processor-internal data memory (8kB)            |  12 |   2 |      65 536 |    0 |
-| GPIO     | General purpose input/output ports              |  37 |  33 |           0 |    0 |
+| GPIO     | General purpose input/output ports              |  38 |  33 |           0 |    0 |
 | IMEM     | Processor-internal instruction memory (16kb)    |   7 |   2 |     131 072 |    0 |
-| MTIME    | Machine system timer                            | 369 | 168 |           0 |    0 |
-| PWM      | Pulse-width modulation controller               |  77 |  69 |           0 |    0 |
-| SPI      | Serial peripheral interface                     | 198 | 125 |           0 |    0 |
-| TRNG     | True random number generator                    | 103 |  93 |           0 |    0 |
-| TWI      | Two-wire interface                              |  76 |  44 |           0 |    0 |
-| UART     | Universal asynchronous receiver/transmitter     | 154 | 108 |           0 |    0 |
+| MTIME    | Machine system timer                            | 270 | 167 |           0 |    0 |
+| PWM      | Pulse-width modulation controller               |  76 |  69 |           0 |    0 |
+| SPI      | Serial peripheral interface                     | 206 | 125 |           0 |    0 |
+| TRNG     | True random number generator                    | 104 |  93 |           0 |    0 |
+| TWI      | Two-wire interface                              |  78 |  44 |           0 |    0 |
+| UART     | Universal asynchronous receiver/transmitter     | 151 | 108 |           0 |    0 |
 | WDT      | Watchdog timer                                  |  57 |  45 |           0 |    0 |
+
+### CPU + Peripheral
+
+The following table shows the implementation results for an _Intel Cyclone IV EP4CE22F17C6N_ FPGA.
+The design was synthesized using Intel Quartus Prime Lite 19.1 (“balanced implementation”).
+IMEM uses 16kB and DMEM uses 8kB memory space.
+
+| CPU Configuration   | LEs        | REGs      | DSPs   | Memory Bits  | f_max   |
+|:--------------------|:----------:|:---------:|:------:|:------------:|:-------:|
+| `rv32imc` + `Zicsr` | 3724 (17%) | 1899 (9%) | 0 (0%) | 231424 (38%) | 103 MHz |
 
 
 ### Lattice iCE40 UltraPlus 5k
@@ -205,11 +217,9 @@ instruction and data memories (each 64kB) based on SPRAM primitives. The FPGA-sp
 Place & route reports generated with **Lattice Radiant 2.1** using Lattice LSE. The clock frequency
 is constrained and generated via the PLL from the internal HF oscillator running at 12 MHz.
 
-Results generated for hardware version: `0.0.2.5`
-
-| CPU Configuration   | Slices     | LUT        | REG        | DSPs   | SPRAM    | EBR      | f         |
-|:--------------------|:----------:|:----------:|:----------:|:------:|:--------:|:--------:|:---------:|
-| `rv32imc` + `Zicsr` | 2405 (91%) | 4642 (87%) | 1810 (34%) | 0 (0%) | 4 (100%) | 12 (40%) | 20.25 MHz |
+| CPU Configuration   | LUTs       | REGs       | DSPs   | SPRAM    | EBR      | f         |
+|:--------------------|:----------:|:----------:|:------:|:--------:|:--------:|:---------:|
+| `rv32imc` + `Zicsr` | 4985 (94%) | 1982 (38%) | 0 (0%) | 4 (100%) | 12 (40%) | 20.25 MHz |
 
 
 ## Performance
@@ -220,7 +230,7 @@ The [CoreMark CPU benchmark](https://www.eembc.org/coremark) was executed on the
 [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) project folder. This benchmark
 tests the capabilities of a CPU itself rather than the functions provided by the whole system / SoC.
 
-Results generated for hardware version: `0.0.2.3`
+Results generated for hardware version: `1.0.0.0`
 
 ~~~
 **Configuration**
@@ -232,12 +242,12 @@ Used peripherals: MTIME for time measurement, UART for printing the results
 
 | __Configuration__ | __Optimization__ | __Executable Size__ | __CoreMark Score__ | __CoreMarks/MHz__ |
 |:------------------|:----------------:|:-------------------:|:------------------:|:-----------------:|
-| `rv32i`           |      `-Os`       |     17 944 bytes    |        23.26       |       0.232       |
-| `rv32i`           |      `-O2`       |     20 264 bytes    |        25.64       |       0.256       |
-| `rv32im`          |      `-Os`       |     16 880 bytes    |        40.81       |       0.408       |
-| `rv32im`          |      `-O2`       |     19 312 bytes    |        47.62       |       0.476       |
-| `rv32imc`         |      `-Os`       |     13 000 bytes    |        32.78       |       0.327       |
-| `rv32imc`         |      `-O2`       |     15 004 bytes    |        37.04       |       0.370       |
+| `rv32i`           |      `-Os`       |     18 044 bytes    |       21.98        |       0.21        |
+| `rv32i`           |      `-O2`       |     20 388 bytes    |        25          |       0.25        |
+| `rv32im`          |      `-Os`       |     16 980 bytes    |        40          |       0.40        |
+| `rv32im`          |      `-O2`       |     19 436 bytes    |       51.28        |       0.51        |
+| `rv32imc`         |      `-Os`       |     13 076 bytes    |       39.22        |       0.39        |
+| `rv32imc`         |      `-O2`       |     15 208 bytes    |        50          |       0.50        |
 
 
 ### Instruction Cycles
@@ -250,31 +260,16 @@ CPU extensions.
 Please note that the CPU-internal shifter (e.g. for the `SLL` instruction) as well as the multiplier and divider of the
 `M` extension use a bit-serial approach and require several cycles for completion.
 
-The following table shows the performance results for successfully (!) running 2000 CoreMark
+The following table shows the performance results for successfully running 2000 CoreMark
 iterations. The average CPI is computed by dividing the total number of required clock cycles (all of CoreMark
 – not only the timed core) by the number of executed instructions (`instret[h]` CSRs). The executables
 were generated using optimization `-O2`.
 
 | CPU / Toolchain Config. | Required Clock Cycles | Executed Instructions | Average CPI |
 |:------------------------|----------------------:|----------------------:|:-----------:|
-| `rv32i`                 |        10 385 023 697 |         1 949 310 506 |     5.3     |
-| `rv32im`                |         6 276 943 488 |           995 011 883 |     6.3     |
-| `rv32imc`               |         7 340 734 652 |           934 952 588 |     7.6     |
-
-
-### Evaluation
-
-Based on the provided performance measurement and the hardware utilization for the
-different CPU configurations, the following configurations are suggested:
-
-
-| Design Goal                    | NEORV32 CPU Config. |
-|:-------------------------------|:--------------------|
-| Highest performance:           | `rv32im`            |
-| Lowest memory requirements:    | `rv32imc`           |
-| Lowest hardware requirements*: | `rv32ec`            |
-
-*) Including on-chip memory hardware requirements.
+| `rv32i`                 |        19 355 607 369 |         2 995 064 579 |     6.5     |
+| `rv32im`                |         5 809 384 583 |           867 377 291 |     6.7     |
+| `rv32imc`               |         5 560 220 723 |           825 898 407 |     6.7     |
 
 
 
@@ -294,6 +289,7 @@ entity neorv32_top is
     CLOCK_FREQUENCY           : natural := 0;       -- clock frequency of clk_i in Hz
     HART_ID                   : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
     BOOTLOADER_USE            : boolean := true;    -- implement processor-internal bootloader?
+    CSR_COUNTERS_USE          : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C     : boolean := false;   -- implement compressed extension?
     CPU_EXTENSION_RISCV_E     : boolean := false;   -- implement embedded RF extension?
@@ -347,9 +343,9 @@ entity neorv32_top is
     uart_txd_o   : out std_ulogic; -- UART send data
     uart_rxd_i   : in  std_ulogic := '0'; -- UART receive data
     -- SPI (available if IO_SPI_USE = true) --
-    spi_sclk_o   : out std_ulogic; -- serial clock line
-    spi_mosi_o   : out std_ulogic; -- serial data line out
-    spi_miso_i   : in  std_ulogic := '0'; -- serial data line in
+    spi_sck_o    : out std_ulogic; -- serial clock line
+    spi_sdo_o    : out std_ulogic; -- serial data line out
+    spi_sdi_i    : in  std_ulogic := '0'; -- serial data line in
     spi_csn_o    : out std_ulogic_vector(07 downto 0); -- SPI CS
     -- TWI (available if IO_TWI_USE = true) --
     twi_sda_io   : inout std_logic := 'H'; -- twi serial data line
@@ -412,7 +408,7 @@ Now its time to get the most recent version the NEORV32 Processor project from G
  
     $ git clone https://github.com/stnolting/neorv32.git
 
-Create a new HW project with your FPGA synthesis tool of choice. Add all files from the [`rtl/core`](https://github.com/stnolting/neorv32/blob/master/rtl)
+Create a new HW project with your FPGA design tool of choice. Add all files from the [`rtl/core`](https://github.com/stnolting/neorv32/blob/master/rtl)
 folder to this project and add them to a **new library** called `neorv32`.
 
 You can either instantiate the [processor's top entity](https://github.com/stnolting/neorv32#top-entity) in you own project, or you
@@ -464,30 +460,6 @@ uses the following default UART configuration:
 
 Use the bootloader console to upload and execute your application image.
 
-```
-  << NEORV32 Bootloader >>
-  
-  BLDV: Jun 22 2020
-  HWV:  0.0.2.3
-  CLK:  0x0134FD90 Hz
-  MISA: 0x42801104
-  CONF: 0x01FF0015
-  IMEM: 0x00010000 bytes @ 0x00000000
-  DMEM: 0x00010000 bytes @ 0x80000000
-  
-  Autoboot in 8s. Press key to abort.
-  Aborted.
-  
-  Available commands:
-  h: Help
-  r: Restart
-  u: Upload
-  s: Store to flash
-  l: Load from flash
-  e: Execute
-  CMD:> 
-```
-
 Going further: Take a look at the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 
@@ -512,6 +484,7 @@ If you are using the NEORV32 Processor in some kind of publication, please cite 
 ## Legal
 
 This is a hobby project released under the BSD 3-Clause license. No copyright infringement intended.
+Other implied/used projects might have different licensing - see their documentation to get more information.
 
 **BSD 3-Clause License**
 
@@ -561,4 +534,4 @@ Continous integration provided by [Travis CI](https://travis-ci.com/stnolting/ne
 This project is not affiliated with or endorsed by the Open Source Initiative (https://www.oshwa.org / https://opensource.org).
 
 
-Made with :heart: in Hannover, Germany.
+Made with :coffee: in Hannover, Germany.
