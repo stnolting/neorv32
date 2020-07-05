@@ -60,10 +60,10 @@
  * Available CPU Control and Status Registers (CSRs)
  **************************************************************************/
 enum NEORV32_CPU_CSRS_enum {
-  CSR_MSTATUS     = 0x300, /**< 0x300 - mstatus  (r/w): Machine status register */
-  CSR_MISA        = 0x301, /**< 0x301 - misa     (r/-): CPU ISA and extensions */
-  CSR_MIE         = 0x304, /**< 0x304 - mie      (r/w): Machine interrupt-enable register */
-  CSR_MTVEC       = 0x305, /**< 0x305 - mtvec    (r/w): Machine trap-handler base address (for ALL traps) */
+  CSR_MSTATUS     = 0x300, /**< 0x300 - mstatus (r/w): Machine status register */
+  CSR_MISA        = 0x301, /**< 0x301 - misa    (r/-): CPU ISA and extensions */
+  CSR_MIE         = 0x304, /**< 0x304 - mie     (r/w): Machine interrupt-enable register */
+  CSR_MTVEC       = 0x305, /**< 0x305 - mtvec   (r/w): Machine trap-handler base address (for ALL traps) */
 
   CSR_MSCRATCH    = 0x340, /**< 0x340 - mscratch (r/w): Machine scratch register */
   CSR_MEPC        = 0x341, /**< 0x341 - mepc     (r/w): Machine exception program counter */
@@ -123,6 +123,21 @@ enum NEORV32_CPU_MIP_enum {
   CPU_MIP_MSIP  =  3, /**< CPU mip CSR (3): Machine software interrupt pending (r/w), can be triggered when set */
   CPU_MIP_MTIP  =  7, /**< CPU mip CSR (7): Machine timer interrupt (MTIME) pending (r/-) */
   CPU_MIP_MEIP  = 11  /**< CPU mip CSR (11): Machine external interrupt (via CLIC) pending (r/-) */
+};
+
+
+/**********************************************************************//**
+ * CPU <b>misa</b> CSR (r/w): Machine instruction set extensions (RISC-V spec.)
+ **************************************************************************/
+enum NEORV32_CPU_MISA_enum {
+  CPU_MISA_C_EXT      =  2, /**< CPU misa CSR  (2): C: Compressed instructions CPU extension available (r/w), can be switched on/off */
+  CPU_MISA_E_EXT      =  4, /**< CPU misa CSR  (3): E: Embedded CPU extension available (r/-) */
+  CPU_MISA_I_EXT      =  8, /**< CPU misa CSR  (8): I: Base integer ISA CPU extension available (r/-) */
+  CPU_MISA_M_EXT      = 12, /**< CPU misa CSR (12): M: Multiplier/divider CPU extension available (r/w), can be switched on/off */
+  CPU_MISA_X_EXT      = 23, /**< CPU misa CSR (23): X: Non-standard CPU extension available (r/-) */
+  CPU_MISA_Z_EXT      = 25, /**< CPU misa CSR (25): Z: Privileged architecture CPU extension available (r/-) */
+  CPU_MISA_MXL_LO_EXT = 30, /**< CPU misa CSR (30): MXL.lo: CPU data width (r/-) */
+  CPU_MISA_MXL_HI_EXT = 31  /**< CPU misa CSR (31): MXL.Hi: CPU data width (r/-) */
 };
 
 
