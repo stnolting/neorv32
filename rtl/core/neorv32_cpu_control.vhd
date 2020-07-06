@@ -192,7 +192,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     irq_ack_nxt   : std_ulogic_vector(interrupt_width_c-1 downto 0);
     cause         : std_ulogic_vector(data_width_c-1 downto 0); -- trap ID (for "mcause")
     cause_nxt     : std_ulogic_vector(data_width_c-1 downto 0);
-    instr         : std_ulogic_vector(31 downto 0); -- faulting instruction
     exc_src       : std_ulogic_vector(exception_width_c-1 downto 0);
     --
     env_start     : std_ulogic; -- start trap handler env
@@ -232,7 +231,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mtvec        : std_ulogic_vector(data_width_c-1 downto 0); -- mtvec: machine trap-handler base address (R/W)
     mtval        : std_ulogic_vector(data_width_c-1 downto 0); -- mtval: machine bad address or isntruction (R/-)
     mscratch     : std_ulogic_vector(data_width_c-1 downto 0); -- mscratch: scratch register (R/W)
-    mtinst       : std_ulogic_vector(data_width_c-1 downto 0); -- mtinst: machine trap instruction (transformed) (R/-)
     cycle        : std_ulogic_vector(32 downto 0); -- cycle, mtime (R/-), plus carry bit
     instret      : std_ulogic_vector(32 downto 0); -- instret (R/-), plus carry bit
     cycleh       : std_ulogic_vector(31 downto 0); -- cycleh, mtimeh (R/-)
@@ -1044,7 +1042,6 @@ begin
                (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"342") or -- mcause
                (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"343") or -- mtval
                (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"344") or -- mip
-               (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"34a") or -- mtinst
                --
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c00") and (CPU_EXTENSION_RISCV_E = false) and (CSR_COUNTERS_USE = true)) or -- cycle
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c01") and (CPU_EXTENSION_RISCV_E = false) and (CSR_COUNTERS_USE = true)) or -- time
@@ -1121,7 +1118,6 @@ begin
       trap_ctrl.exc_ack   <= '0';
       trap_ctrl.irq_ack   <= (others => '0');
       trap_ctrl.cause     <= (others => '0');
-      trap_ctrl.instr     <= (others => '0');
       trap_ctrl.exc_src   <= (others => '0');
       trap_ctrl.env_start <= '0';
     elsif rising_edge(clk_i) then
@@ -1147,13 +1143,11 @@ begin
         if (trap_ctrl.env_start = '0') then -- no started trap handler
           if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and
              ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP))) then -- exception/IRQ detected!
-            trap_ctrl.cause     <= trap_ctrl.cause_nxt;      -- capture source ID for program
-            trap_ctrl.instr     <= execute_engine.i_reg;     -- FIXME mtinst transformation not fully implemented yet!
-            trap_ctrl.instr(1)  <= not execute_engine.is_ci; -- bit is set for uncompressed instruction
-            trap_ctrl.exc_src   <= trap_ctrl.exc_buf;        -- capture exception source for hardware
-            trap_ctrl.exc_ack   <= '1';                      -- clear execption
-            trap_ctrl.irq_ack   <= trap_ctrl.irq_ack_nxt;    -- capture and clear with interrupt ACK mask
-            trap_ctrl.env_start <= '1';                      -- now we want to start the trap handler
+            trap_ctrl.cause     <= trap_ctrl.cause_nxt;   -- capture source ID for program
+            trap_ctrl.exc_src   <= trap_ctrl.exc_buf;     -- capture exception source for hardware
+            trap_ctrl.exc_ack   <= '1';                   -- clear execption
+            trap_ctrl.irq_ack   <= trap_ctrl.irq_ack_nxt; -- capture and clear with interrupt ACK mask
+            trap_ctrl.env_start <= '1';                   -- now we want to start the trap handler
           end if;
         else -- trap waiting to get started
           if (trap_ctrl.env_start_ack = '1') then -- start of trap handler acknowledged by execution engine
@@ -1175,7 +1169,6 @@ begin
 
   -- exception/interrupt/status ID visible for program --
   csr.mcause <= trap_ctrl.cause;
-  csr.mtinst <= trap_ctrl.instr;
 
 
   -- Trap Priority Detector -----------------------------------------------------------------
@@ -1412,8 +1405,6 @@ begin
               csr_rdata_o(03) <= trap_ctrl.irq_buf(interrupt_msw_irq_c);
               csr_rdata_o(07) <= trap_ctrl.irq_buf(interrupt_mtime_irq_c);
               csr_rdata_o(11) <= trap_ctrl.irq_buf(interrupt_mext_irq_c);
-            when x"34a" => -- R/-: mtinst - machine trap instruction (transformed)
-              csr_rdata_o <= csr.mtinst;
             -- counter and timers --
             when x"c00" | x"c01" | x"b00" => -- R/-: cycle/time/mcycle: Cycle counter LOW / Timer LOW
               csr_rdata_o <= csr.cycle(31 downto 0);

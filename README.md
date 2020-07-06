@@ -142,7 +142,7 @@ The CPU is compliant to the [official RISC-V specifications](https://raw.githubu
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
   * System instructions: `ECALL` `EBREAK` `MRET` `WFI`
   * Counter CSRs: `cycle` `cycleh` `time` `timeh` `instret` `instreth` `mcycle` `mcycleh` `minstret` `minstreth`
-  * Machine CSRs: `mstatus` `misa` `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mtinst` `mimpid` `mhartid`
+  * Machine CSRs: `mstatus` `misa` `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mimpid` `mhartid`
   * Custom CSRs: `mfeatures` `mclock` `mispacebase` `mdspacebase` `mispacesize` `mdspacesize`
   * Supported exceptions and interrupts:
     * Misaligned instruction address

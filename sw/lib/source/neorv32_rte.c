@@ -157,26 +157,29 @@ static void __neorv32_rte_debug_exc_handler(void) {
 
   neorv32_uart_printf("System time: 0x%x_%x\n", neorv32_cpu_csr_read(CSR_TIMEH), neorv32_cpu_csr_read(CSR_TIME));
 
-  register uint32_t exc_cause   = neorv32_cpu_csr_read(CSR_MCAUSE);
-  register uint32_t return_addr = neorv32_cpu_csr_read(CSR_MEPC);
-  register uint32_t trans_cmd   = neorv32_cpu_csr_read(CSR_MTINST);
+  register uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
+  register uint32_t trap_addr  = neorv32_cpu_csr_read(CSR_MEPC);
+  register uint32_t trap_inst;
 
-  if (exc_cause & 0x80000000) {
+  // get faulting instruction
+  asm volatile ("lh %[result], 0(%[input_i])" : [result] "=r" (trap_inst) : [input_i] "r" (trap_addr));
+
+  if (trap_cause & 0x80000000) {
     neorv32_uart_printf("INTERRUPT");
   }
   else {
     neorv32_uart_printf("EXCEPTION");
-    if ((trans_cmd & (1 << 1)) == 0) {
-      return_addr -= 4;
+    if ((trap_inst & 3) == 3) {
+      trap_addr -= 4;
     }
     else {
-      return_addr -= 2;
+      trap_addr -= 2;
     }
   }
-  neorv32_uart_printf(" at instruction address: 0x%x\n", return_addr);
+  neorv32_uart_printf(" at instruction address: 0x%x\n", trap_addr);
 
   neorv32_uart_printf("Cause: ");
-  switch (exc_cause) {
+  switch (trap_cause) {
     case 0x00000000: neorv32_uart_printf("Instruction address misaligned"); break;
     case 0x00000001: neorv32_uart_printf("Instruction access fault"); break;
     case 0x00000002: neorv32_uart_printf("Illegal instruction"); break;
@@ -189,20 +192,14 @@ static void __neorv32_rte_debug_exc_handler(void) {
     case 0x80000003: neorv32_uart_printf("Machine software interrupt"); break;
     case 0x80000007: neorv32_uart_printf("Machine timer interrupt (via MTIME)"); break;
     case 0x8000000B: neorv32_uart_printf("Machine external interrupt (via CLIC)"); break;
-    default:         neorv32_uart_printf("Unknown (0x%x)", exc_cause); break;
+    default:         neorv32_uart_printf("Unknown (0x%x)", trap_cause); break;
   }
 
   // fault address
-  if (exc_cause == 0x00000002) {
-    neorv32_uart_printf("\nFaulting instruction");
-  }
-  else {
-    neorv32_uart_printf("\nFaulting address");
-  }
-  neorv32_uart_printf(": 0x%x\n", neorv32_cpu_csr_read(CSR_MTVAL));
-  neorv32_uart_printf("Transf. instruction: 0x%x ", trans_cmd);
+  neorv32_uart_printf("\nFaulting instruction: 0x%x\n", trap_inst);
+  neorv32_uart_printf("MTVAL: 0x%x\n", neorv32_cpu_csr_read(CSR_MTVAL));
 
-  if ((trans_cmd & (1 << 1)) == 0) {
+  if ((trap_inst & 3) != 3) {
     neorv32_uart_printf("(decompressed)\n");
   }
 

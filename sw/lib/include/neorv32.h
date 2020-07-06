@@ -70,7 +70,6 @@ enum NEORV32_CPU_CSRS_enum {
   CSR_MCAUSE      = 0x342, /**< 0x342 - mcause   (r/-): Machine trap cause */
   CSR_MTVAL       = 0x343, /**< 0x343 - mtval    (r/-): Machine bad address or instruction */
   CSR_MIP         = 0x344, /**< 0x344 - mip      (r/w): Machine interrupt pending register */
-  CSR_MTINST      = 0x34a, /**< 0x34a - mtinst   (r/-): Machine trap instruction (transformed) */
 
   CSR_MCYCLE      = 0xb00, /**< 0xb00 - mcycle    (r/-): Machine cycle counter low word */
   CSR_MINSTRET    = 0xb02, /**< 0xb02 - minstret  (r/-): Machine instructions-retired counter low word */

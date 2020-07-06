@@ -42,9 +42,6 @@
   .global _start
 
 
-  // standard CSRs
-  .set mtinst, 0x34a
-
   // custom CSRs
   .set CSR_MISPACEBASE, 0xfc4  // CUSTOM (r/-): Base address of instruction memory space (via MEM_ISPACE_BASE generic) */
   .set CSR_MDSPACEBASE, 0xfc5  // CUSTOM (r/-): Base address of data memory space (via MEM_DSPACE_BASE generic) */
@@ -295,12 +292,16 @@ __crt0_neorv32_rte:
   // --------------------------------------------
 __crt0_neorv32_rte_is_exc:
 
-  // is faulting instruction compressed?
-  csrr  t0, mtinst
-  andi  t0, t0, 2   // get compression flag (bit #1): 0=compressed, 1=uncompressed
+  // check if faulting instruction is compressed and adjust return address
+
+  lh    t0, 0(ra)   // get compressed instruction or lower 16 bits of uncompressed instruction that caused exception
+  addi  t2, zero, 3 // mask
+  and   t0, t0, t2  // isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
 
   addi  ra, ra, +2  // only this for compressed instructions
-  add   ra, ra, t0  // add another 2 (making +4) for uncompressed instructions
+  bne   t0, t2, __crt0_neorv32_rte_execute // jump if compressed instruction
+  
+  addi  ra, ra, +2  // add another 2 (making +4) for uncompressed instructions
   j __crt0_neorv32_rte_execute
 
 
