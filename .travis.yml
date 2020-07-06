@@ -11,7 +11,7 @@ script:
   # Get simulator tools
   - docker pull ghdl/ghdl:buster-gcc-8.3.0
 
-  # Get toolchain SW check
+  # Get toolchain & run SW check
   - /bin/bash -c "chmod u+x .ci/install.sh && .ci/install.sh"
   - /bin/bash -c "chmod u+x .ci/sw_check.sh && .ci/sw_check.sh"
 

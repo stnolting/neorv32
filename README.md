@@ -59,10 +59,29 @@ For more information take a look a the [![NEORV32 datasheet](https://raw.githubu
 The processor is synthesizable (tested with Intel Quartus Prime, Xilinx Vivado and Lattice Radiant/LSE) and can successfully execute
 all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the CoreMark benchmark.
 
-The processor passes the `rv32i`, `rv32im`, `rv32imc` and `rv32Zicsr` *RISC-V compliance tests*.
+The processor passes the official `rv32i`, `rv32im`, `rv32imc` and `rv32Zicsr` [RISC-V compliance tests](https://github.com/riscv/riscv-compliance).
 
-[RISC-V compliance test](https://github.com/stnolting/neorv32_compliance_test): 
-[![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance)
+|                                                                                 |        |
+|:--------------------------------------------------------------------------------|:-------|
+| [Pre-build toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)          | [![Build Test](https://travis-ci.com/stnolting/riscv_gcc_prebuilt.svg?branch=master)](https://travis-ci.com/stnolting/riscv_gcc_prebuilt) |
+| [RISC-V compliance test](https://github.com/stnolting/neorv32_compliance_test)  | [![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) |
+
+
+#### Limitations to be fixed
+
+* No exception is triggered in `E`-mode when using registers above `x15` yet
+
+
+#### To-Do / Wish List
+
+- Port Dhrystone benchmark
+- Implement atomic operations (`A` extension)
+- Implement `Zifence` extension
+- Implement co-processor for single-precision floating-point operations (`F` extension)
+- Implement user mode (`U` extension)
+- Make a 64-bit branch
+- Maybe port an RTOS (like [freeRTOS](https://www.freertos.org/) or [RIOT](https://www.riot-os.org/))
+
 
 
 ## Features
@@ -78,20 +97,20 @@ The processor passes the `rv32i`, `rv32im`, `rv32imc` and `rv32Zicsr` *RISC-V co
   - Completely described in behavioral, platform-independent VHDL – no primitives, macros, etc.
   - Fully synchronous design, no latches, no gated clocks
   - Small hardware footprint and high operating frequency
-  - Customizable processor configuration
+  - Highly customizable processor configuration
   - Optional processor-internal data and instruction memories (DMEM/IMEM)
-  - Optional internal bootloader with UART console and automatic SPI flash boot option
-  - Optional machine system timer (MTIME), RISC-V-compliant
-  - Optional universal asynchronous receiver and transmitter (UART)
-  - Optional 8/16/24/32-bit serial peripheral interface master (SPI) with 8 dedicated chip select lines
-  - Optional two wire serial interface master (TWI), compatible to the I²C standard
-  - Optional general purpose parallel IO port (GPIO), 16xOut & 16xIn, with pin-change interrupt
-  - Optional 32-bit external bus interface, Wishbone b4 compliant (WISHBONE)
-  - Optional watchdog timer (WDT)
-  - Optional PWM controller with 4 channels and 8-bit duty cycle resolution (PWM)
-  - Optional GARO-based true random number generator (TRNG)
-  - Optional core-local interrupt controller with 8 channels (CLIC)
-  - Optional dummy device (DEVNULL) (can be used for *fast* simulation console output)
+  - _Optional_ internal bootloader with UART console and automatic SPI flash boot option
+  - _Optional_ machine system timer (MTIME), RISC-V-compliant
+  - _Optional_ universal asynchronous receiver and transmitter (UART)
+  - _Optional_ 8/16/24/32-bit serial peripheral interface controller (SPI) with 8 dedicated chip select lines
+  - _Optional_ two wire serial interface controller (TWI), compatible to the I²C standard
+  - _Optional_ general purpose parallel IO port (GPIO), 16xOut & 16xIn, with pin-change interrupt
+  - _Optional_ 32-bit external bus interface, Wishbone b4 compliant (WISHBONE)
+  - _Optional_ watchdog timer (WDT)
+  - _Optional_ PWM controller with 4 channels and 8-bit duty cycle resolution (PWM)
+  - _Optional_ GARO-based true random number generator (TRNG)
+  - _Optional_ core-local interrupt controller with 8 channels (CLIC)
+  - _Optional_ dummy device (DEVNULL) (can be used for *fast* simulation console output)
 
 
 ### CPU Features
@@ -101,12 +120,12 @@ The CPU is compliant to the [official RISC-V specifications](https://raw.githubu
 
 **RV32I base instruction set** (`I` extension):
   * ALU instructions: `LUI` `AUIPC` `ADDI` `SLTI` `SLTIU` `XORI` `ORI` `ANDI` `SLLI` `SRLI` `SRAI` `ADD` `SUB` `SLL` `SLT` `SLTU` `XOR` `SRL` `SRA` `OR` `AND`
-  * Branches instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
+  * Jump and branch instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
   * Memory instructions: `LB` `LH` `LW` `LBU` `LHU` `SB` `SH` `SW`
 
 **Compressed instructions** (`C` extension):
   * ALU instructions: `C.ADDI4SPN` `C.ADDI` `C.ADD` `C.ADDI16SP` `C.LI` `C.LUI` `C.SLLI` `C.SRLI` `C.SRAI` `C.ANDI` `C.SUB` `C.XOR` `C.OR` `C.AND` `C.MV` `C.NOP`
-  * Branches instructions: `C.J` `C.JAL` `C.JR` `C.JALR` `C.BEQZ` `C.BNEZ`
+  * Jump and branch instructions: `C.J` `C.JAL` `C.JR` `C.JALR` `C.BEQZ` `C.BNEZ`
   * Memory instructions: `C.LW` `C.SW` `C.LWSP` `C.SWSP`
   * Misc instructions: `C.EBREAK` (only with `Zicsr` extension)
 
@@ -145,18 +164,6 @@ The CPU is compliant to the [official RISC-V specifications](https://raw.githubu
 
 More information including a detailed list of the available CSRs can be found in
 the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
-
-
-### To-Do / Wish List
-
-- No exception is triggered in `E`-mode when using reg >x15 yet
-- Port Dhrystone benchmark
-- Implement atomic operations (`A` extension)
-- Implement `Zifence` extension
-- Implement co-processor for single-precision floating-point operations (`F` extension)
-- Implement user mode (`U` extension)
-- Make a 64-bit branch
-- Maybe port an RTOS (like [freeRTOS](https://www.freertos.org/) or [RIOT](https://www.riot-os.org/))
 
 
 

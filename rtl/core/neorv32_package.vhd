@@ -1068,22 +1068,22 @@ package body neorv32_package is
     variable output_v : character;
   begin
     case input is
-      when x"0" => output_v := '0';
-      when x"1" => output_v := '1';
-      when x"2" => output_v := '2';
-      when x"3" => output_v := '3';
-      when x"4" => output_v := '4';
-      when x"5" => output_v := '5';
-      when x"6" => output_v := '6';
-      when x"7" => output_v := '7';
-      when x"8" => output_v := '8';
-      when x"9" => output_v := '9';
-      when x"a" => output_v := 'a';
-      when x"b" => output_v := 'b';
-      when x"c" => output_v := 'c';
-      when x"d" => output_v := 'd';
-      when x"e" => output_v := 'e';
-      when x"f" => output_v := 'f';
+      when x"0"   => output_v := '0';
+      when x"1"   => output_v := '1';
+      when x"2"   => output_v := '2';
+      when x"3"   => output_v := '3';
+      when x"4"   => output_v := '4';
+      when x"5"   => output_v := '5';
+      when x"6"   => output_v := '6';
+      when x"7"   => output_v := '7';
+      when x"8"   => output_v := '8';
+      when x"9"   => output_v := '9';
+      when x"a"   => output_v := 'a';
+      when x"b"   => output_v := 'b';
+      when x"c"   => output_v := 'c';
+      when x"d"   => output_v := 'd';
+      when x"e"   => output_v := 'e';
+      when x"f"   => output_v := 'f';
       when others => output_v := '?';
     end case;
     return output_v;

@@ -162,7 +162,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal ipb : ipb_t;
 
   -- instruction execution engine --
-  type execute_engine_state_t is (IDLE, DISPATCH, TRAP, EXECUTE, ALU_WAIT, BRANCH, STORE, LOAD, LOADSTORE_0, LOADSTORE_1, CSR_ACCESS);
+  type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP, EXECUTE, ALU_WAIT, BRANCH, STORE, LOAD, LOADSTORE_0, LOADSTORE_1, CSR_ACCESS);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
@@ -547,8 +547,8 @@ begin
         execute_engine.pc      <= MEM_ISPACE_BASE(data_width_c-1 downto 1) & '0';
         execute_engine.last_pc <= MEM_ISPACE_BASE(data_width_c-1 downto 1) & '0';
       end if;
-      execute_engine.state      <= IDLE;
-      execute_engine.state_prev <= IDLE;
+      execute_engine.state      <= SYS_WAIT;
+      execute_engine.state_prev <= SYS_WAIT;
     elsif rising_edge(clk_i) then
       execute_engine.pc <= execute_engine.pc_nxt(data_width_c-1 downto 1) & '0';
       if (execute_engine.state = EXECUTE) then
@@ -693,7 +693,7 @@ begin
     -- state machine --
     case execute_engine.state is
 
-      when IDLE => -- Delay cycle (used to wait for side effects to kick in)
+      when SYS_WAIT => -- Delay cycle (used to wait for side effects to kick in)
       -- ------------------------------------------------------------
         execute_engine.state_nxt <= DISPATCH;
 
@@ -719,7 +719,7 @@ begin
           trap_ctrl.env_start_ack  <= '1';
           execute_engine.pc_nxt    <= csr.mtvec(data_width_c-1 downto 1) & '0';
           fetch_engine.reset       <= '1';
-          execute_engine.state_nxt <= IDLE;
+          execute_engine.state_nxt <= SYS_WAIT;
         end if;
 
       when EXECUTE => -- Decode and execute instruction
@@ -810,15 +810,15 @@ begin
               case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
                 when x"000" => -- ECALL
                   trap_ctrl.env_call <= '1';
-                  execute_engine.state_nxt <= IDLE;
+                  execute_engine.state_nxt <= SYS_WAIT;
                 when x"001" => -- EBREAK
                   trap_ctrl.break_point <= '1';
-                  execute_engine.state_nxt <= IDLE;
+                  execute_engine.state_nxt <= SYS_WAIT;
                 when x"302" => -- MRET
                   trap_ctrl.env_end        <= '1';
                   execute_engine.pc_nxt    <= csr.mepc(data_width_c-1 downto 1) & '0';
                   fetch_engine.reset       <= '1';
-                  execute_engine.state_nxt <= IDLE;
+                  execute_engine.state_nxt <= SYS_WAIT;
                 when x"105" => -- WFI
                   execute_engine.state_nxt <= TRAP;
                 when others => -- undefined
@@ -843,6 +843,7 @@ begin
         ctrl_nxt(ctrl_alu_opb_mux_msb_c) <= '0'; -- default
         ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '0'; -- default
         case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+          -- register operations --
           when funct3_csrrw_c => -- CSRRW
             ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- OPA = rs1
             ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '0'; -- OPB = rs2
@@ -859,6 +860,7 @@ begin
             ctrl_nxt(ctrl_alu_opb_mux_msb_c) <= '1'; -- OPB = rs1
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_bitc_c; -- actual ALU operation = bit clear
             csr.we_nxt <= not rs1_is_r0_v; -- write CSR if rs1 is not zero_reg
+          -- immediate operations --
           when funct3_csrrwi_c => -- CSRRWI
             ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- OPA = rs1
             ctrl_nxt(ctrl_rf_clear_rs1_c)    <= '1'; -- rs1 = 0
@@ -898,7 +900,7 @@ begin
           execute_engine.pc_nxt <= alu_add_i(data_width_c-1 downto 1) & '0';
           fetch_engine.reset    <= '1';
         end if;
-        execute_engine.state_nxt <= IDLE;
+        execute_engine.state_nxt <= SYS_WAIT;
 
       when LOAD => -- trigger memory read request
       -- ------------------------------------------------------------
@@ -920,7 +922,7 @@ begin
         ctrl_nxt(ctrl_bus_mdi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for LOAD)
         ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "01"; -- RF input = memory input (only relevant for LOAD)
         if (ma_load_i = '1') or (be_load_i = '1') or (ma_store_i = '1') or (be_store_i = '1') then -- abort if exception
-          execute_engine.state_nxt <= IDLE;
+          execute_engine.state_nxt <= SYS_WAIT;
         elsif (bus_wait_i = '0') then -- wait here for bus to finish transaction
           if (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_load_c) then -- LOAD?
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
@@ -930,7 +932,7 @@ begin
 
       when others => -- undefined
       -- ------------------------------------------------------------
-        execute_engine.state_nxt <= IDLE;
+        execute_engine.state_nxt <= SYS_WAIT;
 
     end case;
   end process execute_engine_fsm_comb;
