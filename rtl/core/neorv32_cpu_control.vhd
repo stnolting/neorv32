@@ -46,39 +46,40 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
-    CLOCK_FREQUENCY           : natural := 0; -- clock frequency of clk_i in Hz
-    HART_ID                   : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
-    BOOTLOADER_USE            : boolean := true;   -- implement processor-internal bootloader?
-    CSR_COUNTERS_USE          : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    CLOCK_FREQUENCY              : natural := 0; -- clock frequency of clk_i in Hz
+    HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
+    BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
+    CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C     : boolean := false;  -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E     : boolean := false;  -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M     : boolean := false;  -- implement muld/div extension?
-    CPU_EXTENSION_RISCV_Zicsr : boolean := true;   -- implement CSR system?
+    CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
     -- Memory configuration: Instruction memory --
-    MEM_ISPACE_BASE           : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
-    MEM_ISPACE_SIZE           : natural := 8*1024; -- total size of instruction memory space in byte
-    MEM_INT_IMEM_USE          : boolean := true;   -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE         : natural := 8*1024; -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM          : boolean := false;  -- implement processor-internal instruction memory as ROM
+    MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
+    MEM_ISPACE_SIZE              : natural := 8*1024; -- total size of instruction memory space in byte
+    MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE            : natural := 8*1024; -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
     -- Memory configuration: Data memory --
-    MEM_DSPACE_BASE           : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
-    MEM_DSPACE_SIZE           : natural := 4*1024; -- total size of data memory space in byte
-    MEM_INT_DMEM_USE          : boolean := true;   -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE         : natural := 4*1024; -- size of processor-internal data memory in bytes
+    MEM_DSPACE_BASE              : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
+    MEM_DSPACE_SIZE              : natural := 4*1024; -- total size of data memory space in byte
+    MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE            : natural := 4*1024; -- size of processor-internal data memory in bytes
     -- Memory configuration: External memory interface --
-    MEM_EXT_USE               : boolean := false;  -- implement external memory bus interface?
+    MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
     -- Processor peripherals --
-    IO_GPIO_USE               : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE              : boolean := true;   -- implement machine system timer (MTIME)?
-    IO_UART_USE               : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                : boolean := true;   -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_USE                : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                : boolean := true;   -- implement watch dog timer (WDT)?
-    IO_CLIC_USE               : boolean := true;   -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE               : boolean := true;   -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE            : boolean := true    -- implement dummy device (DEVNULL)?
+    IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
+    IO_UART_USE                  : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_USE                   : boolean := true;   -- implement serial peripheral interface (SPI)?
+    IO_TWI_USE                   : boolean := true;   -- implement two-wire interface (TWI)?
+    IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
+    IO_CLIC_USE                  : boolean := true;   -- implement core local interrupt controller (CLIC)?
+    IO_TRNG_USE                  : boolean := true;   -- implement true random number generator (TRNG)?
+    IO_DEVNULL_USE               : boolean := true    -- implement dummy device (DEVNULL)?
   );
   port (
     -- global control --
@@ -795,6 +796,16 @@ begin
             execute_engine.is_jump_nxt <= '1'; -- this is a jump operation
             execute_engine.state_nxt   <= BRANCH;
 
+          when opcode_fence_c => -- fence operations
+          -- ------------------------------------------------------------
+            if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then -- FENCE.I
+              fetch_engine.reset       <= '1';
+              execute_engine.pc_nxt    <= execute_engine.next_pc;
+              execute_engine.state_nxt <= SYS_WAIT;
+            else
+              execute_engine.state_nxt <= DISPATCH;
+            end if;
+
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
@@ -1022,6 +1033,15 @@ begin
             illegal_instruction <= '1';
           else
             illegal_instruction <= '0';
+          end if;
+
+        when opcode_fence_c => -- fence instructions --
+          if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then -- FENCE.I
+            illegal_instruction <= '0';
+          elsif (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then -- FENCE
+            illegal_instruction <= '0';
+          else
+            illegal_instruction <= '1';
           end if;
 
         when opcode_syscsr_c => -- check system instructions --
@@ -1383,7 +1403,7 @@ begin
               csr_rdata_o(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
               csr_rdata_o(12) <= csr.misa_m_en;                               -- M CPU extension
               csr_rdata_o(23) <= '1';                                         -- X CPU extension: non-standard extensions
-              csr_rdata_o(25) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr); -- Z CPU extension
+              csr_rdata_o(25) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr) and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Z CPU extension
               csr_rdata_o(30) <= '1'; -- 32-bit architecture (MXL lo)
               csr_rdata_o(31) <= '0'; -- 32-bit architecture (MXL hi)
             when x"304" => -- R/W: mie - machine interrupt-enable register

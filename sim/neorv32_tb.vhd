@@ -125,41 +125,42 @@ begin
   neorv32_top_inst: neorv32_top
   generic map (
     -- General --
-    CLOCK_FREQUENCY           => f_clock_nat_c, -- clock frequency of clk_i in Hz
-    HART_ID                   => x"00000000",   -- custom hardware thread ID
-    BOOTLOADER_USE            => false,         -- implement processor-internal bootloader?
-    CSR_COUNTERS_USE          => true,          -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    CLOCK_FREQUENCY              => f_clock_nat_c, -- clock frequency of clk_i in Hz
+    HART_ID                      => x"00000000",   -- custom hardware thread ID
+    BOOTLOADER_USE               => false,         -- implement processor-internal bootloader?
+    CSR_COUNTERS_USE             => true,          -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C     => true,          -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E     => false,         -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M     => true,          -- implement muld/div extension?
-    CPU_EXTENSION_RISCV_Zicsr => true,          -- implement CSR system?
+    CPU_EXTENSION_RISCV_C        => true,          -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        => false,         -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        => true,          -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_Zicsr    => true,          -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei => true,          -- implement instruction stream sync.?
     -- Memory configuration: Instruction memory --
-    MEM_ISPACE_BASE           => x"00000000",   -- base address of instruction memory space
-    MEM_ISPACE_SIZE           => 16*1024,       -- total size of instruction memory space in byte
-    MEM_INT_IMEM_USE          => true,          -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE         => 16*1024,       -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM          => false,         -- implement processor-internal instruction memory as ROM
+    MEM_ISPACE_BASE              => x"00000000",   -- base address of instruction memory space
+    MEM_ISPACE_SIZE              => 16*1024,       -- total size of instruction memory space in byte
+    MEM_INT_IMEM_USE             => true,          -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE            => 16*1024,       -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_ROM             => false,         -- implement processor-internal instruction memory as ROM
     -- Memory configuration: Data memory --
-    MEM_DSPACE_BASE           => x"80000000",   -- base address of data memory space
-    MEM_DSPACE_SIZE           => 8*1024,        -- total size of data memory space in byte
-    MEM_INT_DMEM_USE          => true,          -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE         => 8*1024,        -- size of processor-internal data memory in bytes
+    MEM_DSPACE_BASE              => x"80000000",   -- base address of data memory space
+    MEM_DSPACE_SIZE              => 8*1024,        -- total size of data memory space in byte
+    MEM_INT_DMEM_USE             => true,          -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE            => 8*1024,        -- size of processor-internal data memory in bytes
     -- Memory configuration: External memory interface --
-    MEM_EXT_USE               => true,          -- implement external memory bus interface?
-    MEM_EXT_REG_STAGES        => 2,             -- number of interface register stages (0,1,2)
-    MEM_EXT_TIMEOUT           => 15,            -- cycles after which a valid bus access will timeout
+    MEM_EXT_USE                  => true,          -- implement external memory bus interface?
+    MEM_EXT_REG_STAGES           => 2,             -- number of interface register stages (0,1,2)
+    MEM_EXT_TIMEOUT              => 15,            -- cycles after which a valid bus access will timeout
     -- Processor peripherals --
-    IO_GPIO_USE               => true,          -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE              => true,          -- implement machine system timer (MTIME)?
-    IO_UART_USE               => true,          -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                => true,          -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                => true,          -- implement two-wire interface (TWI)?
-    IO_PWM_USE                => true,          -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                => true,          -- implement watch dog timer (WDT)?
-    IO_CLIC_USE               => true,          -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE               => false,         -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE            => true           -- implement dummy device (DEVNULL)?
+    IO_GPIO_USE                  => true,          -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_USE                 => true,          -- implement machine system timer (MTIME)?
+    IO_UART_USE                  => true,          -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_USE                   => true,          -- implement serial peripheral interface (SPI)?
+    IO_TWI_USE                   => true,          -- implement two-wire interface (TWI)?
+    IO_PWM_USE                   => true,          -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_USE                   => true,          -- implement watch dog timer (WDT)?
+    IO_CLIC_USE                  => true,          -- implement core local interrupt controller (CLIC)?
+    IO_TRNG_USE                  => false,         -- implement true random number generator (TRNG)?
+    IO_DEVNULL_USE               => true           -- implement dummy device (DEVNULL)?
   )
   port map (
     -- Global control --

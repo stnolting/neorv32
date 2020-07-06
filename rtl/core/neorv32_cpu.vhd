@@ -50,40 +50,41 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu is
   generic (
     -- General --
-    CLOCK_FREQUENCY           : natural := 0; -- clock frequency of clk_i in Hz
-    HART_ID                   : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
-    BOOTLOADER_USE            : boolean := true;   -- implement processor-internal bootloader?
-    CSR_COUNTERS_USE          : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    CLOCK_FREQUENCY              : natural := 0; -- clock frequency of clk_i in Hz
+    HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
+    BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
+    CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C     : boolean := false;  -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E     : boolean := false;  -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M     : boolean := false;  -- implement muld/div extension?
-    CPU_EXTENSION_RISCV_Zicsr : boolean := true;   -- implement CSR system?
+    CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
     -- Memory configuration: Instruction memory --
-    MEM_ISPACE_BASE           : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
-    MEM_ISPACE_SIZE           : natural := 8*1024; -- total size of instruction memory space in byte
-    MEM_INT_IMEM_USE          : boolean := true;   -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE         : natural := 8*1024; -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM          : boolean := false;  -- implement processor-internal instruction memory as ROM
+    MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
+    MEM_ISPACE_SIZE              : natural := 8*1024; -- total size of instruction memory space in byte
+    MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE            : natural := 8*1024; -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
     -- Memory configuration: Data memory --
-    MEM_DSPACE_BASE           : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
-    MEM_DSPACE_SIZE           : natural := 4*1024; -- total size of data memory space in byte
-    MEM_INT_DMEM_USE          : boolean := true;   -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE         : natural := 4*1024; -- size of processor-internal data memory in bytes
+    MEM_DSPACE_BASE              : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
+    MEM_DSPACE_SIZE              : natural := 4*1024; -- total size of data memory space in byte
+    MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE            : natural := 4*1024; -- size of processor-internal data memory in bytes
     -- Memory configuration: External memory interface --
-    MEM_EXT_USE               : boolean := false;  -- implement external memory bus interface?
-    MEM_EXT_TIMEOUT           : natural := 15;     -- cycles after which a valid bus access will timeout
+    MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
+    MEM_EXT_TIMEOUT              : natural := 15;     -- cycles after which a valid bus access will timeout
     -- Processor peripherals --
-    IO_GPIO_USE               : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE              : boolean := true;   -- implement machine system timer (MTIME)?
-    IO_UART_USE               : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                : boolean := true;   -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_USE                : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                : boolean := true;   -- implement watch dog timer (WDT)?
-    IO_CLIC_USE               : boolean := true;   -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE               : boolean := true;   -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE            : boolean := true    -- implement dummy device (DEVNULL)?
+    IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
+    IO_UART_USE                  : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_USE                   : boolean := true;   -- implement serial peripheral interface (SPI)?
+    IO_TWI_USE                   : boolean := true;   -- implement two-wire interface (TWI)?
+    IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
+    IO_CLIC_USE                  : boolean := true;   -- implement core local interrupt controller (CLIC)?
+    IO_TRNG_USE                  : boolean := true;   -- implement true random number generator (TRNG)?
+    IO_DEVNULL_USE               : boolean := true    -- implement dummy device (DEVNULL)?
   );
   port (
     -- global control --
@@ -142,39 +143,40 @@ begin
   neorv32_cpu_control_inst: neorv32_cpu_control
   generic map (
     -- General --
-    CLOCK_FREQUENCY           => CLOCK_FREQUENCY,  -- clock frequency of clk_i in Hz
-    HART_ID                   => HART_ID,          -- custom hardware thread ID
-    BOOTLOADER_USE            => BOOTLOADER_USE,   -- implement processor-internal bootloader?
-    CSR_COUNTERS_USE          => CSR_COUNTERS_USE, -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    CLOCK_FREQUENCY              => CLOCK_FREQUENCY,  -- clock frequency of clk_i in Hz
+    HART_ID                      => HART_ID,          -- custom hardware thread ID
+    BOOTLOADER_USE               => BOOTLOADER_USE,   -- implement processor-internal bootloader?
+    CSR_COUNTERS_USE             => CSR_COUNTERS_USE, -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C     => CPU_EXTENSION_RISCV_C,     -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E     => CPU_EXTENSION_RISCV_E,     -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M     => CPU_EXTENSION_RISCV_M,     -- implement muld/div extension?
-    CPU_EXTENSION_RISCV_Zicsr => CPU_EXTENSION_RISCV_Zicsr, -- implement CSR system?
+    CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,     -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,     -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,     -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr, -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     -- Memory configuration: Instruction memory --
-    MEM_ISPACE_BASE           => MEM_ISPACE_BASE,   -- base address of instruction memory space
-    MEM_ISPACE_SIZE           => MEM_ISPACE_SIZE,   -- total size of instruction memory space in byte
-    MEM_INT_IMEM_USE          => MEM_INT_IMEM_USE,  -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE         => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM          => MEM_INT_IMEM_ROM,  -- implement processor-internal instruction memory as ROM
+    MEM_ISPACE_BASE              => MEM_ISPACE_BASE,   -- base address of instruction memory space
+    MEM_ISPACE_SIZE              => MEM_ISPACE_SIZE,   -- total size of instruction memory space in byte
+    MEM_INT_IMEM_USE             => MEM_INT_IMEM_USE,  -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_ROM             => MEM_INT_IMEM_ROM,  -- implement processor-internal instruction memory as ROM
     -- Memory configuration: Data memory --
-    MEM_DSPACE_BASE           => MEM_DSPACE_BASE,   -- base address of data memory space
-    MEM_DSPACE_SIZE           => MEM_DSPACE_SIZE,   -- total size of data memory space in byte
-    MEM_INT_DMEM_USE          => MEM_INT_DMEM_USE,  -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE         => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
+    MEM_DSPACE_BASE              => MEM_DSPACE_BASE,   -- base address of data memory space
+    MEM_DSPACE_SIZE              => MEM_DSPACE_SIZE,   -- total size of data memory space in byte
+    MEM_INT_DMEM_USE             => MEM_INT_DMEM_USE,  -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
     -- Memory configuration: External memory interface --
-    MEM_EXT_USE               => MEM_EXT_USE,       -- implement external memory bus interface?
+    MEM_EXT_USE                  => MEM_EXT_USE,       -- implement external memory bus interface?
     -- Processor peripherals --
-    IO_GPIO_USE               => IO_GPIO_USE,       -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE              => IO_MTIME_USE,      -- implement machine system timer (MTIME)?
-    IO_UART_USE               => IO_UART_USE,       -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                => IO_SPI_USE,        -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                => IO_TWI_USE,        -- implement two-wire interface (TWI)?
-    IO_PWM_USE                => IO_PWM_USE,        -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                => IO_WDT_USE,        -- implement watch dog timer (WDT)?
-    IO_CLIC_USE               => IO_CLIC_USE,       -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE               => IO_TRNG_USE,       -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE            => IO_DEVNULL_USE     -- implement dummy device (DEVNULL)?
+    IO_GPIO_USE                  => IO_GPIO_USE,       -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_USE                 => IO_MTIME_USE,      -- implement machine system timer (MTIME)?
+    IO_UART_USE                  => IO_UART_USE,       -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_USE                   => IO_SPI_USE,        -- implement serial peripheral interface (SPI)?
+    IO_TWI_USE                   => IO_TWI_USE,        -- implement two-wire interface (TWI)?
+    IO_PWM_USE                   => IO_PWM_USE,        -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_USE                   => IO_WDT_USE,        -- implement watch dog timer (WDT)?
+    IO_CLIC_USE                  => IO_CLIC_USE,       -- implement core local interrupt controller (CLIC)?
+    IO_TRNG_USE                  => IO_TRNG_USE,       -- implement true random number generator (TRNG)?
+    IO_DEVNULL_USE               => IO_DEVNULL_USE     -- implement dummy device (DEVNULL)?
   )
   port map (
     -- global control --
