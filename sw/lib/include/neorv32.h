@@ -134,7 +134,7 @@ enum NEORV32_CPU_MISA_enum {
   CPU_MISA_I_EXT      =  8, /**< CPU misa CSR  (8): I: Base integer ISA CPU extension available (r/-) */
   CPU_MISA_M_EXT      = 12, /**< CPU misa CSR (12): M: Multiplier/divider CPU extension available (r/w), can be switched on/off */
   CPU_MISA_X_EXT      = 23, /**< CPU misa CSR (23): X: Non-standard CPU extension available (r/-) */
-  CPU_MISA_Z_EXT      = 25, /**< CPU misa CSR (25): Z: Privileged architecture CPU extension available (r/-) */
+  CPU_MISA_Z_EXT      = 25, /**< CPU misa CSR (25): Z: Privileged architecture CPU extension(s) available (r/-) */
   CPU_MISA_MXL_LO_EXT = 30, /**< CPU misa CSR (30): MXL.lo: CPU data width (r/-) */
   CPU_MISA_MXL_HI_EXT = 31  /**< CPU misa CSR (31): MXL.Hi: CPU data width (r/-) */
 };

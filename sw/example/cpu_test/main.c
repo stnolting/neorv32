@@ -197,6 +197,25 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Test fence instructions - make sure CPU does not crash here and throws no exception
+  // ----------------------------------------------------------
+  neorv32_uart_printf("FENCE(.I):   ");
+  cnt_test++;
+  asm volatile ("fence");
+  asm volatile ("fence.i");
+
+  if (exception_handler_answer != 0) {
+    neorv32_uart_printf("fail\n");
+    cnt_fail++;
+  }
+  else {
+    neorv32_uart_printf("ok\n");
+    cnt_ok++;
+  }
+  exception_handler_answer = 0;
+
+
+  // ----------------------------------------------------------
   // Unaligned instruction address
   // ----------------------------------------------------------
   neorv32_uart_printf("EXC I_ALIGN: ");
