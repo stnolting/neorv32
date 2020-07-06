@@ -200,10 +200,11 @@ int main() {
   // Unaligned instruction address
   // ----------------------------------------------------------
   neorv32_uart_printf("EXC I_ALIGN: ");
-  cnt_test++;
 
   // skip if C-mode is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) | (1<<CPU_MISA_C_EXT)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_C_EXT)) == 0) {
+
+    cnt_test++;
 
     // call unaligned address
     ((void (*)(void))ADDR_UNALIGNED)();
