@@ -17,7 +17,8 @@ addons:
 script:
 
   # Generate documentary (modify doxygen script for travis ci before)
-  - /bin/bash -c "sed -i 's/$(PWD)/$(TRAVIS_BUILD_DIR)/g'' docs/doxygen_makefile_sw"
+  - /bin/bash -c "sed -i 's/$(PWD)\/../$(TRAVIS_BUILD_DIR)\/neorv32/g' docs/doxygen_makefile_sw"
+  - /bin/bash -c "cat docs/doxygen_makefile_sw"
   - doxygen docs/doxygen_makefile_sw
 
   # Get simulator tools
