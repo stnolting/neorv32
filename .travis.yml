@@ -39,7 +39,7 @@ script:
 deploy:
   provider: pages
   skip_cleanup: true
-  local_dir: docs/build/html
+  local_dir: doxygen_build/html
   github_token: $GH_REPO_TOKEN
   on:
     branch: master
