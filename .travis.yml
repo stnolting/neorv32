@@ -1,3 +1,5 @@
+sudo: false 
+
 dist: bionic
 
 services:
@@ -6,12 +8,22 @@ services:
 env:
   - PATH=$PATH:$(pwd)/riscv/bin
 
+# Install dependencies
+addons:
+  apt:
+    packages:
+      - doxygen
+
 script:
+
+  # Generate documentary (modify doxygen script for travis ci before)
+  - /bin/bash -c "sed -i 's/$(PWD)/$(TRAVIS_BUILD_DIR)/g'' docs/doxygen_makefile_sw"
+  - doxygen docs/doxygen_makefile_sw
 
   # Get simulator tools
   - docker pull ghdl/ghdl:buster-gcc-8.3.0
 
-  # Get toolchain & run SW check
+  # Get toolchain and run SW check
   - /bin/bash -c "chmod u+x .ci/install.sh && .ci/install.sh"
   - /bin/bash -c "chmod u+x .ci/sw_check.sh && .ci/sw_check.sh"
 
@@ -19,6 +31,15 @@ script:
   - >
     docker run -t -v `pwd`:/mnt/data ghdl/ghdl:buster-gcc-8.3.0
     /bin/bash -c "chmod u+x /mnt/data/.ci/hw_check.sh && /mnt/data/.ci/hw_check.sh"
+
+# Generate and deploy documentation
+deploy:
+  provider: pages
+  skip_cleanup: true
+  local_dir: docs/build/html
+  github_token: $GH_REPO_TOKEN
+  on:
+    branch: master
 
 notifications:
   email:
