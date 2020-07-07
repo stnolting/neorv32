@@ -94,7 +94,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   rf_access: process(clk_i)
   begin
-    if rising_edge(clk_i) then
+    if rising_edge(clk_i) then -- sync read and write
       if (CPU_EXTENSION_RISCV_E = false) then -- normal register file with 32 entries
         -- check if reading from r0 --
         rs1_clear <= '0';

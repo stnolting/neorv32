@@ -70,7 +70,7 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY              => 100000000,   -- clock frequency of clk_i in Hz
-    HART_ID                      => x"00000000", -- custom hardware thread ID
+    HART_ID                      => x"00000000", -- hardware thread ID
     BOOTLOADER_USE               => true,        -- implement processor-internal bootloader?
     CSR_COUNTERS_USE             => true,        -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     -- RISC-V CPU Extensions --

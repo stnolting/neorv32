@@ -170,7 +170,7 @@ begin
       shift_cmd_ff <= shift_cmd;
       if (shift_start = '1') then -- trigger new shift
         shift_sreg <= opa; -- shift operand
-        shift_cnt  <= opb(4 downto 0); -- shift amount
+        shift_cnt  <= opb(index_size_f(data_width_c)-1 downto 0); -- shift amount
       elsif (shift_run = '1') then -- running shift
         shift_cnt <= std_ulogic_vector(unsigned(shift_cnt) - 1);
         if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- SLL: shift left logical
@@ -187,7 +187,7 @@ begin
   shift_start <= '1' when (shift_cmd = '1') and (shift_cmd_ff = '0') else '0';
 
   -- shift operation running? --
-  shift_run <= '1' when (shift_cnt /= "00000") or (shift_start = '1') else '0';
+  shift_run <= '1' when (or_all_f(shift_cnt) = '1') or (shift_start = '1') else '0';
 
 
   -- Coprocessor Interface ------------------------------------------------------------------
@@ -200,7 +200,7 @@ begin
       cp_rb_ff0 <= '0';
       cp_rb_ff1 <= '0';
     elsif rising_edge(clk_i) then
-      if (ctrl_i(ctrl_sys_m_ext_en_c) = '1') then
+      if (ctrl_i(ctrl_sys_m_ext_en_c) = '1') then -- FIXME add second cp (floating point?)
         cp_cmd_ff <= ctrl_i(ctrl_cp_use_c);
         cp_rb_ff0 <= '0';
         cp_rb_ff1 <= cp_rb_ff0;
@@ -231,7 +231,7 @@ begin
   alu_function_mux: process(ctrl_i, opa, opb, add_res, sub_res, cmp_less, shift_sreg)
   begin
     case ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) is
-      when alu_cmd_bitc_c  => alu_res <= opa and (not opb); -- bit clear (for CSR modification only)
+      when alu_cmd_bitc_c  => alu_res <= opa and (not opb); -- bit clear (for CSR modifications only)
       when alu_cmd_sub_c   => alu_res <= sub_res;
       when alu_cmd_add_c   => alu_res <= add_res;
       when alu_cmd_xor_c   => alu_res <= opa xor opb;

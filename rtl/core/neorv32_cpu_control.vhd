@@ -892,7 +892,7 @@ begin
         -- RF write back --
         ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output register
         ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-        execute_engine.state_nxt <= DISPATCH;
+        execute_engine.state_nxt <= DISPATCH; -- was SYS_WAIT
 
       when ALU_WAIT => -- wait for multi-cycle ALU operation to finish
       -- ------------------------------------------------------------
@@ -1321,8 +1321,8 @@ begin
               csr.mstatus_mpie <= csr_wdata_i(07);
             end if;
             if (execute_engine.i_reg(23 downto 20) = x"1") then -- R/W: misa - machine instruction set extensions
-              csr.misa_c_en <= csr_wdata_i(02); -- C extension enable/disable
-              csr.misa_m_en <= csr_wdata_i(12); -- M extension enable/disable
+              csr.misa_c_en <= csr_wdata_i(02); -- C extension enable/disable during runtime
+              csr.misa_m_en <= csr_wdata_i(12); -- M extension enable/disable during runtime
             end if;
             if (execute_engine.i_reg(23 downto 20) = x"4") then -- R/W: mie - machine interrupt-enable register
               csr.mie_msie <= csr_wdata_i(03); -- SW IRQ enable
@@ -1348,6 +1348,7 @@ begin
           end if;
 
         else -- automatic update by hardware
+
           -- machine exception PC & exception value register --
           if (trap_ctrl.env_start_ack = '1') then -- trap handler started?
             if (csr.mcause(data_width_c-1) = '1') then -- for INTERRUPTS only (mtval not defined for interrupts)
@@ -1376,6 +1377,7 @@ begin
           elsif (trap_ctrl.env_end = '1') then -- return from exception
             csr.mstatus_mie <= csr.mstatus_mpie;
           end if;
+
         end if;
       end if;
     end if;
