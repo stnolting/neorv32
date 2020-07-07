@@ -32,7 +32,7 @@ as auxiliary processor within a larger SoC designs or as stand-alone custom micr
 
 The processor provides common peripherals and interfaces like input and output ports, serial interfaces for UART, I²C and SPI,
 interrupt controller, timers and embedded memories. External memories, peripherals and custom IP can be attached via a
-Wishbone-based external memory interface. All optional features beyond the base CPU can be enabled configured via VHDL generics.
+Wishbone-based external memory interface. All optional features beyond the base CPU can be enabled and configured via VHDL generics.
 
 This project comes with a complete software ecosystem that features core libraries for high-level usage of the
 provided functions and peripherals, application makefiles and example programs. All software source files
@@ -61,22 +61,22 @@ all the [provided example programs](https://github.com/stnolting/neorv32/tree/ma
 
 The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and `rv32Zifencei` [RISC-V compliance tests](https://github.com/riscv/riscv-compliance).
 
-|                                                                                 |        |
+| Project                                                                         | Status |
 |:--------------------------------------------------------------------------------|:-------|
+| NEORV32 processor                                                               | [![Build Status](https://travis-ci.com/stnolting/neorv32.svg?branch=master)](https://travis-ci.com/stnolting/neorv32) |
 | [Pre-build toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)          | [![Build Test](https://travis-ci.com/stnolting/riscv_gcc_prebuilt.svg?branch=master)](https://travis-ci.com/stnolting/riscv_gcc_prebuilt) |
 | [RISC-V compliance test](https://github.com/stnolting/neorv32_compliance_test)  | [![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) |
 
 
-#### Limitations to be fixed
+### Limitations to be fixed
 
 * No exception is triggered in `E`-mode when using registers above `x15` yet
 
 
-#### To-Do / Wish List
+### To-Do / Wish List
 
 - Port Dhrystone benchmark
 - Implement atomic operations (`A` extension)
-- Implement `Zifence` extension
 - Implement co-processor for single-precision floating-point operations (`F` extension)
 - Implement user mode (`U` extension)
 - Make a 64-bit branch
@@ -155,9 +155,9 @@ The CPU is compliant to the [official RISC-V specifications](https://raw.githubu
     * Store address misaligned
     * Store access fault
     * Environment call from M-mode (via `ecall` instruction)
-    * Machine software instrrupt
-    * Machine timer interrupt (via `MTIME` unit)
-    * Machine external interrupt (via `CLIC` unit)
+    * Machine software instrrupt `msi`
+    * Machine timer interrupt `mti` (via MTIME unit)
+    * Machine external interrupt `mei` (via CLIC unit)
 
 **Privileged architecture / FENCE.I** (`Zifencei` extension):
   * System instructions: `FENCE.I`
@@ -263,16 +263,17 @@ Used peripherals: MTIME for time measurement, UART for printing the results
 
 ### Instruction Cycles
 
-The NEORV32 CPU is based on a multi-cycle architecture. Each instruction is executed in a sequence of several
-consecutive micro operations. Hence, each instruction requires several clock cycles to execute. The average CPI
-(cycles per instruction) depends on the instruction mix of a specific applications and also on the available
+The NEORV32 CPU is based on two-stages pipelined architecutre. Each stage uses a multi-cycle processing scheme. Hence,
+each instruction requires several clock cycles to execute (2 cycles for ALU operations, ..., 40 cycles for divisions).
+The average CPI (cycles per instruction) depends on the instruction mix of a specific applications and also on the available
 CPU extensions.
 
 Please note that the CPU-internal shifter (e.g. for the `SLL` instruction) as well as the multiplier and divider of the
 `M` extension use a bit-serial approach and require several cycles for completion.
 
 The following table shows the performance results for successfully running 2000 CoreMark
-iterations. The average CPI is computed by dividing the total number of required clock cycles (all of CoreMark
+iterations, which reflects a pretty good "real-life" work load. The average CPI is computed by
+dividing the total number of required clock cycles (all of CoreMark
 – not only the timed core) by the number of executed instructions (`instret[h]` CSRs). The executables
 were generated using optimization `-O2`.
 
