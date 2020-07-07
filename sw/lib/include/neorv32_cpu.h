@@ -43,14 +43,9 @@
 #define neorv32_cpu_h
 
 // prototypes
-void neorv32_cpu_sleep(void);
-void neorv32_cpu_eint(void);
-void neorv32_cpu_dint(void);
+int neorv32_cpu_switch_extension(int sel, int state);
 int neorv32_cpu_irq_enable(uint8_t irq_sel);
 int neorv32_cpu_irq_disable(uint8_t irq_sel);
-void neorv32_cpu_sw_irq(void);
-void neorv32_cpu_breakpoint(void);
-void neorv32_cpu_env_call(void);
 void neorv32_cpu_delay_ms(uint32_t time_ms);
 
 
@@ -82,5 +77,75 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_write(const int csr_
 
   asm volatile ("csrw %[input_i], %[input_j]" :  : [input_i] "i" (csr_id), [input_j] "r" (csr_data));
 }
+
+
+/**********************************************************************//**
+ * Put CPU into "sleep" mode.
+ *
+ * @note This function executes the WFI insstruction.
+ * The WFI (wait for interrupt) instruction will make the CPU stall until
+ * an interupt request is detected. Interrupts have to be globally enabled
+ * and at least one external source must be enabled (e.g., the CLIC or the machine
+ * timer) to allow the CPU to wake up again. If 'Zicsr' CPU extension is disabled,
+ * this will permanently stall the CPU.
+ **************************************************************************/
+inline void __attribute__ ((always_inline)) neorv32_cpu_sleep(void) {
+
+  asm volatile ("wfi");
+}
+
+
+/**********************************************************************//**
+ * Enable global CPU interrupts (via MIE flag in mstatus CSR).
+ **************************************************************************/
+inline void __attribute__ ((always_inline)) neorv32_cpu_eint(void) {
+
+  asm volatile ("csrrsi zero, mstatus, %0" : : "i" (1 << CPU_MSTATUS_MIE));
+}
+
+
+/**********************************************************************//**
+ * Disable global CPU interrupts (via MIE flag in mstatus CSR).
+ **************************************************************************/
+inline void __attribute__ ((always_inline)) neorv32_cpu_dint(void) {
+
+  asm volatile ("csrrci zero, mstatus, %0" : : "i" (1 << CPU_MSTATUS_MIE));
+}
+
+
+/**********************************************************************//**
+ * Trigger machine software interrupt.
+ *
+ * @note The according IRQ has to be enabled via neorv32_cpu_irq_enable(uint8_t irq_sel) and
+ * global interrupts must be enabled via neorv32_cpu_eint(void) to trigger an IRQ via software.
+ * The MSI becomes active after 3 clock cycles.
+ **************************************************************************/
+inline void __attribute__ ((always_inline)) neorv32_cpu_sw_irq(void) {
+
+  asm volatile ("csrrsi zero, mip, %0" : : "i" (1 << CPU_MIP_MSIP));
+
+  // the MSI becomes active 3 clock cycles afters issueing
+  asm volatile ("nop"); // these nops are not required, they just make sure the MSI becomes active
+  asm volatile ("nop"); // before the "real" next operation is executed
+}
+
+
+/**********************************************************************//**
+ * Trigger breakpoint exception (via EBREAK instruction).
+ **************************************************************************/
+inline void __attribute__ ((always_inline)) neorv32_cpu_breakpoint(void) {
+
+  asm volatile ("ebreak");
+}
+
+
+/**********************************************************************//**
+ * Trigger "environment call" exception (via ECALL instruction).
+ **************************************************************************/
+inline void __attribute__ ((always_inline)) neorv32_cpu_env_call(void) {
+
+  asm volatile ("ecall");
+}
+
 
 #endif // neorv32_cpu_h

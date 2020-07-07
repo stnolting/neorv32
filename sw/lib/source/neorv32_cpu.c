@@ -44,38 +44,50 @@
 
 
 /**********************************************************************//**
- * Put CPU into "sleep" mode.
+ * Enable/disable CPU extension during runtime via the 'misa' CSR.
  *
- * @note This function executes the WFI insstruction.
- * The WFI (wait for interrupt) instruction will make the CPU stall until
- * an interupt request is detected. Interrupts have to be globally enabled
- * and at least one external source must be enabled (e.g., the CLIC or the machine
- * timer) to allow the CPU to wake up again. If 'Zicsr' CPU extension is disabled,
- * this will permanently stall the CPU.
+ * @warning This is still highly experimental! This function requires the Zicsr + Zifencei CPU extensions.
+ *
+ * @param[in] sel Bit to be set in misa CSR / extension to be enabled. See #NEORV32_CPU_MISA_enum.
+ * @param[in] state Set 1 to enable the selected extension, set 0 to disable it;
+ * return 0 if success, 1 if error (invalid sel or extension cannot be enabled).
  **************************************************************************/
-void neorv32_cpu_sleep(void) {
+int neorv32_cpu_switch_extension(int sel, int state) {
 
-  asm volatile ("wfi");
-}
+  // get current misa setting
+  uint32_t misa_curr = neorv32_cpu_csr_read(CSR_MISA);
+  uint32_t misa_prev = misa_curr;
 
+  // abort if misa.z is cleared
+  if ((misa_curr & (1 << CPU_MISA_Z_EXT)) == 0) {
+    return 1;
+  }
 
-/**********************************************************************//**
- * Enable global CPU interrupts (via MIE flag in mstatus CSR).
- **************************************************************************/
-void neorv32_cpu_eint(void) {
+  // out of range?
+  if (sel > 25) {
+    return 1;
+  }
 
-  const int mask = 1 << CPU_MSTATUS_MIE;
-  asm volatile ("csrrsi zero, mstatus, %0" : : "i" (mask));
-}
+  // enable/disable selected extension
+  if (state & 1) {
+    misa_curr |= (1 << sel);
+  }
+  else {
+    misa_curr &= ~(1 << sel);
+  }
 
+  // try updating misa
+  neorv32_cpu_csr_write(CSR_MISA, misa_curr);
+  asm volatile("fence.i"); // required to flush prefetch buffers
+  asm volatile("nop");
 
-/**********************************************************************//**
- * Disable global CPU interrupts (via MIE flag in mstatus CSR).
- **************************************************************************/
-void neorv32_cpu_dint(void) {
-
-  const int mask = 1 << CPU_MSTATUS_MIE;
-  asm volatile ("csrrci zero, mstatus, %0" : : "i" (mask));
+  // dit it work?
+  if (neorv32_cpu_csr_read(CSR_MISA) == misa_prev) {
+    return 1; // nope
+  }
+  else {
+    return 0; // fine
+  }
 }
 
 
@@ -114,37 +126,6 @@ int neorv32_cpu_irq_disable(uint8_t irq_sel) {
   register uint32_t mask = (uint32_t)(1 << irq_sel);
   asm volatile ("csrrc zero, mie, %0" : : "r" (mask));
   return 0;
-}
-
-
-/**********************************************************************//**
- * Trigger machine software interrupt.
- *
- * @note The according IRQ has to be enabled via neorv32_cpu_irq_enable(uint8_t irq_sel) and
- * global interrupts must be enabled via neorv32_cpu_eint(void) to trigger an IRQ via software.
- **************************************************************************/
-void neorv32_cpu_sw_irq(void) {
-
-  register uint32_t mask = (uint32_t)(1 << CPU_MIP_MSIP);
-  asm volatile ("csrrs zero, mip, %0" : : "r" (mask));
-}
-
-
-/**********************************************************************//**
- * Trigger breakpoint exception (via EBREAK instruction).
- **************************************************************************/
-void neorv32_cpu_breakpoint(void) {
-
-  asm volatile ("ebreak");
-}
-
-
-/**********************************************************************//**
- * Trigger "environment call" exception (via ECALL instruction).
- **************************************************************************/
-void neorv32_cpu_env_call(void) {
-
-  asm volatile ("ecall");
 }
 
 
