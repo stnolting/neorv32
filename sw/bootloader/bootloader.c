@@ -63,7 +63,7 @@
 /** UART BAUD rate */
 #define BAUD_RATE              (19200)
 /** Time until the auto-boot sequence starts (in seconds) */
-#define AUTOBOOT_TIMEOUT       (8)
+#define AUTOBOOT_TIMEOUT       8
 /** Bootloader status LED at GPIO output port (0..15) */
 #define STATUS_LED             (0)
 /** SPI flash boot image base address */
