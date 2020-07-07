@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32: neorv32_twi.c - Two-Wire Interface Master (TWI) HW Driver >>                      #
+// # << NEORV32: neorv32_twi.c - Two-Wire Interface Controller (TWI) HW Driver >>                  #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file neorv32_twi.c
  * @author Stephan Nolting
- * @brief Two-Wire Interface Master (TWI) HW driver source file.
+ * @brief Two-Wire Interface Controller (TWI) HW driver source file.
  *
  * @note These functions should only be used if the TWI unit was synthesized (IO_TWI_USE = true).
  **************************************************************************/
@@ -94,7 +94,7 @@ void neorv32_twi_disable(void) {
 
 
 /**********************************************************************//**
- * Activate sending ACKs by master (MACK).
+ * Activate sending ACKs by controller (MACK).
  **************************************************************************/
 void neorv32_twi_mack_enable(void) {
 
@@ -103,7 +103,7 @@ void neorv32_twi_mack_enable(void) {
 
 
 /**********************************************************************//**
- * Deacivate sending ACKs by master (MACK).
+ * Deacivate sending ACKs by controller (MACK).
  **************************************************************************/
 void neorv32_twi_mack_disable(void) {
 

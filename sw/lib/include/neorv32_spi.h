@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32: neorv32_spi.h - Serial Peripheral Interface Master (SPI) HW Driver >>             #
+// # << NEORV32: neorv32_spi.h - Serial Peripheral Interface Controller (SPI) HW Driver >>         #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file neorv32_spi.h
  * @author Stephan Nolting
- * @brief Serial peripheral interface master (SPI) HW driver header file.
+ * @brief Serial peripheral interface controller (SPI) HW driver header file.
  *
  * @note These functions should only be used if the SPI unit was synthesized (IO_SPI_USE = true).
  **************************************************************************/

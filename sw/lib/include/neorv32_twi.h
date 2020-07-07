@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32: neorv32_twi.h - Two-Wire Interface Master (TWI) HW Driver >>                      #
+// # << NEORV32: neorv32_twi.h - Two-Wire Interface Controller (TWI) HW Driver >>                  #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file neorv32_twi.h
  * @author Stephan Nolting
- * @brief Two-Wire Interface Master (TWI) HW driver header file.
+ * @brief Two-Wire Interface Controller (TWI) HW driver header file.
  *
  * @note These functions should only be used if the TWI unit was synthesized (IO_TWI_USE = true).
  **************************************************************************/

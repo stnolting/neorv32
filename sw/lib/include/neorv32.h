@@ -384,7 +384,7 @@ enum NEORV32_UART_DATA_enum {
 
 
 /**********************************************************************//**
- * @name IO Device: Serial Peripheral Interface Master (SPI)
+ * @name IO Device: Serial Peripheral Interface Controller (SPI)
  **************************************************************************/
 /**@{*/
 /** SPI control register (r/w) */
@@ -420,7 +420,7 @@ enum NEORV32_SPI_CT_enum {
 
 
 /**********************************************************************//**
- * @name IO Device: Two-Wire Interface Master (TWI)
+ * @name IO Device: Two-Wire Interface Controller (TWI)
  **************************************************************************/
 /**@{*/
 /** TWI control register (r/w) */
@@ -437,7 +437,7 @@ enum NEORV32_TWI_CT_enum {
   TWI_CT_PRSC0  =  4, /**< TWI control register(4) (r/w): Clock prescaler select bit 0 */
   TWI_CT_PRSC1  =  5, /**< TWI control register(5) (r/w): Clock prescaler select bit 1 */
   TWI_CT_PRSC2  =  6, /**< TWI control register(6) (r/w): Clock prescaler select bit 2 */
-  TWI_CT_MACK   =  7, /**< TWI control register(7) (r/w): Generate master ACK for each transmission */
+  TWI_CT_MACK   =  7, /**< TWI control register(7) (r/w): Generate controller ACK for each transmission */
 
   TWI_CT_ACK    = 30, /**< TWI control register(30) (r/-): ACK received when set */
   TWI_CT_BUSY   = 31  /**< TWI control register(31) (r/-): Transfer in progress, busy flag */
