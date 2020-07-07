@@ -31,7 +31,8 @@ Wishbone-based external memory interface. All optional features beyond the base 
 
 This project comes with a complete software ecosystem that features core libraries for high-level usage of the
 provided functions and peripherals, application makefiles and example programs. All software source files
-provide a doxygen-based documentary.
+provide a doxygen-based documentary. The deployed doxygen-based software documentation can be found on the
+project's [Github pages](https://stnolting.github.io/neorv32/files.html).
 
 The project is intended to work "out of the box". Just synthesize the test setup from this project, upload
 it to your FPGA board of choice and start playing with the NEORV32. If you do not want to [compile the GCC toolchains](https://github.com/riscv/riscv-gnu-toolchain)
@@ -56,11 +57,11 @@ all the [provided example programs](https://github.com/stnolting/neorv32/tree/ma
 
 The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and `rv32Zifencei` [RISC-V compliance tests](https://github.com/riscv/riscv-compliance).
 
-| Project                                                                         | Status |
-|:--------------------------------------------------------------------------------|:-------|
-| NEORV32 processor                                                               | [![Build Status](https://travis-ci.com/stnolting/neorv32.svg?branch=master)](https://travis-ci.com/stnolting/neorv32) |
-| [Pre-build toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)          | [![Build Test](https://travis-ci.com/stnolting/riscv_gcc_prebuilt.svg?branch=master)](https://travis-ci.com/stnolting/riscv_gcc_prebuilt) |
-| [RISC-V compliance test](https://github.com/stnolting/neorv32_compliance_test)  | [![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) |
+| Project                                                                         | Status | Misc     |
+|:--------------------------------------------------------------------------------|:-------|:---------|
+| NEORV32 processor                                                               | [![Build Status](https://travis-ci.com/stnolting/neorv32.svg?branch=master)](https://travis-ci.com/stnolting/neorv32)                                   | [Software documentation](https://stnolting.github.io/neorv32/files.html) |
+| [Pre-build toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)          | [![Build Test](https://travis-ci.com/stnolting/riscv_gcc_prebuilt.svg?branch=master)](https://travis-ci.com/stnolting/riscv_gcc_prebuilt)               |   |
+| [RISC-V compliance test](https://github.com/stnolting/neorv32_compliance_test)  | [![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) |   |
 
 
 ### Limitations to be fixed
@@ -89,7 +90,7 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
   - RISC-V-compliant `rv32i` or `rv32e` CPU with optional `C`, `E`, `M`, `Zicsr` and `rv32Zifencei` extensions
   - GCC-based toolchain ([pre-compiled rv32i and rv32 etoolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
   - Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
-  - [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework
+  - [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework: available [@Github pages](https://stnolting.github.io/neorv32/files.html)
   - Completely described in behavioral, platform-independent VHDL – no primitives, macros, etc.
   - Fully synchronous design, no latches, no gated clocks
   - Small hardware footprint and high operating frequency
