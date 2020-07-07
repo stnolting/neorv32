@@ -4,11 +4,6 @@
 [![license](https://img.shields.io/github/license/stnolting/neorv32)](https://github.com/stnolting/neorv32/blob/master/LICENSE)
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases)
 
-[![issues](https://img.shields.io/github/issues/stnolting/neorv32)](https://github.com/stnolting/neorv32/issues)
-[![pull requests](https://img.shields.io/github/issues-pr/stnolting/neorv32)](https://github.com/stnolting/neorv32/pulls)
-[![last commit](https://img.shields.io/github/last-commit/stnolting/neorv32)](https://github.com/stnolting/neorv32/commits/master)
-
-
 
 ## Table of Content
 
@@ -18,7 +13,7 @@
 * [Performance](#Performance)
 * [Top Entity](#Top-Entity)
 * [**Getting Started**](#Getting-Started)
-* [Contact](#Contact)
+* [Contribute](#Contribute)
 * [Legal](#Legal)
 
 
@@ -75,6 +70,7 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 
 ### To-Do / Wish List
 
+- Synthesis results for more platforms
 - Port Dhrystone benchmark
 - Implement atomic operations (`A` extension)
 - Implement co-processor for single-precision floating-point operations (`F` extension)
@@ -414,7 +410,7 @@ has been compiled on a 64-bit x86 Ubuntu (Ubuntu on Windows). Download the toolc
 [https://github.com/stnolting/riscv_gcc_prebuilt](https://github.com/stnolting/riscv_gcc_prebuilt)
 
 
-### Dowload the Project and Create a Hardware Project
+### Dowload the NEORV32 Project and Create a Hardware Project
 
 Now its time to get the most recent version the NEORV32 Processor project from GitHub. Clone the NEORV32 repository using
 `git` from the command line (suggested for easy project updates via `git pull`):
@@ -430,18 +426,18 @@ setup instantiates the processor, implements most of the peripherals and the bas
 propagated:
 
 ```vhdl
-entity neorv32_test_setup is
-  port (
-    -- Global control --
-    clk_i      : in  std_ulogic := '0'; -- global clock, rising edge
-    rstn_i     : in  std_ulogic := '0'; -- global reset, low-active, async
-    -- GPIO --
-    gpio_o     : out std_ulogic_vector(7 downto 0); -- parallel output
-    -- UART --
-    uart_txd_o : out std_ulogic; -- UART send data
-    uart_rxd_i : in  std_ulogic := '0' -- UART receive data
-  );
-end neorv32_test_setup;
+  entity neorv32_test_setup is
+    port (
+      -- Global control --
+      clk_i      : in  std_ulogic := '0'; -- global clock, rising edge
+      rstn_i     : in  std_ulogic := '0'; -- global reset, low-active, async
+      -- GPIO --
+      gpio_o     : out std_ulogic_vector(7 downto 0); -- parallel output
+      -- UART --
+      uart_txd_o : out std_ulogic; -- UART send data
+      uart_rxd_i : in  std_ulogic := '0' -- UART receive data
+    );
+  end neorv32_test_setup;
 ```
 
 This test setup is intended as quick and easy "hello world" test setup to get into the NEORV32.
@@ -454,10 +450,9 @@ Make sure `GNU Make` and a native `GCC` compiler are installed. To test the inst
 
     neorv32/sw/example/blink_led$ make check
 
-The NEORV32 project includes some example programs from which you can start your own application:
-[SW example projects](https://github.com/stnolting/neorv32/tree/master/sw/example)
-
-Simply compile one of these projects. This will create a NEORV32 executable `neorv32_exe.bin` in the same folder.
+The NEORV32 project includes some [example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) from
+which you can start your own application. Simply compile one of these projects. This will create a NEORV32
+executable `neorv32_exe.bin` in the same folder.
 
     neorv32/sw/example/blink_led$ make clean_all compile
 
@@ -471,18 +466,49 @@ uses the following default UART configuration:
 - No transmission / flow control protocol (raw bytes only)
 - Newline on `\r\n` (carriage return & newline)
 
-Use the bootloader console to upload and execute your application image.
+Use the bootloader console to upload the `neorv32_exe.bin` file and run your application image.
 
-Going further: Take a look at the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+```
+  << NEORV32 Bootloader >>
+  
+  BLDV: Jul  6 2020
+  HWV:  1.0.1.0
+  CLK:  0x0134FD90 Hz
+  MHID: 0x0001CE40
+  MISA: 0x42801104
+  CONF: 0x03FF0035
+  IMEM: 0x00010000 bytes @ 0x00000000
+  DMEM: 0x00010000 bytes @ 0x80000000
+  
+  Autoboot in 8s. Press key to abort.
+  Aborted.
+  
+  Available CMDs:
+   h: Help
+   r: Restart
+   u: Upload
+   s: Store to flash
+   l: Load from flash
+   e: Execute
+  CMD:> u
+  Awaiting neorv32_exe.bin... OK
+  CMD:> e
+  Booting...
+  
+  Blinking LED demo program
+```
+
+Going further: Take a look at the _Let's Get It Started!_ chapter of the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 
 
-## Contact
+## Contribute
 
-If you have any questions, bug reports, ideas or if you are facing problems with the NEORV32 or want to give some kind of feedback, open a
-[new issue](https://github.com/stnolting/neorv32/issues) or directly drop me a line:
+I'm always thankful for help! So if you have any questions, bug reports, ideas or if you want to give some kind of feedback, feel free
+to open a [new issue](https://github.com/stnolting/neorv32/issues).
 
-  stnolting@gmail.com
+If you want to get involved you can also directly drop me a line (mailto:stnolting@gmail.com).
+Please also check out the project's [code of conduct](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md).
 
 
 
@@ -499,7 +525,7 @@ If you are using the NEORV32 Processor in some kind of publication, please cite 
 This is a hobby project released under the BSD 3-Clause license. No copyright infringement intended.
 Other implied/used projects might have different licensing - see their documentation to get more information.
 
-**BSD 3-Clause License**
+#### BSD 3-Clause License
 
 Copyright (c) 2020, Stephan Nolting. All rights reserved.
 
@@ -526,6 +552,19 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVE
 OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+#### Limitation of Liability for External Links
+
+Our website contains links to the websites of third parties („external links“). As the
+content of these websites is not under our control, we cannot assume any liability for
+such external content. In all cases, the provider of information of the linked websites
+is liable for the content and accuracy of the information provided. At the point in time
+when the links were placed, no infringements of the law were recognisable to us. As soon
+as an infringement of the law becomes known to us, we will immediately remove the
+link in question.
+
+
+#### Propretary Notice
+
 "Windows" is a trademark of Microsoft Corporation.
 
 "Artix" and "Vivado" are trademarks of Xilinx Inc.
@@ -536,6 +575,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 "AXI4" and "AXI4-Lite" are trademarks of Arm Holdings plc.
 
+
+#### Misc
 
 [![Continous Integration provided by Travis CI](https://travis-ci.com/images/logos/TravisCI-Full-Color.png)](https://travis-ci.com/stnolting/neorv32)
 
