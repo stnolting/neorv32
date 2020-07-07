@@ -59,9 +59,9 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 
 | Project                                                                         | Status | Misc     |
 |:--------------------------------------------------------------------------------|:-------|:---------|
-| NEORV32 processor                                                               | [![Build Status](https://travis-ci.com/stnolting/neorv32.svg?branch=master)](https://travis-ci.com/stnolting/neorv32)                                   | [Software documentation](https://stnolting.github.io/neorv32/files.html) |
-| [Pre-build toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)          | [![Build Test](https://travis-ci.com/stnolting/riscv_gcc_prebuilt.svg?branch=master)](https://travis-ci.com/stnolting/riscv_gcc_prebuilt)               |   |
-| [RISC-V compliance test](https://github.com/stnolting/neorv32_compliance_test)  | [![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) |   |
+| [NEORV32 processor](https://github.com/stnolting/neorv32)                       | [![Test](https://img.shields.io/travis/stnolting/neorv32/master.svg?label=HW-test)](https://travis-ci.com/stnolting/neorv32)                                   | [![sw doc](https://img.shields.io/badge/SW%20documentation-gh--pages-blue)](https://stnolting.github.io/neorv32/files.html) |
+| [Pre-build toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)          | [![Test](https://img.shields.io/travis/stnolting/riscv_gcc_prebuilt/master.svg?label=compliance)](https://travis-ci.com/stnolting/riscv_gcc_prebuilt)             | |
+| [RISC-V compliance test](https://github.com/stnolting/neorv32_riscv_compliance) | [![Test](https://img.shields.io/travis/stnolting/neorv32_riscv_compliance/master.svg?label=test)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) | |
 
 
 ### Limitations to be fixed
