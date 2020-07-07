@@ -141,7 +141,7 @@ begin
   cmp_opx  <= (rs1_i(rs1_i'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs1_i;
   cmp_opy  <= (opc(opc'left)     and (not ctrl_i(ctrl_alu_unsigned_c))) & opc;
   cmp_sub  <= std_ulogic_vector(signed(cmp_opx) - signed(cmp_opy));
-  cmp_less <= cmp_sub(cmp_sub'left); -- carry (borrow) indicates a less
+  cmp_less <= cmp_sub(cmp_sub'left); -- carry (borrow) indicates a "less"
   sub_res  <= cmp_sub(data_width_c-1 downto 0); -- use the less-comparator also for SUB operations
 
   -- equal (x = y) --
@@ -200,7 +200,7 @@ begin
       cp_rb_ff0 <= '0';
       cp_rb_ff1 <= '0';
     elsif rising_edge(clk_i) then
-      if (ctrl_i(ctrl_sys_m_ext_en_c) = '1') then -- FIXME add second cp (floating point?)
+      if (ctrl_i(ctrl_sys_m_ext_en_c) = '1') then -- FIXME add second cp (floating point stuff?)
         cp_cmd_ff <= ctrl_i(ctrl_cp_use_c);
         cp_rb_ff0 <= '0';
         cp_rb_ff1 <= cp_rb_ff0;
@@ -232,11 +232,11 @@ begin
   begin
     case ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) is
       when alu_cmd_bitc_c  => alu_res <= opa and (not opb); -- bit clear (for CSR modifications only)
-      when alu_cmd_sub_c   => alu_res <= sub_res;
-      when alu_cmd_add_c   => alu_res <= add_res;
       when alu_cmd_xor_c   => alu_res <= opa xor opb;
       when alu_cmd_or_c    => alu_res <= opa or opb;
       when alu_cmd_and_c   => alu_res <= opa and opb;
+      when alu_cmd_sub_c   => alu_res <= sub_res;
+      when alu_cmd_add_c   => alu_res <= add_res;
       when alu_cmd_shift_c => alu_res <= shift_sreg;
       when alu_cmd_slt_c   => alu_res <= (others => '0'); alu_res(0) <= cmp_less;
       when others          => alu_res <= (others => '0'); -- undefined

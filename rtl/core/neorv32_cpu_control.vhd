@@ -892,7 +892,7 @@ begin
         -- RF write back --
         ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output register
         ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-        execute_engine.state_nxt <= DISPATCH; -- was SYS_WAIT
+        execute_engine.state_nxt <= DISPATCH; -- FIXME should be SYS_WAIT? have another cycle to let side-effects kick in
 
       when ALU_WAIT => -- wait for multi-cycle ALU operation to finish
       -- ------------------------------------------------------------
@@ -1199,6 +1199,9 @@ begin
     trap_ctrl.cause_nxt   <= (others => '0');
     trap_ctrl.irq_ack_nxt <= (others => '0');
 
+    -- the following traps are caused by asynchronous exceptions (-> interrupts)
+    -- here we do need an acknowledge mask since several sources can trigger at once
+
     -- interrupt: 1.11 machine external interrupt --
     if (trap_ctrl.irq_buf(interrupt_mext_irq_c) = '1') then
       trap_ctrl.cause_nxt(data_width_c-1) <= '1';
@@ -1219,7 +1222,8 @@ begin
 
 
     -- the following traps are caused by synchronous exceptions
-    -- here we do not need an acknowledge mask since only one exception can trigger at the same time
+    -- here we do not need an acknowledge mask since only one exception (the one
+    -- with highest priority) can trigger at once
 
     -- trap/fault: 0.0 instruction address misaligned --
     elsif (trap_ctrl.exc_buf(exception_ialign_c) = '1') then
@@ -1354,16 +1358,14 @@ begin
             if (csr.mcause(data_width_c-1) = '1') then -- for INTERRUPTS only (mtval not defined for interrupts)
               csr.mepc  <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
               csr.mtval <= (others => '0');
-            else -- for EXCEPTIONs
+            else -- for EXCEPTIONS (according to their priority)
               csr.mepc <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
               if ((trap_ctrl.exc_src(exception_iaccess_c) or trap_ctrl.exc_src(exception_ialign_c)) = '1') then -- instruction access error OR misaligned instruction
-                csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0';
+                csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction
               elsif (trap_ctrl.exc_src(exception_iillegal_c) = '1') then -- illegal instruction
-                csr.mtval <= execute_engine.i_reg;
-              else -- everything else
-              --elsif ((trap_ctrl.exc_src(exception_lalign_c)  or trap_ctrl.exc_src(exception_salign_c) or
-              --        trap_ctrl.exc_src(exception_laccess_c) or trap_ctrl.exc_src(exception_saccess_c)) = '1') then -- load/store misaligned / access error
-                csr.mtval <= mar_i;
+                csr.mtval <= execute_engine.i_reg; -- the faulting instruction itself
+              else -- load/store msialignments/access errors
+                csr.mtval <= mar_i; -- faulting data access address
               end if;
             end if;
           end if;
@@ -1371,7 +1373,7 @@ begin
           -- context switch in mstatus --
           if (trap_ctrl.env_start_ack = '1') then -- actually entering trap
             csr.mstatus_mie <= '0';
-            if (csr.mstatus_mpie = '0') then -- FIXME: prevent loosing the prev MIE state after several traps
+            if (csr.mstatus_mpie = '0') then -- prevent loosing the prev MIE state in nested traps
               csr.mstatus_mpie <= csr.mstatus_mie;
             end if;
           elsif (trap_ctrl.env_end = '1') then -- return from exception
