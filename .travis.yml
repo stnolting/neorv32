@@ -18,10 +18,7 @@ script:
 
   # Generate documentary (modify doxygen script for travis ci before)
   - sed -i 's/$(PWD)\/../$(TRAVIS_BUILD_DIR)/g' docs/doxygen_makefile_sw
-  - cat docs/doxygen_makefile_sw
   - doxygen docs/doxygen_makefile_sw
-  - ls -al
-  - ls -al docs
 
   # Get simulator tools
   - docker pull ghdl/ghdl:buster-gcc-8.3.0
