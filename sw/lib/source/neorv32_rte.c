@@ -373,3 +373,16 @@ static void __neorv32_rte_print_hw_version(void) {
     }
   }
 }
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Print project credits
+ **************************************************************************/
+void neorv32_rte_print_credits(void) {
+
+  neorv32_uart_print("\n\nThe NEORV32 Processor Project\n"
+                     "by Stephan Nolting\n"
+                     "https://github.com/stnolting/neorv32\n"
+                     "made in Hannover, Germany\n\n");
+}
+
