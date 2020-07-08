@@ -1406,7 +1406,6 @@ begin
               csr_rdata_o(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
               csr_rdata_o(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
               csr_rdata_o(12) <= csr.misa_m_en;                               -- M CPU extension
-              csr_rdata_o(23) <= '1';                                         -- X CPU extension: non-standard extensions
               csr_rdata_o(25) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr) and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Z CPU extension
               csr_rdata_o(30) <= '1'; -- 32-bit architecture (MXL lo)
               csr_rdata_o(31) <= '0'; -- 32-bit architecture (MXL hi)
