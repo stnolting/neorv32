@@ -72,6 +72,7 @@ entity neorv32_wishbone is
     ben_i    : in  std_ulogic_vector(03 downto 0); -- byte write enable
     data_i   : in  std_ulogic_vector(31 downto 0); -- data in
     data_o   : out std_ulogic_vector(31 downto 0); -- data out
+    cancel_i : in  std_ulogic; -- cancel current bus transaction
     ack_o    : out std_ulogic; -- transfer acknowledge
     err_o    : out std_ulogic; -- transfer error
     -- wishbone interface --
@@ -108,7 +109,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   sanity_check: process(clk_i)
   begin
-    if rising_edge(clk_i) then -- just for simulation
+    if rising_edge(clk_i) then
       if (INTERFACE_REG_STAGES > 2) then
         assert false report "NEORV32 CONFIG ERROR! Number of external memory interface buffer stages must be 0, 1 or 2." severity error;
       end if;
@@ -144,10 +145,8 @@ begin
       -- bus cycle --
       if (INTERFACE_REG_STAGES = 0) then
         wb_cyc_ff <= '0'; -- unused
-      elsif (INTERFACE_REG_STAGES = 1) then
-        wb_cyc_ff <= wb_access and ((not wb_ack_i) or (not wb_err_i));
-      elsif (INTERFACE_REG_STAGES = 2) then
-        wb_cyc_ff <= wb_access and ((not wb_ack_ff) or (not wb_err_ff));
+      else
+        wb_cyc_ff <= (wb_cyc_ff or wb_access) and ((not wb_ack_i) or (not wb_err_i)) and (not cancel_i);
       end if;
       -- bus strobe --
       wb_stb_ff1 <= wb_stb_ff0;
@@ -188,10 +187,12 @@ begin
     buffer_stages_one: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        wb_adr_o <= addr_i;
-        wb_dat_o <= data_i;
-        wb_sel_o <= ben_i;
-        wb_we_o  <= wren_i;
+        if (wb_cyc_ff = '0') then
+          wb_adr_o <= addr_i;
+          wb_dat_o <= data_i;
+          wb_sel_o <= ben_i;
+          wb_we_o  <= wren_i;
+        end if;
       end if;
     end process buffer_stages_one;
     data_o <= wb_dat_i;
@@ -202,11 +203,13 @@ begin
     buffer_stages_two: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        wb_adr_o <= addr_i;
-        wb_dat_o <= data_i;
-        wb_sel_o <= ben_i;
-        wb_we_o  <= wren_i;
-        data_o   <= wb_dat_i;
+        if (wb_cyc_ff = '0') then
+          wb_adr_o <= addr_i;
+          wb_dat_o <= data_i;
+          wb_sel_o <= ben_i;
+          wb_we_o  <= wren_i;
+          data_o   <= wb_dat_i;
+        end if;
       end if;
     end process buffer_stages_two;
   end generate;
