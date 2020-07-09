@@ -244,7 +244,7 @@ int main() {
 #endif
   }
   else {
-    neorv32_uart_printf("skipped (no EXC I_ALIGN possible in C-mode)\n");
+    neorv32_uart_printf("skipped (not possible when C-EXT enabled)\n");
   }
 
 

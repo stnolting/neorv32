@@ -88,20 +88,21 @@ entity neorv32_cpu is
   );
   port (
     -- global control --
-    clk_i       : in  std_ulogic; -- global clock, rising edge
-    rstn_i      : in  std_ulogic; -- global reset, low-active, async
+    clk_i        : in  std_ulogic; -- global clock, rising edge
+    rstn_i       : in  std_ulogic; -- global reset, low-active, async
     -- bus interface --
-    bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-    bus_we_o    : out std_ulogic; -- write enable
-    bus_re_o    : out std_ulogic; -- read enable
-    bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
-    bus_err_i   : in  std_ulogic; -- bus transfer error
+    bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+    bus_we_o     : out std_ulogic; -- write enable
+    bus_re_o     : out std_ulogic; -- read enable
+    bus_cancel_o : out std_ulogic; -- cancel current bus transaction
+    bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
+    bus_err_i    : in  std_ulogic; -- bus transfer error
     -- external interrupts --
-    clic_irq_i  : in  std_ulogic; -- CLIC interrupt request
-    mtime_irq_i : in  std_ulogic  -- machine timer interrupt
+    clic_irq_i   : in  std_ulogic; -- CLIC interrupt request
+    mtime_irq_i  : in  std_ulogic  -- machine timer interrupt
   );
 end neorv32_cpu;
 
@@ -126,7 +127,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal be_instr    : std_ulogic; -- bus error on instruction access
   signal be_load     : std_ulogic; -- bus error on load data access
   signal be_store    : std_ulogic; -- bus error on store data access
-  signal bus_exc_ack : std_ulogic; -- bus exception error acknowledge
   signal bus_busy    : std_ulogic; -- bus unit is busy
   signal fetch_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
   signal curr_pc     : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
@@ -209,7 +209,6 @@ begin
     be_instr_i    => be_instr,    -- bus error on instruction access
     be_load_i     => be_load,     -- bus error on load data access
     be_store_i    => be_store,    -- bus error on store data access
-    bus_exc_ack_o => bus_exc_ack, -- bus exception error acknowledge
     bus_busy_i    => bus_busy     -- bus unit is busy
   );
 
@@ -238,6 +237,9 @@ begin
   -- ALU ------------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_inst: neorv32_cpu_alu
+  generic map (
+    CPU_EXTENSION_RISCV_M => CPU_EXTENSION_RISCV_M -- implement muld/div extension?
+  )
   port map (
     -- global control --
     clk_i       => clk_i,         -- global clock, rising edge
@@ -299,40 +301,41 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_bus_inst: neorv32_cpu_bus
   generic map (
-    MEM_EXT_TIMEOUT => MEM_EXT_TIMEOUT -- cycles after which a valid bus access will timeout
+    CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
+    MEM_EXT_TIMEOUT       => MEM_EXT_TIMEOUT -- cycles after which a valid bus access will timeout
   )
   port map (
     -- global control --
-    clk_i       => clk_i,         -- global clock, rising edge
-    rstn_i      => rstn_i,        -- global reset, low-active, async
-    ctrl_i      => ctrl,          -- main control bus
+    clk_i        => clk_i,         -- global clock, rising edge
+    rstn_i       => rstn_i,        -- global reset, low-active, async
+    ctrl_i       => ctrl,          -- main control bus
     -- data input --
-    wdata_i     => rs2,           -- write data
-    pc_i        => fetch_pc,      -- current PC for instruction fetch
-    alu_i       => alu_res,       -- ALU result
+    wdata_i      => rs2,           -- write data
+    pc_i         => fetch_pc,      -- current PC for instruction fetch
+    alu_i        => alu_res,       -- ALU result
     -- data output --
-    instr_o     => instr,         -- instruction
-    rdata_o     => rdata,         -- read data
+    instr_o      => instr,         -- instruction
+    rdata_o      => rdata,         -- read data
     -- status --
-    mar_o       => mar,           -- current memory address register
-    ma_instr_o  => ma_instr,      -- misaligned instruction address
-    ma_load_o   => ma_load,       -- misaligned load data address
-    ma_store_o  => ma_store,      -- misaligned store data address
-    be_instr_o  => be_instr,      -- bus error on instruction access
-    be_load_o   => be_load,       -- bus error on load data access
-    be_store_o  => be_store,      -- bus error on store data access
-    bus_wait_o  => bus_wait,      -- wait for bus operation to finish
-    bus_busy_o  => bus_busy,      -- bus unit is busy
-    exc_ack_i   => bus_exc_ack,   -- exception controller ACK
+    mar_o        => mar,           -- current memory address register
+    ma_instr_o   => ma_instr,      -- misaligned instruction address
+    ma_load_o    => ma_load,       -- misaligned load data address
+    ma_store_o   => ma_store,      -- misaligned store data address
+    be_instr_o   => be_instr,      -- bus error on instruction access
+    be_load_o    => be_load,       -- bus error on load data access
+    be_store_o   => be_store,      -- bus error on store data access
+    bus_wait_o   => bus_wait,      -- wait for bus operation to finish
+    bus_busy_o   => bus_busy,      -- bus unit is busy
     -- bus system --
-    bus_addr_o  => bus_addr_o,    -- bus access address
-    bus_rdata_i => bus_rdata_i,   -- bus read data
-    bus_wdata_o => bus_wdata_o,   -- bus write data
-    bus_ben_o   => bus_ben_o,     -- byte enable
-    bus_we_o    => bus_we_o,      -- write enable
-    bus_re_o    => bus_re_o,      -- read enable
-    bus_ack_i   => bus_ack_i,     -- bus transfer acknowledge
-    bus_err_i   => bus_err_i      -- bus transfer error
+    bus_addr_o   => bus_addr_o,    -- bus access address
+    bus_rdata_i  => bus_rdata_i,   -- bus read data
+    bus_wdata_o  => bus_wdata_o,   -- bus write data
+    bus_ben_o    => bus_ben_o,     -- byte enable
+    bus_we_o     => bus_we_o,      -- write enable
+    bus_re_o     => bus_re_o,      -- read enable
+    bus_cancel_o => bus_cancel_o,  -- cancel current bus transaction
+    bus_ack_i    => bus_ack_i,     -- bus transfer acknowledge
+    bus_err_i    => bus_err_i      -- bus transfer error
   );
 
 

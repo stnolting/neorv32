@@ -43,40 +43,41 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_bus is
   generic (
-    MEM_EXT_TIMEOUT : natural := 15 -- cycles after which a valid bus access will timeout
+    CPU_EXTENSION_RISCV_C : boolean := true; -- implement compressed extension?
+    MEM_EXT_TIMEOUT       : natural := 15 -- cycles after which a valid bus access will timeout
   );
   port (
     -- global control --
-    clk_i       : in  std_ulogic; -- global clock, rising edge
-    rstn_i      : in  std_ulogic; -- global reset, low-active, async
-    ctrl_i      : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+    clk_i        : in  std_ulogic; -- global clock, rising edge
+    rstn_i       : in  std_ulogic; -- global reset, low-active, async
+    ctrl_i       : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     -- data input --
-    wdata_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- write data
-    pc_i        : in  std_ulogic_vector(data_width_c-1 downto 0); -- current PC
-    alu_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
+    wdata_i      : in  std_ulogic_vector(data_width_c-1 downto 0); -- write data
+    pc_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- current PC
+    alu_i        : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
     -- data output --
-    instr_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- instruction
-    rdata_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- read data
+    instr_o      : out std_ulogic_vector(data_width_c-1 downto 0); -- instruction
+    rdata_o      : out std_ulogic_vector(data_width_c-1 downto 0); -- read data
     -- status --
-    mar_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
-    ma_instr_o  : out std_ulogic; -- misaligned instruction address
-    ma_load_o   : out std_ulogic; -- misaligned load data address
-    ma_store_o  : out std_ulogic; -- misaligned store data address
-    be_instr_o  : out std_ulogic; -- bus error on instruction access
-    be_load_o   : out std_ulogic; -- bus error on load data access
-    be_store_o  : out std_ulogic; -- bus error on store data access
-    bus_wait_o  : out std_ulogic; -- wait for bus operation to finish
-    bus_busy_o  : out std_ulogic; -- bus unit is busy
-    exc_ack_i   : in  std_ulogic; -- exception controller ACK
+    mar_o        : out std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
+    ma_instr_o   : out std_ulogic; -- misaligned instruction address
+    ma_load_o    : out std_ulogic; -- misaligned load data address
+    ma_store_o   : out std_ulogic; -- misaligned store data address
+    be_instr_o   : out std_ulogic; -- bus error on instruction access
+    be_load_o    : out std_ulogic; -- bus error on load data access
+    be_store_o   : out std_ulogic; -- bus error on store data access
+    bus_wait_o   : out std_ulogic; -- wait for bus operation to finish
+    bus_busy_o   : out std_ulogic; -- bus unit is busy
     -- bus system --
-    bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-    bus_we_o    : out std_ulogic; -- write enable
-    bus_re_o    : out std_ulogic; -- read enable
-    bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
-    bus_err_i   : in  std_ulogic  -- bus transfer error
+    bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+    bus_we_o     : out std_ulogic; -- write enable
+    bus_re_o     : out std_ulogic; -- read enable
+    bus_cancel_o : out std_ulogic; -- cancel current bus transaction
+    bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
+    bus_err_i    : in  std_ulogic  -- bus transfer error
   );
 end neorv32_cpu_bus;
 
@@ -103,9 +104,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   mem_adr_reg: process(rstn_i, clk_i)
   begin
-    if (rstn_i = '0') then
-      mar <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mar_we_c) = '1') then
         mar <= alu_i;
       end if;
@@ -113,14 +112,14 @@ begin
   end process mem_adr_reg;
 
   -- address output --
-  bus_addr_o <= pc_i when ((bus_if_req or ctrl_i(ctrl_bus_if_c)) = '1') else mar; -- is instruction fetch?
+  bus_addr_o <= pc_i when ((bus_if_req or ctrl_i(ctrl_bus_if_c)) = '1') else mar; -- is instruction fetch? keep output at PC as long as IF request is active
   mar_o      <= mar;
 
   -- write request output --
   bus_we_o <= ctrl_i(ctrl_bus_wr_c) and (not misaligned_data);
 
   -- read request output (also used for instruction fetch) --
-  bus_re_o <= (ctrl_i(ctrl_bus_rd_c) and (not misaligned_data)) or ((bus_if_req or ctrl_i(ctrl_bus_if_c)) and (not misaligned_instr));
+  bus_re_o <= (ctrl_i(ctrl_bus_rd_c) and (not misaligned_data)) or (ctrl_i(ctrl_bus_if_c) and (not misaligned_instr)); -- FIXME i_reg and misaligned
 
 
   -- Write Data -----------------------------------------------------------------------------
@@ -223,7 +222,7 @@ begin
       align_err   <= '0';
       bus_timeout <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (bus_busy = '0') then -- wait for new request
+      if (bus_busy = '0') or (ctrl_i(ctrl_bus_reset_c) = '1') then -- wait for new request or reset
         bus_busy      <= ctrl_i(ctrl_bus_if_c) or ctrl_i(ctrl_bus_rd_c) or ctrl_i(ctrl_bus_wr_c); -- any request at all?
         bus_if_req    <= ctrl_i(ctrl_bus_if_c); -- instruction fetch
         bus_rd_req    <= ctrl_i(ctrl_bus_rd_c); -- store access
@@ -233,10 +232,10 @@ begin
         align_err     <= '0';
       else -- bus transfer in progress
         bus_timeout <= std_ulogic_vector(unsigned(bus_timeout) - 1);
-        align_err   <= (align_err or misaligned_data or misaligned_instr) and (not exc_ack_i);
-        access_err  <= (access_err or (not or_all_f(bus_timeout)) or bus_err_i) and (not exc_ack_i);
+        align_err   <= (align_err or misaligned_data or misaligned_instr) and (not ctrl_i(ctrl_bus_exc_ack_c));
+        access_err  <= (access_err or (not or_all_f(bus_timeout)) or bus_err_i) and (not ctrl_i(ctrl_bus_exc_ack_c));
         if (align_err = '1') or (access_err = '1') then
-          if (exc_ack_i = '1') then -- wait for controller to ack exception
+          if (ctrl_i(ctrl_bus_exc_ack_c) = '1') then -- wait for controller to ack exception
             bus_if_req <= '0';
             bus_rd_req <= '0';
             bus_wr_req <= '0';
@@ -261,6 +260,9 @@ begin
   ma_instr_o <= bus_if_req and align_err;
   ma_load_o  <= bus_rd_req and align_err;
   ma_store_o <= bus_wr_req and align_err;
+
+  -- terminate bus access --
+  bus_cancel_o <= (bus_busy and (align_err or access_err)) or ctrl_i(ctrl_bus_reset_c);
 
   -- wait for bus --
   bus_busy_o <= bus_busy;
@@ -291,10 +293,10 @@ begin
   begin
     -- check instruction access --
     misaligned_instr <= '0'; -- default
-    if (ctrl_i(ctrl_sys_c_ext_en_c) = '1') then -- 16-bit and 32-bit instruction accesses
+    if (CPU_EXTENSION_RISCV_C = true) then -- 16-bit and 32-bit instruction accesses
       misaligned_instr <= '0';
     else -- 32-bit instruction accesses only
-      if (pc_i(1 downto 0) /= "00") then
+      if (pc_i(1) = '1') then -- PC(0) is always zero
         misaligned_instr <= '1';
       end if; 
     end if;

@@ -52,9 +52,9 @@ entity neorv32_top is
     BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
     CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C        : boolean := true;   -- implement compressed extension?
+    CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean := true;   -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
     -- Memory configuration: Instruction memory --
@@ -142,14 +142,18 @@ architecture neorv32_top_rtl of neorv32_top is
   signal pwm_cg_en  : std_ulogic;
 
   -- cpu bus --
-  signal cpu_addr  : std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-  signal cpu_rdata : std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-  signal cpu_wdata : std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-  signal cpu_ben   : std_ulogic_vector(03 downto 0); -- byte enable
-  signal cpu_we    : std_ulogic; -- write enable
-  signal cpu_re    : std_ulogic; -- read enable
-  signal cpu_ack   : std_ulogic; -- bus transfer acknowledge
-  signal cpu_err   : std_ulogic; -- bus transfer error
+  type cpu_bus_t is record
+    addr   : std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    rdata  : std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    wdata  : std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    ben    : std_ulogic_vector(03 downto 0); -- byte enable
+    we     : std_ulogic; -- write enable
+    re     : std_ulogic; -- read enable
+    cancel : std_ulogic; -- cancel current transfer
+    ack    : std_ulogic; -- bus transfer acknowledge
+    err    : std_ulogic; -- bus transfer error
+  end record;
+  signal cpu : cpu_bus_t;
 
   -- io space access --
   signal io_acc  : std_ulogic;
@@ -352,32 +356,33 @@ begin
   )
   port map (
     -- global control --
-    clk_i       => clk_i,        -- global clock, rising edge
-    rstn_i      => sys_rstn,     -- global reset, low-active, async
+    clk_i        => clk_i,        -- global clock, rising edge
+    rstn_i       => sys_rstn,     -- global reset, low-active, async
     -- bus interface --
-    bus_addr_o  => cpu_addr,     -- bus access address
-    bus_rdata_i => cpu_rdata,    -- bus read data
-    bus_wdata_o => cpu_wdata,    -- bus write data
-    bus_ben_o   => cpu_ben,      -- byte enable
-    bus_we_o    => cpu_we,       -- write enable
-    bus_re_o    => cpu_re,       -- read enable
-    bus_ack_i   => cpu_ack,      -- bus transfer acknowledge
-    bus_err_i   => cpu_err,      -- bus transfer error
+    bus_addr_o   => cpu.addr,     -- bus access address
+    bus_rdata_i  => cpu.rdata,    -- bus read data
+    bus_wdata_o  => cpu.wdata,    -- bus write data
+    bus_ben_o    => cpu.ben,      -- byte enable
+    bus_we_o     => cpu.we,       -- write enable
+    bus_re_o     => cpu.re,       -- read enable
+    bus_cancel_o => cpu.cancel,   -- cancel current bus transaction
+    bus_ack_i    => cpu.ack,      -- bus transfer acknowledge
+    bus_err_i    => cpu.err,      -- bus transfer error
     -- external interrupts --
-    clic_irq_i  => clic_irq,     -- CLIC interrupt request
-    mtime_irq_i => mtime_irq     -- machine timer interrupt
+    clic_irq_i   => clic_irq,     -- CLIC interrupt request
+    mtime_irq_i  => mtime_irq     -- machine timer interrupt
   );
 
   -- CPU data input --
-  cpu_rdata <= (imem_rdata or dmem_rdata or bootrom_rdata) or wishbone_rdata or (gpio_rdata or mtime_rdata or
+  cpu.rdata <= (imem_rdata or dmem_rdata or bootrom_rdata) or wishbone_rdata or (gpio_rdata or mtime_rdata or
                uart_rdata or spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or clic_rdata or trng_rdata or devnull_rdata);
 
   -- CPU ACK input --
-  cpu_ack <= (imem_ack or dmem_ack or bootrom_ack) or wishbone_ack or (gpio_ack or mtime_ack or
+  cpu.ack <= (imem_ack or dmem_ack or bootrom_ack) or wishbone_ack or (gpio_ack or mtime_ack or
               uart_ack or spi_ack or twi_ack or pwm_ack or wdt_ack or clic_ack or trng_ack or devnull_ack);
 
   -- CPU bus error input --
-  cpu_err <= wishbone_err;
+  cpu.err <= wishbone_err;
 
 
   -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
@@ -393,12 +398,12 @@ begin
     )
     port map (
       clk_i  => clk_i,      -- global clock line
-      rden_i => cpu_re,     -- read enable
-      wren_i => cpu_we,     -- write enable
-      ben_i  => cpu_ben,    -- byte write enable
+      rden_i => cpu.re,     -- read enable
+      wren_i => cpu.we,     -- write enable
+      ben_i  => cpu.ben,    -- byte write enable
       upen_i => '1',        -- update enable
-      addr_i => cpu_addr,   -- address
-      data_i => cpu_wdata,  -- data in
+      addr_i => cpu.addr,   -- address
+      data_i => cpu.wdata,  -- data in
       data_o => imem_rdata, -- data out
       ack_o  => imem_ack    -- transfer acknowledge
     );
@@ -422,11 +427,11 @@ begin
     )
     port map (
       clk_i  => clk_i,      -- global clock line
-      rden_i => cpu_re,     -- read enable
-      wren_i => cpu_we,     -- write enable
-      ben_i  => cpu_ben,    -- byte write enable
-      addr_i => cpu_addr,   -- address
-      data_i => cpu_wdata,  -- data in
+      rden_i => cpu.re,     -- read enable
+      wren_i => cpu.we,     -- write enable
+      ben_i  => cpu.ben,    -- byte write enable
+      addr_i => cpu.addr,   -- address
+      data_i => cpu.wdata,  -- data in
       data_o => dmem_rdata, -- data out
       ack_o  => dmem_ack    -- transfer acknowledge
     );
@@ -446,8 +451,8 @@ begin
     neorv32_boot_rom_inst: neorv32_boot_rom
     port map (
       clk_i  => clk_i,         -- global clock line
-      rden_i => cpu_re,        -- read enable
-      addr_i => cpu_addr,      -- address
+      rden_i => cpu.re,        -- read enable
+      addr_i => cpu.addr,      -- address
       data_o => bootrom_rdata, -- data out
       ack_o  => bootrom_ack    -- transfer acknowledge
     );
@@ -483,12 +488,13 @@ begin
       clk_i    => clk_i,          -- global clock line
       rstn_i   => sys_rstn,       -- global reset line, low-active
       -- host access --
-      addr_i   => cpu_addr,       -- address
-      rden_i   => cpu_re,         -- read enable
-      wren_i   => cpu_we,         -- write enable
-      ben_i    => cpu_ben,        -- byte write enable
-      data_i   => cpu_wdata,      -- data in
+      addr_i   => cpu.addr,       -- address
+      rden_i   => cpu.re,         -- read enable
+      wren_i   => cpu.we,         -- write enable
+      ben_i    => cpu.ben,        -- byte write enable
+      data_i   => cpu.wdata,      -- data in
       data_o   => wishbone_rdata, -- data out
+      cancel_i => cpu.cancel,     -- cancel current transaction
       ack_o    => wishbone_ack,   -- transfer acknowledge
       err_o    => wishbone_err,   -- transfer error
       -- wishbone interface --
@@ -521,9 +527,9 @@ begin
 
   -- IO Access? -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  io_acc  <= '1' when (cpu_addr(data_width_c-1 downto index_size_f(io_size_c)) = io_base_c(data_width_c-1 downto index_size_f(io_size_c))) else '0';
-  io_rden <= io_acc and cpu_re;
-  io_wren <= io_acc and cpu_we;
+  io_acc  <= '1' when (cpu.addr(data_width_c-1 downto index_size_f(io_size_c)) = io_base_c(data_width_c-1 downto index_size_f(io_size_c))) else '0';
+  io_rden <= io_acc and cpu.re;
+  io_wren <= io_acc and cpu.we;
 
 
   -- General Purpose Input/Output Port (GPIO) -----------------------------------------------
@@ -534,11 +540,11 @@ begin
     port map (
       -- host access --
       clk_i  => clk_i,      -- global clock line
-      addr_i => cpu_addr,   -- address
+      addr_i => cpu.addr,   -- address
       rden_i => io_rden,    -- read enable
       wren_i => io_wren,    -- write enable
-      ben_i  => cpu_ben,    -- byte write enable
-      data_i => cpu_wdata,  -- data in
+      ben_i  => cpu.ben,    -- byte write enable
+      data_i => cpu.wdata,  -- data in
       data_o => gpio_rdata, -- data out
       ack_o  => gpio_ack,   -- transfer acknowledge
       -- parallel io --
@@ -568,9 +574,9 @@ begin
       clk_i     => clk_i,      -- global clock line
       rden_i    => io_rden,    -- read enable
       wren_i    => io_wren,    -- write enable
-      ben_i     => cpu_ben,    -- byte write enable
-      addr_i    => cpu_addr,   -- address
-      data_i    => cpu_wdata,  -- data in
+      ben_i     => cpu.ben,    -- byte write enable
+      addr_i    => cpu.addr,   -- address
+      data_i    => cpu.wdata,  -- data in
       data_o    => clic_rdata, -- data out
       ack_o     => clic_ack,   -- transfer acknowledge
       -- cpu interrupt --
@@ -615,9 +621,9 @@ begin
       rstn_i      => ext_rstn,   -- global reset line, low-active
       rden_i      => io_rden,    -- read enable
       wren_i      => io_wren,    -- write enable
-      ben_i       => cpu_ben,    -- byte write enable
-      addr_i      => cpu_addr,   -- address
-      data_i      => cpu_wdata,  -- data in
+      ben_i       => cpu.ben,    -- byte write enable
+      addr_i      => cpu.addr,   -- address
+      data_i      => cpu.wdata,  -- data in
       data_o      => wdt_rdata,  -- data out
       ack_o       => wdt_ack,    -- transfer acknowledge
       -- clock generator --
@@ -648,11 +654,11 @@ begin
       -- host access --
       clk_i     => clk_i,        -- global clock line
       rstn_i    => sys_rstn,     -- global reset, low-active, async
-      addr_i    => cpu_addr,     -- address
+      addr_i    => cpu.addr,     -- address
       rden_i    => io_rden,      -- read enable
       wren_i    => io_wren,      -- write enable
-      ben_i     => cpu_ben,      -- byte write enable
-      data_i    => cpu_wdata,    -- data in
+      ben_i     => cpu.ben,      -- byte write enable
+      data_i    => cpu.wdata,    -- data in
       data_o    => mtime_rdata,  -- data out
       ack_o     => mtime_ack,    -- transfer acknowledge
       -- interrupt --
@@ -676,11 +682,11 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,      -- global clock line
-      addr_i      => cpu_addr,   -- address
+      addr_i      => cpu.addr,   -- address
       rden_i      => io_rden,    -- read enable
       wren_i      => io_wren,    -- write enable
-      ben_i       => cpu_ben,    -- byte write enable
-      data_i      => cpu_wdata,  -- data in
+      ben_i       => cpu.ben,    -- byte write enable
+      data_i      => cpu.wdata,  -- data in
       data_o      => uart_rdata, -- data out
       ack_o       => uart_ack,   -- transfer acknowledge
       -- clock generator --
@@ -712,11 +718,11 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,      -- global clock line
-      addr_i      => cpu_addr,   -- address
+      addr_i      => cpu.addr,   -- address
       rden_i      => io_rden,    -- read enable
       wren_i      => io_wren,    -- write enable
-      ben_i       => cpu_ben,    -- byte write enable
-      data_i      => cpu_wdata,  -- data in
+      ben_i       => cpu.ben,    -- byte write enable
+      data_i      => cpu.wdata,  -- data in
       data_o      => spi_rdata,  -- data out
       ack_o       => spi_ack,    -- transfer acknowledge
       -- clock generator --
@@ -752,11 +758,11 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,      -- global clock line
-      addr_i      => cpu_addr,   -- address
+      addr_i      => cpu.addr,   -- address
       rden_i      => io_rden,    -- read enable
       wren_i      => io_wren,    -- write enable
-      ben_i       => cpu_ben,    -- byte write enable
-      data_i      => cpu_wdata,  -- data in
+      ben_i       => cpu.ben,    -- byte write enable
+      data_i      => cpu.wdata,  -- data in
       data_o      => twi_rdata,  -- data out
       ack_o       => twi_ack,    -- transfer acknowledge
       -- clock generator --
@@ -789,11 +795,11 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,      -- global clock line
-      addr_i      => cpu_addr,   -- address
+      addr_i      => cpu.addr,   -- address
       rden_i      => io_rden,    -- read enable
       wren_i      => io_wren,    -- write enable
-      ben_i       => cpu_ben,    -- byte write enable
-      data_i      => cpu_wdata,  -- data in
+      ben_i       => cpu.ben,    -- byte write enable
+      data_i      => cpu.wdata,  -- data in
       data_o      => pwm_rdata,  -- data out
       ack_o       => pwm_ack,    -- transfer acknowledge
       -- clock generator --
@@ -821,11 +827,11 @@ begin
     port map (
       -- host access --
       clk_i  => clk_i,      -- global clock line
-      addr_i => cpu_addr,   -- address
+      addr_i => cpu.addr,   -- address
       rden_i => io_rden,    -- read enable
       wren_i => io_wren,    -- write enable
-      ben_i  => cpu_ben,    -- byte write enable
-      data_i => cpu_wdata,  -- data in
+      ben_i  => cpu.ben,    -- byte write enable
+      data_i => cpu.wdata,  -- data in
       data_o => trng_rdata, -- data out
       ack_o  => trng_ack    -- transfer acknowledge
     );
@@ -846,11 +852,11 @@ begin
     port map (
       -- host access --
       clk_i  => clk_i,         -- global clock line
-      addr_i => cpu_addr,      -- address
+      addr_i => cpu.addr,      -- address
       rden_i => io_rden,       -- read enable
       wren_i => io_wren,       -- write enable
-      ben_i  => cpu_ben,       -- byte write enable
-      data_i => cpu_wdata,     -- data in
+      ben_i  => cpu.ben,       -- byte write enable
+      data_i => cpu.wdata,     -- data in
       data_o => devnull_rdata, -- data out
       ack_o  => devnull_ack    -- transfer acknowledge
     );

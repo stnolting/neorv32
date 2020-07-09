@@ -42,6 +42,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_alu is
+  generic (
+    CPU_EXTENSION_RISCV_M : boolean := true -- implement muld/div extension?
+  );
   port (
     -- global control --
     clk_i       : in  std_ulogic; -- global clock, rising edge
@@ -200,7 +203,7 @@ begin
       cp_rb_ff0 <= '0';
       cp_rb_ff1 <= '0';
     elsif rising_edge(clk_i) then
-      if (ctrl_i(ctrl_sys_m_ext_en_c) = '1') then -- FIXME add second cp (floating point stuff?)
+      if (CPU_EXTENSION_RISCV_M = true) then -- FIXME add second cp (floating point stuff?)
         cp_cmd_ff <= ctrl_i(ctrl_cp_use_c);
         cp_rb_ff0 <= '0';
         cp_rb_ff1 <= cp_rb_ff0;

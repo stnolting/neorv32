@@ -43,7 +43,6 @@
 #define neorv32_cpu_h
 
 // prototypes
-int neorv32_cpu_switch_extension(int sel, int state);
 int neorv32_cpu_irq_enable(uint8_t irq_sel);
 int neorv32_cpu_irq_disable(uint8_t irq_sel);
 void neorv32_cpu_delay_ms(uint32_t time_ms);

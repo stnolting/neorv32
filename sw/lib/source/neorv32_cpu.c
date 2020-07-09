@@ -44,54 +44,6 @@
 
 
 /**********************************************************************//**
- * Enable/disable CPU extension during runtime via the 'misa' CSR.
- *
- * @warning This is still highly experimental! This function requires the Zicsr + Zifencei CPU extensions.
- *
- * @param[in] sel Bit to be set in misa CSR / extension to be enabled. See #NEORV32_CPU_MISA_enum.
- * @param[in] state Set 1 to enable the selected extension, set 0 to disable it;
- * return 0 if success, 1 if error (invalid sel or extension cannot be enabled).
- **************************************************************************/
-int neorv32_cpu_switch_extension(int sel, int state) {
-
-  // get current misa setting
-  uint32_t misa_curr = neorv32_cpu_csr_read(CSR_MISA);
-  uint32_t misa_prev = misa_curr;
-
-  // abort if misa.z is cleared
-  if ((misa_curr & (1 << CPU_MISA_Z_EXT)) == 0) {
-    return 1;
-  }
-
-  // out of range?
-  if (sel > 25) {
-    return 1;
-  }
-
-  // enable/disable selected extension
-  if (state & 1) {
-    misa_curr |= (1 << sel);
-  }
-  else {
-    misa_curr &= ~(1 << sel);
-  }
-
-  // try updating misa
-  neorv32_cpu_csr_write(CSR_MISA, misa_curr);
-  asm volatile("fence.i"); // required to flush prefetch buffers
-  asm volatile("nop");
-
-  // dit it work?
-  if (neorv32_cpu_csr_read(CSR_MISA) == misa_prev) {
-    return 1; // nope
-  }
-  else {
-    return 0; // fine
-  }
-}
-
-
-/**********************************************************************//**
  * Enable specific CPU interrupt.
  *
  * @note Interrupts have to be globally enabled via neorv32_cpu_eint(void), too.

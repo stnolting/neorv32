@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - FIXED!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01000100"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01000500"; -- no touchy!
 
   -- Internal Functions ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -178,16 +178,15 @@ package neorv32_package is
   constant ctrl_bus_mdo_we_c      : natural := 37; -- memory data out register write enable
   constant ctrl_bus_mdi_we_c      : natural := 38; -- memory data in register write enable
   constant ctrl_bus_unsigned_c    : natural := 39; -- is unsigned load
+  constant ctrl_bus_exc_ack_c     : natural := 40; -- acknowledge bus exception
+  constant ctrl_bus_reset_c       : natural := 41; -- reset bus unit, terminate all actions
   -- co-processor --
-  constant ctrl_cp_use_c          : natural := 40; -- is cp operation
-  constant ctrl_cp_id_lsb_c       : natural := 41; -- cp select lsb
-  constant ctrl_cp_id_msb_c       : natural := 42; -- cp select msb
-  constant ctrl_cp_cmd0_c         : natural := 43; -- cp command bit 0
-  constant ctrl_cp_cmd1_c         : natural := 44; -- cp command bit 1
-  constant ctrl_cp_cmd2_c         : natural := 45; -- cp command bit 2
-  -- system --
-  constant ctrl_sys_c_ext_en_c    : natural := 46; -- CPU C extension enabled
-  constant ctrl_sys_m_ext_en_c    : natural := 47; -- CPU M extension enabled
+  constant ctrl_cp_use_c          : natural := 42; -- is cp operation
+  constant ctrl_cp_id_lsb_c       : natural := 43; -- cp select lsb
+  constant ctrl_cp_id_msb_c       : natural := 44; -- cp select msb
+  constant ctrl_cp_cmd0_c         : natural := 45; -- cp command bit 0
+  constant ctrl_cp_cmd1_c         : natural := 46; -- cp command bit 1
+  constant ctrl_cp_cmd2_c         : natural := 47; -- cp command bit 2
   -- control bus size --
   constant ctrl_width_c           : natural := 48; -- control bus size
 
@@ -453,20 +452,21 @@ package neorv32_package is
     );
     port (
       -- global control --
-      clk_i       : in  std_ulogic; -- global clock, rising edge
-      rstn_i      : in  std_ulogic; -- global reset, low-active, async
+      clk_i        : in  std_ulogic; -- global clock, rising edge
+      rstn_i       : in  std_ulogic; -- global reset, low-active, async
       -- bus interface --
-      bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-      bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-      bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-      bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-      bus_we_o    : out std_ulogic; -- write enable
-      bus_re_o    : out std_ulogic; -- read enable
-      bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
-      bus_err_i   : in  std_ulogic; -- bus transfer error
+      bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+      bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+      bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+      bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+      bus_we_o     : out std_ulogic; -- write enable
+      bus_re_o     : out std_ulogic; -- read enable
+      bus_cancel_o : out std_ulogic; -- cancel current bus transaction
+      bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
+      bus_err_i    : in  std_ulogic; -- bus transfer error
       -- external interrupts --
-      clic_irq_i  : in  std_ulogic; -- CLIC interrupt request
-      mtime_irq_i : in  std_ulogic  -- machine timer interrupt
+      clic_irq_i   : in  std_ulogic; -- CLIC interrupt request
+      mtime_irq_i  : in  std_ulogic  -- machine timer interrupt
     );
   end component;
 
@@ -541,7 +541,6 @@ package neorv32_package is
       be_instr_i    : in  std_ulogic; -- bus error on instruction access
       be_load_i     : in  std_ulogic; -- bus error on load data access
       be_store_i    : in  std_ulogic; -- bus error on store data access
-      bus_exc_ack_o : out std_ulogic; -- bus exception error acknowledge
       bus_busy_i    : in  std_ulogic  -- bus unit is busy
     );
   end component;
@@ -570,6 +569,9 @@ package neorv32_package is
   -- Component: CPU ALU ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_alu
+    generic (
+      CPU_EXTENSION_RISCV_M : boolean := true -- implement muld/div extension?
+    );
     port (
       -- global control --
       clk_i       : in  std_ulogic; -- global clock, rising edge
@@ -616,40 +618,41 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_bus
     generic (
-      MEM_EXT_TIMEOUT : natural := 15 -- cycles after which a valid bus access will timeout
+      CPU_EXTENSION_RISCV_C : boolean := true; -- implement compressed extension?
+      MEM_EXT_TIMEOUT       : natural := 15 -- cycles after which a valid bus access will timeout
     );
     port (
       -- global control --
-      clk_i       : in  std_ulogic; -- global clock, rising edge
-      rstn_i      : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i      : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      clk_i        : in  std_ulogic; -- global clock, rising edge
+      rstn_i       : in  std_ulogic; -- global reset, low-active, async
+      ctrl_i       : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
       -- data input --
-      wdata_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- write data
-      pc_i        : in  std_ulogic_vector(data_width_c-1 downto 0); -- current PC
-      alu_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
+      wdata_i      : in  std_ulogic_vector(data_width_c-1 downto 0); -- write data
+      pc_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- current PC
+      alu_i        : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
       -- data output --
-      instr_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- instruction
-      rdata_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- read data
+      instr_o      : out std_ulogic_vector(data_width_c-1 downto 0); -- instruction
+      rdata_o      : out std_ulogic_vector(data_width_c-1 downto 0); -- read data
       -- status --
-      mar_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
-      ma_instr_o  : out std_ulogic; -- misaligned instruction address
-      ma_load_o   : out std_ulogic; -- misaligned load data address
-      ma_store_o  : out std_ulogic; -- misaligned store data address
-      be_instr_o  : out std_ulogic; -- bus error on instruction access
-      be_load_o   : out std_ulogic; -- bus error on load data access
-      be_store_o  : out std_ulogic; -- bus error on store data 
-      bus_wait_o  : out std_ulogic; -- wait for bus operation to finish
-      bus_busy_o  : out std_ulogic; -- bus unit is busy
-      exc_ack_i   : in  std_ulogic; -- exception controller ACK
+      mar_o        : out std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
+      ma_instr_o   : out std_ulogic; -- misaligned instruction address
+      ma_load_o    : out std_ulogic; -- misaligned load data address
+      ma_store_o   : out std_ulogic; -- misaligned store data address
+      be_instr_o   : out std_ulogic; -- bus error on instruction access
+      be_load_o    : out std_ulogic; -- bus error on load data access
+      be_store_o   : out std_ulogic; -- bus error on store data 
+      bus_wait_o   : out std_ulogic; -- wait for bus operation to finish
+      bus_busy_o   : out std_ulogic; -- bus unit is busy
       -- bus system --
-      bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-      bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-      bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-      bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-      bus_we_o    : out std_ulogic; -- write enable
-      bus_re_o    : out std_ulogic; -- read enable
-      bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
-      bus_err_i   : in  std_ulogic  -- bus transfer error
+      bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+      bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+      bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+      bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+      bus_we_o     : out std_ulogic; -- write enable
+      bus_re_o     : out std_ulogic; -- read enable
+      bus_cancel_o : out std_ulogic; -- cancel current bus transaction
+      bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
+      bus_err_i    : in  std_ulogic  -- bus transfer error
     );
   end component;
 
@@ -940,6 +943,7 @@ package neorv32_package is
       ben_i    : in  std_ulogic_vector(03 downto 0); -- byte write enable
       data_i   : in  std_ulogic_vector(31 downto 0); -- data in
       data_o   : out std_ulogic_vector(31 downto 0); -- data out
+      cancel_i : in  std_ulogic; -- cancel current bus transaction
       ack_o    : out std_ulogic; -- transfer acknowledge
       err_o    : out std_ulogic; -- transfer error
       -- wishbone interface --
