@@ -171,6 +171,9 @@ int main(void) {
   // Processor hardware initialization
   // ------------------------------------------------
 
+  // reset system time
+  neorv32_mtime_set_time(0);
+
   // deactivate unused IO devices
   neorv32_clic_disable();
   neorv32_pwm_disable();
