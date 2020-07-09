@@ -62,7 +62,20 @@ int neorv32_mtime_available(void) {
 
 
 /**********************************************************************//**
- * Get current system time since reset.
+ * Set current system time.
+ *
+ * @note The MTIME timer increments with the primary processor clock.
+ *
+ * @param[in] time New system time (uint64_t)
+ **************************************************************************/
+void neorv32_mtime_set_time(uint64_t time) {
+
+  MTIME = time;
+}
+
+
+/**********************************************************************//**
+ * Get current system time.
  *
  * @note The MTIME timer increments with the primary processor clock.
  *

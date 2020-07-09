@@ -324,17 +324,17 @@ enum NEORV32_WDT_CT_enum {
  * @name IO Device: Machine System Timer (MTIME)
  **************************************************************************/
 /**@{*/
-/** MTIME (time register) low word (r/-) */
-#define MTIME_LO     (*(IO_ROM32 0xFFFFFF90UL))
-/** MTIME (time register) high word (r/-) */
-#define MTIME_HI     (*(IO_ROM32 0xFFFFFF94UL))
+/** MTIME (time register) low word (r/w) */
+#define MTIME_LO     (*(IO_REG32 0xFFFFFF90UL))
+/** MTIME (time register) high word (r/w) */
+#define MTIME_HI     (*(IO_REG32 0xFFFFFF94UL))
 /** MTIMECMP (time compare register) low word (r/w) */
 #define MTIMECMP_LO  (*(IO_REG32 0xFFFFFF98UL))
 /** MTIMECMP (time register) high word (r/w) */
 #define MTIMECMP_HI  (*(IO_REG32 0xFFFFFF9CUL))
 
-/** MTIME (time register) 64-bit access (r/-) */
-#define MTIME        (*(IO_ROM64 (&MTIME_LO)))
+/** MTIME (time register) 64-bit access (r/w) */
+#define MTIME        (*(IO_REG64 (&MTIME_LO)))
 /** MTIMECMP (time compare register) low word (r/w) */
 #define MTIMECMP     (*(IO_REG64 (&MTIMECMP_LO)))
 /**@}*/

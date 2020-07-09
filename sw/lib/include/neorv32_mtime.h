@@ -46,6 +46,7 @@
 
 // prototypes
 int neorv32_mtime_available(void);
+void neorv32_mtime_set_time(uint64_t time);
 uint64_t neorv32_mtime_get_time(void);
 void neorv32_mtime_set_timecmp(uint64_t timecmp);
 uint64_t neorv32_mtime_get_timecmp(void);

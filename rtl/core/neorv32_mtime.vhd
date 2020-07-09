@@ -7,6 +7,7 @@
 -- # However, the  achine time cannot issue a new interrupt until the mtimecmp.HI register is      #
 -- # written again.                                                                                #
 -- # Note: The 64-bit time and compare system is broken and de-coupled into two 32-bit systems.    #
+-- # Note: The register of this unit can only be written in WORD MODE.                             #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -75,7 +76,8 @@ architecture neorv32_mtime_rtl of neorv32_mtime is
   signal wren   : std_ulogic; -- module access enable
 
   -- accessible regs --
-  signal mtimecmp        : std_ulogic_vector(63 downto 0);
+  signal mtimecmp_lo     : std_ulogic_vector(31 downto 0);
+  signal mtimecmp_hi     : std_ulogic_vector(31 downto 0);
   signal mtime_lo        : std_ulogic_vector(32 downto 0);
   signal mtime_lo_msb_ff : std_ulogic;
   signal mtime_hi        : std_ulogic_vector(31 downto 0);
@@ -85,8 +87,6 @@ architecture neorv32_mtime_rtl of neorv32_mtime is
   signal cmp_lo_ff    : std_ulogic;
   signal cmp_hi       : std_ulogic;
   signal cmp_match_ff : std_ulogic;
-  signal irq_flag     : std_ulogic;
-  signal irq_flag_ff  : std_ulogic;
 
 begin
 
@@ -94,28 +94,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = mtime_base_c(hi_abb_c downto lo_abb_c)) else '0';
   addr   <= mtime_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and wren_i;
-
-
-  -- System Time Update ---------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  system_time: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (rstn_i = '0') then
-        mtime_lo <= (others => '0');
-        mtime_hi <= (others => '0');
-      else
-        -- mtime low --
-        mtime_lo <= std_ulogic_vector(unsigned(mtime_lo) + 1);
-        mtime_lo_msb_ff <= mtime_lo(mtime_lo'left);
-        -- mtime high --
-        if ((mtime_lo_msb_ff xor mtime_lo(mtime_lo'left)) = '1') then -- mtime_lo carry?
-          mtime_hi <= std_ulogic_vector(unsigned(mtime_hi) + 1);
-        end if;
-      end if;
-    end if;
-  end process system_time;
+  wren   <= acc_en and wren_i and and_all_f(ben_i);
 
 
   -- Write Access ---------------------------------------------------------------------------
@@ -123,23 +102,30 @@ begin
   wr_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o <= acc_en and (rden_i or wren_i);
-      -- mtimecmp low --
-      if (wren = '1') and (addr = mtime_cmp_lo_addr_c) then
-        for i in 0 to 3 loop
-          if (ben_i(i) = '1') then
-            mtimecmp(00+7+i*8 downto 00+0+i*8) <= data_i(7+i*8 downto 0+i*8);
-          end if;
-        end loop; -- byte enable
+      -- mtimecmp --
+      if (wren = '1') then
+        if (addr = mtime_cmp_lo_addr_c) then -- low
+          mtimecmp_lo <= data_i;
+        end if;
+        if (addr = mtime_cmp_hi_addr_c) then -- high
+          mtimecmp_hi <= data_i;
+        end if;
       end if;
 
-      -- mtimecmp high --
-      if (wren = '1') and (addr = mtime_cmp_hi_addr_c) then
-        for i in 0 to 3 loop
-          if (ben_i(i) = '1') then
-            mtimecmp(32+7+i*8 downto 32+0+i*8) <= data_i(7+i*8 downto 0+i*8);
-          end if;
-        end loop; -- byte enable
+      -- mtime low --
+      if (wren = '1') and (addr = mtime_time_lo_addr_c) then
+        mtime_lo_msb_ff <= '0';
+        mtime_lo <= '0' & data_i;
+      else -- auto increment
+        mtime_lo_msb_ff <= mtime_lo(mtime_lo'left);
+        mtime_lo <= std_ulogic_vector(unsigned(mtime_lo) + 1);
+      end if;
+
+      -- mtime high --
+      if (wren = '1') and (addr = mtime_time_hi_addr_c) then
+        mtime_hi <= data_i;
+      elsif ((mtime_lo_msb_ff xor mtime_lo(mtime_lo'left)) = '1') then -- mtime_lo carry?
+        mtime_hi <= std_ulogic_vector(unsigned(mtime_hi) + 1);
       end if;
     end if;
   end process wr_access;
@@ -150,6 +136,7 @@ begin
   rd_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
+      ack_o  <= acc_en and (rden_i or wren_i);
       data_o <= (others => '0'); -- default
       if (rden_i = '1') and (acc_en = '1') then
         if (addr = mtime_time_lo_addr_c) then -- mtime LOW
@@ -157,9 +144,9 @@ begin
         elsif (addr = mtime_time_hi_addr_c) then -- mtime HIGH
           data_o <= mtime_hi;
         elsif (addr = mtime_cmp_lo_addr_c) then -- mtimecmp LOW
-          data_o <= mtimecmp(31 downto 00);
+          data_o <= mtimecmp_lo;
         else -- (addr = mtime_cmp_hi_addr_c) then -- mtimecmp HIGH
-          data_o <= mtimecmp(63 downto 32);
+          data_o <= mtimecmp_hi;
         end if;
       end if;
     end if;
@@ -173,38 +160,13 @@ begin
     if rising_edge(clk_i) then
       cmp_lo_ff    <= cmp_lo;
       cmp_match_ff <= cmp_lo_ff and cmp_hi;
+      irq_o        <= cmp_lo_ff and cmp_hi and (not cmp_match_ff);
     end if;
   end process cmp_sync;
 
   -- test words --
-  cmp_lo <= '1' when (unsigned(mtime_lo(31 downto 00)) >= unsigned(mtimecmp(31 downto 00))) else '0';
-  cmp_hi <= '1' when (unsigned(mtime_hi(31 downto 00)) >= unsigned(mtimecmp(63 downto 32))) else '0';
-
-
-  -- Interrupt Logic ------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  irq_ctrl: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (rstn_i = '0') then
-        irq_flag_ff <= '0';
-        irq_flag    <= '0';
-      else
-        irq_flag_ff  <= irq_flag;
-        if (irq_flag = '0') then -- idle
-          irq_flag <= '0';
-          if (cmp_match_ff = '1') then
-            irq_flag <= '1';
-          end if;
-        elsif (wren = '1') and (addr = mtime_cmp_hi_addr_c) then -- ACK
-          irq_flag <= '0';
-        end if;
-      end if;
-    end if;
-  end process irq_ctrl;
-
-  -- irq output to CPU --
-  irq_o <= irq_flag and (not irq_flag_ff); -- rising edge detector
+  cmp_lo <= '1' when (unsigned(mtime_lo(31 downto 00)) >= unsigned(mtimecmp_lo)) else '0';
+  cmp_hi <= '1' when (unsigned(mtime_hi(31 downto 00)) >= unsigned(mtimecmp_hi)) else '0';
 
 
 end neorv32_mtime_rtl;
