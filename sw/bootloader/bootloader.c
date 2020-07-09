@@ -67,7 +67,7 @@
 /** Bootloader status LED at GPIO output port (0..15) */
 #define STATUS_LED             (0)
 /** SPI flash boot image base address */
-#define SPI_FLASH_BOOT_ADR     (0x00040000)
+#define SPI_FLASH_BOOT_ADR     (0x00800000)
 /** SPI flash chip select at spi_csn_o */
 #define SPI_FLASH_CS           (0)
 /** Default SPI flash clock prescaler for serial peripheral interface */
