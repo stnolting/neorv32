@@ -294,7 +294,7 @@ begin
     -- check instruction access --
     misaligned_instr <= '0'; -- default
     if (CPU_EXTENSION_RISCV_C = true) then -- 16-bit and 32-bit instruction accesses
-      misaligned_instr <= '0';
+      misaligned_instr <= '0'; -- no alignment exceptions possible
     else -- 32-bit instruction accesses only
       if (pc_i(1) = '1') then -- PC(0) is always zero
         misaligned_instr <= '1';

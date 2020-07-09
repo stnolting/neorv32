@@ -5,6 +5,7 @@
 -- # signals. The received chars are shown in the simulator console and also written to a file     #
 -- # ("neorv32.testbench_uart.out").                                                               #
 -- # Futhermore, this testbench provides a simple RAM connected to the external Wishbone bus.      #
+-- # The testbench configures the processor with all optional element enabled by default.          #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -159,7 +160,7 @@ begin
     IO_PWM_USE                   => true,          -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   => true,          -- implement watch dog timer (WDT)?
     IO_CLIC_USE                  => true,          -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE                  => false,         -- implement true random number generator (TRNG)?
+    IO_TRNG_USE                  => false,         -- CANNOT BE SIMULATED!
     IO_DEVNULL_USE               => true           -- implement dummy device (DEVNULL)?
   )
   port map (
