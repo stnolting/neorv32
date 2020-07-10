@@ -596,6 +596,5 @@ Continous integration provided by [Travis CI](https://travis-ci.com/stnolting/ne
 This project is not affiliated with or endorsed by the Open Source Initiative (https://www.oshwa.org / https://opensource.org).
 
 \
-\
 
 Made with :coffee: in Hannover, Germany.
