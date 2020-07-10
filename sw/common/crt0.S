@@ -218,10 +218,10 @@ __crt0_main_entry:
 // Go to endless sleep mode if main returns
 // *********************************************************
 __crt0_this_is_the_end:
-  wfi                      // in case Ziscr is not available -> processor should stall here
-  csrrci zero, mstatus, 8  // mstatus: disable global IRQs (MIE)
+  csrrci zero, mstatus, 8 // mstatus: disable global IRQs (MIE)
   wfi
-  j .
+__crt0_this_is_the_end_end:
+  j __crt0_this_is_the_end_end // in case Ziscr is not available
 
 
 // *********************************************************

@@ -71,17 +71,17 @@ enum NEORV32_CPU_CSRS_enum {
   CSR_MTVAL       = 0x343, /**< 0x343 - mtval    (r/-): Machine bad address or instruction */
   CSR_MIP         = 0x344, /**< 0x344 - mip      (r/w): Machine interrupt pending register */
 
-  CSR_MCYCLE      = 0xb00, /**< 0xb00 - mcycle    (r/-): Machine cycle counter low word */
-  CSR_MINSTRET    = 0xb02, /**< 0xb02 - minstret  (r/-): Machine instructions-retired counter low word */
-  CSR_MCYCLEH     = 0xb80, /**< 0xb80 - mcycleh   (r/-): Machine cycle counter high word */
-  CSR_MINSTRETH   = 0xb82, /**< 0xb82 - minstreth (r/-): Machine instructions-retired counter high word */
+  CSR_MCYCLE      = 0xb00, /**< 0xb00 - mcycle    (r/w): Machine cycle counter low word */
+  CSR_MINSTRET    = 0xb02, /**< 0xb02 - minstret  (r/w): Machine instructions-retired counter low word */
+  CSR_MCYCLEH     = 0xb80, /**< 0xb80 - mcycleh   (r/w): Machine cycle counter high word */
+  CSR_MINSTRETH   = 0xb82, /**< 0xb82 - minstreth (r/w): Machine instructions-retired counter high word */
 
   CSR_CYCLE       = 0xc00, /**< 0xc00 - cycle    (r/-): Cycle counter low word */
-  CSR_TIME        = 0xc01, /**< 0xc01 - time     (r/-): Timer low word*/
+  CSR_TIME        = 0xc01, /**< 0xc01 - time     (r/-): Timer low word (from MTIME.TIME) */
   CSR_INSTRET     = 0xc02, /**< 0xc02 - instret  (r/-): Instructions-retired counter low word */
 
   CSR_CYCLEH      = 0xc80, /**< 0xc80 - cycleh   (r/-): Cycle counter high word */
-  CSR_TIMEH       = 0xc81, /**< 0xc81 - timeh    (r/-): Timer high word*/
+  CSR_TIMEH       = 0xc81, /**< 0xc81 - timeh    (r/-): Timer high word (from MTIME.TIME) */
   CSR_INSTRETH    = 0xc82, /**< 0xc82 - instreth (r/-): Instructions-retired counter high word */
 
   CSR_MIMPID      = 0xf13, /**< 0xf13 - mimpid  (r/-): Implementation ID/version */
