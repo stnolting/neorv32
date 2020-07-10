@@ -202,6 +202,9 @@ architecture neorv32_top_rtl of neorv32_top is
   signal spi_irq   : std_ulogic;
   signal twi_irq   : std_ulogic;
 
+  -- misc --
+  signal mtime_time : std_ulogic_vector(63 downto 0); -- current system time from MTIME
+
 begin
 
   -- Sanity Checks --------------------------------------------------------------------------
@@ -368,6 +371,8 @@ begin
     bus_cancel_o => cpu.cancel,   -- cancel current bus transaction
     bus_ack_i    => cpu.ack,      -- bus transfer acknowledge
     bus_err_i    => cpu.err,      -- bus transfer error
+    -- system time input from MTIME --
+    time_i       => mtime_time,   -- current system time
     -- external interrupts --
     clic_irq_i   => clic_irq,     -- CLIC interrupt request
     mtime_irq_i  => mtime_irq     -- machine timer interrupt
@@ -661,6 +666,8 @@ begin
       data_i    => cpu.wdata,    -- data in
       data_o    => mtime_rdata,  -- data out
       ack_o     => mtime_ack,    -- transfer acknowledge
+      -- time output for CPU --
+      time_o    => mtime_time,   -- current system time
       -- interrupt --
       irq_o     => mtime_irq     -- interrupt request
     );
@@ -669,6 +676,7 @@ begin
   neorv32_mtime_inst_false:
   if (IO_MTIME_USE = false) generate
     mtime_rdata <= (others => '0');
+    mtime_time  <= (others => '0');
     mtime_ack   <= '0';
     mtime_irq   <= '0';
   end generate;

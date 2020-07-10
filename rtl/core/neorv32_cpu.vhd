@@ -100,6 +100,8 @@ entity neorv32_cpu is
     bus_cancel_o : out std_ulogic; -- cancel current bus transaction
     bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
     bus_err_i    : in  std_ulogic; -- bus transfer error
+    -- system time input from MTIME --
+    time_i       : in  std_ulogic_vector(63 downto 0); -- current system time
     -- external interrupts --
     clic_irq_i   : in  std_ulogic; -- CLIC interrupt request
     mtime_irq_i  : in  std_ulogic  -- machine timer interrupt
@@ -201,6 +203,8 @@ begin
     -- external interrupt --
     clic_irq_i    => clic_irq_i,  -- CLIC interrupt request
     mtime_irq_i   => mtime_irq_i, -- machine timer interrupt
+    -- system time input from MTIME --
+    time_i        => time_i,      -- current system time
     -- bus access exceptions --
     mar_i         => mar,         -- memory address register
     ma_instr_i    => ma_instr,    -- misaligned instruction address

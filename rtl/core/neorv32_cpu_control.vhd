@@ -104,6 +104,8 @@ entity neorv32_cpu_control is
     -- external interrupt --
     clic_irq_i    : in  std_ulogic; -- CLIC interrupt request
     mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
+    -- system time input from MTIME --
+    time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
     -- bus access exceptions --
     mar_i         : in  std_ulogic_vector(data_width_c-1 downto 0);  -- memory address register
     ma_instr_i    : in  std_ulogic; -- misaligned instruction address
@@ -179,6 +181,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pc_nxt       : std_ulogic_vector(data_width_c-1 downto 0);
     next_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- next PC, corresponding to next instruction to be executed
     last_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- PC of last executed instruction
+    sleep        : std_ulogic; -- CPU in sleep mode
+    sleep_nxt    : std_ulogic; -- CPU in sleep mode
   end record;
   signal execute_engine : execute_engine_t;
 
@@ -230,15 +234,15 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mtvec        : std_ulogic_vector(data_width_c-1 downto 0); -- mtvec: machine trap-handler base address (R/W)
     mtval        : std_ulogic_vector(data_width_c-1 downto 0); -- mtval: machine bad address or isntruction (R/W)
     mscratch     : std_ulogic_vector(data_width_c-1 downto 0); -- mscratch: scratch register (R/W)
-    cycle        : std_ulogic_vector(32 downto 0); -- cycle, mtime (R/-), plus carry bit
-    instret      : std_ulogic_vector(32 downto 0); -- instret (R/-), plus carry bit
-    cycleh       : std_ulogic_vector(31 downto 0); -- cycleh, mtimeh (R/-)
-    instreth     : std_ulogic_vector(31 downto 0); -- instreth (R/-)
+    mcycle       : std_ulogic_vector(32 downto 0); -- mcycle (R/W), plus carry bit
+    minstret     : std_ulogic_vector(32 downto 0); -- minstret (R/W), plus carry bit
+    mcycleh      : std_ulogic_vector(31 downto 0); -- mcycleh (R/W)
+    minstreth    : std_ulogic_vector(31 downto 0); -- minstreth (R/W)
   end record;
   signal csr : csr_t;
 
-  signal cycle_msb   : std_ulogic;
-  signal instret_msb : std_ulogic;
+  signal mcycle_msb   : std_ulogic;
+  signal minstret_msb : std_ulogic;
 
   -- illegal instruction check --
   signal illegal_instruction : std_ulogic;
@@ -337,7 +341,7 @@ begin
     -- state machine --
     case fetch_engine.state is
 
-      when IFETCH_RESET => -- reset engine, prefetch buffer, get PC
+      when IFETCH_RESET => -- reset engine, prefetch buffer, get appilcation PC
       -- ------------------------------------------------------------
         fetch_engine.i_buf_state_nxt <= (others => '0');
         fetch_engine.ci_return_nxt   <= '0';
@@ -545,6 +549,8 @@ begin
       end if;
       execute_engine.state      <= SYS_WAIT;
       execute_engine.state_prev <= SYS_WAIT;
+      --
+      execute_engine.sleep <= '0';
     elsif rising_edge(clk_i) then
       execute_engine.pc <= execute_engine.pc_nxt(data_width_c-1 downto 1) & '0';
       if (execute_engine.state = EXECUTE) then
@@ -552,6 +558,8 @@ begin
       end if;
       execute_engine.state      <= execute_engine.state_nxt;
       execute_engine.state_prev <= execute_engine.state;
+      --
+      execute_engine.sleep <= execute_engine.sleep_nxt;
     end if;
   end process execute_engine_fsm_sync_rst;
 
@@ -590,7 +598,7 @@ begin
     ctrl_o(ctrl_bus_if_c) <= ctrl(ctrl_bus_if_c) or bus_fast_ir;
     -- bus control --
     ctrl_o(ctrl_bus_exc_ack_c) <= trap_ctrl.env_start_ack or fetch_engine.bus_err_ack;
-    ctrl_o(ctrl_bus_reset_c) <=fetch_engine.bus_reset;
+    ctrl_o(ctrl_bus_reset_c)   <= fetch_engine.bus_reset;
   end process ctrl_output;
 
 
@@ -609,6 +617,7 @@ begin
     execute_engine.is_jump_nxt <= '0';
     execute_engine.is_ci_nxt   <= execute_engine.is_ci;
     execute_engine.pc_nxt      <= execute_engine.pc(data_width_c-1 downto 1) & '0';
+    execute_engine.sleep_nxt   <= execute_engine.sleep;
 
     -- instruction dispatch --
     fetch_engine.reset         <= '0';
@@ -699,7 +708,11 @@ begin
              execute_engine.is_ci_nxt <= ipb.rdata(32); -- flag to indicate this is a compressed instruction beeing executed
              execute_engine.i_reg_nxt <= ipb.rdata(31 downto 0);
              execute_engine.pc_nxt    <= ipb.raddr(data_width_c-1 downto 1) & '0'; -- the PC according to the current instruction
-             execute_engine.state_nxt <= EXECUTE;
+             if (execute_engine.sleep = '1') then
+               execute_engine.state_nxt <= TRAP;
+             else
+               execute_engine.state_nxt <= EXECUTE;
+             end if;
            end if;
          end if;
 
@@ -708,6 +721,7 @@ begin
         fetch_engine.reset <= '1';
         if (trap_ctrl.env_start = '1') then
           trap_ctrl.env_start_ack  <= '1';
+          execute_engine.sleep_nxt <= '0'; -- waky waky
           execute_engine.pc_nxt    <= csr.mtvec(data_width_c-1 downto 1) & '0';
           execute_engine.state_nxt <= SYS_WAIT;
         end if;
@@ -813,22 +827,20 @@ begin
             --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system
               case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
-                when x"000" => -- ECALL
+                when funct12_ecall_c => -- ECALL
                   trap_ctrl.env_call <= '1';
-                  execute_engine.state_nxt <= SYS_WAIT;
-                when x"001" => -- EBREAK
+                when funct12_ebreak_c => -- EBREAK
                   trap_ctrl.break_point <= '1';
-                  execute_engine.state_nxt <= SYS_WAIT;
-                when x"302" => -- MRET
-                  trap_ctrl.env_end        <= '1';
-                  execute_engine.pc_nxt    <= csr.mepc(data_width_c-1 downto 1) & '0';
-                  fetch_engine.reset       <= '1';
-                  execute_engine.state_nxt <= SYS_WAIT;
-                when x"105" => -- WFI = "CPU sleep"
-                  execute_engine.state_nxt <= TRAP;
+                when funct12_mret_c => -- MRET
+                  trap_ctrl.env_end     <= '1';
+                  execute_engine.pc_nxt <= csr.mepc(data_width_c-1 downto 1) & '0';
+                  fetch_engine.reset    <= '1';
+                when funct12_wfi_c => -- WFI = "CPU sleep"
+                  execute_engine.sleep_nxt <= '1'; -- good night
                 when others => -- undefined
                   NULL;
               end case;
+              execute_engine.state_nxt <= SYS_WAIT;
             elsif (CPU_EXTENSION_RISCV_Zicsr = true) then -- CSR access
               execute_engine.state_nxt <= CSR_ACCESS;
             else
@@ -888,7 +900,7 @@ begin
         -- RF write back --
         ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output register
         ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-        execute_engine.state_nxt <= DISPATCH; -- FIXME should be SYS_WAIT? have another cycle to let side-effects kick in
+        execute_engine.state_nxt  <= DISPATCH; -- FIXME should be SYS_WAIT? have another cycle to let side-effects kick in
 
       when ALU_WAIT => -- wait for multi-cycle ALU operation to finish
       -- ------------------------------------------------------------
@@ -902,10 +914,12 @@ begin
       when BRANCH => -- update PC for taken branches and jumps
       -- ------------------------------------------------------------
         if (execute_engine.is_jump = '1') or (execute_engine.branch_taken = '1') then
-          execute_engine.pc_nxt <= alu_add_i(data_width_c-1 downto 1) & '0';
-          fetch_engine.reset    <= '1';
+          execute_engine.pc_nxt    <= alu_add_i(data_width_c-1 downto 1) & '0'; -- branch/jump destination
+          fetch_engine.reset       <= '1';
+          execute_engine.state_nxt <= SYS_WAIT;
+        else
+          execute_engine.state_nxt <= DISPATCH;
         end if;
-        execute_engine.state_nxt <= SYS_WAIT;
 
       when LOAD => -- trigger memory read request
       -- ------------------------------------------------------------
@@ -1062,10 +1076,10 @@ begin
                (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"344") or -- mip
                --
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c00") and (CPU_EXTENSION_RISCV_E = false) and (CSR_COUNTERS_USE = true)) or -- cycle
-               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c01") and (CPU_EXTENSION_RISCV_E = false) and (CSR_COUNTERS_USE = true)) or -- time
+               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c01") and (IO_MTIME_USE = true)) or -- time
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c02") and (CPU_EXTENSION_RISCV_E = false) and (CSR_COUNTERS_USE = true)) or -- instret
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c80") and (CPU_EXTENSION_RISCV_E = false) and (CSR_COUNTERS_USE = true)) or -- cycleh
-               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c81") and (CPU_EXTENSION_RISCV_E = false) and (CSR_COUNTERS_USE = true)) or -- timeh
+               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c81") and (IO_MTIME_USE = true)) or -- timeh
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c82") and (CPU_EXTENSION_RISCV_E = false) and (CSR_COUNTERS_USE = true)) or -- instreth
                --
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"b00") and (CPU_EXTENSION_RISCV_E = false) and (CSR_COUNTERS_USE = true)) or -- mcycle
@@ -1090,10 +1104,10 @@ begin
           -- ecall, ebreak, mret, wfi --
           elsif (execute_engine.i_reg(instr_rd_msb_c  downto instr_rd_lsb_c)  = "00000") and
                 (execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") then
-            if (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = "000000000000") or -- ECALL
-               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = "000000000001") or -- EBREAK 
-               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = "001100000010") or -- MRET
-               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = "000100000101") then -- WFI
+            if (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ecall_c) or -- ECALL
+               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ebreak_c) or -- EBREAK 
+               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_mret_c) or -- MRET
+               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_wfi_c) then -- WFI
               illegal_instruction <= '0';
             else
               illegal_instruction <= '1';
@@ -1159,8 +1173,8 @@ begin
 
         -- trap control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler
-          if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and
-             ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP))) then -- exception/IRQ detected!
+          if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and -- exception/IRQ detected!
+             ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP))) then -- sample IRQs in EXECUTE or TRAP state only
             trap_ctrl.cause     <= trap_ctrl.cause_nxt;   -- capture source ID for program
             trap_ctrl.exc_src   <= trap_ctrl.exc_buf;     -- capture exception source for hardware
             trap_ctrl.exc_ack   <= '1';                   -- clear execption
@@ -1276,22 +1290,14 @@ begin
 -- Control and Status Registers (CSRs)
 -- ****************************************************************************************************************************
 
-  -- CSR CPU Access -------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  csr_cpu_acc: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      csr.we <= csr.we_nxt;
-      csr.re <= csr.re_nxt;
-    end if;
-  end process csr_cpu_acc;
-
-
   -- Control and Status Registers Write Access ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      csr.we <= '0';
+      csr.re <= '0';
+      --
       csr.mstatus_mie  <= '0';
       csr.mstatus_mpie <= '0';
       csr.mie_msie     <= '0';
@@ -1303,28 +1309,33 @@ begin
       csr.mip_msip     <= '0';
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
+        -- access --
+        csr.we <= csr.we_nxt;
+        csr.re <= csr.re_nxt;
+
         -- defaults --
         csr.mip_msip <= '0';
 
-        -- register that can be modified by user --
+        -- registers that can be modified by user --
         if (csr.we = '1') then -- manual update
 
           -- Machine CSRs: Standard read/write
           if (execute_engine.i_reg(31 downto 28) = x"3") then
             -- machine trap setup --
             if (execute_engine.i_reg(27 downto 24) = x"0") then
-              if (execute_engine.i_reg(23 downto 20) = x"0") then -- R/W: mstatus - machine status register
+              case execute_engine.i_reg(23 downto 20) is
+              when x"0" => -- R/W: mstatus - machine status register
                 csr.mstatus_mie  <= csr_wdata_i(03);
                 csr.mstatus_mpie <= csr_wdata_i(07);
-              end if;
-              if (execute_engine.i_reg(23 downto 20) = x"4") then -- R/W: mie - machine interrupt-enable register
+              when x"4" => -- R/W: mie - machine interrupt-enable register
                 csr.mie_msie <= csr_wdata_i(03); -- SW IRQ enable
                 csr.mie_mtie <= csr_wdata_i(07); -- TIMER IRQ enable
                 csr.mie_meie <= csr_wdata_i(11); -- EXT IRQ enable
-              end if;
-              if (execute_engine.i_reg(23 downto 20) = x"5") then -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
+              when x"5" => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
                 csr.mtvec <= csr_wdata_i;
-              end if;
+              when others =>
+                NULL;
+              end case;
             end if;
             -- machine trap handling --
             if (execute_engine.i_reg(27 downto 24) = x"4") then
@@ -1342,27 +1353,11 @@ begin
                 when others =>
                   NULL;
               end case;
-              
--- FIXME remove code below
-              --if (execute_engine.i_reg(23 downto 20) = x"0") then -- R/W: mscratch - machine scratch register
-              --  csr.mscratch <= csr_wdata_i;
-              --end if;
-              --if (execute_engine.i_reg(23 downto 20) = x"1") then -- R/W: mepc - machine exception program counter
-              --  csr.mepc <= csr_wdata_i;
-              --end if;
-              --if (execute_engine.i_reg(23 downto 20) = x"2") then -- R/W: mcause - machine trap cause
-              --  csr.mcause <= csr_wdata_i;
-              --end if;
-              --if (execute_engine.i_reg(23 downto 20) = x"3") then -- R/W: mtval - machine bad address or instruction
-              --  csr.mtval <= csr_wdata_i;
-              --end if;
-              --if (execute_engine.i_reg(23 downto 20) = x"4") then -- R/W: mip - machine interrupt pending
-              --  csr.mip_msip <= csr_wdata_i(03); -- manual SW IRQ trigger
-              --end if;
             end if;
           end if;
 
-        else -- automatic update by hardware
+        -- automatic update by hardware --
+        else
 
           -- machine exception PC & exception value register --
           if (trap_ctrl.env_start_ack = '1') then -- trap handler started?
@@ -1404,90 +1399,100 @@ begin
   begin
     if rising_edge(clk_i) then
       csr_rdata_o <= (others => '0'); -- default
-      if (CPU_EXTENSION_RISCV_Zicsr = true) then -- implement CSR access at all?
-        if (csr.re = '1') then
-          case execute_engine.i_reg(31 downto 20) is
-            -- machine trap setup --
-            when x"300" => -- R/W: mstatus - machine status register
-              csr_rdata_o(03) <= csr.mstatus_mie; -- MIE
-              csr_rdata_o(07) <= csr.mstatus_mpie; -- MPIE
-              csr_rdata_o(11) <= '1'; -- MPP low
-              csr_rdata_o(12) <= '1'; -- MPP high
-            when x"301" => -- R/W: misa - ISA and extensions
-              csr_rdata_o(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
-              csr_rdata_o(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
-              csr_rdata_o(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
-              csr_rdata_o(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_M);     -- M CPU extension
-              csr_rdata_o(25) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr) and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Z CPU extension
-              csr_rdata_o(30) <= '1'; -- 32-bit architecture (MXL lo)
-              csr_rdata_o(31) <= '0'; -- 32-bit architecture (MXL hi)
-            when x"304" => -- R/W: mie - machine interrupt-enable register
-              csr_rdata_o(03) <= csr.mie_msie; -- software IRQ enable
-              csr_rdata_o(07) <= csr.mie_mtie; -- timer IRQ enable
-              csr_rdata_o(11) <= csr.mie_meie; -- external IRQ enable
-            when x"305" => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
-              csr_rdata_o <= csr.mtvec;
-            -- machine trap handling --
-            when x"340" => -- R/W: mscratch - machine scratch register
-              csr_rdata_o <= csr.mscratch;
-            when x"341" => -- R/W: mepc - machine exception program counter
-              csr_rdata_o <= csr.mepc;
-            when x"342" => -- R/W: mcause - machine trap cause
-              csr_rdata_o <= csr.mcause;
-            when x"343" => -- R/W: mtval - machine bad address or instruction
-              csr_rdata_o <= csr.mtval;
-            when x"344" => -- R/W: mip - machine interrupt pending
-              csr_rdata_o(03) <= trap_ctrl.irq_buf(interrupt_msw_irq_c);
-              csr_rdata_o(07) <= trap_ctrl.irq_buf(interrupt_mtime_irq_c);
-              csr_rdata_o(11) <= trap_ctrl.irq_buf(interrupt_mext_irq_c);
-            -- counter and timers --
-            when x"c00" | x"c01" | x"b00" => -- R/-: cycle/time/mcycle: Cycle counter LOW / Timer LOW
-              csr_rdata_o <= csr.cycle(31 downto 0);
-            when x"c02" | x"b02" => -- R/-: instret/minstret: Instructions-retired counter LOW
-              csr_rdata_o <= csr.instret(31 downto 0);
-            when x"c80" | x"c81" | x"b80" => -- R/-: cycleh/timeh/mcycleh: Cycle counter HIGH / Timer HIGH
-              csr_rdata_o <= csr.cycleh;
-            when x"c82" | x"b82" => -- R/-: instreth/minstreth: Instructions-retired counter HIGH
-              csr_rdata_o <= csr.instreth;
-            -- machine information registers --
-            when x"f13" => -- R/-: mimpid - implementation ID / version
-              csr_rdata_o <= hw_version_c;
-            when x"f14" => -- R/-: mhartid - hardware thread ID
-              csr_rdata_o <= HART_ID;
-            -- CUSTOM read-only machine CSRs --
-            when x"fc0" => -- R/-: mfeatures - implemented processor devices/features
-              csr_rdata_o(00) <= bool_to_ulogic_f(BOOTLOADER_USE);   -- implement processor-internal bootloader?
-              csr_rdata_o(01) <= bool_to_ulogic_f(MEM_EXT_USE);      -- implement external memory bus interface?
-              csr_rdata_o(02) <= bool_to_ulogic_f(MEM_INT_IMEM_USE); -- implement processor-internal instruction memory?
-              csr_rdata_o(03) <= bool_to_ulogic_f(MEM_INT_IMEM_ROM); -- implement processor-internal instruction memory as ROM?
-              csr_rdata_o(04) <= bool_to_ulogic_f(MEM_INT_DMEM_USE); -- implement processor-internal data memory?
-              csr_rdata_o(05) <= bool_to_ulogic_f(CSR_COUNTERS_USE); -- implement RISC-V (performance) counter?
-              --
-              csr_rdata_o(16) <= bool_to_ulogic_f(IO_GPIO_USE);      -- implement general purpose input/output port unit (GPIO)?
-              csr_rdata_o(17) <= bool_to_ulogic_f(IO_MTIME_USE);     -- implement machine system timer (MTIME)?
-              csr_rdata_o(18) <= bool_to_ulogic_f(IO_UART_USE);      -- implement universal asynchronous receiver/transmitter (UART)?
-              csr_rdata_o(19) <= bool_to_ulogic_f(IO_SPI_USE);       -- implement serial peripheral interface (SPI)?
-              csr_rdata_o(20) <= bool_to_ulogic_f(IO_TWI_USE);       -- implement two-wire interface (TWI)?
-              csr_rdata_o(21) <= bool_to_ulogic_f(IO_PWM_USE);       -- implement pulse-width modulation unit (PWM)?
-              csr_rdata_o(22) <= bool_to_ulogic_f(IO_WDT_USE);       -- implement watch dog timer (WDT)?
-              csr_rdata_o(23) <= bool_to_ulogic_f(IO_CLIC_USE);      -- implement core local interrupt controller (CLIC)?
-              csr_rdata_o(24) <= bool_to_ulogic_f(IO_TRNG_USE);      -- implement true random number generator (TRNG)?
-              csr_rdata_o(25) <= bool_to_ulogic_f(IO_DEVNULL_USE);   -- implement dummy device (DEVNULL)?
-            when x"fc1" => -- R/-: mclock - processor clock speed
-              csr_rdata_o <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
-            when x"fc4" => -- R/-: mispacebase - Base address of instruction memory space
-              csr_rdata_o <= MEM_ISPACE_BASE;
-            when x"fc5" => -- R/-: mdspacebase - Base address of data memory space
-              csr_rdata_o <= MEM_DSPACE_BASE;
-            when x"fc6" => -- R/-: mispacesize - Total size of instruction memory space in byte
-              csr_rdata_o <= std_ulogic_vector(to_unsigned(MEM_ISPACE_SIZE, 32));
-            when x"fc7" => -- R/-: mdspacesize - Total size of data memory space in byte
-              csr_rdata_o <= std_ulogic_vector(to_unsigned(MEM_DSPACE_SIZE, 32));
-            -- undefined/unavailable --
-            when others =>
-              csr_rdata_o <= (others => '0'); -- not implemented
-          end case;
-        end if;
+      if (CPU_EXTENSION_RISCV_Zicsr = true) and (csr.re = '1') then
+        case execute_engine.i_reg(31 downto 20) is
+
+          -- machine trap setup --
+          when x"300" => -- R/W: mstatus - machine status register
+            csr_rdata_o(03) <= csr.mstatus_mie; -- MIE
+            csr_rdata_o(07) <= csr.mstatus_mpie; -- MPIE
+            csr_rdata_o(11) <= '1'; -- MPP low
+            csr_rdata_o(12) <= '1'; -- MPP high
+          when x"301" => -- R/-: misa - ISA and extensions
+            csr_rdata_o(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
+            csr_rdata_o(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
+            csr_rdata_o(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
+            csr_rdata_o(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_M);     -- M CPU extension
+            csr_rdata_o(25) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr) and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Z CPU extension
+            csr_rdata_o(30) <= '1'; -- 32-bit architecture (MXL lo)
+            csr_rdata_o(31) <= '0'; -- 32-bit architecture (MXL hi)
+          when x"304" => -- R/W: mie - machine interrupt-enable register
+            csr_rdata_o(03) <= csr.mie_msie; -- software IRQ enable
+            csr_rdata_o(07) <= csr.mie_mtie; -- timer IRQ enable
+            csr_rdata_o(11) <= csr.mie_meie; -- external IRQ enable
+          when x"305" => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
+            csr_rdata_o <= csr.mtvec;
+
+          -- machine trap handling --
+          when x"340" => -- R/W: mscratch - machine scratch register
+            csr_rdata_o <= csr.mscratch;
+          when x"341" => -- R/W: mepc - machine exception program counter
+            csr_rdata_o <= csr.mepc;
+          when x"342" => -- R/W: mcause - machine trap cause
+            csr_rdata_o <= csr.mcause;
+          when x"343" => -- R/W: mtval - machine bad address or instruction
+            csr_rdata_o <= csr.mtval;
+          when x"344" => -- R/W: mip - machine interrupt pending
+            csr_rdata_o(03) <= trap_ctrl.irq_buf(interrupt_msw_irq_c);
+            csr_rdata_o(07) <= trap_ctrl.irq_buf(interrupt_mtime_irq_c);
+            csr_rdata_o(11) <= trap_ctrl.irq_buf(interrupt_mext_irq_c);
+
+          -- counter and timers --
+          when x"c00" | x"b00" => -- R/(W): cycle/mcycle: Cycle counter LOW
+            csr_rdata_o <= csr.mcycle(31 downto 0);
+          when x"c02" | x"b02" => -- R/(W): instret/minstret: Instructions-retired counter LOW
+            csr_rdata_o <= csr.minstret(31 downto 0);
+          when x"c80" | x"b80" => -- R/(W): cycleh/mcycleh: Cycle counter HIGH
+            csr_rdata_o <= csr.mcycleh;
+          when x"c82" | x"b82" => -- R/(W): instreth/minstreth: Instructions-retired counter HIGH
+            csr_rdata_o <= csr.minstreth;
+
+          when x"c01" => -- R/-: time: System time LOW (from MTIME unit)
+            csr_rdata_o <= time_i(31 downto 0);
+          when x"c81" => -- R/-: timeh: System time HIGH (from MTIME unit)
+            csr_rdata_o <= time_i(63 downto 32);
+
+          -- machine information registers --
+          when x"f13" => -- R/-: mimpid - implementation ID / version
+            csr_rdata_o <= hw_version_c;
+          when x"f14" => -- R/-: mhartid - hardware thread ID
+            csr_rdata_o <= HART_ID;
+
+          -- CUSTOM read-only machine CSRs --
+          when x"fc0" => -- R/-: mfeatures - implemented processor devices/features
+            csr_rdata_o(00) <= bool_to_ulogic_f(BOOTLOADER_USE);   -- implement processor-internal bootloader?
+            csr_rdata_o(01) <= bool_to_ulogic_f(MEM_EXT_USE);      -- implement external memory bus interface?
+            csr_rdata_o(02) <= bool_to_ulogic_f(MEM_INT_IMEM_USE); -- implement processor-internal instruction memory?
+            csr_rdata_o(03) <= bool_to_ulogic_f(MEM_INT_IMEM_ROM); -- implement processor-internal instruction memory as ROM?
+            csr_rdata_o(04) <= bool_to_ulogic_f(MEM_INT_DMEM_USE); -- implement processor-internal data memory?
+            csr_rdata_o(05) <= bool_to_ulogic_f(CSR_COUNTERS_USE); -- implement RISC-V (performance) counter?
+            --
+            csr_rdata_o(16) <= bool_to_ulogic_f(IO_GPIO_USE);      -- implement general purpose input/output port unit (GPIO)?
+            csr_rdata_o(17) <= bool_to_ulogic_f(IO_MTIME_USE);     -- implement machine system timer (MTIME)?
+            csr_rdata_o(18) <= bool_to_ulogic_f(IO_UART_USE);      -- implement universal asynchronous receiver/transmitter (UART)?
+            csr_rdata_o(19) <= bool_to_ulogic_f(IO_SPI_USE);       -- implement serial peripheral interface (SPI)?
+            csr_rdata_o(20) <= bool_to_ulogic_f(IO_TWI_USE);       -- implement two-wire interface (TWI)?
+            csr_rdata_o(21) <= bool_to_ulogic_f(IO_PWM_USE);       -- implement pulse-width modulation unit (PWM)?
+            csr_rdata_o(22) <= bool_to_ulogic_f(IO_WDT_USE);       -- implement watch dog timer (WDT)?
+            csr_rdata_o(23) <= bool_to_ulogic_f(IO_CLIC_USE);      -- implement core local interrupt controller (CLIC)?
+            csr_rdata_o(24) <= bool_to_ulogic_f(IO_TRNG_USE);      -- implement true random number generator (TRNG)?
+            csr_rdata_o(25) <= bool_to_ulogic_f(IO_DEVNULL_USE);   -- implement dummy device (DEVNULL)?
+          when x"fc1" => -- R/-: mclock - processor clock speed
+            csr_rdata_o <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
+          when x"fc4" => -- R/-: mispacebase - Base address of instruction memory space
+            csr_rdata_o <= MEM_ISPACE_BASE;
+          when x"fc5" => -- R/-: mdspacebase - Base address of data memory space
+            csr_rdata_o <= MEM_DSPACE_BASE;
+          when x"fc6" => -- R/-: mispacesize - Total size of instruction memory space in byte
+            csr_rdata_o <= std_ulogic_vector(to_unsigned(MEM_ISPACE_SIZE, 32));
+          when x"fc7" => -- R/-: mdspacesize - Total size of data memory space in byte
+            csr_rdata_o <= std_ulogic_vector(to_unsigned(MEM_DSPACE_SIZE, 32));
+
+          -- undefined/unavailable --
+          when others =>
+            csr_rdata_o <= (others => '0'); -- not implemented
+
+        end case;
       end if;
     end if;
   end process csr_read_access;
@@ -1498,29 +1503,47 @@ begin
   csr_counters: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      csr.cycle    <= (others => '0');
-      csr.instret  <= (others => '0');
-      csr.cycleh   <= (others => '0');
-      csr.instreth <= (others => '0');
-      cycle_msb    <= '0';
-      instret_msb  <= '0';
+      csr.mcycle    <= (others => '0');
+      csr.minstret  <= (others => '0');
+      csr.mcycleh   <= (others => '0');
+      csr.minstreth <= (others => '0');
+      mcycle_msb    <= '0';
+      minstret_msb  <= '0';
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_E = false) and (CSR_COUNTERS_USE = true) then
-        -- low word overflow buffers --
-        cycle_msb   <= csr.cycle(csr.cycle'left);
-        instret_msb <= csr.instret(csr.instret'left);
-        -- low word counters --
-        csr.cycle <= std_ulogic_vector(unsigned(csr.cycle) + 1);
-        if (execute_engine.state_prev /= EXECUTE) and (execute_engine.state = EXECUTE) then
-          csr.instret <= std_ulogic_vector(unsigned(csr.instret) + 1);
+
+        -- mcycle (cycle) --
+        mcycle_msb <= csr.mcycle(csr.mcycle'left);
+        if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b00") then -- write access
+          csr.mcycle(31 downto 0) <= csr_wdata_i;
+          csr.mcycle(32) <= '0';
+        elsif (execute_engine.sleep = '0') then -- automatic update
+          csr.mcycle <= std_ulogic_vector(unsigned(csr.mcycle) + 1);
         end if;
-        -- high word counters --
-        if ((cycle_msb xor csr.cycle(csr.cycle'left)) = '1') then
-          csr.cycleh <= std_ulogic_vector(unsigned(csr.cycleh) + 1);
+
+        -- mcycleh (cycleh) --
+        if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b80") then -- write access
+          csr.mcycleh <= csr_wdata_i;
+        elsif ((mcycle_msb xor csr.mcycle(csr.mcycle'left)) = '1') then -- automatic update
+          csr.mcycleh <= std_ulogic_vector(unsigned(csr.mcycleh) + 1);
         end if;
-        if ((instret_msb xor csr.instret(csr.instret'left)) = '1') then
-          csr.instreth <= std_ulogic_vector(unsigned(csr.instreth) + 1);
+
+        -- minstret (instret) --
+        minstret_msb <= csr.minstret(csr.minstret'left);
+        if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b02") then -- write access
+          csr.minstret(31 downto 0) <= csr_wdata_i;
+          csr.minstret(32) <= '0';
+        elsif (execute_engine.state_prev /= EXECUTE) and (execute_engine.state = EXECUTE) then -- automatic update
+          csr.minstret <= std_ulogic_vector(unsigned(csr.minstret) + 1);
         end if;
+
+        -- minstreth (instreth) --
+        if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b82") then -- write access
+          csr.minstreth <= csr_wdata_i;
+        elsif ((minstret_msb xor csr.minstret(csr.minstret'left)) = '1') then -- automatic update
+          csr.minstreth <= std_ulogic_vector(unsigned(csr.minstreth) + 1);
+        end if;
+
       end if;
     end if;
   end process csr_counters;

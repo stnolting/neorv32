@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - FIXED!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01000500"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01000600"; -- no touchy!
 
   -- Internal Functions ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -276,6 +276,14 @@ package neorv32_package is
   constant funct3_fence_c  : std_ulogic_vector(2 downto 0) := "000"; -- fence - order IO/memory access (->NOP)
   constant funct3_fencei_c : std_ulogic_vector(2 downto 0) := "001"; -- fencei - instructon stream sync
 
+  -- RISC-V Funct12 --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- system --
+  constant funct12_ecall_c  : std_ulogic_vector(11 downto 0) := x"000"; -- ECALL
+  constant funct12_ebreak_c : std_ulogic_vector(11 downto 0) := x"001"; -- EBREAK
+  constant funct12_mret_c   : std_ulogic_vector(11 downto 0) := x"302"; -- MRET
+  constant funct12_wfi_c    : std_ulogic_vector(11 downto 0) := x"105"; -- WFI
+
   -- Co-Processor Operations ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- cp ids --
@@ -464,6 +472,8 @@ package neorv32_package is
       bus_cancel_o : out std_ulogic; -- cancel current bus transaction
       bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
       bus_err_i    : in  std_ulogic; -- bus transfer error
+      -- system time input from MTIME --
+      time_i       : in  std_ulogic_vector(63 downto 0); -- current system time
       -- external interrupts --
       clic_irq_i   : in  std_ulogic; -- CLIC interrupt request
       mtime_irq_i  : in  std_ulogic  -- machine timer interrupt
@@ -533,6 +543,8 @@ package neorv32_package is
       -- external interrupt --
       clic_irq_i    : in  std_ulogic; -- CLIC interrupt request
       mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
+      -- system time input from MTIME --
+      time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
       -- bus access exceptions --
       mar_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory address register
       ma_instr_i    : in  std_ulogic; -- misaligned instruction address
@@ -735,6 +747,8 @@ package neorv32_package is
       data_i    : in  std_ulogic_vector(31 downto 0); -- data in
       data_o    : out std_ulogic_vector(31 downto 0); -- data out
       ack_o     : out std_ulogic; -- transfer acknowledge
+      -- time output for CPU --
+      time_o    : out std_ulogic_vector(63 downto 0); -- current system time
       -- interrupt --
       irq_o     : out std_ulogic  -- interrupt request
     );
