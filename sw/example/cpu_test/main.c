@@ -119,6 +119,12 @@ int main() {
   int cnt_ok   = 0;
   int cnt_test = 0;
 
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } cpu_systime;
+
+
   // check if UART unit is implemented at all
   if (neorv32_uart_available() == 0) {
     return 0;
@@ -139,6 +145,7 @@ int main() {
   neorv32_uart_setup(BAUD_RATE, 0, 0);
 
 
+  neorv32_mtime_set_time(0);
   // set CMP of machine system timer MTIME to max to prevent an IRQ
   uint64_t mtime_cmp_max = 0xFFFFFFFFFFFFFFFFL;
   neorv32_mtime_set_timecmp(mtime_cmp_max);
@@ -153,7 +160,7 @@ int main() {
   neorv32_rte_print_hw_config();
 
   // intro2
-  neorv32_uart_printf("\n\nNEORV32 exceptions and interrupts test program\n\n");
+  neorv32_uart_printf("\n\nStarting tests...\n\n");
 
   // install exception handler functions
   int install_err = 0;
@@ -200,8 +207,72 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test fence instructions - make sure CPU does not crash here and throws no exception
+  // Test counter CSR access for mcycle[h]
   // ----------------------------------------------------------
+  neorv32_uart_printf("MCYCLE[H]:   ");
+  cnt_test++;
+
+  neorv32_cpu_csr_write(CSR_MCYCLE,  0x1BCD1234);
+  neorv32_cpu_csr_write(CSR_MCYCLEH, 0x22334455);
+
+  if (((neorv32_cpu_csr_read(CSR_MCYCLE) & 0xffff0000L) == 0x1BCD0000) &&
+      (neorv32_cpu_csr_read(CSR_MCYCLEH) == 0x22334455)) {
+    neorv32_uart_printf("ok\n");
+    cnt_ok++;
+  }
+  else {
+    neorv32_uart_printf("fail\n");
+    cnt_fail++;
+  }
+
+
+  // ----------------------------------------------------------
+  // Test counter CSR access for minstret[h]
+  // ----------------------------------------------------------
+  neorv32_uart_printf("MINSTRET[H]: ");
+  cnt_test++;
+
+  neorv32_cpu_csr_write(CSR_MINSTRET,  0x11224499);
+  neorv32_cpu_csr_write(CSR_MINSTRETH, 0x00110011);
+
+  if (((neorv32_cpu_csr_read(CSR_MINSTRET) & 0xffff0000L) == 0x11220000) &&
+       (neorv32_cpu_csr_read(CSR_MINSTRETH) == 0x00110011)) {
+    neorv32_uart_printf("ok\n");
+    cnt_ok++;
+  }
+  else {
+    neorv32_uart_printf("fail\n");
+    cnt_fail++;
+  }
+
+
+  // ----------------------------------------------------------
+  // Test time[h] (must be == MTIME)
+  // ----------------------------------------------------------
+  neorv32_uart_printf("TIME[H]:     ");
+  cnt_test++;
+
+  cpu_systime.uint32[0] = neorv32_cpu_csr_read(CSR_TIME);
+  cpu_systime.uint32[1] = neorv32_cpu_csr_read(CSR_TIMEH);
+  cpu_systime.uint64 &= 0xFFFFFFFFFFFF0000LL;
+
+  uint64_t mtime_systime = neorv32_mtime_get_time() & 0xFFFFFFFFFFFF0000LL;
+
+  if (cpu_systime.uint64 == mtime_systime) {
+    neorv32_uart_printf("ok\n");
+    cnt_ok++;
+  }
+  else {
+    neorv32_uart_printf("fail\n");
+    cnt_fail++;
+  }
+
+
+  // ----------------------------------------------------------
+  // Test fence instructions - make sure CPU does not crash here and throws no exception
+  // a more complex test is provided by the RISC-V compliance test
+  // ----------------------------------------------------------
+  exception_handler_answer = 0;
   neorv32_uart_printf("FENCE(.I):   ");
   cnt_test++;
   asm volatile ("fence");
@@ -215,12 +286,12 @@ int main() {
     neorv32_uart_printf("ok\n");
     cnt_ok++;
   }
-  exception_handler_answer = 0;
 
 
   // ----------------------------------------------------------
   // Unaligned instruction address
   // ----------------------------------------------------------
+  exception_handler_answer = 0;
   neorv32_uart_printf("EXC I_ALIGN: ");
 
   // skip if C-mode is not implemented
@@ -240,7 +311,6 @@ int main() {
       neorv32_uart_printf("fail\n");
       cnt_fail++;
     }
-    exception_handler_answer = 0;
 #endif
   }
   else {
@@ -251,6 +321,7 @@ int main() {
   // ----------------------------------------------------------
   // Instruction access fault
   // ----------------------------------------------------------
+  exception_handler_answer = 0;
   neorv32_uart_printf("EXC I_ACC:   ");
   cnt_test++;
 
@@ -266,13 +337,13 @@ int main() {
     neorv32_uart_printf("fail\n");
     cnt_fail++;
   }
-  exception_handler_answer = 0;
 #endif
 
 
   // ----------------------------------------------------------
   // Illegal instruction
   // ----------------------------------------------------------
+  exception_handler_answer = 0;
   neorv32_uart_printf("EXC I_ILLEG: ");
   cnt_test++;
 
@@ -294,13 +365,13 @@ int main() {
     neorv32_uart_printf("fail\n");
     cnt_fail++;
   }
-  exception_handler_answer = 0;
 #endif
 
 
   // ----------------------------------------------------------
   // Breakpoint instruction
   // ----------------------------------------------------------
+  exception_handler_answer = 0;
   neorv32_uart_printf("EXC BREAK:   ");
   cnt_test++;
 
@@ -315,13 +386,13 @@ int main() {
     neorv32_uart_printf("fail\n");
     cnt_fail++;
   }
-  exception_handler_answer = 0;
 #endif
 
 
   // ----------------------------------------------------------
   // Unaligned load address
   // ----------------------------------------------------------
+  exception_handler_answer = 0;
   neorv32_uart_printf("EXC L_ALIGN: ");
   cnt_test++;
 
@@ -337,13 +408,13 @@ int main() {
     neorv32_uart_printf("fail\n");
     cnt_fail++;
   }
-  exception_handler_answer = 0;
 #endif
 
 
   // ----------------------------------------------------------
   // Load access fault
   // ----------------------------------------------------------
+  exception_handler_answer = 0;
   neorv32_uart_printf("EXC L_ACC:   ");
   cnt_test++;
 
@@ -359,13 +430,13 @@ int main() {
     neorv32_uart_printf("fail\n");
     cnt_fail++;
   }
-  exception_handler_answer = 0;
 #endif
 
 
   // ----------------------------------------------------------
   // Unaligned store address
   // ----------------------------------------------------------
+  exception_handler_answer = 0;
   neorv32_uart_printf("EXC S_ALIGN: ");
   cnt_test++;
 
@@ -381,13 +452,13 @@ int main() {
     neorv32_uart_printf("fail\n");
     cnt_fail++;
   }
-  exception_handler_answer = 0;
 #endif
 
 
   // ----------------------------------------------------------
   // Store access fault
   // ----------------------------------------------------------
+  exception_handler_answer = 0;
   neorv32_uart_printf("EXC S_ACC:   ");
   cnt_test++;
 
@@ -403,13 +474,13 @@ int main() {
     neorv32_uart_printf("fail\n");
     cnt_fail++;
   }
-  exception_handler_answer = 0;
 #endif
 
 
   // ----------------------------------------------------------
   // Environment call
   // ----------------------------------------------------------
+  exception_handler_answer = 0;
   neorv32_uart_printf("EXC ENVCALL: ");
   cnt_test++;
 
@@ -424,13 +495,13 @@ int main() {
     neorv32_uart_printf("fail\n");
     cnt_fail++;
   }
-  exception_handler_answer = 0;
 #endif
 
 
   // ----------------------------------------------------------
   // Machine software interrupt
   // ----------------------------------------------------------
+  exception_handler_answer = 0;
   neorv32_uart_printf("IRQ MSI:     ");
   cnt_test++;
 
@@ -446,13 +517,13 @@ int main() {
     neorv32_uart_printf("fail\n");
     cnt_fail++;
   }
-  exception_handler_answer = 0;
 #endif
 
 
   // ----------------------------------------------------------
   // Machine timer interrupt (MTIME)
   // ----------------------------------------------------------
+  exception_handler_answer = 0;
   neorv32_uart_printf("IRQ MTI:     ");
   cnt_test++;
 
@@ -474,13 +545,16 @@ int main() {
     neorv32_uart_printf("fail\n");
     cnt_fail++;
   }
-  exception_handler_answer = 0;
 #endif
+
+  // no more mtime interrupts
+  neorv32_mtime_set_timecmp(-1);
 
 
   // ----------------------------------------------------------
   // Machine external interrupt (via CLIC)
   // ----------------------------------------------------------
+  exception_handler_answer = 0;
   neorv32_uart_printf("IRQ MEI:     ");
   cnt_test++;
 
@@ -502,8 +576,34 @@ int main() {
     neorv32_uart_printf("fail\n");
     cnt_fail++;
   }
-  exception_handler_answer = 0;
 #endif
+
+
+  // ----------------------------------------------------------
+  // Test WFI ("sleep") instructions
+  // ----------------------------------------------------------
+  exception_handler_answer = 0;
+  neorv32_uart_printf("WFI:         ");
+  cnt_test++;
+
+  // program timer to wake up
+  neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 1000);
+
+  // put CPU into sleep mode
+  asm volatile ("wfi");
+
+  if (exception_handler_answer != ANSWER_MTI) {
+    neorv32_uart_printf("fail\n");
+    cnt_fail++;
+  }
+  else {
+    neorv32_uart_printf("ok\n");
+    cnt_ok++;
+  }
+
+
+
+
 
 
   // error report
