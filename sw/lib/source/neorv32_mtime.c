@@ -70,7 +70,17 @@ int neorv32_mtime_available(void) {
  **************************************************************************/
 void neorv32_mtime_set_time(uint64_t time) {
 
-  MTIME = time;
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } cycles;
+
+  cycles.uint64 = time;
+
+  MTIME_LO = 0;
+  MTIME_HI = cycles.uint32[1];
+  MTIME_LO = cycles.uint32[0];
+
 }
 
 
@@ -83,7 +93,25 @@ void neorv32_mtime_set_time(uint64_t time) {
  **************************************************************************/
 uint64_t neorv32_mtime_get_time(void) {
 
-  return MTIME;
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } cycles;
+
+  uint32_t tmp1, tmp2, tmp3;
+  while(1) {
+    tmp1 = MTIME_HI;
+    tmp2 = MTIME_LO;
+    tmp3 = MTIME_HI;
+    if (tmp1 == tmp3) {
+      break;
+    }
+  }
+
+  cycles.uint32[0] = tmp2;
+  cycles.uint32[1] = tmp3;
+
+  return cycles.uint64;
 }
 
 

@@ -49,7 +49,7 @@
  * @note Interrupts have to be globally enabled via neorv32_cpu_eint(void), too.
  *
  * @param[in] irq_sel CPU interrupt select. See #NEORV32_CPU_MIE_enum.
- * return 0 if success, 1 if error (invalid irq_sel).
+ * @return 0 if success, 1 if error (invalid irq_sel).
  **************************************************************************/
 int neorv32_cpu_irq_enable(uint8_t irq_sel) {
 
@@ -67,7 +67,7 @@ int neorv32_cpu_irq_enable(uint8_t irq_sel) {
  * Disable specific CPU interrupt.
  *
  * @param[in] irq_sel CPU interrupt select. See #NEORV32_CPU_MIE_enum.
- * return 0 if success, 1 if error (invalid irq_sel).
+ * @return 0 if success, 1 if error (invalid irq_sel).
  **************************************************************************/
 int neorv32_cpu_irq_disable(uint8_t irq_sel) {
 
@@ -78,6 +78,108 @@ int neorv32_cpu_irq_disable(uint8_t irq_sel) {
   register uint32_t mask = (uint32_t)(1 << irq_sel);
   asm volatile ("csrrc zero, mie, %0" : : "r" (mask));
   return 0;
+}
+
+
+/**********************************************************************//**
+ * Get cycle count from cycle[h].
+ *
+ * @note The cycle[h] CSR is shadowed copy of the mcycle[h] CSR.
+ *
+ * @return Current cycle counter (64 bit).
+ **************************************************************************/
+uint64_t neorv32_cpu_get_cycle(void) {
+
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } cycles;
+
+  uint32_t tmp1, tmp2, tmp3;
+  while(1) {
+    tmp1 = neorv32_cpu_csr_read(CSR_CYCLEH);
+    tmp2 = neorv32_cpu_csr_read(CSR_CYCLE);
+    tmp3 = neorv32_cpu_csr_read(CSR_CYCLEH);
+    if (tmp1 == tmp3) {
+      break;
+    }
+  }
+
+  cycles.uint32[0] = tmp2;
+  cycles.uint32[1] = tmp3;
+
+  return cycles.uint64;
+}
+
+
+/**********************************************************************//**
+ * Set mcycle[h] counter.
+ *
+ * @param[in] value New value for mcycle[h] CSR (64-bit).
+ **************************************************************************/
+void neorv32_cpu_set_mcycle(uint32_t value) {
+
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } cycles;
+
+  cycles.uint64 = value;
+
+  neorv32_cpu_csr_write(CSR_MCYCLE,  0);
+  neorv32_cpu_csr_write(CSR_MCYCLEH, cycles.uint32[1]);
+  neorv32_cpu_csr_write(CSR_MCYCLE,  cycles.uint32[0]);
+}
+
+
+/**********************************************************************//**
+ * Get retired instructions counter from instret[h].
+ *
+ * @note The instret[h] CSR is shadowed copy of the instret[h] CSR.
+ *
+ * @return Current instructions counter (64 bit).
+ **************************************************************************/
+uint64_t neorv32_cpu_get_instret(void) {
+
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } cycles;
+
+  uint32_t tmp1, tmp2, tmp3;
+  while(1) {
+    tmp1 = neorv32_cpu_csr_read(CSR_INSTRETH);
+    tmp2 = neorv32_cpu_csr_read(CSR_INSTRET);
+    tmp3 = neorv32_cpu_csr_read(CSR_INSTRETH);
+    if (tmp1 == tmp3) {
+      break;
+    }
+  }
+
+  cycles.uint32[0] = tmp2;
+  cycles.uint32[1] = tmp3;
+
+  return cycles.uint64;
+}
+
+
+/**********************************************************************//**
+ * Set retired instructions counter minstret[h].
+ *
+ * @param[in] value New value for mcycle[h] CSR (64-bit).
+ **************************************************************************/
+void neorv32_cpu_set_minstret(uint32_t value) {
+
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } cycles;
+
+  cycles.uint64 = value;
+
+  neorv32_cpu_csr_write(CSR_MINSTRET,  0);
+  neorv32_cpu_csr_write(CSR_MINSTRETH, cycles.uint32[1]);
+  neorv32_cpu_csr_write(CSR_MINSTRET,  cycles.uint32[0]);
 }
 
 
