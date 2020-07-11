@@ -98,6 +98,9 @@ entity neorv32_top is
     wb_cyc_o   : out std_ulogic; -- valid cycle
     wb_ack_i   : in  std_ulogic := '0'; -- transfer acknowledge
     wb_err_i   : in  std_ulogic := '0'; -- transfer error
+    -- Advanced memory control signals (available if MEM_EXT_USE = true) --
+    fence_o    : out std_ulogic; -- indicates an executed FENCE operation
+    fencei_o   : out std_ulogic; -- indicates an executed FENCEI operation
     -- GPIO (available if IO_GPIO_USE = true) --
     gpio_o     : out std_ulogic_vector(15 downto 0); -- parallel output
     gpio_i     : in  std_ulogic_vector(15 downto 0) := (others => '0'); -- parallel input
@@ -371,6 +374,8 @@ begin
     bus_cancel_o => cpu.cancel,   -- cancel current bus transaction
     bus_ack_i    => cpu.ack,      -- bus transfer acknowledge
     bus_err_i    => cpu.err,      -- bus transfer error
+    bus_fence_o  => fence_o,      -- executed FENCE operations
+    bus_fencei_o => fencei_o,     -- executed FENCEI operations
     -- system time input from MTIME --
     time_i       => mtime_time,   -- current system time
     -- external interrupts --

@@ -100,6 +100,8 @@ entity neorv32_cpu is
     bus_cancel_o : out std_ulogic; -- cancel current bus transaction
     bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
     bus_err_i    : in  std_ulogic; -- bus transfer error
+    bus_fence_o  : out std_ulogic; -- executed FENCE operations
+    bus_fencei_o : out std_ulogic; -- executed FENCEI operations
     -- system time input from MTIME --
     time_i       : in  std_ulogic_vector(63 downto 0); -- current system time
     -- external interrupts --
@@ -341,6 +343,10 @@ begin
     bus_ack_i    => bus_ack_i,     -- bus transfer acknowledge
     bus_err_i    => bus_err_i      -- bus transfer error
   );
+
+  -- advanced memory control --
+  bus_fence_o  <= ctrl(ctrl_bus_fence_c)  when (MEM_EXT_USE = true) else '0'; -- executed FENCE operations
+  bus_fencei_o <= ctrl(ctrl_bus_fencei_c) when (MEM_EXT_USE = true) else '0'; -- executed FENCEI operations
 
 
 end neorv32_cpu_rtl;

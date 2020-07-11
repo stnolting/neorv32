@@ -177,6 +177,9 @@ begin
     wb_cyc_o   => wb_cpu.cyc,      -- valid cycle
     wb_ack_i   => wb_cpu.ack,      -- transfer acknowledge
     wb_err_i   => wb_cpu.err,      -- transfer error
+    -- Advanced memory control signals --
+    fence_o    => open,            -- indicates an executed FENCE operation
+    fencei_o   => open,            -- indicates an executed FENCEI operation
     -- GPIO --
     gpio_o     => gpio,            -- parallel output
     gpio_i     => gpio,            -- parallel input

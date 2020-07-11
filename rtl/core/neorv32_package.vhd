@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - FIXED!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01000600"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01000605"; -- no touchy!
 
   -- Internal Functions ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -180,15 +180,17 @@ package neorv32_package is
   constant ctrl_bus_unsigned_c    : natural := 39; -- is unsigned load
   constant ctrl_bus_exc_ack_c     : natural := 40; -- acknowledge bus exception
   constant ctrl_bus_reset_c       : natural := 41; -- reset bus unit, terminate all actions
+  constant ctrl_bus_fence_c       : natural := 42; -- executed fence operation
+  constant ctrl_bus_fencei_c      : natural := 43; -- executed fencei operation
   -- co-processor --
-  constant ctrl_cp_use_c          : natural := 42; -- is cp operation
-  constant ctrl_cp_id_lsb_c       : natural := 43; -- cp select lsb
-  constant ctrl_cp_id_msb_c       : natural := 44; -- cp select msb
-  constant ctrl_cp_cmd0_c         : natural := 45; -- cp command bit 0
-  constant ctrl_cp_cmd1_c         : natural := 46; -- cp command bit 1
-  constant ctrl_cp_cmd2_c         : natural := 47; -- cp command bit 2
+  constant ctrl_cp_use_c          : natural := 44; -- is cp operation
+  constant ctrl_cp_id_lsb_c       : natural := 45; -- cp select lsb
+  constant ctrl_cp_id_msb_c       : natural := 46; -- cp select msb
+  constant ctrl_cp_cmd0_c         : natural := 47; -- cp command bit 0
+  constant ctrl_cp_cmd1_c         : natural := 48; -- cp command bit 1
+  constant ctrl_cp_cmd2_c         : natural := 49; -- cp command bit 2
   -- control bus size --
-  constant ctrl_width_c           : natural := 48; -- control bus size
+  constant ctrl_width_c           : natural := 50; -- control bus size
 
   -- ALU Comparator Bus ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -395,6 +397,9 @@ package neorv32_package is
       wb_cyc_o   : out std_ulogic; -- valid cycle
       wb_ack_i   : in  std_ulogic := '0'; -- transfer acknowledge
       wb_err_i   : in  std_ulogic := '0'; -- transfer error
+      -- Advanced memory control signals (available if MEM_EXT_USE = true) --
+      fence_o    : out std_ulogic; -- indicates an executed FENCE operation
+      fencei_o   : out std_ulogic; -- indicates an executed FENCEI operation
       -- GPIO --
       gpio_o     : out std_ulogic_vector(15 downto 0); -- parallel output
       gpio_i     : in  std_ulogic_vector(15 downto 0) := (others => '0'); -- parallel input
@@ -472,6 +477,8 @@ package neorv32_package is
       bus_cancel_o : out std_ulogic; -- cancel current bus transaction
       bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
       bus_err_i    : in  std_ulogic; -- bus transfer error
+      bus_fence_o  : out std_ulogic; -- executed FENCE operations
+      bus_fencei_o : out std_ulogic; -- executed FENCEI operations
       -- system time input from MTIME --
       time_i       : in  std_ulogic_vector(63 downto 0); -- current system time
       -- external interrupts --

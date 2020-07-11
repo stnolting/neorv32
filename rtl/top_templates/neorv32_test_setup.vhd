@@ -120,6 +120,9 @@ begin
     wb_cyc_o   => open,            -- valid cycle
     wb_ack_i   => '0',             -- transfer acknowledge
     wb_err_i   => '0',             -- transfer error
+    -- Advanced memory control signals --
+    fence_o    => open,            -- indicates an executed FENCE operation
+    fencei_o   => open,            -- indicates an executed FENCEI operation
     -- GPIO --
     gpio_o     => gpio_out,        -- parallel output
     gpio_i     => (others => '0'), -- parallel input

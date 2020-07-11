@@ -809,11 +809,13 @@ begin
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then -- FENCE.I
-              fetch_engine.reset       <= '1';
-              execute_engine.pc_nxt    <= execute_engine.next_pc;
-              execute_engine.state_nxt <= SYS_WAIT;
+              fetch_engine.reset          <= '1';
+              ctrl_nxt(ctrl_bus_fencei_c) <= '1';
+              execute_engine.pc_nxt       <= execute_engine.next_pc;
+              execute_engine.state_nxt    <= SYS_WAIT;
             else
-              execute_engine.state_nxt <= DISPATCH;
+              ctrl_nxt(ctrl_bus_fence_c) <= '1';
+              execute_engine.state_nxt   <= DISPATCH;
             end if;
 
           when opcode_syscsr_c => -- system/csr access
@@ -843,7 +845,7 @@ begin
               execute_engine.state_nxt <= SYS_WAIT;
             elsif (CPU_EXTENSION_RISCV_Zicsr = true) then -- CSR access
               execute_engine.state_nxt <= CSR_ACCESS;
-            else
+            else -- undefined
               execute_engine.state_nxt <= DISPATCH;
             end if;
 
@@ -1119,7 +1121,7 @@ begin
         when others => -- compressed instruction or undefined instruction
           if (execute_engine.i_reg(1 downto 0) = "11") then -- undefined/unimplemented opcode
             illegal_instruction <= '1';
-          else -- compressed instruction: illegal or disabled / not implemented
+          else -- compressed instruction: illegal or not implemented
             illegal_compressed <= ci_illegal;
           end if;
 
