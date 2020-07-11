@@ -71,7 +71,7 @@ CORE_TICKS elapsed_cycles; // NEORV32 specific
 	or zeroing some system parameters - e.g. setting the cpu clocks cycles to 0.
 */
 void start_time(void) {
-  elapsed_cycles = neorv32_mtime_get_time();
+  elapsed_cycles = neorv32_cpu_get_cycle();
 	//GETMYTIME(&start_time_val );      
 }
 /* Function : stop_time
@@ -93,7 +93,7 @@ void stop_time(void) {
 	and the resolution is controlled by <TIMER_RES_DIVIDER>
 */
 CORE_TICKS get_time(void) {
-	CORE_TICKS elapsed = ((CORE_TICKS)neorv32_mtime_get_time()) - elapsed_cycles;
+	CORE_TICKS elapsed = ((CORE_TICKS)neorv32_cpu_get_cycle()) - elapsed_cycles;
   elapsed_cycles = elapsed;
   //CORE_TICKS elapsed=(CORE_TICKS)(MYTIMEDIFF(stop_time_val, start_time_val));
 	return elapsed;
@@ -127,12 +127,6 @@ void portable_init(core_portable *p, int *argc, char *argv[])
   // setup neorv32 UART
   neorv32_uart_setup(BAUD_RATE, 0, 0);
 
-  // check if MTIME unit was synthesized
-  if (!neorv32_mtime_available()) {
-    neorv32_uart_printf("NEORV32: Error! No MTIME unit synthesized!");
-    while(1);
-  }
-
   neorv32_uart_printf("NEORV32: Processor running at %u Hz\n", (uint32_t)neorv32_cpu_csr_read(CSR_MCLOCK));
   neorv32_uart_printf("NEORV32: Executing coremark (%u iterations). This may take some time...\n\n", (uint32_t)ITERATIONS);
 
@@ -163,10 +157,8 @@ void portable_fini(core_portable *p)
   } exe_instructions, exe_time;
 
   exe_time.uint64 = (uint64_t)elapsed_cycles;
-  exe_cycles.uint32[0] = neorv32_cpu_csr_read(CSR_TIME);
-  exe_cycles.uint32[1] = neorv32_cpu_csr_read(CSR_TIMEH);
-  exe_instructions.uint32[0] = neorv32_cpu_csr_read(CSR_INSTRET);
-  exe_instructions.uint32[1] = neorv32_cpu_csr_read(CSR_INSTRETH);
+  exe_cycles.uint64 = neorv32_cpu_get_cycle();
+  exe_instructions.uint64 = neorv32_cpu_get_instret;
 
   neorv32_uart_printf("\nNEORV32: Executed instructions       0x%x_%x\n", (uint32_t)exe_instructions.uint32[1], (uint32_t)exe_instructions.uint32[0]);
   neorv32_uart_printf("NEORV32: Total required clock cycles 0x%x_%x\n", (uint32_t)exe_cycles.uint32[1], (uint32_t)exe_cycles.uint32[0]);
