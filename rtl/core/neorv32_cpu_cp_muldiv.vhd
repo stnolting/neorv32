@@ -60,9 +60,6 @@ end neorv32_cpu_cp_muldiv;
 
 architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
 
-  -- constants --
-  constant all_zero_c : std_ulogic_vector(data_width_c-1 downto 0) := (others => '0');
-
   -- controller --
   type state_t is (IDLE, DECODE, INIT_OPX, INIT_OPY, PROCESSING, FINALIZE, COMPLETED);
   signal state         : state_t;
@@ -86,7 +83,7 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
 
   -- multiplier core --
   signal mul_product    : std_ulogic_vector(63 downto 0);
-  signal mul_do_add     : std_ulogic_vector(32 downto 0);
+  signal mul_do_add     : std_ulogic_vector(data_width_c downto 0);
   signal mul_sign_cycle : std_ulogic;
   signal mul_p_sext     : std_ulogic;
 
@@ -130,8 +127,7 @@ begin
           else
             div_res_corr <= '0';
           end if;
---        if (cp_op = cp_op_div_c) and (opy = all_zero_c) then -- *divide* by 0?
-          if (opy = all_zero_c) then -- *divide* by 0?
+          if (or_all_f(opy) = '0') then -- *divide* by 0?
             opy_is_zero <= '1';
           else
             opy_is_zero <= '0';
@@ -182,7 +178,7 @@ begin
   opy_is_signed <= '1' when (cp_op = cp_op_mulh_c) or (cp_op = cp_op_div_c) or (cp_op = cp_op_rem_c) else '0';
 
 
-  -- Multiplier Core ------------------------------------------------------------------------
+  -- Multiplier Core (signed) ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   multiplier_core: process(clk_i)
   begin
@@ -200,13 +196,14 @@ begin
   -- MUL: do another addition --
   mul_update: process(mul_product, mul_sign_cycle, mul_p_sext, opx_is_signed, opx)
   begin
-    if (mul_product(0) = '1') then
-      if (mul_sign_cycle = '1') then -- for signed operation only: take care of negative weighted MSB
+    -- current bit of opy to take care of --
+    if (mul_product(0) = '1') then -- multiply with 1
+      if (mul_sign_cycle = '1') then -- for signed operations only: take care of negative weighted MSB -> multiply with -1
         mul_do_add <= std_ulogic_vector(unsigned(mul_p_sext & mul_product(63 downto 32)) - unsigned((opx(opx'left) and opx_is_signed) & opx));
-      else
+      else -- multiply with +1
         mul_do_add <= std_ulogic_vector(unsigned(mul_p_sext & mul_product(63 downto 32)) + unsigned((opx(opx'left) and opx_is_signed) & opx));
       end if;
-    else
+    else -- multiply with 0
       mul_do_add <= mul_p_sext & mul_product(63 downto 32);
     end if;
   end process mul_update;
@@ -216,7 +213,7 @@ begin
   mul_p_sext     <= mul_product(mul_product'left) and opx_is_signed;
 
 
-  -- Divider Core ---------------------------------------------------------------------------
+  -- Divider Core (unsigned) ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   divider_core: process(clk_i)
   begin
