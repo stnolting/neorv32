@@ -88,12 +88,15 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal cmp_less  : std_ulogic;
 
   -- shifter --
-  signal shift_cmd    : std_ulogic;
-  signal shift_cmd_ff : std_ulogic;
-  signal shift_start  : std_ulogic;
-  signal shift_run    : std_ulogic;
-  signal shift_cnt    : std_ulogic_vector(4 downto 0);
-  signal shift_sreg   : std_ulogic_vector(data_width_c-1 downto 0);
+  type shifter_t is record
+    cmd    : std_ulogic;
+    cmd_ff : std_ulogic;
+    start  : std_ulogic;
+    run    : std_ulogic;
+    cnt    : std_ulogic_vector(4 downto 0);
+    sreg   : std_ulogic_vector(data_width_c-1 downto 0);
+  end record;
+  signal shifter : shifter_t;
 
   -- co-processor interface --
   signal cp_cmd_ff : std_ulogic;
@@ -110,25 +113,17 @@ begin
   input_op_mux: process(ctrl_i, csr_i, pc2_i, rs1_i, rs2_i, imm_i)
   begin
     -- opa (first ALU input operand) --
-    if (ctrl_i(ctrl_alu_opa_mux_msb_c) = '0') then
-      if (ctrl_i(ctrl_alu_opa_mux_lsb_c) = '0') then
-        opa <= rs1_i;
-      else
-        opa <= pc2_i;
-      end if;
-    else
-      opa <= csr_i;
-    end if;
+    case ctrl_i(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) is
+      when "00"   => opa <= rs1_i;
+      when "01"   => opa <= pc2_i;
+      when others => opa <= csr_i;
+    end case;
     -- opb (second ALU input operand) --
-    if (ctrl_i(ctrl_alu_opb_mux_msb_c) = '0') then
-      if (ctrl_i(ctrl_alu_opb_mux_lsb_c) = '0') then
-        opb <= rs2_i;
-      else
-        opb <= imm_i;
-      end if;
-    else
-      opb <= rs1_i;
-    end if;
+    case ctrl_i(ctrl_alu_opb_mux_msb_c downto ctrl_alu_opb_mux_lsb_c) is
+      when "00"   => opb <= rs2_i;
+      when "01"   => opb <= imm_i;
+      when others => opb <= rs1_i;
+    end case;
     -- opc (second operand for comparison (and SUB)) --
     if (ctrl_i(ctrl_alu_opc_mux_c) = '0') then
       opc <= imm_i;
@@ -166,31 +161,43 @@ begin
   shifter_unit: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      shift_sreg   <= (others => '0');
-      shift_cnt    <= (others => '0');
-      shift_cmd_ff <= '0';
+      shifter.sreg   <= (others => '0');
+      shifter.cnt    <= (others => '0');
+      shifter.cmd_ff <= '0';
     elsif rising_edge(clk_i) then
-      shift_cmd_ff <= shift_cmd;
-      if (shift_start = '1') then -- trigger new shift
-        shift_sreg <= opa; -- shift operand
-        shift_cnt  <= opb(index_size_f(data_width_c)-1 downto 0); -- shift amount
-      elsif (shift_run = '1') then -- running shift
-        shift_cnt <= std_ulogic_vector(unsigned(shift_cnt) - 1);
-        if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- SLL: shift left logical
-          shift_sreg <= shift_sreg(shift_sreg'left-1 downto 0) & '0';
-        else -- SRL: shift right logical / SRA: shift right arithmetical
-          shift_sreg <= (shift_sreg(shift_sreg'left) and ctrl_i(ctrl_alu_shift_ar_c)) & shift_sreg(shift_sreg'left downto 1);
+      shifter.cmd_ff <= shifter.cmd;
+      if (shifter.start = '1') then -- trigger new shift
+        shifter.sreg <= opa; -- shift operand
+        shifter.cnt  <= opb(index_size_f(data_width_c)-1 downto 0); -- shift amount
+      elsif (shifter.run = '1') then -- running shift
+        -- coarse shift - multiples of 4 --
+        if (or_all_f(shifter.cnt(shifter.cnt'left downto 1)) = '1') then -- shift amount >= 2
+          shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 2);
+          if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- SLL: shift left logical
+            shifter.sreg <= shifter.sreg(shifter.sreg'left-2 downto 0) & "00";
+          else -- SRL: shift right logical / SRA: shift right arithmetical
+            shifter.sreg <= (shifter.sreg(shifter.sreg'left) and ctrl_i(ctrl_alu_shift_ar_c)) &
+                            (shifter.sreg(shifter.sreg'left) and ctrl_i(ctrl_alu_shift_ar_c)) & shifter.sreg(shifter.sreg'left downto 2);
+          end if;
+        -- fine shift - 0/1 --
+        else
+          shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 1);
+          if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- SLL: shift left logical
+            shifter.sreg <= shifter.sreg(shifter.sreg'left-1 downto 0) & '0';
+          else -- SRL: shift right logical / SRA: shift right arithmetical
+            shifter.sreg <= (shifter.sreg(shifter.sreg'left) and ctrl_i(ctrl_alu_shift_ar_c)) & shifter.sreg(shifter.sreg'left downto 1);
+          end if;
         end if;
       end if;
     end if;
   end process shifter_unit;
 
   -- is shift operation? --
-  shift_cmd   <= '1' when (ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) = alu_cmd_shift_c) else '0';
-  shift_start <= '1' when (shift_cmd = '1') and (shift_cmd_ff = '0') else '0';
+  shifter.cmd   <= '1' when (ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) = alu_cmd_shift_c) else '0';
+  shifter.start <= '1' when (shifter.cmd = '1') and (shifter.cmd_ff = '0') else '0';
 
   -- shift operation running? --
-  shift_run <= '1' when (or_all_f(shift_cnt) = '1') or (shift_start = '1') else '0';
+  shifter.run <= '1' when (or_all_f(shifter.cnt) = '1') or (shifter.start = '1') else '0';
 
 
   -- Coprocessor Interface ------------------------------------------------------------------
@@ -231,7 +238,7 @@ begin
 
   -- ALU Function Select --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  alu_function_mux: process(ctrl_i, opa, opb, add_res, sub_res, cmp_less, shift_sreg)
+  alu_function_mux: process(ctrl_i, opa, opb, add_res, sub_res, cmp_less, shifter)
   begin
     case ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) is
       when alu_cmd_bitc_c  => alu_res <= opa and (not opb); -- bit clear (for CSR modifications only)
@@ -240,7 +247,7 @@ begin
       when alu_cmd_and_c   => alu_res <= opa and opb;
       when alu_cmd_sub_c   => alu_res <= sub_res;
       when alu_cmd_add_c   => alu_res <= add_res;
-      when alu_cmd_shift_c => alu_res <= shift_sreg;
+      when alu_cmd_shift_c => alu_res <= shifter.sreg;
       when alu_cmd_slt_c   => alu_res <= (others => '0'); alu_res(0) <= cmp_less;
       when others          => alu_res <= (others => '0'); -- undefined
     end case;
@@ -249,7 +256,7 @@ begin
 
   -- ALU Result -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  wait_o <= shift_run or cp_run; -- wait until iterative units have completed
+  wait_o <= shifter.run or cp_run; -- wait until iterative units have completed
   res_o  <= (cp0_data_i or cp1_data_i) when (cp_rb_ff1 = '1') else alu_res; -- FIXME
 
 
