@@ -46,7 +46,6 @@
 static void __neorv32_rte_dummy_exc_handler(void)     __attribute__((unused));
 static void __neorv32_rte_debug_exc_handler(void)     __attribute__((unused));
 static void __neorv32_rte_print_true_false(int state) __attribute__((unused));
-static void __neorv32_rte_print_hw_version(void)      __attribute__((unused));
 
 
 /**********************************************************************//**
@@ -161,8 +160,8 @@ static void __neorv32_rte_debug_exc_handler(void) {
   register uint32_t trap_addr  = neorv32_cpu_csr_read(CSR_MEPC);
   register uint32_t trap_inst;
 
-  // get faulting instruction
   asm volatile ("lh %[result], 0(%[input_i])" : [result] "=r" (trap_inst) : [input_i] "r" (trap_addr));
+
 
   if (trap_cause & 0x80000000) {
     neorv32_uart_printf("INTERRUPT");
@@ -196,7 +195,7 @@ static void __neorv32_rte_debug_exc_handler(void) {
   }
 
   // fault address
-  neorv32_uart_printf("\nFaulting instruction: 0x%x\n", trap_inst);
+  neorv32_uart_printf("\nFaulting instruction (low): 0x%x\n", trap_inst);
   neorv32_uart_printf("MTVAL: 0x%x\n", neorv32_cpu_csr_read(CSR_MTVAL));
 
   if ((trap_inst & 3) != 3) {
@@ -228,7 +227,7 @@ void neorv32_rte_print_hw_config(void) {
 
   // HW version
   neorv32_uart_printf("Hardware version: ");
-  __neorv32_rte_print_hw_version();
+  neorv32_rte_print_hw_version();
   neorv32_uart_printf(" (0x%x)\n", neorv32_cpu_csr_read(CSR_MIMPID));
 
   // CPU architecture
@@ -344,10 +343,9 @@ static void __neorv32_rte_print_true_false(int state) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment: Private function to show the processor version in human-readable format.
- * @note This function is used by neorv32_rte_print_hw_config(void) only.
+ * NEORV32 runtime environment: Function to show the processor version in human-readable format.
  **************************************************************************/
-static void __neorv32_rte_print_hw_version(void) {
+void neorv32_rte_print_hw_version(void) {
 
   uint32_t i;
   char tmp, cnt;
