@@ -75,6 +75,20 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   -- reading from r0? --
   signal rs1_clear, rs2_clear : std_ulogic;
 
+
+  -- attributes - these are *NOT mandatory*; just for footprint / timing optimization --
+  -- -------------------------------------------------------------------------------- --
+
+  -- lattice radiant --
+  attribute syn_ramstyle : string;
+  attribute syn_ramstyle of reg_file     : signal is "no_rw_check";
+  attribute syn_ramstyle of reg_file_emb : signal is "no_rw_check";
+
+  -- intel quartus prime --
+  attribute ramstyle : string;
+  attribute ramstyle of reg_file     : signal is "no_rw_check";
+  attribute ramstyle of reg_file_emb : signal is "no_rw_check";
+
 begin
 
   -- Input mux ------------------------------------------------------------------------------

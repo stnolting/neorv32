@@ -71,7 +71,18 @@ architecture neorv32_dmem_rtl of neorv32_dmem is
   signal dmem_file_hl : dmem_file_t;
   signal dmem_file_hh : dmem_file_t;
 
-  -- RAM attribute to inhibit bypass-logic - Intel only! --
+
+  -- attributes - these are *NOT mandatory*; just for footprint / timing optimization --
+  -- -------------------------------------------------------------------------------- --
+
+  -- lattice radiant --
+  attribute syn_ramstyle : string;
+  attribute syn_ramstyle of dmem_file_ll : signal is "no_rw_check";
+  attribute syn_ramstyle of dmem_file_lh : signal is "no_rw_check";
+  attribute syn_ramstyle of dmem_file_hl : signal is "no_rw_check";
+  attribute syn_ramstyle of dmem_file_hh : signal is "no_rw_check";
+
+  -- intel quartus prime --
   attribute ramstyle : string;
   attribute ramstyle of dmem_file_ll : signal is "no_rw_check";
   attribute ramstyle of dmem_file_lh : signal is "no_rw_check";

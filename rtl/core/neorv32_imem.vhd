@@ -112,16 +112,31 @@ architecture neorv32_imem_rtl of neorv32_imem is
   signal imem_file_ram_hl : imem_file8_t;
   signal imem_file_ram_hh : imem_file8_t;
 
-  -- RAM attribute to inhibit bypass-logic - Intel only! --
+
+  -- attributes - these are *NOT mandatory*; just for footprint / timing optimization --
+  -- -------------------------------------------------------------------------------- --
+
+  -- lattice radiant --
+  attribute syn_ramstyle : string;
+  attribute syn_ramstyle of imem_file_ram_ll : signal is "no_rw_check";
+  attribute syn_ramstyle of imem_file_ram_lh : signal is "no_rw_check";
+  attribute syn_ramstyle of imem_file_ram_hl : signal is "no_rw_check";
+  attribute syn_ramstyle of imem_file_ram_hh : signal is "no_rw_check";
+  attribute syn_ramstyle of imem_file_init_ram_ll : signal is "no_rw_check";
+  attribute syn_ramstyle of imem_file_init_ram_lh : signal is "no_rw_check";
+  attribute syn_ramstyle of imem_file_init_ram_hl : signal is "no_rw_check";
+  attribute syn_ramstyle of imem_file_init_ram_hh : signal is "no_rw_check";
+
+  -- intel quartus prime --
   attribute ramstyle : string;
-  attribute ramstyle of imem_file_init_ram_ll : signal is "no_rw_check";
-  attribute ramstyle of imem_file_init_ram_lh : signal is "no_rw_check";
-  attribute ramstyle of imem_file_init_ram_hl : signal is "no_rw_check";
-  attribute ramstyle of imem_file_init_ram_hh : signal is "no_rw_check";
   attribute ramstyle of imem_file_ram_ll : signal is "no_rw_check";
   attribute ramstyle of imem_file_ram_lh : signal is "no_rw_check";
   attribute ramstyle of imem_file_ram_hl : signal is "no_rw_check";
   attribute ramstyle of imem_file_ram_hh : signal is "no_rw_check";
+  attribute ramstyle of imem_file_init_ram_ll : signal is "no_rw_check";
+  attribute ramstyle of imem_file_init_ram_lh : signal is "no_rw_check";
+  attribute ramstyle of imem_file_init_ram_hl : signal is "no_rw_check";
+  attribute ramstyle of imem_file_init_ram_hh : signal is "no_rw_check";
 
 begin
 
