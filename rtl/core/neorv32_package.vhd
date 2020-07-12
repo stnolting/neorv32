@@ -161,9 +161,9 @@ package neorv32_package is
   constant ctrl_alu_cmd1_c        : natural := 21; -- ALU command bit 1
   constant ctrl_alu_cmd2_c        : natural := 22; -- ALU command bit 2
   constant ctrl_alu_opa_mux_lsb_c : natural := 23; -- operand A select lsb (00=rs1, 01=PC)
-  constant ctrl_alu_opa_mux_msb_c : natural := 24; -- operand A select msb (10=CSR, 11=?)
+  constant ctrl_alu_opa_mux_msb_c : natural := 24; -- operand A select msb (1-=CSR)
   constant ctrl_alu_opb_mux_lsb_c : natural := 25; -- operand B select lsb (00=rs2, 01=IMM)
-  constant ctrl_alu_opb_mux_msb_c : natural := 26; -- operand B select msb (10=rs1, 11=?)
+  constant ctrl_alu_opb_mux_msb_c : natural := 26; -- operand B select msb (1-=rs1)
   constant ctrl_alu_opc_mux_c     : natural := 27; -- operand C select (0=IMM, 1=rs2)
   constant ctrl_alu_unsigned_c    : natural := 28; -- is unsigned ALU operation
   constant ctrl_alu_shift_dir_c   : natural := 29; -- shift direction (0=left, 1=right)
@@ -310,6 +310,21 @@ package neorv32_package is
   constant alu_cmd_or_c    : std_ulogic_vector(2 downto 0) := "101"; -- r <= A or B
   constant alu_cmd_and_c   : std_ulogic_vector(2 downto 0) := "110"; -- r <= A and B
   constant alu_cmd_bitc_c  : std_ulogic_vector(2 downto 0) := "111"; -- r <= A and (not B)
+
+  -- Trap ID Codes --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  constant trap_ima_c : std_ulogic_vector(4 downto 0) := "00000"; -- 0.0:  instruction misaligned
+  constant trap_iba_c : std_ulogic_vector(4 downto 0) := "00001"; -- 0.1:  instruction access fault
+  constant trap_iil_c : std_ulogic_vector(4 downto 0) := "00010"; -- 0.2:  illegal instruction
+  constant trap_brk_c : std_ulogic_vector(4 downto 0) := "00011"; -- 0.3:  breakpoint
+  constant trap_lma_c : std_ulogic_vector(4 downto 0) := "00100"; -- 0.4:  load address misaligned
+  constant trap_lbe_c : std_ulogic_vector(4 downto 0) := "00101"; -- 0.5:  load access fault
+  constant trap_sma_c : std_ulogic_vector(4 downto 0) := "00110"; -- 0.6:  store address misaligned
+  constant trap_sbe_c : std_ulogic_vector(4 downto 0) := "00111"; -- 0.7:  store access fault
+  constant trap_env_c : std_ulogic_vector(4 downto 0) := "01011"; -- 0.11: environment call from m-mode
+  constant trap_msi_c : std_ulogic_vector(4 downto 0) := "10011"; -- 1.3:  machine software interrupt
+  constant trap_mti_c : std_ulogic_vector(4 downto 0) := "10111"; -- 1.7:  machine timer interrupt
+  constant trap_mei_c : std_ulogic_vector(4 downto 0) := "11011"; -- 1.11: machine external interrupt
 
   -- CPU Control Exception System -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
