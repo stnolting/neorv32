@@ -184,6 +184,37 @@ void neorv32_cpu_set_minstret(uint32_t value) {
 
 
 /**********************************************************************//**
+ * Get current system time from time[h] CSR.
+ *
+ * @note This function requires the MTIME system timer to be implemented.
+ *
+ * @return Current system time (64 bit).
+ **************************************************************************/
+uint64_t neorv32_cpu_get_systime(void) {
+
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } cycles;
+
+  uint32_t tmp1, tmp2, tmp3;
+  while(1) {
+    tmp1 = neorv32_cpu_csr_read(CSR_TIMEH);
+    tmp2 = neorv32_cpu_csr_read(CSR_TIME);
+    tmp3 = neorv32_cpu_csr_read(CSR_TIMEH);
+    if (tmp1 == tmp3) {
+      break;
+    }
+  }
+
+  cycles.uint32[0] = tmp2;
+  cycles.uint32[1] = tmp3;
+
+  return cycles.uint64;
+}
+
+
+/**********************************************************************//**
  * Simple delay function (not very precise) using busy wait.
  *
  * @param[in] time_ms Time in ms to wait.

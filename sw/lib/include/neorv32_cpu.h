@@ -49,6 +49,7 @@ uint64_t neorv32_cpu_get_cycle(void);
 void neorv32_cpu_set_mcycle(uint32_t value);
 uint64_t neorv32_cpu_get_instret(void);
 void neorv32_cpu_set_minstret(uint32_t value);
+uint64_t neorv32_cpu_get_systime(void);
 void neorv32_cpu_delay_ms(uint32_t time_ms);
 
 
