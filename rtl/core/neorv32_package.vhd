@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - FIXED!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01000605"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01000800"; -- no touchy!
 
   -- Internal Functions ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -340,8 +340,8 @@ package neorv32_package is
   constant exception_laccess_c   : natural := 8; -- load access fault
   constant exception_width_c     : natural := 9; -- length of this list in bits
   -- interrupt source bits --
-  constant interrupt_mtime_irq_c : natural := 0; -- machine timer interrupt
-  constant interrupt_msw_irq_c   : natural := 1; -- machine sw interrupt
+  constant interrupt_msw_irq_c   : natural := 0; -- machine software interrupt
+  constant interrupt_mtime_irq_c : natural := 1; -- machine timer interrupt
   constant interrupt_mext_irq_c  : natural := 2; -- machine external interrupt
   constant interrupt_width_c     : natural := 3; -- length of this list in bits
 
@@ -361,8 +361,7 @@ package neorv32_package is
   component neorv32_top
     generic (
       -- General --
-      CLOCK_FREQUENCY              : natural := 0; -- clock frequency of clk_i in Hz
-      HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
+      CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
       BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
       CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
       -- RISC-V CPU Extensions --
@@ -442,10 +441,10 @@ package neorv32_package is
   component neorv32_cpu
     generic (
       -- General --
-      CLOCK_FREQUENCY              : natural := 0; -- clock frequency of clk_i in Hz
-      HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
+      CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
       BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
       CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+      HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= x"00000000"; -- hardware thread id
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
@@ -497,6 +496,7 @@ package neorv32_package is
       -- system time input from MTIME --
       time_i       : in  std_ulogic_vector(63 downto 0); -- current system time
       -- external interrupts --
+      msw_irq_i     : in  std_ulogic; -- software interrupt
       clic_irq_i   : in  std_ulogic; -- CLIC interrupt request
       mtime_irq_i  : in  std_ulogic  -- machine timer interrupt
     );
@@ -507,10 +507,10 @@ package neorv32_package is
   component neorv32_cpu_control
     generic (
       -- General --
-      CLOCK_FREQUENCY              : natural := 0; -- clock frequency of clk_i in Hz
-      HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
+      CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
       BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
       CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+      HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= x"00000000"; -- hardware thread id
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
@@ -563,6 +563,7 @@ package neorv32_package is
       csr_wdata_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR write data
       csr_rdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
       -- external interrupt --
+      msw_irq_i     : in  std_ulogic; -- software interrupt
       clic_irq_i    : in  std_ulogic; -- CLIC interrupt request
       mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
       -- system time input from MTIME --
