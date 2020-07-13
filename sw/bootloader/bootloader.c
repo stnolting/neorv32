@@ -149,7 +149,6 @@ void save_exe(void);
 uint32_t get_exe_word(int src, uint32_t addr);
 void system_error(uint8_t err_code);
 void print_hex_word(uint32_t num);
-void print_proc_version(void);
 
 // SPI flash access
 uint8_t spi_flash_read_byte(uint32_t addr);
@@ -172,15 +171,16 @@ int main(void) {
   // ------------------------------------------------
 
   // reset system time
-  neorv32_mtime_set_time(0);
+  MTIME_LO = 0;
+  MTIME_HI = 0;
 
   // deactivate unused IO devices
+  neorv32_wdt_disable();
   neorv32_clic_disable();
   neorv32_pwm_disable();
   neorv32_spi_disable();
   neorv32_trng_disable();
   neorv32_twi_disable();
-  neorv32_wdt_disable();
 
   // get clock speed (in Hz)
   uint32_t clock_speed = neorv32_cpu_csr_read(CSR_MCLOCK);
@@ -218,7 +218,7 @@ int main(void) {
   // ------------------------------------------------
   neorv32_uart_print("\n\n\n\n<< NEORV32 Bootloader >>\n\n"
                      "BLDV: "__DATE__"\nHWV:  ");
-  print_proc_version();
+  neorv32_rte_print_hw_version();
   neorv32_uart_print("\nCLK:  ");
   print_hex_word(neorv32_cpu_csr_read(CSR_MCLOCK));
   neorv32_uart_print(" Hz\nMHID: ");
@@ -584,37 +584,6 @@ void print_hex_word(uint32_t num) {
   for (i=0; i<8; i++) {
     uint32_t index = (num >> (28 - 4*i)) & 0xF;
     neorv32_uart_putc(hex_symbols[index]);
-  }
-}
-
-
-/**********************************************************************//**
- * Print processor version. Deciaml format: "Dd.Dd.Dd.Dd".
- **************************************************************************/
-void print_proc_version(void) {
-
-  uint32_t i;
-  char tmp, cnt;
-  uint32_t version = neorv32_cpu_csr_read(CSR_MIMPID);
-
-  for (i=0; i<4; i++) {
-
-    tmp = (char)(version >> (24 - 8*i));
-
-    // serial division
-    cnt = 0;
-    while (tmp >= 10) {
-      tmp = tmp - 10;
-      cnt++;
-    }
-
-    if (cnt) {
-      neorv32_uart_putc('0' + cnt);
-    }
-    neorv32_uart_putc('0' + tmp);
-    if (i < 3) {
-      neorv32_uart_putc('.');
-    }
   }
 }
 
