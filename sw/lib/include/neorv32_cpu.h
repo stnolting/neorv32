@@ -118,23 +118,6 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_dint(void) {
 
 
 /**********************************************************************//**
- * Trigger machine software interrupt.
- *
- * @note The according IRQ has to be enabled via neorv32_cpu_irq_enable(uint8_t irq_sel) and
- * global interrupts must be enabled via neorv32_cpu_eint(void) to trigger an IRQ via software.
- * The MSI becomes active after 3 clock cycles.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_sw_irq(void) {
-
-  asm volatile ("csrrsi zero, mip, %0" : : "i" (1 << CPU_MIP_MSIP));
-
-  // the MSI becomes active 3 clock cycles afters issueing
-  asm volatile ("nop"); // these nops are not required, they just make sure the MSI becomes active
-  asm volatile ("nop"); // before the "real" next operation is executed
-}
-
-
-/**********************************************************************//**
  * Trigger breakpoint exception (via EBREAK instruction).
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_breakpoint(void) {
