@@ -50,6 +50,8 @@
 #define BAUD_RATE 19200
 //** Set 1 for detailed exception debug information */
 #define DETAILED_EXCEPTION_DEBUG 0
+//** Set 1 to run memory tests */
+#define PROBING_MEM_TEST 0
 //** Reachable unaligned address */
 #define ADDR_UNALIGNED   0x00000002
 //** Unreachable aligned address */
@@ -72,7 +74,6 @@ enum EXC_HANDLER_ANSWERS {
   ANSWER_S_MISALIGN =  0xFF0927DD, /**< Answer for misaligned store address excetion */
   ANSWER_S_ACCESS   =  0x20091777, /**< Answer for store access fault excetion */
   ANSWER_ENVCALL    =  0x55662244, /**< Answer for environment call excetion */
-  ANSWER_MSI        =  0xCDECDEA9, /**< Answer for machine software interrupt */
   ANSWER_MTI        =  0x0012FA53, /**< Answer for machine timer interrupt */
   ANSWER_CLIC       =  0xEEF33088  /**< Answer for machine external interrupt */
 };
@@ -91,7 +92,6 @@ void exc_handler_l_access(void);
 void exc_handler_s_misalign(void);
 void exc_handler_s_access(void);
 void exc_handler_envcall(void);
-void exc_handler_msi(void);
 void exc_handler_mti(void);
 void irq_handler_clic_ch0();
 
@@ -173,7 +173,6 @@ int main() {
   install_err += neorv32_rte_exception_install(EXCID_S_MISALIGNED, exc_handler_s_misalign);
   install_err += neorv32_rte_exception_install(EXCID_S_ACCESS,     exc_handler_s_access);
   install_err += neorv32_rte_exception_install(EXCID_MENV_CALL,    exc_handler_envcall);
-  install_err += neorv32_rte_exception_install(EXCID_MSI,          exc_handler_msi);
   install_err += neorv32_rte_exception_install(EXCID_MTI,          exc_handler_mti);
 //install_err += neorv32_rte_exception_install(EXCID_MEI,          -); done by neorv32_clic_handler_install
 
@@ -204,6 +203,75 @@ int main() {
   neorv32_cpu_eint();
 
   exception_handler_answer = 0;
+
+
+  // ----------------------------------------------------------
+  // Instruction memory test
+  // ----------------------------------------------------------
+  exception_handler_answer = 0;
+  neorv32_uart_printf("IMEM_TEST:   ");
+#if (PROBING_MEM_TEST == 1)
+  cnt_test++;
+
+  register uint32_t dmem_probe_addr = neorv32_cpu_csr_read(CSR_MISPACEBASE);
+  uint32_t dmem_probe_cnt = 0;
+
+  while(1) {
+    asm volatile ("lb zero, 0(%[input_j])" :  : [input_j] "r" (dmem_probe_addr));
+    if (exception_handler_answer == ANSWER_L_ACCESS) {
+      break;
+    }
+    dmem_probe_addr++;
+    dmem_probe_cnt++;
+  }
+  
+  neorv32_uart_printf("%u bytes (should be %u bytes) ", dmem_probe_cnt, neorv32_cpu_csr_read(CSR_MISPACESIZE));
+  neorv32_uart_printf("@ 0x%x  ", neorv32_cpu_csr_read(CSR_MISPACEBASE));
+  if (dmem_probe_cnt == neorv32_cpu_csr_read(CSR_MISPACESIZE)) {
+    neorv32_uart_printf("ok\n");
+    cnt_ok++;
+  }
+  else {
+    neorv32_uart_printf("fail\n");
+    cnt_fail++;
+  }
+#else
+  neorv32_uart_printf("skipped (disabled)\n");
+#endif
+
+  // ----------------------------------------------------------
+  // Data memory test
+  // ----------------------------------------------------------
+  exception_handler_answer = 0;
+  neorv32_uart_printf("DMEM_TEST:   ");
+#if (PROBING_MEM_TEST == 1)
+  cnt_test++;
+
+  register uint32_t imem_probe_addr = neorv32_cpu_csr_read(CSR_MDSPACEBASE);
+  uint32_t imem_probe_cnt = 0;
+
+  while(1) {
+    asm volatile ("lb zero, 0(%[input_j])" :  : [input_j] "r" (imem_probe_addr));
+    if (exception_handler_answer == ANSWER_L_ACCESS) {
+      break;
+    }
+    imem_probe_addr++;
+    imem_probe_cnt++;
+  }
+  
+  neorv32_uart_printf("%u bytes (should be %u bytes) ", imem_probe_cnt, neorv32_cpu_csr_read(CSR_MDSPACESIZE));
+  neorv32_uart_printf("@ 0x%x  ", neorv32_cpu_csr_read(CSR_MDSPACEBASE));
+  if (imem_probe_cnt == neorv32_cpu_csr_read(CSR_MDSPACESIZE)) {
+    neorv32_uart_printf("ok\n");
+    cnt_ok++;
+  }
+  else {
+    neorv32_uart_printf("fail\n");
+    cnt_fail++;
+  }
+#else
+  neorv32_uart_printf("skipped (disabled)\n");
+#endif
 
 
   // ----------------------------------------------------------
@@ -499,28 +567,6 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Machine software interrupt
-  // ----------------------------------------------------------
-  exception_handler_answer = 0;
-  neorv32_uart_printf("IRQ MSI:     ");
-  cnt_test++;
-
-  // trigger machine software interrupt
-  neorv32_cpu_sw_irq();
-
-#if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == ANSWER_MSI) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
-  }
-  else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
-  }
-#endif
-
-
-  // ----------------------------------------------------------
   // Machine timer interrupt (MTIME)
   // ----------------------------------------------------------
   exception_handler_answer = 0;
@@ -603,9 +649,6 @@ int main() {
 
 
 
-
-
-
   // error report
   neorv32_uart_printf("\n\nTests: %i\nOK:    %i\nFAIL:  %i\n\n", cnt_test, cnt_ok, cnt_fail);
 
@@ -682,13 +725,6 @@ void exc_handler_s_access(void) {
  **************************************************************************/
 void exc_handler_envcall(void) {
   exception_handler_answer = ANSWER_ENVCALL;
-}
-
-/**********************************************************************//**
- * Machine software interrupt exception handler.
- **************************************************************************/
-void exc_handler_msi(void) {
-  exception_handler_answer = ANSWER_MSI;
 }
 
 /**********************************************************************//**
