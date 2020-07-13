@@ -227,6 +227,7 @@ __crt0_this_is_the_end_end:
 // *********************************************************
 // NEORV32 runtime environment: First-level exception/interrupt handler
 // *********************************************************
+.align 4
 __crt0_neorv32_rte:
 
   // --------------------------------------------
