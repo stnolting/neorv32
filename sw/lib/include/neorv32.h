@@ -61,14 +61,14 @@
  **************************************************************************/
 enum NEORV32_CPU_CSRS_enum {
   CSR_MSTATUS     = 0x300, /**< 0x300 - mstatus (r/w): Machine status register */
-  CSR_MISA        = 0x301, /**< 0x301 - misa    (r/-): CPU ISA and extensions */
+  CSR_MISA        = 0x301, /**< 0x301 - misa    (r/-): CPU ISA and extensions (read-only in NEORV32) */
   CSR_MIE         = 0x304, /**< 0x304 - mie     (r/w): Machine interrupt-enable register */
   CSR_MTVEC       = 0x305, /**< 0x305 - mtvec   (r/w): Machine trap-handler base address (for ALL traps) */
 
   CSR_MSCRATCH    = 0x340, /**< 0x340 - mscratch (r/w): Machine scratch register */
   CSR_MEPC        = 0x341, /**< 0x341 - mepc     (r/w): Machine exception program counter */
-  CSR_MCAUSE      = 0x342, /**< 0x342 - mcause   (r/-): Machine trap cause */
-  CSR_MTVAL       = 0x343, /**< 0x343 - mtval    (r/-): Machine bad address or instruction */
+  CSR_MCAUSE      = 0x342, /**< 0x342 - mcause   (r/w): Machine trap cause */
+  CSR_MTVAL       = 0x343, /**< 0x343 - mtval    (r/w): Machine bad address or instruction */
   CSR_MIP         = 0x344, /**< 0x344 - mip      (r/w): Machine interrupt pending register */
 
   CSR_MCYCLE      = 0xb00, /**< 0xb00 - mcycle    (r/w): Machine cycle counter low word */
@@ -76,16 +76,18 @@ enum NEORV32_CPU_CSRS_enum {
   CSR_MCYCLEH     = 0xb80, /**< 0xb80 - mcycleh   (r/w): Machine cycle counter high word */
   CSR_MINSTRETH   = 0xb82, /**< 0xb82 - minstreth (r/w): Machine instructions-retired counter high word */
 
-  CSR_CYCLE       = 0xc00, /**< 0xc00 - cycle    (r/-): Cycle counter low word */
-  CSR_TIME        = 0xc01, /**< 0xc01 - time     (r/-): Timer low word (from MTIME.TIME) */
-  CSR_INSTRET     = 0xc02, /**< 0xc02 - instret  (r/-): Instructions-retired counter low word */
+  CSR_CYCLE       = 0xc00, /**< 0xc00 - cycle    (r/-): Cycle counter low word (from MCYCLE) */
+  CSR_TIME        = 0xc01, /**< 0xc01 - time     (r/-): Timer low word (from MTIME.TIME_LO) */
+  CSR_INSTRET     = 0xc02, /**< 0xc02 - instret  (r/-): Instructions-retired counter low word (from MINSTRET) */
 
-  CSR_CYCLEH      = 0xc80, /**< 0xc80 - cycleh   (r/-): Cycle counter high word */
-  CSR_TIMEH       = 0xc81, /**< 0xc81 - timeh    (r/-): Timer high word (from MTIME.TIME) */
-  CSR_INSTRETH    = 0xc82, /**< 0xc82 - instreth (r/-): Instructions-retired counter high word */
+  CSR_CYCLEH      = 0xc80, /**< 0xc80 - cycleh   (r/-): Cycle counter high word (from MCYCLEH) */
+  CSR_TIMEH       = 0xc81, /**< 0xc81 - timeh    (r/-): Timer high word (from MTIME.TIME_HI) */
+  CSR_INSTRETH    = 0xc82, /**< 0xc82 - instreth (r/-): Instructions-retired counter high word (from MINSTRETH) */
 
-  CSR_MIMPID      = 0xf13, /**< 0xf13 - mimpid  (r/-): Implementation ID/version */
-  CSR_MHARTID     = 0xf14, /**< 0xf14 - mhartid (r/-): Hardware thread ID (via HART_ID generic) */
+  CSR_MVENDORID   = 0xf11, /**< 0xf11 - mvendorid (r/-): Vendor ID */
+  CSR_MARCHID     = 0xf12, /**< 0xf12 - marchid   (r/-): Architecture ID */
+  CSR_MIMPID      = 0xf13, /**< 0xf13 - mimpid    (r/-): Implementation ID/version */
+  CSR_MHARTID     = 0xf14, /**< 0xf14 - mhartid   (r/-): Hardware thread ID (always 0) */
 
   CSR_MFEATURES   = 0xfc0, /**< 0xfc0 - CUSTOM (r/-): Implemented processor devices/features (via IO_x_USE generics) */
   CSR_MCLOCK      = 0xfc1, /**< 0xfc1 - CUSTOM (r/-): Processor primary clock spedd in Hz (via CLOCK_FREQUENCY generic)*/
@@ -109,17 +111,17 @@ enum NEORV32_CPU_MSTATUS_enum {
  * CPU <b>mie</b> CSR (r/w): Machine interrupt enable (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MIE_enum {
-  CPU_MIE_MSIE  =  3, /**< CPU mie CSR (3): Machine software interrupt enable bit (r/w) */
+  CPU_MIE_MSIE  =  3, /**< CPU mie CSR (3): Machine software interrupt enable (r/w) */
   CPU_MIE_MTIE  =  7, /**< CPU mie CSR (7): Machine timer interrupt (MTIME) enable bit (r/w) */
   CPU_MIE_MEIE  = 11  /**< CPU mie CSR (11): Machine external interrupt (via CLIC) enable bit (r/w) */
 };
 
 
 /**********************************************************************//**
- * CPU <b>mip</b> CSR (r/w): Machine interrupt pending (RISC-V spec.)
+ * CPU <b>mip</b> CSR (r/-): Machine interrupt pending (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MIP_enum {
-  CPU_MIP_MSIP  =  3, /**< CPU mip CSR (3): Machine software interrupt pending (r/w), can be triggered when set */
+  CPU_MIP_MSIP  =  3, /**< CPU mip CSR (3): Machine software interrupt pending (r/-) */
   CPU_MIP_MTIP  =  7, /**< CPU mip CSR (7): Machine timer interrupt (MTIME) pending (r/-) */
   CPU_MIP_MEIP  = 11  /**< CPU mip CSR (11): Machine external interrupt (via CLIC) pending (r/-) */
 };
