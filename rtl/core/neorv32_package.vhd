@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - FIXED!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01000800"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01010000"; -- no touchy!
 
   -- Internal Functions ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

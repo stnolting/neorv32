@@ -50,10 +50,10 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu is
   generic (
     -- General --
-    CLOCK_FREQUENCY              : natural := 0; -- clock frequency of clk_i in Hz
-    HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
+    CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
     BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
     CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= x"00000000"; -- hardware thread id
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
@@ -105,6 +105,7 @@ entity neorv32_cpu is
     -- system time input from MTIME --
     time_i       : in  std_ulogic_vector(63 downto 0); -- current system time
     -- external interrupts --
+    msw_irq_i    : in  std_ulogic; -- software interrupt
     clic_irq_i   : in  std_ulogic; -- CLIC interrupt request
     mtime_irq_i  : in  std_ulogic  -- machine timer interrupt
   );
@@ -148,9 +149,9 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,  -- clock frequency of clk_i in Hz
-    HART_ID                      => HART_ID,          -- custom hardware thread ID
     BOOTLOADER_USE               => BOOTLOADER_USE,   -- implement processor-internal bootloader?
     CSR_COUNTERS_USE             => CSR_COUNTERS_USE, -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    HW_THREAD_ID                 => HW_THREAD_ID,     -- hardware thread id
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,     -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,     -- implement embedded RF extension?
@@ -203,6 +204,7 @@ begin
     csr_wdata_i   => alu_res,     -- CSR write data
     csr_rdata_o   => csr_rdata,   -- CSR read data
     -- external interrupt --
+    msw_irq_i     => msw_irq_i,   -- software interrupt
     clic_irq_i    => clic_irq_i,  -- CLIC interrupt request
     mtime_irq_i   => mtime_irq_i, -- machine timer interrupt
     -- system time input from MTIME --
