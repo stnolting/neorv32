@@ -65,21 +65,23 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 | [RISC-V compliance test](https://github.com/stnolting/neorv32_riscv_compliance) | [![Test](https://img.shields.io/travis/stnolting/neorv32_riscv_compliance/master.svg?label=compliance)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) | |
 
 
-### Limitations to be fixed
+### Non RISC-V-Compliant
 
-* No exception is triggered in `E`-mode when using registers above `x15` yet
-* `misa` CSR is read-only; no dynamic enabling/disabling of implemented CPU extensions during runtime
+* No exception is triggered in `E` mode when using registers above `x15`
+* `misa` CSR is read-only - no dynamic enabling/disabling of implemented CPU extensions during runtime
+* Machine software interrupt `msi` is implemented, but there is no mechanism available to trigger it
 
 
 ### To-Do / Wish List
 
+- Option to use DSPs for multiplications in `M` extensions (would be so much faster)
 - Synthesis results for more platforms
 - Port Dhrystone benchmark
 - Implement atomic operations (`A` extension)
 - Implement co-processor for single-precision floating-point operations (`F` extension)
 - Implement user mode (`U` extension)
-- Make a 64-bit branch
 - Maybe port an RTOS (like [freeRTOS](https://www.freertos.org/) or [RIOT](https://www.riot-os.org/))
+- Make a 64-bit branch
 
 
 
@@ -143,7 +145,6 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
 
 **Embedded CPU version** (`E` extension):
   * Reduced register file (only the 16 lowest registers)
-  * No performance counter CSRs
 
 **Integer multiplication and division hardware** (`M` extension):
   * Multiplication instructions: `MUL` `MULH` `MULHSU` `MULHU`
@@ -153,8 +154,8 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
   * Privilege levels: `M-mode` (Machine mode)
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
   * System instructions: `MRET` `WFI`
-  * Counter CSRs: `cycle` `cycleh` `time` `timeh` `instret` `instreth` `mcycle` `mcycleh` `minstret` `minstreth`
-  * Machine CSRs: `mstatus` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mimpid` `mhartid`
+  * Counter CSRs: `[m]cycle[h]` `[m]instret[h]` `time[h]`
+  * Machine CSRs: `mstatus` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mvendorid` `marchid` `mimpid` `mhartid`
   * Custom CSRs: `mfeatures` `mclock` `mispacebase` `mdspacebase` `mispacesize` `mdspacesize`
   * Supported exceptions and interrupts:
     * Misaligned instruction address
@@ -166,7 +167,6 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
     * Store address misaligned
     * Store access fault
     * Environment call from M-mode (via `ecall` instruction)
-    * Machine software interrupt `msi`
     * Machine timer interrupt `mti` (via MTIME unit)
     * Machine external interrupt `mei` (via CLIC unit)
 
@@ -183,19 +183,19 @@ of the processor's generics is assumed. No constraints were used.
 
 ### CPU
 
-Results generated for hardware version: `1.0.0.0`
+Results generated for hardware version: `1.1.0.0`
 
-| CPU Configuration   | LEs        | FFs      | Memory bits | DSPs   | f_max   |
-|:--------------------|:----------:|:--------:|:-----------:|:------:|:-------:|
-| `rv32i`             |       1027 |      474 |       2048  | 0 (0%) | 111 MHz |
-| `rv32i` + `Zicsr`   |       1721 |      868 |       2048  | 0 (0%) | 104 MHz |
-| `rv32im` + `Zicsr`  |       2298 |     1115 |       2048  | 0 (0%) | 103 MHz |
-| `rv32imc` + `Zicsr` |       2557 |     1138 |       2048  | 0 (0%) | 103 MHz |
-| `rv32emc` + `Zicsr` |       2342 |     1005 |       1024  | 0 (0%) | 100 MHz |
+| CPU Configuration                | LEs        | FFs      | Memory bits | DSPs | f_max   |
+|:---------------------------------|:----------:|:--------:|:-----------:|:----:|:-------:|
+| `rv32i`                          |       1083 |      471 |       2048  |    0 | 115 MHz |
+| `rv32i` + `Zicsr` + `Zifencei`   |       1961 |      837 |       2048  |    0 | 100 MHz |
+| `rv32im` + `Zicsr` + `Zifencei`  |       2571 |     1075 |       2048  |    0 | 102 MHz |
+| `rv32imc` + `Zicsr` + `Zifencei` |       2843 |     1098 |       2048  |    0 | 100 MHz |
+| `rv32emc` + `Zicsr` + `Zifencei` |       2844 |     1098 |       1024  |    0 | 100 MHz |
 
 ### Processor-Internal Peripherals and Memories
 
-Results generated for hardware version: `1.0.5.0`
+Results generated for hardware version: `1.1.0.0`
 
 | Module   | Description                                     | LEs | FFs | Memory bits | DSPs |
 |:---------|:------------------------------------------------|:---:|:---:|:-----------:|:----:|
@@ -216,23 +216,22 @@ Results generated for hardware version: `1.0.5.0`
 ### Exemplary FPGA Setups
 
 Exemplary implementation results for different FPGA platforms. The processor setup uses *all provided peripherals*,
-all CPU extensions (`rv32imc` + `Zicsr` + `Zifencei`, no `E` extension), no external memory interface and only internal
-instruction and data memories. IMEM uses 16kB and DMEM uses 8kB memory space. The setup top entity connects most of the
+no external memory interface and only internal instruction and data memories. IMEM uses 16kB and DMEM uses 8kB memory space. The setup's top entity connects most of the
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
-to FPGA pins - except for the Wishbone bus and the external interrupt signals.
+to FPGA pins - except for the Wishbone bus and the interrupt signals.
 
-Results generated for hardware version: `1.0.1.1`
+Results generated for hardware version: `1.1.0.0`
 
-| Vendor  | FPGA                              | Board            | Toolchain               | Impl. strategy | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency   |
-|:--------|:----------------------------------|:-----------------|:------------------------|:---------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|------------:|
-| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 19.1 | balanced       | 3841 (17%) | 1866  (8%) | 0 (0%) | 231424 (38%) |          - |        - | 103 MHz     |
-| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (LSE)       | default        | 5014 (95%) | 1952 (37%) | 0 (0%) |            - |   12 (40%) | 4 (100%) | c 20.25 MHz |
-| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2           | default        | 2312 (11%) | 1924  (5%) | 0 (0%) |            - |    8 (16%) |        - | c 100 MHz   |
+| Vendor  | FPGA                              | Board            | Toolchain               | Impl. strategy |CPU                               | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency   |
+|:--------|:----------------------------------|:-----------------|:------------------------|:---------------|:---------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|------------:|
+| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 19.1 | balanced       | `rv32imc` + `Zicsr` + `Zifencei` | 4039 (18%) | 1858  (8%) | 0 (0%) | 231424 (38%) |          - |        - | 100 MHz     |
+| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (LSE)       | timing         | `rv32ic`  + `Zicsr` + `Zifencei` | 5044 (95%) | 1699 (32%) | 0 (0%) |            - |   12 (40%) | 4 (100%) | c 20.25 MHz |
+| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2           | default        | `rv32imc` + `Zicsr` + `Zifencei` | 2535 (12%) | 1913  (5%) | 0 (0%) |            - |    8 (16%) |        - | c 100 MHz   |
 
 **Notes**
 * The Lattice iCE40 UltraPlus setup uses the FPGA's SPRAM memory primitives for the internal IMEM and DEMEM (each 64kb).
 The FPGA-specific memory components can be found in the [`rtl/fpga_specific`](https://github.com/stnolting/neorv32/blob/master/rtl/fpga_specific/lattice_ice40up) folder.
-* The clock frequencies marked with a "c" are constrained clocks. The remaining ones are `f_max` results from the place and route timing reports.
+* The clock frequencies marked with a "c" are constrained clocks. The remaining ones are _f_max_ results from the place and route timing reports.
 * The Upduino and the Arty board have on-board SPI flash memories for storing the FPGA configuration. These device can also be used by the default NEORV32
 bootloader to store and automatically boot an application program after reset (both tested successfully).
 
@@ -244,7 +243,7 @@ The [CoreMark CPU benchmark](https://www.eembc.org/coremark) was executed on the
 [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) project folder. This benchmark
 tests the capabilities of a CPU itself rather than the functions provided by the whole system / SoC.
 
-Results generated for hardware version: `1.0.0.0`
+Results generated for hardware version: `1.1.0.0`
 
 ~~~
 **Configuration**
@@ -254,14 +253,11 @@ CPU extensions:   `rv32i` or `rv32im` or `rv32imc`
 Used peripherals: UART for printing the results
 ~~~
 
-| __Configuration__ | __Optimization__ | __Executable Size__ | __CoreMark Score__ | __CoreMarks/MHz__ |
-|:------------------|:----------------:|:-------------------:|:------------------:|:-----------------:|
-| `rv32i`           |      `-Os`       |     18 044 bytes    |       21.98        |       0.21        |
-| `rv32i`           |      `-O2`       |     20 388 bytes    |        25          |       0.25        |
-| `rv32im`          |      `-Os`       |     16 980 bytes    |        40          |       0.40        |
-| `rv32im`          |      `-O2`       |     19 436 bytes    |       51.28        |       0.51        |
-| `rv32imc`         |      `-Os`       |     13 076 bytes    |       39.22        |       0.39        |
-| `rv32imc`         |      `-O2`       |     15 208 bytes    |        50          |       0.50        |
+| CPU                              | Optimization | CoreMark Score | CoreMarks/MHz |
+|:---------------------------------|:------------:|:--------------:|:-------------:|
+| `rv32i`   + `Zicsr` + `Zifencei` |        `-O2` |          25.97 |        0.2597 |
+| `rv32im`  + `Zicsr` + `Zifencei` |        `-O2` |          54.05 |        0.5405 |
+| `rv32imc` + `Zicsr` + `Zifencei` |        `-O2` |          52.63 |        0.5263 |
 
 
 ### Instruction Cycles
@@ -277,14 +273,14 @@ Please note that the CPU-internal shifter (e.g. for the `SLL` instruction) as we
 The following table shows the performance results for successfully running 2000 CoreMark
 iterations, which reflects a pretty good "real-life" work load. The average CPI is computed by
 dividing the total number of required clock cycles (all of CoreMark
-– not only the timed core) by the number of executed instructions (`instret[h]` CSRs). The executables
-were generated using optimization `-O2`.
+– not only the timed core; via the `cycle[h]` CSRs) by the number of executed instructions (`instret[h]` CSRs).
+The executables were generated using optimization `-O2`.
 
-| CPU / Toolchain Config. | Required Clock Cycles | Executed Instructions | Average CPI |
-|:------------------------|----------------------:|----------------------:|:-----------:|
-| `rv32i`                 |        19 355 607 369 |         2 995 064 579 |     6.5     |
-| `rv32im`                |         5 809 384 583 |           867 377 291 |     6.7     |
-| `rv32imc`               |         5 560 220 723 |           825 898 407 |     6.7     |
+| CPU                              | Required Clock Cycles | Executed Instructions | Average CPI |
+|:---------------------------------|----------------------:|----------------------:|:-----------:|
+| `rv32i`   + `Zicsr` + `Zifencei` |        10 087 723 527 |         1 797 808 673 |         5.6 |
+| `rv32im`  + `Zicsr` + `Zifencei` |         5 588 814 472 |           882 910 974 |         6.3 |
+| `rv32imc` + `Zicsr` + `Zifencei` |         5 540 602 508 |           864 222 402 |         6.4 |
 
 
 
@@ -301,8 +297,7 @@ Detailed information regarding the signals and configuration generics can be fou
 entity neorv32_top is
   generic (
     -- General --
-    CLOCK_FREQUENCY              : natural := 0; -- clock frequency of clk_i in Hz
-    HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom hardware thread ID
+    CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
     BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
     CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     -- RISC-V CPU Extensions --
@@ -352,6 +347,9 @@ entity neorv32_top is
     wb_cyc_o     : out std_ulogic; -- valid cycle
     wb_ack_i     : in  std_ulogic := '0'; -- transfer acknowledge
     wb_err_i     : in  std_ulogic := '0'; -- transfer error
+    -- Advanced memory control signals (available if MEM_EXT_USE = true) --
+    fence_o    : out std_ulogic; -- indicates an executed FENCE operation
+    fencei_o   : out std_ulogic; -- indicates an executed FENCEI operation
     -- GPIO (available if IO_GPIO_USE = true) --
     gpio_o       : out std_ulogic_vector(15 downto 0); -- parallel output
     gpio_i       : in  std_ulogic_vector(15 downto 0) := (others => '0'); -- parallel input
@@ -520,7 +518,7 @@ Please also check out the project's [code of conduct](https://github.com/stnolti
 
 ## Legal
 
-This is project is released under the BSD 3-Clause license. No copyright infringement intended.
+This project is released under the BSD 3-Clause license. No copyright infringement intended.
 Other implied or used projects might have different licensing - see their documentation to get more information.
 
 #### Citation
