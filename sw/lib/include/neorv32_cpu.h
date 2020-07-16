@@ -46,9 +46,9 @@
 int neorv32_cpu_irq_enable(uint8_t irq_sel);
 int neorv32_cpu_irq_disable(uint8_t irq_sel);
 uint64_t neorv32_cpu_get_cycle(void);
-void neorv32_cpu_set_mcycle(uint32_t value);
+void neorv32_cpu_set_mcycle(uint64_t value);
 uint64_t neorv32_cpu_get_instret(void);
-void neorv32_cpu_set_minstret(uint32_t value);
+void neorv32_cpu_set_minstret(uint64_t value);
 uint64_t neorv32_cpu_get_systime(void);
 void neorv32_cpu_delay_ms(uint32_t time_ms);
 

@@ -117,7 +117,7 @@ uint64_t neorv32_cpu_get_cycle(void) {
  *
  * @param[in] value New value for mcycle[h] CSR (64-bit).
  **************************************************************************/
-void neorv32_cpu_set_mcycle(uint32_t value) {
+void neorv32_cpu_set_mcycle(uint64_t value) {
 
   union {
     uint64_t uint64;
@@ -168,7 +168,7 @@ uint64_t neorv32_cpu_get_instret(void) {
  *
  * @param[in] value New value for mcycle[h] CSR (64-bit).
  **************************************************************************/
-void neorv32_cpu_set_minstret(uint32_t value) {
+void neorv32_cpu_set_minstret(uint64_t value) {
 
   union {
     uint64_t uint64;
