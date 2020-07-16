@@ -333,6 +333,12 @@ void start_app(void) {
   // wait for UART to finish transmitting
   while ((UART_CT & (1<<UART_CT_TX_BUSY)) != 0);
 
+  // reset performance counters (to benchmark actual application)
+  asm volatile ("csrrw zero, mcycle,    zero"); // will also clear 'cycle'
+  asm volatile ("csrrw zero, mcycleh,   zero"); // will also clear 'cycleh'
+  asm volatile ("csrrw zero, minstret,  zero"); // will also clear 'instret'
+  asm volatile ("csrrw zero, minstreth, zero"); // will also clear 'instreth'
+
   // start app at instruction space base address
   while (1) {
     register uint32_t app_base = neorv32_cpu_csr_read(CSR_MISPACEBASE);
