@@ -1,7 +1,7 @@
 /* ################################################################################################# */
 /* # << NEORV32 - bootloader_crt0.S - Bootloader Start-Up Code >>                                  # */
 /* # ********************************************************************************************* # */
-/* # Minimal hardware setup (STACK + EXC handler). The rest is done by the bootloader itself.      # */
+/* # Minimal hardware setup (STACK + Trap handler). The rest is done by the bootloader itself.     # */
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
@@ -40,9 +40,9 @@
   .global _start
 
 
-  // custom CSRs
-  .set CSR_MDSPACEBASE, 0xfc5  // CUSTOM (r/-): Base address of data memory space (via MEM_DSPACE_BASE generic) */
-  .set CSR_MDSPACESIZE, 0xfc7  // CUSTOM (r/-): Total size of data memory space in byte (via MEM_DSPACE_SIZE generic) */
+  // SYSINFO
+  .set SYSINFO_DSPACE_BASE, 0xFFFFFFF4
+  .set SYSINFO_DSPACE_SIZE, 0xFFFFFFFC
 
 
 _start:
@@ -53,17 +53,17 @@ _start:
 // Setup stack pointer
 // *********************************************************
 __crt0_stack_pointer_init:
-  csrrw x11, CSR_MDSPACEBASE, zero  // data memory space base address
-  csrrw x12, CSR_MDSPACESIZE, zero  // data memory space size
+  lw    x11, SYSINFO_DSPACE_BASE(zero)  // data memory space base address
+  lw    x12, SYSINFO_DSPACE_SIZE(zero)  // data memory space size
   add   sp, x11, x12
-  addi  sp, sp, -4                  // stack pointer = last entry
+  addi  sp, sp, -4  // stack pointer = last entry
 
 
 // *********************************************************
 // Init exception vector base with dummy handler
 // *********************************************************
-  la    x11, __crt0_dummy_exception_handler
-  csrrw zero, mtvec, x11
+  la   x13, __crt0_dummy_trap_handler
+  csrw mtvec, x13
 
 
 // *********************************************************
@@ -81,9 +81,9 @@ __crt0_clear_reg_file:
   addi  x8, zero, 0
   addi  x9, zero, 0
   addi x10, zero, 0
-  addi x11, zero, 0
-  addi x12, zero, 0
-  addi x13, zero, 0
+//addi x11, zero, 0 # allready initialized
+//addi x12, zero, 0 # allready initialized
+//addi x13, zero, 0 # allready initialized
   addi x14, zero, 0
   addi x15, zero, 0
 
@@ -94,23 +94,32 @@ __crt0_clear_reg_file:
 __crt0_main_entry:
 
   jal ra, main
-  j   _start # restart if main returns
+
+  // if main returns: stall
+__crt0_the_end:
+  j __crt0_the_end # restart if main returns
 
 
 // *********************************************************
-// dummy exception handler (for exceptions only, no IRQs)
-// bootloader has to be compiled without any CPU extensions!
+// dummy trap handler (for exceptions & IRQs)
+// bootloader has to be compiled without any CPU extensions
+// - especially without C extension!
 // *********************************************************
-__crt0_dummy_exception_handler:
-  
+__crt0_dummy_trap_handler:
+
   addi	sp, sp, -4
-  sw	  ra, 0(sp)
+  sw	  x8, 0(sp)
 
-  csrrw ra, mepc, zero
-  addi  ra, ra, +4  // just move on to next instruction
-  csrrw zero, mepc, ra
+  csrr  x8, mcause
+  blt   x8, zero, __crt0_dummy_trap_handler_irq  // skip mepc modification if interrupt
 
-  lw	  ra, 0(sp)
+  csrr  x8, mepc
+  addi  x8, x8, +4  // move on to next instruction if exception
+  csrw  mepc, x8
+
+__crt0_dummy_trap_handler_irq:
+
+  lw	  x8, 0(sp)
   addi	sp, sp, +4
 
   mret
