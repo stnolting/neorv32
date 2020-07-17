@@ -170,16 +170,18 @@ begin
         shifter.sreg <= opa; -- shift operand
         shifter.cnt  <= opb(index_size_f(data_width_c)-1 downto 0); -- shift amount
       elsif (shifter.run = '1') then -- running shift
-        -- coarse shift - multiples of 4 --
-        if (or_all_f(shifter.cnt(shifter.cnt'left downto 1)) = '1') then -- shift amount >= 2
-          shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 2);
+        -- coarse shift -> multiples of 4 --
+        if (or_all_f(shifter.cnt(shifter.cnt'left downto 2)) = '1') then -- shift amount >= 4
+          shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 4);
           if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- SLL: shift left logical
-            shifter.sreg <= shifter.sreg(shifter.sreg'left-2 downto 0) & "00";
+            shifter.sreg <= shifter.sreg(shifter.sreg'left-4 downto 0) & "0000";
           else -- SRL: shift right logical / SRA: shift right arithmetical
             shifter.sreg <= (shifter.sreg(shifter.sreg'left) and ctrl_i(ctrl_alu_shift_ar_c)) &
-                            (shifter.sreg(shifter.sreg'left) and ctrl_i(ctrl_alu_shift_ar_c)) & shifter.sreg(shifter.sreg'left downto 2);
+                            (shifter.sreg(shifter.sreg'left) and ctrl_i(ctrl_alu_shift_ar_c)) &
+                            (shifter.sreg(shifter.sreg'left) and ctrl_i(ctrl_alu_shift_ar_c)) &
+                            (shifter.sreg(shifter.sreg'left) and ctrl_i(ctrl_alu_shift_ar_c)) & shifter.sreg(shifter.sreg'left downto 4);
           end if;
-        -- fine shift - 0/1 --
+        -- fine shift -> 0..3 --
         else
           shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 1);
           if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- SLL: shift left logical
