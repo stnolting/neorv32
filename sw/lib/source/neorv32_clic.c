@@ -61,7 +61,7 @@ static uint32_t __neorv32_clic_vectors[8] __attribute__((unused));
  **************************************************************************/
 int neorv32_clic_available(void) {
 
-  if (neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_IO_CLIC)) {
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_CLIC)) {
     return 1;
   }
   else {

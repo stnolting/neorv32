@@ -221,7 +221,7 @@ uint64_t neorv32_cpu_get_systime(void) {
  **************************************************************************/
 void neorv32_cpu_delay_ms(uint32_t time_ms) {
 
-  uint32_t clock_speed = neorv32_cpu_csr_read(CSR_MCLOCK) >> 10; // fake divide by 1000
+  uint32_t clock_speed = SYSINFO_CLK >> 10; // fake divide by 1000
   clock_speed = clock_speed >> 5; // divide by loop execution time (~30 cycles)
   uint32_t cnt = clock_speed * time_ms;
 

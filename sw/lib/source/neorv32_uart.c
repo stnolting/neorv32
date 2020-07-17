@@ -59,7 +59,7 @@ static void __neorv32_uart_tohex(uint32_t x, char *res) __attribute__((unused));
  **************************************************************************/
 int neorv32_uart_available(void) {
 
-  if (neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_IO_UART)) {
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_UART)) {
     return 1;
   }
   else {
@@ -80,7 +80,7 @@ void neorv32_uart_setup(uint32_t baudrate, uint8_t rx_irq, uint8_t tx_irq) {
   UART_CT = 0; // reset
 
   // raw baud rate prescaler
-  uint32_t clock = neorv32_cpu_csr_read(CSR_MCLOCK);
+  uint32_t clock = SYSINFO_CLK;
   uint16_t i = 0; // BAUD rate divisor
   uint8_t p = 0; // prsc = CLK/2
   while (clock >= 2*baudrate) {

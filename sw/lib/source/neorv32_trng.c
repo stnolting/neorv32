@@ -52,7 +52,7 @@
  **************************************************************************/
 int neorv32_trng_available(void) {
 
-  if (neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_IO_TRNG)) {
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_TRNG)) {
     return 1;
   }
   else {

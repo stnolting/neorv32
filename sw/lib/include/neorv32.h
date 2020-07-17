@@ -73,28 +73,21 @@ enum NEORV32_CPU_CSRS_enum {
 
   CSR_MCYCLE      = 0xb00, /**< 0xb00 - mcycle    (r/w): Machine cycle counter low word */
   CSR_MINSTRET    = 0xb02, /**< 0xb02 - minstret  (r/w): Machine instructions-retired counter low word */
-  CSR_MCYCLEH     = 0xb80, /**< 0xb80 - mcycleh   (r/w): Machine cycle counter high word */
-  CSR_MINSTRETH   = 0xb82, /**< 0xb82 - minstreth (r/w): Machine instructions-retired counter high word */
+  CSR_MCYCLEH     = 0xb80, /**< 0xb80 - mcycleh   (r/w): Machine cycle counter high word - only 20-bit wide!*/
+  CSR_MINSTRETH   = 0xb82, /**< 0xb82 - minstreth (r/w): Machine instructions-retired counter high word - only 20-bit wide! */
 
   CSR_CYCLE       = 0xc00, /**< 0xc00 - cycle    (r/-): Cycle counter low word (from MCYCLE) */
   CSR_TIME        = 0xc01, /**< 0xc01 - time     (r/-): Timer low word (from MTIME.TIME_LO) */
   CSR_INSTRET     = 0xc02, /**< 0xc02 - instret  (r/-): Instructions-retired counter low word (from MINSTRET) */
 
-  CSR_CYCLEH      = 0xc80, /**< 0xc80 - cycleh   (r/-): Cycle counter high word (from MCYCLEH) */
+  CSR_CYCLEH      = 0xc80, /**< 0xc80 - cycleh   (r/-): Cycle counter high word (from MCYCLEH) - only 20-bit wide! */
   CSR_TIMEH       = 0xc81, /**< 0xc81 - timeh    (r/-): Timer high word (from MTIME.TIME_HI) */
-  CSR_INSTRETH    = 0xc82, /**< 0xc82 - instreth (r/-): Instructions-retired counter high word (from MINSTRETH) */
+  CSR_INSTRETH    = 0xc82, /**< 0xc82 - instreth (r/-): Instructions-retired counter high word (from MINSTRETH) - only 20-bit wide! */
 
   CSR_MVENDORID   = 0xf11, /**< 0xf11 - mvendorid (r/-): Vendor ID */
   CSR_MARCHID     = 0xf12, /**< 0xf12 - marchid   (r/-): Architecture ID */
   CSR_MIMPID      = 0xf13, /**< 0xf13 - mimpid    (r/-): Implementation ID/version */
-  CSR_MHARTID     = 0xf14, /**< 0xf14 - mhartid   (r/-): Hardware thread ID (always 0) */
-
-  CSR_MFEATURES   = 0xfc0, /**< 0xfc0 - CUSTOM (r/-): Implemented processor devices/features (via IO_x_USE generics) */
-  CSR_MCLOCK      = 0xfc1, /**< 0xfc1 - CUSTOM (r/-): Processor primary clock spedd in Hz (via CLOCK_FREQUENCY generic)*/
-  CSR_MISPACEBASE = 0xfc4, /**< 0xfc4 - CUSTOM (r/-): Base address of instruction memory space (via MEM_ISPACE_BASE generic) */
-  CSR_MDSPACEBASE = 0xfc5, /**< 0xfc5 - CUSTOM (r/-): Base address of data memory space (via MEM_DSPACE_BASE generic) */
-  CSR_MISPACESIZE = 0xfc6, /**< 0xfc6 - CUSTOM (r/-): Total size of instruction memory space in byte (via MEM_ISPACE_SIZE generic) */
-  CSR_MDSPACESIZE = 0xfc7  /**< 0xfc7 - CUSTOM (r/-): Total size of data memory space in byte (via MEM_DSPACE_SIZE generic) */
+  CSR_MHARTID     = 0xf14  /**< 0xf14 - mhartid   (r/-): Hardware thread ID (always 0) */
 };
 
 
@@ -143,30 +136,6 @@ enum NEORV32_CPU_MISA_enum {
 
 
 /**********************************************************************//**
- * CPU <b>mfeatures</b> CSR (r/-): Implemented processor devices/features (CUSTOM)
- **************************************************************************/
- enum NEORV32_CPU_MFEATURES_enum {
-  CPU_MFEATURES_BOOTLOADER       =  0, /**< CPU mfeatures CSR (0) (r/-): Bootloader implemented when 1 (via BOOTLOADER_USE generic) */
-  CPU_MFEATURES_MEM_EXT          =  1, /**< CPU mfeatures CSR (1) (r/-): External bus interface implemented when 1 (via MEM_EXT_USE generic) */
-  CPU_MFEATURES_MEM_INT_IMEM     =  2, /**< CPU mfeatures CSR (2) (r/-): Processor-internal instruction memory implemented when 1 (via MEM_INT_IMEM_USE generic) */
-  CPU_MFEATURES_MEM_INT_IMEM_ROM =  3, /**< CPU mfeatures CSR (3) (r/-): Processor-internal instruction memory implemented as ROM when 1 (via MEM_INT_IMEM_ROM generic) */
-  CPU_MFEATURES_MEM_INT_DMEM     =  4, /**< CPU mfeatures CSR (4) (r/-): Processor-internal data memory implemented when 1 (via MEM_INT_DMEM_USE generic) */
-  CPU_MFEATURES_CSR_COUNTERS     =  5, /**< CPU mfeatures CSR (5) (r/-): RISC-V performance counters implemented when 1 (via CSR_COUNTERS_USE generic) */
-
-  CPU_MFEATURES_IO_GPIO          = 16, /**< CPU mfeatures CSR (16) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_USE generic) */
-  CPU_MFEATURES_IO_MTIME         = 17, /**< CPU mfeatures CSR (17) (r/-): Machine system timer implemented when 1 (via IO_MTIME_USE generic) */
-  CPU_MFEATURES_IO_UART          = 18, /**< CPU mfeatures CSR (18) (r/-): Universal asynchronous receiver/transmitter implemented when 1 (via IO_UART_USE generic) */
-  CPU_MFEATURES_IO_SPI           = 19, /**< CPU mfeatures CSR (19) (r/-): Serial peripheral interface implemented when 1 (via IO_SPI_USE generic) */
-  CPU_MFEATURES_IO_TWI           = 20, /**< CPU mfeatures CSR (20) (r/-): Two-wire interface implemented when 1 (via IO_TWI_USE generic) */
-  CPU_MFEATURES_IO_PWM           = 21, /**< CPU mfeatures CSR (21) (r/-): Pulse-width modulation unit implemented when 1 (via IO_PWM_USE generic) */
-  CPU_MFEATURES_IO_WDT           = 22, /**< CPU mfeatures CSR (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_USE generic) */
-  CPU_MFEATURES_IO_CLIC          = 23, /**< CPU mfeatures CSR (23) (r/-): Core-local interrupt controller implemented when 1 (via IO_CLIC_USE generic) */
-  CPU_MFEATURES_IO_TRNG          = 24, /**< CPU mfeatures CSR (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_USE generic) */
-  CPU_MFEATURES_IO_DEVNULL       = 25  /**< CPU mfeatures CSR (24) (r/-): Dummy device implemented when 1 (via IO_DEVNULL_USE generic) */
-};
-
-
-/**********************************************************************//**
  * Exception IDs.
  **************************************************************************/
 enum NEORV32_EXCEPTION_IDS_enum {
@@ -182,6 +151,25 @@ enum NEORV32_EXCEPTION_IDS_enum {
   EXCID_MSI          = 19, /**< 16 + 3: Machine software interrupt */
   EXCID_MTI          = 23, /**< 16 + 7: Machine timer interrupt (via MTIME) */
   EXCID_MEI          = 27  /**< 16 + 11: Machine external interrupt (via CLIC) */
+};
+
+
+/**********************************************************************//**
+ * Exception codes from mcause CSR.
+ **************************************************************************/
+enum NEORV32_EXCEPTION_CODES_enum {
+  EXCCODE_I_MISALIGNED = 0x00000000, /**< 0: Instruction address misaligned */
+  EXCCODE_I_ACCESS     = 0x00000001, /**< 1: Instruction (bus) access fault */
+  EXCCODE_I_ILLEGAL    = 0x00000002, /**< 2: Illegal instruction */
+  EXCCODE_BREAKPOINT   = 0x00000003, /**< 3: Breakpoint (EBREAK instruction) */
+  EXCCODE_L_MISALIGNED = 0x00000004, /**< 4: Load address misaligned */
+  EXCCODE_L_ACCESS     = 0x00000005, /**< 5: Load (bus) access fault */
+  EXCCODE_S_MISALIGNED = 0x00000006, /**< 6: Store address misaligned */
+  EXCCODE_S_ACCESS     = 0x00000007, /**< 7: Store (bus) access fault */
+  EXCCODE_MENV_CALL    = 0x0000000b, /**< 11: Environment call from machine mode (ECALL instruction) */
+  EXCCODE_MSI          = 0x80000003, /**< 16 + 3: Machine software interrupt */
+  EXCCODE_MTI          = 0x80000007, /**< 16 + 7: Machine timer interrupt (via MTIME) */
+  EXCCODE_MEI          = 0x8000000b  /**< 16 + 11: Machine external interrupt (via CLIC) */
 };
 
 
@@ -514,8 +502,54 @@ enum NEORV32_TRNG_DUTY_enum {
  **************************************************************************/
 /**@{*/
 /** DEVNULL data register (r/w) */
-#define DEVNULL_DATA (*(IO_REG32 0xFFFFFFFCUL))
+#define DEVNULL_DATA (*(IO_REG32 0xFFFFFFC8UL))
 /**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: System Configuration Info Memory (SYSINFO)
+ **************************************************************************/
+/**@{*/
+/** SYSINFO(0): Clock speed */
+#define SYSINFO_CLK (*(IO_ROM32 0xFFFFFFE0UL))
+/** SYSINFO(1): reserved */
+#define SYSINFO_reserved0 (*(IO_ROM32 0xFFFFFFE4UL))
+/** SYSINFO(2): Clock speed */
+#define SYSINFO_FEATURES (*(IO_ROM32 0xFFFFFFE8UL))
+/** SYSINFO(3): reserved */
+#define SYSINFO_reserved1 (*(IO_ROM32 0xFFFFFFECUL))
+/** SYSINFO(4): Instruction memory address space base */
+#define SYSINFO_ISPACE_BASE (*(IO_ROM32 0xFFFFFFF0UL))
+/** SYSINFO(5): Data memory address space base */
+#define SYSINFO_DSPACE_BASE (*(IO_ROM32 0xFFFFFFF4UL))
+/** SYSINFO(6): Instruction memory address space size in bytes */
+#define SYSINFO_ISPACE_SIZE (*(IO_ROM32 0xFFFFFFF8UL))
+/** SYSINFO(7): Data memory address space size in bytes */
+#define SYSINFO_DSPACE_SIZE (*(IO_ROM32 0xFFFFFFFCUL))
+/**@}*/
+
+
+/**********************************************************************//**
+ * SYSINFO_FEATURES (r/-): Implemented processor devices/features
+ **************************************************************************/
+ enum NEORV32_SYSINFO_FEATURES_enum {
+  SYSINFO_FEATURES_BOOTLOADER       =  0, /**< SYSINFO_FEATURES  (0) (r/-): Bootloader implemented when 1 (via BOOTLOADER_USE generic) */
+  SYSINFO_FEATURES_MEM_EXT          =  1, /**< SYSINFO_FEATURES  (1) (r/-): External bus interface implemented when 1 (via MEM_EXT_USE generic) */
+  SYSINFO_FEATURES_MEM_INT_IMEM     =  2, /**< SYSINFO_FEATURES  (2) (r/-): Processor-internal instruction memory implemented when 1 (via MEM_INT_IMEM_USE generic) */
+  SYSINFO_FEATURES_MEM_INT_IMEM_ROM =  3, /**< SYSINFO_FEATURES  (3) (r/-): Processor-internal instruction memory implemented as ROM when 1 (via MEM_INT_IMEM_ROM generic) */
+  SYSINFO_FEATURES_MEM_INT_DMEM     =  4, /**< SYSINFO_FEATURES  (4) (r/-): Processor-internal data memory implemented when 1 (via MEM_INT_DMEM_USE generic) */
+
+  SYSINFO_FEATURES_IO_GPIO          = 16, /**< SYSINFO_FEATURES (16) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_USE generic) */
+  SYSINFO_FEATURES_IO_MTIME         = 17, /**< SYSINFO_FEATURES (17) (r/-): Machine system timer implemented when 1 (via IO_MTIME_USE generic) */
+  SYSINFO_FEATURES_IO_UART          = 18, /**< SYSINFO_FEATURES (18) (r/-): Universal asynchronous receiver/transmitter implemented when 1 (via IO_UART_USE generic) */
+  SYSINFO_FEATURES_IO_SPI           = 19, /**< SYSINFO_FEATURES (19) (r/-): Serial peripheral interface implemented when 1 (via IO_SPI_USE generic) */
+  SYSINFO_FEATURES_IO_TWI           = 20, /**< SYSINFO_FEATURES (20) (r/-): Two-wire interface implemented when 1 (via IO_TWI_USE generic) */
+  SYSINFO_FEATURES_IO_PWM           = 21, /**< SYSINFO_FEATURES (21) (r/-): Pulse-width modulation unit implemented when 1 (via IO_PWM_USE generic) */
+  SYSINFO_FEATURES_IO_WDT           = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_USE generic) */
+  SYSINFO_FEATURES_IO_CLIC          = 23, /**< SYSINFO_FEATURES (23) (r/-): Core-local interrupt controller implemented when 1 (via IO_CLIC_USE generic) */
+  SYSINFO_FEATURES_IO_TRNG          = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_USE generic) */
+  SYSINFO_FEATURES_IO_DEVNULL       = 25  /**< SYSINFO_FEATURES (24) (r/-): Dummy device implemented when 1 (via IO_DEVNULL_USE generic) */
+};
 
 
 // ----------------------------------------------------------------------------

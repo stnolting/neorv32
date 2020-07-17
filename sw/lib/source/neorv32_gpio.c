@@ -52,7 +52,7 @@
  **************************************************************************/
 int neorv32_gpio_available(void) {
 
-  if (neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_IO_GPIO)) {
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_GPIO)) {
     return 1;
   }
   else {

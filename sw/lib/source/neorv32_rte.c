@@ -93,7 +93,7 @@ int neorv32_rte_exception_install(uint8_t exc_id, void (*handler)(void)) {
     if (exc_id == EXCID_MTI) { neorv32_cpu_irq_enable(CPU_MIE_MTIE); } // activate timer interrupt
     if (exc_id == EXCID_MEI) { neorv32_cpu_irq_enable(CPU_MIE_MEIE); } // activate external interrupt
 
-    uint32_t vt_base = neorv32_cpu_csr_read(CSR_MDSPACEBASE); // base address of vector table
+    uint32_t vt_base = SYSINFO_DSPACE_BASE; // base address of vector table
     vt_base = vt_base + (((uint32_t)exc_id) << 2);
     (*(IO_REG32 (vt_base))) = (uint32_t)handler;
 
@@ -126,7 +126,7 @@ int neorv32_rte_exception_uninstall(uint8_t exc_id) {
     if (exc_id == EXCID_MTI) { neorv32_cpu_irq_disable(CPU_MIE_MTIE); } // deactivate timer interrupt
     if (exc_id == EXCID_MEI) { neorv32_cpu_irq_disable(CPU_MIE_MEIE); } // deactivate external interrupt
 
-    uint32_t vt_base = neorv32_cpu_csr_read(CSR_MDSPACEBASE); // base address of vector table
+    uint32_t vt_base = SYSINFO_DSPACE_BASE; // base address of vector table
     vt_base = vt_base + (((uint32_t)exc_id) << 2);
     (*(IO_REG32 (vt_base))) = (uint32_t)(&__neorv32_rte_dummy_exc_handler); // use dummy handler in case the exception is triggered
 
@@ -259,69 +259,65 @@ void neorv32_rte_print_hw_config(void) {
   }
   neorv32_uart_printf("(0x%x)\n", tmp);
 
-  // Performance counters
-  neorv32_uart_printf("CNT & time CSRs:  ");
-  __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_CSR_COUNTERS));
-
   // Clock speed
-  neorv32_uart_printf("Clock speed:      %u Hz\n", neorv32_cpu_csr_read(CSR_MCLOCK));
+  neorv32_uart_printf("Clock speed:      %u Hz\n", SYSINFO_CLK);
 
   // Memory configuration
   neorv32_uart_printf("\n-- Memory Configuration --\n");
 
-  uint32_t size = neorv32_cpu_csr_read(CSR_MISPACESIZE);
-  uint32_t base = neorv32_cpu_csr_read(CSR_MISPACEBASE);
+  uint32_t size = SYSINFO_ISPACE_SIZE;
+  uint32_t base = SYSINFO_ISPACE_BASE;
   neorv32_uart_printf("Instruction memory:   %u bytes @ 0x%x\n", size, base);
   neorv32_uart_printf("Internal IMEM:        ");
-  __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_MEM_INT_IMEM));
+  __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM));
   neorv32_uart_printf("Internal IMEM as ROM: ");
-  __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_MEM_INT_IMEM_ROM));
+  __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM_ROM));
 
-  size = neorv32_cpu_csr_read(CSR_MDSPACESIZE);
-  base = neorv32_cpu_csr_read(CSR_MDSPACEBASE);
+  size = SYSINFO_DSPACE_SIZE;
+  base = SYSINFO_DSPACE_BASE;
   neorv32_uart_printf("Data memory:          %u bytes @ 0x%x\n", size, base);
   neorv32_uart_printf("Internal DMEM:        ");
-  __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_MEM_INT_DMEM));
+  __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_DMEM));
 
   neorv32_uart_printf("Bootloader:           ");
-  __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_BOOTLOADER));
+  __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_BOOTLOADER));
 
   neorv32_uart_printf("External interface:   ");
-  __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_MEM_EXT));
+  __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT));
 
   // peripherals
   neorv32_uart_printf("\n-- Peripherals --\n");
-  tmp = neorv32_cpu_csr_read(CSR_MFEATURES);
+  tmp = SYSINFO_FEATURES;
 
   neorv32_uart_printf("GPIO:    ");
-  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_GPIO));
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_GPIO));
 
   neorv32_uart_printf("MTIME:   ");
-  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_MTIME));
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_MTIME));
 
   neorv32_uart_printf("UART:    ");
-  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_UART));
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_UART));
 
   neorv32_uart_printf("SPI:     ");
-  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_SPI));
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_SPI));
 
   neorv32_uart_printf("TWI:     ");
-  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_TWI));
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_TWI));
 
   neorv32_uart_printf("PWM:     ");
-  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_PWM));
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_PWM));
 
   neorv32_uart_printf("WDT:     ");
-  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_WDT));
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_WDT));
 
   neorv32_uart_printf("CLIC:    ");
-  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_CLIC));
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_CLIC));
 
   neorv32_uart_printf("TRNG:    ");
-  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_TRNG));
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_TRNG));
 
   neorv32_uart_printf("DEVNULL: ");
-  __neorv32_rte_print_true_false(tmp & (1 << CPU_MFEATURES_IO_DEVNULL));
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_DEVNULL));
 }
 
 
