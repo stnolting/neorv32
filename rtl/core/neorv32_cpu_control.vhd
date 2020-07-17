@@ -88,7 +88,8 @@ entity neorv32_cpu_control is
     ctrl_o        : out std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     -- status input --
     alu_wait_i    : in  std_ulogic; -- wait for ALU
-    bus_wait_i    : in  std_ulogic; -- wait for bus
+    bus_i_wait_i  : in  std_ulogic; -- wait for bus
+    bus_d_wait_i  : in  std_ulogic; -- wait for bus
     -- data input --
     instr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- instruction
     cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
@@ -114,8 +115,7 @@ entity neorv32_cpu_control is
     ma_store_i    : in  std_ulogic; -- misaligned store data address
     be_instr_i    : in  std_ulogic; -- bus error on instruction access
     be_load_i     : in  std_ulogic; -- bus error on load data access
-    be_store_i    : in  std_ulogic; -- bus error on store data access
-    bus_busy_i    : in  std_ulogic  -- bus unit is busy
+    be_store_i    : in  std_ulogic  -- bus error on store data access
   );
 end neorv32_cpu_control;
 
@@ -142,7 +142,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     ci_return_nxt   : std_ulogic;
     reset           : std_ulogic;
     bus_err_ack     : std_ulogic;
-    bus_reset       : std_ulogic;
   end record;
   signal fetch_engine : fetch_engine_t;
 
@@ -236,8 +235,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mscratch     : std_ulogic_vector(data_width_c-1 downto 0); -- mscratch: scratch register (R/W)
     mcycle       : std_ulogic_vector(32 downto 0); -- mcycle (R/W), plus carry bit
     minstret     : std_ulogic_vector(32 downto 0); -- minstret (R/W), plus carry bit
-    mcycleh      : std_ulogic_vector(31 downto 0); -- mcycleh (R/W)
-    minstreth    : std_ulogic_vector(31 downto 0); -- minstreth (R/W)
+    mcycleh      : std_ulogic_vector(19 downto 0); -- mcycleh (R/W) - REDUCED BIT-WIDTH!
+    minstreth    : std_ulogic_vector(19 downto 0); -- minstreth (R/W) - REDUCED BIT-WIDTH!
   end record;
   signal csr : csr_t;
 
@@ -321,7 +320,7 @@ begin
 
   -- Fetch Engine FSM Comb ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fetch_engine_fsm_comb: process(fetch_engine, execute_engine, csr, ipb, instr_i, bus_wait_i, bus_busy_i, ci_instr32, be_instr_i, ma_instr_i)
+  fetch_engine_fsm_comb: process(fetch_engine, csr, ipb, instr_i, bus_i_wait_i, ci_instr32, be_instr_i, ma_instr_i)
   begin
     -- arbiter defaults --
     fetch_engine.state_nxt       <= fetch_engine.state;
@@ -334,7 +333,6 @@ begin
     fetch_engine.ci_reg_nxt      <= fetch_engine.ci_reg;
     fetch_engine.ci_return_nxt   <= fetch_engine.ci_return;
     fetch_engine.bus_err_ack     <= '0';
-    fetch_engine.bus_reset       <= '0';
 
     -- instruction prefetch buffer interface --
     ipb.we    <= '0';
@@ -349,30 +347,23 @@ begin
       -- ------------------------------------------------------------
         fetch_engine.i_buf_state_nxt <= (others => '0');
         fetch_engine.ci_return_nxt   <= '0';
-        fetch_engine.bus_reset       <= '1'; -- reset bus unit
         ipb.clear                    <= '1'; -- clear instruction prefetch buffer
         fetch_engine.state_nxt       <= IFETCH_0;
 
       when IFETCH_0 => -- output current PC to bus system, request 32-bit word
       -- ------------------------------------------------------------
-        if (bus_busy_i = '0') and (execute_engine.state /= LOADSTORE_0) and (execute_engine.state /= LOADSTORE_1) and
-                                  (execute_engine.state /= LOADSTORE_2) then -- wait if execute engine is using bus unit
-          bus_fast_ir            <= '1'; -- fast instruction fetch request (output PC to bus.address)
-          fetch_engine.state_nxt <= IFETCH_1;
-        end if;
+        bus_fast_ir            <= '1'; -- fast instruction fetch request (output PC to bus.address)
+        fetch_engine.state_nxt <= IFETCH_1;
 
       when IFETCH_1 => -- store data from memory to buffer(s)
       -- ------------------------------------------------------------
-        fetch_engine.i_buf_nxt  <= be_instr_i & ma_instr_i & instr_i(31 downto 0); -- store data word and exception info
-        if (bus_wait_i = '0') then -- wait for bus response
-          fetch_engine.i_buf2_nxt <= fetch_engine.i_buf;
+        if (bus_i_wait_i = '0') or (be_instr_i = '1') or (ma_instr_i = '1') then -- wait for bus response
+          fetch_engine.i_buf_nxt          <= be_instr_i & ma_instr_i & instr_i(31 downto 0); -- store data word and exception info
+          fetch_engine.i_buf2_nxt         <= fetch_engine.i_buf;
           fetch_engine.i_buf_state_nxt(1) <= fetch_engine.i_buf_state(0);
+          fetch_engine.i_buf_state_nxt(0) <= '1';
+          fetch_engine.bus_err_ack        <= '1'; -- ack bus errors, the execute engine has to take care of them
           fetch_engine.state_nxt          <= IFETCH_2;
-        end if;
-
-        fetch_engine.i_buf_state_nxt(0) <= '1';
-        if (be_instr_i = '1') or (ma_instr_i = '1') then -- any fetch exception?
-          fetch_engine.bus_err_ack <= '1'; -- ack bus errors, the execute engine has to take care of them
         end if;
 
       when IFETCH_2 => -- construct instruction and issue
@@ -594,18 +585,18 @@ begin
     ctrl_o(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= execute_engine.i_reg(instr_rd_msb_c  downto instr_rd_lsb_c);
     ctrl_o(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c);
     ctrl_o(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= execute_engine.i_reg(instr_rs2_msb_c downto instr_rs2_lsb_c);
-    -- bus access requests --
+    -- fast bus access requests --
     ctrl_o(ctrl_bus_if_c) <= ctrl(ctrl_bus_if_c) or bus_fast_ir;
-    -- bus control --
-    ctrl_o(ctrl_bus_exc_ack_c) <= trap_ctrl.env_start_ack or fetch_engine.bus_err_ack;
-    ctrl_o(ctrl_bus_reset_c)   <= fetch_engine.bus_reset;
+    -- bus error control --
+    ctrl_o(ctrl_bus_ierr_ack_c) <= fetch_engine.bus_err_ack;
+    ctrl_o(ctrl_bus_derr_ack_c) <= trap_ctrl.env_start_ack;
   end process ctrl_output;
 
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   execute_engine_fsm_comb: process(execute_engine, fetch_engine, ipb, trap_ctrl, csr, ctrl, 
-                                   alu_add_i, alu_wait_i, bus_wait_i, ma_load_i, be_load_i, ma_store_i, be_store_i)
+                                   alu_add_i, alu_wait_i, bus_d_wait_i, ma_load_i, be_load_i, ma_store_i, be_store_i)
     variable alu_immediate_v : std_ulogic;
     variable alu_operation_v : std_ulogic_vector(2 downto 0);
     variable rs1_is_r0_v     : std_ulogic;
@@ -766,9 +757,7 @@ begin
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_add_c; -- actual ALU operation
             ctrl_nxt(ctrl_bus_mar_we_c) <= '1'; -- write to MAR
             ctrl_nxt(ctrl_bus_mdo_we_c) <= '1'; -- write to MDO (only relevant for stores)
-            if (fetch_engine.state /= IFETCH_0) then
-              execute_engine.state_nxt <= LOADSTORE_0;
-            end if;
+            execute_engine.state_nxt    <= LOADSTORE_0;
 
           when opcode_branch_c => -- branch instruction
           -- ------------------------------------------------------------
@@ -928,7 +917,7 @@ begin
         ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "01"; -- RF input = memory input (only relevant for LOAD)
         if (ma_load_i = '1') or (be_load_i = '1') or (ma_store_i = '1') or (be_store_i = '1') then -- abort if exception
           execute_engine.state_nxt <= SYS_WAIT;
-        elsif (bus_wait_i = '0') then -- wait here for bus to finish transaction
+        elsif (bus_d_wait_i = '0') then -- wait here for bus to finish transaction
           if (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_load_c) then -- LOAD?
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
           end if;
@@ -1317,7 +1306,7 @@ begin
                 when x"1" => -- R/W: mepc - machine exception program counter
                   csr.mepc <= csr_wdata_i(data_width_c-1 downto 1) & '0';
                 when x"2" => -- R/W: mcause - machine trap cause
-                  csr.mcause <= csr_wdata_i(31) & "000" & x"000000" & csr_wdata_i(3 downto 0);
+                  csr.mcause <= csr_wdata_i;
                 when x"3" => -- R/W: mtval - machine bad address or instruction
                   csr.mtval <= csr_wdata_i;
                 when others =>
@@ -1418,11 +1407,11 @@ begin
           when x"c02" | x"b02" => -- R/(W): instret/minstret: Instructions-retired counter LOW
             csr_rdata_o <= csr.minstret(31 downto 0);
           when x"c80" | x"b80" => -- R/(W): cycleh/mcycleh: Cycle counter HIGH
-            csr_rdata_o <= csr.mcycleh;
+            csr_rdata_o <= x"000" & csr.mcycleh(19 downto 0);
           when x"c81" => -- R/-: timeh: System time HIGH (from MTIME unit)
             csr_rdata_o <= systime(63 downto 32);
           when x"c82" | x"b82" => -- R/(W): instreth/minstreth: Instructions-retired counter HIGH
-            csr_rdata_o <= csr.minstreth;
+            csr_rdata_o <= x"000" & csr.minstreth(19 downto 0);
 
           -- machine information registers --
           when x"f11" => -- R/-: mvendorid
@@ -1504,7 +1493,7 @@ begin
 
         -- mcycleh (cycleh) --
         if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b80") then -- write access
-          csr.mcycleh <= csr_wdata_i;
+          csr.mcycleh <= csr_wdata_i(19 downto 0);
         elsif ((mcycle_msb xor csr.mcycle(csr.mcycle'left)) = '1') then -- automatic update
           csr.mcycleh <= std_ulogic_vector(unsigned(csr.mcycleh) + 1);
         end if;
@@ -1520,7 +1509,7 @@ begin
 
         -- minstreth (instreth) --
         if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b82") then -- write access
-          csr.minstreth <= csr_wdata_i;
+          csr.minstreth <= csr_wdata_i(19 downto 0);
         elsif ((minstret_msb xor csr.minstret(csr.minstret'left)) = '1') then -- automatic update
           csr.minstreth <= std_ulogic_vector(unsigned(csr.minstreth) + 1);
         end if;

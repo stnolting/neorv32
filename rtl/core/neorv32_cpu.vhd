@@ -2,10 +2,10 @@
 -- # << NEORV32 - CPU Top Entity >>                                                                #
 -- # ********************************************************************************************* #
 -- # Top NEORV32 CPU:                                                                              #
--- # * neorv32_cpu_alu: Arithemtical/logical unit                                                  #
+-- # * neorv32_cpu_alu: Arithemtic/logic unit                                                      #
 -- # * neorv32_cpu_ctrl: CPU control and CSR system                                                #
 -- #   * neorv32_cpu_decompressor: Compressed instructions decoder                                 #
--- # * neorv32_cpu_bus: Memory/IO bus interface unit                                               #
+-- # * neorv32_cpu_bus: Instruction and data bus interface unit                                    #
 -- # * neorv32_cpu_cp_muldiv: MULDIV co-processor                                                  #
 -- # * neorv32_cpu_regfile: Data register file                                                     #
 -- # ********************************************************************************************* #
@@ -88,26 +88,36 @@ entity neorv32_cpu is
   );
   port (
     -- global control --
-    clk_i        : in  std_ulogic; -- global clock, rising edge
-    rstn_i       : in  std_ulogic; -- global reset, low-active, async
-    -- bus interface --
-    bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-    bus_we_o     : out std_ulogic; -- write enable
-    bus_re_o     : out std_ulogic; -- read enable
-    bus_cancel_o : out std_ulogic; -- cancel current bus transaction
-    bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
-    bus_err_i    : in  std_ulogic; -- bus transfer error
-    bus_fence_o  : out std_ulogic; -- executed FENCE operations
-    bus_fencei_o : out std_ulogic; -- executed FENCEI operations
+    clk_i          : in  std_ulogic; -- global clock, rising edge
+    rstn_i         : in  std_ulogic; -- global reset, low-active, async
+    -- instruction bus interface --
+    i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    i_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+    i_bus_we_o     : out std_ulogic; -- write enable
+    i_bus_re_o     : out std_ulogic; -- read enable
+    i_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
+    i_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
+    i_bus_err_i    : in  std_ulogic; -- bus transfer error
+    i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
+    -- data bus interface --
+    d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    d_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+    d_bus_we_o     : out std_ulogic; -- write enable
+    d_bus_re_o     : out std_ulogic; -- read enable
+    d_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
+    d_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
+    d_bus_err_i    : in  std_ulogic; -- bus transfer error
+    d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
     -- system time input from MTIME --
-    time_i       : in  std_ulogic_vector(63 downto 0); -- current system time
+    time_i         : in  std_ulogic_vector(63 downto 0); -- current system time
     -- external interrupts --
-    msw_irq_i    : in  std_ulogic; -- software interrupt
-    clic_irq_i   : in  std_ulogic; -- CLIC interrupt request
-    mtime_irq_i  : in  std_ulogic  -- machine timer interrupt
+    msw_irq_i      : in  std_ulogic; -- software interrupt
+    clic_irq_i     : in  std_ulogic; -- CLIC interrupt request
+    mtime_irq_i    : in  std_ulogic  -- machine timer interrupt
   );
 end neorv32_cpu;
 
@@ -123,7 +133,8 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal alu_add     : std_ulogic_vector(data_width_c-1 downto 0); -- alu adder result
   signal rdata       : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
   signal alu_wait    : std_ulogic; -- alu is busy due to iterative unit
-  signal bus_wait    : std_ulogic; -- wait for bus to finish operation
+  signal bus_i_wait  : std_ulogic; -- wait for current bus instruction fetch
+  signal bus_d_wait  : std_ulogic; -- wait for current bus data access
   signal csr_rdata   : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
   signal mar         : std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
   signal ma_instr    : std_ulogic; -- misaligned instruction address
@@ -132,7 +143,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal be_instr    : std_ulogic; -- bus error on instruction access
   signal be_load     : std_ulogic; -- bus error on load data access
   signal be_store    : std_ulogic; -- bus error on store data access
-  signal bus_busy    : std_ulogic; -- bus unit is busy
   signal fetch_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
   signal curr_pc     : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
   signal next_pc     : std_ulogic_vector(data_width_c-1 downto 0); -- next pc (for current executed instruction)
@@ -190,7 +200,8 @@ begin
     ctrl_o        => ctrl,        -- main control bus
     -- status input --
     alu_wait_i    => alu_wait,    -- wait for ALU
-    bus_wait_i    => bus_wait,    -- wait for bus
+    bus_i_wait_i  => bus_i_wait,  -- wait for bus
+    bus_d_wait_i  => bus_d_wait,  -- wait for bus
     -- data input --
     instr_i       => instr,       -- instruction
     cmp_i         => alu_cmp,     -- comparator status
@@ -216,8 +227,7 @@ begin
     ma_store_i    => ma_store,    -- misaligned store data address
     be_instr_i    => be_instr,    -- bus error on instruction access
     be_load_i     => be_load,     -- bus error on load data access
-    be_store_i    => be_store,    -- bus error on store data access
-    bus_busy_i    => bus_busy     -- bus unit is busy
+    be_store_i    => be_store     -- bus error on store data access
   );
 
 
@@ -305,7 +315,7 @@ begin
   cp1_valid <= '0';
 
 
-  -- Bus Unit -------------------------------------------------------------------------------
+  -- Bus Interface Unit ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_bus_inst: neorv32_cpu_bus
   generic map (
@@ -314,41 +324,50 @@ begin
   )
   port map (
     -- global control --
-    clk_i        => clk_i,         -- global clock, rising edge
-    rstn_i       => rstn_i,        -- global reset, low-active, async
-    ctrl_i       => ctrl,          -- main control bus
-    -- data input --
-    wdata_i      => rs2,           -- write data
-    pc_i         => fetch_pc,      -- current PC for instruction fetch
-    alu_i        => alu_res,       -- ALU result
-    -- data output --
-    instr_o      => instr,         -- instruction
-    rdata_o      => rdata,         -- read data
-    -- status --
-    mar_o        => mar,           -- current memory address register
-    ma_instr_o   => ma_instr,      -- misaligned instruction address
-    ma_load_o    => ma_load,       -- misaligned load data address
-    ma_store_o   => ma_store,      -- misaligned store data address
-    be_instr_o   => be_instr,      -- bus error on instruction access
-    be_load_o    => be_load,       -- bus error on load data access
-    be_store_o   => be_store,      -- bus error on store data access
-    bus_wait_o   => bus_wait,      -- wait for bus operation to finish
-    bus_busy_o   => bus_busy,      -- bus unit is busy
-    -- bus system --
-    bus_addr_o   => bus_addr_o,    -- bus access address
-    bus_rdata_i  => bus_rdata_i,   -- bus read data
-    bus_wdata_o  => bus_wdata_o,   -- bus write data
-    bus_ben_o    => bus_ben_o,     -- byte enable
-    bus_we_o     => bus_we_o,      -- write enable
-    bus_re_o     => bus_re_o,      -- read enable
-    bus_cancel_o => bus_cancel_o,  -- cancel current bus transaction
-    bus_ack_i    => bus_ack_i,     -- bus transfer acknowledge
-    bus_err_i    => bus_err_i      -- bus transfer error
+    clk_i          => clk_i,          -- global clock, rising edge
+    rstn_i         => rstn_i,         -- global reset, low-active, async
+    ctrl_i         => ctrl,           -- main control bus
+    -- cpu instruction fetch interface --
+    fetch_pc_i     => fetch_pc,       -- PC for instruction fetch
+    instr_o        => instr,          -- instruction
+    i_wait_o       => bus_i_wait,     -- wait for fetch to complete
+    --
+    ma_instr_o     => ma_instr,       -- misaligned instruction address
+    be_instr_o     => be_instr,       -- bus error on instruction access
+    -- cpu data access interface --
+    addr_i         => alu_res,        -- ALU result -> access address
+    wdata_i        => rs2,            -- write data
+    rdata_o        => rdata,          -- read data
+    mar_o          => mar,            -- current memory address register
+    d_wait_o       => bus_d_wait,     -- wait for access to complete
+    --
+    ma_load_o      => ma_load,        -- misaligned load data address
+    ma_store_o     => ma_store,       -- misaligned store data address
+    be_load_o      => be_load,        -- bus error on load data access
+    be_store_o     => be_store,       -- bus error on store data access
+    -- instruction bus --
+    i_bus_addr_o   => i_bus_addr_o,   -- bus access address
+    i_bus_rdata_i  => i_bus_rdata_i,  -- bus read data
+    i_bus_wdata_o  => i_bus_wdata_o,  -- bus write data
+    i_bus_ben_o    => i_bus_ben_o,    -- byte enable
+    i_bus_we_o     => i_bus_we_o,     -- write enable
+    i_bus_re_o     => i_bus_re_o,     -- read enable
+    i_bus_cancel_o => i_bus_cancel_o, -- cancel current bus transaction
+    i_bus_ack_i    => i_bus_ack_i,    -- bus transfer acknowledge
+    i_bus_err_i    => i_bus_err_i,    -- bus transfer error
+    i_bus_fence_o  => i_bus_fence_o,  -- fence operation
+    -- data bus --
+    d_bus_addr_o   => d_bus_addr_o,   -- bus access address
+    d_bus_rdata_i  => d_bus_rdata_i,  -- bus read data
+    d_bus_wdata_o  => d_bus_wdata_o,  -- bus write data
+    d_bus_ben_o    => d_bus_ben_o,    -- byte enable
+    d_bus_we_o     => d_bus_we_o,     -- write enable
+    d_bus_re_o     => d_bus_re_o,     -- read enable
+    d_bus_cancel_o => d_bus_cancel_o, -- cancel current bus transaction
+    d_bus_ack_i    => d_bus_ack_i,    -- bus transfer acknowledge
+    d_bus_err_i    => d_bus_err_i,    -- bus transfer error
+    d_bus_fence_o  => d_bus_fence_o   -- fence operation
   );
-
-  -- advanced memory control --
-  bus_fence_o  <= ctrl(ctrl_bus_fence_c)  when (MEM_EXT_USE = true) else '0'; -- executed FENCE operations
-  bus_fencei_o <= ctrl(ctrl_bus_fencei_c) when (MEM_EXT_USE = true) else '0'; -- executed FENCEI operations
 
 
 end neorv32_cpu_rtl;
