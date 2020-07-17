@@ -71,7 +71,9 @@ CORE_TICKS elapsed_cycles; // NEORV32 specific
 	or zeroing some system parameters - e.g. setting the cpu clocks cycles to 0.
 */
 void start_time(void) {
-  elapsed_cycles = neorv32_cpu_get_cycle();
+  elapsed_cycles = 0; // this is time zero
+  neorv32_cpu_set_mcycle(0);
+  neorv32_cpu_set_minstret(0);
 	//GETMYTIME(&start_time_val );      
 }
 /* Function : stop_time
@@ -149,21 +151,14 @@ void portable_fini(core_portable *p)
   union {
     uint64_t uint64;
     uint32_t  uint32[sizeof(uint64_t)/2];
-  } exe_cycles;
-
-  union {
-    uint64_t uint64;
-    uint32_t  uint32[sizeof(uint64_t)/2];
   } exe_instructions, exe_time;
 
   exe_time.uint64 = (uint64_t)elapsed_cycles;
-  exe_cycles.uint64 = neorv32_cpu_get_cycle();
   exe_instructions.uint64 = neorv32_cpu_get_instret();
 
-  neorv32_uart_printf("\nNEORV32: Executed instructions       0x%x_%x\n", (uint32_t)exe_instructions.uint32[1], (uint32_t)exe_instructions.uint32[0]);
-  neorv32_uart_printf("NEORV32: Total required clock cycles 0x%x_%x\n", (uint32_t)exe_cycles.uint32[1], (uint32_t)exe_cycles.uint32[0]);
-  neorv32_uart_printf("NEORV32: CoreMark core clock cycles  0x%x_%x\n", (uint32_t)exe_time.uint32[1], (uint32_t)exe_time.uint32[0]);
+  neorv32_uart_printf("\nNEORV32: Executed instructions      0x%x_%x\n", (uint32_t)exe_instructions.uint32[1], (uint32_t)exe_instructions.uint32[0]);
+  neorv32_uart_printf("NEORV32: CoreMark core clock cycles 0x%x_%x\n", (uint32_t)exe_time.uint32[1], (uint32_t)exe_time.uint32[0]);
 
-  uint64_t average_cpi = exe_cycles.uint64 / exe_instructions.uint64;
+  uint64_t average_cpi = exe_time.uint64 / exe_instructions.uint64;
   neorv32_uart_printf("NEORV32: Average CPI (integer part only): %u cycles/instruction\n", (uint32_t)average_cpi);
 }
