@@ -60,6 +60,9 @@ end neorv32_cpu_cp_muldiv;
 
 architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
 
+  -- configuration - still experimental --
+  constant FAST_MUL_EN : boolean := false; -- use DSPs for faster multiplication
+
   -- controller --
   type state_t is (IDLE, DECODE, INIT_OPX, INIT_OPY, PROCESSING, FINALIZE, COMPLETED);
   signal state         : state_t;
@@ -86,6 +89,10 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   signal mul_do_add     : std_ulogic_vector(data_width_c downto 0);
   signal mul_sign_cycle : std_ulogic;
   signal mul_p_sext     : std_ulogic;
+  signal mul_op_x       : std_ulogic_vector(32 downto 0);
+  signal mul_op_y       : std_ulogic_vector(32 downto 0);
+  signal mul_buf_ff0    : std_ulogic_vector(65 downto 0);
+  signal mul_buf_ff1    : std_ulogic_vector(65 downto 0);
 
 begin
 
@@ -119,7 +126,7 @@ begin
           end if;
 
         when DECODE =>
-          cnt <= "11111";
+          --
           if (cp_op = cp_op_div_c) then -- result sign compensation for div?
             div_res_corr <= opx(opx'left) xor opy(opy'left);
           elsif (cp_op = cp_op_rem_c) then -- result sign compensation for rem?
@@ -127,14 +134,22 @@ begin
           else
             div_res_corr <= '0';
           end if;
+          --
           if (or_all_f(opy) = '0') then -- *divide* by 0?
             opy_is_zero <= '1';
           else
             opy_is_zero <= '0';
           end if;
+          --
           if (operation = '1') then -- division
+            cnt   <= "11111";
             state <= INIT_OPX;
           else -- multiplication
+            if (FAST_MUL_EN = false) then
+              cnt <= "11111";
+            else
+              cnt <= "00101"; -- FIXME
+            end if;
             start <= '1';
             state <= PROCESSING;
           end if;
@@ -183,12 +198,22 @@ begin
   multiplier_core: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (start = '1') then -- start new multiplication
-        mul_product(63 downto 32) <= (others => '0');
-        mul_product(31 downto 00) <= opy;
-      elsif ((state = PROCESSING) or (state = FINALIZE)) and (operation = '0') then
-        mul_product(63 downto 31) <= mul_do_add(32 downto 0);
-        mul_product(30 downto 00) <= mul_product(31 downto 1);
+      if (FAST_MUL_EN = false) then -- use small iterative computation
+        if (start = '1') then -- start new multiplication
+          mul_product(63 downto 32) <= (others => '0');
+          mul_product(31 downto 00) <= opy;
+        elsif ((state = PROCESSING) or (state = FINALIZE)) and (operation = '0') then
+          mul_product(63 downto 31) <= mul_do_add(32 downto 0);
+          mul_product(30 downto 00) <= mul_product(31 downto 1);
+        end if;
+      else -- use direct approach using (several!) DSP blocks
+        if (start = '1') then
+          mul_op_x <= (opx(opx'left) and opx_is_signed) & opx;
+          mul_op_y <= (opy(opy'left) and opy_is_signed) & opy;
+        end if;
+        mul_buf_ff0 <= std_ulogic_vector(signed(mul_op_x) * signed(mul_op_y));
+        mul_buf_ff1 <= mul_buf_ff0;
+        mul_product <= mul_buf_ff1(63 downto 0); -- let the register balancing do the magic here
       end if;
     end if;
   end process multiplier_core;
