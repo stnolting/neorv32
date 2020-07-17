@@ -42,16 +42,12 @@
   .global _start
 
 
-  // custom CSRs
-  .set CSR_MISPACEBASE, 0xfc4  // CUSTOM (r/-): Base address of instruction memory space (via MEM_ISPACE_BASE generic) */
-  .set CSR_MDSPACEBASE, 0xfc5  // CUSTOM (r/-): Base address of data memory space (via MEM_DSPACE_BASE generic) */
-  .set CSR_MISPACESIZE, 0xfc6  // CUSTOM (r/-): Total size of instruction memory space in byte (via MEM_ISPACE_SIZE generic) */
-  .set CSR_MDSPACESIZE, 0xfc7  // CUSTOM (r/-): Total size of data memory space in byte (via MEM_DSPACE_SIZE generic) */
-
   // IO region
-  .set IO_BEGIN,    0xFFFFFF80  // start of processor-internal IO region
-  .set MTIMECMP_LO, 0xFFFFFF98
-  .set MTIMECMP_HI, 0xFFFFFF9C
+  .set IO_BEGIN, 0xFFFFFF80 // start of processor-internal IO region
+
+  // SYSINFO
+  .set SYSINFO_DSPACE_BASE, 0xFFFFFFF4
+  .set SYSINFO_DSPACE_SIZE, 0xFFFFFFFC
 
 
 _start:
@@ -114,8 +110,8 @@ __crt0_tests:
 // Setup stack pointer
 // *********************************************************
 __crt0_stack_pointer_init:
-  csrr  x11, CSR_MDSPACEBASE // data memory space base address
-  csrr  x12, CSR_MDSPACESIZE // data memory space size
+  lw    x11, SYSINFO_DSPACE_BASE(zero) // data memory space base address
+  lw    x12, SYSINFO_DSPACE_SIZE(zero) // data memory space size
   add   sp, x11, x12
   addi  sp, sp, -4 // stack pointer = last entry
   addi  fp, sp, 0  // frame pointer = stack pointer
@@ -138,7 +134,7 @@ __crt0_neorv32_rte_init:
   la    x11, __crt0_neorv32_rte
   csrw  mtvec, x11 // set address of first-level exception handler
 
-  csrr  x11, CSR_MDSPACEBASE // data memory space base address
+  lw    x11, SYSINFO_DSPACE_BASE(zero) // data memory space base address
   la    x12, __crt0_neorv32_rte_dummy_hanlder
   li    x13, 2*16  // number of entries (16xEXC, 16xIRQ)
 
@@ -161,11 +157,6 @@ __crt0_reset_io_loop:
   sw   zero, 0(x11)
   addi x11, x11, 4
   bne  zero, x11, __crt0_reset_io_loop
-
-  // set mtime_compare to MAX (to prevent an IRQ)
-  li x11, -1
-  sw x11, MTIMECMP_LO(zero)  
-  sw x11, MTIMECMP_HI(zero)
 
 
 // *********************************************************
@@ -280,7 +271,7 @@ __crt0_neorv32_rte:
 
   andi  t1, t0, 0x0f      // isolate cause ID
   slli  t1, t1, 2         // make address offset
-  csrr  ra, CSR_MDSPACEBASE  // data memory space base address
+  lw    ra, SYSINFO_DSPACE_BASE(zero)  // data memory space base address
   add   t1, t1, ra        // get vetor table entry address (EXC vectors)
 
   csrr  ra, mepc          // get return address
