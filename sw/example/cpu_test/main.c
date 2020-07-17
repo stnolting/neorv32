@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file cpu_test/main.c
  * @author Stephan Nolting
- * @brief Simple CPU interrupts and exceptions test program.
+ * @brief Simple CPU (interrupts and exceptions) test program.
  **************************************************************************/
 
 #include <neorv32.h>
@@ -63,37 +63,13 @@
  * @name Exception handler acknowledges
  **************************************************************************/
 /**@{*/
-/** Exception handler answers / identifiers */
-enum EXC_HANDLER_ANSWERS {
-  ANSWER_I_MISALIGN =  0x12345678, /**< Answer for misaligned instruction address excetion */
-  ANSWER_I_ACCESS   =  0xAABB1133, /**< Answer for instruction access fault excetion */
-  ANSWER_I_ILLEGAL  =  0x0199203B, /**< Answer for illegal instruction excetion */
-  ANSWER_BREAKPOINT =  0x12322330, /**< Answer for breakpoint excetion */
-  ANSWER_L_MISALIGN =  0xBABCCCCC, /**< Answer for misaligned load address excetion */
-  ANSWER_L_ACCESS   =  0xDEF728AA, /**< Answer for load access fault excetion */
-  ANSWER_S_MISALIGN =  0xFF0927DD, /**< Answer for misaligned store address excetion */
-  ANSWER_S_ACCESS   =  0x20091777, /**< Answer for store access fault excetion */
-  ANSWER_ENVCALL    =  0x55662244, /**< Answer for environment call excetion */
-  ANSWER_MTI        =  0x0012FA53, /**< Answer for machine timer interrupt */
-  ANSWER_CLIC       =  0xEEF33088  /**< Answer for machine external interrupt */
-};
-/** Gloabl volatile variable to store exception handler answer */
+/** Global volatile variable to store exception handler answer */
 volatile uint32_t exception_handler_answer;
 /**@}*/
 
 
 // Prototypes
-void exc_handler_i_misalign(void);
-void exc_handler_i_access(void);
-void exc_handler_i_illegal(void);
-void exc_handler_breakpoint(void);
-void exc_handler_l_misalign(void);
-void exc_handler_l_access(void);
-void exc_handler_s_misalign(void);
-void exc_handler_s_access(void);
-void exc_handler_envcall(void);
-void exc_handler_mti(void);
-void irq_handler_clic_ch0();
+void global_trap_handler(void);
 
 
 /**********************************************************************//**
@@ -164,26 +140,26 @@ int main() {
 
   // install exception handler functions
   int install_err = 0;
-  install_err += neorv32_rte_exception_install(EXCID_I_MISALIGNED, exc_handler_i_misalign);
-  install_err += neorv32_rte_exception_install(EXCID_I_ACCESS,     exc_handler_i_access);
-  install_err += neorv32_rte_exception_install(EXCID_I_ILLEGAL,    exc_handler_i_illegal);
-  install_err += neorv32_rte_exception_install(EXCID_BREAKPOINT,   exc_handler_breakpoint);
-  install_err += neorv32_rte_exception_install(EXCID_L_MISALIGNED, exc_handler_l_misalign);
-  install_err += neorv32_rte_exception_install(EXCID_L_ACCESS,     exc_handler_l_access);
-  install_err += neorv32_rte_exception_install(EXCID_S_MISALIGNED, exc_handler_s_misalign);
-  install_err += neorv32_rte_exception_install(EXCID_S_ACCESS,     exc_handler_s_access);
-  install_err += neorv32_rte_exception_install(EXCID_MENV_CALL,    exc_handler_envcall);
-  install_err += neorv32_rte_exception_install(EXCID_MTI,          exc_handler_mti);
+  install_err += neorv32_rte_exception_install(EXCID_I_MISALIGNED, global_trap_handler);
+  install_err += neorv32_rte_exception_install(EXCID_I_ACCESS,     global_trap_handler);
+  install_err += neorv32_rte_exception_install(EXCID_I_ILLEGAL,    global_trap_handler);
+  install_err += neorv32_rte_exception_install(EXCID_BREAKPOINT,   global_trap_handler);
+  install_err += neorv32_rte_exception_install(EXCID_L_MISALIGNED, global_trap_handler);
+  install_err += neorv32_rte_exception_install(EXCID_L_ACCESS,     global_trap_handler);
+  install_err += neorv32_rte_exception_install(EXCID_S_MISALIGNED, global_trap_handler);
+  install_err += neorv32_rte_exception_install(EXCID_S_ACCESS,     global_trap_handler);
+  install_err += neorv32_rte_exception_install(EXCID_MENV_CALL,    global_trap_handler);
+  install_err += neorv32_rte_exception_install(EXCID_MTI,          global_trap_handler);
 //install_err += neorv32_rte_exception_install(EXCID_MEI,          -); done by neorv32_clic_handler_install
 
   if (install_err) {
-    neorv32_uart_printf("install error!\n");
+    neorv32_uart_printf("RTE install error!\n");
     return 0;
   }
 
 
   // install interrupt handler for clic WDT channel
-  install_err += neorv32_clic_handler_install(CLIC_CH_WDT, irq_handler_clic_ch0);
+  install_err += neorv32_clic_handler_install(CLIC_CH_WDT, global_trap_handler);
 
   if (install_err) {
     neorv32_uart_printf("CLIC install error!\n");
@@ -202,13 +178,13 @@ int main() {
   // enable global interrupts
   neorv32_cpu_eint();
 
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
 
 
   // ----------------------------------------------------------
   // Instruction memory test
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("IMEM_TEST:   ");
 #if (PROBING_MEM_TEST == 1)
   cnt_test++;
@@ -218,7 +194,7 @@ int main() {
 
   while(1) {
     asm volatile ("lb zero, 0(%[input_j])" :  : [input_j] "r" (dmem_probe_addr));
-    if (exception_handler_answer == ANSWER_L_ACCESS) {
+    if (exception_handler_answer == EXCCODE_L_ACCESS) {
       break;
     }
     dmem_probe_addr++;
@@ -242,7 +218,7 @@ int main() {
   // ----------------------------------------------------------
   // Data memory test
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("DMEM_TEST:   ");
 #if (PROBING_MEM_TEST == 1)
   cnt_test++;
@@ -252,7 +228,7 @@ int main() {
 
   while(1) {
     asm volatile ("lb zero, 0(%[input_j])" :  : [input_j] "r" (imem_probe_addr));
-    if (exception_handler_answer == ANSWER_L_ACCESS) {
+    if (exception_handler_answer == EXCCODE_L_ACCESS) {
       break;
     }
     imem_probe_addr++;
@@ -281,10 +257,10 @@ int main() {
   cnt_test++;
 
   neorv32_cpu_csr_write(CSR_MCYCLE,  0x1BCD1234);
-  neorv32_cpu_csr_write(CSR_MCYCLEH, 0x22334455);
+  neorv32_cpu_csr_write(CSR_MCYCLEH, 0x00034455);
 
   if (((neorv32_cpu_csr_read(CSR_MCYCLE) & 0xffff0000L) == 0x1BCD0000) &&
-      (neorv32_cpu_csr_read(CSR_MCYCLEH) == 0x22334455)) {
+      (neorv32_cpu_csr_read(CSR_MCYCLEH) == 0x00034455)) {
     neorv32_uart_printf("ok\n");
     cnt_ok++;
   }
@@ -301,10 +277,10 @@ int main() {
   cnt_test++;
 
   neorv32_cpu_csr_write(CSR_MINSTRET,  0x11224499);
-  neorv32_cpu_csr_write(CSR_MINSTRETH, 0x00110011);
+  neorv32_cpu_csr_write(CSR_MINSTRETH, 0x00090011);
 
   if (((neorv32_cpu_csr_read(CSR_MINSTRET) & 0xffff0000L) == 0x11220000) &&
-       (neorv32_cpu_csr_read(CSR_MINSTRETH) == 0x00110011)) {
+       (neorv32_cpu_csr_read(CSR_MINSTRETH) == 0x00090011)) {
     neorv32_uart_printf("ok\n");
     cnt_ok++;
   }
@@ -340,13 +316,13 @@ int main() {
   // Test fence instructions - make sure CPU does not crash here and throws no exception
   // a more complex test is provided by the RISC-V compliance test
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("FENCE(.I):   ");
   cnt_test++;
   asm volatile ("fence");
   asm volatile ("fence.i");
 
-  if (exception_handler_answer != 0) {
+  if (exception_handler_answer != 0xFFFFFFFF) {
     neorv32_uart_printf("fail\n");
     cnt_fail++;
   }
@@ -359,7 +335,7 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned instruction address
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("EXC I_ALIGN: ");
 
   // skip if C-mode is not implemented
@@ -371,7 +347,7 @@ int main() {
     ((void (*)(void))ADDR_UNALIGNED)();
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-    if (exception_handler_answer == ANSWER_I_MISALIGN) {
+    if (exception_handler_answer == EXCCODE_I_MISALIGNED) {
       neorv32_uart_printf("ok\n");
       cnt_ok++;
     }
@@ -389,7 +365,7 @@ int main() {
   // ----------------------------------------------------------
   // Instruction access fault
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("EXC I_ACC:   ");
   cnt_test++;
 
@@ -397,7 +373,7 @@ int main() {
   ((void (*)(void))ADDR_UNREACHABLE)();
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == ANSWER_I_ACCESS) {
+  if (exception_handler_answer == EXCCODE_I_ACCESS) {
     neorv32_uart_printf("ok\n");
     cnt_ok++;
   }
@@ -411,7 +387,7 @@ int main() {
   // ----------------------------------------------------------
   // Illegal instruction
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("EXC I_ILLEG: ");
   cnt_test++;
 
@@ -425,7 +401,7 @@ int main() {
   asm volatile ( "jalr ra, %0 " : "=r" (tmp_a) : "r"  (tmp_a));
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == ANSWER_I_ILLEGAL) {
+  if (exception_handler_answer == EXCCODE_I_ILLEGAL) {
     neorv32_uart_printf("ok\n");
     cnt_ok++;
   }
@@ -439,14 +415,14 @@ int main() {
   // ----------------------------------------------------------
   // Breakpoint instruction
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("EXC BREAK:   ");
   cnt_test++;
 
   asm volatile("EBREAK");
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == ANSWER_BREAKPOINT) {
+  if (exception_handler_answer == EXCCODE_BREAKPOINT) {
     neorv32_uart_printf("ok\n");
     cnt_ok++;
   }
@@ -460,7 +436,7 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned load address
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("EXC L_ALIGN: ");
   cnt_test++;
 
@@ -468,7 +444,7 @@ int main() {
   asm volatile ("lw zero, %[input_i](zero)" :  : [input_i] "i" (ADDR_UNALIGNED));
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == ANSWER_L_MISALIGN) {
+  if (exception_handler_answer == EXCCODE_L_MISALIGNED) {
     neorv32_uart_printf("ok\n");
     cnt_ok++;
   }
@@ -482,7 +458,7 @@ int main() {
   // ----------------------------------------------------------
   // Load access fault
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("EXC L_ACC:   ");
   cnt_test++;
 
@@ -490,7 +466,7 @@ int main() {
   dummy_dst = MMR_UNREACHABLE;
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == ANSWER_L_ACCESS) {
+  if (exception_handler_answer == EXCCODE_L_ACCESS) {
     neorv32_uart_printf("ok\n");
     cnt_ok++;
   }
@@ -504,7 +480,7 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned store address
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("EXC S_ALIGN: ");
   cnt_test++;
 
@@ -512,7 +488,7 @@ int main() {
   asm volatile ("sw zero, %[input_i](zero)" :  : [input_i] "i" (ADDR_UNALIGNED));
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == ANSWER_S_MISALIGN) {
+  if (exception_handler_answer == EXCCODE_S_MISALIGNED) {
     neorv32_uart_printf("ok\n");
     cnt_ok++;
   }
@@ -526,7 +502,7 @@ int main() {
   // ----------------------------------------------------------
   // Store access fault
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("EXC S_ACC:   ");
   cnt_test++;
 
@@ -534,7 +510,7 @@ int main() {
   MMR_UNREACHABLE = 0;
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == ANSWER_S_ACCESS) {
+  if (exception_handler_answer == EXCCODE_S_ACCESS) {
     neorv32_uart_printf("ok\n");
     cnt_ok++;
   }
@@ -548,14 +524,14 @@ int main() {
   // ----------------------------------------------------------
   // Environment call
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("EXC ENVCALL: ");
   cnt_test++;
 
   asm volatile("ECALL");
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == ANSWER_ENVCALL) {
+  if (exception_handler_answer == EXCCODE_MENV_CALL) {
     neorv32_uart_printf("ok\n");
     cnt_ok++;
   }
@@ -569,7 +545,7 @@ int main() {
   // ----------------------------------------------------------
   // Machine timer interrupt (MTIME)
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("IRQ MTI:     ");
   cnt_test++;
 
@@ -583,7 +559,7 @@ int main() {
   asm volatile("nop");
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == ANSWER_MTI) {
+  if (exception_handler_answer == EXCCODE_MTI) {
     neorv32_uart_printf("ok\n");
     cnt_ok++;
   }
@@ -600,7 +576,7 @@ int main() {
   // ----------------------------------------------------------
   // Machine external interrupt (via CLIC)
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("IRQ MEI:     ");
   cnt_test++;
 
@@ -614,7 +590,7 @@ int main() {
   asm volatile("nop");
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == ANSWER_CLIC) {
+  if (exception_handler_answer == EXCCODE_MEI) {
     neorv32_uart_printf("ok\n");
     cnt_ok++;
   }
@@ -628,7 +604,7 @@ int main() {
   // ----------------------------------------------------------
   // Test WFI ("sleep") instructions
   // ----------------------------------------------------------
-  exception_handler_answer = 0;
+  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("WFI:         ");
   cnt_test++;
 
@@ -638,7 +614,7 @@ int main() {
   // put CPU into sleep mode
   asm volatile ("wfi");
 
-  if (exception_handler_answer != ANSWER_MTI) {
+  if (exception_handler_answer != EXCCODE_MTI) {
     neorv32_uart_printf("fail\n");
     cnt_fail++;
   }
@@ -665,81 +641,8 @@ int main() {
 
 
 /**********************************************************************//**
- * Misaligned instruction address exception handler.
+ * Trap handler for ALL exceptions/interrupts.
  **************************************************************************/
-void exc_handler_i_misalign(void) {
-  exception_handler_answer = ANSWER_I_MISALIGN;
+void global_trap_handler(void) {
+  exception_handler_answer = neorv32_cpu_csr_read(CSR_MCAUSE);
 }
-
-/**********************************************************************//**
- * Instruction access fault exception handler.
- **************************************************************************/
-void exc_handler_i_access(void) {
-  exception_handler_answer = ANSWER_I_ACCESS;
-}
-
-/**********************************************************************//**
- * Illegal instruction exception handler.
- **************************************************************************/
-void exc_handler_i_illegal(void) {
-  exception_handler_answer = ANSWER_I_ILLEGAL;
-}
-
-/**********************************************************************//**
- * Breakpoint exception handler.
- **************************************************************************/
-void exc_handler_breakpoint(void) {
-  exception_handler_answer = ANSWER_BREAKPOINT;
-}
-
-/**********************************************************************//**
- * Misaligned load address exception handler.
- **************************************************************************/
-void exc_handler_l_misalign(void) {
-  exception_handler_answer = ANSWER_L_MISALIGN;
-}
-
-/**********************************************************************//**
- * Load instruction access fault exception handler.
- **************************************************************************/
-void exc_handler_l_access(void) {
-  exception_handler_answer = ANSWER_L_ACCESS;
-}
-
-/**********************************************************************//**
- * Misaligned store address exception handler.
- **************************************************************************/
-void exc_handler_s_misalign(void) {
-  exception_handler_answer = ANSWER_S_MISALIGN;
-}
-
-/**********************************************************************//**
- * Store address access fault exception handler.
- **************************************************************************/
-void exc_handler_s_access(void) {
-  exception_handler_answer = ANSWER_S_ACCESS;
-}
-
-/**********************************************************************//**
- * Environment call exception handler.
- **************************************************************************/
-void exc_handler_envcall(void) {
-  exception_handler_answer = ANSWER_ENVCALL;
-}
-
-/**********************************************************************//**
- * Machine timer interrupt exception handler.
- **************************************************************************/
-void exc_handler_mti(void) {
-  exception_handler_answer = ANSWER_MTI;
-  // set CMP of machine system timer MTIME to max to prevent an IRQ
-  neorv32_mtime_set_timecmp(-1);
-}
-
-/**********************************************************************//**
- * CLIC interrupt handler for channel 0.
- **************************************************************************/
-void irq_handler_clic_ch0(void) {
-  exception_handler_answer = ANSWER_CLIC;
-}
-
