@@ -46,40 +46,15 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
-    CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
-    BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
-    CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= x"00000000"; -- hardware thread id
+    CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
-    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
-    -- Memory configuration: Instruction memory --
-    MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
-    MEM_ISPACE_SIZE              : natural := 8*1024; -- total size of instruction memory space in byte
-    MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE            : natural := 8*1024; -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
-    -- Memory configuration: Data memory --
-    MEM_DSPACE_BASE              : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
-    MEM_DSPACE_SIZE              : natural := 4*1024; -- total size of data memory space in byte
-    MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE            : natural := 4*1024; -- size of processor-internal data memory in bytes
-    -- Memory configuration: External memory interface --
-    MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
-    -- Processor peripherals --
-    IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
-    IO_UART_USE                  : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                   : boolean := true;   -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                   : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
-    IO_CLIC_USE                  : boolean := true;   -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE                  : boolean := true;   -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE               : boolean := true    -- implement dummy device (DEVNULL)?
+    CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei : boolean := true   -- implement instruction stream sync.?
   );
   port (
     -- global control --
@@ -535,14 +510,9 @@ begin
   execute_engine_fsm_sync_rst: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      if (BOOTLOADER_USE = true) then -- boot from bootloader ROM
-        execute_engine.pc      <= boot_base_c(data_width_c-1 downto 1) & '0';
-        execute_engine.last_pc <= boot_base_c(data_width_c-1 downto 1) & '0';
-      else -- boot from IMEM
-        execute_engine.pc      <= MEM_ISPACE_BASE(data_width_c-1 downto 1) & '0';
-        execute_engine.last_pc <= MEM_ISPACE_BASE(data_width_c-1 downto 1) & '0';
-      end if;
-      execute_engine.state <= SYS_WAIT;
+      execute_engine.pc      <= CPU_BOOT_ADDR(data_width_c-1 downto 1) & '0';
+      execute_engine.last_pc <= CPU_BOOT_ADDR(data_width_c-1 downto 1) & '0';
+      execute_engine.state   <= SYS_WAIT;
       --
       execute_engine.sleep <= '0';
     elsif rising_edge(clk_i) then
@@ -1051,10 +1021,10 @@ begin
                (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"344") or -- mip
                --
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c00") and (CSR_COUNTERS_USE = true)) or -- cycle
-               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c01") and (CSR_COUNTERS_USE = true) and (IO_MTIME_USE = true)) or -- time
+               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c01") and (CSR_COUNTERS_USE = true)) or -- time
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c02") and (CSR_COUNTERS_USE = true)) or -- instret
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c80") and (CSR_COUNTERS_USE = true)) or -- cycleh
-               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c81") and (CSR_COUNTERS_USE = true) and (IO_MTIME_USE = true)) or -- timeh
+               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c81") and (CSR_COUNTERS_USE = true)) or -- timeh
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"c82") and (CSR_COUNTERS_USE = true)) or -- instreth
                --
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"b00") and (CSR_COUNTERS_USE = true)) or -- mcycle
@@ -1065,14 +1035,7 @@ begin
                (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"f11") or -- mvendorid
                (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"f12") or -- marchid
                (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"f13") or -- mimpid
-               (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"f14") or -- mhartid
-               --
-               (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"fc0") or -- mfeatures
-               (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"fc1") or -- mclock
-               (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"fc4") or -- mispacebase
-               (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"fc5") or -- mispacesize
-               (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"fc6") or -- mdspacebase
-               (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"fc7") then -- mdspacesize
+               (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = x"f14") then -- mhartid
               illegal_instruction <= '0';
             else
               illegal_instruction <= '1';
@@ -1422,36 +1385,6 @@ begin
             csr_rdata_o <= hw_version_c;
           when x"f14" => -- R/-: mhartid - hardware thread ID
             csr_rdata_o <= HW_THREAD_ID;
-
-          -- CUSTOM read-only machine CSRs --
-          when x"fc0" => -- R/-: mfeatures - implemented processor devices/features
-            csr_rdata_o(00) <= bool_to_ulogic_f(BOOTLOADER_USE);   -- implement processor-internal bootloader?
-            csr_rdata_o(01) <= bool_to_ulogic_f(MEM_EXT_USE);      -- implement external memory bus interface?
-            csr_rdata_o(02) <= bool_to_ulogic_f(MEM_INT_IMEM_USE); -- implement processor-internal instruction memory?
-            csr_rdata_o(03) <= bool_to_ulogic_f(MEM_INT_IMEM_ROM); -- implement processor-internal instruction memory as ROM?
-            csr_rdata_o(04) <= bool_to_ulogic_f(MEM_INT_DMEM_USE); -- implement processor-internal data memory?
-            csr_rdata_o(05) <= bool_to_ulogic_f(CSR_COUNTERS_USE); -- implement RISC-V (performance) counter?
-            --
-            csr_rdata_o(16) <= bool_to_ulogic_f(IO_GPIO_USE);      -- implement general purpose input/output port unit (GPIO)?
-            csr_rdata_o(17) <= bool_to_ulogic_f(IO_MTIME_USE);     -- implement machine system timer (MTIME)?
-            csr_rdata_o(18) <= bool_to_ulogic_f(IO_UART_USE);      -- implement universal asynchronous receiver/transmitter (UART)?
-            csr_rdata_o(19) <= bool_to_ulogic_f(IO_SPI_USE);       -- implement serial peripheral interface (SPI)?
-            csr_rdata_o(20) <= bool_to_ulogic_f(IO_TWI_USE);       -- implement two-wire interface (TWI)?
-            csr_rdata_o(21) <= bool_to_ulogic_f(IO_PWM_USE);       -- implement pulse-width modulation unit (PWM)?
-            csr_rdata_o(22) <= bool_to_ulogic_f(IO_WDT_USE);       -- implement watch dog timer (WDT)?
-            csr_rdata_o(23) <= bool_to_ulogic_f(IO_CLIC_USE);      -- implement core local interrupt controller (CLIC)?
-            csr_rdata_o(24) <= bool_to_ulogic_f(IO_TRNG_USE);      -- implement true random number generator (TRNG)?
-            csr_rdata_o(25) <= bool_to_ulogic_f(IO_DEVNULL_USE);   -- implement dummy device (DEVNULL)?
-          when x"fc1" => -- R/-: mclock - processor clock speed
-            csr_rdata_o <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
-          when x"fc4" => -- R/-: mispacebase - Base address of instruction memory space
-            csr_rdata_o <= MEM_ISPACE_BASE;
-          when x"fc5" => -- R/-: mdspacebase - Base address of data memory space
-            csr_rdata_o <= MEM_DSPACE_BASE;
-          when x"fc6" => -- R/-: mispacesize - Total size of instruction memory space in byte
-            csr_rdata_o <= std_ulogic_vector(to_unsigned(MEM_ISPACE_SIZE, 32));
-          when x"fc7" => -- R/-: mdspacesize - Total size of data memory space in byte
-            csr_rdata_o <= std_ulogic_vector(to_unsigned(MEM_DSPACE_SIZE, 32));
 
           -- undefined/unavailable --
           when others =>

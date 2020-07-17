@@ -50,41 +50,17 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu is
   generic (
     -- General --
-    CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
-    BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
-    CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= x"00000000"; -- hardware thread id
+    CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
-    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
-    -- Memory configuration: Instruction memory --
-    MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
-    MEM_ISPACE_SIZE              : natural := 8*1024; -- total size of instruction memory space in byte
-    MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE            : natural := 8*1024; -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
-    -- Memory configuration: Data memory --
-    MEM_DSPACE_BASE              : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
-    MEM_DSPACE_SIZE              : natural := 4*1024; -- total size of data memory space in byte
-    MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE            : natural := 4*1024; -- size of processor-internal data memory in bytes
+    CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
     -- Memory configuration: External memory interface --
-    MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
-    MEM_EXT_TIMEOUT              : natural := 15;     -- cycles after which a valid bus access will timeout
-    -- Processor peripherals --
-    IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
-    IO_UART_USE                  : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                   : boolean := true;   -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                   : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
-    IO_CLIC_USE                  : boolean := true;   -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE                  : boolean := true;   -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE               : boolean := true    -- implement dummy device (DEVNULL)?
+    MEM_EXT_TIMEOUT              : natural := 15     -- cycles after which a valid bus access will timeout
   );
   port (
     -- global control --
@@ -124,28 +100,28 @@ end neorv32_cpu;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- local signals --
-  signal ctrl        : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
-  signal alu_cmp     : std_ulogic_vector(1 downto 0); -- alu comparator result
-  signal imm         : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
-  signal instr       : std_ulogic_vector(data_width_c-1 downto 0); -- new instruction
-  signal rs1, rs2    : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
-  signal alu_res     : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
-  signal alu_add     : std_ulogic_vector(data_width_c-1 downto 0); -- alu adder result
-  signal rdata       : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
-  signal alu_wait    : std_ulogic; -- alu is busy due to iterative unit
-  signal bus_i_wait  : std_ulogic; -- wait for current bus instruction fetch
-  signal bus_d_wait  : std_ulogic; -- wait for current bus data access
-  signal csr_rdata   : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
-  signal mar         : std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
-  signal ma_instr    : std_ulogic; -- misaligned instruction address
-  signal ma_load     : std_ulogic; -- misaligned load data address
-  signal ma_store    : std_ulogic; -- misaligned store data address
-  signal be_instr    : std_ulogic; -- bus error on instruction access
-  signal be_load     : std_ulogic; -- bus error on load data access
-  signal be_store    : std_ulogic; -- bus error on store data access
-  signal fetch_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
-  signal curr_pc     : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
-  signal next_pc     : std_ulogic_vector(data_width_c-1 downto 0); -- next pc (for current executed instruction)
+  signal ctrl       : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+  signal alu_cmp    : std_ulogic_vector(1 downto 0); -- alu comparator result
+  signal imm        : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
+  signal instr      : std_ulogic_vector(data_width_c-1 downto 0); -- new instruction
+  signal rs1, rs2   : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
+  signal alu_res    : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
+  signal alu_add    : std_ulogic_vector(data_width_c-1 downto 0); -- alu adder result
+  signal rdata      : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
+  signal alu_wait   : std_ulogic; -- alu is busy due to iterative unit
+  signal bus_i_wait : std_ulogic; -- wait for current bus instruction fetch
+  signal bus_d_wait : std_ulogic; -- wait for current bus data access
+  signal csr_rdata  : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
+  signal mar        : std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
+  signal ma_instr   : std_ulogic; -- misaligned instruction address
+  signal ma_load    : std_ulogic; -- misaligned load data address
+  signal ma_store   : std_ulogic; -- misaligned store data address
+  signal be_instr   : std_ulogic; -- bus error on instruction access
+  signal be_load    : std_ulogic; -- bus error on load data access
+  signal be_store   : std_ulogic; -- bus error on store data access
+  signal fetch_pc   : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
+  signal curr_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
+  signal next_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- next pc (for current executed instruction)
 
   -- co-processor interface --
   signal cp0_data,  cp1_data  : std_ulogic_vector(data_width_c-1 downto 0);
@@ -158,40 +134,15 @@ begin
   neorv32_cpu_control_inst: neorv32_cpu_control
   generic map (
     -- General --
-    CLOCK_FREQUENCY              => CLOCK_FREQUENCY,  -- clock frequency of clk_i in Hz
-    BOOTLOADER_USE               => BOOTLOADER_USE,   -- implement processor-internal bootloader?
     CSR_COUNTERS_USE             => CSR_COUNTERS_USE, -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     HW_THREAD_ID                 => HW_THREAD_ID,     -- hardware thread id
+    CPU_BOOT_ADDR                => CPU_BOOT_ADDR,    -- cpu boot address
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,     -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,     -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,     -- implement muld/div extension?
-    CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr, -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
-    -- Memory configuration: Instruction memory --
-    MEM_ISPACE_BASE              => MEM_ISPACE_BASE,   -- base address of instruction memory space
-    MEM_ISPACE_SIZE              => MEM_ISPACE_SIZE,   -- total size of instruction memory space in byte
-    MEM_INT_IMEM_USE             => MEM_INT_IMEM_USE,  -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM             => MEM_INT_IMEM_ROM,  -- implement processor-internal instruction memory as ROM
-    -- Memory configuration: Data memory --
-    MEM_DSPACE_BASE              => MEM_DSPACE_BASE,   -- base address of data memory space
-    MEM_DSPACE_SIZE              => MEM_DSPACE_SIZE,   -- total size of data memory space in byte
-    MEM_INT_DMEM_USE             => MEM_INT_DMEM_USE,  -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
-    -- Memory configuration: External memory interface --
-    MEM_EXT_USE                  => MEM_EXT_USE,       -- implement external memory bus interface?
-    -- Processor peripherals --
-    IO_GPIO_USE                  => IO_GPIO_USE,       -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE                 => IO_MTIME_USE,      -- implement machine system timer (MTIME)?
-    IO_UART_USE                  => IO_UART_USE,       -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                   => IO_SPI_USE,        -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                   => IO_TWI_USE,        -- implement two-wire interface (TWI)?
-    IO_PWM_USE                   => IO_PWM_USE,        -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                   => IO_WDT_USE,        -- implement watch dog timer (WDT)?
-    IO_CLIC_USE                  => IO_CLIC_USE,       -- implement core local interrupt controller (CLIC)?
-    IO_TRNG_USE                  => IO_TRNG_USE,       -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE               => IO_DEVNULL_USE     -- implement dummy device (DEVNULL)?
+    CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,       -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,       -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,       -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,   -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei -- implement instruction stream sync.?
   )
   port map (
     -- global control --
@@ -335,7 +286,7 @@ begin
     ma_instr_o     => ma_instr,       -- misaligned instruction address
     be_instr_o     => be_instr,       -- bus error on instruction access
     -- cpu data access interface --
-    addr_i         => alu_res,        -- ALU result -> access address
+    addr_i         => alu_add,        -- ALU.add result -> access address
     wdata_i        => rs2,            -- write data
     rdata_o        => rdata,          -- read data
     mar_o          => mar,            -- current memory address register
