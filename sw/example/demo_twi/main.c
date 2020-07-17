@@ -185,7 +185,7 @@ void set_speed(void) {
   }
 
   // print new clock frequency
-  uint32_t clock = neorv32_cpu_csr_read(CSR_MCLOCK);
+  uint32_t clock = SYSINFO_CLK;
   switch (prsc) {
     case 0: clock = clock / 2; break;
     case 1: clock = clock / 4; break;

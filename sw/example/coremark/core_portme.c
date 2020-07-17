@@ -108,7 +108,7 @@ CORE_TICKS get_time(void) {
 */
 secs_ret time_in_secs(CORE_TICKS ticks) {
 	//secs_ret retval=((secs_ret)ticks) / (secs_ret)EE_TICKS_PER_SEC;
-	secs_ret retval=(secs_ret)(ticks / neorv32_cpu_csr_read(CSR_MCLOCK));
+	secs_ret retval=(secs_ret)(ticks / SYSINFO_CLK);
 	return retval;
 }
 
@@ -129,7 +129,7 @@ void portable_init(core_portable *p, int *argc, char *argv[])
   // setup neorv32 UART
   neorv32_uart_setup(BAUD_RATE, 0, 0);
 
-  neorv32_uart_printf("NEORV32: Processor running at %u Hz\n", (uint32_t)neorv32_cpu_csr_read(CSR_MCLOCK));
+  neorv32_uart_printf("NEORV32: Processor running at %u Hz\n", (uint32_t)SYSINFO_CLK);
   neorv32_uart_printf("NEORV32: Executing coremark (%u iterations). This may take some time...\n\n", (uint32_t)ITERATIONS);
 
 	if (sizeof(ee_ptr_int) != sizeof(ee_u8 *)) {
