@@ -183,7 +183,7 @@ int main(void) {
   neorv32_twi_disable();
 
   // get clock speed (in Hz)
-  uint32_t clock_speed = neorv32_cpu_csr_read(CSR_MCLOCK);
+  uint32_t clock_speed = SYSINFO_CLK;
 
   // init SPI for 8-bit, clock-mode 0, MSB-first, no interrupt
   if (clock_speed < 40000000) {
@@ -220,21 +220,21 @@ int main(void) {
                      "BLDV: "__DATE__"\nHWV:  ");
   neorv32_rte_print_hw_version();
   neorv32_uart_print("\nCLK:  ");
-  print_hex_word(neorv32_cpu_csr_read(CSR_MCLOCK));
+  print_hex_word(SYSINFO_CLK);
   neorv32_uart_print(" Hz\nMHID: ");
   print_hex_word(neorv32_cpu_csr_read(CSR_MHARTID));
   neorv32_uart_print("\nMISA: ");
   print_hex_word(neorv32_cpu_csr_read(CSR_MISA));
   neorv32_uart_print("\nCONF: ");
-  print_hex_word(neorv32_cpu_csr_read(CSR_MFEATURES));
+  print_hex_word(SYSINFO_FEATURES);
   neorv32_uart_print("\nIMEM: ");
-  print_hex_word(neorv32_cpu_csr_read(CSR_MISPACESIZE));
+  print_hex_word(SYSINFO_ISPACE_SIZE);
   neorv32_uart_print(" bytes @ ");
-  print_hex_word(neorv32_cpu_csr_read(CSR_MISPACEBASE));
+  print_hex_word(SYSINFO_ISPACE_BASE);
   neorv32_uart_print("\nDMEM: ");
-  print_hex_word(neorv32_cpu_csr_read(CSR_MDSPACESIZE));
+  print_hex_word(SYSINFO_DSPACE_SIZE);
   neorv32_uart_print(" bytes @ ");
-  print_hex_word(neorv32_cpu_csr_read(CSR_MDSPACEBASE));
+  print_hex_word(SYSINFO_DSPACE_BASE);
 
 
   // ------------------------------------------------
@@ -266,7 +266,10 @@ int main(void) {
     neorv32_uart_print("\n");
 
     if (c == 'r') { // restart bootloader
-      break;
+      neorv32_cpu_dint(); // disable global interrupts
+      // jump to beginning of boot ROM
+      asm volatile ("li t0, %[input_i]; jr t0" :  : [input_i] "i" (BOOTLOADER_BASE_ADDRESS));
+      while(1); // just for the compiler
     }
     else if (c == 'h') { // help menu
       print_help();
@@ -291,7 +294,7 @@ int main(void) {
     }
   }
 
-  return 0; // bootloader will restart when returning
+  return 0; // bootloader should never return
 }
 
 
@@ -341,7 +344,7 @@ void start_app(void) {
 
   // start app at instruction space base address
   while (1) {
-    register uint32_t app_base = neorv32_cpu_csr_read(CSR_MISPACEBASE);
+    register uint32_t app_base = SYSINFO_ISPACE_BASE;
     asm volatile ("jalr zero, %0" : : "r" (app_base));
   }
 }
@@ -355,7 +358,7 @@ void __attribute__((__interrupt__)) mtime_irq_handler(void) {
 
   // make sure this was caused by MTIME IRQ
   uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
-  if (cause != 0x80000007) { // raw exception code for MTI
+  if (cause != EXCCODE_MTI) { // raw exception code for MTI
     neorv32_uart_print("\n\nEXCEPTION: ");
     print_hex_word(cause);
     neorv32_uart_print(" @ 0x");
@@ -367,7 +370,7 @@ void __attribute__((__interrupt__)) mtime_irq_handler(void) {
     // toggle status LED
     neorv32_gpio_pin_toggle(STATUS_LED);
     // set time for next IRQ
-    neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (neorv32_cpu_csr_read(CSR_MCLOCK)/4));
+    neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (SYSINFO_CLK/4));
   }
 }
 
@@ -380,7 +383,7 @@ void __attribute__((__interrupt__)) mtime_irq_handler(void) {
 void get_exe(int src) {
 
   // is instruction memory (actually, the IMEM) read-only?
-  if (neorv32_cpu_csr_read(CSR_MFEATURES) & (1 << CPU_MFEATURES_MEM_INT_IMEM_ROM)) {
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM_ROM)) {
     system_error(ERROR_ROM);
   }
 
@@ -411,13 +414,13 @@ void get_exe(int src) {
   uint32_t check = get_exe_word(src, addr + EXE_OFFSET_CHECKSUM); // complement sum checksum
 
   // executable too large?
-  uint32_t imem_size = neorv32_cpu_csr_read(CSR_MISPACESIZE);
+  uint32_t imem_size = SYSINFO_ISPACE_SIZE;
   if (size > imem_size) {
     system_error(ERROR_SIZE);
   }
 
   // transfer program data
-  uint32_t *pnt = (uint32_t*)neorv32_cpu_csr_read(CSR_MISPACEBASE);
+  uint32_t *pnt = (uint32_t*)SYSINFO_ISPACE_BASE;
   uint32_t checksum = 0;
   uint32_t d = 0, i = 0;
   addr = addr + EXE_OFFSET_DATA;
@@ -503,7 +506,7 @@ void save_exe(void) {
 
   // store data from instruction memory and update checksum
   uint32_t checksum = 0;
-  uint32_t *pnt = (uint32_t*)neorv32_cpu_csr_read(CSR_MISPACEBASE);
+  uint32_t *pnt = (uint32_t*)SYSINFO_ISPACE_BASE;
   addr = addr + EXE_OFFSET_DATA;
   uint32_t i = 0;
   while (i < (size/4)) { // in words
