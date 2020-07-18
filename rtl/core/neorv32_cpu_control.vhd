@@ -333,16 +333,15 @@ begin
       when IFETCH_1 => -- store data from memory to buffer(s)
       -- ------------------------------------------------------------
         if (bus_i_wait_i = '0') or (be_instr_i = '1') or (ma_instr_i = '1') then -- wait for bus response
-          fetch_engine.i_buf_nxt          <= be_instr_i & ma_instr_i & instr_i(31 downto 0); -- store data word and exception info
-          fetch_engine.i_buf2_nxt         <= fetch_engine.i_buf;
-          fetch_engine.i_buf_state_nxt(1) <= fetch_engine.i_buf_state(0);
-          fetch_engine.i_buf_state_nxt(0) <= '1';
-          fetch_engine.bus_err_ack        <= '1'; -- ack bus errors, the execute engine has to take care of them
-          fetch_engine.state_nxt          <= IFETCH_2;
+          fetch_engine.i_buf_nxt       <= be_instr_i & ma_instr_i & instr_i(31 downto 0); -- store data word and exception info
+          fetch_engine.i_buf2_nxt      <= fetch_engine.i_buf;
+          fetch_engine.i_buf_state_nxt <= fetch_engine.i_buf_state(0) & '1';
+          fetch_engine.state_nxt       <= IFETCH_2;
         end if;
 
       when IFETCH_2 => -- construct instruction and issue
       -- ------------------------------------------------------------
+        fetch_engine.bus_err_ack <= '1'; -- acknowledge any instruction bus errors, the execute engine has to take care of them
         if (fetch_engine.i_buf_state(1) = '1') then
           if (fetch_engine.pc_fetch(1) = '0') or (CPU_EXTENSION_RISCV_C = false) then -- 32-bit aligned
             fetch_engine.ci_reg_nxt <= fetch_engine.i_buf2(33 downto 32) & fetch_engine.i_buf2(15 downto 00);
@@ -1370,11 +1369,11 @@ begin
           when x"c02" | x"b02" => -- R/(W): instret/minstret: Instructions-retired counter LOW
             csr_rdata_o <= csr.minstret(31 downto 0);
           when x"c80" | x"b80" => -- R/(W): cycleh/mcycleh: Cycle counter HIGH
-            csr_rdata_o <= x"000" & csr.mcycleh(19 downto 0);
+            csr_rdata_o <= x"000" & csr.mcycleh(19 downto 0); -- only the lowest 20 bit!
           when x"c81" => -- R/-: timeh: System time HIGH (from MTIME unit)
             csr_rdata_o <= systime(63 downto 32);
           when x"c82" | x"b82" => -- R/(W): instreth/minstreth: Instructions-retired counter HIGH
-            csr_rdata_o <= x"000" & csr.minstreth(19 downto 0);
+            csr_rdata_o <= x"000" & csr.minstreth(19 downto 0); -- only the lowest 20 bit!
 
           -- machine information registers --
           when x"f11" => -- R/-: mvendorid

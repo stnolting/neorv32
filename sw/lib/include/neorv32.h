@@ -511,13 +511,13 @@ enum NEORV32_TRNG_DUTY_enum {
  **************************************************************************/
 /**@{*/
 /** SYSINFO(0): Clock speed */
-#define SYSINFO_CLK (*(IO_ROM32 0xFFFFFFE0UL))
+#define SYSINFO_CLK         (*(IO_ROM32 0xFFFFFFE0UL))
 /** SYSINFO(1): reserved */
-#define SYSINFO_reserved0 (*(IO_ROM32 0xFFFFFFE4UL))
+#define SYSINFO_reserved0   (*(IO_ROM32 0xFFFFFFE4UL))
 /** SYSINFO(2): Clock speed */
-#define SYSINFO_FEATURES (*(IO_ROM32 0xFFFFFFE8UL))
+#define SYSINFO_FEATURES    (*(IO_ROM32 0xFFFFFFE8UL))
 /** SYSINFO(3): reserved */
-#define SYSINFO_reserved1 (*(IO_ROM32 0xFFFFFFECUL))
+#define SYSINFO_reserved1   (*(IO_ROM32 0xFFFFFFECUL))
 /** SYSINFO(4): Instruction memory address space base */
 #define SYSINFO_ISPACE_BASE (*(IO_ROM32 0xFFFFFFF0UL))
 /** SYSINFO(5): Data memory address space base */

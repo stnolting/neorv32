@@ -115,7 +115,7 @@ begin
   sysinfo_mem(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
 
   -- SYSINFO(1): reserved --
-  sysinfo_mem(1) <= (others => '0');
+  sysinfo_mem(1) <= (others => '0'); -- reserved - for custom user code?
 
   -- SYSINFO(2): Implemented processor devices/features --
   sysinfo_mem(2)(00) <= bool_to_ulogic_f(BOOTLOADER_USE);   -- implement processor-internal bootloader?
@@ -136,7 +136,7 @@ begin
   sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_DEVNULL_USE);   -- implement dummy device (DEVNULL)?
 
   -- SYSINFO(3): reserved --
-  sysinfo_mem(3) <= (others => '0'); -- reserved for technology-specific configuration options
+  sysinfo_mem(3) <= (others => '0'); -- reserved - for technology-specific configuration options?
 
   -- SYSINFO(4): Base address of instruction memory space --
   sysinfo_mem(4) <= MEM_ISPACE_BASE;

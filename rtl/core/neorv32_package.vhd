@@ -43,7 +43,7 @@ package neorv32_package is
   constant data_width_c : natural := 32; -- data width - FIXED!
   constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01020000"; -- no touchy!
 
-  -- Internal Functions ---------------------------------------------------------------------
+  -- Helper Functions -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function index_size_f(input : natural) return natural;
   function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural;
