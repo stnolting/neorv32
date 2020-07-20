@@ -223,7 +223,10 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("\n-- Central Processing Unit --\n");
 
   // Hart ID
-  neorv32_uart_printf("Hart ID:          0x%x\n", neorv32_cpu_csr_read(CSR_MHARTID));
+  neorv32_uart_printf("Hart ID:          %u\n", neorv32_cpu_csr_read(CSR_MHARTID));
+
+  // Custom user code
+  neorv32_uart_printf("User code:        0x%x\n", SYSINFO_USER_CODE);
 
   // HW version
   neorv32_uart_printf("Hardware version: ");

@@ -47,6 +47,7 @@ entity neorv32_sysinfo is
     -- General --
     CLOCK_FREQUENCY   : natural := 0;      -- clock frequency of clk_i in Hz
     BOOTLOADER_USE    : boolean := true;   -- implement processor-internal bootloader?
+    USER_CODE         : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     -- Memory configuration: Instruction memory --
     MEM_ISPACE_BASE   : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
     MEM_ISPACE_SIZE   : natural := 8*1024; -- total size of instruction memory space in byte
@@ -114,10 +115,11 @@ begin
   -- SYSINFO(0): Processor (primary) clock frequency --
   sysinfo_mem(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
 
-  -- SYSINFO(1): reserved --
-  sysinfo_mem(1) <= (others => '0'); -- reserved - for custom user code?
+  -- SYSINFO(1): Custom user code --
+  sysinfo_mem(1) <= USER_CODE;
 
   -- SYSINFO(2): Implemented processor devices/features --
+  -- Memory
   sysinfo_mem(2)(00) <= bool_to_ulogic_f(BOOTLOADER_USE);   -- implement processor-internal bootloader?
   sysinfo_mem(2)(01) <= bool_to_ulogic_f(MEM_EXT_USE);      -- implement external memory bus interface?
   sysinfo_mem(2)(02) <= bool_to_ulogic_f(MEM_INT_IMEM_USE); -- implement processor-internal instruction memory?
@@ -136,7 +138,7 @@ begin
   sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_DEVNULL_USE);   -- implement dummy device (DEVNULL)?
 
   -- SYSINFO(3): reserved --
-  sysinfo_mem(3) <= (others => '0'); -- reserved - for technology-specific configuration options?
+  sysinfo_mem(3) <= (others => '0'); -- reserved - maybe for technology-specific configuration options?
 
   -- SYSINFO(4): Base address of instruction memory space --
   sysinfo_mem(4) <= MEM_ISPACE_BASE;
@@ -144,10 +146,10 @@ begin
   -- SYSINFO(5): Base address of data memory space --
   sysinfo_mem(5) <= MEM_DSPACE_BASE;
 
-  -- SYSINFO(6): Total size of instruction memory space in byte --
+  -- SYSINFO(6): Total size of instruction memory space in bytes --
   sysinfo_mem(6) <= std_ulogic_vector(to_unsigned(MEM_ISPACE_SIZE, 32));
 
-  -- SYSINFO(7): Total size of data memory space in byte --
+  -- SYSINFO(7): Total size of data memory space in bytes --
   sysinfo_mem(7) <= std_ulogic_vector(to_unsigned(MEM_DSPACE_SIZE, 32));
 
 

@@ -512,8 +512,8 @@ enum NEORV32_TRNG_DUTY_enum {
 /**@{*/
 /** SYSINFO(0): Clock speed */
 #define SYSINFO_CLK         (*(IO_ROM32 0xFFFFFFE0UL))
-/** SYSINFO(1): reserved */
-#define SYSINFO_reserved0   (*(IO_ROM32 0xFFFFFFE4UL))
+/** SYSINFO(1): Custom user code (via "USER_CODE" generic) */
+#define SYSINFO_USER_CODE   (*(IO_ROM32 0xFFFFFFE4UL))
 /** SYSINFO(2): Clock speed */
 #define SYSINFO_FEATURES    (*(IO_ROM32 0xFFFFFFE8UL))
 /** SYSINFO(3): reserved */

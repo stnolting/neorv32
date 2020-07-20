@@ -50,6 +50,7 @@ entity neorv32_top is
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
     BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
     CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
@@ -235,15 +236,15 @@ begin
         end if;
       end if;
 
-      -- memory system - address space --
+      -- memory system --
       if (MEM_INT_IMEM_USE = true) and (MEM_INT_IMEM_SIZE > MEM_ISPACE_SIZE) then
         assert false report "NEORV32 CONFIG ERROR! Internal instruction memory (IMEM) cannot be greater than total instruction address space." severity error;
       end if;
       if (MEM_INT_DMEM_USE = true) and (MEM_INT_DMEM_SIZE > MEM_DSPACE_SIZE) then
         assert false report "NEORV32 CONFIG ERROR! Internal data memory (DMEM) cannot be greater than total data address space." severity error;
       end if;
-      if (MEM_EXT_TIMEOUT <= 1) then
-        assert false report "NEORV32 CONFIG ERROR! Invalid bus timeout. Internal components require 1 cycle delay." severity error;
+      if (MEM_EXT_TIMEOUT < 1) then
+        assert false report "NEORV32 CONFIG ERROR! Invalid bus timeout. Processor-internal components have 1 cycle delay." severity error;
       end if;
 
       -- clock --
@@ -253,7 +254,7 @@ begin
 
       -- CSR system not implemented --
       if (CPU_EXTENSION_RISCV_Zicsr = false) then
-        assert false report "NEORV32 CONFIG WARNING! No exception/interrupt/machine status features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;
+        assert false report "NEORV32 CONFIG WARNING! No exception/interrupt/machine features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;
       end if;
       -- core local interrupt controller --
       if (CPU_EXTENSION_RISCV_Zicsr = false) and (IO_CLIC_USE = true) then
@@ -262,10 +263,10 @@ begin
 
       -- memory layout notifier --
       if (MEM_ISPACE_BASE /= x"00000000") then
-        assert false report "NEORV32 CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the linker script." severity warning;
+        assert false report "NEORV32 CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framwork." severity warning;
       end if;
       if (MEM_DSPACE_BASE /= x"80000000") then
-        assert false report "NEORV32 CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the linker script." severity warning;
+        assert false report "NEORV32 CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framwork." severity warning;
       end if;
     end if;
   end process sanity_check;
@@ -929,6 +930,7 @@ begin
     -- General --
     CLOCK_FREQUENCY   => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
     BOOTLOADER_USE    => BOOTLOADER_USE,    -- implement processor-internal bootloader?
+    USER_CODE         => USER_CODE,         -- custom user code
     -- Memory configuration: Instruction memory --
     MEM_ISPACE_BASE   => MEM_ISPACE_BASE,   -- base address of instruction memory space
     MEM_ISPACE_SIZE   => MEM_ISPACE_SIZE,   -- total size of instruction memory space in byte
