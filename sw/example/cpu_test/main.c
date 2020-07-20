@@ -185,7 +185,7 @@ int main() {
   // Instruction memory test
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("IMEM_TEST:   ");
+  neorv32_uart_printf("IMEM_TEST:    ");
 #if (PROBING_MEM_TEST == 1)
   cnt_test++;
 
@@ -219,7 +219,7 @@ int main() {
   // Data memory test
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("DMEM_TEST:   ");
+  neorv32_uart_printf("DMEM_TEST:    ");
 #if (PROBING_MEM_TEST == 1)
   cnt_test++;
 
@@ -253,7 +253,7 @@ int main() {
   // ----------------------------------------------------------
   // Test counter CSR access for mcycle[h]
   // ----------------------------------------------------------
-  neorv32_uart_printf("MCYCLE[H]:   ");
+  neorv32_uart_printf("MCYCLE[H]:    ");
   cnt_test++;
 
   neorv32_cpu_csr_write(CSR_MCYCLE,  0x1BCD1234);
@@ -273,7 +273,7 @@ int main() {
   // ----------------------------------------------------------
   // Test counter CSR access for minstret[h]
   // ----------------------------------------------------------
-  neorv32_uart_printf("MINSTRET[H]: ");
+  neorv32_uart_printf("MINSTRET[H]:  ");
   cnt_test++;
 
   neorv32_cpu_csr_write(CSR_MINSTRET,  0x11224499);
@@ -293,7 +293,7 @@ int main() {
   // ----------------------------------------------------------
   // Test time[h] (must be == MTIME)
   // ----------------------------------------------------------
-  neorv32_uart_printf("TIME[H]:     ");
+  neorv32_uart_printf("TIME[H]:      ");
   cnt_test++;
 
   cpu_systime.uint32[0] = neorv32_cpu_csr_read(CSR_TIME);
@@ -317,7 +317,7 @@ int main() {
   // a more complex test is provided by the RISC-V compliance test
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("FENCE(.I):   ");
+  neorv32_uart_printf("FENCE(.I):    ");
   cnt_test++;
   asm volatile ("fence");
   asm volatile ("fence.i");
@@ -336,9 +336,9 @@ int main() {
   // Unaligned instruction address
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("EXC I_ALIGN: ");
+  neorv32_uart_printf("EXC I_ALIGN:  ");
 
-  // skip if C-mode is not implemented
+  // skip if C-mode is implemented
   if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_C_EXT)) == 0) {
 
     cnt_test++;
@@ -366,7 +366,7 @@ int main() {
   // Instruction access fault
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("EXC I_ACC:   ");
+  neorv32_uart_printf("EXC I_ACC:    ");
   cnt_test++;
 
   // call unreachable aligned address
@@ -388,7 +388,7 @@ int main() {
   // Illegal instruction
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("EXC I_ILLEG: ");
+  neorv32_uart_printf("EXC I_ILLEG:  ");
   cnt_test++;
 
   // create test program in RAM
@@ -413,10 +413,46 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Illegal compressed instruction
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("EXC CI_ILLEG: ");
+
+  // skip if C-mode is not implemented
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_C_EXT)) != 0) {
+
+  cnt_test++;
+
+  // create test program in RAM
+  static const uint32_t dummy_sub_program_ci[2] = {
+    0x00000001, // 2nd: official_illegal_op | 1st: NOP -> illegal instruction exception
+    0x00008067  // ret (32-bit)
+  };
+
+  tmp_a = (uint32_t)&dummy_sub_program_ci; // call the dummy sub program
+  asm volatile ( "jalr ra, %0 " : "=r" (tmp_a) : "r"  (tmp_a));
+
+#if (DETAILED_EXCEPTION_DEBUG==0)
+  if (exception_handler_answer == EXCCODE_I_ILLEGAL) {
+    neorv32_uart_printf("ok\n");
+    cnt_ok++;
+  }
+  else {
+    neorv32_uart_printf("fail\n");
+    cnt_fail++;
+  }
+#endif
+  }
+  else {
+    neorv32_uart_printf("skipped (not possible when C-EXT disabled)\n");
+  }
+
+
+  // ----------------------------------------------------------
   // Breakpoint instruction
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("EXC BREAK:   ");
+  neorv32_uart_printf("EXC BREAK:    ");
   cnt_test++;
 
   asm volatile("EBREAK");
@@ -437,7 +473,7 @@ int main() {
   // Unaligned load address
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("EXC L_ALIGN: ");
+  neorv32_uart_printf("EXC L_ALIGN:  ");
   cnt_test++;
 
   // load from unaligned address
@@ -459,7 +495,7 @@ int main() {
   // Load access fault
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("EXC L_ACC:   ");
+  neorv32_uart_printf("EXC L_ACC:    ");
   cnt_test++;
 
   // load from unreachable aligned address
@@ -481,7 +517,7 @@ int main() {
   // Unaligned store address
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("EXC S_ALIGN: ");
+  neorv32_uart_printf("EXC S_ALIGN:  ");
   cnt_test++;
 
   // store to unaligned address
@@ -503,7 +539,7 @@ int main() {
   // Store access fault
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("EXC S_ACC:   ");
+  neorv32_uart_printf("EXC S_ACC:    ");
   cnt_test++;
 
   // store to unreachable aligned address
@@ -525,7 +561,7 @@ int main() {
   // Environment call
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("EXC ENVCALL: ");
+  neorv32_uart_printf("EXC ENVCALL:  ");
   cnt_test++;
 
   asm volatile("ECALL");
@@ -546,7 +582,7 @@ int main() {
   // Machine timer interrupt (MTIME)
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("IRQ MTI:     ");
+  neorv32_uart_printf("IRQ MTI:      ");
   cnt_test++;
 
   // force MTIME IRQ
@@ -577,7 +613,7 @@ int main() {
   // Machine external interrupt (via CLIC)
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("IRQ MEI:     ");
+  neorv32_uart_printf("IRQ MEI:      ");
   cnt_test++;
 
   // manually trigger CLIC channel (watchdog interrupt)
@@ -605,7 +641,7 @@ int main() {
   // Test WFI ("sleep") instructions
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("WFI:         ");
+  neorv32_uart_printf("WFI:          ");
   cnt_test++;
 
   // program timer to wake up
