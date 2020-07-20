@@ -49,9 +49,6 @@
 
 // Standard libraries
 #include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
 #include <inttypes.h>
 #include <limits.h>
 
