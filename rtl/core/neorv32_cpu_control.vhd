@@ -336,12 +336,12 @@ begin
           fetch_engine.i_buf_nxt       <= be_instr_i & ma_instr_i & instr_i(31 downto 0); -- store data word and exception info
           fetch_engine.i_buf2_nxt      <= fetch_engine.i_buf;
           fetch_engine.i_buf_state_nxt <= fetch_engine.i_buf_state(0) & '1';
+          fetch_engine.bus_err_ack     <= '1'; -- acknowledge any instruction bus errors, the execute engine has to take care of them
           fetch_engine.state_nxt       <= IFETCH_2;
         end if;
 
       when IFETCH_2 => -- construct instruction and issue
       -- ------------------------------------------------------------
-        fetch_engine.bus_err_ack <= '1'; -- acknowledge any instruction bus errors, the execute engine has to take care of them
         if (fetch_engine.i_buf_state(1) = '1') then
           if (fetch_engine.pc_fetch(1) = '0') or (CPU_EXTENSION_RISCV_C = false) then -- 32-bit aligned
             fetch_engine.ci_reg_nxt <= fetch_engine.i_buf2(33 downto 32) & fetch_engine.i_buf2(15 downto 00);
