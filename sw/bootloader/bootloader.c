@@ -574,6 +574,7 @@ void system_error(uint8_t err_code) {
   neorv32_cpu_dint(); // deactivate IRQs
   neorv32_gpio_port_set(1 << STATUS_LED); // permanently light up status LED
 
+  asm volatile ("wfi"); // power-down
   while(1); // freeze
 }
 
