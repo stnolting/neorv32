@@ -221,8 +221,8 @@ int main(void) {
   neorv32_rte_print_hw_version();
   neorv32_uart_print("\nCLK:  ");
   print_hex_word(SYSINFO_CLK);
-  neorv32_uart_print(" Hz\nMHID: ");
-  print_hex_word(neorv32_cpu_csr_read(CSR_MHARTID));
+  neorv32_uart_print(" Hz\nUSER: ");
+  print_hex_word(SYSINFO_USER_CODE);
   neorv32_uart_print("\nMISA: ");
   print_hex_word(neorv32_cpu_csr_read(CSR_MISA));
   neorv32_uart_print("\nCONF: ");
