@@ -312,7 +312,7 @@ begin
     -- instruction prefetch buffer interface --
     ipb.we    <= '0';
     ipb.clear <= '0';
-    ipb.wdata <= (others => '0');
+    ipb.wdata <= fetch_engine.i_buf2(33 downto 32) & '0' & fetch_engine.i_buf2(31 downto 0);
     ipb.waddr <= fetch_engine.pc_real(data_width_c-1 downto 1) & '0';
 
     -- state machine --
@@ -327,7 +327,7 @@ begin
 
       when IFETCH_0 => -- output current PC to bus system, request 32-bit word
       -- ------------------------------------------------------------
-        bus_fast_ir            <= '1'; -- fast instruction fetch request (output PC to bus.address)
+        bus_fast_ir            <= '1'; -- fast instruction fetch request
         fetch_engine.state_nxt <= IFETCH_1;
 
       when IFETCH_1 => -- store data from memory to buffer(s)
@@ -337,59 +337,56 @@ begin
           fetch_engine.i_buf2_nxt      <= fetch_engine.i_buf;
           fetch_engine.i_buf_state_nxt <= fetch_engine.i_buf_state(0) & '1';
           fetch_engine.bus_err_ack     <= '1'; -- acknowledge any instruction bus errors, the execute engine has to take care of them
-          fetch_engine.state_nxt       <= IFETCH_2;
+          if (fetch_engine.i_buf_state(0) = '1') then -- buffer filled?
+            fetch_engine.state_nxt <= IFETCH_2;
+          else
+            fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
+            fetch_engine.state_nxt    <= IFETCH_0; -- get another instruction word
+          end if;
         end if;
 
-      when IFETCH_2 => -- construct instruction and issue
+      when IFETCH_2 => -- construct instruction word and issue
       -- ------------------------------------------------------------
-        if (fetch_engine.i_buf_state(1) = '1') then
-          if (fetch_engine.pc_fetch(1) = '0') or (CPU_EXTENSION_RISCV_C = false) then -- 32-bit aligned
-            fetch_engine.ci_reg_nxt <= fetch_engine.i_buf2(33 downto 32) & fetch_engine.i_buf2(15 downto 00);
-            ipb.wdata <= fetch_engine.i_buf2(33 downto 32) & '0' & fetch_engine.i_buf2(31 downto 0);
-            
-            if (fetch_engine.i_buf2(01 downto 00) = "11") or (CPU_EXTENSION_RISCV_C = false) then -- uncompressed
-              if (ipb.free = '1') then -- free entry in buffer?
-                ipb.we                    <= '1';
-                fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(4, data_width_c));
-                fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
-                fetch_engine.state_nxt    <= IFETCH_0;
-              end if;
-              
-            else -- compressed
-              fetch_engine.pc_fetch_add  <= std_ulogic_vector(to_unsigned(2, data_width_c));
-              fetch_engine.ci_return_nxt <= '1'; -- come back here after issueing
-              fetch_engine.state_nxt     <= IFETCH_3;
-            end if;
-            
-          else -- 16-bit aligned
-            fetch_engine.ci_reg_nxt <= fetch_engine.i_buf2(33 downto 32) & fetch_engine.i_buf2(31 downto 16);
-            ipb.wdata <= fetch_engine.i_buf(33 downto 32) & '0' & fetch_engine.i_buf(15 downto 00) & fetch_engine.i_buf2(31 downto 16);
-            
-            if (fetch_engine.i_buf2(17 downto 16) = "11") then -- uncompressed
-              if (ipb.free = '1') then -- free entry in buffer?
-                ipb.we                    <= '1';
-                fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(4, data_width_c));
-                fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
-                fetch_engine.state_nxt    <= IFETCH_0;
-              end if;
-              
-            else -- compressed
-              fetch_engine.pc_fetch_add  <= std_ulogic_vector(to_unsigned(2, data_width_c));
-              fetch_engine.ci_return_nxt <= '0'; -- start next fetch after issueing
-              fetch_engine.state_nxt     <= IFETCH_3;
-            end if;
-          end if;
-        else
-         fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
-         fetch_engine.state_nxt    <= IFETCH_0;
-        end if;
+       if (fetch_engine.pc_fetch(1) = '0') or (CPU_EXTENSION_RISCV_C = false) then -- 32-bit aligned
+         fetch_engine.ci_reg_nxt <= fetch_engine.i_buf2(33 downto 32) & fetch_engine.i_buf2(15 downto 00);
+         ipb.wdata <= fetch_engine.i_buf2(33 downto 32) & '0' & fetch_engine.i_buf2(31 downto 0);
+
+         if (fetch_engine.i_buf2(01 downto 00) = "11") or (CPU_EXTENSION_RISCV_C = false) then -- uncompressed
+           if (ipb.free = '1') then -- free entry in buffer?
+             ipb.we                    <= '1';
+             fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(4, data_width_c));
+             fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
+             fetch_engine.state_nxt    <= IFETCH_0;
+           end if;
+         else -- compressed
+           fetch_engine.ci_return_nxt <= '1'; -- come back here after issueing
+           fetch_engine.state_nxt     <= IFETCH_3;
+         end if;
+         
+       else -- 16-bit aligned
+         fetch_engine.ci_reg_nxt <= fetch_engine.i_buf2(33 downto 32) & fetch_engine.i_buf2(31 downto 16);
+         ipb.wdata <= fetch_engine.i_buf(33 downto 32) & '0' & fetch_engine.i_buf(15 downto 00) & fetch_engine.i_buf2(31 downto 16);
+
+         if (fetch_engine.i_buf2(17 downto 16) = "11") then -- uncompressed
+           if (ipb.free = '1') then -- free entry in buffer?
+             ipb.we                    <= '1';
+             fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(4, data_width_c));
+             fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
+             fetch_engine.state_nxt    <= IFETCH_0;
+           end if;
+         else -- compressed
+           fetch_engine.ci_return_nxt <= '0'; -- start next fetch after issueing
+           fetch_engine.state_nxt     <= IFETCH_3;
+         end if;
+       end if;
 
       when IFETCH_3 => -- additional cycle for issueing decompressed instructions
       -- ------------------------------------------------------------
         if (ipb.free = '1') then -- free entry in buffer?
-          ipb.we    <= '1';
-          ipb.wdata <= fetch_engine.ci_reg(17 downto 16) & '1' & ci_instr32;
-          fetch_engine.pc_real_add <= std_ulogic_vector(to_unsigned(2, data_width_c));
+          ipb.we                    <= '1';
+          ipb.wdata                 <= fetch_engine.ci_reg(17 downto 16) & '1' & ci_instr32;
+          fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(2, data_width_c));
+          fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(2, data_width_c));
           if (fetch_engine.ci_return = '0') then
             fetch_engine.state_nxt <= IFETCH_0;
           else
