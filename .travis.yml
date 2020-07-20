@@ -32,7 +32,7 @@ script:
     docker run -t -v `pwd`:/mnt/data ghdl/ghdl:buster-gcc-8.3.0
     /bin/bash -c "chmod u+x /mnt/data/.ci/hw_check.sh && /mnt/data/.ci/hw_check.sh"
 
-# Generate and deploy documentation
+# Deploy documentation
 deploy:
   provider: pages
   skip_cleanup: true
