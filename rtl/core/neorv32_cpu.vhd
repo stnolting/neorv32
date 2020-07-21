@@ -2,12 +2,13 @@
 -- # << NEORV32 - CPU Top Entity >>                                                                #
 -- # ********************************************************************************************* #
 -- # Top NEORV32 CPU:                                                                              #
--- # * neorv32_cpu_alu: Arithemtic/logic unit                                                      #
--- # * neorv32_cpu_ctrl: CPU control and CSR system                                                #
--- #   * neorv32_cpu_decompressor: Compressed instructions decoder                                 #
--- # * neorv32_cpu_bus: Instruction and data bus interface unit                                    #
--- # * neorv32_cpu_cp_muldiv: MULDIV co-processor                                                  #
--- # * neorv32_cpu_regfile: Data register file                                                     #
+-- # * neorv32_cpu.vhd                  : CPU top entity                                           #
+-- #   * neorv32_cpu_alu.vhd            : Arithmetic/logic unit                                    #
+-- #   * neorv32_cpu_bus.vhd            : Instruction and data bus interface unit                  #
+-- #   * neorv32_cpu_cp_muldiv.vhd      : MULDIV co-processor                                      #
+-- #   * neorv32_cpu_ctrl.vhd           : CPU control and CSR system                               #
+-- #     * neorv32_cpu_decompressor.vhd : Compressed instructions decoder                          #
+-- #   * neorv32_cpu_regfile.vhd        : Data register file                                       #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
