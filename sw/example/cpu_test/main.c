@@ -127,7 +127,7 @@ int main() {
   neorv32_mtime_set_timecmp(mtime_cmp_max);
 
   // intro
-  neorv32_uart_printf("\n\n------ CPU TEST ------\n\n");
+  neorv32_uart_printf("\n\n-==== CPU TEST ====-\n\n");
 
   // show project credits
   neorv32_rte_print_credits();
