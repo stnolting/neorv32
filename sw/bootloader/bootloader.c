@@ -242,7 +242,8 @@ int main(void) {
   // ------------------------------------------------
   neorv32_uart_print("\n\nAutoboot in "xstr(AUTOBOOT_TIMEOUT)"s. Press key to abort.\n");
 
-  uint64_t timeout_time = (uint64_t)(AUTOBOOT_TIMEOUT * clock_speed);
+  uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTOBOOT_TIMEOUT * clock_speed);
+
   while ((UART_DATA & (1 << UART_DATA_AVAIL)) == 0) { // wait for any key to be pressed or timeout
 
     if (neorv32_mtime_get_time() >= timeout_time) { // timeout? start auto boot sequence
