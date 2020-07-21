@@ -552,7 +552,7 @@ begin
     execute_engine.i_reg_nxt   <= execute_engine.i_reg;
     execute_engine.is_jump_nxt <= '0';
     execute_engine.is_ci_nxt   <= execute_engine.is_ci;
-    execute_engine.pc_nxt      <= execute_engine.pc(data_width_c-1 downto 1) & '0';
+    execute_engine.pc_nxt      <= execute_engine.pc;
     execute_engine.sleep_nxt   <= execute_engine.sleep;
 
     -- instruction dispatch --
@@ -638,7 +638,7 @@ begin
           else
             execute_engine.is_ci_nxt <= ipb.rdata(32); -- flag to indicate this is a compressed instruction beeing executed
             execute_engine.i_reg_nxt <= ipb.rdata(31 downto 0);
-            execute_engine.pc_nxt    <= ipb.raddr(data_width_c-1 downto 1) & '0'; -- the PC according to the current instruction
+            execute_engine.pc_nxt    <= ipb.raddr; -- the PC according to the current instruction
             if (execute_engine.sleep = '1') then
               execute_engine.state_nxt <= TRAP;
             else
@@ -652,7 +652,7 @@ begin
         fetch_engine.reset <= '1';
         if (trap_ctrl.env_start = '1') then -- check here again if we came directly from DISPATCH
           trap_ctrl.env_start_ack  <= '1';
-          execute_engine.pc_nxt    <= csr.mtvec(data_width_c-1 downto 2) & "00";
+          execute_engine.pc_nxt    <= csr.mtvec;
           execute_engine.sleep_nxt <= '0'; -- waky waky
           execute_engine.state_nxt <= SYS_WAIT;
         end if;
@@ -724,7 +724,7 @@ begin
             end if;
             ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '1'; -- use IMM as ALU.OPB
             -- save return address --
-            ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "10"; -- RF input = current PC
+            ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "10"; -- RF input = next PC (save return address)
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
             --
             execute_engine.is_jump_nxt <= '1'; -- this is a jump operation
@@ -732,7 +732,7 @@ begin
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
-            execute_engine.pc_nxt <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- "refetch" next instruction (only relevant for fencei)
+            execute_engine.pc_nxt <= execute_engine.next_pc; -- "refetch" next instruction (only relevant for fencei)
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then -- FENCEI
               fetch_engine.reset          <= '1';
               ctrl_nxt(ctrl_bus_fencei_c) <= '1';
@@ -753,7 +753,7 @@ begin
                   trap_ctrl.break_point <= '1';
                 when funct12_mret_c => -- MRET
                   trap_ctrl.env_end     <= '1';
-                  execute_engine.pc_nxt <= csr.mepc(data_width_c-1 downto 1) & '0';
+                  execute_engine.pc_nxt <= csr.mepc;
                   fetch_engine.reset    <= '1';
                 when funct12_wfi_c => -- WFI = "CPU sleep"
                   execute_engine.sleep_nxt <= '1'; -- good night
@@ -761,12 +761,8 @@ begin
                   NULL;
               end case;
               execute_engine.state_nxt <= SYS_WAIT;
-            else
-              if (CPU_EXTENSION_RISCV_Zicsr = true) then -- CSR access
-                execute_engine.state_nxt <= CSR_ACCESS;
-              else -- undefined
-                execute_engine.state_nxt <= DISPATCH;
-              end if;
+            else -- CSR access
+              execute_engine.state_nxt <= CSR_ACCESS;
             end if;
 
           when others => -- undefined
@@ -836,9 +832,9 @@ begin
 
       when BRANCH => -- update PC for taken branches and jumps
       -- ------------------------------------------------------------
+        execute_engine.pc_nxt <= alu_add_i; -- branch/jump destination
         if (execute_engine.is_jump = '1') or (execute_engine.branch_taken = '1') then
-          fetch_engine.reset       <= '1';
-          execute_engine.pc_nxt    <= alu_add_i(data_width_c-1 downto 1) & '0'; -- branch/jump destination
+          fetch_engine.reset       <= '1'; -- trigger new instruction fetch from modified PC
           execute_engine.state_nxt <= SYS_WAIT;
         else
           execute_engine.state_nxt <= DISPATCH;

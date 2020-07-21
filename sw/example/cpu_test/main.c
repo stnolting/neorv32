@@ -70,6 +70,13 @@ volatile uint32_t exception_handler_answer;
 
 // Prototypes
 void global_trap_handler(void);
+void test_ok(void);
+void test_fail(void);
+
+// Global variables (also test initialization of global vars here)
+int cnt_fail = 0;
+int cnt_ok   = 0;
+int cnt_test = 0;
 
 
 /**********************************************************************//**
@@ -90,10 +97,6 @@ int main() {
 
   register uint32_t tmp_a;
   volatile uint32_t dummy_dst __attribute__((unused));
-
-  int cnt_fail = 0;
-  int cnt_ok   = 0;
-  int cnt_test = 0;
 
   union {
     uint64_t uint64;
@@ -204,12 +207,10 @@ int main() {
   neorv32_uart_printf("%u bytes (should be %u bytes) ", dmem_probe_cnt, neorv32_cpu_csr_read(CSR_MISPACESIZE));
   neorv32_uart_printf("@ 0x%x  ", neorv32_cpu_csr_read(CSR_MISPACEBASE));
   if (dmem_probe_cnt == neorv32_cpu_csr_read(CSR_MISPACESIZE)) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 #else
   neorv32_uart_printf("skipped (disabled)\n");
@@ -238,12 +239,10 @@ int main() {
   neorv32_uart_printf("%u bytes (should be %u bytes) ", imem_probe_cnt, neorv32_cpu_csr_read(CSR_MDSPACESIZE));
   neorv32_uart_printf("@ 0x%x  ", neorv32_cpu_csr_read(CSR_MDSPACEBASE));
   if (imem_probe_cnt == neorv32_cpu_csr_read(CSR_MDSPACESIZE)) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 #else
   neorv32_uart_printf("skipped (disabled)\n");
@@ -261,12 +260,10 @@ int main() {
 
   if (((neorv32_cpu_csr_read(CSR_MCYCLE) & 0xffff0000L) == 0x1BCD0000) &&
       (neorv32_cpu_csr_read(CSR_MCYCLEH) == 0x00034455)) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 
 
@@ -281,12 +278,10 @@ int main() {
 
   if (((neorv32_cpu_csr_read(CSR_MINSTRET) & 0xffff0000L) == 0x11220000) &&
        (neorv32_cpu_csr_read(CSR_MINSTRETH) == 0x00090011)) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 
 
@@ -303,12 +298,10 @@ int main() {
   uint64_t mtime_systime = neorv32_mtime_get_time() & 0xFFFFFFFFFFFF0000LL;
 
   if (cpu_systime.uint64 == mtime_systime) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 
 
@@ -323,13 +316,31 @@ int main() {
   asm volatile ("fence.i");
 
   if (exception_handler_answer != 0xFFFFFFFF) {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
   else {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
+
+
+  // ----------------------------------------------------------
+  // Illegal CSR access
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("ILLEGAL CSR:  ");
+
+  cnt_test++;
+
+  neorv32_cpu_csr_read(0xfff); // CSR 0xfff not implemented
+
+#if (DETAILED_EXCEPTION_DEBUG==0)
+  if (exception_handler_answer == EXCCODE_I_ILLEGAL) {
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
+#endif
 
 
   // ----------------------------------------------------------
@@ -374,12 +385,10 @@ int main() {
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == EXCCODE_I_ACCESS) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 #endif
 
@@ -402,12 +411,10 @@ int main() {
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == EXCCODE_I_ILLEGAL) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 #endif
 
@@ -434,12 +441,10 @@ int main() {
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == EXCCODE_I_ILLEGAL) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 #endif
   }
@@ -459,12 +464,10 @@ int main() {
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == EXCCODE_BREAKPOINT) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 #endif
 
@@ -481,12 +484,10 @@ int main() {
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == EXCCODE_L_MISALIGNED) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 #endif
 
@@ -503,12 +504,10 @@ int main() {
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == EXCCODE_L_ACCESS) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 #endif
 
@@ -525,12 +524,10 @@ int main() {
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == EXCCODE_S_MISALIGNED) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 #endif
 
@@ -547,12 +544,10 @@ int main() {
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == EXCCODE_S_ACCESS) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 #endif
 
@@ -568,12 +563,10 @@ int main() {
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == EXCCODE_MENV_CALL) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 #endif
 
@@ -596,12 +589,10 @@ int main() {
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == EXCCODE_MTI) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 #endif
 
@@ -627,12 +618,10 @@ int main() {
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == EXCCODE_MEI) {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
   else {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
 #endif
 
@@ -651,12 +640,10 @@ int main() {
   asm volatile ("wfi");
 
   if (exception_handler_answer != EXCCODE_MTI) {
-    neorv32_uart_printf("fail\n");
-    cnt_fail++;
+    test_fail();
   }
   else {
-    neorv32_uart_printf("ok\n");
-    cnt_ok++;
+    test_ok();
   }
 
 
@@ -680,5 +667,26 @@ int main() {
  * Trap handler for ALL exceptions/interrupts.
  **************************************************************************/
 void global_trap_handler(void) {
+
   exception_handler_answer = neorv32_cpu_csr_read(CSR_MCAUSE);
+}
+
+
+/**********************************************************************//**
+ * Test results helper function: Shows "ok" and increments global cnt_ok
+ **************************************************************************/
+void test_ok(void) {
+
+  neorv32_uart_printf("ok\n");
+  cnt_ok++;
+}
+
+
+/**********************************************************************//**
+ * Test results helper function: Shows "fail" and increments global cnt_fail
+ **************************************************************************/
+void test_fail(void) {
+
+  neorv32_uart_printf("fail\n");
+  cnt_fail++;
 }

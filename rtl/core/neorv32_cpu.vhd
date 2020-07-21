@@ -196,7 +196,7 @@ begin
     mem_i  => rdata,              -- memory read data
     alu_i  => alu_res,            -- ALU result
     csr_i  => csr_rdata,          -- CSR read data
-    pc_i   => next_pc,            -- next pc
+    pc_i   => next_pc,            -- next pc (for linking)
     -- data output --
     rs1_o  => rs1,                -- operand 1
     rs2_o  => rs2                 -- operand 2
