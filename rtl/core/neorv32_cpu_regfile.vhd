@@ -2,7 +2,7 @@
 -- # << NEORV32 - CPU Register File >>                                                             #
 -- # ********************************************************************************************* #
 -- # General purpose data registers. 32 entries for normal mode, 16 entries for embedded mode when #
--- # RISC-V M extension is enabled. R0 output is hardwired to zero.                                #
+-- # RISC-V M extension is enabled. x0 output is allways set to zero.                              #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -69,6 +69,7 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   signal reg_file      : reg_file_t;
   signal reg_file_emb  : reg_file_emb_t;
   signal rf_write_data : std_ulogic_vector(data_width_c-1 downto 0); -- actual write-back data
+  signal valid_wr      : std_ulogic; -- writing not to r0
   signal rs1_read      : std_ulogic_vector(data_width_c-1 downto 0); -- internal operand rs1
   signal rs2_read      : std_ulogic_vector(data_width_c-1 downto 0); -- internal operand rs2
 
@@ -103,6 +104,10 @@ begin
     end case;
   end process input_mux;
 
+  -- only write if destination is not x0 (pretty irrelevant, but might save some power) --
+  valid_wr <= or_all_f(ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c)) when (CPU_EXTENSION_RISCV_E = false) else
+              or_all_f(ctrl_i(ctrl_rf_rd_adr3_c downto ctrl_rf_rd_adr0_c));
+
 
   -- Register file read/write access --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -120,7 +125,7 @@ begin
           rs2_clear <= '1';
         end if;
         -- write --
-        if (ctrl_i(ctrl_rf_wb_en_c) = '1') then -- valid write-back
+        if (ctrl_i(ctrl_rf_wb_en_c) = '1') and (valid_wr = '1') then -- valid write-back
           reg_file(to_integer(unsigned(ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c)))) <= rf_write_data;
         end if;
         -- read --
@@ -138,7 +143,7 @@ begin
           rs2_clear <= '1';
         end if;
         -- write --
-        if (ctrl_i(ctrl_rf_wb_en_c) = '1') then -- valid write-back
+        if (ctrl_i(ctrl_rf_wb_en_c) = '1') and (valid_wr = '1') then -- valid write-back
           reg_file_emb(to_integer(unsigned(ctrl_i(ctrl_rf_rd_adr3_c downto ctrl_rf_rd_adr0_c)))) <= rf_write_data;
         end if;
         -- read --
