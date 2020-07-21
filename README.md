@@ -75,14 +75,15 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 
 ### To-Do / Wish List
 
-- Option to use DSPs for multiplications in `M` extensions (would be so much faster)
+- Add instructions how to use the NEORV32 CPU without the processor surroundings
+- Add AXI / AXI-Lite bridges
+- Option to use DSP-based multiplier in `M` extension (would be so much faster)
 - Synthesis results for more platforms
-- Port Dhrystone benchmark
-- Implement atomic operations (`A` extension)
-- Implement co-processor for single-precision floating-point operations (`F` extension)
 - Implement user mode (`U` extension)
-- Maybe port an RTOS (like [freeRTOS](https://www.freertos.org/) or [RIOT](https://www.riot-os.org/))
-- Make a 64-bit branch
+- Port Dhrystone benchmark
+- Implement atomic operations (`A` extension) and floating-point operations (`F` extension)
+- Maybe port an RTOS (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr), [freeRTOS](https://www.freertos.org) or [RIOT](https://www.riot-os.org))
+- Make a 64-bit branch someday
 
 
 
@@ -223,13 +224,13 @@ no external memory interface and only internal instruction and data memories. IM
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
 to FPGA pins - except for the Wishbone bus and the interrupt signals.
 
-Results generated for hardware version: `1.2.0.0`
+Results generated for hardware version: `1.2.0.6`
 
-| Vendor  | FPGA                              | Board            | Toolchain               | Impl. strategy |CPU                               | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency   |
-|:--------|:----------------------------------|:-----------------|:------------------------|:---------------|:---------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|------------:|
-| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 19.1 | balanced       | `rv32imc` + `Zicsr` + `Zifencei` | 4066 (18%) | 1877  (8%) | 0 (0%) | 231424 (38%) |          - |        - | 100 MHz     |
-| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (LSE)       | timing         | `rv32ic`  + `Zicsr` + `Zifencei` | 5017 (95%) | 1717 (32%) | 0 (0%) |            - |   12 (40%) | 4 (100%) | c 20.25 MHz |
-| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2           | default        | `rv32imc` + `Zicsr` + `Zifencei` | 2494 (12%) | 1930  (5%) | 0 (0%) |            - |    8 (16%) |        - | c 100 MHz   |
+| Vendor  | FPGA                              | Board            | Toolchain               | Impl. strategy |CPU                               | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency    |
+|:--------|:----------------------------------|:-----------------|:------------------------|:---------------|:---------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|-------------:|
+| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 19.1 | balanced       | `rv32imc` + `Zicsr` + `Zifencei` | 4035 (18%) | 1860  (8%) | 0 (0%) | 231424 (38%) |          - |        - |      101 MHz |
+| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (LSE)       | timing         | `rv32ic`  + `Zicsr` + `Zifencei` | 5001 (95%) | 1694 (32%) | 0 (0%) |            - |   12 (40%) | 4 (100%) |   c 22.5 MHz |
+| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2           | default        | `rv32imc` + `Zicsr` + `Zifencei` | 2509 (12%) | 1914  (5%) | 0 (0%) |            - |    8 (16%) |        - |    c 100 MHz |
 
 **Notes**
 * The Lattice iCE40 UltraPlus setup uses the FPGA's SPRAM memory primitives for the internal IMEM and DEMEM (each 64kb).
@@ -483,7 +484,7 @@ Use the bootloader console to upload the `neorv32_exe.bin` file and run your app
   BLDV: Jul  6 2020
   HWV:  1.0.1.0
   CLK:  0x0134FD90 Hz
-  MHID: 0x0001CE40
+  USER: 0x0001CE40
   MISA: 0x42801104
   CONF: 0x03FF0035
   IMEM: 0x00010000 bytes @ 0x00000000
@@ -582,7 +583,7 @@ link in question.
 
 "iCE40", "UltraPlus" and "Lattice Radiant" are trademarks of Lattice Semiconductor Corporation.
 
-"AXI4" and "AXI4-Lite" are trademarks of Arm Holdings plc.
+"AXI" and "AXI-Lite" are trademarks of Arm Holdings plc.
 
 
 ## Acknowledgement
