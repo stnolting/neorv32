@@ -97,7 +97,7 @@ end neorv32_cpu_control;
 architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction fetch enginge --
-  type fetch_engine_state_t is (IFETCH_RESET, IFETCH_0, IFETCH_1, IFETCH_2, IFETCH_3);
+  type fetch_engine_state_t is (IFETCH_RESET, IFETCH_0, IFETCH_1, IFETCH_2);
   type fetch_engine_t is record
     state           : fetch_engine_state_t;
     state_nxt       : fetch_engine_state_t;
@@ -105,16 +105,13 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     i_buf_nxt       : std_ulogic_vector(33 downto 0);
     i_buf2          : std_ulogic_vector(33 downto 0);
     i_buf2_nxt      : std_ulogic_vector(33 downto 0);
-    ci_reg          : std_ulogic_vector(17 downto 0);
-    ci_reg_nxt      : std_ulogic_vector(17 downto 0);
+    ci_input        : std_ulogic_vector(15 downto 0); -- input to compressed instr. decoder
     i_buf_state     : std_ulogic_vector(01 downto 0);
     i_buf_state_nxt : std_ulogic_vector(01 downto 0);
     pc_real         : std_ulogic_vector(data_width_c-1 downto 0);
     pc_real_add     : std_ulogic_vector(data_width_c-1 downto 0);
     pc_fetch        : std_ulogic_vector(data_width_c-1 downto 0);
     pc_fetch_add    : std_ulogic_vector(data_width_c-1 downto 0);
-    ci_return       : std_ulogic;
-    ci_return_nxt   : std_ulogic;
     reset           : std_ulogic;
     bus_err_ack     : std_ulogic;
   end record;
@@ -126,8 +123,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instrucion prefetch buffer (IPB) --
   type ipb_t is record
-    wdata  : std_ulogic_vector(34 downto 0);
-    rdata  : std_ulogic_vector(34 downto 0);
+    wdata  : std_ulogic_vector(35 downto 0);
+    rdata  : std_ulogic_vector(35 downto 0);
     waddr  : std_ulogic_vector(31 downto 0);
     raddr  : std_ulogic_vector(31 downto 0);
     status : std_ulogic;
@@ -237,7 +234,7 @@ begin
     neorv32_cpu_decompressor_inst: neorv32_cpu_decompressor
     port map (
       -- instruction input --
-      ci_instr16_i => fetch_engine.ci_reg(15 downto 0), -- compressed instruction input
+      ci_instr16_i => fetch_engine.ci_input, -- compressed instruction input
       -- instruction output --
       ci_illegal_o => ci_illegal, -- is an illegal compressed instruction
       ci_instr32_o => ci_instr32  -- 32-bit decompressed instruction
@@ -283,9 +280,6 @@ begin
       fetch_engine.i_buf       <= fetch_engine.i_buf_nxt;
       fetch_engine.i_buf2      <= fetch_engine.i_buf2_nxt;
       fetch_engine.i_buf_state <= fetch_engine.i_buf_state_nxt;
-      --
-      fetch_engine.ci_reg      <= fetch_engine.ci_reg_nxt;
-      fetch_engine.ci_return   <= fetch_engine.ci_return_nxt;
     end if;
   end process fetch_engine_fsm_sync;
 
@@ -295,24 +289,23 @@ begin
 
   -- Fetch Engine FSM Comb ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fetch_engine_fsm_comb: process(fetch_engine, csr, ipb, instr_i, bus_i_wait_i, ci_instr32, be_instr_i, ma_instr_i)
+  fetch_engine_fsm_comb: process(fetch_engine, csr, ipb, instr_i, bus_i_wait_i, ci_instr32, ci_illegal, be_instr_i, ma_instr_i)
   begin
     -- arbiter defaults --
+    bus_fast_ir                  <= '0';
     fetch_engine.state_nxt       <= fetch_engine.state;
     fetch_engine.pc_fetch_add    <= (others => '0');
     fetch_engine.pc_real_add     <= (others => '0');
-    bus_fast_ir                  <= '0';
     fetch_engine.i_buf_nxt       <= fetch_engine.i_buf;
     fetch_engine.i_buf2_nxt      <= fetch_engine.i_buf2;
     fetch_engine.i_buf_state_nxt <= fetch_engine.i_buf_state;
-    fetch_engine.ci_reg_nxt      <= fetch_engine.ci_reg;
-    fetch_engine.ci_return_nxt   <= fetch_engine.ci_return;
+    fetch_engine.ci_input        <= fetch_engine.i_buf2(15 downto 00);
     fetch_engine.bus_err_ack     <= '0';
 
     -- instruction prefetch buffer interface --
     ipb.we    <= '0';
     ipb.clear <= '0';
-    ipb.wdata <= fetch_engine.i_buf2(33 downto 32) & '0' & fetch_engine.i_buf2(31 downto 0);
+    ipb.wdata <= '0' & fetch_engine.i_buf2(33 downto 32) & '0' & fetch_engine.i_buf2(31 downto 0);
     ipb.waddr <= fetch_engine.pc_real(data_width_c-1 downto 1) & '0';
 
     -- state machine --
@@ -321,7 +314,6 @@ begin
       when IFETCH_RESET => -- reset engine, prefetch buffer, get appilcation PC
       -- ------------------------------------------------------------
         fetch_engine.i_buf_state_nxt <= (others => '0');
-        fetch_engine.ci_return_nxt   <= '0';
         ipb.clear                    <= '1'; -- clear instruction prefetch buffer
         fetch_engine.state_nxt       <= IFETCH_0;
 
@@ -347,52 +339,42 @@ begin
 
       when IFETCH_2 => -- construct instruction word and issue
       -- ------------------------------------------------------------
-       if (fetch_engine.pc_fetch(1) = '0') or (CPU_EXTENSION_RISCV_C = false) then -- 32-bit aligned
-         fetch_engine.ci_reg_nxt <= fetch_engine.i_buf2(33 downto 32) & fetch_engine.i_buf2(15 downto 00);
-         ipb.wdata <= fetch_engine.i_buf2(33 downto 32) & '0' & fetch_engine.i_buf2(31 downto 0);
+        if (fetch_engine.pc_fetch(1) = '0') or (CPU_EXTENSION_RISCV_C = false) then -- 32-bit aligned
+          fetch_engine.ci_input <= fetch_engine.i_buf2(15 downto 00);
 
-         if (fetch_engine.i_buf2(01 downto 00) = "11") or (CPU_EXTENSION_RISCV_C = false) then -- uncompressed
-           if (ipb.free = '1') then -- free entry in buffer?
-             ipb.we                    <= '1';
-             fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(4, data_width_c));
-             fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
-             fetch_engine.state_nxt    <= IFETCH_0;
-           end if;
-         else -- compressed
-           fetch_engine.ci_return_nxt <= '1'; -- come back here after issueing
-           fetch_engine.state_nxt     <= IFETCH_3;
-         end if;
-         
-       else -- 16-bit aligned
-         fetch_engine.ci_reg_nxt <= fetch_engine.i_buf2(33 downto 32) & fetch_engine.i_buf2(31 downto 16);
-         ipb.wdata <= fetch_engine.i_buf(33 downto 32) & '0' & fetch_engine.i_buf(15 downto 00) & fetch_engine.i_buf2(31 downto 16);
-
-         if (fetch_engine.i_buf2(17 downto 16) = "11") then -- uncompressed
-           if (ipb.free = '1') then -- free entry in buffer?
-             ipb.we                    <= '1';
-             fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(4, data_width_c));
-             fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
-             fetch_engine.state_nxt    <= IFETCH_0;
-           end if;
-         else -- compressed
-           fetch_engine.ci_return_nxt <= '0'; -- start next fetch after issueing
-           fetch_engine.state_nxt     <= IFETCH_3;
-         end if;
-       end if;
-
-      when IFETCH_3 => -- additional cycle for issueing decompressed instructions
-      -- ------------------------------------------------------------
-        if (ipb.free = '1') then -- free entry in buffer?
-          ipb.we                    <= '1';
-          ipb.wdata                 <= fetch_engine.ci_reg(17 downto 16) & '1' & ci_instr32;
-          fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(2, data_width_c));
-          fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(2, data_width_c));
-          if (fetch_engine.ci_return = '0') then
-            fetch_engine.state_nxt <= IFETCH_0;
-          else
-            fetch_engine.state_nxt <= IFETCH_2;
+          if (ipb.free = '1') then -- free entry in buffer?
+            ipb.we <= '1';
+            if (fetch_engine.i_buf2(01 downto 00) = "11") or (CPU_EXTENSION_RISCV_C = false) then -- uncompressed
+              ipb.wdata                 <= '0' & fetch_engine.i_buf2(33 downto 32) & '0' & fetch_engine.i_buf2(31 downto 0);
+              fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(4, data_width_c));
+              fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
+              fetch_engine.state_nxt    <= IFETCH_0;
+            else -- compressed
+              ipb.wdata                 <= ci_illegal & fetch_engine.i_buf2(33 downto 32) & '1' & ci_instr32;
+              fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(2, data_width_c));
+              fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(2, data_width_c));
+              fetch_engine.state_nxt    <= IFETCH_2; -- try to get another 16-bit instruction word in next round
+            end if;
           end if;
-        end if;
+
+        else -- 16-bit aligned
+          fetch_engine.ci_input <= fetch_engine.i_buf2(31 downto 16);
+
+          if (ipb.free = '1') then -- free entry in buffer?
+            ipb.we <= '1';
+            if (fetch_engine.i_buf2(17 downto 16) = "11") then -- uncompressed
+              ipb.wdata                 <= '0' & fetch_engine.i_buf(33 downto 32) & '0' & fetch_engine.i_buf(15 downto 00) & fetch_engine.i_buf2(31 downto 16);
+              fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(4, data_width_c));
+              fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
+              fetch_engine.state_nxt    <= IFETCH_0;
+            else -- uncompressed
+              ipb.wdata                 <= ci_illegal & fetch_engine.i_buf(33 downto 32) & '1' & ci_instr32;
+              fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(2, data_width_c));
+              fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(2, data_width_c));
+              fetch_engine.state_nxt    <= IFETCH_0;
+            end if;
+          end if;
+       end if;
 
       when others => -- undefined
       -- ------------------------------------------------------------
@@ -409,7 +391,7 @@ begin
 
   -- Instruction Prefetch Buffer Stage ------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  instr_prefetch_buffer: process(rstn_i, clk_i)
+  instr_prefetch_buffer: process(rstn_i, clk_i) -- once upon a time, this was a fifo with 8 entries
   begin
     if (rstn_i = '0') then
       ipb.status <= '0';
@@ -509,15 +491,13 @@ begin
       execute_engine.pc      <= CPU_BOOT_ADDR(data_width_c-1 downto 1) & '0';
       execute_engine.last_pc <= CPU_BOOT_ADDR(data_width_c-1 downto 1) & '0';
       execute_engine.state   <= SYS_WAIT;
-      --
-      execute_engine.sleep <= '0';
+      execute_engine.sleep   <= '0';
     elsif rising_edge(clk_i) then
-      execute_engine.pc <= execute_engine.pc_nxt(data_width_c-1 downto 1) & '0';
+      execute_engine.pc    <= execute_engine.pc_nxt(data_width_c-1 downto 1) & '0';
       if (execute_engine.state = EXECUTE) then
         execute_engine.last_pc <= execute_engine.pc(data_width_c-1 downto 1) & '0';
       end if;
       execute_engine.state <= execute_engine.state_nxt;
-      --
       execute_engine.sleep <= execute_engine.sleep_nxt;
     end if;
   end process execute_engine_fsm_sync_rst;
@@ -588,6 +568,7 @@ begin
     trap_ctrl.instr_ma         <= '0';
     trap_ctrl.env_call         <= '0';
     trap_ctrl.break_point      <= '0';
+    illegal_compressed         <= '0';
 
     -- CSR access --
     csr.we_nxt                 <= '0';
@@ -601,8 +582,8 @@ begin
       ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- unsigned branches (BLTU, BGEU)
     end if;
     ctrl_nxt(ctrl_bus_unsigned_c)  <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
-    ctrl_nxt(ctrl_alu_shift_dir_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- shift direction
-    ctrl_nxt(ctrl_alu_shift_ar_c)  <= execute_engine.i_reg(30); -- arithmetic shift
+    ctrl_nxt(ctrl_alu_shift_dir_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- shift direction (left/right)
+    ctrl_nxt(ctrl_alu_shift_ar_c)  <= execute_engine.i_reg(30); -- is arithmetic shift
     ctrl_nxt(ctrl_bus_size_lsb_c)  <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- transfer size lsb (00=byte, 01=half-word)
     ctrl_nxt(ctrl_bus_size_msb_c)  <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- transfer size msb (10=word, 11=?)
     ctrl_nxt(ctrl_cp_cmd2_c   downto ctrl_cp_cmd0_c)   <= execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c); -- CP operation
@@ -647,31 +628,32 @@ begin
 
        when DISPATCH => -- Get new command from instruction prefetch buffer (IPB)
        -- ------------------------------------------------------------
-         if (ipb.avail = '1') then -- instruction available?
-           ipb.re <= '1';
-           trap_ctrl.instr_ma    <= ipb.rdata(33);
-           trap_ctrl.instr_be    <= ipb.rdata(34);
-           if (trap_ctrl.env_start = '1') or (ipb.rdata(33) = '1') or (ipb.rdata(34) = '1') then -- exception/interrupt?
-             execute_engine.state_nxt <= TRAP;
-           else
-             execute_engine.is_ci_nxt <= ipb.rdata(32); -- flag to indicate this is a compressed instruction beeing executed
-             execute_engine.i_reg_nxt <= ipb.rdata(31 downto 0);
-             execute_engine.pc_nxt    <= ipb.raddr(data_width_c-1 downto 1) & '0'; -- the PC according to the current instruction
-             if (execute_engine.sleep = '1') then
-               execute_engine.state_nxt <= TRAP;
-             else
-               execute_engine.state_nxt <= EXECUTE;
-             end if;
-           end if;
-         end if;
+        if (ipb.avail = '1') then -- instruction available?
+          ipb.re <= '1';
+          trap_ctrl.instr_ma <= ipb.rdata(33); -- misaligned instruction fetch address
+          trap_ctrl.instr_be <= ipb.rdata(34); -- bus access fault druing instrucion fetch
+          illegal_compressed <= ipb.rdata(35); -- invalid decompressed instruction
+          if (trap_ctrl.env_start = '1') or ((ipb.rdata(33) or ipb.rdata(34) or ipb.rdata(35)) = '1') then -- exception/interrupt?
+            execute_engine.state_nxt <= TRAP;
+          else
+            execute_engine.is_ci_nxt <= ipb.rdata(32); -- flag to indicate this is a compressed instruction beeing executed
+            execute_engine.i_reg_nxt <= ipb.rdata(31 downto 0);
+            execute_engine.pc_nxt    <= ipb.raddr(data_width_c-1 downto 1) & '0'; -- the PC according to the current instruction
+            if (execute_engine.sleep = '1') then
+              execute_engine.state_nxt <= TRAP;
+            else
+              execute_engine.state_nxt <= EXECUTE;
+            end if;
+          end if;
+        end if;
 
       when TRAP => -- Start trap environment (also used as cpu sleep state)
       -- ------------------------------------------------------------
         fetch_engine.reset <= '1';
-        if (trap_ctrl.env_start = '1') then
+        if (trap_ctrl.env_start = '1') then -- check here again if we came directly from DISPATCH
           trap_ctrl.env_start_ack  <= '1';
+          execute_engine.pc_nxt    <= csr.mtvec(data_width_c-1 downto 2) & "00";
           execute_engine.sleep_nxt <= '0'; -- waky waky
-          execute_engine.pc_nxt    <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- has to be here for wfi to work
           execute_engine.state_nxt <= SYS_WAIT;
         end if;
 
@@ -750,7 +732,7 @@ begin
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
-            execute_engine.pc_nxt <= execute_engine.next_pc; -- "refetch" next instruction (only relevant for fencei)
+            execute_engine.pc_nxt <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- "refetch" next instruction (only relevant for fencei)
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then -- FENCEI
               fetch_engine.reset          <= '1';
               ctrl_nxt(ctrl_bus_fencei_c) <= '1';
@@ -762,8 +744,7 @@ begin
 
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
-            csr.re_nxt <= '1'; -- always read CSR
-            --
+            csr.re_nxt <= '1'; -- always read CSR - regardless of actual operation
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system
               case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
                 when funct12_ecall_c => -- ECALL
@@ -856,8 +837,8 @@ begin
       when BRANCH => -- update PC for taken branches and jumps
       -- ------------------------------------------------------------
         if (execute_engine.is_jump = '1') or (execute_engine.branch_taken = '1') then
-          execute_engine.pc_nxt    <= alu_add_i(data_width_c-1 downto 1) & '0'; -- branch/jump destination
           fetch_engine.reset       <= '1';
+          execute_engine.pc_nxt    <= alu_add_i(data_width_c-1 downto 1) & '0'; -- branch/jump destination
           execute_engine.state_nxt <= SYS_WAIT;
         else
           execute_engine.state_nxt <= DISPATCH;
@@ -900,7 +881,7 @@ begin
 
   -- Illegal Instruction Check --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  illegal_instruction_check: process(execute_engine, csr, ctrl_nxt, ci_illegal)
+  illegal_instruction_check: process(execute_engine, csr, ctrl_nxt)
   begin
     -- illegal instructions are checked in the EXECUTE stage
     -- the execute engine will only commit valid instructions
@@ -908,14 +889,13 @@ begin
       -- defaults --
       illegal_instruction <= '0';
       illegal_register    <= '0';
-      illegal_compressed  <= '0';
 
       -- check if using reg >= 16 for E-CPUs --
---if (CPU_EXTENSION_RISCV_E = true) then
---  illegal_register <= ctrl_nxt(ctrl_rf_rd_adr4_c) or ctrl_nxt(ctrl_rf_rs2_adr4_c) or ctrl_nxt(ctrl_rf_rs1_adr4_c);
---else
---  illegal_register <= '0';
---end if;
+      --if (CPU_EXTENSION_RISCV_E = true) then
+      --  illegal_register <= ????? FIXME
+      --else
+      --  illegal_register <= '0';
+      --end if;
 
       -- check instructions --
       case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
@@ -1040,10 +1020,10 @@ begin
           -- ecall, ebreak, mret, wfi --
           elsif (execute_engine.i_reg(instr_rd_msb_c  downto instr_rd_lsb_c)  = "00000") and
                 (execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") then
-            if (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ecall_c) or -- ECALL
+            if (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ecall_c)  or -- ECALL
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ebreak_c) or -- EBREAK 
-               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_mret_c) or -- MRET
-               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_wfi_c) then -- WFI
+               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_mret_c)   or -- MRET
+               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_wfi_c) then  -- WFI
               illegal_instruction <= '0';
             else
               illegal_instruction <= '1';
@@ -1055,15 +1035,12 @@ begin
         when others => -- compressed instruction or undefined instruction
           if (execute_engine.i_reg(1 downto 0) = "11") then -- undefined/unimplemented opcode
             illegal_instruction <= '1';
-          else -- compressed instruction: illegal or not implemented
-            illegal_compressed <= ci_illegal;
           end if;
 
       end case;
     else
       illegal_instruction <= '0';
       illegal_register    <= '0';
-      illegal_compressed  <= '0';
     end if;
   end process illegal_instruction_check;
 
@@ -1109,11 +1086,11 @@ begin
         -- trap control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler
           if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and -- exception/IRQ detected!
-             ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP))) then -- sample IRQs in EXECUTE or TRAP state only
-            trap_ctrl.cause     <= trap_ctrl.cause_nxt;   -- capture source ID for program
+             ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP))) then -- sample IRQs in EXECUTE or TRAP state only -> continue execution even if permanent IRQ
+            trap_ctrl.cause     <= trap_ctrl.cause_nxt;   -- capture source ID for program (for mcause csr)
             trap_ctrl.exc_ack   <= '1';                   -- clear execption
             trap_ctrl.irq_ack   <= trap_ctrl.irq_ack_nxt; -- capture and clear with interrupt ACK mask
-            trap_ctrl.env_start <= '1';                   -- now we want to start the trap handler
+            trap_ctrl.env_start <= '1';                   -- now execute engine can start trap handler
           end if;
         else -- trap waiting to get started
           if (trap_ctrl.env_start_ack = '1') then -- start of trap handler acknowledged by execution engine
@@ -1127,8 +1104,8 @@ begin
   end process trap_controller;
 
   -- any exception/interrupt? --
-  trap_ctrl.exc_fire <= or_all_f(trap_ctrl.exc_buf); -- classic exceptions (faults/traps) cannot be masked
-  trap_ctrl.irq_fire <= or_all_f(trap_ctrl.irq_buf) and csr.mstatus_mie; -- classic interrupts can be enabled/disabled
+  trap_ctrl.exc_fire <= or_all_f(trap_ctrl.exc_buf); -- exceptions/faults cannot be masked
+  trap_ctrl.irq_fire <= or_all_f(trap_ctrl.irq_buf) and csr.mstatus_mie; -- interrupts can be masked
 
 
   -- Trap Priority Detector -----------------------------------------------------------------
@@ -1280,7 +1257,7 @@ begin
           -- machine exception PC & trap value register --
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
             csr.mcause <= trap_ctrl.cause(4) & "000" & x"000000" & trap_ctrl.cause(3 downto 0);
-            if (trap_ctrl.cause(4) = '1') then -- for INTERRUPTS only
+            if (trap_ctrl.cause(4) = '1') then -- for INTERRUPTS only (is mcause(31))
               csr.mepc  <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
               csr.mtval <= (others => '0'); -- mtval is zero for interrupts
             else -- for EXCEPTIONS (according to their priority)
