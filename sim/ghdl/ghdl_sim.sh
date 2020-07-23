@@ -37,7 +37,6 @@ ghdl -a --work=neorv32 $srcdir_core/neorv32_bootloader_image.vhd
 #
 ghdl -a --work=neorv32 $srcdir_core/neorv32_boot_rom.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_busswitch.vhd
-ghdl -a --work=neorv32 $srcdir_core/neorv32_clic.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_alu.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_bus.vhd
