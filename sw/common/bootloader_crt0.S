@@ -41,8 +41,8 @@
 
 
   // SYSINFO
-  .set SYSINFO_DSPACE_BASE, 0xFFFFFFF4
-  .set SYSINFO_DSPACE_SIZE, 0xFFFFFFFC
+  .equ SYSINFO_DSPACE_BASE, 0xFFFFFFF4
+  .equ SYSINFO_DSPACE_SIZE, 0xFFFFFFFC
 
 
 _start:
@@ -105,6 +105,7 @@ __crt0_the_end:
 // bootloader has to be compiled without any CPU extensions
 // - especially without C extension!
 // *********************************************************
+.balign 4
 __crt0_dummy_trap_handler:
 
   addi	sp, sp, -4

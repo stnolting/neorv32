@@ -176,7 +176,6 @@ int main(void) {
 
   // deactivate unused IO devices
   neorv32_wdt_disable();
-  neorv32_clic_disable();
   neorv32_pwm_disable();
   neorv32_spi_disable();
   neorv32_trng_disable();
@@ -359,7 +358,7 @@ void __attribute__((__interrupt__)) mtime_irq_handler(void) {
 
   // make sure this was caused by MTIME IRQ
   uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
-  if (cause != EXCCODE_MTI) { // raw exception code for MTI
+  if (cause != TRAP_CODE_MTI) { // raw exception code for MTI
     neorv32_uart_print("\n\nEXCEPTION: ");
     print_hex_word(cause);
     neorv32_uart_print(" @ 0x");
