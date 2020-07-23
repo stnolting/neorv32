@@ -44,7 +44,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_bus is
   generic (
     CPU_EXTENSION_RISCV_C : boolean := true; -- implement compressed extension?
-    MEM_EXT_TIMEOUT       : natural := 15 -- cycles after which a valid bus access will timeout
+    BUS_TIMEOUT           : natural := 15    -- cycles after which a valid bus access will timeout
   );
   port (
     -- global control --
@@ -113,7 +113,7 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
     wr_req    : std_ulogic; -- write access in progress
     err_align : std_ulogic; -- alignment error
     err_bus   : std_ulogic; -- bus access error
-    timeout   : std_ulogic_vector(index_size_f(MEM_EXT_TIMEOUT)-1 downto 0);
+    timeout   : std_ulogic_vector(index_size_f(BUS_TIMEOUT)-1 downto 0);
   end record;
   signal i_arbiter, d_arbiter : bus_arbiter_t;
 
@@ -271,7 +271,7 @@ begin
         i_arbiter.rd_req    <= ctrl_i(ctrl_bus_if_c);
         i_arbiter.err_align <= i_misaligned;
         i_arbiter.err_bus   <= '0';
-        i_arbiter.timeout   <= std_ulogic_vector(to_unsigned(MEM_EXT_TIMEOUT, index_size_f(MEM_EXT_TIMEOUT)));
+        i_arbiter.timeout   <= std_ulogic_vector(to_unsigned(BUS_TIMEOUT, index_size_f(BUS_TIMEOUT)));
       else -- in progress
         i_arbiter.timeout   <= std_ulogic_vector(unsigned(i_arbiter.timeout) - 1);
         i_arbiter.err_align <= (i_arbiter.err_align or i_misaligned)                                     and (not ctrl_i(ctrl_bus_ierr_ack_c));
@@ -326,7 +326,7 @@ begin
         d_arbiter.rd_req    <= ctrl_i(ctrl_bus_rd_c);
         d_arbiter.err_align <= d_misaligned;
         d_arbiter.err_bus   <= '0';
-        d_arbiter.timeout   <= std_ulogic_vector(to_unsigned(MEM_EXT_TIMEOUT, index_size_f(MEM_EXT_TIMEOUT)));
+        d_arbiter.timeout   <= std_ulogic_vector(to_unsigned(BUS_TIMEOUT, index_size_f(BUS_TIMEOUT)));
       else -- in progress
         d_arbiter.timeout   <= std_ulogic_vector(unsigned(d_arbiter.timeout) - 1);
         d_arbiter.err_align <= (d_arbiter.err_align or d_misaligned)                                     and (not ctrl_i(ctrl_bus_derr_ack_c));

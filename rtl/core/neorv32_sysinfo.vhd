@@ -69,7 +69,6 @@ entity neorv32_sysinfo is
     IO_TWI_USE        : boolean := true;   -- implement two-wire interface (TWI)?
     IO_PWM_USE        : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE        : boolean := true;   -- implement watch dog timer (WDT)?
-    IO_CLIC_USE       : boolean := true;   -- implement core local interrupt controller (CLIC)?
     IO_TRNG_USE       : boolean := true;   -- implement true random number generator (TRNG)?
     IO_DEVNULL_USE    : boolean := true    -- implement dummy device (DEVNULL)?
   );
@@ -125,6 +124,7 @@ begin
   sysinfo_mem(2)(02) <= bool_to_ulogic_f(MEM_INT_IMEM_USE); -- implement processor-internal instruction memory?
   sysinfo_mem(2)(03) <= bool_to_ulogic_f(MEM_INT_IMEM_ROM); -- implement processor-internal instruction memory as ROM?
   sysinfo_mem(2)(04) <= bool_to_ulogic_f(MEM_INT_DMEM_USE); -- implement processor-internal data memory?
+  sysinfo_mem(2)(15 downto 05) <= (others => '0'); -- reserved
   -- IO
   sysinfo_mem(2)(16) <= bool_to_ulogic_f(IO_GPIO_USE);      -- implement general purpose input/output port unit (GPIO)?
   sysinfo_mem(2)(17) <= bool_to_ulogic_f(IO_MTIME_USE);     -- implement machine system timer (MTIME)?
@@ -133,9 +133,10 @@ begin
   sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_USE);       -- implement two-wire interface (TWI)?
   sysinfo_mem(2)(21) <= bool_to_ulogic_f(IO_PWM_USE);       -- implement pulse-width modulation unit (PWM)?
   sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_USE);       -- implement watch dog timer (WDT)?
-  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CLIC_USE);      -- implement core local interrupt controller (CLIC)?
+  sysinfo_mem(2)(23) <= '0';
   sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_USE);      -- implement true random number generator (TRNG)?
   sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_DEVNULL_USE);   -- implement dummy device (DEVNULL)?
+  sysinfo_mem(2)(31 downto 26) <= (others => '0'); -- reserved
 
   -- SYSINFO(3): reserved --
   sysinfo_mem(3) <= (others => '0'); -- reserved - maybe for technology-specific configuration options?

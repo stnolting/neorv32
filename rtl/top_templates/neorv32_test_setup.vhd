@@ -102,7 +102,6 @@ begin
     IO_TWI_USE                   => false, -- implement two-wire interface (TWI)?
     IO_PWM_USE                   => false, -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   => true,  -- implement watch dog timer (WDT)?
-    IO_CLIC_USE                  => true,  -- implement core local interrupt controller (CLIC)?
     IO_TRNG_USE                  => false, -- implement true random number generator (TRNG)?
     IO_DEVNULL_USE               => true   -- implement dummy device (DEVNULL)?
   )
@@ -140,8 +139,8 @@ begin
     -- PWM --
     pwm_o      => open,            -- pwm channels
     -- Interrupts --
-    ext_irq_i  => (others => '0'), -- external interrupt request
-    ext_ack_o  => open             -- external interrupt request acknowledge
+    msw_irq_i  => '0',             -- machine software interrupt
+    mext_irq_i => '0'              -- machine external interrupt
   );
 
   -- output --

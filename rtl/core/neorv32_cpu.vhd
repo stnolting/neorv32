@@ -52,49 +52,51 @@ entity neorv32_cpu is
   generic (
     -- General --
     CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
-    HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= x"00000000"; -- hardware thread id
-    CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
+    HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= (others => '0'); -- hardware thread id
+    CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= (others => '0'); -- cpu boot address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
-    -- Memory configuration: External memory interface --
-    MEM_EXT_TIMEOUT              : natural := 15     -- cycles after which a valid bus access will timeout
+    -- Bus Interface --
+    BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
   );
   port (
     -- global control --
-    clk_i          : in  std_ulogic; -- global clock, rising edge
-    rstn_i         : in  std_ulogic; -- global reset, low-active, async
+    clk_i          : in  std_ulogic := '0'; -- global clock, rising edge
+    rstn_i         : in  std_ulogic := '0'; -- global reset, low-active, async
     -- instruction bus interface --
     i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
     i_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
     i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
     i_bus_we_o     : out std_ulogic; -- write enable
     i_bus_re_o     : out std_ulogic; -- read enable
     i_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
-    i_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
-    i_bus_err_i    : in  std_ulogic; -- bus transfer error
+    i_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
+    i_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
     i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
     -- data bus interface --
     d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
     d_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
     d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
     d_bus_we_o     : out std_ulogic; -- write enable
     d_bus_re_o     : out std_ulogic; -- read enable
     d_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
-    d_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
-    d_bus_err_i    : in  std_ulogic; -- bus transfer error
+    d_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
+    d_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
     d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
     -- system time input from MTIME --
-    time_i         : in  std_ulogic_vector(63 downto 0); -- current system time
-    -- external interrupts --
-    msw_irq_i      : in  std_ulogic; -- software interrupt
-    clic_irq_i     : in  std_ulogic; -- CLIC interrupt request
-    mtime_irq_i    : in  std_ulogic  -- machine timer interrupt
+    time_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
+    -- interrupts (risc-v compliant) --
+    msw_irq_i      : in  std_ulogic := '0'; -- machine software interrupt
+    mext_irq_i     : in  std_ulogic := '0'; -- machine external interrupt
+    mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt
+    -- fast interrupts (custom) --
+    firq_i         : in  std_ulogic_vector(3 downto 0) := (others => '0')
   );
 end neorv32_cpu;
 
@@ -166,10 +168,12 @@ begin
     -- csr interface --
     csr_wdata_i   => alu_res,     -- CSR write data
     csr_rdata_o   => csr_rdata,   -- CSR read data
-    -- external interrupt --
-    msw_irq_i     => msw_irq_i,   -- software interrupt
-    clic_irq_i    => clic_irq_i,  -- CLIC interrupt request
+    -- interrupts (risc-v compliant) --
+    msw_irq_i     => msw_irq_i,   -- machine software interrupt
+    mext_irq_i    => mext_irq_i,  -- machine external interrupt
     mtime_irq_i   => mtime_irq_i, -- machine timer interrupt
+    -- fast interrupts (custom) --
+    firq_i        => firq_i,
     -- system time input from MTIME --
     time_i        => time_i,      -- current system time
     -- bus access exceptions --
@@ -272,7 +276,7 @@ begin
   neorv32_cpu_bus_inst: neorv32_cpu_bus
   generic map (
     CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
-    MEM_EXT_TIMEOUT       => MEM_EXT_TIMEOUT -- cycles after which a valid bus access will timeout
+    BUS_TIMEOUT           => BUS_TIMEOUT            -- cycles after which a valid bus access will timeout
   )
   port map (
     -- global control --

@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - FIXED!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01020006"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01030000"; -- no touchy!
 
   -- Helper Functions -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -76,10 +76,9 @@ package neorv32_package is
   constant gpio_in_addr_c       : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(gpio_base_c) + x"00000000");
   constant gpio_out_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(gpio_base_c) + x"00000004");
 
-  -- Core-Local Interrupt Controller (CLIC) --
-  constant clic_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF88"; -- base address, fixed!
-  constant clic_size_c          : natural := 1*4; -- bytes, fixed!
-  constant clic_ctrl_addr_c     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(clic_base_c) + x"00000000");
+  -- RESERVED --
+--constant ???_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF88"; -- base address, fixed!
+--constant ???_size_c           : natural := 1*4; -- bytes, fixed!
 
   -- Watch Dog Timer (WDT) --
   constant wdt_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF8C"; -- base address, fixed!
@@ -317,18 +316,25 @@ package neorv32_package is
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant trap_ima_c : std_ulogic_vector(4 downto 0) := "00000"; -- 0.0:  instruction misaligned
-  constant trap_iba_c : std_ulogic_vector(4 downto 0) := "00001"; -- 0.1:  instruction access fault
-  constant trap_iil_c : std_ulogic_vector(4 downto 0) := "00010"; -- 0.2:  illegal instruction
-  constant trap_brk_c : std_ulogic_vector(4 downto 0) := "00011"; -- 0.3:  breakpoint
-  constant trap_lma_c : std_ulogic_vector(4 downto 0) := "00100"; -- 0.4:  load address misaligned
-  constant trap_lbe_c : std_ulogic_vector(4 downto 0) := "00101"; -- 0.5:  load access fault
-  constant trap_sma_c : std_ulogic_vector(4 downto 0) := "00110"; -- 0.6:  store address misaligned
-  constant trap_sbe_c : std_ulogic_vector(4 downto 0) := "00111"; -- 0.7:  store access fault
-  constant trap_env_c : std_ulogic_vector(4 downto 0) := "01011"; -- 0.11: environment call from m-mode
-  constant trap_msi_c : std_ulogic_vector(4 downto 0) := "10011"; -- 1.3:  machine software interrupt
-  constant trap_mti_c : std_ulogic_vector(4 downto 0) := "10111"; -- 1.7:  machine timer interrupt
-  constant trap_mei_c : std_ulogic_vector(4 downto 0) := "11011"; -- 1.11: machine external interrupt
+  -- risc-v compliant --
+  constant trap_ima_c   : std_ulogic_vector(5 downto 0) := "000000"; -- 0.0:  instruction misaligned
+  constant trap_iba_c   : std_ulogic_vector(5 downto 0) := "000001"; -- 0.1:  instruction access fault
+  constant trap_iil_c   : std_ulogic_vector(5 downto 0) := "000010"; -- 0.2:  illegal instruction
+  constant trap_brk_c   : std_ulogic_vector(5 downto 0) := "000011"; -- 0.3:  breakpoint
+  constant trap_lma_c   : std_ulogic_vector(5 downto 0) := "000100"; -- 0.4:  load address misaligned
+  constant trap_lbe_c   : std_ulogic_vector(5 downto 0) := "000101"; -- 0.5:  load access fault
+  constant trap_sma_c   : std_ulogic_vector(5 downto 0) := "000110"; -- 0.6:  store address misaligned
+  constant trap_sbe_c   : std_ulogic_vector(5 downto 0) := "000111"; -- 0.7:  store access fault
+  constant trap_menv_c  : std_ulogic_vector(5 downto 0) := "001011"; -- 0.11: environment call from m-mode
+  --
+  constant trap_msi_c   : std_ulogic_vector(5 downto 0) := "100011"; -- 1.3:  machine software interrupt
+  constant trap_mti_c   : std_ulogic_vector(5 downto 0) := "100111"; -- 1.7:  machine timer interrupt
+  constant trap_mei_c   : std_ulogic_vector(5 downto 0) := "101011"; -- 1.11: machine external interrupt
+  -- custom --
+  constant trap_firq0_c : std_ulogic_vector(5 downto 0) := "110000"; -- 1.16: fast interrupt 0
+  constant trap_firq1_c : std_ulogic_vector(5 downto 0) := "110001"; -- 1.17: fast interrupt 1
+  constant trap_firq2_c : std_ulogic_vector(5 downto 0) := "110010"; -- 1.18: fast interrupt 2
+  constant trap_firq3_c : std_ulogic_vector(5 downto 0) := "110011"; -- 1.19: fast interrupt 3
 
   -- CPU Control Exception System -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -342,12 +348,18 @@ package neorv32_package is
   constant exception_lalign_c    : natural := 6; -- load address misaligned
   constant exception_saccess_c   : natural := 7; -- store access fault
   constant exception_laccess_c   : natural := 8; -- load access fault
+  --
   constant exception_width_c     : natural := 9; -- length of this list in bits
   -- interrupt source bits --
   constant interrupt_msw_irq_c   : natural := 0; -- machine software interrupt
   constant interrupt_mtime_irq_c : natural := 1; -- machine timer interrupt
   constant interrupt_mext_irq_c  : natural := 2; -- machine external interrupt
-  constant interrupt_width_c     : natural := 3; -- length of this list in bits
+  constant interrupt_firq_0_c    : natural := 3; -- fast interrupt channel 0
+  constant interrupt_firq_1_c    : natural := 4; -- fast interrupt channel 1
+  constant interrupt_firq_2_c    : natural := 5; -- fast interrupt channel 2
+  constant interrupt_firq_3_c    : natural := 6; -- fast interrupt channel 3
+  --
+  constant interrupt_width_c     : natural := 7; -- length of this list in bits
 
   -- Clock Generator -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -398,7 +410,6 @@ package neorv32_package is
       IO_TWI_USE                   : boolean := true;   -- implement two-wire interface (TWI)?
       IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
       IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
-      IO_CLIC_USE                  : boolean := true;   -- implement core local interrupt controller (CLIC)?
       IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
       IO_DEVNULL_USE               : boolean := true    -- implement dummy device (DEVNULL)?
     );
@@ -428,7 +439,7 @@ package neorv32_package is
       -- SPI --
       spi_sck_o  : out std_ulogic; -- SPI serial clock
       spi_sdo_o  : out std_ulogic; -- controller data out, peripheral data in
-      spi_sdi_i  : in  std_ulogic; -- controller data in, peripheral data out
+      spi_sdi_i  : in  std_ulogic := '0'; -- controller data in, peripheral data out
       spi_csn_o  : out std_ulogic_vector(07 downto 0); -- SPI CS
       -- TWI --
       twi_sda_io : inout std_logic := 'H'; -- twi serial data line
@@ -436,8 +447,8 @@ package neorv32_package is
       -- PWM --
       pwm_o      : out std_ulogic_vector(03 downto 0);  -- pwm channels
       -- Interrupts --
-      ext_irq_i  : in  std_ulogic_vector(01 downto 0) := (others => '0'); -- external interrupt request
-      ext_ack_o  : out std_ulogic_vector(01 downto 0)  -- external interrupt request acknowledge
+      msw_irq_i  : in  std_ulogic := '0'; -- machine software interrupt
+      mext_irq_i : in  std_ulogic := '0'  -- machine external interrupt
     );
   end component;
 
@@ -447,49 +458,51 @@ package neorv32_package is
     generic (
       -- General --
       CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
-      HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= x"00000000"; -- hardware thread id
-      CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
+      HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= (others => '0'); -- hardware thread id
+      CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= (others => '0'); -- cpu boot address
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
-      -- Memory configuration: External memory interface --
-      MEM_EXT_TIMEOUT              : natural := 15     -- cycles after which a valid bus access will timeout
+      -- Bus Interface --
+      BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
     );
     port (
       -- global control --
-      clk_i          : in  std_ulogic; -- global clock, rising edge
-      rstn_i         : in  std_ulogic; -- global reset, low-active, async
+      clk_i          : in  std_ulogic := '0'; -- global clock, rising edge
+      rstn_i         : in  std_ulogic := '0'; -- global reset, low-active, async
       -- instruction bus interface --
       i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-      i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+      i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
       i_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
       i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
       i_bus_we_o     : out std_ulogic; -- write enable
       i_bus_re_o     : out std_ulogic; -- read enable
       i_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
-      i_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
-      i_bus_err_i    : in  std_ulogic; -- bus transfer error
+      i_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
+      i_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
       i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
       -- data bus interface --
       d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-      d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+      d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
       d_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
       d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
       d_bus_we_o     : out std_ulogic; -- write enable
       d_bus_re_o     : out std_ulogic; -- read enable
       d_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
-      d_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
-      d_bus_err_i    : in  std_ulogic; -- bus transfer error
+      d_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
+      d_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
       d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
       -- system time input from MTIME --
-      time_i         : in  std_ulogic_vector(63 downto 0); -- current system time
-      -- external interrupts --
-      msw_irq_i      : in  std_ulogic; -- software interrupt
-      clic_irq_i     : in  std_ulogic; -- CLIC interrupt request
-      mtime_irq_i    : in  std_ulogic  -- machine timer interrupt
+      time_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
+      -- interrupts (risc-v compliant) --
+      msw_irq_i      : in  std_ulogic := '0'; -- machine software interrupt
+      mext_irq_i     : in  std_ulogic := '0'; -- machine external interrupt
+      mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt
+      -- fast interrupts (custom) --
+      firq_i         : in  std_ulogic_vector(3 downto 0) := (others => '0')
     );
   end component;
 
@@ -529,10 +542,12 @@ package neorv32_package is
       -- csr interface --
       csr_wdata_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR write data
       csr_rdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
-      -- external interrupt --
-      msw_irq_i     : in  std_ulogic; -- software interrupt
-      clic_irq_i    : in  std_ulogic; -- CLIC interrupt request
+      -- interrupts (risc-v compliant) --
+      msw_irq_i     : in  std_ulogic; -- machine software interrupt
+      mext_irq_i    : in  std_ulogic; -- machine external interrupt
       mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
+      -- fast interrupts (custom) --
+      firq_i        : in  std_ulogic_vector(3 downto 0);
       -- system time input from MTIME --
       time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
       -- bus access exceptions --
@@ -620,7 +635,7 @@ package neorv32_package is
   component neorv32_cpu_bus
     generic (
       CPU_EXTENSION_RISCV_C : boolean := true; -- implement compressed extension?
-      MEM_EXT_TIMEOUT       : natural := 15 -- cycles after which a valid bus access will timeout
+      BUS_TIMEOUT           : natural := 15    -- cycles after which a valid bus access will timeout
     );
     port (
       -- global control --
@@ -818,27 +833,6 @@ package neorv32_package is
       gpio_i : in  std_ulogic_vector(15 downto 0);
       -- interrupt --
       irq_o  : out std_ulogic
-    );
-  end component;
-
-  -- Component: Core Local Interrupt Controller (CLIC) --------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_clic
-    port (
-      -- host access --
-      clk_i     : in  std_ulogic; -- global clock line
-      addr_i    : in  std_ulogic_vector(31 downto 0); -- address
-      rden_i    : in  std_ulogic; -- read enable
-      wren_i    : in  std_ulogic; -- write enable
-      ben_i     : in  std_ulogic_vector(03 downto 0); -- byte write enable
-      data_i    : in  std_ulogic_vector(31 downto 0); -- data in
-      data_o    : out std_ulogic_vector(31 downto 0); -- data out
-      ack_o     : out std_ulogic; -- transfer acknowledge
-      -- cpu interrupt --
-      cpu_irq_o : out std_ulogic; -- trigger CPU's external IRQ
-      -- external interrupt lines --
-      ext_irq_i : in  std_ulogic_vector(07 downto 0); -- IRQ, triggering on HIGH level
-      ext_ack_o : out std_ulogic_vector(07 downto 0)  -- acknowledge
     );
   end component;
 
@@ -1064,7 +1058,6 @@ package neorv32_package is
       IO_TWI_USE        : boolean := true;   -- implement two-wire interface (TWI)?
       IO_PWM_USE        : boolean := true;   -- implement pulse-width modulation unit (PWM)?
       IO_WDT_USE        : boolean := true;   -- implement watch dog timer (WDT)?
-      IO_CLIC_USE       : boolean := true;   -- implement core local interrupt controller (CLIC)?
       IO_TRNG_USE       : boolean := true;   -- implement true random number generator (TRNG)?
       IO_DEVNULL_USE    : boolean := true    -- implement dummy device (DEVNULL)?
     );

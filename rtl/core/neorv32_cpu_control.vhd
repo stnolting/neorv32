@@ -77,10 +77,12 @@ entity neorv32_cpu_control is
     -- csr data interface --
     csr_wdata_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR write data
     csr_rdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
-    -- external interrupt --
-    msw_irq_i     : in  std_ulogic; -- software interrupt
-    clic_irq_i    : in  std_ulogic; -- CLIC interrupt request
+    -- interrupts (risc-v compliant) --
+    msw_irq_i     : in  std_ulogic; -- machine software interrupt
+    mext_irq_i    : in  std_ulogic; -- machine external interrupt
     mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
+    -- fast interrupts (custom) --
+    firq_i        : in  std_ulogic_vector(3 downto 0);
     -- system time input from MTIME --
     time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
     -- bus access exceptions --
@@ -168,8 +170,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     exc_ack       : std_ulogic; -- acknowledge all exceptions
     irq_ack       : std_ulogic_vector(interrupt_width_c-1 downto 0); -- acknowledge specific interrupt
     irq_ack_nxt   : std_ulogic_vector(interrupt_width_c-1 downto 0);
-    cause         : std_ulogic_vector(4 downto 0); -- trap ID (for "mcause"), only for hw
-    cause_nxt     : std_ulogic_vector(4 downto 0);
+    cause         : std_ulogic_vector(5 downto 0); -- trap ID (for "mcause"), only for hw
+    cause_nxt     : std_ulogic_vector(5 downto 0);
     --
     env_start     : std_ulogic; -- start trap handler env
     env_start_ack : std_ulogic; -- start of trap handler acknowledged
@@ -199,9 +201,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mstatus_mpie : std_ulogic; -- mstatus.MPIE: previous global IRQ enable (R/-)
     mie_msie     : std_ulogic; -- mie.MSIE: machine software interrupt enable (R/W)
     mie_meie     : std_ulogic; -- mie.MEIE: machine external interrupt enable (R/W)
-    mie_mtie     : std_ulogic; -- mie.MEIE: machine timer interrupt enable (R/W)
+    mie_mtie     : std_ulogic; -- mie.MEIE: machine timer interrupt enable (R/W
+    mie_firqe    : std_ulogic_vector(3 downto 0); -- mie.firq*e: fast interrupt enabled (R/W)
     mepc         : std_ulogic_vector(data_width_c-1 downto 0); -- mepc: machine exception pc (R/W)
-    mcause       : std_ulogic_vector(data_width_c-1 downto 0); -- mcause: machine trap cause (R/W)
+    mcause       : std_ulogic_vector(data_width_c-1 downto 0); -- mcause: machine trap cause (R/-)
     mtvec        : std_ulogic_vector(data_width_c-1 downto 0); -- mtvec: machine trap-handler base address (R/W), bit 1:0 == 00
     mtval        : std_ulogic_vector(data_width_c-1 downto 0); -- mtval: machine bad address or isntruction (R/W)
     mscratch     : std_ulogic_vector(data_width_c-1 downto 0); -- mscratch: scratch register (R/W)
@@ -633,17 +636,14 @@ begin
           trap_ctrl.instr_ma <= ipb.rdata(33); -- misaligned instruction fetch address
           trap_ctrl.instr_be <= ipb.rdata(34); -- bus access fault druing instrucion fetch
           illegal_compressed <= ipb.rdata(35); -- invalid decompressed instruction
-          if (trap_ctrl.env_start = '1') or ((ipb.rdata(33) or ipb.rdata(34) or ipb.rdata(35)) = '1') then -- exception/interrupt?
+          execute_engine.is_ci_nxt <= ipb.rdata(32); -- flag to indicate this is a compressed instruction beeing executed
+          execute_engine.i_reg_nxt <= ipb.rdata(31 downto 0);
+          execute_engine.pc_nxt    <= ipb.raddr; -- the PC according to the current instruction
+          -- ipb.rdata(35) is not immediately checked here!
+          if (execute_engine.sleep = '1') or (trap_ctrl.env_start = '1') or ((ipb.rdata(33) or ipb.rdata(34)) = '1') then
             execute_engine.state_nxt <= TRAP;
           else
-            execute_engine.is_ci_nxt <= ipb.rdata(32); -- flag to indicate this is a compressed instruction beeing executed
-            execute_engine.i_reg_nxt <= ipb.rdata(31 downto 0);
-            execute_engine.pc_nxt    <= ipb.raddr; -- the PC according to the current instruction
-            if (execute_engine.sleep = '1') then
-              execute_engine.state_nxt <= TRAP;
-            else
-              execute_engine.state_nxt <= EXECUTE;
-            end if;
+            execute_engine.state_nxt <= EXECUTE;
           end if;
         end if;
 
@@ -1074,10 +1074,15 @@ begin
         trap_ctrl.exc_buf(exception_m_envcall_c) <= (trap_ctrl.exc_buf(exception_m_envcall_c) or trap_ctrl.env_call)    and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_break_c)     <= (trap_ctrl.exc_buf(exception_break_c)     or trap_ctrl.break_point) and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_iillegal_c)  <= (trap_ctrl.exc_buf(exception_iillegal_c)  or trap_ctrl.instr_il)    and (not trap_ctrl.exc_ack);
-        -- interrupt buffer: machine software/external/timer interrupt
-        trap_ctrl.irq_buf(interrupt_msw_irq_c)   <= csr.mie_msie and (trap_ctrl.irq_buf(interrupt_msw_irq_c)   or msw_irq_i)    and (not trap_ctrl.irq_ack(interrupt_msw_irq_c));
-        trap_ctrl.irq_buf(interrupt_mext_irq_c)  <= csr.mie_meie and (trap_ctrl.irq_buf(interrupt_mext_irq_c)  or clic_irq_i)   and (not trap_ctrl.irq_ack(interrupt_mext_irq_c));
-        trap_ctrl.irq_buf(interrupt_mtime_irq_c) <= csr.mie_mtie and (trap_ctrl.irq_buf(interrupt_mtime_irq_c) or mtime_irq_i)  and (not trap_ctrl.irq_ack(interrupt_mtime_irq_c));
+        -- interrupt buffer (RISC-V compliant): machine software/external/timer interrupt
+        trap_ctrl.irq_buf(interrupt_msw_irq_c)   <= csr.mie_msie and (trap_ctrl.irq_buf(interrupt_msw_irq_c)   or msw_irq_i)   and (not trap_ctrl.irq_ack(interrupt_msw_irq_c));
+        trap_ctrl.irq_buf(interrupt_mext_irq_c)  <= csr.mie_meie and (trap_ctrl.irq_buf(interrupt_mext_irq_c)  or mext_irq_i)  and (not trap_ctrl.irq_ack(interrupt_mext_irq_c));
+        trap_ctrl.irq_buf(interrupt_mtime_irq_c) <= csr.mie_mtie and (trap_ctrl.irq_buf(interrupt_mtime_irq_c) or mtime_irq_i) and (not trap_ctrl.irq_ack(interrupt_mtime_irq_c));
+        -- interrupt buffer (custom): fast interrupts
+        trap_ctrl.irq_buf(interrupt_firq_0_c)    <= csr.mie_firqe(0) and (trap_ctrl.irq_buf(interrupt_firq_0_c) or firq_i(0)) and (not trap_ctrl.irq_ack(interrupt_firq_0_c));
+        trap_ctrl.irq_buf(interrupt_firq_1_c)    <= csr.mie_firqe(1) and (trap_ctrl.irq_buf(interrupt_firq_1_c) or firq_i(1)) and (not trap_ctrl.irq_ack(interrupt_firq_1_c));
+        trap_ctrl.irq_buf(interrupt_firq_2_c)    <= csr.mie_firqe(2) and (trap_ctrl.irq_buf(interrupt_firq_2_c) or firq_i(2)) and (not trap_ctrl.irq_ack(interrupt_firq_2_c));
+        trap_ctrl.irq_buf(interrupt_firq_3_c)    <= csr.mie_firqe(3) and (trap_ctrl.irq_buf(interrupt_firq_3_c) or firq_i(3)) and (not trap_ctrl.irq_ack(interrupt_firq_3_c));
 
         -- trap control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler
@@ -1131,6 +1136,27 @@ begin
       trap_ctrl.irq_ack_nxt(interrupt_msw_irq_c) <= '1';
 
 
+    -- interrupt: 1.16 fast interrupt channel 0 --
+    elsif (trap_ctrl.irq_buf(interrupt_firq_0_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_firq0_c;
+      trap_ctrl.irq_ack_nxt(interrupt_firq_0_c) <= '1';
+
+    -- interrupt: 1.17 fast interrupt channel 1 --
+    elsif (trap_ctrl.irq_buf(interrupt_firq_1_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_firq1_c;
+      trap_ctrl.irq_ack_nxt(interrupt_firq_1_c) <= '1';
+
+    -- interrupt: 1.18 fast interrupt channel 2 --
+    elsif (trap_ctrl.irq_buf(interrupt_firq_2_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_firq2_c;
+      trap_ctrl.irq_ack_nxt(interrupt_firq_2_c) <= '1';
+
+    -- interrupt: 1.19 fast interrupt channel 3 --
+    elsif (trap_ctrl.irq_buf(interrupt_firq_3_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_firq3_c;
+      trap_ctrl.irq_ack_nxt(interrupt_firq_3_c) <= '1';
+
+
     -- the following traps are caused by synchronous exceptions
     -- here we do not need a specific acknowledge mask since only one exception (the one
     -- with highest priority) can trigger at once
@@ -1150,7 +1176,7 @@ begin
 
     -- trap/fault: 0.11 environment call from M-mode --
     elsif (trap_ctrl.exc_buf(exception_m_envcall_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_env_c;
+      trap_ctrl.cause_nxt <= trap_menv_c;
 
     -- trap/fault: 0.3 breakpoint --
     elsif (trap_ctrl.exc_buf(exception_break_c) = '1') then
@@ -1198,6 +1224,7 @@ begin
       csr.mie_msie     <= '0';
       csr.mie_meie     <= '0';
       csr.mie_mtie     <= '0';
+      csr.mie_firqe    <= (others => '0');
       csr.mtvec        <= (others => '0');
       csr.mscratch     <= (others => '0');
       csr.mepc         <= (others => '0');
@@ -1221,9 +1248,14 @@ begin
                   csr.mstatus_mie  <= csr_wdata_i(03);
                   csr.mstatus_mpie <= csr_wdata_i(07);
                 when x"4" => -- R/W: mie - machine interrupt-enable register
-                  csr.mie_msie <= csr_wdata_i(03); -- SW IRQ enable
-                  csr.mie_mtie <= csr_wdata_i(07); -- TIMER IRQ enable
-                  csr.mie_meie <= csr_wdata_i(11); -- EXT IRQ enable
+                  csr.mie_msie <= csr_wdata_i(03); -- machine SW IRQ enable
+                  csr.mie_mtie <= csr_wdata_i(07); -- machine TIMER IRQ enable
+                  csr.mie_meie <= csr_wdata_i(11); -- machine EXT IRQ enable
+                  --
+                  csr.mie_firqe(0) <= csr_wdata_i(16); -- fast interrupt channel 0
+                  csr.mie_firqe(1) <= csr_wdata_i(17); -- fast interrupt channel 1
+                  csr.mie_firqe(2) <= csr_wdata_i(18); -- fast interrupt channel 2
+                  csr.mie_firqe(3) <= csr_wdata_i(19); -- fast interrupt channel 3
                 when x"5" => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
                   csr.mtvec <= csr_wdata_i(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
                 when others =>
@@ -1237,8 +1269,6 @@ begin
                   csr.mscratch <= csr_wdata_i;
                 when x"1" => -- R/W: mepc - machine exception program counter
                   csr.mepc <= csr_wdata_i(data_width_c-1 downto 1) & '0';
-                when x"2" => -- R/W: mcause - machine trap cause
-                  csr.mcause <= csr_wdata_i;
                 when x"3" => -- R/W: mtval - machine bad address or instruction
                   csr.mtval <= csr_wdata_i;
                 when others =>
@@ -1250,20 +1280,20 @@ begin
         -- automatic update by hardware --
         else
 
-          -- machine exception PC & trap value register --
+          -- machine exception PC & machine trap value register --
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
-            csr.mcause <= trap_ctrl.cause(4) & "000" & x"000000" & trap_ctrl.cause(3 downto 0);
-            if (trap_ctrl.cause(4) = '1') then -- for INTERRUPTS only (is mcause(31))
+            csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & "000" & x"00000" & "000" & trap_ctrl.cause(4 downto 0);
+            if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS only (is mcause(31))
               csr.mepc  <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
               csr.mtval <= (others => '0'); -- mtval is zero for interrupts
             else -- for EXCEPTIONS (according to their priority)
               csr.mepc <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
-              if (trap_ctrl.cause(3 downto 0) = trap_iba_c(3 downto 0)) or -- instr access error OR
-                 (trap_ctrl.cause(3 downto 0) = trap_ima_c(3 downto 0)) or -- misaligned instruction OR
-                 (trap_ctrl.cause(3 downto 0) = trap_brk_c(3 downto 0)) or -- breakpoint OR
-                 (trap_ctrl.cause(3 downto 0) = trap_env_c(3 downto 0)) then -- env call OR
+              if (trap_ctrl.cause(4 downto 0) = trap_iba_c(4 downto 0)) or -- instr access error OR
+                 (trap_ctrl.cause(4 downto 0) = trap_ima_c(4 downto 0)) or -- misaligned instruction OR
+                 (trap_ctrl.cause(4 downto 0) = trap_brk_c(4 downto 0)) or -- breakpoint OR
+                 (trap_ctrl.cause(4 downto 0) = trap_menv_c(4 downto 0)) then -- env call OR
                 csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction
-              elsif (trap_ctrl.cause(3 downto 0) = trap_iil_c(3 downto 0)) then -- illegal instruction
+              elsif (trap_ctrl.cause(4 downto 0) = trap_iil_c(4 downto 0)) then -- illegal instruction
                 csr.mtval <= execute_engine.i_reg; -- faulting instruction itself
               else -- load/store misalignments/access errors
                 csr.mtval <= mar_i; -- faulting data access address
@@ -1307,13 +1337,19 @@ begin
             csr_rdata_o(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
             csr_rdata_o(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
             csr_rdata_o(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_M);     -- M CPU extension
+            csr_rdata_o(23) <= '1';                                         -- X CPU extension (non-std extensions)
             csr_rdata_o(25) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr) and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Z CPU extension
             csr_rdata_o(30) <= '1'; -- 32-bit architecture (MXL lo)
             csr_rdata_o(31) <= '0'; -- 32-bit architecture (MXL hi)
           when x"304" => -- R/W: mie - machine interrupt-enable register
-            csr_rdata_o(03) <= csr.mie_msie; -- software IRQ enable
-            csr_rdata_o(07) <= csr.mie_mtie; -- timer IRQ enable
-            csr_rdata_o(11) <= csr.mie_meie; -- external IRQ enable
+            csr_rdata_o(03) <= csr.mie_msie; -- machine software IRQ enable
+            csr_rdata_o(07) <= csr.mie_mtie; -- machine timer IRQ enable
+            csr_rdata_o(11) <= csr.mie_meie; -- machine external IRQ enable
+            --
+            csr_rdata_o(16) <= csr.mie_firqe(0); -- fast interrupt channel 0
+            csr_rdata_o(17) <= csr.mie_firqe(1); -- fast interrupt channel 1
+            csr_rdata_o(18) <= csr.mie_firqe(2); -- fast interrupt channel 2
+            csr_rdata_o(19) <= csr.mie_firqe(3); -- fast interrupt channel 3
           when x"305" => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
             csr_rdata_o <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
 
@@ -1322,7 +1358,7 @@ begin
             csr_rdata_o <= csr.mscratch;
           when x"341" => -- R/W: mepc - machine exception program counter
             csr_rdata_o <= csr.mepc(data_width_c-1 downto 1) & '0';
-          when x"342" => -- R/W: mcause - machine trap cause
+          when x"342" => -- R/-: mcause - machine trap cause
             csr_rdata_o <= csr.mcause;
           when x"343" => -- R/W: mtval - machine bad address or instruction
             csr_rdata_o <= csr.mtval;
@@ -1330,6 +1366,11 @@ begin
             csr_rdata_o(03) <= trap_ctrl.irq_buf(interrupt_msw_irq_c);
             csr_rdata_o(07) <= trap_ctrl.irq_buf(interrupt_mtime_irq_c);
             csr_rdata_o(11) <= trap_ctrl.irq_buf(interrupt_mext_irq_c);
+            --
+            csr_rdata_o(16) <= trap_ctrl.irq_buf(interrupt_firq_0_c);
+            csr_rdata_o(17) <= trap_ctrl.irq_buf(interrupt_firq_1_c);
+            csr_rdata_o(18) <= trap_ctrl.irq_buf(interrupt_firq_2_c);
+            csr_rdata_o(19) <= trap_ctrl.irq_buf(interrupt_firq_3_c);
 
           -- counter and timers --
           when x"c00" | x"b00" => -- R/(W): cycle/mcycle: Cycle counter LOW

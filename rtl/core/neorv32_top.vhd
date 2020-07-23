@@ -80,7 +80,6 @@ entity neorv32_top is
     IO_TWI_USE                   : boolean := true;   -- implement two-wire interface (TWI)?
     IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
-    IO_CLIC_USE                  : boolean := true;   -- implement core local interrupt controller (CLIC)?
     IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
     IO_DEVNULL_USE               : boolean := true    -- implement dummy device (DEVNULL)?
   );
@@ -110,16 +109,16 @@ entity neorv32_top is
     -- SPI (available if IO_SPI_USE = true) --
     spi_sck_o  : out std_ulogic; -- SPI serial clock
     spi_sdo_o  : out std_ulogic; -- controller data out, peripheral data in
-    spi_sdi_i  : in  std_ulogic; -- controller data in, peripheral data out
+    spi_sdi_i  : in  std_ulogic := '0'; -- controller data in, peripheral data out
     spi_csn_o  : out std_ulogic_vector(07 downto 0); -- SPI CS
     -- TWI (available if IO_TWI_USE = true) --
     twi_sda_io : inout std_logic := 'H'; -- twi serial data line
     twi_scl_io : inout std_logic := 'H'; -- twi serial clock line
     -- PWM (available if IO_PWM_USE = true) --
-    pwm_o      : out std_ulogic_vector(03 downto 0);  -- pwm channels
-    -- Interrupts (available if IO_CLIC_USE = true) --
-    ext_irq_i  : in  std_ulogic_vector(01 downto 0) := (others => '0'); -- external interrupt request
-    ext_ack_o  : out std_ulogic_vector(01 downto 0)  -- external interrupt request acknowledge
+    pwm_o      : out std_ulogic_vector(03 downto 0); -- pwm channels
+    -- Interrupts --
+    msw_irq_i  : in  std_ulogic := '0'; -- machine software interrupt
+    mext_irq_i : in  std_ulogic := '0'  -- machine external interrupt
   );
 end neorv32_top;
 
@@ -191,8 +190,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal pwm_ack        : std_ulogic;
   signal wdt_rdata      : std_ulogic_vector(data_width_c-1 downto 0);
   signal wdt_ack        : std_ulogic;
-  signal clic_rdata     : std_ulogic_vector(data_width_c-1 downto 0);
-  signal clic_ack       : std_ulogic;
   signal trng_rdata     : std_ulogic_vector(data_width_c-1 downto 0);
   signal trng_ack       : std_ulogic;
   signal devnull_rdata  : std_ulogic_vector(data_width_c-1 downto 0);
@@ -202,9 +199,7 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- IRQs --
   signal mtime_irq : std_ulogic;
-  signal clic_irq  : std_ulogic;
-  signal clic_xirq : std_ulogic_vector(7 downto 0);
-  signal clic_xack : std_ulogic_vector(7 downto 0);
+  signal fast_irq  : std_ulogic_vector(3 downto 0);
   signal gpio_irq  : std_ulogic;
   signal wdt_irq   : std_ulogic;
   signal uart_irq  : std_ulogic;
@@ -255,10 +250,6 @@ begin
       -- CSR system not implemented --
       if (CPU_EXTENSION_RISCV_Zicsr = false) then
         assert false report "NEORV32 CONFIG WARNING! No exception/interrupt/machine features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;
-      end if;
-      -- core local interrupt controller --
-      if (CPU_EXTENSION_RISCV_Zicsr = false) and (IO_CLIC_USE = true) then
-        assert false report "NEORV32 CONFIG ERROR! Core local interrupt controller (CLIC) cannot be used without >Zicsr< CPU extension." severity error;
       end if;
 
       -- memory layout notifier --
@@ -339,8 +330,8 @@ begin
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
-    -- Memory configuration: External memory interface --
-    MEM_EXT_TIMEOUT              => MEM_EXT_TIMEOUT   -- cycles after which a valid bus access will timeout
+    -- Bus Interface --
+    BUS_TIMEOUT                  => MEM_EXT_TIMEOUT   -- cycles after which a valid bus access will timeout
   )
   port map (
     -- global control --
@@ -370,11 +361,23 @@ begin
     d_bus_fence_o  => cpu_d.fence,  -- executed FENCE operation
     -- system time input from MTIME --
     time_i         => mtime_time,   -- current system time
-    -- external interrupts --
-    msw_irq_i      => '0',          -- software interrupt
-    clic_irq_i     => clic_irq,     -- CLIC interrupt request
-    mtime_irq_i    => mtime_irq     -- machine timer interrupt
+    -- interrupts (risc-v compliant) --
+    msw_irq_i      => msw_irq_i,    -- machine software interrupt
+    mext_irq_i     => mext_irq_i,   -- machine external interrupt request
+    mtime_irq_i    => mtime_irq,    -- machine timer interrupt
+    -- fast interrupts (custom) --
+    firq_i         => fast_irq
   );
+
+  -- advanced memory control --
+  fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
+  fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
+
+  -- fast interrupts --
+  fast_irq(0) <= wdt_irq; -- highest priority
+  fast_irq(1) <= gpio_irq;
+  fast_irq(2) <= uart_irq;
+  fast_irq(3) <= spi_irq or twi_irq; -- lowest priority, can be triggered by SPI or TWI
 
 
   -- CPU Crossbar Switch --------------------------------------------------------------------
@@ -420,19 +423,15 @@ begin
     p_bus_err_i     => p_bus.err     -- bus transfer error
   );
 
-  -- advanced memory control --
-  fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
-  fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
-
-  -- process bus: CPU data input --
+  -- processor bus: CPU data input --
   p_bus.rdata <= (imem_rdata or dmem_rdata or bootrom_rdata) or wishbone_rdata or (gpio_rdata or mtime_rdata or uart_rdata or
-                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or clic_rdata or trng_rdata or devnull_rdata or sysinfo_rdata);
+                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or devnull_rdata or sysinfo_rdata);
 
-  -- process bus: CPU data ACK input --
+  -- processor bus: CPU data ACK input --
   p_bus.ack <= (imem_ack or dmem_ack or bootrom_ack) or wishbone_ack or (gpio_ack or mtime_ack or uart_ack or
-               spi_ack or twi_ack or pwm_ack or wdt_ack or clic_ack or trng_ack or devnull_ack or sysinfo_ack);
+               spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or devnull_ack or sysinfo_ack);
 
-  -- process bus: CPU data bus error input --
+  -- processor bus: CPU data bus error input --
   p_bus.err <= wishbone_err;
 
 
@@ -612,52 +611,6 @@ begin
     gpio_ack   <= '0';
     gpio_o     <= (others => '0');
     gpio_irq   <= '0';
-  end generate;
-
-
-  -- Core-Local Interrupt Controller (CLIC) -------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  neorv32_clic_inst_true:
-  if (IO_CLIC_USE = true) generate
-    neorv32_clic_inst: neorv32_clic
-    port map (
-      -- host access --
-      clk_i     => clk_i,       -- global clock line
-      rden_i    => io_rden,     -- read enable
-      wren_i    => io_wren,     -- write enable
-      ben_i     => p_bus.ben,   -- byte write enable
-      addr_i    => p_bus.addr,  -- address
-      data_i    => p_bus.wdata, -- data in
-      data_o    => clic_rdata,  -- data out
-      ack_o     => clic_ack,    -- transfer acknowledge
-      -- cpu interrupt --
-      cpu_irq_o => clic_irq,    -- trigger CPU's external IRQ
-      -- external interrupt lines --
-      ext_irq_i => clic_xirq,   -- IRQ, triggering on HIGH level
-      ext_ack_o => clic_xack    -- acknowledge
-    );
-  end generate;
-
-  -- CLIC interrupt channels and priority --
-  clic_xirq(0) <= wdt_irq; -- highest priority
-  clic_xirq(1) <= '0'; -- reserved
-  clic_xirq(2) <= gpio_irq;
-  clic_xirq(3) <= uart_irq;
-  clic_xirq(4) <= spi_irq;
-  clic_xirq(5) <= twi_irq;
-  clic_xirq(6) <= ext_irq_i(0);
-  clic_xirq(7) <= ext_irq_i(1); -- lowest priority
-
-  -- external interrupt request acknowledge --
-  ext_ack_o(0) <= clic_xack(6);
-  ext_ack_o(1) <= clic_xack(7);
-
-  neorv32_clic_inst_false:
-  if (IO_CLIC_USE = false) generate
-    clic_rdata <= (others => '0');
-    clic_ack   <= '0';
-    clic_irq   <= '0';
-    clic_xack  <= (others => '0');
   end generate;
 
 
@@ -952,7 +905,6 @@ begin
     IO_TWI_USE        => IO_TWI_USE,        -- implement two-wire interface (TWI)?
     IO_PWM_USE        => IO_PWM_USE,        -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE        => IO_WDT_USE,        -- implement watch dog timer (WDT)?
-    IO_CLIC_USE       => IO_CLIC_USE,       -- implement core local interrupt controller (CLIC)?
     IO_TRNG_USE       => IO_TRNG_USE,       -- implement true random number generator (TRNG)?
     IO_DEVNULL_USE    => IO_DEVNULL_USE     -- implement dummy device (DEVNULL)?
   )
