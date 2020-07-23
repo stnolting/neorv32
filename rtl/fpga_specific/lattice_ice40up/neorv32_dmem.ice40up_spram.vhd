@@ -90,7 +90,7 @@ begin
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (addr_i >= DMEM_BASE) and (addr_i < std_ulogic_vector(unsigned(DMEM_BASE) + DMEM_SIZE)) else '0';
+  acc_en <= '1' when (unsigned(addr_i) >= unsigned(DMEM_BASE)) and (unsigned(addr_i) < unsigned(DMEM_BASE) + DMEM_SIZE) else '0';
   mem_cs <= acc_en and (rden_i or wren_i);
 
 
