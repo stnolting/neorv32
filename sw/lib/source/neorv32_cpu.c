@@ -53,7 +53,8 @@
  **************************************************************************/
 int neorv32_cpu_irq_enable(uint8_t irq_sel) {
 
-  if ((irq_sel != CPU_MIE_MSIE) && (irq_sel != CPU_MIE_MTIE) && (irq_sel != CPU_MIE_MEIE)) {
+  if ((irq_sel != CPU_MIE_MSIE) && (irq_sel != CPU_MIE_MTIE) && (irq_sel != CPU_MIE_MEIE) &&
+      (irq_sel != CPU_MIE_FIRQ0E) && (irq_sel != CPU_MIE_FIRQ1E) && (irq_sel != CPU_MIE_FIRQ2E) && (irq_sel != CPU_MIE_FIRQ3E)) {
     return 1;
   }
 
@@ -71,7 +72,8 @@ int neorv32_cpu_irq_enable(uint8_t irq_sel) {
  **************************************************************************/
 int neorv32_cpu_irq_disable(uint8_t irq_sel) {
 
-  if ((irq_sel != CPU_MIE_MSIE) && (irq_sel != CPU_MIE_MTIE) && (irq_sel != CPU_MIE_MEIE)) {
+  if ((irq_sel != CPU_MIE_MSIE) && (irq_sel != CPU_MIE_MTIE) && (irq_sel != CPU_MIE_MEIE) &&
+      (irq_sel != CPU_MIE_FIRQ0E) && (irq_sel != CPU_MIE_FIRQ1E) && (irq_sel != CPU_MIE_FIRQ2E) && (irq_sel != CPU_MIE_FIRQ3E)) {
     return 1;
   }
 

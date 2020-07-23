@@ -64,7 +64,7 @@ enum NEORV32_CPU_CSRS_enum {
 
   CSR_MSCRATCH    = 0x340, /**< 0x340 - mscratch (r/w): Machine scratch register */
   CSR_MEPC        = 0x341, /**< 0x341 - mepc     (r/w): Machine exception program counter */
-  CSR_MCAUSE      = 0x342, /**< 0x342 - mcause   (r/w): Machine trap cause */
+  CSR_MCAUSE      = 0x342, /**< 0x342 - mcause   (r/-): Machine trap cause */
   CSR_MTVAL       = 0x343, /**< 0x343 - mtval    (r/w): Machine bad address or instruction */
   CSR_MIP         = 0x344, /**< 0x344 - mip      (r/w): Machine interrupt pending register */
 
@@ -101,9 +101,14 @@ enum NEORV32_CPU_MSTATUS_enum {
  * CPU <b>mie</b> CSR (r/w): Machine interrupt enable (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MIE_enum {
-  CPU_MIE_MSIE  =  3, /**< CPU mie CSR (3): Machine software interrupt enable (r/w) */
-  CPU_MIE_MTIE  =  7, /**< CPU mie CSR (7): Machine timer interrupt (MTIME) enable bit (r/w) */
-  CPU_MIE_MEIE  = 11  /**< CPU mie CSR (11): Machine external interrupt (via CLIC) enable bit (r/w) */
+  CPU_MIE_MSIE   =  3, /**< CPU mie CSR (3): Machine software interrupt enable (r/w) */
+  CPU_MIE_MTIE   =  7, /**< CPU mie CSR (7): Machine timer interrupt enable bit (r/w) */
+  CPU_MIE_MEIE   = 11, /**< CPU mie CSR (11): Machine external interrupt enable bit (r/w) */
+
+  CPU_MIE_FIRQ0E = 16, /**< CPU mie CSR (16): Fast interrupt channel 0 enable bit (r/w) */
+  CPU_MIE_FIRQ1E = 17, /**< CPU mie CSR (17): Fast interrupt channel 1 enable bit (r/w) */
+  CPU_MIE_FIRQ2E = 18, /**< CPU mie CSR (18): Fast interrupt channel 2 enable bit (r/w) */
+  CPU_MIE_FIRQ3E = 19  /**< CPU mie CSR (19): Fast interrupt channel 3 enable bit (r/w) */
 };
 
 
@@ -111,9 +116,14 @@ enum NEORV32_CPU_MIE_enum {
  * CPU <b>mip</b> CSR (r/-): Machine interrupt pending (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MIP_enum {
-  CPU_MIP_MSIP  =  3, /**< CPU mip CSR (3): Machine software interrupt pending (r/-) */
-  CPU_MIP_MTIP  =  7, /**< CPU mip CSR (7): Machine timer interrupt (MTIME) pending (r/-) */
-  CPU_MIP_MEIP  = 11  /**< CPU mip CSR (11): Machine external interrupt (via CLIC) pending (r/-) */
+  CPU_MIP_MSIP   =  3, /**< CPU mip CSR (3): Machine software interrupt pending (r/-) */
+  CPU_MIP_MTIP   =  7, /**< CPU mip CSR (7): Machine timer interrupt pending (r/-) */
+  CPU_MIP_MEIP   = 11, /**< CPU mip CSR (11): Machine external interrupt pending (r/-) */
+
+  CPU_MIP_FIRQ0P = 16, /**< CPU mip CSR (16): Fast interrupt channel 0 pending (r/-) */
+  CPU_MIP_FIRQ1P = 17, /**< CPU mip CSR (17): Fast interrupt channel 1 pending (r/-) */
+  CPU_MIP_FIRQ2P = 18, /**< CPU mip CSR (18): Fast interrupt channel 2 pending (r/-) */
+  CPU_MIP_FIRQ3P = 19  /**< CPU mip CSR (19): Fast interrupt channel 3 pending (r/-) */
 };
 
 
@@ -133,40 +143,25 @@ enum NEORV32_CPU_MISA_enum {
 
 
 /**********************************************************************//**
- * Exception IDs.
- **************************************************************************/
-enum NEORV32_EXCEPTION_IDS_enum {
-  EXCID_I_MISALIGNED =  0, /**< 0: Instruction address misaligned */
-  EXCID_I_ACCESS     =  1, /**< 1: Instruction (bus) access fault */
-  EXCID_I_ILLEGAL    =  2, /**< 2: Illegal instruction */
-  EXCID_BREAKPOINT   =  3, /**< 3: Breakpoint (EBREAK instruction) */
-  EXCID_L_MISALIGNED =  4, /**< 4: Load address misaligned */
-  EXCID_L_ACCESS     =  5, /**< 5: Load (bus) access fault */
-  EXCID_S_MISALIGNED =  6, /**< 6: Store address misaligned */
-  EXCID_S_ACCESS     =  7, /**< 7: Store (bus) access fault */
-  EXCID_MENV_CALL    = 11, /**< 11: Environment call from machine mode (ECALL instruction) */
-  EXCID_MSI          = 19, /**< 16 + 3: Machine software interrupt */
-  EXCID_MTI          = 23, /**< 16 + 7: Machine timer interrupt (via MTIME) */
-  EXCID_MEI          = 27  /**< 16 + 11: Machine external interrupt (via CLIC) */
-};
-
-
-/**********************************************************************//**
- * Exception codes from mcause CSR.
+ * Trap codes from mcause CSR.
  **************************************************************************/
 enum NEORV32_EXCEPTION_CODES_enum {
-  EXCCODE_I_MISALIGNED = 0x00000000, /**< 0: Instruction address misaligned */
-  EXCCODE_I_ACCESS     = 0x00000001, /**< 1: Instruction (bus) access fault */
-  EXCCODE_I_ILLEGAL    = 0x00000002, /**< 2: Illegal instruction */
-  EXCCODE_BREAKPOINT   = 0x00000003, /**< 3: Breakpoint (EBREAK instruction) */
-  EXCCODE_L_MISALIGNED = 0x00000004, /**< 4: Load address misaligned */
-  EXCCODE_L_ACCESS     = 0x00000005, /**< 5: Load (bus) access fault */
-  EXCCODE_S_MISALIGNED = 0x00000006, /**< 6: Store address misaligned */
-  EXCCODE_S_ACCESS     = 0x00000007, /**< 7: Store (bus) access fault */
-  EXCCODE_MENV_CALL    = 0x0000000b, /**< 11: Environment call from machine mode (ECALL instruction) */
-  EXCCODE_MSI          = 0x80000003, /**< 16 + 3: Machine software interrupt */
-  EXCCODE_MTI          = 0x80000007, /**< 16 + 7: Machine timer interrupt (via MTIME) */
-  EXCCODE_MEI          = 0x8000000b  /**< 16 + 11: Machine external interrupt (via CLIC) */
+  TRAP_CODE_I_MISALIGNED = 0x00000000, /**< 0.0: Instruction address misaligned */
+  TRAP_CODE_I_ACCESS     = 0x00000001, /**< 0.1: Instruction (bus) access fault */
+  TRAP_CODE_I_ILLEGAL    = 0x00000002, /**< 0.2: Illegal instruction */
+  TRAP_CODE_BREAKPOINT   = 0x00000003, /**< 0.3: Breakpoint (EBREAK instruction) */
+  TRAP_CODE_L_MISALIGNED = 0x00000004, /**< 0.4: Load address misaligned */
+  TRAP_CODE_L_ACCESS     = 0x00000005, /**< 0.5: Load (bus) access fault */
+  TRAP_CODE_S_MISALIGNED = 0x00000006, /**< 0.6: Store address misaligned */
+  TRAP_CODE_S_ACCESS     = 0x00000007, /**< 0.7: Store (bus) access fault */
+  TRAP_CODE_MENV_CALL    = 0x0000000b, /**< 0.11: Environment call from machine mode (ECALL instruction) */
+  TRAP_CODE_MSI          = 0x80000003, /**< 1.3: Machine software interrupt */
+  TRAP_CODE_MTI          = 0x80000007, /**< 1.7: Machine timer interrupt */
+  TRAP_CODE_MEI          = 0x8000000b, /**< 1.11: Machine external interrupt */
+  TRAP_CODE_FIRQ_0       = 0x80000010, /**< 1.16: Fast interrupt channel 0 */
+  TRAP_CODE_FIRQ_1       = 0x80000011, /**< 1.17: Fast interrupt channel 1 */
+  TRAP_CODE_FIRQ_2       = 0x80000012, /**< 1.18: Fast interrupt channel 2 */
+  TRAP_CODE_FIRQ_3       = 0x80000013  /**< 1.19: Fast interrupt channel 3 */
 };
 
 
@@ -232,53 +227,6 @@ enum NEORV32_CLOCK_PRSC_enum {
 /** GPIO parallel output port (r/w) */
 #define GPIO_OUTPUT (*(IO_REG32 0xFFFFFF84UL))
 /**@}*/
-
-
-/**********************************************************************//**
- * @name IO Device: Core Local Interrupts Controller (CLIC)
- **************************************************************************/
-/**@{*/
-/** CLIC control register (r/w) */
-#define CLIC_CT (*(IO_REG32 0xFFFFFF88UL))
-
-/** CLIC control register bits */
-enum NEORV32_CLIC_CT_enum {
-  CLIC_CT_SRC0        =  0, /**< CLIC control register(0) (r/-): IRQ source bit 0 */
-  CLIC_CT_SRC1        =  1, /**< CLIC control register(1) (r/-): IRQ source bit 1 */
-  CLIC_CT_SRC2        =  2, /**< CLIC control register(2) (r/-): IRQ source bit 2 */
-  CLIC_CT_ACK         =  3, /**< CLIC control register(3) (-/w): Acknowledge current IRQ when set, auto-clears when set */
-  CLIC_CT_EN          =  4, /**< CLIC control register(4) (r/w): Unit enable */
-
-  CLIC_CT_IRQ0_EN     =  8, /**< CLIC control register(8)  (r/w): Enable IRQ channel 0 */
-  CLIC_CT_IRQ1_EN     =  9, /**< CLIC control register(9)  (r/w): Enable IRQ channel 1 */
-  CLIC_CT_IRQ2_EN     = 10, /**< CLIC control register(10) (r/w): Enable IRQ channel 2 */
-  CLIC_CT_IRQ3_EN     = 11, /**< CLIC control register(11) (r/w): Enable IRQ channel 3 */
-  CLIC_CT_IRQ4_EN     = 12, /**< CLIC control register(12) (r/w): Enable IRQ channel 4 */
-  CLIC_CT_IRQ5_EN     = 13, /**< CLIC control register(13) (r/w): Enable IRQ channel 5 */
-  CLIC_CT_IRQ6_EN     = 14, /**< CLIC control register(14) (r/w): Enable IRQ channel 6 */
-  CLIC_CT_IRQ7_EN     = 15, /**< CLIC control register(15) (r/w): Enable IRQ channel 7 */
-
-  CLIC_CT_SW_IRQ_SRC0 = 16, /**< CLIC control register(16) (-/w): SW IRQ trigger, IRQ select bit 0, auto-clears when set */
-  CLIC_CT_SW_IRQ_SRC1 = 17, /**< CLIC control register(17) (-/w): SW IRQ trigger, IRQ select bit 1, auto-clears when set */
-  CLIC_CT_SW_IRQ_SRC2 = 18, /**< CLIC control register(18) (-/w): SW IRQ trigger, IRQ select bit 2, auto-clears when set */
-  CLIC_CT_SW_IRQ_EN   = 19  /**< CLIC control register(19) (-/w): SW IRQ trigger enable, auto-clears when set */
-};
-/**@}*/
-
-
-/**********************************************************************//**
- * Core-local interrupt controller IRQ channel
- **************************************************************************/
-enum NEORV32_CLIC_CHANNELS_enum {
-  CLIC_CH_WDT   = 0, /**< CLIC channel 0: Watchdog timer overflow interrupt */
-  CLIC_CH_RES   = 1, /**< CLIC channel 1: reserved */
-  CLIC_CH_GPIO  = 2, /**< CLIC channel 2: GPIO pin-change interrupt */
-  CLIC_CH_UART  = 3, /**< CLIC channel 3: UART RX available or TX done interrupt */
-  CLIC_CH_SPI   = 4, /**< CLIC channel 4: SPI transmission done interrupt */
-  CLIC_CH_TWI   = 5, /**< CLIC channel 5: TWI transmission done interrupt */
-  CLIC_CH_EXT0  = 6, /**< CLIC channel 6: Processor-external interrupt request 0 */
-  CLIC_CH_EXT1  = 7  /**< CLIC channel 7: Processor-external interrupt request 1 */
-};
 
 
 /**********************************************************************//**
@@ -543,7 +491,7 @@ enum NEORV32_TRNG_DUTY_enum {
   SYSINFO_FEATURES_IO_TWI           = 20, /**< SYSINFO_FEATURES (20) (r/-): Two-wire interface implemented when 1 (via IO_TWI_USE generic) */
   SYSINFO_FEATURES_IO_PWM           = 21, /**< SYSINFO_FEATURES (21) (r/-): Pulse-width modulation unit implemented when 1 (via IO_PWM_USE generic) */
   SYSINFO_FEATURES_IO_WDT           = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_USE generic) */
-  SYSINFO_FEATURES_IO_CLIC          = 23, /**< SYSINFO_FEATURES (23) (r/-): Core-local interrupt controller implemented when 1 (via IO_CLIC_USE generic) */
+
   SYSINFO_FEATURES_IO_TRNG          = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_USE generic) */
   SYSINFO_FEATURES_IO_DEVNULL       = 25  /**< SYSINFO_FEATURES (24) (r/-): Dummy device implemented when 1 (via IO_DEVNULL_USE generic) */
 };
@@ -559,7 +507,6 @@ enum NEORV32_TRNG_DUTY_enum {
 #include "neorv32_rte.h"
 
 // io/peripheral devices
-#include "neorv32_clic.h"
 #include "neorv32_gpio.h"
 #include "neorv32_mtime.h"
 #include "neorv32_pwm.h"
