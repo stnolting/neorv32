@@ -43,11 +43,11 @@
 
 
   // IO region
-  .set IO_BEGIN, 0xFFFFFF80 // start of processor-internal IO region
+  .equ IO_BEGIN, 0xFFFFFF80 // start of processor-internal IO region
 
   // SYSINFO
-  .set SYSINFO_DSPACE_BASE, 0xFFFFFFF4
-  .set SYSINFO_DSPACE_SIZE, 0xFFFFFFFC
+  .equ SYSINFO_DSPACE_BASE, 0xFFFFFFF4
+  .equ SYSINFO_DSPACE_SIZE, 0xFFFFFFFC
 
 
 _start:
@@ -58,9 +58,8 @@ _start:
 // Clear register file
 // *********************************************************
 __crt0_reg_file_clear:
-  addi  x0,  x0, 0 // hardwired to zero
+//addi  x0,  x0, 0 // hardwired to zero
   addi  x1,  x0, 0
-__crt0_reg_file_init:
   addi  x2,  x1, 0
   addi  x3,  x2, 0
   addi  x4,  x3, 0
@@ -78,7 +77,7 @@ __crt0_reg_file_init:
 
 // the following registers do not exist in rv32e
 // "__RISCV_EMBEDDED_CPU__" is automatically defined by the makefiles when
-// compiling for a rv32e architecture
+// compiling for a rv32e* architecture
 #ifndef __RISCV_EMBEDDED_CPU__
   addi x16, x15, 0
   addi x17, x16, 0
@@ -100,7 +99,7 @@ __crt0_reg_file_init:
 
 
 // *********************************************************
-// TEST AREA / DANGER ZONE / IDEA-LAB
+// TEST AREA / DANGER ZONE
 // *********************************************************
 __crt0_tests:
   nop
@@ -128,21 +127,11 @@ __crt0_global_pointer_init:
 
 
 // *********************************************************
-// Init exception vector table (2x16 4-byte entries) with dummy handlers
+// Init trap handler base address
 // *********************************************************
-__crt0_neorv32_rte_init:
-  la    x11, __crt0_neorv32_rte
+__crt0_neorv32_trap_init:
+  la    x11, __crt0_dummy_trap_handler
   csrw  mtvec, x11 // set address of first-level exception handler
-
-  lw    x11, SYSINFO_DSPACE_BASE(zero) // data memory space base address
-  la    x12, __crt0_neorv32_rte_dummy_hanlder
-  li    x13, 2*16  // number of entries (16xEXC, 16xIRQ)
-
-__crt0_neorv32_rte_init_loop:
-  sw  x12,  0(x11) // set dummy handler
-  add x11, x11, 4
-  add x13, x13, -1
-  bne zero, x13, __crt0_neorv32_rte_init_loop
 
 
 // *********************************************************
@@ -216,167 +205,44 @@ __crt0_this_is_the_end_end:
 
 
 // *********************************************************
-// NEORV32 runtime environment: First-level exception/interrupt handler
+// dummy trap handler (for exceptions & IRQs)
+// tries to move on to next instruction
 // *********************************************************
-.align 4
-__crt0_neorv32_rte:
+.balign 4
+__crt0_dummy_trap_handler:
 
-  // --------------------------------------------
-  // full context save
-  // --------------------------------------------
-#ifndef __RISCV_EMBEDDED_CPU__
-  addi	sp, sp, -120
-#else
-  addi  sp, sp, -56
-#endif
+  addi	sp, sp, -8
+  sw	  x8, 0(sp)
+  sw	  x9, 4(sp)
 
-  sw	ra,0(sp)
-  sw	gp,4(sp)
-  sw	tp,8(sp)
-  sw	t0,12(sp)
-  sw	t1,16(sp)
-  sw	t2,20(sp)
-  sw	s0,24(sp)
-  sw	s1,28(sp)
-  sw	a0,32(sp)
-  sw	a1,36(sp)
-  sw	a2,40(sp)
-  sw	a3,44(sp)
-  sw	a4,48(sp)
-  sw	a5,52(sp)
-#ifndef __RISCV_EMBEDDED_CPU__
-  sw	a6,56(sp)
-  sw	a7,60(sp)
-  sw	s2,64(sp)
-  sw	s3,68(sp)
-  sw	s4,72(sp)
-  sw	s5,76(sp)
-  sw	s6,80(sp)
-  sw	s7,84(sp)
-  sw	s8,88(sp)
-  sw	s9,92(sp)
-  sw	s10,96(sp)
-  sw	s11,100(sp)
-  sw	t3,104(sp)
-  sw	t4,108(sp)
-  sw	t5,112(sp)
-  sw	t6,116(sp)
-#endif
+  csrr  x8, mcause
+  blt   x8, zero, __crt0_dummy_trap_handler_irq  // skip mepc modification if interrupt
 
+__crt0_dummy_trap_handler_compute_return:
+  csrr  x8, mepc
 
-  // --------------------------------------------
-  // get cause and prepare jump into vector table
-  // --------------------------------------------
-  csrr  t0, mcause        // get cause code
+// is compressed instruction?
+  lh    x9, 0(x8)   // get compressed instruction or lower 16 bits of uncompressed instruction that caused exception
+  andi  x9, zero, 3 // mask: isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
 
-  andi  t1, t0, 0x0f      // isolate cause ID
-  slli  t1, t1, 2         // make address offset
-  lw    ra, SYSINFO_DSPACE_BASE(zero)  // data memory space base address
-  add   t1, t1, ra        // get vetor table entry address (EXC vectors)
+  addi  x8, x8, +2  // only this for compressed instructions
+  csrw  mepc, x8    // set return address when compressed instruction
 
-  csrr  ra, mepc          // get return address
-
-  blt   t0, zero, __crt0_neorv32_rte_is_irq  // branch if this is an INTERRUPT
-
-
-  // --------------------------------------------
-  // compute return address for EXCEPTIONS only
-  // --------------------------------------------
-__crt0_neorv32_rte_is_exc:
-
-  // check if faulting instruction is compressed and adjust return address
-
-  lh    t0, 0(ra)   // get compressed instruction or lower 16 bits of uncompressed instruction that caused exception
-  addi  t2, zero, 3 // mask
-  and   t0, t0, t2  // isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
-
-  addi  ra, ra, +2  // only this for compressed instructions
-  bne   t0, t2, __crt0_neorv32_rte_execute // jump if compressed instruction
+  addi  x8, zero, 3
+  bne   x8, x9, __crt0_dummy_trap_handler_irq // jump if compressed instruction
   
-  addi  ra, ra, +2  // add another 2 (making +4) for uncompressed instructions
-  j __crt0_neorv32_rte_execute
+// is uncompressed instruction
+  csrr  x8, mepc
+  addi  x8, x8, +2  // add another 2 (making +4) for uncompressed instructions
+  csrw  mepc, x8
 
+__crt0_dummy_trap_handler_irq:
 
-  // --------------------------------------------
-  // vector table offset for INTERRUPTS only
-  // --------------------------------------------
-__crt0_neorv32_rte_is_irq:
-  addi  t1, t1, 16*4
+  lw	  x9, 0(sp)
+  lw	  x8, 4(sp)
+  addi	sp, sp, +8
 
-
-  // --------------------------------------------
-  // call handler from vector table
-  // --------------------------------------------
-__crt0_neorv32_rte_execute:
-  lw    t0, 0(t1)       // get base address of second-level handler
-
-  // push ra
-  addi	sp, sp, -4
-  sw    ra, 0(sp)
-
-  jalr  ra, t0          // call second-level handler
-
-  // pop ra
-  lw    ra, 0(sp)
-  addi	sp, sp, +4
-
-  csrw  mepc, ra
-
-
-  // --------------------------------------------
-  // full context restore
-  // --------------------------------------------
-  lw	ra,0(sp)
-  lw	gp,4(sp)
-  lw	tp,8(sp)
-  lw	t0,12(sp)
-  lw	t1,16(sp)
-  lw	t2,20(sp)
-  lw	s0,24(sp)
-  lw	s1,28(sp)
-  lw	a0,32(sp)
-  lw	a1,36(sp)
-  lw	a2,40(sp)
-  lw	a3,44(sp)
-  lw	a4,48(sp)
-  lw	a5,52(sp)
-#ifndef __RISCV_EMBEDDED_CPU__
-  lw	a6,56(sp)
-  lw	a7,60(sp)
-  lw	s2,64(sp)
-  lw	s3,68(sp)
-  lw	s4,72(sp)
-  lw	s5,76(sp)
-  lw	s6,80(sp)
-  lw	s7,84(sp)
-  lw	s8,88(sp)
-  lw	s9,92(sp)
-  lw	s10,96(sp)
-  lw	s11,100(sp)
-  lw	t3,104(sp)
-  lw	t4,108(sp)
-  lw	t5,112(sp)
-  lw	t6,116(sp)
-#endif
-
-#ifndef __RISCV_EMBEDDED_CPU__
-  addi	sp, sp, +120
-#else
-  addi	sp, sp, +56
-#endif
-
-
-  // --------------------------------------------
-  // this is the ONLY place where MRET should be used!
-  // --------------------------------------------
   mret
-
-
-// *********************************************************
-// Dummy exception handler: just move on to next instruction
-// *********************************************************
-__crt0_neorv32_rte_dummy_hanlder:
-  ret
 
   .cfi_endproc
   .end

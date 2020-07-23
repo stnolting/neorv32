@@ -42,10 +42,32 @@
 #ifndef neorv32_rte_h
 #define neorv32_rte_h
 
+/**********************************************************************//**
+ * RTE trap IDs.
+ **************************************************************************/
+enum NEORV32_RTE_TRAP_enum {
+  RTE_TRAP_I_MISALIGNED =  0, /**< Instruction address misaligned */
+  RTE_TRAP_I_ACCESS     =  1, /**< Instruction (bus) access fault */
+  RTE_TRAP_I_ILLEGAL    =  2, /**< Illegal instruction */
+  RTE_TRAP_BREAKPOINT   =  3, /**< Breakpoint (EBREAK instruction) */
+  RTE_TRAP_L_MISALIGNED =  4, /**< Load address misaligned */
+  RTE_TRAP_L_ACCESS     =  5, /**< Load (bus) access fault */
+  RTE_TRAP_S_MISALIGNED =  6, /**< Store address misaligned */
+  RTE_TRAP_S_ACCESS     =  7, /**< Store (bus) access fault */
+  RTE_TRAP_MENV_CALL    =  8, /**< Environment call from machine mode (ECALL instruction) */
+  RTE_TRAP_MSI          =  9, /**< Machine software interrupt */
+  RTE_TRAP_MTI          = 10, /**< Machine timer interrupt */
+  RTE_TRAP_MEI          = 11, /**< Machine external interrupt */
+  RTE_TRAP_FIRQ_0       = 12, /**< Fast interrupt channel 0 */
+  RTE_TRAP_FIRQ_1       = 13, /**< Fast interrupt channel 1 */
+  RTE_TRAP_FIRQ_2       = 14, /**< Fast interrupt channel 2 */
+  RTE_TRAP_FIRQ_3       = 15  /**< Fast interrupt channel 3 */
+};
+
 // prototypes
-void neorv32_rte_enable_debug_mode(void);
-int  neorv32_rte_exception_install(uint8_t exc_id, void (*handler)(void));
-int  neorv32_rte_exception_uninstall(uint8_t exc_id);
+void neorv32_rte_setup(void);
+int  neorv32_rte_exception_install(uint8_t id, void (*handler)(void));
+int  neorv32_rte_exception_uninstall(uint8_t id);
 
 void neorv32_rte_print_hw_config(void);
 void neorv32_rte_print_hw_version(void);

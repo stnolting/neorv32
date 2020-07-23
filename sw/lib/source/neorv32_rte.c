@@ -43,29 +43,29 @@
 #include "neorv32_rte.h"
 
 // Privates
-static void __neorv32_rte_dummy_exc_handler(void)     __attribute__((unused));
+static uint32_t __neorv32_rte_vector_lut[16] __attribute__((unused)); // trap handler vector table
+static void __attribute__((__interrupt__)) __neorv32_rte_core(void) __attribute__((aligned(16))) __attribute__((unused));
 static void __neorv32_rte_debug_exc_handler(void)     __attribute__((unused));
 static void __neorv32_rte_print_true_false(int state) __attribute__((unused));
 
 
 /**********************************************************************//**
- * Setup NEORV32 runtime environment in debug mode.
+ * Setup NEORV32 runtime environment.
  *
  * @note This function installs a debug handler for ALL exception and interrupt sources, which
- * gives detailed information about the exception/interrupt. Call this function before you
- * install custom handler functions via neorv32_rte_exception_install(uint8_t exc_id, void (*handler)(void)),
- * since this function will override all installed exception handlers.
- *
- * @warning This function should be used for debugging only, since it only shows the uninitialize exception/interrupt, but
- * does not resolve the cause. Hence, it cannot guarantee to resume normal application execution after showing the debug messages.
+ * gives detailed information about the exception/interrupt. Actual handler can be installed afterwards
+ * via neorv32_rte_exception_install(uint8_t id, void (*handler)(void)).
  **************************************************************************/
-void neorv32_rte_enable_debug_mode(void) {
+void neorv32_rte_setup(void) {
 
-  uint8_t id;
+  // configure trap handler base address
+  uint32_t mtvec_base = (uint32_t)(&__neorv32_rte_core);
+  neorv32_cpu_csr_write(CSR_MTVEC, mtvec_base);
 
   // install debug handler for all sources
-  for (id=0; id<32; id++) {
-    neorv32_rte_exception_install(id, __neorv32_rte_debug_exc_handler);
+  uint8_t id;
+  for (id = 0; id < (sizeof(__neorv32_rte_vector_lut)/sizeof(__neorv32_rte_vector_lut[0])); id++) {
+    neorv32_rte_exception_uninstall(id); // this will configure the debug handler
   }
 }
 
@@ -74,28 +74,32 @@ void neorv32_rte_enable_debug_mode(void) {
  * Install exception handler function to NEORV32 runtime environment.
  *
  * @note This function automatically activates the according CSR.mie bits when installing handlers for
- * the MTIME (MTI), CLIC (MEI) or machine software interrupt (MSI). The global interrupt enable bit mstatus.mie has
+ * the MTIME (MTI), CLIC (MEI), machine software interrupt (MSI) or a fast IRQ. The global interrupt enable bit mstatus.mie has
  * to be set by the user via neorv32_cpu_eint(void).
  *
- * @param[in] exc_id Identifier (type) of the targeted exception. See #NEORV32_EXCEPTION_IDS_enum.
- * @param[in] handler The actual handler function for the specified exception (function must be of type "void function(void);").
- * return 0 if success, 1 if error (invalid exc_id or targeted exception not supported).
+ * @param[in] id Identifier (type) of the targeted exception. See #NEORV32_RTE_TRAP_enum.
+ * @param[in] handler The actual handler function for the specified exception (function MUST be of type "void function(void);").
+ * return 0 if success, 1 if error (invalid id or targeted exception not supported).
  **************************************************************************/
-int neorv32_rte_exception_install(uint8_t exc_id, void (*handler)(void)) {
+int neorv32_rte_exception_install(uint8_t id, void (*handler)(void)) {
 
   // id valid?
-  if ((exc_id == EXCID_I_MISALIGNED) || (exc_id == EXCID_I_ACCESS)     || (exc_id == EXCID_I_ILLEGAL) ||
-      (exc_id == EXCID_BREAKPOINT)   || (exc_id == EXCID_L_MISALIGNED) || (exc_id == EXCID_L_ACCESS)  || 
-      (exc_id == EXCID_S_MISALIGNED) || (exc_id == EXCID_S_ACCESS)     || (exc_id == EXCID_MENV_CALL) || 
-      (exc_id == EXCID_MSI)          || (exc_id == EXCID_MTI)          || (exc_id == EXCID_MEI)) {
+  if ((id == RTE_TRAP_I_MISALIGNED) || (id == RTE_TRAP_I_ACCESS)     || (id == RTE_TRAP_I_ILLEGAL) ||
+      (id == RTE_TRAP_BREAKPOINT)   || (id == RTE_TRAP_L_MISALIGNED) || (id == RTE_TRAP_L_ACCESS)  || 
+      (id == RTE_TRAP_S_MISALIGNED) || (id == RTE_TRAP_S_ACCESS)     || (id == RTE_TRAP_MENV_CALL) || 
+      (id == RTE_TRAP_MSI)          || (id == RTE_TRAP_MTI)          || (id == RTE_TRAP_MEI)       ||
+      (id == RTE_TRAP_FIRQ_0)       || (id == RTE_TRAP_FIRQ_1)       || (id == RTE_TRAP_FIRQ_2)    || (id == RTE_TRAP_FIRQ_3)) {
 
-    if (exc_id == EXCID_MSI) { neorv32_cpu_irq_enable(CPU_MIE_MSIE); } // activate software interrupt
-    if (exc_id == EXCID_MTI) { neorv32_cpu_irq_enable(CPU_MIE_MTIE); } // activate timer interrupt
-    if (exc_id == EXCID_MEI) { neorv32_cpu_irq_enable(CPU_MIE_MEIE); } // activate external interrupt
 
-    uint32_t vt_base = SYSINFO_DSPACE_BASE; // base address of vector table
-    vt_base = vt_base + (((uint32_t)exc_id) << 2);
-    (*(IO_REG32 (vt_base))) = (uint32_t)handler;
+    if (id == RTE_TRAP_MSI)    { neorv32_cpu_irq_enable(CPU_MIE_MSIE); } // activate software interrupt
+    if (id == RTE_TRAP_MTI)    { neorv32_cpu_irq_enable(CPU_MIE_MTIE); } // activate timer interrupt
+    if (id == RTE_TRAP_MEI)    { neorv32_cpu_irq_enable(CPU_MIE_MEIE); } // activate external interrupt
+    if (id == RTE_TRAP_FIRQ_0) { neorv32_cpu_irq_enable(CPU_MIE_FIRQ0E); } // activate fast interrupt channel 0
+    if (id == RTE_TRAP_FIRQ_1) { neorv32_cpu_irq_enable(CPU_MIE_FIRQ1E); } // activate fast interrupt channel 1
+    if (id == RTE_TRAP_FIRQ_2) { neorv32_cpu_irq_enable(CPU_MIE_FIRQ2E); } // activate fast interrupt channel 2
+    if (id == RTE_TRAP_FIRQ_3) { neorv32_cpu_irq_enable(CPU_MIE_FIRQ3E); } // activate fast interrupt channel 3
+
+    __neorv32_rte_vector_lut[id]  = (uint32_t)handler; // install handler
 
     return 0;
   }
@@ -105,30 +109,33 @@ int neorv32_rte_exception_install(uint8_t exc_id, void (*handler)(void)) {
 
 /**********************************************************************//**
  * Uninstall exception handler function from NEORV32 runtime environment, which was
- * previously installed via neorv32_rte_exception_install(uint8_t exc_id, void (*handler)(void)).
+ * previously installed via neorv32_rte_exception_install(uint8_t id, void (*handler)(void)).
  *
  * @note This function automatically clears the according CSR.mie bits when uninstalling handlers for
- * the MTIME (MTI), CLIC (MEI) or machine software interrupt (MSI). The global interrupt enable bit mstatus.mie has
+ * the MTIME (MTI), CLIC (MEI), machine software interrupt (MSI) or fast IRQs. The global interrupt enable bit mstatus.mie has
  * to be cleared by the user via neorv32_cpu_dint(void).
  *
- * @param[in] exc_id Identifier (type) of the targeted exception. See #NEORV32_EXCEPTION_IDS_enum.
- * return 0 if success, 1 if error (invalid exc_id or targeted exception not supported).
+ * @param[in] id Identifier (type) of the targeted exception. See #NEORV32_RTE_TRAP_enum.
+ * return 0 if success, 1 if error (invalid id or targeted exception not supported).
  **************************************************************************/
-int neorv32_rte_exception_uninstall(uint8_t exc_id) {
+int neorv32_rte_exception_uninstall(uint8_t id) {
 
   // id valid?
-  if ((exc_id == EXCID_I_MISALIGNED) || (exc_id == EXCID_I_ACCESS)     || (exc_id == EXCID_I_ILLEGAL) ||
-      (exc_id == EXCID_BREAKPOINT)   || (exc_id == EXCID_L_MISALIGNED) || (exc_id == EXCID_L_ACCESS)  || 
-      (exc_id == EXCID_S_MISALIGNED) || (exc_id == EXCID_S_ACCESS)     || (exc_id == EXCID_MENV_CALL) || 
-      (exc_id == EXCID_MSI)          || (exc_id == EXCID_MTI)          || (exc_id == EXCID_MEI)) {
+  if ((id == RTE_TRAP_I_MISALIGNED) || (id == RTE_TRAP_I_ACCESS)     || (id == RTE_TRAP_I_ILLEGAL) ||
+      (id == RTE_TRAP_BREAKPOINT)   || (id == RTE_TRAP_L_MISALIGNED) || (id == RTE_TRAP_L_ACCESS)  || 
+      (id == RTE_TRAP_S_MISALIGNED) || (id == RTE_TRAP_S_ACCESS)     || (id == RTE_TRAP_MENV_CALL) || 
+      (id == RTE_TRAP_MSI)          || (id == RTE_TRAP_MTI)          || (id == RTE_TRAP_MEI)       ||
+      (id == RTE_TRAP_FIRQ_0)       || (id == RTE_TRAP_FIRQ_1)       || (id == RTE_TRAP_FIRQ_2)    || (id == RTE_TRAP_FIRQ_3)) {
 
-    if (exc_id == EXCID_MSI) { neorv32_cpu_irq_disable(CPU_MIE_MSIE); } // deactivate software interrupt
-    if (exc_id == EXCID_MTI) { neorv32_cpu_irq_disable(CPU_MIE_MTIE); } // deactivate timer interrupt
-    if (exc_id == EXCID_MEI) { neorv32_cpu_irq_disable(CPU_MIE_MEIE); } // deactivate external interrupt
+    if (id == RTE_TRAP_MSI)    { neorv32_cpu_irq_disable(CPU_MIE_MSIE); } // deactivate software interrupt
+    if (id == RTE_TRAP_MTI)    { neorv32_cpu_irq_disable(CPU_MIE_MTIE); } // deactivate timer interrupt
+    if (id == RTE_TRAP_MEI)    { neorv32_cpu_irq_disable(CPU_MIE_MEIE); } // deactivate external interrupt
+    if (id == RTE_TRAP_FIRQ_0) { neorv32_cpu_irq_disable(CPU_MIE_FIRQ0E); } // deactivate fast interrupt channel 0
+    if (id == RTE_TRAP_FIRQ_1) { neorv32_cpu_irq_disable(CPU_MIE_FIRQ1E); } // deactivate fast interrupt channel 1
+    if (id == RTE_TRAP_FIRQ_2) { neorv32_cpu_irq_disable(CPU_MIE_FIRQ2E); } // deactivate fast interrupt channel 2
+    if (id == RTE_TRAP_FIRQ_3) { neorv32_cpu_irq_disable(CPU_MIE_FIRQ3E); } // deactivate fast interrupt channel 3
 
-    uint32_t vt_base = SYSINFO_DSPACE_BASE; // base address of vector table
-    vt_base = vt_base + (((uint32_t)exc_id) << 2);
-    (*(IO_REG32 (vt_base))) = (uint32_t)(&__neorv32_rte_dummy_exc_handler); // use dummy handler in case the exception is triggered
+    __neorv32_rte_vector_lut[id] = (uint32_t)(&__neorv32_rte_debug_exc_handler); // use dummy handler in case the exception is accidently triggered
 
     return 0;
   }
@@ -137,18 +144,66 @@ int neorv32_rte_exception_uninstall(uint8_t exc_id) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment: Dummy exception handler (does nothing).
- * @note This function is used by neorv32_rte_exception_uninstall(uint8_t exc_id) only.
+ * This is the core of the NEORV32 RTE.
+ *
+ * @note This function must no be explicitly used by the user.
+ * @warning When using the the RTE, this function is the ONLY function that can use the 'interrupt' attribute!
  **************************************************************************/
-static void __neorv32_rte_dummy_exc_handler(void) {
+static void __attribute__((__interrupt__)) __attribute__((aligned(16)))  __neorv32_rte_core(void) {
 
-  asm volatile("nop");
+  register uint32_t rte_mepc   = neorv32_cpu_csr_read(CSR_MEPC);
+  register uint32_t rte_mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
+
+  // compute return address
+  if ((rte_mcause & 0x80000000) == 0) { // modify pc only if exception
+
+    // get low half word of faulting instruction
+    register uint32_t rte_trap_inst;
+    asm volatile ("lh %[result], 0(%[input_i])" : [result] "=r" (rte_trap_inst) : [input_i] "r" (rte_mepc));
+
+    if ((rte_trap_inst & 3) == 3) { // faulting instruction is uncompressed instruction
+      rte_mepc += 4;
+    }
+    else { // faulting instruction is compressed instruction
+      rte_mepc += 2;
+    }
+
+    // store new return address
+    neorv32_cpu_csr_write(CSR_MEPC, rte_mepc);
+  }
+
+  // find according trap handler
+  register uint32_t rte_handler = (uint32_t)(&__neorv32_rte_debug_exc_handler);
+  switch (rte_mcause) {
+    case TRAP_CODE_I_MISALIGNED: rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_I_MISALIGNED]; break;
+    case TRAP_CODE_I_ACCESS:     rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_I_ACCESS]; break;
+    case TRAP_CODE_I_ILLEGAL:    rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_I_ILLEGAL]; break;
+    case TRAP_CODE_BREAKPOINT:   rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_BREAKPOINT]; break;
+    case TRAP_CODE_L_MISALIGNED: rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_L_MISALIGNED]; break;
+    case TRAP_CODE_L_ACCESS:     rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_L_ACCESS]; break;
+    case TRAP_CODE_S_MISALIGNED: rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_S_MISALIGNED]; break;
+    case TRAP_CODE_S_ACCESS:     rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_S_ACCESS]; break;
+    case TRAP_CODE_MENV_CALL:    rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_MENV_CALL]; break;
+    case TRAP_CODE_MSI:          rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_MSI]; break;
+    case TRAP_CODE_MTI:          rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_MTI]; break;
+    case TRAP_CODE_MEI:          rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_MEI]; break;
+    case TRAP_CODE_FIRQ_0:       rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_0]; break;
+    case TRAP_CODE_FIRQ_1:       rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_1]; break;
+    case TRAP_CODE_FIRQ_2:       rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_2]; break;
+    case TRAP_CODE_FIRQ_3:       rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_3]; break;
+    default: break;
+  }
+
+  // execute handler
+  void (*handler_pnt)(void);
+  handler_pnt = (void*)rte_handler;
+  (*handler_pnt)();
 }
 
 
 /**********************************************************************//**
  * NEORV32 runtime environment: Debug exception handler, printing various exception/interrupt information via UART.
- * @note This function is used by neorv32_rte_enable_debug_mode(void) only.
+ * @note This function is used by neorv32_rte_exception_uninstall(void) only.
  **************************************************************************/
 static void __neorv32_rte_debug_exc_handler(void) {
 
@@ -179,28 +234,33 @@ static void __neorv32_rte_debug_exc_handler(void) {
 
   neorv32_uart_printf("Cause: ");
   switch (trap_cause) {
-    case 0x00000000: neorv32_uart_printf("Instruction address misaligned"); break;
-    case 0x00000001: neorv32_uart_printf("Instruction access fault"); break;
-    case 0x00000002: neorv32_uart_printf("Illegal instruction"); break;
-    case 0x00000003: neorv32_uart_printf("Breakpoint (EBREAK)"); break;
-    case 0x00000004: neorv32_uart_printf("Load address misaligned"); break;
-    case 0x00000005: neorv32_uart_printf("Load access fault"); break;
-    case 0x00000006: neorv32_uart_printf("Store address misaligned"); break;
-    case 0x00000007: neorv32_uart_printf("Store access fault"); break;
-    case 0x0000000B: neorv32_uart_printf("Environment call (ECALL)"); break;
-    case 0x80000003: neorv32_uart_printf("Machine software interrupt"); break;
-    case 0x80000007: neorv32_uart_printf("Machine timer interrupt (via MTIME)"); break;
-    case 0x8000000B: neorv32_uart_printf("Machine external interrupt (via CLIC)"); break;
-    default:         neorv32_uart_printf("Unknown (0x%x)", trap_cause); break;
+    case TRAP_CODE_I_MISALIGNED: neorv32_uart_printf("Instruction address misaligned"); break;
+    case TRAP_CODE_I_ACCESS:     neorv32_uart_printf("Instruction access fault"); break;
+    case TRAP_CODE_I_ILLEGAL:    neorv32_uart_printf("Illegal instruction"); break;
+    case TRAP_CODE_BREAKPOINT:   neorv32_uart_printf("Breakpoint (EBREAK)"); break;
+    case TRAP_CODE_L_MISALIGNED: neorv32_uart_printf("Load address misaligned"); break;
+    case TRAP_CODE_L_ACCESS:     neorv32_uart_printf("Load access fault"); break;
+    case TRAP_CODE_S_MISALIGNED: neorv32_uart_printf("Store address misaligned"); break;
+    case TRAP_CODE_S_ACCESS:     neorv32_uart_printf("Store access fault"); break;
+    case TRAP_CODE_MENV_CALL:    neorv32_uart_printf("Environment call from M-mode"); break;
+    case TRAP_CODE_MSI:          neorv32_uart_printf("Machine software interrupt"); break;
+    case TRAP_CODE_MTI:          neorv32_uart_printf("Machine timer interrupt"); break;
+    case TRAP_CODE_MEI:          neorv32_uart_printf("Machine external interrupt"); break;
+    case TRAP_CODE_FIRQ_0:       neorv32_uart_printf("Fast interrupt channel 0"); break;
+    case TRAP_CODE_FIRQ_1:       neorv32_uart_printf("Fast interrupt channel 1"); break;
+    case TRAP_CODE_FIRQ_2:       neorv32_uart_printf("Fast interrupt channel 2"); break;
+    case TRAP_CODE_FIRQ_3:       neorv32_uart_printf("Fast interrupt channel 3"); break;
+    default:                     neorv32_uart_printf("Unknown (0x%x)", trap_cause); break;
   }
 
   // fault address
-  neorv32_uart_printf("\nFaulting instruction (low): 0x%x\n", trap_inst);
-  neorv32_uart_printf("MTVAL: 0x%x\n", neorv32_cpu_csr_read(CSR_MTVAL));
+  neorv32_uart_printf("\nFaulting instruction (low half word): 0x%x", trap_inst);
 
   if ((trap_inst & 3) != 3) {
-    neorv32_uart_printf("(decompressed)\n");
+    neorv32_uart_printf(" (decompressed)\n");
   }
+
+  neorv32_uart_printf("\nMTVAL: 0x%x\n", neorv32_cpu_csr_read(CSR_MTVAL));
 
   neorv32_uart_printf("Trying to resume application @ 0x%x...", neorv32_cpu_csr_read(CSR_MEPC));
 
@@ -312,9 +372,6 @@ void neorv32_rte_print_hw_config(void) {
 
   neorv32_uart_printf("WDT:     ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_WDT));
-
-  neorv32_uart_printf("CLIC:    ");
-  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_CLIC));
 
   neorv32_uart_printf("TRNG:    ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_TRNG));
