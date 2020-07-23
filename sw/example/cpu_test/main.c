@@ -109,11 +109,6 @@ int main() {
     return 0;
   }
 
-  // check if CLIC unit is implemented at all
-  if (neorv32_clic_available() == 0) {
-    return 0;
-  }
-
   // check if MTIME unit is implemented at all
   if (neorv32_mtime_available() == 0) {
     return 0;
@@ -141,41 +136,35 @@ int main() {
   // intro2
   neorv32_uart_printf("\n\nStarting tests...\n\n");
 
-  // install exception handler functions
+  // configure RTE
+  neorv32_rte_setup(); // this will install a full-detailed debug handler for all traps
+
+#if (DETAILED_EXCEPTION_DEBUG==0)
   int install_err = 0;
-  install_err += neorv32_rte_exception_install(EXCID_I_MISALIGNED, global_trap_handler);
-  install_err += neorv32_rte_exception_install(EXCID_I_ACCESS,     global_trap_handler);
-  install_err += neorv32_rte_exception_install(EXCID_I_ILLEGAL,    global_trap_handler);
-  install_err += neorv32_rte_exception_install(EXCID_BREAKPOINT,   global_trap_handler);
-  install_err += neorv32_rte_exception_install(EXCID_L_MISALIGNED, global_trap_handler);
-  install_err += neorv32_rte_exception_install(EXCID_L_ACCESS,     global_trap_handler);
-  install_err += neorv32_rte_exception_install(EXCID_S_MISALIGNED, global_trap_handler);
-  install_err += neorv32_rte_exception_install(EXCID_S_ACCESS,     global_trap_handler);
-  install_err += neorv32_rte_exception_install(EXCID_MENV_CALL,    global_trap_handler);
-  install_err += neorv32_rte_exception_install(EXCID_MTI,          global_trap_handler);
-//install_err += neorv32_rte_exception_install(EXCID_MEI,          -); done by neorv32_clic_handler_install
+  // here we are overriding the default debug handlers
+  install_err += neorv32_rte_exception_install(RTE_TRAP_I_MISALIGNED, global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_I_ACCESS,     global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_I_ILLEGAL,    global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_BREAKPOINT,   global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_L_MISALIGNED, global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_L_ACCESS,     global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_S_MISALIGNED, global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_S_ACCESS,     global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_MENV_CALL,    global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_MTI,          global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_MSI,          global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_MTI,          global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_0,       global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_1,       global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_2,       global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_3,       global_trap_handler);
 
   if (install_err) {
-    neorv32_uart_printf("RTE install error!\n");
+    neorv32_uart_printf("RTE install error (%i)!\n", install_err);
     return 0;
   }
-
-
-  // install interrupt handler for clic WDT channel
-  install_err += neorv32_clic_handler_install(CLIC_CH_WDT, global_trap_handler);
-
-  if (install_err) {
-    neorv32_uart_printf("CLIC install error!\n");
-    return 0;
-  }
-
-
-#if (DETAILED_EXCEPTION_DEBUG==1)
-  // enable debug mode for uninitialized exception/interrupt vectors
-  // and overwrite previous exception handler installations
-  // -> any exception/interrupt will show a message from the neorv32 runtime environment
-  neorv32_rte_enable_debug_mode();
 #endif
+
 
 
   // enable global interrupts
@@ -197,7 +186,7 @@ int main() {
 
   while(1) {
     asm volatile ("lb zero, 0(%[input_j])" :  : [input_j] "r" (dmem_probe_addr));
-    if (exception_handler_answer == EXCCODE_L_ACCESS) {
+    if (exception_handler_answer == TRAP_CODE_L_ACCESS) {
       break;
     }
     dmem_probe_addr++;
@@ -229,7 +218,7 @@ int main() {
 
   while(1) {
     asm volatile ("lb zero, 0(%[input_j])" :  : [input_j] "r" (imem_probe_addr));
-    if (exception_handler_answer == EXCCODE_L_ACCESS) {
+    if (exception_handler_answer == TRAP_CODE_L_ACCESS) {
       break;
     }
     imem_probe_addr++;
@@ -291,13 +280,13 @@ int main() {
   neorv32_uart_printf("TIME[H]:      ");
   cnt_test++;
 
-  cpu_systime.uint32[0] = neorv32_cpu_csr_read(CSR_TIME);
-  cpu_systime.uint32[1] = neorv32_cpu_csr_read(CSR_TIMEH);
-  cpu_systime.uint64 &= 0xFFFFFFFFFFFF0000LL;
+  cpu_systime.uint64 = neorv32_cpu_get_systime();
+  uint64_t mtime_systime = neorv32_mtime_get_time();
 
-  uint64_t mtime_systime = neorv32_mtime_get_time() & 0xFFFFFFFFFFFF0000LL;
+  // compute difference
+  mtime_systime = mtime_systime - cpu_systime.uint64;
 
-  if (cpu_systime.uint64 == mtime_systime) {
+  if (mtime_systime < 100) { // diff should be pretty small
     test_ok();
   }
   else {
@@ -334,7 +323,7 @@ int main() {
   neorv32_cpu_csr_read(0xfff); // CSR 0xfff not implemented
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == EXCCODE_I_ILLEGAL) {
+  if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
     test_ok();
   }
   else {
@@ -358,7 +347,7 @@ int main() {
     ((void (*)(void))ADDR_UNALIGNED)();
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-    if (exception_handler_answer == EXCCODE_I_MISALIGNED) {
+    if (exception_handler_answer == TRAP_CODE_I_MISALIGNED) {
       neorv32_uart_printf("ok\n");
       cnt_ok++;
     }
@@ -384,7 +373,7 @@ int main() {
   ((void (*)(void))ADDR_UNREACHABLE)();
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == EXCCODE_I_ACCESS) {
+  if (exception_handler_answer == TRAP_CODE_I_ACCESS) {
     test_ok();
   }
   else {
@@ -401,8 +390,8 @@ int main() {
   cnt_test++;
 
   // create test program in RAM
-  static const uint32_t dummy_sub_program[2] = {
-    0xDEAD007F, // undefined 32-bit opcode -> illegal instruction exception
+  static const uint32_t dummy_sub_program[2] __attribute__((aligned(8))) = {
+    0xDEAD007F, // undefined 32-bit instruction (invalid opcode) -> illegal instruction exception
     0x00008067  // ret (32-bit)
   };
 
@@ -410,7 +399,7 @@ int main() {
   asm volatile ( "jalr ra, %0 " : "=r" (tmp_a) : "r"  (tmp_a));
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == EXCCODE_I_ILLEGAL) {
+  if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
     test_ok();
   }
   else {
@@ -431,7 +420,7 @@ int main() {
   cnt_test++;
 
   // create test program in RAM
-  static const uint32_t dummy_sub_program_ci[2] = {
+  static const uint32_t dummy_sub_program_ci[2] __attribute__((aligned(8))) = {
     0x00000001, // 2nd: official_illegal_op | 1st: NOP -> illegal instruction exception
     0x00008067  // ret (32-bit)
   };
@@ -440,7 +429,7 @@ int main() {
   asm volatile ( "jalr ra, %0 " : "=r" (tmp_a) : "r"  (tmp_a));
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == EXCCODE_I_ILLEGAL) {
+  if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
     test_ok();
   }
   else {
@@ -463,7 +452,7 @@ int main() {
   asm volatile("EBREAK");
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == EXCCODE_BREAKPOINT) {
+  if (exception_handler_answer == TRAP_CODE_BREAKPOINT) {
     test_ok();
   }
   else {
@@ -483,7 +472,7 @@ int main() {
   asm volatile ("lw zero, %[input_i](zero)" :  : [input_i] "i" (ADDR_UNALIGNED));
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == EXCCODE_L_MISALIGNED) {
+  if (exception_handler_answer == TRAP_CODE_L_MISALIGNED) {
     test_ok();
   }
   else {
@@ -503,7 +492,7 @@ int main() {
   dummy_dst = MMR_UNREACHABLE;
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == EXCCODE_L_ACCESS) {
+  if (exception_handler_answer == TRAP_CODE_L_ACCESS) {
     test_ok();
   }
   else {
@@ -523,7 +512,7 @@ int main() {
   asm volatile ("sw zero, %[input_i](zero)" :  : [input_i] "i" (ADDR_UNALIGNED));
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == EXCCODE_S_MISALIGNED) {
+  if (exception_handler_answer == TRAP_CODE_S_MISALIGNED) {
     test_ok();
   }
   else {
@@ -543,7 +532,7 @@ int main() {
   MMR_UNREACHABLE = 0;
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == EXCCODE_S_ACCESS) {
+  if (exception_handler_answer == TRAP_CODE_S_ACCESS) {
     test_ok();
   }
   else {
@@ -562,7 +551,7 @@ int main() {
   asm volatile("ECALL");
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == EXCCODE_MENV_CALL) {
+  if (exception_handler_answer == TRAP_CODE_MENV_CALL) {
     test_ok();
   }
   else {
@@ -576,74 +565,96 @@ int main() {
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("IRQ MTI:      ");
-  cnt_test++;
 
-  // force MTIME IRQ
-  neorv32_mtime_set_timecmp(0);
+  if (neorv32_mtime_available()) {
+    cnt_test++;
 
-  // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
-  asm volatile("nop");
-  asm volatile("nop");
-  asm volatile("nop");
+    // force MTIME IRQ
+    neorv32_mtime_set_timecmp(0);
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == EXCCODE_MTI) {
-    test_ok();
-  }
-  else {
-    test_fail();
-  }
+    if (exception_handler_answer == TRAP_CODE_MTI) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
 #endif
 
-  // no more mtime interrupts
-  neorv32_mtime_set_timecmp(-1);
+    // no more mtime interrupts
+    neorv32_mtime_set_timecmp(-1);
+  }
+  else {
+    neorv32_uart_printf("skipped (WDT not implemented)\n");
+  }
 
 
   // ----------------------------------------------------------
-  // Machine external interrupt (via CLIC)
+  // Fast interrupt
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("IRQ MEI:      ");
-  cnt_test++;
+  neorv32_uart_printf("FIRQ0 (WDT):  ");
 
-  // manually trigger CLIC channel (watchdog interrupt)
-  neorv32_clic_trigger_irq(CLIC_CH_WDT);
+  if (neorv32_wdt_available()) {
+    cnt_test++;
 
-  // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
-  asm volatile("nop");
-  asm volatile("nop");
-  asm volatile("nop");
+    // configure WDT
+    neorv32_wdt_setup(CLK_PRSC_2, 0); // lowest clock prescaler, trigger IRQ on timeout
+    neorv32_wdt_reset(); // reset watchdog
+    neorv32_wdt_force(); // force watchdog into action
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == EXCCODE_MEI) {
-    test_ok();
+    if (exception_handler_answer == TRAP_CODE_FIRQ_0) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+#endif
   }
   else {
-    test_fail();
+    neorv32_uart_printf("skipped (WDT not implemented)\n");
   }
-#endif
 
 
   // ----------------------------------------------------------
-  // Test WFI ("sleep") instructions
+  // Test WFI ("sleep") instructions, wakeup via MTIME
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("WFI:          ");
-  cnt_test++;
 
-  // program timer to wake up
-  neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 1000);
+  if (neorv32_mtime_available()) {
+    cnt_test++;
 
-  // put CPU into sleep mode
-  asm volatile ("wfi");
+    // program timer to wake up
+    neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 1000);
 
-  if (exception_handler_answer != EXCCODE_MTI) {
-    test_fail();
+    // put CPU into sleep mode
+    asm volatile ("wfi");
+
+#if (DETAILED_EXCEPTION_DEBUG==0)
+    if (exception_handler_answer != TRAP_CODE_MTI) {
+      test_fail();
+    }
+    else {
+      test_ok();
+    }
+#endif
   }
   else {
-    test_ok();
+    neorv32_uart_printf("skipped (MTIME not implemented)\n");
   }
 
 

@@ -40,6 +40,7 @@
  **************************************************************************/
 
 #include <neorv32.h>
+#include <string.h>
 
 
 /**********************************************************************//**
@@ -79,7 +80,7 @@ int main() {
 
   // capture all exceptions and give debug info via UART
   // this is not required, but keeps us safe
-  neorv32_rte_enable_debug_mode();
+  neorv32_rte_setup();
 
 
   // init UART at default baud rate, no rx interrupt, no tx interrupt
