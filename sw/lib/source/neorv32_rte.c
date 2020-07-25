@@ -42,8 +42,12 @@
 #include "neorv32.h"
 #include "neorv32_rte.h"
 
-// Privates
+/**********************************************************************//**
+ * The >private< trap vector look-up table of the NEORV32 RTE.
+ **************************************************************************/
 static uint32_t __neorv32_rte_vector_lut[16] __attribute__((unused)); // trap handler vector table
+
+// private functions
 static void __attribute__((__interrupt__)) __neorv32_rte_core(void) __attribute__((aligned(16))) __attribute__((unused));
 static void __neorv32_rte_debug_exc_handler(void)     __attribute__((unused));
 static void __neorv32_rte_print_true_false(int state) __attribute__((unused));
