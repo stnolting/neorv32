@@ -124,7 +124,7 @@ void portable_init(core_portable *p, int *argc, char *argv[])
   neorv32_cpu_dint();
 
   // capture all exceptions and give debug information
-  neorv32_rte_enable_debug_mode();
+  neorv32_rte_setup();
 
   // setup neorv32 UART
   neorv32_uart_setup(BAUD_RATE, 0, 0);

@@ -659,7 +659,9 @@ int main() {
 
 
 
-  // error report
+  // ----------------------------------------------------------
+  // Final test reports
+  // ----------------------------------------------------------
   neorv32_uart_printf("\n\nTests: %i\nOK:    %i\nFAIL:  %i\n\n", cnt_test, cnt_ok, cnt_fail);
 
   // final result
