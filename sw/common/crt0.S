@@ -208,7 +208,8 @@ __crt0_this_is_the_end_end:
 // dummy trap handler (for exceptions & IRQs)
 // tries to move on to next instruction
 // *********************************************************
-.balign 4
+  .global __crt0_dummy_trap_handler
+  .balign 4
 __crt0_dummy_trap_handler:
 
   addi	sp, sp, -8
@@ -223,7 +224,7 @@ __crt0_dummy_trap_handler_compute_return:
 
 // is compressed instruction?
   lh    x9, 0(x8)   // get compressed instruction or lower 16 bits of uncompressed instruction that caused exception
-  andi  x9, zero, 3 // mask: isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
+  andi  x9, x9, 3   // mask: isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
 
   addi  x8, x8, +2  // only this for compressed instructions
   csrw  mepc, x8    // set return address when compressed instruction

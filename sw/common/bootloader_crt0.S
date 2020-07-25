@@ -102,26 +102,42 @@ __crt0_the_end:
 
 // *********************************************************
 // dummy trap handler (for exceptions & IRQs)
-// bootloader has to be compiled without any CPU extensions
-// - especially without C extension!
+// tries to move on to next instruction
 // *********************************************************
-.balign 4
+  .global __crt0_dummy_trap_handler
+  .balign 4
 __crt0_dummy_trap_handler:
 
-  addi	sp, sp, -4
+  addi	sp, sp, -8
   sw	  x8, 0(sp)
+  sw	  x9, 4(sp)
 
   csrr  x8, mcause
   blt   x8, zero, __crt0_dummy_trap_handler_irq  // skip mepc modification if interrupt
 
+__crt0_dummy_trap_handler_compute_return:
   csrr  x8, mepc
-  addi  x8, x8, +4  // move on to next instruction if exception
+
+// is compressed instruction?
+  lh    x9, 0(x8)   // get compressed instruction or lower 16 bits of uncompressed instruction that caused exception
+  andi  x9, x9, 3   // mask: isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
+
+  addi  x8, x8, +2  // only this for compressed instructions
+  csrw  mepc, x8    // set return address when compressed instruction
+
+  addi  x8, zero, 3
+  bne   x8, x9, __crt0_dummy_trap_handler_irq // jump if compressed instruction
+  
+// is uncompressed instruction
+  csrr  x8, mepc
+  addi  x8, x8, +2  // add another 2 (making +4) for uncompressed instructions
   csrw  mepc, x8
 
 __crt0_dummy_trap_handler_irq:
 
-  lw	  x8, 0(sp)
-  addi	sp, sp, +4
+  lw	  x9, 0(sp)
+  lw	  x8, 4(sp)
+  addi	sp, sp, +8
 
   mret
 
