@@ -20,24 +20,28 @@
 
 ## Introduction
 
-The NEORV32 is a customizable full-scale mikrocontroller-like processor system based on a [RISC-V-compliant](https://github.com/stnolting/neorv32_riscv_compliance)
-`rv32i` CPU with optional `E`, `C`, `M`, `Zicsr` and `Zifencei` extensions. The CPU was built from scratch and is compliant to the **Unprivileged
-ISA Specification Version 2.2** and a subset of the **Privileged Architecture Specification Version 1.12-draft**.
+The **NEORV32 processor** is a customizable full-scale mikrocontroller-like processor system based on the RISC-V-compliant
+`rv32i` NEORV32 CPU with optional `M`, `E`, `C` and `Zicsr` and `Zifencei` extensions. The CPU was built from scratch and
+is compliant to the *Unprivileged ISA Specification Version 2.2* and a subset of the *Privileged Architecture
+Specification Version 1.12-draft*.
 
-The NEORV32 is intended as auxiliary processor within a larger SoC designs or as stand-alone custom microcontroller.
-Its top entity can be directly synthesized for any FPGA without modifications and provides a full-scale RISC-V based microcontroller.
+The **processor** is intended as auxiliary processor within a larger SoC designs or as stand-alone
+custom microcontroller. Its top entity can be directly synthesized for any FPGA without modifications and
+provides a full-scale RISC-V based microcontroller with common peripherals like GPIO, serial interfaces for
+UART, I²C and SPI, timers, external bus interface and embedded memories. All optional features beyond the
+base CPU can be enabled and configured via VHDL generics.
 
-The processor provides common peripherals and interfaces like input and output ports, serial interfaces for UART, I²C and SPI,
-interrupt controller, timers and embedded memories. External memories, peripherals and custom IP can be attached via a
-Wishbone-based external memory interface. All optional features beyond the base CPU can be enabled and configured via VHDL generics.
+Alternatively, you can use the **NEORV32 CPU** as stand-alone central processing unit and build your own microcontroller
+or processor system around it.
 
-This project comes with a complete software ecosystem that features core libraries for high-level usage of the
-provided functions and peripherals, application makefiles, a runtime environment and several example programs. All software source files
-provide a doxygen-based [documentary](https://stnolting.github.io/neorv32/files.html).
+This project comes with a complete software ecosystem that features core libraries for high-level
+usage of the provided functions and peripherals, application makefiles, a runtime environment and
+several example programs. All software source files provide a doxygen-based documentary.
 
-The project is intended to work "out of the box". Just synthesize the test setup from this project, upload
-it to your FPGA board of choice and start playing with the NEORV32. If you do not want to [compile the GCC toolchains](https://github.com/riscv/riscv-gnu-toolchain)
-by yourself, you can also download [pre-compiled toolchains](https://github.com/stnolting/riscv_gcc_prebuilt) for Linux.
+The project is intended to work "out of the box". Just synthesize the test setup from this project,
+upload it to your FPGA board of choice and start playing with the NEORV32. If you do not want to
+[compile the GCC toolchains](https://github.com/riscv/riscv-gnu-toolchain) by yourself, you can also
+download [pre-compiled toolchains](https://github.com/stnolting/riscv_gcc_prebuilt) for Linux.
 
 For more information take a look a the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
@@ -60,17 +64,22 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 
 | Project component                                                               | CI status | Note     |
 |:--------------------------------------------------------------------------------|:----------|:---------|
-| [NEORV32 processor](https://github.com/stnolting/neorv32)                       | [![Test](https://img.shields.io/travis/stnolting/neorv32/master.svg?label=test)](https://travis-ci.com/stnolting/neorv32)                                         | [![sw doc](https://img.shields.io/badge/SW%20documentation-gh--pages-blue)](https://stnolting.github.io/neorv32/files.html) |
-| [Pre-built toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)          | [![Test](https://img.shields.io/travis/stnolting/riscv_gcc_prebuilt/master.svg?label=test)](https://travis-ci.com/stnolting/riscv_gcc_prebuilt)                   | |
-| [RISC-V compliance test](https://github.com/stnolting/neorv32_riscv_compliance) | [![Test](https://img.shields.io/travis/stnolting/neorv32_riscv_compliance/master.svg?label=compliance)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) | |
+| [NEORV32 processor](https://github.com/stnolting/neorv32)                       | [![Build Status](https://travis-ci.com/stnolting/neorv32.svg?branch=master)](https://travis-ci.com/stnolting/neorv32) | [![sw doc](https://img.shields.io/badge/SW%20documentation-gh--pages-blue)](https://stnolting.github.io/neorv32/files.html) |
+| [Pre-built toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)          | [![Build Status](https://travis-ci.com/stnolting/riscv_gcc_prebuilt.svg?branch=master)](https://travis-ci.com/stnolting/riscv_gcc_prebuilt) | |
+| [RISC-V compliance test](https://github.com/stnolting/neorv32_riscv_compliance) | [![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) | |
 
 
 ### Non RISC-V-Compliant Issues
 
-* No exception is triggered in `E` mode when using registers above `x15` (*needs fixing*)
+* No exception is triggered for the `E` CPU extension when using registers above `x15` (*needs fixing*)
 * `misa` CSR is read-only - no dynamic enabling/disabling of implemented CPU extensions during runtime
-* Machine software interrupt `msi` is implemented, but there is no mechanism available to trigger it
+* `mcause` CSR is read-only
 * The `[m]cycleh` and `[m]instreth` CSR counters are only 20-bit wide (in contrast to original 32-bit)
+
+
+### Custom CPU Extensions
+
+* Four *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
 
 
 ### To-Do / Wish List
@@ -93,7 +102,7 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_processor.png)
 
-  - RISC-V-compliant `rv32i` or `rv32e` CPU with optional `C`, `E`, `M`, `Zicsr` and `rv32Zifencei` extensions
+  - RISC-V-compliant `rv32i` CPU with optional `C`, `E`, `M`, `Zicsr` and `rv32Zifencei` extensions
   - GCC-based toolchain ([pre-compiled rv32i and rv32 etoolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
   - Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
   - [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
@@ -113,7 +122,6 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
   - _Optional_ watchdog timer (WDT)
   - _Optional_ PWM controller with 4 channels and 8-bit duty cycle resolution (PWM)
   - _Optional_ GARO-based true random number generator (TRNG)
-  - _Optional_ core-local interrupt controller with 8 channels (CLIC)
   - _Optional_ dummy device (DEVNULL) (can be used for *fast* simulation console output)
   - System configuration information memory to check hardware configuration by software (SYSINFO)
 
@@ -159,7 +167,7 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
   * System instructions: `MRET` `WFI`
   * Counter CSRs: `[m]cycle[h]` `[m]instret[h]` `time[h]`
-  * Machine CSRs: `mstatus` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mvendorid` `marchid` `mimpid` `mhartid`
+  * Machine CSRs: `mstatus` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause`(read-only!) `mtval` `mip` `mvendorid` `marchid` `mimpid` `mhartid`
   * Supported exceptions and interrupts:
     * Misaligned instruction address
     * Instruction access fault
@@ -186,35 +194,36 @@ of the processor's generics is assumed. No constraints were used at all.
 
 ### CPU
 
-Results generated for hardware version: `1.2.0.0`
+Results generated for hardware version: `1.3.0.0`
 
 | CPU Configuration                | LEs        | FFs      | Memory bits | DSPs | f_max   |
 |:---------------------------------|:----------:|:--------:|:-----------:|:----:|:-------:|
-| `rv32i`                          |       1065 |      477 |       2048  |    0 | 112 MHz |
-| `rv32i`   + `Zicsr` + `Zifencei` |       1914 |      837 |       2048  |    0 | 100 MHz |
-| `rv32im`  + `Zicsr` + `Zifencei` |       2542 |     1085 |       2048  |    0 | 100 MHz |
-| `rv32imc` + `Zicsr` + `Zifencei` |       2806 |     1102 |       2048  |    0 | 100 MHz |
-| `rv32emc` + `Zicsr` + `Zifencei` |       2783 |     1102 |       1024  |    0 | 100 MHz |
+| `rv32i`                          |       1122 |      481 |       2048  |    0 | 110 MHz |
+| `rv32i`   + `Zicsr` + `Zifencei` |       1891 |      819 |       2048  |    0 | 100 MHz |
+| `rv32im`  + `Zicsr` + `Zifencei` |       2496 |     1067 |       2048  |    0 | 100 MHz |
+| `rv32imc` + `Zicsr` + `Zifencei` |       2734 |     1066 |       2048  |    0 | 100 MHz |
+| `rv32emc` + `Zicsr` + `Zifencei` |       2722 |     1066 |       1024  |    0 | 100 MHz |
 
 ### Processor-Internal Peripherals and Memories
 
-Results generated for hardware version: `1.2.0.0`
+Results generated for hardware version: `1.3.0.0`
 
-| Module   | Description                                     | LEs | FFs | Memory bits | DSPs |
-|:---------|:------------------------------------------------|:---:|:---:|:-----------:|:----:|
-| BOOT ROM | Bootloader ROM (4kB)                            |   3 |   1 |      32 768 |    0 |
-| DEVNULL  | Dummy device                                    |   3 |   1 |           0 |    0 |
-| DMEM     | Processor-internal data memory (8kB)            |  12 |   2 |      65 536 |    0 |
-| GPIO     | General purpose input/output ports              |  38 |  33 |           0 |    0 |
-| IMEM     | Processor-internal instruction memory (16kb)    |   7 |   2 |     131 072 |    0 |
-| MTIME    | Machine system timer                            | 269 | 166 |           0 |    0 |
-| PWM      | Pulse-width modulation controller               |  76 |  69 |           0 |    0 |
-| SPI      | Serial peripheral interface                     | 206 | 125 |           0 |    0 |
-| SYSINFO  | System configuration information memory         |   7 |   7 |           0 |    0 |
-| TRNG     | True random number generator                    | 104 |  93 |           0 |    0 |
-| TWI      | Two-wire interface                              |  78 |  44 |           0 |    0 |
-| UART     | Universal asynchronous receiver/transmitter     | 151 | 108 |           0 |    0 |
-| WDT      | Watchdog timer                                  |  57 |  45 |           0 |    0 |
+| Module    | Description                                     | LEs | FFs | Memory bits | DSPs |
+|:----------|:------------------------------------------------|:---:|:---:|:-----------:|:----:|
+| BOOT ROM  | Bootloader ROM (4kB)                            |   4 |   1 |      32 768 |    0 |
+| BUSSWITCH | Mux for CPU I & D interfaces                    |  62 |   8 |           0 |    0 |
+| DEVNULL   | Dummy device                                    |   3 |   1 |           0 |    0 |
+| DMEM      | Processor-internal data memory (8kB)            |  12 |   2 |      65 536 |    0 |
+| GPIO      | General purpose input/output ports              |  40 |  33 |           0 |    0 |
+| IMEM      | Processor-internal instruction memory (16kb)    |   7 |   2 |     131 072 |    0 |
+| MTIME     | Machine system timer                            | 266 | 166 |           0 |    0 |
+| PWM       | Pulse-width modulation controller               |  72 |  69 |           0 |    0 |
+| SPI       | Serial peripheral interface                     | 198 | 125 |           0 |    0 |
+| SYSINFO   | System configuration information memory         |  10 |   9 |           0 |    0 |
+| TRNG      | True random number generator                    | 105 |  93 |           0 |    0 |
+| TWI       | Two-wire interface                              |  75 |  44 |           0 |    0 |
+| UART      | Universal asynchronous receiver/transmitter     | 153 | 108 |           0 |    0 |
+| WDT       | Watchdog timer                                  |  59 |  45 |           0 |    0 |
 
 
 ### Exemplary FPGA Setups
@@ -224,13 +233,13 @@ no external memory interface and only internal instruction and data memories. IM
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
 to FPGA pins - except for the Wishbone bus and the interrupt signals.
 
-Results generated for hardware version: `1.2.0.6`
+Results generated for hardware version: `1.3.0.0`
 
-| Vendor  | FPGA                              | Board            | Toolchain               | Impl. strategy |CPU                               | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency    |
-|:--------|:----------------------------------|:-----------------|:------------------------|:---------------|:---------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|-------------:|
-| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 19.1 | balanced       | `rv32imc` + `Zicsr` + `Zifencei` | 4035 (18%) | 1860  (8%) | 0 (0%) | 231424 (38%) |          - |        - |      101 MHz |
-| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (LSE)       | timing         | `rv32ic`  + `Zicsr` + `Zifencei` | 5001 (95%) | 1694 (32%) | 0 (0%) |            - |   12 (40%) | 4 (100%) |   c 22.5 MHz |
-| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2           | default        | `rv32imc` + `Zicsr` + `Zifencei` | 2509 (12%) | 1914  (5%) | 0 (0%) |            - |    8 (16%) |        - |    c 100 MHz |
+| Vendor  | FPGA                              | Board            | Toolchain               | Impl. strategy |CPU                               | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency      |
+|:--------|:----------------------------------|:-----------------|:------------------------|:---------------|:---------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|---------------:|
+| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 19.1 | balanced       | `rv32imc` + `Zicsr` + `Zifencei` | 3934 (18%) | 1799  (8%) | 0 (0%) | 231424 (38%) |          - |        - |        100 MHz |
+| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (LSE)       | timing         | `rv32ic`  + `Zicsr` + `Zifencei` | 4895 (92%) | 1636 (31%) | 0 (0%) |            - |   12 (40%) | 4 (100%) | *c* 22.875 MHz |
+| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2           | default        | `rv32imc` + `Zicsr` + `Zifencei` | 2432 (12%) | 1852  (4%) | 0 (0%) |            - |    8 (16%) |        - |    *c* 100 MHz |
 
 **Notes**
 * The Lattice iCE40 UltraPlus setup uses the FPGA's SPRAM memory primitives for the internal IMEM and DEMEM (each 64kb).
@@ -247,21 +256,21 @@ The [CoreMark CPU benchmark](https://www.eembc.org/coremark) was executed on the
 [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) project folder. This benchmark
 tests the capabilities of a CPU itself rather than the functions provided by the whole system / SoC.
 
-Results generated for hardware version: `1.2.0.0`
+Results generated for hardware version: `1.3.0.0`
 
 ~~~
 **Configuration**
 Hardware:    32kB IMEM, 16kB DMEM, 100MHz clock
 CoreMark:    2000 iterations, MEM_METHOD is MEM_STACK
-Compiler:    RISCV32-GCC 9.2.0
+Compiler:    RISCV32-GCC 10.1.0
 Peripherals: UART for printing the results
 ~~~
 
-| CPU                              | Optimization | CoreMark Score | CoreMarks/MHz |
-|:---------------------------------|:------------:|:--------------:|:-------------:|
-| `rv32i`   + `Zicsr` + `Zifencei` |        `-O2` |          25.97 |        0.2597 |
-| `rv32im`  + `Zicsr` + `Zifencei` |        `-O2` |          55.55 |        0.5555 |
-| `rv32imc` + `Zicsr` + `Zifencei` |        `-O2` |          54.05 |        0.5405 |
+| CPU                              | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
+|:---------------------------------|:---------------:|:------------:|:--------------:|:-------------:|
+| `rv32i`   + `Zicsr` + `Zifencei` |    21 600 bytes |        `-O2` |          27.02 |        0.2702 |
+| `rv32im`  + `Zicsr` + `Zifencei` |    20 976 bytes |        `-O2` |          57.14 |        0.5714 |
+| `rv32imc` + `Zicsr` + `Zifencei` |    16 348 bytes |        `-O2` |          57.14 |        0.5714 |
 
 
 ### Instruction Cycles
@@ -279,24 +288,30 @@ iterations, which reflects a pretty good "real-life" work load. The average CPI 
 dividing the total number of required clock cycles (only the timed core to avoid distortion due to IO wait cycles; sampled via the `cycle[h]` CSRs)
 by the number of executed instructions (`instret[h]` CSRs). The executables were generated using optimization `-O2`.
 
-Results generated for hardware version: `1.2.0.0`
+Results generated for hardware version: `1.3.0.0`
 
 | CPU                              | Required Clock Cycles | Executed Instructions | Average CPI |
 |:---------------------------------|----------------------:|----------------------:|:-----------:|
-| `rv32i`   + `Zicsr` + `Zifencei` |         7 754 927 850 |         1 492 843 669 |         5.2 |
-| `rv32im`  + `Zicsr` + `Zifencei` |         3 684 015 850 |           626 274 115 |         5.9 |
-| `rv32imc` + `Zicsr` + `Zifencei` |         3 788 220 853 |           626 274 115 |         6.0 |
+| `rv32i`   + `Zicsr` + `Zifencei` |         7 433 933 906 |         1 494 298 800 |        4.97 |
+| `rv32im`  + `Zicsr` + `Zifencei` |         3 589 861 906 |           628 281 454 |        5.71 |
+| `rv32imc` + `Zicsr` + `Zifencei` |         3 587 131 226 |           628 282 016 |        5.70 |
 
 
 
-## Top Entity
+## Top Entities
 
-The top entity of the processor is [**neorv32_top.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) (from the `rtl/core` folder).
+The top entity of the **processor** is [**neorv32_top.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) (from the `rtl/core` folder).
 Just instantiate this file in your project and you are ready to go! All signals of this top entity are of type *std_ulogic* or *std_ulogic_vector*, respectively
 (except for the TWI signals, which are of type *std_logic*).
 
-Use the generics to configure the processor according to your needs. Each generic is initilized with the default configuration.
+The top entity of the **CPU** is [**neorv32_cpu.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd) (from the `rtl/core` folder).
+
+Use the generics to configure the processor/CPU according to your needs. Each generic is initilized with the default configuration.
 Detailed information regarding the signals and configuration generics can be found in the [NEORV32 documentary](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+
+Alternative top entities can be found in [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) folder.
+
+### Processor
 
 ```vhdl
 entity neorv32_top is
@@ -307,17 +322,17 @@ entity neorv32_top is
     CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C        : boolean := true;   -- implement compressed extension?
+    CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean := true;   -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
     -- Memory configuration: Instruction memory --
     MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
     MEM_ISPACE_SIZE              : natural := 16*1024; -- total size of instruction memory space in byte
-    MEM_INT_IMEM_USE             : boolean := true;    -- implement processor-internal instruction memory
+    MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM             : boolean := false;   -- implement processor-internal instruction memory as ROM
+    MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
     -- Memory configuration: Data memory --
     MEM_DSPACE_BASE              : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
     MEM_DSPACE_SIZE              : natural := 8*1024; -- total size of data memory space in byte
@@ -326,7 +341,7 @@ entity neorv32_top is
     -- Memory configuration: External memory interface --
     MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
     MEM_EXT_REG_STAGES           : natural := 2;      -- number of interface register stages (0,1,2)
-    MEM_EXT_TIMEOUT              : natural := 15;     -- cycles after which a valid bus access will timeout (>=1)
+    MEM_EXT_TIMEOUT              : natural := 15;     -- cycles after which a valid bus access will timeout
     -- Processor peripherals --
     IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
@@ -335,48 +350,103 @@ entity neorv32_top is
     IO_TWI_USE                   : boolean := true;   -- implement two-wire interface (TWI)?
     IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
-    IO_CLIC_USE                  : boolean := true;   -- implement core local interrupt controller (CLIC)?
     IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
     IO_DEVNULL_USE               : boolean := true    -- implement dummy device (DEVNULL)?
   );
   port (
     -- Global control --
-    clk_i        : in  std_ulogic := '0'; -- global clock, rising edge
-    rstn_i       : in  std_ulogic := '0'; -- global reset, low-active, async
+    clk_i      : in  std_ulogic := '0'; -- global clock, rising edge
+    rstn_i     : in  std_ulogic := '0'; -- global reset, low-active, async
     -- Wishbone bus interface (available if MEM_EXT_USE = true) --
-    wb_adr_o     : out std_ulogic_vector(31 downto 0); -- address
-    wb_dat_i     : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
-    wb_dat_o     : out std_ulogic_vector(31 downto 0); -- write data
-    wb_we_o      : out std_ulogic; -- read/write
-    wb_sel_o     : out std_ulogic_vector(03 downto 0); -- byte enable
-    wb_stb_o     : out std_ulogic; -- strobe
-    wb_cyc_o     : out std_ulogic; -- valid cycle
-    wb_ack_i     : in  std_ulogic := '0'; -- transfer acknowledge
-    wb_err_i     : in  std_ulogic := '0'; -- transfer error
+    wb_adr_o   : out std_ulogic_vector(31 downto 0); -- address
+    wb_dat_i   : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
+    wb_dat_o   : out std_ulogic_vector(31 downto 0); -- write data
+    wb_we_o    : out std_ulogic; -- read/write
+    wb_sel_o   : out std_ulogic_vector(03 downto 0); -- byte enable
+    wb_stb_o   : out std_ulogic; -- strobe
+    wb_cyc_o   : out std_ulogic; -- valid cycle
+    wb_ack_i   : in  std_ulogic := '0'; -- transfer acknowledge
+    wb_err_i   : in  std_ulogic := '0'; -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_USE = true) --
-    fence_o      : out std_ulogic; -- indicates an executed FENCE operation
-    fencei_o     : out std_ulogic; -- indicates an executed FENCEI operation
+    fence_o    : out std_ulogic; -- indicates an executed FENCE operation
+    fencei_o   : out std_ulogic; -- indicates an executed FENCEI operation
     -- GPIO (available if IO_GPIO_USE = true) --
-    gpio_o       : out std_ulogic_vector(15 downto 0); -- parallel output
-    gpio_i       : in  std_ulogic_vector(15 downto 0) := (others => '0'); -- parallel input
+    gpio_o     : out std_ulogic_vector(15 downto 0); -- parallel output
+    gpio_i     : in  std_ulogic_vector(15 downto 0) := (others => '0'); -- parallel input
     -- UART (available if IO_UART_USE = true) --
-    uart_txd_o   : out std_ulogic; -- UART send data
-    uart_rxd_i   : in  std_ulogic := '0'; -- UART receive data
+    uart_txd_o : out std_ulogic; -- UART send data
+    uart_rxd_i : in  std_ulogic := '0'; -- UART receive data
     -- SPI (available if IO_SPI_USE = true) --
-    spi_sck_o    : out std_ulogic; -- serial clock line
-    spi_sdo_o    : out std_ulogic; -- serial data line out
-    spi_sdi_i    : in  std_ulogic := '0'; -- serial data line in
-    spi_csn_o    : out std_ulogic_vector(07 downto 0); -- SPI CS
+    spi_sck_o  : out std_ulogic; -- SPI serial clock
+    spi_sdo_o  : out std_ulogic; -- controller data out, peripheral data in
+    spi_sdi_i  : in  std_ulogic := '0'; -- controller data in, peripheral data out
+    spi_csn_o  : out std_ulogic_vector(07 downto 0); -- SPI CS
     -- TWI (available if IO_TWI_USE = true) --
-    twi_sda_io   : inout std_logic := 'H'; -- twi serial data line
-    twi_scl_io   : inout std_logic := 'H'; -- twi serial clock line
+    twi_sda_io : inout std_logic := 'H'; -- twi serial data line
+    twi_scl_io : inout std_logic := 'H'; -- twi serial clock line
     -- PWM (available if IO_PWM_USE = true) --
-    pwm_o        : out std_ulogic_vector(03 downto 0); -- pwm channels
-    -- Interrupts (available if IO_CLIC_USE = true) --
-    ext_irq_i    : in  std_ulogic_vector(01 downto 0) := (others => '0'); -- external interrupt request
-    ext_ack_o    : out std_ulogic_vector(01 downto 0)  -- external interrupt request acknowledge
+    pwm_o      : out std_ulogic_vector(03 downto 0); -- pwm channels
+    -- Interrupts --
+    msw_irq_i  : in  std_ulogic := '0'; -- machine software interrupt
+    mext_irq_i : in  std_ulogic := '0'  -- machine external interrupt
   );
 end neorv32_top;
+```
+
+### CPU
+
+```vhdl
+entity neorv32_cpu is
+  generic (
+    -- General --
+    CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= (others => '0'); -- hardware thread id
+    CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= (others => '0'); -- cpu boot address
+    -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
+    -- Bus Interface --
+    BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
+  );
+  port (
+    -- global control --
+    clk_i          : in  std_ulogic := '0'; -- global clock, rising edge
+    rstn_i         : in  std_ulogic := '0'; -- global reset, low-active, async
+    -- instruction bus interface --
+    i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
+    i_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+    i_bus_we_o     : out std_ulogic; -- write enable
+    i_bus_re_o     : out std_ulogic; -- read enable
+    i_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
+    i_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
+    i_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
+    i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
+    -- data bus interface --
+    d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
+    d_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+    d_bus_we_o     : out std_ulogic; -- write enable
+    d_bus_re_o     : out std_ulogic; -- read enable
+    d_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
+    d_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
+    d_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
+    d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
+    -- system time input from MTIME --
+    time_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
+    -- interrupts (risc-v compliant) --
+    msw_irq_i      : in  std_ulogic := '0'; -- machine software interrupt
+    mext_irq_i     : in  std_ulogic := '0'; -- machine external interrupt
+    mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt
+    -- fast interrupts (custom) --
+    firq_i         : in  std_ulogic_vector(3 downto 0) := (others => '0')
+  );
+end neorv32_cpu;
 ```
 
 
@@ -388,35 +458,19 @@ This overview is just a short excerpt from the *Let's Get It Started* section of
 [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
 
 
-### Building the Toolchain
+### Toolchain
 
 At first you need the **RISC-V GCC toolchain**. You can either [download the sources](https://github.com/riscv/riscv-gnu-toolchain)
 and build the toolchain by yourself, or you can download a prebuilt one and install it.
 
-To build the toolchain by yourself, get the sources from the official [RISCV-GNU-TOOLCHAIN](https://github.com/riscv/riscv-gnu-toolchain) github page:
+:warning: Keep in mind that – for instance – a `rv32imc` toolchain only provides library code compiled with compressed and
+`mul`/`div` instructions! Hence, this code cannot be executed (without emulation) on an architecture without these extensions!
 
-    $ git clone --recursive https://github.com/riscv/riscv-gnu-toolchain
+To build the toolchain by yourself, follow the official [build instructions](https://github.com/riscv/riscv-gnu-toolchain.
+Make sure to use the `ilp32` or `ilp32e` ABI.
 
-Download and install the prerequisite standard packages:
-
-    $ sudo apt-get install autoconf automake autotools-dev curl python3 libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev
-
-To build the Linux cross-compiler, pick an install path. If you choose, say, `/opt/riscv`, then add `/opt/riscv/bin` to your `PATH` environment variable.
-
-    $ export PATH:$PATH:/opt/riscv/bin
-
-Then, simply run the following commands in the RISC-V GNU toolchain source folder (for the `rv32i` toolchain):
-
-    riscv-gnu-toolchain$ ./configure --prefix=/opt/riscv --with-arch=rv32i –with-abi=ilp32
-    riscv-gnu-toolchain$ make
-
-After a while (hours!) you will get `riscv32-unknown-elf-gcc` and all of its friends in your `/opt/riscv/bin` folder.
-
-
-### Using a Prebuilt Toolchain
-
-Alternatively, you can download a prebuilt toolchain. I have uploaded the toolchain I am using to GitHub. This toolchain
-has been compiled on a 64-bit x86 Ubuntu (Ubuntu on Windows). Download the toolchain of choice:
+Alternatively, you can download a prebuilt toolchain. I have uploaded the toolchain(s) I am using to GitHub. This toolchain
+has been compiled on a 64-bit x86 Ubuntu (Ubuntu on Windows, actually). Download the toolchain of choice:
 
 [https://github.com/stnolting/riscv_gcc_prebuilt](https://github.com/stnolting/riscv_gcc_prebuilt)
 
@@ -599,6 +653,6 @@ Continous integration provided by [Travis CI](https://travis-ci.com/stnolting/ne
 
 This project is not affiliated with or endorsed by the Open Source Initiative (https://www.oshwa.org / https://opensource.org).
 
-.
+
 
 Made with :coffee: in Hannover, Germany.
