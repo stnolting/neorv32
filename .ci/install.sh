@@ -4,7 +4,7 @@
 set -e
 
 # Toolchain to be used 
-TOOLCHAIN_V=riscv32-unknown-elf.gcc-10.1.0.rv32gc.ilp32.newlib
+TOOLCHAIN_V=riscv32-unknown-elf.gcc-10.1.0.rv32i.ilp32.newlib
 
 # Download toolchain
 echo "Downloading prebuilt RISC-V GCC toolchain ($TOOLCHAIN_V)..."
