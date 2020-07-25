@@ -337,16 +337,15 @@ void start_app(void) {
   while ((UART_CT & (1<<UART_CT_TX_BUSY)) != 0);
 
   // reset performance counters (to benchmark actual application)
-  asm volatile ("csrrw zero, mcycle,    zero"); // will also clear 'cycle'
-  asm volatile ("csrrw zero, mcycleh,   zero"); // will also clear 'cycleh'
-  asm volatile ("csrrw zero, minstret,  zero"); // will also clear 'instret'
-  asm volatile ("csrrw zero, minstreth, zero"); // will also clear 'instreth'
+  asm volatile ("csrw mcycle,    zero"); // will also clear 'cycle'
+  asm volatile ("csrw mcycleh,   zero"); // will also clear 'cycleh'
+  asm volatile ("csrw minstret,  zero"); // will also clear 'instret'
+  asm volatile ("csrw minstreth, zero"); // will also clear 'instreth'
 
   // start app at instruction space base address
-  while (1) {
-    register uint32_t app_base = SYSINFO_ISPACE_BASE;
-    asm volatile ("jalr zero, %0" : : "r" (app_base));
-  }
+  register uint32_t app_base = SYSINFO_ISPACE_BASE;
+  asm volatile ("jalr zero, %0" : : "r" (app_base));
+  while (1);
 }
 
 
