@@ -134,8 +134,13 @@ begin
     CPU_EXTENSION_RISCV_C        => true,          -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => false,         -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => true,          -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_U        => true,          -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    => true,          -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => true,          -- implement instruction stream sync.?
+    -- Physical Memory Protection (PMP) --
+    PMP_USE                      => true,          -- implement PMP?
+    PMP_NUM_REGIONS              => 4,             -- number of regions (max 16)
+    PMP_GRANULARITY              => 15,            -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Memory configuration: Instruction memory --
     MEM_ISPACE_BASE              => x"00000000",   -- base address of instruction memory space
     MEM_ISPACE_SIZE              => 16*1024,       -- total size of instruction memory space in byte
