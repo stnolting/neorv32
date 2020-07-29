@@ -237,3 +237,20 @@ void neorv32_cpu_delay_ms(uint32_t time_ms) {
   }
 }
 
+
+/**********************************************************************//**
+ * Switch from privilege mode MACHINE to privilege mode USER.
+ *
+ * @note This function requires the U extension to be implemented.
+ **************************************************************************/
+void __attribute__((naked)) neorv32_cpu_goto_user_mode(void) {
+
+  register uint32_t mask = (1<<CPU_MSTATUS_MPP_H) | (1<<CPU_MSTATUS_MPP_L);
+  mask = ~mask;
+  asm volatile ("csrrc zero, mstatus, %[input_j]" :  : [input_j] "r" (mask));
+
+  // return and switch to user mode
+  asm volatile ("csrw mepc, ra");
+  asm volatile ("mret");
+}
+

@@ -51,6 +51,7 @@ uint64_t neorv32_cpu_get_instret(void);
 void neorv32_cpu_set_minstret(uint64_t value);
 uint64_t neorv32_cpu_get_systime(void);
 void neorv32_cpu_delay_ms(uint32_t time_ms);
+void __attribute__((naked)) neorv32_cpu_goto_user_mode(void);
 
 
 /**********************************************************************//**
