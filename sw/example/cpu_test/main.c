@@ -74,8 +74,11 @@ void test_ok(void);
 void test_fail(void);
 
 // Global variables (also test initialization of global vars here)
+/// Global counter for failing tests
 int cnt_fail = 0;
+/// Global counter for successful tests
 int cnt_ok   = 0;
+/// Global counter for total number of tests
 int cnt_test = 0;
 
 
