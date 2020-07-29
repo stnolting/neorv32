@@ -96,6 +96,7 @@ int cnt_test = 0;
 int main() {
 
   register uint32_t tmp_a;
+  uint32_t i;
   volatile uint32_t dummy_dst __attribute__((unused));
 
   union {
@@ -181,7 +182,7 @@ int main() {
 #if (PROBING_MEM_TEST == 1)
   cnt_test++;
 
-  register uint32_t dmem_probe_addr = neorv32_cpu_csr_read(CSR_MISPACEBASE);
+  register uint32_t dmem_probe_addr = SYSINFO_ISPACE_BASE;
   uint32_t dmem_probe_cnt = 0;
 
   while(1) {
@@ -193,9 +194,9 @@ int main() {
     dmem_probe_cnt++;
   }
   
-  neorv32_uart_printf("%u bytes (should be %u bytes) ", dmem_probe_cnt, neorv32_cpu_csr_read(CSR_MISPACESIZE));
-  neorv32_uart_printf("@ 0x%x  ", neorv32_cpu_csr_read(CSR_MISPACEBASE));
-  if (dmem_probe_cnt == neorv32_cpu_csr_read(CSR_MISPACESIZE)) {
+  neorv32_uart_printf("%u bytes (should be %u bytes) ", dmem_probe_cnt, SYSINFO_ISPACE_SIZE);
+  neorv32_uart_printf("@ 0x%x  ", SYSINFO_ISPACE_BASE);
+  if (dmem_probe_cnt == SYSINFO_ISPACE_SIZE) {
     test_ok();
   }
   else {
@@ -213,7 +214,7 @@ int main() {
 #if (PROBING_MEM_TEST == 1)
   cnt_test++;
 
-  register uint32_t imem_probe_addr = neorv32_cpu_csr_read(CSR_MDSPACEBASE);
+  register uint32_t imem_probe_addr =SYSINFO_DSPACE_BASE;
   uint32_t imem_probe_cnt = 0;
 
   while(1) {
@@ -225,9 +226,9 @@ int main() {
     imem_probe_cnt++;
   }
   
-  neorv32_uart_printf("%u bytes (should be %u bytes) ", imem_probe_cnt, neorv32_cpu_csr_read(CSR_MDSPACESIZE));
-  neorv32_uart_printf("@ 0x%x  ", neorv32_cpu_csr_read(CSR_MDSPACEBASE));
-  if (imem_probe_cnt == neorv32_cpu_csr_read(CSR_MDSPACESIZE)) {
+  neorv32_uart_printf("%u bytes (should be %u bytes) ", imem_probe_cnt, SYSINFO_DSPACE_SIZE);
+  neorv32_uart_printf("@ 0x%x  ", SYSINFO_DSPACE_BASE);
+  if (imem_probe_cnt == SYSINFO_DSPACE_SIZE) {
     test_ok();
   }
   else {
@@ -623,6 +624,8 @@ int main() {
       test_fail();
     }
 #endif
+    // no more mtime interrupts
+    neorv32_wdt_disable();
   }
   else {
     neorv32_uart_printf("skipped (WDT not implemented)\n");
@@ -633,7 +636,7 @@ int main() {
   // Test WFI ("sleep") instructions, wakeup via MTIME
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("WFI:          ");
+  neorv32_uart_printf("WFI (MTIME):  ");
 
   if (neorv32_mtime_available()) {
     cnt_test++;
@@ -652,9 +655,185 @@ int main() {
       test_ok();
     }
 #endif
+    // no more mtime interrupts
+    neorv32_mtime_set_timecmp(-1);
   }
   else {
     neorv32_uart_printf("skipped (MTIME not implemented)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Test invalid CSR access in user mode
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("USR INV_CSR:  ");
+
+  // skip if U-mode is not implemented
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_U_EXT)) {
+
+    cnt_test++;
+
+    // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+    neorv32_cpu_goto_user_mode();
+    {
+      // access to mstatus not allowed for user mode programs
+      neorv32_cpu_csr_read(CSR_MSTATUS);
+    }
+
+#if (DETAILED_EXCEPTION_DEBUG==0)
+    if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+#endif
+  }
+  else {
+    neorv32_uart_printf("skipped (not possible when U-EXT disabled)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Test RTE debug handler
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("RTE DB TEST:  ");
+
+  cnt_test++;
+
+  // uninstall custom handler and use default RTE debug handler
+  neorv32_rte_exception_uninstall(RTE_TRAP_I_ILLEGAL);
+
+  // trigger illegal instruction exception
+  neorv32_cpu_csr_read(0xfff); // CSR not available
+
+  neorv32_uart_printf(" ");
+  if (exception_handler_answer == 0xFFFFFFFF) {
+    test_ok();
+  }
+  else {
+    test_fail();
+    neorv32_uart_printf("answer: 0x%x", exception_handler_answer);
+  }
+
+  // restore original handler
+  neorv32_rte_exception_install(RTE_TRAP_I_ILLEGAL, global_trap_handler);
+
+
+  // ----------------------------------------------------------
+  // Test physical memory protection
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("\nPhysical memory protection: ");
+
+  // check if PMP is implemented
+  neorv32_cpu_csr_read(0x3a0);
+  if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+    neorv32_uart_printf("test skipped (PMP not implemented)\n");
+  }
+  else {
+    neorv32_uart_printf("implemented\n");
+
+    // find out number of regions
+    for (i=0; i<16; i++) {
+      exception_handler_answer = 0xFFFFFFFF;
+      switch (i) {
+        case  0: neorv32_cpu_csr_read(0x3b0); break;
+        case  1: neorv32_cpu_csr_read(0x3b1); break;
+        case  2: neorv32_cpu_csr_read(0x3b2); break;
+        case  3: neorv32_cpu_csr_read(0x3b3); break;
+        case  4: neorv32_cpu_csr_read(0x3b4); break;
+        case  5: neorv32_cpu_csr_read(0x3b5); break;
+        case  6: neorv32_cpu_csr_read(0x3b6); break;
+        case  7: neorv32_cpu_csr_read(0x3b7); break;
+        case  8: neorv32_cpu_csr_read(0x3b8); break;
+        case  9: neorv32_cpu_csr_read(0x3b9); break;
+        case 10: neorv32_cpu_csr_read(0x3ba); break;
+        case 11: neorv32_cpu_csr_read(0x3bb); break;
+        case 12: neorv32_cpu_csr_read(0x3bc); break;
+        case 13: neorv32_cpu_csr_read(0x3bd); break;
+        case 14: neorv32_cpu_csr_read(0x3be); break;
+        case 15: neorv32_cpu_csr_read(0x3bf); break;
+        default: break;
+      }
+      if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+        break;
+      }
+    }
+    neorv32_uart_printf("Regions: %u\n", i);
+
+
+    // check granulartiy
+    neorv32_cpu_csr_write(0x3a0, 0);
+    neorv32_cpu_csr_write(0x3b0, 0xffffffff);
+    uint32_t pmp_test_g = neorv32_cpu_csr_read(0x3b0);
+
+    // find least-significat set bit
+    for (i=31; i>=0; i--) {
+      if (((pmp_test_g >> i) & 1) == 0) {
+        break;
+      }
+    }
+    neorv32_uart_printf("Min granulartiy: %u bytes per region\n", 1<<(i+2));
+
+
+    // test available modes
+    neorv32_uart_printf("Mode TOR:   ");
+    neorv32_cpu_csr_write(0x3a0, 0x08);
+    if ((neorv32_cpu_csr_read(0x3a0) & 0xFF) == 0x08) {
+      neorv32_uart_printf("available\n");
+    }
+    else {
+      neorv32_uart_printf("not implemented\n");
+    }
+
+    neorv32_uart_printf("Mode NA4:   ");
+    neorv32_cpu_csr_write(0x3a0, 0x10);
+    if ((neorv32_cpu_csr_read(0x3a0) & 0xFF) == 0x10) {
+      neorv32_uart_printf("available\n");
+    }
+    else {
+      neorv32_uart_printf("not implemented\n");
+    }
+
+    neorv32_uart_printf("Mode NAPOT: ");
+    neorv32_cpu_csr_write(0x3a0, 0x18);
+    if ((neorv32_cpu_csr_read(0x3a0) & 0xFF) == 0x18) {
+      neorv32_uart_printf("available\n");
+    }
+    else {
+      neorv32_uart_printf("not implemented\n");
+    }
+
+
+    // test user mode access fault
+    neorv32_cpu_csr_write(0x3b0, 0x00007fff); // 64k area @ 0x00000000
+    neorv32_cpu_csr_write(0x3a0, 0b00011100); // NAPOT, execute permission, NO load permission
+
+    neorv32_uart_printf("U-mode protected load fault test: ");
+    cnt_test++;
+
+    exception_handler_answer = 0xFFFFFFFF;
+
+    // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+    neorv32_cpu_goto_user_mode();
+    {
+      // load from protected area
+      asm volatile ("lw zero, 0(zero)");
+    }
+
+#if (DETAILED_EXCEPTION_DEBUG==0)
+    if (exception_handler_answer == TRAP_CODE_L_ACCESS) {
+      neorv32_uart_printf("ok\n");
+      cnt_ok++;
+    }
+    else {
+      neorv32_uart_printf("fail\n");
+      cnt_fail++;
+    }
+#endif
   }
 
 
@@ -682,6 +861,10 @@ int main() {
 void global_trap_handler(void) {
 
   exception_handler_answer = neorv32_cpu_csr_read(CSR_MCAUSE);
+
+  // hack: always come back in MACHINE MODE
+  register uint32_t mask = (1<<CPU_MSTATUS_MPP_H) | (1<<CPU_MSTATUS_MPP_L);
+  asm volatile ("csrrs zero, mstatus, %[input_j]" :  : [input_j] "r" (mask));
 }
 
 
@@ -703,3 +886,4 @@ void test_fail(void) {
   neorv32_uart_printf("fail\n");
   cnt_fail++;
 }
+
