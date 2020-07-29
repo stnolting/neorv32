@@ -211,32 +211,11 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(16)))  __neorv
  **************************************************************************/
 static void __neorv32_rte_debug_exc_handler(void) {
 
-  neorv32_uart_printf("\n\n<< NEORV32 Runtime Environment >>\n");
+  // intro
+  neorv32_uart_printf("<RTE> ");
 
-  neorv32_uart_printf("System time: 0x%x_%x\n", neorv32_cpu_csr_read(CSR_TIMEH), neorv32_cpu_csr_read(CSR_TIME));
-
+  // cause
   register uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
-  register uint32_t trap_addr  = neorv32_cpu_csr_read(CSR_MEPC);
-  register uint32_t trap_inst;
-
-  asm volatile ("lh %[result], 0(%[input_i])" : [result] "=r" (trap_inst) : [input_i] "r" (trap_addr));
-
-
-  if (trap_cause & 0x80000000) {
-    neorv32_uart_printf("INTERRUPT");
-  }
-  else {
-    neorv32_uart_printf("EXCEPTION");
-    if ((trap_inst & 3) == 3) {
-      trap_addr -= 4;
-    }
-    else {
-      trap_addr -= 2;
-    }
-  }
-  neorv32_uart_printf(" at instruction address: 0x%x\n", trap_addr);
-
-  neorv32_uart_printf("Cause: ");
   switch (trap_cause) {
     case TRAP_CODE_I_MISALIGNED: neorv32_uart_printf("Instruction address misaligned"); break;
     case TRAP_CODE_I_ACCESS:     neorv32_uart_printf("Instruction access fault"); break;
@@ -257,18 +236,21 @@ static void __neorv32_rte_debug_exc_handler(void) {
     default:                     neorv32_uart_printf("Unknown (0x%x)", trap_cause); break;
   }
 
-  // fault address
-  neorv32_uart_printf("\nFaulting instruction (low half word): 0x%x", trap_inst);
+  // address
+  register uint32_t trap_addr  = neorv32_cpu_csr_read(CSR_MEPC);
+  register uint32_t trap_inst;
 
-  if ((trap_inst & 3) != 3) {
-    neorv32_uart_printf(" (decompressed)\n");
+  asm volatile ("lh %[result], 0(%[input_i])" : [result] "=r" (trap_inst) : [input_i] "r" (trap_addr));
+
+  if ((trap_cause & 0x80000000) == 0) {
+    if ((trap_inst & 3) == 3) {
+      trap_addr -= 4;
+    }
+    else {
+      trap_addr -= 2;
+    }
   }
-
-  neorv32_uart_printf("\nMTVAL: 0x%x\n", neorv32_cpu_csr_read(CSR_MTVAL));
-
-  neorv32_uart_printf("Trying to resume application @ 0x%x...", neorv32_cpu_csr_read(CSR_MEPC));
-
-  neorv32_uart_printf("\n<</NEORV32 Runtime Environment >>\n\n");
+  neorv32_uart_printf(" @0x%x, MTVAL=0x%x </RTE>", trap_addr, neorv32_cpu_csr_read(CSR_MTVAL));
 }
 
 
@@ -326,11 +308,14 @@ void neorv32_rte_print_hw_config(void) {
   }
   neorv32_uart_printf("(0x%x)\n", tmp);
 
-  // Clock speed
-  neorv32_uart_printf("Clock speed:      %u Hz\n", SYSINFO_CLK);
+
+  // Misc
+  neorv32_uart_printf("\n-- System --\n");
+  neorv32_uart_printf("Clock: %u Hz\n", SYSINFO_CLK);
+
 
   // Memory configuration
-  neorv32_uart_printf("\n-- Memory Configuration --\n");
+  neorv32_uart_printf("\n-- Processor Memory Configuration --\n");
 
   uint32_t size = SYSINFO_ISPACE_SIZE;
   uint32_t base = SYSINFO_ISPACE_BASE;
@@ -353,7 +338,8 @@ void neorv32_rte_print_hw_config(void) {
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT));
 
   // peripherals
-  neorv32_uart_printf("\n-- Peripherals --\n");
+  neorv32_uart_printf("\n-- Processor Peripherals --\n");
+
   tmp = SYSINFO_FEATURES;
 
   neorv32_uart_printf("GPIO:    ");
