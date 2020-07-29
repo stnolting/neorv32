@@ -44,7 +44,11 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_bus is
   generic (
     CPU_EXTENSION_RISCV_C : boolean := true; -- implement compressed extension?
-    BUS_TIMEOUT           : natural := 15    -- cycles after which a valid bus access will timeout
+    BUS_TIMEOUT           : natural := 15;   -- cycles after which a valid bus access will timeout
+    -- Physical memory protection (PMP) --
+    PMP_USE               : boolean := false; -- implement physical memory protection?
+    PMP_NUM_REGIONS       : natural := 4; -- number of regions (1..4)
+    PMP_GRANULARITY       : natural := 16  -- granularity (0=none, 1=8B, 2=16B, 3=32B, ...)
   );
   port (
     -- global control --
@@ -69,6 +73,11 @@ entity neorv32_cpu_bus is
     ma_store_o     : out std_ulogic; -- misaligned store data address
     be_load_o      : out std_ulogic; -- bus error on load data access
     be_store_o     : out std_ulogic; -- bus error on store data access
+    -- physical memory protection --
+    pmp_addr_i     : in  pmp_addr_if_t; -- addresses
+    pmp_maddr_o    : out pmp_addr_if_t; -- masked addresses
+    pmp_ctrl_i     : in  pmp_ctrl_if_t; -- configs
+    priv_mode_i    : in  std_ulogic_vector(1 downto 0); -- current CPU privilege level
     -- instruction bus --
     i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -96,6 +105,20 @@ end neorv32_cpu_bus;
 
 architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
 
+  -- PMP modes --
+  constant pmp_off_mode_c   : std_ulogic_vector(1 downto 0) := "00"; -- null region (disabled)
+  constant pmp_tor_mode_c   : std_ulogic_vector(1 downto 0) := "01"; -- top of range
+  constant pmp_na4_mode_c   : std_ulogic_vector(1 downto 0) := "10"; -- naturally aligned four-byte region
+  constant pmp_napot_mode_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (>= 8 bytes)
+
+  -- PMP configuration register bits --
+  constant pmp_cfg_r_c  : natural := 0; -- read permit
+  constant pmp_cfg_w_c  : natural := 1; -- write permit
+  constant pmp_cfg_x_c  : natural := 2; -- execute permit
+  constant pmp_cfg_al_c : natural := 3; -- mode bit low
+  constant pmp_cfg_ah_c : natural := 4; -- mode bit high
+  constant pmp_cfg_l_c  : natural := 7; -- locked entry
+
   -- data interface registers --
   signal mar, mdo, mdi : std_ulogic_vector(data_width_c-1 downto 0);
 
@@ -116,6 +139,24 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
     timeout   : std_ulogic_vector(index_size_f(BUS_TIMEOUT)-1 downto 0);
   end record;
   signal i_arbiter, d_arbiter : bus_arbiter_t;
+
+  -- physical memory protection --
+  type pmp_addr34_t is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c+1 downto 0);
+  type pmp_addr_t is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-1 downto 0);
+  type pmp_t is record
+    addr_mask : pmp_addr34_t; -- 34-bit
+    i_match   : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for instruction interface
+    d_match   : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for data interface
+    if_fault  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for fetch operation
+    ld_fault  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for load operation
+    st_fault  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for store operation
+  end record;
+  signal pmp : pmp_t;
+
+  -- pmp faults anybody? --
+  signal if_pmp_fault : std_ulogic; -- pmp instruction access fault
+  signal ld_pmp_fault : std_ulogic; -- pmp load access fault
+  signal st_pmp_fault : std_ulogic; -- pmp store access fault
 
 begin
 
@@ -303,7 +344,7 @@ begin
   i_bus_wdata_o <= (others => '0');
   i_bus_ben_o   <= (others => '0');
   i_bus_we_o    <= '0';
-  i_bus_re_o    <= ctrl_i(ctrl_bus_if_c) and (not i_misaligned); -- no actual read when misaligned
+  i_bus_re_o    <= ctrl_i(ctrl_bus_if_c) and (not i_misaligned) and (not if_pmp_fault); -- no actual read when misaligned or PMP fault
   i_bus_fence_o <= ctrl_i(ctrl_bus_fencei_c);
   instr_o       <= i_bus_rdata_i;
 
@@ -357,14 +398,101 @@ begin
   ma_store_o <= d_arbiter.wr_req and d_arbiter.err_align;
   be_store_o <= d_arbiter.wr_req and d_arbiter.err_bus;
 
-  -- data bus --
+  -- data bus (read/write)--
   d_bus_addr_o  <= mar;
   d_bus_wdata_o <= d_bus_wdata;
   d_bus_ben_o   <= d_bus_ben;
-  d_bus_we_o    <= ctrl_i(ctrl_bus_wr_c) and (not d_misaligned); -- no actual write when misaligned
-  d_bus_re_o    <= ctrl_i(ctrl_bus_rd_c) and (not d_misaligned); -- no actual read when misaligned
+  d_bus_we_o    <= ctrl_i(ctrl_bus_wr_c) and (not d_misaligned) and (not st_pmp_fault); -- no actual write when misaligned or PMP fault
+  d_bus_re_o    <= ctrl_i(ctrl_bus_rd_c) and (not d_misaligned) and (not ld_pmp_fault); -- no actual read when misaligned or PMP fault
   d_bus_fence_o <= ctrl_i(ctrl_bus_fence_c);
   d_bus_rdata   <= d_bus_rdata_i;
+
+
+  -- Physical Memory Protection (PMP) -------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- compute address masks --
+  pmp_masks: process(pmp_addr_i, pmp)
+  begin
+    for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
+      pmp.addr_mask(r) <= (others => '0'); -- default
+      for i in PMP_GRANULARITY+2 to 33 loop
+        if (i = PMP_GRANULARITY+2) then
+          if (pmp_ctrl_i(r)(pmp_cfg_ah_c downto pmp_cfg_al_c) = pmp_napot_mode_c) then
+            pmp.addr_mask(r)(i) <= '0';
+          else -- OFF or unsupported mode
+            pmp.addr_mask(r)(i) <= '1'; -- required for SW to check min granularity when entry is disabled
+          end if;
+        else
+          if (pmp_ctrl_i(r)(pmp_cfg_ah_c downto pmp_cfg_al_c) = pmp_napot_mode_c) then
+            -- current bit = not AND(all previous bits)
+            pmp.addr_mask(r)(i) <= not and_all_f(pmp_addr_i(r)(i-1 downto PMP_GRANULARITY+2));
+          else -- OFF or unsupported mode
+            pmp.addr_mask(r)(i) <= '1'; -- required for SW to check min granularity when entry is disabled
+          end if;
+        end if;
+      end loop; -- i
+    end loop; -- r
+  end process pmp_masks;
+
+
+  -- masked pmpaddr output for CSR read-back --
+  pmp_masked_output: process(pmp_addr_i, pmp)
+  begin
+    pmp_maddr_o <= (others => (others => '0'));
+    for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
+      pmp_maddr_o(r) <= pmp_addr_i(r) and pmp.addr_mask(r);
+    end loop; -- r
+  end process pmp_masked_output;
+
+
+  -- check for access address match --
+  pmp_addr_check: process (pmp, fetch_pc_i, mar)
+    variable i_cmp_v : std_ulogic_vector(31 downto 0);
+    variable d_cmp_v : std_ulogic_vector(31 downto 0);
+    variable b_cmp_v : std_ulogic_vector(31 downto 0);
+  begin
+    for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
+      b_cmp_v := pmp_addr_i(r)(33 downto 2) and pmp.addr_mask(r)(33 downto 2);
+      -- instruction interface --
+      i_cmp_v := fetch_pc_i and pmp.addr_mask(r)(33 downto 2);
+      if (i_cmp_v(31 downto PMP_GRANULARITY+2) = b_cmp_v(31 downto PMP_GRANULARITY+2)) then
+        pmp.i_match(r) <= '1';
+      else
+        pmp.i_match(r) <= '0';
+      end if;
+      -- data interface --
+      d_cmp_v := mar and pmp.addr_mask(r)(33 downto 2);
+      if (d_cmp_v(31 downto PMP_GRANULARITY+2) = b_cmp_v(31 downto PMP_GRANULARITY+2)) then
+        pmp.d_match(r) <= '1';
+      else
+        pmp.d_match(r) <= '0';
+      end if;
+    end loop; -- r
+  end process pmp_addr_check;
+
+
+  -- check access type and regions's permissions --
+  pmp_check_permission: process(pmp, pmp_ctrl_i, priv_mode_i)
+  begin
+    for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
+      if ((priv_mode_i = u_priv_mode_c) or (pmp_ctrl_i(r)(pmp_cfg_l_c) = '1')) and -- user privilege level or locked pmp entry - enforce permissions also for machine mode
+          (pmp_ctrl_i(r)(pmp_cfg_ah_c downto pmp_cfg_al_c) /= pmp_off_mode_c) then -- active entry
+        pmp.if_fault(r) <= pmp.i_match(r) and (not pmp_ctrl_i(r)(pmp_cfg_x_c)); -- fetch access match no execute permission
+        pmp.ld_fault(r) <= pmp.d_match(r) and (not pmp_ctrl_i(r)(pmp_cfg_r_c)); -- load access match no read permission
+        pmp.st_fault(r) <= pmp.d_match(r) and (not pmp_ctrl_i(r)(pmp_cfg_w_c)); -- store access match no write permission
+      else
+        pmp.if_fault(r) <= '0';
+        pmp.ld_fault(r) <= '0';
+        pmp.st_fault(r) <= '0';
+      end if;
+    end loop; -- r
+  end process pmp_check_permission;
+
+
+  -- final PMP access fault signals --
+  if_pmp_fault <= or_all_f(pmp.if_fault) when (PMP_USE = true) else '0';
+  ld_pmp_fault <= or_all_f(pmp.ld_fault) when (PMP_USE = true) else '0';
+  st_pmp_fault <= or_all_f(pmp.st_fault) when (PMP_USE = true) else '0';
 
 
 end neorv32_cpu_bus_rtl;

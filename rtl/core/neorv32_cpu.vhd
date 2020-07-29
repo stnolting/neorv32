@@ -58,8 +58,13 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
+    -- Physical Memory Protection (PMP) --
+    PMP_USE                      : boolean := false; -- implement PMP?
+    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 16)
+    PMP_GRANULARITY              : natural := 15;    -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Bus Interface --
     BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
   );
@@ -130,7 +135,41 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal cp0_data,  cp1_data  : std_ulogic_vector(data_width_c-1 downto 0);
   signal cp0_valid, cp1_valid : std_ulogic;
 
+  -- pmp interface --
+  signal pmp_addr  : pmp_addr_if_t;
+  signal pmp_maddr : pmp_addr_if_t;
+  signal pmp_ctrl  : pmp_ctrl_if_t;
+  signal priv_mode : std_ulogic_vector(1 downto 0); -- current CPU privilege level
+
 begin
+
+  -- Sanity Checks --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  sanity_check: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      -- CSR system --
+      if (CPU_EXTENSION_RISCV_Zicsr = false) then
+        assert false report "NEORV32 CONFIG WARNING! No exception/interrupt/machine features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;
+      end if;
+      -- U-extension requires Zicsr extension --
+      if (CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true) then
+        assert false report "NEORV32 CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr = true." severity error;
+      end if;
+      -- PMP requires Zicsr extension --
+      if (CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true) then
+        assert false report "NEORV32 CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr = true." severity error;
+      end if;
+      -- performance counters requires Zicsr extension --
+      if (CPU_EXTENSION_RISCV_Zicsr = false) and (CSR_COUNTERS_USE = true) then
+        assert false report "NEORV32 CONFIG ERROR! Performance counter CSRs require CPU_EXTENSION_RISCV_Zicsr = true." severity error;
+      end if;
+      -- PMP regions --
+      if (PMP_NUM_REGIONS > pmp_max_r_c) and (PMP_USE = true) then
+        assert false report "NEORV32 CONFIG ERROR! Number of PMP regions out of valid range." severity error;
+      end if;
+    end if;
+  end process sanity_check;
 
   -- Control Unit ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -141,11 +180,16 @@ begin
     HW_THREAD_ID                 => HW_THREAD_ID,     -- hardware thread id
     CPU_BOOT_ADDR                => CPU_BOOT_ADDR,    -- cpu boot address
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,       -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,       -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,       -- implement muld/div extension?
-    CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,   -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
+    -- Physical memory protection (PMP) --
+    PMP_USE                      => PMP_USE,         -- implement physical memory protection?
+    PMP_NUM_REGIONS              => PMP_NUM_REGIONS, -- number of regions (1..4)
+    PMP_GRANULARITY              => PMP_GRANULARITY  -- granularity (0=none, 1=8B, 2=16B, 3=32B, ...)
   )
   port map (
     -- global control --
@@ -176,6 +220,11 @@ begin
     firq_i        => firq_i,
     -- system time input from MTIME --
     time_i        => time_i,      -- current system time
+    -- physical memory protection --
+    pmp_addr_o    => pmp_addr,    -- addresses
+    pmp_maddr_i   => pmp_maddr,   -- masked addresses
+    pmp_ctrl_o    => pmp_ctrl,    -- configs
+    priv_mode_o   => priv_mode,   -- current CPU privilege level
     -- bus access exceptions --
     mar_i         => mar,         -- memory address register
     ma_instr_i    => ma_instr,    -- misaligned instruction address
@@ -276,7 +325,11 @@ begin
   neorv32_cpu_bus_inst: neorv32_cpu_bus
   generic map (
     CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
-    BUS_TIMEOUT           => BUS_TIMEOUT            -- cycles after which a valid bus access will timeout
+    BUS_TIMEOUT           => BUS_TIMEOUT,           -- cycles after which a valid bus access will timeout
+    -- Physical memory protection (PMP) --
+    PMP_USE               => PMP_USE,         -- implement physical memory protection?
+    PMP_NUM_REGIONS       => PMP_NUM_REGIONS, -- number of regions (1..4)
+    PMP_GRANULARITY       => PMP_GRANULARITY  -- granularity (0=none, 1=8B, 2=16B, 3=32B, ...)
   )
   port map (
     -- global control --
@@ -301,6 +354,11 @@ begin
     ma_store_o     => ma_store,       -- misaligned store data address
     be_load_o      => be_load,        -- bus error on load data access
     be_store_o     => be_store,       -- bus error on store data access
+    -- physical memory protection --
+    pmp_addr_i     => pmp_addr,       -- addresses
+    pmp_maddr_o    => pmp_maddr,      -- masked addresses
+    pmp_ctrl_i     => pmp_ctrl,       -- configs
+    priv_mode_i    => priv_mode,      -- current CPU privilege level
     -- instruction bus --
     i_bus_addr_o   => i_bus_addr_o,   -- bus access address
     i_bus_rdata_i  => i_bus_rdata_i,  -- bus read data

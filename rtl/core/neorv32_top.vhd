@@ -55,8 +55,13 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
+    -- Physical Memory Protection (PMP) --
+    PMP_USE                      : boolean := false; -- implement PMP?
+    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 16)
+    PMP_GRANULARITY              : natural := 15;    -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Memory configuration: Instruction memory --
     MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
     MEM_ISPACE_SIZE              : natural := 16*1024; -- total size of instruction memory space in byte
@@ -247,11 +252,6 @@ begin
         assert false report "NEORV32 CONFIG ERROR! Core clock frequency (CLOCK_FREQUENCY) not specified." severity error;
       end if;
 
-      -- CSR system not implemented --
-      if (CPU_EXTENSION_RISCV_Zicsr = false) then
-        assert false report "NEORV32 CONFIG WARNING! No exception/interrupt/machine features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;
-      end if;
-
       -- memory layout notifier --
       if (MEM_ISPACE_BASE /= x"00000000") then
         assert false report "NEORV32 CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framwork." severity warning;
@@ -328,8 +328,13 @@ begin
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
+    -- Physical Memory Protection (PMP) --
+    PMP_USE                      => PMP_USE,         -- implement PMP?
+    PMP_NUM_REGIONS              => PMP_NUM_REGIONS, -- number of regions (max 16)
+    PMP_GRANULARITY              => PMP_GRANULARITY, -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Bus Interface --
     BUS_TIMEOUT                  => MEM_EXT_TIMEOUT   -- cycles after which a valid bus access will timeout
   )

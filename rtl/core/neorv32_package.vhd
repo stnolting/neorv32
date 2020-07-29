@@ -41,7 +41,8 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - FIXED!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01030000"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01030500"; -- no touchy!
+  constant pmp_max_r_c  : natural := 8; -- max PMP regions
 
   -- Helper Functions -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -49,11 +50,16 @@ package neorv32_package is
   function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural;
   function cond_sel_stdulogicvector_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector;
   function bool_to_ulogic_f(cond : boolean) return std_ulogic;
-  function or_all_f(  a : std_ulogic_vector) return std_ulogic;
-  function and_all_f( a : std_ulogic_vector) return std_ulogic;
-  function xor_all_f( a : std_ulogic_vector) return std_ulogic;
+  function or_all_f(a : std_ulogic_vector) return std_ulogic;
+  function and_all_f(a : std_ulogic_vector) return std_ulogic;
+  function xor_all_f(a : std_ulogic_vector) return std_ulogic;
   function xnor_all_f(a : std_ulogic_vector) return std_ulogic;
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
+
+  -- Internal Types -------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  type pmp_ctrl_if_t is array (0 to pmp_max_r_c-1) of std_ulogic_vector(7 downto 0);
+  type pmp_addr_if_t is array (0 to pmp_max_r_c-1) of std_ulogic_vector(33 downto 0);
 
   -- Processor-internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -361,6 +367,11 @@ package neorv32_package is
   --
   constant interrupt_width_c     : natural := 7; -- length of this list in bits
 
+  -- CPU Privilege Modes --------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  constant m_priv_mode_c : std_ulogic_vector(1 downto 0) := "11"; -- machine mode
+  constant u_priv_mode_c : std_ulogic_vector(1 downto 0) := "00"; -- user mode
+
   -- Clock Generator -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant clk_div2_c    : natural := 0;
@@ -385,8 +396,13 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_C        : boolean := true;   -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := true;   -- implement muld/div extension?
+      CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
+      -- Physical Memory Protection (PMP) --
+      PMP_USE                      : boolean := false; -- implement PMP?
+      PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 16)
+      PMP_GRANULARITY              : natural := 15;    -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
       -- Memory configuration: Instruction memory --
       MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
       MEM_ISPACE_SIZE              : natural := 16*1024; -- total size of instruction memory space in byte
@@ -464,8 +480,13 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
+      CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
+      -- Physical Memory Protection (PMP) --
+      PMP_USE                      : boolean := false; -- implement PMP?
+      PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 16)
+      PMP_GRANULARITY              : natural := 15;    -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
       -- Bus Interface --
       BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
     );
@@ -518,8 +539,13 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
+      CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
-      CPU_EXTENSION_RISCV_Zifencei : boolean := true   -- implement instruction stream sync.?
+      CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
+      -- Physical memory protection (PMP) --
+      PMP_USE                      : boolean := false; -- implement physical memory protection?
+      PMP_NUM_REGIONS              : natural := 4; -- number of regions (1..4)
+      PMP_GRANULARITY              : natural := 0  -- granularity (0=none, 1=8B, 2=16B, 3=32B, ...)
     );
     port (
       -- global control --
@@ -550,6 +576,11 @@ package neorv32_package is
       firq_i        : in  std_ulogic_vector(3 downto 0);
       -- system time input from MTIME --
       time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
+      -- physical memory protection --
+      pmp_addr_o    : out pmp_addr_if_t; -- addresses
+      pmp_maddr_i   : in  pmp_addr_if_t; -- masked addresses
+      pmp_ctrl_o    : out pmp_ctrl_if_t; -- configs
+      priv_mode_o   : out std_ulogic_vector(1 downto 0); -- current CPU privilege level
       -- bus access exceptions --
       mar_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory address register
       ma_instr_i    : in  std_ulogic; -- misaligned instruction address
@@ -635,7 +666,11 @@ package neorv32_package is
   component neorv32_cpu_bus
     generic (
       CPU_EXTENSION_RISCV_C : boolean := true; -- implement compressed extension?
-      BUS_TIMEOUT           : natural := 15    -- cycles after which a valid bus access will timeout
+      BUS_TIMEOUT           : natural := 15;   -- cycles after which a valid bus access will timeout
+      -- Physical memory protection (PMP) --
+      PMP_USE               : boolean := false; -- implement physical memory protection?
+      PMP_NUM_REGIONS       : natural := 4; -- number of regions (1..4)
+      PMP_GRANULARITY       : natural := 0  -- granularity (0=none, 1=8B, 2=16B, 3=32B, ...)
     );
     port (
       -- global control --
@@ -660,6 +695,11 @@ package neorv32_package is
       ma_store_o     : out std_ulogic; -- misaligned store data address
       be_load_o      : out std_ulogic; -- bus error on load data access
       be_store_o     : out std_ulogic; -- bus error on store data access
+      -- physical memory protection --
+      pmp_addr_i     : in  pmp_addr_if_t; -- addresses
+      pmp_maddr_o    : out pmp_addr_if_t; -- masked addresses
+      pmp_ctrl_i     : in  pmp_ctrl_if_t; -- configs
+      priv_mode_i    : in  std_ulogic_vector(1 downto 0); -- current CPU privilege level
       -- instruction bus --
       i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
       i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
