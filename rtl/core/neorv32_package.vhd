@@ -1166,9 +1166,11 @@ package body neorv32_package is
     variable tmp_v : std_ulogic;
   begin
     tmp_v := a(a'low);
-    for i in a'low+1 to a'high loop
-      tmp_v := tmp_v or a(i);
-    end loop; -- i
+    if (a'low < a'high) then -- not null range?
+      for i in a'low+1 to a'high loop
+        tmp_v := tmp_v or a(i);
+      end loop; -- i
+    end if;
     return tmp_v;
   end function or_all_f;
 
@@ -1178,9 +1180,11 @@ package body neorv32_package is
     variable tmp_v : std_ulogic;
   begin
     tmp_v := a(a'low);
-    for i in a'low+1 to a'high loop
-      tmp_v := tmp_v and a(i);
-    end loop; -- i
+    if (a'low < a'high) then -- not null range?
+      for i in a'low+1 to a'high loop
+        tmp_v := tmp_v and a(i);
+      end loop; -- i
+    end if;
     return tmp_v;
   end function and_all_f;
 
@@ -1190,9 +1194,11 @@ package body neorv32_package is
     variable tmp_v : std_ulogic;
   begin
     tmp_v := a(a'low);
-    for i in a'low+1 to a'high loop
-      tmp_v := tmp_v xor a(i);
-    end loop; -- i
+    if (a'low < a'high) then -- not null range?
+      for i in a'low+1 to a'high loop
+        tmp_v := tmp_v xor a(i);
+      end loop; -- i
+    end if;
     return tmp_v;
   end function xor_all_f;
 
@@ -1202,9 +1208,11 @@ package body neorv32_package is
     variable tmp_v : std_ulogic;
   begin
     tmp_v := a(a'low);
-    for i in a'low+1 to a'high loop
-      tmp_v := tmp_v xnor a(i);
-    end loop; -- i
+    if (a'low < a'high) then -- not null range?
+      for i in a'low+1 to a'high loop
+        tmp_v := tmp_v xnor a(i);
+      end loop; -- i
+    end if;
     return tmp_v;
   end function xnor_all_f;
 
