@@ -168,6 +168,10 @@ begin
       if (PMP_NUM_REGIONS > pmp_max_r_c) and (PMP_USE = true) then
         assert false report "NEORV32 CONFIG ERROR! Number of PMP regions out of valid range." severity error;
       end if;
+      -- PMP granulartiy --
+      if ((PMP_GRANULARITY <= 1) or (PMP_GRANULARITY > 31)) and (PMP_USE = true) then
+        assert false report "NEORV32 CONFIG ERROR! Invalid PMP grnaulartiy (1 < G < 32)." severity error;
+      end if;
     end if;
   end process sanity_check;
 
