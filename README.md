@@ -21,8 +21,8 @@
 ## Introduction
 
 The **NEORV32 processor** is a customizable full-scale mikrocontroller-like processor system based on the RISC-V-compliant
-`rv32i` NEORV32 CPU with optional `M`, `E`, `C` and `Zicsr` and `Zifencei` extensions. The CPU was built from scratch and
-is compliant to the *Unprivileged ISA Specification Version 2.2* and a subset of the *Privileged Architecture
+`rv32i` NEORV32 CPU with optional `M`, `E`, `C` and `U`, `Zicsr` and `Zifencei` extensions and optional physical memory protection (PMP).
+The CPU was built from scratch and is compliant to the *Unprivileged ISA Specification Version 2.2* and a subset of the *Privileged Architecture
 Specification Version 1.12-draft*.
 
 The **processor** is intended as auxiliary processor within a larger SoC designs or as stand-alone
@@ -45,6 +45,17 @@ download [pre-compiled toolchains](https://github.com/stnolting/riscv_gcc_prebui
 
 For more information take a look a the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
+###  Key Features
+
+- RISC-V-compliant `rv32i` CPU with optional `C`, `E`, `M`, `U`, `Zicsr`, `rv32Zifencei` and PMP (physical memory protection) extensions
+- GCC-based toolchain ([pre-compiled rv32i and rv32 etoolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
+- Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
+- [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
+- Detailed [datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf)
+- Completely described in behavioral, platform-independent VHDL – no primitives, macros, etc.
+- Fully synchronous design, no latches, no gated clocks
+- Small hardware footprint and high operating frequency
+- Highly configurable CPU and processor setup
 
 ### Design Principles
 
@@ -75,20 +86,21 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 * `misa` CSR is read-only - no dynamic enabling/disabling of implemented CPU extensions during runtime
 * `mcause` CSR is read-only
 * The `[m]cycleh` and `[m]instreth` CSR counters are only 20-bit wide (in contrast to original 32-bit)
+* The physical memory protection (**PMP**) only supports `NAPOT` mode and only up to 8 regions
 
 
 ### Custom CPU Extensions
+
+The custom extensions are always enabled and are indicated via the `X` bit in the `misa` CSR.
 
 * Four *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
 
 
 ### To-Do / Wish List
 
-- Add instructions how to use the NEORV32 CPU without the processor surroundings
 - Add AXI / AXI-Lite bridges
 - Option to use DSP-based multiplier in `M` extension (would be so much faster)
 - Synthesis results for more platforms
-- Implement user mode (`U` extension)
 - Port Dhrystone benchmark
 - Implement atomic operations (`A` extension) and floating-point operations (`F` extension)
 - Maybe port an RTOS (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr), [freeRTOS](https://www.freertos.org) or [RIOT](https://www.riot-os.org))
@@ -102,28 +114,20 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_processor.png)
 
-  - RISC-V-compliant `rv32i` CPU with optional `C`, `E`, `M`, `Zicsr` and `rv32Zifencei` extensions
-  - GCC-based toolchain ([pre-compiled rv32i and rv32 etoolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
-  - Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
-  - [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
-  - Detailed [datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf)
-  - Completely described in behavioral, platform-independent VHDL – no primitives, macros, etc.
-  - Fully synchronous design, no latches, no gated clocks
-  - Small hardware footprint and high operating frequency
-  - Highly customizable processor configuration
-  - _Optional_ processor-internal data and instruction memories (DMEM/IMEM)
-  - _Optional_ internal bootloader with UART console and automatic SPI flash boot option
-  - _Optional_ machine system timer (MTIME), RISC-V-compliant
-  - _Optional_ universal asynchronous receiver and transmitter (UART)
-  - _Optional_ 8/16/24/32-bit serial peripheral interface controller (SPI) with 8 dedicated chip select lines
-  - _Optional_ two wire serial interface controller (TWI), compatible to the I²C standard
-  - _Optional_ general purpose parallel IO port (GPIO), 16xOut & 16xIn, with pin-change interrupt
-  - _Optional_ 32-bit external bus interface, Wishbone b4 compliant (WISHBONE)
-  - _Optional_ watchdog timer (WDT)
-  - _Optional_ PWM controller with 4 channels and 8-bit duty cycle resolution (PWM)
-  - _Optional_ GARO-based true random number generator (TRNG)
-  - _Optional_ dummy device (DEVNULL) (can be used for *fast* simulation console output)
-  - System configuration information memory to check hardware configuration by software (SYSINFO)
+Highly customizable processor configuration:
+- Optional processor-internal data and instruction memories (DMEM/IMEM)
+- Optional internal bootloader with UART console and automatic SPI flash boot option
+- Optional machine system timer (MTIME), RISC-V-compliant
+- Optional universal asynchronous receiver and transmitter (UART)
+- Optional 8/16/24/32-bit serial peripheral interface controller (SPI) with 8 dedicated chip select lines
+- Optional two wire serial interface controller (TWI), compatible to the I²C standard
+- Optional general purpose parallel IO port (GPIO), 16xOut & 16xIn, with pin-change interrupt
+- Optional 32-bit external bus interface, Wishbone b4 compliant (WISHBONE)
+- Optional watchdog timer (WDT)
+- Optional PWM controller with 4 channels and 8-bit duty cycle resolution (PWM)
+- Optional GARO-based true random number generator (TRNG)
+- Optional dummy device (DEVNULL) (can be used for *fast* simulation console output)
+- System configuration information memory to check hardware configuration by software (SYSINFO)
 
 ### CPU Features
 
@@ -140,7 +144,8 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
 **General**:
   * Modified Harvard architecture (separate CPU interfaces for data and instructions; single processor-bus via bus switch)
   * Two stages in-order pipeline (FETCH, EXECUTE); each stage uses a multi-cycle processing scheme
-  * No hardware support of unaligned accesses - they will trigger and exception
+  * No hardware support of unaligned accesses - they will trigger an exception
+  * Privilege levels: `machine` mode, `user` mode (if enabled via `U` extension)
 
 
 **RV32I base instruction set** (`I` extension):
@@ -178,11 +183,19 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
     * Store address misaligned
     * Store access fault
     * Environment call from M-mode (via `ecall` instruction)
-    * Machine timer interrupt `mti` (via MTIME unit)
-    * Machine external interrupt `mei` (via CLIC unit)
+    * Machine timer interrupt `mti` (via processor's MTIME unit)
+    * Machine software interrupt `msi` (via external signal)
+    * Machine external interrupt `mei` (via external signal)
+    * Four fast interrupt requests (custom extension)
+
+**Privileged architecture / User mode** (`U` extension, requires `Zicsr` extension):
+  * Privilege levels: `M-mode` (Machine mode) + `U-Mode` (User mode)
 
 **Privileged architecture / FENCE.I** (`Zifencei` extension):
-  * System instructions: `FENCE.I`
+  * System instructions: `FENCEI`
+
+**Physical memory protection** (`PMP`, requires `Zicsr` extension):
+  * Additional machine CSRs: `pmpcfgx` `pmpaddrx`
 
 
 ## FPGA Implementation Results
@@ -190,7 +203,7 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
 This chapter shows exemplary implementation results of the NEORV32 processor for an **Intel Cyclone IV EP4CE22F17C6N FPGA** on
 a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 19.1** ("balanced implementation"). The timing
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
-of the processor's generics is assumed. No constraints were used at all.
+of the CPU's generics is assumed (no PMP). No constraints were used at all.
 
 ### CPU
 
@@ -229,7 +242,7 @@ Results generated for hardware version: `1.3.0.0`
 ### Exemplary FPGA Setups
 
 Exemplary implementation results for different FPGA platforms. The processor setup uses *all provided peripherals*,
-no external memory interface and only internal instruction and data memories. IMEM uses 16kB and DMEM uses 8kB memory space. The setup's top entity connects most of the
+no external memory interface, no PMP and only internal instruction and data memories. IMEM uses 16kB and DMEM uses 8kB memory space. The setup's top entity connects most of the
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
 to FPGA pins - except for the Wishbone bus and the interrupt signals.
 
@@ -325,8 +338,13 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
+    -- Physical Memory Protection (PMP) --
+    PMP_USE                      : boolean := false;  -- implement PMP?
+    PMP_NUM_REGIONS              : natural := 4;      -- number of regions (max 16)
+    PMP_GRANULARITY              : natural := 15;     -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Memory configuration: Instruction memory --
     MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
     MEM_ISPACE_SIZE              : natural := 16*1024; -- total size of instruction memory space in byte
@@ -406,8 +424,13 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
+    -- Physical Memory Protection (PMP) --
+    PMP_USE                      : boolean := false; -- implement PMP?
+    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 16)
+    PMP_GRANULARITY              : natural := 15;    -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Bus Interface --
     BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
   );
@@ -469,8 +492,8 @@ and build the toolchain by yourself, or you can download a prebuilt one and inst
 To build the toolchain by yourself, follow the official [build instructions](https://github.com/riscv/riscv-gnu-toolchain.
 Make sure to use the `ilp32` or `ilp32e` ABI.
 
-Alternatively, you can download a prebuilt toolchain. I have uploaded the toolchain(s) I am using to GitHub. This toolchain
-has been compiled on a 64-bit x86 Ubuntu (Ubuntu on Windows, actually). Download the toolchain of choice:
+**Alternatively**, you can download a prebuilt toolchain. I have uploaded the toolchains I am using to GitHub. These toolchains
+were compiled on a 64-bit x86 Ubuntu 20.04 LTS (Ubuntu on Windows, actually). Download the toolchain of choice:
 
 [https://github.com/stnolting/riscv_gcc_prebuilt](https://github.com/stnolting/riscv_gcc_prebuilt)
 
