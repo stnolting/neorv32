@@ -68,6 +68,18 @@ enum NEORV32_CPU_CSRS_enum {
   CSR_MTVAL       = 0x343, /**< 0x343 - mtval    (r/w): Machine bad address or instruction */
   CSR_MIP         = 0x344, /**< 0x344 - mip      (r/w): Machine interrupt pending register */
 
+  CSR_PMPCFG0     = 0x3a0, /**< 0x3a0 - pmpcfg0 (r/w): Physical memory protection configuration register 0 */
+  CSR_PMPCFG1     = 0x3a1, /**< 0x3a1 - pmpcfg1 (r/w): Physical memory protection configuration register 1 */
+
+  CSR_PMPADDR0    = 0x3b0, /**< 0x3b0 - pmpaddr0 (r/w): Physical memory protection address register 0 */
+  CSR_PMPADDR1    = 0x3b1, /**< 0x3b1 - pmpaddr1 (r/w): Physical memory protection address register 1 */
+  CSR_PMPADDR2    = 0x3b2, /**< 0x3b2 - pmpaddr2 (r/w): Physical memory protection address register 2 */
+  CSR_PMPADDR3    = 0x3b3, /**< 0x3b3 - pmpaddr3 (r/w): Physical memory protection address register 3 */
+  CSR_PMPADDR4    = 0x3b4, /**< 0x3b4 - pmpaddr4 (r/w): Physical memory protection address register 4 */
+  CSR_PMPADDR5    = 0x3b5, /**< 0x3b5 - pmpaddr5 (r/w): Physical memory protection address register 5 */
+  CSR_PMPADDR6    = 0x3b6, /**< 0x3b6 - pmpaddr6 (r/w): Physical memory protection address register 6 */
+  CSR_PMPADDR7    = 0x3b7, /**< 0x3b7 - pmpaddr7 (r/w): Physical memory protection address register 7 */
+
   CSR_MCYCLE      = 0xb00, /**< 0xb00 - mcycle    (r/w): Machine cycle counter low word */
   CSR_MINSTRET    = 0xb02, /**< 0xb02 - minstret  (r/w): Machine instructions-retired counter low word */
   CSR_MCYCLEH     = 0xb80, /**< 0xb80 - mcycleh   (r/w): Machine cycle counter high word - only 20-bit wide!*/
@@ -92,8 +104,10 @@ enum NEORV32_CPU_CSRS_enum {
  * CPU <b>mstatus</b> CSR (r/w): Machine status (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MSTATUS_enum {
-  CPU_MSTATUS_MIE  = 3, /**< CPU mstatus CSR (3): Machine interrupt enable bit (r/w) */
-  CPU_MSTATUS_MPIE = 7  /**< CPU mstatus CSR (7): Machine previous interrupt enable bit (r/w) */
+  CPU_MSTATUS_MIE   =  3, /**< CPU mstatus CSR (3): Machine interrupt enable bit (r/w) */
+  CPU_MSTATUS_MPIE  =  7, /**< CPU mstatus CSR (7): Machine previous interrupt enable bit (r/w) */
+  CPU_MSTATUS_MPP_L = 11, /**< CPU mstatus CSR (11): Machine previous privilege mode bit low (r/w) */
+  CPU_MSTATUS_MPP_H = 12  /**< CPU mstatus CSR (12): Machine previous privilege mode bit high (r/w) */
 };
 
 
@@ -104,7 +118,6 @@ enum NEORV32_CPU_MIE_enum {
   CPU_MIE_MSIE   =  3, /**< CPU mie CSR (3): Machine software interrupt enable (r/w) */
   CPU_MIE_MTIE   =  7, /**< CPU mie CSR (7): Machine timer interrupt enable bit (r/w) */
   CPU_MIE_MEIE   = 11, /**< CPU mie CSR (11): Machine external interrupt enable bit (r/w) */
-
   CPU_MIE_FIRQ0E = 16, /**< CPU mie CSR (16): Fast interrupt channel 0 enable bit (r/w) */
   CPU_MIE_FIRQ1E = 17, /**< CPU mie CSR (17): Fast interrupt channel 1 enable bit (r/w) */
   CPU_MIE_FIRQ2E = 18, /**< CPU mie CSR (18): Fast interrupt channel 2 enable bit (r/w) */
@@ -131,10 +144,11 @@ enum NEORV32_CPU_MIP_enum {
  * CPU <b>misa</b> CSR (r/w): Machine instruction set extensions (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MISA_enum {
-  CPU_MISA_C_EXT      =  2, /**< CPU misa CSR  (2): C: Compressed instructions CPU extension available (r/-), can be switched on/off */
+  CPU_MISA_C_EXT      =  2, /**< CPU misa CSR  (2): C: Compressed instructions CPU extension available (r/-)*/
   CPU_MISA_E_EXT      =  4, /**< CPU misa CSR  (3): E: Embedded CPU extension available (r/-) */
   CPU_MISA_I_EXT      =  8, /**< CPU misa CSR  (8): I: Base integer ISA CPU extension available (r/-) */
-  CPU_MISA_M_EXT      = 12, /**< CPU misa CSR (12): M: Multiplier/divider CPU extension available (r/-), can be switched on/off */
+  CPU_MISA_M_EXT      = 12, /**< CPU misa CSR (12): M: Multiplier/divider CPU extension available (r/-)*/
+  CPU_MISA_U_EXT      = 20, /**< CPU misa CSR (20): U: User mode CPU extension available (r/-)*/
   CPU_MISA_X_EXT      = 23, /**< CPU misa CSR (23): X: Non-standard CPU extension available (r/-) */
   CPU_MISA_Z_EXT      = 25, /**< CPU misa CSR (25): Z: Privileged architecture CPU extension(s) available (r/-) */
   CPU_MISA_MXL_LO_EXT = 30, /**< CPU misa CSR (30): MXL.lo: CPU data width (r/-) */
