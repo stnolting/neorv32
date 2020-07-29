@@ -411,7 +411,7 @@ begin
   -- Physical Memory Protection (PMP) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- compute address masks --
-  pmp_masks: process(pmp_addr_i, pmp)
+  pmp_masks: process(pmp_addr_i, pmp, pmp_ctrl_i)
   begin
     for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
       pmp.addr_mask(r) <= (others => '0'); -- default
@@ -446,7 +446,7 @@ begin
 
 
   -- check for access address match --
-  pmp_addr_check: process (pmp, fetch_pc_i, mar)
+  pmp_addr_check: process (pmp, fetch_pc_i, mar, pmp_addr_i)
     variable i_cmp_v : std_ulogic_vector(31 downto 0);
     variable d_cmp_v : std_ulogic_vector(31 downto 0);
     variable b_cmp_v : std_ulogic_vector(31 downto 0);
