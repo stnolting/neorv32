@@ -1345,22 +1345,42 @@ begin
             if (PMP_USE = true) then
               -- pmpcfg --
               if (execute_engine.i_reg(27 downto 24) = x"a") then
-                for i in 0 to (PMP_NUM_REGIONS/4)-1 loop
-                  if (execute_engine.i_reg(23 downto 20) = std_ulogic_vector(to_unsigned(i, 4))) then
-                    for j in 0 to 3 loop
-                      if (csr.pmpcfg(i*4+j)(7) = '0') then -- unlocked pmpcfg access
-                        csr.pmpcfg(i*4+j)(0) <= csr_wdata_i(j*8+0); -- R
-                        csr.pmpcfg(i*4+j)(1) <= csr_wdata_i(j*8+1); -- W
-                        csr.pmpcfg(i*4+j)(2) <= csr_wdata_i(j*8+2); -- X
-                        csr.pmpcfg(i*4+j)(3) <= csr_wdata_i(j*8+3) and csr_wdata_i(j*8+4); -- A_L
-                        csr.pmpcfg(i*4+j)(4) <= csr_wdata_i(j*8+3) and csr_wdata_i(j*8+4); -- A_H - NAPOT/OFF only
-                        csr.pmpcfg(i*4+j)(5) <= '0'; -- reserved
-                        csr.pmpcfg(i*4+j)(6) <= '0'; -- reserved
-                        csr.pmpcfg(i*4+j)(7) <= csr_wdata_i(j*8+7); -- L
+                if (PMP_NUM_REGIONS >= 1) then
+                  if (execute_engine.i_reg(23 downto 20) = x"0") then -- pmpcfg0
+                    for j in 0 to 3 loop -- bytes in pmpcfg CSR
+                      if ((j+1) <= PMP_NUM_REGIONS) then
+                        if (csr.pmpcfg(0+j)(7) = '0') then -- unlocked pmpcfg access
+                          csr.pmpcfg(0+j)(0) <= csr_wdata_i(j*8+0); -- R
+                          csr.pmpcfg(0+j)(1) <= csr_wdata_i(j*8+1); -- W
+                          csr.pmpcfg(0+j)(2) <= csr_wdata_i(j*8+2); -- X
+                          csr.pmpcfg(0+j)(3) <= csr_wdata_i(j*8+3) and csr_wdata_i(j*8+4); -- A_L
+                          csr.pmpcfg(0+j)(4) <= csr_wdata_i(j*8+3) and csr_wdata_i(j*8+4); -- A_H - NAPOT/OFF only
+                          csr.pmpcfg(0+j)(5) <= '0'; -- reserved
+                          csr.pmpcfg(0+j)(6) <= '0'; -- reserved
+                          csr.pmpcfg(0+j)(7) <= csr_wdata_i(j*8+7); -- L
+                        end if;
                       end if;
                     end loop; -- j (bytes in CSR)
                   end if;
-                end loop; -- i (4-byte CSRs)
+                end if;
+                if (PMP_NUM_REGIONS >= 5) then
+                  if (execute_engine.i_reg(23 downto 20) = x"1") then -- pmpcfg1
+                    for j in 0 to 3 loop -- bytes in pmpcfg CSR
+                      if ((j+1+4) <= PMP_NUM_REGIONS) then
+                        if (csr.pmpcfg(4+j)(7) = '0') then -- unlocked pmpcfg access
+                          csr.pmpcfg(4+j)(0) <= csr_wdata_i(j*8+0); -- R
+                          csr.pmpcfg(4+j)(1) <= csr_wdata_i(j*8+1); -- W
+                          csr.pmpcfg(4+j)(2) <= csr_wdata_i(j*8+2); -- X
+                          csr.pmpcfg(4+j)(3) <= csr_wdata_i(j*8+3) and csr_wdata_i(j*8+4); -- A_L
+                          csr.pmpcfg(4+j)(4) <= csr_wdata_i(j*8+3) and csr_wdata_i(j*8+4); -- A_H - NAPOT/OFF only
+                          csr.pmpcfg(4+j)(5) <= '0'; -- reserved
+                          csr.pmpcfg(4+j)(6) <= '0'; -- reserved
+                          csr.pmpcfg(4+j)(7) <= csr_wdata_i(j*8+7); -- L
+                        end if;
+                      end if;
+                    end loop; -- j (bytes in CSR)
+                  end if;
+                end if;
               end if;
               -- pmpaddr --
               if (execute_engine.i_reg(27 downto 24) = x"b") then
