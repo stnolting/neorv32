@@ -169,6 +169,19 @@ int main() {
   }
 #endif
 
+  // enable interrupt sources
+  install_err  = neorv32_cpu_irq_enable(CPU_MIE_MSIE); // activate software interrupt
+  install_err += neorv32_cpu_irq_enable(CPU_MIE_MTIE); // activate timer interrupt
+  install_err += neorv32_cpu_irq_enable(CPU_MIE_MEIE); // activate external interrupt
+  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ0E);// activate fast interrupt channel 0
+  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ1E);// activate fast interrupt channel 1
+  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ2E);// activate fast interrupt channel 2
+  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ3E);// activate fast interrupt channel 3
+
+  if (install_err) {
+    neorv32_uart_printf("IRQ enable error (%i)!\n", install_err);
+    return 0;
+  }
 
 
   // enable global interrupts
@@ -300,19 +313,41 @@ int main() {
 
   // ----------------------------------------------------------
   // Test fence instructions - make sure CPU does not crash here and throws no exception
-  // a more complex test is provided by the RISC-V compliance test
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("FENCE(.I):    ");
+  neorv32_uart_printf("FENCE:        ");
   cnt_test++;
   asm volatile ("fence");
-  asm volatile ("fence.i");
 
   if (exception_handler_answer != 0xFFFFFFFF) {
     test_fail();
   }
   else {
     test_ok();
+  }
+
+
+  // ----------------------------------------------------------
+  // Test fencei instructions - make sure CPU does not crash here and throws no exception
+  // a more complex test is provided by the RISC-V compliance test
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("FENCE.I:      ");
+  asm volatile ("fence.i");
+  
+  if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+    neorv32_uart_printf("skipped (not implemented)\n");
+  }
+  else {
+    cnt_test++;
+    exception_handler_answer = 0xFFFFFFFF;
+    asm volatile ("fence.i");
+    if (exception_handler_answer == 0xFFFFFFFF) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
   }
 
 
