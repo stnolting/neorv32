@@ -36,7 +36,6 @@
 /**********************************************************************//**
  * @file neorv32.h
  * @author Stephan Nolting
- * @date 30 May 2020
  *
  * @brief Main NEORV32 core library file.
  *
@@ -141,7 +140,7 @@ enum NEORV32_CPU_MIP_enum {
 
 
 /**********************************************************************//**
- * CPU <b>misa</b> CSR (r/w): Machine instruction set extensions (RISC-V spec.)
+ * CPU <b>misa</b> CSR (r/-): Machine instruction set extensions (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MISA_enum {
   CPU_MISA_C_EXT      =  2, /**< CPU misa CSR  (2): C: Compressed instructions CPU extension available (r/-)*/
@@ -150,7 +149,6 @@ enum NEORV32_CPU_MISA_enum {
   CPU_MISA_M_EXT      = 12, /**< CPU misa CSR (12): M: Multiplier/divider CPU extension available (r/-)*/
   CPU_MISA_U_EXT      = 20, /**< CPU misa CSR (20): U: User mode CPU extension available (r/-)*/
   CPU_MISA_X_EXT      = 23, /**< CPU misa CSR (23): X: Non-standard CPU extension available (r/-) */
-  CPU_MISA_Z_EXT      = 25, /**< CPU misa CSR (25): Z: Privileged architecture CPU extension(s) available (r/-) */
   CPU_MISA_MXL_LO_EXT = 30, /**< CPU misa CSR (30): MXL.lo: CPU data width (r/-) */
   CPU_MISA_MXL_HI_EXT = 31  /**< CPU misa CSR (31): MXL.Hi: CPU data width (r/-) */
 };

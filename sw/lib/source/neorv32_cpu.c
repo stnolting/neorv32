@@ -242,6 +242,7 @@ void neorv32_cpu_delay_ms(uint32_t time_ms) {
  * Switch from privilege mode MACHINE to privilege mode USER.
  *
  * @note This function requires the U extension to be implemented.
+ * @note Maybe you should do a fencei after this.
  **************************************************************************/
 void __attribute__((naked)) neorv32_cpu_goto_user_mode(void) {
 

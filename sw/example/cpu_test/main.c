@@ -742,23 +742,15 @@ int main() {
     // find out number of regions
     for (i=0; i<16; i++) {
       exception_handler_answer = 0xFFFFFFFF;
-      switch (i) {
-        case  0: neorv32_cpu_csr_read(0x3b0); break;
-        case  1: neorv32_cpu_csr_read(0x3b1); break;
-        case  2: neorv32_cpu_csr_read(0x3b2); break;
-        case  3: neorv32_cpu_csr_read(0x3b3); break;
-        case  4: neorv32_cpu_csr_read(0x3b4); break;
-        case  5: neorv32_cpu_csr_read(0x3b5); break;
-        case  6: neorv32_cpu_csr_read(0x3b6); break;
-        case  7: neorv32_cpu_csr_read(0x3b7); break;
-        case  8: neorv32_cpu_csr_read(0x3b8); break;
-        case  9: neorv32_cpu_csr_read(0x3b9); break;
-        case 10: neorv32_cpu_csr_read(0x3ba); break;
-        case 11: neorv32_cpu_csr_read(0x3bb); break;
-        case 12: neorv32_cpu_csr_read(0x3bc); break;
-        case 13: neorv32_cpu_csr_read(0x3bd); break;
-        case 14: neorv32_cpu_csr_read(0x3be); break;
-        case 15: neorv32_cpu_csr_read(0x3bf); break;
+      switch (i) { // try to access pmpaddr regs
+        case  0: neorv32_cpu_csr_read(CSR_PMPADDR0); break;
+        case  1: neorv32_cpu_csr_read(CSR_PMPADDR1); break;
+        case  2: neorv32_cpu_csr_read(CSR_PMPADDR2); break;
+        case  3: neorv32_cpu_csr_read(CSR_PMPADDR3); break;
+        case  4: neorv32_cpu_csr_read(CSR_PMPADDR4); break;
+        case  5: neorv32_cpu_csr_read(CSR_PMPADDR5); break;
+        case  6: neorv32_cpu_csr_read(CSR_PMPADDR6); break;
+        case  7: neorv32_cpu_csr_read(CSR_PMPADDR7); break;
         default: break;
       }
       if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
@@ -774,18 +766,25 @@ int main() {
     uint32_t pmp_test_g = neorv32_cpu_csr_read(0x3b0);
 
     // find least-significat set bit
-    for (i=31; i>=0; i--) {
+    for (i=31; i!=0; i--) {
       if (((pmp_test_g >> i) & 1) == 0) {
         break;
       }
     }
-    neorv32_uart_printf("Min granulartiy: %u bytes per region\n", 1<<(i+2));
 
+    neorv32_uart_printf("Min granularity (0x%x): ", pmp_test_g);
+    if (i < 29) {
+      neorv32_uart_printf("%u bytes per region\n", (uint32_t)(1 << (i+1+2)));
+    }
+    else {
+      neorv32_uart_printf("2^%u bytes per region\n", i+1+2);
+    }
+    
 
     // test available modes
     neorv32_uart_printf("Mode TOR:   ");
-    neorv32_cpu_csr_write(0x3a0, 0x08);
-    if ((neorv32_cpu_csr_read(0x3a0) & 0xFF) == 0x08) {
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0x08);
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xFF) == 0x08) {
       neorv32_uart_printf("available\n");
     }
     else {
@@ -793,8 +792,8 @@ int main() {
     }
 
     neorv32_uart_printf("Mode NA4:   ");
-    neorv32_cpu_csr_write(0x3a0, 0x10);
-    if ((neorv32_cpu_csr_read(0x3a0) & 0xFF) == 0x10) {
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0x10);
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xFF) == 0x10) {
       neorv32_uart_printf("available\n");
     }
     else {
@@ -802,8 +801,8 @@ int main() {
     }
 
     neorv32_uart_printf("Mode NAPOT: ");
-    neorv32_cpu_csr_write(0x3a0, 0x18);
-    if ((neorv32_cpu_csr_read(0x3a0) & 0xFF) == 0x18) {
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0x18);
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xFF) == 0x18) {
       neorv32_uart_printf("available\n");
     }
     else {
@@ -811,30 +810,61 @@ int main() {
     }
 
 
-    // test user mode access fault
-    neorv32_cpu_csr_write(0x3b0, 0x00007fff); // 64k area @ 0x00000000
-    neorv32_cpu_csr_write(0x3a0, 0b00011100); // NAPOT, execute permission, NO load permission
+    // Test access to protected region
+    // ---------------------------------------------
+    neorv32_uart_printf("Creating protected page (NAPOT, 64k) @ 0xFFFFA000, (!x, !w, r)...\n");
+    neorv32_cpu_csr_write(CSR_PMPADDR0, 0xffffdfff); // 64k area @ 0xFFFFA000
+    neorv32_cpu_csr_write(CSR_PMPCFG0,  0b00011001); // NAPOT, read permission, NO write and execute permissions
 
-    neorv32_uart_printf("U-mode protected load fault test: ");
+
+    // ------ LOAD: should work ------
+    neorv32_uart_printf("U-mode (!X,!W,R) load test:  ");
     cnt_test++;
-
     exception_handler_answer = 0xFFFFFFFF;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
     {
-      // load from protected area
-      asm volatile ("lw zero, 0(zero)");
+      asm volatile ("lw zero, 0xFFFFFF90(zero)"); // MTIME load access, should work
     }
-
 #if (DETAILED_EXCEPTION_DEBUG==0)
-    if (exception_handler_answer == TRAP_CODE_L_ACCESS) {
-      neorv32_uart_printf("ok\n");
-      cnt_ok++;
+    if (exception_handler_answer == 0xFFFFFFFF) {
+      // switch back to machine mode (if not allready)
+      asm volatile ("ecall");
+
+      test_ok();
     }
     else {
-      neorv32_uart_printf("fail\n");
-      cnt_fail++;
+      // switch back to machine mode (if not allready)
+      asm volatile ("ecall");
+
+      test_fail();
+    }
+#endif
+
+
+    // ------ STORE: should fail ------
+    neorv32_uart_printf("U-mode (!X,!W,R) store test: ");
+    cnt_test++;
+    exception_handler_answer = 0xFFFFFFFF;
+
+    // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+    neorv32_cpu_goto_user_mode();
+    {
+      asm volatile ("sw zero, 0xFFFFFF90(zero)"); // MTIME store access, should fail
+    }
+#if (DETAILED_EXCEPTION_DEBUG==0)
+    if (exception_handler_answer == TRAP_CODE_S_ACCESS) {
+      // switch back to machine mode (if not allready)
+      asm volatile ("ecall");
+
+      test_ok();
+    }
+    else {
+      // switch back to machine mode (if not allready)
+      asm volatile ("ecall");
+
+      test_fail();
     }
 #endif
   }

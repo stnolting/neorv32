@@ -98,7 +98,7 @@ The custom extensions are always enabled and are indicated via the `X` bit in th
 
 ### To-Do / Wish List
 
-- Add AXI / AXI-Lite bridges
+- Add AXI(-Lite) bridges
 - Option to use DSP-based multiplier in `M` extension (would be so much faster)
 - Synthesis results for more platforms
 - Port Dhrystone benchmark
@@ -189,7 +189,7 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
     * Four fast interrupt requests (custom extension)
 
 **Privileged architecture / User mode** (`U` extension, requires `Zicsr` extension):
-  * Privilege levels: `M-mode` (Machine mode) + `U-Mode` (User mode)
+  * Privilege levels: `M-mode` (Machine mode) + `U-mode` (User mode)
 
 **Privileged architecture / FENCE.I** (`Zifencei` extension):
   * System instructions: `FENCEI`
@@ -318,6 +318,7 @@ Just instantiate this file in your project and you are ready to go! All signals 
 (except for the TWI signals, which are of type *std_logic*).
 
 The top entity of the **CPU** is [**neorv32_cpu.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd) (from the `rtl/core` folder).
+All signals of this top entity are of type *std_ulogic* or *std_ulogic_vector*, respectively.
 
 Use the generics to configure the processor/CPU according to your needs. Each generic is initilized with the default configuration.
 Detailed information regarding the signals and configuration generics can be found in the [NEORV32 documentary](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
@@ -343,8 +344,8 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false;  -- implement PMP?
-    PMP_NUM_REGIONS              : natural := 4;      -- number of regions (max 16)
-    PMP_GRANULARITY              : natural := 15;     -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+    PMP_NUM_REGIONS              : natural := 4;      -- number of regions (max 8)
+    PMP_GRANULARITY              : natural := 14;     -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Memory configuration: Instruction memory --
     MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
     MEM_ISPACE_SIZE              : natural := 16*1024; -- total size of instruction memory space in byte
@@ -429,8 +430,8 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false; -- implement PMP?
-    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 16)
-    PMP_GRANULARITY              : natural := 15;    -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
+    PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Bus Interface --
     BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
   );
