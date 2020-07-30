@@ -77,9 +77,8 @@ void neorv32_rte_setup(void) {
 /**********************************************************************//**
  * Install exception handler function to NEORV32 runtime environment.
  *
- * @note This function automatically activates the according CSR.mie bits when installing handlers for
- * the MTIME (MTI), CLIC (MEI), machine software interrupt (MSI) or a fast IRQ. The global interrupt enable bit mstatus.mie has
- * to be set by the user via neorv32_cpu_eint(void).
+ * @note Interrupt sources have to be explicitly enabled by the user via the CSR.mie bits via neorv32_cpu_irq_enable(uint8_t irq_sel)
+ * and the global interrupt enable bit mstatus.mie via neorv32_cpu_eint(void).
  *
  * @param[in] id Identifier (type) of the targeted exception. See #NEORV32_RTE_TRAP_enum.
  * @param[in] handler The actual handler function for the specified exception (function MUST be of type "void function(void);").
@@ -94,15 +93,6 @@ int neorv32_rte_exception_install(uint8_t id, void (*handler)(void)) {
       (id == RTE_TRAP_MSI)          || (id == RTE_TRAP_MTI)          || (id == RTE_TRAP_MEI)       ||
       (id == RTE_TRAP_FIRQ_0)       || (id == RTE_TRAP_FIRQ_1)       || (id == RTE_TRAP_FIRQ_2)    || (id == RTE_TRAP_FIRQ_3)) {
 
-
-    if (id == RTE_TRAP_MSI)    { neorv32_cpu_irq_enable(CPU_MIE_MSIE); } // activate software interrupt
-    if (id == RTE_TRAP_MTI)    { neorv32_cpu_irq_enable(CPU_MIE_MTIE); } // activate timer interrupt
-    if (id == RTE_TRAP_MEI)    { neorv32_cpu_irq_enable(CPU_MIE_MEIE); } // activate external interrupt
-    if (id == RTE_TRAP_FIRQ_0) { neorv32_cpu_irq_enable(CPU_MIE_FIRQ0E); } // activate fast interrupt channel 0
-    if (id == RTE_TRAP_FIRQ_1) { neorv32_cpu_irq_enable(CPU_MIE_FIRQ1E); } // activate fast interrupt channel 1
-    if (id == RTE_TRAP_FIRQ_2) { neorv32_cpu_irq_enable(CPU_MIE_FIRQ2E); } // activate fast interrupt channel 2
-    if (id == RTE_TRAP_FIRQ_3) { neorv32_cpu_irq_enable(CPU_MIE_FIRQ3E); } // activate fast interrupt channel 3
-
     __neorv32_rte_vector_lut[id]  = (uint32_t)handler; // install handler
 
     return 0;
@@ -115,9 +105,8 @@ int neorv32_rte_exception_install(uint8_t id, void (*handler)(void)) {
  * Uninstall exception handler function from NEORV32 runtime environment, which was
  * previously installed via neorv32_rte_exception_install(uint8_t id, void (*handler)(void)).
  *
- * @note This function automatically clears the according CSR.mie bits when uninstalling handlers for
- * the MTIME (MTI), CLIC (MEI), machine software interrupt (MSI) or fast IRQs. The global interrupt enable bit mstatus.mie has
- * to be cleared by the user via neorv32_cpu_dint(void).
+ * @note Interrupt sources have to be explicitly disabled by the user via the CSR.mie bits via neorv32_cpu_irq_disable(uint8_t irq_sel)
+ * and/or the global interrupt enable bit mstatus.mie via neorv32_cpu_dint(void).
  *
  * @param[in] id Identifier (type) of the targeted exception. See #NEORV32_RTE_TRAP_enum.
  * return 0 if success, 1 if error (invalid id or targeted exception not supported).
@@ -130,14 +119,6 @@ int neorv32_rte_exception_uninstall(uint8_t id) {
       (id == RTE_TRAP_S_MISALIGNED) || (id == RTE_TRAP_S_ACCESS)     || (id == RTE_TRAP_MENV_CALL) || 
       (id == RTE_TRAP_MSI)          || (id == RTE_TRAP_MTI)          || (id == RTE_TRAP_MEI)       ||
       (id == RTE_TRAP_FIRQ_0)       || (id == RTE_TRAP_FIRQ_1)       || (id == RTE_TRAP_FIRQ_2)    || (id == RTE_TRAP_FIRQ_3)) {
-
-    if (id == RTE_TRAP_MSI)    { neorv32_cpu_irq_disable(CPU_MIE_MSIE); } // deactivate software interrupt
-    if (id == RTE_TRAP_MTI)    { neorv32_cpu_irq_disable(CPU_MIE_MTIE); } // deactivate timer interrupt
-    if (id == RTE_TRAP_MEI)    { neorv32_cpu_irq_disable(CPU_MIE_MEIE); } // deactivate external interrupt
-    if (id == RTE_TRAP_FIRQ_0) { neorv32_cpu_irq_disable(CPU_MIE_FIRQ0E); } // deactivate fast interrupt channel 0
-    if (id == RTE_TRAP_FIRQ_1) { neorv32_cpu_irq_disable(CPU_MIE_FIRQ1E); } // deactivate fast interrupt channel 1
-    if (id == RTE_TRAP_FIRQ_2) { neorv32_cpu_irq_disable(CPU_MIE_FIRQ2E); } // deactivate fast interrupt channel 2
-    if (id == RTE_TRAP_FIRQ_3) { neorv32_cpu_irq_disable(CPU_MIE_FIRQ3E); } // deactivate fast interrupt channel 3
 
     __neorv32_rte_vector_lut[id] = (uint32_t)(&__neorv32_rte_debug_exc_handler); // use dummy handler in case the exception is accidently triggered
 
