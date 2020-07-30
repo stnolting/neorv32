@@ -92,7 +92,6 @@ entity neorv32_cpu_control is
     time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
     -- physical memory protection --
     pmp_addr_o     : out pmp_addr_if_t; -- addresses
-    pmp_maddr_i    : in  pmp_addr_if_t; -- masked addresses
     pmp_ctrl_o     : out pmp_ctrl_if_t; -- configs
     priv_mode_o    : out std_ulogic_vector(1 downto 0); -- current CPU privilege level
     -- bus access exceptions --
@@ -1467,7 +1466,6 @@ begin
             csr_rdata_o(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_M);     -- M CPU extension
             csr_rdata_o(20) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);     -- U CPU extension
             csr_rdata_o(23) <= '1';                                         -- X CPU extension (non-std extensions)
-            csr_rdata_o(25) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr) and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Z CPU extension
             csr_rdata_o(30) <= '1'; -- 32-bit architecture (MXL lo)
             csr_rdata_o(31) <= '0'; -- 32-bit architecture (MXL hi)
           when x"304" => -- R/W: mie - machine interrupt-enable register
@@ -1535,7 +1533,7 @@ begin
 
           when x"3b0" => -- R/W: pmpaddr0 - physical memory protection address register 0
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 1) then
-              csr_rdata_o <= pmp_maddr_i(0)(33 downto 2);
+              csr_rdata_o <= csr.pmpaddr(0);
               if (csr.pmpcfg(0)(4 downto 3) = "00") then -- mode = off
                 csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
@@ -1544,7 +1542,7 @@ begin
             end if;
           when x"3b1" => -- R/W: pmpaddr1 - physical memory protection address register 1
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 2) then
-              csr_rdata_o <= pmp_maddr_i(1)(33 downto 2);
+              csr_rdata_o <= csr.pmpaddr(1);
               if (csr.pmpcfg(1)(4 downto 3) = "00") then -- mode = off
                 csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
@@ -1553,7 +1551,7 @@ begin
             end if;
           when x"3b2" => -- R/W: pmpaddr2 - physical memory protection address register 2
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 3) then
-              csr_rdata_o <= pmp_maddr_i(2)(33 downto 2);
+              csr_rdata_o <= csr.pmpaddr(2);
               if (csr.pmpcfg(2)(4 downto 3) = "00") then -- mode = off
                 csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
@@ -1562,7 +1560,7 @@ begin
             end if;
           when x"3b3" => -- R/W: pmpaddr3 - physical memory protection address register 3
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 4) then
-              csr_rdata_o <= pmp_maddr_i(3)(33 downto 2);
+              csr_rdata_o <= csr.pmpaddr(3);
               if (csr.pmpcfg(3)(4 downto 3) = "00") then -- mode = off
                 csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
@@ -1571,7 +1569,7 @@ begin
             end if;
           when x"3b4" => -- R/W: pmpaddr4 - physical memory protection address register 4
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 5) then
-              csr_rdata_o <= pmp_maddr_i(4)(33 downto 2);
+              csr_rdata_o <= csr.pmpaddr(4);
               if (csr.pmpcfg(4)(4 downto 3) = "00") then -- mode = off
                 csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
@@ -1580,7 +1578,7 @@ begin
             end if;
           when x"3b5" => -- R/W: pmpaddr5 - physical memory protection address register 5
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 6) then
-              csr_rdata_o <= pmp_maddr_i(5)(33 downto 2);
+              csr_rdata_o <= csr.pmpaddr(5);
               if (csr.pmpcfg(5)(4 downto 3) = "00") then -- mode = off
                 csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
@@ -1589,7 +1587,7 @@ begin
             end if;
           when x"3b6" => -- R/W: pmpaddr6 - physical memory protection address register 6
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 7) then
-              csr_rdata_o <= pmp_maddr_i(6)(33 downto 2);
+              csr_rdata_o <= csr.pmpaddr(6);
               if (csr.pmpcfg(6)(4 downto 3) = "00") then -- mode = off
                 csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
@@ -1598,7 +1596,7 @@ begin
             end if;
           when x"3b7" => -- R/W: pmpaddr7 - physical memory protection address register 7
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 8) then
-              csr_rdata_o <= pmp_maddr_i(7)(33 downto 2);
+              csr_rdata_o <= csr.pmpaddr(7);
               if (csr.pmpcfg(7)(4 downto 3) = "00") then -- mode = off
                 csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
