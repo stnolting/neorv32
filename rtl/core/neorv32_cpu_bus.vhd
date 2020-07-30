@@ -413,18 +413,20 @@ begin
   -- Physical Memory Protection (PMP) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- compute address masks --
-  pmp_masks: process(pmp_addr_i)
+  pmp_masks: process(clk_i)
   begin
-    for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
-      pmp.addr_mask(r) <= (others => '0'); -- default
-      for i in PMP_GRANULARITY+1 to 33 loop
-        if (i = PMP_GRANULARITY+1) then
-          pmp.addr_mask(r)(i) <= '0';
-        else -- current bit = not AND(all previous bits)
-          pmp.addr_mask(r)(i) <= not (and_all_f(pmp_addr_i(r)(i-1 downto PMP_GRANULARITY)));
-        end if;
-      end loop; -- i
-    end loop; -- r
+    if rising_edge(clk_i) then -- address configuration (not the actual address check!) has a latency of +1 cycles
+      for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
+        pmp.addr_mask(r) <= (others => '0'); -- default
+        for i in PMP_GRANULARITY+1 to 33 loop
+          if (i = PMP_GRANULARITY+1) then
+            pmp.addr_mask(r)(i) <= '0';
+          else -- current bit = not AND(all previous bits)
+            pmp.addr_mask(r)(i) <= not (and_all_f(pmp_addr_i(r)(i-1 downto PMP_GRANULARITY)));
+          end if;
+        end loop; -- i
+      end loop; -- r
+    end if;
   end process pmp_masks;
 
 
