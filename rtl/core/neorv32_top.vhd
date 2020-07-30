@@ -60,8 +60,8 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false; -- implement PMP?
-    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 16)
-    PMP_GRANULARITY              : natural := 15;    -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
+    PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Memory configuration: Instruction memory --
     MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
     MEM_ISPACE_SIZE              : natural := 16*1024; -- total size of instruction memory space in byte
@@ -333,8 +333,8 @@ begin
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     -- Physical Memory Protection (PMP) --
     PMP_USE                      => PMP_USE,         -- implement PMP?
-    PMP_NUM_REGIONS              => PMP_NUM_REGIONS, -- number of regions (max 16)
-    PMP_GRANULARITY              => PMP_GRANULARITY, -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+    PMP_NUM_REGIONS              => PMP_NUM_REGIONS, -- number of regions (max 8)
+    PMP_GRANULARITY              => PMP_GRANULARITY, -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Bus Interface --
     BUS_TIMEOUT                  => MEM_EXT_TIMEOUT   -- cycles after which a valid bus access will timeout
   )

@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - FIXED!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01030500"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01030501"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions
 
   -- Helper Functions -----------------------------------------------------------------------
@@ -401,8 +401,8 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
       -- Physical Memory Protection (PMP) --
       PMP_USE                      : boolean := false; -- implement PMP?
-      PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 16)
-      PMP_GRANULARITY              : natural := 15;    -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+      PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
+      PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
       -- Memory configuration: Instruction memory --
       MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
       MEM_ISPACE_SIZE              : natural := 16*1024; -- total size of instruction memory space in byte
@@ -485,8 +485,8 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
       -- Physical Memory Protection (PMP) --
       PMP_USE                      : boolean := false; -- implement PMP?
-      PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 16)
-      PMP_GRANULARITY              : natural := 15;    -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+      PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
+      PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
       -- Bus Interface --
       BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
     );
@@ -578,7 +578,6 @@ package neorv32_package is
       time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
       -- physical memory protection --
       pmp_addr_o    : out pmp_addr_if_t; -- addresses
-      pmp_maddr_i   : in  pmp_addr_if_t; -- masked addresses
       pmp_ctrl_o    : out pmp_ctrl_if_t; -- configs
       priv_mode_o   : out std_ulogic_vector(1 downto 0); -- current CPU privilege level
       -- bus access exceptions --
@@ -697,7 +696,6 @@ package neorv32_package is
       be_store_o     : out std_ulogic; -- bus error on store data access
       -- physical memory protection --
       pmp_addr_i     : in  pmp_addr_if_t; -- addresses
-      pmp_maddr_o    : out pmp_addr_if_t; -- masked addresses
       pmp_ctrl_i     : in  pmp_ctrl_if_t; -- configs
       priv_mode_i    : in  std_ulogic_vector(1 downto 0); -- current CPU privilege level
       -- instruction bus --

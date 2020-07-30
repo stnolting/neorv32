@@ -63,8 +63,8 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false; -- implement PMP?
-    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 16)
-    PMP_GRANULARITY              : natural := 15;    -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
+    PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Bus Interface --
     BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
   );
@@ -137,7 +137,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- pmp interface --
   signal pmp_addr  : pmp_addr_if_t;
-  signal pmp_maddr : pmp_addr_if_t;
   signal pmp_ctrl  : pmp_ctrl_if_t;
   signal priv_mode : std_ulogic_vector(1 downto 0); -- current CPU privilege level
 
@@ -154,23 +153,23 @@ begin
       end if;
       -- U-extension requires Zicsr extension --
       if (CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true) then
-        assert false report "NEORV32 CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr = true." severity error;
+        assert false report "NEORV32 CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
       end if;
       -- PMP requires Zicsr extension --
       if (CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true) then
-        assert false report "NEORV32 CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr = true." severity error;
+        assert false report "NEORV32 CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
       end if;
-      -- performance counters requires Zicsr extension --
+      -- performance counters require Zicsr extension --
       if (CPU_EXTENSION_RISCV_Zicsr = false) and (CSR_COUNTERS_USE = true) then
-        assert false report "NEORV32 CONFIG ERROR! Performance counter CSRs require CPU_EXTENSION_RISCV_Zicsr = true." severity error;
+        assert false report "NEORV32 CONFIG ERROR! Performance counter CSRs require CPU_EXTENSION_RISCV_Zicsr extension." severity error;
       end if;
       -- PMP regions --
       if (PMP_NUM_REGIONS > pmp_max_r_c) and (PMP_USE = true) then
         assert false report "NEORV32 CONFIG ERROR! Number of PMP regions out of valid range." severity error;
       end if;
       -- PMP granulartiy --
-      if ((PMP_GRANULARITY <= 1) or (PMP_GRANULARITY > 31)) and (PMP_USE = true) then
-        assert false report "NEORV32 CONFIG ERROR! Invalid PMP grnaulartiy (1 < G < 32)." severity error;
+      if ((PMP_GRANULARITY < 1) or (PMP_GRANULARITY > 32)) and (PMP_USE = true) then
+        assert false report "NEORV32 CONFIG ERROR! Invalid PMP granulartiy (0 < G < 33)." severity error;
       end if;
     end if;
   end process sanity_check;
@@ -226,7 +225,6 @@ begin
     time_i        => time_i,      -- current system time
     -- physical memory protection --
     pmp_addr_o    => pmp_addr,    -- addresses
-    pmp_maddr_i   => pmp_maddr,   -- masked addresses
     pmp_ctrl_o    => pmp_ctrl,    -- configs
     priv_mode_o   => priv_mode,   -- current CPU privilege level
     -- bus access exceptions --
@@ -360,7 +358,6 @@ begin
     be_store_o     => be_store,       -- bus error on store data access
     -- physical memory protection --
     pmp_addr_i     => pmp_addr,       -- addresses
-    pmp_maddr_o    => pmp_maddr,      -- masked addresses
     pmp_ctrl_i     => pmp_ctrl,       -- configs
     priv_mode_i    => priv_mode,      -- current CPU privilege level
     -- instruction bus --

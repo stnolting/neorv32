@@ -75,7 +75,6 @@ entity neorv32_cpu_bus is
     be_store_o     : out std_ulogic; -- bus error on store data access
     -- physical memory protection --
     pmp_addr_i     : in  pmp_addr_if_t; -- addresses
-    pmp_maddr_o    : out pmp_addr_if_t; -- masked addresses
     pmp_ctrl_i     : in  pmp_ctrl_if_t; -- configs
     priv_mode_i    : in  std_ulogic_vector(1 downto 0); -- current CPU privilege level
     -- instruction bus --
@@ -142,14 +141,17 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
 
   -- physical memory protection --
   type pmp_addr34_t is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c+1 downto 0);
-  type pmp_addr_t is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-1 downto 0);
+  type pmp_addr_t   is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-1 downto 0);
   type pmp_t is record
-    addr_mask : pmp_addr34_t; -- 34-bit
-    i_match   : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for instruction interface
-    d_match   : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for data interface
-    if_fault  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for fetch operation
-    ld_fault  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for load operation
-    st_fault  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for store operation
+    addr_mask     : pmp_addr34_t; -- 34-bit physical address
+    region_base   : pmp_addr_t; -- masked region base address for comparator
+    region_i_addr : pmp_addr_t; -- masked instruction access base address for comparator
+    region_d_addr : pmp_addr_t; -- masked data access base address for comparator
+    i_match       : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for instruction interface
+    d_match       : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for data interface
+    if_fault      : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for fetch operation
+    ld_fault      : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for load operation
+    st_fault      : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for store operation
   end record;
   signal pmp : pmp_t;
 
@@ -411,61 +413,44 @@ begin
   -- Physical Memory Protection (PMP) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- compute address masks --
-  pmp_masks: process(pmp_addr_i, pmp, pmp_ctrl_i)
+  pmp_masks: process(pmp_addr_i)
   begin
     for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
       pmp.addr_mask(r) <= (others => '0'); -- default
-      for i in PMP_GRANULARITY+2 to 33 loop
-        if (i = PMP_GRANULARITY+2) then
-          if (pmp_ctrl_i(r)(pmp_cfg_ah_c downto pmp_cfg_al_c) = pmp_napot_mode_c) then
-            pmp.addr_mask(r)(i) <= '0';
-          else -- OFF or unsupported mode
-            pmp.addr_mask(r)(i) <= '1'; -- required for SW to check min granularity when entry is disabled
-          end if;
-        else
-          if (pmp_ctrl_i(r)(pmp_cfg_ah_c downto pmp_cfg_al_c) = pmp_napot_mode_c) then
-            -- current bit = not AND(all previous bits)
-            pmp.addr_mask(r)(i) <= not and_all_f(pmp_addr_i(r)(i-1 downto PMP_GRANULARITY+2));
-          else -- OFF or unsupported mode
-            pmp.addr_mask(r)(i) <= '1'; -- required for SW to check min granularity when entry is disabled
-          end if;
+      for i in PMP_GRANULARITY+1 to 33 loop
+        if (i = PMP_GRANULARITY+1) then
+          pmp.addr_mask(r)(i) <= '0';
+        else -- current bit = not AND(all previous bits)
+          pmp.addr_mask(r)(i) <= not (and_all_f(pmp_addr_i(r)(i-1 downto PMP_GRANULARITY)));
         end if;
       end loop; -- i
     end loop; -- r
   end process pmp_masks;
 
 
-  -- masked pmpaddr output for CSR read-back --
-  pmp_masked_output: process(pmp_addr_i, pmp)
-  begin
-    pmp_maddr_o <= (others => (others => '0'));
-    for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
-      pmp_maddr_o(r) <= pmp_addr_i(r) and pmp.addr_mask(r);
-    end loop; -- r
-  end process pmp_masked_output;
+  -- compute operands for comparator --
+  pmp_prepare_check:
+  for r in 0 to PMP_NUM_REGIONS-1 generate -- iterate over all regions
+    -- ignore lowest 3 bits of access addresses -> minimal region size = 8 bytes
+    pmp.region_i_addr(r) <= (fetch_pc_i(31 downto 3) & "000") and pmp.addr_mask(r)(33 downto 2);
+    pmp.region_d_addr(r) <= (mar(31 downto 3) & "000")        and pmp.addr_mask(r)(33 downto 2);
+    pmp.region_base(r)   <= pmp_addr_i(r)(33 downto 2)        and pmp.addr_mask(r)(33 downto 2);
+  end generate; -- r
 
 
   -- check for access address match --
-  pmp_addr_check: process (pmp, fetch_pc_i, mar, pmp_addr_i)
-    variable i_cmp_v : std_ulogic_vector(31 downto 0);
-    variable d_cmp_v : std_ulogic_vector(31 downto 0);
-    variable b_cmp_v : std_ulogic_vector(31 downto 0);
+  pmp_addr_check: process (pmp)
   begin
     for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
-      b_cmp_v := pmp_addr_i(r)(33 downto 2) and pmp.addr_mask(r)(33 downto 2);
       -- instruction interface --
-      i_cmp_v := fetch_pc_i and pmp.addr_mask(r)(33 downto 2);
-      if (i_cmp_v(31 downto PMP_GRANULARITY+2) = b_cmp_v(31 downto PMP_GRANULARITY+2)) then
+      pmp.i_match(r) <= '0';
+      if (pmp.region_i_addr(r)(31 downto PMP_GRANULARITY+2) = pmp.region_base(r)(31 downto PMP_GRANULARITY+2)) then
         pmp.i_match(r) <= '1';
-      else
-        pmp.i_match(r) <= '0';
       end if;
       -- data interface --
-      d_cmp_v := mar and pmp.addr_mask(r)(33 downto 2);
-      if (d_cmp_v(31 downto PMP_GRANULARITY+2) = b_cmp_v(31 downto PMP_GRANULARITY+2)) then
+      pmp.d_match(r) <= '0';
+      if (pmp.region_d_addr(r)(31 downto PMP_GRANULARITY+2) = pmp.region_base(r)(31 downto PMP_GRANULARITY+2)) then
         pmp.d_match(r) <= '1';
-      else
-        pmp.d_match(r) <= '0';
       end if;
     end loop; -- r
   end process pmp_addr_check;
