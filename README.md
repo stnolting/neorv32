@@ -192,7 +192,7 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
   * Privilege levels: `M-mode` (Machine mode) + `U-mode` (User mode)
 
 **Privileged architecture / FENCE.I** (`Zifencei` extension):
-  * System instructions: `FENCEI`
+  * System instructions: `FENCE.I`
 
 **Physical memory protection** (`PMP`, requires `Zicsr` extension):
   * Additional machine CSRs: `pmpcfgx` `pmpaddrx`
