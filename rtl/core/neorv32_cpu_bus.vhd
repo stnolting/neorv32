@@ -1,7 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - Bus Interface Unit >>                                                            #
 -- # ********************************************************************************************* #
--- # Instruction and data bus interfaces.                                                          #
+-- # Instruction and data bus interfaces and physical memory protection (PMP).                     #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -48,7 +48,7 @@ entity neorv32_cpu_bus is
     -- Physical memory protection (PMP) --
     PMP_USE               : boolean := false; -- implement physical memory protection?
     PMP_NUM_REGIONS       : natural := 4; -- number of regions (1..4)
-    PMP_GRANULARITY       : natural := 16  -- granularity (0=none, 1=8B, 2=16B, 3=32B, ...)
+    PMP_GRANULARITY       : natural := 16 -- granularity (1=8B, 2=16B, 3=32B, ...)
   );
   port (
     -- global control --
@@ -462,7 +462,7 @@ begin
   pmp_check_permission: process(pmp, pmp_ctrl_i, priv_mode_i)
   begin
     for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
-      if ((priv_mode_i = u_priv_mode_c) or (pmp_ctrl_i(r)(pmp_cfg_l_c) = '1')) and -- user privilege level or locked pmp entry - enforce permissions also for machine mode
+      if ((priv_mode_i = u_priv_mode_c) or (pmp_ctrl_i(r)(pmp_cfg_l_c) = '1')) and -- user privilege level or locked pmp entry -> enforce permissions also for machine mode
           (pmp_ctrl_i(r)(pmp_cfg_ah_c downto pmp_cfg_al_c) /= pmp_off_mode_c) then -- active entry
         pmp.if_fault(r) <= pmp.i_match(r) and (not pmp_ctrl_i(r)(pmp_cfg_x_c)); -- fetch access match no execute permission
         pmp.ld_fault(r) <= pmp.d_match(r) and (not pmp_ctrl_i(r)(pmp_cfg_r_c)); -- load access match no read permission

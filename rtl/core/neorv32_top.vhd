@@ -1,10 +1,11 @@
 -- #################################################################################################
 -- # << NEORV32 - Processor Top Entity >>                                                          #
 -- # ********************************************************************************************* #
--- # This is the top entity of the NEORV32 Processor. Instantiate this unit in your own project    #
+-- # This is the top entity of the NEORV32 PROCESSOR. Instantiate this unit in your own project    #
 -- # and define all the configuration generics according to your needs. Alternatively, you can use #
--- # one of the alternative top entities provided in the "rtl\top_templates" folder.               #
--- # Check the processor's documentary for more information: doc\NEORV32.pdf                       #
+-- # one of the alternative top entities provided in the "rtl/top_templates" folder.               #
+-- #                                                                                               #
+-- # Check the processor's documentary for more information: docs/NEORV32.pdf                      #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -223,41 +224,47 @@ begin
     if rising_edge(clk_i) then
       -- internal bootloader memory --
       if (BOOTLOADER_USE = true) and (boot_size_c > boot_max_size_c) then
-        assert false report "NEORV32 CONFIG ERROR! Boot ROM size out of range." severity error;
+        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range." severity error;
       end if;
 
       -- memory system - data/instruction fetch --
       if (MEM_EXT_USE = false) then
         if (MEM_INT_DMEM_USE = false) then
-          assert false report "NEORV32 CONFIG ERROR! Core cannot fetch data without external memory interface and internal data memory." severity error;
+          assert false report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal data memory." severity error;
         end if;
         if (MEM_INT_IMEM_USE = false) and (BOOTLOADER_USE = false) then
-          assert false report "NEORV32 CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal data memory and bootloader." severity error;
+          assert false report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal data memory and bootloader." severity error;
         end if;
       end if;
 
       -- memory system --
+      if (MEM_ISPACE_BASE(1 downto 0) /= "00") then
+        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address must be 4-byte-aligned." severity error;
+      end if;
+      if (MEM_DSPACE_BASE(1 downto 0) /= "00") then
+        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 4-byte-aligned." severity error;
+      end if;
       if (MEM_INT_IMEM_USE = true) and (MEM_INT_IMEM_SIZE > MEM_ISPACE_SIZE) then
-        assert false report "NEORV32 CONFIG ERROR! Internal instruction memory (IMEM) cannot be greater than total instruction address space." severity error;
+        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Internal instruction memory (IMEM) cannot be greater than total instruction address space." severity error;
       end if;
       if (MEM_INT_DMEM_USE = true) and (MEM_INT_DMEM_SIZE > MEM_DSPACE_SIZE) then
-        assert false report "NEORV32 CONFIG ERROR! Internal data memory (DMEM) cannot be greater than total data address space." severity error;
+        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Internal data memory (DMEM) cannot be greater than total data address space." severity error;
       end if;
       if (MEM_EXT_TIMEOUT < 1) then
-        assert false report "NEORV32 CONFIG ERROR! Invalid bus timeout. Processor-internal components have 1 cycle delay." severity error;
+        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Invalid bus timeout. Processor-internal components have 1 cycle delay." severity error;
       end if;
 
       -- clock --
       if (CLOCK_FREQUENCY = 0) then
-        assert false report "NEORV32 CONFIG ERROR! Core clock frequency (CLOCK_FREQUENCY) not specified." severity error;
+        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Core clock frequency (CLOCK_FREQUENCY) not specified." severity error;
       end if;
 
       -- memory layout notifier --
       if (MEM_ISPACE_BASE /= x"00000000") then
-        assert false report "NEORV32 CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framwork." severity warning;
+        assert false report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framwork." severity warning;
       end if;
       if (MEM_DSPACE_BASE /= x"80000000") then
-        assert false report "NEORV32 CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framwork." severity warning;
+        assert false report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framwork." severity warning;
       end if;
     end if;
   end process sanity_check;

@@ -514,7 +514,7 @@ begin
       execute_engine.state   <= SYS_WAIT;
       execute_engine.sleep   <= '0';
     elsif rising_edge(clk_i) then
-      execute_engine.pc    <= execute_engine.pc_nxt(data_width_c-1 downto 1) & '0';
+      execute_engine.pc <= execute_engine.pc_nxt(data_width_c-1 downto 1) & '0';
       if (execute_engine.state = EXECUTE) then
         execute_engine.last_pc <= execute_engine.pc(data_width_c-1 downto 1) & '0';
       end if;
@@ -537,10 +537,10 @@ begin
   end process execute_engine_fsm_sync;
 
   -- PC output --
-  next_pc_tmp <= std_ulogic_vector(unsigned(execute_engine.pc) + 2) when (execute_engine.is_ci = '1') else std_ulogic_vector(unsigned(execute_engine.pc) + 4);
+  curr_pc_o              <= execute_engine.pc(data_width_c-1 downto 1) & '0';
+  next_pc_tmp            <= std_ulogic_vector(unsigned(execute_engine.pc) + 2) when (execute_engine.is_ci = '1') else std_ulogic_vector(unsigned(execute_engine.pc) + 4);
   execute_engine.next_pc <= next_pc_tmp(data_width_c-1 downto 1) & '0';
   next_pc_o              <= next_pc_tmp(data_width_c-1 downto 1) & '0';
-  curr_pc_o              <= execute_engine.pc(data_width_c-1 downto 1) & '0';
 
 
   -- CPU Control Bus Output -----------------------------------------------------------------
@@ -1130,11 +1130,11 @@ begin
         trap_ctrl.exc_buf(exception_m_envcall_c) <= (trap_ctrl.exc_buf(exception_m_envcall_c) or trap_ctrl.env_call)    and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_break_c)     <= (trap_ctrl.exc_buf(exception_break_c)     or trap_ctrl.break_point) and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_iillegal_c)  <= (trap_ctrl.exc_buf(exception_iillegal_c)  or trap_ctrl.instr_il)    and (not trap_ctrl.exc_ack);
-        -- interrupt buffer (RISC-V compliant): machine software/external/timer interrupt
+        -- interrupt buffer: machine software/external/timer interrupt
         trap_ctrl.irq_buf(interrupt_msw_irq_c)   <= csr.mie_msie and (trap_ctrl.irq_buf(interrupt_msw_irq_c)   or msw_irq_i)   and (not trap_ctrl.irq_ack(interrupt_msw_irq_c));
         trap_ctrl.irq_buf(interrupt_mext_irq_c)  <= csr.mie_meie and (trap_ctrl.irq_buf(interrupt_mext_irq_c)  or mext_irq_i)  and (not trap_ctrl.irq_ack(interrupt_mext_irq_c));
         trap_ctrl.irq_buf(interrupt_mtime_irq_c) <= csr.mie_mtie and (trap_ctrl.irq_buf(interrupt_mtime_irq_c) or mtime_irq_i) and (not trap_ctrl.irq_ack(interrupt_mtime_irq_c));
-        -- interrupt buffer (custom): fast interrupts
+        -- interrupt buffer: custom fast interrupts
         trap_ctrl.irq_buf(interrupt_firq_0_c)    <= csr.mie_firqe(0) and (trap_ctrl.irq_buf(interrupt_firq_0_c) or firq_i(0)) and (not trap_ctrl.irq_ack(interrupt_firq_0_c));
         trap_ctrl.irq_buf(interrupt_firq_1_c)    <= csr.mie_firqe(1) and (trap_ctrl.irq_buf(interrupt_firq_1_c) or firq_i(1)) and (not trap_ctrl.irq_ack(interrupt_firq_1_c));
         trap_ctrl.irq_buf(interrupt_firq_2_c)    <= csr.mie_firqe(2) and (trap_ctrl.irq_buf(interrupt_firq_2_c) or firq_i(2)) and (not trap_ctrl.irq_ack(interrupt_firq_2_c));

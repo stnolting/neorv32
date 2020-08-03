@@ -1,7 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - CPU Top Entity >>                                                                #
 -- # ********************************************************************************************* #
--- # Top NEORV32 CPU:                                                                              #
+-- # NEORV32 CPU:                                                                                  #
 -- # * neorv32_cpu.vhd                  : CPU top entity                                           #
 -- #   * neorv32_cpu_alu.vhd            : Arithmetic/logic unit                                    #
 -- #   * neorv32_cpu_bus.vhd            : Instruction and data bus interface unit                  #
@@ -9,6 +9,8 @@
 -- #   * neorv32_cpu_ctrl.vhd           : CPU control and CSR system                               #
 -- #     * neorv32_cpu_decompressor.vhd : Compressed instructions decoder                          #
 -- #   * neorv32_cpu_regfile.vhd        : Data register file                                       #
+-- #                                                                                               #
+-- # Check the processor's documentary for more information: docs/NEORV32.pdf                      #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -149,27 +151,31 @@ begin
     if rising_edge(clk_i) then
       -- CSR system --
       if (CPU_EXTENSION_RISCV_Zicsr = false) then
-        assert false report "NEORV32 CONFIG WARNING! No exception/interrupt/machine features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;
+        assert false report "NEORV32 CPU CONFIG WARNING! No exception/interrupt/machine features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;
       end if;
       -- U-extension requires Zicsr extension --
       if (CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true) then
-        assert false report "NEORV32 CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
+        assert false report "NEORV32 CPU CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
       end if;
       -- PMP requires Zicsr extension --
       if (CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true) then
-        assert false report "NEORV32 CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
+        assert false report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
       end if;
       -- performance counters require Zicsr extension --
       if (CPU_EXTENSION_RISCV_Zicsr = false) and (CSR_COUNTERS_USE = true) then
-        assert false report "NEORV32 CONFIG ERROR! Performance counter CSRs require CPU_EXTENSION_RISCV_Zicsr extension." severity error;
+        assert false report "NEORV32 CPU CONFIG ERROR! Performance counter CSRs require CPU_EXTENSION_RISCV_Zicsr extension." severity error;
       end if;
       -- PMP regions --
       if (PMP_NUM_REGIONS > pmp_max_r_c) and (PMP_USE = true) then
-        assert false report "NEORV32 CONFIG ERROR! Number of PMP regions out of valid range." severity error;
+        assert false report "NEORV32 CPU CONFIG ERROR! Number of PMP regions out of valid range." severity error;
       end if;
       -- PMP granulartiy --
       if ((PMP_GRANULARITY < 1) or (PMP_GRANULARITY > 32)) and (PMP_USE = true) then
-        assert false report "NEORV32 CONFIG ERROR! Invalid PMP granulartiy (0 < G < 33)." severity error;
+        assert false report "NEORV32 CPU CONFIG ERROR! Invalid PMP granulartiy (0 < G < 33)." severity error;
+      end if;
+      -- Bus timeout --
+      if (BUS_TIMEOUT < 1) then
+        assert false report "NEORV32 CPU CONFIG ERROR! Invalid bus timeout - must be at least 1 cycle." severity error;
       end if;
     end if;
   end process sanity_check;
