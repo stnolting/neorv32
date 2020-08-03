@@ -86,7 +86,7 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 * `misa` CSR is read-only - no dynamic enabling/disabling of implemented CPU extensions during runtime
 * `mcause` CSR is read-only
 * The `[m]cycleh` and `[m]instreth` CSR counters are only 20-bit wide (in contrast to original 32-bit)
-* The physical memory protection (**PMP**) only supports `NAPOT` mode and only up to 8 regions
+* The physical memory protection (**PMP**) only supports `NAPOT` mode, a minimal granularity of 8 bytes and only up to 8 regions
 
 
 ### Custom CPU Extensions
@@ -194,7 +194,7 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
 **Privileged architecture / FENCE.I** (`Zifencei` extension):
   * System instructions: `FENCE.I`
 
-**Physical memory protection** (`PMP`, requires `Zicsr` extension):
+**Privileged architecture / Physical memory protection** (`PMP`, requires `Zicsr` extension):
   * Additional machine CSRs: `pmpcfgx` `pmpaddrx`
 
 
@@ -664,7 +664,9 @@ link in question.
 "AXI" and "AXI-Lite" are trademarks of Arm Holdings plc.
 
 
-## Acknowledgement
+## Acknowledgements
+
+[![RISC-V](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/riscv_logo.png)](https://riscv.org/)
 
 [RISC-V](https://riscv.org/) - Instruction Sets Want To Be Free :heart:
 
