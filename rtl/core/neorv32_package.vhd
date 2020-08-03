@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - FIXED!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01030502"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01030600"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions
 
   -- Helper Functions -----------------------------------------------------------------------

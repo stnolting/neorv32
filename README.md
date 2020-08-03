@@ -63,6 +63,7 @@ For more information take a look a the [![NEORV32 datasheet](https://raw.githubu
  * Plain VHDL without technology-specific parts like attributes, macros or primitives.
  * Easy to use – working out of the box.
  * Clean synchronous design, no wacky combinatorial interfaces.
+ * Be as small as possible – but with a reasonable size-speed tradeoff.
  * The processor has to fit in a Lattice iCE40 UltraPlus 5k FPGA running at 20+ MHz.
 
 
@@ -279,11 +280,11 @@ Compiler:    RISCV32-GCC 10.1.0
 Peripherals: UART for printing the results
 ~~~
 
-| CPU                              | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
-|:---------------------------------|:---------------:|:------------:|:--------------:|:-------------:|
-| `rv32i`   + `Zicsr` + `Zifencei` |    21 600 bytes |        `-O2` |          27.02 |        0.2702 |
-| `rv32im`  + `Zicsr` + `Zifencei` |    20 976 bytes |        `-O2` |          57.14 |        0.5714 |
-| `rv32imc` + `Zicsr` + `Zifencei` |    16 348 bytes |        `-O2` |          57.14 |        0.5714 |
+| CPU       | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
+|:----------|:---------------:|:------------:|:--------------:|:-------------:|
+| `rv32i`   |    21 600 bytes |        `-O2` |          27.02 |        0.2702 |
+| `rv32im`  |    20 976 bytes |        `-O2` |          57.14 |        0.5714 |
+| `rv32imc` |    16 348 bytes |        `-O2` |          57.14 |        0.5714 |
 
 
 ### Instruction Cycles
@@ -303,11 +304,11 @@ by the number of executed instructions (`instret[h]` CSRs). The executables were
 
 Results generated for hardware version: `1.3.0.0`
 
-| CPU                              | Required Clock Cycles | Executed Instructions | Average CPI |
-|:---------------------------------|----------------------:|----------------------:|:-----------:|
-| `rv32i`   + `Zicsr` + `Zifencei` |         7 433 933 906 |         1 494 298 800 |        4.97 |
-| `rv32im`  + `Zicsr` + `Zifencei` |         3 589 861 906 |           628 281 454 |        5.71 |
-| `rv32imc` + `Zicsr` + `Zifencei` |         3 587 131 226 |           628 282 016 |        5.70 |
+| CPU       | Required Clock Cycles | Executed Instructions | Average CPI |
+|:----------|----------------------:|----------------------:|:-----------:|
+| `rv32i`   |         7 433 933 906 |         1 494 298 800 |        4.97 |
+| `rv32im`  |         3 589 861 906 |           628 281 454 |        5.71 |
+| `rv32imc` |         3 587 131 226 |           628 282 016 |        5.70 |
 
 
 
