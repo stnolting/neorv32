@@ -81,6 +81,7 @@ enum NEORV32_CPU_CSRS_enum {
 
   CSR_MCYCLE      = 0xb00, /**< 0xb00 - mcycle    (r/w): Machine cycle counter low word */
   CSR_MINSTRET    = 0xb02, /**< 0xb02 - minstret  (r/w): Machine instructions-retired counter low word */
+
   CSR_MCYCLEH     = 0xb80, /**< 0xb80 - mcycleh   (r/w): Machine cycle counter high word - only 20-bit wide!*/
   CSR_MINSTRETH   = 0xb82, /**< 0xb82 - minstreth (r/w): Machine instructions-retired counter high word - only 20-bit wide! */
 
@@ -238,6 +239,15 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define GPIO_INPUT  (*(IO_ROM32 0xFFFFFF80UL))
 /** GPIO parallel output port (r/w) */
 #define GPIO_OUTPUT (*(IO_REG32 0xFFFFFF84UL))
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: Dummy Device (DEVNULL)
+ **************************************************************************/
+/**@{*/
+/** DEVNULL data register (r/w) */
+#define DEVNULL_DATA (*(IO_REG32 0xFFFFFF88UL))
 /**@}*/
 
 
@@ -451,15 +461,6 @@ enum NEORV32_TRNG_DUTY_enum {
   TRNG_DATA_MSB   = 15, /**< TRNG data register(15) (r/-): Random data (16-bit) MSB */
   TRNG_DATA_VALID = 31  /**< TRNG data register(31) (r/-): Random data output valid */
 };
-/**@}*/
-
-
-/**********************************************************************//**
- * @name IO Device: Dummy Device (DEVNULL)
- **************************************************************************/
-/**@{*/
-/** DEVNULL data register (r/w) */
-#define DEVNULL_DATA (*(IO_REG32 0xFFFFFFC8UL))
 /**@}*/
 
 

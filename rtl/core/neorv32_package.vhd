@@ -82,9 +82,10 @@ package neorv32_package is
   constant gpio_in_addr_c       : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(gpio_base_c) + x"00000000");
   constant gpio_out_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(gpio_base_c) + x"00000004");
 
-  -- RESERVED --
---constant ???_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF88"; -- base address, fixed!
---constant ???_size_c           : natural := 1*4; -- bytes, fixed!
+  -- Dummy Device (with SIMULATION output) (DEVNULL) --
+  constant devnull_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF88"; -- base address, fixed!
+  constant devnull_size_c       : natural := 1*4; -- bytes, fixed!
+  constant devnull_data_addr_c  : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(devnull_base_c) + x"00000000");
 
   -- Watch Dog Timer (WDT) --
   constant wdt_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF8C"; -- base address, fixed!
@@ -129,14 +130,9 @@ package neorv32_package is
   constant trng_ctrl_addr_c     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(trng_base_c) + x"00000000");
   constant trng_data_addr_c     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(trng_base_c) + x"00000004");
 
-  -- Dummy Device (with SIMULATION output) (DEVNULL) --
-  constant devnull_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC8"; -- base address, fixed!
-  constant devnull_size_c       : natural := 1*4; -- bytes, fixed!
-  constant devnull_data_addr_c  : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(devnull_base_c) + x"00000000");
-
   -- RESERVED --
---constant ???_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFCC"; -- base address, fixed!
---constant ???_size_c           : natural := 5*4; -- bytes, fixed!
+--constant ???_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC8"; -- base address, fixed!
+--constant ???_size_c           : natural := 6*4; -- bytes, fixed!
 
   -- System Information Memory (with SIMULATION output) (SYSINFO) --
   constant sysinfo_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFE0"; -- base address, fixed!
@@ -393,10 +389,10 @@ package neorv32_package is
       CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
       USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
       -- RISC-V CPU Extensions --
-      CPU_EXTENSION_RISCV_C        : boolean := true;   -- implement compressed extension?
+      CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
-      CPU_EXTENSION_RISCV_M        : boolean := true;   -- implement muld/div extension?
-      CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
+      CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
+      CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
       -- Physical Memory Protection (PMP) --
@@ -669,7 +665,7 @@ package neorv32_package is
       -- Physical memory protection (PMP) --
       PMP_USE               : boolean := false; -- implement physical memory protection?
       PMP_NUM_REGIONS       : natural := 4; -- number of regions (1..4)
-      PMP_GRANULARITY       : natural := 0  -- granularity (0=none, 1=8B, 2=16B, 3=32B, ...)
+      PMP_GRANULARITY       : natural := 0  -- granularity (1=8B, 2=16B, 3=32B, ...)
     );
     port (
       -- global control --
