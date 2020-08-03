@@ -74,7 +74,7 @@ begin
     CSR_COUNTERS_USE             => true,        -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     USER_CODE                    => x"00000000", -- custom user code
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C        => false,  -- implement compressed extension?
+    CPU_EXTENSION_RISCV_C        => true,   -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => false,  -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => false,  -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        => false,  -- implement user mode extension?
