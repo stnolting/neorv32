@@ -82,7 +82,7 @@ void neorv32_rte_setup(void) {
  *
  * @param[in] id Identifier (type) of the targeted exception. See #NEORV32_RTE_TRAP_enum.
  * @param[in] handler The actual handler function for the specified exception (function MUST be of type "void function(void);").
- * return 0 if success, 1 if error (invalid id or targeted exception not supported).
+ * @return 0 if success, 1 if error (invalid id or targeted exception not supported).
  **************************************************************************/
 int neorv32_rte_exception_install(uint8_t id, void (*handler)(void)) {
 
@@ -109,7 +109,7 @@ int neorv32_rte_exception_install(uint8_t id, void (*handler)(void)) {
  * and/or the global interrupt enable bit mstatus.mie via neorv32_cpu_dint(void).
  *
  * @param[in] id Identifier (type) of the targeted exception. See #NEORV32_RTE_TRAP_enum.
- * return 0 if success, 1 if error (invalid id or targeted exception not supported).
+ * @return 0 if success, 1 if error (invalid id or targeted exception not supported).
  **************************************************************************/
 int neorv32_rte_exception_uninstall(uint8_t id) {
 
@@ -201,19 +201,19 @@ static void __neorv32_rte_debug_exc_handler(void) {
     case TRAP_CODE_I_MISALIGNED: neorv32_uart_printf("Instruction address misaligned"); break;
     case TRAP_CODE_I_ACCESS:     neorv32_uart_printf("Instruction access fault"); break;
     case TRAP_CODE_I_ILLEGAL:    neorv32_uart_printf("Illegal instruction"); break;
-    case TRAP_CODE_BREAKPOINT:   neorv32_uart_printf("Breakpoint (EBREAK)"); break;
+    case TRAP_CODE_BREAKPOINT:   neorv32_uart_printf("Breakpoint"); break;
     case TRAP_CODE_L_MISALIGNED: neorv32_uart_printf("Load address misaligned"); break;
     case TRAP_CODE_L_ACCESS:     neorv32_uart_printf("Load access fault"); break;
     case TRAP_CODE_S_MISALIGNED: neorv32_uart_printf("Store address misaligned"); break;
     case TRAP_CODE_S_ACCESS:     neorv32_uart_printf("Store access fault"); break;
-    case TRAP_CODE_MENV_CALL:    neorv32_uart_printf("Environment call from M-mode"); break;
+    case TRAP_CODE_MENV_CALL:    neorv32_uart_printf("Environment call"); break;
     case TRAP_CODE_MSI:          neorv32_uart_printf("Machine software interrupt"); break;
     case TRAP_CODE_MTI:          neorv32_uart_printf("Machine timer interrupt"); break;
     case TRAP_CODE_MEI:          neorv32_uart_printf("Machine external interrupt"); break;
-    case TRAP_CODE_FIRQ_0:       neorv32_uart_printf("Fast interrupt channel 0"); break;
-    case TRAP_CODE_FIRQ_1:       neorv32_uart_printf("Fast interrupt channel 1"); break;
-    case TRAP_CODE_FIRQ_2:       neorv32_uart_printf("Fast interrupt channel 2"); break;
-    case TRAP_CODE_FIRQ_3:       neorv32_uart_printf("Fast interrupt channel 3"); break;
+    case TRAP_CODE_FIRQ_0:       neorv32_uart_printf("Fast interrupt 0"); break;
+    case TRAP_CODE_FIRQ_1:       neorv32_uart_printf("Fast interrupt 1"); break;
+    case TRAP_CODE_FIRQ_2:       neorv32_uart_printf("Fast interrupt 2"); break;
+    case TRAP_CODE_FIRQ_3:       neorv32_uart_printf("Fast interrupt 3"); break;
     default:                     neorv32_uart_printf("Unknown (0x%x)", trap_cause); break;
   }
 
@@ -231,7 +231,7 @@ static void __neorv32_rte_debug_exc_handler(void) {
       trap_addr -= 2;
     }
   }
-  neorv32_uart_printf(" @0x%x, MTVAL=0x%x </RTE>", trap_addr, neorv32_cpu_csr_read(CSR_MTVAL));
+  neorv32_uart_printf(" @ 0x%x, MTVAL=0x%x </RTE>", trap_addr, neorv32_cpu_csr_read(CSR_MTVAL));
 }
 
 
