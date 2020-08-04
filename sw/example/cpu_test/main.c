@@ -807,9 +807,9 @@ int main() {
       }
     }
 
-    neorv32_uart_printf("Min granularity (0x%x): ", pmp_test_g);
+    neorv32_uart_printf("Min granularity: ");
     if (i < 29) {
-      neorv32_uart_printf("%u bytes per region\n", (uint32_t)(1 << (i+1+2)));
+      neorv32_uart_printf("%u bytes per region (0x%x)\n", (uint32_t)(1 << (i+1+2)), pmp_test_g);
     }
     else {
       neorv32_uart_printf("2^%u bytes per region\n", i+1+2);
