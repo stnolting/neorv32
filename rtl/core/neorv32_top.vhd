@@ -50,7 +50,6 @@ entity neorv32_top is
     -- General --
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
     BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
-    CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
@@ -59,6 +58,9 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
+    -- Extension Options --
+    CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false; -- implement PMP?
     PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
@@ -328,9 +330,8 @@ begin
   neorv32_cpu_inst: neorv32_cpu
   generic map (
     -- General --
-    CSR_COUNTERS_USE             => CSR_COUNTERS_USE, -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
-    HW_THREAD_ID                 => (others => '0'),  -- hardware thread id
-    CPU_BOOT_ADDR                => boot_addr_c,      -- cpu boot address
+    HW_THREAD_ID                 => (others => '0'), -- hardware thread id
+    CPU_BOOT_ADDR                => boot_addr_c,     -- cpu boot address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
@@ -338,6 +339,9 @@ begin
     CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
+    -- Extension Options --
+    CSR_COUNTERS_USE             => CSR_COUNTERS_USE, -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    FAST_MUL_EN                  => FAST_MUL_EN,      -- use DSPs for M extension's multiplier
     -- Physical Memory Protection (PMP) --
     PMP_USE                      => PMP_USE,         -- implement PMP?
     PMP_NUM_REGIONS              => PMP_NUM_REGIONS, -- number of regions (max 8)

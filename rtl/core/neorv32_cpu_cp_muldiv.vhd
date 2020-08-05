@@ -44,12 +44,16 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_muldiv is
+  generic (
+    FAST_MUL_EN : boolean := false -- use DSPs for faster multiplication
+  );
   port (
     -- global control --
     clk_i   : in  std_ulogic; -- global clock, rising edge
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     -- data input --
+    start_i : in  std_ulogic; -- trigger operation
     rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
     rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
     -- result and status --
@@ -59,9 +63,6 @@ entity neorv32_cpu_cp_muldiv is
 end neorv32_cpu_cp_muldiv;
 
 architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
-
-  -- configuration - still experimental --
-  constant FAST_MUL_EN : boolean := false; -- use DSPs for faster multiplication
 
   -- controller --
   type state_t is (IDLE, DECODE, INIT_OPX, INIT_OPY, PROCESSING, FINALIZE, COMPLETED);
@@ -89,10 +90,9 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   signal mul_do_add     : std_ulogic_vector(data_width_c downto 0);
   signal mul_sign_cycle : std_ulogic;
   signal mul_p_sext     : std_ulogic;
-  signal mul_op_x       : std_ulogic_vector(32 downto 0);
-  signal mul_op_y       : std_ulogic_vector(32 downto 0);
-  signal mul_buf_ff0    : std_ulogic_vector(65 downto 0);
-  signal mul_buf_ff1    : std_ulogic_vector(65 downto 0);
+  signal mul_op_x       : signed(32 downto 0); -- for using DSPs
+  signal mul_op_y       : signed(32 downto 0); -- for using DSPs
+  signal mul_buf_ff     : signed(65 downto 0); -- for using DSPs
 
 begin
 
@@ -118,10 +118,10 @@ begin
       -- FSM --
       case state is
         when IDLE =>
-          opx   <= rs1_i;
-          opy   <= rs2_i;
-          cp_op <= ctrl_i(ctrl_cp_cmd2_c downto ctrl_cp_cmd0_c);
-          if (ctrl_i(ctrl_cp_use_c) = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = cp_sel_muldiv_c) then
+          opx <= rs1_i;
+          opy <= rs2_i;
+          if (start_i = '1') then
+            cp_op <= ctrl_i(ctrl_cp_cmd2_c downto ctrl_cp_cmd0_c);
             state <= DECODE;
           end if;
 
@@ -148,7 +148,7 @@ begin
             if (FAST_MUL_EN = false) then
               cnt <= "11111";
             else
-              cnt <= "00101"; -- FIXME
+              cnt <= "00001";
             end if;
             start <= '1';
             state <= PROCESSING;
@@ -208,12 +208,11 @@ begin
         end if;
       else -- use direct approach using (several!) DSP blocks
         if (start = '1') then
-          mul_op_x <= (opx(opx'left) and opx_is_signed) & opx;
-          mul_op_y <= (opy(opy'left) and opy_is_signed) & opy;
+          mul_op_x <= signed((opx(opx'left) and opx_is_signed) & opx);
+          mul_op_y <= signed((opy(opy'left) and opy_is_signed) & opy);
         end if;
-        mul_buf_ff0 <= std_ulogic_vector(signed(mul_op_x) * signed(mul_op_y));
-        mul_buf_ff1 <= mul_buf_ff0;
-        mul_product <= mul_buf_ff1(63 downto 0); -- let the register balancing do the magic here
+        mul_buf_ff  <= mul_op_x * mul_op_y;
+        mul_product <= std_ulogic_vector(mul_buf_ff(63 downto 0)); -- let the register balancing do the magic here
       end if;
     end if;
   end process multiplier_core;

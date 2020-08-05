@@ -61,8 +61,10 @@ entity neorv32_cpu_alu is
     add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- OPA + OPB
     res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
     -- co-processor interface --
+    cp0_start_o : out std_ulogic; -- trigger co-processor 0
     cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
     cp0_valid_i : in  std_ulogic; -- co-processor 0 result valid
+    cp1_start_o : out std_ulogic; -- trigger co-processor 1
     cp1_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 1 result
     cp1_valid_i : in  std_ulogic; -- co-processor 1 result valid
     -- status --
@@ -98,13 +100,16 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   end record;
   signal shifter : shifter_t;
 
-  -- co-processor interface --
-  signal cp_cmd_ff : std_ulogic;
-  signal cp_run    : std_ulogic;
-  signal cp_start  : std_ulogic;
-  signal cp_busy   : std_ulogic;
-  signal cp_rb_ff0 : std_ulogic;
-  signal cp_rb_ff1 : std_ulogic;
+  -- co-processor arbiter and interface --
+  type cp_ctrl_t is record
+    cmd_ff : std_ulogic;
+    run    : std_ulogic;
+    start  : std_ulogic;
+    busy   : std_ulogic;
+    rb_ff0 : std_ulogic;
+    rb_ff1 : std_ulogic;
+  end record;
+  signal cp_ctrl : cp_ctrl_t;
 
 begin
 
@@ -124,7 +129,7 @@ begin
       when "01"   => opb <= imm_i;
       when others => opb <= rs1_i;
     end case;
-    -- opc (second operand for comparison (and SUB)) --
+    -- opc (second operand for comparison and SUB) --
     if (ctrl_i(ctrl_alu_opc_mux_c) = '0') then
       opc <= imm_i;
     else
@@ -195,47 +200,49 @@ begin
   end process shifter_unit;
 
   -- is shift operation? --
-  shifter.cmd   <= '1' when (ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) = alu_cmd_shift_c) else '0';
+  shifter.cmd   <= '1' when (ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) = alu_cmd_shift_c) and (ctrl_i(ctrl_cp_use_c) = '0') else '0';
   shifter.start <= '1' when (shifter.cmd = '1') and (shifter.cmd_ff = '0') else '0';
 
   -- shift operation running? --
   shifter.run <= '1' when (or_all_f(shifter.cnt) = '1') or (shifter.start = '1') else '0';
 
 
-  -- Coprocessor Interface ------------------------------------------------------------------
+  -- Coprocessor Arbiter --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cp_interface: process(rstn_i, clk_i)
+  cp_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      cp_cmd_ff <= '0';
-      cp_busy   <= '0';
-      cp_rb_ff0 <= '0';
-      cp_rb_ff1 <= '0';
+      cp_ctrl.cmd_ff <= '0';
+      cp_ctrl.busy   <= '0';
+      cp_ctrl.rb_ff0 <= '0';
+      cp_ctrl.rb_ff1 <= '0';
     elsif rising_edge(clk_i) then
-      if (CPU_EXTENSION_RISCV_M = true) then -- FIXME add second cp (floating point stuff?)
-        cp_cmd_ff <= ctrl_i(ctrl_cp_use_c);
-        cp_rb_ff0 <= '0';
-        cp_rb_ff1 <= cp_rb_ff0;
-        if (cp_start = '1') then
-          cp_busy <= '1';
-        elsif ((cp0_valid_i or cp1_valid_i) = '1') then
-          cp_busy   <= '0';
-          cp_rb_ff0 <= '1';
+      if (CPU_EXTENSION_RISCV_M = true) then
+        cp_ctrl.cmd_ff <= ctrl_i(ctrl_cp_use_c);
+        cp_ctrl.rb_ff0 <= '0';
+        cp_ctrl.rb_ff1 <= cp_ctrl.rb_ff0;
+        if (cp_ctrl.start = '1') then
+          cp_ctrl.busy <= '1';
+        elsif ((cp0_valid_i or cp1_valid_i) = '1') then -- cp computation done?
+          cp_ctrl.busy   <= '0';
+          cp_ctrl.rb_ff0 <= '1';
         end if;
       else -- no co-processors implemented
-        cp_cmd_ff <= '0';
-        cp_busy   <= '0';
-        cp_rb_ff0 <= '0';
-        cp_rb_ff1 <= '0';
+        cp_ctrl.cmd_ff <= '0';
+        cp_ctrl.busy   <= '0';
+        cp_ctrl.rb_ff0 <= '0';
+        cp_ctrl.rb_ff1 <= '0';
       end if;
     end if;
-  end process cp_interface;
+  end process cp_arbiter;
 
   -- is co-processor operation? --
-  cp_start <= '1' when (ctrl_i(ctrl_cp_use_c) = '1') and (cp_cmd_ff = '0') else '0';
+  cp_ctrl.start <= '1' when (ctrl_i(ctrl_cp_use_c) = '1') and (cp_ctrl.cmd_ff = '0') else '0';
+  cp0_start_o      <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = cp_sel_muldiv_c) else '0'; -- MULDIV CP
+  cp1_start_o      <= '0'; -- not yet implemented
 
   -- co-processor operation running? --
-  cp_run <= cp_busy or cp_start;
+  cp_ctrl.run <= cp_ctrl.busy or cp_ctrl.start;
 
 
   -- ALU Function Select --------------------------------------------------------------------
@@ -258,8 +265,8 @@ begin
 
   -- ALU Result -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  wait_o <= shifter.run or cp_run; -- wait until iterative units have completed
-  res_o  <= (cp0_data_i or cp1_data_i) when (cp_rb_ff1 = '1') else alu_res; -- FIXME
+  wait_o <= shifter.run or cp_ctrl.run; -- wait until iterative units have completed
+  res_o  <= (cp0_data_i or cp1_data_i) when (cp_ctrl.rb_ff1 = '1') else alu_res; -- FIXME
 
 
 end neorv32_cpu_cpu_rtl;

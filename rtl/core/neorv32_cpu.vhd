@@ -53,7 +53,6 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu is
   generic (
     -- General --
-    CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= (others => '0'); -- hardware thread id
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= (others => '0'); -- cpu boot address
     -- RISC-V CPU Extensions --
@@ -63,6 +62,9 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
+    -- Extension Options --
+    CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false; -- implement PMP?
     PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
@@ -136,6 +138,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   -- co-processor interface --
   signal cp0_data,  cp1_data  : std_ulogic_vector(data_width_c-1 downto 0);
   signal cp0_valid, cp1_valid : std_ulogic;
+  signal cp0_start, cp1_start : std_ulogic;
 
   -- pmp interface --
   signal pmp_addr  : pmp_addr_if_t;
@@ -287,8 +290,10 @@ begin
     add_o       => alu_add,       -- OPA + OPB
     res_o       => alu_res,       -- ALU result
     -- co-processor interface --
+    cp0_start_o => cp0_start,     -- trigger co-processor 0
     cp0_data_i  => cp0_data,      -- co-processor 0 result
     cp0_valid_i => cp0_valid,     -- co-processor 0 result valid
+    cp1_start_o => cp1_start,     -- trigger co-processor 1
     cp1_data_i  => cp1_data,      -- co-processor 1 result
     cp1_valid_i => cp1_valid,     -- co-processor 1 result valid
     -- status --
@@ -301,12 +306,16 @@ begin
   neorv32_cpu_cp_muldiv_inst_true:
   if (CPU_EXTENSION_RISCV_M = true) generate
     neorv32_cpu_cp_muldiv_inst: neorv32_cpu_cp_muldiv
+    generic map (
+      FAST_MUL_EN => FAST_MUL_EN -- use DSPs for faster multiplication
+    )
     port map (
       -- global control --
       clk_i   => clk_i,           -- global clock, rising edge
       rstn_i  => rstn_i,          -- global reset, low-active, async
       ctrl_i  => ctrl,            -- main control bus
       -- data input --
+      start_i => cp0_start,       -- trigger operation
       rs1_i   => rs1,             -- rf source 1
       rs2_i   => rs2,             -- rf source 2
       -- result and status --

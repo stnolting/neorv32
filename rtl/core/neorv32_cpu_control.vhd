@@ -687,7 +687,7 @@ begin
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_operation_v; -- actual ALU operation
             ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "00"; -- RF input = ALU result
             -- multi cycle alu operation? --
-            if (alu_operation_v = alu_cmd_shift_c) or -- shift operation
+            if (alu_operation_v = alu_cmd_shift_c) or -- shift operation?
                ((CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_alu_c) and
                 (execute_engine.i_reg(instr_funct7_lsb_c) = '1')) then -- MULDIV?
               execute_engine.state_nxt <= ALU_WAIT;
@@ -700,7 +700,6 @@ begin
                (execute_engine.i_reg(instr_funct7_lsb_c) = '1') then -- MULDIV?
               ctrl_nxt(ctrl_cp_use_c) <= '1'; -- use CP
             end if;
-
 
           when opcode_lui_c | opcode_auipc_c => -- load upper immediate (add to PC)
           -- ------------------------------------------------------------
@@ -839,11 +838,16 @@ begin
         ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
         execute_engine.state_nxt  <= DISPATCH; -- FIXME should be SYS_WAIT? have another cycle to let side-effects kick in
 
-      when ALU_WAIT => -- wait for multi-cycle ALU operation to finish
+      when ALU_WAIT => -- wait for multi-cycle ALU operation (shifter or CP) to finish
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_operation_v; -- actual ALU operation
+        ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_shift_c;
         ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "00"; -- RF input = ALU result
         ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back (permanent write-back)
+        -- cp access? --
+        if (CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_funct7_lsb_c) = '1') then -- MULDIV?
+          ctrl_nxt(ctrl_cp_use_c) <= '1'; -- use CP
+        end if;
+        -- wait for result --
         if (alu_wait_i = '0') then
           execute_engine.state_nxt  <= DISPATCH;
         end if;
@@ -1620,9 +1624,9 @@ begin
 
           -- machine information registers --
           when x"f11" => -- R/-: mvendorid
-            csr_rdata_o <= (others => '0'); -- not yet assigned for NEORV32
+            csr_rdata_o <= (others => '0'); -- not available for NEORV32
           when x"f12" => -- R/-: marchid
-            csr_rdata_o <= (others => '0'); -- not yet assigned for NEORV32
+            csr_rdata_o <= (others => '0'); -- not available for NEORV32
           when x"f13" => -- R/-: mimpid - implementation ID / NEORV32: version
             csr_rdata_o <= hw_version_c;
           when x"f14" => -- R/-: mhartid - hardware thread ID

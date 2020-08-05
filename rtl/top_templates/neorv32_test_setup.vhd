@@ -71,7 +71,6 @@ begin
     -- General --
     CLOCK_FREQUENCY              => 100000000,   -- clock frequency of clk_i in Hz
     BOOTLOADER_USE               => true,        -- implement processor-internal bootloader?
-    CSR_COUNTERS_USE             => true,        -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     USER_CODE                    => x"00000000", -- custom user code
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        => true,   -- implement compressed extension?
@@ -80,6 +79,9 @@ begin
     CPU_EXTENSION_RISCV_U        => false,  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    => true,   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => true,   -- implement instruction stream sync.?
+    -- Extension Options --
+    CSR_COUNTERS_USE             => true,  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    FAST_MUL_EN                  => false, -- use DSPs for M extension's multiplier
     -- Physical Memory Protection (PMP) --
     PMP_USE                      => false,  -- implement PMP?
     PMP_NUM_REGIONS              => 4,      -- number of regions (max 16)

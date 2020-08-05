@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - FIXED!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01030600"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01030602"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions
 
   -- Helper Functions -----------------------------------------------------------------------
@@ -386,7 +386,6 @@ package neorv32_package is
       -- General --
       CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
       BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
-      CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
       USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
@@ -395,6 +394,9 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
+      -- Extension Options --
+      CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+      FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
       -- Physical Memory Protection (PMP) --
       PMP_USE                      : boolean := false; -- implement PMP?
       PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
@@ -469,7 +471,6 @@ package neorv32_package is
   component neorv32_cpu
     generic (
       -- General --
-      CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
       HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= (others => '0'); -- hardware thread id
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= (others => '0'); -- cpu boot address
       -- RISC-V CPU Extensions --
@@ -479,6 +480,9 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
+      -- Extension Options --
+      CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+      FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
       -- Physical Memory Protection (PMP) --
       PMP_USE                      : boolean := false; -- implement PMP?
       PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
@@ -630,8 +634,10 @@ package neorv32_package is
       add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- OPA + OPB
       res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
       -- co-processor interface --
+      cp0_start_o : out std_ulogic; -- trigger co-processor 0
       cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
       cp0_valid_i : in  std_ulogic; -- co-processor 0 result valid
+      cp1_start_o : out std_ulogic; -- trigger co-processor 1
       cp1_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 1 result
       cp1_valid_i : in  std_ulogic; -- co-processor 1 result valid
       -- status --
@@ -642,12 +648,16 @@ package neorv32_package is
   -- Component: CPU Co-Processor MULDIV -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_muldiv
+    generic (
+      FAST_MUL_EN : boolean := false -- use DSPs for faster multiplication
+    );
     port (
       -- global control --
       clk_i   : in  std_ulogic; -- global clock, rising edge
       rstn_i  : in  std_ulogic; -- global reset, low-active, async
       ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
       -- data input --
+      start_i : in  std_ulogic; -- trigger operation
       rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
       rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
       -- result and status --
