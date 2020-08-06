@@ -64,6 +64,9 @@ end neorv32_cpu_cp_muldiv;
 
 architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
 
+  -- advanced configuration --
+  constant dsp_add_reg_stage_c : boolean := false; -- add another register stage to DSP-based multiplication for timing-closure
+
   -- controller --
   type state_t is (IDLE, DECODE, INIT_OPX, INIT_OPY, PROCESSING, FINALIZE, COMPLETED);
   signal state         : state_t;
@@ -93,6 +96,7 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   signal mul_op_x       : signed(32 downto 0); -- for using DSPs
   signal mul_op_y       : signed(32 downto 0); -- for using DSPs
   signal mul_buf_ff     : signed(65 downto 0); -- for using DSPs
+  signal mul_buf2_ff    : signed(65 downto 0); -- for using DSPs
 
 begin
 
@@ -211,8 +215,13 @@ begin
           mul_op_x <= signed((opx(opx'left) and opx_is_signed) & opx);
           mul_op_y <= signed((opy(opy'left) and opy_is_signed) & opy);
         end if;
-        mul_buf_ff  <= mul_op_x * mul_op_y;
-        mul_product <= std_ulogic_vector(mul_buf_ff(63 downto 0)); -- let the register balancing do the magic here
+        mul_buf_ff <= mul_op_x * mul_op_y;
+        if (dsp_add_reg_stage_c = true) then -- add another reg stage?
+          mul_buf2_ff <= mul_buf_ff;
+          mul_product <= std_ulogic_vector(mul_buf2_ff(63 downto 0)); -- let the register balancing do the magic here
+        else
+          mul_product <= std_ulogic_vector(mul_buf_ff(63 downto 0)); -- let the register balancing do the magic here
+        end if;
       end if;
     end if;
   end process multiplier_core;
