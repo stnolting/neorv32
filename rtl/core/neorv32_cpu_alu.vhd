@@ -95,6 +95,7 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
     cmd_ff : std_ulogic;
     start  : std_ulogic;
     run    : std_ulogic;
+    halt   : std_ulogic;
     cnt    : std_ulogic_vector(4 downto 0);
     sreg   : std_ulogic_vector(data_width_c-1 downto 0);
   end record;
@@ -103,9 +104,9 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   -- co-processor arbiter and interface --
   type cp_ctrl_t is record
     cmd_ff : std_ulogic;
-    run    : std_ulogic;
-    start  : std_ulogic;
     busy   : std_ulogic;
+    start  : std_ulogic;
+    halt   : std_ulogic;
     rb_ff0 : std_ulogic;
     rb_ff1 : std_ulogic;
   end record;
@@ -204,7 +205,8 @@ begin
   shifter.start <= '1' when (shifter.cmd = '1') and (shifter.cmd_ff = '0') else '0';
 
   -- shift operation running? --
-  shifter.run <= '1' when (or_all_f(shifter.cnt) = '1') or (shifter.start = '1') else '0';
+  shifter.run  <= '1' when (or_all_f(shifter.cnt) = '1') or (shifter.start = '1') else '0';
+  shifter.halt <= '1' when (or_all_f(shifter.cnt(shifter.cnt'left downto 1)) = '1') or (shifter.start = '1') else '0';
 
 
   -- Coprocessor Arbiter --------------------------------------------------------------------
@@ -242,7 +244,7 @@ begin
   cp1_start_o      <= '0'; -- not yet implemented
 
   -- co-processor operation running? --
-  cp_ctrl.run <= cp_ctrl.busy or cp_ctrl.start;
+  cp_ctrl.halt <= cp_ctrl.busy or cp_ctrl.start;
 
 
   -- ALU Function Select --------------------------------------------------------------------
@@ -265,7 +267,7 @@ begin
 
   -- ALU Result -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  wait_o <= shifter.run or cp_ctrl.run; -- wait until iterative units have completed
+  wait_o <= shifter.halt or cp_ctrl.halt; -- wait until iterative units have completed
   res_o  <= (cp0_data_i or cp1_data_i) when (cp_ctrl.rb_ff1 = '1') else alu_res; -- FIXME
 
 
