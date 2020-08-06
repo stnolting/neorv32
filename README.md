@@ -47,8 +47,8 @@ For more information take a look a the [![NEORV32 datasheet](https://raw.githubu
 
 ###  Key Features
 
-- RISC-V-compliant `rv32i` CPU with optional `C`, `E`, `M`, `U`, `Zicsr`, `rv32Zifencei` and PMP (physical memory protection) extensions
-- GCC-based toolchain ([pre-compiled rv32i and rv32 etoolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
+- RISC-V-compliant `rv32i` CPU with optional `C`, `E`, `M`, `U`, `Zicsr`, `Zifencei` and PMP (physical memory protection) extensions
+- GCC-based toolchain ([pre-compiled rv32i and rv32e toolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
 - Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
 - [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
 - Detailed [datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf)
@@ -100,7 +100,6 @@ The custom extensions are always enabled and are indicated via the `X` bit in th
 ### To-Do / Wish List
 
 - Add AXI(-Lite) bridges
-- Option to use DSP-based multiplier in `M` extension (would be so much faster)
 - Synthesis results for more platforms
 - Port Dhrystone benchmark
 - Implement atomic operations (`A` extension) and floating-point operations (`F` extension)
@@ -167,6 +166,8 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
 **Integer multiplication and division hardware** (`M` extension):
   * Multiplication instructions: `MUL` `MULH` `MULHSU` `MULHU`
   * Division instructions: `DIV` `DIVU` `REM` `REMU`
+  * By default, the multiplier and divider cores use an iterative bit-serial processing scheme
+  * Multiplications can be mapped to DSPs via the `FAST_MUL_EN` generic to increase performance
 
 **Privileged architecture / CSR access** (`Zicsr` extension):
   * Privilege levels: `M-mode` (Machine mode)
@@ -204,23 +205,23 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
 This chapter shows exemplary implementation results of the NEORV32 processor for an **Intel Cyclone IV EP4CE22F17C6N FPGA** on
 a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 19.1** ("balanced implementation"). The timing
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
-of the CPU's generics is assumed (no PMP). No constraints were used at all.
+of the CPU's generics is assumed (e.g., no PMP). No constraints were used at all.
 
 ### CPU
 
-Results generated for hardware version: `1.3.0.0`
+Results generated for hardware version: `1.3.6.5`
 
 | CPU Configuration                | LEs        | FFs      | Memory bits | DSPs | f_max   |
 |:---------------------------------|:----------:|:--------:|:-----------:|:----:|:-------:|
-| `rv32i`                          |       1122 |      481 |       2048  |    0 | 110 MHz |
-| `rv32i`   + `Zicsr` + `Zifencei` |       1891 |      819 |       2048  |    0 | 100 MHz |
-| `rv32im`  + `Zicsr` + `Zifencei` |       2496 |     1067 |       2048  |    0 | 100 MHz |
-| `rv32imc` + `Zicsr` + `Zifencei` |       2734 |     1066 |       2048  |    0 | 100 MHz |
-| `rv32emc` + `Zicsr` + `Zifencei` |       2722 |     1066 |       1024  |    0 | 100 MHz |
+| `rv32i`                          |       1113 |      479 |       2048  |    0 | 109 MHz |
+| `rv32i`   + `Zicsr` + `Zifencei` |       1851 |      817 |       2048  |    0 | 100 MHz |
+| `rv32im`  + `Zicsr` + `Zifencei` |       2462 |     1065 |       2048  |    0 | 100 MHz |
+| `rv32imc` + `Zicsr` + `Zifencei` |       2714 |     1064 |       2048  |    0 | 100 MHz |
+| `rv32emc` + `Zicsr` + `Zifencei` |       2717 |     1064 |       1024  |    0 | 100 MHz |
 
 ### Processor-Internal Peripherals and Memories
 
-Results generated for hardware version: `1.3.0.0`
+Results generated for hardware version: `1.3.6.5`
 
 | Module    | Description                                     | LEs | FFs | Memory bits | DSPs |
 |:----------|:------------------------------------------------|:---:|:---:|:-----------:|:----:|
@@ -247,13 +248,13 @@ no external memory interface, no PMP and only internal instruction and data memo
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
 to FPGA pins - except for the Wishbone bus and the interrupt signals.
 
-Results generated for hardware version: `1.3.0.0`
+Results generated for hardware version: `1.3.6.5`
 
-| Vendor  | FPGA                              | Board            | Toolchain               | Impl. strategy |CPU                               | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency      |
-|:--------|:----------------------------------|:-----------------|:------------------------|:---------------|:---------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|---------------:|
-| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 19.1 | balanced       | `rv32imc` + `Zicsr` + `Zifencei` | 3934 (18%) | 1799  (8%) | 0 (0%) | 231424 (38%) |          - |        - |        100 MHz |
-| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (LSE)       | timing         | `rv32ic`  + `Zicsr` + `Zifencei` | 4895 (92%) | 1636 (31%) | 0 (0%) |            - |   12 (40%) | 4 (100%) | *c* 22.875 MHz |
-| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2           | default        | `rv32imc` + `Zicsr` + `Zifencei` | 2432 (12%) | 1852  (4%) | 0 (0%) |            - |    8 (16%) |        - |    *c* 100 MHz |
+| Vendor  | FPGA                              | Board            | Toolchain               | Impl. strategy |CPU                                | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency      |
+|:--------|:----------------------------------|:-----------------|:------------------------|:---------------|:----------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|---------------:|
+| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 19.1 | balanced       | `rv32imcu` + `Zicsr` + `Zifencei` | 3800 (17%) | 1706  (8%) | 0 (0%) | 231424 (38%) |          - |        - |        100 MHz |
+| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (LSE)       | timing         | `rv32icu`  + `Zicsr` + `Zifencei` | 4950 (93%) | 1641 (31%) | 0 (0%) |            - |   12 (40%) | 4 (100%) | *c* 22.875 MHz |
+| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2           | default        | `rv32imcu` + `Zicsr` + `Zifencei` | 2445 (12%) | 1893  (4%) | 0 (0%) |            - |    8 (16%) |        - |    *c* 100 MHz |
 
 **Notes**
 * The Lattice iCE40 UltraPlus setup uses the FPGA's SPRAM memory primitives for the internal IMEM and DEMEM (each 64kb).
@@ -270,7 +271,7 @@ The [CoreMark CPU benchmark](https://www.eembc.org/coremark) was executed on the
 [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) project folder. This benchmark
 tests the capabilities of a CPU itself rather than the functions provided by the whole system / SoC.
 
-Results generated for hardware version: `1.3.0.0`
+Results generated for hardware version: `1.3.6.5`
 
 ~~~
 **Configuration**
@@ -280,12 +281,14 @@ Compiler:    RISCV32-GCC 10.1.0
 Peripherals: UART for printing the results
 ~~~
 
-| CPU       | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
-|:----------|:---------------:|:------------:|:--------------:|:-------------:|
-| `rv32i`   |    21 600 bytes |        `-O2` |          27.02 |        0.2702 |
-| `rv32im`  |    20 976 bytes |        `-O2` |          57.14 |        0.5714 |
-| `rv32imc` |    16 348 bytes |        `-O2` |          57.14 |        0.5714 |
+| CPU                  | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
+|:---------------------|:---------------:|:------------:|:--------------:|:-------------:|
+| `rv32i`              |    26 764 bytes |        `-O3` |          28.98 |        0.2898 |
+| `rv32im`             |    25 612 bytes |        `-O3` |          58.82 |        0.5882 |
+| `rv32imc`            |    19 652 bytes |        `-O3` |          60.61 |        0.6061 |
+| `rv32imc` + FAST_MUL |    19 652 bytes |        `-O3` |          71.43 |        0.7143 |
 
+The _FAST_MUL_ configuration uses DSPs for the multiplier of the `M` extensions (enabled via the `FAST_MUL_EN` generic).
 
 ### Instruction Cycles
 
@@ -300,16 +303,18 @@ Please note that the CPU-internal shifter (e.g. for the `SLL` instruction) as we
 The following table shows the performance results for successfully running 2000 CoreMark
 iterations, which reflects a pretty good "real-life" work load. The average CPI is computed by
 dividing the total number of required clock cycles (only the timed core to avoid distortion due to IO wait cycles; sampled via the `cycle[h]` CSRs)
-by the number of executed instructions (`instret[h]` CSRs). The executables were generated using optimization `-O2`.
+by the number of executed instructions (`instret[h]` CSRs). The executables were generated using optimization `-O3`.
 
-Results generated for hardware version: `1.3.0.0`
+Results generated for hardware version: `1.3.6.5`
 
-| CPU       | Required Clock Cycles | Executed Instructions | Average CPI |
-|:----------|----------------------:|----------------------:|:-----------:|
-| `rv32i`   |         7 433 933 906 |         1 494 298 800 |        4.97 |
-| `rv32im`  |         3 589 861 906 |           628 281 454 |        5.71 |
-| `rv32imc` |         3 587 131 226 |           628 282 016 |        5.70 |
+| CPU                  | Required Clock Cycles | Executed Instructions | Average CPI |
+|:---------------------|----------------------:|----------------------:|:-----------:|
+| `rv32i`              |         6 984 305 325 |         1 468 927 290 |        4.75 |
+| `rv32im`             |         3 415 761 325 |           601 565 734 |        5.67 |
+| `rv32imc`            |         3 398 881 094 |           601 565 832 |        5.65 |
+| `rv32imc` + FAST_MUL |         2 835 121 094 |           601 565 846 |        4.71 |
 
+The _FAST_MUL_ configuration uses DSPs for the multiplier of the `M` extensions (enabled via the `FAST_MUL_EN` generic).
 
 
 ## Top Entities
@@ -334,7 +339,6 @@ entity neorv32_top is
     -- General --
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
     BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
-    CSR_COUNTERS_USE             : boolean := true;   -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
@@ -343,10 +347,13 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
+    -- Extension Options --
+    CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      : boolean := false;  -- implement PMP?
-    PMP_NUM_REGIONS              : natural := 4;      -- number of regions (max 8)
-    PMP_GRANULARITY              : natural := 14;     -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+    PMP_USE                      : boolean := false; -- implement PMP?
+    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
+    PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Memory configuration: Instruction memory --
     MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
     MEM_ISPACE_SIZE              : natural := 16*1024; -- total size of instruction memory space in byte
@@ -419,7 +426,6 @@ end neorv32_top;
 entity neorv32_cpu is
   generic (
     -- General --
-    CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= (others => '0'); -- hardware thread id
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= (others => '0'); -- cpu boot address
     -- RISC-V CPU Extensions --
@@ -429,6 +435,9 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
+    -- Extension Options --
+    CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false; -- implement PMP?
     PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
