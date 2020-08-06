@@ -36,29 +36,25 @@
 
 
 # *****************************************************************************
-# USER CONFIGURATION
+# USER CONFIGURATION (use default if not set by user)
 # *****************************************************************************
 # Compiler effort
-EFFORT = -Os
+EFFORT ?= -Os
 
 # User's application sources (add additional files here)
-APP_SRC = $(wildcard *.c)
+APP_SRC ?= $(wildcard *.c)
 
 # User's application include folders (don't forget the '-I' before each entry)
-APP_INC = -I .
+APP_INC ?= -I .
 
-# Compiler toolchain (use default if not set by user)
+# Compiler toolchain
 RISCV_TOOLCHAIN ?= riscv32-unknown-elf
 
 # CPU architecture and ABI
-MARCH = -march=rv32i
-MABI  = -mabi=ilp32
+MARCH ?= -march=rv32i
+MABI  ?= -mabi=ilp32
 
-# Path to runtime c library (use default if not set by user)
-LIBC_PATH   ?= $(dir $(shell which $(CC)))../$(RISCV_TOOLCHAIN)/lib/libc.a
-LIBGCC_PATH ?= $(dir $(shell which $(CC)))../lib/gcc/$(RISCV_TOOLCHAIN)/*/libgcc.a
-
-# Relative or absolute path to the NEORV32 home folder (use default if not set by user)
+# Relative or absolute path to the NEORV32 home folder
 NEORV32_HOME ?= ../..
 # *****************************************************************************
 
@@ -82,16 +78,14 @@ NEORV32_HOME_MARKER=$(NEORV32_INC_PATH)/neorv32.h
 
 
 # -----------------------------------------------------------------------------
-# Add NEORV32 sources to input SRCs
+# NEORV32 core sources
 # -----------------------------------------------------------------------------
-APP_SRC += $(wildcard $(NEORV32_SRC_PATH)/*.c)
+CORE_SRC = $(wildcard $(NEORV32_SRC_PATH)/*.c)
 
 
 # -----------------------------------------------------------------------------
 # Make defaults
 # -----------------------------------------------------------------------------
-.SUFFIXES:
-.PHONY: all
 .DEFAULT_GOAL := help
 
 
@@ -106,7 +100,8 @@ install: $(APP_ASM) neorv32_application_image.vhd
 all:     $(APP_ASM) $(APP_EXE) neorv32_application_image.vhd
 
 # define all object files
-OBJ = $(APP_SRC:.c=.o)
+OBJ  = $(APP_SRC:.c=.o)
+OBJ += $(CORE_SRC:.c=.o)
 
 
 # -----------------------------------------------------------------------------
@@ -114,7 +109,6 @@ OBJ = $(APP_SRC:.c=.o)
 # -----------------------------------------------------------------------------
 # compiler tools
 CC      = $(RISCV_TOOLCHAIN)-gcc
-LD      = $(RISCV_TOOLCHAIN)-ld
 OBJDUMP = $(RISCV_TOOLCHAIN)-objdump
 OBJCOPY = $(RISCV_TOOLCHAIN)-objcopy
 SIZE    = $(RISCV_TOOLCHAIN)-size
@@ -122,22 +116,13 @@ SIZE    = $(RISCV_TOOLCHAIN)-size
 # NEORV32 executable image generator
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
 
-# Compiler flags
-CC_OPTS = $(MARCH) $(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -lm
+# Compiler & linker flags
+CC_OPTS = $(MARCH) $(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles
+CC_OPTS += -Wl,--gc-sections -lm -lc -lgcc -lc
 
-# Linker flags
-LD_OPTS = $(EFFORT) --gc-sections
-
-# User flags for additional config
+# User flags for additional configuration
 USER_FLAGS = 
 CC_OPTS += $(USER_FLAGS)
-
-# Use embedded RISC-V CPU extension?
-ifeq (,$(findstring rv32e,$(MARCH)))
-	CC_OPTS +=
-else
-	CC_OPTS += -D__RISCV_EMBEDDED_CPU__
-endif
 
 # -----------------------------------------------------------------------------
 # Host native compiler
@@ -167,7 +152,7 @@ $(OBJ): %.o : %.c crt0.elf
 
 # Link object files and show memory utilization
 main.elf: $(OBJ)
-	@$(LD) $(LD_OPTS) -I $(NEORV32_INC_PATH) $(APP_INC) -T $(NEORV32_COM_PATH)/neorv32.ld $(OBJ) $(LIBC_PATH) $(LIBGCC_PATH) -o $@
+	@$(CC) $(CC_OPTS) -I $(NEORV32_INC_PATH) $(APP_INC) -T $(NEORV32_COM_PATH)/neorv32.ld $(OBJ) -o $@
 	@echo "Memory utilization:"
 	@$(SIZE) main.elf
 
@@ -213,7 +198,7 @@ bootloader_crt0.elf: $(NEORV32_COM_PATH)/bootloader_crt0.S
 # Compile and install bootloader
 bootloader: bootloader_crt0.elf $(OBJ) $(IMAGE_GEN)
 	@set -e
-	@$(LD) $(LD_OPTS) -I $(NEORV32_INC_PATH) $(APP_INC) -T $(NEORV32_COM_PATH)/bootloader_neorv32.ld $(OBJ) $(LIBC_PATH) $(LIBGCC_PATH) -o bootloader.elf
+	@$(CC) $(CC_OPTS) -I $(NEORV32_INC_PATH) $(APP_INC) -T $(NEORV32_COM_PATH)/bootloader_neorv32.ld $(OBJ) -o bootloader.elf
 	@echo "Memory utilization:"
 	@$(SIZE) bootloader.elf
 	@$(OBJDUMP) -D -S -z bootloader.elf > bootloader.s
@@ -238,8 +223,6 @@ endif
 	@echo "NEORV32_HOME: $(NEORV32_HOME)"
 	@echo "---------------- Check: $(CC) ----------------"
 	@$(CC) -v
-	@echo "---------------- Check: $(LD) ----------------"
-	@$(LD) -V
 	@echo "---------------- Check: $(OBJDUMP) ----------------"
 	@$(OBJDUMP) -V
 	@echo "---------------- Check: $(OBJCOPY) ----------------"
@@ -248,7 +231,7 @@ endif
 	@$(SIZE) -V
 	@echo "---------------- Check: NEORV32 image_gen ----------------"
 	@$(IMAGE_GEN) -help
-	@echo "---------------- Check: native gcc ----------------"
+	@echo "---------------- Check: Native GCC ----------------"
 	@$(CC_X86) -v
 	@echo
 	@echo "Toolchain check OK"
@@ -259,30 +242,35 @@ endif
 # -----------------------------------------------------------------------------
 info:
 	@echo "---------------- Info: Project ----------------"
-	@echo "Project: $(shell basename $(CURDIR))"
-	@echo "Project source files: $(APP_SRC)"
-	@echo "Project include folders: $(NEORV32_INC_PATH) $(APP_INC)"
-	@echo "Project object files: $(OBJ)"
+	@echo "Project folder:    $(shell basename $(CURDIR))"
+	@echo "Source files:      $(APP_SRC)"
+	@echo "Include folder(s): $(APP_INC)"
 	@echo "---------------- Info: NEORV32 ----------------"
 	@echo "NEORV32 home folder (NEORV32_HOME): $(NEORV32_HOME)"
 	@echo "IMAGE_GEN: $(IMAGE_GEN)"
+	@echo "Core source files:"
+	@echo "$(CORE_SRC)"
+	@echo "Core include folder:"
+	@echo "$(NEORV32_INC_PATH)"
+	@echo "Project object files:"
+	@echo "$(OBJ)"
 	@echo "---------------- Info: RISC-V CPU ----------------"
 	@echo "MARCH:     $(MARCH)"
 	@echo "MABI:      $(MABI)"
 	@echo "---------------- Info: RISC-V Toolchain ----------------"
 	@echo "Toolchain: $(RISCV_TOLLCHAIN)"
 	@echo "CC:        $(CC)"
-	@echo "LD:        $(LD)"
 	@echo "OBJDUMP:   $(OBJDUMP)"
 	@echo "OBJCOPY:   $(OBJCOPY)"
 	@echo "SIZE:      $(SIZE)"
-	@echo "---------------- Info: C Lib ----------------"
-	@echo "CLIB:      $(LIBC_PATH)"
-	@echo "GCCLIB:    $(LIBGCC_PATH)"
+	@echo "---------------- Info: Libraries ----------------"
+	@echo "LIBGCC:"
+	@$(CC) -print-libgcc-file-name
+	@echo "SEARCH-DIRS:"
+	@$(CC) -print-search-dirs
 	@echo "---------------- Info: Flags ----------------"
 	@echo "CC_OPTS:   $(CC_OPTS)"
-	@echo "LD_OPTS:   $(LD_OPTS)"
-	@echo "---------------- Info: Host Native GCC ----------------"
+	@echo "---------------- Info: Host Native GCC Flags ----------------"
 	@echo "CC_X86:    $(CC_X86)"
 
 
