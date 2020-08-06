@@ -151,6 +151,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP, EXECUTE, ALU_WAIT, BRANCH, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, CSR_ACCESS);
   type execute_engine_t is record
     state        : execute_engine_state_t;
+    state_prev   : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
     i_reg        : std_ulogic_vector(31 downto 0);
     i_reg_nxt    : std_ulogic_vector(31 downto 0);
@@ -326,7 +327,7 @@ begin
     -- instruction prefetch buffer interface --
     ipb.we    <= '0';
     ipb.clear <= '0';
-    ipb.wdata <= '0' & fetch_engine.i_buf2(33 downto 32) & '0' & fetch_engine.i_buf2(31 downto 0);
+    ipb.wdata <= (others => '0');
     ipb.waddr <= fetch_engine.pc_real(data_width_c-1 downto 1) & '0';
 
     -- state machine --
@@ -388,7 +389,7 @@ begin
               fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(4, data_width_c));
               fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
               fetch_engine.state_nxt    <= IFETCH_0;
-            else -- uncompressed
+            else -- compressed
               ipb.wdata                 <= ci_illegal & fetch_engine.i_buf(33 downto 32) & '1' & ci_instr32;
               fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(2, data_width_c));
               fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(2, data_width_c));
@@ -528,10 +529,11 @@ begin
   execute_engine_fsm_sync: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      execute_engine.i_reg   <= execute_engine.i_reg_nxt;
-      execute_engine.is_ci   <= execute_engine.is_ci_nxt;
-      execute_engine.is_jump <= execute_engine.is_jump_nxt;
-      -- control signals --
+      execute_engine.state_prev <= execute_engine.state;
+      execute_engine.i_reg      <= execute_engine.i_reg_nxt;
+      execute_engine.is_ci      <= execute_engine.is_ci_nxt;
+      execute_engine.is_jump    <= execute_engine.is_jump_nxt;
+      --
       ctrl <= ctrl_nxt;
     end if;
   end process execute_engine_fsm_sync;
@@ -1698,7 +1700,7 @@ begin
         if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b02") then -- write access
           csr.minstret(31 downto 0) <= csr_wdata_i;
           csr.minstret(32) <= '0';
-        elsif (execute_engine.state_nxt /= EXECUTE) and (execute_engine.state = EXECUTE) then -- automatic update
+        elsif (execute_engine.state_prev /= EXECUTE) and (execute_engine.state = EXECUTE) then -- automatic update
           csr.minstret <= std_ulogic_vector(unsigned(csr.minstret) + 1);
         end if;
 
