@@ -108,6 +108,11 @@ int main() {
   } cpu_systime;
 
 
+  // reset performance counter
+  neorv32_cpu_set_minstret(0);
+  neorv32_cpu_set_mcycle(0);
+
+
   // check if UART unit is implemented at all
   if (neorv32_uart_available() == 0) {
     return 0;
@@ -254,41 +259,6 @@ int main() {
   neorv32_uart_printf("skipped (disabled)\n");
 #endif
 
-
-  // ----------------------------------------------------------
-  // Test counter CSR access for mcycle[h]
-  // ----------------------------------------------------------
-  neorv32_uart_printf("MCYCLE[H]:    ");
-  cnt_test++;
-
-  neorv32_cpu_csr_write(CSR_MCYCLE,  0x1BCD1234);
-  neorv32_cpu_csr_write(CSR_MCYCLEH, 0x00034455);
-
-  if (((neorv32_cpu_csr_read(CSR_MCYCLE) & 0xffff0000L) == 0x1BCD0000) &&
-      (neorv32_cpu_csr_read(CSR_MCYCLEH) == 0x00034455)) {
-    test_ok();
-  }
-  else {
-    test_fail();
-  }
-
-
-  // ----------------------------------------------------------
-  // Test counter CSR access for minstret[h]
-  // ----------------------------------------------------------
-  neorv32_uart_printf("MINSTRET[H]:  ");
-  cnt_test++;
-
-  neorv32_cpu_csr_write(CSR_MINSTRET,  0x11224499);
-  neorv32_cpu_csr_write(CSR_MINSTRETH, 0x00090011);
-
-  if (((neorv32_cpu_csr_read(CSR_MINSTRET) & 0xffff0000L) == 0x11220000) &&
-       (neorv32_cpu_csr_read(CSR_MINSTRETH) == 0x00090011)) {
-    test_ok();
-  }
-  else {
-    test_fail();
-  }
 
 
   // ----------------------------------------------------------
@@ -909,7 +879,18 @@ int main() {
   // ----------------------------------------------------------
   // Final test reports
   // ----------------------------------------------------------
-  neorv32_uart_printf("\n\nTests: %i\nOK:    %i\nFAIL:  %i\n\n", cnt_test, cnt_ok, cnt_fail);
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } exe_instr, exe_cycles;
+
+  exe_cycles.uint64 = neorv32_cpu_get_cycle();
+  exe_instr.uint64  = neorv32_cpu_get_instret();
+
+  neorv32_uart_printf("\n\nExecuted instructions: 0x%x_%x\n", exe_instr.uint32[1],  exe_instr.uint32[0]);
+  neorv32_uart_printf(    "Clock cycles:          0x%x_%x\n", exe_cycles.uint32[1], exe_cycles.uint32[0]);
+
+  neorv32_uart_printf("\nTests: %i\nOK:    %i\nFAIL:  %i\n\n", cnt_test, cnt_ok, cnt_fail);
 
   // final result
   if (cnt_fail == 0) {
