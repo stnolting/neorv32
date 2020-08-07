@@ -45,6 +45,10 @@ download [pre-compiled toolchains](https://github.com/stnolting/riscv_gcc_prebui
 
 For more information take a look a the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
+This project is hosted on [GitHub](https://github.com/stnolting/neorv32) and [opencores.org](https://opencores.org/projects/neorv32).
+A not-so-complete project log can be found on [hackaday.io](https://hackaday.io/project/174167-the-neorv32-risc-v-processor).
+
+
 ###  Key Features
 
 - RISC-V-compliant `rv32i` CPU with optional `C`, `E`, `M`, `U`, `Zicsr`, `Zifencei` and PMP (physical memory protection) extensions
@@ -257,7 +261,7 @@ Results generated for hardware version: `1.3.6.5`
 | Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2           | default        | `rv32imcu` + `Zicsr` + `Zifencei` | 2445 (12%) | 1893  (4%) | 0 (0%) |            - |    8 (16%) |        - |    *c* 100 MHz |
 
 **Notes**
-* The Lattice iCE40 UltraPlus setup uses the FPGA's SPRAM memory primitives for the internal IMEM and DEMEM (each 64kb).
+* The Lattice iCE40 UltraPlus setup uses the FPGA's SPRAM memory primitives for the internal IMEM and DMEM (each 64kb).
 The FPGA-specific memory components can be found in [`rtl/fpga_specific`](https://github.com/stnolting/neorv32/blob/master/rtl/fpga_specific/lattice_ice40up).
 * The clock frequencies marked with a "c" are constrained clocks. The remaining ones are _f_max_ results from the place and route timing reports.
 * The Upduino and the Arty board have on-board SPI flash memories for storing the FPGA configuration. These device can also be used by the default NEORV32
@@ -288,7 +292,7 @@ Peripherals: UART for printing the results
 | `rv32imc`            |    19 652 bytes |        `-O3` |          60.61 |        0.6061 |
 | `rv32imc` + FAST_MUL |    19 652 bytes |        `-O3` |          71.43 |        0.7143 |
 
-The _FAST_MUL_ configuration uses DSPs for the multiplier of the `M` extensions (enabled via the `FAST_MUL_EN` generic).
+The _FAST_MUL_ configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic).
 
 ### Instruction Cycles
 
@@ -314,7 +318,7 @@ Results generated for hardware version: `1.3.6.5`
 | `rv32imc`            |         3 398 881 094 |           601 565 832 |        5.65 |
 | `rv32imc` + FAST_MUL |         2 835 121 094 |           601 565 846 |        4.71 |
 
-The _FAST_MUL_ configuration uses DSPs for the multiplier of the `M` extensions (enabled via the `FAST_MUL_EN` generic).
+The _FAST_MUL_ configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic).
 
 
 ## Top Entities

@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file cpu_test/main.c
  * @author Stephan Nolting
- * @brief Simple CPU (interrupts and exceptions) test program.
+ * @brief Simple CPU test program.
  **************************************************************************/
 
 #include <neorv32.h>

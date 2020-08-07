@@ -1,7 +1,8 @@
 -- #################################################################################################
 -- # << NEORV32 - Arithmetical/Logical Unit >>                                                     #
 -- # ********************************************************************************************* #
--- # Main data and address ALU. Include comparator unit.                                           #
+-- # Main data and address ALU. Includes comparator unit and co-processor interface/arbiter.       #
+-- # The shifter sub-unit uses an iterative approach.                                              #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
