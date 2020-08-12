@@ -37,10 +37,7 @@
  * @file neorv32.h
  * @author Stephan Nolting
  *
- * @brief Main NEORV32 core library file.
- *
- * @details This file defines the addresses of the IO devices and their according
- * registers and register bits as well as the available CPU CSRs and flags.
+ * @brief Main NEORV32 core library include file.
  **************************************************************************/
 
 #ifndef neorv32_h

@@ -1391,7 +1391,7 @@ begin
               if (execute_engine.i_reg(27 downto 24) = x"b") then
                 for i in 0 to PMP_NUM_REGIONS-1 loop
                   if (execute_engine.i_reg(23 downto 20) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
-                    csr.pmpaddr(i) <= csr_wdata_i;
+                    csr.pmpaddr(i) <= csr_wdata_i(31 downto 1) & '0'; -- min granularity is 8 bytes -> bit zero cannot be configured
                   end if;
                 end loop; -- i (CSRs)
               end if;
