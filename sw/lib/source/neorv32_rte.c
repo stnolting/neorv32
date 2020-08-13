@@ -278,7 +278,7 @@ void neorv32_rte_print_hw_config(void) {
   }
   
   // CPU extensions
-  neorv32_uart_printf("\nCPU extensions:   ");
+  neorv32_uart_printf(" + ");
   tmp = neorv32_cpu_csr_read(CSR_MISA);
   for (i=0; i<26; i++) {
     if (tmp & (1 << i)) {
