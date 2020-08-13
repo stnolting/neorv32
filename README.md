@@ -1,4 +1,4 @@
-# [The NEORV32 Processor](https://github.com/stnolting/neorv32) (RISC-V-compliant)
+# [The NEORV32 Processor](https://github.com/stnolting/neorv32) (RISC-V)
 
 [![Build Status](https://travis-ci.com/stnolting/neorv32.svg?branch=master)](https://travis-ci.com/stnolting/neorv32)
 [![license](https://img.shields.io/github/license/stnolting/neorv32)](https://github.com/stnolting/neorv32/blob/master/LICENSE)
@@ -108,7 +108,6 @@ The custom extensions are always enabled and are indicated via the `X` bit in th
 - Port Dhrystone benchmark
 - Implement atomic operations (`A` extension) and floating-point operations (`F` extension)
 - Maybe port an RTOS (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr), [freeRTOS](https://www.freertos.org) or [RIOT](https://www.riot-os.org))
-- Make a 64-bit branch someday
 
 
 

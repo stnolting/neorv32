@@ -304,7 +304,7 @@ int main() {
   exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("FENCE.I:      ");
   asm volatile ("fence.i");
-  
+
   if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
     neorv32_uart_printf("skipped (not implemented)\n");
   }
@@ -426,24 +426,24 @@ int main() {
   // skip if C-mode is not implemented
   if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_C_EXT)) != 0) {
 
-  cnt_test++;
+    cnt_test++;
 
-  // create test program in RAM
-  static const uint32_t dummy_sub_program_ci[2] __attribute__((aligned(8))) = {
-    0x00000001, // 2nd: official_illegal_op | 1st: NOP -> illegal instruction exception
-    0x00008067  // ret (32-bit)
-  };
+    // create test program in RAM
+    static const uint32_t dummy_sub_program_ci[2] __attribute__((aligned(8))) = {
+      0x00000001, // 2nd: official_illegal_op | 1st: NOP -> illegal instruction exception
+      0x00008067  // ret (32-bit)
+    };
 
-  tmp_a = (uint32_t)&dummy_sub_program_ci; // call the dummy sub program
-  asm volatile ( "jalr ra, %0 " : "=r" (tmp_a) : "r"  (tmp_a));
+    tmp_a = (uint32_t)&dummy_sub_program_ci; // call the dummy sub program
+    asm volatile ( "jalr ra, %0 " : "=r" (tmp_a) : "r"  (tmp_a));
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
-  if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
-    test_ok();
-  }
-  else {
-    test_fail();
-  }
+    if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
 #endif
   }
   else {
