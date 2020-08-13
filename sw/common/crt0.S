@@ -60,20 +60,20 @@ _start:
 __crt0_reg_file_clear:
 //addi  x0,  x0, 0 // hardwired to zero
   addi  x1,  x0, 0
-  addi  x2,  x1, 0
-  addi  x3,  x2, 0
-  addi  x4,  x3, 0
-  addi  x5,  x4, 0
-  addi  x6,  x5, 0
-  addi  x7,  x6, 0
-  addi  x8,  x7, 0
-  addi  x9,  x8, 0
-//addi x10,  x9, 0
-//addi x11, x10, 0
-//addi x12, x11, 0
-//addi x13, x12, 0
-//addi x14, x13, 0
-  addi x15, x14, 0
+  addi  x2,  x0, 0
+  addi  x3,  x0, 0
+  addi  x4,  x0, 0
+  addi  x5,  x0, 0
+  addi  x6,  x0, 0
+  addi  x7,  x0, 0
+  addi  x8,  x0, 0
+  addi  x9,  x0, 0
+//addi x10,  x0, 0
+//addi x11,  x0, 0
+//addi x12,  x0, 0
+//addi x13,  x0, 0
+//addi x14,  x0, 0
+  addi x15,  x0, 0
 
 // since we dont know here if we are compiling for a rv32e architecture
 // we won't touch registers above x15
