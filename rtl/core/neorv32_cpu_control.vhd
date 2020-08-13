@@ -119,10 +119,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     ci_input        : std_ulogic_vector(15 downto 0); -- input to compressed instr. decoder
     i_buf_state     : std_ulogic_vector(01 downto 0);
     i_buf_state_nxt : std_ulogic_vector(01 downto 0);
-    pc_real         : std_ulogic_vector(data_width_c-1 downto 0);
-    pc_real_add     : std_ulogic_vector(data_width_c-1 downto 0);
-    pc_fetch        : std_ulogic_vector(data_width_c-1 downto 0);
-    pc_fetch_add    : std_ulogic_vector(data_width_c-1 downto 0);
+    pc              : std_ulogic_vector(data_width_c-1 downto 0);
+    pc_add          : std_ulogic_vector(data_width_c-1 downto 0);
     reset           : std_ulogic;
     bus_err_ack     : std_ulogic;
   end record;
@@ -133,17 +131,23 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal ci_illegal : std_ulogic;
 
   -- instrucion prefetch buffer (IPB) --
+  type ipb_dbuf_t is array (0 to ipb_entries_c-1) of std_ulogic_vector(35 downto 0);
   type ipb_t is record
-    wdata  : std_ulogic_vector(35 downto 0);
-    rdata  : std_ulogic_vector(35 downto 0);
-    waddr  : std_ulogic_vector(31 downto 0);
-    raddr  : std_ulogic_vector(31 downto 0);
-    status : std_ulogic;
-    free   : std_ulogic;
-    avail  : std_ulogic;
-    we     : std_ulogic;
-    re     : std_ulogic;
-    clear  : std_ulogic;
+    wdata  : std_ulogic_vector(35 downto 0); -- data (+ status) to be written
+    we     : std_ulogic; -- trigger write
+    free   : std_ulogic; -- free entry available?
+    --
+    rdata  : std_ulogic_vector(35 downto 0); -- read data (+ status)
+    re     : std_ulogic; -- trigger read
+    avail  : std_ulogic; -- data available?
+    --
+    clear  : std_ulogic; -- clear all entries
+    --
+    data   : ipb_dbuf_t; -- the data fifo
+    w_pnt  : std_ulogic_vector(index_size_f(ipb_entries_c) downto 0); -- write pointer
+    r_pnt  : std_ulogic_vector(index_size_f(ipb_entries_c) downto 0); -- read pointer
+    empty  : std_ulogic;
+    full   : std_ulogic;
   end record;
   signal ipb : ipb_t;
 
@@ -166,6 +170,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     last_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- PC of last executed instruction
     sleep        : std_ulogic; -- CPU in sleep mode
     sleep_nxt    : std_ulogic; -- CPU in sleep mode
+    if_rst       : std_ulogic; -- instruction fetch was reset
+    if_rst_nxt   : std_ulogic; -- instruction fetch was reset
   end record;
   signal execute_engine : execute_engine_t;
 
@@ -292,11 +298,9 @@ begin
   begin
     if rising_edge(clk_i) then
       if (fetch_engine.state = IFETCH_RESET) then
-        fetch_engine.pc_fetch  <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- initialize with "real" application PC
-        fetch_engine.pc_real   <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- initialize with "real" application PC
+        fetch_engine.pc <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- initialize with "real" application PC
       else
-        fetch_engine.pc_real   <= std_ulogic_vector(unsigned(fetch_engine.pc_real(data_width_c-1 downto 1) & '0')  + unsigned(fetch_engine.pc_real_add(data_width_c-1 downto 1) & '0'));
-        fetch_engine.pc_fetch  <= std_ulogic_vector(unsigned(fetch_engine.pc_fetch(data_width_c-1 downto 1) & '0') + unsigned(fetch_engine.pc_fetch_add(data_width_c-1 downto 1) & '0'));
+        fetch_engine.pc <= std_ulogic_vector(unsigned(fetch_engine.pc(data_width_c-1 downto 1) & '0') + unsigned(fetch_engine.pc_add(data_width_c-1 downto 1) & '0'));
       end if;
       --
       fetch_engine.i_buf       <= fetch_engine.i_buf_nxt;
@@ -306,7 +310,7 @@ begin
   end process fetch_engine_fsm_sync;
 
   -- PC output --
-  fetch_pc_o <= fetch_engine.pc_fetch(data_width_c-1 downto 1) & '0';
+  fetch_pc_o <= fetch_engine.pc(data_width_c-1 downto 1) & '0';
 
 
   -- Fetch Engine FSM Comb ------------------------------------------------------------------
@@ -316,8 +320,7 @@ begin
     -- arbiter defaults --
     bus_fast_ir                  <= '0';
     fetch_engine.state_nxt       <= fetch_engine.state;
-    fetch_engine.pc_fetch_add    <= (others => '0');
-    fetch_engine.pc_real_add     <= (others => '0');
+    fetch_engine.pc_add          <= (others => '0');
     fetch_engine.i_buf_nxt       <= fetch_engine.i_buf;
     fetch_engine.i_buf2_nxt      <= fetch_engine.i_buf2;
     fetch_engine.i_buf_state_nxt <= fetch_engine.i_buf_state;
@@ -328,7 +331,6 @@ begin
     ipb.we    <= '0';
     ipb.clear <= '0';
     ipb.wdata <= (others => '0');
-    ipb.waddr <= fetch_engine.pc_real(data_width_c-1 downto 1) & '0';
 
     -- state machine --
     case fetch_engine.state is
@@ -354,28 +356,26 @@ begin
           if (fetch_engine.i_buf_state(0) = '1') then -- buffer filled?
             fetch_engine.state_nxt <= IFETCH_2;
           else
-            fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
-            fetch_engine.state_nxt    <= IFETCH_0; -- get another instruction word
+            fetch_engine.pc_add    <= std_ulogic_vector(to_unsigned(4, data_width_c));
+            fetch_engine.state_nxt <= IFETCH_0; -- get another instruction word
           end if;
         end if;
 
       when IFETCH_2 => -- construct instruction word and issue
       -- ------------------------------------------------------------
-        if (fetch_engine.pc_fetch(1) = '0') or (CPU_EXTENSION_RISCV_C = false) then -- 32-bit aligned
+        if (fetch_engine.pc(1) = '0') or (CPU_EXTENSION_RISCV_C = false) then -- 32-bit aligned
           fetch_engine.ci_input <= fetch_engine.i_buf2(15 downto 00);
 
           if (ipb.free = '1') then -- free entry in buffer?
             ipb.we <= '1';
             if (fetch_engine.i_buf2(01 downto 00) = "11") or (CPU_EXTENSION_RISCV_C = false) then -- uncompressed
-              ipb.wdata                 <= '0' & fetch_engine.i_buf2(33 downto 32) & '0' & fetch_engine.i_buf2(31 downto 0);
-              fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(4, data_width_c));
-              fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
-              fetch_engine.state_nxt    <= IFETCH_0;
+              ipb.wdata              <= '0' & fetch_engine.i_buf2(33 downto 32) & '0' & fetch_engine.i_buf2(31 downto 0);
+              fetch_engine.pc_add    <= std_ulogic_vector(to_unsigned(4, data_width_c));
+              fetch_engine.state_nxt <= IFETCH_0;
             else -- compressed
-              ipb.wdata                 <= ci_illegal & fetch_engine.i_buf2(33 downto 32) & '1' & ci_instr32;
-              fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(2, data_width_c));
-              fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(2, data_width_c));
-              fetch_engine.state_nxt    <= IFETCH_2; -- try to get another 16-bit instruction word in next round
+              ipb.wdata              <= ci_illegal & fetch_engine.i_buf2(33 downto 32) & '1' & ci_instr32;
+              fetch_engine.pc_add    <= std_ulogic_vector(to_unsigned(2, data_width_c));
+              fetch_engine.state_nxt <= IFETCH_2; -- try to get another 16-bit instruction word in next round
             end if;
           end if;
 
@@ -385,15 +385,13 @@ begin
           if (ipb.free = '1') then -- free entry in buffer?
             ipb.we <= '1';
             if (fetch_engine.i_buf2(17 downto 16) = "11") then -- uncompressed
-              ipb.wdata                 <= '0' & fetch_engine.i_buf(33 downto 32) & '0' & fetch_engine.i_buf(15 downto 00) & fetch_engine.i_buf2(31 downto 16);
-              fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(4, data_width_c));
-              fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(4, data_width_c));
-              fetch_engine.state_nxt    <= IFETCH_0;
+              ipb.wdata              <= '0' & fetch_engine.i_buf(33 downto 32) & '0' & fetch_engine.i_buf(15 downto 00) & fetch_engine.i_buf2(31 downto 16);
+              fetch_engine.pc_add    <= std_ulogic_vector(to_unsigned(4, data_width_c));
+              fetch_engine.state_nxt <= IFETCH_0;
             else -- compressed
-              ipb.wdata                 <= ci_illegal & fetch_engine.i_buf(33 downto 32) & '1' & ci_instr32;
-              fetch_engine.pc_fetch_add <= std_ulogic_vector(to_unsigned(2, data_width_c));
-              fetch_engine.pc_real_add  <= std_ulogic_vector(to_unsigned(2, data_width_c));
-              fetch_engine.state_nxt    <= IFETCH_0;
+              ipb.wdata              <= ci_illegal & fetch_engine.i_buf(33 downto 32) & '1' & ci_instr32;
+              fetch_engine.pc_add    <= std_ulogic_vector(to_unsigned(2, data_width_c));
+              fetch_engine.state_nxt <= IFETCH_0;
             end if;
           end if;
        end if;
@@ -411,32 +409,47 @@ begin
 -- ****************************************************************************************************************************
 
 
-  -- Instruction Prefetch Buffer Stage ------------------------------------------------------
+  -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  instr_prefetch_buffer: process(rstn_i, clk_i) -- once upon a time, this was a fifo with 8 entries
+  instr_prefetch_buffer_ctrl: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ipb.status <= '0';
-      ipb.rdata  <= (others => '0');
-      ipb.raddr  <= (others => '0');
+      ipb.w_pnt <= (others => '0');
+      ipb.r_pnt <= (others => '0');
     elsif rising_edge(clk_i) then
+      -- write port --
       if (ipb.clear = '1') then
-        ipb.status <= '0';
+        ipb.w_pnt <= (others => '0');
       elsif (ipb.we = '1') then
-        ipb.status <= '1';
-      elsif (ipb.re = '1') then
-        ipb.status <= '0';
+        ipb.w_pnt <= std_ulogic_vector(unsigned(ipb.w_pnt) + 1);
       end if;
-      if (ipb.we = '1') then
-        ipb.rdata <= ipb.wdata;
-        ipb.raddr <= ipb.waddr;
+      -- read port --
+      if (ipb.clear = '1') then
+        ipb.r_pnt <= (others => '0');
+      elsif (ipb.re = '1') then
+        ipb.r_pnt <= std_ulogic_vector(unsigned(ipb.r_pnt) + 1);
       end if;
     end if;
-  end process instr_prefetch_buffer;
+  end process instr_prefetch_buffer_ctrl;
+
+  instr_prefetch_buffer_data: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if (ipb.we = '1') then -- write port
+        ipb.data(to_integer(unsigned(ipb.w_pnt(ipb.w_pnt'left-1 downto 0)))) <= ipb.wdata;
+      end if;
+    end if;
+  end process instr_prefetch_buffer_data;
+
+  -- async read --
+  ipb.rdata <= ipb.data(to_integer(unsigned(ipb.r_pnt(ipb.w_pnt'left-1 downto 0))));
 
   -- status --
-  ipb.free  <= not ipb.status;
-  ipb.avail <= ipb.status;
+  ipb.full  <= '1' when (ipb.r_pnt(ipb.r_pnt'left) /= ipb.w_pnt(ipb.w_pnt'left)) and (ipb.r_pnt(ipb.r_pnt'left-1 downto 0) = ipb.w_pnt(ipb.w_pnt'left-1 downto 0)) else '0';
+  ipb.empty <= '1' when (ipb.r_pnt(ipb.r_pnt'left)  = ipb.w_pnt(ipb.w_pnt'left)) and (ipb.r_pnt(ipb.r_pnt'left-1 downto 0) = ipb.w_pnt(ipb.w_pnt'left-1 downto 0)) else '0';
+  
+  ipb.free  <= not ipb.full;
+  ipb.avail <= not ipb.empty;
 
 
 -- ****************************************************************************************************************************
@@ -514,13 +527,15 @@ begin
       execute_engine.last_pc <= CPU_BOOT_ADDR(data_width_c-1 downto 1) & '0';
       execute_engine.state   <= SYS_WAIT;
       execute_engine.sleep   <= '0';
+      execute_engine.if_rst  <= '1'; -- IF is reset after system reset
     elsif rising_edge(clk_i) then
       execute_engine.pc <= execute_engine.pc_nxt(data_width_c-1 downto 1) & '0';
       if (execute_engine.state = EXECUTE) then
         execute_engine.last_pc <= execute_engine.pc(data_width_c-1 downto 1) & '0';
       end if;
-      execute_engine.state <= execute_engine.state_nxt;
-      execute_engine.sleep <= execute_engine.sleep_nxt;
+      execute_engine.state  <= execute_engine.state_nxt;
+      execute_engine.sleep  <= execute_engine.sleep_nxt;
+      execute_engine.if_rst <= execute_engine.if_rst_nxt;
     end if;
   end process execute_engine_fsm_sync_rst;
 
@@ -538,11 +553,13 @@ begin
     end if;
   end process execute_engine_fsm_sync;
 
-  -- PC output --
-  curr_pc_o              <= execute_engine.pc(data_width_c-1 downto 1) & '0';
-  next_pc_tmp            <= std_ulogic_vector(unsigned(execute_engine.pc) + 2) when (execute_engine.is_ci = '1') else std_ulogic_vector(unsigned(execute_engine.pc) + 4);
+  -- next PC --
+  next_pc_tmp <= std_ulogic_vector(unsigned(execute_engine.pc) + 2) when (execute_engine.is_ci = '1') else std_ulogic_vector(unsigned(execute_engine.pc) + 4);
   execute_engine.next_pc <= next_pc_tmp(data_width_c-1 downto 1) & '0';
-  next_pc_o              <= next_pc_tmp(data_width_c-1 downto 1) & '0';
+
+  -- PC output --
+  curr_pc_o <= execute_engine.pc(data_width_c-1 downto 1) & '0';
+  next_pc_o <= next_pc_tmp(data_width_c-1 downto 1) & '0';
 
 
   -- CPU Control Bus Output -----------------------------------------------------------------
@@ -577,6 +594,7 @@ begin
     execute_engine.is_ci_nxt   <= execute_engine.is_ci;
     execute_engine.pc_nxt      <= execute_engine.pc;
     execute_engine.sleep_nxt   <= execute_engine.sleep;
+    execute_engine.if_rst_nxt  <= execute_engine.if_rst;
 
     -- instruction dispatch --
     fetch_engine.reset         <= '0';
@@ -654,12 +672,15 @@ begin
         if (ipb.avail = '1') then -- instruction available?
           ipb.re <= '1';
           trap_ctrl.instr_ma <= ipb.rdata(33); -- misaligned instruction fetch address
-          trap_ctrl.instr_be <= ipb.rdata(34); -- bus access fault druing instrucion fetch
+          trap_ctrl.instr_be <= ipb.rdata(34); -- bus access fault during instrucion fetch
           illegal_compressed <= ipb.rdata(35); -- invalid decompressed instruction
           execute_engine.is_ci_nxt <= ipb.rdata(32); -- flag to indicate this is a compressed instruction beeing executed
           execute_engine.i_reg_nxt <= ipb.rdata(31 downto 0);
-          execute_engine.pc_nxt    <= ipb.raddr; -- the PC according to the current instruction
-          -- ipb.rdata(35) is not immediately checked here!
+execute_engine.if_rst_nxt <= '0';
+if (execute_engine.if_rst = '0') then -- if there was no non-linear PC modification
+  execute_engine.pc_nxt <= execute_engine.next_pc;
+end if;
+          -- ipb.rdata(35) (invalid decompressed instruction) is not immediately checked here!
           if (execute_engine.sleep = '1') or (trap_ctrl.env_start = '1') or ((ipb.rdata(33) or ipb.rdata(34)) = '1') then
             execute_engine.state_nxt <= TRAP;
           else
@@ -669,7 +690,8 @@ begin
 
       when TRAP => -- Start trap environment (also used as cpu sleep state)
       -- ------------------------------------------------------------
-        fetch_engine.reset <= '1';
+        fetch_engine.reset        <= '1';
+        execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
         if (trap_ctrl.env_start = '1') then -- check here again if we came directly from DISPATCH
           trap_ctrl.env_start_ack  <= '1';
           execute_engine.pc_nxt    <= csr.mtvec;
@@ -751,9 +773,10 @@ begin
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
-            execute_engine.pc_nxt <= execute_engine.next_pc; -- "refetch" next instruction (only relevant for fencei)
-            if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then -- FENCEI
+            if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then -- FENCE.I
               fetch_engine.reset          <= '1';
+              execute_engine.if_rst_nxt   <= '1'; -- this is a non-linear PC modification
+              execute_engine.pc_nxt       <= execute_engine.next_pc; -- "refetch" next instruction (only relevant for fence.i)
               ctrl_nxt(ctrl_bus_fencei_c) <= '1';
             end if;
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then -- FENCE
@@ -771,9 +794,10 @@ begin
                 when funct12_ebreak_c => -- EBREAK
                   trap_ctrl.break_point <= '1';
                 when funct12_mret_c => -- MRET
-                  trap_ctrl.env_end     <= '1';
-                  execute_engine.pc_nxt <= csr.mepc;
-                  fetch_engine.reset    <= '1';
+                  trap_ctrl.env_end         <= '1';
+                  execute_engine.pc_nxt     <= csr.mepc;
+                  fetch_engine.reset        <= '1';
+                  execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
                 when funct12_wfi_c => -- WFI = "CPU sleep"
                   execute_engine.sleep_nxt <= '1'; -- good night
                 when others => -- undefined
@@ -856,10 +880,11 @@ begin
 
       when BRANCH => -- update PC for taken branches and jumps
       -- ------------------------------------------------------------
-        execute_engine.pc_nxt <= alu_add_i; -- branch/jump destination
         if (execute_engine.is_jump = '1') or (execute_engine.branch_taken = '1') then
-          fetch_engine.reset       <= '1'; -- trigger new instruction fetch from modified PC
-          execute_engine.state_nxt <= SYS_WAIT;
+          execute_engine.pc_nxt     <= alu_add_i; -- branch/jump destination
+          fetch_engine.reset        <= '1'; -- trigger new instruction fetch from modified PC
+          execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
+          execute_engine.state_nxt  <= SYS_WAIT;
         else
           execute_engine.state_nxt <= DISPATCH;
         end if;
