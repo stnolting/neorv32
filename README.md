@@ -274,7 +274,7 @@ The [CoreMark CPU benchmark](https://www.eembc.org/coremark) was executed on the
 [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) project folder. This benchmark
 tests the capabilities of a CPU itself rather than the functions provided by the whole system / SoC.
 
-Results generated for hardware version: `1.3.6.5`
+Results generated for hardware version: `1.3.7.0`
 
 ~~~
 **Configuration**
@@ -286,10 +286,10 @@ Peripherals: UART for printing the results
 
 | CPU                  | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
 |:---------------------|:---------------:|:------------:|:--------------:|:-------------:|
-| `rv32i`              |    26 764 bytes |        `-O3` |          28.98 |        0.2898 |
-| `rv32im`             |    25 612 bytes |        `-O3` |          58.82 |        0.5882 |
-| `rv32imc`            |    19 652 bytes |        `-O3` |          60.61 |        0.6061 |
-| `rv32imc` + FAST_MUL |    19 652 bytes |        `-O3` |          71.43 |        0.7143 |
+| `rv32i`              |    26 748 bytes |        `-O3` |          28.98 |        0.2898 |
+| `rv32im`             |    25 580 bytes |        `-O3` |          60.60 |        0.6060 |
+| `rv32imc`            |    19 636 bytes |        `-O3` |          62.50 |        0.6250 |
+| `rv32imc` + FAST_MUL |    19 636 bytes |        `-O3` |          74.07 |        0.7407 |
 
 The _FAST_MUL_ configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic).
 
@@ -308,14 +308,14 @@ iterations, which reflects a pretty good "real-life" work load. The average CPI 
 dividing the total number of required clock cycles (only the timed core to avoid distortion due to IO wait cycles; sampled via the `cycle[h]` CSRs)
 by the number of executed instructions (`instret[h]` CSRs). The executables were generated using optimization `-O3`.
 
-Results generated for hardware version: `1.3.6.5`
+Results generated for hardware version: `1.3.7.0`
 
 | CPU                  | Required Clock Cycles | Executed Instructions | Average CPI |
 |:---------------------|----------------------:|----------------------:|:-----------:|
-| `rv32i`              |         6 984 305 325 |         1 468 927 290 |        4.75 |
-| `rv32im`             |         3 415 761 325 |           601 565 734 |        5.67 |
-| `rv32imc`            |         3 398 881 094 |           601 565 832 |        5.65 |
-| `rv32imc` + FAST_MUL |         2 835 121 094 |           601 565 846 |        4.71 |
+| `rv32i`              |         6 955 817 507 |         1 468 927 290 |        4.73 |
+| `rv32im`             |         3 376 961 507 |           601 565 750 |        5.61 |
+| `rv32imc`            |         3 274 832 513 |           601 565 964 |        5.44 |
+| `rv32imc` + FAST_MUL |         2 711 072 513 |           601 566 024 |        4.51 |
 
 The _FAST_MUL_ configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic).
 
