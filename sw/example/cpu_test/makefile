@@ -36,16 +36,18 @@
 
 
 # *****************************************************************************
-# USER CONFIGURATION (use default if not set by user)
+# USER CONFIGURATION
 # *****************************************************************************
-# Compiler effort
-EFFORT ?= -Os
-
-# User's application sources (add additional files here)
-APP_SRC ?= $(wildcard *.c)
+# User's application sources (*.c, *.cpp, *.s, *.S); add additional files here
+APP_SRC ?= $(wildcard ./*.c) $(wildcard ./*.s) $(wildcard ./*.cpp) $(wildcard ./*.S)
 
 # User's application include folders (don't forget the '-I' before each entry)
 APP_INC ?= -I .
+# User's application include folders - for assembly files only (don't forget the '-I' before each entry)
+ASM_INC ?= -I .
+
+# Optimization
+EFFORT ?= -Os
 
 # Compiler toolchain
 RISCV_TOOLCHAIN ?= riscv32-unknown-elf
@@ -53,6 +55,9 @@ RISCV_TOOLCHAIN ?= riscv32-unknown-elf
 # CPU architecture and ABI
 MARCH ?= -march=rv32i
 MABI  ?= -mabi=ilp32
+
+# User flags for additional configuration (will be added to compiler flags)
+USER_FLAGS ?= 
 
 # Relative or absolute path to the NEORV32 home folder
 NEORV32_HOME ?= ../../..
@@ -64,74 +69,83 @@ NEORV32_HOME ?= ../../..
 # NEORV32 framework
 # -----------------------------------------------------------------------------
 # Path to NEORV32 linker script and startup file
-NEORV32_COM_PATH=$(NEORV32_HOME)/sw/common
+NEORV32_COM_PATH = $(NEORV32_HOME)/sw/common
 # Path to main NEORV32 library include files
-NEORV32_INC_PATH=$(NEORV32_HOME)/sw/lib/include
+NEORV32_INC_PATH = $(NEORV32_HOME)/sw/lib/include
 # Path to main NEORV32 library source files
-NEORV32_SRC_PATH=$(NEORV32_HOME)/sw/lib/source
+NEORV32_SRC_PATH = $(NEORV32_HOME)/sw/lib/source
 # Path to NEORV32 executable generator
-NEORV32_EXG_PATH=$(NEORV32_HOME)/sw/image_gen
+NEORV32_EXG_PATH = $(NEORV32_HOME)/sw/image_gen
 # Path to NEORV32 core rtl folder
-NEORV32_RTL_PATH=$(NEORV32_HOME)/rtl/core
-# Marker file to verify NEORV32 home folder
-NEORV32_HOME_MARKER=$(NEORV32_INC_PATH)/neorv32.h
+NEORV32_RTL_PATH = $(NEORV32_HOME)/rtl/core
+# Marker file to check for NEORV32 home folder
+NEORV32_HOME_MARKER = $(NEORV32_INC_PATH)/neorv32.h
+
+# Core libraries (peripheral and CPU drivers)
+CORE_SRC  = $(wildcard $(NEORV32_SRC_PATH)/*.c)
+# Application start-up code
+CORE_SRC += $(NEORV32_COM_PATH)/crt0.S
+
+# Default linker script
+LD_SCRIPT = $(NEORV32_COM_PATH)/neorv32.ld
+
+# Main output files
+APP_EXE  = neorv32_exe.bin
+APP_ASM  = main.asm
+APP_IMG  = neorv32_application_image.vhd
+BOOT_IMG = neorv32_bootloader_image.vhd
 
 
 # -----------------------------------------------------------------------------
-# NEORV32 core sources
+# Sources and objects
 # -----------------------------------------------------------------------------
-CORE_SRC = $(wildcard $(NEORV32_SRC_PATH)/*.c)
+# Define all sources
+SRC  = $(APP_SRC)
+SRC += $(CORE_SRC)
 
-
-# -----------------------------------------------------------------------------
-# Make defaults
-# -----------------------------------------------------------------------------
-.DEFAULT_GOAL := help
-
-
-# -----------------------------------------------------------------------------
-# Application output definitions
-# -----------------------------------------------------------------------------
-APP_EXE = neorv32_exe.bin
-APP_ASM = main.s
-
-compile: $(APP_ASM) $(APP_EXE)
-install: $(APP_ASM) neorv32_application_image.vhd
-all:     $(APP_ASM) $(APP_EXE) neorv32_application_image.vhd
-
-# define all object files
-OBJ  = $(APP_SRC:.c=.o)
-OBJ += $(CORE_SRC:.c=.o)
+# Define all object files
+OBJ = $(SRC:%=%.o)
 
 
 # -----------------------------------------------------------------------------
 # Tools and flags
 # -----------------------------------------------------------------------------
-# compiler tools
+# Compiler tools
 CC      = $(RISCV_TOOLCHAIN)-gcc
 OBJDUMP = $(RISCV_TOOLCHAIN)-objdump
 OBJCOPY = $(RISCV_TOOLCHAIN)-objcopy
 SIZE    = $(RISCV_TOOLCHAIN)-size
 
+# Host native compiler
+CC_X86 = gcc -Wall -O -g
+
 # NEORV32 executable image generator
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
 
 # Compiler & linker flags
-CC_OPTS = $(MARCH) $(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles
+CC_OPTS  = $(MARCH) $(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles
 CC_OPTS += -Wl,--gc-sections -lm -lc -lgcc -lc
-
-# User flags for additional configuration
-USER_FLAGS = 
 CC_OPTS += $(USER_FLAGS)
 
+
 # -----------------------------------------------------------------------------
-# Host native compiler
+# Application output definitions
 # -----------------------------------------------------------------------------
-CC_X86 = gcc -Wall -O -g
+.PHONY: check info help elf_info clean clean_all bootloader
+.DEFAULT_GOAL := help
+
+compile: $(APP_ASM) $(APP_EXE)
+install: $(APP_ASM) $(APP_IMG)
+all:     $(APP_ASM) $(APP_EXE) $(APP_IMG)
+
+# Check if making bootloader
+# This will disable some functions in crt0.S that are not relevant for the bootloader
+target bootloader: USER_FLAGS += -D__BOOTLOADER_START_CODE__
+target bootloader: LD_SCRIPT = $(NEORV32_COM_PATH)/bootloader_neorv32.ld
 
 
 # -----------------------------------------------------------------------------
-# Tool targets
+# Image generator targets
 # -----------------------------------------------------------------------------
 # install/compile tools
 $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.cpp
@@ -140,19 +154,27 @@ $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.cpp
 
 
 # -----------------------------------------------------------------------------
-# Application targets: Assemble, compile, link, dump
+# General targets: Assemble, compile, link, dump
 # -----------------------------------------------------------------------------
-# Assemble startup code
-crt0.elf: $(NEORV32_COM_PATH)/crt0.S
-	@$(CC) $(CC_OPTS) -c $< -o $@
+# Compile app *.s sources (assembly)
+%.s.o: %.s
+	@$(CC) -c $(CC_OPTS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
 
-# Compile app sources
-$(OBJ): %.o : %.c crt0.elf
+# Compile app *.S sources (assembly + C pre-processor)
+%.S.o: %.S
+	@$(CC) -c $(CC_OPTS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
+
+# Compile app *.c sources
+%.c.o: %.c
+	@$(CC) -c $(CC_OPTS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
+
+# Compile app *.cpp sources
+%.cpp.o: %.cpp
 	@$(CC) -c $(CC_OPTS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
 
 # Link object files and show memory utilization
 main.elf: $(OBJ)
-	@$(CC) $(CC_OPTS) -I $(NEORV32_INC_PATH) $(APP_INC) -T $(NEORV32_COM_PATH)/neorv32.ld $(OBJ) -o $@
+	@$(CC) $(CC_OPTS) -T $(LD_SCRIPT) $(OBJ) -o $@
 	@echo "Memory utilization:"
 	@$(SIZE) main.elf
 
@@ -160,11 +182,7 @@ main.elf: $(OBJ)
 $(APP_ASM): main.elf
 	@$(OBJDUMP) -D -S -z  $< > $@
 
-
-# -----------------------------------------------------------------------------
-# Application targets: Generate binary executable, install (as VHDL file)
-# -----------------------------------------------------------------------------
-# Generate final executable: text, rodata, data (in THIS order!)
+# Generate final executable from .text + .rodata + .data (in THIS order!)
 main.bin: main.elf
 	@$(OBJCOPY) -I elf32-little $< -j .text   -O binary text.bin
 	@$(OBJCOPY) -I elf32-little $< -j .rodata -O binary rodata.bin
@@ -172,7 +190,11 @@ main.bin: main.elf
 	@cat text.bin rodata.bin data.bin > $@
 	@rm -f text.bin rodata.bin data.bin
 
-# Generate NEORV32 executable image for bootloader update
+
+# -----------------------------------------------------------------------------
+# Application targets: Generate binary executable, install (as VHDL file)
+# -----------------------------------------------------------------------------
+# Generate NEORV32 executable image for upload via bootloader
 $(APP_EXE): main.bin $(IMAGE_GEN)
 	@set -e
 	@$(IMAGE_GEN) -app_bin $< $@ $(shell basename $(CURDIR))
@@ -180,36 +202,25 @@ $(APP_EXE): main.bin $(IMAGE_GEN)
 	@wc -c < $(APP_EXE)
 
 # Generate NEORV32 executable VHDL boot image
-neorv32_application_image.vhd: main.bin $(IMAGE_GEN)
+$(APP_IMG): main.bin $(IMAGE_GEN)
 	@set -e
 	@$(IMAGE_GEN) -app_img $< $@ $(shell basename $(CURDIR))
-	@echo "Installing application image to $(NEORV32_RTL_PATH)/neorv32_application_image.vhd"
-	@cp neorv32_application_image.vhd $(NEORV32_RTL_PATH)/.
-	@rm -f neorv32_application_image.vhd
+	@echo "Installing application image to $(NEORV32_RTL_PATH)/$(APP_IMG)"
+	@cp $(APP_IMG) $(NEORV32_RTL_PATH)/.
 
 
 # -----------------------------------------------------------------------------
 # Bootloader targets
 # -----------------------------------------------------------------------------
-# Assemble startup code
-bootloader_crt0.elf: $(NEORV32_COM_PATH)/bootloader_crt0.S
-	@$(CC) $(CC_OPTS) -c $< -o $@
-
-# Compile and install bootloader
-bootloader: bootloader_crt0.elf $(OBJ) $(IMAGE_GEN)
+# Create and install bootloader VHDL init image
+$(BOOT_IMG): main.bin $(IMAGE_GEN)
 	@set -e
-	@$(CC) $(CC_OPTS) -I $(NEORV32_INC_PATH) $(APP_INC) -T $(NEORV32_COM_PATH)/bootloader_neorv32.ld $(OBJ) -o bootloader.elf
-	@echo "Memory utilization:"
-	@$(SIZE) bootloader.elf
-	@$(OBJDUMP) -D -S -z bootloader.elf > bootloader.s
-	@$(OBJCOPY) -I elf32-little bootloader.elf -j .text   -O binary text.bin
-	@$(OBJCOPY) -I elf32-little bootloader.elf -j .rodata -O binary rodata.bin
-	@$(OBJCOPY) -I elf32-little bootloader.elf -j .data   -O binary data.bin
-	@cat text.bin rodata.bin data.bin > bootloader.bin
-	@$(IMAGE_GEN) -bld_img bootloader.bin neorv32_bootloader_image.vhd $(shell basename $(CURDIR))
-	@echo "Installing bootloader image to $(NEORV32_RTL_PATH)/neorv32_bootloader_image.vhd"
-	@cp neorv32_bootloader_image.vhd $(NEORV32_RTL_PATH)/.
-	@rm -f neorv32_bootloader_image.vhd text.bin rodata.bin data.bin
+	@$(IMAGE_GEN) -bld_img $< $(BOOT_IMG) $(shell basename $(CURDIR))
+	@echo "Installing bootloader image to $(NEORV32_RTL_PATH)/$(BOOT_IMG)"
+	@cp $(BOOT_IMG) $(NEORV32_RTL_PATH)/.
+
+# Just an alias that
+bootloader: $(BOOT_IMG)
 
 
 # -----------------------------------------------------------------------------
@@ -242,36 +253,40 @@ endif
 # -----------------------------------------------------------------------------
 info:
 	@echo "---------------- Info: Project ----------------"
-	@echo "Project folder:    $(shell basename $(CURDIR))"
-	@echo "Source files:      $(APP_SRC)"
-	@echo "Include folder(s): $(APP_INC)"
+	@echo "Project folder:        $(shell basename $(CURDIR))"
+	@echo "Source files:          $(APP_SRC)"
+	@echo "Include folder(s):     $(APP_INC)"
+	@echo "ASM include folder(s): $(ASM_INC)"
 	@echo "---------------- Info: NEORV32 ----------------"
 	@echo "NEORV32 home folder (NEORV32_HOME): $(NEORV32_HOME)"
 	@echo "IMAGE_GEN: $(IMAGE_GEN)"
+	@echo "LD script: $(LD_SCRIPT)"
 	@echo "Core source files:"
 	@echo "$(CORE_SRC)"
 	@echo "Core include folder:"
 	@echo "$(NEORV32_INC_PATH)"
+	@echo "---------------- Info: Objects ----------------"
 	@echo "Project object files:"
 	@echo "$(OBJ)"
 	@echo "---------------- Info: RISC-V CPU ----------------"
-	@echo "MARCH:     $(MARCH)"
-	@echo "MABI:      $(MABI)"
-	@echo "---------------- Info: RISC-V Toolchain ----------------"
-	@echo "Toolchain: $(RISCV_TOLLCHAIN)"
-	@echo "CC:        $(CC)"
-	@echo "OBJDUMP:   $(OBJDUMP)"
-	@echo "OBJCOPY:   $(OBJCOPY)"
-	@echo "SIZE:      $(SIZE)"
-	@echo "---------------- Info: Libraries ----------------"
+	@echo "MARCH:      $(MARCH)"
+	@echo "MABI:       $(MABI)"
+	@echo "---------------- Info: Toolchain ----------------"
+	@echo "Toolchain:  $(RISCV_TOLLCHAIN)"
+	@echo "CC:         $(CC)"
+	@echo "OBJDUMP:    $(OBJDUMP)"
+	@echo "OBJCOPY:    $(OBJCOPY)"
+	@echo "SIZE:       $(SIZE)"
+	@echo "---------------- Info: Compiler Libraries ----------------"
 	@echo "LIBGCC:"
 	@$(CC) -print-libgcc-file-name
 	@echo "SEARCH-DIRS:"
 	@$(CC) -print-search-dirs
 	@echo "---------------- Info: Flags ----------------"
-	@echo "CC_OPTS:   $(CC_OPTS)"
+	@echo "USER_FLAGS: $(USER_FLAGS)"
+	@echo "CC_OPTS:    $(CC_OPTS)"
 	@echo "---------------- Info: Host Native GCC Flags ----------------"
-	@echo "CC_X86:    $(CC_X86)"
+	@echo "CC_X86:     $(CC_X86)"
 
 
 # -----------------------------------------------------------------------------
@@ -292,19 +307,18 @@ help:
 	@echo " check      - check toolchain"
 	@echo " info       - show makefile/toolchain configuration"
 	@echo " compile    - compile and generate <neorv32_exe.bin> executable for upload via bootloader"
-	@echo " install    - compile, generate and install VHDL IMEM boot image"
-	@echo " all        - compile and generate <neorv32_exe.bin> executable for upload via bootloader and generate and install VHDL IMEM boot image"
+	@echo " install    - compile, generate and install VHDL IMEM boot image (for application)"
+	@echo " all        - compile and generate <neorv32_exe.bin> executable for upload via bootloader and generate and install VHDL IMEM boot image (for application)"
 	@echo " clean      - clean up project"
 	@echo " clean_all  - clean up project, core libraries and image generator"
-	@echo " bootloader - compile, generate and install VHDL BOOTROM bott image (for bootloader only!)"
+	@echo " bootloader - compile, generate and install VHDL BOOTROM boot image (for bootloader only!)"
 
 
 # -----------------------------------------------------------------------------
 # Clean up
 # -----------------------------------------------------------------------------
 clean:
-	@rm -f *.elf *.o *.bin *.out *.s
+	@rm -f *.elf *.o *.bin *.out *.asm *.vhd
 
 clean_all: clean
 	@rm -f $(OBJ) $(IMAGE_GEN)
-
