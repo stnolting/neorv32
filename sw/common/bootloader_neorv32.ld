@@ -1,5 +1,5 @@
 /* ################################################################################################# */
-/* # << NEORV32 - RISC-V GCC Linker Script (for bootloader) >>                                     # */
+/* # << NEORV32 - RISC-V GCC Linker Script (for bootloader only) >>                                # */
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
@@ -99,9 +99,10 @@ SECTIONS
 
     *(.rela.plt)
 
+    KEEP(*(.text.boot)); /* keep start-up code */
+
     KEEP (*(SORT_NONE(.init)))
 
-    KEEP(bootloader_crt0.elf(.text)); /* NEORV32-SPECIFIC bootloader start-up code */
     *(.text.unlikely .text.*_unlikely .text.unlikely.*)
     *(.text.exit .text.exit.*)
     *(.text.startup .text.startup.*)

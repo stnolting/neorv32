@@ -54,7 +54,7 @@ SEARCH_DIR("=/opt/riscv/riscv64-unknown-linux-gnu/lib"); SEARCH_DIR("=/usr/local
 MEMORY
 {
   rom  (rx) : ORIGIN = 0x00000000, LENGTH = 16*1024
-  ram (rwx) : ORIGIN = 0x80000000, LENGTH =  8*1024
+  ram (rwx) : ORIGIN = 0x80000000, LENGTH = 16*1024
 }
 /* ************************************************* */
 
@@ -103,9 +103,10 @@ SECTIONS
 
     *(.rela.plt)
 
+    KEEP(*(.text.boot)); /* keep start-up code */
+
     KEEP (*(SORT_NONE(.init)))
 
-    KEEP(crt0.elf(.text)); /* NEORV32-SPECIFIC start-up code */
     *(.text.unlikely .text.*_unlikely .text.unlikely.*)
     *(.text.exit .text.exit.*)
     *(.text.startup .text.startup.*)
