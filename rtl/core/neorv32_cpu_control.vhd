@@ -674,13 +674,13 @@ begin
           trap_ctrl.instr_ma <= ipb.rdata(33); -- misaligned instruction fetch address
           trap_ctrl.instr_be <= ipb.rdata(34); -- bus access fault during instrucion fetch
           illegal_compressed <= ipb.rdata(35); -- invalid decompressed instruction
-          execute_engine.is_ci_nxt <= ipb.rdata(32); -- flag to indicate this is a compressed instruction beeing executed
-          execute_engine.i_reg_nxt <= ipb.rdata(31 downto 0);
-execute_engine.if_rst_nxt <= '0';
-if (execute_engine.if_rst = '0') then -- if there was no non-linear PC modification
-  execute_engine.pc_nxt <= execute_engine.next_pc;
-end if;
-          -- ipb.rdata(35) (invalid decompressed instruction) is not immediately checked here!
+          execute_engine.is_ci_nxt  <= ipb.rdata(32); -- flag to indicate this is a compressed instruction beeing executed
+          execute_engine.i_reg_nxt  <= ipb.rdata(31 downto 0);
+          execute_engine.if_rst_nxt <= '0';
+          if (execute_engine.if_rst = '0') then -- if there was no non-linear PC modification
+            execute_engine.pc_nxt <= execute_engine.next_pc;
+          end if;
+          --
           if (execute_engine.sleep = '1') or (trap_ctrl.env_start = '1') or ((ipb.rdata(33) or ipb.rdata(34)) = '1') then
             execute_engine.state_nxt <= TRAP;
           else
