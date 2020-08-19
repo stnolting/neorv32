@@ -1,9 +1,5 @@
 /* ################################################################################################# */
-/* # << NEORV32 - crt0.S - Application Start-Up Code & Minimal Runtime Environment >>              # */
-/* # ********************************************************************************************* # */
-/* # The start-up code provides a minimal runtime environment that catches all exceptions and      # */
-/* # interrupts and delegates them to the handler functions (installed by user via dedicated       # */
-/* # install function from the neorv32 runtime environment library).                               # */
+/* # << NEORV32 - crt0.S - Start-Up Code >>                                                        # */
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
@@ -36,26 +32,27 @@
 /* # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting # */
 /* ################################################################################################# */
 
-  .file	"crt0.S"
-  .section .text
-  .balign 4
-  .global _start
+.file	"crt0.S"
+.section .text.boot
+.balign 4
+.global _start
 
 
-  // IO region
-  .equ IO_BEGIN, 0xFFFFFF80 // start of processor-internal IO region
+// IO region
+.equ IO_BEGIN, 0xFFFFFF80 // start of processor-internal IO region
 
-  // SYSINFO
-  .equ SYSINFO_DSPACE_BASE, 0xFFFFFFF4
-  .equ SYSINFO_DSPACE_SIZE, 0xFFFFFFFC
+// SYSINFO
+.equ SYSINFO_DSPACE_BASE, 0xFFFFFFF4
+.equ SYSINFO_DSPACE_SIZE, 0xFFFFFFFC
 
 
 _start:
-  .cfi_startproc
-  .cfi_undefined ra
+.cfi_startproc
+.cfi_undefined ra
 
 // *********************************************************
 // Clear register file
+// Assume 'worst case': rv32e
 // *********************************************************
 __crt0_reg_file_clear:
 //addi  x0,  x0, 0 // hardwired to zero
@@ -71,19 +68,9 @@ __crt0_reg_file_clear:
 //addi x10,  x0, 0
 //addi x11,  x0, 0
 //addi x12,  x0, 0
-//addi x13,  x0, 0
-//addi x14,  x0, 0
+  addi x13,  x0, 0
+  addi x14,  x0, 0
   addi x15,  x0, 0
-
-// since we dont know here if we are compiling for a rv32e architecture
-// we won't touch registers above x15
-
-
-// *********************************************************
-// TEST AREA / DANGER ZONE
-// *********************************************************
-__crt0_tests:
-  nop
 
 
 // *********************************************************
@@ -100,11 +87,13 @@ __crt0_stack_pointer_init:
 // *********************************************************
 // Setup global pointer
 // *********************************************************
+#ifndef __BOOTLOADER_START_CODE__
 __crt0_global_pointer_init:
-  .option push
-  .option norelax
+.option push
+.option norelax
   la gp, __global_pointer$
-  .option pop
+.option pop
+#endif
 
 
 // *********************************************************
@@ -120,6 +109,7 @@ __crt0_neorv32_trap_init:
 // Devices, that are not implemented, will cause a store access fault
 // which is captured but actually ignored due to the dummy handler.
 // *********************************************************
+#ifndef __BOOTLOADER_START_CODE__
 __crt0_reset_io:
   li x11, IO_BEGIN // start of processor-internal IO region
 
@@ -127,11 +117,13 @@ __crt0_reset_io_loop:
   sw   zero, 0(x11)
   addi x11, x11, 4
   bne  zero, x11, __crt0_reset_io_loop
+#endif
 
 
 // *********************************************************
 // Clear .bss section (byte-wise)
 // *********************************************************
+#ifndef __BOOTLOADER_START_CODE__
 __crt0_clear_bss:
   la x11, __crt0_bss_start
   la x12, __crt0_bss_end
@@ -143,11 +135,13 @@ __crt0_clear_bss_loop:
   j    __crt0_clear_bss_loop
 
 __crt0_clear_bss_loop_end:
+#endif
 
 
 // *********************************************************
 // Copy initialized .data section from ROM to RAM (byte-wise)
 // *********************************************************
+#ifndef __BOOTLOADER_START_CODE__
 __crt0_copy_data:
   la x11, __crt0_copy_data_src_begin  // start of data area (copy source)
   la x12, __crt0_copy_data_dst_begin  // start of data area (copy destination)
@@ -162,6 +156,7 @@ __crt0_copy_data_loop:
   j    __crt0_copy_data_loop
 
 __crt0_copy_data_loop_end:
+#endif
 
 
 // *********************************************************
@@ -181,16 +176,15 @@ __crt0_main_entry:
 __crt0_this_is_the_end:
   csrrci zero, mstatus, 8 // mstatus: disable global IRQs (MIE)
   wfi
-__crt0_this_is_the_end_end:
-  j __crt0_this_is_the_end_end // in case Ziscr is not available
+  j . // in case WFI is not available
 
 
 // *********************************************************
 // dummy trap handler (for exceptions & IRQs)
 // tries to move on to next instruction
 // *********************************************************
-  .global __crt0_dummy_trap_handler
-  .balign 4
+.global __crt0_dummy_trap_handler
+.balign 4
 __crt0_dummy_trap_handler:
 
   addi	sp, sp, -8
@@ -200,7 +194,6 @@ __crt0_dummy_trap_handler:
   csrr  x8, mcause
   blt   x8, zero, __crt0_dummy_trap_handler_irq  // skip mepc modification if interrupt
 
-__crt0_dummy_trap_handler_compute_return:
   csrr  x8, mepc
 
 // is compressed instruction?
@@ -226,5 +219,5 @@ __crt0_dummy_trap_handler_irq:
 
   mret
 
-  .cfi_endproc
-  .end
+.cfi_endproc
+.end
