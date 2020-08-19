@@ -168,18 +168,8 @@ int main(void) {
 
   // ------------------------------------------------
   // Processor hardware initialization
+  // - all IO devices are reset and disbaled by the crt0 code
   // ------------------------------------------------
-
-  // reset system time
-  MTIME_LO = 0;
-  MTIME_HI = 0;
-
-  // deactivate unused IO devices
-  neorv32_wdt_disable();
-  neorv32_pwm_disable();
-  neorv32_spi_disable();
-  neorv32_trng_disable();
-  neorv32_twi_disable();
 
   // get clock speed (in Hz)
   uint32_t clock_speed = SYSINFO_CLK;
