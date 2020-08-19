@@ -213,7 +213,7 @@ SECTIONS
   /* zero/non-initialized read/write data placed in RAM */
   .sbss2          : { *(.sbss2 .sbss2.* .gnu.linkonce.sb2.*) }
   .tbss		  : { *(.tbss .tbss.* .gnu.linkonce.tb.*) *(.tcommon) }
-  .bss :
+  .bss (NOLOAD):
   {
     __bss_start = .;
     *(.dynsbss)
