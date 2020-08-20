@@ -19,8 +19,8 @@ ls -al $srcdir_bootloader
 # check toolchain
 make -C $test_app_dir check
 
-# Compile all example projects
-make -C $srcdir_examples clean_all compile
+# Generate executables for all example projects
+make -C $srcdir_examples clean_all exe
 
 # Compile and install bootloader
 make -C $srcdir_bootloader clean_all info bootloader

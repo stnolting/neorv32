@@ -134,6 +134,8 @@ CC_OPTS += $(USER_FLAGS)
 .PHONY: check info help elf_info clean clean_all bootloader
 .DEFAULT_GOAL := help
 
+# 'compile' is still here for compatibility
+exe:     $(APP_ASM) $(APP_EXE)
 compile: $(APP_ASM) $(APP_EXE)
 install: $(APP_ASM) $(APP_IMG)
 all:     $(APP_ASM) $(APP_EXE) $(APP_IMG)
@@ -183,7 +185,7 @@ $(APP_ASM): main.elf
 	@$(OBJDUMP) -D -S -z  $< > $@
 
 # Generate final executable from .text + .rodata + .data (in THIS order!)
-main.bin: main.elf
+main.bin: main.elf $(APP_ASM)
 	@$(OBJCOPY) -I elf32-little $< -j .text   -O binary text.bin
 	@$(OBJCOPY) -I elf32-little $< -j .rodata -O binary rodata.bin
 	@$(OBJCOPY) -I elf32-little $< -j .data   -O binary data.bin
@@ -306,7 +308,7 @@ help:
 	@echo " help       - show this text"
 	@echo " check      - check toolchain"
 	@echo " info       - show makefile/toolchain configuration"
-	@echo " compile    - compile and generate <neorv32_exe.bin> executable for upload via bootloader"
+	@echo " exe        - compile and generate <neorv32_exe.bin> executable for upload via bootloader"
 	@echo " install    - compile, generate and install VHDL IMEM boot image (for application)"
 	@echo " all        - compile and generate <neorv32_exe.bin> executable for upload via bootloader and generate and install VHDL IMEM boot image (for application)"
 	@echo " clean      - clean up project"
