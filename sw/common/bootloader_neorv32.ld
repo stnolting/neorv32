@@ -53,7 +53,7 @@ SEARCH_DIR("=/opt/riscv/riscv64-unknown-linux-gnu/lib"); SEARCH_DIR("=/usr/local
 /* ************************************************* */
 MEMORY
 {
-  bootrom  (rx) : ORIGIN = 0xFFFF0000, LENGTH = 4*1024
+  bootrom (rx) : ORIGIN = 0xFFFF0000, LENGTH = 4*1024
 }
 /* ************************************************* */
 

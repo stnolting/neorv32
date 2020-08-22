@@ -64,7 +64,7 @@
 #define BAUD_RATE              (19200)
 /** Time until the auto-boot sequence starts (in seconds) */
 #define AUTOBOOT_TIMEOUT       8
-/** Bootloader status LED at GPIO output port (0..15) */
+/** Bootloader status LED at GPIO output port */
 #define STATUS_LED             (0)
 /** SPI flash boot image base address */
 #define SPI_FLASH_BOOT_ADR     (0x00800000)
@@ -141,7 +141,7 @@ enum NEORV32_EXECUTABLE {
 
 
 // Function prototypes
-void __attribute__((__interrupt__)) mtime_irq_handler(void);
+void __attribute__((__interrupt__)) bootloader_trap_handler(void);
 void print_help(void);
 void start_app(void);
 void get_exe(int src);
@@ -188,10 +188,10 @@ int main(void) {
   // Configure machine system timer interrupt for ~2Hz
   neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (clock_speed/4));
 
-  // confiure interrupt vector (bare-metal, no neorv32 rte)
-  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&mtime_irq_handler));
-  neorv32_cpu_csr_write(CSR_MIE, 1 << CPU_MIE_MTIE); // activate MTIME IRQ source
+  // confiure trap handler (bare-metal, no neorv32 rte available)
+  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&bootloader_trap_handler));
 
+  neorv32_cpu_csr_write(CSR_MIE, 1 << CPU_MIE_MTIE); // activate MTIME IRQ source
   neorv32_cpu_eint(); // enable global interrupts
 
   // init GPIO
@@ -229,11 +229,11 @@ int main(void) {
   // ------------------------------------------------
   // Auto boot sequence
   // ------------------------------------------------
-  neorv32_uart_print("\n\nAutoboot in "xstr(AUTOBOOT_TIMEOUT)"s. Press key to abort.\n");
+  neorv32_uart_print("\n\nAutoboot in "xstr(AUTOBOOT_TIMEOUT)"s. Press any key to abort.\n");
 
   uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTOBOOT_TIMEOUT * clock_speed);
 
-  while ((UART_DATA & (1 << UART_DATA_AVAIL)) == 0) { // wait for any key to be pressed or timeout
+  while ((UART_DATA & (1 << UART_DATA_AVAIL)) == 0) { // wait for any key to be pressed
 
     if (neorv32_mtime_get_time() >= timeout_time) { // timeout? start auto boot sequence
       get_exe(EXE_STREAM_FLASH); // try loading from spi flash
@@ -257,8 +257,7 @@ int main(void) {
 
     if (c == 'r') { // restart bootloader
       neorv32_cpu_dint(); // disable global interrupts
-      // jump to beginning of boot ROM
-      asm volatile ("li t0, %[input_i]; jr t0" :  : [input_i] "i" (BOOTLOADER_BASE_ADDRESS));
+      asm volatile ("li t0, %[input_i]; jr t0" :  : [input_i] "i" (BOOTLOADER_BASE_ADDRESS)); // jump to beginning of boot ROM
       while(1); // just for the compiler
     }
     else if (c == 'h') { // help menu
@@ -340,17 +339,18 @@ void start_app(void) {
 
 
 /**********************************************************************//**
- * Machine system timer (MTIME) interrupt handler.
+ * Bootloader trap handler.
+ * Primarily used for the MTIME tick.
  * @warning Since we have no runtime environment, we have to use the interrupt attribute here. Here, and only here!
  **************************************************************************/
-void __attribute__((__interrupt__)) mtime_irq_handler(void) {
+void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
 
   // make sure this was caused by MTIME IRQ
   uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
   if (cause != TRAP_CODE_MTI) { // raw exception code for MTI
-    neorv32_uart_print("\n\nEXCEPTION: ");
+    neorv32_uart_print("\n\nEXCEPTION (");
     print_hex_word(cause);
-    neorv32_uart_print(" @ 0x");
+    neorv32_uart_print(") @ 0x");
     print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
     system_error(ERROR_SYSTEM);
     while(1); // freeze
@@ -371,7 +371,7 @@ void __attribute__((__interrupt__)) mtime_irq_handler(void) {
  **************************************************************************/
 void get_exe(int src) {
 
-  // is instruction memory (actually, the IMEM) read-only?
+  // is instruction memory (IMEM) read-only?
   if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM_ROM)) {
     system_error(ERROR_ROM);
   }
@@ -419,19 +419,6 @@ void get_exe(int src) {
     pnt[i++] = d;
     addr += 4;
   }
-
-/*
-  // Debugging stuff
-  neorv32_uart_putc('.');
-  print_hex_word(signature);
-  neorv32_uart_putc('.');
-  print_hex_word(imem_size);
-  neorv32_uart_putc('.');
-  print_hex_word(check);
-  neorv32_uart_putc('.');
-  print_hex_word(checksum);
-  neorv32_uart_putc('.');
-*/
 
   // error during transfer?
   if ((checksum + check) != 0) {
@@ -552,7 +539,7 @@ uint32_t get_exe_word(int src, uint32_t addr) {
  **************************************************************************/
 void system_error(uint8_t err_code) {
 
-  neorv32_uart_print("\a\nERR_"); // output error code with annoying bell sound
+  neorv32_uart_print("\a\nBootloader ERR_"); // output error code with annoying bell sound
   if (err_code <= ERROR_SYSTEM) {
     neorv32_uart_putc('0' + ((char)err_code));
   }
