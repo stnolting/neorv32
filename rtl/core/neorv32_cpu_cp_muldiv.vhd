@@ -68,7 +68,7 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   constant dsp_add_reg_stage_c : boolean := false; -- add another register stage to DSP-based multiplication for timing-closure
 
   -- controller --
-  type state_t is (IDLE, DECODE, INIT_OPX, INIT_OPY, PROCESSING, FINALIZE, COMPLETED);
+  type state_t is (IDLE, DECODE, INIT_OPX, INIT_OPY, PROCESSING, FINALIZE, COMPLETED, FAST_MUL);
   signal state         : state_t;
   signal cnt           : std_ulogic_vector(4 downto 0);
   signal cp_op         : std_ulogic_vector(2 downto 0); -- operation to execute
@@ -145,17 +145,16 @@ begin
             opy_is_zero <= '0';
           end if;
           --
+          cnt   <= "11111";
           if (operation = '1') then -- division
-            cnt   <= "11111";
             state <= INIT_OPX;
           else -- multiplication
-            if (FAST_MUL_EN = false) then
-              cnt <= "11111";
-            else
-              cnt <= "00001";
-            end if;
             start <= '1';
-            state <= PROCESSING;
+            if (FAST_MUL_EN = true) then
+              state <= FAST_MUL;
+            else
+              state <= PROCESSING;
+            end if;
           end if;
 
         when INIT_OPX =>
@@ -176,6 +175,9 @@ begin
           if (cnt = "00000") then
             state <= FINALIZE;
           end if;
+
+        when FAST_MUL =>
+          state <= FINALIZE;
 
         when FINALIZE =>
           state <= COMPLETED;

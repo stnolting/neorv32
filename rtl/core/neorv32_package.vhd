@@ -43,7 +43,7 @@ package neorv32_package is
   constant data_width_c  : natural := 32; -- data width - FIXED!
   constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01030703"; -- no touchy!
   constant pmp_max_r_c   : natural := 8; -- max PMP regions
-  constant ipb_entries_c : natural := 2; -- entries in instruction prefetch buffer, power of 2
+  constant ipb_entries_c : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
 
   -- Helper Functions -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
