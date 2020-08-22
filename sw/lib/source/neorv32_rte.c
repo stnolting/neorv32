@@ -288,10 +288,23 @@ void neorv32_rte_print_hw_config(void) {
     }
   }
   neorv32_uart_printf("(0x%x)\n", tmp);
+  
+  // Z* CPU extensions (from custom CSR)
+  neorv32_uart_printf("Z* extensions:    ");
+  tmp = neorv32_cpu_csr_read(CSR_MZEXT);
+  if (tmp & (1<<0)) {
+    neorv32_uart_printf("Zicsr ");
+  }
+  if (tmp & (1<<1)) {
+    neorv32_uart_printf("Zifencei ");
+  }
+  if (tmp & (1<<2)) {
+    neorv32_uart_printf("cpu_counters ");
+  }
 
 
   // Misc
-  neorv32_uart_printf("\n-- System --\n");
+  neorv32_uart_printf("\n\n-- System --\n");
   neorv32_uart_printf("Clock: %u Hz\n", SYSINFO_CLK);
 
 
