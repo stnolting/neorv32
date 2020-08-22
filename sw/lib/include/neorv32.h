@@ -93,7 +93,9 @@ enum NEORV32_CPU_CSRS_enum {
   CSR_MVENDORID   = 0xf11, /**< 0xf11 - mvendorid (r/-): Vendor ID */
   CSR_MARCHID     = 0xf12, /**< 0xf12 - marchid   (r/-): Architecture ID */
   CSR_MIMPID      = 0xf13, /**< 0xf13 - mimpid    (r/-): Implementation ID/version */
-  CSR_MHARTID     = 0xf14  /**< 0xf14 - mhartid   (r/-): Hardware thread ID (always 0) */
+  CSR_MHARTID     = 0xf14, /**< 0xf14 - mhartid   (r/-): Hardware thread ID (always 0) */
+
+  CSR_MZEXT       = 0xfc0  /**< 0xfc0 - mzext (custom) (r/-): Available Z* CPU extensions */
 };
 
 
