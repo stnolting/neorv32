@@ -228,6 +228,9 @@ begin
       if (BOOTLOADER_USE = true) and (boot_size_c > boot_max_size_c) then
         assert false report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range." severity error;
       end if;
+      if (BOOTLOADER_USE = true) and (MEM_INT_IMEM_ROM = true) then
+        assert false report "NEORV32 PROCESSOR CONFIG WARNING! IMEM is configured as read-only. Bootloader will not be able to load new executables." severity warning;
+      end if;
 
       -- memory system - data/instruction fetch --
       if (MEM_EXT_USE = false) then
