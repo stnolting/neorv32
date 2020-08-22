@@ -982,6 +982,8 @@ begin
       when x"f13" => csr_acc_valid <= is_m_mode_v; -- mimpid
       when x"f14" => csr_acc_valid <= is_m_mode_v; -- mhartid
       --
+      when x"fc0" => csr_acc_valid <= is_m_mode_v; -- mzext (custom CSR)
+      --
       when others => csr_acc_valid <= '0'; -- undefined
     end case;
   end process invalid_csr_access_check;
@@ -1658,6 +1660,12 @@ begin
             csr_rdata_o <= hw_version_c;
           when x"f14" => -- R/-: mhartid - hardware thread ID
             csr_rdata_o <= HW_THREAD_ID;
+
+          -- custom machine read-only CSRs --
+          when x"fc0" => -- R/-: mzext
+            csr_rdata_o(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr CPU extension
+            csr_rdata_o(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei CPU extension
+            csr_rdata_o(2) <= bool_to_ulogic_f(CSR_COUNTERS_USE);             -- std (performance) counters enabled
 
           -- undefined/unavailable --
           when others =>
