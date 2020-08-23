@@ -20,7 +20,7 @@
 
 ## Introduction
 
-The **NEORV32 processor** is a customizable full-scale mikrocontroller-like processor system based on the RISC-V-compliant
+The **NEORV32 processor** is a customizable full-scale microcontroller-like processor system based on the RISC-V-compliant
 `rv32i` NEORV32 CPU with optional `M`, `E`, `C` and `U`, `Zicsr` and `Zifencei` extensions and optional physical memory protection (PMP).
 The CPU was built from scratch and is compliant to the *Unprivileged ISA Specification Version 2.2* and a subset of the *Privileged Architecture
 Specification Version 1.12-draft*.
