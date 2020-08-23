@@ -99,16 +99,18 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 The custom extensions are always enabled and are indicated via the `X` bit in the `misa` CSR.
 
 * Four *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
+* `mzext` CSR to check for implemented Z* CPU extensions
 
 
 ### To-Do / Wish List
 
 - Add AXI(-Lite) bridges
 - Synthesis results for more platforms
-- Port Dhrystone benchmark
-- Implement atomic operations (`A` extension) and floating-point operations (`F` extension)
 - Maybe port an RTOS (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr), [freeRTOS](https://www.freertos.org) or [RIOT](https://www.riot-os.org))
-
+- Implement further CPU extensions:
+  - Atomic operations (`A`)
+  - Floating-point instructions (`F`)
+  - ...
 
 
 ## Features
@@ -177,7 +179,7 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
   * System instructions: `MRET` `WFI`
   * Counter CSRs: `[m]cycle[h]` `[m]instret[h]` `time[h]`
-  * Machine CSRs: `mstatus` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause`(read-only!) `mtval` `mip` `mvendorid` `marchid` `mimpid` `mhartid`
+  * Machine CSRs: `mstatus` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause`(read-only!) `mtval` `mip` `mvendorid` `marchid` `mimpid` `mhartid` `mzext`(custom)
   * Supported exceptions and interrupts:
     * Misaligned instruction address
     * Instruction access fault
@@ -274,7 +276,7 @@ The [CoreMark CPU benchmark](https://www.eembc.org/coremark) was executed on the
 [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) project folder. This benchmark
 tests the capabilities of a CPU itself rather than the functions provided by the whole system / SoC.
 
-Results generated for hardware version: `1.3.7.0`
+Results generated for hardware version: `1.3.7.3`
 
 ~~~
 **Configuration**
@@ -289,7 +291,7 @@ Peripherals: UART for printing the results
 | `rv32i`              |    26 748 bytes |        `-O3` |          28.98 |        0.2898 |
 | `rv32im`             |    25 580 bytes |        `-O3` |          60.60 |        0.6060 |
 | `rv32imc`            |    19 636 bytes |        `-O3` |          62.50 |        0.6250 |
-| `rv32imc` + FAST_MUL |    19 636 bytes |        `-O3` |          74.07 |        0.7407 |
+| `rv32imc` + FAST_MUL |    19 636 bytes |        `-O3` |          76.92 |        0.7692 |
 
 The _FAST_MUL_ configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic).
 
@@ -308,14 +310,14 @@ iterations, which reflects a pretty good "real-life" work load. The average CPI 
 dividing the total number of required clock cycles (only the timed core to avoid distortion due to IO wait cycles; sampled via the `cycle[h]` CSRs)
 by the number of executed instructions (`instret[h]` CSRs). The executables were generated using optimization `-O3`.
 
-Results generated for hardware version: `1.3.7.0`
+Results generated for hardware version: `1.3.7.3`
 
 | CPU                  | Required Clock Cycles | Executed Instructions | Average CPI |
 |:---------------------|----------------------:|----------------------:|:-----------:|
 | `rv32i`              |         6 955 817 507 |         1 468 927 290 |        4.73 |
 | `rv32im`             |         3 376 961 507 |           601 565 750 |        5.61 |
 | `rv32imc`            |         3 274 832 513 |           601 565 964 |        5.44 |
-| `rv32imc` + FAST_MUL |         2 711 072 513 |           601 566 024 |        4.51 |
+| `rv32imc` + FAST_MUL |         2 689 845 200 |           601 565 890 |        4.47 |
 
 The _FAST_MUL_ configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic).
 

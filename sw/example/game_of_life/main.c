@@ -54,6 +54,10 @@
 #define NUM_CELLS_Y   40
 /** Delay between generations in ms */
 #define GEN_DELAY     500
+/** Symbol for dead cell */
+#define CELL_DEAD  (' ')
+/** Symbol for alive cell */
+#define CELL_ALIVE ('#')
 /**@}*/
 
 
@@ -172,7 +176,10 @@ int main(void) {
           cell = get_cell(u, x, y); // state of current cell
           n = get_neighborhood(u, x, y); // number of living neighbor cells
 
-          // classic rule set
+          // -- classic rule set --
+          // if center cell is dead -> cell comes to life when there are exactly 3 living cells around
+          // if center cell is alive -> stay alive if there are 2 or three living cells around
+          // else -> cell is/becomes dead
           if (((cell == 0) && (n == 3)) || ((cell != 0) && ((n == 2) || (n == 3)))) {
             set_cell((u + 1) & 1, x, y);
           }
@@ -214,9 +221,9 @@ void print_universe(int u){
    
     for (x=0; x<NUM_CELLS_X; x++) {
       if (get_cell(u, x, y))
-        neorv32_uart_putc('#');
+        neorv32_uart_putc((char)CELL_ALIVE);
       else
-        neorv32_uart_putc(' ');
+        neorv32_uart_putc((char)CELL_DEAD);
     }
 
     // end of line

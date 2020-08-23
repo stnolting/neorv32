@@ -52,40 +52,37 @@
 
 
 /**********************************************************************//**
- * Main function, shows an incrementing 8-bit timer on GPIO.output(7:0).
+ * Main function; shows an incrementing 8-bit counter on GPIO.output(7:0).
  *
- * @note This program requires the GPIO to be synthesized (the UART is optional).
+ * @note This program requires the GPIO controller to be synthesized (the UART is optional).
  *
  * @return Irrelevant.
  **************************************************************************/
 int main() {
 
+  // init UART at default baud rate, no rx interrupt, no tx interrupt
+  neorv32_uart_setup(BAUD_RATE, 0, 0);
+
   // check if GPIO unit is implemented at all
   if (neorv32_gpio_available() == 0) {
-    return 0; // nope, no GPIO unit synthesized :(
+    neorv32_uart_print("Error! No GPIO unit synthesized!\n");
+    return 0; // nope, no GPIO unit synthesized
   }
-
 
   // capture all exceptions and give debug info via UART
   // this is not required, but keeps us safe
   neorv32_rte_setup();
 
-
-  // init UART at default baud rate, no rx interrupt, no tx interrupt
-  neorv32_uart_setup(BAUD_RATE, 0, 0);
-
   // say hello
   neorv32_uart_print("Blinking LED demo program\n");
-
 
   neorv32_gpio_port_set(0); // clear gpio output put
 
   int cnt = 0;
 
   while (1) {
-    neorv32_gpio_port_set(cnt & 0xFF); // mask for lowest 8 bit
-    neorv32_cpu_delay_ms(200); // wait 0.2s using busy wait
-    cnt++; // increment counter
+    neorv32_gpio_port_set(cnt++ & 0xFF); // increment counter and mask for lowest 8 bit
+    neorv32_cpu_delay_ms(200); // wait 200ms using busy wait
   }
 
   return 0;
