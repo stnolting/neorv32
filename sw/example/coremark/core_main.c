@@ -97,11 +97,11 @@ MAIN_RETURN_TYPE main(int argc, char *argv[]) {
 // -----------------------------------------------
 // Disable coremark compilation by default
 #ifndef RUN_COREMARK
-  #warning COREMARK HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_COREMARK clean_all compile<< to compile it.
+  #warning COREMARK HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_COREMARK clean_all exe<< to compile it.
 
   // inform the user if you are actually executing this
 	portable_init(NULL, &argc, argv);
-  ee_printf("ERROR! CoreMark has not been compiled. Use >>make USER_FLAGS+=-DRUN_COREMARK clean_all compile<< to compile it.\n");
+  ee_printf("ERROR! CoreMark has not been compiled. Use >>make USER_FLAGS+=-DRUN_COREMARK clean_all exe<< to compile it.\n");
 
   return 0;
 #endif
