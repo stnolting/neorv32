@@ -207,7 +207,7 @@ char neorv32_uart_char_received_get(void) {
  *
  * @param[in] s Pointer to string.
  **************************************************************************/
-void neorv32_uart_print(char *s) {
+void neorv32_uart_print(const char *s) {
 
   char c = 0;
   while ((c = *s++)) {
@@ -227,7 +227,7 @@ void neorv32_uart_print(char *s) {
  **************************************************************************/
 static void __neorv32_uart_itoa(uint32_t x, char *res) {
 
-  static const char numbers[10] = "0123456789";
+  static const char numbers[] = "0123456789";
   char buffer1[11];
   uint16_t i, j;
 
@@ -267,7 +267,7 @@ static void __neorv32_uart_itoa(uint32_t x, char *res) {
  **************************************************************************/
 static void __neorv32_uart_tohex(uint32_t x, char *res) {
 
-  static const char symbols[16] = "0123456789abcdef";
+  static const char symbols[] = "0123456789abcdef";
 
   int i;
   for (i=0; i<8; i++) { // nibble by bibble
@@ -294,7 +294,7 @@ static void __neorv32_uart_tohex(uint32_t x, char *res) {
  * <TR><TD>%x</TD><TD>32-bit number, printed as 8-char hexadecimal</TD></TR>
  * </TABLE>
  **************************************************************************/
-void neorv32_uart_printf(char *format, ...) {
+void neorv32_uart_printf(const char *format, ...) {
 
   char c, string_buf[11];
   int32_t n;

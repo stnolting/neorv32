@@ -405,7 +405,7 @@ int main() {
   };
 
   tmp_a = (uint32_t)&dummy_sub_program; // call the dummy sub program
-  asm volatile ( "jalr ra, %0 " : "=r" (tmp_a) : "r"  (tmp_a));
+  asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
@@ -435,7 +435,7 @@ int main() {
     };
 
     tmp_a = (uint32_t)&dummy_sub_program_ci; // call the dummy sub program
-    asm volatile ( "jalr ra, %0 " : "=r" (tmp_a) : "r"  (tmp_a));
+    asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
     if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
