@@ -43,3 +43,17 @@ Blink
 Blink
 Blink
 ```
+
+
+## Note
+
+The onfiguration of the FreeRTOS home folder (via `FREERTOS_HOME`) is corrupted if the compiler shows the following error:
+
+```
+main.c:36:10: fatal error: FreeRTOS.h: No such file or directory
+   36 | #include <FreeRTOS.h>
+      |          ^~~~~~~~~~~~
+compilation terminated.
+make: *** [makefile:203: main.c.o] Error 1
+```
+
