@@ -140,6 +140,13 @@ enum NEORV32_EXECUTABLE {
 /**@}*/
 
 
+/**********************************************************************//**
+ * This global variable keeps the size of the available executable in bytes.
+ * If =0 no executable is available (yet).
+ **************************************************************************/
+uint32_t exe_available = 0;
+
+
 // Function prototypes
 void __attribute__((__interrupt__)) bootloader_trap_handler(void);
 void print_help(void);
@@ -168,7 +175,7 @@ int main(void) {
 
   // ------------------------------------------------
   // Processor hardware initialization
-  // - all IO devices are reset and disbaled by the crt0 code
+  // - all IO devices are reset and disabled by the crt0 code
   // ------------------------------------------------
 
   // get clock speed (in Hz)
@@ -197,9 +204,8 @@ int main(void) {
   // init GPIO
   neorv32_gpio_port_set(1 << STATUS_LED); // activate status LED, clear all others
 
-  // abuse mscratch CSR as global variable to store the size of the last uploaded executable
-  // this CSR must not be used by the bootloader's crt0.S!
-  neorv32_cpu_csr_write(CSR_MSCRATCH, 0);
+  // global variable to executable size; 0 means there is no exe available
+  exe_available = 0;
 
 
   // ------------------------------------------------
@@ -229,7 +235,7 @@ int main(void) {
   // ------------------------------------------------
   // Auto boot sequence
   // ------------------------------------------------
-  neorv32_uart_print("\n\nAutoboot in "xstr(AUTOBOOT_TIMEOUT)"s. Press any key to abort.\n");
+  neorv32_uart_print("\n\nAutoboot in "xstr(AUTOBOOT_TIMEOUT)"s. Press key to abort.\n");
 
   uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTOBOOT_TIMEOUT * clock_speed);
 
@@ -275,7 +281,7 @@ int main(void) {
     else if (c == 'e') { // start application program
       start_app();
     }
-    else if (c == '?') { // credits
+    else if (c == '?') {
       neorv32_uart_print("by Stephan Nolting");
     }
     else { // unknown command
@@ -308,7 +314,7 @@ void print_help(void) {
 void start_app(void) {
 
   // executable available?
-  if (neorv32_cpu_csr_read(CSR_MSCRATCH) == 0) {
+  if (exe_available == 0) {
     neorv32_uart_print("No executable available.");
     return;
   }
@@ -426,7 +432,7 @@ void get_exe(int src) {
   }
   else {
     neorv32_uart_print("OK");
-    neorv32_cpu_csr_write(CSR_MSCRATCH, size); // store exe size in "global variable"
+    exe_available = size; // store exe size
   }
 }
 
@@ -437,7 +443,7 @@ void get_exe(int src) {
 void save_exe(void) {
 
   // size of last uploaded executable
-  uint32_t size = neorv32_cpu_csr_read(CSR_MSCRATCH);
+  uint32_t size = exe_available;
 
   if (size == 0) {
     neorv32_uart_print("No executable available.");
@@ -540,12 +546,7 @@ uint32_t get_exe_word(int src, uint32_t addr) {
 void system_error(uint8_t err_code) {
 
   neorv32_uart_print("\a\nBootloader ERR_"); // output error code with annoying bell sound
-  if (err_code <= ERROR_SYSTEM) {
-    neorv32_uart_putc('0' + ((char)err_code));
-  }
-  else {
-    neorv32_uart_print("unknown");
-  }
+  neorv32_uart_putc('0' + ((char)err_code)); // FIXME err_code should/must be below 10
 
   neorv32_cpu_dint(); // deactivate IRQs
   neorv32_gpio_port_set(1 << STATUS_LED); // permanently light up status LED
