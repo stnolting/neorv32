@@ -87,13 +87,11 @@ __crt0_stack_pointer_init:
 // *********************************************************
 // Setup global pointer
 // *********************************************************
-#ifndef __BOOTLOADER_START_CODE__
 __crt0_global_pointer_init:
 .option push
 .option norelax
   la gp, __global_pointer$
 .option pop
-#endif
 
 
 // *********************************************************
@@ -109,7 +107,6 @@ __crt0_neorv32_trap_init:
 // Devices, that are not implemented, will cause a store access fault
 // which is captured but actually ignored due to the dummy handler.
 // *********************************************************
-#ifndef __BOOTLOADER_START_CODE__
 __crt0_reset_io:
   li x11, IO_BEGIN // start of processor-internal IO region
 
@@ -117,13 +114,11 @@ __crt0_reset_io_loop:
   sw   zero, 0(x11)
   addi x11, x11, 4
   bne  zero, x11, __crt0_reset_io_loop
-#endif
 
 
 // *********************************************************
 // Clear .bss section (byte-wise)
 // *********************************************************
-#ifndef __BOOTLOADER_START_CODE__
 __crt0_clear_bss:
   la x11, __crt0_bss_start
   la x12, __crt0_bss_end
@@ -135,13 +130,11 @@ __crt0_clear_bss_loop:
   j    __crt0_clear_bss_loop
 
 __crt0_clear_bss_loop_end:
-#endif
 
 
 // *********************************************************
 // Copy initialized .data section from ROM to RAM (byte-wise)
 // *********************************************************
-#ifndef __BOOTLOADER_START_CODE__
 __crt0_copy_data:
   la x11, __crt0_copy_data_src_begin  // start of data area (copy source)
   la x12, __crt0_copy_data_dst_begin  // start of data area (copy destination)
@@ -156,7 +149,6 @@ __crt0_copy_data_loop:
   j    __crt0_copy_data_loop
 
 __crt0_copy_data_loop_end:
-#endif
 
 
 // *********************************************************
