@@ -107,11 +107,9 @@ int main() {
     uint32_t uint32[sizeof(uint64_t)/2];
   } cpu_systime;
 
-
   // reset performance counter
   neorv32_cpu_set_minstret(0);
   neorv32_cpu_set_mcycle(0);
-
 
   // check if UART unit is implemented at all
   if (neorv32_uart_available() == 0) {
@@ -123,10 +121,8 @@ int main() {
     return 0;
   }
 
-
   // init UART at default baud rate, no rx interrupt, no tx interrupt
   neorv32_uart_setup(BAUD_RATE, 0, 0);
-
 
   neorv32_mtime_set_time(0);
   // set CMP of machine system timer MTIME to max to prevent an IRQ
@@ -138,6 +134,9 @@ int main() {
 
   // show project credits
   neorv32_rte_print_credits();
+
+  // show project license
+  neorv32_rte_print_license();
 
   // show full HW config report
   neorv32_rte_print_hw_config();
@@ -227,6 +226,7 @@ int main() {
   neorv32_uart_printf("skipped (disabled)\n");
 #endif
 
+
   // ----------------------------------------------------------
   // Data memory test
   // ----------------------------------------------------------
@@ -258,7 +258,6 @@ int main() {
 #else
   neorv32_uart_printf("skipped (disabled)\n");
 #endif
-
 
 
   // ----------------------------------------------------------
