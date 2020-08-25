@@ -424,3 +424,46 @@ void neorv32_rte_print_credits(void) {
                      "made in Hannover, Germany\n\n");
 }
 
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Print project license
+ **************************************************************************/
+void neorv32_rte_print_license(void) {
+
+  neorv32_uart_print(
+  "\n"
+  "\n"
+  "BSD 3-Clause License\n"
+  "\n"
+  "Copyright (c) 2020, Stephan Nolting. All rights reserved.\n"
+  "\n"
+  "Redistribution and use in source and binary forms, with or without modification, are\n"
+  "permitted provided that the following conditions are met:\n"
+  "\n"
+  "1. Redistributions of source code must retain the above copyright notice, this list of\n"
+  "   conditions and the following disclaimer.\n"
+  "\n"
+  "2. Redistributions in binary form must reproduce the above copyright notice, this list of\n"
+  "   conditions and the following disclaimer in the documentation and/or other materials\n"
+  "   provided with the distribution.\n"
+  "\n"
+  "3. Neither the name of the copyright holder nor the names of its contributors may be used to\n"
+  "   endorse or promote products derived from this software without specific prior written\n"
+  "   permission.\n"
+  "\n"
+  "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS\n"
+  "OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF\n"
+  "MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE\n"
+  "COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,\n"
+  "EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE\n"
+  "GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED\n"
+  "AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\n"
+  "NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED\n"
+  "OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+  "\n"
+  "The NEORV32 Processor - https://github.com/stnolting/neorv32 (c) Stephan Nolting\n"
+  "\n"
+  "\n"
+  );
+}
+

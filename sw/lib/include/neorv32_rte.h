@@ -72,5 +72,6 @@ int  neorv32_rte_exception_uninstall(uint8_t id);
 void neorv32_rte_print_hw_config(void);
 void neorv32_rte_print_hw_version(void);
 void neorv32_rte_print_credits(void);
+void neorv32_rte_print_license(void);
 
 #endif // neorv32_rte_h
