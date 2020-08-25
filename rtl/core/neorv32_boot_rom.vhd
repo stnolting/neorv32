@@ -56,10 +56,12 @@ architecture neorv32_boot_rom_rtl of neorv32_boot_rom is
   type boot_img_t is array (0 to boot_size_c/4-1) of std_ulogic_vector(31 downto 0);
 
   -- init function --
+  -- impure function: returns NOT the same result every time it is evaluated with the same arguments since the source file might have changed
   impure function init_boot_rom(init : bootloader_init_image_t) return boot_img_t is
     variable mem_v : boot_img_t;
   begin
-    for i in 0 to boot_size_c/4-1 loop
+    mem_v := (others => (others => '0'));
+    for i in 0 to init'length-1 loop -- init only in range of source data array
       mem_v(i) := init(i);
     end loop; -- i
     return mem_v;
