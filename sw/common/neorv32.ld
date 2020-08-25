@@ -53,7 +53,7 @@ SEARCH_DIR("=/opt/riscv/riscv64-unknown-linux-gnu/lib"); SEARCH_DIR("=/usr/local
 /* ************************************************* */
 MEMORY
 {
-  rom  (rx) : ORIGIN = 0x00000000, LENGTH = 16*1024
+  rom  (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 4*1024 : 16*1024
   ram (rwx) : ORIGIN = 0x80000000, LENGTH =  8*1024
 }
 /* ************************************************* */
@@ -95,15 +95,13 @@ SECTIONS
     PROVIDE(__text_start = .);
     PROVIDE(__textstart = .);
 
-
-
     PROVIDE_HIDDEN (__rela_iplt_start = .);
     *(.rela.iplt)
     PROVIDE_HIDDEN (__rela_iplt_end = .);
 
     *(.rela.plt)
 
-    KEEP(*(.text.boot)); /* keep start-up code */
+    KEEP(*(.text.boot)); /* keep start-up code at the beginning of rom */
 
     KEEP (*(SORT_NONE(.init)))
 
@@ -172,7 +170,6 @@ SECTIONS
   } > rom
 
 
-
   /* initialized read/write data, accessed in RAM, placed in ROM, copied during boot */
   .jcr            : { KEEP (*(.jcr)) }
   .data.rel.ro : { *(.data.rel.ro.local* .gnu.linkonce.d.rel.ro.local.*) *(.data.rel.ro .data.rel.ro.* .gnu.linkonce.d.rel.ro.*) }
@@ -187,7 +184,6 @@ SECTIONS
 
     *(.data .data.* .gnu.linkonce.d.*)
     SORT(CONSTRUCTORS)
-
 
     /* We want the small data sections together, so single-instruction offsets
        can access them all, and initialized data all before uninitialized, so
@@ -209,7 +205,6 @@ SECTIONS
   } > ram AT > rom
 
 
-
   /* zero/non-initialized read/write data placed in RAM */
   .sbss2          : { *(.sbss2 .sbss2.* .gnu.linkonce.sb2.*) }
   .tbss		  : { *(.tbss .tbss.* .gnu.linkonce.tb.*) *(.tcommon) }
@@ -222,7 +217,6 @@ SECTIONS
 
     *(.dynbss)
     *(.bss .bss.* .gnu.linkonce.b.*)
-
 
     PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array))
@@ -242,7 +236,6 @@ SECTIONS
 		            MAX(__DATA_BEGIN__ + 0x800, __BSS_END__ - 0x800));
     _end = .; PROVIDE (end = .);
   } > ram
-
 
 
   /* Stabs debugging sections.  */
@@ -287,7 +280,6 @@ SECTIONS
   .debug_addr     0 : { *(.debug_addr) }
   .gnu.attributes 0 : { KEEP (*(.gnu.attributes)) }
   /DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }
-
 
 
   /* Provide further symbols for neorv32 crt0.elf */
