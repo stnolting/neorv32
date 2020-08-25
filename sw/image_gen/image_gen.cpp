@@ -62,6 +62,7 @@ int main(int argc, char *argv[]) {
   uint32_t tmp = 0, size = 0, checksum = 0;
   unsigned int i = 0;
   int option = 0;
+  unsigned long raw_exe_size = 0;
 
   if (strcmp(argv[1], "-app_bin") == 0)
     option = 1;
@@ -87,6 +88,18 @@ int main(int argc, char *argv[]) {
     printf("Output file error!");
     return 3;
   }
+
+
+// ------------------------------------------------------------
+// Get size of application (in bytes)
+// ------------------------------------------------------------
+  fseek(input, 0L, SEEK_END);
+
+  // get file size (raw executable)
+  raw_exe_size = (unsigned long)ftell(input);
+
+  // go back to beginning
+  rewind(input);
 
 
 // ------------------------------------------------------------
@@ -167,8 +180,8 @@ int main(int argc, char *argv[]) {
 						            "\n"
 						            "package neorv32_application_image is\n"
 						            "\n"
-						            "  type application_init_image_t is array (0 to 65535) of std_ulogic_vector(31 downto 0);\n"
-						            "  constant application_init_image : application_init_image_t := (\n", argv[4], argv[2]);
+						            "  type application_init_image_t is array (0 to %lu) of std_ulogic_vector(31 downto 0);\n"
+						            "  constant application_init_image : application_init_image_t := (\n", argv[4], argv[2], (raw_exe_size/4)+1);
     fputs(tmp_string, output);
 
 	// data
@@ -216,8 +229,8 @@ int main(int argc, char *argv[]) {
 						            "\n"
 						            "package neorv32_bootloader_image is\n"
 						            "\n"
-						            "  type bootloader_init_image_t is array (0 to 65535) of std_ulogic_vector(31 downto 0);\n"
-						            "  constant bootloader_init_image : bootloader_init_image_t := (\n", argv[4], argv[2]);
+						            "  type bootloader_init_image_t is array (0 to %lu) of std_ulogic_vector(31 downto 0);\n"
+						            "  constant bootloader_init_image : bootloader_init_image_t := (\n", argv[4], argv[2], (raw_exe_size/4)+1);
     fputs(tmp_string, output);
 
 	// data
@@ -240,7 +253,7 @@ int main(int argc, char *argv[]) {
       i++;
     }
 
-    sprintf(tmp_string, "    others =>   x\"00000000\"\n");
+    sprintf(tmp_string, "    others   => x\"00000000\"\n");
     fputs(tmp_string, output);
 
 	// end
