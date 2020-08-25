@@ -86,7 +86,7 @@ CORE_SRC  = $(wildcard $(NEORV32_SRC_PATH)/*.c)
 # Application start-up code
 CORE_SRC += $(NEORV32_COM_PATH)/crt0.S
 
-# Default linker script
+# Linker script
 LD_SCRIPT = $(NEORV32_COM_PATH)/neorv32.ld
 
 # Main output files
@@ -141,9 +141,8 @@ install: $(APP_ASM) $(APP_IMG)
 all:     $(APP_ASM) $(APP_EXE) $(APP_IMG)
 
 # Check if making bootloader
-# This will disable some functions in crt0.S that are not relevant for the bootloader
-target bootloader: USER_FLAGS += -D__BOOTLOADER_START_CODE__
-target bootloader: LD_SCRIPT = $(NEORV32_COM_PATH)/bootloader_neorv32.ld
+# Use different base address and legth for instruction memory/"rom" (BOOTMEM instead of IMEM)
+target bootloader: CC_OPTS += -Wl,--defsym=make_bootloader=1
 
 
 # -----------------------------------------------------------------------------
@@ -262,7 +261,6 @@ info:
 	@echo "---------------- Info: NEORV32 ----------------"
 	@echo "NEORV32 home folder (NEORV32_HOME): $(NEORV32_HOME)"
 	@echo "IMAGE_GEN: $(IMAGE_GEN)"
-	@echo "LD script: $(LD_SCRIPT)"
 	@echo "Core source files:"
 	@echo "$(CORE_SRC)"
 	@echo "Core include folder:"
