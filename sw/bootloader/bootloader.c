@@ -64,6 +64,8 @@
 #define BAUD_RATE              (19200)
 /** Time until the auto-boot sequence starts (in seconds) */
 #define AUTOBOOT_TIMEOUT       8
+/** Set to 0 to disable bootloader status LED */
+#define STATUS_LED_EN          (1)
 /** Bootloader status LED at GPIO output port */
 #define STATUS_LED             (0)
 /** SPI flash boot image base address */
@@ -201,8 +203,10 @@ int main(void) {
   neorv32_cpu_csr_write(CSR_MIE, 1 << CPU_MIE_MTIE); // activate MTIME IRQ source
   neorv32_cpu_eint(); // enable global interrupts
 
-  // init GPIO
-  neorv32_gpio_port_set(1 << STATUS_LED); // activate status LED, clear all others
+  if (STATUS_LED_EN == 1) {
+    // activate status LED, clear all others
+    neorv32_gpio_port_set(1 << STATUS_LED);
+  }
 
   // global variable to executable size; 0 means there is no exe available
   exe_available = 0;
@@ -362,8 +366,10 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
     while(1); // freeze
   }
   else {
-    // toggle status LED
-    neorv32_gpio_pin_toggle(STATUS_LED);
+    if (STATUS_LED_EN == 1) {
+      // toggle status LED
+      neorv32_gpio_pin_toggle(STATUS_LED);
+    }
     // set time for next IRQ
     neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (SYSINFO_CLK/4));
   }
@@ -497,9 +503,6 @@ void save_exe(void) {
     spi_flash_write_word(addr, d);
     addr += 4;
     i++;
-//  if ((i & 0x000000FF) == 0) {
-//    neorv32_uart_putc('.');
-//  }
   }
 
   // write checksum (sum complement)
@@ -549,7 +552,9 @@ void system_error(uint8_t err_code) {
   neorv32_uart_putc('0' + ((char)err_code)); // FIXME err_code should/must be below 10
 
   neorv32_cpu_dint(); // deactivate IRQs
-  neorv32_gpio_port_set(1 << STATUS_LED); // permanently light up status LED
+  if (STATUS_LED_EN == 1) {
+    neorv32_gpio_port_set(1 << STATUS_LED); // permanently light up status LED
+  }
 
   asm volatile ("wfi"); // power-down
   while(1); // freeze
