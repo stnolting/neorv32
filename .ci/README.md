@@ -1,5 +1,7 @@
 ## Scripts for Continous Integration
 
+These scripts are called by the Travis CI job configuration file `.travis.yml` in the repository's root directory.
+
 ### `install.sh`
 
 This scripts download a pre-built toolchain from the [`stnolting/riscv_gcc_prebuilt`](https://github.com/stnolting/riscv_gcc_prebuilt)

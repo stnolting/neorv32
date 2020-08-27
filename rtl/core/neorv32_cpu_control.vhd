@@ -384,7 +384,7 @@ begin
 
           if (ipb.free = '1') then -- free entry in buffer?
             ipb.we <= '1';
-            if (fetch_engine.i_buf2(17 downto 16) = "11") then -- uncompressed
+            if (fetch_engine.i_buf2(17 downto 16) = "11") then -- uncompressed and "unaligned"
               ipb.wdata              <= '0' & fetch_engine.i_buf(33 downto 32) & '0' & fetch_engine.i_buf(15 downto 00) & fetch_engine.i_buf2(31 downto 16);
               fetch_engine.pc_add    <= std_ulogic_vector(to_unsigned(4, data_width_c));
               fetch_engine.state_nxt <= IFETCH_0;
