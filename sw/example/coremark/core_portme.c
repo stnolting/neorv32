@@ -156,7 +156,9 @@ void portable_fini(core_portable *p)
   exe_time.uint64 = (uint64_t)elapsed_cycles;
   exe_instructions.uint64 = neorv32_cpu_get_instret();
 
-  neorv32_uart_printf("\nNEORV32: Executed instructions      0x%x_%x\n", (uint32_t)exe_instructions.uint32[1], (uint32_t)exe_instructions.uint32[0]);
+  neorv32_uart_printf("\nNEORV32: All reported numbers only show the integer results.\n\n");
+
+  neorv32_uart_printf("NEORV32: Executed instructions      0x%x_%x\n", (uint32_t)exe_instructions.uint32[1], (uint32_t)exe_instructions.uint32[0]);
   neorv32_uart_printf("NEORV32: CoreMark core clock cycles 0x%x_%x\n", (uint32_t)exe_time.uint32[1], (uint32_t)exe_time.uint32[0]);
 
   uint64_t average_cpi = exe_time.uint64 / exe_instructions.uint64;
