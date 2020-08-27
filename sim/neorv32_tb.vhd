@@ -81,7 +81,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal uart_rx_bitcnt   : natural;
 
   -- gpio --
-  signal gpio : std_ulogic_vector(15 downto 0);
+  signal gpio : std_ulogic_vector(31 downto 0);
 
   -- twi --
   signal twi_scl, twi_sda : std_logic;

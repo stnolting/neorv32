@@ -446,8 +446,8 @@ package neorv32_package is
       fence_o    : out std_ulogic; -- indicates an executed FENCE operation
       fencei_o   : out std_ulogic; -- indicates an executed FENCEI operation
       -- GPIO --
-      gpio_o     : out std_ulogic_vector(15 downto 0); -- parallel output
-      gpio_i     : in  std_ulogic_vector(15 downto 0) := (others => '0'); -- parallel input
+      gpio_o     : out std_ulogic_vector(31 downto 0); -- parallel output
+      gpio_i     : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
       -- UART --
       uart_txd_o : out std_ulogic; -- UART send data
       uart_rxd_i : in  std_ulogic := '0'; -- UART receive data
@@ -872,8 +872,8 @@ package neorv32_package is
       data_o : out std_ulogic_vector(31 downto 0); -- data out
       ack_o  : out std_ulogic; -- transfer acknowledge
       -- parallel io --
-      gpio_o : out std_ulogic_vector(15 downto 0);
-      gpio_i : in  std_ulogic_vector(15 downto 0);
+      gpio_o : out std_ulogic_vector(31 downto 0);
+      gpio_i : in  std_ulogic_vector(31 downto 0);
       -- interrupt --
       irq_o  : out std_ulogic
     );

@@ -60,7 +60,7 @@ end neorv32_test_setup;
 architecture neorv32_test_setup_rtl of neorv32_test_setup is
 
   -- gpio output --
-  signal gpio_out : std_ulogic_vector(15 downto 0);
+  signal gpio_out : std_ulogic_vector(31 downto 0);
 
 begin
 

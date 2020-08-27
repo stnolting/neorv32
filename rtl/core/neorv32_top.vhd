@@ -109,8 +109,8 @@ entity neorv32_top is
     fence_o    : out std_ulogic; -- indicates an executed FENCE operation
     fencei_o   : out std_ulogic; -- indicates an executed FENCEI operation
     -- GPIO (available if IO_GPIO_USE = true) --
-    gpio_o     : out std_ulogic_vector(15 downto 0); -- parallel output
-    gpio_i     : in  std_ulogic_vector(15 downto 0) := (others => '0'); -- parallel input
+    gpio_o     : out std_ulogic_vector(31 downto 0); -- parallel output
+    gpio_i     : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
     -- UART (available if IO_UART_USE = true) --
     uart_txd_o : out std_ulogic; -- UART send data
     uart_rxd_i : in  std_ulogic := '0'; -- UART receive data
