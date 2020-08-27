@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c  : natural := 32; -- data width - FIXED!
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01030800"; -- no touchy!
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01040000"; -- no touchy!
   constant pmp_max_r_c   : natural := 8; -- max PMP regions
   constant ipb_entries_c : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
 
@@ -849,7 +849,6 @@ package neorv32_package is
       addr_i    : in  std_ulogic_vector(31 downto 0); -- address
       rden_i    : in  std_ulogic; -- read enable
       wren_i    : in  std_ulogic; -- write enable
-      ben_i     : in  std_ulogic_vector(03 downto 0); -- byte write enable
       data_i    : in  std_ulogic_vector(31 downto 0); -- data in
       data_o    : out std_ulogic_vector(31 downto 0); -- data out
       ack_o     : out std_ulogic; -- transfer acknowledge
@@ -869,7 +868,6 @@ package neorv32_package is
       addr_i : in  std_ulogic_vector(31 downto 0); -- address
       rden_i : in  std_ulogic; -- read enable
       wren_i : in  std_ulogic; -- write enable
-      ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
       data_i : in  std_ulogic_vector(31 downto 0); -- data in
       data_o : out std_ulogic_vector(31 downto 0); -- data out
       ack_o  : out std_ulogic; -- transfer acknowledge
@@ -890,7 +888,6 @@ package neorv32_package is
       rstn_i      : in  std_ulogic; -- global reset line, low-active
       rden_i      : in  std_ulogic; -- read enable
       wren_i      : in  std_ulogic; -- write enable
-      ben_i       : in  std_ulogic_vector(03 downto 0); -- byte write enable
       addr_i      : in  std_ulogic_vector(31 downto 0); -- address
       data_i      : in  std_ulogic_vector(31 downto 0); -- data in
       data_o      : out std_ulogic_vector(31 downto 0); -- data out
@@ -913,7 +910,6 @@ package neorv32_package is
       addr_i      : in  std_ulogic_vector(31 downto 0); -- address
       rden_i      : in  std_ulogic; -- read enable
       wren_i      : in  std_ulogic; -- write enable
-      ben_i       : in  std_ulogic_vector(03 downto 0); -- byte write enable
       data_i      : in  std_ulogic_vector(31 downto 0); -- data in
       data_o      : out std_ulogic_vector(31 downto 0); -- data out
       ack_o       : out std_ulogic; -- transfer acknowledge
@@ -937,7 +933,6 @@ package neorv32_package is
       addr_i      : in  std_ulogic_vector(31 downto 0); -- address
       rden_i      : in  std_ulogic; -- read enable
       wren_i      : in  std_ulogic; -- write enable
-      ben_i       : in  std_ulogic_vector(03 downto 0); -- byte write enable
       data_i      : in  std_ulogic_vector(31 downto 0); -- data in
       data_o      : out std_ulogic_vector(31 downto 0); -- data out
       ack_o       : out std_ulogic; -- transfer acknowledge
@@ -963,7 +958,6 @@ package neorv32_package is
       addr_i      : in  std_ulogic_vector(31 downto 0); -- address
       rden_i      : in  std_ulogic; -- read enable
       wren_i      : in  std_ulogic; -- write enable
-      ben_i       : in  std_ulogic_vector(03 downto 0); -- byte write enable
       data_i      : in  std_ulogic_vector(31 downto 0); -- data in
       data_o      : out std_ulogic_vector(31 downto 0); -- data out
       ack_o       : out std_ulogic; -- transfer acknowledge
@@ -987,7 +981,6 @@ package neorv32_package is
       addr_i      : in  std_ulogic_vector(31 downto 0); -- address
       rden_i      : in  std_ulogic; -- read enable
       wren_i      : in  std_ulogic; -- write enable
-      ben_i       : in  std_ulogic_vector(03 downto 0); -- byte write enable
       data_i      : in  std_ulogic_vector(31 downto 0); -- data in
       data_o      : out std_ulogic_vector(31 downto 0); -- data out
       ack_o       : out std_ulogic; -- transfer acknowledge
@@ -1008,7 +1001,6 @@ package neorv32_package is
       addr_i : in  std_ulogic_vector(31 downto 0); -- address
       rden_i : in  std_ulogic; -- read enable
       wren_i : in  std_ulogic; -- write enable
-      ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
       data_i : in  std_ulogic_vector(31 downto 0); -- data in
       data_o : out std_ulogic_vector(31 downto 0); -- data out
       ack_o  : out std_ulogic  -- transfer acknowledge
@@ -1067,7 +1059,6 @@ package neorv32_package is
       addr_i : in  std_ulogic_vector(31 downto 0); -- address
       rden_i : in  std_ulogic; -- read enable
       wren_i : in  std_ulogic; -- write enable
-      ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
       data_i : in  std_ulogic_vector(31 downto 0); -- data in
       data_o : out std_ulogic_vector(31 downto 0); -- data out
       ack_o  : out std_ulogic  -- transfer acknowledge

@@ -49,7 +49,6 @@ entity neorv32_pwm is
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
-    ben_i       : in  std_ulogic_vector(03 downto 0); -- byte write enable
     data_i      : in  std_ulogic_vector(31 downto 0); -- data in
     data_o      : out std_ulogic_vector(31 downto 0); -- data out
     ack_o       : out std_ulogic; -- transfer acknowledge
@@ -114,16 +113,12 @@ begin
       -- write access --
       if (wren = '1') then
         if (addr = pwm_ctrl_addr_c) then -- control register
-          if (ben_i(0) = '1') then
-            enable <= data_i(ctrl_enable_c);
-            prsc   <= data_i(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c);
-          end if;
+          enable <= data_i(ctrl_enable_c);
+          prsc   <= data_i(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c);
         end if;
         if (addr = pwm_duty_addr_c) then -- duty cycle register
           for i in 0 to 3 loop
-            if (ben_i(i) = '1') then
-              pwm_ch(i) <= data_i(7+i*8 downto 0+i*8);
-            end if;
+            pwm_ch(i) <= data_i(7+i*8 downto 0+i*8);
           end loop;
         end if;
       end if;

@@ -50,7 +50,6 @@ entity neorv32_twi is
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
-    ben_i       : in  std_ulogic_vector(03 downto 0); -- byte write enable
     data_i      : in  std_ulogic_vector(31 downto 0); -- data in
     data_o      : out std_ulogic_vector(31 downto 0); -- data out
     ack_o       : out std_ulogic; -- transfer acknowledge
@@ -129,9 +128,7 @@ begin
       -- write access --
       if (wr_en = '1') then
         if (addr = twi_ctrl_addr_c) then
-          if (ben_i(0) = '1') then
-            ctrl(07 downto 00) <= data_i(07 downto 00);
-          end if;
+          ctrl <= data_i(ctrl'left downto 0);
         end if;
       end if;
       -- read access --
@@ -213,10 +210,8 @@ begin
             elsif (addr = twi_rtx_addr_c) then -- start a data transmission
               -- one bit extra for ack, issued by controller if ctrl_twi_mack_c is set,
               -- sampled from peripheral if ctrl_twi_mack_c is cleared
-              if (ben_i(0) = '1') then
-                twi_rtx_sreg <= data_i(7 downto 0) & (not ctrl(ctrl_twi_mack_c));
-                arbiter(1 downto 0) <= "11";
-              end if;
+              twi_rtx_sreg <= data_i(7 downto 0) & (not ctrl(ctrl_twi_mack_c));
+              arbiter(1 downto 0) <= "11";
             end if;
           end if;
 

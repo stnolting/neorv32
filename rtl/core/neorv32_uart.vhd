@@ -50,7 +50,6 @@ entity neorv32_uart is
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
-    ben_i       : in  std_ulogic_vector(03 downto 0); -- byte write enable
     data_i      : in  std_ulogic_vector(31 downto 0); -- data in
     data_o      : out std_ulogic_vector(31 downto 0); -- data out
     ack_o       : out std_ulogic; -- transfer acknowledge
@@ -146,11 +145,7 @@ begin
       -- write access --
       if (wr_en = '1') then
         if (addr = uart_ctrl_addr_c) then
-          for i in 0 to 3 loop
-            if (ben_i(i) = '1') then
-              ctrl(7+i*8 downto 0+i*8) <= data_i(7+i*8 downto 0+i*8);
-            end if;
-          end loop; -- i
+          ctrl <= data_i;
         end if;
       end if;
       -- read access --

@@ -1,7 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - General Purpose Parallel Input/Output Port (GPIO) >>                             #
 -- # ********************************************************************************************* #
--- # 16-bit parallel input & output unit. Any pin-change (HI->LO or LO->HI) triggers the IRQ.      #
+-- # 16-bit parallel input & output unit. Any pin change (HI->LO or LO->HI) triggers an IRQ.       #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -48,7 +48,6 @@ entity neorv32_gpio is
     addr_i : in  std_ulogic_vector(31 downto 0); -- address
     rden_i : in  std_ulogic; -- read enable
     wren_i : in  std_ulogic; -- write enable
-    ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
     data_i : in  std_ulogic_vector(31 downto 0); -- data in
     data_o : out std_ulogic_vector(31 downto 0); -- data out
     ack_o  : out std_ulogic; -- transfer acknowledge
@@ -95,9 +94,7 @@ begin
       if ((acc_en and wren_i) = '1') then
         if (addr = gpio_out_addr_c) then
           for i in 0 to 1 loop
-            if (ben_i(i) = '1') then
-              dout(7+i*8 downto 0+i*8) <= data_i(7+i*8 downto 0+i*8);
-            end if;
+            dout(7+i*8 downto 0+i*8) <= data_i(7+i*8 downto 0+i*8);
           end loop;
         end if;
       end if;

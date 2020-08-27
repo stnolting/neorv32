@@ -64,7 +64,6 @@ entity neorv32_trng is
     addr_i : in  std_ulogic_vector(31 downto 0); -- address
     rden_i : in  std_ulogic; -- read enable
     wren_i : in  std_ulogic; -- write enable
-    ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
     data_i : in  std_ulogic_vector(31 downto 0); -- data in
     data_o : out std_ulogic_vector(31 downto 0); -- data out
     ack_o  : out std_ulogic  -- transfer acknowledge
@@ -134,18 +133,8 @@ begin
       -- write access --
       if (wren = '1') then
         if (addr = trng_ctrl_addr_c) then
-          if (ben_i(0) = '1') then
-            tap_config(07 downto 00) <= data_i(ctrl_taps_lsb_c+7 downto ctrl_taps_lsb_c+0);
-          end if;
-          if (ben_i(1) = '1') then
-            tap_config(15 downto 08) <= data_i(ctrl_taps_lsb_c+15 downto ctrl_taps_lsb_c+8);
-          end if;
---        if (ben_i(2) = '1') then
---          NULL;
---        end if;
-          if (ben_i(3) = '1') then
-            rnd_enable <= data_i(ctrl_en_c);
-          end if;
+          tap_config <= data_i(tap_config'left downto 0);
+          rnd_enable <= data_i(ctrl_en_c);
         end if;
       end if;
       -- read access --

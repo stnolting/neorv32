@@ -598,7 +598,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   io_acc  <= '1' when (p_bus.addr(data_width_c-1 downto index_size_f(io_size_c)) = io_base_c(data_width_c-1 downto index_size_f(io_size_c))) else '0';
   io_rden <= io_acc and p_bus.re;
-  io_wren <= io_acc and p_bus.we;
+  -- the peripheral/IO devices in the IO area can only be written in word mode (reduces HW complexity)
+  io_wren <= io_acc and p_bus.we and p_bus.ben(3) and p_bus.ben(2) and p_bus.ben(1) and p_bus.ben(0);
 
 
   -- General Purpose Input/Output Port (GPIO) -----------------------------------------------
@@ -612,7 +613,6 @@ begin
       addr_i => p_bus.addr,  -- address
       rden_i => io_rden,     -- read enable
       wren_i => io_wren,     -- write enable
-      ben_i  => p_bus.ben,   -- byte write enable
       data_i => p_bus.wdata, -- data in
       data_o => gpio_rdata,  -- data out
       ack_o  => gpio_ack,    -- transfer acknowledge
@@ -644,7 +644,6 @@ begin
       rstn_i      => ext_rstn,    -- global reset line, low-active
       rden_i      => io_rden,     -- read enable
       wren_i      => io_wren,     -- write enable
-      ben_i       => p_bus.ben,   -- byte write enable
       addr_i      => p_bus.addr,  -- address
       data_i      => p_bus.wdata, -- data in
       data_o      => wdt_rdata,   -- data out
@@ -680,7 +679,6 @@ begin
       addr_i    => p_bus.addr,  -- address
       rden_i    => io_rden,     -- read enable
       wren_i    => io_wren,     -- write enable
-      ben_i     => p_bus.ben,   -- byte write enable
       data_i    => p_bus.wdata, -- data in
       data_o    => mtime_rdata, -- data out
       ack_o     => mtime_ack,   -- transfer acknowledge
@@ -711,7 +709,6 @@ begin
       addr_i      => p_bus.addr,  -- address
       rden_i      => io_rden,     -- read enable
       wren_i      => io_wren,     -- write enable
-      ben_i       => p_bus.ben,   -- byte write enable
       data_i      => p_bus.wdata, -- data in
       data_o      => uart_rdata,  -- data out
       ack_o       => uart_ack,    -- transfer acknowledge
@@ -747,7 +744,6 @@ begin
       addr_i      => p_bus.addr,  -- address
       rden_i      => io_rden,     -- read enable
       wren_i      => io_wren,     -- write enable
-      ben_i       => p_bus.ben,   -- byte write enable
       data_i      => p_bus.wdata, -- data in
       data_o      => spi_rdata,   -- data out
       ack_o       => spi_ack,     -- transfer acknowledge
@@ -787,7 +783,6 @@ begin
       addr_i      => p_bus.addr,  -- address
       rden_i      => io_rden,     -- read enable
       wren_i      => io_wren,     -- write enable
-      ben_i       => p_bus.ben,   -- byte write enable
       data_i      => p_bus.wdata, -- data in
       data_o      => twi_rdata,   -- data out
       ack_o       => twi_ack,     -- transfer acknowledge
@@ -824,7 +819,6 @@ begin
       addr_i      => p_bus.addr,  -- address
       rden_i      => io_rden,     -- read enable
       wren_i      => io_wren,     -- write enable
-      ben_i       => p_bus.ben,   -- byte write enable
       data_i      => p_bus.wdata, -- data in
       data_o      => pwm_rdata,   -- data out
       ack_o       => pwm_ack,     -- transfer acknowledge
@@ -856,7 +850,6 @@ begin
       addr_i => p_bus.addr,  -- address
       rden_i => io_rden,     -- read enable
       wren_i => io_wren,     -- write enable
-      ben_i  => p_bus.ben,   -- byte write enable
       data_i => p_bus.wdata, -- data in
       data_o => trng_rdata,  -- data out
       ack_o  => trng_ack     -- transfer acknowledge
@@ -881,7 +874,6 @@ begin
       addr_i => p_bus.addr,    -- address
       rden_i => io_rden,       -- read enable
       wren_i => io_wren,       -- write enable
-      ben_i  => p_bus.ben,     -- byte write enable
       data_i => p_bus.wdata,   -- data in
       data_o => devnull_rdata, -- data out
       ack_o  => devnull_ack    -- transfer acknowledge

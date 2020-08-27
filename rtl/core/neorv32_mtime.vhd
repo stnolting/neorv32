@@ -55,7 +55,6 @@ entity neorv32_mtime is
     addr_i    : in  std_ulogic_vector(31 downto 0); -- address
     rden_i    : in  std_ulogic; -- read enable
     wren_i    : in  std_ulogic; -- write enable
-    ben_i     : in  std_ulogic_vector(03 downto 0); -- byte write enable
     data_i    : in  std_ulogic_vector(31 downto 0); -- data in
     data_o    : out std_ulogic_vector(31 downto 0); -- data out
     ack_o     : out std_ulogic; -- transfer acknowledge
@@ -96,7 +95,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = mtime_base_c(hi_abb_c downto lo_abb_c)) else '0';
   addr   <= mtime_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and wren_i and and_all_f(ben_i);
+  wren   <= acc_en and wren_i;
 
 
   -- Write Access ---------------------------------------------------------------------------

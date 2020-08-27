@@ -52,7 +52,6 @@ entity neorv32_devnull is
     addr_i : in  std_ulogic_vector(31 downto 0); -- address
     rden_i : in  std_ulogic; -- read enable
     wren_i : in  std_ulogic; -- write enable
-    ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
     data_i : in  std_ulogic_vector(31 downto 0); -- data in
     data_o : out std_ulogic_vector(31 downto 0); -- data out
     ack_o  : out std_ulogic  -- transfer acknowledge
@@ -90,7 +89,7 @@ begin
     if rising_edge(clk_i) then
       ack_o <= acc_en and (wren_i or rden_i);
       if (acc_en = '1') and (wren_i = '1') then
-        if (sim_text_output_en_c = true) and (ben_i(0) = '1') then
+        if (sim_text_output_en_c = true) then
           -- print lowest byte as ASCII to console --
           i := to_integer(unsigned(data_i(7 downto 0)));
           if (i >= 128) then -- out of range?

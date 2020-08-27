@@ -49,7 +49,6 @@ entity neorv32_spi is
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
-    ben_i       : in  std_ulogic_vector(03 downto 0); -- byte write enable
     data_i      : in  std_ulogic_vector(31 downto 0); -- data in
     data_o      : out std_ulogic_vector(31 downto 0); -- data out
     ack_o       : out std_ulogic; -- transfer acknowledge
@@ -140,24 +139,12 @@ begin
       if (wren = '1') then
         -- control regsiter --
         if (addr = spi_ctrl_addr_c) then
-          if (ben_i(0) = '1') then
-            ctrl(07 downto 00) <= data_i(07 downto 00);
-          end if;
-          if (ben_i(1) = '1') then
-            ctrl(15 downto 08) <= data_i(15 downto 08);
-          end if;
-          if (ben_i(2) = '1') then
-            ctrl(16 downto 16) <= data_i(16 downto 16);
-          end if;
+          ctrl <= data_i(ctrl'left downto 0);
         end if;
         -- data regsiter --
         if (addr = spi_rtx_addr_c) then
+          tx_data   <= data_i;
           spi_start <= '1';
-          for i in 0 to 3 loop
-            if (ben_i(i) = '1') then
-              tx_data(7+i*8 downto 0+i*8) <= data_i(7+i*8 downto 0+i*8);
-            end if;
-          end loop; -- i
         end if;
       end if;
       -- read access --

@@ -54,7 +54,6 @@ entity neorv32_wdt is
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
-    ben_i       : in  std_ulogic_vector(03 downto 0); -- byte write enable
     data_i      : in  std_ulogic_vector(31 downto 0); -- data in
     data_o      : out std_ulogic_vector(31 downto 0); -- data out
     ack_o       : out std_ulogic; -- transfer acknowledge
@@ -111,7 +110,7 @@ begin
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = wdt_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  pwd_ok <= '1' when (data_i(15 downto 8) = wdt_password_c) and (ben_i(1) = '1') else '0'; -- password check
+  pwd_ok <= '1' when (data_i(15 downto 8) = wdt_password_c) else '0'; -- password check
   wren   <= '1' when ((acc_en = '1') and (wren_i = '1') and (pwd_ok = '1')) else '0'; -- write access ok
   fail   <= '1' when ((acc_en = '1') and (wren_i = '1') and (pwd_ok = '0')) else '0'; -- write access fail!
 
@@ -129,11 +128,9 @@ begin
       else
         -- control register write access --
         if (wren = '1') then -- allow write if password is correct
-          if (ben_i(0) = '1') then
-            enable  <= data_i(ctrl_enable_c);
-            clk_sel <= data_i(ctrl_clksel2_c downto ctrl_clksel0_c);
-            mode    <= data_i(ctrl_mode_c);
-          end if;
+          enable  <= data_i(ctrl_enable_c);
+          clk_sel <= data_i(ctrl_clksel2_c downto ctrl_clksel0_c);
+          mode    <= data_i(ctrl_mode_c);
         end if;
         -- trigger system reset when enabled AND reset mode AND timeout OR unauthorized access --
         if (enable = '1') and (mode = '1') and ((cnt(cnt'left) = '1') or (fail_ff = '1')) then
