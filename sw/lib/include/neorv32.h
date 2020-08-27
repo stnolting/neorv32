@@ -220,9 +220,9 @@ enum NEORV32_CLOCK_PRSC_enum {
  **************************************************************************/
 /**@{*/
 /** instruction memory base address (r/w/x) */
-// -> use value from MEM_ISPACE_BASE CSR
+// -> use value from MEM_ISPACE_BASE generic
 /** data memory base address (r/w/x) */
-// -> use value from MEM_DSPACE_BASE CSR
+// -> use value from MEM_DSPACE_BASE generic
 /** bootloader memory base address (r/-/x) */
 #define BOOTLOADER_BASE_ADDRESS (0xFFFF0000UL)
 /** peripheral/IO devices memory base address (r/w/x) */
@@ -234,9 +234,9 @@ enum NEORV32_CLOCK_PRSC_enum {
  * @name IO Device: General Purpose Input/Output Port Unit (GPIO)
  **************************************************************************/
 /**@{*/
-/** GPIO parallel input port (r/-) */
+/** GPIO parallel input port 32-bit (r/-) */
 #define GPIO_INPUT  (*(IO_ROM32 0xFFFFFF80UL))
-/** GPIO parallel output port (r/w) */
+/** GPIO parallel output port 32-bit (r/w) */
 #define GPIO_OUTPUT (*(IO_REG32 0xFFFFFF84UL))
 /**@}*/
 

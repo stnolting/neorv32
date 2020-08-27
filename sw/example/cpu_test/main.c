@@ -366,7 +366,7 @@ int main() {
 #endif
   }
   else {
-    neorv32_uart_printf("skipped (not possible when C-EXT enabled)\n");
+    neorv32_uart_printf("skipped (not possible when C extension is enabled)\n");
   }
 
 
