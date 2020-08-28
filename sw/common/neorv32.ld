@@ -53,6 +53,7 @@ SEARCH_DIR("=/opt/riscv/riscv64-unknown-linux-gnu/lib"); SEARCH_DIR("=/usr/local
 /* ************************************************* */
 MEMORY
 {
+/* rom section: first value of ORIGIN/LENGHT: bootloader ROM; second value of ORIGIN/LENGHT: IMEM */
   rom  (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 4*1024 : 16*1024
   ram (rwx) : ORIGIN = 0x80000000, LENGTH =  8*1024
 }
