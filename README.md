@@ -20,7 +20,7 @@
 
 ## Introduction
 
-The NEORV321 Processor is a customizable microcontroller-like system on chip (SoC) that is based
+The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC) that is based
 on the RISC-V-compliant NEORV32 CPU. The project consists of two main parts:
 
 
