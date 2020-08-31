@@ -61,7 +61,7 @@ The processor is intended to work "out of the box". Just synthesize the
 with the NEORV32. If you do not want to [compile the GCC toolchains](https://github.com/riscv/riscv-gnu-toolchain) by yourself, you can also
 download [pre-compiled toolchains](https://github.com/stnolting/riscv_gcc_prebuilt) for Linux.
 
-For more information take a look a the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+For more information take a look at the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 This project is hosted on [GitHub](https://github.com/stnolting/neorv32) and [opencores.org](https://opencores.org/projects/neorv32).
 A not-so-complete project log can be found on [hackaday.io](https://hackaday.io/project/174167-the-neorv32-risc-v-processor).
@@ -589,7 +589,7 @@ executable `neorv32_exe.bin` in the same folder.
 
     neorv32/sw/example/blink_led$ make clean_all compile
 
-Connect your FPGA board via UART to you computer and open the according port to interface with the NEORV32 bootloader. The bootloader
+Connect your FPGA board via UART to your computer and open the according port to interface with the NEORV32 bootloader. The bootloader
 uses the following default UART configuration:
 
 - 19200 Baud
@@ -703,8 +703,6 @@ link in question.
 
 #### Proprietary  Notice
 
-"Windows" is a trademark of Microsoft Corporation.
-
 "Artix" and "Vivado" are trademarks of Xilinx Inc.
 
 "Cyclone", "Quartus Prime", "Quartus Prime Lite" and "Avalon Bus" are trademarks of Intel Corporation.
@@ -721,7 +719,7 @@ link in question.
 
 [![RISC-V](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/riscv_logo.png)](https://riscv.org/)
 
-[RISC-V](https://riscv.org/) - Instruction Sets Want To Be Free :heart:
+[RISC-V](https://riscv.org/) - Instruction Sets Want To Be Free!
 
 [![Continous Integration provided by Travis CI](https://travis-ci.com/images/logos/TravisCI-Full-Color.png)](https://travis-ci.com/stnolting/neorv32)
 
