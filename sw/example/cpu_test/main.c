@@ -604,7 +604,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt
+  // Fast interrupt channel 0 (WDT)
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("FIRQ0 (WDT):  ");
@@ -631,11 +631,133 @@ int main() {
       test_fail();
     }
 #endif
-    // no more mtime interrupts
+    // no more WDT interrupts
     neorv32_wdt_disable();
   }
   else {
     neorv32_uart_printf("skipped (WDT not implemented)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Fast interrupt channel 2 (UART)
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("FIRQ2 (UART): ");
+
+  if (neorv32_uart_available()) {
+    cnt_test++;
+
+    // wait for UART to finish transmitting
+    while(neorv32_uart_tx_busy());
+
+    // enable UART TX done IRQ
+    UART_CT |= (1 << UART_CT_TX_IRQ);
+
+    // trigger UART TX IRQ
+    UART_DATA = 0; // we need to access the raw HW here, since >DEVNULL_UART_OVERRIDE< might be active
+
+    // wait for UART to finish transmitting
+    while(neorv32_uart_tx_busy());
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+
+#if (DETAILED_EXCEPTION_DEBUG==0)
+    if (exception_handler_answer == TRAP_CODE_FIRQ_2) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+#endif
+    // wait for UART to finish transmitting
+    while(neorv32_uart_tx_busy());
+
+    // disable UART TX done IRQ
+    UART_CT &= ~(1 << UART_CT_TX_IRQ);
+  }
+  else {
+    neorv32_uart_printf("skipped (UART not implemented)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Fast interrupt channel 3 (SPI)
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("FIRQ3 (SPI):  ");
+
+  if (neorv32_spi_available()) {
+    cnt_test++;
+
+    // configure SPI, enable transfer-done IRQ
+    neorv32_spi_setup(CLK_PRSC_2, 0, 0, 0, 1);
+
+    // trigger SPI IRQ
+    neorv32_spi_trans(0);
+    while(neorv32_spi_busy()); // wait for current transfer to finish
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+
+#if (DETAILED_EXCEPTION_DEBUG==0)
+    if (exception_handler_answer == TRAP_CODE_FIRQ_3) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+#endif
+    // disable SPI
+    neorv32_spi_disable();
+  }
+  else {
+    neorv32_uart_printf("skipped (SPI not implemented)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Fast interrupt channel 3 (TWI)
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("FIRQ3 (TWI):  ");
+
+  if (neorv32_twi_available()) {
+    cnt_test++;
+
+    // configure TWI, fastest clock, transfer-done IRQ enable
+    neorv32_twi_setup(CLK_PRSC_2, 1);
+
+    // trigger TWI IRQ
+    neorv32_twi_trans(0);
+    neorv32_twi_generate_stop();
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+
+#if (DETAILED_EXCEPTION_DEBUG==0)
+    if (exception_handler_answer == TRAP_CODE_FIRQ_3) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+#endif
+    // disable TWI
+    neorv32_twi_disable();
+  }
+  else {
+    neorv32_uart_printf("skipped (TWI not implemented)\n");
   }
 
 
