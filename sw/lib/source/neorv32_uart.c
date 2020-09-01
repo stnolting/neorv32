@@ -125,7 +125,6 @@ void neorv32_uart_disable(void) {
 }
 
 
-
 /**********************************************************************//**
  * Send single char via UART.
  *
@@ -145,6 +144,22 @@ void neorv32_uart_putc(char c) {
   UART_DATA = ((uint32_t)c) << UART_DATA_LSB;
 #endif
 
+}
+
+
+/**********************************************************************//**
+ * Check if UART TX is busy.
+ *
+ * @note This function is blocking.
+ *
+ * @return 0 if idle, 1 if busy
+ **************************************************************************/
+int neorv32_uart_tx_busy(void) {
+
+  if ((UART_CT & (1<<UART_CT_TX_BUSY)) != 0) {
+    return 1;
+  }
+  return 0;
 }
 
 

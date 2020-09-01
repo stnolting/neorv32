@@ -150,3 +150,19 @@ uint32_t neorv32_spi_trans(uint32_t tx_data) {
 
   return SPI_DATA;
 }
+
+
+/**********************************************************************//**
+ * Check if SPI transceiver is busy.
+ *
+ * @note This function is blocking.
+ *
+ * @return 0 if idle, 1 if busy
+ **************************************************************************/
+int neorv32_spi_busy(void) {
+
+  if ((SPI_CT & (1<<SPI_CT_BUSY)) != 0) {
+    return 1;
+  }
+  return 0;
+}

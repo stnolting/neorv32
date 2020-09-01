@@ -111,6 +111,22 @@ void neorv32_twi_mack_disable(void) {
 }
 
 
+/**********************************************************************//**
+ * Check if TWI is busy.
+ *
+ * @note This function is blocking.
+ *
+ * @return 0 if idle, 1 if busy
+ **************************************************************************/
+int neorv32_twi_busy(void) {
+
+  if (TWI_CT & (1 << TWI_CT_BUSY)) {
+    return 1;
+  }
+  return 0;
+}
+
+
  /**********************************************************************//**
  * Generate START condition and send first byte (address including R/W bit).
  *
