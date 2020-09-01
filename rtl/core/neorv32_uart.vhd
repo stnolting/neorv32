@@ -152,27 +152,8 @@ begin
       data_o <= (others => '0');
       if (rd_en = '1') then
         if (addr = uart_ctrl_addr_c) then
-          data_o(ctrl_uart_baud00_c)  <= ctrl(ctrl_uart_baud00_c);
-          data_o(ctrl_uart_baud01_c)  <= ctrl(ctrl_uart_baud01_c);
-          data_o(ctrl_uart_baud02_c)  <= ctrl(ctrl_uart_baud02_c);
-          data_o(ctrl_uart_baud03_c)  <= ctrl(ctrl_uart_baud03_c);
-          data_o(ctrl_uart_baud04_c)  <= ctrl(ctrl_uart_baud04_c);
-          data_o(ctrl_uart_baud05_c)  <= ctrl(ctrl_uart_baud05_c);
-          data_o(ctrl_uart_baud06_c)  <= ctrl(ctrl_uart_baud06_c);
-          data_o(ctrl_uart_baud07_c)  <= ctrl(ctrl_uart_baud07_c);
-          --
-          data_o(ctrl_uart_baud08_c)  <= ctrl(ctrl_uart_baud08_c);
-          data_o(ctrl_uart_baud09_c)  <= ctrl(ctrl_uart_baud09_c);
-          data_o(ctrl_uart_baud10_c)  <= ctrl(ctrl_uart_baud10_c);
-          data_o(ctrl_uart_baud11_c)  <= ctrl(ctrl_uart_baud11_c);
-          --
-          data_o(ctrl_uart_prsc0_c)   <= ctrl(ctrl_uart_prsc0_c);
-          data_o(ctrl_uart_prsc1_c)   <= ctrl(ctrl_uart_prsc1_c);
-          data_o(ctrl_uart_prsc2_c)   <= ctrl(ctrl_uart_prsc2_c);
+          data_o <= ctrl; -- default
           data_o(ctrl_uart_rxovr_c)   <= uart_rx_avail(0) and uart_rx_avail(1);
-          data_o(ctrl_uart_en_c)      <= ctrl(ctrl_uart_en_c);
-          data_o(ctrl_uart_rx_irq_c)  <= ctrl(ctrl_uart_rx_irq_c);
-          data_o(ctrl_uart_tx_irq_c)  <= ctrl(ctrl_uart_tx_irq_c);
           data_o(ctrl_uart_tx_busy_c) <= uart_tx_busy;
         else -- uart_rtx_addr_c
           data_o(data_rx_avail_c) <= uart_rx_avail(0);
