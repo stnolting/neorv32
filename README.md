@@ -107,7 +107,7 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 
 ### Non RISC-V-Compliant Issues
 
-* `misa` CSR is read-only - no dynamic enabling/disabling of implemented CPU extensions during runtime
+* `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime
 * `mcause` CSR is read-only
 * The `[m]cycleh` and `[m]instreth` CSR counters are only 20-bit wide (in contrast to original 32-bit)
 * The physical memory protection (**PMP**) only supports `NAPOT` mode, a minimal granularity of 8 bytes and only up to 8 regions
@@ -128,6 +128,7 @@ The NEORV32-specific extensions are always enabled and are indicated via the `X`
 - Maybe port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
 - Implement further CPU extensions:
   - Atomic operations (`A`)
+  - Bitmanipulation operations (`B`), when they are "official"
   - Floating-point instructions (`F`)
   - ...
 
