@@ -107,7 +107,6 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 
 ### Non RISC-V-Compliant Issues
 
-* No exception is triggered for the `E` CPU extension when using registers above `x15` (*needs fixing*)
 * `misa` CSR is read-only - no dynamic enabling/disabling of implemented CPU extensions during runtime
 * `mcause` CSR is read-only
 * The `[m]cycleh` and `[m]instreth` CSR counters are only 20-bit wide (in contrast to original 32-bit)
