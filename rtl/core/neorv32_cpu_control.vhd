@@ -255,27 +255,6 @@ begin
 -- Instruction Fetch
 -- ****************************************************************************************************************************
 
-  -- Compressed Instructions Recoding -------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_decompressor_inst_true:
-  if (CPU_EXTENSION_RISCV_C = true) generate
-    neorv32_cpu_decompressor_inst: neorv32_cpu_decompressor
-    port map (
-      -- instruction input --
-      ci_instr16_i => fetch_engine.ci_input, -- compressed instruction input
-      -- instruction output --
-      ci_illegal_o => ci_illegal, -- is an illegal compressed instruction
-      ci_instr32_o => ci_instr32  -- 32-bit decompressed instruction
-    );
-  end generate;
-
-  neorv32_cpu_decompressor_inst_false:
-  if (CPU_EXTENSION_RISCV_C = false) generate
-    ci_instr32 <= (others => '0');
-    ci_illegal <= '0';
-  end generate;
-
-
   -- Fetch Engine FSM Sync ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- for registers that require a specific reset state --
@@ -404,6 +383,27 @@ begin
   end process fetch_engine_fsm_comb;
 
 
+  -- Compressed Instructions Recoding -------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_cpu_decompressor_inst_true:
+  if (CPU_EXTENSION_RISCV_C = true) generate
+    neorv32_cpu_decompressor_inst: neorv32_cpu_decompressor
+    port map (
+      -- instruction input --
+      ci_instr16_i => fetch_engine.ci_input, -- compressed instruction input
+      -- instruction output --
+      ci_illegal_o => ci_illegal, -- is an illegal compressed instruction
+      ci_instr32_o => ci_instr32  -- 32-bit decompressed instruction
+    );
+  end generate;
+
+  neorv32_cpu_decompressor_inst_false:
+  if (CPU_EXTENSION_RISCV_C = false) generate
+    ci_instr32 <= (others => '0');
+    ci_illegal <= '0';
+  end generate;
+
+
 -- ****************************************************************************************************************************
 -- Instruction Prefetch Buffer
 -- ****************************************************************************************************************************
@@ -527,7 +527,7 @@ begin
       execute_engine.last_pc <= CPU_BOOT_ADDR(data_width_c-1 downto 1) & '0';
       execute_engine.state   <= SYS_WAIT;
       execute_engine.sleep   <= '0';
-      execute_engine.if_rst  <= '1'; -- IF is reset after system reset
+      execute_engine.if_rst  <= '1'; -- instruction fetch is reset after system reset
     elsif rising_edge(clk_i) then
       execute_engine.pc <= execute_engine.pc_nxt(data_width_c-1 downto 1) & '0';
       if (execute_engine.state = EXECUTE) then
@@ -953,17 +953,17 @@ begin
       when x"343" => csr_acc_valid <= is_m_mode_v; -- mtval
       when x"344" => csr_acc_valid <= is_m_mode_v; -- mip
       --
-      when x"3a0" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >=  1)) and is_m_mode_v; -- pmpacfg0
-      when x"3a1" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >=  5)) and is_m_mode_v; -- pmpacfg1
+      when x"3a0" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 1)) and is_m_mode_v; -- pmpacfg0
+      when x"3a1" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 5)) and is_m_mode_v; -- pmpacfg1
       --
-      when x"3b0" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >=  1)) and is_m_mode_v; -- pmpaddr0
-      when x"3b1" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >=  2)) and is_m_mode_v; -- pmpaddr1
-      when x"3b2" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >=  3)) and is_m_mode_v; -- pmpaddr2
-      when x"3b3" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >=  4)) and is_m_mode_v; -- pmpaddr3
-      when x"3b4" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >=  5)) and is_m_mode_v; -- pmpaddr4
-      when x"3b5" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >=  6)) and is_m_mode_v; -- pmpaddr5
-      when x"3b6" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >=  7)) and is_m_mode_v; -- pmpaddr6
-      when x"3b7" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >=  8)) and is_m_mode_v; -- pmpaddr7
+      when x"3b0" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 1)) and is_m_mode_v; -- pmpaddr0
+      when x"3b1" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 2)) and is_m_mode_v; -- pmpaddr1
+      when x"3b2" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 3)) and is_m_mode_v; -- pmpaddr2
+      when x"3b3" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 4)) and is_m_mode_v; -- pmpaddr3
+      when x"3b4" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 5)) and is_m_mode_v; -- pmpaddr4
+      when x"3b5" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 6)) and is_m_mode_v; -- pmpaddr5
+      when x"3b6" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 7)) and is_m_mode_v; -- pmpaddr6
+      when x"3b7" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 8)) and is_m_mode_v; -- pmpaddr7
       --
       when x"c00" => csr_acc_valid <= bool_to_ulogic_f(CSR_COUNTERS_USE); -- cycle
       when x"c01" => csr_acc_valid <= bool_to_ulogic_f(CSR_COUNTERS_USE); -- time
@@ -984,7 +984,7 @@ begin
       --
       when x"fc0" => csr_acc_valid <= is_m_mode_v; -- mzext (custom CSR)
       --
-      when others => csr_acc_valid <= '0'; -- undefined
+      when others => csr_acc_valid <= '0'; -- undefined, invalid access
     end case;
   end process invalid_csr_access_check;
 
@@ -1000,19 +1000,16 @@ begin
       illegal_instruction <= '0';
       illegal_register    <= '0';
 
-      -- check if using reg >= 16 for E-CPUs --
-      --if (CPU_EXTENSION_RISCV_E = true) then
-      --  illegal_register <= ????? FIXME
-      --else
-      --  illegal_register <= '0';
-      --end if;
-
       -- check instructions --
       case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
 
         -- OPCODE check sufficient: LUI, UIPC, JAL --
         when opcode_lui_c | opcode_auipc_c | opcode_jal_c =>
           illegal_instruction <= '0';
+          -- illegal E-CPU register? --
+          if (CPU_EXTENSION_RISCV_E = true) and (execute_engine.i_reg(instr_rd_msb_c) = '1') then
+            illegal_register <= '1';
+          end if;
 
         when opcode_alui_c => -- check ALUI funct7
           if ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) and
@@ -1023,6 +1020,10 @@ begin
             illegal_instruction <= '1';
           else
             illegal_instruction <= '0';
+          end if;
+          -- illegal E-CPU register? --
+          if (CPU_EXTENSION_RISCV_E = true) and ((execute_engine.i_reg(instr_rs1_msb_c) = '1') or (execute_engine.i_reg(instr_rd_msb_c) = '1')) then
+            illegal_register <= '1';
           end if;
       
         when opcode_load_c => -- check LOAD funct3
@@ -1035,6 +1036,10 @@ begin
           else
             illegal_instruction <= '1';
           end if;
+          -- illegal E-CPU register? --
+          if (CPU_EXTENSION_RISCV_E = true) and ((execute_engine.i_reg(instr_rs1_msb_c) = '1') or (execute_engine.i_reg(instr_rd_msb_c) = '1')) then
+            illegal_register <= '1';
+          end if;
       
         when opcode_store_c => -- check STORE funct3
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sb_c) or
@@ -1043,6 +1048,10 @@ begin
             illegal_instruction <= '0';
           else
             illegal_instruction <= '1';
+          end if;
+          -- illegal E-CPU register? --
+          if (CPU_EXTENSION_RISCV_E = true) and ((execute_engine.i_reg(instr_rs2_msb_c) = '1') or (execute_engine.i_reg(instr_rs1_msb_c) = '1')) then
+            illegal_register <= '1';
           end if;
 
         when opcode_branch_c => -- check BRANCH funct3
@@ -1056,12 +1065,20 @@ begin
           else
             illegal_instruction <= '1';
           end if;
+          -- illegal E-CPU register? --
+          if (CPU_EXTENSION_RISCV_E = true) and ((execute_engine.i_reg(instr_rs2_msb_c) = '1') or (execute_engine.i_reg(instr_rs1_msb_c) = '1')) then
+            illegal_register <= '1';
+          end if;
 
         when opcode_jalr_c => -- check JALR funct3
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "000") then
             illegal_instruction <= '0';
           else
             illegal_instruction <= '1';
+          end if;
+          -- illegal E-CPU register? --
+          if (CPU_EXTENSION_RISCV_E = true) and ((execute_engine.i_reg(instr_rs1_msb_c) = '1') or (execute_engine.i_reg(instr_rd_msb_c) = '1')) then
+            illegal_register <= '1';
           end if;
 
         when opcode_alu_c => -- check ALU funct3 & funct7
@@ -1076,6 +1093,11 @@ begin
             illegal_instruction <= '1';
           else
             illegal_instruction <= '0';
+          end if;
+          -- illegal E-CPU register? --
+          if (CPU_EXTENSION_RISCV_E = true) and
+             ((execute_engine.i_reg(instr_rs2_msb_c) = '1') or (execute_engine.i_reg(instr_rs1_msb_c) = '1') or (execute_engine.i_reg(instr_rd_msb_c) = '1')) then
+            illegal_register <= '1';
           end if;
 
         when opcode_fence_c => -- fence instructions --
@@ -1100,6 +1122,14 @@ begin
               illegal_instruction <= '0';
             else
               illegal_instruction <= '1';
+            end if;
+            -- illegal E-CPU register? --
+            if (CPU_EXTENSION_RISCV_E = true) then
+              if (execute_engine.i_reg(instr_funct3_msb_c) = '0') then -- reg-reg CSR
+                illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
+              else -- reg-imm CSR
+                illegal_register <= execute_engine.i_reg(instr_rd_msb_c);
+              end if;
             end if;
 
           -- ecall, ebreak, mret, wfi --
