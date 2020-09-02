@@ -60,6 +60,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   constant baud_rate_c        : real := 19200.0; -- standard UART baudrate
   constant wb_mem_base_addr_c : std_ulogic_vector(31 downto 0) := x"F0000000"; -- wishbone memory base address
   constant wb_mem_size_c      : natural := 256; -- wishbone memory size in bytes
+  constant wb_mem_latency_c   : natural := 8; -- latency in clock cycles (min 1)
   -- -------------------------------------------------------------------------------------------
 
   -- text.io --
@@ -103,15 +104,17 @@ architecture neorv32_tb_rtl of neorv32_tb is
   end record;
   signal wb_cpu : wishbone_t;
 
-
-  -- Wishbone memory, SimCom --
-  type wb_mem_file_t is array (0 to wb_mem_size_c/4-1) of std_ulogic_vector(31 downto 0);
-  signal wb_mem_file  : wb_mem_file_t := (others => (others => '0'));
-  signal rb_en        : std_ulogic;
-  signal r_data       : std_ulogic_vector(31 downto 0);
-  signal wb_acc_en    : std_ulogic;
-  signal wb_mem_rdata : std_ulogic_vector(31 downto 0);
-  signal wb_mem_ack   : std_ulogic;
+  -- Wishbone memory --
+  type wb_mem_ram_t is array (0 to wb_mem_size_c/4-1) of std_ulogic_vector(31 downto 0);
+  type wb_mem_read_latency_t is array (0 to wb_mem_latency_c-1) of std_ulogic_vector(31 downto 0);
+  type wb_mem_t is record
+    ram    : wb_mem_ram_t;
+    rdata  : wb_mem_read_latency_t;
+    acc_en : std_ulogic;
+    ack    : std_ulogic_vector(wb_mem_latency_c-1 downto 0);
+    rb_en  : std_ulogic_vector(wb_mem_latency_c-1 downto 0);
+  end record;
+  signal wb_mem : wb_mem_t;
 
 begin
 
@@ -156,7 +159,7 @@ begin
     MEM_INT_DMEM_SIZE            => 8*1024,        -- size of processor-internal data memory in bytes
     -- Memory configuration: External memory interface --
     MEM_EXT_USE                  => true,          -- implement external memory bus interface?
-    MEM_EXT_REG_STAGES           => 2,             -- number of interface register stages (0,1,2)
+    MEM_EXT_REG_STAGES           => 0,             -- number of interface register stages (0,1,2)
     MEM_EXT_TIMEOUT              => 15,            -- cycles after which a valid bus access will timeout
     -- Processor peripherals --
     IO_GPIO_USE                  => true,          -- implement general purpose input/output port unit (GPIO)?
@@ -209,11 +212,6 @@ begin
   -- TWI termination --
   twi_scl <= 'H';
   twi_sda <= 'H';
-
-  -- Wishbone read-back --
-  wb_cpu.rdata <= wb_mem_rdata;
-  wb_cpu.ack   <= wb_mem_ack;
-  wb_cpu.err   <= '0';
 
 
   -- Console UART Receiver ------------------------------------------------------------------
@@ -270,27 +268,40 @@ begin
 
   -- Wishbone Memory ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-    wb_mem_file_access: process(clk_gen)
-    begin
-      if rising_edge(clk_gen) then
-        rb_en <= wb_cpu.cyc and wb_cpu.stb and wb_acc_en and (not wb_cpu.we); -- read-back control
-        wb_mem_ack <= wb_cpu.cyc and wb_cpu.stb and wb_acc_en; -- wishbone acknowledge
-        if ((wb_cpu.cyc and wb_cpu.stb and wb_acc_en and wb_cpu.we) = '1') then -- valid write access
-          for i in 0 to 3 loop
-            if (wb_cpu.sel(i) = '1') then
-              wb_mem_file(to_integer(unsigned(wb_cpu.addr(index_size_f(wb_mem_size_c/4)+1 downto 2))))(7+i*8 downto 0+i*8) <= wb_cpu.wdata(7+i*8 downto 0+i*8);
-            end if;
-          end loop; -- i
-        end if;
-        r_data <= wb_mem_file(to_integer(unsigned(wb_cpu.addr(index_size_f(wb_mem_size_c/4)+1 downto 2)))); -- word aligned
+  wb_mem_ram_access: process(clk_gen)
+  begin
+    if rising_edge(clk_gen) then
+      -- control --
+      wb_mem.rb_en(0) <= wb_cpu.cyc and wb_cpu.stb and wb_mem.acc_en and (not wb_cpu.we); -- read-back control
+      wb_mem.ack(0)   <= wb_cpu.cyc and wb_cpu.stb and wb_mem.acc_en; -- wishbone acknowledge
+      -- write access --
+      if ((wb_cpu.cyc and wb_cpu.stb and wb_mem.acc_en and wb_cpu.we) = '1') then -- valid write access
+        for i in 0 to 3 loop
+          if (wb_cpu.sel(i) = '1') then
+            wb_mem.ram(to_integer(unsigned(wb_cpu.addr(index_size_f(wb_mem_size_c/4)+1 downto 2))))(7+i*8 downto 0+i*8) <= wb_cpu.wdata(7+i*8 downto 0+i*8);
+          end if;
+        end loop; -- i
       end if;
-    end process wb_mem_file_access;
+      -- read access --
+      wb_mem.rdata(0) <= wb_mem.ram(to_integer(unsigned(wb_cpu.addr(index_size_f(wb_mem_size_c/4)+1 downto 2)))); -- word aligned
+      -- virtual read and ack latency --
+      if (wb_mem_latency_c > 1) then
+        for i in 1 to wb_mem_latency_c-1 loop
+          wb_mem.rdata(i) <= wb_mem.rdata(i-1);
+          wb_mem.rb_en(i) <= wb_mem.rb_en(i-1);
+          wb_mem.ack(i)   <= wb_mem.ack(i-1);
+        end loop;
+      end if;
+    end if;
+  end process wb_mem_ram_access;
 
-  -- wb mem access --
-  wb_acc_en <= '1' when (wb_cpu.addr >= wb_mem_base_addr_c) and (wb_cpu.addr < std_ulogic_vector(unsigned(wb_mem_base_addr_c) + wb_mem_size_c)) else '0';
+  -- wishbone memory access? --
+  wb_mem.acc_en <= '1' when (wb_cpu.addr >= wb_mem_base_addr_c) and (wb_cpu.addr < std_ulogic_vector(unsigned(wb_mem_base_addr_c) + wb_mem_size_c)) else '0';
 
-  -- output gate --
-  wb_mem_rdata <= r_data when (rb_en = '1') else (others=> '0');
+  -- output to cpu --
+  wb_cpu.rdata <= wb_mem.rdata(wb_mem_latency_c-1) when (wb_mem.rb_en(wb_mem_latency_c-1) = '1') else (others=> '0'); -- data output gate
+  wb_cpu.ack   <= wb_mem.ack(wb_mem_latency_c-1);
+  wb_cpu.err   <= '0';
 
 
 end neorv32_tb_rtl;
