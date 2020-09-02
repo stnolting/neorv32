@@ -149,9 +149,9 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  sanity_check: process(clk_i)
+  sanity_check: process(rstn_i)
   begin
-    if rising_edge(clk_i) then
+    if rising_edge(rstn_i) then -- no worries - this won't be synthesized
       -- CSR system --
       if (CPU_EXTENSION_RISCV_Zicsr = false) then
         assert false report "NEORV32 CPU CONFIG WARNING! No exception/interrupt/machine features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;

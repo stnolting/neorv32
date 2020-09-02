@@ -221,9 +221,9 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  sanity_check: process(clk_i)
+  sanity_check: process(rstn_i)
   begin
-    if rising_edge(clk_i) then
+    if rising_edge(rstn_i) then -- no worries - this won't be synthesized
       -- internal bootloader memory --
       if (BOOTLOADER_USE = true) and (boot_size_c > boot_max_size_c) then
         assert false report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range." severity error;
