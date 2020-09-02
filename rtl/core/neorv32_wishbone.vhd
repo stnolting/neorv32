@@ -4,9 +4,9 @@
 -- # The interface is either unregistered (INTERFACE_REG_STAGES = 0), only outgoing signals are    #
 -- # registered (INTERFACE_REG_STAGES = 1) or incoming and outgoing signals are registered         #
 -- # (INTERFACE_REG_STAGES = 2).                                                                   #
--- #                                                                                               #
+-- # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 -- # All bus accesses from the CPU, which do not target the internal IO region, the internal boot- #
--- # loader or the internal instruction & data memories (if implemented), are delegated via this   #
+-- # loader or the internal instruction or data memories (if implemented), are delegated via this  #
 -- # Wishbone gateway to the external bus interface.                                               #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
@@ -95,6 +95,8 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
   signal int_dmem_acc, int_dmem_acc_real : std_ulogic;
   signal int_boot_acc, int_io_acc        : std_ulogic;
   signal wb_access                       : std_ulogic;
+  signal wb_access_ff, wb_access_ff_ff   : std_ulogic;
+  signal rb_en                           : std_ulogic;
 
   -- bus arbiter --
   signal wb_stb_ff0 : std_ulogic;
@@ -103,15 +105,21 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
   signal wb_ack_ff  : std_ulogic;
   signal wb_err_ff  : std_ulogic;
 
+  -- data read-back --
+  signal wb_rdata : std_ulogic_vector(31 downto 0);
+
 begin
 
   -- Sanity Check ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  sanity_check: process(clk_i)
+  sanity_check: process(rstn_i)
   begin
-    if rising_edge(clk_i) then
+    if rising_edge(rstn_i) then -- no worries - this won't be synthesized
       if (INTERFACE_REG_STAGES > 2) then
         assert false report "NEORV32 CONFIG ERROR! Number of external memory interface buffer stages must be 0, 1 or 2." severity error;
+      end if;
+      if (INTERFACE_REG_STAGES = 0) then
+        assert false report "NEORV32 CONFIG WARNING! External memory interface without register stages is still experimental for peripherals with more than 1 cycle latency." severity warning;
       end if;
     end if;
   end process sanity_check;
@@ -136,17 +144,19 @@ begin
   bus_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      wb_cyc_ff  <= '0';
-      wb_stb_ff1 <= '0';
-      wb_stb_ff0 <= '0';
-      wb_ack_ff  <= '0';
-      wb_err_ff  <= '0';
+      wb_cyc_ff       <= '0';
+      wb_stb_ff1      <= '0';
+      wb_stb_ff0      <= '0';
+      wb_ack_ff       <= '0';
+      wb_err_ff       <= '0';
+      wb_access_ff    <= '0';
+      wb_access_ff_ff <= '0';
     elsif rising_edge(clk_i) then
       -- bus cycle --
       if (INTERFACE_REG_STAGES = 0) then
         wb_cyc_ff <= '0'; -- unused
       else
-        wb_cyc_ff <= (wb_cyc_ff or wb_access) and ((not wb_ack_i) or (not wb_err_i)) and (not cancel_i);
+        wb_cyc_ff <= (wb_cyc_ff or wb_access) and (not wb_ack_i) and (not wb_err_i) and (not cancel_i);
       end if;
       -- bus strobe --
       wb_stb_ff1 <= wb_stb_ff0;
@@ -155,6 +165,13 @@ begin
       wb_ack_ff <= wb_ack_i;
       -- bus err --
       wb_err_ff <= wb_err_i;
+      -- access still active? --
+      wb_access_ff_ff <= wb_access_ff;
+      if (wb_access = '1') then
+        wb_access_ff <= '1';
+      elsif ((wb_ack_i or wb_err_i or cancel_i) = '1') then
+        wb_access_ff <= '0';
+      end if;
     end if;
   end process bus_arbiter;
 
@@ -170,12 +187,16 @@ begin
   -- cpu err --
   err_o <= wb_err_ff when (INTERFACE_REG_STAGES = 2) else wb_err_i;
 
+  -- cpu read-data --
+  rb_en  <= wb_access_ff_ff when (INTERFACE_REG_STAGES = 2) else wb_access_ff;
+  data_o <= wb_rdata when (rb_en = '1') else (others => '0');
+
 
   -- Bus Buffer -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   interface_reg_level_zero:
   if (INTERFACE_REG_STAGES = 0) generate -- 0 register levels: direct connection
-    data_o   <= wb_dat_i;
+    wb_rdata <= wb_dat_i;
     wb_adr_o <= addr_i;
     wb_dat_o <= data_i;
     wb_sel_o <= ben_i;
@@ -195,7 +216,7 @@ begin
         end if;
       end if;
     end process buffer_stages_one;
-    data_o <= wb_dat_i;
+    wb_rdata <= wb_dat_i;
   end generate;
 
   interface_reg_level_two:
@@ -208,7 +229,9 @@ begin
           wb_dat_o <= data_i;
           wb_sel_o <= ben_i;
           wb_we_o  <= wren_i;
-          data_o   <= wb_dat_i;
+        end if;
+        if (wb_ack_i = '1') then
+          wb_rdata <= wb_dat_i;
         end if;
       end if;
     end process buffer_stages_two;
