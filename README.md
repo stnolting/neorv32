@@ -532,7 +532,7 @@ and build the toolchain by yourself, or you can download a prebuilt one and inst
 :warning: Keep in mind that – for instance – a `rv32imc` toolchain only provides library code compiled with compressed and
 `mul`/`div` instructions! Hence, this code cannot be executed (without emulation) on an architecture without these extensions!
 
-To build the toolchain by yourself, follow the official [build instructions](https://github.com/riscv/riscv-gnu-toolchain.
+To build the toolchain by yourself, follow the official [build instructions](https://github.com/riscv/riscv-gnu-toolchain).
 Make sure to use the `ilp32` or `ilp32e` ABI.
 
 **Alternatively**, you can download a prebuilt toolchain. I have uploaded the toolchains I am using to GitHub. These toolchains
@@ -638,7 +638,7 @@ Going further: Take a look at the _Let's Get It Started!_ chapter of the [![NEOR
 ## Contribute
 
 I'm always thankful for help! So if you have any questions, bug reports, ideas or if you want to give some kind of feedback, feel free
-to open a [new issue](https://github.com/stnolting/neorv32/issues) or directly drop me a line (mailto:stnolting@gmail.com).
+to [open a new issue](https://github.com/stnolting/neorv32/issues) or directly [drop me a line](mailto:stnolting@gmail.com).
 
 If you'd like to contribute:
 
