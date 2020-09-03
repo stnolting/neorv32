@@ -712,7 +712,7 @@ begin
             ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "00"; -- RF input = ALU result
             -- multi cycle alu operation? --
             if (alu_operation_v = alu_cmd_shift_c) or -- shift operation?
-               ((CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_alu_c) and
+               ((CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and
                 (execute_engine.i_reg(instr_funct7_lsb_c) = '1')) then -- MULDIV?
               execute_engine.state_nxt <= ALU_WAIT;
             else
@@ -720,7 +720,7 @@ begin
               execute_engine.state_nxt <= DISPATCH;
             end if;
             -- cp access? --
-            if (CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_alu_c) and
+            if (CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and
                (execute_engine.i_reg(instr_funct7_lsb_c) = '1') then -- MULDIV?
               ctrl_nxt(ctrl_cp_use_c) <= '1'; -- use CP
             end if;
@@ -728,7 +728,7 @@ begin
           when opcode_lui_c | opcode_auipc_c => -- load upper immediate (add to PC)
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_rf_clear_rs1_c) <= '1'; -- force RS1 = r0 (only relevant for LUI)
-            if (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_auipc_c) then -- AUIPC
+            if (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_auipc_c(5)) then -- AUIPC
               ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '1'; -- use PC as ALU.OPA
             else -- LUI
               ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- use RS1 as ALU.OPA
@@ -758,7 +758,7 @@ begin
           when opcode_jal_c | opcode_jalr_c => -- jump and link (with register)
           -- ------------------------------------------------------------
             -- compute target address --
-            if (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_jal_c) then -- JAL
+            if (execute_engine.i_reg(instr_opcode_lsb_c+3) = opcode_jal_c(3)) then -- JAL
               ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '1'; -- use PC as ALU.OPA
             else -- JALR
               ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- use RS1 as ALU.OPA
@@ -773,13 +773,13 @@ begin
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
-            if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then -- FENCE.I
+            if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) and (CPU_EXTENSION_RISCV_Zifencei = true) then -- FENCE.I
               fetch_engine.reset          <= '1';
               execute_engine.if_rst_nxt   <= '1'; -- this is a non-linear PC modification
               execute_engine.pc_nxt       <= execute_engine.next_pc; -- "refetch" next instruction (only relevant for fence.i)
               ctrl_nxt(ctrl_bus_fencei_c) <= '1';
             end if;
-            if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then -- FENCE
+            if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fence_c(0)) then -- FENCE
               ctrl_nxt(ctrl_bus_fence_c) <= '1';
             end if;
             execute_engine.state_nxt <= SYS_WAIT;
@@ -910,7 +910,7 @@ begin
         if (ma_load_i = '1') or (be_load_i = '1') or (ma_store_i = '1') or (be_store_i = '1') then -- abort if exception
           execute_engine.state_nxt <= SYS_WAIT;
         elsif (bus_d_wait_i = '0') then -- wait here for bus to finish transaction
-          if (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_load_c) then -- LOAD?
+          if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then -- LOAD
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
           end if;
           execute_engine.state_nxt <= DISPATCH;
