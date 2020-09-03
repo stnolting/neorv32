@@ -324,7 +324,7 @@ begin
             i_arbiter.rd_req <= '0';
           end if;
         elsif (i_bus_ack_i = '1') then -- wait for normal termination
-         i_arbiter.rd_req <= '0';
+          i_arbiter.rd_req <= '0';
         end if;
       end if;
 
