@@ -167,9 +167,11 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
 
 
 **General**:
-  * Modified Harvard architecture (separate CPU interfaces for data and instructions; single processor-bus via bus switch)
+  * Modified Harvard architecture (separate CPU interfaces for data and instructions; NEORV32 processor: Single processor-internal bus via bus I/D mux)
   * Two stages in-order pipeline (FETCH, EXECUTE); each stage uses a multi-cycle processing scheme
   * No hardware support of unaligned accesses - they will trigger an exception
+  * Little-endian byte order
+  * All reserved or unimplemented instructions will raise an illegal instruction exception
   * Privilege levels: `machine` mode, `user` mode (if enabled via `U` extension)
 
 
@@ -349,17 +351,83 @@ The _FAST_MUL_ configuration uses DSPs for the multiplier of the `M` extension (
 
 ## Top Entities
 
-The top entity of the **processor** is [**neorv32_top.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) (from the `rtl/core` folder).
+The top entity of the **NEORV32 Processor** is [**neorv32_top.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) (from the `rtl/core` folder).
 Just instantiate this file in your project and you are ready to go! All signals of this top entity are of type *std_ulogic* or *std_ulogic_vector*, respectively
 (except for the TWI signals, which are of type *std_logic*).
 
-The top entity of the **CPU** is [**neorv32_cpu.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd) (from the `rtl/core` folder).
+The top entity of the **NEORV32 CPU** is [**neorv32_cpu.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd) (from the `rtl/core` folder).
 All signals of this top entity are of type *std_ulogic* or *std_ulogic_vector*, respectively.
 
 Use the generics to configure the processor/CPU according to your needs. Each generic is initilized with the default configuration.
-Detailed information regarding the signals and configuration generics can be found in the [NEORV32 documentary](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+Detailed information regarding the signals and configuration generics can be found in
+the [NEORV32 documentary](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
-Alternative top entities can be found in [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) folder.
+Alternative top entities, like the simplified ["hello world" test setup](#Create-a-new-Hardware-Project), can be found
+in [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) folder.
+
+
+### CPU
+
+```vhdl
+entity neorv32_cpu is
+  generic (
+    -- General --
+    HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= (others => '0'); -- hardware thread id
+    CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= (others => '0'); -- cpu boot address
+    -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
+    -- Extension Options --
+    CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
+    FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
+    -- Physical Memory Protection (PMP) --
+    PMP_USE                      : boolean := false; -- implement PMP?
+    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
+    PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+    -- Bus Interface --
+    BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
+  );
+  port (
+    -- global control --
+    clk_i          : in  std_ulogic := '0'; -- global clock, rising edge
+    rstn_i         : in  std_ulogic := '0'; -- global reset, low-active, async
+    -- instruction bus interface --
+    i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
+    i_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+    i_bus_we_o     : out std_ulogic; -- write enable
+    i_bus_re_o     : out std_ulogic; -- read enable
+    i_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
+    i_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
+    i_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
+    i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
+    -- data bus interface --
+    d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
+    d_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+    d_bus_we_o     : out std_ulogic; -- write enable
+    d_bus_re_o     : out std_ulogic; -- read enable
+    d_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
+    d_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
+    d_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
+    d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
+    -- system time input from MTIME --
+    time_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
+    -- interrupts (risc-v compliant) --
+    msw_irq_i      : in  std_ulogic := '0'; -- machine software interrupt
+    mext_irq_i     : in  std_ulogic := '0'; -- machine external interrupt
+    mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt
+    -- fast interrupts (custom) --
+    firq_i         : in  std_ulogic_vector(3 downto 0) := (others => '0')
+  );
+end neorv32_cpu;
+```
 
 
 ### Processor
@@ -452,70 +520,6 @@ end neorv32_top;
 ```
 
 
-### CPU
-
-```vhdl
-entity neorv32_cpu is
-  generic (
-    -- General --
-    HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= (others => '0'); -- hardware thread id
-    CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= (others => '0'); -- cpu boot address
-    -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
-    CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
-    -- Extension Options --
-    CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
-    FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
-    -- Physical Memory Protection (PMP) --
-    PMP_USE                      : boolean := false; -- implement PMP?
-    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
-    PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
-    -- Bus Interface --
-    BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
-  );
-  port (
-    -- global control --
-    clk_i          : in  std_ulogic := '0'; -- global clock, rising edge
-    rstn_i         : in  std_ulogic := '0'; -- global reset, low-active, async
-    -- instruction bus interface --
-    i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
-    i_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-    i_bus_we_o     : out std_ulogic; -- write enable
-    i_bus_re_o     : out std_ulogic; -- read enable
-    i_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
-    i_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
-    i_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
-    i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
-    -- data bus interface --
-    d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
-    d_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-    d_bus_we_o     : out std_ulogic; -- write enable
-    d_bus_re_o     : out std_ulogic; -- read enable
-    d_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
-    d_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
-    d_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
-    d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
-    -- system time input from MTIME --
-    time_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
-    -- interrupts (risc-v compliant) --
-    msw_irq_i      : in  std_ulogic := '0'; -- machine software interrupt
-    mext_irq_i     : in  std_ulogic := '0'; -- machine external interrupt
-    mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt
-    -- fast interrupts (custom) --
-    firq_i         : in  std_ulogic_vector(3 downto 0) := (others => '0')
-  );
-end neorv32_cpu;
-```
-
-
 
 ## Getting Started
 
@@ -543,22 +547,25 @@ were compiled on a 64-bit x86 Ubuntu 20.04 LTS (Ubuntu on Windows, actually). Do
 
 ### Dowload the NEORV32 Project
 
-Get the sources of the NEORV32 Processor project. You can either download a [release](https://github.com/stnolting/neorv32/releases)
-or get the most recent version of this project as [`*.zip` file](https://github.com/stnolting/neorv32/archive/master.zip) or using `git clone` (suggested for easy project updates via `git pull`):
+Get the sources of the NEORV32 Processor project. The simplest way is using `git clone` (suggested for easy project updates via `git pull`):
 
     $ git clone https://github.com/stnolting/neorv32.git
 
-Create a new project with your FPGA design tool of choice and add all the `*.vhd` files from the [`rtl/core`](https://github.com/stnolting/neorv32/blob/master/rtl)
-folder to this project. Make sure to add them to a **new library** called `neorv32`.
+Alternatively, you can either download a specific [release](https://github.com/stnolting/neorv32/releases) or get the most recent version
+of this project as [`*.zip` file](https://github.com/stnolting/neorv32/archive/master.zip).
 
 
 ### Create a new Hardware Project
 
+Create a new project with your FPGA design tool of choice. Add all the `*.vhd` files from the [`rtl/core`](https://github.com/stnolting/neorv32/blob/master/rtl)
+folder to this project. Make sure to add these files to a **new design library** called `neorv32`.
+
 You can either instantiate the [processor's top entity](https://github.com/stnolting/neorv32#top-entity) in your own project or you
 can use a simple [test setup](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd) (from the project's
 [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) folder) as top entity.
-This test setup instantiates the processor and implements most of the peripherals and some ISA extensions. Only the UART, clock, reset and some GPIO output sginals are
-propagated (basically, its a FPGA "hello world" example):
+
+This test setup instantiates the processor and implements most of the peripherals and some ISA extensions. Only the UART lines, clock, reset and some GPIO output sginals are
+propagated as actual entity signals. Basically, its a FPGA "hello world" example:
 
 ```vhdl
   entity neorv32_test_setup is
@@ -576,18 +583,24 @@ propagated (basically, its a FPGA "hello world" example):
 ```
 
 
-### Compiling and Uploading One of the Example Projects
+### Check the Toolchain
 
 Make sure `GNU Make` and a native `GCC` compiler are installed. To test the installation of the RISC-V toolchain navigate to an example project like
 `sw/example/blink_led` and run:
 
     neorv32/sw/example/blink_led$ make check
 
+
+### Compiling an Example Program
+
 The NEORV32 project includes some [example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) from
 which you can start your own application. Simply compile one of these projects. This will create a NEORV32
-executable `neorv32_exe.bin` in the same folder.
+*executable* `neorv32_exe.bin` in the same folder:
 
-    neorv32/sw/example/blink_led$ make clean_all compile
+    neorv32/sw/example/blink_led$ make clean_all exe
+
+
+### Upload the Executable via the Bootloader
 
 Connect your FPGA board via UART to your computer and open the according port to interface with the NEORV32 bootloader. The bootloader
 uses the following default UART configuration:
@@ -597,9 +610,9 @@ uses the following default UART configuration:
 - 1 stop bit
 - No parity bits
 - No transmission / flow control protocol (raw bytes only)
-- Newline on `\r\n` (carriage return & newline)
+- Newline on `\r\n` (carriage return & newline) - also for sent data
 
-Use the bootloader console to upload the `neorv32_exe.bin` file and run your application image.
+Use the bootloader console to upload the `neorv32_exe.bin` executable and run your application image.
 
 ```
   << NEORV32 Bootloader >>
