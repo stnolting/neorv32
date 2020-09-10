@@ -48,7 +48,15 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE 19200
+/** Use the custom ASM version for blinking the LEDs if != 0 */
+#define USE_ASM_VERSION 0
 /**@}*/
+
+
+/**********************************************************************//**
+ * ASM function to blink LEDs (if enabled)
+ **************************************************************************/
+extern void blink_led_asm(uint32_t gpio_out_addr);
 
 
 /**********************************************************************//**
@@ -76,6 +84,10 @@ int main() {
   // say hello
   neorv32_uart_print("Blinking LED demo program\n");
 
+
+// use C version of LED blinking
+#if (USE_ASM_VERSION == 0)
+
   neorv32_gpio_port_set(0); // clear gpio output put
 
   int cnt = 0;
@@ -85,5 +97,11 @@ int main() {
     neorv32_cpu_delay_ms(200); // wait 200ms using busy wait
   }
 
+// use ASM version of LED blinking (file: blink_led_in_asm.S)
+#else
+
+  blink_led_asm((uint32_t)(&GPIO_OUTPUT));
+
+#endif
   return 0;
 }
