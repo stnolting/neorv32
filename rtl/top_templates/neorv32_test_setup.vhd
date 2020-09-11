@@ -80,7 +80,6 @@ begin
     CPU_EXTENSION_RISCV_Zicsr    => true,   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => true,   -- implement instruction stream sync.?
     -- Extension Options --
-    CSR_COUNTERS_USE             => true,  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     FAST_MUL_EN                  => false, -- use DSPs for M extension's multiplier
     -- Physical Memory Protection (PMP) --
     PMP_USE                      => false,  -- implement PMP?
