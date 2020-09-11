@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # This unit implements a true random number generator which uses several GARO chain as entropy  #
 -- # source. The outputs of all chains are XORed and de-biased using a John von Neumann randomness #
--- # extractor. The output is further post-processed by a simple LFSR for improved whitening.      #
+-- # extractor. The de-biased signal is further processed by a simple LFSR for improved whitening. #
 -- #                                                                                               #
 -- # Sources:                                                                                      #
 -- #  - Von Neumann De-Biasing: "Iterating Von Neumann's Post-Processing under Hardware            #
@@ -68,9 +68,9 @@ architecture neorv32_trng_rtl of neorv32_trng is
   constant lfsr_taps_c : std_ulogic_vector(7 downto 0) := "10111000"; -- Fibonacci post-processing LFSR feedback taps
   constant lfsr_en_c   : boolean := true; -- use LFSR-based post-processing
   type tap_mask_t is array (0 to num_garos_c-1) of std_ulogic_vector(num_inv_c-2 downto 0);
-  constant tap_mask : tap_mask_t := ( -- GARO tap mask(s), number of set bits has to be even
-    "11110000000000", -- "slow" osc
-    "11001100110000"  -- "fast" osc
+  constant tap_mask : tap_mask_t := ( -- GARO tap masks, sum of set bits has to be even
+    "11110000000000",
+    "00000011000000"
   );
   -- -------------------------------------------------------------------------------------------------------
 
