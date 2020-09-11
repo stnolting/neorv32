@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c  : natural := 32; -- data width - FIXED!
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01040002"; -- no touchy!
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01040004"; -- no touchy!
   constant pmp_max_r_c   : natural := 8; -- max PMP regions
   constant ipb_entries_c : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
 
@@ -129,11 +129,10 @@ package neorv32_package is
   constant trng_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0"; -- base address, fixed!
   constant trng_size_c          : natural := 2*4; -- bytes, fixed!
   constant trng_ctrl_addr_c     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(trng_base_c) + x"00000000");
-  constant trng_data_addr_c     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(trng_base_c) + x"00000004");
 
   -- RESERVED --
---constant ???_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC8"; -- base address, fixed!
---constant ???_size_c           : natural := 6*4; -- bytes, fixed!
+--constant ???_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC4"; -- base address, fixed!
+--constant ???_size_c           : natural := 7*4; -- bytes, fixed!
 
   -- System Information Memory (with SIMULATION output) (SYSINFO) --
   constant sysinfo_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFE0"; -- base address, fixed!
@@ -315,7 +314,7 @@ package neorv32_package is
   constant alu_cmd_xor_c   : std_ulogic_vector(2 downto 0) := "100"; -- r <= A xor B
   constant alu_cmd_or_c    : std_ulogic_vector(2 downto 0) := "101"; -- r <= A or B
   constant alu_cmd_and_c   : std_ulogic_vector(2 downto 0) := "110"; -- r <= A and B
-  constant alu_cmd_bitc_c  : std_ulogic_vector(2 downto 0) := "111"; -- r <= A and (not B)
+  constant alu_cmd_bitm_c  : std_ulogic_vector(2 downto 0) := "111"; -- r <= bit manipulation
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
