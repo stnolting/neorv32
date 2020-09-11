@@ -298,9 +298,6 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<1)) {
     neorv32_uart_printf("Zifencei ");
   }
-  if (tmp & (1<<2)) {
-    neorv32_uart_printf("cpu_counters ");
-  }
 
 
   // Misc

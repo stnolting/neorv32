@@ -46,7 +46,6 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
-    CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= x"00000000"; -- hardware thread id
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
     -- RISC-V CPU Extensions --
@@ -239,7 +238,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   signal mcycle_msb   : std_ulogic;
   signal minstret_msb : std_ulogic;
-  signal systime      : std_ulogic_vector(63 downto 0);
 
   -- illegal instruction check --
   signal illegal_instruction : std_ulogic;
@@ -965,17 +963,17 @@ begin
       when x"3b6" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 7)) and is_m_mode_v; -- pmpaddr6
       when x"3b7" => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 8)) and is_m_mode_v; -- pmpaddr7
       --
-      when x"c00" => csr_acc_valid <= bool_to_ulogic_f(CSR_COUNTERS_USE); -- cycle
-      when x"c01" => csr_acc_valid <= bool_to_ulogic_f(CSR_COUNTERS_USE); -- time
-      when x"c02" => csr_acc_valid <= bool_to_ulogic_f(CSR_COUNTERS_USE); -- instret
-      when x"c80" => csr_acc_valid <= bool_to_ulogic_f(CSR_COUNTERS_USE); -- cycleh
-      when x"c81" => csr_acc_valid <= bool_to_ulogic_f(CSR_COUNTERS_USE); -- timeh
-      when x"c82" => csr_acc_valid <= bool_to_ulogic_f(CSR_COUNTERS_USE); -- instreth
+      when x"c00" => csr_acc_valid <= '1'; -- cycle
+      when x"c01" => csr_acc_valid <= '1'; -- time
+      when x"c02" => csr_acc_valid <= '1'; -- instret
+      when x"c80" => csr_acc_valid <= '1'; -- cycleh
+      when x"c81" => csr_acc_valid <= '1'; -- timeh
+      when x"c82" => csr_acc_valid <= '1'; -- instreth
       --
-      when x"b00" => csr_acc_valid <= bool_to_ulogic_f(CSR_COUNTERS_USE) and is_m_mode_v; -- mcycle
-      when x"b02" => csr_acc_valid <= bool_to_ulogic_f(CSR_COUNTERS_USE) and is_m_mode_v; -- minstret
-      when x"b80" => csr_acc_valid <= bool_to_ulogic_f(CSR_COUNTERS_USE) and is_m_mode_v; -- mcycleh
-      when x"b82" => csr_acc_valid <= bool_to_ulogic_f(CSR_COUNTERS_USE) and is_m_mode_v; -- minstreth
+      when x"b00" => csr_acc_valid <= is_m_mode_v; -- mcycle
+      when x"b02" => csr_acc_valid <= is_m_mode_v; -- minstret
+      when x"b80" => csr_acc_valid <= is_m_mode_v; -- mcycleh
+      when x"b82" => csr_acc_valid <= is_m_mode_v; -- minstreth
       --
       when x"f11" => csr_acc_valid <= is_m_mode_v; -- mvendorid
       when x"f12" => csr_acc_valid <= is_m_mode_v; -- marchid
@@ -1671,13 +1669,13 @@ begin
           when x"c00" | x"b00" => -- R/(W): cycle/mcycle: Cycle counter LOW
             csr_rdata_o <= csr.mcycle(31 downto 0);
           when x"c01" => -- R/-: time: System time LOW (from MTIME unit)
-            csr_rdata_o <= systime(31 downto 0);
+            csr_rdata_o <= time_i(31 downto 0);
           when x"c02" | x"b02" => -- R/(W): instret/minstret: Instructions-retired counter LOW
             csr_rdata_o <= csr.minstret(31 downto 0);
           when x"c80" | x"b80" => -- R/(W): cycleh/mcycleh: Cycle counter HIGH
             csr_rdata_o <= x"000" & csr.mcycleh(19 downto 0); -- only the lowest 20 bit!
           when x"c81" => -- R/-: timeh: System time HIGH (from MTIME unit)
-            csr_rdata_o <= systime(63 downto 32);
+            csr_rdata_o <= time_i(63 downto 32);
           when x"c82" | x"b82" => -- R/(W): instreth/minstreth: Instructions-retired counter HIGH
             csr_rdata_o <= x"000" & csr.minstreth(19 downto 0); -- only the lowest 20 bit!
 
@@ -1695,7 +1693,6 @@ begin
           when x"fc0" => -- R/-: mzext
             csr_rdata_o(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr CPU extension
             csr_rdata_o(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei CPU extension
-            csr_rdata_o(2) <= bool_to_ulogic_f(CSR_COUNTERS_USE);             -- std (performance) counters enabled
 
           -- undefined/unavailable --
           when others =>
@@ -1707,9 +1704,6 @@ begin
       end if;
     end if;
   end process csr_read_access;
-
-  -- time[h] CSR --
-  systime <= time_i when (CSR_COUNTERS_USE = true) else (others => '0');
 
   -- CPU's current privilege level --
   priv_mode_o <= csr.privilege;
@@ -1740,47 +1734,36 @@ begin
       mcycle_msb    <= '0';
       minstret_msb  <= '0';
     elsif rising_edge(clk_i) then
-      if (CSR_COUNTERS_USE = true) then
+      -- mcycle (cycle) --
+      mcycle_msb <= csr.mcycle(csr.mcycle'left);
+      if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b00") then -- write access
+        csr.mcycle(31 downto 0) <= csr_wdata_i;
+        csr.mcycle(32) <= '0';
+      elsif (execute_engine.sleep = '0') then -- automatic update
+        csr.mcycle <= std_ulogic_vector(unsigned(csr.mcycle) + 1);
+      end if;
 
-        -- mcycle (cycle) --
-        mcycle_msb <= csr.mcycle(csr.mcycle'left);
-        if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b00") then -- write access
-          csr.mcycle(31 downto 0) <= csr_wdata_i;
-          csr.mcycle(32) <= '0';
-        elsif (execute_engine.sleep = '0') then -- automatic update
-          csr.mcycle <= std_ulogic_vector(unsigned(csr.mcycle) + 1);
-        end if;
+      -- mcycleh (cycleh) --
+      if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b80") then -- write access
+        csr.mcycleh <= csr_wdata_i(csr.mcycleh'left downto 0);
+      elsif ((mcycle_msb xor csr.mcycle(csr.mcycle'left)) = '1') then -- automatic update
+        csr.mcycleh <= std_ulogic_vector(unsigned(csr.mcycleh) + 1);
+      end if;
 
-        -- mcycleh (cycleh) --
-        if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b80") then -- write access
-          csr.mcycleh <= csr_wdata_i(19 downto 0);
-        elsif ((mcycle_msb xor csr.mcycle(csr.mcycle'left)) = '1') then -- automatic update
-          csr.mcycleh <= std_ulogic_vector(unsigned(csr.mcycleh) + 1);
-        end if;
+      -- minstret (instret) --
+      minstret_msb <= csr.minstret(csr.minstret'left);
+      if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b02") then -- write access
+        csr.minstret(31 downto 0) <= csr_wdata_i;
+        csr.minstret(32) <= '0';
+      elsif (execute_engine.state_prev /= EXECUTE) and (execute_engine.state = EXECUTE) then -- automatic update
+        csr.minstret <= std_ulogic_vector(unsigned(csr.minstret) + 1);
+      end if;
 
-        -- minstret (instret) --
-        minstret_msb <= csr.minstret(csr.minstret'left);
-        if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b02") then -- write access
-          csr.minstret(31 downto 0) <= csr_wdata_i;
-          csr.minstret(32) <= '0';
-        elsif (execute_engine.state_prev /= EXECUTE) and (execute_engine.state = EXECUTE) then -- automatic update
-          csr.minstret <= std_ulogic_vector(unsigned(csr.minstret) + 1);
-        end if;
-
-        -- minstreth (instreth) --
-        if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b82") then -- write access
-          csr.minstreth <= csr_wdata_i(19 downto 0);
-        elsif ((minstret_msb xor csr.minstret(csr.minstret'left)) = '1') then -- automatic update
-          csr.minstreth <= std_ulogic_vector(unsigned(csr.minstreth) + 1);
-        end if;
-
-      else -- if not implemented
-        csr.mcycle    <= (others => '0');
-        csr.minstret  <= (others => '0');
-        csr.mcycleh   <= (others => '0');
-        csr.minstreth <= (others => '0');
-        mcycle_msb    <= '0';
-        minstret_msb  <= '0';
+      -- minstreth (instreth) --
+      if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b82") then -- write access
+        csr.minstreth <= csr_wdata_i(csr.minstreth'left downto 0);
+      elsif ((minstret_msb xor csr.minstret(csr.minstret'left)) = '1') then -- automatic update
+        csr.minstreth <= std_ulogic_vector(unsigned(csr.minstreth) + 1);
       end if;
     end if;
   end process csr_counters;

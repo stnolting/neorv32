@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants/Configuration ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c  : natural := 32; -- data width - FIXED!
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01040004"; -- no touchy!
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01040005"; -- no touchy!
   constant pmp_max_r_c   : natural := 8; -- max PMP regions
   constant ipb_entries_c : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
 
@@ -395,7 +395,6 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
       -- Extension Options --
-      CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
       FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
       -- Physical Memory Protection (PMP) --
       PMP_USE                      : boolean := false; -- implement PMP?
@@ -481,7 +480,6 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
       -- Extension Options --
-      CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
       FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
       -- Physical Memory Protection (PMP) --
       PMP_USE                      : boolean := false; -- implement PMP?
@@ -532,7 +530,6 @@ package neorv32_package is
   component neorv32_cpu_control
     generic (
       -- General --
-      CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
       HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= x"00000000"; -- hardware thread id
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
       -- RISC-V CPU Extensions --

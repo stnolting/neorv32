@@ -63,7 +63,6 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
     -- Extension Options --
-    CSR_COUNTERS_USE             : boolean := true;  -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false; -- implement PMP?
@@ -155,8 +154,6 @@ begin
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report "NEORV32 CPU CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
   -- PMP requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
-  -- performance counters require Zicsr extension --
-  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CSR_COUNTERS_USE = true)) report "NEORV32 CPU CONFIG ERROR! Performance counter CSRs require CPU_EXTENSION_RISCV_Zicsr extension." severity error;
   -- PMP regions --
   assert not ((PMP_NUM_REGIONS > pmp_max_r_c) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions out of valid range." severity error;
   -- PMP granulartiy --
@@ -170,7 +167,6 @@ begin
   neorv32_cpu_control_inst: neorv32_cpu_control
   generic map (
     -- General --
-    CSR_COUNTERS_USE             => CSR_COUNTERS_USE, -- implement RISC-V perf. counters ([m]instret[h], [m]cycle[h], time[h])?
     HW_THREAD_ID                 => HW_THREAD_ID,     -- hardware thread id
     CPU_BOOT_ADDR                => CPU_BOOT_ADDR,    -- cpu boot address
     -- RISC-V CPU Extensions --
