@@ -113,6 +113,10 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   end record;
   signal cp_ctrl : cp_ctrl_t;
 
+  -- bit manipulation --
+  -- TODO
+  signal bitm_res : std_ulogic_vector(31 downto 0);
+
 begin
 
   -- Operand Mux ----------------------------------------------------------------------------
@@ -161,6 +165,19 @@ begin
   -- -------------------------------------------------------------------------------------------
   add_res <= std_ulogic_vector(unsigned(opa) + unsigned(opb));
   add_o   <= add_res; -- direct output
+
+
+  -- Bit Manipulation Unit ------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+
+  -- ------------------ --
+  -- UNDER CONSTRUCTION --
+  -- ------------------ --
+
+--bitm_minmax <= rs1_i when ((cmp_less xor ???) = '1') else rs2_i; -- min[u] / max[u]
+
+  -- result of bit manipulation operation --
+  bitm_res <= opa and (not opb); -- ANDN
 
 
   -- Iterative Shifter Unit -----------------------------------------------------------------
@@ -230,7 +247,7 @@ begin
           cp_ctrl.busy   <= '0';
           cp_ctrl.rb_ff0 <= '1';
         end if;
-      else -- no co-processors implemented
+      else -- no co-processor(s) implemented
         cp_ctrl.cmd_ff <= '0';
         cp_ctrl.busy   <= '0';
         cp_ctrl.rb_ff0 <= '0';
@@ -241,8 +258,8 @@ begin
 
   -- is co-processor operation? --
   cp_ctrl.start <= '1' when (ctrl_i(ctrl_cp_use_c) = '1') and (cp_ctrl.cmd_ff = '0') else '0';
-  cp0_start_o      <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = cp_sel_muldiv_c) else '0'; -- MULDIV CP
-  cp1_start_o      <= '0'; -- not yet implemented
+  cp0_start_o   <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = cp_sel_muldiv_c) else '0'; -- MULDIV CP
+  cp1_start_o   <= '0'; -- not yet implemented
 
   -- co-processor operation running? --
   cp_ctrl.halt <= cp_ctrl.busy or cp_ctrl.start;
@@ -250,12 +267,12 @@ begin
 
   -- ALU Function Select --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  alu_function_mux: process(ctrl_i, opa, opb, add_res, sub_res, cmp_less, shifter)
+  alu_function_mux: process(ctrl_i, opa, opb, add_res, sub_res, cmp_less, shifter, bitm_res)
   begin
     case ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) is
-      when alu_cmd_bitc_c  => alu_res <= opa and (not opb); -- bit clear (for CSR modifications only)
+      when alu_cmd_bitm_c  => alu_res <= bitm_res;
       when alu_cmd_xor_c   => alu_res <= opa xor opb;
-      when alu_cmd_or_c    => alu_res <= opa or opb;
+      when alu_cmd_or_c    => alu_res <= opa or  opb;
       when alu_cmd_and_c   => alu_res <= opa and opb;
       when alu_cmd_sub_c   => alu_res <= sub_res;
       when alu_cmd_add_c   => alu_res <= add_res;

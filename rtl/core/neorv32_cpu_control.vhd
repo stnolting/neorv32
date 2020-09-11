@@ -622,11 +622,11 @@ begin
     else -- branches
       ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- unsigned branches (BLTU, BGEU)
     end if;
-    ctrl_nxt(ctrl_bus_unsigned_c)  <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
-    ctrl_nxt(ctrl_alu_shift_dir_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- shift direction (left/right)
-    ctrl_nxt(ctrl_alu_shift_ar_c)  <= execute_engine.i_reg(30); -- is arithmetic shift
-    ctrl_nxt(ctrl_bus_size_lsb_c)  <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- transfer size lsb (00=byte, 01=half-word)
-    ctrl_nxt(ctrl_bus_size_msb_c)  <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- transfer size msb (10=word, 11=?)
+    ctrl_nxt(ctrl_bus_unsigned_c)   <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
+    ctrl_nxt(ctrl_alu_shift_dir_c)  <= execute_engine.i_reg(instr_funct3_msb_c); -- shift direction (left/right)
+    ctrl_nxt(ctrl_alu_shift_ar_c)   <= execute_engine.i_reg(30); -- is arithmetic shift
+    ctrl_nxt(ctrl_bus_size_lsb_c)   <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- transfer size lsb (00=byte, 01=half-word)
+    ctrl_nxt(ctrl_bus_size_msb_c)   <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- transfer size msb (10=word, 11=?)
     ctrl_nxt(ctrl_cp_cmd2_c   downto ctrl_cp_cmd0_c)   <= execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c); -- CP operation
     ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- only CP0 (MULDIV) implemented yet
 
@@ -820,7 +820,8 @@ begin
         ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- default
         ctrl_nxt(ctrl_alu_opb_mux_msb_c) <= '0'; -- default
         ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '0'; -- default
-        ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_or_c; -- default ALU operation = OR
+        ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c)   <= alu_cmd_or_c; -- default ALU operation = OR
+--      ctrl_nxt(ctrl_alu_bmop2_c downto ctrl_alu_bmop0_c) <= alu_bm_andn_c; -- bit manipulation operation = ANDN
         case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
           -- register operations --
           when funct3_csrrw_c => -- CSRRW
@@ -837,7 +838,7 @@ begin
           when funct3_csrrc_c => -- CSRRC
             ctrl_nxt(ctrl_alu_opa_mux_msb_c) <= '1'; -- OPA = csr
             ctrl_nxt(ctrl_alu_opb_mux_msb_c) <= '1'; -- OPB = rs1
-            ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_bitc_c; -- actual ALU operation = bit clear
+            ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_bitm_c; -- actual ALU operation = bit manipulation (ANDN)
             csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if rs1 is not zero_reg and if valid access
           -- immediate operations --
           when funct3_csrrwi_c => -- CSRRWI
@@ -854,7 +855,7 @@ begin
           when funct3_csrrci_c => -- CSRRCI
             ctrl_nxt(ctrl_alu_opa_mux_msb_c) <= '1'; -- OPA = csr
             ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '1'; -- OPB = immediate
-            ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_bitc_c; -- actual ALU operation = bit clear
+            ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_bitm_c; -- actual ALU operation = bit manipulation (ANDN)
             csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if UIMM5 is not zero (bits from rs1 filed) and if valid access
           when others => -- undefined
             NULL;
