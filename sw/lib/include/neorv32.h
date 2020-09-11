@@ -442,23 +442,17 @@ enum NEORV32_PWM_DUTY_enum {
  * @name IO Device: True Random Number Generator (TRNG)
  **************************************************************************/
 /**@{*/
-/** TRNG control register (r/w) */
+/** TRNG control/data register (r/w) */
 #define TRNG_CT   (*(IO_REG32 0xFFFFFFC0UL))
-/** TRNG data register (r/-) */
-#define TRNG_DATA (*(IO_ROM32 0xFFFFFFC4UL))
 
-/** TRNG control register bits */
+/** TRNG control/data register bits */
 enum NEORV32_TRNG_CT_enum {
-  TRNG_CT_TAP_LSB =  0, /**< TRNG control register(0)  (r/w): TAP mask (16-bit) LSB */
-  TRNG_CT_TAP_MSB = 15, /**< TRNG control register(15) (r/w): TAP mask (16-bit) MSB */
-  TRNG_CT_EN      = 31  /**< TRNG control register(31) (r/w): TRNG enable */
-};
-
-/** WTD data register bits */
-enum NEORV32_TRNG_DUTY_enum {
-  TRNG_DATA_LSB   =  0, /**< TRNG data register(0)  (r/-): Random data (16-bit) LSB */
-  TRNG_DATA_MSB   = 15, /**< TRNG data register(15) (r/-): Random data (16-bit) MSB */
-  TRNG_DATA_VALID = 31  /**< TRNG data register(31) (r/-): Random data output valid */
+  TRNG_CT_DATA_LSB =  0, /**< TRNG data/control register(0)  (r/-): Random data (8-bit) LSB */
+  TRNG_CT_DATA_MSB =  7, /**< TRNG data/control register(7)  (r/-): Random data (8-bit) MSB */
+  TRNG_CT_VALID    = 15, /**< TRNG data/control register(15) (r/-): Random data output valid */
+  TRNG_CT_ERROR_0  = 16, /**< TRNG data/control register(16) (r/-): Stuck-at-zero error */
+  TRNG_CT_ERROR_1  = 17, /**< TRNG data/control register(17) (r/-): Stuck-at-one error */
+  TRNG_CT_EN       = 31  /**< TRNG data/control register(31) (r/w): TRNG enable */
 };
 /**@}*/
 

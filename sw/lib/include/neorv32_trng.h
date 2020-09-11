@@ -46,9 +46,8 @@
 
 // prototypes
 int neorv32_trng_available(void);
-int neorv32_trng_setup(uint16_t tap_mask);
-uint16_t neorv32_trng_find_tap_mask(void);
+void neorv32_trng_enable(void);
 void neorv32_trng_disable(void);
-int neorv32_trng_get(uint16_t *data);
+int neorv32_trng_get(uint8_t *data);
 
 #endif // neorv32_trng_h
