@@ -942,7 +942,6 @@ begin
     end if;
 
     -- check CSR access --
-    csr_acc_valid <= '0'; -- default
     case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
       when x"300" => csr_acc_valid <= is_m_mode_v; -- mstatus
       when x"301" => csr_acc_valid <= is_m_mode_v; -- misa
@@ -1684,10 +1683,10 @@ begin
 
           -- machine information registers --
           when x"f11" => -- R/-: mvendorid
-            csr_rdata_o <= (others => '0'); -- not available for NEORV32
+            csr_rdata_o <= (others => '0'); -- not assigned
           when x"f12" => -- R/-: marchid
-            csr_rdata_o <= (others => '0'); -- not available for NEORV32
-          when x"f13" => -- R/-: mimpid - implementation ID / NEORV32: version
+            csr_rdata_o <= (others => '0'); -- not assigned
+          when x"f13" => -- R/-: mimpid - implementation ID / NEORV32 version
             csr_rdata_o <= hw_version_c;
           when x"f14" => -- R/-: mhartid - hardware thread ID
             csr_rdata_o <= HW_THREAD_ID;

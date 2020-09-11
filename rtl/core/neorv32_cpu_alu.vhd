@@ -114,7 +114,6 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal cp_ctrl : cp_ctrl_t;
 
   -- bit manipulation --
-  -- TODO
   signal bitm_res : std_ulogic_vector(31 downto 0);
 
 begin
@@ -194,7 +193,7 @@ begin
         shifter.sreg <= opa; -- shift operand
         shifter.cnt  <= opb(index_size_f(data_width_c)-1 downto 0); -- shift amount
       elsif (shifter.run = '1') then -- running shift
-        -- coarse shift -> multiples of 4 --
+        -- coarse shift: multiples of 4 --
         if (or_all_f(shifter.cnt(shifter.cnt'left downto 2)) = '1') then -- shift amount >= 4
           shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 4);
           if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- SLL: shift left logical
@@ -205,7 +204,7 @@ begin
                             (shifter.sreg(shifter.sreg'left) and ctrl_i(ctrl_alu_shift_ar_c)) &
                             (shifter.sreg(shifter.sreg'left) and ctrl_i(ctrl_alu_shift_ar_c)) & shifter.sreg(shifter.sreg'left downto 4);
           end if;
-        -- fine shift -> 0..3 --
+        -- fine shift: single shifts, 0..3 times --
         else
           shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 1);
           if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- SLL: shift left logical

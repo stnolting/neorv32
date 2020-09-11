@@ -1008,8 +1008,8 @@ int main() {
   exe_cycles.uint64 = neorv32_cpu_get_cycle();
   exe_instr.uint64  = neorv32_cpu_get_instret();
 
-  neorv32_uart_printf("\n\nExecuted instructions: 0x%x_%x\n", exe_instr.uint32[1],  exe_instr.uint32[0]);
-  neorv32_uart_printf(    "Clock cycles:          0x%x_%x\n", exe_cycles.uint32[1], exe_cycles.uint32[0]);
+  neorv32_uart_printf("\n\nExecuted instructions: %u\n", exe_instr.uint32[0]);
+  neorv32_uart_printf(    "Required clock cycles: %u\n", exe_cycles.uint32[0]);
 
   neorv32_uart_printf("\nTests: %i\nOK:    %i\nFAIL:  %i\n\n", cnt_test, cnt_ok, cnt_fail);
 
