@@ -210,10 +210,10 @@ static void __neorv32_rte_debug_exc_handler(void) {
     case TRAP_CODE_MSI:          neorv32_uart_printf("Machine software interrupt"); break;
     case TRAP_CODE_MTI:          neorv32_uart_printf("Machine timer interrupt"); break;
     case TRAP_CODE_MEI:          neorv32_uart_printf("Machine external interrupt"); break;
-    case TRAP_CODE_FIRQ_0:       neorv32_uart_printf("Fast interrupt 0"); break;
-    case TRAP_CODE_FIRQ_1:       neorv32_uart_printf("Fast interrupt 1"); break;
-    case TRAP_CODE_FIRQ_2:       neorv32_uart_printf("Fast interrupt 2"); break;
-    case TRAP_CODE_FIRQ_3:       neorv32_uart_printf("Fast interrupt 3"); break;
+    case TRAP_CODE_FIRQ_0:       neorv32_uart_printf("Fast interrupt 0 (WDT)"); break;
+    case TRAP_CODE_FIRQ_1:       neorv32_uart_printf("Fast interrupt 1 (GPIO)"); break;
+    case TRAP_CODE_FIRQ_2:       neorv32_uart_printf("Fast interrupt 2 (UART)"); break;
+    case TRAP_CODE_FIRQ_3:       neorv32_uart_printf("Fast interrupt 3 (SPI/TWI)"); break;
     default:                     neorv32_uart_printf("Unknown (0x%x)", trap_cause); break;
   }
 
