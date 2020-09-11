@@ -90,9 +90,8 @@ architecture neorv32_pwm_rtl of neorv32_pwm is
   -- prescaler clock generator --
   signal prsc_tick : std_ulogic;
 
-  -- pwm counter --
+  -- pwm core counter --
   signal pwm_cnt : std_ulogic_vector(7 downto 0);
-  signal pwm_out : std_ulogic_vector(3 downto 0);
 
 begin
 
@@ -157,19 +156,13 @@ begin
       -- channels --
       for i in 0 to num_pwm_channels_c-1 loop
         if (unsigned(pwm_cnt) >= unsigned(pwm_ch(i))) or (enable = '0') then
-          pwm_out(i) <= '0';
+          pwm_o(i) <= '0';
         else
-          pwm_out(i) <= '1';
+          pwm_o(i) <= '1';
         end if;
       end loop; -- i, pwm channel
     end if;
   end process pwm_core;
-
-  -- output --
-  pwm_o(0) <= pwm_out(0);
-  pwm_o(1) <= pwm_out(1);
-  pwm_o(2) <= pwm_out(2);
-  pwm_o(3) <= pwm_out(3);
 
 
 end neorv32_pwm_rtl;
