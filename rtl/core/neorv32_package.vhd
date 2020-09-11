@@ -38,7 +38,7 @@ use ieee.numeric_std.all;
 
 package neorv32_package is
 
-  -- Architecture Constants -----------------------------------------------------------------
+  -- Architecture Constants/Configuration ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c  : natural := 32; -- data width - FIXED!
   constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01040004"; -- no touchy!
@@ -62,7 +62,7 @@ package neorv32_package is
   type pmp_ctrl_if_t is array (0 to pmp_max_r_c-1) of std_ulogic_vector(7 downto 0);
   type pmp_addr_if_t is array (0 to pmp_max_r_c-1) of std_ulogic_vector(33 downto 0);
 
-  -- Processor-internal Address Space Layout ------------------------------------------------
+  -- Processor-Internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- Instruction Memory & Data Memory --
   -- => configured via top's generics
@@ -127,7 +127,7 @@ package neorv32_package is
 
   -- True Random Number generator (TRNG) --
   constant trng_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0"; -- base address, fixed!
-  constant trng_size_c          : natural := 2*4; -- bytes, fixed!
+  constant trng_size_c          : natural := 1*4; -- bytes, fixed!
   constant trng_ctrl_addr_c     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(trng_base_c) + x"00000000");
 
   -- RESERVED --

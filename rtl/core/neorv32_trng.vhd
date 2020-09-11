@@ -152,12 +152,12 @@ begin
     if rising_edge(clk_i) then
       ack_o <= acc_en and (rden_i or wren_i);
       -- write access --
-      if (wren = '1') and (addr = trng_ctrl_addr_c) then
+      if (wren = '1') then
         rnd_enable <= data_i(ctrl_en_c);
       end if;
       -- read access --
       data_o <= (others => '0');
-      if (rden = '1') and (addr = trng_ctrl_addr_c) then
+      if (rden = '1') then
         data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= rnd_output;
         data_o(ctrl_data_valid_c) <= rnd_ready;
         data_o(ctrl_err_zero_c)   <= rnd_error_zero;
