@@ -106,7 +106,7 @@ int main(void) {
     int u = 0, cell = 0, n = 0;
     int x, y;
     int trng_available = 0;
-    uint16_t trng_data;
+    uint8_t trng_data;
 
 
     // initialize universe
@@ -123,9 +123,8 @@ int main(void) {
 
     // check if TRNG was synthesized
     if (neorv32_trng_available()) {
-      uint16_t trng_tap_config = neorv32_trng_find_tap_mask();
-      neorv32_trng_setup(trng_tap_config);
-      neorv32_uart_printf("\nTRNG detected (tap mask 0x%x). Using TRNG for universe initialization.\n", (uint32_t)trng_tap_config);
+      neorv32_uart_printf("\nTRNG detected. Using TRNG for universe initialization.\n");
+      neorv32_trng_enable();
       trng_available = 1;
     }
 
@@ -140,11 +139,17 @@ int main(void) {
     for (x=0; x<NUM_CELLS_X/8; x++) {
       for (y=0; y<NUM_CELLS_Y; y++) {
         if (trng_available) {
-          if (neorv32_trng_get(&trng_data)) {
-            neorv32_uart_printf("TRNG error!\n");
-            return 1;
+          while (1) {
+            int err = neorv32_trng_get(&trng_data);
+            if (err) {
+              neorv32_uart_printf("TRNG error (%i)! Restarting TRNG...\n", err);
+              continue;
+            }
+            else {
+              break;
+            }
           }
-          universe[0][x][y] = (uint8_t)trng_data; // use data from TRNG
+          universe[0][x][y] = trng_data; // use data from TRNG
         }
         else {
           universe[0][x][y] = (uint8_t)xorshift32(); // use data from PRNG

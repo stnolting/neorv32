@@ -64,15 +64,15 @@ int main(void) {
   uint8_t lucky_numbers_5of50[5];
   uint8_t lucky_numbers_2of10[2];
 
-  uint8_t i, j, tmp;
-  uint16_t trng_data;
+  int err;
+  uint8_t i, j, probe;
+  uint8_t trng_data;
   unsigned int num_samples;
 
   // check if UART unit is implemented at all
   if (neorv32_uart_available() == 0) {
     return 0;
   }
-
 
   // capture all exceptions and give debug info via UART
   // this is not required, but keeps us safe
@@ -91,11 +91,8 @@ int main(void) {
     return 0;
   }
 
-  // configure TRNG with defaul GARO tap mask
-  neorv32_uart_printf("Configuring TRNG...\n");
-  uint16_t trng_tap_config = neorv32_trng_find_tap_mask();
-  neorv32_uart_printf("TRNG: Using tap mask: 0x%x ", (uint32_t)trng_tap_config);
-  neorv32_trng_setup(trng_tap_config);
+  // enable TRNG
+  neorv32_trng_enable();
 
   while(1) {
 
@@ -113,11 +110,12 @@ int main(void) {
     if (cmd == 'n') {
       num_samples = 0;
       while(1) {
-        if (neorv32_trng_get(&trng_data)) {
-          neorv32_uart_printf("\nTRNG error!\n");
+        err = neorv32_trng_get(&trng_data);
+        if (err) {
+          neorv32_uart_printf("\nTRNG error (%i)!\n", err);
           break;
         }
-        neorv32_uart_printf("%u ", (uint32_t)(trng_data & 0xFF));
+        neorv32_uart_printf("%u ", (uint32_t)(trng_data));
         num_samples++;
         if (neorv32_uart_char_received()) { // abort when key pressed
           neorv32_uart_printf("\nPrinted samples: %u", num_samples);
@@ -128,7 +126,7 @@ int main(void) {
 
     // print lucky numbers
     if (cmd == 'l') {
-      // reset array
+      // reset arrays
       for (i=0; i<5; i++) {
         lucky_numbers_5of50[i] = 0;
       }
@@ -138,45 +136,57 @@ int main(void) {
       // get numbers
       i = 0;
       while (i<5) {
-        if (neorv32_trng_get(&trng_data)) {
-          neorv32_uart_printf("\nTRNG error!\n");
+        err = neorv32_trng_get(&trng_data);
+        if (err) {
+          neorv32_uart_printf("\nTRNG error (%i)!\n", err);
           break;
         }
         // valid range?
-        tmp = (uint8_t)(trng_data & 0xff);
-        if ((tmp == 0) || (tmp > 50)) {
+        if ((trng_data == 0) || (trng_data > 50)) {
           continue;
         }
         // already sampled?
+        probe = 0;
         for (j=0; j<5; j++) {
-          if (lucky_numbers_5of50[j] == tmp) {
-            continue;
+          if (lucky_numbers_5of50[j] == trng_data) {
+            probe++;
           }
         }
-        lucky_numbers_5of50[i] = tmp;
-        i++;
+        if (probe) {
+          continue;
+        }
+        else {
+          lucky_numbers_5of50[i] = trng_data;
+          i++;
+        }
       }
 
       // get numbers part 2
       i = 0;
       while (i<2) {
-        if (neorv32_trng_get(&trng_data)) {
-          neorv32_uart_printf("\nTRNG error!\n");
+        err = neorv32_trng_get(&trng_data);
+        if (err) {
+          neorv32_uart_printf("\nTRNG error (%i)!\n", err);
           break;
         }
         // valid range?
-        tmp = (uint8_t)(trng_data & 0xff);
-        if ((tmp == 0) || (tmp > 10)) {
+        if ((trng_data == 0) || (trng_data > 10)) {
           continue;
         }
         // already sampled?
+        probe = 0;
         for (j=0; j<2; j++) {
-          if (lucky_numbers_2of10[j] == tmp) {
-            continue;
+          if (lucky_numbers_2of10[j] == trng_data) {
+            probe++;
           }
         }
-        lucky_numbers_2of10[i] = tmp;
-        i++;
+        if (probe) {
+          continue;
+        }
+        else {
+          lucky_numbers_2of10[i] = trng_data;
+          i++;
+        }
       }
 
       // output
