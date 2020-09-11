@@ -221,58 +221,23 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  sanity_check: process(rstn_i)
-  begin
-    if rising_edge(rstn_i) then -- no worries - this won't be synthesized
-      -- internal bootloader memory --
-      if (BOOTLOADER_USE = true) and (boot_size_c > boot_max_size_c) then
-        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range." severity error;
-      end if;
-      if (BOOTLOADER_USE = true) and (MEM_INT_IMEM_ROM = true) then
-        assert false report "NEORV32 PROCESSOR CONFIG WARNING! IMEM is configured as read-only. Bootloader will not be able to load new executables." severity warning;
-      end if;
-
-      -- memory system - data/instruction fetch --
-      if (MEM_EXT_USE = false) then
-        if (MEM_INT_DMEM_USE = false) then
-          assert false report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal data memory." severity error;
-        end if;
-        if (MEM_INT_IMEM_USE = false) and (BOOTLOADER_USE = false) then
-          assert false report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal data memory and bootloader." severity error;
-        end if;
-      end if;
-
-      -- memory system --
-      if (MEM_ISPACE_BASE(1 downto 0) /= "00") then
-        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address must be 4-byte-aligned." severity error;
-      end if;
-      if (MEM_DSPACE_BASE(1 downto 0) /= "00") then
-        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 4-byte-aligned." severity error;
-      end if;
-      if (MEM_INT_IMEM_USE = true) and (MEM_INT_IMEM_SIZE > MEM_ISPACE_SIZE) then
-        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Internal instruction memory (IMEM) cannot be greater than total instruction address space." severity error;
-      end if;
-      if (MEM_INT_DMEM_USE = true) and (MEM_INT_DMEM_SIZE > MEM_DSPACE_SIZE) then
-        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Internal data memory (DMEM) cannot be greater than total data address space." severity error;
-      end if;
-      if (MEM_EXT_TIMEOUT < 1) then
-        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Invalid bus timeout. Processor-internal components have 1 cycle delay." severity error;
-      end if;
-
-      -- clock --
-      if (CLOCK_FREQUENCY = 0) then
-        assert false report "NEORV32 PROCESSOR CONFIG ERROR! Core clock frequency (CLOCK_FREQUENCY) not specified." severity error;
-      end if;
-
-      -- memory layout notifier --
-      if (MEM_ISPACE_BASE /= x"00000000") then
-        assert false report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framwork." severity warning;
-      end if;
-      if (MEM_DSPACE_BASE /= x"80000000") then
-        assert false report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framwork." severity warning;
-      end if;
-    end if;
-  end process sanity_check;
+  -- internal bootloader memory --
+  assert not ((BOOTLOADER_USE = true) and (boot_size_c > boot_max_size_c)) report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range." severity error;
+  assert not ((BOOTLOADER_USE = true) and (MEM_INT_IMEM_ROM = true)) report "NEORV32 PROCESSOR CONFIG WARNING! IMEM is configured as read-only. Bootloader will not be able to load new executables." severity warning;
+  -- memory system - data/instruction fetch --
+  assert not ((MEM_EXT_USE = false) and (MEM_INT_DMEM_USE = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal data memory." severity error;
+  assert not ((MEM_EXT_USE = false) and (MEM_INT_IMEM_USE = false) and (BOOTLOADER_USE = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal data memory and bootloader." severity error;
+  -- memory system --
+  assert not (MEM_ISPACE_BASE(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address must be 4-byte-aligned." severity error;
+  assert not (MEM_DSPACE_BASE(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 4-byte-aligned." severity error;
+  assert not ((MEM_INT_IMEM_USE = true) and (MEM_INT_IMEM_SIZE > MEM_ISPACE_SIZE)) report "NEORV32 PROCESSOR CONFIG ERROR! Internal instruction memory (IMEM) cannot be greater than total instruction address space." severity error;
+  assert not ((MEM_INT_DMEM_USE = true) and (MEM_INT_DMEM_SIZE > MEM_DSPACE_SIZE)) report "NEORV32 PROCESSOR CONFIG ERROR! Internal data memory (DMEM) cannot be greater than total data address space." severity error;
+  assert not (MEM_EXT_TIMEOUT < 1) report "NEORV32 PROCESSOR CONFIG ERROR! Invalid bus timeout. Processor-internal components have 1 cycle delay." severity error;
+  -- clock --
+  assert not (CLOCK_FREQUENCY = 0) report "NEORV32 PROCESSOR CONFIG ERROR! Core clock frequency (CLOCK_FREQUENCY) not specified." severity error;
+  -- memory layout notifier --
+  assert not (MEM_ISPACE_BASE /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framwork." severity warning;
+  assert not (MEM_DSPACE_BASE /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framwork." severity warning;
 
 
   -- Reset Generator ------------------------------------------------------------------------

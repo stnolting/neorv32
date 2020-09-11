@@ -149,39 +149,21 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  sanity_check: process(rstn_i)
-  begin
-    if rising_edge(rstn_i) then -- no worries - this won't be synthesized
-      -- CSR system --
-      if (CPU_EXTENSION_RISCV_Zicsr = false) then
-        assert false report "NEORV32 CPU CONFIG WARNING! No exception/interrupt/machine features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;
-      end if;
-      -- U-extension requires Zicsr extension --
-      if (CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true) then
-        assert false report "NEORV32 CPU CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
-      end if;
-      -- PMP requires Zicsr extension --
-      if (CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true) then
-        assert false report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
-      end if;
-      -- performance counters require Zicsr extension --
-      if (CPU_EXTENSION_RISCV_Zicsr = false) and (CSR_COUNTERS_USE = true) then
-        assert false report "NEORV32 CPU CONFIG ERROR! Performance counter CSRs require CPU_EXTENSION_RISCV_Zicsr extension." severity error;
-      end if;
-      -- PMP regions --
-      if (PMP_NUM_REGIONS > pmp_max_r_c) and (PMP_USE = true) then
-        assert false report "NEORV32 CPU CONFIG ERROR! Number of PMP regions out of valid range." severity error;
-      end if;
-      -- PMP granulartiy --
-      if ((PMP_GRANULARITY < 1) or (PMP_GRANULARITY > 32)) and (PMP_USE = true) then
-        assert false report "NEORV32 CPU CONFIG ERROR! Invalid PMP granulartiy (0 < G < 33)." severity error;
-      end if;
-      -- Bus timeout --
-      if (BUS_TIMEOUT < 1) then
-        assert false report "NEORV32 CPU CONFIG ERROR! Invalid bus timeout - must be at least 1 cycle." severity error;
-      end if;
-    end if;
-  end process sanity_check;
+  -- CSR system --
+  assert not (CPU_EXTENSION_RISCV_Zicsr = false) report "NEORV32 CPU CONFIG WARNING! No exception/interrupt/machine features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;
+  -- U-extension requires Zicsr extension --
+  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report "NEORV32 CPU CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
+  -- PMP requires Zicsr extension --
+  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
+  -- performance counters require Zicsr extension --
+  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CSR_COUNTERS_USE = true)) report "NEORV32 CPU CONFIG ERROR! Performance counter CSRs require CPU_EXTENSION_RISCV_Zicsr extension." severity error;
+  -- PMP regions --
+  assert not ((PMP_NUM_REGIONS > pmp_max_r_c) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions out of valid range." severity error;
+  -- PMP granulartiy --
+  assert not (((PMP_GRANULARITY < 1) or (PMP_GRANULARITY > 32)) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Invalid PMP granulartiy (0 < G < 33)." severity error;
+  -- Bus timeout --
+  assert not (BUS_TIMEOUT < 1) report "NEORV32 CPU CONFIG ERROR! Invalid bus timeout - must be at least 1 cycle." severity error;
+
 
   -- Control Unit ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

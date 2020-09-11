@@ -112,17 +112,8 @@ begin
 
   -- Sanity Check ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  sanity_check: process(rstn_i)
-  begin
-    if rising_edge(rstn_i) then -- no worries - this won't be synthesized
-      if (INTERFACE_REG_STAGES > 2) then
-        assert false report "NEORV32 CONFIG ERROR! Number of external memory interface buffer stages must be 0, 1 or 2." severity error;
-      end if;
-      if (INTERFACE_REG_STAGES = 0) then
-        assert false report "NEORV32 CONFIG WARNING! External memory interface without register stages is still experimental for peripherals with more than 1 cycle latency." severity warning;
-      end if;
-    end if;
-  end process sanity_check;
+  assert (INTERFACE_REG_STAGES <= 2) report "NEORV32 CONFIG ERROR! Number of external memory interface buffer stages must be 0, 1 or 2." severity error;
+  assert (INTERFACE_REG_STAGES /= 0) report "NEORV32 CONFIG WARNING! External memory interface without register stages is still experimental for peripherals with more than 1 cycle latency." severity warning;
 
 
   -- Access Control -------------------------------------------------------------------------
