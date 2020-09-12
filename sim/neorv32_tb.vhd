@@ -168,8 +168,9 @@ begin
     IO_TWI_USE                   => true,          -- implement two-wire interface (TWI)?
     IO_PWM_USE                   => true,          -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   => true,          -- implement watch dog timer (WDT)?
-    IO_TRNG_USE                  => false,         -- CANNOT BE SIMULATED!
-    IO_DEVNULL_USE               => true           -- implement dummy device (DEVNULL)?
+    IO_TRNG_USE                  => false,         -- DEFAULT TRNG CONFIG CANNOT BE SIMULATED!
+    IO_DEVNULL_USE               => true,          -- implement dummy device (DEVNULL)?
+    IO_CFU_USE                   => true           -- implement custom functions unit (CFU)?
   )
   port map (
     -- Global control --
