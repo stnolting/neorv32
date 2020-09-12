@@ -24,12 +24,12 @@ echo ""
 
 # List files
 echo "Simulation source files:"
-ls -al $srcdir_core
-ls -al $srcdir_sim
+ls -l $srcdir_core
+ls -l $srcdir_sim
 
 # Just a hint
 echo ""
-echo "Tip: Compile application with USER_FLAGS+=-DDEVNULL_UART_OVERRIDE to have faster UART/console output."
+echo "Tip: Compile application with USER_FLAGS+=-DDEVNULL_UART_OVERRIDE to have faster UART/console output via NEORV32.DEVNULL."
 echo ""
 
 # Analyse sources; libs and images at first!
@@ -39,6 +39,7 @@ ghdl -a --work=neorv32 $srcdir_core/neorv32_bootloader_image.vhd
 #
 ghdl -a --work=neorv32 $srcdir_core/neorv32_boot_rom.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_busswitch.vhd
+ghdl -a --work=neorv32 $srcdir_core/neorv32_cfu.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_alu.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_bus.vhd
