@@ -88,7 +88,8 @@ entity neorv32_top is
     IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE               : boolean := true    -- implement dummy device (DEVNULL)?
+    IO_DEVNULL_USE               : boolean := true;   -- implement dummy device (DEVNULL)?
+    IO_CFU_USE                   : boolean := false   -- implement custom functions unit (CFU)?
   );
   port (
     -- Global control --
@@ -152,6 +153,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal spi_cg_en  : std_ulogic;
   signal twi_cg_en  : std_ulogic;
   signal pwm_cg_en  : std_ulogic;
+  signal cfu_cg_en  : std_ulogic;
 
   -- bus interface --
   type bus_interface_t is record
@@ -201,6 +203,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal trng_ack       : std_ulogic;
   signal devnull_rdata  : std_ulogic_vector(data_width_c-1 downto 0);
   signal devnull_ack    : std_ulogic;
+  signal cfu_rdata      : std_ulogic_vector(data_width_c-1 downto 0);
+  signal cfu_ack        : std_ulogic;
   signal sysinfo_rdata  : std_ulogic_vector(data_width_c-1 downto 0);
   signal sysinfo_ack    : std_ulogic;
 
@@ -273,23 +277,28 @@ begin
       clk_div    <= (others => '0');
       clk_div_ff <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- anybody wanting some fresh clocks? --
-      if ((wdt_cg_en or uart_cg_en or spi_cg_en or twi_cg_en or pwm_cg_en) = '1') then
-        clk_div    <= std_ulogic_vector(unsigned(clk_div) + 1);
-        clk_div_ff <= clk_div;
+      -- fresh clocks anyone? --
+      if ((wdt_cg_en or uart_cg_en or spi_cg_en or twi_cg_en or pwm_cg_en or cfu_cg_en) = '1') then
+        clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
       end if;
+      clk_div_ff <= clk_div;
     end if;
   end process clock_generator;
 
-  -- clock enable select: rising edge detectors --
-  clk_gen(clk_div2_c)    <= clk_div(0)  and (not clk_div_ff(0));  -- CLK/2
-  clk_gen(clk_div4_c)    <= clk_div(1)  and (not clk_div_ff(1));  -- CLK/4
-  clk_gen(clk_div8_c)    <= clk_div(2)  and (not clk_div_ff(2));  -- CLK/8
-  clk_gen(clk_div64_c)   <= clk_div(5)  and (not clk_div_ff(5));  -- CLK/64
-  clk_gen(clk_div128_c)  <= clk_div(6)  and (not clk_div_ff(6));  -- CLK/128
-  clk_gen(clk_div1024_c) <= clk_div(9)  and (not clk_div_ff(9));  -- CLK/1024
-  clk_gen(clk_div2048_c) <= clk_div(10) and (not clk_div_ff(10)); -- CLK/2048
-  clk_gen(clk_div4096_c) <= clk_div(11) and (not clk_div_ff(11)); -- CLK/4096
+  -- clock enables: rising edge detectors --
+  clock_generator_edge: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      clk_gen(clk_div2_c)    <= clk_div(0)  and (not clk_div_ff(0));  -- CLK/2
+      clk_gen(clk_div4_c)    <= clk_div(1)  and (not clk_div_ff(1));  -- CLK/4
+      clk_gen(clk_div8_c)    <= clk_div(2)  and (not clk_div_ff(2));  -- CLK/8
+      clk_gen(clk_div64_c)   <= clk_div(5)  and (not clk_div_ff(5));  -- CLK/64
+      clk_gen(clk_div128_c)  <= clk_div(6)  and (not clk_div_ff(6));  -- CLK/128
+      clk_gen(clk_div1024_c) <= clk_div(9)  and (not clk_div_ff(9));  -- CLK/1024
+      clk_gen(clk_div2048_c) <= clk_div(10) and (not clk_div_ff(10)); -- CLK/2048
+      clk_gen(clk_div4096_c) <= clk_div(11) and (not clk_div_ff(11)); -- CLK/4096
+    end if;
+  end process clock_generator_edge;
 
 
   -- CPU ------------------------------------------------------------------------------------
@@ -407,11 +416,11 @@ begin
 
   -- processor bus: CPU data input --
   p_bus.rdata <= (imem_rdata or dmem_rdata or bootrom_rdata) or wishbone_rdata or (gpio_rdata or mtime_rdata or uart_rdata or
-                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or devnull_rdata or sysinfo_rdata);
+                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or devnull_rdata or cfu_rdata or sysinfo_rdata);
 
   -- processor bus: CPU data ACK input --
   p_bus.ack <= (imem_ack or dmem_ack or bootrom_ack) or wishbone_ack or (gpio_ack or mtime_ack or uart_ack or
-               spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or devnull_ack or sysinfo_ack);
+               spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or devnull_ack or cfu_ack or sysinfo_ack);
 
   -- processor bus: CPU data bus error input --
   p_bus.err <= wishbone_err;
@@ -850,6 +859,37 @@ begin
   end generate;
 
 
+  -- Custom Functions Unit (CFU) ------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_cfu_inst_true:
+  if (IO_CFU_USE = true) generate
+    neorv32_cfu_inst: neorv32_cfu
+    port map (
+      -- host access --
+      clk_i       => clk_i,       -- global clock line
+      rstn_i      => sys_rstn,    -- global reset line, low-active, use as async
+      addr_i      => p_bus.addr,  -- address
+      rden_i      => io_rden,     -- read enable
+      wren_i      => io_wren,     -- write enable
+      data_i      => p_bus.wdata, -- data in
+      data_o      => cfu_rdata,   -- data out
+      ack_o       => cfu_ack,     -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o => cfu_cg_en,   -- enable clock generator
+      clkgen_i    => clk_gen      -- "clock" inputs
+      -- custom io --
+      -- ...
+    );
+  end generate;
+
+  neorv32_cfu_inst_false:
+  if (IO_CFU_USE = false) generate
+    cfu_rdata <= (others => '0');
+    cfu_ack   <= '0';
+    cfu_cg_en <= '0';
+  end generate;
+
+
   -- System Configuration Information Memory (SYSINFO) --------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_sysinfo_inst: neorv32_sysinfo
@@ -880,7 +920,8 @@ begin
     IO_PWM_USE        => IO_PWM_USE,        -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE        => IO_WDT_USE,        -- implement watch dog timer (WDT)?
     IO_TRNG_USE       => IO_TRNG_USE,       -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE    => IO_DEVNULL_USE     -- implement dummy device (DEVNULL)?
+    IO_DEVNULL_USE    => IO_DEVNULL_USE,    -- implement dummy device (DEVNULL)?
+    IO_CFU_USE        => IO_CFU_USE         -- implement custom functions unit (CFU)?
   )
   port map (
     -- host access --
