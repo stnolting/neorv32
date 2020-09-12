@@ -70,7 +70,8 @@ entity neorv32_sysinfo is
     IO_PWM_USE        : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE        : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_USE       : boolean := true;   -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE    : boolean := true    -- implement dummy device (DEVNULL)?
+    IO_DEVNULL_USE    : boolean := true;   -- implement dummy device (DEVNULL)?
+    IO_CFU_USE        : boolean := true    -- implement custom functions unit (CFU)?
   );
   port (
     -- host access --
@@ -118,24 +119,26 @@ begin
   sysinfo_mem(1) <= USER_CODE;
 
   -- SYSINFO(2): Implemented processor devices/features --
-  -- Memory
-  sysinfo_mem(2)(00) <= bool_to_ulogic_f(BOOTLOADER_USE);   -- implement processor-internal bootloader?
-  sysinfo_mem(2)(01) <= bool_to_ulogic_f(MEM_EXT_USE);      -- implement external memory bus interface?
-  sysinfo_mem(2)(02) <= bool_to_ulogic_f(MEM_INT_IMEM_USE); -- implement processor-internal instruction memory?
-  sysinfo_mem(2)(03) <= bool_to_ulogic_f(MEM_INT_IMEM_ROM); -- implement processor-internal instruction memory as ROM?
-  sysinfo_mem(2)(04) <= bool_to_ulogic_f(MEM_INT_DMEM_USE); -- implement processor-internal data memory?
+  -- Memory --
+  sysinfo_mem(2)(00) <= bool_to_ulogic_f(BOOTLOADER_USE);   -- processor-internal bootloader implemented?
+  sysinfo_mem(2)(01) <= bool_to_ulogic_f(MEM_EXT_USE);      -- external memory bus interface implemented?
+  sysinfo_mem(2)(02) <= bool_to_ulogic_f(MEM_INT_IMEM_USE); -- processor-internal instruction memory implemented?
+  sysinfo_mem(2)(03) <= bool_to_ulogic_f(MEM_INT_IMEM_ROM); -- processor-internal instruction memory implemented as ROM?
+  sysinfo_mem(2)(04) <= bool_to_ulogic_f(MEM_INT_DMEM_USE); -- processor-internal data memory implemented?
+  --
   sysinfo_mem(2)(15 downto 05) <= (others => '0'); -- reserved
-  -- IO
-  sysinfo_mem(2)(16) <= bool_to_ulogic_f(IO_GPIO_USE);      -- implement general purpose input/output port unit (GPIO)?
-  sysinfo_mem(2)(17) <= bool_to_ulogic_f(IO_MTIME_USE);     -- implement machine system timer (MTIME)?
-  sysinfo_mem(2)(18) <= bool_to_ulogic_f(IO_UART_USE);      -- implement universal asynchronous receiver/transmitter (UART)?
-  sysinfo_mem(2)(19) <= bool_to_ulogic_f(IO_SPI_USE);       -- implement serial peripheral interface (SPI)?
-  sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_USE);       -- implement two-wire interface (TWI)?
-  sysinfo_mem(2)(21) <= bool_to_ulogic_f(IO_PWM_USE);       -- implement pulse-width modulation unit (PWM)?
-  sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_USE);       -- implement watch dog timer (WDT)?
-  sysinfo_mem(2)(23) <= '0';
-  sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_USE);      -- implement true random number generator (TRNG)?
-  sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_DEVNULL_USE);   -- implement dummy device (DEVNULL)?
+  -- IO --
+  sysinfo_mem(2)(16) <= bool_to_ulogic_f(IO_GPIO_USE);      -- general purpose input/output port unit (GPIO) implemented?
+  sysinfo_mem(2)(17) <= bool_to_ulogic_f(IO_MTIME_USE);     -- machine system timer (MTIME) implemented?
+  sysinfo_mem(2)(18) <= bool_to_ulogic_f(IO_UART_USE);      -- universal asynchronous receiver/transmitter (UART) implemented?
+  sysinfo_mem(2)(19) <= bool_to_ulogic_f(IO_SPI_USE);       -- serial peripheral interface (SPI) implemented?
+  sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_USE);       -- two-wire interface (TWI) implemented?
+  sysinfo_mem(2)(21) <= bool_to_ulogic_f(IO_PWM_USE);       -- pulse-width modulation unit (PWM) implemented?
+  sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_USE);       -- watch dog timer (WDT) implemented?
+  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFU_USE);       -- custom unctions unit (CFU) implemented?
+  sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_USE);      -- true random number generator (TRNG) implemented?
+  sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_DEVNULL_USE);   -- dummy device (DEVNULL) implemented?
+  --
   sysinfo_mem(2)(31 downto 26) <= (others => '0'); -- reserved
 
   -- SYSINFO(3): reserved --
@@ -159,11 +162,10 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o <= rden;
+      ack_o  <= rden;
+      data_o <= (others => '0');
       if (rden = '1') then
         data_o <= sysinfo_mem(to_integer(unsigned(info_addr)));
-      else
-        data_o <= (others => '0');
       end if;
     end if;
   end process read_access;
