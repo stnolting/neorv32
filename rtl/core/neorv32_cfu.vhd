@@ -54,7 +54,9 @@ entity neorv32_cfu is
     ack_o       : out std_ulogic; -- transfer acknowledge
     -- clock generator --
     clkgen_en_o : out std_ulogic; -- enable clock generator
-    clkgen_i    : in  std_ulogic_vector(07 downto 0) -- "clock" inputs
+    clkgen_i    : in  std_ulogic_vector(07 downto 0); -- "clock" inputs
+    -- interrupt --
+    irq_o       : out std_ulogic
     -- custom io --
     -- ...
   );
@@ -173,6 +175,21 @@ begin
       end if;
     end if;
   end process rw_access;
+
+
+  -- CFU Interrupt --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- The CFU provides a single interrupt request signal, which is forwarded to the CPU's fast interrupt channel 1.
+  -- This channel is shared with the GPIO unit - so both unit can trigger the same interrupt.
+  --
+  -- An interrupt request is generated when the irq_o signal is high for one cycle. If the signal is high for more than one cycle
+  -- more than one interrupt request might be generated.
+  --
+  -- There is no interrupt acknowledge signal. If required: The interrupt handler can write to a specific control reister bit within the
+  -- CFU to acknowledge an interrupt.
+
+  irq_o <= '0'; -- not used for this minimal example
+
 
 
   -- CFU Core -------------------------------------------------------------------------------

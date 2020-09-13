@@ -216,6 +216,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal uart_irq  : std_ulogic;
   signal spi_irq   : std_ulogic;
   signal twi_irq   : std_ulogic;
+  signal cfu_irq   : std_ulogic;
 
   -- misc --
   signal mtime_time : std_ulogic_vector(63 downto 0); -- current system time from MTIME
@@ -366,7 +367,7 @@ begin
 
   -- fast interrupts --
   fast_irq(0) <= wdt_irq; -- highest priority
-  fast_irq(1) <= gpio_irq;
+  fast_irq(1) <= gpio_irq or cfu_irq; -- can be triggered by GPIO pin-change or CFU
   fast_irq(2) <= uart_irq;
   fast_irq(3) <= spi_irq or twi_irq; -- lowest priority, can be triggered by SPI or TWI
 
@@ -876,7 +877,9 @@ begin
       ack_o       => cfu_ack,     -- transfer acknowledge
       -- clock generator --
       clkgen_en_o => cfu_cg_en,   -- enable clock generator
-      clkgen_i    => clk_gen      -- "clock" inputs
+      clkgen_i    => clk_gen,     -- "clock" inputs
+      -- interrupt --
+      irq_o       => cfu_irq
       -- custom io --
       -- ...
     );
@@ -887,6 +890,7 @@ begin
     cfu_rdata <= (others => '0');
     cfu_ack   <= '0';
     cfu_cg_en <= '0';
+    cfu_irq   <= '0';
   end generate;
 
 
