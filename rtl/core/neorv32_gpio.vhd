@@ -70,8 +70,9 @@ architecture neorv32_gpio_rtl of neorv32_gpio is
   signal addr   : std_ulogic_vector(31 downto 0); -- access address
 
   -- accessible regs --
-  signal din  : std_ulogic_vector(31 downto 0); -- r/w
-  signal dout : std_ulogic_vector(31 downto 0); -- r/w
+  signal din    : std_ulogic_vector(31 downto 0); -- r/-
+  signal dout   : std_ulogic_vector(31 downto 0); -- r/w
+  signal irq_en : std_ulogic_vector(31 downto 0); -- -/w, uses the same address as data_in
 
   -- misc --
   signal in_buf : std_ulogic_vector(31 downto 0);
@@ -92,17 +93,19 @@ begin
       ack_o <= acc_en and (rden_i or wren_i);
       -- write access --
       if ((acc_en and wren_i) = '1') then
-        if (addr = gpio_out_addr_c) then
-          dout <= data_i;
+        if (addr = gpio_in_addr_c) then
+          irq_en <= data_i; -- pin change IRQ enable
+        else -- gpio_out_addr_c
+          dout <= data_i; -- data output port
         end if;
       end if;
       -- read access --
       data_o <= (others => '0');
       if ((acc_en and rden_i) = '1') then
         if (addr = gpio_in_addr_c) then
-          data_o <= din;
+          data_o <= din; -- data input port
         else -- gpio_out_addr_c
-          data_o <= dout;
+          data_o <= dout; -- data output port
         end if;
       end if;
     end if;
@@ -121,7 +124,7 @@ begin
       in_buf <= gpio_i;
       din    <= in_buf;
       -- IRQ --
-      irq_o <= or_all_f(in_buf xor din); -- any transition triggers an interrupt
+      irq_o <= or_all_f(in_buf xor (din and irq_en)); -- any enabled pin transition triggers an interrupt
     end if;
   end process irq_detector;
 
