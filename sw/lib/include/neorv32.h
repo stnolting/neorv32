@@ -234,8 +234,8 @@ enum NEORV32_CLOCK_PRSC_enum {
  * @name IO Device: General Purpose Input/Output Port Unit (GPIO)
  **************************************************************************/
 /**@{*/
-/** GPIO parallel input port 32-bit (r/-) */
-#define GPIO_INPUT  (*(IO_ROM32 0xFFFFFF80UL))
+/** read access: GPIO parallel input port 32-bit (r/-), write_access: pin-change IRQ for each input pin (-/w) */
+#define GPIO_INPUT  (*(IO_REG32 0xFFFFFF80UL))
 /** GPIO parallel output port 32-bit (r/w) */
 #define GPIO_OUTPUT (*(IO_REG32 0xFFFFFF84UL))
 /**@}*/
@@ -455,6 +455,22 @@ enum NEORV32_TRNG_CT_enum {
   TRNG_CT_EN       = 31  /**< TRNG data/control register(31) (r/w): TRNG enable */
 };
 /**@}*/
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: Custom Functions Unit (CFU)
+ **************************************************************************/
+/**@{*/
+/** CFU register 0 ((r)/(w)) */
+#define CFU_REG_0 (*(IO_REG32 0xFFFFFFD0UL)) // (r)/(w): CFU register 0, user-defined
+/** CFU register 1 ((r)/(w)) */
+#define CFU_REG_1 (*(IO_REG32 0xFFFFFFD4UL)) // (r)/(w): CFU register 1, user-defined
+/** CFU register 2 ((r)/(w)) */
+#define CFU_REG_2 (*(IO_REG32 0xFFFFFFD8UL)) // (r)/(w): CFU register 2, user-defined
+/** CFU register 3 ((r)/(w)) */
+#define CFU_REG_3 (*(IO_REG32 0xFFFFFFDCUL)) // (r)/(w): CFU register 3, user-defined
+/**@}*/
 
 
 /**********************************************************************//**
@@ -497,9 +513,9 @@ enum NEORV32_TRNG_CT_enum {
   SYSINFO_FEATURES_IO_TWI           = 20, /**< SYSINFO_FEATURES (20) (r/-): Two-wire interface implemented when 1 (via IO_TWI_USE generic) */
   SYSINFO_FEATURES_IO_PWM           = 21, /**< SYSINFO_FEATURES (21) (r/-): Pulse-width modulation unit implemented when 1 (via IO_PWM_USE generic) */
   SYSINFO_FEATURES_IO_WDT           = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_USE generic) */
-
+  SYSINFO_FEATURES_IO_CFU           = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions unit implemented when 1 (via IO_CFU_USE generic) */
   SYSINFO_FEATURES_IO_TRNG          = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_USE generic) */
-  SYSINFO_FEATURES_IO_DEVNULL       = 25  /**< SYSINFO_FEATURES (24) (r/-): Dummy device implemented when 1 (via IO_DEVNULL_USE generic) */
+  SYSINFO_FEATURES_IO_DEVNULL       = 25  /**< SYSINFO_FEATURES (25) (r/-): Dummy device implemented when 1 (via IO_DEVNULL_USE generic) */
 };
 
 
