@@ -64,7 +64,7 @@ int neorv32_gpio_available(void) {
 /**********************************************************************//**
  * Set single pin of GPIO's output port.
  *
- * @param[in] pin Pin number to be set (0..31).
+ * @param[in] pin Output pin number to be set (0..31).
  **************************************************************************/
 void neorv32_gpio_pin_set(uint8_t pin) {
 
@@ -76,7 +76,7 @@ void neorv32_gpio_pin_set(uint8_t pin) {
 /**********************************************************************//**
  * Clear single pin of GPIO's output port.
  *
- * @param[in] pin Pin number to be cleared (0..31).
+ * @param[in] pin Output pin number to be cleared (0..31).
  **************************************************************************/
 void neorv32_gpio_pin_clr(uint8_t pin) {
 
@@ -88,7 +88,7 @@ void neorv32_gpio_pin_clr(uint8_t pin) {
 /**********************************************************************//**
  * Toggle single pin of GPIO's output port.
  *
- * @param[in] pin Pin number to be toggled (0..31).
+ * @param[in] pin Output pin number to be toggled (0..31).
  **************************************************************************/
 void neorv32_gpio_pin_toggle(uint8_t pin) {
 
@@ -100,7 +100,7 @@ void neorv32_gpio_pin_toggle(uint8_t pin) {
 /**********************************************************************//**
  * Get single pin of GPIO's input port.
  *
- * @param[in] pin Pin to be read (0..31).
+ * @param[in] pin Input pin to be read (0..31).
  * @return uint32_t: =0 if pin is low, !=0 if pin is high.
  **************************************************************************/
 uint32_t neorv32_gpio_pin_get(uint8_t pin) {
@@ -113,7 +113,7 @@ uint32_t neorv32_gpio_pin_get(uint8_t pin) {
 /**********************************************************************//**
  * Set complete GPIO output port.
  *
- * @param[in] port_data New port value (32-bit).
+ * @param[in] port_data New output port value (32-bit).
  **************************************************************************/
 void neorv32_gpio_port_set(uint32_t port_data) {
 
@@ -130,3 +130,17 @@ uint32_t neorv32_gpio_port_get(void) {
 
   return GPIO_INPUT;
 }
+
+
+/**********************************************************************//**
+ * Configure pin-change IRQ mask for input pins.
+ *
+ * @note The pin-change IRQ will trigger on any transition (rising and falling edge) for any enabled input pin.
+ *
+ * @param[in] pin_en Mask to select which input pins can cause a pin-change IRQ (32-bit), 1 = pin enabled.
+ **************************************************************************/
+void neorv32_gpio_pin_change_config(uint32_t pin_sel) {
+
+  GPIO_INPUT = pin_sel;
+}
+

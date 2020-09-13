@@ -52,5 +52,6 @@ void neorv32_gpio_pin_toggle(uint8_t p);
 uint32_t neorv32_gpio_pin_get(uint8_t p);
 void neorv32_gpio_port_set(uint32_t d);
 uint32_t neorv32_gpio_port_get(void);
+void neorv32_gpio_pin_change_config(uint32_t pin_sel);
 
 #endif // neorv32_gpio_h
