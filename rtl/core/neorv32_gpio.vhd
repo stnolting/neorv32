@@ -124,7 +124,7 @@ begin
       in_buf <= gpio_i;
       din    <= in_buf;
       -- IRQ --
-      irq_o <= or_all_f(in_buf xor (din and irq_en)); -- any enabled pin transition triggers an interrupt
+      irq_o <= or_all_f((in_buf xor din) and irq_en); -- any enabled pin transition triggers an interrupt
     end if;
   end process irq_detector;
 
