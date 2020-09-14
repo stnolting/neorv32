@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants/Configuration ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c  : natural := 32; -- data width - FIXED!
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01040200"; -- no touchy!
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01040500"; -- no touchy!
   constant pmp_max_r_c   : natural := 8; -- max PMP regions
   constant ipb_entries_c : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
 
@@ -62,15 +62,25 @@ package neorv32_package is
   type pmp_ctrl_if_t is array (0 to pmp_max_r_c-1) of std_ulogic_vector(7 downto 0);
   type pmp_addr_if_t is array (0 to pmp_max_r_c-1) of std_ulogic_vector(33 downto 0);
 
+  -- General Address Space Layout -----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  constant ispace_base_c : std_ulogic_vector(data_width_c-1 downto 0) := x"00000000"; -- instruction memory space base address
+  constant dspace_base_c : std_ulogic_vector(data_width_c-1 downto 0) := x"80000000"; -- data memory space base address
+
   -- Processor-Internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- Instruction Memory & Data Memory --
-  -- => configured via top's generics
+  -- Internal Instruction Memory (IMEM) --
+  constant imem_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := ispace_base_c; -- internal instruction memory base address
+  --> size is configured via top's generic
 
-  -- Bootloader ROM --
-  constant boot_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFF0000"; -- bootloader base address, fixed!
-  constant boot_size_c          : natural := 4*1024; -- bytes
-  constant boot_max_size_c      : natural := 32*1024; -- bytes, fixed!
+  -- Internal Data Memory (DMEM) --
+  constant dmem_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := dspace_base_c; -- internal data memory base address
+  --> size is configured via top's generic
+
+  -- Internal Bootloader ROM --
+  constant boot_rom_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFF0000"; -- bootloader base address, fixed!
+  constant boot_rom_size_c      : natural := 4*1024; -- bytes
+  constant boot_rom_max_size_c  : natural := 32*1024; -- bytes, fixed!
 
   -- IO: Peripheral Devices ("IO") Area --
   -- Control register(s) (including the device-enable) should be located at the base address of each device
@@ -79,72 +89,72 @@ package neorv32_package is
 
   -- General Purpose Input/Output Unit (GPIO) --
   constant gpio_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF80"; -- base address, fixed!
-  constant gpio_size_c          : natural := 2*4; -- bytes, fixed!
-  constant gpio_in_addr_c       : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(gpio_base_c) + x"00000000");
-  constant gpio_out_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(gpio_base_c) + x"00000004");
+  constant gpio_size_c          : natural := 2*4; -- bytes
+  constant gpio_in_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF80";
+  constant gpio_out_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF84";
 
   -- Dummy Device (with SIMULATION output) (DEVNULL) --
   constant devnull_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF88"; -- base address, fixed!
-  constant devnull_size_c       : natural := 1*4; -- bytes, fixed!
-  constant devnull_data_addr_c  : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(devnull_base_c) + x"00000000");
+  constant devnull_size_c       : natural := 1*4; -- bytes
+  constant devnull_data_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF88";
 
   -- Watch Dog Timer (WDT) --
   constant wdt_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF8C"; -- base address, fixed!
-  constant wdt_size_c           : natural := 1*4; -- bytes, fixed!
-  constant wdt_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(wdt_base_c) + x"00000000");
+  constant wdt_size_c           : natural := 1*4; -- bytes
+  constant wdt_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF8C";
 
   -- Machine System Timer (MTIME) --
   constant mtime_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF90"; -- base address, fixed!
-  constant mtime_size_c         : natural := 4*4; -- bytes, fixed!
-  constant mtime_time_lo_addr_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(mtime_base_c) + x"00000000");
-  constant mtime_time_hi_addr_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(mtime_base_c) + x"00000004");
-  constant mtime_cmp_lo_addr_c  : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(mtime_base_c) + x"00000008");
-  constant mtime_cmp_hi_addr_c  : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(mtime_base_c) + x"0000000C");
+  constant mtime_size_c         : natural := 4*4; -- bytes
+  constant mtime_time_lo_addr_c : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF90";
+  constant mtime_time_hi_addr_c : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF94";
+  constant mtime_cmp_lo_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF98";
+  constant mtime_cmp_hi_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF9C";
 
   -- Universal Asynchronous Receiver/Transmitter (UART) --
   constant uart_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFA0"; -- base address, fixed!
-  constant uart_size_c          : natural := 2*4; -- bytes, fixed!
-  constant uart_ctrl_addr_c     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(uart_base_c) + x"00000000");
-  constant uart_rtx_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(uart_base_c) + x"00000004");
+  constant uart_size_c          : natural := 2*4; -- bytes
+  constant uart_ctrl_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFA0";
+  constant uart_rtx_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFA4";
 
   -- Serial Peripheral Interface (SPI) --
   constant spi_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFA8"; -- base address, fixed!
-  constant spi_size_c           : natural := 2*4; -- bytes, fixed!
-  constant spi_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(spi_base_c) + x"00000000");
-  constant spi_rtx_addr_c       : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(spi_base_c) + x"00000004");
+  constant spi_size_c           : natural := 2*4; -- bytes
+  constant spi_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFA8";
+  constant spi_rtx_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFAC";
 
   -- Two Wire Interface (TWI) --
   constant twi_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFB0"; -- base address, fixed!
-  constant twi_size_c           : natural := 2*4; -- bytes, fixed!
-  constant twi_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(twi_base_c) + x"00000000");
-  constant twi_rtx_addr_c       : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(twi_base_c) + x"00000004");
+  constant twi_size_c           : natural := 2*4; -- bytes
+  constant twi_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFB0";
+  constant twi_rtx_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFB4";
 
   -- Pulse-Width Modulation Controller (PWM) --
   constant pwm_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFB8"; -- base address, fixed!
-  constant pwm_size_c           : natural := 2*4; -- bytes, fixed!
-  constant pwm_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(pwm_base_c) + x"00000000");
-  constant pwm_duty_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(pwm_base_c) + x"00000004");
+  constant pwm_size_c           : natural := 2*4; -- bytes
+  constant pwm_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFB8";
+  constant pwm_duty_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFBC";
 
   -- True Random Number Generator (TRNG) --
   constant trng_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0"; -- base address, fixed!
-  constant trng_size_c          : natural := 1*4; -- bytes, fixed!
-  constant trng_ctrl_addr_c     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(trng_base_c) + x"00000000");
+  constant trng_size_c          : natural := 1*4; -- bytes
+  constant trng_ctrl_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0";
 
   -- RESERVED --
 --constant ???_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC4"; -- base address, fixed!
---constant ???_size_c           : natural := 3*4; -- bytes, fixed!
+--constant ???_size_c           : natural := 3*4; -- bytes
 
   -- Custom Functions Unit (CFU) --
   constant cfu_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD0"; -- base address, fixed!
-  constant cfu_size_c           : natural := 4*4; -- bytes, fixed!
-  constant cfu_reg0_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(cfu_base_c) + x"00000000");
-  constant cfu_reg1_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(cfu_base_c) + x"00000004");
-  constant cfu_reg2_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(cfu_base_c) + x"00000008");
-  constant cfu_reg3_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(cfu_base_c) + x"0000000C");
+  constant cfu_size_c           : natural := 4*4; -- bytes
+  constant cfu_reg0_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD0";
+  constant cfu_reg1_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD4";
+  constant cfu_reg2_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD8";
+  constant cfu_reg3_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFDC";
 
   -- System Information Memory (SYSINFO) --
   constant sysinfo_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFE0"; -- base address, fixed!
-  constant sysinfo_size_c       : natural := 8*4; -- bytes, fixed!
+  constant sysinfo_size_c       : natural := 8*4; -- bytes
 
   -- Main Control Bus -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -408,18 +418,14 @@ package neorv32_package is
       PMP_USE                      : boolean := false; -- implement PMP?
       PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
       PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
-      -- Memory configuration: Instruction memory --
-      MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
-      MEM_ISPACE_SIZE              : natural := 16*1024; -- total size of instruction memory space in byte
+      -- Internal Instruction memory --
       MEM_INT_IMEM_USE             : boolean := true;    -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
       MEM_INT_IMEM_ROM             : boolean := false;   -- implement processor-internal instruction memory as ROM
-      -- Memory configuration: Data memory --
-      MEM_DSPACE_BASE              : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
-      MEM_DSPACE_SIZE              : natural := 8*1024; -- total size of data memory space in byte
+      -- Internal Data memory --
       MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
-      -- Memory configuration: External memory interface --
+      -- External memory interface --
       MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
       MEM_EXT_REG_STAGES           : natural := 2;      -- number of interface register stages (0,1,2)
       MEM_EXT_TIMEOUT              : natural := 15;     -- cycles after which a valid bus access will timeout (>=1)
@@ -835,6 +841,10 @@ package neorv32_package is
   -- Component: Processor-internal bootloader ROM (BOOTROM) ---------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_boot_rom
+    generic (
+      BOOTROM_BASE : std_ulogic_vector(31 downto 0) := x"FFFF0000"; -- boot ROM base address
+      BOOTROM_SIZE : natural := 4*1024  -- processor-internal boot ROM memory size in bytes
+    );
     port (
       clk_i  : in  std_ulogic; -- global clock line
       rden_i : in  std_ulogic; -- read enable
@@ -1017,14 +1027,10 @@ package neorv32_package is
   component neorv32_wishbone
     generic (
       INTERFACE_REG_STAGES : natural := 2; -- number of interface register stages (0,1,2)
-      -- Memory configuration: Instruction memory --
-      MEM_ISPACE_BASE      : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
-      MEM_ISPACE_SIZE      : natural := 8*1024; -- total size of instruction memory space in byte
+      -- Internal instruction memory --
       MEM_INT_IMEM_USE     : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE    : natural := 8*1024; -- size of processor-internal instruction memory in bytes
-      -- Memory configuration: Data memory --
-      MEM_DSPACE_BASE      : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
-      MEM_DSPACE_SIZE      : natural := 4*1024; -- total size of data memory space in byte
+      -- Internal data memory --
       MEM_INT_DMEM_USE     : boolean := true;   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE    : natural := 4*1024  -- size of processor-internal data memory in bytes
     );
@@ -1101,18 +1107,14 @@ package neorv32_package is
       CLOCK_FREQUENCY   : natural := 0;      -- clock frequency of clk_i in Hz
       BOOTLOADER_USE    : boolean := true;   -- implement processor-internal bootloader?
       USER_CODE         : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
-      -- Memory configuration: Instruction memory --
-      MEM_ISPACE_BASE   : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
-      MEM_ISPACE_SIZE   : natural := 8*1024; -- total size of instruction memory space in byte
+      -- Internal Instruction memory --
       MEM_INT_IMEM_USE  : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
       MEM_INT_IMEM_ROM  : boolean := false;  -- implement processor-internal instruction memory as ROM
-      -- Memory configuration: Data memory --
-      MEM_DSPACE_BASE   : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
-      MEM_DSPACE_SIZE   : natural := 4*1024; -- total size of data memory space in byte
+      -- Internal Data memory --
       MEM_INT_DMEM_USE  : boolean := true;   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE : natural := 4*1024; -- size of processor-internal data memory in bytes
-      -- Memory configuration: External memory interface --
+      -- External memory interface --
       MEM_EXT_USE       : boolean := false;  -- implement external memory bus interface?
       -- Processor peripherals --
       IO_GPIO_USE       : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
