@@ -90,9 +90,9 @@ entity neorv32_cpu_control is
     -- system time input from MTIME --
     time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
     -- physical memory protection --
-    pmp_addr_o     : out pmp_addr_if_t; -- addresses
-    pmp_ctrl_o     : out pmp_ctrl_if_t; -- configs
-    priv_mode_o    : out std_ulogic_vector(1 downto 0); -- current CPU privilege level
+    pmp_addr_o    : out pmp_addr_if_t; -- addresses
+    pmp_ctrl_o    : out pmp_ctrl_if_t; -- configs
+    priv_mode_o   : out std_ulogic_vector(1 downto 0); -- current CPU privilege level
     -- bus access exceptions --
     mar_i         : in  std_ulogic_vector(data_width_c-1 downto 0);  -- memory address register
     ma_instr_i    : in  std_ulogic; -- misaligned instruction address
@@ -255,7 +255,7 @@ begin
 
   -- Fetch Engine FSM Sync ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- for registers that require a specific reset state --
+  -- registers that require a specific reset state --
   fetch_engine_fsm_sync_rst: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -270,7 +270,7 @@ begin
   end process fetch_engine_fsm_sync_rst;
 
 
-  -- for registers that DO NOT require a specific reset state --
+  -- registers that DO NOT require a specific reset state --
   fetch_engine_fsm_sync: process(clk_i)
   begin
     if rising_edge(clk_i) then
@@ -1209,6 +1209,7 @@ begin
             trap_ctrl.exc_ack   <= '1';                   -- clear execption
             trap_ctrl.irq_ack   <= trap_ctrl.irq_ack_nxt; -- capture and clear with interrupt ACK mask
             trap_ctrl.env_start <= '1';                   -- now execute engine can start trap handler
+--          assert false report "NEORV32.CPU TRAP: mcause=" & integer'image(to_integer(unsigned(trap_ctrl.cause_nxt))) severity note; -- for debugging
           end if;
         else -- trap waiting to get started
           if (trap_ctrl.env_start_ack = '1') then -- start of trap handler acknowledged by execution engine
@@ -1734,12 +1735,13 @@ begin
       mcycle_msb    <= '0';
       minstret_msb  <= '0';
     elsif rising_edge(clk_i) then
+
       -- mcycle (cycle) --
       mcycle_msb <= csr.mcycle(csr.mcycle'left);
       if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b00") then -- write access
         csr.mcycle(31 downto 0) <= csr_wdata_i;
         csr.mcycle(32) <= '0';
-      elsif (execute_engine.sleep = '0') then -- automatic update
+      elsif (execute_engine.sleep = '0') then -- automatic update (if CPU is not in sleep mode)
         csr.mcycle <= std_ulogic_vector(unsigned(csr.mcycle) + 1);
       end if;
 
