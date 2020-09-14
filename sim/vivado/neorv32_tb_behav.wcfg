@@ -12,15 +12,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="829833fs"></ZoomStartTime>
-      <ZoomEndTime time="1034034fs"></ZoomEndTime>
-      <Cursor1Time time="1000000fs"></Cursor1Time>
+      <ZoomStartTime time="820966fs"></ZoomStartTime>
+      <ZoomEndTime time="923467fs"></ZoomEndTime>
+      <Cursor1Time time="866866fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="203"></NameColumnWidth>
-      <ValueColumnWidth column_width="98"></ValueColumnWidth>
+      <ValueColumnWidth column_width="94"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="107" />
+   <WVObjectSize size="112" />
    <wvobject type="divider" fp_name="divider273">
       <obj_property name="label">CPU: Control.FETCH</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -285,7 +285,6 @@
    <wvobject fp_name="/neorv32_tb/neorv32_top_inst/cpu_d" type="array">
       <obj_property name="ElementShortName">cpu_d</obj_property>
       <obj_property name="ObjectShortName">cpu_d</obj_property>
-      <obj_property name="isExpanded"></obj_property>
    </wvobject>
    <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/PMP_USE" type="other">
       <obj_property name="ElementShortName">PMP_USE</obj_property>
@@ -454,5 +453,25 @@
    <wvobject fp_name="/neorv32_tb/neorv32_top_inst/fencei_o" type="logic">
       <obj_property name="ElementShortName">fencei_o</obj_property>
       <obj_property name="ObjectShortName">fencei_o</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider238">
+      <obj_property name="label">IO: CFU</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cfu_inst_true/neorv32_cfu_inst/wr_en" type="logic">
+      <obj_property name="ElementShortName">wr_en</obj_property>
+      <obj_property name="ObjectShortName">wr_en</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cfu_inst_true/neorv32_cfu_inst/rd_en" type="logic">
+      <obj_property name="ElementShortName">rd_en</obj_property>
+      <obj_property name="ObjectShortName">rd_en</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cfu_inst_true/neorv32_cfu_inst/cfu_reg_in" type="array">
+      <obj_property name="ElementShortName">cfu_reg_in[0:3][31:0]</obj_property>
+      <obj_property name="ObjectShortName">cfu_reg_in[0:3][31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cfu_inst_true/neorv32_cfu_inst/cfu_reg_out" type="array">
+      <obj_property name="ElementShortName">cfu_reg_out[0:3][31:0]</obj_property>
+      <obj_property name="ObjectShortName">cfu_reg_out[0:3][31:0]</obj_property>
    </wvobject>
 </wave_config>
