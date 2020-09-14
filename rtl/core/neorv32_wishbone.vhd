@@ -50,14 +50,10 @@ use neorv32.neorv32_package.all;
 entity neorv32_wishbone is
   generic (
     INTERFACE_REG_STAGES : natural := 2; -- number of interface register stages (0,1,2)
-    -- Memory configuration: Instruction memory --
-    MEM_ISPACE_BASE      : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
-    MEM_ISPACE_SIZE      : natural := 8*1024; -- total size of instruction memory space in byte
+    -- Internal instruction memory --
     MEM_INT_IMEM_USE     : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE    : natural := 8*1024; -- size of processor-internal instruction memory in bytes
-    -- Memory configuration: Data memory --
-    MEM_DSPACE_BASE      : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
-    MEM_DSPACE_SIZE      : natural := 4*1024; -- total size of data memory space in byte
+    -- Internal data memory --
     MEM_INT_DMEM_USE     : boolean := true;   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE    : natural := 4*1024  -- size of processor-internal data memory in bytes
   );
@@ -93,7 +89,7 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
   -- access control --
   signal int_imem_acc, int_imem_acc_real : std_ulogic;
   signal int_dmem_acc, int_dmem_acc_real : std_ulogic;
-  signal int_boot_acc, int_io_acc        : std_ulogic;
+  signal int_boot_acc                    : std_ulogic;
   signal wb_access                       : std_ulogic;
   signal wb_access_ff, wb_access_ff_ff   : std_ulogic;
   signal rb_en                           : std_ulogic;
@@ -119,15 +115,15 @@ begin
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- access to internal IMEM or DMEM? --
-  int_imem_acc <= '1' when (addr_i >= MEM_ISPACE_BASE) and (addr_i < std_ulogic_vector(unsigned(MEM_ISPACE_BASE) + MEM_INT_IMEM_SIZE)) else '0';
-  int_dmem_acc <= '1' when (addr_i >= MEM_DSPACE_BASE) and (addr_i < std_ulogic_vector(unsigned(MEM_DSPACE_BASE) + MEM_INT_DMEM_SIZE)) else '0';
+  int_imem_acc <= '1' when (addr_i >= imem_base_c) and (addr_i < std_ulogic_vector(unsigned(imem_base_c) + MEM_INT_IMEM_SIZE)) else '0';
+  int_dmem_acc <= '1' when (addr_i >= dmem_base_c) and (addr_i < std_ulogic_vector(unsigned(dmem_base_c) + MEM_INT_DMEM_SIZE)) else '0';
   int_imem_acc_real <= int_imem_acc when (MEM_INT_IMEM_USE = true) else '0';
   int_dmem_acc_real <= int_dmem_acc when (MEM_INT_DMEM_USE = true) else '0';
-  int_boot_acc <= '1' when (addr_i >= boot_base_c) else '0';
-  int_io_acc   <= '1' when (addr_i >= io_base_c)   else '0';
+  int_boot_acc <= '1' when (addr_i >= boot_rom_base_c) else '0'; -- this also covers access to the IO space
+--int_io_acc   <= '1' when (addr_i >= io_base_c) else '0';
 
   -- actual external bus access? --
-  wb_access <= (not int_imem_acc_real) and (not int_dmem_acc_real) and (not int_boot_acc) and (not int_io_acc) and (wren_i or rden_i);
+  wb_access <= (not int_imem_acc_real) and (not int_dmem_acc_real) and (not int_boot_acc) and (wren_i or rden_i);
 
 
   -- Bus Arbiter -----------------------------------------------------------------------------
