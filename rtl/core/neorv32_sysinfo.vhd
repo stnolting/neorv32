@@ -48,18 +48,14 @@ entity neorv32_sysinfo is
     CLOCK_FREQUENCY   : natural := 0;      -- clock frequency of clk_i in Hz
     BOOTLOADER_USE    : boolean := true;   -- implement processor-internal bootloader?
     USER_CODE         : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
-    -- Memory configuration: Instruction memory --
-    MEM_ISPACE_BASE   : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
-    MEM_ISPACE_SIZE   : natural := 8*1024; -- total size of instruction memory space in byte
+    -- Internal Instruction memory --
     MEM_INT_IMEM_USE  : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM  : boolean := false;  -- implement processor-internal instruction memory as ROM
-    -- Memory configuration: Data memory --
-    MEM_DSPACE_BASE   : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
-    MEM_DSPACE_SIZE   : natural := 4*1024; -- total size of data memory space in byte
+    -- Internal Data memory --
     MEM_INT_DMEM_USE  : boolean := true;   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE : natural := 4*1024; -- size of processor-internal data memory in bytes
-    -- Memory configuration: External memory interface --
+    -- External memory interface --
     MEM_EXT_USE       : boolean := false;  -- implement external memory bus interface?
     -- Processor peripherals --
     IO_GPIO_USE       : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
@@ -115,7 +111,7 @@ begin
   -- SYSINFO(0): Processor (primary) clock frequency --
   sysinfo_mem(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
 
-  -- SYSINFO(1): Custom user code --
+  -- SYSINFO(1): Custom user code/ID --
   sysinfo_mem(1) <= USER_CODE;
 
   -- SYSINFO(2): Implemented processor devices/features --
@@ -135,26 +131,26 @@ begin
   sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_USE);       -- two-wire interface (TWI) implemented?
   sysinfo_mem(2)(21) <= bool_to_ulogic_f(IO_PWM_USE);       -- pulse-width modulation unit (PWM) implemented?
   sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_USE);       -- watch dog timer (WDT) implemented?
-  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFU_USE);       -- custom unctions unit (CFU) implemented?
+  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFU_USE);       -- custom functions unit (CFU) implemented?
   sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_USE);      -- true random number generator (TRNG) implemented?
   sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_DEVNULL_USE);   -- dummy device (DEVNULL) implemented?
   --
   sysinfo_mem(2)(31 downto 26) <= (others => '0'); -- reserved
 
   -- SYSINFO(3): reserved --
-  sysinfo_mem(3) <= (others => '0'); -- reserved - maybe for technology-specific configuration options?
+  sysinfo_mem(3) <= (others => '0'); -- reserved
 
   -- SYSINFO(4): Base address of instruction memory space --
-  sysinfo_mem(4) <= MEM_ISPACE_BASE;
+  sysinfo_mem(4) <= ispace_base_c; -- defined in neorv32_package.vhd file
 
   -- SYSINFO(5): Base address of data memory space --
-  sysinfo_mem(5) <= MEM_DSPACE_BASE;
+  sysinfo_mem(5) <= dspace_base_c; -- defined in neorv32_package.vhd file
 
-  -- SYSINFO(6): Total size of instruction memory space in bytes --
-  sysinfo_mem(6) <= std_ulogic_vector(to_unsigned(MEM_ISPACE_SIZE, 32));
+  -- SYSINFO(6): Size of IMEM in bytes --
+  sysinfo_mem(6) <= std_ulogic_vector(to_unsigned(MEM_INT_IMEM_SIZE, 32)) when (MEM_INT_IMEM_USE = true) else (others => '0');
 
-  -- SYSINFO(7): Total size of data memory space in bytes --
-  sysinfo_mem(7) <= std_ulogic_vector(to_unsigned(MEM_DSPACE_SIZE, 32));
+  -- SYSINFO(7): Size of DMEM in bytes --
+  sysinfo_mem(7) <= std_ulogic_vector(to_unsigned(MEM_INT_DMEM_SIZE, 32)) when (MEM_INT_DMEM_USE = true) else (others => '0');
 
 
   -- Read Access ----------------------------------------------------------------------------
