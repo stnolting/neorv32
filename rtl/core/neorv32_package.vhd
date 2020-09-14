@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants/Configuration ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c  : natural := 32; -- data width - FIXED!
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01040005"; -- no touchy!
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01040200"; -- no touchy!
   constant pmp_max_r_c   : natural := 8; -- max PMP regions
   constant ipb_entries_c : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
 
@@ -125,16 +125,24 @@ package neorv32_package is
   constant pwm_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(pwm_base_c) + x"00000000");
   constant pwm_duty_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(pwm_base_c) + x"00000004");
 
-  -- True Random Number generator (TRNG) --
+  -- True Random Number Generator (TRNG) --
   constant trng_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0"; -- base address, fixed!
   constant trng_size_c          : natural := 1*4; -- bytes, fixed!
   constant trng_ctrl_addr_c     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(trng_base_c) + x"00000000");
 
   -- RESERVED --
 --constant ???_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC4"; -- base address, fixed!
---constant ???_size_c           : natural := 7*4; -- bytes, fixed!
+--constant ???_size_c           : natural := 3*4; -- bytes, fixed!
 
-  -- System Information Memory (with SIMULATION output) (SYSINFO) --
+  -- Custom Functions Unit (CFU) --
+  constant cfu_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD0"; -- base address, fixed!
+  constant cfu_size_c           : natural := 4*4; -- bytes, fixed!
+  constant cfu_reg0_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(cfu_base_c) + x"00000000");
+  constant cfu_reg1_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(cfu_base_c) + x"00000004");
+  constant cfu_reg2_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(cfu_base_c) + x"00000008");
+  constant cfu_reg3_addr_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(cfu_base_c) + x"0000000C");
+
+  -- System Information Memory (SYSINFO) --
   constant sysinfo_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFE0"; -- base address, fixed!
   constant sysinfo_size_c       : natural := 8*4; -- bytes, fixed!
 
@@ -424,7 +432,8 @@ package neorv32_package is
       IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
       IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-      IO_DEVNULL_USE               : boolean := true    -- implement dummy device (DEVNULL)?
+      IO_DEVNULL_USE               : boolean := true;   -- implement dummy device (DEVNULL)?
+      IO_CFU_USE                   : boolean := false   -- implement custom functions unit (CFU)?
     );
     port (
       -- Global control --
@@ -1046,8 +1055,8 @@ package neorv32_package is
     );
   end component;
 
-  ---- Component: Dummy Device with SIM Output (DEVNULL) -------------------------------------
-  ---- -------------------------------------------------------------------------------------------
+  -- Component: Dummy Device with SIM Output (DEVNULL) --------------------------------------
+  -- -------------------------------------------------------------------------------------------
   component neorv32_devnull
     port (
       -- host access --
@@ -1061,8 +1070,31 @@ package neorv32_package is
     );
   end component;
 
-  ---- Component: System Configuration Information Memory (SYSINFO) ---------------------------
-  ---- -------------------------------------------------------------------------------------------
+  -- Component: Custom Functions Unit (CFU) -------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_cfu
+    port (
+      -- host access --
+      clk_i       : in  std_ulogic; -- global clock line
+      rstn_i      : in  std_ulogic; -- global reset line, low-active, use as async
+      addr_i      : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i      : in  std_ulogic; -- read enable
+      wren_i      : in  std_ulogic; -- write enable
+      data_i      : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o      : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o       : out std_ulogic; -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o : out std_ulogic; -- enable clock generator
+      clkgen_i    : in  std_ulogic_vector(07 downto 0); -- "clock" inputs
+      -- interrupt --
+      irq_o       : out std_ulogic
+      -- custom io --
+      -- ...
+    );
+  end component;
+
+  -- Component: System Configuration Information Memory (SYSINFO) ---------------------------
+  -- -------------------------------------------------------------------------------------------
   component neorv32_sysinfo
     generic (
       -- General --
@@ -1091,7 +1123,8 @@ package neorv32_package is
       IO_PWM_USE        : boolean := true;   -- implement pulse-width modulation unit (PWM)?
       IO_WDT_USE        : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_USE       : boolean := true;   -- implement true random number generator (TRNG)?
-      IO_DEVNULL_USE    : boolean := true    -- implement dummy device (DEVNULL)?
+      IO_DEVNULL_USE    : boolean := true;   -- implement dummy device (DEVNULL)?
+      IO_CFU_USE        : boolean := true    -- implement custom functions unit (CFU)?
     );
     port (
       -- host access --

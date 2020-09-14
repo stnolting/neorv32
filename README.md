@@ -152,6 +152,7 @@ Highly customizable processor configuration:
 - Optional PWM controller with 4 channels and 8-bit duty cycle resolution (PWM)
 - Optional GARO-based true random number generator (TRNG)
 - Optional dummy device (DEVNULL) (can be used for *fast* simulation console output)
+- Optional custom functions unit (CFU) for tightly-coupled custom co-processors
 - System configuration information memory to check hardware configuration by software (SYSINFO)
 
 ### CPU Features
@@ -201,7 +202,7 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
   * System instructions: `MRET` `WFI`
   * Counter CSRs: `[m]cycle[h]` `[m]instret[h]` `time[h]`
-  * Machine CSRs: `mstatus` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause`(read-only!) `mtval` `mip` `mvendorid` `marchid` `mimpid` `mhartid` `mzext`(custom)
+  * Machine CSRs: `mstatus` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause`(read-only!) `mtval` `mip` `mvendorid` [`marchid`](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) `mimpid` `mhartid` `mzext`(custom)
   * Supported exceptions and interrupts:
     * Misaligned instruction address
     * Instruction access fault
@@ -254,6 +255,7 @@ Results generated for hardware version: `1.3.6.5`
 |:----------|:------------------------------------------------|:---:|:---:|:-----------:|:----:|
 | BOOT ROM  | Bootloader ROM (4kB)                            |   4 |   1 |      32 768 |    0 |
 | BUSSWITCH | Mux for CPU I & D interfaces                    |  62 |   8 |           0 |    0 |
+| CFU       | Custom functions unit                           |   - |   - |           - |    - |
 | DEVNULL   | Dummy device                                    |   3 |   1 |           0 |    0 |
 | DMEM      | Processor-internal data memory (8kB)            |  12 |   2 |      65 536 |    0 |
 | GPIO      | General purpose input/output ports              |  40 |  33 |           0 |    0 |
@@ -475,7 +477,8 @@ entity neorv32_top is
     IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE               : boolean := true    -- implement dummy device (DEVNULL)?
+    IO_DEVNULL_USE               : boolean := true;   -- implement dummy device (DEVNULL)?
+    IO_CFU_USE                   : boolean := false   -- implement custom functions unit (CFU)?
   );
   port (
     -- Global control --
@@ -653,10 +656,11 @@ to [open a new issue](https://github.com/stnolting/neorv32/issues) or directly [
 
 If you'd like to contribute:
 
-1. [Fork](https://github.com/stnolting/neorv32/fork) this repository
-2. Create a feature branch in your fork: `git checkout -b cool_new_feature`
-3. Commit your modifications: `git commit -am 'This is awesome because ...'`
-4. Push to the branch: `git push origin cool_new_feature`
+1. [Fork](https://github.com/stnolting/neorv32/fork) this repository and clone the fork
+2. Create a feature branch in your fork: `git checkout -b awesome_new_feature_branch`
+3. Create a new remote for the upstream repo: `git remote add https://github.com/stnolting/neorv32`
+3. Commit your modifications: `git commit -m "Awesome new feature!"`
+4. Push to the branch: `git push origin awesome_new_feature_branch`
 5. Create a new [pull request](https://github.com/stnolting/neorv32/pulls)
 
 Please also check out the project's [code of conduct](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md).
