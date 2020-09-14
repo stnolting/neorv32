@@ -64,18 +64,14 @@ entity neorv32_top is
     PMP_USE                      : boolean := false; -- implement PMP?
     PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
     PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
-    -- Memory configuration: Instruction memory --
-    MEM_ISPACE_BASE              : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of instruction memory space
-    MEM_ISPACE_SIZE              : natural := 16*1024; -- total size of instruction memory space in byte
+    -- Internal Instruction memory --
     MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
-    -- Memory configuration: Data memory --
-    MEM_DSPACE_BASE              : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of data memory space
-    MEM_DSPACE_SIZE              : natural := 8*1024; -- total size of data memory space in byte
+    -- Internal Data memory --
     MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
-    -- Memory configuration: External memory interface --
+    -- External memory interface --
     MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
     MEM_EXT_REG_STAGES           : natural := 2;      -- number of interface register stages (0,1,2)
     MEM_EXT_TIMEOUT              : natural := 15;     -- cycles after which a valid bus access will timeout
@@ -133,7 +129,7 @@ end neorv32_top;
 architecture neorv32_top_rtl of neorv32_top is
 
   -- CPU boot address --
-  constant boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(BOOTLOADER_USE, boot_base_c, MEM_ISPACE_BASE);
+  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(BOOTLOADER_USE, boot_rom_base_c, ispace_base_c);
 
   -- reset generator --
   signal rstn_i_sync0 : std_ulogic;
@@ -226,22 +222,20 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- internal bootloader memory --
-  assert not ((BOOTLOADER_USE = true) and (boot_size_c > boot_max_size_c)) report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range." severity error;
+  assert not ((BOOTLOADER_USE = true) and (boot_rom_size_c > boot_rom_max_size_c)) report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range." severity error;
   assert not ((BOOTLOADER_USE = true) and (MEM_INT_IMEM_ROM = true)) report "NEORV32 PROCESSOR CONFIG WARNING! IMEM is configured as read-only. Bootloader will not be able to load new executables." severity warning;
   -- memory system - data/instruction fetch --
   assert not ((MEM_EXT_USE = false) and (MEM_INT_DMEM_USE = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal data memory." severity error;
   assert not ((MEM_EXT_USE = false) and (MEM_INT_IMEM_USE = false) and (BOOTLOADER_USE = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal data memory and bootloader." severity error;
   -- memory system --
-  assert not (MEM_ISPACE_BASE(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address must be 4-byte-aligned." severity error;
-  assert not (MEM_DSPACE_BASE(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 4-byte-aligned." severity error;
-  assert not ((MEM_INT_IMEM_USE = true) and (MEM_INT_IMEM_SIZE > MEM_ISPACE_SIZE)) report "NEORV32 PROCESSOR CONFIG ERROR! Internal instruction memory (IMEM) cannot be greater than total instruction address space." severity error;
-  assert not ((MEM_INT_DMEM_USE = true) and (MEM_INT_DMEM_SIZE > MEM_DSPACE_SIZE)) report "NEORV32 PROCESSOR CONFIG ERROR! Internal data memory (DMEM) cannot be greater than total data address space." severity error;
+  assert not (imem_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address must be 4-byte-aligned." severity error;
+  assert not (dmem_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 4-byte-aligned." severity error;
   assert not (MEM_EXT_TIMEOUT < 1) report "NEORV32 PROCESSOR CONFIG ERROR! Invalid bus timeout. Processor-internal components have 1 cycle delay." severity error;
   -- clock --
   assert not (CLOCK_FREQUENCY = 0) report "NEORV32 PROCESSOR CONFIG ERROR! Core clock frequency (CLOCK_FREQUENCY) not specified." severity error;
   -- memory layout notifier --
-  assert not (MEM_ISPACE_BASE /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framwork." severity warning;
-  assert not (MEM_DSPACE_BASE /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framwork." severity warning;
+  assert not (imem_base_c /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framwork." severity warning;
+  assert not (dmem_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framwork." severity warning;
 
 
   -- Reset Generator ------------------------------------------------------------------------
@@ -308,7 +302,7 @@ begin
   generic map (
     -- General --
     HW_THREAD_ID                 => (others => '0'), -- hardware thread id
-    CPU_BOOT_ADDR                => boot_addr_c,     -- cpu boot address
+    CPU_BOOT_ADDR                => cpu_boot_addr_c,     -- cpu boot address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
@@ -433,7 +427,7 @@ begin
   if (MEM_INT_IMEM_USE = true) generate
     neorv32_int_imem_inst: neorv32_imem
     generic map (
-      IMEM_BASE      => MEM_ISPACE_BASE,   -- memory base address
+      IMEM_BASE      => imem_base_c,       -- memory base address
       IMEM_SIZE      => MEM_INT_IMEM_SIZE, -- processor-internal instruction memory size in bytes
       IMEM_AS_ROM    => MEM_INT_IMEM_ROM,  -- implement IMEM as read-only memory?
       BOOTLOADER_USE => BOOTLOADER_USE     -- implement and use bootloader?
@@ -464,7 +458,7 @@ begin
   if (MEM_INT_DMEM_USE = true) generate
     neorv32_int_dmem_inst: neorv32_dmem
     generic map (
-      DMEM_BASE => MEM_DSPACE_BASE,  -- memory base address
+      DMEM_BASE => dmem_base_c,      -- memory base address
       DMEM_SIZE => MEM_INT_DMEM_SIZE -- processor-internal data memory size in bytes
     )
     port map (
@@ -491,6 +485,10 @@ begin
   neorv32_boot_rom_inst_true:
   if (BOOTLOADER_USE = true) generate
     neorv32_boot_rom_inst: neorv32_boot_rom
+    generic map (
+      BOOTROM_BASE => boot_rom_base_c, -- boot ROM base address
+      BOOTROM_SIZE => boot_rom_size_c  -- processor-internal boot TOM memory size in bytes
+    )
     port map (
       clk_i  => clk_i,         -- global clock line
       rden_i => p_bus.re,      -- read enable
@@ -514,14 +512,10 @@ begin
     neorv32_wishbone_inst: neorv32_wishbone
     generic map (
       INTERFACE_REG_STAGES => MEM_EXT_REG_STAGES, -- number of interface register stages (0,1,2)
-      -- Memory configuration: Instruction memory --
-      MEM_ISPACE_BASE      => MEM_ISPACE_BASE,    -- base address of instruction memory space
-      MEM_ISPACE_SIZE      => MEM_ISPACE_SIZE,    -- total size of instruction memory space in byte
+      -- Internal instruction memory --
       MEM_INT_IMEM_USE     => MEM_INT_IMEM_USE,   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE    => MEM_INT_IMEM_SIZE,  -- size of processor-internal instruction memory in bytes
-      -- Memory configuration: Data memory --
-      MEM_DSPACE_BASE      => MEM_DSPACE_BASE,    -- base address of data memory space
-      MEM_DSPACE_SIZE      => MEM_DSPACE_SIZE,    -- total size of data memory space in byte
+      -- Internal data memory --
       MEM_INT_DMEM_USE     => MEM_INT_DMEM_USE,   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE    => MEM_INT_DMEM_SIZE   -- size of processor-internal data memory in bytes
     )
@@ -902,18 +896,14 @@ begin
     CLOCK_FREQUENCY   => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
     BOOTLOADER_USE    => BOOTLOADER_USE,    -- implement processor-internal bootloader?
     USER_CODE         => USER_CODE,         -- custom user code
-    -- Memory configuration: Instruction memory --
-    MEM_ISPACE_BASE   => MEM_ISPACE_BASE,   -- base address of instruction memory space
-    MEM_ISPACE_SIZE   => MEM_ISPACE_SIZE,   -- total size of instruction memory space in byte
+    -- internal Instruction memory --
     MEM_INT_IMEM_USE  => MEM_INT_IMEM_USE,  -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM  => MEM_INT_IMEM_ROM,  -- implement processor-internal instruction memory as ROM
-    -- Memory configuration: Data memory --
-    MEM_DSPACE_BASE   => MEM_DSPACE_BASE,   -- base address of data memory space
-    MEM_DSPACE_SIZE   => MEM_DSPACE_SIZE,   -- total size of data memory space in byte
+    -- Internal Data memory --
     MEM_INT_DMEM_USE  => MEM_INT_DMEM_USE,  -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
-    -- Memory configuration: External memory interface --
+    -- External memory interface --
     MEM_EXT_USE       => MEM_EXT_USE,       -- implement external memory bus interface?
     -- Processor peripherals --
     IO_GPIO_USE       => IO_GPIO_USE,       -- implement general purpose input/output port unit (GPIO)?
