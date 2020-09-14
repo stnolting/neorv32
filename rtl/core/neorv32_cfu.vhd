@@ -191,7 +191,6 @@ begin
   irq_o <= '0'; -- not used for this minimal example
 
 
-
   -- CFU Core -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- This is where the actual functionality can be implemented. In this example we are just doing some pointless operations.
