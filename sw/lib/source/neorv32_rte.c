@@ -310,19 +310,17 @@ void neorv32_rte_print_hw_config(void) {
   // Memory configuration
   neorv32_uart_printf("\n-- Processor Memory Configuration --\n");
 
-  uint32_t size = SYSINFO_ISPACE_SIZE;
-  uint32_t base = SYSINFO_ISPACE_BASE;
-  neorv32_uart_printf("Instruction memory:   %u bytes @ 0x%x\n", size, base);
+  neorv32_uart_printf("Instr. base address:  0x%x\n", SYSINFO_ISPACE_BASE);
   neorv32_uart_printf("Internal IMEM:        ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM));
+  neorv32_uart_printf("IMEM size:            %u bytes\n", SYSINFO_IMEM_SIZE);
   neorv32_uart_printf("Internal IMEM as ROM: ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM_ROM));
 
-  size = SYSINFO_DSPACE_SIZE;
-  base = SYSINFO_DSPACE_BASE;
-  neorv32_uart_printf("Data memory:          %u bytes @ 0x%x\n", size, base);
+  neorv32_uart_printf("Data base address:    0x%x\n", SYSINFO_DSPACE_BASE);
   neorv32_uart_printf("Internal DMEM:        ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_DMEM));
+  neorv32_uart_printf("DMEM size:            %u bytes\n", SYSINFO_DMEM_SIZE);
 
   neorv32_uart_printf("Bootloader:           ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_BOOTLOADER));
