@@ -85,18 +85,14 @@ begin
     PMP_USE                      => false,  -- implement PMP?
     PMP_NUM_REGIONS              => 4,      -- number of regions (max 16)
     PMP_GRANULARITY              => 14,     -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
-    -- Memory configuration: Instruction memory --
-    MEM_ISPACE_BASE              => x"00000000", -- base address of instruction memory space
-    MEM_ISPACE_SIZE              => 16*1024, -- total size of instruction memory space in byte
+    -- Internal Instruction memory --
     MEM_INT_IMEM_USE             => true,    -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => 16*1024, -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM             => false,   -- implement processor-internal instruction memory as ROM
-    -- Memory configuration: Data memory --
-    MEM_DSPACE_BASE              => x"80000000", -- base address of data memory space
-    MEM_DSPACE_SIZE              => 8*1024, -- total size of data memory space in byte
+    -- Internal Data memory --
     MEM_INT_DMEM_USE             => true,   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => 8*1024, -- size of processor-internal data memory in bytes
-    -- Memory configuration: External memory interface --
+    -- External memory interface --
     MEM_EXT_USE                  => false,  -- implement external memory bus interface?
     MEM_EXT_REG_STAGES           => 2,      -- number of interface register stages (0,1,2)
     MEM_EXT_TIMEOUT              => 15,     -- cycles after which a valid bus access will timeout
