@@ -220,9 +220,9 @@ enum NEORV32_CLOCK_PRSC_enum {
  **************************************************************************/
 /**@{*/
 /** instruction memory base address (r/w/x) */
-// -> use value from MEM_ISPACE_BASE generic
+// -> configured via ispace_base_c constant in neorv32_package.vhd and available to SW via SYSCONFIG entry
 /** data memory base address (r/w/x) */
-// -> use value from MEM_DSPACE_BASE generic
+// -> configured via dspace_base_c constant in neorv32_package.vhd and available to SW via SYSCONFIG entry
 /** bootloader memory base address (r/-/x) */
 #define BOOTLOADER_BASE_ADDRESS (0xFFFF0000UL)
 /** peripheral/IO devices memory base address (r/w/x) */
@@ -484,15 +484,15 @@ enum NEORV32_TRNG_CT_enum {
 /** SYSINFO(2): Clock speed */
 #define SYSINFO_FEATURES    (*(IO_ROM32 0xFFFFFFE8UL))
 /** SYSINFO(3): reserved */
-#define SYSINFO_reserved1   (*(IO_ROM32 0xFFFFFFECUL))
+#define SYSINFO_reserved    (*(IO_ROM32 0xFFFFFFECUL))
 /** SYSINFO(4): Instruction memory address space base */
 #define SYSINFO_ISPACE_BASE (*(IO_ROM32 0xFFFFFFF0UL))
 /** SYSINFO(5): Data memory address space base */
 #define SYSINFO_DSPACE_BASE (*(IO_ROM32 0xFFFFFFF4UL))
-/** SYSINFO(6): Instruction memory address space size in bytes */
-#define SYSINFO_ISPACE_SIZE (*(IO_ROM32 0xFFFFFFF8UL))
-/** SYSINFO(7): Data memory address space size in bytes */
-#define SYSINFO_DSPACE_SIZE (*(IO_ROM32 0xFFFFFFFCUL))
+/** SYSINFO(6): Internal instruction memory (IMEM) size in bytes */
+#define SYSINFO_IMEM_SIZE   (*(IO_ROM32 0xFFFFFFF8UL))
+/** SYSINFO(7): Internal data memory (DMEM) size in bytes */
+#define SYSINFO_DMEM_SIZE   (*(IO_ROM32 0xFFFFFFFCUL))
 /**@}*/
 
 
