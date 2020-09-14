@@ -46,21 +46,23 @@ OUTPUT_ARCH(riscv)
 ENTRY(_start)
 SEARCH_DIR("=/opt/riscv/riscv64-unknown-linux-gnu/lib"); SEARCH_DIR("=/usr/local/lib"); SEARCH_DIR("=/lib"); SEARCH_DIR("=/usr/lib");
 
-/* ************************************************* */
-/* NEORV32 memory configuration.                     */
-/* Make sure this is sync with your processor/       */
-/* memory hardware configuration.                    */
-/* ************************************************* */
+/* ************************************************************************* */
+/* NEORV32 memory configuration.                                             */
+/* Make sure this is sync with your processor/memory hardware configuration. */
+/* ************************************************************************* */
 MEMORY
 {
-/* rom section: first value of ORIGIN/LENGHT: bootloader ROM; second value of ORIGIN/LENGHT: IMEM */
+/* "rom" section: first value of ORIGIN/LENGHT => bootloader ROM; second value of ORIGIN/LENGHT => instruction memory */
+
   rom  (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 4*1024 : 16*1024
   ram (rwx) : ORIGIN = 0x80000000, LENGTH =  8*1024
 }
-/* ************************************************* */
+/* ************************************************************************* */
 
 SECTIONS
 {
+  /* stack pointer init: last 32-bit entry in data memory */
+  __crt0_stack_begin = (ORIGIN(ram) + LENGTH(ram)) - 4;
 
   /* start section on WORD boundary */
   . = ALIGN(4);
@@ -284,8 +286,8 @@ SECTIONS
 
 
   /* Provide further symbols for neorv32 crt0.elf */
-  PROVIDE(__crt0_bss_start = __bss_start);
-  PROVIDE(__crt0_bss_end   = __BSS_END__);
+  PROVIDE(__crt0_bss_start   = __bss_start);
+  PROVIDE(__crt0_bss_end     = __BSS_END__);
   PROVIDE(__crt0_copy_data_src_begin = __etext + SIZEOF(.rodata));
   PROVIDE(__crt0_copy_data_dst_begin = __DATA_BEGIN__);
   PROVIDE(__crt0_copy_data_dst_end   = __DATA_BEGIN__ + SIZEOF(.data));
