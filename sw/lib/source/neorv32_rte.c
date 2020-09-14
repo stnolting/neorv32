@@ -249,19 +249,23 @@ void neorv32_rte_print_hw_config(void) {
   // CPU configuration
   neorv32_uart_printf("\n-- Central Processing Unit --\n");
 
-  // Hart ID
+  // ID
   neorv32_uart_printf("Hart ID:          %u\n", neorv32_cpu_csr_read(CSR_MHARTID));
 
-  // Custom user code
-  neorv32_uart_printf("User code:        0x%x\n", SYSINFO_USER_CODE);
+  neorv32_uart_printf("Vendor ID:        0x%x\n", neorv32_cpu_csr_read(CSR_MVENDORID));
+
+  tmp = neorv32_cpu_csr_read(CSR_MARCHID);
+  neorv32_uart_printf("Architecture ID:  0x%x", tmp);
+
+  // Custom user code/ID
+  neorv32_uart_printf("\nUser ID:          0x%x\n", SYSINFO_USER_CODE);
 
   // HW version
   neorv32_uart_printf("Hardware version: ");
   neorv32_rte_print_hw_version();
-  neorv32_uart_printf(" (0x%x)\n", neorv32_cpu_csr_read(CSR_MIMPID));
 
   // CPU architecture
-  neorv32_uart_printf("Architecture:     ");
+  neorv32_uart_printf("\nArchitecture:     ");
   tmp = neorv32_cpu_csr_read(CSR_MISA);
   tmp = (tmp >> 30) & 0x03;
   if (tmp == 0) {
@@ -278,7 +282,7 @@ void neorv32_rte_print_hw_config(void) {
   }
   
   // CPU extensions
-  neorv32_uart_printf(" + ");
+  neorv32_uart_printf("\nExtensions:       ");
   tmp = neorv32_cpu_csr_read(CSR_MISA);
   for (i=0; i<26; i++) {
     if (tmp & (1 << i)) {
@@ -287,10 +291,8 @@ void neorv32_rte_print_hw_config(void) {
       neorv32_uart_putc(' ');
     }
   }
-  neorv32_uart_printf("(0x%x)\n", tmp);
   
-  // Z* CPU extensions (from custom CSR)
-  neorv32_uart_printf("Z* extensions:    ");
+  // Z* CPU extensions (from custom CSR "mzext")
   tmp = neorv32_cpu_csr_read(CSR_MZEXT);
   if (tmp & (1<<0)) {
     neorv32_uart_printf("Zicsr ");
@@ -359,6 +361,9 @@ void neorv32_rte_print_hw_config(void) {
 
   neorv32_uart_printf("DEVNULL: ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_DEVNULL));
+
+  neorv32_uart_printf("CFU:     ");
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_CFU));
 }
 
 
