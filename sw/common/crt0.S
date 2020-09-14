@@ -41,10 +41,6 @@
 // IO region
 .equ IO_BEGIN, 0xFFFFFF80 // start of processor-internal IO region
 
-// SYSINFO
-.equ SYSINFO_DSPACE_BASE, 0xFFFFFFF4
-.equ SYSINFO_DSPACE_SIZE, 0xFFFFFFFC
-
 
 _start:
 .cfi_startproc
@@ -68,29 +64,30 @@ __crt0_reg_file_clear:
 //addi x10,  x0, 0
 //addi x11,  x0, 0
 //addi x12,  x0, 0
-  addi x13,  x0, 0
+//addi x13,  x0, 0
   addi x14,  x0, 0
   addi x15,  x0, 0
 
 
 // *********************************************************
-// Setup stack pointer
+// No interrupts, thanks
 // *********************************************************
-__crt0_stack_pointer_init:
-  lw    x11, SYSINFO_DSPACE_BASE(zero) // data memory space base address
-  lw    x12, SYSINFO_DSPACE_SIZE(zero) // data memory space size
-  add   sp, x11, x12
-  addi  sp, sp, -4 // stack pointer = last entry
-  addi  fp, sp, 0  // frame pointer = stack pointer
+__crt0_status_init:
+  li x10, 0x00001800    // clear mstatus and set mpp(1:0)
+  csrrw zero, mstatus, x10
+  csrrw zero, mie, zero // clear mie
 
 
 // *********************************************************
-// Setup global pointer
+// Setup pointers using linker script symbol
 // *********************************************************
-__crt0_global_pointer_init:
+__crt0_pointer_init:
 .option push
 .option norelax
-  la gp, __global_pointer$
+  la    sp, __crt0_stack_begin
+  andi  sp, sp, 0xfffffffc // make sure this is aligned
+  addi  fp, sp, 0          // frame pointer = stack pointer
+  la gp, __global_pointer$ // global pointer
 .option pop
 
 
@@ -117,7 +114,7 @@ __crt0_reset_io_loop:
 
 
 // *********************************************************
-// Clear .bss section (byte-wise)
+// Clear .bss section (byte-wise) using linker script symbols
 // *********************************************************
 __crt0_clear_bss:
   la x11, __crt0_bss_start
@@ -133,7 +130,7 @@ __crt0_clear_bss_loop_end:
 
 
 // *********************************************************
-// Copy initialized .data section from ROM to RAM (byte-wise)
+// Copy initialized .data section from ROM to RAM (byte-wise) using linker script symbols
 // *********************************************************
 __crt0_copy_data:
   la x11, __crt0_copy_data_src_begin  // start of data area (copy source)
