@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
 						            "package neorv32_application_image is\n"
 						            "\n"
 						            "  type application_init_image_t is array (0 to %lu) of std_ulogic_vector(31 downto 0);\n"
-						            "  constant application_init_image : application_init_image_t := (\n", argv[4], argv[2], (raw_exe_size/4)+1);
+						            "  constant application_init_image : application_init_image_t := (\n", argv[4], argv[2], raw_exe_size/4);
     fputs(tmp_string, output);
 
 	// data
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
 						            "package neorv32_bootloader_image is\n"
 						            "\n"
 						            "  type bootloader_init_image_t is array (0 to %lu) of std_ulogic_vector(31 downto 0);\n"
-						            "  constant bootloader_init_image : bootloader_init_image_t := (\n", argv[4], argv[2], (raw_exe_size/4)+1);
+						            "  constant bootloader_init_image : bootloader_init_image_t := (\n", argv[4], argv[2], raw_exe_size/4);
     fputs(tmp_string, output);
 
 	// data
