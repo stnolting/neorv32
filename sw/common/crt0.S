@@ -186,6 +186,7 @@ __crt0_dummy_trap_handler:
   csrr  x8, mepc
 
 // is compressed instruction?
+__crt0_dummy_trap_handler_exc_c_check:
   lh    x9, 0(x8)   // get compressed instruction or lower 16 bits of uncompressed instruction that caused exception
   andi  x9, x9, 3   // mask: isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
 
@@ -196,15 +197,16 @@ __crt0_dummy_trap_handler:
   bne   x8, x9, __crt0_dummy_trap_handler_irq // jump if compressed instruction
   
 // is uncompressed instruction
+__crt0_dummy_trap_handler_exc_uncrompressed:
   csrr  x8, mepc
   addi  x8, x8, +2  // add another 2 (making +4) for uncompressed instructions
   csrw  mepc, x8
 
 __crt0_dummy_trap_handler_irq:
 
-  lw	  x9, 0(sp)
-  lw	  x8, 4(sp)
-  addi	sp, sp, +8
+  lw    x9, 0(sp)
+  lw    x8, 4(sp)
+  addi  sp, sp, +8
 
   mret
 
