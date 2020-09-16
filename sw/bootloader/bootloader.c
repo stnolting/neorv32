@@ -227,11 +227,11 @@ int main(void) {
   neorv32_uart_print("\nCONF: ");
   print_hex_word(SYSINFO_FEATURES);
   neorv32_uart_print("\nIMEM: ");
-  print_hex_word(SYSINFO_ISPACE_SIZE);
+  print_hex_word(SYSINFO_IMEM_SIZE);
   neorv32_uart_print(" bytes @ ");
   print_hex_word(SYSINFO_ISPACE_BASE);
   neorv32_uart_print("\nDMEM: ");
-  print_hex_word(SYSINFO_DSPACE_SIZE);
+  print_hex_word(SYSINFO_DMEM_SIZE);
   neorv32_uart_print(" bytes @ ");
   print_hex_word(SYSINFO_DSPACE_BASE);
 
@@ -323,12 +323,12 @@ void start_app(void) {
     return;
   }
 
-  // no need to shutdown or reset the used peripherals
+  // no need to shut down or reset the used peripherals
+  // no need to disable interrupt sources
   // -> this will be done by application's crt0
 
-  // deactivate IRQs and IRQ sources
+  // deactivate global IRQs
   neorv32_cpu_dint();
-  neorv32_cpu_csr_write(CSR_MIE, 0);
 
   neorv32_uart_print("Booting...\n\n");
 
@@ -336,10 +336,10 @@ void start_app(void) {
   while ((UART_CT & (1<<UART_CT_TX_BUSY)) != 0);
 
   // reset performance counters (to benchmark actual application)
-  asm volatile ("csrw mcycle,    zero"); // will also clear 'cycle'
-  asm volatile ("csrw mcycleh,   zero"); // will also clear 'cycleh'
-  asm volatile ("csrw minstret,  zero"); // will also clear 'instret'
-  asm volatile ("csrw minstreth, zero"); // will also clear 'instreth'
+  asm volatile ("csrw mcycle,    zero"); // also clears 'cycle'
+  asm volatile ("csrw mcycleh,   zero"); // also clears 'cycleh'
+  asm volatile ("csrw minstret,  zero"); // also clears 'instret'
+  asm volatile ("csrw minstreth, zero"); // also clears 'instreth'
 
   // start app at instruction space base address
   register uint32_t app_base = SYSINFO_ISPACE_BASE;
@@ -349,29 +349,32 @@ void start_app(void) {
 
 
 /**********************************************************************//**
- * Bootloader trap handler.
- * Primarily used for the MTIME tick.
+ * Bootloader trap handler. Used for the MTIME tick and to capture any other traps.
  * @warning Since we have no runtime environment, we have to use the interrupt attribute here. Here, and only here!
  **************************************************************************/
 void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
 
   // make sure this was caused by MTIME IRQ
   uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
-  if (cause != TRAP_CODE_MTI) { // raw exception code for MTI
-    neorv32_uart_print("\n\nEXCEPTION (");
-    print_hex_word(cause);
-    neorv32_uart_print(") @ 0x");
-    print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
-    system_error(ERROR_SYSTEM);
-    while(1); // freeze
-  }
-  else {
+  if (cause == TRAP_CODE_MTI) { // raw exception code for MTI
     if (STATUS_LED_EN == 1) {
       // toggle status LED
       neorv32_gpio_pin_toggle(STATUS_LED);
     }
     // set time for next IRQ
     neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (SYSINFO_CLK/4));
+  }
+
+  else if (cause == TRAP_CODE_S_ACCESS) { // seems like executable is too large
+    system_error(ERROR_SIZE);
+  }
+
+  else {
+    neorv32_uart_print("\n\nEXCEPTION (");
+    print_hex_word(cause);
+    neorv32_uart_print(") @ 0x");
+    print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
+    system_error(ERROR_SYSTEM);
   }
 }
 
@@ -413,12 +416,6 @@ void get_exe(int src) {
   // image size and checksum
   uint32_t size  = get_exe_word(src, addr + EXE_OFFSET_SIZE); // size in bytes
   uint32_t check = get_exe_word(src, addr + EXE_OFFSET_CHECKSUM); // complement sum checksum
-
-  // executable too large?
-  uint32_t imem_size = SYSINFO_ISPACE_SIZE;
-  if (size > imem_size) {
-    system_error(ERROR_SIZE);
-  }
 
   // transfer program data
   uint32_t *pnt = (uint32_t*)SYSINFO_ISPACE_BASE;
@@ -548,7 +545,7 @@ uint32_t get_exe_word(int src, uint32_t addr) {
  **************************************************************************/
 void system_error(uint8_t err_code) {
 
-  neorv32_uart_print("\a\nBootloader ERR_"); // output error code with annoying bell sound
+  neorv32_uart_print("\a\nERROR_"); // output error code with annoying bell sound
   neorv32_uart_putc('0' + ((char)err_code)); // FIXME err_code should/must be below 10
 
   neorv32_cpu_dint(); // deactivate IRQs
