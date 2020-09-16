@@ -5,7 +5,7 @@
 -- # and define all the configuration generics according to your needs. Alternatively, you can use #
 -- # one of the alternative top entities provided in the "rtl/top_templates" folder.               #
 -- #                                                                                               #
--- # Check the processor's documentary for more information: docs/NEORV32.pdf                      #
+-- # Check the processor's data sheet for more information: docs/NEORV32.pdf                       #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -59,11 +59,11 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
     -- Extension Options --
-    FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
+    FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      : boolean := false; -- implement PMP?
-    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
-    PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+    PMP_USE                      : boolean := false;  -- implement PMP?
+    PMP_NUM_REGIONS              : natural := 4;      -- number of regions (max 8)
+    PMP_GRANULARITY              : natural := 14;     -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Internal Instruction memory --
     MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
@@ -221,7 +221,7 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- internal bootloader memory --
+  -- internal bootloader ROM --
   assert not ((BOOTLOADER_USE = true) and (boot_rom_size_c > boot_rom_max_size_c)) report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range." severity error;
   assert not ((BOOTLOADER_USE = true) and (MEM_INT_IMEM_ROM = true)) report "NEORV32 PROCESSOR CONFIG WARNING! IMEM is configured as read-only. Bootloader will not be able to load new executables." severity warning;
   -- memory system - data/instruction fetch --
@@ -230,12 +230,12 @@ begin
   -- memory system --
   assert not (imem_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address must be 4-byte-aligned." severity error;
   assert not (dmem_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 4-byte-aligned." severity error;
-  assert not (MEM_EXT_TIMEOUT < 1) report "NEORV32 PROCESSOR CONFIG ERROR! Invalid bus timeout. Processor-internal components have 1 cycle delay." severity error;
+  assert not (MEM_EXT_TIMEOUT < 1) report "NEORV32 PROCESSOR CONFIG ERROR! Invalid bus timeout. Processor-internal components have 1 cycle latency." severity error;
   -- clock --
   assert not (CLOCK_FREQUENCY = 0) report "NEORV32 PROCESSOR CONFIG ERROR! Core clock frequency (CLOCK_FREQUENCY) not specified." severity error;
   -- memory layout notifier --
-  assert not (imem_base_c /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framwork." severity warning;
-  assert not (dmem_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framwork." severity warning;
+  assert not (imem_base_c /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framework." severity warning;
+  assert not (dmem_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framework." severity warning;
 
 
   -- Reset Generator ------------------------------------------------------------------------
@@ -253,7 +253,7 @@ begin
   -- keep internal reset active for at least 4 clock cycles
   reset_generator: process(rstn_i_sync1, rstn_i_sync2, clk_i)
   begin
-    if ((rstn_i_sync1 or rstn_i_sync2) = '0') then -- signal stable somehow?
+    if ((rstn_i_sync1 and rstn_i_sync2) = '0') then -- signal stable?
       rstn_gen <= (others => '0');
     elsif rising_edge(clk_i) then
       rstn_gen <= rstn_gen(rstn_gen'left-1 downto 0) & '1';
@@ -261,7 +261,7 @@ begin
   end process reset_generator;
 
   ext_rstn <= rstn_gen(rstn_gen'left); -- the beautified external reset signal
-  sys_rstn <= ext_rstn and wdt_rstn; -- system reset - can also be triggered by watchdog
+  sys_rstn <= ext_rstn and wdt_rstn;   -- system reset - can also be triggered by watchdog
 
 
   -- Clock Generator ------------------------------------------------------------------------
