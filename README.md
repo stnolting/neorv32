@@ -69,7 +69,7 @@ A not-so-complete project log can be found on [hackaday.io](https://hackaday.io/
 
 ###  Key Features
 
-- RISC-V-compliant `rv32i` CPU with optional `C`, `E`, `M`, `U`, `Zicsr`, `Zifencei` and PMP (physical memory protection) extensions
+- RISC-V-compliant `rv32i` CPU with optional `C`, `E`, `M`, `U`, `Zicsr`, `Zifencei` and `PMP` (physical memory protection) extensions
 - GCC-based toolchain ([pre-compiled rv32i and rv32e toolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
 - Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
 - [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
@@ -87,7 +87,7 @@ A not-so-complete project log can be found on [hackaday.io](https://hackaday.io/
  * Plain VHDL without technology-specific parts like attributes, macros or primitives.
  * Easy to use – working out of the box.
  * Clean synchronous design, no wacky combinatorial interfaces.
- * Be as small as possible – but with a reasonable size-speed tradeoff.
+ * Be as small as possible – but with a reasonable size-performance tradeoff.
  * The processor has to fit in a Lattice iCE40 UltraPlus 5k FPGA running at 20+ MHz.
 
 
@@ -103,22 +103,6 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 | [NEORV32 processor](https://github.com/stnolting/neorv32)                       | [![Build Status](https://travis-ci.com/stnolting/neorv32.svg?branch=master)](https://travis-ci.com/stnolting/neorv32) | [![sw doc](https://img.shields.io/badge/SW%20documentation-gh--pages-blue)](https://stnolting.github.io/neorv32/files.html) |
 | [Pre-built toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)          | [![Build Status](https://travis-ci.com/stnolting/riscv_gcc_prebuilt.svg?branch=master)](https://travis-ci.com/stnolting/riscv_gcc_prebuilt) | |
 | [RISC-V compliance test](https://github.com/stnolting/neorv32_riscv_compliance) | [![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) | |
-
-
-### Non RISC-V-Compliant Issues
-
-* `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime
-* `mcause` CSR is read-only
-* The `[m]cycleh` and `[m]instreth` CSR counters are only 20-bit wide (in contrast to original 32-bit)
-* The physical memory protection (**PMP**) only supports `NAPOT` mode, a minimal granularity of 8 bytes and only up to 8 regions
-
-
-### NEORV32-Specific CPU Extensions
-
-The NEORV32-specific extensions are always enabled and are indicated via the `X` bit in the `misa` CSR.
-
-* Four *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
-* `mzext` CSR to check for implemented `Z*` CPU extensions (like `Zifencei`)
 
 
 ### To-Do / Wish List
@@ -139,21 +123,23 @@ The NEORV32-specific extensions are always enabled and are indicated via the `X`
 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_processor.png)
 
-Highly customizable processor configuration:
-- Optional processor-internal data and instruction memories (DMEM/IMEM)
-- Optional internal bootloader with UART console and automatic SPI flash boot option
-- Optional machine system timer (MTIME), RISC-V-compliant
-- Optional universal asynchronous receiver and transmitter (UART)
-- Optional 8/16/24/32-bit serial peripheral interface controller (SPI) with 8 dedicated chip select lines
-- Optional two wire serial interface controller (TWI), compatible to the I²C standard
-- Optional general purpose parallel IO port (GPIO), 16xOut & 16xIn, with pin-change interrupt
-- Optional 32-bit external bus interface, Wishbone b4 compliant (WISHBONE)
-- Optional watchdog timer (WDT)
-- Optional PWM controller with 4 channels and 8-bit duty cycle resolution (PWM)
-- Optional GARO-based true random number generator (TRNG)
-- Optional dummy device (DEVNULL) (can be used for *fast* simulation console output)
-- Optional custom functions unit (CFU) for tightly-coupled custom co-processors
-- System configuration information memory to check hardware configuration by software (SYSINFO)
+The NEORV32 Processor provides a full-scale microcontroller-like SoC based on the NEORV32 CPU. The setup
+is highly customizable via the processor top's generics.
+
+- Optional processor-internal data and instruction memories (**DMEM** / **IMEM**)
+- Optional internal **Bootloader** with UART console and automatic SPI flash boot option
+- Optional machine system timer (**MTIME**), RISC-V-compliant
+- Optional universal asynchronous receiver and transmitter (**UART**)
+- Optional 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
+- Optional two wire serial interface controller (**TWI**), compatible to the I²C standard
+- Optional general purpose parallel IO port (**GPIO**), 16xOut & 16xIn, with pin-change interrupt
+- Optional 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**)
+- Optional watchdog timer (**WDT**)
+- Optional PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
+- Optional GARO-based true random number generator (**TRNG**)
+- Optional dummy device (**DEVNULL**); used for debugging; can also be used for *fast* simulation console output
+- Optional custom functions unit (**CFU**) for tightly-coupled custom co-processors
+- System configuration information memory to check hardware configuration by software (**SYSINFO**)
 
 ### CPU Features
 
@@ -225,17 +211,35 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
   * System instructions: `FENCE.I`
 
 **Privileged architecture / Physical memory protection** (`PMP`, requires `Zicsr` extension):
-  * Additional machine CSRs: `pmpcfgx` `pmpaddrx`
+  * Additional machine CSRs: `pmpcfg0` `pmpcfg1` `pmpaddr0` `pmpaddr1` `pmpaddr2` `pmpaddr3` `pmpaddr4` `pmpaddr5` `pmpaddr6` `pmpaddr7`
+
+
+### Non-RISC-V-Compliant Issues
+
+* `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime
+* `mcause` CSR is read-only
+* The `[m]cycleh` and `[m]instreth` CSR counters are only 20-bit wide (in contrast to original 32-bit)
+* The physical memory protection (**PMP**) only supports `NAPOT` mode, a minimal granularity of 8 bytes and only up to 8 regions
+* All invalid, unimplemented, unspecified or disabled instructions will trigger an illegal instruction exception
+
+
+### NEORV32-Specific CPU Extensions
+
+The NEORV32-specific extensions are always enabled and are indicated via the `X` bit in the `misa` CSR.
+
+* Four *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
+* `mzext` CSR to check for implemented `Z*` CPU extensions (like `Zifencei`)
+
 
 
 ## FPGA Implementation Results
 
-This chapter shows exemplary implementation results of the NEORV32 processor for an **Intel Cyclone IV EP4CE22F17C6N FPGA** on
+### NEORV32 CPU
+
+This chapter shows exemplary implementation results of the NEORV32 CPU for an **Intel Cyclone IV EP4CE22F17C6N FPGA** on
 a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 19.1** ("balanced implementation"). The timing
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
 of the CPU's generics is assumed (e.g., no PMP). No constraints were used at all.
-
-### CPU
 
 Results generated for hardware version: `1.3.6.5`
 
@@ -247,7 +251,8 @@ Results generated for hardware version: `1.3.6.5`
 | `rv32imc` + `Zicsr` + `Zifencei` |       2714 |     1064 |       2048  |    0 | 100 MHz |
 | `rv32emc` + `Zicsr` + `Zifencei` |       2717 |     1064 |       1024  |    0 | 100 MHz |
 
-### Processor-Internal Peripherals and Memories
+
+### NEORV32 Processor-Internal Peripherals and Memories
 
 Results generated for hardware version: `1.3.6.5`
 
@@ -270,10 +275,10 @@ Results generated for hardware version: `1.3.6.5`
 | WDT       | Watchdog timer                                  |  59 |  45 |           0 |    0 |
 
 
-### Exemplary FPGA Setups
+### NEORV32 Processor - Exemplary FPGA Setups
 
-Exemplary implementation results for different FPGA platforms. The processor setup uses *all provided peripherals*,
-no external memory interface, no PMP and only internal instruction and data memories. IMEM uses 16kB and DMEM uses 8kB memory space. The setup's top entity connects most of the
+Exemplary processor implementation results for different FPGA platforms. The processor setup uses *all provided peripherals* (but not the _CFU_),
+no external memory interface and only internal instruction and data memories. IMEM uses 16kB and DMEM uses 8kB memory space. The setup's top entity connects most of the
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
 to FPGA pins - except for the Wishbone bus and the interrupt signals.
 
@@ -285,7 +290,7 @@ Results generated for hardware version: `1.4.0.0`
 | Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (Synplify Pro) | default  | `rv32icu`  + `Zicsr` + `Zifencei`         | 4249 (80%) | 1617 (31%) | 0 (0%) |            - |   12 (40%) | 4 (100%) |  *c* 20.25 MHz |
 | Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2              | default  | `rv32imcu` + `Zicsr` + `Zifencei` + `PMP` | 2447 (12%) | 1803  (4%) | 0 (0%) |            - |    8 (16%) |        - |    *c* 100 MHz |
 
-**Notes**
+**_Notes_**
 * The Lattice iCE40 UltraPlus setup uses the FPGA's SPRAM memory primitives for the internal IMEM and DMEM (each 64kb).
 The FPGA-specific memory components can be found in [`rtl/fpga_specific`](https://github.com/stnolting/neorv32/blob/master/rtl/fpga_specific/lattice_ice40up).
 * The clock frequencies marked with a "c" are constrained clocks. The remaining ones are _f_max_ results from the place and route timing reports.
