@@ -62,6 +62,11 @@ static void __neorv32_rte_print_true_false(int state) __attribute__((unused));
  **************************************************************************/
 void neorv32_rte_setup(void) {
 
+  // check if CSR system is available at all
+  if (neorv32_cpu_csr_read(CSR_MISA) == 0) {
+    neorv32_uart_printf("<RTE> WARNING! CPU CSR system not available! </RTE>");
+  }
+
   // configure trap handler base address
   uint32_t mtvec_base = (uint32_t)(&__neorv32_rte_core);
   neorv32_cpu_csr_write(CSR_MTVEC, mtvec_base);
