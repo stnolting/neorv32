@@ -220,7 +220,6 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
 * `mcause` CSR is read-only
 * The `[m]cycleh` and `[m]instreth` CSR counters are only 20-bit wide (in contrast to original 32-bit)
 * The physical memory protection (**PMP**) only supports `NAPOT` mode, a minimal granularity of 8 bytes and only up to 8 regions
-* All invalid, unimplemented, unspecified or disabled instructions will trigger an illegal instruction exception
 
 
 ### NEORV32-Specific CPU Extensions
