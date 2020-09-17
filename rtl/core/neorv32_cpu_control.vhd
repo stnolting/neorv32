@@ -729,7 +729,7 @@ begin
             if (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_auipc_c(5)) then -- AUIPC
               ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '1'; -- use PC as ALU.OPA
             else -- LUI
-              ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- use RS1 as ALU.OPA
+              ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- use RS1 as ALU.OPA ( = 0)
             end if;
             ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '1'; -- use IMM as ALU.OPB
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_add_c; -- actual ALU operation
@@ -784,7 +784,7 @@ begin
 
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
-            csr.re_nxt <= csr_acc_valid; -- read CSR if valid access
+            csr.re_nxt <= csr_acc_valid; -- always read CSR if valid access
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system
               case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
                 when funct12_ecall_c => -- ECALL
@@ -823,8 +823,8 @@ begin
           -- register operations --
           when funct3_csrrw_c => -- CSRRW
             ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- OPA = rs1
-            ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '0'; -- OPB = rs2
-            ctrl_nxt(ctrl_rf_clear_rs2_c)    <= '1'; -- rs2 = 0
+            ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '1'; -- OPB = rs1
+            ctrl_nxt(ctrl_alu_opb_mux_msb_c) <= '1'; -- OPB = rs1
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_or_c; -- actual ALU operation = OR
             csr.we_nxt <= csr_acc_valid; -- always write CSR if valid access
           when funct3_csrrs_c => -- CSRRS

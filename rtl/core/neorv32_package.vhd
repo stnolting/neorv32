@@ -178,42 +178,41 @@ package neorv32_package is
   constant ctrl_rf_rd_adr4_c      : natural := 16; -- destiantion register address bit 4
   constant ctrl_rf_wb_en_c        : natural := 17; -- write back enable
   constant ctrl_rf_clear_rs1_c    : natural := 18; -- force rs1=r0
-  constant ctrl_rf_clear_rs2_c    : natural := 19; -- force rs2=r0
   -- alu --
-  constant ctrl_alu_cmd0_c        : natural := 20; -- ALU command bit 0
-  constant ctrl_alu_cmd1_c        : natural := 21; -- ALU command bit 1
-  constant ctrl_alu_cmd2_c        : natural := 22; -- ALU command bit 2
-  constant ctrl_alu_opa_mux_lsb_c : natural := 23; -- operand A select lsb (00=rs1, 01=PC)
-  constant ctrl_alu_opa_mux_msb_c : natural := 24; -- operand A select msb (1-=CSR)
-  constant ctrl_alu_opb_mux_lsb_c : natural := 25; -- operand B select lsb (00=rs2, 01=IMM)
-  constant ctrl_alu_opb_mux_msb_c : natural := 26; -- operand B select msb (1-=rs1)
-  constant ctrl_alu_opc_mux_c     : natural := 27; -- operand C select (0=IMM, 1=rs2)
-  constant ctrl_alu_unsigned_c    : natural := 28; -- is unsigned ALU operation
-  constant ctrl_alu_shift_dir_c   : natural := 29; -- shift direction (0=left, 1=right)
-  constant ctrl_alu_shift_ar_c    : natural := 30; -- is arithmetic shift
+  constant ctrl_alu_cmd0_c        : natural := 19; -- ALU command bit 0
+  constant ctrl_alu_cmd1_c        : natural := 20; -- ALU command bit 1
+  constant ctrl_alu_cmd2_c        : natural := 21; -- ALU command bit 2
+  constant ctrl_alu_opa_mux_lsb_c : natural := 22; -- operand A select lsb (00=rs1, 01=PC)
+  constant ctrl_alu_opa_mux_msb_c : natural := 23; -- operand A select msb (1-=CSR)
+  constant ctrl_alu_opb_mux_lsb_c : natural := 24; -- operand B select lsb (00=rs2, 01=IMM)
+  constant ctrl_alu_opb_mux_msb_c : natural := 25; -- operand B select msb (1-=rs1)
+  constant ctrl_alu_opc_mux_c     : natural := 26; -- operand C select (0=IMM, 1=rs2)
+  constant ctrl_alu_unsigned_c    : natural := 27; -- is unsigned ALU operation
+  constant ctrl_alu_shift_dir_c   : natural := 28; -- shift direction (0=left, 1=right)
+  constant ctrl_alu_shift_ar_c    : natural := 29; -- is arithmetic shift
   -- bus interface --
-  constant ctrl_bus_size_lsb_c    : natural := 31; -- transfer size lsb (00=byte, 01=half-word)
-  constant ctrl_bus_size_msb_c    : natural := 32; -- transfer size msb (10=word, 11=?)
-  constant ctrl_bus_rd_c          : natural := 33; -- read data request
-  constant ctrl_bus_wr_c          : natural := 34; -- write data request
-  constant ctrl_bus_if_c          : natural := 35; -- instruction fetch request
-  constant ctrl_bus_mar_we_c      : natural := 36; -- memory address register write enable
-  constant ctrl_bus_mdo_we_c      : natural := 37; -- memory data out register write enable
-  constant ctrl_bus_mdi_we_c      : natural := 38; -- memory data in register write enable
-  constant ctrl_bus_unsigned_c    : natural := 39; -- is unsigned load
-  constant ctrl_bus_ierr_ack_c    : natural := 40; -- acknowledge instruction fetch bus exception
-  constant ctrl_bus_derr_ack_c    : natural := 41; -- acknowledge data access bus exception
-  constant ctrl_bus_fence_c       : natural := 42; -- executed fence operation
-  constant ctrl_bus_fencei_c      : natural := 43; -- executed fencei operation
+  constant ctrl_bus_size_lsb_c    : natural := 30; -- transfer size lsb (00=byte, 01=half-word)
+  constant ctrl_bus_size_msb_c    : natural := 31; -- transfer size msb (10=word, 11=?)
+  constant ctrl_bus_rd_c          : natural := 32; -- read data request
+  constant ctrl_bus_wr_c          : natural := 33; -- write data request
+  constant ctrl_bus_if_c          : natural := 34; -- instruction fetch request
+  constant ctrl_bus_mar_we_c      : natural := 35; -- memory address register write enable
+  constant ctrl_bus_mdo_we_c      : natural := 36; -- memory data out register write enable
+  constant ctrl_bus_mdi_we_c      : natural := 37; -- memory data in register write enable
+  constant ctrl_bus_unsigned_c    : natural := 38; -- is unsigned load
+  constant ctrl_bus_ierr_ack_c    : natural := 39; -- acknowledge instruction fetch bus exception
+  constant ctrl_bus_derr_ack_c    : natural := 40; -- acknowledge data access bus exception
+  constant ctrl_bus_fence_c       : natural := 41; -- executed fence operation
+  constant ctrl_bus_fencei_c      : natural := 42; -- executed fencei operation
   -- co-processor --
-  constant ctrl_cp_use_c          : natural := 44; -- is cp operation
-  constant ctrl_cp_id_lsb_c       : natural := 45; -- cp select lsb
-  constant ctrl_cp_id_msb_c       : natural := 46; -- cp select msb
-  constant ctrl_cp_cmd0_c         : natural := 47; -- cp command bit 0
-  constant ctrl_cp_cmd1_c         : natural := 48; -- cp command bit 1
-  constant ctrl_cp_cmd2_c         : natural := 49; -- cp command bit 2
+  constant ctrl_cp_use_c          : natural := 43; -- is cp operation
+  constant ctrl_cp_id_lsb_c       : natural := 44; -- cp select lsb
+  constant ctrl_cp_id_msb_c       : natural := 45; -- cp select msb
+  constant ctrl_cp_cmd0_c         : natural := 46; -- cp command bit 0
+  constant ctrl_cp_cmd1_c         : natural := 47; -- cp command bit 1
+  constant ctrl_cp_cmd2_c         : natural := 48; -- cp command bit 2
   -- control bus size --
-  constant ctrl_width_c           : natural := 50; -- control bus size
+  constant ctrl_width_c           : natural := 49; -- control bus size
 
   -- ALU Comparator Bus ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

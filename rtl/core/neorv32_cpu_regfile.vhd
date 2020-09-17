@@ -154,10 +154,10 @@ begin
   end process rf_access;
 
 
-  -- Check if reading from r0 ---------------------------------------------------------------
+  -- Check if reading from x0 ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   rs1_o <= (others => '0') when ((rs1_clear or ctrl_i(ctrl_rf_clear_rs1_c)) = '1') else rs1_read;
-  rs2_o <= (others => '0') when ((rs2_clear or ctrl_i(ctrl_rf_clear_rs2_c)) = '1') else rs2_read;
+  rs2_o <= (others => '0') when (rs2_clear = '1') else rs2_read;
 
 
 end neorv32_cpu_regfile_rtl;
