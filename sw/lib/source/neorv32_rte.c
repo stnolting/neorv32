@@ -98,7 +98,7 @@ int neorv32_rte_exception_install(uint8_t id, void (*handler)(void)) {
       (id == RTE_TRAP_MSI)          || (id == RTE_TRAP_MTI)          || (id == RTE_TRAP_MEI)       ||
       (id == RTE_TRAP_FIRQ_0)       || (id == RTE_TRAP_FIRQ_1)       || (id == RTE_TRAP_FIRQ_2)    || (id == RTE_TRAP_FIRQ_3)) {
 
-    __neorv32_rte_vector_lut[id]  = (uint32_t)handler; // install handler
+    __neorv32_rte_vector_lut[id] = (uint32_t)handler; // install handler
 
     return 0;
   }
@@ -215,21 +215,20 @@ static void __neorv32_rte_debug_exc_handler(void) {
     case TRAP_CODE_MSI:          neorv32_uart_printf("Machine software interrupt"); break;
     case TRAP_CODE_MTI:          neorv32_uart_printf("Machine timer interrupt"); break;
     case TRAP_CODE_MEI:          neorv32_uart_printf("Machine external interrupt"); break;
-    case TRAP_CODE_FIRQ_0:       neorv32_uart_printf("Fast interrupt 0 (WDT)"); break;
-    case TRAP_CODE_FIRQ_1:       neorv32_uart_printf("Fast interrupt 1 (GPIO)"); break;
-    case TRAP_CODE_FIRQ_2:       neorv32_uart_printf("Fast interrupt 2 (UART)"); break;
-    case TRAP_CODE_FIRQ_3:       neorv32_uart_printf("Fast interrupt 3 (SPI/TWI)"); break;
+    case TRAP_CODE_FIRQ_0:       neorv32_uart_printf("Fast interrupt 0"); break;
+    case TRAP_CODE_FIRQ_1:       neorv32_uart_printf("Fast interrupt 1"); break;
+    case TRAP_CODE_FIRQ_2:       neorv32_uart_printf("Fast interrupt 2"); break;
+    case TRAP_CODE_FIRQ_3:       neorv32_uart_printf("Fast interrupt 3"); break;
     default:                     neorv32_uart_printf("Unknown (0x%x)", trap_cause); break;
   }
 
   // address
-  register uint32_t trap_addr  = neorv32_cpu_csr_read(CSR_MEPC);
+  register uint32_t trap_addr = neorv32_cpu_csr_read(CSR_MEPC);
   register uint32_t trap_inst;
-
   asm volatile ("lh %[result], 0(%[input_i])" : [result] "=r" (trap_inst) : [input_i] "r" (trap_addr));
 
-  if ((trap_cause & 0x80000000) == 0) {
-    if ((trap_inst & 3) == 3) {
+  if ((trap_cause & 0x80000000) == 0) { // is exception?
+    if ((trap_inst & 3) == 3) { // is uncompressed instruction?
       trap_addr -= 4;
     }
     else {
