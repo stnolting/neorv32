@@ -1,15 +1,15 @@
 // #################################################################################################
 // # << NEORV32 - Bootloader >>                                                                    #
 // # ********************************************************************************************* #
-// # THE BOOTLOADER SHOULD BE COMPILED USING THE BASE ISA ONLY (rv32i or rv32e)!                   #
+// # THE BOOTLOADER SHOULD BE COMPILED USING ONLY THE BASE ISA (rv32i or rv32e)!                   #
 // # ********************************************************************************************* #
 // # Boot from (internal) instruction memory, UART or SPI Flash.                                   #
 // #                                                                                               #
 // # UART configuration: 8N1 at 19200 baud                                                         #
 // # Boot Flash: 8-bit SPI, 24-bit addresses (like Micron N25Q032A) @ neorv32.spi_csn_o(0)         #
-// # neorv32.gpio_o(0) is used as high-active status LED.                                          #
+// # neorv32.gpio_o(0) is used as high-active status LED (can be disabled via STATUS_LED_EN).      #
 // #                                                                                               #
-// # Auto boot sequence after timeout:                                                             #
+// # Auto boot sequence (can be disabled via AUTOBOOT_EN) after timeout (via AUTOBOOT_TIMEOUT):    #
 // #  -> Try booting from SPI flash at spi_csn_o(0).                                               #
 // #  -> Permanently light up status led and freeze if SPI flash booting attempt fails.            #
 // # ********************************************************************************************* #
@@ -64,6 +64,8 @@
 #define BAUD_RATE              (19200)
 /** Time until the auto-boot sequence starts (in seconds) */
 #define AUTOBOOT_TIMEOUT       8
+/** Enable auto-boot sequence if != 0 */
+#define AUTOBOOT_EN            (1)
 /** Set to 0 to disable bootloader status LED */
 #define STATUS_LED_EN          (1)
 /** Bootloader status LED at GPIO output port */
@@ -239,6 +241,7 @@ int main(void) {
   // ------------------------------------------------
   // Auto boot sequence
   // ------------------------------------------------
+#if (AUTOBOOT_EN != 0)
   neorv32_uart_print("\n\nAutoboot in "xstr(AUTOBOOT_TIMEOUT)"s. Press key to abort.\n");
 
   uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTOBOOT_TIMEOUT * clock_speed);
@@ -252,6 +255,10 @@ int main(void) {
     }
   }
   neorv32_uart_print("Aborted.\n\n");
+#else
+  neorv32_uart_print("\n\n");
+#endif
+
   print_help();
 
 
@@ -276,7 +283,7 @@ int main(void) {
     else if (c == 'u') { // get executable via UART
       get_exe(EXE_STREAM_UART);
     }
-    else if (c == 's') { // program EEPROM from RAM
+    else if (c == 's') { // program flash from memory (IMEM)
       save_exe();
     }
     else if (c == 'l') { // get executable from flash
