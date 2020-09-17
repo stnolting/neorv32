@@ -332,7 +332,7 @@ package neorv32_package is
   constant alu_cmd_xor_c   : std_ulogic_vector(2 downto 0) := "100"; -- r <= A xor B
   constant alu_cmd_or_c    : std_ulogic_vector(2 downto 0) := "101"; -- r <= A or B
   constant alu_cmd_and_c   : std_ulogic_vector(2 downto 0) := "110"; -- r <= A and B
-  constant alu_cmd_bitm_c  : std_ulogic_vector(2 downto 0) := "111"; -- r <= bit manipulation
+  constant alu_cmd_bclr_c  : std_ulogic_vector(2 downto 0) := "111"; -- r <= A  and (not B)
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -646,6 +646,8 @@ package neorv32_package is
       add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- OPA + OPB
       res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
       -- co-processor interface --
+      cp_opa_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- co-processor operand a
+      cp_opb_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- co-processor operand b
       cp0_start_o : out std_ulogic; -- trigger co-processor 0
       cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
       cp0_valid_i : in  std_ulogic; -- co-processor 0 result valid

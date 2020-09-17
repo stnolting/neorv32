@@ -62,6 +62,8 @@ entity neorv32_cpu_alu is
     add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- OPA + OPB
     res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
     -- co-processor interface --
+    cp_opa_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- co-processor operand a
+    cp_opb_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- co-processor operand b
     cp0_start_o : out std_ulogic; -- trigger co-processor 0
     cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
     cp0_valid_i : in  std_ulogic; -- co-processor 0 result valid
@@ -81,6 +83,7 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   -- results --
   signal add_res : std_ulogic_vector(data_width_c-1 downto 0);
   signal alu_res : std_ulogic_vector(data_width_c-1 downto 0);
+  signal cp_res  : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- comparator --
   signal cmp_opx   : std_ulogic_vector(data_width_c downto 0);
@@ -108,13 +111,8 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
     busy   : std_ulogic;
     start  : std_ulogic;
     halt   : std_ulogic;
-    rb_ff0 : std_ulogic;
-    rb_ff1 : std_ulogic;
   end record;
   signal cp_ctrl : cp_ctrl_t;
-
-  -- bit manipulation --
-  signal bitm_res : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -164,19 +162,6 @@ begin
   -- -------------------------------------------------------------------------------------------
   add_res <= std_ulogic_vector(unsigned(opa) + unsigned(opb));
   add_o   <= add_res; -- direct output
-
-
-  -- Bit Manipulation Unit ------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-
-  -- ------------------ --
-  -- UNDER CONSTRUCTION --
-  -- ------------------ --
-
---bitm_minmax <= rs1_i when ((cmp_less xor ???) = '1') else rs2_i; -- min[u] / max[u]
-
-  -- result of bit manipulation operation --
-  bitm_res <= opa and (not opb); -- ANDN
 
 
   -- Iterative Shifter Unit -----------------------------------------------------------------
@@ -233,24 +218,17 @@ begin
     if (rstn_i = '0') then
       cp_ctrl.cmd_ff <= '0';
       cp_ctrl.busy   <= '0';
-      cp_ctrl.rb_ff0 <= '0';
-      cp_ctrl.rb_ff1 <= '0';
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_M = true) then
         cp_ctrl.cmd_ff <= ctrl_i(ctrl_cp_use_c);
-        cp_ctrl.rb_ff0 <= '0';
-        cp_ctrl.rb_ff1 <= cp_ctrl.rb_ff0;
         if (cp_ctrl.start = '1') then
           cp_ctrl.busy <= '1';
         elsif ((cp0_valid_i or cp1_valid_i) = '1') then -- cp computation done?
-          cp_ctrl.busy   <= '0';
-          cp_ctrl.rb_ff0 <= '1';
+          cp_ctrl.busy <= '0';
         end if;
       else -- no co-processor(s) implemented
         cp_ctrl.cmd_ff <= '0';
         cp_ctrl.busy   <= '0';
-        cp_ctrl.rb_ff0 <= '0';
-        cp_ctrl.rb_ff1 <= '0';
       end if;
     end if;
   end process cp_arbiter;
@@ -263,16 +241,23 @@ begin
   -- co-processor operation running? --
   cp_ctrl.halt <= cp_ctrl.busy or cp_ctrl.start;
 
+  -- co-processor operands --
+  cp_opa_o <= opa;
+  cp_opb_o <= opb;
+
+  -- co-processor result --
+  cp_res <= cp0_data_i or cp1_data_i; -- only the selcted cp may output data != 0
+
 
   -- ALU Function Select --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  alu_function_mux: process(ctrl_i, opa, opb, add_res, sub_res, cmp_less, shifter, bitm_res)
+  alu_function_mux: process(ctrl_i, opa, opb, add_res, sub_res, cmp_less, shifter)
   begin
     case ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) is
-      when alu_cmd_bitm_c  => alu_res <= bitm_res;
       when alu_cmd_xor_c   => alu_res <= opa xor opb;
       when alu_cmd_or_c    => alu_res <= opa or  opb;
       when alu_cmd_and_c   => alu_res <= opa and opb;
+      when alu_cmd_bclr_c  => alu_res <= opa and (not opb);
       when alu_cmd_sub_c   => alu_res <= sub_res;
       when alu_cmd_add_c   => alu_res <= add_res;
       when alu_cmd_shift_c => alu_res <= shifter.sreg;
@@ -285,7 +270,7 @@ begin
   -- ALU Result -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   wait_o <= shifter.halt or cp_ctrl.halt; -- wait until iterative units have completed
-  res_o  <= (cp0_data_i or cp1_data_i) when (cp_ctrl.rb_ff1 = '1') else alu_res; -- FIXME
+  res_o  <= cp_res when (ctrl_i(ctrl_cp_use_c) = '1') else alu_res; -- FIXME?
 
 
 end neorv32_cpu_cpu_rtl;

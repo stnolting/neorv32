@@ -135,6 +135,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal next_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- next pc (for current executed instruction)
 
   -- co-processor interface --
+  signal cp_opa,    cp_opb    : std_ulogic_vector(data_width_c-1 downto 0);
   signal cp0_data,  cp1_data  : std_ulogic_vector(data_width_c-1 downto 0);
   signal cp0_valid, cp1_valid : std_ulogic;
   signal cp0_start, cp1_start : std_ulogic;
@@ -268,6 +269,8 @@ begin
     add_o       => alu_add,       -- OPA + OPB
     res_o       => alu_res,       -- ALU result
     -- co-processor interface --
+    cp_opa_o    => cp_opa,        -- co-processor operand a
+    cp_opb_o    => cp_opb,        -- co-processor operand b
     cp0_start_o => cp0_start,     -- trigger co-processor 0
     cp0_data_i  => cp0_data,      -- co-processor 0 result
     cp0_valid_i => cp0_valid,     -- co-processor 0 result valid
@@ -294,8 +297,8 @@ begin
       ctrl_i  => ctrl,            -- main control bus
       -- data input --
       start_i => cp0_start,       -- trigger operation
-      rs1_i   => rs1,             -- rf source 1
-      rs2_i   => rs2,             -- rf source 2
+      rs1_i   => cp_opa,          -- rf source 1
+      rs2_i   => cp_opb,          -- rf source 2
       -- result and status --
       res_o   => cp0_data,        -- operation result
       valid_o => cp0_valid        -- data output valid
