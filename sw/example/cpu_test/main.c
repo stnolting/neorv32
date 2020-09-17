@@ -640,6 +640,17 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Fast interrupt channel 1 (GPIO)
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("FIRQ1 (GPIO): ");
+
+  // no test available yet
+
+  neorv32_uart_printf("skipped (no test available)\n");
+
+
+  // ----------------------------------------------------------
   // Fast interrupt channel 2 (UART)
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
