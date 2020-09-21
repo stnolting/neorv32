@@ -172,7 +172,7 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
   * ALU instructions: `C.ADDI4SPN` `C.ADDI` `C.ADD` `C.ADDI16SP` `C.LI` `C.LUI` `C.SLLI` `C.SRLI` `C.SRAI` `C.ANDI` `C.SUB` `C.XOR` `C.OR` `C.AND` `C.MV` `C.NOP`
   * Jump and branch instructions: `C.J` `C.JAL` `C.JR` `C.JALR` `C.BEQZ` `C.BNEZ`
   * Memory instructions: `C.LW` `C.SW` `C.LWSP` `C.SWSP`
-  * Misc instructions: `C.EBREAK` (only with `Zicsr` extension)
+  * System instructions: `C.EBREAK` (only with `Zicsr` extension)
 
 **Embedded CPU version** (`E` extension):
   * Reduced register file (only the 16 lowest registers)
@@ -255,23 +255,23 @@ Results generated for hardware version: `1.3.6.5`
 
 Results generated for hardware version: `1.3.6.5`
 
-| Module    | Description                                     | LEs | FFs | Memory bits | DSPs |
-|:----------|:------------------------------------------------|:---:|:---:|:-----------:|:----:|
-| BOOT ROM  | Bootloader ROM (4kB)                            |   4 |   1 |      32 768 |    0 |
-| BUSSWITCH | Mux for CPU I & D interfaces                    |  62 |   8 |           0 |    0 |
-| CFU       | Custom functions unit                           |   - |   - |           - |    - |
-| DEVNULL   | Dummy device                                    |   3 |   1 |           0 |    0 |
-| DMEM      | Processor-internal data memory (8kB)            |  12 |   2 |      65 536 |    0 |
-| GPIO      | General purpose input/output ports              |  40 |  33 |           0 |    0 |
-| IMEM      | Processor-internal instruction memory (16kb)    |   7 |   2 |     131 072 |    0 |
-| MTIME     | Machine system timer                            | 266 | 166 |           0 |    0 |
-| PWM       | Pulse-width modulation controller               |  72 |  69 |           0 |    0 |
-| SPI       | Serial peripheral interface                     | 198 | 125 |           0 |    0 |
-| SYSINFO   | System configuration information memory         |  10 |   9 |           0 |    0 |
-| TRNG      | True random number generator                    | 105 |  93 |           0 |    0 |
-| TWI       | Two-wire interface                              |  75 |  44 |           0 |    0 |
-| UART      | Universal asynchronous receiver/transmitter     | 153 | 108 |           0 |    0 |
-| WDT       | Watchdog timer                                  |  59 |  45 |           0 |    0 |
+| Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
+|:----------|:-----------------------------------------------------|:---:|:---:|:-----------:|:----:|
+| BOOT ROM  | Bootloader ROM (default 4kB)                         |   4 |   1 |      32 768 |    0 |
+| BUSSWITCH | Mux for CPU I & D interfaces                         |  62 |   8 |           0 |    0 |
+| CFU       | Custom functions unit                                |   - |   - |           - |    - |
+| DEVNULL   | Dummy device                                         |   3 |   1 |           0 |    0 |
+| DMEM      | Processor-internal data memory (default 8kB)         |  12 |   2 |      65 536 |    0 |
+| GPIO      | General purpose input/output ports                   |  40 |  33 |           0 |    0 |
+| IMEM      | Processor-internal instruction memory (default 16kb) |   7 |   2 |     131 072 |    0 |
+| MTIME     | Machine system timer                                 | 266 | 166 |           0 |    0 |
+| PWM       | Pulse-width modulation controller                    |  72 |  69 |           0 |    0 |
+| SPI       | Serial peripheral interface                          | 198 | 125 |           0 |    0 |
+| SYSINFO   | System configuration information memory              |  10 |   9 |           0 |    0 |
+| TRNG      | True random number generator                         | 105 |  93 |           0 |    0 |
+| TWI       | Two-wire interface                                   |  75 |  44 |           0 |    0 |
+| UART      | Universal asynchronous receiver/transmitter          | 153 | 108 |           0 |    0 |
+| WDT       | Watchdog timer                                       |  59 |  45 |           0 |    0 |
 
 
 ### NEORV32 Processor - Exemplary FPGA Setups
@@ -566,7 +566,7 @@ can use a simple [test setup](https://github.com/stnolting/neorv32/blob/master/r
 [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) folder) as top entity.
 
 This test setup instantiates the processor and implements most of the peripherals and some ISA extensions. Only the UART lines, clock, reset and some GPIO output sginals are
-propagated as actual entity signals. Basically, its a FPGA "hello world" example:
+propagated as actual entity signals. Basically, it is a FPGA "hello world" example:
 
 ```vhdl
   entity neorv32_test_setup is
