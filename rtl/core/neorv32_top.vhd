@@ -302,7 +302,7 @@ begin
   generic map (
     -- General --
     HW_THREAD_ID                 => (others => '0'), -- hardware thread id
-    CPU_BOOT_ADDR                => cpu_boot_addr_c,     -- cpu boot address
+    CPU_BOOT_ADDR                => cpu_boot_addr_c, -- cpu boot address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
@@ -311,13 +311,13 @@ begin
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     -- Extension Options --
-    FAST_MUL_EN                  => FAST_MUL_EN,      -- use DSPs for M extension's multiplier
+    FAST_MUL_EN                  => FAST_MUL_EN,     -- use DSPs for M extension's multiplier
     -- Physical Memory Protection (PMP) --
     PMP_USE                      => PMP_USE,         -- implement PMP?
     PMP_NUM_REGIONS              => PMP_NUM_REGIONS, -- number of regions (max 8)
     PMP_GRANULARITY              => PMP_GRANULARITY, -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Bus Interface --
-    BUS_TIMEOUT                  => MEM_EXT_TIMEOUT   -- cycles after which a valid bus access will timeout
+    BUS_TIMEOUT                  => MEM_EXT_TIMEOUT  -- cycles after which a valid bus access will timeout
   )
   port map (
     -- global control --
