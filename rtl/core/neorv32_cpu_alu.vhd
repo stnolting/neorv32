@@ -251,7 +251,7 @@ begin
 
   -- ALU Function Select --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  alu_function_mux: process(ctrl_i, opa, opb, add_res, sub_res, cmp_less, shifter)
+  alu_function_mux: process(ctrl_i, opa, opb, add_res, sub_res, cmp_less, shifter.sreg)
   begin
     case ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) is
       when alu_cmd_xor_c   => alu_res <= opa xor opb;
