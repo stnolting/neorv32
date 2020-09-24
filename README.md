@@ -132,7 +132,7 @@ is highly customizable via the processor top's generics.
 - Optional universal asynchronous receiver and transmitter (**UART**)
 - Optional 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
 - Optional two wire serial interface controller (**TWI**), compatible to the I²C standard
-- Optional general purpose parallel IO port (**GPIO**), 16xOut & 16xIn, with pin-change interrupt
+- Optional general purpose parallel IO port (**GPIO**), 32xOut & 32xIn, with pin-change interrupt
 - Optional 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**)
 - Optional watchdog timer (**WDT**)
 - Optional PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
