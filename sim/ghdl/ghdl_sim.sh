@@ -13,6 +13,7 @@ homedir=$homedir/../..
 # The directories of the hw source files
 srcdir_core=$homedir/rtl/core
 srcdir_sim=$homedir/sim
+srcdir_top_templates=$homedir/rtl/top_templates
 
 # Show GHDL version
 ghdl -v
@@ -26,6 +27,7 @@ echo ""
 echo "Simulation source files:"
 ls -l $srcdir_core
 ls -l $srcdir_sim
+ls -l $srcdir_top_templates
 
 # Just a hint
 echo ""
@@ -61,6 +63,9 @@ ghdl -a --work=neorv32 $srcdir_core/neorv32_twi.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_uart.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_wdt.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_wishbone.vhd
+#
+ghdl -a --work=neorv32 $srcdir_top_templates/neorv32_test_setup.vhd
+ghdl -a --work=neorv32 $srcdir_top_templates/neorv32_top_stdlogic.vhd
 #
 ghdl -a --work=neorv32 $srcdir_sim/*.vhd
 
