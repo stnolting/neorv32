@@ -40,10 +40,11 @@ package neorv32_package is
 
   -- Architecture Constants/Configuration ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant data_width_c  : natural := 32; -- data width - FIXED!
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01040300"; -- no touchy!
-  constant pmp_max_r_c   : natural := 8; -- max PMP regions - FIXED!
-  constant ipb_entries_c : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
+  constant data_width_c   : natural := 32; -- data width - FIXED!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040301"; -- no touchy!
+  constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
+  constant ipb_entries_c  : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
+  constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero
 
   -- Helper Functions -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -177,7 +178,7 @@ package neorv32_package is
   constant ctrl_rf_rd_adr3_c      : natural := 15; -- destiantion register address bit 3
   constant ctrl_rf_rd_adr4_c      : natural := 16; -- destiantion register address bit 4
   constant ctrl_rf_wb_en_c        : natural := 17; -- write back enable
-  constant ctrl_rf_clear_rs1_c    : natural := 18; -- force rs1=r0
+  constant ctrl_rf_r0_we_c        : natural := 18; -- allow write access to r0 (zero), also forces dst=r0
   -- alu --
   constant ctrl_alu_cmd0_c        : natural := 19; -- ALU command bit 0
   constant ctrl_alu_cmd1_c        : natural := 20; -- ALU command bit 1
