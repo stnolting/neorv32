@@ -184,7 +184,7 @@ package neorv32_package is
   constant ctrl_alu_cmd1_c        : natural := 20; -- ALU command bit 1
   constant ctrl_alu_cmd2_c        : natural := 21; -- ALU command bit 2
   constant ctrl_alu_opa_mux_lsb_c : natural := 22; -- operand A select lsb (00=rs1, 01=PC)
-  constant ctrl_alu_opa_mux_msb_c : natural := 23; -- operand A select msb (10=CSR, 11=0)
+  constant ctrl_alu_opa_mux_msb_c : natural := 23; -- operand A select msb (1-=CSR)
   constant ctrl_alu_opb_mux_c     : natural := 24; -- operand B select (0=rs2, 1=IMM)
   constant ctrl_alu_opc_mux_c     : natural := 25; -- operand C select (0=IMM, 1=rs2)
   constant ctrl_alu_unsigned_c    : natural := 26; -- is unsigned ALU operation

@@ -124,8 +124,7 @@ begin
     case ctrl_i(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) is
       when "00"   => opa <= rs1_i;
       when "01"   => opa <= pc2_i;
-      when "10"   => opa <= csr_i;
-      when others => opa <= (others => '0');
+      when others => opa <= csr_i;
     end case;
     -- opb (second ALU input operand) --
     if (ctrl_i(ctrl_alu_opb_mux_c) = '0') then
