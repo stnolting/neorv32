@@ -72,7 +72,6 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   signal reg_file_emb  : reg_file_emb_t;
   signal rf_write_data : std_ulogic_vector(data_width_c-1 downto 0); -- actual write-back data
   signal valid_wr      : std_ulogic; -- writing not to r0
-  signal dst_addr      : std_ulogic_vector(4 downto 0);
 
 
   -- attributes - these are *NOT mandatory*; just for footprint / timing optimization --
@@ -102,9 +101,6 @@ begin
     end case;
   end process input_mux;
 
-  -- destination address (force dst=r0 when explicitly writing to r0) --
-  dst_addr <= ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) when (ctrl_i(ctrl_rf_r0_we_c) = '0') else (others => '0');
-
   -- only write if destination is not x0; except we are forcing a r0 write access --
   valid_wr <= or_all_f(ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c)) or ctrl_i(ctrl_rf_r0_we_c) when (CPU_EXTENSION_RISCV_E = false) else
               or_all_f(ctrl_i(ctrl_rf_rd_adr3_c downto ctrl_rf_rd_adr0_c)) or ctrl_i(ctrl_rf_r0_we_c);
@@ -118,7 +114,7 @@ begin
       if (CPU_EXTENSION_RISCV_E = false) then -- normal register file with 32 entries
         -- write --
         if (ctrl_i(ctrl_rf_wb_en_c) = '1') and ((valid_wr = '1') or (rf_r0_is_reg_c = false)) then -- valid write-back
-          reg_file(to_integer(unsigned(dst_addr(4 downto 0)))) <= rf_write_data;
+          reg_file(to_integer(unsigned(ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c)))) <= rf_write_data;
         end if;
         -- read --
         rs1_o <= reg_file(to_integer(unsigned(ctrl_i(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c))));
@@ -127,7 +123,7 @@ begin
       else -- embedded register file with 16 entries
         -- write --
         if (ctrl_i(ctrl_rf_wb_en_c) = '1') and ((valid_wr = '1') or (rf_r0_is_reg_c = false)) then -- valid write-back
-          reg_file_emb(to_integer(unsigned(dst_addr(3 downto 0)))) <= rf_write_data;
+          reg_file_emb(to_integer(unsigned(ctrl_i(ctrl_rf_rd_adr3_c downto ctrl_rf_rd_adr0_c)))) <= rf_write_data;
         end if;
         -- read --
         rs1_o <= reg_file_emb(to_integer(unsigned(ctrl_i(ctrl_rf_rs1_adr3_c downto ctrl_rf_rs1_adr0_c))));

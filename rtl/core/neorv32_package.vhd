@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants/Configuration ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - FIXED!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040301"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040302"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant ipb_entries_c  : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero
@@ -184,36 +184,35 @@ package neorv32_package is
   constant ctrl_alu_cmd1_c        : natural := 20; -- ALU command bit 1
   constant ctrl_alu_cmd2_c        : natural := 21; -- ALU command bit 2
   constant ctrl_alu_opa_mux_lsb_c : natural := 22; -- operand A select lsb (00=rs1, 01=PC)
-  constant ctrl_alu_opa_mux_msb_c : natural := 23; -- operand A select msb (1-=CSR)
-  constant ctrl_alu_opb_mux_lsb_c : natural := 24; -- operand B select lsb (00=rs2, 01=IMM)
-  constant ctrl_alu_opb_mux_msb_c : natural := 25; -- operand B select msb (1-=rs1)
-  constant ctrl_alu_opc_mux_c     : natural := 26; -- operand C select (0=IMM, 1=rs2)
-  constant ctrl_alu_unsigned_c    : natural := 27; -- is unsigned ALU operation
-  constant ctrl_alu_shift_dir_c   : natural := 28; -- shift direction (0=left, 1=right)
-  constant ctrl_alu_shift_ar_c    : natural := 29; -- is arithmetic shift
+  constant ctrl_alu_opa_mux_msb_c : natural := 23; -- operand A select msb (10=CSR, 11=0)
+  constant ctrl_alu_opb_mux_c     : natural := 24; -- operand B select (0=rs2, 1=IMM)
+  constant ctrl_alu_opc_mux_c     : natural := 25; -- operand C select (0=IMM, 1=rs2)
+  constant ctrl_alu_unsigned_c    : natural := 26; -- is unsigned ALU operation
+  constant ctrl_alu_shift_dir_c   : natural := 27; -- shift direction (0=left, 1=right)
+  constant ctrl_alu_shift_ar_c    : natural := 28; -- is arithmetic shift
   -- bus interface --
-  constant ctrl_bus_size_lsb_c    : natural := 30; -- transfer size lsb (00=byte, 01=half-word)
-  constant ctrl_bus_size_msb_c    : natural := 31; -- transfer size msb (10=word, 11=?)
-  constant ctrl_bus_rd_c          : natural := 32; -- read data request
-  constant ctrl_bus_wr_c          : natural := 33; -- write data request
-  constant ctrl_bus_if_c          : natural := 34; -- instruction fetch request
-  constant ctrl_bus_mar_we_c      : natural := 35; -- memory address register write enable
-  constant ctrl_bus_mdo_we_c      : natural := 36; -- memory data out register write enable
-  constant ctrl_bus_mdi_we_c      : natural := 37; -- memory data in register write enable
-  constant ctrl_bus_unsigned_c    : natural := 38; -- is unsigned load
-  constant ctrl_bus_ierr_ack_c    : natural := 39; -- acknowledge instruction fetch bus exception
-  constant ctrl_bus_derr_ack_c    : natural := 40; -- acknowledge data access bus exception
-  constant ctrl_bus_fence_c       : natural := 41; -- executed fence operation
-  constant ctrl_bus_fencei_c      : natural := 42; -- executed fencei operation
+  constant ctrl_bus_size_lsb_c    : natural := 29; -- transfer size lsb (00=byte, 01=half-word)
+  constant ctrl_bus_size_msb_c    : natural := 30; -- transfer size msb (10=word, 11=?)
+  constant ctrl_bus_rd_c          : natural := 31; -- read data request
+  constant ctrl_bus_wr_c          : natural := 32; -- write data request
+  constant ctrl_bus_if_c          : natural := 33; -- instruction fetch request
+  constant ctrl_bus_mar_we_c      : natural := 34; -- memory address register write enable
+  constant ctrl_bus_mdo_we_c      : natural := 35; -- memory data out register write enable
+  constant ctrl_bus_mdi_we_c      : natural := 36; -- memory data in register write enable
+  constant ctrl_bus_unsigned_c    : natural := 37; -- is unsigned load
+  constant ctrl_bus_ierr_ack_c    : natural := 38; -- acknowledge instruction fetch bus exception
+  constant ctrl_bus_derr_ack_c    : natural := 39; -- acknowledge data access bus exception
+  constant ctrl_bus_fence_c       : natural := 40; -- executed fence operation
+  constant ctrl_bus_fencei_c      : natural := 41; -- executed fencei operation
   -- co-processor --
-  constant ctrl_cp_use_c          : natural := 43; -- is cp operation
-  constant ctrl_cp_id_lsb_c       : natural := 44; -- cp select lsb
-  constant ctrl_cp_id_msb_c       : natural := 45; -- cp select msb
-  constant ctrl_cp_cmd0_c         : natural := 46; -- cp command bit 0
-  constant ctrl_cp_cmd1_c         : natural := 47; -- cp command bit 1
-  constant ctrl_cp_cmd2_c         : natural := 48; -- cp command bit 2
+  constant ctrl_cp_use_c          : natural := 42; -- is cp operation
+  constant ctrl_cp_id_lsb_c       : natural := 43; -- cp select ID lsb
+  constant ctrl_cp_id_msb_c       : natural := 44; -- cp select ID msb
+  constant ctrl_cp_cmd0_c         : natural := 45; -- cp command bit 0
+  constant ctrl_cp_cmd1_c         : natural := 46; -- cp command bit 1
+  constant ctrl_cp_cmd2_c         : natural := 47; -- cp command bit 2
   -- control bus size --
-  constant ctrl_width_c           : natural := 49; -- control bus size
+  constant ctrl_width_c           : natural := 48; -- control bus size
 
   -- ALU Comparator Bus ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -332,7 +331,7 @@ package neorv32_package is
   constant alu_cmd_xor_c   : std_ulogic_vector(2 downto 0) := "100"; -- r <= A xor B
   constant alu_cmd_or_c    : std_ulogic_vector(2 downto 0) := "101"; -- r <= A or B
   constant alu_cmd_and_c   : std_ulogic_vector(2 downto 0) := "110"; -- r <= A and B
-  constant alu_cmd_bclr_c  : std_ulogic_vector(2 downto 0) := "111"; -- r <= A  and (not B)
+  constant alu_cmd_bclr_c  : std_ulogic_vector(2 downto 0) := "111"; -- r <= A and (not B)
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
