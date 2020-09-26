@@ -562,12 +562,9 @@ begin
 
   -- CPU Control Bus Output -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_output: process(ctrl, execute_engine, fetch_engine, trap_ctrl, csr, bus_fast_ir)
+  ctrl_output: process(ctrl, fetch_engine, trap_ctrl, csr, bus_fast_ir)
   begin
     ctrl_o <= ctrl;
-    ctrl_o(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= execute_engine.i_reg(instr_rd_msb_c  downto instr_rd_lsb_c);
-    ctrl_o(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c);
-    ctrl_o(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= execute_engine.i_reg(instr_rs2_msb_c downto instr_rs2_lsb_c);
     -- fast bus access requests --
     ctrl_o(ctrl_bus_if_c) <= ctrl(ctrl_bus_if_c) or bus_fast_ir;
     -- bus error control --
@@ -624,8 +621,11 @@ begin
     ctrl_nxt(ctrl_alu_shift_ar_c)   <= execute_engine.i_reg(30); -- is arithmetic shift
     ctrl_nxt(ctrl_bus_size_lsb_c)   <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- transfer size lsb (00=byte, 01=half-word)
     ctrl_nxt(ctrl_bus_size_msb_c)   <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- transfer size msb (10=word, 11=?)
-    ctrl_nxt(ctrl_cp_cmd2_c   downto ctrl_cp_cmd0_c)   <= execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c); -- CP operation
-    ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- only CP0 (MULDIV) implemented yet
+    ctrl_nxt(ctrl_cp_cmd2_c     downto ctrl_cp_cmd0_c)     <= execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c); -- CP operation
+    ctrl_nxt(ctrl_cp_id_msb_c   downto ctrl_cp_id_lsb_c)   <= cp_sel_muldiv_c; -- only CP0 (MULDIV) implemented yet
+    ctrl_nxt(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= ctrl(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c); -- keep rd addr
+    ctrl_nxt(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= ctrl(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- keep rs1 addr
+    ctrl_nxt(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= ctrl(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c); -- keep rs2 addr
 
     -- is immediate operation? --
     alu_immediate_v := '0';
@@ -660,26 +660,35 @@ begin
     -- state machine --
     case execute_engine.state is
 
-      when SYS_WAIT => -- Delay cycle (used to wait for side effects to kick in)
+      when SYS_WAIT => -- System delay cycle (used to wait for side effects to kick in) ((and to init r0 with zero if it is a physical register))
       -- ------------------------------------------------------------
         if (rf_r0_is_reg_c = true) then -- is r0 implemented as physical register, which has to be set to zero?
           -- set reg_file.r0 to zero
-          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output (=0 since there is no valid CSR_read request)
-          ctrl_nxt(ctrl_rf_r0_we_c) <= '1'; -- forced write access to r0
+          ctrl_nxt(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) <= (others => '0'); -- rd addr = r0
+          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output (results zero since there is no valid CSR_read request)
+          ctrl_nxt(ctrl_rf_r0_we_c) <= '1'; -- allow write access to r0
           ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
         end if;
+        --
         execute_engine.state_nxt <= DISPATCH;
 
       when DISPATCH => -- Get new command from instruction prefetch buffer (IPB)
       -- ------------------------------------------------------------
         if (ipb.avail = '1') then -- instruction available?
           ipb.re <= '1';
+          --
           trap_ctrl.instr_ma <= ipb.rdata(33); -- misaligned instruction fetch address
           trap_ctrl.instr_be <= ipb.rdata(34); -- bus access fault during instrucion fetch
           illegal_compressed <= ipb.rdata(35); -- invalid decompressed instruction
+          --
+          ctrl_nxt(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= ipb.rdata(instr_rd_msb_c  downto instr_rd_lsb_c); -- rd addr
+          ctrl_nxt(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= ipb.rdata(instr_rs1_msb_c downto instr_rs1_lsb_c); -- rs1 addr
+          ctrl_nxt(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= ipb.rdata(instr_rs2_msb_c downto instr_rs2_lsb_c); -- rs2 addr
+          --
           execute_engine.is_ci_nxt  <= ipb.rdata(32); -- flag to indicate this is a compressed instruction beeing executed
           execute_engine.i_reg_nxt  <= ipb.rdata(31 downto 0);
           execute_engine.if_rst_nxt <= '0';
+          --
           if (execute_engine.if_rst = '0') then -- if there was no non-linear PC modification
             execute_engine.pc_nxt <= execute_engine.next_pc;
           end if;
@@ -706,10 +715,10 @@ begin
       -- ------------------------------------------------------------
         case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
 
-          when opcode_alu_c | opcode_alui_c => -- ALU operation
+          when opcode_alu_c | opcode_alui_c => -- (immediate) ALU operation
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- use RS1 as ALU.OPA
-            ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= alu_immediate_v; -- use IMM as ALU.OPB for immediate operations
+            ctrl_nxt(ctrl_alu_opb_mux_c)     <= alu_immediate_v; -- use IMM as ALU.OPB for immediate operations
             ctrl_nxt(ctrl_alu_opc_mux_c)     <= not alu_immediate_v;
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_operation_v; -- actual ALU operation
             ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "00"; -- RF input = ALU result
@@ -728,14 +737,13 @@ begin
               ctrl_nxt(ctrl_cp_use_c) <= '1'; -- use CP
             end if;
 
-          when opcode_lui_c | opcode_auipc_c => -- load upper immediate (add to PC)
+          when opcode_lui_c | opcode_auipc_c => -- load upper immediate / add upper immediate to PC
           -- ------------------------------------------------------------
-            if (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_auipc_c(5)) then -- AUIPC
-              ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '1'; -- use PC as ALU.OPA
-            else -- LUI
-              ctrl_nxt(ctrl_alu_opa_mux_msb_c) <= '1'; -- force RS1 = r0 via OPA = csr (hacky! CSR read access without actual CSR_read_en will always return 0)
+            ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '1'; -- ALU.OPA = PC (for AUIPC)
+            if (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_lui_c(5)) then -- LUI
+              ctrl_nxt(ctrl_alu_opa_mux_msb_c) <= '1'; -- ALU.OPA = 0
             end if;
-            ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '1'; -- use IMM as ALU.OPB
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_add_c; -- actual ALU operation
             ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "00"; -- RF input = ALU result
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
@@ -744,7 +752,7 @@ begin
           when opcode_load_c | opcode_store_c => -- load/store
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- use RS1 as ALU.OPA
-            ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '1'; -- use IMM as ALU.OPB
+            ctrl_nxt(ctrl_alu_opb_mux_c)     <= '1'; -- use IMM as ALU.OPB
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_add_c; -- actual ALU operation
             ctrl_nxt(ctrl_bus_mar_we_c) <= '1'; -- write to MAR
             ctrl_nxt(ctrl_bus_mdo_we_c) <= '1'; -- write to MDO (only relevant for stores)
@@ -753,7 +761,7 @@ begin
           when opcode_branch_c => -- branch instruction
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '1'; -- use PC as ALU.OPA
-            ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '1'; -- use IMM as ALU.OPB
+            ctrl_nxt(ctrl_alu_opb_mux_c)     <= '1'; -- use IMM as ALU.OPB
             ctrl_nxt(ctrl_alu_opc_mux_c)     <= '1'; -- use RS2 as ALU.OPC
             execute_engine.state_nxt         <= BRANCH;
 
@@ -765,7 +773,7 @@ begin
             else -- JALR
               ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- use RS1 as ALU.OPA
             end if;
-            ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '1'; -- use IMM as ALU.OPB
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
             -- save return address --
             ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "10"; -- RF input = next PC (save return address)
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
@@ -789,6 +797,8 @@ begin
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
             csr.re_nxt <= csr_acc_valid; -- always read CSR if valid access
+            ctrl_nxt(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= ctrl(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- copy rs1_addr to rs2_addr (for CSR mod)
+            --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system
               case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
                 when funct12_ecall_c => -- ECALL
@@ -796,12 +806,12 @@ begin
                 when funct12_ebreak_c => -- EBREAK
                   trap_ctrl.break_point <= '1';
                 when funct12_mret_c => -- MRET
-                  trap_ctrl.env_end         <= '1';
-                  execute_engine.pc_nxt     <= csr.mepc;
-                  fetch_engine.reset        <= '1';
+                  trap_ctrl.env_end <= '1';
+                  execute_engine.pc_nxt <= csr.mepc;
+                  fetch_engine.reset <= '1';
                   execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
-                when funct12_wfi_c => -- WFI = "CPU sleep"
-                  execute_engine.sleep_nxt <= '1'; -- good night
+                when funct12_wfi_c => -- WFI (CPU sleep)
+                  execute_engine.sleep_nxt <= '1'; -- sleep well
                 when others => -- undefined
                   NULL;
               end case;
@@ -818,45 +828,39 @@ begin
 
       when CSR_ACCESS => -- write CSR data to RF, write ALU.res to CSR
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_alu_opa_mux_msb_c) <= '0'; -- default
-        ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- default
-        ctrl_nxt(ctrl_alu_opb_mux_msb_c) <= '0'; -- default
-        ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '0'; -- default
-        ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_or_c; -- default ALU operation = OR
         case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
           -- register operations --
           when funct3_csrrw_c => -- CSRRW
-            ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- OPA = rs1
-            ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '1'; -- OPB = rs1
-            ctrl_nxt(ctrl_alu_opb_mux_msb_c) <= '1'; -- OPB = rs1
+            ctrl_nxt(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) <= "11"; -- OPA = 0
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= '0'; -- OPB = rs2 (which is rs1 here)
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_or_c; -- actual ALU operation = OR
             csr.we_nxt <= csr_acc_valid; -- always write CSR if valid access
           when funct3_csrrs_c => -- CSRRS
-            ctrl_nxt(ctrl_alu_opa_mux_msb_c) <= '1'; -- OPA = csr
-            ctrl_nxt(ctrl_alu_opb_mux_msb_c) <= '1'; -- OPB = rs1
+            ctrl_nxt(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) <= "10"; -- OPA = CSR
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= '0'; -- OPB = rs2 (which is rs1 here)
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_or_c; -- actual ALU operation = OR
             csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if rs1 is not zero_reg and if valid access
           when funct3_csrrc_c => -- CSRRC
-            ctrl_nxt(ctrl_alu_opa_mux_msb_c) <= '1'; -- OPA = csr
-            ctrl_nxt(ctrl_alu_opb_mux_msb_c) <= '1'; -- OPB = rs1
+            ctrl_nxt(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) <= "10"; -- OPA = CSR
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= '0'; -- OPB = rs2 (which is rs1 here)
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_bclr_c; -- actual ALU operation = bit clear
             csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if rs1 is not zero_reg and if valid access
           -- immediate operations --
           when funct3_csrrwi_c => -- CSRRWI
-            ctrl_nxt(ctrl_alu_opa_mux_msb_c) <= '1'; -- force OPA=rs1=0 via OPA = csr (hacky! CSR read access without actual CSR_read_en will always return 0)
-            ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '1'; -- OPB = immediate
+            ctrl_nxt(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) <= "11"; -- OPA = 0
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- OPB = immediate
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_or_c; -- actual ALU operation = OR
             csr.we_nxt <= csr_acc_valid; -- always write CSR if valid access
           when funct3_csrrsi_c => -- CSRRSI
-            ctrl_nxt(ctrl_alu_opa_mux_msb_c) <= '1'; -- OPA = csr
-            ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '1'; -- OPB = immediate
+            ctrl_nxt(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) <= "10"; -- OPA = CSR
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- OPB = immediate
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_or_c; -- actual ALU operation = OR
-            csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if UIMM5 is not zero (bits from rs1 filed) and if valid access
+            csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if UIMM5 is not zero (bits from rs1 field) and if valid access
           when funct3_csrrci_c => -- CSRRCI
-            ctrl_nxt(ctrl_alu_opa_mux_msb_c) <= '1'; -- OPA = csr
-            ctrl_nxt(ctrl_alu_opb_mux_lsb_c) <= '1'; -- OPB = immediate
+            ctrl_nxt(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) <= "10"; -- OPA = CSR
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- OPB = immediate
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_bclr_c; -- actual ALU operation = bit clear
-            csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if UIMM5 is not zero (bits from rs1 filed) and if valid access
+            csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if UIMM5 is not zero (bits from rs1 field) and if valid access
           when others => -- undefined
             NULL;
         end case;
@@ -932,7 +936,7 @@ begin
 
   -- Illegal CSR Access Check ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  invalid_csr_access_check: process(execute_engine, csr)
+  invalid_csr_access_check: process(execute_engine, csr.privilege)
     variable is_m_mode_v : std_ulogic;
   begin
     -- are we in machine mode? --
