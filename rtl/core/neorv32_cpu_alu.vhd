@@ -120,23 +120,23 @@ begin
   -- -------------------------------------------------------------------------------------------
   input_op_mux: process(ctrl_i, csr_i, pc2_i, rs1_i, rs2_i, imm_i)
   begin
-    -- opa (first ALU input operand) --
+    -- operand a (first ALU input operand) --
     case ctrl_i(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) is
       when "00"   => opa <= rs1_i;
       when "01"   => opa <= pc2_i;
       when others => opa <= csr_i;
     end case;
-    -- opb (second ALU input operand) --
+    -- operand b (second ALU input operand) --
     if (ctrl_i(ctrl_alu_opb_mux_c) = '0') then
       opb <= rs2_i;
     else
       opb <= imm_i;
     end if;
-    -- opc (second operand for comparison and SUB) --
+    -- operand c (third ALU input operand for comparison and SUB) --
     if (ctrl_i(ctrl_alu_opc_mux_c) = '0') then
-      opc <= imm_i;
-    else
       opc <= rs2_i;
+    else
+      opc <= imm_i;
     end if;
   end process input_op_mux;
 
@@ -150,10 +150,10 @@ begin
   cmp_less <= cmp_sub(cmp_sub'left); -- carry (borrow) indicates a "less"
   sub_res  <= cmp_sub(data_width_c-1 downto 0); -- use the less-comparator also for SUB operations
 
-  -- equal (x = y) --
-  cmp_equal <= '1' when (rs1_i = opc) else '0';
+  -- equal (for branch check only) --
+  cmp_equal <= '1' when (rs1_i = rs2_i) else '0';
 
-  -- output for branch condition evaluation -
+  -- output for branch condition evaluation --
   cmp_o(alu_cmp_equal_c) <= cmp_equal;
   cmp_o(alu_cmp_less_c)  <= cmp_less;
 
@@ -161,7 +161,7 @@ begin
   -- Binary Adder ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   add_res <= std_ulogic_vector(unsigned(opa) + unsigned(opb));
-  add_o   <= add_res; -- direct output
+  add_o   <= add_res; -- direct output (for PC modification)
 
 
   -- Iterative Shifter Unit -----------------------------------------------------------------
