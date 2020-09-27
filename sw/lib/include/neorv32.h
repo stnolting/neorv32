@@ -443,7 +443,7 @@ enum NEORV32_PWM_DUTY_enum {
  **************************************************************************/
 /**@{*/
 /** TRNG control/data register (r/w) */
-#define TRNG_CT   (*(IO_REG32 0xFFFFFFC0UL))
+#define TRNG_CT (*(IO_REG32 0xFFFFFFC0UL))
 
 /** TRNG control/data register bits */
 enum NEORV32_TRNG_CT_enum {
@@ -529,6 +529,7 @@ enum NEORV32_TRNG_CT_enum {
 #include "neorv32_rte.h"
 
 // io/peripheral devices
+#include "neorv32_cfu.h"
 #include "neorv32_gpio.h"
 #include "neorv32_mtime.h"
 #include "neorv32_pwm.h"
