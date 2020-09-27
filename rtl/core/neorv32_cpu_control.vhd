@@ -621,32 +621,28 @@ begin
     ctrl_nxt(ctrl_bus_size_lsb_c)   <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- transfer size lsb (00=byte, 01=half-word)
     ctrl_nxt(ctrl_bus_size_msb_c)   <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- transfer size msb (10=word, 11=?)
     ctrl_nxt(ctrl_cp_cmd2_c     downto ctrl_cp_cmd0_c)     <= execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c); -- CP operation
-    ctrl_nxt(ctrl_cp_id_msb_c   downto ctrl_cp_id_lsb_c)   <= cp_sel_muldiv_c; -- only CP0 (MULDIV) implemented yet
+    ctrl_nxt(ctrl_alu_cmd2_c    downto ctrl_alu_cmd0_c)    <= alu_cmd_add_c; -- default ALU operation: ADD(I)
+    ctrl_nxt(ctrl_cp_id_msb_c   downto ctrl_cp_id_lsb_c)   <= cp_sel_muldiv_c; -- only CP0 (=MULDIV) implemented yet
     ctrl_nxt(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= ctrl(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c); -- keep rd addr
     ctrl_nxt(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= ctrl(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- keep rs1 addr
     ctrl_nxt(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= ctrl(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c); -- keep rs2 addr
 
-    -- is immediate operation? --
-    alu_immediate_v := '0';
-    if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then
-      alu_immediate_v := '1';
-    end if;
+    -- is immediate ALU operation? --
+    alu_immediate_v := not execute_engine.i_reg(instr_opcode_msb_c-1);
 
-    -- is rs1 = r0? --
-    rs1_is_r0_v := '0';
-    if (execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") then
-      rs1_is_r0_v := '1';
-    end if;
+    -- is rs1 == r0? --
+    rs1_is_r0_v := not or_all_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c));
+
 
     -- state machine --
     case execute_engine.state is
 
       when SYS_WAIT => -- System delay cycle (used to wait for side effects to kick in) ((and to init r0 with zero if it is a physical register))
       -- ------------------------------------------------------------
+        -- set reg_file's r0 to zero --
         if (rf_r0_is_reg_c = true) then -- is r0 implemented as physical register, which has to be set to zero?
-          -- set reg_file.r0 to zero
           ctrl_nxt(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) <= (others => '0'); -- rd addr = r0
-          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output (results zero since there is no valid CSR_read request)
+          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output (hacky! results zero since there is no valid CSR_read request)
           ctrl_nxt(ctrl_rf_r0_we_c) <= '1'; -- allow write access to r0
           ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
         end if;
@@ -700,25 +696,24 @@ begin
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- use RS1 as ALU.OPA
             ctrl_nxt(ctrl_alu_opb_mux_c)     <= alu_immediate_v; -- use IMM as ALU.OPB for immediate operations
-            ctrl_nxt(ctrl_alu_opc_mux_c)     <= not alu_immediate_v;
+            ctrl_nxt(ctrl_alu_opc_mux_c)     <= alu_immediate_v; -- use IMM as ALU.OPC for immediate operations (SLT(I)(U))
             ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "00"; -- RF input = ALU result
 
             -- actual ALU operation (re-coding) --
             case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-              when funct3_subadd_c => -- ADD(I) / SUB
-                if (alu_immediate_v = '0') and (execute_engine.i_reg(instr_funct7_msb_c-1) = '1') then -- not immediate and funct7 => SUB
+              when funct3_sll_c  => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_shift_c; -- SLL(I)
+              when funct3_slt_c  => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_slt_c;   -- SLT(I)
+              when funct3_sltu_c => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_slt_c;   -- SLTU(I)
+              when funct3_xor_c  => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_xor_c;   -- XOR(I)
+              when funct3_sr_c   => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_shift_c; -- SRL(I) / SRA(I)
+              when funct3_or_c   => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_or_c;    -- OR(I)
+              when funct3_and_c  => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_and_c;   -- AND(I)
+              when others => -- ADD(I) / SUB
+                if (alu_immediate_v = '0') and (execute_engine.i_reg(instr_funct7_msb_c-1) = '1') then -- not an immediate op and funct7.6 set => SUB
                   ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_sub_c; -- SUB
                 else
                   ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_add_c; -- ADD(I)
                 end if;
-              when funct3_sll_c    => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_shift_c; -- SLL(I)
-              when funct3_slt_c    => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_slt_c;   -- SLT(I)
-              when funct3_sltu_c   => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_slt_c;   -- SLTU(I)
-              when funct3_xor_c    => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_xor_c;   -- XOR(I)
-              when funct3_sr_c     => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_shift_c; -- SRL(I) / SRA(I)
-              when funct3_or_c     => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_or_c;    -- OR(I)
-              when funct3_and_c    => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_and_c;   -- AND(I)
-              when others          => ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= (others => '0'); -- undefined
             end case;
 
             -- cp access? --
@@ -732,7 +727,7 @@ begin
                (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) or -- SR shift operation?
                ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_lsb_c) = '1')) then -- MULDIV?
               execute_engine.state_nxt <= ALU_WAIT;
-            else
+            else -- single cycle ALU operation
               ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
               execute_engine.state_nxt <= DISPATCH;
             end if;
@@ -741,7 +736,7 @@ begin
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '1'; -- ALU.OPA = PC (for AUIPC only)
             if (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_lui_c(5)) then -- LUI
-              ctrl_nxt(ctrl_alu_opa_mux_msb_c) <= '1'; -- ALU.OPA = CSR = 0 (hacky: csr.result is 0 since there was no csr_read_request)
+              ctrl_nxt(ctrl_alu_opa_mux_msb_c) <= '1'; -- ALU.OPA = CSR = 0 (hacky: csr.result is 0 since there is no csr_read_request)
             end if;
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_add_c; -- actual ALU operation = ADD
@@ -760,9 +755,9 @@ begin
 
           when opcode_branch_c => -- branch instruction
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '1'; -- use PC as ALU.OPA
-            ctrl_nxt(ctrl_alu_opb_mux_c)     <= '1'; -- use IMM as ALU.OPB
-            ctrl_nxt(ctrl_alu_opc_mux_c)     <= '1'; -- use RS2 as ALU.OPC
+            ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '1'; -- use PC as ALU.OPA (branch target address base)
+            ctrl_nxt(ctrl_alu_opb_mux_c)     <= '1'; -- use IMM as ALU.OPB (branch target address offset)
+            ctrl_nxt(ctrl_alu_opc_mux_c)     <= '0'; -- use RS2 as ALU.OPC (for branch condition check)
             execute_engine.state_nxt         <= BRANCH;
 
           when opcode_jal_c | opcode_jalr_c => -- jump and link (with register)
@@ -783,21 +778,27 @@ begin
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
-            if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) and (CPU_EXTENSION_RISCV_Zifencei = true) then -- FENCE.I
-              fetch_engine.reset          <= '1';
-              execute_engine.if_rst_nxt   <= '1'; -- this is a non-linear PC modification
-              execute_engine.pc_nxt       <= execute_engine.next_pc; -- "refetch" next instruction (only relevant for fence.i)
-              ctrl_nxt(ctrl_bus_fencei_c) <= '1';
+            -- foe simplicity: internally, fence and fence.i perform the same operations ;)
+            -- FENCE.I --
+            if (CPU_EXTENSION_RISCV_Zifencei = true) then
+              execute_engine.pc_nxt     <= execute_engine.next_pc; -- "refetch" next instruction
+              execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
+              fetch_engine.reset        <= '1';
+              if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) then
+                ctrl_nxt(ctrl_bus_fencei_c) <= '1';
+              end if;
             end if;
-            if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fence_c(0)) then -- FENCE
+            -- FENCE --
+            if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fence_c(0)) then
               ctrl_nxt(ctrl_bus_fence_c) <= '1';
             end if;
+            --
             execute_engine.state_nxt <= SYS_WAIT;
 
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
             csr.re_nxt <= csr_acc_valid; -- always read CSR if valid access
-            ctrl_nxt(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= (others => '0'); -- set rs1_addr to r0 (zero)
+            ctrl_nxt(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= (others => '0'); -- set rs1_addr to r0 (zero) (for CSR mod)
             ctrl_nxt(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= ctrl(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- copy rs1_addr to rs2_addr (for CSR mod)
             --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system
@@ -839,7 +840,7 @@ begin
             ctrl_nxt(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) <= "10"; -- OPA = CSR
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_or_c; -- actual ALU operation = OR
             csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if rs1 is not zero_reg and if valid access
-          when others => -- CSRRC(I)
+          when others => -- CSRRC(I) -- FIXME?!
             ctrl_nxt(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) <= "10"; -- OPA = CSR
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_bclr_c; -- actual ALU operation = bit clear
             csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if rs1 is not zero_reg and if valid access
@@ -847,7 +848,7 @@ begin
         -- RF write back --
         ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output
         ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-        execute_engine.state_nxt  <= DISPATCH; -- FIXME? should be SYS_WAIT? have another cycle to let side-effects kick in
+        execute_engine.state_nxt  <= SYS_WAIT; -- have another cycle to let side-effects kick in
 
       when ALU_WAIT => -- wait for multi-cycle ALU operation (shifter or CP) to finish
       -- ------------------------------------------------------------
@@ -894,7 +895,7 @@ begin
         ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "01"; -- RF input = memory input (only relevant for LOAD)
         if (ma_load_i = '1') or (be_load_i = '1') or (ma_store_i = '1') or (be_store_i = '1') then -- abort if exception
           execute_engine.state_nxt <= SYS_WAIT;
-        elsif (bus_d_wait_i = '0') then -- wait here for bus to finish transaction
+        elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then -- LOAD
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
           end if;
@@ -930,7 +931,7 @@ begin
       when x"300" => csr_acc_valid <= is_m_mode_v; -- mstatus
       when x"301" => csr_acc_valid <= is_m_mode_v; -- misa
       when x"304" => csr_acc_valid <= is_m_mode_v; -- mie
-      when x"305" => csr_acc_valid <= is_m_mode_v; -- mtvev
+      when x"305" => csr_acc_valid <= is_m_mode_v; -- mtvec
       when x"340" => csr_acc_valid <= is_m_mode_v; -- mscratch
       when x"341" => csr_acc_valid <= is_m_mode_v; -- mepc
       when x"342" => csr_acc_valid <= is_m_mode_v; -- mcause
@@ -1451,10 +1452,10 @@ begin
               csr.mtval <= (others => '0'); -- mtval is zero for interrupts
             else -- for EXCEPTIONS (according to their priority)
               csr.mepc <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
-              if (trap_ctrl.cause(4 downto 0) = trap_iba_c(4 downto 0)) or -- instr access error OR
-                 (trap_ctrl.cause(4 downto 0) = trap_ima_c(4 downto 0)) or -- misaligned instruction OR
+              if (trap_ctrl.cause(4 downto 0) = trap_iba_c(4 downto 0)) or -- instruction access error OR
+                 (trap_ctrl.cause(4 downto 0) = trap_ima_c(4 downto 0)) or -- misaligned instruction address OR
                  (trap_ctrl.cause(4 downto 0) = trap_brk_c(4 downto 0)) or -- breakpoint OR
-                 (trap_ctrl.cause(4 downto 0) = trap_menv_c(4 downto 0)) then -- env call OR
+                 (trap_ctrl.cause(4 downto 0) = trap_menv_c(4 downto 0)) then -- environment call
                 csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction
               elsif (trap_ctrl.cause(4 downto 0) = trap_iil_c(4 downto 0)) then -- illegal instruction
                 csr.mtval <= execute_engine.i_reg; -- faulting instruction itself
