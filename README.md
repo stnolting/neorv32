@@ -124,7 +124,7 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_processor.png)
 
 The NEORV32 Processor provides a full-scale microcontroller-like SoC based on the NEORV32 CPU. The setup
-is highly customizable via the processor top's generics.
+is highly customizable via the processor's top generics.
 
 - Optional processor-internal data and instruction memories (**DMEM** / **IMEM**)
 - Optional internal **Bootloader** with UART console and automatic SPI flash boot option
@@ -154,7 +154,7 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
 
 
 **General**:
-  * Modified Harvard architecture (separate CPU interfaces for data and instructions; NEORV32 processor: Single processor-internal bus via bus I/D mux)
+  * Modified Harvard architecture (separate CPU interfaces for data and instructions; NEORV32 processor: Single processor-internal bus via I/D mux)
   * Two stages in-order pipeline (FETCH, EXECUTE); each stage uses a multi-cycle processing scheme
   * No hardware support of unaligned accesses - they will trigger an exception
   * Little-endian byte order
@@ -238,40 +238,40 @@ The NEORV32-specific extensions are always enabled and are indicated via the `X`
 This chapter shows exemplary implementation results of the NEORV32 CPU for an **Intel Cyclone IV EP4CE22F17C6N FPGA** on
 a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 19.1** ("balanced implementation"). The timing
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
-of the CPU's generics is assumed (e.g., no PMP). No constraints were used at all.
+of the CPU's generics is assumed (for example no PMP). No constraints were used at all.
 
-Results generated for hardware version: `1.3.6.5`
+Results generated for hardware version: `1.4.3.3`
 
-| CPU Configuration                | LEs        | FFs      | Memory bits | DSPs | f_max   |
-|:---------------------------------|:----------:|:--------:|:-----------:|:----:|:-------:|
-| `rv32i`                          |       1113 |      479 |       2048  |    0 | 109 MHz |
-| `rv32i`   + `Zicsr` + `Zifencei` |       1851 |      817 |       2048  |    0 | 100 MHz |
-| `rv32im`  + `Zicsr` + `Zifencei` |       2462 |     1065 |       2048  |    0 | 100 MHz |
-| `rv32imc` + `Zicsr` + `Zifencei` |       2714 |     1064 |       2048  |    0 | 100 MHz |
-| `rv32emc` + `Zicsr` + `Zifencei` |       2717 |     1064 |       1024  |    0 | 100 MHz |
+| CPU Configuration                      | LEs        | FFs      | Memory bits | DSPs | f_max   |
+|:---------------------------------------|:----------:|:--------:|:-----------:|:----:|:-------:|
+| `rv32i`                                |       1033 |      567 |       2048  |    0 | 120 MHz |
+| `rv32i`   + `u` + `Zicsr` + `Zifencei` |       1778 |      806 |       2048  |    0 | 103 MHz |
+| `rv32im`  + `u` + `Zicsr` + `Zifencei` |       2389 |     1052 |       2048  |    0 | 102 MHz |
+| `rv32imc` + `u` + `Zicsr` + `Zifencei` |       2644 |     1053 |       2048  |    0 | 106 MHz |
+| `rv32emc` + `u` + `Zicsr` + `Zifencei` |       2646 |     1050 |       1024  |    0 | 103 MHz |
 
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version: `1.3.6.5`
+Results generated for hardware version: `1.4.3.3`
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|:---:|:---:|:-----------:|:----:|
-| BOOT ROM  | Bootloader ROM (default 4kB)                         |   4 |   1 |      32 768 |    0 |
-| BUSSWITCH | Mux for CPU I & D interfaces                         |  62 |   8 |           0 |    0 |
+| BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |    0 |
+| BUSSWITCH | Mux for CPU I & D interfaces                         |  59 |   8 |           0 |    0 |
 | CFU       | Custom functions unit                                |   - |   - |           - |    - |
-| DEVNULL   | Dummy device                                         |   3 |   1 |           0 |    0 |
-| DMEM      | Processor-internal data memory (default 8kB)         |  12 |   2 |      65 536 |    0 |
-| GPIO      | General purpose input/output ports                   |  40 |  33 |           0 |    0 |
-| IMEM      | Processor-internal instruction memory (default 16kb) |   7 |   2 |     131 072 |    0 |
-| MTIME     | Machine system timer                                 | 266 | 166 |           0 |    0 |
+| DEVNULL   | Dummy device                                         |   1 |   1 |           0 |    0 |
+| DMEM      | Processor-internal data memory (default 8kB)         |  13 |   2 |      65 536 |    0 |
+| GPIO      | General purpose input/output ports                   |  69 |  65 |           0 |    0 |
+| IMEM      | Processor-internal instruction memory (default 16kb) |   9 |   2 |     131 072 |    0 |
+| MTIME     | Machine system timer                                 | 281 | 166 |           0 |    0 |
 | PWM       | Pulse-width modulation controller                    |  72 |  69 |           0 |    0 |
-| SPI       | Serial peripheral interface                          | 198 | 125 |           0 |    0 |
+| SPI       | Serial peripheral interface                          | 189 | 125 |           0 |    0 |
 | SYSINFO   | System configuration information memory              |  10 |   9 |           0 |    0 |
-| TRNG      | True random number generator                         | 105 |  93 |           0 |    0 |
-| TWI       | Two-wire interface                                   |  75 |  44 |           0 |    0 |
-| UART      | Universal asynchronous receiver/transmitter          | 153 | 108 |           0 |    0 |
-| WDT       | Watchdog timer                                       |  59 |  45 |           0 |    0 |
+| TRNG      | True random number generator                         | 175 | 132 |           0 |    0 |
+| TWI       | Two-wire interface                                   |  72 |  44 |           0 |    0 |
+| UART      | Universal asynchronous receiver/transmitter          | 175 | 132 |           0 |    0 |
+| WDT       | Watchdog timer                                       |  60 |  45 |           0 |    0 |
 
 
 ### NEORV32 Processor - Exemplary FPGA Setups
@@ -281,13 +281,13 @@ no external memory interface and only internal instruction and data memories. IM
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
 to FPGA pins - except for the Wishbone bus and the interrupt signals.
 
-Results generated for hardware version: `1.4.0.0`
+Results generated for hardware version: `1.4.3.3`
 
-| Vendor  | FPGA                              | Board            | Toolchain                  | Strategy | CPU Configuration                         | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency      |
-|:--------|:----------------------------------|:-----------------|:---------------------------|:-------- |:------------------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|---------------:|
-| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 19.1    | balanced | `rv32imcu` + `Zicsr` + `Zifencei` + `PMP` | 4020 (18%) | 1766  (8%) | 0 (0%) | 231424 (38%) |          - |        - |        100 MHz |
-| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (Synplify Pro) | default  | `rv32icu`  + `Zicsr` + `Zifencei`         | 4249 (80%) | 1617 (31%) | 0 (0%) |            - |   12 (40%) | 4 (100%) |  *c* 20.25 MHz |
-| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2              | default  | `rv32imcu` + `Zicsr` + `Zifencei` + `PMP` | 2447 (12%) | 1803  (4%) | 0 (0%) |            - |    8 (16%) |        - |    *c* 100 MHz |
+| Vendor  | FPGA                              | Board            | Toolchain                  | Strategy | CPU Configuration                              | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency     |
+|:--------|:----------------------------------|:-----------------|:---------------------------|:-------- |:-----------------------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|--------------:|
+| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 19.1    | balanced | `rv32imc` + `u` + `Zicsr` + `Zifencei` + `PMP` | 4120 (18%) | 1944  (9%) | 0 (0%) | 231424 (38%) |          - |        - |       103 MHz |
+| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (Synplify Pro) | default  | `rv32ic`  + `u` + `Zicsr` + `Zifencei`         | 4288 (81%) | 1693 (32%) | 0 (0%) |            - |   12 (40%) | 4 (100%) |  *c* 22.5 MHz |
+| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2              | default  | `rv32imc` + `u` + `Zicsr` + `Zifencei` + `PMP` | 2385 (11%) | 2008  (5%) | 0 (0%) |            - |    8 (16%) |        - |   *c* 100 MHz |
 
 **_Notes_**
 * The Lattice iCE40 UltraPlus setup uses the FPGA's SPRAM memory primitives for the internal IMEM and DMEM (each 64kb).
@@ -372,7 +372,7 @@ Alternative top entities, like the simplified ["hello world" test setup](#Create
 in [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) folder.
 
 
-### CPU
+### NEORV32 CPU
 
 ```vhdl
 entity neorv32_cpu is
@@ -435,7 +435,7 @@ end neorv32_cpu;
 ```
 
 
-### Processor
+### NEORV32 Processor
 
 ```vhdl
 entity neorv32_top is
@@ -674,9 +674,9 @@ Other implied or used projects might have different licensing - see their docume
 
 #### Citation
 
-If you are using the NEORV32 Processor in some kind of publication, please cite it as follows:
+If you are using the NEORV32 Processor/CPU in some kind of publication, please cite it as follows:
 
-> S. Nolting, "The NEORV32 Processor", github.com/stnolting/neorv32
+> S. Nolting, "The NEORV32 Processor/CPU", github.com/stnolting/neorv32
 
 #### BSD 3-Clause License
 
