@@ -137,7 +137,7 @@ uint32_t neorv32_gpio_port_get(void) {
  *
  * @note The pin-change IRQ will trigger on any transition (rising and falling edge) for any enabled input pin.
  *
- * @param[in] pin_en Mask to select which input pins can cause a pin-change IRQ (32-bit), 1 = pin enabled.
+ * @param[in] pin_sel Mask to select which input pins can cause a pin-change IRQ (32-bit), 1 = pin enabled.
  **************************************************************************/
 void neorv32_gpio_pin_change_config(uint32_t pin_sel) {
 
