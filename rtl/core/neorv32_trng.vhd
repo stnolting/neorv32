@@ -104,7 +104,6 @@ architecture neorv32_trng_rtl of neorv32_trng is
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
   signal wren   : std_ulogic; -- full word write enable
   signal rden   : std_ulogic; -- read enable
 
@@ -140,7 +139,6 @@ begin
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = trng_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= trng_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 

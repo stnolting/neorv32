@@ -917,7 +917,7 @@ begin
 
   -- Illegal CSR Access Check ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  invalid_csr_access_check: process(execute_engine, csr.privilege)
+  invalid_csr_access_check: process(execute_engine.i_reg, csr.privilege)
     variable is_m_mode_v : std_ulogic;
   begin
     -- are we in machine mode? --
@@ -976,7 +976,7 @@ begin
 
   -- Illegal Instruction Check --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  illegal_instruction_check: process(execute_engine, csr, ctrl_nxt, csr_acc_valid)
+  illegal_instruction_check: process(execute_engine, csr_acc_valid)
   begin
     -- illegal instructions are checked in the EXECUTE stage
     -- the execute engine will only commit valid instructions
@@ -1668,9 +1668,9 @@ begin
             csr_rdata_o <= x"000" & csr.minstreth(19 downto 0); -- only the lowest 20 bit!
 
           -- machine information registers --
-          when x"f11" => -- R/-: mvendorid
+          when x"f11" => -- R/-: mvendorid - vendor ID
             csr_rdata_o <= (others => '0'); -- not assigned
-          when x"f12" => -- R/-: marchid
+          when x"f12" => -- R/-: marchid - architecture ID
             csr_rdata_o <= (others => '0'); -- not assigned
           when x"f13" => -- R/-: mimpid - implementation ID / NEORV32 version
             csr_rdata_o <= hw_version_c;

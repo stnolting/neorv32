@@ -142,7 +142,7 @@ begin
   begin
     if rising_edge(clk_i) then
       -- transfer ack --
-      ack_o <= wr_en or rd_en;
+      ack_o <= wr_en or rd_en; -- required for the CPU to check the CFU is answering a bus read OR write request
 
       -- write access --
       if (wr_en = '1') then
@@ -163,15 +163,13 @@ begin
       -- read access --
       data_o <= (others => '0'); -- make sure the output is zero if there is no actual read access
       if (rd_en = '1') then
-        if (addr = cfu_reg0_addr_c) then
-          data_o <= cfu_reg_out(0);
-        elsif (addr = cfu_reg1_addr_c) then
-          data_o <= cfu_reg_out(1);
-        elsif (addr = cfu_reg2_addr_c) then
-          data_o <= cfu_reg_out(2);
-        else -- addr = cfu_reg3_addr_c
-          data_o <= cfu_reg_out(3);
-        end if;
+        case addr is
+          when cfu_reg0_addr_c => data_o <= cfu_reg_out(0);
+          when cfu_reg1_addr_c => data_o <= cfu_reg_out(1);
+          when cfu_reg2_addr_c => data_o <= cfu_reg_out(2);
+          when cfu_reg3_addr_c => data_o <= cfu_reg_out(3);
+          when others          => data_o <= (others => '0');
+        end case;
       end if;
     end if;
   end process rw_access;

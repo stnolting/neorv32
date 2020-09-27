@@ -147,16 +147,14 @@ begin
             data_o <= mtime_hi;
           when mtime_cmp_lo_addr_c => -- mtimecmp LOW
             data_o <= mtimecmp_lo;
-          when mtime_cmp_hi_addr_c => -- mtimecmp HIGH
+          when others => -- mtime_cmp_hi_addr_c -  mtimecmp HIGH
             data_o <= mtimecmp_hi;
-          when others =>
-            data_o <= (others => '0');
         end case;
       end if;
     end if;
   end process rd_access;
 
-  -- time output for cpu --
+  -- system time output for cpu --
   time_o <= mtime_hi & mtime_lo(31 downto 00);
 
 
