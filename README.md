@@ -24,7 +24,7 @@ The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC
 on the RISC-V-compliant NEORV32 CPU. The project consists of two main parts:
 
 
-**[NEORV32 CPU](#CPU-Features)**
+### [NEORV32 CPU](#CPU-Features)
 
 The CPU implements an `rv32i RISC-V` core with optional `C`, `E`, `M`, `U`, `Zicsr`, `Zifencei` and
 `PMP` (physical memory protection) extensions. It passes the official [RISC-V compliance tests](https://github.com/stnolting/neorv32_riscv_compliance)
@@ -35,7 +35,7 @@ If you do not want to use the NEORV32 Processor setup, you can also use the CPU 
 stand-alone mode and build your own SoC around it.
 
 
-**[NEORV32 Processor](#Processor-Features)**
+### [NEORV32 Processor](#Processor-Features)
 
 Based on the NEORV32 CPU, the NEORV32 Processor is a full-scale RISC-V microcontroller system
 that already provides common peripherals like GPIO, serial interfaces, timers, embedded
