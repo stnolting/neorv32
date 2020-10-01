@@ -623,7 +623,7 @@ Use the bootloader console to upload the `neorv32_exe.bin` executable and run yo
   CLK:  0x0134FD90 Hz
   USER: 0x0001CE40
   MISA: 0x42801104
-  CONF: 0x03FF0035
+  PROC: 0x03FF0035
   IMEM: 0x00010000 bytes @ 0x00000000
   DMEM: 0x00010000 bytes @ 0x80000000
   
