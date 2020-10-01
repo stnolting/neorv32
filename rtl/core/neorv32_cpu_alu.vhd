@@ -56,14 +56,11 @@ entity neorv32_cpu_alu is
     rs2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
     pc2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- delayed PC
     imm_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
-    csr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
     -- data output --
     cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
     add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- OPA + OPB
     res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
     -- co-processor interface --
-    cp_opa_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- co-processor operand a
-    cp_opb_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- co-processor operand b
     cp0_start_o : out std_ulogic; -- trigger co-processor 0
     cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
     cp0_valid_i : in  std_ulogic; -- co-processor 0 result valid
@@ -118,27 +115,9 @@ begin
 
   -- Operand Mux ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  input_op_mux: process(ctrl_i, csr_i, pc2_i, rs1_i, rs2_i, imm_i)
-  begin
-    -- operand a (first ALU input operand) --
-    case ctrl_i(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) is
-      when "00"   => opa <= rs1_i;
-      when "01"   => opa <= pc2_i;
-      when others => opa <= csr_i;
-    end case;
-    -- operand b (second ALU input operand) --
-    if (ctrl_i(ctrl_alu_opb_mux_c) = '0') then
-      opb <= rs2_i;
-    else
-      opb <= imm_i;
-    end if;
-    -- operand c (third ALU input operand for comparison and SUB) --
-    if (ctrl_i(ctrl_alu_opc_mux_c) = '0') then
-      opc <= rs2_i;
-    else
-      opc <= imm_i;
-    end if;
-  end process input_op_mux;
+  opa <= rs1_i when (ctrl_i(ctrl_alu_opa_mux_c) = '0') else pc2_i; -- operand a (first ALU input operand)
+  opb <= rs2_i when (ctrl_i(ctrl_alu_opb_mux_c) = '0') else imm_i; -- operand b (second ALU input operand)
+  opc <= rs2_i when (ctrl_i(ctrl_alu_opc_mux_c) = '0') else imm_i; -- operand c (third ALU input operand for comparison and SUB)
 
 
   -- Comparator Unit ------------------------------------------------------------------------
@@ -241,12 +220,8 @@ begin
   -- co-processor operation running? --
   cp_ctrl.halt <= cp_ctrl.busy or cp_ctrl.start;
 
-  -- co-processor operands --
-  cp_opa_o <= opa;
-  cp_opb_o <= opb;
-
   -- co-processor result --
-  cp_res <= cp0_data_i or cp1_data_i; -- only the selcted cp may output data != 0
+  cp_res <= cp0_data_i or cp1_data_i; -- only the selected cp may output data != 0
 
 
   -- ALU Function Select --------------------------------------------------------------------
@@ -257,7 +232,7 @@ begin
       when alu_cmd_xor_c   => alu_res <= opa xor opb;
       when alu_cmd_or_c    => alu_res <= opa or  opb;
       when alu_cmd_and_c   => alu_res <= opa and opb;
-      when alu_cmd_bclr_c  => alu_res <= opa and (not opb);
+      when alu_cmd_movb_c  => alu_res <= opb;
       when alu_cmd_sub_c   => alu_res <= sub_res;
       when alu_cmd_add_c   => alu_res <= add_res;
       when alu_cmd_shift_c => alu_res <= shifter.sreg;

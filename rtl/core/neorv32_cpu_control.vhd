@@ -73,13 +73,12 @@ entity neorv32_cpu_control is
     instr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- instruction
     cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
     alu_add_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU.add result
+    alu_res_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU processing result
     -- data output --
     imm_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- immediate
     fetch_pc_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
     curr_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- current PC (corresponding to current instruction)
     next_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- next PC (corresponding to current instruction)
-    -- csr data interface --
-    csr_wdata_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR write data
     csr_rdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
     -- interrupts (risc-v compliant) --
     msw_irq_i     : in  std_ulogic; -- machine software interrupt
@@ -167,6 +166,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pc_nxt       : std_ulogic_vector(data_width_c-1 downto 0);
     next_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- next PC, corresponding to next instruction to be executed
     last_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- PC of last executed instruction
+    last_pc_nxt  : std_ulogic_vector(data_width_c-1 downto 0); -- PC of last executed instruction
     sleep        : std_ulogic; -- CPU in sleep mode
     sleep_nxt    : std_ulogic; -- CPU in sleep mode
     if_rst       : std_ulogic; -- instruction fetch was reset
@@ -214,6 +214,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     we_nxt       : std_ulogic;
     re           : std_ulogic; -- read enable
     re_nxt       : std_ulogic;
+    wdata        : std_ulogic_vector(data_width_c-1 downto 0); -- write data
+    rdata        : std_ulogic_vector(data_width_c-1 downto 0); -- read data
     mstatus_mie  : std_ulogic; -- mstatus.MIE: global IRQ enable (R/W)
     mstatus_mpie : std_ulogic; -- mstatus.MPIE: previous global IRQ enable (R/-)
     mie_msie     : std_ulogic; -- mie.MSIE: machine software interrupt enable (R/W)
@@ -527,13 +529,11 @@ begin
       execute_engine.sleep   <= '0';
       execute_engine.if_rst  <= '1'; -- instruction fetch is reset after system reset
     elsif rising_edge(clk_i) then
-      execute_engine.pc <= execute_engine.pc_nxt(data_width_c-1 downto 1) & '0';
-      if (execute_engine.state = EXECUTE) then
-        execute_engine.last_pc <= execute_engine.pc(data_width_c-1 downto 1) & '0';
-      end if;
-      execute_engine.state  <= execute_engine.state_nxt;
-      execute_engine.sleep  <= execute_engine.sleep_nxt;
-      execute_engine.if_rst <= execute_engine.if_rst_nxt;
+      execute_engine.pc      <= execute_engine.pc_nxt(data_width_c-1 downto 1) & '0';
+      execute_engine.last_pc <= execute_engine.last_pc_nxt;
+      execute_engine.state   <= execute_engine.state_nxt;
+      execute_engine.sleep   <= execute_engine.sleep_nxt;
+      execute_engine.if_rst  <= execute_engine.if_rst_nxt;
     end if;
   end process execute_engine_fsm_sync_rst;
 
@@ -586,6 +586,7 @@ begin
     execute_engine.is_jump_nxt <= '0';
     execute_engine.is_ci_nxt   <= execute_engine.is_ci;
     execute_engine.pc_nxt      <= execute_engine.pc;
+    execute_engine.last_pc_nxt <= execute_engine.last_pc;
     execute_engine.sleep_nxt   <= execute_engine.sleep;
     execute_engine.if_rst_nxt  <= execute_engine.if_rst;
 
@@ -615,17 +616,16 @@ begin
     else -- branches
       ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- unsigned branches (BLTU, BGEU)
     end if;
-    ctrl_nxt(ctrl_bus_unsigned_c)   <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
-    ctrl_nxt(ctrl_alu_shift_dir_c)  <= execute_engine.i_reg(instr_funct3_msb_c); -- shift direction (left/right)
-    ctrl_nxt(ctrl_alu_shift_ar_c)   <= execute_engine.i_reg(30); -- is arithmetic shift
-    ctrl_nxt(ctrl_bus_size_lsb_c)   <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- transfer size lsb (00=byte, 01=half-word)
-    ctrl_nxt(ctrl_bus_size_msb_c)   <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- transfer size msb (10=word, 11=?)
-    ctrl_nxt(ctrl_cp_cmd2_c     downto ctrl_cp_cmd0_c)     <= execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c); -- CP operation
-    ctrl_nxt(ctrl_alu_cmd2_c    downto ctrl_alu_cmd0_c)    <= alu_cmd_add_c; -- default ALU operation: ADD(I)
-    ctrl_nxt(ctrl_cp_id_msb_c   downto ctrl_cp_id_lsb_c)   <= cp_sel_muldiv_c; -- only CP0 (=MULDIV) implemented yet
-    ctrl_nxt(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= ctrl(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c); -- keep rd addr
-    ctrl_nxt(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= ctrl(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- keep rs1 addr
-    ctrl_nxt(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= ctrl(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c); -- keep rs2 addr
+    ctrl_nxt(ctrl_bus_unsigned_c)  <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
+    ctrl_nxt(ctrl_alu_shift_dir_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- shift direction (left/right)
+    ctrl_nxt(ctrl_alu_shift_ar_c)  <= execute_engine.i_reg(30); -- is arithmetic shift
+    ctrl_nxt(ctrl_cp_cmd2_c      downto ctrl_cp_cmd0_c)      <= execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c); -- CP operation
+    ctrl_nxt(ctrl_alu_cmd2_c     downto ctrl_alu_cmd0_c)     <= alu_cmd_add_c; -- default ALU operation: ADD(I)
+    ctrl_nxt(ctrl_cp_id_msb_c    downto ctrl_cp_id_lsb_c)    <= cp_sel_muldiv_c; -- only CP0 (=MULDIV) implemented yet
+    ctrl_nxt(ctrl_rf_rd_adr4_c   downto ctrl_rf_rd_adr0_c)   <= ctrl(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c); -- keep rd addr
+    ctrl_nxt(ctrl_rf_rs1_adr4_c  downto ctrl_rf_rs1_adr0_c)  <= ctrl(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- keep rs1 addr
+    ctrl_nxt(ctrl_rf_rs2_adr4_c  downto ctrl_rf_rs2_adr0_c)  <= ctrl(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c); -- keep rs2 addr
+    ctrl_nxt(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c); -- mem transfer size
 
     -- is immediate ALU operation? --
     alu_immediate_v := not execute_engine.i_reg(instr_opcode_msb_c-1);
@@ -651,22 +651,22 @@ begin
 
       when DISPATCH => -- Get new command from instruction prefetch buffer (IPB)
       -- ------------------------------------------------------------
+        ctrl_nxt(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= ipb.rdata(instr_rd_msb_c  downto instr_rd_lsb_c); -- rd addr
+        ctrl_nxt(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= ipb.rdata(instr_rs1_msb_c downto instr_rs1_lsb_c); -- rs1 addr
+        ctrl_nxt(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= ipb.rdata(instr_rs2_msb_c downto instr_rs2_lsb_c); -- rs2 addr
+        --
         if (ipb.avail = '1') then -- instruction available?
           ipb.re <= '1';
+          --
+          execute_engine.is_ci_nxt  <= ipb.rdata(32); -- flag to indicate this is a de-compressed instruction beeing executed
+          execute_engine.i_reg_nxt  <= ipb.rdata(31 downto 0);
+          execute_engine.if_rst_nxt <= '0';
           --
           trap_ctrl.instr_ma <= ipb.rdata(33); -- misaligned instruction fetch address
           trap_ctrl.instr_be <= ipb.rdata(34); -- bus access fault during instrucion fetch
           illegal_compressed <= ipb.rdata(35); -- invalid decompressed instruction
           --
-          ctrl_nxt(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= ipb.rdata(instr_rd_msb_c  downto instr_rd_lsb_c); -- rd addr
-          ctrl_nxt(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= ipb.rdata(instr_rs1_msb_c downto instr_rs1_lsb_c); -- rs1 addr
-          ctrl_nxt(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= ipb.rdata(instr_rs2_msb_c downto instr_rs2_lsb_c); -- rs2 addr
-          --
-          execute_engine.is_ci_nxt  <= ipb.rdata(32); -- flag to indicate this is a compressed instruction beeing executed
-          execute_engine.i_reg_nxt  <= ipb.rdata(31 downto 0);
-          execute_engine.if_rst_nxt <= '0';
-          --
-          if (execute_engine.if_rst = '0') then -- if there was no non-linear PC modification
+          if (execute_engine.if_rst = '0') then -- if there was NO non-linear PC modification
             execute_engine.pc_nxt <= execute_engine.next_pc;
           end if;
           --
@@ -690,13 +690,15 @@ begin
 
       when EXECUTE => -- Decode and execute instruction
       -- ------------------------------------------------------------
+        execute_engine.last_pc_nxt <= execute_engine.pc; -- store address of current instruction for commit
+        --
         case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
 
           when opcode_alu_c | opcode_alui_c => -- (immediate) ALU operation
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- use RS1 as ALU.OPA
-            ctrl_nxt(ctrl_alu_opb_mux_c)     <= alu_immediate_v; -- use IMM as ALU.OPB for immediate operations
-            ctrl_nxt(ctrl_alu_opc_mux_c)     <= alu_immediate_v; -- use IMM as ALU.OPC for immediate operations (SLT(I)(U))
+            ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= alu_immediate_v; -- use IMM as ALU.OPB for immediate operations
+            ctrl_nxt(ctrl_alu_opc_mux_c) <= alu_immediate_v; -- use IMM as ALU.OPC for immediate operations (SLT(I)(U))
             ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "00"; -- RF input = ALU result
 
             -- actual ALU operation (re-coding) --
@@ -734,20 +736,21 @@ begin
 
           when opcode_lui_c | opcode_auipc_c => -- load upper immediate / add upper immediate to PC
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '1'; -- ALU.OPA = PC (for AUIPC only)
-            if (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_lui_c(5)) then -- LUI
-              ctrl_nxt(ctrl_alu_opa_mux_msb_c) <= '1'; -- ALU.OPA = CSR = 0 (hacky: csr.result is 0 since there is no csr_read_request)
-            end if;
+            ctrl_nxt(ctrl_alu_opa_mux_c) <= '1'; -- ALU.OPA = PC (for AUIPC only)
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
-            ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_add_c; -- actual ALU operation = ADD
+            if (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_lui_c(5)) then -- LUI
+              ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_movb_c; -- actual ALU operation = MOVB
+            else -- AUIPC
+              ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_add_c; -- actual ALU operation = ADD
+            end if;
             ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "00"; -- RF input = ALU result
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
             execute_engine.state_nxt  <= DISPATCH;
 
           when opcode_load_c | opcode_store_c => -- load/store
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- use RS1 as ALU.OPA
-            ctrl_nxt(ctrl_alu_opb_mux_c)     <= '1'; -- use IMM as ALU.OPB
+            ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
             ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_add_c; -- actual ALU operation = ADD
             ctrl_nxt(ctrl_bus_mar_we_c) <= '1'; -- write to MAR
             ctrl_nxt(ctrl_bus_mdo_we_c) <= '1'; -- write to MDO (only relevant for stores)
@@ -755,30 +758,29 @@ begin
 
           when opcode_branch_c => -- branch instruction
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '1'; -- use PC as ALU.OPA (branch target address base)
-            ctrl_nxt(ctrl_alu_opb_mux_c)     <= '1'; -- use IMM as ALU.OPB (branch target address offset)
-            ctrl_nxt(ctrl_alu_opc_mux_c)     <= '0'; -- use RS2 as ALU.OPC (for branch condition check)
-            execute_engine.state_nxt         <= BRANCH;
+            ctrl_nxt(ctrl_alu_opa_mux_c) <= '1'; -- use PC as ALU.OPA (branch target address base)
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB (branch target address offset)
+            ctrl_nxt(ctrl_alu_opc_mux_c) <= '0'; -- use RS2 as ALU.OPC (for branch condition check)
+            execute_engine.state_nxt     <= BRANCH;
 
           when opcode_jal_c | opcode_jalr_c => -- jump and link (with register)
           -- ------------------------------------------------------------
             -- compute target address --
             if (execute_engine.i_reg(instr_opcode_lsb_c+3) = opcode_jal_c(3)) then -- JAL
-              ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '1'; -- use PC as ALU.OPA
+              ctrl_nxt(ctrl_alu_opa_mux_c) <= '1'; -- use PC as ALU.OPA
             else -- JALR
-              ctrl_nxt(ctrl_alu_opa_mux_lsb_c) <= '0'; -- use RS1 as ALU.OPA
+              ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA
             end if;
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
             -- save return address --
             ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "10"; -- RF input = next PC (save return address)
-            ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-            --
+            ctrl_nxt(ctrl_rf_wb_en_c)  <= '1'; -- valid RF write-back
             execute_engine.is_jump_nxt <= '1'; -- this is a jump operation
             execute_engine.state_nxt   <= BRANCH;
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
-            -- foe simplicity: internally, fence and fence.i perform the same operations ;)
+            -- for simplicity: internally, fence and fence.i perform the same operations (flush and reload of instruction prefetch buffer)
             -- FENCE.I --
             if (CPU_EXTENSION_RISCV_Zifencei = true) then
               execute_engine.pc_nxt     <= execute_engine.next_pc; -- "refetch" next instruction
@@ -797,8 +799,6 @@ begin
 
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
-            csr.re_nxt <= csr_acc_valid; -- always read CSR if valid access
-            ctrl_nxt(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= (others => '0'); -- set rs1_addr to r0 (zero) (for CSR mod)
             ctrl_nxt(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= ctrl(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- copy rs1_addr to rs2_addr (for CSR mod)
             --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system
@@ -813,12 +813,13 @@ begin
                   fetch_engine.reset <= '1';
                   execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
                 when funct12_wfi_c => -- WFI (CPU sleep)
-                  execute_engine.sleep_nxt <= '1'; -- sleep well
+                  execute_engine.sleep_nxt <= '1'; -- good night
                 when others => -- undefined
                   NULL;
               end case;
               execute_engine.state_nxt <= SYS_WAIT;
             else -- CSR access
+              csr.re_nxt <= '1'; -- always read CSR (internally)
               execute_engine.state_nxt <= CSR_ACCESS;
             end if;
 
@@ -831,24 +832,20 @@ begin
       when CSR_ACCESS => -- write CSR data to RF, write ALU.res to CSR
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_alu_opb_mux_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- OPB = rs2 (which is rs1 here) / immediate
+        ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_movb_c; -- actual ALU operation = MOVB
+        -- CSR write access --
         case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
           when funct3_csrrw_c | funct3_csrrwi_c => -- CSRRW(I)
-            ctrl_nxt(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) <= "00"; -- OPA = rs1 (which is zero here)
-            ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_or_c; -- actual ALU operation = OR
             csr.we_nxt <= csr_acc_valid; -- always write CSR if valid access
-          when funct3_csrrs_c | funct3_csrrsi_c => -- CSRRS(I)
-            ctrl_nxt(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) <= "10"; -- OPA = CSR
-            ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_or_c; -- actual ALU operation = OR
-            csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if rs1 is not zero_reg and if valid access
-          when others => -- CSRRC(I) -- FIXME?!
-            ctrl_nxt(ctrl_alu_opa_mux_msb_c downto ctrl_alu_opa_mux_lsb_c) <= "10"; -- OPA = CSR
-            ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_bclr_c; -- actual ALU operation = bit clear
-            csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if rs1 is not zero_reg and if valid access
+          when funct3_csrrs_c | funct3_csrrsi_c | funct3_csrrc_c | funct3_csrrci_c => -- CSRRS(I) / CSRRC(I)
+            csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if rs1/imm is not zero and if valid access
+          when others =>
+            csr.we_nxt <= '0';
         end case;
-        -- RF write back --
+        -- register file write back --
         ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output
         ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-        execute_engine.state_nxt  <= SYS_WAIT; -- have another cycle to let side-effects kick in
+        execute_engine.state_nxt  <= SYS_WAIT; -- have another cycle to let side-effects kick in (FIXME?)
 
       when ALU_WAIT => -- wait for multi-cycle ALU operation (shifter or CP) to finish
       -- ------------------------------------------------------------
@@ -921,9 +918,10 @@ begin
     variable is_m_mode_v : std_ulogic;
   begin
     -- are we in machine mode? --
-    is_m_mode_v := '0';
     if (csr.privilege = m_priv_mode_c) then
       is_m_mode_v := '1';
+    else
+      is_m_mode_v := '0';
     end if;
 
     -- check CSR access --
@@ -1210,8 +1208,8 @@ begin
   end process trap_controller;
 
   -- any exception/interrupt? --
-  trap_ctrl.exc_fire <= or_all_f(trap_ctrl.exc_buf); -- exceptions/faults cannot be masked
-  trap_ctrl.irq_fire <= or_all_f(trap_ctrl.irq_buf) and csr.mstatus_mie; -- interrupts can be masked
+  trap_ctrl.exc_fire <= or_all_f(trap_ctrl.exc_buf); -- exceptions/faults CANNOT be masked
+  trap_ctrl.irq_fire <= or_all_f(trap_ctrl.irq_buf) and csr.mstatus_mie; -- interrupts CAN be masked
 
 
   -- Trap Priority Detector -----------------------------------------------------------------
@@ -1316,6 +1314,18 @@ begin
 -- Control and Status Registers (CSRs)
 -- ****************************************************************************************************************************
 
+  -- Control and Status Registers Write Data ------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  csr_write_data: process(execute_engine.i_reg, csr.rdata, alu_res_i)
+  begin
+    case execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c) is
+      when "10"   => csr.wdata <= csr.rdata or alu_res_i; -- CSRRS(I)
+      when "11"   => csr.wdata <= csr.rdata and (not alu_res_i); -- CSRRC(I)
+      when others => csr.wdata <= alu_res_i; -- CSRRW(I)
+    end case;
+  end process csr_write_data;
+
+
   -- Control and Status Registers Write Access ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_write_access: process(rstn_i, clk_i)
@@ -1354,24 +1364,24 @@ begin
             if (execute_engine.i_reg(27 downto 24) = x"0") then
               case execute_engine.i_reg(23 downto 20) is
                 when x"0" => -- R/W: mstatus - machine status register
-                  csr.mstatus_mie  <= csr_wdata_i(03);
-                  csr.mstatus_mpie <= csr_wdata_i(07);
+                  csr.mstatus_mie  <= csr.wdata(03);
+                  csr.mstatus_mpie <= csr.wdata(07);
                   --
                   if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
-                    csr.mpp(0) <= csr_wdata_i(11) and csr_wdata_i(12);
-                    csr.mpp(1) <= csr_wdata_i(11) and csr_wdata_i(12);
+                    csr.mpp(0) <= csr.wdata(11) and csr.wdata(12);
+                    csr.mpp(1) <= csr.wdata(11) and csr.wdata(12);
                   end if;
                 when x"4" => -- R/W: mie - machine interrupt-enable register
-                  csr.mie_msie <= csr_wdata_i(03); -- machine SW IRQ enable
-                  csr.mie_mtie <= csr_wdata_i(07); -- machine TIMER IRQ enable
-                  csr.mie_meie <= csr_wdata_i(11); -- machine EXT IRQ enable
+                  csr.mie_msie <= csr.wdata(03); -- machine SW IRQ enable
+                  csr.mie_mtie <= csr.wdata(07); -- machine TIMER IRQ enable
+                  csr.mie_meie <= csr.wdata(11); -- machine EXT IRQ enable
                   --
-                  csr.mie_firqe(0) <= csr_wdata_i(16); -- fast interrupt channel 0
-                  csr.mie_firqe(1) <= csr_wdata_i(17); -- fast interrupt channel 1
-                  csr.mie_firqe(2) <= csr_wdata_i(18); -- fast interrupt channel 2
-                  csr.mie_firqe(3) <= csr_wdata_i(19); -- fast interrupt channel 3
+                  csr.mie_firqe(0) <= csr.wdata(16); -- fast interrupt channel 0
+                  csr.mie_firqe(1) <= csr.wdata(17); -- fast interrupt channel 1
+                  csr.mie_firqe(2) <= csr.wdata(18); -- fast interrupt channel 2
+                  csr.mie_firqe(3) <= csr.wdata(19); -- fast interrupt channel 3
                 when x"5" => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
-                  csr.mtvec <= csr_wdata_i(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
+                  csr.mtvec <= csr.wdata(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
                 when others =>
                   NULL;
               end case;
@@ -1380,11 +1390,11 @@ begin
             if (execute_engine.i_reg(27 downto 24) = x"4") then
               case execute_engine.i_reg(23 downto 20) is
                 when x"0" => -- R/W: mscratch - machine scratch register
-                  csr.mscratch <= csr_wdata_i;
+                  csr.mscratch <= csr.wdata;
                 when x"1" => -- R/W: mepc - machine exception program counter
-                  csr.mepc <= csr_wdata_i(data_width_c-1 downto 1) & '0';
+                  csr.mepc <= csr.wdata(data_width_c-1 downto 1) & '0';
                 when x"3" => -- R/W: mtval - machine bad address or instruction
-                  csr.mtval <= csr_wdata_i;
+                  csr.mtval <= csr.wdata;
                 when others =>
                   NULL;
               end case;
@@ -1398,14 +1408,14 @@ begin
                     for j in 0 to 3 loop -- bytes in pmpcfg CSR
                       if ((j+1) <= PMP_NUM_REGIONS) then
                         if (csr.pmpcfg(0+j)(7) = '0') then -- unlocked pmpcfg access
-                          csr.pmpcfg(0+j)(0) <= csr_wdata_i(j*8+0); -- R
-                          csr.pmpcfg(0+j)(1) <= csr_wdata_i(j*8+1); -- W
-                          csr.pmpcfg(0+j)(2) <= csr_wdata_i(j*8+2); -- X
-                          csr.pmpcfg(0+j)(3) <= csr_wdata_i(j*8+3) and csr_wdata_i(j*8+4); -- A_L
-                          csr.pmpcfg(0+j)(4) <= csr_wdata_i(j*8+3) and csr_wdata_i(j*8+4); -- A_H - NAPOT/OFF only
+                          csr.pmpcfg(0+j)(0) <= csr.wdata(j*8+0); -- R
+                          csr.pmpcfg(0+j)(1) <= csr.wdata(j*8+1); -- W
+                          csr.pmpcfg(0+j)(2) <= csr.wdata(j*8+2); -- X
+                          csr.pmpcfg(0+j)(3) <= csr.wdata(j*8+3) and csr.wdata(j*8+4); -- A_L
+                          csr.pmpcfg(0+j)(4) <= csr.wdata(j*8+3) and csr.wdata(j*8+4); -- A_H - NAPOT/OFF only
                           csr.pmpcfg(0+j)(5) <= '0'; -- reserved
                           csr.pmpcfg(0+j)(6) <= '0'; -- reserved
-                          csr.pmpcfg(0+j)(7) <= csr_wdata_i(j*8+7); -- L
+                          csr.pmpcfg(0+j)(7) <= csr.wdata(j*8+7); -- L
                         end if;
                       end if;
                     end loop; -- j (bytes in CSR)
@@ -1416,14 +1426,14 @@ begin
                     for j in 0 to 3 loop -- bytes in pmpcfg CSR
                       if ((j+1+4) <= PMP_NUM_REGIONS) then
                         if (csr.pmpcfg(4+j)(7) = '0') then -- unlocked pmpcfg access
-                          csr.pmpcfg(4+j)(0) <= csr_wdata_i(j*8+0); -- R
-                          csr.pmpcfg(4+j)(1) <= csr_wdata_i(j*8+1); -- W
-                          csr.pmpcfg(4+j)(2) <= csr_wdata_i(j*8+2); -- X
-                          csr.pmpcfg(4+j)(3) <= csr_wdata_i(j*8+3) and csr_wdata_i(j*8+4); -- A_L
-                          csr.pmpcfg(4+j)(4) <= csr_wdata_i(j*8+3) and csr_wdata_i(j*8+4); -- A_H - NAPOT/OFF only
+                          csr.pmpcfg(4+j)(0) <= csr.wdata(j*8+0); -- R
+                          csr.pmpcfg(4+j)(1) <= csr.wdata(j*8+1); -- W
+                          csr.pmpcfg(4+j)(2) <= csr.wdata(j*8+2); -- X
+                          csr.pmpcfg(4+j)(3) <= csr.wdata(j*8+3) and csr.wdata(j*8+4); -- A_L
+                          csr.pmpcfg(4+j)(4) <= csr.wdata(j*8+3) and csr.wdata(j*8+4); -- A_H - NAPOT/OFF only
                           csr.pmpcfg(4+j)(5) <= '0'; -- reserved
                           csr.pmpcfg(4+j)(6) <= '0'; -- reserved
-                          csr.pmpcfg(4+j)(7) <= csr_wdata_i(j*8+7); -- L
+                          csr.pmpcfg(4+j)(7) <= csr.wdata(j*8+7); -- L
                         end if;
                       end if;
                     end loop; -- j (bytes in CSR)
@@ -1434,7 +1444,7 @@ begin
               if (execute_engine.i_reg(27 downto 24) = x"b") then
                 for i in 0 to PMP_NUM_REGIONS-1 loop
                   if (execute_engine.i_reg(23 downto 20) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
-                    csr.pmpaddr(i) <= csr_wdata_i(31 downto 1) & '0'; -- min granularity is 8 bytes -> bit zero cannot be configured
+                    csr.pmpaddr(i) <= csr.wdata(31 downto 1) & '0'; -- min granularity is 8 bytes -> bit zero cannot be configured
                   end if;
                 end loop; -- i (CSRs)
               end if;
@@ -1446,8 +1456,11 @@ begin
 
           -- machine exception PC & machine trap value register --
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
-            csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & "000" & x"00000" & "000" & trap_ctrl.cause(4 downto 0);
-            if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS only (is mcause(31))
+            -- trap ID code --
+            csr.mcause <= (others => '0');
+            csr.mcause(csr.mcause'left) <= trap_ctrl.cause(trap_ctrl.cause'left); -- 1: interrupt, 0: exception
+            csr.mcause(4 downto 0)      <= trap_ctrl.cause(4 downto 0); -- identifier
+            if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS (is mcause(31))
               csr.mepc  <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
               csr.mtval <= (others => '0'); -- mtval is zero for interrupts
             else -- for EXCEPTIONS (according to their priority)
@@ -1498,200 +1511,203 @@ begin
   csr_read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      csr_rdata_o <= (others => '0'); -- default
+      csr.rdata <= (others => '0'); -- default
       if (CPU_EXTENSION_RISCV_Zicsr = true) and (csr.re = '1') then
         case execute_engine.i_reg(31 downto 20) is
 
           -- machine trap setup --
           when x"300" => -- R/W: mstatus - machine status register
-            csr_rdata_o(03) <= csr.mstatus_mie;  -- MIE
-            csr_rdata_o(07) <= csr.mstatus_mpie; -- MPIE
-            csr_rdata_o(11) <= csr.mpp(0); -- MPP: machine previous privilege mode low
-            csr_rdata_o(12) <= csr.mpp(1); -- MPP: machine previous privilege mode high
+            csr.rdata(03) <= csr.mstatus_mie;  -- MIE
+            csr.rdata(07) <= csr.mstatus_mpie; -- MPIE
+            csr.rdata(11) <= csr.mpp(0); -- MPP: machine previous privilege mode low
+            csr.rdata(12) <= csr.mpp(1); -- MPP: machine previous privilege mode high
           when x"301" => -- R/-: misa - ISA and extensions
-            csr_rdata_o(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
-            csr_rdata_o(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
-            csr_rdata_o(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
-            csr_rdata_o(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_M);     -- M CPU extension
-            csr_rdata_o(20) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);     -- U CPU extension
-            csr_rdata_o(23) <= '1';                                         -- X CPU extension (non-std extensions)
-            csr_rdata_o(30) <= '1'; -- 32-bit architecture (MXL lo)
-            csr_rdata_o(31) <= '0'; -- 32-bit architecture (MXL hi)
+            csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
+            csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
+            csr.rdata(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
+            csr.rdata(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_M);     -- M CPU extension
+            csr.rdata(20) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);     -- U CPU extension
+            csr.rdata(23) <= '1';                                         -- X CPU extension (non-std extensions)
+            csr.rdata(30) <= '1'; -- 32-bit architecture (MXL lo)
+            csr.rdata(31) <= '0'; -- 32-bit architecture (MXL hi)
           when x"304" => -- R/W: mie - machine interrupt-enable register
-            csr_rdata_o(03) <= csr.mie_msie; -- machine software IRQ enable
-            csr_rdata_o(07) <= csr.mie_mtie; -- machine timer IRQ enable
-            csr_rdata_o(11) <= csr.mie_meie; -- machine external IRQ enable
+            csr.rdata(03) <= csr.mie_msie; -- machine software IRQ enable
+            csr.rdata(07) <= csr.mie_mtie; -- machine timer IRQ enable
+            csr.rdata(11) <= csr.mie_meie; -- machine external IRQ enable
             --
-            csr_rdata_o(16) <= csr.mie_firqe(0); -- fast interrupt channel 0
-            csr_rdata_o(17) <= csr.mie_firqe(1); -- fast interrupt channel 1
-            csr_rdata_o(18) <= csr.mie_firqe(2); -- fast interrupt channel 2
-            csr_rdata_o(19) <= csr.mie_firqe(3); -- fast interrupt channel 3
+            csr.rdata(16) <= csr.mie_firqe(0); -- fast interrupt channel 0
+            csr.rdata(17) <= csr.mie_firqe(1); -- fast interrupt channel 1
+            csr.rdata(18) <= csr.mie_firqe(2); -- fast interrupt channel 2
+            csr.rdata(19) <= csr.mie_firqe(3); -- fast interrupt channel 3
           when x"305" => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
-            csr_rdata_o <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
+            csr.rdata <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
 
           -- machine trap handling --
           when x"340" => -- R/W: mscratch - machine scratch register
-            csr_rdata_o <= csr.mscratch;
+            csr.rdata <= csr.mscratch;
           when x"341" => -- R/W: mepc - machine exception program counter
-            csr_rdata_o <= csr.mepc(data_width_c-1 downto 1) & '0';
+            csr.rdata <= csr.mepc(data_width_c-1 downto 1) & '0';
           when x"342" => -- R/-: mcause - machine trap cause
-            csr_rdata_o <= csr.mcause;
+            csr.rdata <= csr.mcause;
           when x"343" => -- R/W: mtval - machine bad address or instruction
-            csr_rdata_o <= csr.mtval;
+            csr.rdata <= csr.mtval;
           when x"344" => -- R/W: mip - machine interrupt pending
-            csr_rdata_o(03) <= trap_ctrl.irq_buf(interrupt_msw_irq_c);
-            csr_rdata_o(07) <= trap_ctrl.irq_buf(interrupt_mtime_irq_c);
-            csr_rdata_o(11) <= trap_ctrl.irq_buf(interrupt_mext_irq_c);
+            csr.rdata(03) <= trap_ctrl.irq_buf(interrupt_msw_irq_c);
+            csr.rdata(07) <= trap_ctrl.irq_buf(interrupt_mtime_irq_c);
+            csr.rdata(11) <= trap_ctrl.irq_buf(interrupt_mext_irq_c);
             --
-            csr_rdata_o(16) <= trap_ctrl.irq_buf(interrupt_firq_0_c);
-            csr_rdata_o(17) <= trap_ctrl.irq_buf(interrupt_firq_1_c);
-            csr_rdata_o(18) <= trap_ctrl.irq_buf(interrupt_firq_2_c);
-            csr_rdata_o(19) <= trap_ctrl.irq_buf(interrupt_firq_3_c);
+            csr.rdata(16) <= trap_ctrl.irq_buf(interrupt_firq_0_c);
+            csr.rdata(17) <= trap_ctrl.irq_buf(interrupt_firq_1_c);
+            csr.rdata(18) <= trap_ctrl.irq_buf(interrupt_firq_2_c);
+            csr.rdata(19) <= trap_ctrl.irq_buf(interrupt_firq_3_c);
 
           -- physical memory protection --
           when x"3a0" => -- R/W: pmpcfg0 - physical memory protection configuration register 0
             if (PMP_USE = true) then
               if (PMP_NUM_REGIONS >= 1) then
-                csr_rdata_o(07 downto 00) <= csr.pmpcfg(0);
+                csr.rdata(07 downto 00) <= csr.pmpcfg(0);
               end if;
               if (PMP_NUM_REGIONS >= 2) then
-                csr_rdata_o(15 downto 08) <= csr.pmpcfg(1);
+                csr.rdata(15 downto 08) <= csr.pmpcfg(1);
               end if;
               if (PMP_NUM_REGIONS >= 3) then
-                csr_rdata_o(23 downto 16) <= csr.pmpcfg(2);
+                csr.rdata(23 downto 16) <= csr.pmpcfg(2);
               end if;
               if (PMP_NUM_REGIONS >= 4) then
-                csr_rdata_o(31 downto 24) <= csr.pmpcfg(3);
+                csr.rdata(31 downto 24) <= csr.pmpcfg(3);
               end if;
             end if;
           when x"3a1" => -- R/W: pmpcfg1 - physical memory protection configuration register 1
             if (PMP_USE = true) then
               if (PMP_NUM_REGIONS >= 5) then
-                csr_rdata_o(07 downto 00) <= csr.pmpcfg(4);
+                csr.rdata(07 downto 00) <= csr.pmpcfg(4);
               end if;
               if (PMP_NUM_REGIONS >= 6) then
-                csr_rdata_o(15 downto 08) <= csr.pmpcfg(5);
+                csr.rdata(15 downto 08) <= csr.pmpcfg(5);
               end if;
               if (PMP_NUM_REGIONS >= 7) then
-                csr_rdata_o(23 downto 16) <= csr.pmpcfg(6);
+                csr.rdata(23 downto 16) <= csr.pmpcfg(6);
               end if;
               if (PMP_NUM_REGIONS >= 8) then
-                csr_rdata_o(31 downto 24) <= csr.pmpcfg(7);
+                csr.rdata(31 downto 24) <= csr.pmpcfg(7);
               end if;
             end if;
 
           when x"3b0" => -- R/W: pmpaddr0 - physical memory protection address register 0
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 1) then
-              csr_rdata_o <= csr.pmpaddr(0);
+              csr.rdata <= csr.pmpaddr(0);
               if (csr.pmpcfg(0)(4 downto 3) = "00") then -- mode = off
-                csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
+                csr.rdata(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
-                csr_rdata_o(PMP_GRANULARITY-2 downto 0) <= (others => '1');
+                csr.rdata(PMP_GRANULARITY-2 downto 0) <= (others => '1');
               end if;
             end if;
           when x"3b1" => -- R/W: pmpaddr1 - physical memory protection address register 1
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 2) then
-              csr_rdata_o <= csr.pmpaddr(1);
+              csr.rdata <= csr.pmpaddr(1);
               if (csr.pmpcfg(1)(4 downto 3) = "00") then -- mode = off
-                csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
+                csr.rdata(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
-                csr_rdata_o(PMP_GRANULARITY-2 downto 0) <= (others => '1');
+                csr.rdata(PMP_GRANULARITY-2 downto 0) <= (others => '1');
               end if;
             end if;
           when x"3b2" => -- R/W: pmpaddr2 - physical memory protection address register 2
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 3) then
-              csr_rdata_o <= csr.pmpaddr(2);
+              csr.rdata <= csr.pmpaddr(2);
               if (csr.pmpcfg(2)(4 downto 3) = "00") then -- mode = off
-                csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
+                csr.rdata(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
-                csr_rdata_o(PMP_GRANULARITY-2 downto 0) <= (others => '1');
+                csr.rdata(PMP_GRANULARITY-2 downto 0) <= (others => '1');
               end if;
             end if;
           when x"3b3" => -- R/W: pmpaddr3 - physical memory protection address register 3
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 4) then
-              csr_rdata_o <= csr.pmpaddr(3);
+              csr.rdata <= csr.pmpaddr(3);
               if (csr.pmpcfg(3)(4 downto 3) = "00") then -- mode = off
-                csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
+                csr.rdata(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
-                csr_rdata_o(PMP_GRANULARITY-2 downto 0) <= (others => '1');
+                csr.rdata(PMP_GRANULARITY-2 downto 0) <= (others => '1');
               end if;
             end if;
           when x"3b4" => -- R/W: pmpaddr4 - physical memory protection address register 4
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 5) then
-              csr_rdata_o <= csr.pmpaddr(4);
+              csr.rdata <= csr.pmpaddr(4);
               if (csr.pmpcfg(4)(4 downto 3) = "00") then -- mode = off
-                csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
+                csr.rdata(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
-                csr_rdata_o(PMP_GRANULARITY-2 downto 0) <= (others => '1');
+                csr.rdata(PMP_GRANULARITY-2 downto 0) <= (others => '1');
               end if;
             end if;
           when x"3b5" => -- R/W: pmpaddr5 - physical memory protection address register 5
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 6) then
-              csr_rdata_o <= csr.pmpaddr(5);
+              csr.rdata <= csr.pmpaddr(5);
               if (csr.pmpcfg(5)(4 downto 3) = "00") then -- mode = off
-                csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
+                csr.rdata(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
-                csr_rdata_o(PMP_GRANULARITY-2 downto 0) <= (others => '1');
+                csr.rdata(PMP_GRANULARITY-2 downto 0) <= (others => '1');
               end if;
             end if;
           when x"3b6" => -- R/W: pmpaddr6 - physical memory protection address register 6
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 7) then
-              csr_rdata_o <= csr.pmpaddr(6);
+              csr.rdata <= csr.pmpaddr(6);
               if (csr.pmpcfg(6)(4 downto 3) = "00") then -- mode = off
-                csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
+                csr.rdata(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
-                csr_rdata_o(PMP_GRANULARITY-2 downto 0) <= (others => '1');
+                csr.rdata(PMP_GRANULARITY-2 downto 0) <= (others => '1');
               end if;
             end if;
           when x"3b7" => -- R/W: pmpaddr7 - physical memory protection address register 7
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 8) then
-              csr_rdata_o <= csr.pmpaddr(7);
+              csr.rdata <= csr.pmpaddr(7);
               if (csr.pmpcfg(7)(4 downto 3) = "00") then -- mode = off
-                csr_rdata_o(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
+                csr.rdata(PMP_GRANULARITY-1 downto 0) <= (others => '0'); -- required for granularity check by SW
               else -- mode = NAPOT
-                csr_rdata_o(PMP_GRANULARITY-2 downto 0) <= (others => '1');
+                csr.rdata(PMP_GRANULARITY-2 downto 0) <= (others => '1');
               end if;
             end if;
 
           -- counter and timers --
           when x"c00" | x"b00" => -- R/(W): cycle/mcycle: Cycle counter LOW
-            csr_rdata_o <= csr.mcycle(31 downto 0);
+            csr.rdata <= csr.mcycle(31 downto 0);
           when x"c01" => -- R/-: time: System time LOW (from MTIME unit)
-            csr_rdata_o <= time_i(31 downto 0);
+            csr.rdata <= time_i(31 downto 0);
           when x"c02" | x"b02" => -- R/(W): instret/minstret: Instructions-retired counter LOW
-            csr_rdata_o <= csr.minstret(31 downto 0);
+            csr.rdata <= csr.minstret(31 downto 0);
           when x"c80" | x"b80" => -- R/(W): cycleh/mcycleh: Cycle counter HIGH
-            csr_rdata_o <= x"000" & csr.mcycleh(19 downto 0); -- only the lowest 20 bit!
+            csr.rdata <= x"000" & csr.mcycleh(19 downto 0); -- only the lowest 20 bit!
           when x"c81" => -- R/-: timeh: System time HIGH (from MTIME unit)
-            csr_rdata_o <= time_i(63 downto 32);
+            csr.rdata <= time_i(63 downto 32);
           when x"c82" | x"b82" => -- R/(W): instreth/minstreth: Instructions-retired counter HIGH
-            csr_rdata_o <= x"000" & csr.minstreth(19 downto 0); -- only the lowest 20 bit!
+            csr.rdata <= x"000" & csr.minstreth(19 downto 0); -- only the lowest 20 bit!
 
           -- machine information registers --
           when x"f11" => -- R/-: mvendorid - vendor ID
-            csr_rdata_o <= (others => '0'); -- not assigned
+            csr.rdata <= (others => '0');
           when x"f12" => -- R/-: marchid - architecture ID
-            csr_rdata_o <= (others => '0'); -- not assigned
-          when x"f13" => -- R/-: mimpid - implementation ID / NEORV32 version
-            csr_rdata_o <= hw_version_c;
+            csr.rdata <= (others => '0');
+          when x"f13" => -- R/-: mimpid - implementation ID / NEORV32 hardware version
+            csr.rdata <= hw_version_c;
           when x"f14" => -- R/-: mhartid - hardware thread ID
-            csr_rdata_o <= HW_THREAD_ID;
+            csr.rdata <= HW_THREAD_ID;
 
           -- custom machine read-only CSRs --
           when x"fc0" => -- R/-: mzext
-            csr_rdata_o(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr CPU extension
-            csr_rdata_o(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei CPU extension
+            csr.rdata(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr CPU extension
+            csr.rdata(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei CPU extension
 
           -- undefined/unavailable --
           when others =>
-            csr_rdata_o <= (others => '0'); -- not implemented
+            csr.rdata <= (others => '0'); -- not implemented
 
         end case;
       else
-        csr_rdata_o <= (others => '0');
+        csr.rdata <= (others => '0');
       end if;
     end if;
   end process csr_read_access;
+
+  -- CSR read data output --
+  csr_rdata_o <= csr.rdata;
 
   -- CPU's current privilege level --
   priv_mode_o <= csr.privilege;
@@ -1726,7 +1742,7 @@ begin
       -- mcycle (cycle) --
       mcycle_msb <= csr.mcycle(csr.mcycle'left);
       if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b00") then -- write access
-        csr.mcycle(31 downto 0) <= csr_wdata_i;
+        csr.mcycle(31 downto 0) <= csr.wdata;
         csr.mcycle(32) <= '0';
       elsif (execute_engine.sleep = '0') then -- automatic update (if CPU is not in sleep mode)
         csr.mcycle <= std_ulogic_vector(unsigned(csr.mcycle) + 1);
@@ -1734,7 +1750,7 @@ begin
 
       -- mcycleh (cycleh) --
       if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b80") then -- write access
-        csr.mcycleh <= csr_wdata_i(csr.mcycleh'left downto 0);
+        csr.mcycleh <= csr.wdata(csr.mcycleh'left downto 0);
       elsif ((mcycle_msb xor csr.mcycle(csr.mcycle'left)) = '1') then -- automatic update
         csr.mcycleh <= std_ulogic_vector(unsigned(csr.mcycleh) + 1);
       end if;
@@ -1742,7 +1758,7 @@ begin
       -- minstret (instret) --
       minstret_msb <= csr.minstret(csr.minstret'left);
       if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b02") then -- write access
-        csr.minstret(31 downto 0) <= csr_wdata_i;
+        csr.minstret(31 downto 0) <= csr.wdata;
         csr.minstret(32) <= '0';
       elsif (execute_engine.state_prev /= EXECUTE) and (execute_engine.state = EXECUTE) then -- automatic update
         csr.minstret <= std_ulogic_vector(unsigned(csr.minstret) + 1);
@@ -1750,7 +1766,7 @@ begin
 
       -- minstreth (instreth) --
       if (csr.we = '1') and (execute_engine.i_reg(31 downto 20) = x"b82") then -- write access
-        csr.minstreth <= csr_wdata_i(csr.minstreth'left downto 0);
+        csr.minstreth <= csr.wdata(csr.minstreth'left downto 0);
       elsif ((minstret_msb xor csr.minstret(csr.minstret'left)) = '1') then -- automatic update
         csr.minstreth <= std_ulogic_vector(unsigned(csr.minstreth) + 1);
       end if;

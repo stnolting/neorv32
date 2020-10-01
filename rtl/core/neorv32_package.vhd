@@ -38,11 +38,16 @@ use ieee.numeric_std.all;
 
 package neorv32_package is
 
-  -- Architecture Constants/Configuration ---------------------------------------------------
+  -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant data_width_c   : natural := 32; -- data width - FIXED!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040303"; -- no touchy!
-  constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
+  constant data_width_c : natural := 32; -- data width - do not change!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040308"; -- no touchy!
+  constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
+
+  -- Architecture Configuration -------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  constant ispace_base_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"00000000"; -- default instruction memory address space base address
+  constant dspace_base_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"80000000"; -- default data memory address space base address
   constant ipb_entries_c  : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero
 
@@ -62,11 +67,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   type pmp_ctrl_if_t is array (0 to pmp_max_r_c-1) of std_ulogic_vector(7 downto 0);
   type pmp_addr_if_t is array (0 to pmp_max_r_c-1) of std_ulogic_vector(33 downto 0);
-
-  -- General Address Space Layout -----------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  constant ispace_base_c : std_ulogic_vector(data_width_c-1 downto 0) := x"00000000"; -- default instruction memory space base address
-  constant dspace_base_c : std_ulogic_vector(data_width_c-1 downto 0) := x"80000000"; -- default data memory space base address
 
   -- Processor-Internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -183,36 +183,37 @@ package neorv32_package is
   constant ctrl_alu_cmd0_c        : natural := 19; -- ALU command bit 0
   constant ctrl_alu_cmd1_c        : natural := 20; -- ALU command bit 1
   constant ctrl_alu_cmd2_c        : natural := 21; -- ALU command bit 2
-  constant ctrl_alu_opa_mux_lsb_c : natural := 22; -- operand A select lsb (00=rs1, 01=PC)
-  constant ctrl_alu_opa_mux_msb_c : natural := 23; -- operand A select msb (1-=CSR)
-  constant ctrl_alu_opb_mux_c     : natural := 24; -- operand B select (0=rs2, 1=IMM)
-  constant ctrl_alu_opc_mux_c     : natural := 25; -- operand C select (0=rs2, 1=IMM)
-  constant ctrl_alu_unsigned_c    : natural := 26; -- is unsigned ALU operation
-  constant ctrl_alu_shift_dir_c   : natural := 27; -- shift direction (0=left, 1=right)
-  constant ctrl_alu_shift_ar_c    : natural := 28; -- is arithmetic shift
+  constant ctrl_alu_opa_mux_c     : natural := 22; -- operand A select (0=rs1, 1=PC)
+  constant ctrl_alu_opb_mux_c     : natural := 23; -- operand B select (0=rs2, 1=IMM)
+  constant ctrl_alu_opc_mux_c     : natural := 24; -- operand C select (0=rs2, 1=IMM)
+  constant ctrl_alu_unsigned_c    : natural := 25; -- is unsigned ALU operation
+  constant ctrl_alu_shift_dir_c   : natural := 26; -- shift direction (0=left, 1=right)
+  constant ctrl_alu_shift_ar_c    : natural := 27; -- is arithmetic shift
   -- bus interface --
-  constant ctrl_bus_size_lsb_c    : natural := 29; -- transfer size lsb (00=byte, 01=half-word)
-  constant ctrl_bus_size_msb_c    : natural := 30; -- transfer size msb (10=word, 11=?)
-  constant ctrl_bus_rd_c          : natural := 31; -- read data request
-  constant ctrl_bus_wr_c          : natural := 32; -- write data request
-  constant ctrl_bus_if_c          : natural := 33; -- instruction fetch request
-  constant ctrl_bus_mar_we_c      : natural := 34; -- memory address register write enable
-  constant ctrl_bus_mdo_we_c      : natural := 35; -- memory data out register write enable
-  constant ctrl_bus_mdi_we_c      : natural := 36; -- memory data in register write enable
-  constant ctrl_bus_unsigned_c    : natural := 37; -- is unsigned load
-  constant ctrl_bus_ierr_ack_c    : natural := 38; -- acknowledge instruction fetch bus exceptions
-  constant ctrl_bus_derr_ack_c    : natural := 39; -- acknowledge data access bus exceptions
-  constant ctrl_bus_fence_c       : natural := 40; -- executed fence operation
-  constant ctrl_bus_fencei_c      : natural := 41; -- executed fencei operation
+  constant ctrl_bus_size_lsb_c    : natural := 28; -- transfer size lsb (00=byte, 01=half-word)
+  constant ctrl_bus_size_msb_c    : natural := 29; -- transfer size msb (10=word, 11=?)
+  constant ctrl_bus_rd_c          : natural := 30; -- read data request
+  constant ctrl_bus_wr_c          : natural := 31; -- write data request
+  constant ctrl_bus_if_c          : natural := 32; -- instruction fetch request
+  constant ctrl_bus_mar_we_c      : natural := 33; -- memory address register write enable
+  constant ctrl_bus_mdo_we_c      : natural := 34; -- memory data out register write enable
+  constant ctrl_bus_mdi_we_c      : natural := 35; -- memory data in register write enable
+  constant ctrl_bus_unsigned_c    : natural := 36; -- is unsigned load
+  constant ctrl_bus_ierr_ack_c    : natural := 37; -- acknowledge instruction fetch bus exceptions
+  constant ctrl_bus_derr_ack_c    : natural := 38; -- acknowledge data access bus exceptions
+  constant ctrl_bus_fence_c       : natural := 39; -- executed fence operation
+  constant ctrl_bus_fencei_c      : natural := 40; -- executed fencei operation
   -- co-processors --
-  constant ctrl_cp_use_c          : natural := 42; -- is cp operation
-  constant ctrl_cp_id_lsb_c       : natural := 43; -- cp select ID lsb
-  constant ctrl_cp_id_msb_c       : natural := 44; -- cp select ID msb
-  constant ctrl_cp_cmd0_c         : natural := 45; -- cp command bit 0
-  constant ctrl_cp_cmd1_c         : natural := 46; -- cp command bit 1
-  constant ctrl_cp_cmd2_c         : natural := 47; -- cp command bit 2
+  constant ctrl_cp_use_c          : natural := 41; -- is cp operation
+  constant ctrl_cp_id_lsb_c       : natural := 42; -- cp select ID lsb
+  constant ctrl_cp_id_msb_c       : natural := 43; -- cp select ID msb
+  constant ctrl_cp_cmd0_c         : natural := 44; -- cp command bit 0
+  constant ctrl_cp_cmd1_c         : natural := 45; -- cp command bit 1
+  constant ctrl_cp_cmd2_c         : natural := 46; -- cp command bit 2
   -- control bus size --
-  constant ctrl_width_c           : natural := 48; -- control bus size
+  constant ctrl_width_c           : natural := 47; -- control bus size
+
+constant ctrl_alu_aopb_inv_c    : natural := 48;
 
   -- ALU Comparator Bus ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -331,7 +332,7 @@ package neorv32_package is
   constant alu_cmd_xor_c   : std_ulogic_vector(2 downto 0) := "100"; -- r <= A xor B
   constant alu_cmd_or_c    : std_ulogic_vector(2 downto 0) := "101"; -- r <= A or B
   constant alu_cmd_and_c   : std_ulogic_vector(2 downto 0) := "110"; -- r <= A and B
-  constant alu_cmd_bclr_c  : std_ulogic_vector(2 downto 0) := "111"; -- r <= A and (not B)
+  constant alu_cmd_movb_c  : std_ulogic_vector(2 downto 0) := "111"; -- r <= B
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -571,13 +572,12 @@ package neorv32_package is
       instr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- instruction
       cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
       alu_add_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU.add result
+      alu_res_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU processing result
       -- data output --
       imm_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- immediate
       fetch_pc_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
       curr_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- current PC (corresponding to current instruction)
       next_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- next PC (corresponding to current instruction)
-      -- csr interface --
-      csr_wdata_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR write data
       csr_rdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
       -- interrupts (risc-v compliant) --
       msw_irq_i     : in  std_ulogic; -- machine software interrupt
@@ -639,14 +639,11 @@ package neorv32_package is
       rs2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
       pc2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- delayed PC
       imm_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
-      csr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
       -- data output --
       cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
       add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- OPA + OPB
       res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
       -- co-processor interface --
-      cp_opa_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- co-processor operand a
-      cp_opb_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- co-processor operand b
       cp0_start_o : out std_ulogic; -- trigger co-processor 0
       cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
       cp0_valid_i : in  std_ulogic; -- co-processor 0 result valid
