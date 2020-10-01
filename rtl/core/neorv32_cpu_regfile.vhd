@@ -119,7 +119,6 @@ begin
         -- read --
         rs1_o <= reg_file(to_integer(unsigned(ctrl_i(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c))));
         rs2_o <= reg_file(to_integer(unsigned(ctrl_i(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c))));
-
       else -- embedded register file with 16 entries
         -- write --
         if (ctrl_i(ctrl_rf_wb_en_c) = '1') and ((valid_wr = '1') or (rf_r0_is_reg_c = false)) then -- valid write-back
