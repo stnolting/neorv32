@@ -321,7 +321,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Illegal CSR access
+  // Illegal CSR access (CSR not implemented)
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("ILLEGAL CSR:  ");
@@ -332,6 +332,36 @@ int main() {
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
+#endif
+
+
+  // ----------------------------------------------------------
+  // Write-access to read-only CSR (must not trigger an exception)
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("Rd-only CSR:  ");
+
+  cnt_test++;
+
+  neorv32_cpu_csr_write(CSR_CYCLE, 0); // cycle CSR is read-only
+
+  if (neorv32_cpu_csr_read(CSR_CYCLE) < 100) {
+  neorv32_uart_printf("[CSR update error!] ");
+  }
+
+#if (DETAILED_EXCEPTION_DEBUG==0)
+  if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+    test_fail();
+  }
+  else if (neorv32_cpu_csr_read(CSR_CYCLE) < 100) {
+    test_fail();
+  }
+  else if (exception_handler_answer == 0xFFFFFFFF) {
     test_ok();
   }
   else {
@@ -898,8 +928,8 @@ int main() {
 
 
     // check granulartiy
-    neorv32_cpu_csr_write(0x3a0, 0);
-    neorv32_cpu_csr_write(0x3b0, 0xffffffff);
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0);
+    neorv32_cpu_csr_write(CSR_PMPADDR0, 0xffffffff);
     uint32_t pmp_test_g = neorv32_cpu_csr_read(0x3b0);
 
     // find least-significat set bit
