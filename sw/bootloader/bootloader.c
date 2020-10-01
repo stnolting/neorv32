@@ -226,7 +226,7 @@ int main(void) {
   print_hex_word(SYSINFO_USER_CODE);
   neorv32_uart_print("\nMISA: ");
   print_hex_word(neorv32_cpu_csr_read(CSR_MISA));
-  neorv32_uart_print("\nCONF: ");
+  neorv32_uart_print("\nPROC: ");
   print_hex_word(SYSINFO_FEATURES);
   neorv32_uart_print("\nIMEM: ");
   print_hex_word(SYSINFO_IMEM_SIZE);
