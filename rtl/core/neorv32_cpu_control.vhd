@@ -231,8 +231,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mscratch     : std_ulogic_vector(data_width_c-1 downto 0); -- mscratch: scratch register (R/W)
     mcycle       : std_ulogic_vector(32 downto 0); -- mcycle (R/W), plus carry bit
     minstret     : std_ulogic_vector(32 downto 0); -- minstret (R/W), plus carry bit
-    mcycleh      : std_ulogic_vector(19 downto 0); -- mcycleh (R/W) - REDUCED BIT-WIDTH!
-    minstreth    : std_ulogic_vector(19 downto 0); -- minstreth (R/W) - REDUCED BIT-WIDTH!
+    mcycleh      : std_ulogic_vector(31 downto 0); -- mcycleh (R/W) - REDUCED BIT-WIDTH!
+    minstreth    : std_ulogic_vector(31 downto 0); -- minstreth (R/W) - REDUCED BIT-WIDTH!
     pmpcfg       : pmp_ctrl_t; -- physical memory protection - configuration registers
     pmpaddr      : pmp_addr_t; -- physical memory protection - address registers
   end record;
@@ -1674,11 +1674,11 @@ begin
           when x"c02" | x"b02" => -- R/(W): instret/minstret: Instructions-retired counter LOW
             csr.rdata <= csr.minstret(31 downto 0);
           when x"c80" | x"b80" => -- R/(W): cycleh/mcycleh: Cycle counter HIGH
-            csr.rdata <= x"000" & csr.mcycleh(19 downto 0); -- only the lowest 20 bit!
+            csr.rdata <= csr.mcycleh(31 downto 0);
           when x"c81" => -- R/-: timeh: System time HIGH (from MTIME unit)
             csr.rdata <= time_i(63 downto 32);
           when x"c82" | x"b82" => -- R/(W): instreth/minstreth: Instructions-retired counter HIGH
-            csr.rdata <= x"000" & csr.minstreth(19 downto 0); -- only the lowest 20 bit!
+            csr.rdata <= csr.minstreth(31 downto 0);
 
           -- machine information registers --
           when x"f11" => -- R/-: mvendorid - vendor ID

@@ -79,16 +79,16 @@ enum NEORV32_CPU_CSRS_enum {
   CSR_MCYCLE      = 0xb00, /**< 0xb00 - mcycle    (r/w): Machine cycle counter low word */
   CSR_MINSTRET    = 0xb02, /**< 0xb02 - minstret  (r/w): Machine instructions-retired counter low word */
 
-  CSR_MCYCLEH     = 0xb80, /**< 0xb80 - mcycleh   (r/w): Machine cycle counter high word - only 20-bit wide!*/
-  CSR_MINSTRETH   = 0xb82, /**< 0xb82 - minstreth (r/w): Machine instructions-retired counter high word - only 20-bit wide! */
+  CSR_MCYCLEH     = 0xb80, /**< 0xb80 - mcycleh   (r/w): Machine cycle counter high word */
+  CSR_MINSTRETH   = 0xb82, /**< 0xb82 - minstreth (r/w): Machine instructions-retired counter high word */
 
   CSR_CYCLE       = 0xc00, /**< 0xc00 - cycle    (r/-): Cycle counter low word (from MCYCLE) */
   CSR_TIME        = 0xc01, /**< 0xc01 - time     (r/-): Timer low word (from MTIME.TIME_LO) */
   CSR_INSTRET     = 0xc02, /**< 0xc02 - instret  (r/-): Instructions-retired counter low word (from MINSTRET) */
 
-  CSR_CYCLEH      = 0xc80, /**< 0xc80 - cycleh   (r/-): Cycle counter high word (from MCYCLEH) - only 20-bit wide! */
+  CSR_CYCLEH      = 0xc80, /**< 0xc80 - cycleh   (r/-): Cycle counter high word (from MCYCLEH) */
   CSR_TIMEH       = 0xc81, /**< 0xc81 - timeh    (r/-): Timer high word (from MTIME.TIME_HI) */
-  CSR_INSTRETH    = 0xc82, /**< 0xc82 - instreth (r/-): Instructions-retired counter high word (from MINSTRETH) - only 20-bit wide! */
+  CSR_INSTRETH    = 0xc82, /**< 0xc82 - instreth (r/-): Instructions-retired counter high word (from MINSTRETH) */
 
   CSR_MVENDORID   = 0xf11, /**< 0xf11 - mvendorid (r/-): Vendor ID */
   CSR_MARCHID     = 0xf12, /**< 0xf12 - marchid   (r/-): Architecture ID */
