@@ -167,8 +167,8 @@ begin
   neorv32_cpu_control_inst: neorv32_cpu_control
   generic map (
     -- General --
-    HW_THREAD_ID                 => HW_THREAD_ID,     -- hardware thread id
-    CPU_BOOT_ADDR                => CPU_BOOT_ADDR,    -- cpu boot address
+    HW_THREAD_ID                 => HW_THREAD_ID,    -- hardware thread id
+    CPU_BOOT_ADDR                => CPU_BOOT_ADDR,   -- cpu boot address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
@@ -320,9 +320,9 @@ begin
     CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
     BUS_TIMEOUT           => BUS_TIMEOUT,           -- cycles after which a valid bus access will timeout
     -- Physical memory protection (PMP) --
-    PMP_USE               => PMP_USE,         -- implement physical memory protection?
-    PMP_NUM_REGIONS       => PMP_NUM_REGIONS, -- number of regions (1..4)
-    PMP_GRANULARITY       => PMP_GRANULARITY  -- granularity (0=none, 1=8B, 2=16B, 3=32B, ...)
+    PMP_USE               => PMP_USE,               -- implement physical memory protection?
+    PMP_NUM_REGIONS       => PMP_NUM_REGIONS,       -- number of regions (1..4)
+    PMP_GRANULARITY       => PMP_GRANULARITY        -- granularity (0=none, 1=8B, 2=16B, 3=32B, ...)
   )
   port map (
     -- global control --
