@@ -54,7 +54,7 @@ even a builtin bootloader for easy program upload via UART.
 All software source files provide a doxygen-based documentary (available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)).
 
 
-**[How to get started?](Getting-Started)**
+### [How to get started?](Getting-Started)
 
 The processor is intended to work "out of the box". Just synthesize the
 [test setup](#Create-a-new-Hardware-Project), upload it to your FPGA board of choice and start playing
@@ -187,7 +187,7 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
   * Privilege levels: `M-mode` (Machine mode)
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
   * System instructions: `MRET` `WFI`
-  * Counter CSRs: `[m]cycle[h]` `[m]instret[h]` `time[h]`
+  * Counter CSRs: `cycle` `cycleh` `instret` `instreth` `time` `timeh` `mcycle` `mcycleh` `minstret` `minstreth`
   * Machine CSRs: `mstatus` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause`(read-only!) `mtval` `mip` `mvendorid` [`marchid`](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) `mimpid` `mhartid` `mzext`(custom)
   * Supported exceptions and interrupts:
     * Misaligned instruction address
@@ -218,7 +218,6 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
 
 * `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime
 * `mcause` CSR is read-only
-* The `[m]cycleh` and `[m]instreth` CSR counters are only 20-bit wide (in contrast to original 32-bit)
 * The physical memory protection (**PMP**) only supports `NAPOT` mode, a minimal granularity of 8 bytes and only up to 8 regions
 
 
