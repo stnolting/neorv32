@@ -40,6 +40,7 @@
  **************************************************************************/
 
 #include <neorv32.h>
+#include <string.h>
 
 
 /**********************************************************************//**
@@ -52,10 +53,14 @@
 #define DETAILED_EXCEPTION_DEBUG 0
 //** Set 1 to run memory tests */
 #define PROBING_MEM_TEST 0
+//** Set 1 to run external memory test */
+#define EXT_MEM_TEST     1
 //** Reachable unaligned address */
 #define ADDR_UNALIGNED   0x00000002
 //** Unreachable aligned address */
 #define ADDR_UNREACHABLE 0xFFFFFF00
+//* external memory base address */
+#define EXT_MEM_BASE     0xF0000000
 /**@}*/
 
 
@@ -198,7 +203,7 @@ int main() {
   // Instruction memory test
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("IMEM_TEST:    ");
+  neorv32_uart_printf("IMEM TEST:    ");
 #if (PROBING_MEM_TEST == 1)
   cnt_test++;
 
@@ -214,9 +219,9 @@ int main() {
     dmem_probe_cnt++;
   }
   
-  neorv32_uart_printf("%u bytes (should be %u bytes) ", dmem_probe_cnt, SYSINFO_ISPACE_SIZE);
+  neorv32_uart_printf("%u bytes (should be %u bytes) ", dmem_probe_cnt, SYSINFO_IMEM_SIZE);
   neorv32_uart_printf("@ 0x%x  ", SYSINFO_ISPACE_BASE);
-  if (dmem_probe_cnt == SYSINFO_ISPACE_SIZE) {
+  if (dmem_probe_cnt == SYSINFO_IMEM_SIZE) {
     test_ok();
   }
   else {
@@ -231,7 +236,7 @@ int main() {
   // Data memory test
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("DMEM_TEST:    ");
+  neorv32_uart_printf("DMEM TEST:    ");
 #if (PROBING_MEM_TEST == 1)
   cnt_test++;
 
@@ -247,13 +252,56 @@ int main() {
     imem_probe_cnt++;
   }
   
-  neorv32_uart_printf("%u bytes (should be %u bytes) ", imem_probe_cnt, SYSINFO_DSPACE_SIZE);
+  neorv32_uart_printf("%u bytes (should be %u bytes) ", imem_probe_cnt, SYSINFO_DMEM_SIZE);
   neorv32_uart_printf("@ 0x%x  ", SYSINFO_DSPACE_BASE);
-  if (imem_probe_cnt == SYSINFO_DSPACE_SIZE) {
+  if (imem_probe_cnt == SYSINFO_DMEM_SIZE) {
     test_ok();
   }
   else {
     test_fail();
+  }
+#else
+  neorv32_uart_printf("skipped (disabled)\n");
+#endif
+
+
+  // ----------------------------------------------------------
+  // External memory interface test
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("EXT_MEM TEST: ");
+#if (EXT_MEM_TEST == 1)
+  cnt_test++;
+
+  // create test program in RAM
+  static const uint32_t dummy_ext_program[2] __attribute__((aligned(8))) = {
+    0x3407D073, // csrwi mscratch, 15
+    0x00008067  // ret (32-bit)
+  };
+
+  // copy to external memory
+  if (memcpy((void*)EXT_MEM_BASE, (void*)&dummy_ext_program, (size_t)sizeof(dummy_ext_program)) == NULL) {
+    test_fail();
+  }
+  else {
+
+    // execute program
+    tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
+    asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
+  
+#if (DETAILED_EXCEPTION_DEBUG==0)
+    if (exception_handler_answer == 0xFFFFFFFF) { // make sure there was no exception
+      if (neorv32_cpu_csr_read(CSR_MSCRATCH) == 15) { // make sure the program was executed in the right way
+        test_ok();
+      }
+      else {
+        test_fail();
+      }
+    }
+    else {
+      test_fail();
+    }
+#endif
   }
 #else
   neorv32_uart_printf("skipped (disabled)\n");
