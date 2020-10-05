@@ -319,6 +319,7 @@ begin
         fetch_engine.i_buf_state_nxt <= (others => '0');
         ipb.clear                    <= '1'; -- clear instruction prefetch buffer
         fetch_engine.state_nxt       <= IFETCH_0;
+        fetch_engine.bus_err_ack     <= '1'; -- acknowledge any instruction bus errors, the execute engine has to take care of them / terminate current transfer
 
       when IFETCH_0 => -- output current PC to bus system, request 32-bit word
       -- ------------------------------------------------------------
@@ -331,7 +332,6 @@ begin
           fetch_engine.i_buf_nxt       <= be_instr_i & ma_instr_i & instr_i(31 downto 0); -- store data word and exception info
           fetch_engine.i_buf2_nxt      <= fetch_engine.i_buf;
           fetch_engine.i_buf_state_nxt <= fetch_engine.i_buf_state(0) & '1';
-          fetch_engine.bus_err_ack     <= '1'; -- acknowledge any instruction bus errors, the execute engine has to take care of them
           if (fetch_engine.i_buf_state(0) = '1') then -- buffer filled?
             fetch_engine.state_nxt <= IFETCH_2;
           else
@@ -342,6 +342,7 @@ begin
 
       when IFETCH_2 => -- construct instruction word and issue
       -- ------------------------------------------------------------
+        fetch_engine.bus_err_ack <= '1'; -- acknowledge any instruction bus errors, the execute engine has to take care of them / terminate current transfer
         if (fetch_engine.pc(1) = '0') or (CPU_EXTENSION_RISCV_C = false) then -- 32-bit aligned
           fetch_engine.ci_input <= fetch_engine.i_buf2(15 downto 00);
 

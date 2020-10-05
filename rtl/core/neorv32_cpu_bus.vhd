@@ -319,20 +319,19 @@ begin
         i_arbiter.timeout   <= std_ulogic_vector(unsigned(i_arbiter.timeout) - 1);
         i_arbiter.err_align <= (i_arbiter.err_align or i_misaligned)                                     and (not ctrl_i(ctrl_bus_ierr_ack_c));
         i_arbiter.err_bus   <= (i_arbiter.err_bus   or (not or_all_f(i_arbiter.timeout)) or i_bus_err_i) and (not ctrl_i(ctrl_bus_ierr_ack_c));
-        if (i_arbiter.err_align = '1') or (i_arbiter.err_bus = '1') then -- any error?
-          if (ctrl_i(ctrl_bus_ierr_ack_c) = '1') then -- wait for controller to acknowledge error
-            i_arbiter.rd_req <= '0';
-          end if;
-        elsif (i_bus_ack_i = '1') then -- wait for normal termination
+        --if (i_arbiter.err_align = '1') or (i_arbiter.err_bus = '1') then -- any error?
+        --  if (ctrl_i(ctrl_bus_ierr_ack_c) = '1') then -- wait for controller to acknowledge error
+        --    i_arbiter.rd_req <= '0';
+        --  end if;
+        if (i_bus_ack_i = '1') or (ctrl_i(ctrl_bus_ierr_ack_c) = '1') then -- wait for normal termination / CPU abort
           i_arbiter.rd_req <= '0';
         end if;
       end if;
-
-      -- cancel bus access --
-      i_bus_cancel_o <= i_arbiter.rd_req and ctrl_i(ctrl_bus_ierr_ack_c);
     end if;
   end process ifetch_arbiter;
 
+  -- cancel bus access --
+  i_bus_cancel_o <= i_arbiter.rd_req and ctrl_i(ctrl_bus_ierr_ack_c);
 
   -- wait for bus transaction to finish --
   i_wait_o <= i_arbiter.rd_req and (not i_bus_ack_i);
@@ -374,22 +373,21 @@ begin
         d_arbiter.timeout   <= std_ulogic_vector(unsigned(d_arbiter.timeout) - 1);
         d_arbiter.err_align <= (d_arbiter.err_align or d_misaligned)                                     and (not ctrl_i(ctrl_bus_derr_ack_c));
         d_arbiter.err_bus   <= (d_arbiter.err_bus   or (not or_all_f(d_arbiter.timeout)) or d_bus_err_i) and (not ctrl_i(ctrl_bus_derr_ack_c));
-        if (d_arbiter.err_align = '1') or (d_arbiter.err_bus = '1') then -- any error?
-          if (ctrl_i(ctrl_bus_derr_ack_c) = '1') then -- wait for controller to acknowledge error
-            d_arbiter.wr_req <= '0';
-            d_arbiter.rd_req <= '0';
-          end if;
-        elsif (d_bus_ack_i = '1') then -- wait for normal termination
+        --if (d_arbiter.err_align = '1') or (d_arbiter.err_bus = '1') then -- any error?
+        --  if (ctrl_i(ctrl_bus_derr_ack_c) = '1') then -- wait for controller to acknowledge error
+        --    d_arbiter.wr_req <= '0';
+        --    d_arbiter.rd_req <= '0';
+        --  end if;
+        if (d_bus_ack_i = '1') or (ctrl_i(ctrl_bus_derr_ack_c) = '1') then -- wait for normal termination / CPU abort
           d_arbiter.wr_req <= '0';
           d_arbiter.rd_req <= '0';
         end if;
       end if;
-
-      -- cancel bus access --
-      d_bus_cancel_o <= (d_arbiter.wr_req or d_arbiter.rd_req) and ctrl_i(ctrl_bus_derr_ack_c);
     end if;
   end process data_access_arbiter;
 
+  -- cancel bus access --
+  d_bus_cancel_o <= (d_arbiter.wr_req or d_arbiter.rd_req) and ctrl_i(ctrl_bus_derr_ack_c);
 
   -- wait for bus transaction to finish --
   d_wait_o <= (d_arbiter.wr_req or d_arbiter.rd_req) and (not d_bus_ack_i);
