@@ -312,7 +312,7 @@ Results generated for hardware version: `1.3.7.3`
 **Configuration**
 Hardware:    32kB IMEM, 16kB DMEM, 100MHz clock
 CoreMark:    2000 iterations, MEM_METHOD is MEM_STACK
-Compiler:    RISCV32-GCC 10.1.0
+Compiler:    RISCV32-GCC 10.1.0 (rv32i)
 Peripherals: UART for printing the results
 ~~~
 
