@@ -285,7 +285,7 @@ begin
         for i in 1 to wb_mem_latency_c-1 loop
           wb_mem.rdata(i) <= wb_mem.rdata(i-1);
           wb_mem.rb_en(i) <= wb_mem.rb_en(i-1);
-          wb_mem.ack(i)   <= wb_mem.ack(i-1);
+          wb_mem.ack(i)   <= wb_mem.ack(i-1) and wb_cpu.cyc;
         end loop;
       end if;
     end if;
