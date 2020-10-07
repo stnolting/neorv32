@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040400"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040402"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
 
   -- Architecture Configuration -------------------------------------------------------------
@@ -183,9 +183,9 @@ package neorv32_package is
   constant ctrl_alu_cmd0_c        : natural := 19; -- ALU command bit 0
   constant ctrl_alu_cmd1_c        : natural := 20; -- ALU command bit 1
   constant ctrl_alu_cmd2_c        : natural := 21; -- ALU command bit 2
-  constant ctrl_alu_opa_mux_c     : natural := 22; -- operand A select (0=rs1, 1=PC)
-  constant ctrl_alu_opb_mux_c     : natural := 23; -- operand B select (0=rs2, 1=IMM)
-  constant ctrl_alu_opc_mux_c     : natural := 24; -- operand C select (0=rs2, 1=IMM)
+  constant ctrl_alu_addsub_c      : natural := 22; -- 0=ADD, 1=SUB
+  constant ctrl_alu_opa_mux_c     : natural := 23; -- operand A select (0=rs1, 1=PC)
+  constant ctrl_alu_opb_mux_c     : natural := 24; -- operand B select (0=rs2, 1=IMM)
   constant ctrl_alu_unsigned_c    : natural := 25; -- is unsigned ALU operation
   constant ctrl_alu_shift_dir_c   : natural := 26; -- shift direction (0=left, 1=right)
   constant ctrl_alu_shift_ar_c    : natural := 27; -- is arithmetic shift
@@ -204,16 +204,13 @@ package neorv32_package is
   constant ctrl_bus_fence_c       : natural := 39; -- executed fence operation
   constant ctrl_bus_fencei_c      : natural := 40; -- executed fencei operation
   -- co-processors --
-  constant ctrl_cp_use_c          : natural := 41; -- is cp operation
-  constant ctrl_cp_id_lsb_c       : natural := 42; -- cp select ID lsb
-  constant ctrl_cp_id_msb_c       : natural := 43; -- cp select ID msb
-  constant ctrl_cp_cmd0_c         : natural := 44; -- cp command bit 0
-  constant ctrl_cp_cmd1_c         : natural := 45; -- cp command bit 1
-  constant ctrl_cp_cmd2_c         : natural := 46; -- cp command bit 2
+  constant ctrl_cp_id_lsb_c       : natural := 41; -- cp select ID lsb
+  constant ctrl_cp_id_msb_c       : natural := 42; -- cp select ID msb
+  constant ctrl_cp_cmd0_c         : natural := 43; -- cp command bit 0
+  constant ctrl_cp_cmd1_c         : natural := 44; -- cp command bit 1
+  constant ctrl_cp_cmd2_c         : natural := 45; -- cp command bit 2
   -- control bus size --
-  constant ctrl_width_c           : natural := 47; -- control bus size
-
-constant ctrl_alu_aopb_inv_c    : natural := 48;
+  constant ctrl_width_c           : natural := 46; -- control bus size
 
   -- ALU Comparator Bus ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -252,7 +249,7 @@ constant ctrl_alu_aopb_inv_c    : natural := 48;
   constant opcode_alu_c    : std_ulogic_vector(6 downto 0) := "0110011"; -- ALU operation (operation via funct3 and funct7)
   -- control flow --
   constant opcode_jal_c    : std_ulogic_vector(6 downto 0) := "1101111"; -- jump and link
-  constant opcode_jalr_c   : std_ulogic_vector(6 downto 0) := "1100111"; -- jump and register
+  constant opcode_jalr_c   : std_ulogic_vector(6 downto 0) := "1100111"; -- jump and link with register
   constant opcode_branch_c : std_ulogic_vector(6 downto 0) := "1100011"; -- branch (condition set via funct3)
   -- memory access --
   constant opcode_load_c   : std_ulogic_vector(6 downto 0) := "0000011"; -- load (data type via funct3)
@@ -309,6 +306,52 @@ constant ctrl_alu_aopb_inv_c    : natural := 48;
   constant funct12_mret_c   : std_ulogic_vector(11 downto 0) := x"302"; -- MRET
   constant funct12_wfi_c    : std_ulogic_vector(11 downto 0) := x"105"; -- WFI
 
+  -- RISC-V CSR Addresses -------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  constant csr_mstatus_c    : std_ulogic_vector(11 downto 0) := x"300"; -- mstatus
+  constant csr_misa_c       : std_ulogic_vector(11 downto 0) := x"301"; -- misa
+  constant csr_mie_c        : std_ulogic_vector(11 downto 0) := x"304"; -- mie
+  constant csr_mtvec_c      : std_ulogic_vector(11 downto 0) := x"305"; -- mtvec
+  --
+  constant csr_mscratch_c   : std_ulogic_vector(11 downto 0) := x"340"; -- mscratch
+  constant csr_mepc_c       : std_ulogic_vector(11 downto 0) := x"341"; -- mepc
+  constant csr_mcause_c     : std_ulogic_vector(11 downto 0) := x"342"; -- mcause
+  constant csr_mtval_c      : std_ulogic_vector(11 downto 0) := x"343"; -- mtval
+  constant csr_mip_c        : std_ulogic_vector(11 downto 0) := x"344"; -- mip
+  --
+  constant csr_pmpcfg0_c    : std_ulogic_vector(11 downto 0) := x"3a0"; -- pmpcfg0
+  constant csr_pmpcfg1_c    : std_ulogic_vector(11 downto 0) := x"3a1"; -- pmpcfg1
+  --
+  constant csr_pmpaddr0_c   : std_ulogic_vector(11 downto 0) := x"3b0"; -- pmpaddr0
+  constant csr_pmpaddr1_c   : std_ulogic_vector(11 downto 0) := x"3b1"; -- pmpaddr1
+  constant csr_pmpaddr2_c   : std_ulogic_vector(11 downto 0) := x"3b2"; -- pmpaddr2
+  constant csr_pmpaddr3_c   : std_ulogic_vector(11 downto 0) := x"3b3"; -- pmpaddr3
+  constant csr_pmpaddr4_c   : std_ulogic_vector(11 downto 0) := x"3b4"; -- pmpaddr4
+  constant csr_pmpaddr5_c   : std_ulogic_vector(11 downto 0) := x"3b5"; -- pmpaddr5
+  constant csr_pmpaddr6_c   : std_ulogic_vector(11 downto 0) := x"3b6"; -- pmpaddr6
+  constant csr_pmpaddr7_c   : std_ulogic_vector(11 downto 0) := x"3b7"; -- pmpaddr7
+  --
+  constant csr_mcycle_c     : std_ulogic_vector(11 downto 0) := x"b00"; -- mcycle
+  constant csr_minstret_c   : std_ulogic_vector(11 downto 0) := x"b02"; -- minstret
+  --
+  constant csr_mcycleh_c    : std_ulogic_vector(11 downto 0) := x"b80"; -- mcycleh
+  constant csr_minstreth_c  : std_ulogic_vector(11 downto 0) := x"b82"; -- minstreth
+  --
+  constant csr_cycle_c      : std_ulogic_vector(11 downto 0) := x"c00"; -- cycle
+  constant csr_time_c       : std_ulogic_vector(11 downto 0) := x"c01"; -- time
+  constant csr_instret_c    : std_ulogic_vector(11 downto 0) := x"c02"; -- instret
+  --
+  constant csr_cycleh_c     : std_ulogic_vector(11 downto 0) := x"c80"; -- cycleh
+  constant csr_timeh_c      : std_ulogic_vector(11 downto 0) := x"c81"; -- timeh
+  constant csr_instreth_c   : std_ulogic_vector(11 downto 0) := x"c82"; -- instreth
+  --
+  constant csr_mvendorid_c  : std_ulogic_vector(11 downto 0) := x"f11"; -- mvendorid
+  constant csr_marchid_c    : std_ulogic_vector(11 downto 0) := x"f12"; -- marchid
+  constant csr_mimpid_c     : std_ulogic_vector(11 downto 0) := x"f13"; -- mimpid
+  constant csr_mhartid_c    : std_ulogic_vector(11 downto 0) := x"f14"; -- mhartid
+  --
+  constant csr_mzext_c      : std_ulogic_vector(11 downto 0) := x"fc0"; -- mzext
+
   -- Co-Processor Operations ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- cp ids --
@@ -325,14 +368,14 @@ constant ctrl_alu_aopb_inv_c    : natural := 48;
 
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant alu_cmd_add_c   : std_ulogic_vector(2 downto 0) := "000"; -- r <= A + B
-  constant alu_cmd_sub_c   : std_ulogic_vector(2 downto 0) := "001"; -- r <= A - B
-  constant alu_cmd_slt_c   : std_ulogic_vector(2 downto 0) := "010"; -- r <= A < B
-  constant alu_cmd_shift_c : std_ulogic_vector(2 downto 0) := "011"; -- r <= A <</>> B
-  constant alu_cmd_xor_c   : std_ulogic_vector(2 downto 0) := "100"; -- r <= A xor B
-  constant alu_cmd_or_c    : std_ulogic_vector(2 downto 0) := "101"; -- r <= A or B
-  constant alu_cmd_and_c   : std_ulogic_vector(2 downto 0) := "110"; -- r <= A and B
-  constant alu_cmd_movb_c  : std_ulogic_vector(2 downto 0) := "111"; -- r <= B
+  constant alu_cmd_addsub_c : std_ulogic_vector(2 downto 0) := "000"; -- r <= A +/- B
+  constant alu_cmd_slt_c    : std_ulogic_vector(2 downto 0) := "001"; -- r <= A < B
+  constant alu_cmd_cp_c     : std_ulogic_vector(2 downto 0) := "010"; -- r <= CP result (iterative)
+  constant alu_cmd_shift_c  : std_ulogic_vector(2 downto 0) := "011"; -- r <= A <</>> B (iterative)
+  constant alu_cmd_movb_c   : std_ulogic_vector(2 downto 0) := "100"; -- r <= B
+  constant alu_cmd_xor_c    : std_ulogic_vector(2 downto 0) := "101"; -- r <= A xor B
+  constant alu_cmd_or_c     : std_ulogic_vector(2 downto 0) := "110"; -- r <= A or B
+  constant alu_cmd_and_c    : std_ulogic_vector(2 downto 0) := "111"; -- r <= A and B
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -383,8 +426,8 @@ constant ctrl_alu_aopb_inv_c    : natural := 48;
 
   -- CPU Privilege Modes --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant m_priv_mode_c : std_ulogic_vector(1 downto 0) := "11"; -- machine mode
-  constant u_priv_mode_c : std_ulogic_vector(1 downto 0) := "00"; -- user mode
+  constant priv_mode_m_c : std_ulogic_vector(1 downto 0) := "11"; -- machine mode
+  constant priv_mode_u_c : std_ulogic_vector(1 downto 0) := "00"; -- user mode
 
   -- Clock Generator -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -571,7 +614,6 @@ constant ctrl_alu_aopb_inv_c    : natural := 48;
       -- data input --
       instr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- instruction
       cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
-      alu_add_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU.add result
       alu_res_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU processing result
       -- data output --
       imm_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- immediate
@@ -641,7 +683,6 @@ constant ctrl_alu_aopb_inv_c    : natural := 48;
       imm_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
       -- data output --
       cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
-      add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- OPA + OPB
       res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
       -- co-processor interface --
       cp0_start_o : out std_ulogic; -- trigger co-processor 0
