@@ -127,11 +127,7 @@ int main() {
   }
 
   // init UART at default baud rate, no rx interrupt, no tx interrupt
-#ifdef DEVNULL_UART_OVERRIDE
-  UART_CT = 0; // skip UART init if we are using the DEVNULL simulation console output
-#else
   neorv32_uart_setup(BAUD_RATE, 0, 0);
-#endif
   
 
   neorv32_mtime_set_time(0);
