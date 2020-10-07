@@ -58,7 +58,6 @@ entity neorv32_cpu_alu is
     imm_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
     -- data output --
     cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
-    add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- OPA + OPB
     res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
     -- co-processor interface --
     cp0_start_o : out std_ulogic; -- trigger co-processor 0
@@ -75,19 +74,16 @@ end neorv32_cpu_alu;
 architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
 
   -- operands --
-  signal opa, opb, opc : std_ulogic_vector(data_width_c-1 downto 0);
+  signal opa, opb : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- results --
-  signal add_res : std_ulogic_vector(data_width_c-1 downto 0);
-  signal alu_res : std_ulogic_vector(data_width_c-1 downto 0);
-  signal cp_res  : std_ulogic_vector(data_width_c-1 downto 0);
+  signal addsub_res : std_ulogic_vector(data_width_c-1 downto 0);
+  signal cp_res     : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- comparator --
   signal cmp_opx   : std_ulogic_vector(data_width_c downto 0);
   signal cmp_opy   : std_ulogic_vector(data_width_c downto 0);
   signal cmp_sub   : std_ulogic_vector(data_width_c downto 0);
-  signal sub_res   : std_ulogic_vector(data_width_c-1 downto 0);
-  signal cmp_equal : std_ulogic;
   signal cmp_less  : std_ulogic;
 
   -- shifter --
@@ -104,6 +100,7 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
 
   -- co-processor arbiter and interface --
   type cp_ctrl_t is record
+    cmd    : std_ulogic;
     cmd_ff : std_ulogic;
     busy   : std_ulogic;
     start  : std_ulogic;
@@ -115,32 +112,50 @@ begin
 
   -- Operand Mux ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  opa <= rs1_i when (ctrl_i(ctrl_alu_opa_mux_c) = '0') else pc2_i; -- operand a (first ALU input operand)
-  opb <= rs2_i when (ctrl_i(ctrl_alu_opb_mux_c) = '0') else imm_i; -- operand b (second ALU input operand)
-  opc <= rs2_i when (ctrl_i(ctrl_alu_opc_mux_c) = '0') else imm_i; -- operand c (third ALU input operand for comparison and SUB)
+  opa <= pc2_i when (ctrl_i(ctrl_alu_opa_mux_c) = '1') else rs1_i; -- operand a (first ALU input operand)
+  opb <= imm_i when (ctrl_i(ctrl_alu_opb_mux_c) = '1') else rs2_i; -- operand b (second ALU input operand)
 
 
   -- Comparator Unit ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- less than (x < y) --
   cmp_opx  <= (rs1_i(rs1_i'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs1_i;
-  cmp_opy  <= (opc(opc'left)     and (not ctrl_i(ctrl_alu_unsigned_c))) & opc;
-  cmp_sub  <= std_ulogic_vector(signed(cmp_opx) - signed(cmp_opy));
-  cmp_less <= cmp_sub(cmp_sub'left); -- carry (borrow) indicates a "less"
-  sub_res  <= cmp_sub(data_width_c-1 downto 0); -- use the less-comparator also for SUB operations
+  cmp_opy  <= (rs2_i(rs2_i'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs2_i;
+  cmp_sub  <= std_ulogic_vector(signed(cmp_opx) - signed(cmp_opy)); -- less than (x < y)
 
-  -- equal (for branch check only) --
-  cmp_equal <= '1' when (rs1_i = rs2_i) else '0';
-
-  -- output for branch condition evaluation --
-  cmp_o(alu_cmp_equal_c) <= cmp_equal;
-  cmp_o(alu_cmp_less_c)  <= cmp_less;
+  cmp_o(alu_cmp_equal_c) <= '1' when (rs1_i = rs2_i) else '0';
+  cmp_o(alu_cmp_less_c)  <= cmp_sub(cmp_sub'left); -- less = carry (borrow)
 
 
-  -- Binary Adder ---------------------------------------------------------------------------
+  -- Binary Adder/Subtractor ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  add_res <= std_ulogic_vector(unsigned(opa) + unsigned(opb));
-  add_o   <= add_res; -- direct output (for PC modification)
+  binary_arithmetic_core: process(ctrl_i, opa, opb)
+    variable cin_v  : std_ulogic_vector(0 downto 0);
+    variable op_a_v : std_ulogic_vector(data_width_c downto 0);
+    variable op_b_v : std_ulogic_vector(data_width_c downto 0);
+    variable op_y_v : std_ulogic_vector(data_width_c downto 0);
+    variable res_v  : std_ulogic_vector(data_width_c downto 0);
+  begin
+    -- operand sign-extension --
+    op_a_v := (opa(opa'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opa;
+    op_b_v := (opb(opb'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opb;
+
+    -- add/sub(slt) select --
+    if (ctrl_i(ctrl_alu_addsub_c) = '1') then -- subtraction
+      op_y_v   := not op_b_v;
+      cin_v(0) := '1';
+    else-- addition
+      op_y_v   := op_b_v;
+      cin_v(0) := '0';
+    end if;
+
+    -- adder core --
+    res_v := std_ulogic_vector(unsigned(op_a_v) + unsigned(op_y_v) + unsigned(cin_v(0 downto 0)));
+
+    -- output --
+    cmp_less    <= res_v(32);
+    addsub_res  <= res_v(31 downto 0);
+    addsub_res  <= res_v(31 downto 0);
+  end process binary_arithmetic_core;
 
 
   -- Iterative Shifter Unit -----------------------------------------------------------------
@@ -182,7 +197,7 @@ begin
   end process shifter_unit;
 
   -- is shift operation? --
-  shifter.cmd   <= '1' when (ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) = alu_cmd_shift_c) and (ctrl_i(ctrl_cp_use_c) = '0') else '0';
+  shifter.cmd   <= '1' when (ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) = alu_cmd_shift_c) else '0';
   shifter.start <= '1' when (shifter.cmd = '1') and (shifter.cmd_ff = '0') else '0';
 
   -- shift operation running? --
@@ -199,7 +214,7 @@ begin
       cp_ctrl.busy   <= '0';
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_M = true) then
-        cp_ctrl.cmd_ff <= ctrl_i(ctrl_cp_use_c);
+        cp_ctrl.cmd_ff <= cp_ctrl.cmd;
         if (cp_ctrl.start = '1') then
           cp_ctrl.busy <= '1';
         elsif ((cp0_valid_i or cp1_valid_i) = '1') then -- cp computation done?
@@ -213,7 +228,8 @@ begin
   end process cp_arbiter;
 
   -- is co-processor operation? --
-  cp_ctrl.start <= '1' when (ctrl_i(ctrl_cp_use_c) = '1') and (cp_ctrl.cmd_ff = '0') else '0';
+  cp_ctrl.cmd   <= '1' when (ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) = alu_cmd_cp_c) else '0';
+  cp_ctrl.start <= '1' when (cp_ctrl.cmd = '1') and (cp_ctrl.cmd_ff = '0') else '0';
   cp0_start_o   <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = cp_sel_muldiv_c) else '0'; -- MULDIV CP
   cp1_start_o   <= '0'; -- not yet implemented
 
@@ -221,31 +237,30 @@ begin
   cp_ctrl.halt <= cp_ctrl.busy or cp_ctrl.start;
 
   -- co-processor result --
-  cp_res <= cp0_data_i or cp1_data_i; -- only the selected cp may output data != 0
+  cp_res <= cp0_data_i or cp1_data_i; -- only the **actaully selected** co-processor should output data != 0
 
 
   -- ALU Function Select --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  alu_function_mux: process(ctrl_i, opa, opb, add_res, sub_res, cmp_less, shifter.sreg)
+  alu_function_mux: process(ctrl_i, opa, opb, addsub_res, cp_res, cmp_less, shifter.sreg)
   begin
     case ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) is
-      when alu_cmd_xor_c   => alu_res <= opa xor opb;
-      when alu_cmd_or_c    => alu_res <= opa or  opb;
-      when alu_cmd_and_c   => alu_res <= opa and opb;
-      when alu_cmd_movb_c  => alu_res <= opb;
-      when alu_cmd_sub_c   => alu_res <= sub_res;
-      when alu_cmd_add_c   => alu_res <= add_res;
-      when alu_cmd_shift_c => alu_res <= shifter.sreg;
-      when alu_cmd_slt_c   => alu_res <= (others => '0'); alu_res(0) <= cmp_less;
-      when others          => alu_res <= (others => '0'); -- undefined
+      when alu_cmd_xor_c    => res_o <= opa xor opb;
+      when alu_cmd_or_c     => res_o <= opa or  opb;
+      when alu_cmd_and_c    => res_o <= opa and opb;
+      when alu_cmd_movb_c   => res_o <= opb;
+      when alu_cmd_addsub_c => res_o <= addsub_res;
+      when alu_cmd_cp_c     => res_o <= cp_res;
+      when alu_cmd_shift_c  => res_o <= shifter.sreg;
+      when alu_cmd_slt_c    => res_o <= (others => '0'); res_o(0) <= cmp_less;
+      when others           => res_o <= opb; -- undefined
     end case;
   end process alu_function_mux;
 
 
-  -- ALU Result -----------------------------------------------------------------------------
+  -- ALU Busy -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   wait_o <= shifter.halt or cp_ctrl.halt; -- wait until iterative units have completed
-  res_o  <= cp_res when (ctrl_i(ctrl_cp_use_c) = '1') else alu_res; -- FIXME?
 
 
 end neorv32_cpu_cpu_rtl;

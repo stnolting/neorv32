@@ -10,7 +10,7 @@
 -- #     * neorv32_cpu_decompressor.vhd : Compressed instructions decoder                          #
 -- #   * neorv32_cpu_regfile.vhd        : Data register file                                       #
 -- #                                                                                               #
--- # Check the processor's documentary for more information: docs/NEORV32.pdf                      #
+-- # Check out the processor's data sheet for more information: docs/NEORV32.pdf                   #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -117,7 +117,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal instr      : std_ulogic_vector(data_width_c-1 downto 0); -- new instruction
   signal rs1, rs2   : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
   signal alu_res    : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
-  signal alu_add    : std_ulogic_vector(data_width_c-1 downto 0); -- alu adder result
   signal rdata      : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
   signal alu_wait   : std_ulogic; -- alu is busy due to iterative unit
   signal bus_i_wait : std_ulogic; -- wait for current bus instruction fetch
@@ -193,7 +192,6 @@ begin
     -- data input --
     instr_i       => instr,       -- instruction
     cmp_i         => alu_cmp,     -- comparator status
-    alu_add_i     => alu_add,     -- ALU.add result
     alu_res_i     => alu_res,     -- ALU processing result
     -- data output --
     imm_o         => imm,         -- immediate
@@ -263,7 +261,6 @@ begin
     imm_i       => imm,           -- immediate
     -- data output --
     cmp_o       => alu_cmp,       -- comparator status
-    add_o       => alu_add,       -- OPA + OPB
     res_o       => alu_res,       -- ALU result
     -- co-processor interface --
     cp0_start_o => cp0_start,     -- trigger co-processor 0
@@ -337,7 +334,7 @@ begin
     ma_instr_o     => ma_instr,       -- misaligned instruction address
     be_instr_o     => be_instr,       -- bus error on instruction access
     -- cpu data access interface --
-    addr_i         => alu_add,        -- ALU.add result -> access address
+    addr_i         => alu_res,       -- ALU result -> access address
     wdata_i        => rs2,            -- write data
     rdata_o        => rdata,          -- read data
     mar_o          => mar,            -- current memory address register
