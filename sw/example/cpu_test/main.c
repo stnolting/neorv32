@@ -127,7 +127,12 @@ int main() {
   }
 
   // init UART at default baud rate, no rx interrupt, no tx interrupt
+#ifdef DEVNULL_UART_OVERRIDE
+  UART_CT = 0; // skip UART init if we are using the DEVNULL simulation console output
+#else
   neorv32_uart_setup(BAUD_RATE, 0, 0);
+#endif
+  
 
   neorv32_mtime_set_time(0);
   // set CMP of machine system timer MTIME to max to prevent an IRQ
@@ -135,7 +140,8 @@ int main() {
   neorv32_mtime_set_timecmp(mtime_cmp_max);
 
   // intro
-  neorv32_uart_printf("\n\n--- CPU TEST ---\n\n");
+  neorv32_uart_printf("\n\n--- CPU TEST ---\n");
+  neorv32_uart_printf("build: "__DATE__" "__TIME__"\n\n");
 
   // show project credits
   neorv32_rte_print_credits();
