@@ -70,6 +70,10 @@ architecture neorv32_imem_rtl of neorv32_imem is
   constant spram_sleep_mode_en_c : boolean := false; -- put IMEM into sleep mode when idle (for low power)
   -- -------------------------------------------------------------------------------------------------------
 
+  -- IO space: module base address --
+  constant hi_abb_c : natural := 31; -- high address boundary bit
+  constant lo_abb_c : natural := index_size_f(IMEM_SIZE); -- low address boundary bit
+
   -- local signals --
   signal acc_en  : std_ulogic;
   signal mem_cs  : std_ulogic;
@@ -93,7 +97,7 @@ begin
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (unsigned(addr_i) >= unsigned(IMEM_BASE)) and (unsigned(addr_i) < unsigned(IMEM_BASE) + IMEM_SIZE) else '0';
+  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = IMEM_BASE(hi_abb_c downto lo_abb_c)) else '0';
   mem_cs <= acc_en and (rden_i or wren_i);
 
 

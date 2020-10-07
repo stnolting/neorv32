@@ -58,6 +58,10 @@ end neorv32_dmem;
 
 architecture neorv32_dmem_rtl of neorv32_dmem is
 
+  -- IO space: module base address --
+  constant hi_abb_c : natural := 31; -- high address boundary bit
+  constant lo_abb_c : natural := index_size_f(DMEM_SIZE); -- low address boundary bit
+
   -- local signals --
   signal acc_en : std_ulogic;
   signal rdata  : std_ulogic_vector(31 downto 0);
@@ -96,7 +100,7 @@ begin
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (addr_i >= DMEM_BASE) and (addr_i < std_ulogic_vector(unsigned(DMEM_BASE) + DMEM_SIZE)) else '0';
+  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = DMEM_BASE(hi_abb_c downto lo_abb_c)) else '0';
   addr   <= addr_i(index_size_f(DMEM_SIZE/4)+1 downto 2); -- word aligned
 
 

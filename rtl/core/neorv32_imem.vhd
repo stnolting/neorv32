@@ -67,6 +67,10 @@ end neorv32_imem;
 
 architecture neorv32_imem_rtl of neorv32_imem is
 
+  -- IO space: module base address --
+  constant hi_abb_c : natural := 31; -- high address boundary bit
+  constant lo_abb_c : natural := index_size_f(IMEM_SIZE); -- low address boundary bit
+
   -- ROM types --
   type imem_file8_t is array (0 to IMEM_SIZE/4-1) of std_ulogic_vector(07 downto 0);
 
@@ -140,7 +144,7 @@ begin
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (addr_i >= IMEM_BASE) and (addr_i < std_ulogic_vector(unsigned(IMEM_BASE) + IMEM_SIZE)) else '0';
+  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = IMEM_BASE(hi_abb_c downto lo_abb_c)) else '0';
   addr   <= addr_i(index_size_f(IMEM_SIZE/4)+1 downto 2); -- word aligned
 
 
