@@ -31,7 +31,7 @@ ls -l $srcdir_top_templates
 
 # Just a hint
 echo ""
-echo "Tip: Compile application with USER_FLAGS+=-DDEVNULL_UART_OVERRIDE to have faster UART/console output via NEORV32.DEVNULL."
+echo "Tip: Compile application with USER_FLAGS+=-UART_SIM_MODE to have UART/console via direct simulation output."
 echo ""
 
 # Analyse sources; libs and images at first!
@@ -49,7 +49,6 @@ ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_control.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_cp_muldiv.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_decompressor.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_regfile.vhd
-ghdl -a --work=neorv32 $srcdir_core/neorv32_devnull.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_dmem.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_gpio.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_imem.vhd
@@ -73,10 +72,10 @@ ghdl -a --work=neorv32 $srcdir_sim/*.vhd
 # Prepare simulation output files
 touch neorv32.testbench_uart.out
 chmod 777 neorv32.testbench_uart.out
-touch neorv32.devnull.out
-chmod 777 neorv32.devnull.out
-touch neorv32.devnull.data.out
-chmod 777 neorv32.devnull.data.out
+touch neorv32.uart.sim_mode.text.out
+chmod 777 neorv32.uart.sim_mode.text.out
+touch neorv32.uart.sim_mode.data.out
+chmod 777 neorv32.uart.sim_mode.data.out
 
 # Run simulation
 ghdl -e --work=neorv32 neorv32_tb
