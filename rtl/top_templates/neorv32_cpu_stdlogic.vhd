@@ -56,9 +56,7 @@ entity neorv32_cpu_stdlogic is
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false; -- implement PMP?
     PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
-    PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
-    -- Bus Interface --
-    BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
+    PMP_GRANULARITY              : natural := 14     -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
   );
   port (
     -- global control --
@@ -143,9 +141,7 @@ begin
     -- Physical Memory Protection (PMP) --
     PMP_USE                      => PMP_USE,                      -- implement PMP?
     PMP_NUM_REGIONS              => PMP_NUM_REGIONS,              -- number of regions (max 8)
-    PMP_GRANULARITY              => PMP_GRANULARITY,              -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
-    -- Bus Interface --
-    BUS_TIMEOUT                  => BUS_TIMEOUT                   -- cycles after which a valid bus access will timeout
+    PMP_GRANULARITY              => PMP_GRANULARITY               -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
   )
   port map (
     -- global control --

@@ -67,9 +67,7 @@ entity neorv32_cpu is
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false; -- implement PMP?
     PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
-    PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
-    -- Bus Interface --
-    BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
+    PMP_GRANULARITY              : natural := 14     -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
   );
   port (
     -- global control --
@@ -157,8 +155,6 @@ begin
   assert not ((PMP_NUM_REGIONS > pmp_max_r_c) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions out of valid range." severity error;
   -- PMP granulartiy --
   assert not (((PMP_GRANULARITY < 1) or (PMP_GRANULARITY > 32)) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Invalid PMP granulartiy (0 < G < 33)." severity error;
-  -- Bus timeout --
-  assert not (BUS_TIMEOUT < 1) report "NEORV32 CPU CONFIG ERROR! Invalid bus timeout - must be at least 1 cycle." severity error;
 
 
   -- Control Unit ---------------------------------------------------------------------------
@@ -315,7 +311,6 @@ begin
   neorv32_cpu_bus_inst: neorv32_cpu_bus
   generic map (
     CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
-    BUS_TIMEOUT           => BUS_TIMEOUT,           -- cycles after which a valid bus access will timeout
     -- Physical memory protection (PMP) --
     PMP_USE               => PMP_USE,               -- implement physical memory protection?
     PMP_NUM_REGIONS       => PMP_NUM_REGIONS,       -- number of regions (1..4)

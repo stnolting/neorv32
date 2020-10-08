@@ -388,9 +388,7 @@ entity neorv32_cpu is
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false; -- implement PMP?
     PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
-    PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
-    -- Bus Interface --
-    BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
+    PMP_GRANULARITY              : natural := 14     -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
   );
   port (
     -- global control --
@@ -463,7 +461,6 @@ entity neorv32_top is
     -- External memory interface --
     MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
     MEM_EXT_REG_STAGES           : natural := 2;      -- number of interface register stages (0,1,2)
-    MEM_EXT_TIMEOUT              : natural := 15;     -- cycles after which a valid bus access will timeout
     -- Processor peripherals --
     IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?

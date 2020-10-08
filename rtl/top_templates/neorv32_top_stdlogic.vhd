@@ -68,7 +68,6 @@ entity neorv32_top_stdlogic is
     -- External memory interface --
     MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
     MEM_EXT_REG_STAGES           : natural := 2;      -- number of interface register stages (0,1,2)
-    MEM_EXT_TIMEOUT              : natural := 15;     -- cycles after which a valid bus access will timeout
     -- Processor peripherals --
     IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
@@ -189,7 +188,6 @@ begin
     -- External memory interface --
     MEM_EXT_USE                  => MEM_EXT_USE,        -- implement external memory bus interface?
     MEM_EXT_REG_STAGES           => MEM_EXT_REG_STAGES, -- number of interface register stages (0,1,2)
-    MEM_EXT_TIMEOUT              => MEM_EXT_TIMEOUT,    -- cycles after which a valid bus access will timeout
     -- Processor peripherals --
     IO_GPIO_USE                  => IO_GPIO_USE,        -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE                 => IO_MTIME_USE,       -- implement machine system timer (MTIME)?

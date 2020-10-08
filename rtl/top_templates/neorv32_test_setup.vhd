@@ -95,7 +95,6 @@ begin
     -- External memory interface --
     MEM_EXT_USE                  => false,  -- implement external memory bus interface?
     MEM_EXT_REG_STAGES           => 2,      -- number of interface register stages (0,1,2)
-    MEM_EXT_TIMEOUT              => 15,     -- cycles after which a valid bus access will timeout
     -- Processor peripherals --
     IO_GPIO_USE                  => true,  -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE                 => true,  -- implement machine system timer (MTIME)?

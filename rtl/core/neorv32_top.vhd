@@ -74,7 +74,6 @@ entity neorv32_top is
     -- External memory interface --
     MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
     MEM_EXT_REG_STAGES           : natural := 2;      -- number of interface register stages (0,1,2)
-    MEM_EXT_TIMEOUT              : natural := 15;     -- cycles after which a valid bus access will timeout
     -- Processor peripherals --
     IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
@@ -233,8 +232,6 @@ begin
   assert not (dspace_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 4-byte-aligned." severity error;
   assert not ((ispace_base_c(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) /= imem_align_check_c) and (MEM_INT_IMEM_USE = true)) report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address has to be aligned to IMEM size." severity error;
   assert not ((dspace_base_c(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) /= dmem_align_check_c) and (MEM_INT_DMEM_USE = true)) report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address has to be aligned to DMEM size." severity error;
-  -- memory system - max latency --
-  assert not (MEM_EXT_TIMEOUT < 1) report "NEORV32 PROCESSOR CONFIG ERROR! Invalid bus timeout. Processor-internal components have 1 cycle latency." severity error;
   -- clock --
   assert not (CLOCK_FREQUENCY = 0) report "NEORV32 PROCESSOR CONFIG ERROR! Core clock frequency (CLOCK_FREQUENCY) not specified." severity error;
   -- memory layout notifier --
@@ -319,9 +316,7 @@ begin
     -- Physical Memory Protection (PMP) --
     PMP_USE                      => PMP_USE,         -- implement PMP?
     PMP_NUM_REGIONS              => PMP_NUM_REGIONS, -- number of regions (max 8)
-    PMP_GRANULARITY              => PMP_GRANULARITY, -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
-    -- Bus Interface --
-    BUS_TIMEOUT                  => MEM_EXT_TIMEOUT  -- cycles after which a valid bus access will timeout
+    PMP_GRANULARITY              => PMP_GRANULARITY  -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
   )
   port map (
     -- global control --
