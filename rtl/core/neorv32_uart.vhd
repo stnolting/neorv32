@@ -4,6 +4,14 @@
 -- # Fixed frame config: 8-bit, no parity bit, 1 stop bit, programmable BAUD rate (via clock pre-  #
 -- # scaler and BAUD value config register.                                                        #
 -- # Interrupt: UART_RX_available or UART_TX_done                                                  #
+-- #                                                                                               #
+-- # SIMULATION:                                                                                   #
+-- # When the simulation mode is enabled (setting the ctrl.ctrl_uart_sim_en_c bit) any write       #
+-- # access to the TX register will not trigger any UART activity. Instead, the written data is    #
+-- # output to the simulation environment. The lowest 8 bits of the written data are printed as    #
+-- # ASCII char to the simulator console. This char is also stored to a text file                  #
+-- # "neorv32.uart.sim_mode.text.out". The full 32-bit write data is also stored as 8-hex char     #
+-- # encoded value to text file "neorv32.uart.sim_mode.data.out".                                  #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -42,6 +50,7 @@ use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
+use std.textio.all; -- obviously only for simulation
 
 entity neorv32_uart is
   port (
@@ -66,6 +75,11 @@ end neorv32_uart;
 
 architecture neorv32_uart_rtl of neorv32_uart is
 
+  -- simulation output configuration --
+  constant sim_screen_output_en_c : boolean := true; -- output lowest byte as char to simulator console when enabled
+  constant sim_text_output_en_c   : boolean := true; -- output lowest byte as char to text file when enabled
+  constant sim_data_output_en_c   : boolean := true; -- dump 32-word to file when enabled
+
   -- IO space: module base address --
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(uart_size_c); -- low address boundary bit
@@ -87,6 +101,8 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant ctrl_uart_baud09_c  : natural :=  9; -- r/w: UART baud config bit 9
   constant ctrl_uart_baud10_c  : natural := 10; -- r/w: UART baud config bit 10
   constant ctrl_uart_baud11_c  : natural := 11; -- r/w: UART baud config bit 11
+  --
+  constant ctrl_uart_sim_en_c  : natural := 12; -- r/w: UART SIMULATION OUTPUT enable
   --
   constant ctrl_uart_prsc0_c   : natural := 24; -- r/w: UART baud prsc bit 0
   constant ctrl_uart_prsc1_c   : natural := 25; -- r/w: UART baud prsc bit 1
@@ -180,11 +196,11 @@ begin
     if rising_edge(clk_i) then
       -- serial engine --
       uart_tx_done <= '0';
-      if (uart_tx_busy = '0') or (ctrl(ctrl_uart_en_c) = '0') then -- idle or disabled
+      if (uart_tx_busy = '0') or (ctrl(ctrl_uart_en_c) = '0') or (ctrl(ctrl_uart_sim_en_c) = '1') then -- idle or disabled or in SIM mode
         uart_tx_busy     <= '0';
         uart_tx_baud_cnt <= ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud00_c);
         uart_tx_bitcnt   <= "1010"; -- 10 bit
-        if (wr_en = '1') and (ctrl(ctrl_uart_en_c) = '1') and (addr = uart_rtx_addr_c) then
+        if (wr_en = '1') and (ctrl(ctrl_uart_en_c) = '1') and (addr = uart_rtx_addr_c) and (ctrl(ctrl_uart_sim_en_c) = '0') then -- write trigger and not in SIM mode
           uart_tx_sreg <= '1' & data_i(7 downto 0) & '0'; -- stopbit & data & startbit
           uart_tx_busy <= '1';
         end if;
@@ -254,6 +270,58 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- UART Rx data available [OR] UART Tx complete
   uart_irq_o <= (uart_rx_busy_ff and (not uart_rx_busy) and ctrl(ctrl_uart_rx_irq_c)) or (uart_tx_done and ctrl(ctrl_uart_tx_irq_c));
+
+
+  -- SIMULATION Output ----------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  sim_output: process(clk_i) -- for SIMULATION ONLY!
+    file file_devnull_text_out : text open write_mode is "neorv32.uart.sim_mode.text.out";
+    file file_devnull_data_out : text open write_mode is "neorv32.uart.sim_mode.data.out";
+    variable char_v            : integer;
+    variable line_screen_v     : line; -- we need several line variables here since "writeline" seems to flush the source variable
+    variable line_text_v       : line;
+    variable line_data_v       : line;
+  begin
+    if rising_edge(clk_i) then
+      if (ctrl(ctrl_uart_en_c) = '1') and (ctrl(ctrl_uart_sim_en_c) = '1') then -- UART enabled and simulation output selected?
+        if (wr_en = '1') and (addr = uart_rtx_addr_c) then -- write access to tx register
+        
+          -- print lowest byte to ASCII char --
+          char_v := to_integer(unsigned(data_i(7 downto 0)));
+          if (char_v >= 128) then -- out of range?
+            char_v := 0;
+          end if;
+
+          if (char_v /= 10) and (char_v /= 13) then -- skip line breaks - they are issued via "writeline"
+            if (sim_screen_output_en_c = true) then
+              write(line_screen_v, character'val(char_v));
+            end if;
+            if (sim_text_output_en_c = true) then
+              write(line_text_v, character'val(char_v));
+            end if;
+          end if;
+
+          if (char_v = 10) then -- line break: write to screen and text file
+            if (sim_screen_output_en_c = true) then
+              writeline(output, line_screen_v);
+            end if;
+            if (sim_text_output_en_c = true) then
+              writeline(file_devnull_text_out, line_text_v);
+            end if;
+          end if;
+
+          -- dump raw data as 8 hex char text to file --
+          if (sim_data_output_en_c = true) then
+            for x in 7 downto 0 loop
+              write(line_data_v, to_hexchar_f(data_i(3+x*4 downto 0+x*4))); -- write in hex form
+            end loop; -- x
+            writeline(file_devnull_data_out, line_data_v);
+          end if;
+
+        end if;
+      end if;
+    end if;
+  end process sim_output;
 
 
 end neorv32_uart_rtl;

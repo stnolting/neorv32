@@ -71,6 +71,8 @@ int neorv32_uart_available(void) {
 /**********************************************************************//**
  * Enable and configure UART.
  *
+ * @warning The 'UART_SIM_MODE' compiler flag will redirect all UART TX data to the simulation output. Use this for simulations only!
+ *
  * @param[in] baudrate Targeted BAUD rate (e.g. 9600).
  * @param[in] rx_irq Enable RX interrupt (data received) when 1.
  * @param[in] tx_irq Enable TX interrupt (transmission done) when 1.
@@ -112,7 +114,16 @@ void neorv32_uart_setup(uint32_t baudrate, uint8_t rx_irq, uint8_t tx_irq) {
   uint32_t tx_irq_en = (uint32_t)(tx_irq & 1);
   tx_irq_en = tx_irq_en << UART_CT_TX_IRQ;
 
-  UART_CT = prsc | baud | uart_en | rx_irq_en | tx_irq_en;
+  /* Enable the UART for SIM mode. */
+  /* Only use this for simulation! */
+#ifdef UART_SIM_MODE
+  #warning UART_SIM_MODE enabled! Sending all UART.TX to text.io simulation output instead of real UART transmitter. Use this for simulations only!
+  uint32_t sim_mode = 1 << UART_CT_SIM_MODE;
+#else
+  uint32_t sim_mode = 0;
+#endif
+
+  UART_CT = prsc | baud | uart_en | rx_irq_en | tx_irq_en | sim_mode;
 }
 
 
@@ -129,21 +140,18 @@ void neorv32_uart_disable(void) {
  * Send single char via UART.
  *
  * @note This function is blocking.
- * @warning The 'DEVNULL_UART_OVERRIDE' compiler user flag will forward all UART TX data to the DEVNULL simulation console output.
  *
  * @param[in] c Char to be send.
  **************************************************************************/
 void neorv32_uart_putc(char c) {
 
-#ifdef DEVNULL_UART_OVERRIDE
-  #warning UART OVERRIDE! Sending all UART.TX data to DEVNULL simulation output instead of UART transmitter. Use this for simulations only!
-  DEVNULL_DATA = (uint32_t)c;
+#ifdef UART_SIM_MODE
+  UART_DATA = ((uint32_t)c) << UART_DATA_LSB;
 #else
   // wait for previous transfer to finish
   while ((UART_CT & (1<<UART_CT_TX_BUSY)) != 0);
   UART_DATA = ((uint32_t)c) << UART_DATA_LSB;
 #endif
-
 }
 
 
