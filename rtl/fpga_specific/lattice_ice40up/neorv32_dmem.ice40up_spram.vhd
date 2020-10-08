@@ -69,7 +69,7 @@ architecture neorv32_dmem_rtl of neorv32_dmem is
 
   -- IO space: module base address --
   constant hi_abb_c : natural := 31; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(DMEM_SIZE); -- low address boundary bit
+  constant lo_abb_c : natural := index_size_f(64*1024); -- low address boundary bit
 
   -- local signals --
   signal acc_en  : std_ulogic;
