@@ -311,9 +311,9 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test time[h] (must be == MTIME)
+  // Test time (must be == MTIME.TIME)
   // ----------------------------------------------------------
-  neorv32_uart_printf("TIME[H]:      ");
+  neorv32_uart_printf("TIME:         ");
   cnt_test++;
 
   cpu_systime.uint64 = neorv32_cpu_get_systime();
@@ -322,7 +322,7 @@ int main() {
   // compute difference
   mtime_systime = mtime_systime - cpu_systime.uint64;
 
-  if (mtime_systime < 100) { // diff should be pretty small
+  if (mtime_systime < 4096) { // diff should be pretty small depending on bus latency
     test_ok();
   }
   else {
