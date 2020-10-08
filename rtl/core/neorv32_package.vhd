@@ -41,13 +41,14 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040404"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040405"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
 
   -- Architecture Configuration -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant ispace_base_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"00000000"; -- default instruction memory address space base address
   constant dspace_base_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"80000000"; -- default data memory address space base address
+  constant bus_timeout_c  : natural := 127; -- cycles after which a valid bus access will timeout and triggers an access exception
   constant ipb_entries_c  : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero
 
@@ -466,7 +467,6 @@ package neorv32_package is
       -- External memory interface --
       MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
       MEM_EXT_REG_STAGES           : natural := 2;      -- number of interface register stages (0,1,2)
-      MEM_EXT_TIMEOUT              : natural := 15;     -- cycles after which a valid bus access will timeout (>=1)
       -- Processor peripherals --
       IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
       IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
@@ -536,9 +536,7 @@ package neorv32_package is
       -- Physical Memory Protection (PMP) --
       PMP_USE                      : boolean := false; -- implement PMP?
       PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
-      PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
-      -- Bus Interface --
-      BUS_TIMEOUT                  : natural := 15     -- cycles after which a valid bus access will timeout
+      PMP_GRANULARITY              : natural := 14     -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     );
     port (
       -- global control --
@@ -716,7 +714,6 @@ package neorv32_package is
   component neorv32_cpu_bus
     generic (
       CPU_EXTENSION_RISCV_C : boolean := true; -- implement compressed extension?
-      BUS_TIMEOUT           : natural := 15;   -- cycles after which a valid bus access will timeout
       -- Physical memory protection (PMP) --
       PMP_USE               : boolean := false; -- implement physical memory protection?
       PMP_NUM_REGIONS       : natural := 4; -- number of regions (1..4)
