@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040402"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040404"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
 
   -- Architecture Configuration -------------------------------------------------------------
@@ -94,10 +94,10 @@ package neorv32_package is
   constant gpio_in_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF80";
   constant gpio_out_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF84";
 
-  -- Dummy Device (with SIMULATION output) (DEVNULL) --
-  constant devnull_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF88"; -- base address, fixed!
-  constant devnull_size_c       : natural := 1*4; -- bytes
-  constant devnull_data_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF88";
+  -- True Random Number Generator (TRNG) --
+  constant trng_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF88"; -- base address, fixed!
+  constant trng_size_c          : natural := 1*4; -- bytes
+  constant trng_ctrl_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF88";
 
   -- Watch Dog Timer (WDT) --
   constant wdt_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF8C"; -- base address, fixed!
@@ -136,14 +136,9 @@ package neorv32_package is
   constant pwm_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFB8";
   constant pwm_duty_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFBC";
 
-  -- True Random Number Generator (TRNG) --
-  constant trng_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0"; -- base address, fixed!
-  constant trng_size_c          : natural := 1*4; -- bytes
-  constant trng_ctrl_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0";
-
   -- RESERVED --
---constant ???_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC4"; -- base address, fixed!
---constant ???_size_c           : natural := 3*4; -- bytes
+--constant ???_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0"; -- base address, fixed!
+--constant ???_size_c           : natural := 4*4; -- bytes
 
   -- Custom Functions Unit (CFU) --
   constant cfu_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD0"; -- base address, fixed!
@@ -178,7 +173,7 @@ package neorv32_package is
   constant ctrl_rf_rd_adr3_c      : natural := 15; -- destiantion register address bit 3
   constant ctrl_rf_rd_adr4_c      : natural := 16; -- destiantion register address bit 4
   constant ctrl_rf_wb_en_c        : natural := 17; -- write back enable
-  constant ctrl_rf_r0_we_c        : natural := 18; -- allow write access to r0 (zero), also forces dst=r0
+  constant ctrl_rf_r0_we_c        : natural := 18; -- allow write access to r0 (zero)
   -- alu --
   constant ctrl_alu_cmd0_c        : natural := 19; -- ALU command bit 0
   constant ctrl_alu_cmd1_c        : natural := 20; -- ALU command bit 1
@@ -481,7 +476,6 @@ package neorv32_package is
       IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
       IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-      IO_DEVNULL_USE               : boolean := true;   -- implement dummy device (DEVNULL)?
       IO_CFU_USE                   : boolean := false   -- implement custom functions unit (CFU)?
     );
     port (
@@ -1100,21 +1094,6 @@ package neorv32_package is
     );
   end component;
 
-  -- Component: Dummy Device with SIM Output (DEVNULL) --------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_devnull
-    port (
-      -- host access --
-      clk_i  : in  std_ulogic; -- global clock line
-      addr_i : in  std_ulogic_vector(31 downto 0); -- address
-      rden_i : in  std_ulogic; -- read enable
-      wren_i : in  std_ulogic; -- write enable
-      data_i : in  std_ulogic_vector(31 downto 0); -- data in
-      data_o : out std_ulogic_vector(31 downto 0); -- data out
-      ack_o  : out std_ulogic  -- transfer acknowledge
-    );
-  end component;
-
   -- Component: Custom Functions Unit (CFU) -------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cfu
@@ -1164,7 +1143,6 @@ package neorv32_package is
       IO_PWM_USE        : boolean := true;   -- implement pulse-width modulation unit (PWM)?
       IO_WDT_USE        : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_USE       : boolean := true;   -- implement true random number generator (TRNG)?
-      IO_DEVNULL_USE    : boolean := true;   -- implement dummy device (DEVNULL)?
       IO_CFU_USE        : boolean := true    -- implement custom functions unit (CFU)?
     );
     port (

@@ -242,11 +242,22 @@ enum NEORV32_CLOCK_PRSC_enum {
 
 
 /**********************************************************************//**
- * @name IO Device: Dummy Device (DEVNULL)
+ * @name IO Device: True Random Number Generator (TRNG)
  **************************************************************************/
 /**@{*/
-/** DEVNULL data register (r/w) */
-#define DEVNULL_DATA (*(IO_REG32 0xFFFFFF88UL))
+/** TRNG control/data register (r/w) */
+#define TRNG_CT (*(IO_REG32 0xFFFFFF88UL))
+
+/** TRNG control/data register bits */
+enum NEORV32_TRNG_CT_enum {
+  TRNG_CT_DATA_LSB =  0, /**< TRNG data/control register(0)  (r/-): Random data (8-bit) LSB */
+  TRNG_CT_DATA_MSB =  7, /**< TRNG data/control register(7)  (r/-): Random data (8-bit) MSB */
+  TRNG_CT_VALID    = 15, /**< TRNG data/control register(15) (r/-): Random data output valid */
+  TRNG_CT_ERROR_0  = 16, /**< TRNG data/control register(16) (r/-): Stuck-at-zero error */
+  TRNG_CT_ERROR_1  = 17, /**< TRNG data/control register(17) (r/-): Stuck-at-one error */
+  TRNG_CT_EN       = 31  /**< TRNG data/control register(31) (r/w): TRNG enable */
+};
+/**@}*/
 /**@}*/
 
 
@@ -307,27 +318,29 @@ enum NEORV32_WDT_CT_enum {
 
 /** UART control register bits */
 enum NEORV32_UART_CT_enum {
-  UART_CT_BAUD00  =  0, /**< UART control register(0)  (r/w): BAUD rate config value lsb (12-bi, bit 0) */
-  UART_CT_BAUD01  =  1, /**< UART control register(1)  (r/w): BAUD rate config value (12-bi, bit 1) */
-  UART_CT_BAUD02  =  2, /**< UART control register(2)  (r/w): BAUD rate config value (12-bi, bit 2) */
-  UART_CT_BAUD03  =  3, /**< UART control register(3)  (r/w): BAUD rate config value (12-bi, bit 3) */
-  UART_CT_BAUD04  =  4, /**< UART control register(4)  (r/w): BAUD rate config value (12-bi, bit 4) */
-  UART_CT_BAUD05  =  5, /**< UART control register(5)  (r/w): BAUD rate config value (12-bi, bit 4) */
-  UART_CT_BAUD06  =  6, /**< UART control register(6)  (r/w): BAUD rate config value (12-bi, bit 5) */
-  UART_CT_BAUD07  =  7, /**< UART control register(7)  (r/w): BAUD rate config value (12-bi, bit 6) */
-  UART_CT_BAUD08  =  8, /**< UART control register(8)  (r/w): BAUD rate config value (12-bi, bit 7) */
-  UART_CT_BAUD09  =  9, /**< UART control register(9)  (r/w): BAUD rate config value (12-bi, bit 8) */
-  UART_CT_BAUD10  = 10, /**< UART control register(10) (r/w): BAUD rate config value (12-bi, bit 9) */
-  UART_CT_BAUD11  = 11, /**< UART control register(11) (r/w): BAUD rate config value msb (12-bi, bit 0)*/
+  UART_CT_BAUD00   =  0, /**< UART control register(0)  (r/w): BAUD rate config value lsb (12-bi, bit 0) */
+  UART_CT_BAUD01   =  1, /**< UART control register(1)  (r/w): BAUD rate config value (12-bi, bit 1) */
+  UART_CT_BAUD02   =  2, /**< UART control register(2)  (r/w): BAUD rate config value (12-bi, bit 2) */
+  UART_CT_BAUD03   =  3, /**< UART control register(3)  (r/w): BAUD rate config value (12-bi, bit 3) */
+  UART_CT_BAUD04   =  4, /**< UART control register(4)  (r/w): BAUD rate config value (12-bi, bit 4) */
+  UART_CT_BAUD05   =  5, /**< UART control register(5)  (r/w): BAUD rate config value (12-bi, bit 4) */
+  UART_CT_BAUD06   =  6, /**< UART control register(6)  (r/w): BAUD rate config value (12-bi, bit 5) */
+  UART_CT_BAUD07   =  7, /**< UART control register(7)  (r/w): BAUD rate config value (12-bi, bit 6) */
+  UART_CT_BAUD08   =  8, /**< UART control register(8)  (r/w): BAUD rate config value (12-bi, bit 7) */
+  UART_CT_BAUD09   =  9, /**< UART control register(9)  (r/w): BAUD rate config value (12-bi, bit 8) */
+  UART_CT_BAUD10   = 10, /**< UART control register(10) (r/w): BAUD rate config value (12-bi, bit 9) */
+  UART_CT_BAUD11   = 11, /**< UART control register(11) (r/w): BAUD rate config value msb (12-bi, bit 0) */
 
-  UART_CT_PRSC0   = 24, /**< UART control register(24) (r/w): BAUD rate clock prescaler select bit 0 */
-  UART_CT_PRSC1   = 25, /**< UART control register(25) (r/w): BAUD rate clock prescaler select bit 1 */
-  UART_CT_PRSC2   = 26, /**< UART control register(26) (r/w): BAUD rate clock prescaler select bit 2 */
-  UART_CT_RXOR    = 27, /**< UART control register(27) (r/-): RX data overrun when set */
-  UART_CT_EN      = 28, /**< UART control register(28) (r/w): UART global enable */
-  UART_CT_RX_IRQ  = 29, /**< UART control register(29) (r/w): Activate interrupt on RX done */
-  UART_CT_TX_IRQ  = 30, /**< UART control register(30) (r/w): Activate interrupt on TX done */
-  UART_CT_TX_BUSY = 31  /**< UART control register(31) (r/-): Transmitter is busy when set */
+  UART_CT_SIM_MODE = 12, /**< UART control register(12) (r/w): Simulation output override enable, for use in simulation only */
+
+  UART_CT_PRSC0    = 24, /**< UART control register(24) (r/w): BAUD rate clock prescaler select bit 0 */
+  UART_CT_PRSC1    = 25, /**< UART control register(25) (r/w): BAUD rate clock prescaler select bit 1 */
+  UART_CT_PRSC2    = 26, /**< UART control register(26) (r/w): BAUD rate clock prescaler select bit 2 */
+  UART_CT_RXOR     = 27, /**< UART control register(27) (r/-): RX data overrun when set */
+  UART_CT_EN       = 28, /**< UART control register(28) (r/w): UART global enable */
+  UART_CT_RX_IRQ   = 29, /**< UART control register(29) (r/w): Activate interrupt on RX done */
+  UART_CT_TX_IRQ   = 30, /**< UART control register(30) (r/w): Activate interrupt on TX done */
+  UART_CT_TX_BUSY  = 31  /**< UART control register(31) (r/-): Transmitter is busy when set */
 };
 
 /** UART receive/transmit data register bits */
@@ -439,26 +452,6 @@ enum NEORV32_PWM_DUTY_enum {
 
 
 /**********************************************************************//**
- * @name IO Device: True Random Number Generator (TRNG)
- **************************************************************************/
-/**@{*/
-/** TRNG control/data register (r/w) */
-#define TRNG_CT (*(IO_REG32 0xFFFFFFC0UL))
-
-/** TRNG control/data register bits */
-enum NEORV32_TRNG_CT_enum {
-  TRNG_CT_DATA_LSB =  0, /**< TRNG data/control register(0)  (r/-): Random data (8-bit) LSB */
-  TRNG_CT_DATA_MSB =  7, /**< TRNG data/control register(7)  (r/-): Random data (8-bit) MSB */
-  TRNG_CT_VALID    = 15, /**< TRNG data/control register(15) (r/-): Random data output valid */
-  TRNG_CT_ERROR_0  = 16, /**< TRNG data/control register(16) (r/-): Stuck-at-zero error */
-  TRNG_CT_ERROR_1  = 17, /**< TRNG data/control register(17) (r/-): Stuck-at-one error */
-  TRNG_CT_EN       = 31  /**< TRNG data/control register(31) (r/w): TRNG enable */
-};
-/**@}*/
-/**@}*/
-
-
-/**********************************************************************//**
  * @name IO Device: Custom Functions Unit (CFU)
  **************************************************************************/
 /**@{*/
@@ -514,8 +507,7 @@ enum NEORV32_TRNG_CT_enum {
   SYSINFO_FEATURES_IO_PWM           = 21, /**< SYSINFO_FEATURES (21) (r/-): Pulse-width modulation unit implemented when 1 (via IO_PWM_USE generic) */
   SYSINFO_FEATURES_IO_WDT           = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_USE generic) */
   SYSINFO_FEATURES_IO_CFU           = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions unit implemented when 1 (via IO_CFU_USE generic) */
-  SYSINFO_FEATURES_IO_TRNG          = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_USE generic) */
-  SYSINFO_FEATURES_IO_DEVNULL       = 25  /**< SYSINFO_FEATURES (25) (r/-): Dummy device implemented when 1 (via IO_DEVNULL_USE generic) */
+  SYSINFO_FEATURES_IO_TRNG          = 24  /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_USE generic) */
 };
 
 
