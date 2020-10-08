@@ -925,6 +925,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   invalid_csr_access_check: process(execute_engine.i_reg, csr.privilege)
     variable is_m_mode_v : std_ulogic;
+    variable csr_wacc_v  : std_ulogic; -- to check access to read-only CSRs
+--  variable csr_racc_v  : std_ulogic; -- to check access to write-only CSRs
   begin
     -- are we in machine mode? --
     if (csr.privilege = priv_mode_m_c) then
@@ -933,50 +935,60 @@ begin
       is_m_mode_v := '0';
     end if;
 
+    -- is this CSR instruction really going to write/read to/from a CSR? --
+    if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
+       (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) then
+      csr_wacc_v := '1'; -- always write CSR
+--    csr_racc_v := or_all_f(execute_engine.i_reg(instr_rd_msb_c downto instr_rd_lsb_c)); -- read allowed if rd != 0
+    else
+      csr_wacc_v := or_all_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c)); -- write allowed if rs1/uimm5 != 0
+--    csr_racc_v := '1'; -- always read CSR
+    end if;
+
     -- check CSR access --
     case execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) is
-      when csr_mstatus_c   => csr_acc_valid <= is_m_mode_v;
-      when csr_misa_c      => csr_acc_valid <= is_m_mode_v;
-      when csr_mie_c       => csr_acc_valid <= is_m_mode_v;
-      when csr_mtvec_c     => csr_acc_valid <= is_m_mode_v;
-      when csr_mscratch_c  => csr_acc_valid <= is_m_mode_v;
-      when csr_mepc_c      => csr_acc_valid <= is_m_mode_v;
-      when csr_mcause_c    => csr_acc_valid <= is_m_mode_v;
-      when csr_mtval_c     => csr_acc_valid <= is_m_mode_v;
-      when csr_mip_c       => csr_acc_valid <= is_m_mode_v;
+      when csr_mstatus_c   => csr_acc_valid <= is_m_mode_v; -- M-mode only
+      when csr_misa_c      => csr_acc_valid <= is_m_mode_v;-- and (not csr_wacc_v); -- M-mode only, MISA is read-only for the NEORV32 but we don't cause an exception here for compatibility
+      when csr_mie_c       => csr_acc_valid <= is_m_mode_v; -- M-mode only
+      when csr_mtvec_c     => csr_acc_valid <= is_m_mode_v; -- M-mode only
+      when csr_mscratch_c  => csr_acc_valid <= is_m_mode_v; -- M-mode only
+      when csr_mepc_c      => csr_acc_valid <= is_m_mode_v; -- M-mode only
+      when csr_mcause_c    => csr_acc_valid <= is_m_mode_v; -- M-mode only
+      when csr_mtval_c     => csr_acc_valid <= is_m_mode_v; -- M-mode only
+      when csr_mip_c       => csr_acc_valid <= is_m_mode_v; -- M-mode only
       --
-      when csr_pmpcfg0_c   => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 1)) and is_m_mode_v;
-      when csr_pmpcfg1_c   => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 5)) and is_m_mode_v;
+      when csr_pmpcfg0_c   => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 1)) and is_m_mode_v; -- M-mode only
+      when csr_pmpcfg1_c   => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 5)) and is_m_mode_v; -- M-mode only
       --
-      when csr_pmpaddr0_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 1)) and is_m_mode_v;
-      when csr_pmpaddr1_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 2)) and is_m_mode_v;
-      when csr_pmpaddr2_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 3)) and is_m_mode_v;
-      when csr_pmpaddr3_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 4)) and is_m_mode_v;
-      when csr_pmpaddr4_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 5)) and is_m_mode_v;
-      when csr_pmpaddr5_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 6)) and is_m_mode_v;
-      when csr_pmpaddr6_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 7)) and is_m_mode_v;
-      when csr_pmpaddr7_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 8)) and is_m_mode_v;
+      when csr_pmpaddr0_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 1)) and is_m_mode_v; -- M-mode only
+      when csr_pmpaddr1_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 2)) and is_m_mode_v; -- M-mode only
+      when csr_pmpaddr2_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 3)) and is_m_mode_v; -- M-mode only
+      when csr_pmpaddr3_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 4)) and is_m_mode_v; -- M-mode only
+      when csr_pmpaddr4_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 5)) and is_m_mode_v; -- M-mode only
+      when csr_pmpaddr5_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 6)) and is_m_mode_v; -- M-mode only
+      when csr_pmpaddr6_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 7)) and is_m_mode_v; -- M-mode only
+      when csr_pmpaddr7_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS >= 8)) and is_m_mode_v; -- M-mode only
       --
-      when csr_mcycle_c    => csr_acc_valid <= is_m_mode_v;
-      when csr_minstret_c  => csr_acc_valid <= is_m_mode_v;
+      when csr_mcycle_c    => csr_acc_valid <= is_m_mode_v; -- M-mode only
+      when csr_minstret_c  => csr_acc_valid <= is_m_mode_v; -- M-mode only
       --
-      when csr_mcycleh_c   => csr_acc_valid <= is_m_mode_v;
-      when csr_minstreth_c => csr_acc_valid <= is_m_mode_v;
+      when csr_mcycleh_c   => csr_acc_valid <= is_m_mode_v; -- M-mode only
+      when csr_minstreth_c => csr_acc_valid <= is_m_mode_v; -- M-mode only
       --
-      when csr_cycle_c     => csr_acc_valid <= '1';
-      when csr_time_c      => csr_acc_valid <= '1';
-      when csr_instret_c   => csr_acc_valid <= '1';
+      when csr_cycle_c     => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
+      when csr_time_c      => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
+      when csr_instret_c   => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
       --
-      when csr_cycleh_c    => csr_acc_valid <= '1';
-      when csr_timeh_c     => csr_acc_valid <= '1';
-      when csr_instreth_c  => csr_acc_valid <= '1';
+      when csr_cycleh_c    => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
+      when csr_timeh_c     => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
+      when csr_instreth_c  => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
       --
-      when csr_mvendorid_c => csr_acc_valid <= is_m_mode_v;
-      when csr_marchid_c   => csr_acc_valid <= is_m_mode_v;
-      when csr_mimpid_c    => csr_acc_valid <= is_m_mode_v;
-      when csr_mhartid_c   => csr_acc_valid <= is_m_mode_v;
+      when csr_mvendorid_c => csr_acc_valid <= is_m_mode_v and (not csr_wacc_v); -- M-mode only, read-only
+      when csr_marchid_c   => csr_acc_valid <= is_m_mode_v and (not csr_wacc_v); -- M-mode only, read-only
+      when csr_mimpid_c    => csr_acc_valid <= is_m_mode_v and (not csr_wacc_v); -- M-mode only, read-only
+      when csr_mhartid_c   => csr_acc_valid <= is_m_mode_v and (not csr_wacc_v); -- M-mode only, read-only
       --
-      when csr_mzext_c     => csr_acc_valid <= is_m_mode_v;
+      when csr_mzext_c     => csr_acc_valid <= is_m_mode_v and (not csr_wacc_v); -- M-mode only, read-only
       --
       when others => csr_acc_valid <= '0'; -- undefined, invalid access
     end case;
@@ -1472,6 +1484,11 @@ begin
             if (execute_engine.i_reg(23 downto 20) = csr_mepc_c(3 downto 0)) then -- R/W: mepc - machine exception program counter
               csr.mepc <= csr.wdata(data_width_c-1 downto 1) & '0';
             end if;
+            if (execute_engine.i_reg(23 downto 20) = csr_mcause_c(3 downto 0)) then -- R/W: mcause - machine trap cause
+              csr.mcause <= (others => '0');
+              csr.mcause(csr.mcause'left) <= csr.wdata(31); -- 1: interrupt, 0: exception
+              csr.mcause(4 downto 0)      <= csr.wdata(4 downto 0); -- identifier
+            end if;
             if (execute_engine.i_reg(23 downto 20) = csr_mtval_c(3 downto 0)) then -- R/W: mtval - machine bad address or instruction
               csr.mtval <= csr.wdata;
             end if;
@@ -1506,6 +1523,11 @@ begin
 
         -- mstatus: context switch --
         if (trap_ctrl.env_start_ack = '1') then -- ENTER: trap handler starting?
+          -- trap ID code --
+          csr.mcause <= (others => '0');
+          csr.mcause(csr.mcause'left) <= trap_ctrl.cause(trap_ctrl.cause'left); -- 1: interrupt, 0: exception
+          csr.mcause(4 downto 0)      <= trap_ctrl.cause(4 downto 0); -- identifier
+          --
           csr.mstatus_mie  <= '0'; -- disable interrupts
           csr.mstatus_mpie <= csr.mstatus_mie; -- buffer previous mie state
           if (CPU_EXTENSION_RISCV_U = true) then -- implement user mode
@@ -1525,18 +1547,6 @@ begin
           csr.privilege   <= priv_mode_m_c;
           csr.mstatus_mpp <= priv_mode_m_c;
         end if;
-      end if;
-
-      -- --------------------------------------------------------------------------------
-      -- CSRs that can be written by hardware only
-      -- --------------------------------------------------------------------------------
-
-      -- mcause
-      if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
-        -- trap ID code --
-        csr.mcause <= (others => '0');
-        csr.mcause(csr.mcause'left) <= trap_ctrl.cause(trap_ctrl.cause'left); -- 1: interrupt, 0: exception
-        csr.mcause(4 downto 0)      <= trap_ctrl.cause(4 downto 0); -- identifier
       end if;
 
     end if;
