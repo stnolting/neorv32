@@ -11,7 +11,7 @@
 * [Features](#Features)
 * [FPGA Implementation Results](#FPGA-Implementation-Results)
 * [Performance](#Performance)
-* [Top Entity](#Top-Entity)
+* [Top Entities](#Top-Entities)
 * [**Getting Started**](#Getting-Started)
 * [Contribute](#Contribute)
 * [Legal](#Legal)
@@ -54,7 +54,7 @@ even a builtin bootloader for easy program upload via UART.
 All software source files provide a doxygen-based documentary (available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)).
 
 
-### [How to get started?](Getting-Started)
+### [How to get started?](#Getting-Started)
 
 The processor is intended to work "out of the box". Just synthesize the
 [test setup](#Create-a-new-Hardware-Project), upload it to your FPGA board of choice and start playing
@@ -93,8 +93,8 @@ A not-so-complete project log can be found on [hackaday.io](https://hackaday.io/
 
 ### Status
 
-The processor is synthesizable (tested with Intel Quartus Prime, Xilinx Vivado and Lattice Radiant/Synplify Pro) and can successfully execute
-all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the CoreMark benchmark.
+The processor is [synthesizable](#NEORV32-Processor-Exemplary-FPGA-Setups) (tested with *real hardware* using Intel Quartus Prime, Xilinx Vivado and Lattice Radiant/Synplify Pro) and can successfully execute
+all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the [CoreMark benchmark](#CoreMark-Benchmark).
 
 The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and `rv32Zifencei` [RISC-V compliance tests](https://github.com/riscv/riscv-compliance).
 
@@ -129,7 +129,7 @@ is highly customizable via the processor's top generics.
 - Optional processor-internal data and instruction memories (**DMEM** / **IMEM**)
 - Optional internal **Bootloader** with UART console and automatic SPI flash boot option
 - Optional machine system timer (**MTIME**), RISC-V-compliant
-- Optional universal asynchronous receiver and transmitter (**UART**)
+- Optional universal asynchronous receiver and transmitter (**UART**) with simulation output option via text.io
 - Optional 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
 - Optional two wire serial interface controller (**TWI**), compatible to the I²C standard
 - Optional general purpose parallel IO port (**GPIO**), 32xOut & 32xIn, with pin-change interrupt
@@ -137,7 +137,6 @@ is highly customizable via the processor's top generics.
 - Optional watchdog timer (**WDT**)
 - Optional PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
 - Optional GARO-based true random number generator (**TRNG**)
-- Optional dummy device (**DEVNULL**); used for debugging; can also be used for *fast* simulation console output
 - Optional custom functions unit (**CFU**) for tightly-coupled custom co-processors
 - System configuration information memory to check hardware configuration by software (**SYSINFO**)
 
@@ -259,7 +258,6 @@ Results generated for hardware version: `1.4.3.3`
 | BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |    0 |
 | BUSSWITCH | Mux for CPU I & D interfaces                         |  59 |   8 |           0 |    0 |
 | CFU       | Custom functions unit                                |   - |   - |           - |    - |
-| DEVNULL   | Dummy device                                         |   1 |   1 |           0 |    0 |
 | DMEM      | Processor-internal data memory (default 8kB)         |  13 |   2 |      65 536 |    0 |
 | GPIO      | General purpose input/output ports                   |  69 |  65 |           0 |    0 |
 | IMEM      | Processor-internal instruction memory (default 16kb) |   9 |   2 |     131 072 |    0 |
@@ -356,19 +354,19 @@ The _FAST_MUL_ configuration uses DSPs for the multiplier of the `M` extension (
 
 ## Top Entities
 
-The top entity of the **NEORV32 Processor** is [**neorv32_top.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) (from the `rtl/core` folder).
+The top entity of the **NEORV32 Processor** is [**neorv32_top.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) (from `rtl/core`).
 Just instantiate this file in your project and you are ready to go! All signals of this top entity are of type *std_ulogic* or *std_ulogic_vector*, respectively
 (except for the TWI signals, which are of type *std_logic*).
 
-The top entity of the **NEORV32 CPU** is [**neorv32_cpu.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd) (from the `rtl/core` folder).
+The top entity of the **NEORV32 CPU** is [**neorv32_cpu.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd) (from `rtl/core`).
 All signals of this top entity are of type *std_ulogic* or *std_ulogic_vector*, respectively.
 
 Use the generics to configure the processor/CPU according to your needs. Each generic is initilized with the default configuration.
 Detailed information regarding the signals and configuration generics can be found in
 the [NEORV32 documentary](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
-Alternative top entities, like the simplified ["hello world" test setup](#Create-a-new-Hardware-Project), can be found
-in [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) folder.
+Alternative top entities, like the simplified ["hello world" test setup](#Create-a-new-Hardware-Project) or CPU/Processor
+wrappers with resolved port signal types (i.e. *std_logic*), can be found in [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates).
 
 
 ### NEORV32 CPU
@@ -476,7 +474,6 @@ entity neorv32_top is
     IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE               : boolean := true;   -- implement dummy device (DEVNULL)?
     IO_CFU_USE                   : boolean := false   -- implement custom functions unit (CFU)?
   );
   port (
