@@ -254,22 +254,20 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("\n-- Central Processing Unit --\n");
 
   // ID
-  neorv32_uart_printf("Hart ID:          %u\n", neorv32_cpu_csr_read(CSR_MHARTID));
+  neorv32_uart_printf("Hart ID:           0x%x\n", neorv32_cpu_csr_read(CSR_MHARTID));
 
-  neorv32_uart_printf("Vendor ID:        0x%x\n", neorv32_cpu_csr_read(CSR_MVENDORID));
+  neorv32_uart_printf("Vendor ID:         0x%x\n", neorv32_cpu_csr_read(CSR_MVENDORID));
 
   tmp = neorv32_cpu_csr_read(CSR_MARCHID);
-  neorv32_uart_printf("Architecture ID:  0x%x", tmp);
-
-  // Custom user code/ID
-  neorv32_uart_printf("\nUser ID:          0x%x\n", SYSINFO_USER_CODE);
+  neorv32_uart_printf("Architecture ID:   0x%x", tmp);
 
   // HW version
-  neorv32_uart_printf("Hardware version: ");
+  neorv32_uart_printf("\nImplementation ID: 0x%x (", neorv32_cpu_csr_read(CSR_MIMPID));
   neorv32_rte_print_hw_version();
+  neorv32_uart_printf(")\n");
 
   // CPU architecture
-  neorv32_uart_printf("\nArchitecture:     ");
+  neorv32_uart_printf("Architecture:      ");
   tmp = neorv32_cpu_csr_read(CSR_MISA);
   tmp = (tmp >> 30) & 0x03;
   if (tmp == 0) {
@@ -286,7 +284,7 @@ void neorv32_rte_print_hw_config(void) {
   }
   
   // CPU extensions
-  neorv32_uart_printf("\nExtensions:       ");
+  neorv32_uart_printf("\nExtensions:        ");
   tmp = neorv32_cpu_csr_read(CSR_MISA);
   for (i=0; i<26; i++) {
     if (tmp & (1 << i)) {
@@ -307,8 +305,9 @@ void neorv32_rte_print_hw_config(void) {
 
 
   // Misc
-  neorv32_uart_printf("\n\n-- System --\n");
-  neorv32_uart_printf("Clock: %u Hz\n", SYSINFO_CLK);
+  neorv32_uart_printf("\n\n\n-- Processor --\n");
+  neorv32_uart_printf("Clock:   %u Hz\n", SYSINFO_CLK);
+  neorv32_uart_printf("User ID: 0x%x\n", SYSINFO_USER_CODE);
 
 
   // Memory configuration
@@ -329,7 +328,7 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("Bootloader:           ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_BOOTLOADER));
 
-  neorv32_uart_printf("External interface:   ");
+  neorv32_uart_printf("External M interface: ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT));
 
   // peripherals
@@ -337,34 +336,31 @@ void neorv32_rte_print_hw_config(void) {
 
   tmp = SYSINFO_FEATURES;
 
-  neorv32_uart_printf("GPIO:    ");
+  neorv32_uart_printf("GPIO:  ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_GPIO));
 
-  neorv32_uart_printf("MTIME:   ");
+  neorv32_uart_printf("MTIME: ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_MTIME));
 
-  neorv32_uart_printf("UART:    ");
+  neorv32_uart_printf("UART:  ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_UART));
 
-  neorv32_uart_printf("SPI:     ");
+  neorv32_uart_printf("SPI:   ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_SPI));
 
-  neorv32_uart_printf("TWI:     ");
+  neorv32_uart_printf("TWI:   ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_TWI));
 
-  neorv32_uart_printf("PWM:     ");
+  neorv32_uart_printf("PWM:   ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_PWM));
 
-  neorv32_uart_printf("WDT:     ");
+  neorv32_uart_printf("WDT:   ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_WDT));
 
-  neorv32_uart_printf("TRNG:    ");
+  neorv32_uart_printf("TRNG:  ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_TRNG));
 
-  neorv32_uart_printf("DEVNULL: ");
-  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_DEVNULL));
-
-  neorv32_uart_printf("CFU:     ");
+  neorv32_uart_printf("CFU:   ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_CFU));
 }
 
