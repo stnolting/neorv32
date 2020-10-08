@@ -391,27 +391,39 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Write-access to read-only CSR (must not trigger an exception)
+  // Write-access to read-only CSR
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("Rd-only CSR:  ");
 
   cnt_test++;
 
-  neorv32_cpu_csr_write(CSR_CYCLE, 0); // cycle CSR is read-only
-
-  if (neorv32_cpu_csr_read(CSR_CYCLE) < 100) {
-  neorv32_uart_printf("[CSR update error!] ");
-  }
+  neorv32_cpu_csr_write(CSR_TIME, 0); // time CSR is read-only
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+    test_ok();
+  }
+  else {
     test_fail();
   }
-  else if (neorv32_cpu_csr_read(CSR_CYCLE) < 100) {
-    test_fail();
-  }
-  else if (exception_handler_answer == 0xFFFFFFFF) {
+#endif
+
+
+  // ----------------------------------------------------------
+  // No "real" CSR write access (because rs1 = r0)
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("NotWrite CSR: ");
+
+  cnt_test++;
+
+  // time CSR is read-only, but no actual write is performed because rs1=r0
+  // -> should cause no exception
+  asm volatile("csrrs zero, time, zero");
+
+#if (DETAILED_EXCEPTION_DEBUG==0)
+  if (exception_handler_answer == 0xFFFFFFFF) {
     test_ok();
   }
   else {
@@ -742,6 +754,12 @@ int main() {
     // wait for UART to finish transmitting
     while(neorv32_uart_tx_busy());
 
+    // backup current UART configuration
+    uint32_t uart_ct_backup = UART_CT;
+
+    // disable UART sim_mode if it is enabled
+    UART_CT &= ~(1 << UART_CT_SIM_MODE);
+
     // enable UART TX done IRQ
     UART_CT |= (1 << UART_CT_TX_IRQ);
 
@@ -757,6 +775,12 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
 
+    // wait for UART to finish transmitting
+    while(neorv32_uart_tx_busy());
+
+    // re-enable UART sim_mode if it was enabled and disable UART TX done IRQ
+    UART_CT = uart_ct_backup;
+
 #if (DETAILED_EXCEPTION_DEBUG==0)
     if (exception_handler_answer == TRAP_CODE_FIRQ_2) {
       test_ok();
@@ -765,11 +789,6 @@ int main() {
       test_fail();
     }
 #endif
-    // wait for UART to finish transmitting
-    while(neorv32_uart_tx_busy());
-
-    // disable UART TX done IRQ
-    UART_CT &= ~(1 << UART_CT_TX_IRQ);
   }
   else {
     neorv32_uart_printf("skipped (UART not implemented)\n");
@@ -974,7 +993,7 @@ int main() {
         break;
       }
     }
-    neorv32_uart_printf("Regions: %u\n", i);
+    neorv32_uart_printf("Max regions: %u\n", i);
 
 
     // check granulartiy
@@ -1029,13 +1048,13 @@ int main() {
 
     // Test access to protected region
     // ---------------------------------------------
-    neorv32_uart_printf("Creating protected page (NAPOT, 64k) @ 0xFFFFA000, (!x, !w, r)...\n");
+    neorv32_uart_printf("Creating protected page (NAPOT, 64kB) @ 0xFFFFA000, [!x, !w, r]...\n");
     neorv32_cpu_csr_write(CSR_PMPADDR0, 0xffffdfff); // 64k area @ 0xFFFFA000
     neorv32_cpu_csr_write(CSR_PMPCFG0,  0b00011001); // NAPOT, read permission, NO write and execute permissions
 
 
     // ------ LOAD: should work ------
-    neorv32_uart_printf("U-mode (!X,!W,R) load test:  ");
+    neorv32_uart_printf("U-mode [!X,!W,R] load test:  ");
     cnt_test++;
     exception_handler_answer = 0xFFFFFFFF;
 
@@ -1061,7 +1080,7 @@ int main() {
 
 
     // ------ STORE: should fail ------
-    neorv32_uart_printf("U-mode (!X,!W,R) store test: ");
+    neorv32_uart_printf("U-mode [!X,!W,R] store test: ");
     cnt_test++;
     exception_handler_answer = 0xFFFFFFFF;
 
