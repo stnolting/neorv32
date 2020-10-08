@@ -84,7 +84,6 @@ entity neorv32_top is
     IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE               : boolean := true;   -- implement dummy device (DEVNULL)?
     IO_CFU_USE                   : boolean := false   -- implement custom functions unit (CFU)?
   );
   port (
@@ -201,8 +200,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal wdt_ack        : std_ulogic;
   signal trng_rdata     : std_ulogic_vector(data_width_c-1 downto 0);
   signal trng_ack       : std_ulogic;
-  signal devnull_rdata  : std_ulogic_vector(data_width_c-1 downto 0);
-  signal devnull_ack    : std_ulogic;
   signal cfu_rdata      : std_ulogic_vector(data_width_c-1 downto 0);
   signal cfu_ack        : std_ulogic;
   signal sysinfo_rdata  : std_ulogic_vector(data_width_c-1 downto 0);
@@ -418,11 +415,11 @@ begin
 
   -- processor bus: CPU data input --
   p_bus.rdata <= (imem_rdata or dmem_rdata or bootrom_rdata) or wishbone_rdata or (gpio_rdata or mtime_rdata or uart_rdata or
-                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or devnull_rdata or cfu_rdata or sysinfo_rdata);
+                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or cfu_rdata or sysinfo_rdata);
 
   -- processor bus: CPU data ACK input --
   p_bus.ack <= (imem_ack or dmem_ack or bootrom_ack) or wishbone_ack or (gpio_ack or mtime_ack or uart_ack or
-               spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or devnull_ack or cfu_ack or sysinfo_ack);
+               spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or cfu_ack or sysinfo_ack);
 
   -- processor bus: CPU data bus error input --
   p_bus.err <= wishbone_err;
@@ -837,30 +834,6 @@ begin
   end generate;
 
 
-  -- Dummy Device (DEVNULL) -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  neorv32_devnull_inst_true:
-  if (IO_DEVNULL_USE = true) generate
-    neorv32_devnull_inst: neorv32_devnull
-    port map (
-      -- host access --
-      clk_i  => clk_i,         -- global clock line
-      addr_i => p_bus.addr,    -- address
-      rden_i => io_rden,       -- read enable
-      wren_i => io_wren,       -- write enable
-      data_i => p_bus.wdata,   -- data in
-      data_o => devnull_rdata, -- data out
-      ack_o  => devnull_ack    -- transfer acknowledge
-    );
-  end generate;
-
-  neorv32_devnull_inst_false:
-  if (IO_DEVNULL_USE = false) generate
-    devnull_rdata <= (others => '0');
-    devnull_ack   <= '0';
-  end generate;
-
-
   -- Custom Functions Unit (CFU) ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cfu_inst_true:
@@ -921,7 +894,6 @@ begin
     IO_PWM_USE        => IO_PWM_USE,        -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE        => IO_WDT_USE,        -- implement watch dog timer (WDT)?
     IO_TRNG_USE       => IO_TRNG_USE,       -- implement true random number generator (TRNG)?
-    IO_DEVNULL_USE    => IO_DEVNULL_USE,    -- implement dummy device (DEVNULL)?
     IO_CFU_USE        => IO_CFU_USE         -- implement custom functions unit (CFU)?
   )
   port map (
