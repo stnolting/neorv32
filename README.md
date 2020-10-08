@@ -215,8 +215,7 @@ the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/ma
 
 ### Non-RISC-V-Compliant Issues
 
-* `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime
-* `mcause` CSR is read-only
+* `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime; for compatibility: write accesses (in m-mode) are ignored and do not cause an exception
 * The physical memory protection (**PMP**) only supports `NAPOT` mode, a minimal granularity of 8 bytes and only up to 8 regions
 
 
