@@ -61,10 +61,7 @@ The processor is intended to work "out of the box". Just synthesize the
 with the NEORV32. If you do not want to [compile the GCC toolchains](https://github.com/riscv/riscv-gnu-toolchain) by yourself, you can also
 download [pre-compiled toolchains](https://github.com/stnolting/riscv_gcc_prebuilt) for Linux.
 
-For more information take a look at the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
-
-This project is hosted on [GitHub](https://github.com/stnolting/neorv32) and [opencores.org](https://opencores.org/projects/neorv32).
-A not-so-complete project log can be found on [hackaday.io](https://hackaday.io/project/174167-the-neorv32-risc-v-processor).
+For more information take a look at the [![NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 
 ###  Key Features
@@ -73,7 +70,7 @@ A not-so-complete project log can be found on [hackaday.io](https://hackaday.io/
 - GCC-based toolchain ([pre-compiled rv32i and rv32e toolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
 - Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
 - [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
-- Detailed [datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf)
+- [**Detailed data sheet**](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf)
 - Completely described in behavioral, platform-independent VHDL – no primitives, macros, etc.
 - Fully synchronous design, no latches, no gated clocks
 - Small hardware footprint and high operating frequency
@@ -93,10 +90,12 @@ A not-so-complete project log can be found on [hackaday.io](https://hackaday.io/
 
 ### Status
 
-The processor is [synthesizable](#NEORV32-Processor-Exemplary-FPGA-Setups) (tested with *real hardware* using Intel Quartus Prime, Xilinx Vivado and Lattice Radiant/Synplify Pro) and can successfully execute
+The processor is [synthesizable](#FPGA-Implementation-Results) (tested on *real hardware* using Intel Quartus Prime, Xilinx Vivado and Lattice Radiant/Synplify Pro) and can successfully execute
 all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the [CoreMark benchmark](#CoreMark-Benchmark).
 
-The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and `rv32Zifencei` [RISC-V compliance tests](https://github.com/riscv/riscv-compliance).
+The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and `rv32Zifencei` [RISC-V compliance tests](https://github.com/riscv/riscv-compliance). 
+
+The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
 
 | Project component                                                               | CI status | Note     |
 |:--------------------------------------------------------------------------------|:----------|:---------|
@@ -118,6 +117,9 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 
 
 ## Features
+
+The full-blown data sheet of the NEORV32 Processor/CPU is available as pdf file:
+[![NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 ### Processor Features
 
@@ -149,7 +151,7 @@ The CPU is [compliant](https://github.com/stnolting/neorv32_riscv_compliance) to
 [RISC-V privileged architecture specifications (1.12-draft)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf).
 
 More information regarding the CPU including a detailed list of the instruction set and the available CSRs can be found in
-the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 
 **General**:
@@ -518,7 +520,7 @@ end neorv32_top;
 
 This overview is just a short excerpt from the *Let's Get It Started* section of the NEORV32 documentary:
 
-[![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
+[![NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
 
 
 ### Toolchain
@@ -637,7 +639,7 @@ Use the bootloader console to upload the `neorv32_exe.bin` executable and run yo
   Blinking LED demo program
 ```
 
-Going further: Take a look at the _Let's Get It Started!_ chapter of the [![NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 datasheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+Going further: Take a look at the _Let's Get It Started!_ chapter of the [![NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 
 
