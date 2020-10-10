@@ -31,7 +31,7 @@ ls -l $srcdir_top_templates
 
 # Just a hint
 echo ""
-echo "Tip: Compile application with USER_FLAGS+=-UART_SIM_MODE to have UART/console via direct simulation output."
+echo "Tip: Compile application with USER_FLAGS+=-DUART_SIM_MODE to auto-enable UART's SIM MODE."
 echo ""
 
 # Analyse sources; libs and images at first!
