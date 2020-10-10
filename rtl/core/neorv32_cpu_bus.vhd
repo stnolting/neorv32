@@ -340,7 +340,7 @@ begin
   be_instr_o <= i_arbiter.err_bus;
 
   -- instruction bus (read-only) --
-  i_bus_addr_o  <= fetch_pc_i;
+  i_bus_addr_o  <= fetch_pc_i(data_width_c-1 downto 2) & "00"; -- instruction access is always 4-byte aligned (even for compressed instructions)
   i_bus_wdata_o <= (others => '0');
   i_bus_ben_o   <= (others => '0');
   i_bus_we_o    <= '0';
