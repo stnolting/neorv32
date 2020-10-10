@@ -329,7 +329,7 @@ begin
     ma_instr_o     => ma_instr,       -- misaligned instruction address
     be_instr_o     => be_instr,       -- bus error on instruction access
     -- cpu data access interface --
-    addr_i         => alu_res,       -- ALU result -> access address
+    addr_i         => alu_res,        -- ALU result -> access address
     wdata_i        => rs2,            -- write data
     rdata_o        => rdata,          -- read data
     mar_o          => mar,            -- current memory address register
