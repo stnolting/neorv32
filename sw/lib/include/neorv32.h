@@ -158,17 +158,17 @@ enum NEORV32_CPU_MISA_enum {
  * Trap codes from mcause CSR.
  **************************************************************************/
 enum NEORV32_EXCEPTION_CODES_enum {
-  TRAP_CODE_I_MISALIGNED = 0x00000000, /**< 0.0: Instruction address misaligned */
-  TRAP_CODE_I_ACCESS     = 0x00000001, /**< 0.1: Instruction (bus) access fault */
-  TRAP_CODE_I_ILLEGAL    = 0x00000002, /**< 0.2: Illegal instruction */
-  TRAP_CODE_BREAKPOINT   = 0x00000003, /**< 0.3: Breakpoint (EBREAK instruction) */
-  TRAP_CODE_L_MISALIGNED = 0x00000004, /**< 0.4: Load address misaligned */
-  TRAP_CODE_L_ACCESS     = 0x00000005, /**< 0.5: Load (bus) access fault */
-  TRAP_CODE_S_MISALIGNED = 0x00000006, /**< 0.6: Store address misaligned */
-  TRAP_CODE_S_ACCESS     = 0x00000007, /**< 0.7: Store (bus) access fault */
+  TRAP_CODE_I_MISALIGNED = 0x00000000, /**< 0.0:  Instruction address misaligned */
+  TRAP_CODE_I_ACCESS     = 0x00000001, /**< 0.1:  Instruction (bus) access fault */
+  TRAP_CODE_I_ILLEGAL    = 0x00000002, /**< 0.2:  Illegal instruction */
+  TRAP_CODE_BREAKPOINT   = 0x00000003, /**< 0.3:  Breakpoint (EBREAK instruction) */
+  TRAP_CODE_L_MISALIGNED = 0x00000004, /**< 0.4:  Load address misaligned */
+  TRAP_CODE_L_ACCESS     = 0x00000005, /**< 0.5:  Load (bus) access fault */
+  TRAP_CODE_S_MISALIGNED = 0x00000006, /**< 0.6:  Store address misaligned */
+  TRAP_CODE_S_ACCESS     = 0x00000007, /**< 0.7:  Store (bus) access fault */
   TRAP_CODE_MENV_CALL    = 0x0000000b, /**< 0.11: Environment call from machine mode (ECALL instruction) */
-  TRAP_CODE_MSI          = 0x80000003, /**< 1.3: Machine software interrupt */
-  TRAP_CODE_MTI          = 0x80000007, /**< 1.7: Machine timer interrupt */
+  TRAP_CODE_MSI          = 0x80000003, /**< 1.3:  Machine software interrupt */
+  TRAP_CODE_MTI          = 0x80000007, /**< 1.7:  Machine timer interrupt */
   TRAP_CODE_MEI          = 0x8000000b, /**< 1.11: Machine external interrupt */
   TRAP_CODE_FIRQ_0       = 0x80000010, /**< 1.16: Fast interrupt channel 0 */
   TRAP_CODE_FIRQ_1       = 0x80000011, /**< 1.17: Fast interrupt channel 1 */
