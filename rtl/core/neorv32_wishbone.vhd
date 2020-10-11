@@ -123,11 +123,14 @@ begin
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- access to internal IMEM or DMEM? --
-  int_imem_acc <= '1' when (addr_i >= imem_base_c) and (addr_i < std_ulogic_vector(unsigned(imem_base_c) + MEM_INT_IMEM_SIZE)) else '0';
-  int_dmem_acc <= '1' when (addr_i >= dmem_base_c) and (addr_i < std_ulogic_vector(unsigned(dmem_base_c) + MEM_INT_DMEM_SIZE)) else '0';
+  int_imem_acc <= '1' when (addr_i(31 downto index_size_f(MEM_INT_IMEM_SIZE)) = imem_base_c(31 downto index_size_f(MEM_INT_IMEM_SIZE))) else '0';
+  int_dmem_acc <= '1' when (addr_i(31 downto index_size_f(MEM_INT_DMEM_SIZE)) = dmem_base_c(31 downto index_size_f(MEM_INT_DMEM_SIZE))) else '0';
   int_imem_acc_real <= int_imem_acc when (MEM_INT_IMEM_USE = true) else '0';
   int_dmem_acc_real <= int_dmem_acc when (MEM_INT_DMEM_USE = true) else '0';
+
+  -- access to internal BOOTROM or IO devices? --
   int_boot_acc <= '1' when (addr_i >= boot_rom_base_c) else '0'; -- this also covers access to the IO space
+--int_boot_acc <= '1' when (addr_i(31 downto index_size_f(2*boot_rom_max_size_c)) = boot_rom_base_c(31 downto index_size_f(2*boot_rom_max_size_c))) else '0'; -- this also covers access to the IO space
 --int_io_acc   <= '1' when (addr_i >= io_base_c) else '0';
 
   -- actual external bus access? --
