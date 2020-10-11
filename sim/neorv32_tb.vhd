@@ -126,7 +126,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- How to simulate a boot from an external memory --
   -- ---------------------------------------------- --
   -- The simulated Wishbone memory can be initialized with the compiled application init.
-  -- 1. Uncomment the init_wbmen function below
+  -- 1. Uncomment the init_wbmen function below; this will initialize the simulated wishbone memory with the neorv32_application_image.vhd image
   -- 2. Increase the wb_mem_size_c constant above to (at least) the size of the application image (like 16kB)
   -- 3. Disable the processor-internal IMEM in the processor instantiation below (MEM_INT_IMEM_USE => false)
   -- 4. Set the Wishbone memory base address wb_mem_base_addr_c (above) to zero (constant wb_mem_base_addr_c : std_ulogic_vector(31 downto 0) := x"00000000";)
@@ -320,7 +320,7 @@ begin
 
   -- output to cpu --
   wb_cpu.rdata <= wb_mem.rdata(wb_mem_latency_c-1) when (wb_mem.rb_en(wb_mem_latency_c-1) = '1') else (others=> '0'); -- data output gate
-  wb_cpu.ack   <= wb_mem.ack(wb_mem_latency_c-1);
+  wb_cpu.ack   <= wb_mem.ack(wb_mem_latency_c-1) and wb_cpu.cyc; -- another AND for classic/standard wishbone transactions
   wb_cpu.err   <= '0';
 
 
