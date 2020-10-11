@@ -1050,7 +1050,7 @@ int main() {
     // ---------------------------------------------
     neorv32_uart_printf("Creating protected page (NAPOT, 64kB) @ 0xFFFFA000, [!x, !w, r]...\n");
     neorv32_cpu_csr_write(CSR_PMPADDR0, 0xffffdfff); // 64k area @ 0xFFFFA000
-    neorv32_cpu_csr_write(CSR_PMPCFG0,  0b00011001); // NAPOT, read permission, NO write and execute permissions
+    neorv32_cpu_csr_write(CSR_PMPCFG0,  0b00011001); // NAPOT, read permission, NO write and NO execute permissions
 
 
     // ------ LOAD: should work ------
@@ -1103,8 +1103,27 @@ int main() {
       test_fail();
     }
 #endif
-  }
 
+
+    // ------ Lock test ------
+    neorv32_uart_printf("Locking pmpcfg0 [mode=off]:  ");
+    cnt_test++;
+    exception_handler_answer = 0xFFFFFFFF;
+
+    neorv32_cpu_csr_write(CSR_PMPCFG0,  0b10000001); // locked but entry is deactivated (mode = off)
+
+    // make sure a locked cfg cannot be written
+    tmp_a = neorv32_cpu_csr_read(CSR_PMPCFG0);
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0b00011001); // try to re-write CFG content
+
+    if ((tmp_a != neorv32_cpu_csr_read(CSR_PMPCFG0)) || (exception_handler_answer != 0xFFFFFFFF)) {
+      test_fail();
+    }
+    else {
+      test_ok();
+    }
+
+  }
 
 
   // ----------------------------------------------------------
