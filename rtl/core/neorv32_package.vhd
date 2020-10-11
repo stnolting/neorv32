@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040405"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040406"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
 
   -- Architecture Configuration -------------------------------------------------------------
@@ -49,6 +49,7 @@ package neorv32_package is
   constant ispace_base_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"00000000"; -- default instruction memory address space base address
   constant dspace_base_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"80000000"; -- default data memory address space base address
   constant bus_timeout_c  : natural := 127; -- cycles after which a valid bus access will timeout and triggers an access exception
+  constant wb_pipe_mode_c : boolean := false; -- false: classic/standard wishbone mode, true: pipelined wishbone mode (better timing)
   constant ipb_entries_c  : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero
 
@@ -1057,6 +1058,7 @@ package neorv32_package is
   component neorv32_wishbone
     generic (
       INTERFACE_REG_STAGES : natural := 2; -- number of interface register stages (0,1,2)
+      WB_PIPELINED_MODE    : boolean := false; -- false: classic/standard wishbone mode, true: pipelined wishbone mode
       -- Internal instruction memory --
       MEM_INT_IMEM_USE     : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE    : natural := 8*1024; -- size of processor-internal instruction memory in bytes

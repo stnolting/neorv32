@@ -3,7 +3,9 @@
 -- # ********************************************************************************************* #
 -- # The interface is either unregistered (INTERFACE_REG_STAGES = 0), only outgoing signals are    #
 -- # registered (INTERFACE_REG_STAGES = 1) or incoming and outgoing signals are registered         #
--- # (INTERFACE_REG_STAGES = 2).                                                                   #
+-- # (INTERFACE_REG_STAGES = 2). This interface supports classic/standard Wishbone transactions    #
+-- # (WB_PIPELINED_MODE = false) and also pipelined transactions for improved timing               #
+-- # (WB_PIPELINED_MODE = true).                                                                   #
 -- # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 -- # All bus accesses from the CPU, which do not target the internal IO region, the internal boot- #
 -- # loader or the internal instruction or data memories (if implemented), are delegated via this  #
@@ -50,6 +52,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_wishbone is
   generic (
     INTERFACE_REG_STAGES : natural := 2; -- number of interface register stages (0,1,2)
+    WB_PIPELINED_MODE    : boolean := false; -- false: classic/standard wishbone mode, true: pipelined wishbone mode
     -- Internal instruction memory --
     MEM_INT_IMEM_USE     : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE    : natural := 8*1024; -- size of processor-internal instruction memory in bytes
@@ -95,11 +98,16 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
   signal rb_en                           : std_ulogic;
 
   -- bus arbiter --
+  signal wb_we_ff   : std_ulogic;
   signal wb_stb_ff0 : std_ulogic;
   signal wb_stb_ff1 : std_ulogic;
   signal wb_cyc_ff  : std_ulogic;
   signal wb_ack_ff  : std_ulogic;
   signal wb_err_ff  : std_ulogic;
+
+  -- wishbone mode: standard / pipelined --
+  signal stb_int_std  : std_ulogic;
+  signal stb_int_pipe : std_ulogic;
 
   -- data read-back --
   signal wb_rdata : std_ulogic_vector(31 downto 0);
@@ -131,6 +139,7 @@ begin
   bus_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      wb_we_ff        <= '0';
       wb_cyc_ff       <= '0';
       wb_stb_ff1      <= '0';
       wb_stb_ff0      <= '0';
@@ -139,6 +148,8 @@ begin
       wb_access_ff    <= '0';
       wb_access_ff_ff <= '0';
     elsif rising_edge(clk_i) then
+      -- read/write --
+      wb_we_ff <= (wb_we_ff or wren_i) and wb_access and (not wb_ack_i) and (not wb_err_i) and (not cancel_i);
       -- bus cycle --
       if (INTERFACE_REG_STAGES = 0) then
         wb_cyc_ff <= '0'; -- unused
@@ -162,11 +173,14 @@ begin
     end if;
   end process bus_arbiter;
 
-  -- bus cycle --
+  -- valid bus cycle --
   wb_cyc_o <= wb_access when (INTERFACE_REG_STAGES = 0) else wb_cyc_ff;
 
-  -- bus_strobe: rising edge detector --
-  wb_stb_o <= (wb_access and (not wb_stb_ff0)) when (INTERFACE_REG_STAGES = 0) else (wb_stb_ff0 and (not wb_stb_ff1));
+  -- bus strobe --
+  stb_int_std  <= wb_access when (INTERFACE_REG_STAGES = 0) else wb_cyc_ff; -- same as wb_cyc
+  stb_int_pipe <= (wb_access and (not wb_stb_ff0)) when (INTERFACE_REG_STAGES = 0) else (wb_stb_ff0 and (not wb_stb_ff1)); -- wb_access rising edge detector
+  --
+  wb_stb_o <= stb_int_std when (WB_PIPELINED_MODE = false) else stb_int_pipe; -- standard or pipelined mode
 
   -- cpu ack --
   ack_o <= wb_ack_ff when (INTERFACE_REG_STAGES = 2) else wb_ack_i;
@@ -187,7 +201,7 @@ begin
     wb_adr_o <= addr_i;
     wb_dat_o <= data_i;
     wb_sel_o <= ben_i;
-    wb_we_o  <= wren_i;
+    wb_we_o  <= wren_i or wb_we_ff;
   end generate;
 
   interface_reg_level_one:
@@ -199,7 +213,7 @@ begin
           wb_adr_o <= addr_i;
           wb_dat_o <= data_i;
           wb_sel_o <= ben_i;
-          wb_we_o  <= wren_i;
+          wb_we_o  <= wren_i or wb_we_ff;
         end if;
       end if;
     end process buffer_stages_one;
@@ -215,7 +229,7 @@ begin
           wb_adr_o <= addr_i;
           wb_dat_o <= data_i;
           wb_sel_o <= ben_i;
-          wb_we_o  <= wren_i;
+          wb_we_o  <= wren_i or wb_we_ff;
         end if;
         if (wb_ack_i = '1') then
           wb_rdata <= wb_dat_i;

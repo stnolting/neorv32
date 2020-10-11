@@ -511,6 +511,7 @@ begin
     neorv32_wishbone_inst: neorv32_wishbone
     generic map (
       INTERFACE_REG_STAGES => MEM_EXT_REG_STAGES, -- number of interface register stages (0,1,2)
+      WB_PIPELINED_MODE    => wb_pipe_mode_c,     -- false: classic/standard wishbone mode, true: pipelined wishbone mode
       -- Internal instruction memory --
       MEM_INT_IMEM_USE     => MEM_INT_IMEM_USE,   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE    => MEM_INT_IMEM_SIZE,  -- size of processor-internal instruction memory in bytes
