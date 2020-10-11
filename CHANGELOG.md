@@ -14,6 +14,7 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 11.10.2020 | 1.4.4.6 | Added option to configure external memory interface (Wishbone) to either use *standard/classic protocol* (default) or *pipelined protocol* (for better timing): via `wb_pipe_mode_c` constant in VHDL package file (`rtl/core/neorv32_package.vhd`); added help text to NEORV32.pdf section "3.4.4. Processor-External Memory Interface (WISHBONE)" |
 | 08.10.2020 | 1.4.4.5 | Removed CPU’s `BUS_TIMEOUT` and processor’s `MEM_EXT_TIMEOUT` generics; instead, a global configuration `bus_timeout_c` in the VHDL package file is used now |
 | 08.10.2020 | 1.4.4.4 | Removed `DEVNULL` device; all simulation output options from this device are now available as `SIM_MODE` in the `UART`; `mcause` CSR can now also be written; FIXED: trying to write a read-only CSR will cause an illegal instruction exception; for compatibility reasons any write access to the misa CSR will be ignored and will NOT cause an exception |
 | 07.10.2020 | 1.4.4.2 | Simplified ALU's set of core operations; removed co-processor data mux right after ALU -> shorter critical path; CPU control VHDL code clean-up and CSR write logic optimization; optimized IMEM/DMEM access logic; added note regarding alignment of IMEM/DMEM |
