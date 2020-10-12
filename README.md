@@ -7,7 +7,8 @@
 
 ## Table of Content
 
-* [Introduction](#Introduction)
+* [Overview](#Overview)
+* [Project Status](#Status)
 * [Features](#Features)
 * [FPGA Implementation Results](#FPGA-Implementation-Results)
 * [Performance](#Performance)
@@ -18,7 +19,7 @@
 
 
 
-## Introduction
+## Overview
 
 The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC) that is based
 on the RISC-V-compliant NEORV32 CPU. The project consists of two main parts:
@@ -64,7 +65,7 @@ download [pre-compiled toolchains](https://github.com/stnolting/riscv_gcc_prebui
 For more information take a look at the [![NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 
-###  Key Features
+### Key Features
 
 - RISC-V-compliant `rv32i` CPU with optional `C`, `E`, `M`, `U`, `Zicsr`, `Zifencei` and `PMP` (physical memory protection) extensions
 - GCC-based toolchain ([pre-compiled rv32i and rv32e toolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
@@ -88,7 +89,7 @@ For more information take a look at the [![NEORV32 data sheet](https://raw.githu
  * The processor has to fit in a Lattice iCE40 UltraPlus 5k FPGA running at 20+ MHz.
 
 
-### Status
+## Status
 
 The processor is [synthesizable](#FPGA-Implementation-Results) (tested on *real hardware* using Intel Quartus Prime, Xilinx Vivado and Lattice Radiant/Synplify Pro) and can successfully execute
 all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the [CoreMark benchmark](#CoreMark-Benchmark).
@@ -312,17 +313,17 @@ Results generated for hardware version: `1.4.4.8`
 **Configuration**
 Hardware:    32kB IMEM, 16kB DMEM, 100MHz clock
 CoreMark:    2000 iterations, MEM_METHOD is MEM_STACK
-Compiler:    RISCV32-GCC 10.1.0 (rv32i)
+Compiler:    RISCV32-GCC 10.1.0 (rv32i toolchain)
+Flags:       default, see makefile
 Peripherals: UART for printing the results
 ~~~
 
 | CPU                       | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
 |:--------------------------|:---------------:|:------------:|:--------------:|:-------------:|
-| `rv32i`                   |    26 940 bytes |        `-O3` |          33.89 |        0.3389 |
-| `rv32im`                  |    25 772 bytes |        `-O3` |          64.51 |        0.6451 |
-| `rv32im` + `FAST_MUL_EN`  |    25 772 bytes |        `-O3` |          80.00 |        0.8000 |
-| `rv32imc`                 |    19 812 bytes |        `-O3` |          62.50 |        0.6250 |
-| `rv32imc` + `FAST_MUL_EN` |    19 812 bytes |        `-O3` |          76.92 |        0.7692 |
+| `rv32i`                   |    26 940 bytes |        `-O3` |          33.89 |    **0.3389** |
+| `rv32im`                  |    25 772 bytes |        `-O3` |          64.51 |    **0.6451** |
+| `rv32imc`                 |    20 524 bytes |        `-O3` |          64.51 |    **0.6451** |
+| `rv32imc` + `FAST_MUL_EN` |    20 524 bytes |        `-O3` |          80.00 |    **0.8000** |
 
 The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic).
 
@@ -347,11 +348,10 @@ Results generated for hardware version: `1.4.4.8`
 
 | CPU                     | Required Clock Cycles | Executed Instructions | Average CPI |
 |:------------------------|----------------------:|----------------------:|:-----------:|
-| `rv32i`                 |         5 945 938 586 |         1 469 587 406 |        4.05 |
-| `rv32im`                |         3 110 282 586 |           602 225 760 |        5.16 |
-| `rv32im` `FAST_MUL_EN`  |         2 527 730 586 |           602 225 728 |        4.19 |
-| `rv32imc`               |         3 217 064 278 |           602 225 530 |        5.34 |
-| `rv32imc` `FAST_MUL_EN` |         2 634 512 278 |           602 225 574 |        4.37 |
+| `rv32i`                 |         5 945 938 586 |         1 469 587 406 |    **4.05** |
+| `rv32im`                |         3 110 282 586 |           602 225 760 |    **5.16** |
+| `rv32imc`               |         3 172 969 968 |           615 388 924 |    **5.16** |
+| `rv32imc` `FAST_MUL_EN` |         2 590 417 968 |           615 388 890 |    **4.21** |
 
 The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic).
 
