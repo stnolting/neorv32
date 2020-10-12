@@ -237,6 +237,8 @@ begin
   -- memory layout notifier --
   assert not (ispace_base_c /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framework." severity warning;
   assert not (dspace_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framework." severity warning;
+  -- memory latency notifier --
+  assert not (MEM_EXT_USE = true) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface with max latency = " & integer'image(bus_timeout_c) & " cycles." severity warning;
 
 
   -- Reset Generator ------------------------------------------------------------------------
