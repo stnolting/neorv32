@@ -97,8 +97,6 @@ int cnt_test = 0;
  * This program uses mostly synthetic case to trigger all implemented exceptions.
  * Each exception is captured and evaluated for correct detection.
  *
- * @note This program requires the UART, MTIME and CLIC to be synthesized.
- *
  * @return Irrelevant.
  **************************************************************************/
 int main() {
