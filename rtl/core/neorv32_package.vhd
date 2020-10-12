@@ -64,6 +64,7 @@ package neorv32_package is
   function xor_all_f(a : std_ulogic_vector) return std_ulogic;
   function xnor_all_f(a : std_ulogic_vector) return std_ulogic;
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
+  function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
 
   -- Internal Types -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1285,5 +1286,16 @@ package body neorv32_package is
     end case;
     return output_v;
   end function to_hexchar_f;
+
+  -- Function: Bit reversal -----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector is
+    variable output_v : std_ulogic_vector(input'range);
+  begin
+    for i in 0 to input'length-1 loop
+      output_v(input'length-i-1) := input(i);
+    end loop; -- i
+    return output_v;
+  end function bit_rev_f;
 
 end neorv32_package;
