@@ -66,37 +66,6 @@ NEORV32_HOME ?= ../../..
 
 
 # -----------------------------------------------------------------------------
-# FreeRTOS
-# -----------------------------------------------------------------------------
-ifneq (,$(findstring RUN_FREERTOS_DEMO,$(USER_FLAGS)))
-# FreeRTOS home folder (adapt this!)
-FREERTOS_HOME ?= /mnt/n/Projects/FreeRTOS/FreeRTOS
-
-# Application
-APP_SRC += blinky_demo/main_blinky.c
-
-# FreeRTOS core
-APP_SRC += $(wildcard $(FREERTOS_HOME)/Source/*.c)
-APP_SRC += $(wildcard $(FREERTOS_HOME)/Source/portable/MemMang/heap_1.c)
-
-APP_INC += -I $(FREERTOS_HOME)/Source/include
-
-# FreeRTOS RISC-V specific
-APP_SRC += $(wildcard $(FREERTOS_HOME)/Source/portable/GCC/RISC-V/*.c)
-APP_SRC += $(FREERTOS_HOME)/Source/portable/GCC/RISC-V/portASM.S
-
-APP_INC += -I $(FREERTOS_HOME)/Source/portable/GCC/RISC-V
-
-# NEORV32 specific
-ASM_INC += -DportasmHANDLE_INTERRUPT=SystemIrqHandler
-
-APP_INC += -I chip_specific_extensions/neorv32
-
-ASM_INC += -I chip_specific_extensions/neorv32
-endif
-
-
-# -----------------------------------------------------------------------------
 # NEORV32 framework
 # -----------------------------------------------------------------------------
 # Path to NEORV32 linker script and startup file
@@ -156,6 +125,8 @@ IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
 # Compiler & linker flags
 CC_OPTS  = $(MARCH) $(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles
 CC_OPTS += -Wl,--gc-sections -lm -lc -lgcc -lc
+# This accelerates instruction fetch after branches when C extension is enabled (irrelevant when C extension is disabled)
+CC_OPTS += -falign-functions=4 -falign-labels=4 -falign-loops=4 -falign-jumps=4
 CC_OPTS += $(USER_FLAGS)
 
 

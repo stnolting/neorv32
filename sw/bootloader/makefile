@@ -125,6 +125,8 @@ IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
 # Compiler & linker flags
 CC_OPTS  = $(MARCH) $(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles
 CC_OPTS += -Wl,--gc-sections -lm -lc -lgcc -lc
+# This accelerates instruction fetch after branches when C extension is enabled (irrelevant when C extension is disabled)
+CC_OPTS += -falign-functions=4 -falign-labels=4 -falign-loops=4 -falign-jumps=4
 CC_OPTS += $(USER_FLAGS)
 
 
