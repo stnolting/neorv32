@@ -72,6 +72,8 @@ __crt0_reg_file_clear:
 // Clear register file (upper half, if no E extension)
 // *********************************************************
 #ifndef __riscv_32e
+// save some program space if compiling bootloader
+#ifndef make_bootloader
   addi x16, x0, 0
   addi x17, x0, 0
   addi x18, x0, 0
@@ -88,6 +90,7 @@ __crt0_reg_file_clear:
   addi x29, x0, 0
   addi x30, x0, 0
   addi x31, x0, 0
+#endif
 #endif
 
 

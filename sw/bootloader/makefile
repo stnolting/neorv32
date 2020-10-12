@@ -144,7 +144,8 @@ all:     $(APP_ASM) $(APP_EXE) $(APP_IMG)
 
 # Check if making bootloader
 # Use different base address and legth for instruction memory/"rom" (BOOTMEM instead of IMEM)
-target bootloader: CC_OPTS += -Wl,--defsym=make_bootloader=1
+# Also define "make_bootloader" for crt0.S
+target bootloader: CC_OPTS += -Wl,--defsym=make_bootloader=1 -Dmake_bootloader
 
 
 # -----------------------------------------------------------------------------
