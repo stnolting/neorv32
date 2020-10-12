@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040408"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040409"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
 
   -- Architecture Configuration -------------------------------------------------------------
@@ -51,7 +51,7 @@ package neorv32_package is
   constant bus_timeout_c  : natural := 127; -- cycles after which a valid bus access will timeout and triggers an access exception
   constant wb_pipe_mode_c : boolean := false; -- false: classic/standard wishbone mode, true: pipelined wishbone mode (better timing)
   constant ipb_entries_c  : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
-  constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero
+  constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero by the CPU HW
 
   -- Helper Functions -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
