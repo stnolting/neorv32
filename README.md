@@ -72,7 +72,7 @@ For more information take a look at the [![NEORV32 data sheet](https://raw.githu
 * Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
 * [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
 * [**Detailed data sheet**](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf)
-* Completely described in behavioral, platform-independent VHDL – no primitives, macros, etc.
+* Completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
 * Fully synchronous design, no latches, no gated clocks
 * Small hardware footprint and high operating frequency
 * Highly configurable CPU and processor setup
