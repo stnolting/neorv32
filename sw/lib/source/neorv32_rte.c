@@ -227,6 +227,7 @@ static void __neorv32_rte_debug_exc_handler(void) {
   register uint32_t trap_inst;
   asm volatile ("lh %[result], 0(%[input_i])" : [result] "=r" (trap_inst) : [input_i] "r" (trap_addr));
 
+  // modify return address only if exception (NOT for interrupts)
   if ((trap_cause & 0x80000000) == 0) { // is exception?
     if ((trap_inst & 3) == 3) { // is uncompressed instruction?
       trap_addr -= 4;
@@ -248,7 +249,7 @@ void neorv32_rte_print_hw_config(void) {
   int i;
   char c;
 
-  neorv32_uart_printf("\n\n<< NEORV32 Hardware Configuration Overview >>\n");
+  neorv32_uart_printf("\n\n<< Hardware Configuration Overview >>\n");
 
   // CPU configuration
   neorv32_uart_printf("\n-- Central Processing Unit --\n");
@@ -260,6 +261,9 @@ void neorv32_rte_print_hw_config(void) {
 
   tmp = neorv32_cpu_csr_read(CSR_MARCHID);
   neorv32_uart_printf("Architecture ID:   0x%x", tmp);
+  if (tmp == NEORV32_ARCHID) {
+    neorv32_uart_printf(" (NEORV32)");
+  }
 
   // HW version
   neorv32_uart_printf("\nImplementation ID: 0x%x (", neorv32_cpu_csr_read(CSR_MIMPID));
