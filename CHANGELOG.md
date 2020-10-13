@@ -14,7 +14,7 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 13.10.2020 | 1.4.5.0 | An official *open-soucre RISC-V architecture ID* was assigned to the project: decimal = `19`, 32-bit hexadecimal = `0x00000013` - software can retrieve the ID from the `marchid` CSR |
+| 13.10.2020 | [**:rocket:1.4.5.0**](https://github.com/stnolting/neorv32/releases/tag/v1.4.5.0) | An official *open-soucre RISC-V architecture ID* was assigned to the project: decimal = `19`, 32-bit hexadecimal = `0x00000013` - software can retrieve the ID from the `marchid` CSR |
 | 12.10.2020 | 1.4.4.9 | Added *alignment flags* to makefiles: branch targets are forced to be 32-bit aligned -> increases performance when using the `C` extension; added makefile flag listing to NEORV32.pdf; updated performance results for CPUs with `C` extension; `crt0.S` will initialize *all* registers with zero if not using `E` extension and not compiling bootloader |
 | 11.10.2020 | 1.4.4.8 | Reworked pipeline frontend: Optimized fetch enginge, added issue engine, faster instruction fetch after taken branches + reduced hardware requirements; updated synthesis and performance results |
 | 11.10.2020 | 1.4.4.6 | Added option to configure external memory interface (Wishbone) to either use *standard/classic protocol* (default) or *pipelined protocol* (for better timing): via `wb_pipe_mode_c` constant in VHDL package file (`rtl/core/neorv32_package.vhd`); added help text to NEORV32.pdf section "3.4.4. Processor-External Memory Interface (WISHBONE)" |
