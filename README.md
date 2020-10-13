@@ -38,7 +38,7 @@ stand-alone mode and build your own SoC around it.
 
 ### [NEORV32 Processor](#Processor-Features)
 
-Based on the NEORV32 CPU, the NEORV32 Processor is a full-scale RISC-V microcontroller system
+Based on the NEORV32 CPU, the NEORV32 Processor is a full-scale RISC-V microcontroller system (**SoC**)
 that already provides common peripherals like GPIO, serial interfaces, timers, embedded
 memories and an external bus interface for connectivity and custom extension.
 All optional features and modules beyond the base CPU can be enabled and configured via
@@ -67,21 +67,21 @@ For more information take a look at the [![NEORV32 data sheet](https://raw.githu
 
 ### Key Features
 
-- RISC-V-compliant `rv32i` CPU with optional `C`, `E`, `M`, `U`, `Zicsr`, `Zifencei` and `PMP` (physical memory protection) extensions
-- GCC-based toolchain ([pre-compiled rv32i and rv32e toolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
-- Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
-- [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
-- [**Detailed data sheet**](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf)
-- Completely described in behavioral, platform-independent VHDL – no primitives, macros, etc.
-- Fully synchronous design, no latches, no gated clocks
-- Small hardware footprint and high operating frequency
-- Highly configurable CPU and processor setup
-- [FreeRTOS port](https://github.com/stnolting/neorv32/blob/master/sw/example/demo_freeRTOS) available
+* RISC-V-compliant `rv32i` CPU with optional `C`, `E`, `M`, `U`, `Zicsr`, `Zifencei` and `PMP` (physical memory protection) extensions
+* GCC-based toolchain ([pre-compiled rv32i and rv32e toolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
+* Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
+* [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
+* [**Detailed data sheet**](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf)
+* Completely described in behavioral, platform-independent VHDL – no primitives, macros, etc.
+* Fully synchronous design, no latches, no gated clocks
+* Small hardware footprint and high operating frequency
+* Highly configurable CPU and processor setup
+* [FreeRTOS port](https://github.com/stnolting/neorv32/blob/master/sw/example/demo_freeRTOS) available
 
 
 ### Design Principles
 
- * From zero to main(): Completely open source and documented.
+ * From zero to `main()`: Completely open source and documented.
  * Plain VHDL without technology-specific parts like attributes, macros or primitives.
  * Easy to use – working out of the box.
  * Clean synchronous design, no wacky combinatorial interfaces.
@@ -107,14 +107,14 @@ The project’s change log is available in the [CHANGELOG.md](https://github.com
 
 ### To-Do / Wish List
 
-- Add AXI(-Lite) bridges
-- Synthesis results (+ wrappers?) for more platforms
-- Maybe port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
-- Implement further CPU extensions:
-  - Atomic operations (`A`)
-  - Bitmanipulation operations (`B`), when they are "official"
-  - Floating-point instructions (`F`)
-  - ...
+* Add AXI(-Lite) bridges
+* Synthesis results (+ wrappers?) for more platforms
+* Maybe port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
+* Implement further CPU extensions:
+  * Atomic operations (`A`)
+  * Bitmanipulation operations (`B`), when they are "official"
+  * Floating-point instructions (`F`)
+  * ...
 
 
 ## Features
@@ -129,19 +129,19 @@ The full-blown data sheet of the NEORV32 Processor/CPU is available as pdf file:
 The NEORV32 Processor provides a full-scale microcontroller-like SoC based on the NEORV32 CPU. The setup
 is highly customizable via the processor's top generics.
 
-- Optional processor-internal data and instruction memories (**DMEM** / **IMEM**)
-- Optional internal **Bootloader** with UART console and automatic SPI flash boot option
-- Optional machine system timer (**MTIME**), RISC-V-compliant
-- Optional universal asynchronous receiver and transmitter (**UART**) with simulation output option via text.io
-- Optional 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
-- Optional two wire serial interface controller (**TWI**), compatible to the I²C standard
-- Optional general purpose parallel IO port (**GPIO**), 32xOut & 32xIn, with pin-change interrupt
-- Optional 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**), *standard* or *pipelined* handshake/transactions mode
-- Optional watchdog timer (**WDT**)
-- Optional PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
-- Optional GARO-based true random number generator (**TRNG**)
-- Optional custom functions unit (**CFU**) for tightly-coupled custom co-processors
-- System configuration information memory to check hardware configuration by software (**SYSINFO**)
+* Optional processor-internal data and instruction memories (**DMEM** / **IMEM**)
+* Optional internal **Bootloader** with UART console and automatic SPI flash boot option
+* Optional machine system timer (**MTIME**), RISC-V-compliant
+* Optional universal asynchronous receiver and transmitter (**UART**) with simulation output option via text.io
+* Optional 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
+* Optional two wire serial interface controller (**TWI**), compatible to the I²C standard
+* Optional general purpose parallel IO port (**GPIO**), 32xOut & 32xIn, with pin-change interrupt
+* Optional 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**), *standard* or *pipelined* handshake/transactions mode
+* Optional watchdog timer (**WDT**)
+* Optional PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
+* Optional GARO-based true random number generator (**TRNG**)
+* Optional custom functions unit (**CFU**) for tightly-coupled custom co-processors
+* System configuration information memory to check hardware configuration by software (**SYSINFO**)
 
 ### CPU Features
 
@@ -606,12 +606,12 @@ which you can start your own application. Simply compile one of these projects. 
 Connect your FPGA board via UART to your computer and open the according port to interface with the NEORV32 bootloader. The bootloader
 uses the following default UART configuration:
 
-- 19200 Baud
-- 8 data bits
-- 1 stop bit
-- No parity bits
-- No transmission / flow control protocol (raw bytes only)
-- Newline on `\r\n` (carriage return & newline) - also for sent data
+* 19200 Baud
+* 8 data bits
+* 1 stop bit
+* No parity bits
+* No transmission / flow control protocol (raw bytes only)
+* Newline on `\r\n` (carriage return & newline) - also for sent data
 
 Use the bootloader console to upload the `neorv32_exe.bin` executable and run your application image.
 
@@ -745,6 +745,8 @@ Continous integration provided by [Travis CI](https://travis-ci.com/stnolting/ne
 
 This project is not affiliated with or endorsed by the Open Source Initiative (https://www.oshwa.org / https://opensource.org).
 
+--------
 
+This repository was created on June 23th, 2020.
 
 Made with :coffee: in Hannover, Germany.
