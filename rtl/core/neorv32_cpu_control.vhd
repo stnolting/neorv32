@@ -117,7 +117,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal fetch_engine : fetch_engine_t;
 
-  -- instrucion prefetch buffer (IPB) --
+  -- instrucion prefetch buffer (IPB, real FIFO) --
   type ipb_data_fifo_t is array (0 to ipb_entries_c-1) of std_ulogic_vector(2+31 downto 0);
   type ipb_t is record
     wdata : std_ulogic_vector(2+31 downto 0); -- write status (bus_error, align_error) + 32-bit instruction data
@@ -155,7 +155,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal issue_engine : issue_engine_t;
 
-  -- instruction buffer --
+  -- instruction buffer ("FIFO" with just one entry) --
   type i_buf_t is record
     wdata  : std_ulogic_vector(35 downto 0); -- 4-bit status + 32-bit instruction
     rdata  : std_ulogic_vector(35 downto 0); -- 4-bit status + 32-bit instruction
@@ -1837,16 +1837,16 @@ begin
           when csr_mvendorid_c => -- R/-: mvendorid - vendor ID
             csr.rdata <= (others => '0');
           when csr_marchid_c => -- R/-: marchid - architecture ID
-            csr.rdata <= (others => '0');
-          when csr_mimpid_c => -- R/-: mimpid - implementation ID / NEORV32 hardware version
-            csr.rdata <= hw_version_c;
+            csr.rdata(4 downto 0) <= "10011"; -- official open-source arch ID
+          when csr_mimpid_c => -- R/-: mimpid - implementation ID
+            csr.rdata <= hw_version_c; -- NEORV32 hardware version
           when csr_mhartid_c => -- R/-: mhartid - hardware thread ID
             csr.rdata <= HW_THREAD_ID;
 
           -- custom machine read-only CSRs --
           when csr_mzext_c => -- R/-: mzext
-            csr.rdata(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr CPU extension
-            csr.rdata(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei CPU extension
+            csr.rdata(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- RISC-V.Zicsr CPU extension
+            csr.rdata(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- RISC-V.Zifencei CPU extension
 
           -- undefined/unavailable --
           when others =>
