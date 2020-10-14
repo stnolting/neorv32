@@ -346,12 +346,12 @@ by the number of executed instructions (`instret[h]` CSRs). The executables were
 
 Results generated for hardware version: `1.4.4.8`
 
-| CPU                     | Required Clock Cycles | Executed Instructions | Average CPI |
-|:------------------------|----------------------:|----------------------:|:-----------:|
-| `rv32i`                 |         5 945 938 586 |         1 469 587 406 |    **4.05** |
-| `rv32im`                |         3 110 282 586 |           602 225 760 |    **5.16** |
-| `rv32imc`               |         3 172 969 968 |           615 388 924 |    **5.16** |
-| `rv32imc` `FAST_MUL_EN` |         2 590 417 968 |           615 388 890 |    **4.21** |
+| CPU                       | Required Clock Cycles | Executed Instructions | Average CPI |
+|:--------------------------|----------------------:|----------------------:|:-----------:|
+| `rv32i`                   |         5 945 938 586 |         1 469 587 406 |    **4.05** |
+| `rv32im`                  |         3 110 282 586 |           602 225 760 |    **5.16** |
+| `rv32imc`                 |         3 172 969 968 |           615 388 924 |    **5.16** |
+| `rv32imc` + `FAST_MUL_EN` |         2 590 417 968 |           615 388 890 |    **4.21** |
 
 The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic).
 
@@ -565,7 +565,7 @@ You can either instantiate the [processor's top entity](https://github.com/stnol
 can use a simple [test setup](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd) (from the project's
 [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) folder) as top entity.
 
-This test setup instantiates the processor and implements most of the peripherals and some ISA extensions. Only the UART lines, clock, reset and some GPIO output sginals are
+This test setup instantiates the processor and implements most of the peripherals and some ISA extensions. Only the UART lines, clock, reset and some GPIO output signals are
 propagated as actual entity signals. Basically, it is a FPGA "hello world" example:
 
 ```vhdl

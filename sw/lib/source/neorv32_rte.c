@@ -393,11 +393,10 @@ void neorv32_rte_print_hw_version(void) {
 
   uint32_t i;
   char tmp, cnt;
-  uint32_t version = neorv32_cpu_csr_read(CSR_MIMPID);
 
   for (i=0; i<4; i++) {
 
-    tmp = (char)(version >> (24 - 8*i));
+    tmp = (char)(neorv32_cpu_csr_read(CSR_MIMPID) >> (24 - 8*i));
 
     // serial division
     cnt = 0;
