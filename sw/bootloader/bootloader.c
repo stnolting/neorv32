@@ -1,17 +1,18 @@
 // #################################################################################################
 // # << NEORV32 - Bootloader >>                                                                    #
 // # ********************************************************************************************* #
-// # THE BOOTLOADER SHOULD BE COMPILED USING ONLY THE BASE ISA (rv32i or rv32e)!                   #
+// # In order to run the bootloader on any CPU configuration, the bootloader should be compiled    #
+// # unsing the base ISA (rv32i/rv32e) only.                                                       #
 // # ********************************************************************************************* #
 // # Boot from (internal) instruction memory, UART or SPI Flash.                                   #
 // #                                                                                               #
-// # UART configuration: 8N1 at 19200 baud                                                         #
+// # UART configuration: 8 data bits, no parity bit, 1 stop bit, 19200 baud                        #
 // # Boot Flash: 8-bit SPI, 24-bit addresses (like Micron N25Q032A) @ neorv32.spi_csn_o(0)         #
-// # neorv32.gpio_o(0) is used as high-active status LED (can be disabled via STATUS_LED_EN).      #
+// # neorv32.gpio_o(0) is used as high-active status LED (can be disabled via #STATUS_LED_EN).     #
 // #                                                                                               #
-// # Auto boot sequence (can be disabled via AUTOBOOT_EN) after timeout (via AUTOBOOT_TIMEOUT):    #
+// # Auto boot sequence (can be disabled via #AUTOBOOT_EN) after timeout (via #AUTOBOOT_TIMEOUT):  #
 // #  -> Try booting from SPI flash at spi_csn_o(0).                                               #
-// #  -> Permanently light up status led and freeze if SPI flash booting attempt fails.            #
+// #  -> Permanently light up status led and stall CPU if SPI flash booting attempt fails.         #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -48,7 +49,7 @@
 /**********************************************************************//**
  * @file bootloader.c
  * @author Stephan Nolting
- * @brief Default NEORV32 bootloader. Compile only for rv32i or rv32e (better).
+ * @brief Default NEORV32 bootloader.
  **************************************************************************/
 
 // Libraries
@@ -62,21 +63,21 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE              (19200)
-/** Time until the auto-boot sequence starts (in seconds) */
-#define AUTOBOOT_TIMEOUT       8
 /** Enable auto-boot sequence if != 0 */
 #define AUTOBOOT_EN            (1)
+/** Time until the auto-boot sequence starts (in seconds) */
+#define AUTOBOOT_TIMEOUT       8
 /** Set to 0 to disable bootloader status LED */
 #define STATUS_LED_EN          (1)
 /** Bootloader status LED at GPIO output port */
 #define STATUS_LED             (0)
-/** SPI flash boot image base address */
+/** SPI flash boot image base address (warning! address might wrap-around!) */
 #define SPI_FLASH_BOOT_ADR     (0x00800000)
-/** SPI flash chip select at spi_csn_o */
+/** SPI flash chip select line at spi_csn_o */
 #define SPI_FLASH_CS           (0)
-/** Default SPI flash clock prescaler for serial peripheral interface */
+/** Default SPI flash clock prescaler */
 #define SPI_FLASH_CLK_PRSC     (CLK_PRSC_8)
-/** SPI flash sector size in bytes */
+/** SPI flash sector size in bytes (default = 64kb) */
 #define SPI_FLASH_SECTOR_SIZE  (64*1024)
 /**@}*/
 
