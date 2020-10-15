@@ -485,20 +485,22 @@ int main() {
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("EXC I_ILLEG:  ");
+
   cnt_test++;
 
-  // create test program in RAM
-  static const uint32_t dummy_sub_program[2] __attribute__((aligned(8))) = {
-    0xDEAD007F, // undefined 32-bit instruction (invalid opcode) -> illegal instruction exception
-    0x00008067  // ret (32-bit)
-  };
-
-  tmp_a = (uint32_t)&dummy_sub_program; // call the dummy sub program
-  asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
+  asm volatile ("csrrw zero, 0xfff, zero"); // = 0xfff01073 : CSR 0xfff not implemented -> illegal instruction
 
 #if (DETAILED_EXCEPTION_DEBUG==0)
+  // make sure this has cause an illegal exception
   if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
-    test_ok();
+    // make sure this is really the instruction that caused the exception
+    // for illegal instructions mtval contains the actual instruction word
+    if (neorv32_cpu_csr_read(CSR_MTVAL) == 0xfff01073) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
   }
   else {
     test_fail();
