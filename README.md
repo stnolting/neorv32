@@ -162,6 +162,7 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
   * Little-endian byte order
   * All reserved or unimplemented instructions will raise an illegal instruction exception
   * Privilege levels: `machine` mode, `user` mode (if enabled via `U` extension)
+  * Official [RISC-V open-source architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
 
 
 **RV32I base instruction set** (`I` extension):
