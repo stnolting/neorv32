@@ -176,6 +176,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     state_nxt    : execute_engine_state_t;
     i_reg        : std_ulogic_vector(31 downto 0);
     i_reg_nxt    : std_ulogic_vector(31 downto 0);
+    i_reg_last   : std_ulogic_vector(31 downto 0); -- last executed instruction
     is_ci        : std_ulogic; -- current instruction is de-compressed instruction
     is_ci_nxt    : std_ulogic;
     is_jump      : std_ulogic; -- current instruction is jump instruction
@@ -659,6 +660,10 @@ begin
       execute_engine.is_jump    <= execute_engine.is_jump_nxt;
       execute_engine.is_cp_op   <= execute_engine.is_cp_op_nxt;
       --
+      if (execute_engine.state = EXECUTE) then
+        execute_engine.i_reg_last <= execute_engine.i_reg;
+      end if;
+      --
       ctrl <= ctrl_nxt;
     end if;
   end process execute_engine_fsm_sync;
@@ -784,7 +789,8 @@ begin
             execute_engine.pc_nxt <= execute_engine.next_pc;
           end if;
           --
-          if (execute_engine.sleep = '1') or (trap_ctrl.env_start = '1') or ((i_buf.rdata(33) or i_buf.rdata(34)) = '1') then
+          -- any reason to go FAST to trap state? --
+          if (execute_engine.sleep = '1') or (trap_ctrl.env_start = '1') or (trap_ctrl.exc_fire = '1') or ((i_buf.rdata(33) or i_buf.rdata(34)) = '1') then
             execute_engine.state_nxt <= TRAP;
           else
             execute_engine.state_nxt <= EXECUTE;
@@ -846,7 +852,7 @@ begin
             -- multi cycle alu operation? --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or -- SLL shift operation?
                (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) or -- SR shift operation?
-               ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_lsb_c) = '1')) then -- MULDIV?
+               ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_lsb_c) = '1') and (CPU_EXTENSION_RISCV_M = true)) then -- MULDIV?
               execute_engine.state_nxt <= ALU_WAIT;
             else -- single cycle ALU operation
               ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
@@ -1619,7 +1625,7 @@ begin
                (trap_ctrl.cause(4 downto 0) = trap_menv_c(4 downto 0)) then -- environment call
               csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction
             elsif (trap_ctrl.cause(4 downto 0) = trap_iil_c(4 downto 0)) then -- illegal instruction
-              csr.mtval <= execute_engine.i_reg; -- faulting instruction itself
+              csr.mtval <= execute_engine.i_reg_last; -- faulting instruction itself
             else -- load/store misalignments/access errors
               csr.mtval <= mar_i; -- faulting data access address
             end if;
