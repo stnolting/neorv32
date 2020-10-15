@@ -51,6 +51,7 @@ static uint32_t __neorv32_rte_vector_lut[16] __attribute__((unused)); // trap ha
 static void __attribute__((__interrupt__)) __neorv32_rte_core(void) __attribute__((aligned(16))) __attribute__((unused));
 static void __neorv32_rte_debug_exc_handler(void)     __attribute__((unused));
 static void __neorv32_rte_print_true_false(int state) __attribute__((unused));
+static void __neorv32_rte_print_hex_word(uint32_t num);
 
 
 /**********************************************************************//**
@@ -64,7 +65,7 @@ void neorv32_rte_setup(void) {
 
   // check if CSR system is available at all
   if (neorv32_cpu_csr_read(CSR_MISA) == 0) {
-    neorv32_uart_printf("<RTE> WARNING! CPU CSR system not available! </RTE>");
+    neorv32_uart_print("<RTE> WARNING! CPU CSR system not available! </RTE>");
   }
 
   // configure trap handler base address
@@ -137,11 +138,14 @@ int neorv32_rte_exception_uninstall(uint8_t id) {
  * This is the core of the NEORV32 RTE.
  *
  * @note This function must no be explicitly used by the user.
+ * @note The RTE core uses mscratch CSR to store the trap-causing mepc for further (user-defined) processing.
+ *
  * @warning When using the the RTE, this function is the ONLY function that can use the 'interrupt' attribute!
  **************************************************************************/
 static void __attribute__((__interrupt__)) __attribute__((aligned(16)))  __neorv32_rte_core(void) {
 
-  register uint32_t rte_mepc   = neorv32_cpu_csr_read(CSR_MEPC);
+  register uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
+  neorv32_cpu_csr_write(CSR_MSCRATCH, rte_mepc); // store for later
   register uint32_t rte_mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
 
   // compute return address
@@ -198,45 +202,38 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(16)))  __neorv
 static void __neorv32_rte_debug_exc_handler(void) {
 
   // intro
-  neorv32_uart_printf("<RTE> ");
+  neorv32_uart_print("<RTE> ");
 
   // cause
   register uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
   switch (trap_cause) {
-    case TRAP_CODE_I_MISALIGNED: neorv32_uart_printf("Instruction address misaligned"); break;
-    case TRAP_CODE_I_ACCESS:     neorv32_uart_printf("Instruction access fault"); break;
-    case TRAP_CODE_I_ILLEGAL:    neorv32_uart_printf("Illegal instruction"); break;
-    case TRAP_CODE_BREAKPOINT:   neorv32_uart_printf("Breakpoint"); break;
-    case TRAP_CODE_L_MISALIGNED: neorv32_uart_printf("Load address misaligned"); break;
-    case TRAP_CODE_L_ACCESS:     neorv32_uart_printf("Load access fault"); break;
-    case TRAP_CODE_S_MISALIGNED: neorv32_uart_printf("Store address misaligned"); break;
-    case TRAP_CODE_S_ACCESS:     neorv32_uart_printf("Store access fault"); break;
-    case TRAP_CODE_MENV_CALL:    neorv32_uart_printf("Environment call"); break;
-    case TRAP_CODE_MSI:          neorv32_uart_printf("Machine software interrupt"); break;
-    case TRAP_CODE_MTI:          neorv32_uart_printf("Machine timer interrupt"); break;
-    case TRAP_CODE_MEI:          neorv32_uart_printf("Machine external interrupt"); break;
-    case TRAP_CODE_FIRQ_0:       neorv32_uart_printf("Fast interrupt 0"); break;
-    case TRAP_CODE_FIRQ_1:       neorv32_uart_printf("Fast interrupt 1"); break;
-    case TRAP_CODE_FIRQ_2:       neorv32_uart_printf("Fast interrupt 2"); break;
-    case TRAP_CODE_FIRQ_3:       neorv32_uart_printf("Fast interrupt 3"); break;
-    default:                     neorv32_uart_printf("Unknown (0x%x)", trap_cause); break;
+    case TRAP_CODE_I_MISALIGNED: neorv32_uart_print("Instruction address misaligned"); break;
+    case TRAP_CODE_I_ACCESS:     neorv32_uart_print("Instruction access fault"); break;
+    case TRAP_CODE_I_ILLEGAL:    neorv32_uart_print("Illegal instruction"); break;
+    case TRAP_CODE_BREAKPOINT:   neorv32_uart_print("Breakpoint"); break;
+    case TRAP_CODE_L_MISALIGNED: neorv32_uart_print("Load address misaligned"); break;
+    case TRAP_CODE_L_ACCESS:     neorv32_uart_print("Load access fault"); break;
+    case TRAP_CODE_S_MISALIGNED: neorv32_uart_print("Store address misaligned"); break;
+    case TRAP_CODE_S_ACCESS:     neorv32_uart_print("Store access fault"); break;
+    case TRAP_CODE_MENV_CALL:    neorv32_uart_print("Environment call"); break;
+    case TRAP_CODE_MSI:          neorv32_uart_print("Machine software interrupt"); break;
+    case TRAP_CODE_MTI:          neorv32_uart_print("Machine timer interrupt"); break;
+    case TRAP_CODE_MEI:          neorv32_uart_print("Machine external interrupt"); break;
+    case TRAP_CODE_FIRQ_0:       neorv32_uart_print("Fast interrupt 0"); break;
+    case TRAP_CODE_FIRQ_1:       neorv32_uart_print("Fast interrupt 1"); break;
+    case TRAP_CODE_FIRQ_2:       neorv32_uart_print("Fast interrupt 2"); break;
+    case TRAP_CODE_FIRQ_3:       neorv32_uart_print("Fast interrupt 3"); break;
+    default:                     neorv32_uart_print("Unknown "); __neorv32_rte_print_hex_word(trap_cause); break;
   }
 
   // address
-  register uint32_t trap_addr = neorv32_cpu_csr_read(CSR_MEPC);
-  register uint32_t trap_inst;
-  asm volatile ("lh %[result], 0(%[input_i])" : [result] "=r" (trap_inst) : [input_i] "r" (trap_addr));
+  neorv32_uart_print(" @ ");
+  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MSCRATCH)); // rte core stores actual mepc to mscratch
 
-  // modify return address only if exception (NOT for interrupts)
-  if ((trap_cause & 0x80000000) == 0) { // is exception?
-    if ((trap_inst & 3) == 3) { // is uncompressed instruction?
-      trap_addr -= 4;
-    }
-    else {
-      trap_addr -= 2;
-    }
-  }
-  neorv32_uart_printf(" @ 0x%x, MTVAL=0x%x </RTE>", trap_addr, neorv32_cpu_csr_read(CSR_MTVAL));
+  // additional info
+  neorv32_uart_print(", MTVAL=");
+  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL));
+  neorv32_uart_print(" </RTE>");
 }
 
 
@@ -378,12 +375,33 @@ void neorv32_rte_print_hw_config(void) {
 static void __neorv32_rte_print_true_false(int state) {
 
   if (state) {
-    neorv32_uart_printf("True\n");
+    neorv32_uart_print("True\n");
   }
   else {
-    neorv32_uart_printf("False\n");
+    neorv32_uart_print("False\n");
   }
 }
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Private function to print 32-bit number
+ * as 8-digit hexadecimal value (with "0x" suffix).
+ *
+ * @param[in] num Number to print as hexadecimal.
+ **************************************************************************/
+void __neorv32_rte_print_hex_word(uint32_t num) {
+
+  static const char hex_symbols[16] = "0123456789ABCDEF";
+
+  neorv32_uart_print("0x");
+
+  int i;
+  for (i=0; i<8; i++) {
+    uint32_t index = (num >> (28 - 4*i)) & 0xF;
+    neorv32_uart_putc(hex_symbols[index]);
+  }
+}
+
 
 
 /**********************************************************************//**
