@@ -223,10 +223,10 @@ static void __neorv32_rte_debug_exc_handler(void) {
     case TRAP_CODE_FIRQ_1:       neorv32_uart_print("Fast interrupt 1"); break;
     case TRAP_CODE_FIRQ_2:       neorv32_uart_print("Fast interrupt 2"); break;
     case TRAP_CODE_FIRQ_3:       neorv32_uart_print("Fast interrupt 3"); break;
-    default:                     neorv32_uart_print("Unknown "); __neorv32_rte_print_hex_word(trap_cause); break;
+    default:                     neorv32_uart_print("Unknown trap cause: "); __neorv32_rte_print_hex_word(trap_cause); break;
   }
 
-  // address
+  // instruction address
   neorv32_uart_print(" @ ");
   __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MSCRATCH)); // rte core stores actual mepc to mscratch
 

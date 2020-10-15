@@ -264,9 +264,9 @@ begin
             i := to_integer(unsigned(uart_rx_sreg(8 downto 1)));
 
             if (i < 32) or (i > 32+95) then -- printable char?
-              report "SIM_UART TX: (" & integer'image(i) & ")"; -- print code
+              report "NEORV32_TB_UART.TX: (" & integer'image(i) & ")"; -- print code
             else
-              report "SIM_UART TX: " & character'val(i); -- print ASCII
+              report "NEORV32_TB_UART.TX: " & character'val(i); -- print ASCII
             end if;
 
             if (i = 10) then -- Linux line break
