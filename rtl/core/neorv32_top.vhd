@@ -234,11 +234,14 @@ begin
   assert not ((dspace_base_c(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) /= dmem_align_check_c) and (MEM_INT_DMEM_USE = true)) report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address has to be aligned to DMEM size." severity error;
   -- clock --
   assert not (CLOCK_FREQUENCY = 0) report "NEORV32 PROCESSOR CONFIG ERROR! Core clock frequency (CLOCK_FREQUENCY) not specified." severity error;
-  -- memory layout notifier --
+  -- memory layout warning --
   assert not (ispace_base_c /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framework." severity warning;
   assert not (dspace_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framework." severity warning;
-  -- memory latency notifier --
+  -- memory latency notifier (warning) --
   assert not (MEM_EXT_USE = true) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface with max latency = " & integer'image(bus_timeout_c) & " cycles." severity warning;
+  -- external memory iterface protocol notifier (warning) --
+  assert not ((MEM_EXT_USE = true) and (wb_pipe_mode_c = false)) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using STANDARD Wishbone protocol." severity warning;
+  assert not ((MEM_EXT_USE = true) and (wb_pipe_mode_c =  true)) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using PIEPLINED Wishbone protocol." severity warning;
 
 
   -- Reset Generator ------------------------------------------------------------------------
