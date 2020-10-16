@@ -297,11 +297,14 @@ void neorv32_rte_print_hw_config(void) {
   
   // Z* CPU extensions (from custom CSR "mzext")
   tmp = neorv32_cpu_csr_read(CSR_MZEXT);
-  if (tmp & (1<<0)) {
+  if (tmp & (1<<CPU_MZEXT_ZICSR)) {
     neorv32_uart_printf("Zicsr ");
   }
-  if (tmp & (1<<1)) {
+  if (tmp & (1<<CPU_MZEXT_ZIFENCEI)) {
     neorv32_uart_printf("Zifencei ");
+  }
+  if (tmp & (1<<CPU_MZEXT_PMP)) {
+    neorv32_uart_printf("PMP ");
   }
 
 
