@@ -155,6 +155,16 @@ enum NEORV32_CPU_MISA_enum {
 
 
 /**********************************************************************//**
+ * CPU <b>mzext</b> custom CSR (r/-): Implemented Z* CPU extensions
+ **************************************************************************/
+enum NEORV32_CPU_MZEXT_enum {
+  CPU_MZEXT_ZICSR    = 0, /**< CPU mzext CSR (0): Zicsr extension available when set (r/-) */
+  CPU_MZEXT_ZIFENCEI = 1, /**< CPU mzext CSR (1): Zifencei extension available when set (r/-) */
+  CPU_MZEXT_PMP      = 2  /**< CPU mzext CSR (2): PMP extension available when set (r/-) */
+};
+
+
+/**********************************************************************//**
  * Trap codes from mcause CSR.
  **************************************************************************/
 enum NEORV32_EXCEPTION_CODES_enum {
