@@ -14,7 +14,8 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 15.10.2020 | 1.4.5.1 | Fixed "unprecise exceptions": `mtval` did not always reflect the correct value according to instruction that caused the exceptions; fixed bug in RTE: Debug trap handler was not showing the correct `mepc` value |
+| 16.10.2020 | 1.4.5.2 | Added read-only flag to custom `mzext` CSR to check if physical memory protection (PMP) is implemented; added [C] `mzext` CSR name aliases to neorv32.h |
+| 15.10.2020 | 1.4.5.1 | Fixed "unprecise exceptions": `mtval` did not always reflect the correct value according to the instruction that caused the exceptions; fixed bug in RTE: Debug trap handler was not showing the correct `mepc` value |
 | 13.10.2020 | [**:rocket:1.4.5.0**](https://github.com/stnolting/neorv32/releases/tag/v1.4.5.0) | An official *open-soucre RISC-V architecture ID* was assigned to the project: decimal = `19`, 32-bit hexadecimal = `0x00000013` - software can retrieve the ID from the `marchid` CSR |
 | 12.10.2020 | 1.4.4.9 | Added *alignment flags* to makefiles: branch targets are forced to be 32-bit aligned -> increases performance when using the `C` extension; added makefile flag listing to NEORV32.pdf; updated performance results for CPUs with `C` extension; `crt0.S` will initialize *all* registers with zero if not using `E` extension and not compiling bootloader |
 | 11.10.2020 | 1.4.4.8 | Reworked pipeline frontend: Optimized fetch enginge, added issue engine, faster instruction fetch after taken branches + reduced hardware requirements; updated synthesis and performance results |
