@@ -1853,6 +1853,7 @@ begin
           when csr_mzext_c => -- R/-: mzext
             csr.rdata(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- RISC-V.Zicsr CPU extension
             csr.rdata(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- RISC-V.Zifencei CPU extension
+            csr.rdata(2) <= bool_to_ulogic_f(PMP_USE);                      -- RISC-V physical memory protection
 
           -- undefined/unavailable --
           when others =>
