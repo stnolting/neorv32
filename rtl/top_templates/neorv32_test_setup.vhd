@@ -81,6 +81,7 @@ begin
     CPU_EXTENSION_RISCV_Zifencei => true,   -- implement instruction stream sync.?
     -- Extension Options --
     FAST_MUL_EN                  => false, -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN                => false, -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
     PMP_USE                      => false,  -- implement PMP?
     PMP_NUM_REGIONS              => 4,      -- number of regions (max 16)

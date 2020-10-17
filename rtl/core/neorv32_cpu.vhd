@@ -64,6 +64,7 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false; -- implement PMP?
     PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
@@ -243,7 +244,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_inst: neorv32_cpu_alu
   generic map (
-    CPU_EXTENSION_RISCV_M => CPU_EXTENSION_RISCV_M -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_M => CPU_EXTENSION_RISCV_M, -- implement muld/div extension?
+    FAST_SHIFT_EN         => FAST_SHIFT_EN          -- use barrel shifter for shift operations
   )
   port map (
     -- global control --

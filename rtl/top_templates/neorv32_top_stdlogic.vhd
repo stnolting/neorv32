@@ -54,6 +54,7 @@ entity neorv32_top_stdlogic is
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false; -- implement PMP?
     PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
@@ -174,6 +175,7 @@ begin
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     -- Extension Options --
     FAST_MUL_EN                  => FAST_MUL_EN,        -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN                => FAST_SHIFT_EN,      -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
     PMP_USE                      => PMP_USE,            -- implement PMP?
     PMP_NUM_REGIONS              => PMP_NUM_REGIONS,    -- number of regions (max 16)

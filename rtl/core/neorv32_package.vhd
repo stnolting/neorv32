@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040502"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040504"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
@@ -456,6 +456,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
       -- Extension Options --
       FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
+      FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
       -- Physical Memory Protection (PMP) --
       PMP_USE                      : boolean := false; -- implement PMP?
       PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
@@ -536,6 +537,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
       -- Extension Options --
       FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
+      FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
       -- Physical Memory Protection (PMP) --
       PMP_USE                      : boolean := false; -- implement PMP?
       PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
@@ -664,7 +666,8 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_alu
     generic (
-      CPU_EXTENSION_RISCV_M : boolean := true -- implement muld/div extension?
+      CPU_EXTENSION_RISCV_M : boolean := true; -- implement muld/div extension?
+      FAST_SHIFT_EN         : boolean := false -- use barrel shifter for shift operations
     );
     port (
       -- global control --
