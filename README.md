@@ -242,7 +242,7 @@ a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 19
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
 of the CPU's generics is assumed (for example no PMP). No constraints were used at all.
 
-Results generated for hardware version: `1.4.4.8`
+Results generated for hardware version `1.4.4.8`.
 
 | CPU Configuration                      | LEs        | FFs      | Memory bits | DSPs | f_max    |
 |:---------------------------------------|:----------:|:--------:|:-----------:|:----:|:--------:|
@@ -255,7 +255,7 @@ Results generated for hardware version: `1.4.4.8`
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version: `1.4.4.8`
+Results generated for hardware version `1.4.4.8`.
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
@@ -283,7 +283,7 @@ no external memory interface and only internal instruction and data memories. IM
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
 to FPGA pins - except for the Wishbone bus and the interrupt signals.
 
-Results generated for hardware version: `1.4.4.8`
+Results generated for hardware version `1.4.4.8`.
 
 | Vendor  | FPGA                              | Board            | Toolchain                  | Strategy | CPU Configuration                              | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency     |
 |:--------|:----------------------------------|:-----------------|:---------------------------|:-------- |:-----------------------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|--------------:|
@@ -309,7 +309,7 @@ The [CoreMark CPU benchmark](https://www.eembc.org/coremark) was executed on the
 [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) project folder. This benchmark
 tests the capabilities of a CPU itself rather than the functions provided by the whole system / SoC.
 
-Results generated for hardware version: `1.4.5.4`
+Results generated for hardware version `1.4.5.4`.
 
 ~~~
 **Configuration**
@@ -349,13 +349,13 @@ iterations, which reflects a pretty good "real-life" work load. The average CPI 
 dividing the total number of required clock cycles (only the timed core to avoid distortion due to IO wait cycles; sampled via the `cycle[h]` CSRs)
 by the number of executed instructions (`instret[h]` CSRs). The executables were generated using optimization `-O3`.
 
-Results generated for hardware version: `1.4.5.4`
+Results generated for hardware version `1.4.5.4`.
 
 | CPU                                         | Required Clock Cycles | Executed Instructions | Average CPI |
 |:--------------------------------------------|----------------------:|----------------------:|:-----------:|
 | `rv32i`                                     |         5 945 938 586 |         1 469 587 406 |    **4.05** |
 | `rv32im`                                    |         3 110 282 586 |           602 225 760 |    **5.16** |
-| `rv32imc`                                   |         3 172 969 968 |           615 388 924 |    **5.16** |
+| `rv32imc`                                   |         3 172 969 968 |           615 388 890 |    **5.16** |
 | `rv32imc` + `FAST_MUL_EN`                   |         2 590 417 968 |           615 388 890 |    **4.21** |
 | `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |         2 456 318 408 |           615 388 890 |    **3.99** |
 
@@ -613,6 +613,12 @@ which you can start your own application. Simply compile one of these projects. 
 
 ### Upload the Executable via the Bootloader
 
+You can upload a generated executable directly from the command line using the makefile's `upload` target. Replace `/dev/ttyUSB0` with
+the according serial port.
+
+    sw/exeample/blink_example$ make COM_PORT=/dev/ttyUSB0` upload
+
+A more "secure" way is to use a dedicated terminal program. This allows to directly interact with the bootloader console.
 Connect your FPGA board via UART to your computer and open the according port to interface with the NEORV32 bootloader. The bootloader
 uses the following default UART configuration:
 
