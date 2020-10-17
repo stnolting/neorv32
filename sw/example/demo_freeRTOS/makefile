@@ -59,6 +59,9 @@ MABI  ?= -mabi=ilp32
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?= 
 
+# Serial port for executable upload via bootloer
+COM_PORT ?= /dev/ttyUSB0
+
 # Relative or absolute path to the NEORV32 home folder
 NEORV32_HOME ?= ../../..
 # *****************************************************************************
@@ -285,6 +288,13 @@ endif
 
 
 # -----------------------------------------------------------------------------
+# Upload executable via serial port to bootloader
+# -----------------------------------------------------------------------------
+upload: $(APP_EXE)
+	@sh $(NEORV32_EXG_PATH)/uart_upload.sh $(COM_PORT) $(APP_EXE)
+
+
+# -----------------------------------------------------------------------------
 # Show configuration
 # -----------------------------------------------------------------------------
 info:
@@ -347,6 +357,7 @@ help:
 	@echo " clean      - clean up project"
 	@echo " clean_all  - clean up project, core libraries and image generator"
 	@echo " bootloader - compile, generate and install VHDL BOOTROM boot image (for bootloader only!)"
+	@echo " upload     - upload <neorv32_exe.bin> executable via serial port <COM_PORT> to bootloader"
 
 
 # -----------------------------------------------------------------------------
