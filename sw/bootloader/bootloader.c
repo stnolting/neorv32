@@ -79,6 +79,8 @@
 #define SPI_FLASH_CLK_PRSC     (CLK_PRSC_8)
 /** SPI flash sector size in bytes (default = 64kb) */
 #define SPI_FLASH_SECTOR_SIZE  (64*1024)
+/** ASCII char to start fast executable upload process (for use with automatic upload scripts) */
+#define FAST_UPLOAD_CMD        '#'
 /**@}*/
 
 
@@ -256,6 +258,12 @@ int main(void) {
     }
   }
   neorv32_uart_print("Aborted.\n\n");
+
+  // fast executable upload?
+  if (neorv32_uart_char_received_get() == FAST_UPLOAD_CMD) {
+    get_exe(EXE_STREAM_UART);
+    start_app();
+  }
 #else
   neorv32_uart_print("\n\n");
 #endif
@@ -273,10 +281,12 @@ int main(void) {
     neorv32_uart_putc(c); // echo
     neorv32_uart_print("\n");
 
-    if (c == 'r') { // restart bootloader
-      neorv32_cpu_dint(); // disable global interrupts
+    if (c == FAST_UPLOAD_CMD) { // fast executable upload
+      get_exe(EXE_STREAM_UART);
+      start_app();
+    }
+    else if (c == 'r') { // restart bootloader
       asm volatile ("li t0, %[input_i]; jr t0" :  : [input_i] "i" (BOOTLOADER_BASE_ADDRESS)); // jump to beginning of boot ROM
-      while(1); // just for the compiler
     }
     else if (c == 'h') { // help menu
       print_help();
@@ -378,7 +388,7 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
   }
 
   else {
-    neorv32_uart_print("\n\nEXCEPTION (");
+    neorv32_uart_print("\n\nEXC (");
     print_hex_word(cause);
     neorv32_uart_print(") @ 0x");
     print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
@@ -561,7 +571,6 @@ void system_error(uint8_t err_code) {
     neorv32_gpio_port_set(1 << STATUS_LED); // permanently light up status LED
   }
 
-  asm volatile ("wfi"); // power-down
   while(1); // freeze
 }
 
