@@ -14,7 +14,7 @@ then
 fi
 
 # configure serial port
-stty -F "$1" 19200 -hup raw -echo -echoe -echok -echoctl -echoke -crtscts cs8 -cstopb noflsh
+stty -F "$1" 19200 -hup raw -echo -echoe -echok -echoctl -echoke -crtscts cs8 -cstopb noflsh clocal cread
 
 # trigger fast upload mode and get response
 exec 3<$1                              # redirect serial output to fd 3
@@ -41,7 +41,7 @@ exec 3<$1                              # redirect serial output to fd 3
   cat <&3 > uart_upload.response.dat & # redirect serial output to file
   PID=$!                               # save pid to kill cat
     cat "$2" > "$1"                    # send executable to serial port
-    sleep 0.5s                         # wait for bootloader response
+    sleep 3s                           # wait for bootloader response
   kill $PID                            # kill cat process
 
 exec 3<&- # free fd 3
