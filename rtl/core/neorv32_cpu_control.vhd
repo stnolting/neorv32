@@ -131,6 +131,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     --
     w_pnt : std_ulogic_vector(index_size_f(ipb_entries_c) downto 0); -- write pointer
     r_pnt : std_ulogic_vector(index_size_f(ipb_entries_c) downto 0); -- read pointer
+    match : std_ulogic;
     empty : std_ulogic;
     full  : std_ulogic;
     --
@@ -392,9 +393,9 @@ begin
   ipb.rdata <= ipb.data(to_integer(unsigned(ipb.r_pnt(ipb.r_pnt'left-1 downto 0))));
 
   -- status --
-  ipb.full  <= '1' when (ipb.r_pnt(ipb.r_pnt'left) /= ipb.w_pnt(ipb.w_pnt'left)) and (ipb.r_pnt(ipb.r_pnt'left-1 downto 0) = ipb.w_pnt(ipb.w_pnt'left-1 downto 0)) else '0';
-  ipb.empty <= '1' when (ipb.r_pnt(ipb.r_pnt'left)  = ipb.w_pnt(ipb.w_pnt'left)) and (ipb.r_pnt(ipb.r_pnt'left-1 downto 0) = ipb.w_pnt(ipb.w_pnt'left-1 downto 0)) else '0';
-
+  ipb.match <= '1' when (ipb.r_pnt(ipb.r_pnt'left-1 downto 0) = ipb.w_pnt(ipb.w_pnt'left-1 downto 0)) else '0';
+  ipb.full  <= '1' when (ipb.r_pnt(ipb.r_pnt'left) /= ipb.w_pnt(ipb.w_pnt'left)) and (ipb.match = '1') else '0';
+  ipb.empty <= '1' when (ipb.r_pnt(ipb.r_pnt'left)  = ipb.w_pnt(ipb.w_pnt'left)) and (ipb.match = '1') else '0';
   ipb.free  <= not ipb.full;
   ipb.avail <= not ipb.empty;
 
