@@ -240,7 +240,7 @@ int main() {
 #if (PROBING_MEM_TEST == 1)
   cnt_test++;
 
-  register uint32_t imem_probe_addr =SYSINFO_DSPACE_BASE;
+  register uint32_t imem_probe_addr = SYSINFO_DSPACE_BASE;
   uint32_t imem_probe_cnt = 0;
 
   while(1) {
@@ -263,6 +263,26 @@ int main() {
 #else
   neorv32_uart_printf("skipped (disabled)\n");
 #endif
+
+
+  // ----------------------------------------------------------
+  // Bus timeout latency estimation
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("BUS TIMEOUT:  ");
+
+  // start timing
+  tmp_a = neorv32_cpu_csr_read(CSR_CYCLE);
+
+  // this will timeout
+  MMR_UNREACHABLE = 0;
+
+  // wait for timeout
+  while (exception_handler_answer == 0xFFFFFFFF);
+
+  tmp_a = neorv32_cpu_csr_read(CSR_CYCLE) - tmp_a;
+  tmp_a = tmp_a / 4; // divide by average CPI
+  neorv32_uart_printf("~%u cycles\n", tmp_a);
 
 
   // ----------------------------------------------------------
