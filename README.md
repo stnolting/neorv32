@@ -27,7 +27,7 @@ on the RISC-V-compliant NEORV32 CPU. The project consists of two main parts:
 
 ### [NEORV32 CPU](#CPU-Features)
 
-The CPU implements an `rv32i RISC-V` core with optional `C`, `E`, `M`, `U`, `Zicsr`, `Zifencei` and
+The CPU implements a `rv32i RISC-V` core with optional `C`, `E`, `M`, `U`, `Zicsr`, `Zifencei` and
 `PMP` (physical memory protection) extensions. It passes the official [RISC-V compliance tests](https://github.com/stnolting/neorv32_riscv_compliance)
 and is compliant to the *Unprivileged ISA Specification [Version 2.2](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)*
 and a subset of the *Privileged Architecture Specification [Version 1.12-draft](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)*.
@@ -107,6 +107,7 @@ The project’s change log is available in the [CHANGELOG.md](https://github.com
 
 ### To-Do / Wish List
 
+* Further size and performance optimization
 * Add AXI(-Lite) bridges
 * Synthesis results (+ wrappers?) for more platforms
 * Maybe port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
@@ -308,7 +309,7 @@ The [CoreMark CPU benchmark](https://www.eembc.org/coremark) was executed on the
 [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) project folder. This benchmark
 tests the capabilities of a CPU itself rather than the functions provided by the whole system / SoC.
 
-Results generated for hardware version: `1.4.4.8`
+Results generated for hardware version: `1.4.5.4`
 
 ~~~
 **Configuration**
@@ -319,16 +320,19 @@ Flags:       default, see makefile
 Peripherals: UART for printing the results
 ~~~
 
-| CPU                       | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
-|:--------------------------|:---------------:|:------------:|:--------------:|:-------------:|
-| `rv32i`                   |    26 940 bytes |        `-O3` |          33.89 |    **0.3389** |
-| `rv32im`                  |    25 772 bytes |        `-O3` |          64.51 |    **0.6451** |
-| `rv32imc`                 |    20 524 bytes |        `-O3` |          64.51 |    **0.6451** |
-| `rv32imc` + `FAST_MUL_EN` |    20 524 bytes |        `-O3` |          80.00 |    **0.8000** |
+| CPU                                         | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
+|:--------------------------------------------|:---------------:|:------------:|:--------------:|:-------------:|
+| `rv32i`                                     |    26 940 bytes |        `-O3` |          33.89 |    **0.3389** |
+| `rv32im`                                    |    25 772 bytes |        `-O3` |          64.51 |    **0.6451** |
+| `rv32imc`                                   |    20 524 bytes |        `-O3` |          64.51 |    **0.6451** |
+| `rv32imc` + `FAST_MUL_EN`                   |    20 524 bytes |        `-O3` |          80.00 |    **0.8000** |
+| `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |    20 524 bytes |        `-O3` |          83.33 |    **0.8333** |
 
-The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic).
+The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic). The `FAST_SHIFT_EN` configuration
+uses a barrel shifter for CPU shift operations (enabled via the `FAST_SHIFT_EN` generic).
 
 When the `C` extension is enabled, branches to an unaligned uncompressed instruction require additional instruction fetch cycles.
+
 
 ### Instruction Cycles
 
@@ -337,7 +341,7 @@ each instruction requires several clock cycles to execute (2 cycles for ALU oper
 The average CPI (cycles per instruction) depends on the instruction mix of a specific applications and also on the available
 CPU extensions.
 
-Please note that the CPU-internal shifter (e.g. for the `SLL` instruction) as well as the multiplier and divider of the
+Please note that by default the CPU-internal shifter (e.g. for the `SLL` instruction) as well as the multiplier and divider of the
 `M` extension use a bit-serial approach and require several cycles for completion.
 
 The following table shows the performance results for successfully running 2000 CoreMark
@@ -345,16 +349,19 @@ iterations, which reflects a pretty good "real-life" work load. The average CPI 
 dividing the total number of required clock cycles (only the timed core to avoid distortion due to IO wait cycles; sampled via the `cycle[h]` CSRs)
 by the number of executed instructions (`instret[h]` CSRs). The executables were generated using optimization `-O3`.
 
-Results generated for hardware version: `1.4.4.8`
+Results generated for hardware version: `1.4.5.4`
 
-| CPU                       | Required Clock Cycles | Executed Instructions | Average CPI |
-|:--------------------------|----------------------:|----------------------:|:-----------:|
-| `rv32i`                   |         5 945 938 586 |         1 469 587 406 |    **4.05** |
-| `rv32im`                  |         3 110 282 586 |           602 225 760 |    **5.16** |
-| `rv32imc`                 |         3 172 969 968 |           615 388 924 |    **5.16** |
-| `rv32imc` + `FAST_MUL_EN` |         2 590 417 968 |           615 388 890 |    **4.21** |
+| CPU                                         | Required Clock Cycles | Executed Instructions | Average CPI |
+|:--------------------------------------------|----------------------:|----------------------:|:-----------:|
+| `rv32i`                                     |         5 945 938 586 |         1 469 587 406 |    **4.05** |
+| `rv32im`                                    |         3 110 282 586 |           602 225 760 |    **5.16** |
+| `rv32imc`                                   |         3 172 969 968 |           615 388 924 |    **5.16** |
+| `rv32imc` + `FAST_MUL_EN`                   |         2 590 417 968 |           615 388 890 |    **4.21** |
+| `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |         2 456 318 408 |           615 388 890 |    **3.99** |
 
-The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic).
+
+The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic). The `FAST_SHIFT_EN` configuration
+uses a barrel shifter for CPU shift operations (enabled via the `FAST_SHIFT_EN` generic).
 
 When the `C` extension is enabled, branches to an unaligned uncompressed instruction require additional instruction fetch cycles.
 
@@ -394,6 +401,7 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false; -- implement PMP?
     PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
@@ -455,11 +463,12 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
     -- Extension Options --
-    FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
+    FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      : boolean := false; -- implement PMP?
-    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
-    PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64kB
+    PMP_USE                      : boolean := false;  -- implement PMP?
+    PMP_NUM_REGIONS              : natural := 4;      -- number of regions (max 8)
+    PMP_GRANULARITY              : natural := 14;     -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64kB
     -- Internal Instruction memory --
     MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
@@ -675,9 +684,9 @@ Other implied or used projects might have different licensing - see their docume
 
 #### Citation
 
-If you are using the NEORV32 Processor/CPU in some kind of publication, please cite it as follows:
+If you are using the NEORV32 or some parts of the project in some kind of publication, please cite it as follows:
 
-> S. Nolting, "The NEORV32 Processor/CPU", github.com/stnolting/neorv32
+> S. Nolting, "The NEORV32 Processor", github.com/stnolting/neorv32
 
 #### BSD 3-Clause License
 
