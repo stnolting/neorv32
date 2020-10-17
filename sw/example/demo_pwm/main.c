@@ -49,14 +49,14 @@
 /** UART BAUD rate */
 #define BAUD_RATE 19200
 /** Maximum PWM output intensity (0..255) */
-#define PWM_MAX 200
+#define PWM_MAX 128
 /**@}*/
 
 
 /**********************************************************************//**
  * This program generates a simple dimming sequence for PWM channel 0,1,2.
  *
- * @note This program requires the PWM to be synthesized (the UART is optional).
+ * @note This program requires the PWM controller to be synthesized (the UART is optional).
  *
  * @return Irrelevant.
  **************************************************************************/
@@ -121,7 +121,7 @@ int main() {
       neorv32_pwm_set(ch, pwm);
     }
 
-    neorv32_cpu_delay_ms(5); // wait ~5ms
+    neorv32_cpu_delay_ms(10); // wait ~10ms
   }
 
   return 0;
