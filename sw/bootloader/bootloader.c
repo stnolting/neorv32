@@ -156,6 +156,7 @@ uint32_t exe_available = 0;
 
 // Function prototypes
 void __attribute__((__interrupt__)) bootloader_trap_handler(void);
+void fast_upload(int src);
 void print_help(void);
 void start_app(void);
 void get_exe(int src);
@@ -252,17 +253,14 @@ int main(void) {
   while ((UART_DATA & (1 << UART_DATA_AVAIL)) == 0) { // wait for any key to be pressed
 
     if (neorv32_mtime_get_time() >= timeout_time) { // timeout? start auto boot sequence
-      get_exe(EXE_STREAM_FLASH); // try loading from spi flash
-      neorv32_uart_print("\n");
-      start_app();
+      fast_upload(EXE_STREAM_FLASH); // try booting from flash
     }
   }
   neorv32_uart_print("Aborted.\n\n");
 
   // fast executable upload?
   if (neorv32_uart_char_received_get() == FAST_UPLOAD_CMD) {
-    get_exe(EXE_STREAM_UART);
-    start_app();
+    fast_upload(EXE_STREAM_UART);
   }
 #else
   neorv32_uart_print("\n\n");
@@ -282,8 +280,7 @@ int main(void) {
     neorv32_uart_print("\n");
 
     if (c == FAST_UPLOAD_CMD) { // fast executable upload
-      get_exe(EXE_STREAM_UART);
-      start_app();
+      fast_upload(EXE_STREAM_UART);
     }
     else if (c == 'r') { // restart bootloader
       asm volatile ("li t0, %[input_i]; jr t0" :  : [input_i] "i" (BOOTLOADER_BASE_ADDRESS)); // jump to beginning of boot ROM
@@ -312,6 +309,20 @@ int main(void) {
   }
 
   return 0; // bootloader should never return
+}
+
+
+/**********************************************************************//**
+ * Get executable stream and execute it.
+ *
+ * @param src Source of executable stream data. See #EXE_STREAM_SOURCE.
+ **************************************************************************/
+void fast_upload(int src) {
+
+  get_exe(src);
+  neorv32_uart_print("\n");
+  start_app();
+  while(1);
 }
 
 
