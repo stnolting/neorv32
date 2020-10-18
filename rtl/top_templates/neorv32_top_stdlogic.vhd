@@ -78,7 +78,8 @@ entity neorv32_top_stdlogic is
     IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-    IO_CFU_USE                   : boolean := false   -- implement custom functions unit (CFU)?
+    IO_CFU0_USE                  : boolean := false;  -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_USE                  : boolean := false   -- implement custom functions unit 1 (CFU1)?
   );
   port (
     -- Global control --
@@ -199,7 +200,8 @@ begin
     IO_PWM_USE                   => IO_PWM_USE,         -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   => IO_WDT_USE,         -- implement watch dog timer (WDT)?
     IO_TRNG_USE                  => IO_TRNG_USE,        -- implement true random number generator (TRNG)?
-    IO_CFU_USE                   => IO_CFU_USE          -- implement custom functions unit (CFU)?
+    IO_CFU0_USE                  => IO_CFU0_USE,        -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_USE                  => IO_CFU1_USE         -- implement custom functions unit 1 (CFU1)?
   )
   port map (
     -- Global control --

@@ -84,7 +84,8 @@ entity neorv32_top is
     IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-    IO_CFU_USE                   : boolean := false   -- implement custom functions unit (CFU)?
+    IO_CFU0_USE                  : boolean := false;  -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_USE                  : boolean := false   -- implement custom functions unit 1 (CFU1)?
   );
   port (
     -- Global control --
@@ -152,7 +153,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal spi_cg_en  : std_ulogic;
   signal twi_cg_en  : std_ulogic;
   signal pwm_cg_en  : std_ulogic;
-  signal cfu_cg_en  : std_ulogic;
+  signal cfu0_cg_en : std_ulogic;
+  signal cfu1_cg_en : std_ulogic;
 
   -- bus interface --
   type bus_interface_t is record
@@ -200,8 +202,10 @@ architecture neorv32_top_rtl of neorv32_top is
   signal wdt_ack        : std_ulogic;
   signal trng_rdata     : std_ulogic_vector(data_width_c-1 downto 0);
   signal trng_ack       : std_ulogic;
-  signal cfu_rdata      : std_ulogic_vector(data_width_c-1 downto 0);
-  signal cfu_ack        : std_ulogic;
+  signal cfu0_rdata     : std_ulogic_vector(data_width_c-1 downto 0);
+  signal cfu0_ack       : std_ulogic;
+  signal cfu1_rdata     : std_ulogic_vector(data_width_c-1 downto 0);
+  signal cfu1_ack       : std_ulogic;
   signal sysinfo_rdata  : std_ulogic_vector(data_width_c-1 downto 0);
   signal sysinfo_ack    : std_ulogic;
 
@@ -213,7 +217,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal uart_irq  : std_ulogic;
   signal spi_irq   : std_ulogic;
   signal twi_irq   : std_ulogic;
-  signal cfu_irq   : std_ulogic;
 
   -- misc --
   signal mtime_time : std_ulogic_vector(63 downto 0); -- current system time from MTIME
@@ -280,7 +283,7 @@ begin
       clk_div_ff <= (others => '0');
     elsif rising_edge(clk_i) then
       -- fresh clocks anyone? --
-      if ((wdt_cg_en or uart_cg_en or spi_cg_en or twi_cg_en or pwm_cg_en or cfu_cg_en) = '1') then
+      if ((wdt_cg_en or uart_cg_en or spi_cg_en or twi_cg_en or pwm_cg_en or cfu0_cg_en or cfu1_cg_en) = '1') then
         clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
       end if;
       clk_div_ff <= clk_div;
@@ -366,9 +369,9 @@ begin
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
 
   -- fast interrupts --
-  fast_irq(0) <= wdt_irq; -- highest priority
-  fast_irq(1) <= gpio_irq or cfu_irq; -- can be triggered by GPIO pin-change or CFU
-  fast_irq(2) <= uart_irq;
+  fast_irq(0) <= wdt_irq;            -- highest priority, watchdog timeout interrupt
+  fast_irq(1) <= gpio_irq;           -- GPIO input pin-change interrupt
+  fast_irq(2) <= uart_irq;           -- UART TX done or RX complete interrupt
   fast_irq(3) <= spi_irq or twi_irq; -- lowest priority, can be triggered by SPI or TWI
 
 
@@ -417,11 +420,11 @@ begin
 
   -- processor bus: CPU data input --
   p_bus.rdata <= (imem_rdata or dmem_rdata or bootrom_rdata) or wishbone_rdata or (gpio_rdata or mtime_rdata or uart_rdata or
-                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or cfu_rdata or sysinfo_rdata);
+                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or cfu0_rdata or cfu1_rdata or sysinfo_rdata);
 
   -- processor bus: CPU data ACK input --
   p_bus.ack <= (imem_ack or dmem_ack or bootrom_ack) or wishbone_ack or (gpio_ack or mtime_ack or uart_ack or
-               spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or cfu_ack or sysinfo_ack);
+               spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or cfu0_ack or cfu1_ack or sysinfo_ack);
 
   -- processor bus: CPU data bus error input --
   p_bus.err <= wishbone_err;
@@ -837,11 +840,11 @@ begin
   end generate;
 
 
-  -- Custom Functions Unit (CFU) ------------------------------------------------------------
+  -- Custom Functions Unit 0 (CFU0) ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cfu_inst_true:
-  if (IO_CFU_USE = true) generate
-    neorv32_cfu_inst: neorv32_cfu
+  neorv32_cfu0_inst_true:
+  if (IO_CFU0_USE = true) generate
+    neorv32_cfu0_inst: neorv32_cfu0
     port map (
       -- host access --
       clk_i       => clk_i,       -- global clock line
@@ -850,24 +853,52 @@ begin
       rden_i      => io_rden,     -- read enable
       wren_i      => io_wren,     -- write enable
       data_i      => p_bus.wdata, -- data in
-      data_o      => cfu_rdata,   -- data out
-      ack_o       => cfu_ack,     -- transfer acknowledge
+      data_o      => cfu0_rdata,  -- data out
+      ack_o       => cfu0_ack,    -- transfer acknowledge
       -- clock generator --
-      clkgen_en_o => cfu_cg_en,   -- enable clock generator
-      clkgen_i    => clk_gen,     -- "clock" inputs
-      -- interrupt --
-      irq_o       => cfu_irq
+      clkgen_en_o => cfu0_cg_en,  -- enable clock generator
+      clkgen_i    => clk_gen      -- "clock" inputs
       -- custom io --
       -- ...
     );
   end generate;
 
-  neorv32_cfu_inst_false:
-  if (IO_CFU_USE = false) generate
-    cfu_rdata <= (others => '0');
-    cfu_ack   <= '0';
-    cfu_cg_en <= '0';
-    cfu_irq   <= '0';
+  neorv32_cfu0_inst_false:
+  if (IO_CFU0_USE = false) generate
+    cfu0_rdata <= (others => '0');
+    cfu0_ack   <= '0';
+    cfu0_cg_en <= '0';
+  end generate;
+
+
+  -- Custom Functions Unit 1 (CFU1) ---------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_cfu1_inst_true:
+  if (IO_CFU1_USE = true) generate
+    neorv32_cfu1_inst: neorv32_cfu1
+    port map (
+      -- host access --
+      clk_i       => clk_i,       -- global clock line
+      rstn_i      => sys_rstn,    -- global reset line, low-active, use as async
+      addr_i      => p_bus.addr,  -- address
+      rden_i      => io_rden,     -- read enable
+      wren_i      => io_wren,     -- write enable
+      data_i      => p_bus.wdata, -- data in
+      data_o      => cfu1_rdata,  -- data out
+      ack_o       => cfu1_ack,    -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o => cfu1_cg_en,  -- enable clock generator
+      clkgen_i    => clk_gen      -- "clock" inputs
+      -- custom io --
+      -- ...
+    );
+  end generate;
+
+  neorv32_cfu1_inst_false:
+  if (IO_CFU1_USE = false) generate
+    cfu1_rdata <= (others => '0');
+    cfu1_ack   <= '0';
+    cfu1_cg_en <= '0';
   end generate;
 
 
@@ -897,7 +928,8 @@ begin
     IO_PWM_USE        => IO_PWM_USE,        -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE        => IO_WDT_USE,        -- implement watch dog timer (WDT)?
     IO_TRNG_USE       => IO_TRNG_USE,       -- implement true random number generator (TRNG)?
-    IO_CFU_USE        => IO_CFU_USE         -- implement custom functions unit (CFU)?
+    IO_CFU0_USE       => IO_CFU0_USE,       -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_USE       => IO_CFU1_USE        -- implement custom functions unit 1 (CFU1)?
   )
   port map (
     -- host access --

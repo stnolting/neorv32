@@ -105,7 +105,8 @@ begin
     IO_PWM_USE                   => false, -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   => true,  -- implement watch dog timer (WDT)?
     IO_TRNG_USE                  => false, -- implement true random number generator (TRNG)?
-    IO_CFU_USE                   => false  -- implement custom functions unit (CFU)?
+    IO_CFU0_USE                  => false, -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_USE                  => false  -- implement custom functions unit 1 (CFU1)?
   )
   port map (
     -- Global control --

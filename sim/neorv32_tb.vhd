@@ -191,7 +191,8 @@ begin
     IO_PWM_USE                   => true,          -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   => true,          -- implement watch dog timer (WDT)?
     IO_TRNG_USE                  => false,         -- DEFAULT TRNG CONFIG CANNOT BE SIMULATED!
-    IO_CFU_USE                   => true           -- implement custom functions unit (CFU)?
+    IO_CFU0_USE                  => true,          -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_USE                  => true           -- implement custom functions unit 1 (CFU1)?
   )
   port map (
     -- Global control --
