@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - Custom Function Unit (CFU) >>                                                    #
+-- # << NEORV32 - Custom Function Unit 1 (CFU1) >>                                                 #
 -- # ********************************************************************************************* #
 -- # For tightly-coupled custom co-processors. Provides four memory mapped interface registers.    #
 -- # ********************************************************************************************* #
@@ -41,7 +41,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_cfu is
+entity neorv32_cfu1 is
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
@@ -54,19 +54,17 @@ entity neorv32_cfu is
     ack_o       : out std_ulogic; -- transfer acknowledge
     -- clock generator --
     clkgen_en_o : out std_ulogic; -- enable clock generator
-    clkgen_i    : in  std_ulogic_vector(07 downto 0); -- "clock" inputs
-    -- interrupt --
-    irq_o       : out std_ulogic
+    clkgen_i    : in  std_ulogic_vector(07 downto 0) -- "clock" inputs
     -- custom io --
     -- ...
   );
-end neorv32_cfu;
+end neorv32_cfu1;
 
-architecture neorv32_cfu_rtl of neorv32_cfu is
+architecture neorv32_cfu1_rtl of neorv32_cfu1 is
 
   -- IO space: module base address --
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(cfu_size_c); -- low address boundary bit
+  constant lo_abb_c : natural := index_size_f(cfu1_size_c); -- low address boundary bit
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
@@ -75,9 +73,9 @@ architecture neorv32_cfu_rtl of neorv32_cfu is
   signal rd_en  : std_ulogic; -- read enable
 
   -- default CFU interface registers --
-  type cfu_regs_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
-  signal cfu_reg_in  : cfu_regs_t; -- interface registers for WRITE
-  signal cfu_reg_out : cfu_regs_t; -- interface registers for READ
+  type cfu1_regs_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
+  signal cfu1_reg_in  : cfu1_regs_t; -- interface registers for WRITE
+  signal cfu1_reg_out : cfu1_regs_t; -- interface registers for READ
 
 begin
 
@@ -86,15 +84,15 @@ begin
   -- These assignments are required to check if the CFU is accessed at all.
   -- Do NOT modify this for your custom application (unless you really know what you are doing).
 
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = cfu_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= cfu_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = cfu1_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  addr   <= cfu1_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wr_en  <= acc_en and wren_i;
   rd_en  <= acc_en and rden_i;
 
 
   -- Clock System ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- The top unit implements a clock generator providing 8 "derived clocks"
+  -- The processor top unit implements a clock generator providing 8 "derived clocks"
   -- Actually, these signals must not be used as direct clock signals, but as clock enable signals.
 
   -- The following clock divider rates are available:
@@ -146,57 +144,39 @@ begin
 
       -- write access --
       if (wr_en = '1') then
-        if (addr = cfu_reg0_addr_c) then -- this should be the control register
-          cfu_reg_in(0) <= data_i; -- for example: control register
-        end if;
-        if (addr = cfu_reg1_addr_c) then
-          cfu_reg_in(1) <= data_i; -- for example: data in/out fifo
-        end if;
-        if (addr = cfu_reg2_addr_c) then
-          cfu_reg_in(2) <= data_i; -- for example: command fifo
-        end if;
-        if (addr = cfu_reg3_addr_c) then
-          cfu_reg_in(3) <= data_i; -- for example: status register
-        end if;
+        case addr is
+          when cfu1_reg0_addr_c => cfu1_reg_in(0) <= data_i; -- for example: control register
+          when cfu1_reg1_addr_c => cfu1_reg_in(1) <= data_i; -- for example: data in/out fifo
+          when cfu1_reg2_addr_c => cfu1_reg_in(2) <= data_i; -- for example: command fifo
+          when cfu1_reg3_addr_c => cfu1_reg_in(3) <= data_i; -- for example: status register
+          when others           => NULL;
+        end case;
       end if;
 
       -- read access --
       data_o <= (others => '0'); -- make sure the output is zero if there is no actual read access
       if (rd_en = '1') then
         case addr is
-          when cfu_reg0_addr_c => data_o <= cfu_reg_out(0);
-          when cfu_reg1_addr_c => data_o <= cfu_reg_out(1);
-          when cfu_reg2_addr_c => data_o <= cfu_reg_out(2);
-          when cfu_reg3_addr_c => data_o <= cfu_reg_out(3);
-          when others          => data_o <= (others => '0');
+          when cfu1_reg0_addr_c => data_o <= cfu1_reg_out(0);
+          when cfu1_reg1_addr_c => data_o <= cfu1_reg_out(1);
+          when cfu1_reg2_addr_c => data_o <= cfu1_reg_out(2);
+          when cfu1_reg3_addr_c => data_o <= cfu1_reg_out(3);
+          when others           => data_o <= (others => '0');
         end case;
       end if;
     end if;
   end process rw_access;
 
 
-  -- CFU Interrupt --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- The CFU provides a single interrupt request signal, which is forwarded to the CPU's fast interrupt channel 1.
-  -- This channel is shared with the GPIO unit - so both unit can trigger the same interrupt.
-  --
-  -- An interrupt request is generated when the irq_o signal is high for one cycle. If the signal is high for more than one cycle
-  -- more than one interrupt request might be generated.
-  --
-  -- There is no interrupt acknowledge signal. If required: The interrupt handler can write to a specific control reister bit within the
-  -- CFU to acknowledge an interrupt.
-
-  irq_o <= '0'; -- not used for this minimal example
-
-
   -- CFU Core -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- This is where the actual functionality can be implemented. In this example we are just doing some pointless operations.
+  -- This is where the actual functionality can be implemented.
+  -- In this example we are just implementing 4 r/W registers.
 
-  cfu_reg_out(0) <= cfu_reg_in(0) and cfu_reg_in(1);
-  cfu_reg_out(1) <= cfu_reg_in(2) and cfu_reg_in(3);
-  cfu_reg_out(2) <= x"00000001";
-  cfu_reg_out(3) <= (others => '0');
+  cfu1_reg_out(0) <= cfu1_reg_in(0);
+  cfu1_reg_out(1) <= cfu1_reg_in(1);
+  cfu1_reg_out(2) <= cfu1_reg_in(2);
+  cfu1_reg_out(3) <= cfu1_reg_in(3);
 
 
-end neorv32_cfu_rtl;
+end neorv32_cfu1_rtl;
