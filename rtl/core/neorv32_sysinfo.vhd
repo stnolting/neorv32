@@ -66,7 +66,8 @@ entity neorv32_sysinfo is
     IO_PWM_USE        : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE        : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_USE       : boolean := true;   -- implement true random number generator (TRNG)?
-    IO_CFU_USE        : boolean := true    -- implement custom functions unit (CFU)?
+    IO_CFU0_USE       : boolean := true;   -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_USE       : boolean := true    -- implement custom functions unit 1 (CFU1)?
   );
   port (
     -- host access --
@@ -130,10 +131,11 @@ begin
   sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_USE);       -- two-wire interface (TWI) implemented?
   sysinfo_mem(2)(21) <= bool_to_ulogic_f(IO_PWM_USE);       -- pulse-width modulation unit (PWM) implemented?
   sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_USE);       -- watch dog timer (WDT) implemented?
-  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFU_USE);       -- custom functions unit (CFU) implemented?
+  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFU0_USE);      -- custom functions unit 0 (CFU0) implemented?
   sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_USE);      -- true random number generator (TRNG) implemented?
+  sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_CFU1_USE);      -- custom functions unit 1 (CFU1) implemented?
   --
-  sysinfo_mem(2)(31 downto 25) <= (others => '0'); -- reserved
+  sysinfo_mem(2)(31 downto 26) <= (others => '0'); -- reserved
 
   -- SYSINFO(3): reserved --
   sysinfo_mem(3) <= (others => '0'); -- reserved
