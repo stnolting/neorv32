@@ -49,8 +49,6 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE 19200
-//** Set 1 for detailed exception debug information */
-#define DETAILED_EXCEPTION_DEBUG 0
 //** Set 1 to run memory tests */
 #define PROBING_MEM_TEST 0
 //** Set 1 to run external memory test */
@@ -152,7 +150,6 @@ int main() {
   // configure RTE
   neorv32_rte_setup(); // this will install a full-detailed debug handler for all traps
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
   int install_err = 0;
   // here we are overriding the default debug handlers
   install_err += neorv32_rte_exception_install(RTE_TRAP_I_MISALIGNED, global_trap_handler);
@@ -176,7 +173,6 @@ int main() {
     neorv32_uart_printf("RTE install error (%i)!\n", install_err);
     return 0;
   }
-#endif
 
   // enable interrupt sources
   install_err  = neorv32_cpu_irq_enable(CPU_MIE_MSIE); // activate software interrupt
@@ -266,6 +262,66 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // CFU0 test (default HW)
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("CFU0 TEST:    ");
+
+  // cfu0 implemented?
+  if (neorv32_cfu0_available()) {
+    cnt_test++;
+
+    // write test data
+    CFU0_REG_0 = 0x01234567;
+    CFU0_REG_1 = 0x76543210;
+    CFU0_REG_2 = 0xABCDABCD;
+    CFU0_REG_3 = 0xFFAAFFAA;
+
+    if ((CFU0_REG_0 == 0x01234567) && (CFU0_REG_1 == 0x76543210) &&
+        (CFU0_REG_2 == 0xABCDABCD) && (CFU0_REG_3 == 0xFFAAFFAA) && // correct read-back
+        (exception_handler_answer == 0xFFFFFFFF)) { // no exception
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    neorv32_uart_printf("skipped (disabled)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // CFU1 test (default HW)
+  // ----------------------------------------------------------
+  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_uart_printf("CFU1 TEST:    ");
+
+  // cfu0 implemented?
+  if (neorv32_cfu1_available()) {
+    cnt_test++;
+
+    // write test data
+    CFU1_REG_0 = 0x22334455;
+    CFU1_REG_1 = 0x44782931;
+    CFU1_REG_2 = 0xDDAABBFF;
+    CFU1_REG_3 = 0xA0B0D0C0;
+
+    if ((CFU1_REG_0 == 0x22334455) && (CFU1_REG_1 == 0x44782931) &&
+        (CFU1_REG_2 == 0xDDAABBFF) && (CFU1_REG_3 == 0xA0B0D0C0) && // correct read-back
+        (exception_handler_answer == 0xFFFFFFFF)) { // no exception
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    neorv32_uart_printf("skipped (disabled)\n");
+  }
+
+
+  // ----------------------------------------------------------
   // Bus timeout latency estimation
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
@@ -309,7 +365,6 @@ int main() {
     tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
     asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
   
-#if (DETAILED_EXCEPTION_DEBUG==0)
     if (exception_handler_answer == 0xFFFFFFFF) { // make sure there was no exception
       if (neorv32_cpu_csr_read(CSR_MSCRATCH) == 15) { // make sure the program was executed in the right way
         test_ok();
@@ -321,7 +376,6 @@ int main() {
     else {
       test_fail();
     }
-#endif
   }
 #else
   neorv32_uart_printf("skipped (disabled)\n");
@@ -398,14 +452,12 @@ int main() {
 
   neorv32_cpu_csr_read(0xfff); // CSR 0xfff not implemented
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
     test_ok();
   }
   else {
     test_fail();
   }
-#endif
 
 
   // ----------------------------------------------------------
@@ -418,14 +470,12 @@ int main() {
 
   neorv32_cpu_csr_write(CSR_TIME, 0); // time CSR is read-only
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
     test_ok();
   }
   else {
     test_fail();
   }
-#endif
 
 
   // ----------------------------------------------------------
@@ -440,14 +490,12 @@ int main() {
   // -> should cause no exception
   asm volatile("csrrs zero, time, zero");
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == 0xFFFFFFFF) {
     test_ok();
   }
   else {
     test_fail();
   }
-#endif
 
 
   // ----------------------------------------------------------
@@ -464,7 +512,6 @@ int main() {
     // call unaligned address
     ((void (*)(void))ADDR_UNALIGNED)();
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
     if (exception_handler_answer == TRAP_CODE_I_MISALIGNED) {
       neorv32_uart_printf("ok\n");
       cnt_ok++;
@@ -473,7 +520,6 @@ int main() {
       neorv32_uart_printf("fail\n");
       cnt_fail++;
     }
-#endif
   }
   else {
     neorv32_uart_printf("skipped (not possible when C extension is enabled)\n");
@@ -490,14 +536,12 @@ int main() {
   // call unreachable aligned address
   ((void (*)(void))ADDR_UNREACHABLE)();
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == TRAP_CODE_I_ACCESS) {
     test_ok();
   }
   else {
     test_fail();
   }
-#endif
 
 
   // ----------------------------------------------------------
@@ -510,7 +554,6 @@ int main() {
 
   asm volatile ("csrrw zero, 0xfff, zero"); // = 0xfff01073 : CSR 0xfff not implemented -> illegal instruction
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
   // make sure this has cause an illegal exception
   if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
     // make sure this is really the instruction that caused the exception
@@ -525,7 +568,6 @@ int main() {
   else {
     test_fail();
   }
-#endif
 
 
   // ----------------------------------------------------------
@@ -548,14 +590,12 @@ int main() {
     tmp_a = (uint32_t)&dummy_sub_program_ci; // call the dummy sub program
     asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
     if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
       test_ok();
     }
     else {
       test_fail();
     }
-#endif
   }
   else {
     neorv32_uart_printf("skipped (not possible when C-EXT disabled)\n");
@@ -571,14 +611,12 @@ int main() {
 
   asm volatile("EBREAK");
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == TRAP_CODE_BREAKPOINT) {
     test_ok();
   }
   else {
     test_fail();
   }
-#endif
 
 
   // ----------------------------------------------------------
@@ -591,14 +629,12 @@ int main() {
   // load from unaligned address
   asm volatile ("lw zero, %[input_i](zero)" :  : [input_i] "i" (ADDR_UNALIGNED));
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == TRAP_CODE_L_MISALIGNED) {
     test_ok();
   }
   else {
     test_fail();
   }
-#endif
 
 
   // ----------------------------------------------------------
@@ -611,14 +647,12 @@ int main() {
   // load from unreachable aligned address
   dummy_dst = MMR_UNREACHABLE;
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == TRAP_CODE_L_ACCESS) {
     test_ok();
   }
   else {
     test_fail();
   }
-#endif
 
 
   // ----------------------------------------------------------
@@ -631,14 +665,12 @@ int main() {
   // store to unaligned address
   asm volatile ("sw zero, %[input_i](zero)" :  : [input_i] "i" (ADDR_UNALIGNED));
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == TRAP_CODE_S_MISALIGNED) {
     test_ok();
   }
   else {
     test_fail();
   }
-#endif
 
 
   // ----------------------------------------------------------
@@ -651,14 +683,12 @@ int main() {
   // store to unreachable aligned address
   MMR_UNREACHABLE = 0;
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == TRAP_CODE_S_ACCESS) {
     test_ok();
   }
   else {
     test_fail();
   }
-#endif
 
 
   // ----------------------------------------------------------
@@ -670,14 +700,12 @@ int main() {
 
   asm volatile("ECALL");
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
   if (exception_handler_answer == TRAP_CODE_MENV_CALL) {
     test_ok();
   }
   else {
     test_fail();
   }
-#endif
 
 
   // ----------------------------------------------------------
@@ -698,14 +726,12 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
     if (exception_handler_answer == TRAP_CODE_MTI) {
       test_ok();
     }
     else {
       test_fail();
     }
-#endif
 
     // no more mtime interrupts
     neorv32_mtime_set_timecmp(-1);
@@ -735,14 +761,13 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
     if (exception_handler_answer == TRAP_CODE_FIRQ_0) {
       test_ok();
     }
     else {
       test_fail();
     }
-#endif
+
     // no more WDT interrupts
     neorv32_wdt_disable();
   }
@@ -801,14 +826,13 @@ int main() {
     // re-enable UART sim_mode if it was enabled and disable UART TX done IRQ
     UART_CT = uart_ct_backup;
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
     if (exception_handler_answer == TRAP_CODE_FIRQ_2) {
       test_ok();
     }
     else {
       test_fail();
     }
-#endif
+
   }
   else {
     neorv32_uart_printf("skipped (UART not implemented)\n");
@@ -837,14 +861,13 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
     if (exception_handler_answer == TRAP_CODE_FIRQ_3) {
       test_ok();
     }
     else {
       test_fail();
     }
-#endif
+
     // disable SPI
     neorv32_spi_disable();
   }
@@ -875,14 +898,13 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
     if (exception_handler_answer == TRAP_CODE_FIRQ_3) {
       test_ok();
     }
     else {
       test_fail();
     }
-#endif
+
     // disable TWI
     neorv32_twi_disable();
   }
@@ -906,14 +928,13 @@ int main() {
     // put CPU into sleep mode
     asm volatile ("wfi");
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
     if (exception_handler_answer != TRAP_CODE_MTI) {
       test_fail();
     }
     else {
       test_ok();
     }
-#endif
+
     // no more mtime interrupts
     neorv32_mtime_set_timecmp(-1);
   }
@@ -940,14 +961,13 @@ int main() {
       neorv32_cpu_csr_read(CSR_MSTATUS);
     }
 
-#if (DETAILED_EXCEPTION_DEBUG==0)
     if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
       test_ok();
     }
     else {
       test_fail();
     }
-#endif
+
   }
   else {
     neorv32_uart_printf("skipped (not possible when U-EXT disabled)\n");
@@ -1083,7 +1103,7 @@ int main() {
     {
       asm volatile ("lw zero, 0xFFFFFF90(zero)"); // MTIME load access, should work
     }
-#if (DETAILED_EXCEPTION_DEBUG==0)
+
     if (exception_handler_answer == 0xFFFFFFFF) {
       // switch back to machine mode (if not allready)
       asm volatile ("ecall");
@@ -1096,7 +1116,6 @@ int main() {
 
       test_fail();
     }
-#endif
 
 
     // ------ STORE: should fail ------
@@ -1109,7 +1128,7 @@ int main() {
     {
       asm volatile ("sw zero, 0xFFFFFF90(zero)"); // MTIME store access, should fail
     }
-#if (DETAILED_EXCEPTION_DEBUG==0)
+
     if (exception_handler_answer == TRAP_CODE_S_ACCESS) {
       // switch back to machine mode (if not allready)
       asm volatile ("ecall");
@@ -1122,7 +1141,6 @@ int main() {
 
       test_fail();
     }
-#endif
 
 
     // ------ Lock test ------
@@ -1205,4 +1223,3 @@ void test_fail(void) {
   neorv32_uart_printf("fail\n");
   cnt_fail++;
 }
-
