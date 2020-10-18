@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040505"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040507"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
@@ -140,17 +140,21 @@ package neorv32_package is
   constant pwm_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFB8";
   constant pwm_duty_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFBC";
 
-  -- RESERVED --
---constant ???_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0"; -- base address, fixed!
---constant ???_size_c           : natural := 4*4; -- bytes
+  -- Custom Functions Unit 0 (CFU0) --
+  constant cfu0_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0"; -- base address, fixed!
+  constant cfu0_size_c          : natural := 4*4; -- bytes
+  constant cfu0_reg0_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0";
+  constant cfu0_reg1_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC4";
+  constant cfu0_reg2_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC8";
+  constant cfu0_reg3_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFCC";
 
-  -- Custom Functions Unit (CFU) --
-  constant cfu_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD0"; -- base address, fixed!
-  constant cfu_size_c           : natural := 4*4; -- bytes
-  constant cfu_reg0_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD0";
-  constant cfu_reg1_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD4";
-  constant cfu_reg2_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD8";
-  constant cfu_reg3_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFDC";
+  -- Custom Functions Unit 1 (CFU1) --
+  constant cfu1_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD0"; -- base address, fixed!
+  constant cfu1_size_c          : natural := 4*4; -- bytes
+  constant cfu1_reg0_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD0";
+  constant cfu1_reg1_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD4";
+  constant cfu1_reg2_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD8";
+  constant cfu1_reg3_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFDC";
 
   -- System Information Memory (SYSINFO) --
   constant sysinfo_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFE0"; -- base address, fixed!
@@ -480,7 +484,8 @@ package neorv32_package is
       IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
       IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-      IO_CFU_USE                   : boolean := false   -- implement custom functions unit (CFU)?
+      IO_CFU0_USE                  : boolean := false;  -- implement custom functions unit 0 (CFU0)?
+      IO_CFU1_USE                  : boolean := false   -- implement custom functions unit 1 (CFU1)?
     );
     port (
       -- Global control --
@@ -1098,9 +1103,9 @@ package neorv32_package is
     );
   end component;
 
-  -- Component: Custom Functions Unit (CFU) -------------------------------------------------
+  -- Component: Custom Functions Unit 0 (CFU0) ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  component neorv32_cfu
+  component neorv32_cfu0
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
@@ -1113,9 +1118,28 @@ package neorv32_package is
       ack_o       : out std_ulogic; -- transfer acknowledge
       -- clock generator --
       clkgen_en_o : out std_ulogic; -- enable clock generator
-      clkgen_i    : in  std_ulogic_vector(07 downto 0); -- "clock" inputs
-      -- interrupt --
-      irq_o       : out std_ulogic
+      clkgen_i    : in  std_ulogic_vector(07 downto 0) -- "clock" inputs
+      -- custom io --
+      -- ...
+    );
+  end component;
+
+  -- Component: Custom Functions Unit 1 (CFU1) ----------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_cfu1
+    port (
+      -- host access --
+      clk_i       : in  std_ulogic; -- global clock line
+      rstn_i      : in  std_ulogic; -- global reset line, low-active, use as async
+      addr_i      : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i      : in  std_ulogic; -- read enable
+      wren_i      : in  std_ulogic; -- write enable
+      data_i      : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o      : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o       : out std_ulogic; -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o : out std_ulogic; -- enable clock generator
+      clkgen_i    : in  std_ulogic_vector(07 downto 0) -- "clock" inputs
       -- custom io --
       -- ...
     );
@@ -1147,7 +1171,8 @@ package neorv32_package is
       IO_PWM_USE        : boolean := true;   -- implement pulse-width modulation unit (PWM)?
       IO_WDT_USE        : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_USE       : boolean := true;   -- implement true random number generator (TRNG)?
-      IO_CFU_USE        : boolean := true    -- implement custom functions unit (CFU)?
+      IO_CFU0_USE       : boolean := true;   -- implement custom functions unit 0 (CFU0)?
+      IO_CFU1_USE       : boolean := true    -- implement custom functions unit 1 (CFU1)?
     );
     port (
       -- host access --
