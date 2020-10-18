@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32: neorv32_cfu.h - Custom Functions Unit (CFU) HW Driver >>                          #
+// # << NEORV32: neorv32_cfu.h - Custom Functions Unit 0/1 (CFU0/CFU1) HW Driver (stub) >>         #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -36,18 +36,19 @@
 /**********************************************************************//**
  * @file neorv32_cfu.h
  * @author Stephan Nolting
- * @brief Custom Functions Unit (CFU) HW driver header file.
+ * @brief Custom Functions Unit 0/1 (CFU0/CFU1) HW driver header file.
  *
  * @warning There are no "real" CFU driver functions available here, because these functions are defined by the actual hardware.
  * @warning Hence, the CFU designer has to provide the actual driver functions.
  *
- * @note These functions should only be used if the CFU was synthesized (IO_CFU_USE = true).
+ * @note These functions should only be used if the CFU0/CFU1 was synthesized (IO_CFU0_USE/IO_CFU1_USE = true).
  **************************************************************************/
 
 #ifndef neorv32_cfu_h
 #define neorv32_cfu_h
 
 // prototypes
-int neorv32_cfu_available(void);
+int neorv32_cfu0_available(void);
+int neorv32_cfu1_available(void);
 
 #endif // neorv32_cfu_h

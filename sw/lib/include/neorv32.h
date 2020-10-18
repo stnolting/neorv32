@@ -468,17 +468,32 @@ enum NEORV32_PWM_DUTY_enum {
 
 
 /**********************************************************************//**
- * @name IO Device: Custom Functions Unit (CFU)
+ * @name IO Device: Custom Functions Unit 0 (CFU0)
  **************************************************************************/
 /**@{*/
-/** CFU register 0 ((r)/(w)) */
-#define CFU_REG_0 (*(IO_REG32 0xFFFFFFD0UL)) // (r)/(w): CFU register 0, user-defined
-/** CFU register 1 ((r)/(w)) */
-#define CFU_REG_1 (*(IO_REG32 0xFFFFFFD4UL)) // (r)/(w): CFU register 1, user-defined
-/** CFU register 2 ((r)/(w)) */
-#define CFU_REG_2 (*(IO_REG32 0xFFFFFFD8UL)) // (r)/(w): CFU register 2, user-defined
-/** CFU register 3 ((r)/(w)) */
-#define CFU_REG_3 (*(IO_REG32 0xFFFFFFDCUL)) // (r)/(w): CFU register 3, user-defined
+/** CFU0 register 0 ((r)/(w)) */
+#define CFU0_REG_0 (*(IO_REG32 0xFFFFFFC0UL)) // (r)/(w): CFU0 register 0, user-defined
+/** CFU0 register 1 ((r)/(w)) */
+#define CFU0_REG_1 (*(IO_REG32 0xFFFFFFC4UL)) // (r)/(w): CFU0 register 1, user-defined
+/** CFU0 register 2 ((r)/(w)) */
+#define CFU0_REG_2 (*(IO_REG32 0xFFFFFFC8UL)) // (r)/(w): CFU0 register 2, user-defined
+/** CFU0 register 3 ((r)/(w)) */
+#define CFU0_REG_3 (*(IO_REG32 0xFFFFFFCCUL)) // (r)/(w): CFU0 register 3, user-defined
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: Custom Functions Unit 1 (CFU1)
+ **************************************************************************/
+/**@{*/
+/** CFU1 register 0 ((r)/(w)) */
+#define CFU1_REG_0 (*(IO_REG32 0xFFFFFFD0UL)) // (r)/(w): CFU1 register 0, user-defined
+/** CFU1 register 1 ((r)/(w)) */
+#define CFU1_REG_1 (*(IO_REG32 0xFFFFFFD4UL)) // (r)/(w): CFU1 register 1, user-defined
+/** CFU1 register 2 ((r)/(w)) */
+#define CFU1_REG_2 (*(IO_REG32 0xFFFFFFD8UL)) // (r)/(w): CFU1 register 2, user-defined
+/** CFU1 register 3 ((r)/(w)) */
+#define CFU1_REG_3 (*(IO_REG32 0xFFFFFFDCUL)) // (r)/(w): CFU1 register 3, user-defined
 /**@}*/
 
 
@@ -522,8 +537,9 @@ enum NEORV32_PWM_DUTY_enum {
   SYSINFO_FEATURES_IO_TWI           = 20, /**< SYSINFO_FEATURES (20) (r/-): Two-wire interface implemented when 1 (via IO_TWI_USE generic) */
   SYSINFO_FEATURES_IO_PWM           = 21, /**< SYSINFO_FEATURES (21) (r/-): Pulse-width modulation unit implemented when 1 (via IO_PWM_USE generic) */
   SYSINFO_FEATURES_IO_WDT           = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_USE generic) */
-  SYSINFO_FEATURES_IO_CFU           = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions unit implemented when 1 (via IO_CFU_USE generic) */
-  SYSINFO_FEATURES_IO_TRNG          = 24  /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_USE generic) */
+  SYSINFO_FEATURES_IO_CFU0          = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions unit 0 implemented when 1 (via IO_CFU0_USE generic) */
+  SYSINFO_FEATURES_IO_TRNG          = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_USE generic) */
+  SYSINFO_FEATURES_IO_CFU1          = 25  /**< SYSINFO_FEATURES (25) (r/-): Custom functions unit 1 implemented when 1 (via IO_CFU1_USE generic) */
 };
 
 

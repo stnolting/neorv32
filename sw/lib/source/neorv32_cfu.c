@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32: neorv32_cfu.c - Custom Functions Unit (CFU) HW Driver >>                          #
+// # << NEORV32: neorv32_cfu.c - Custom Functions Unit 0/1 (CFU0/CFU1) HW Driver (stub) >>         #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -36,12 +36,12 @@
 /**********************************************************************//**
  * @file neorv32_cfu.c
  * @author Stephan Nolting
- * @brief Custom functions unit (CFU) HW driver source file.
+ * @brief Custom Functions Unit 0/1 (CFU0/CFU1) HW driver source file.
  *
  * @warning There are no "real" CFU driver functions available here, because these functions are defined by the actual hardware.
  * @warning Hence, the CFU designer has to provide the actual driver functions.
  *
- * @note These functions should only be used if the CFU was synthesized (IO_CFU_USE = true).
+ * @note These functions should only be used if the CFU0/CFU1 was synthesized (IO_CFU0_USE/IO_CFU1_USE = true).
  **************************************************************************/
 
 #include "neorv32.h"
@@ -49,13 +49,29 @@
 
 
 /**********************************************************************//**
- * Check if CFU unit was synthesized.
+ * Check if custom functions unit 0 was synthesized.
  *
- * @return 0 if CFU was not synthesized, 1 if CFU is available.
+ * @return 0 if CFU0 was not synthesized, 1 if CFU0 is available.
  **************************************************************************/
-int neorv32_cfu_available(void) {
+int neorv32_cfu0_available(void) {
 
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_CFU)) {
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_CFU0)) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
+
+
+/**********************************************************************//**
+ * Check if custom functions unit 1 was synthesized.
+ *
+ * @return 0 if CFU1 was not synthesized, 1 if CFU1 is available.
+ **************************************************************************/
+int neorv32_cfu1_available(void) {
+
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_CFU1)) {
     return 1;
   }
   else {
