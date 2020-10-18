@@ -74,13 +74,10 @@ package neorv32_package is
 
   -- Processor-Internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- Internal Instruction Memory (IMEM) --
-  constant imem_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := ispace_base_c; -- internal instruction memory base address
-  --> size is configured via top's generic
-
-  -- Internal Data Memory (DMEM) --
-  constant dmem_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := dspace_base_c; -- internal data memory base address
-  --> size is configured via top's generic
+  -- Internal Instruction Memory (IMEM) and Date Memory (DMEM) --
+  constant imem_base_c : std_ulogic_vector(data_width_c-1 downto 0) := ispace_base_c; -- internal instruction memory base address
+  constant dmem_base_c : std_ulogic_vector(data_width_c-1 downto 0) := dspace_base_c; -- internal data memory base address
+  --> sizea are configured via top's generic
 
   -- Internal Bootloader ROM --
   constant boot_rom_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFF0000"; -- bootloader base address, fixed!
