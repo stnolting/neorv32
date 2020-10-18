@@ -6,14 +6,15 @@ The latest release is [![release](https://img.shields.io/github/v/release/stnolt
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases). The most recent version of the *NEORV32 data sheet*
 can be found [here](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
-The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 2x4-bit decimal coded representation is used.
-Example: `CSR(mimpid) = 0x01040309 -> 01.04.03.09 -> Version 1.4.3.9 = v1.4.3.9`
+The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 2x4-bit decimal-coded representation is used.
+Example: `CSR(mimpid) = 0x01040312 -> 01.04.03.12 -> Version 1.4.3.12 = v1.4.3.12`
 
 For the HDL sources the version number is globally defined by the `hw_version_c` constant in the main VHDL package file
 [`rtl/core/neorv32_package.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 18.10.2020 | 1.4.5.7 | Added new IO peripheral/Device: Second CFU (CFU1); renamed old CFU to CFU0; CFU VHDL files: `neorv32_cfu0.vhd` & `neorv32_cfu1.vhd`; removed CFU interrupt |
 | 17.10.2020 | 1.4.5.5 | New makefile target `upload` allows to directly upload an executable to the bootloader from the console |
 | 17.10.2020 | 1.4.5.4 | Added new CPU/Processor generic `FAST_SHIFT_EN` (default = *false*) to enable implementation of a fast (but large) barrel shifter for accelerating CPU shift instructions; updated CoreMark performance results |
 | 16.10.2020 | 1.4.5.2 | Added read-only flag to custom `mzext` CSR to check if physical memory protection (PMP) is implemented; added [C] `mzext` CSR name aliases to neorv32.h |

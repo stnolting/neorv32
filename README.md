@@ -141,7 +141,7 @@ is highly customizable via the processor's top generics.
 * Optional watchdog timer (**WDT**)
 * Optional PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
 * Optional GARO-based true random number generator (**TRNG**)
-* Optional custom functions unit (**CFU**) for tightly-coupled custom co-processors
+* Optional custom functions units (**CFU0** and **CFU1**) for tightly-coupled custom co-processors
 * System configuration information memory to check hardware configuration by software (**SYSINFO**)
 
 ### CPU Features
@@ -261,7 +261,8 @@ Results generated for hardware version `1.4.4.8`.
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
 | BOOT ROM  | Bootloader ROM (default 4kB)                         |   4 |   1 |      32 768 |    0 |
 | BUSSWITCH | Mux for CPU I & D interfaces                         |  62 |   8 |           0 |    0 |
-| CFU       | Custom functions unit                                |   - |   - |           - |    - |
+| CFU0      | Custom functions unit 0                              |   - |   - |           - |    - |
+| CFU1      | Custom functions unit 1                              |   - |   - |           - |    - |
 | DMEM      | Processor-internal data memory (default 8kB)         |  13 |   2 |      65 536 |    0 |
 | GPIO      | General purpose input/output ports                   |  66 |  65 |           0 |    0 |
 | IMEM      | Processor-internal instruction memory (default 16kb) |   7 |   2 |     131 072 |    0 |
@@ -278,7 +279,7 @@ Results generated for hardware version `1.4.4.8`.
 
 ### NEORV32 Processor - Exemplary FPGA Setups
 
-Exemplary processor implementation results for different FPGA platforms. The processor setup uses *the default peripheral configuration* (like no _CFU_ and no _TRNG_),
+Exemplary processor implementation results for different FPGA platforms. The processor setup uses *the default peripheral configuration* (like no _CFUs_ and no _TRNG_),
 no external memory interface and only internal instruction and data memories. IMEM uses 16kB and DMEM uses 8kB memory space. The setup's top entity connects most of the
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
 to FPGA pins - except for the Wishbone bus and the interrupt signals.
@@ -488,7 +489,8 @@ entity neorv32_top is
     IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-    IO_CFU_USE                   : boolean := false   -- implement custom functions unit (CFU)?
+    IO_CFU0_USE                  : boolean := false;  -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_USE                  : boolean := false   -- implement custom functions unit 1 (CFU1)?
   );
   port (
     -- Global control --
