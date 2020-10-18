@@ -1671,39 +1671,40 @@ begin
       -- --------------------------------------------------------------------------------
       -- Counter CSRs
       -- --------------------------------------------------------------------------------
+      if (CPU_EXTENSION_RISCV_Zicsr = true) then
 
-      -- mcycle (cycle) --
-      mcycle_msb <= csr.mcycle(csr.mcycle'left);
-      if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_mcycle_c) then -- write access
-        csr.mcycle(31 downto 0) <= csr.wdata;
-        csr.mcycle(32) <= '0';
-      elsif (execute_engine.sleep = '0') then -- automatic update (if CPU is not in sleep mode)
-        csr.mcycle <= std_ulogic_vector(unsigned(csr.mcycle) + 1);
+        -- mcycle (cycle) --
+        mcycle_msb <= csr.mcycle(csr.mcycle'left);
+        if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_mcycle_c) then -- write access
+          csr.mcycle(31 downto 0) <= csr.wdata;
+          csr.mcycle(32) <= '0';
+        elsif (execute_engine.sleep = '0') then -- automatic update (if CPU is not in sleep mode)
+          csr.mcycle <= std_ulogic_vector(unsigned(csr.mcycle) + 1);
+        end if;
+
+        -- mcycleh (cycleh) --
+        if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_mcycleh_c) then -- write access
+          csr.mcycleh <= csr.wdata(csr.mcycleh'left downto 0);
+        elsif ((mcycle_msb xor csr.mcycle(csr.mcycle'left)) = '1') then -- automatic update
+          csr.mcycleh <= std_ulogic_vector(unsigned(csr.mcycleh) + 1);
+        end if;
+
+        -- minstret (instret) --
+        minstret_msb <= csr.minstret(csr.minstret'left);
+        if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_minstret_c) then -- write access
+          csr.minstret(31 downto 0) <= csr.wdata;
+          csr.minstret(32) <= '0';
+        elsif (execute_engine.state_prev /= EXECUTE) and (execute_engine.state = EXECUTE) then -- automatic update
+          csr.minstret <= std_ulogic_vector(unsigned(csr.minstret) + 1);
+        end if;
+
+        -- minstreth (instreth) --
+        if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_minstreth_c) then -- write access
+          csr.minstreth <= csr.wdata(csr.minstreth'left downto 0);
+        elsif ((minstret_msb xor csr.minstret(csr.minstret'left)) = '1') then -- automatic update
+          csr.minstreth <= std_ulogic_vector(unsigned(csr.minstreth) + 1);
+        end if;
       end if;
-
-      -- mcycleh (cycleh) --
-      if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_mcycleh_c) then -- write access
-        csr.mcycleh <= csr.wdata(csr.mcycleh'left downto 0);
-      elsif ((mcycle_msb xor csr.mcycle(csr.mcycle'left)) = '1') then -- automatic update
-        csr.mcycleh <= std_ulogic_vector(unsigned(csr.mcycleh) + 1);
-      end if;
-
-      -- minstret (instret) --
-      minstret_msb <= csr.minstret(csr.minstret'left);
-      if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_minstret_c) then -- write access
-        csr.minstret(31 downto 0) <= csr.wdata;
-        csr.minstret(32) <= '0';
-      elsif (execute_engine.state_prev /= EXECUTE) and (execute_engine.state = EXECUTE) then -- automatic update
-        csr.minstret <= std_ulogic_vector(unsigned(csr.minstret) + 1);
-      end if;
-
-      -- minstreth (instreth) --
-      if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_minstreth_c) then -- write access
-        csr.minstreth <= csr.wdata(csr.minstreth'left downto 0);
-      elsif ((minstret_msb xor csr.minstret(csr.minstret'left)) = '1') then -- automatic update
-        csr.minstreth <= std_ulogic_vector(unsigned(csr.minstreth) + 1);
-      end if;
-
     end if;
   end process csr_write_access;
 
