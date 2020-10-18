@@ -274,7 +274,6 @@ enum NEORV32_TRNG_CT_enum {
   TRNG_CT_EN       = 31  /**< TRNG data/control register(31) (r/w): TRNG enable */
 };
 /**@}*/
-/**@}*/
 
 
 /**********************************************************************//**
