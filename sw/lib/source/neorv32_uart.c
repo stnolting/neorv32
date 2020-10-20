@@ -72,6 +72,7 @@ int neorv32_uart_available(void) {
  * Enable and configure UART.
  *
  * @warning The 'UART_SIM_MODE' compiler flag will redirect all UART TX data to the simulation output. Use this for simulations only!
+ * @warning To enable simulation mode add <USER_FLAGS+=-DUART_SIM_MODE> when compiling.
  *
  * @param[in] baudrate Targeted BAUD rate (e.g. 9600).
  * @param[in] rx_irq Enable RX interrupt (data received) when 1.

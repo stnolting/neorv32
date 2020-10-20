@@ -203,7 +203,8 @@ enum NEORV32_CLOCK_PRSC_enum {
 
 
 /**********************************************************************//**
- * Official NEORV32 open-source architecture ID (https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
+ * Official NEORV32 >RISC-V open-source architecture ID<
+ * https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md
  **************************************************************************/
 #define NEORV32_ARCHID 19
 
