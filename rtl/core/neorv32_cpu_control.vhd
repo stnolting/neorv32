@@ -551,7 +551,7 @@ begin
   instruction_buffer_data: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (i_buf.we = '1') and (ipb.clear = '0') then
+      if (i_buf.we = '1') and (i_buf.clear = '0') then
         i_buf.rdata <= i_buf.wdata;
       end if;
     end if;
@@ -598,7 +598,7 @@ begin
           imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
           imm_o(04 downto 01) <= execute_engine.i_reg(24 downto 21);
           imm_o(00)           <= '0';
-        when opcode_syscsr_c => -- CSR-immediate
+        when opcode_syscsr_c => -- CSR-immediate (uimm5)
           imm_o(31 downto 05) <= (others => '0');
           imm_o(04 downto 00) <= execute_engine.i_reg(19 downto 15);
         when others => -- I-immediate
@@ -1708,6 +1708,22 @@ begin
     end if;
   end process csr_write_access;
 
+  -- CPU's current privilege level --
+  priv_mode_o <= csr.privilege;
+
+  -- PMP output --
+  pmp_output: process(csr)
+  begin
+    pmp_addr_o <= (others => (others => '0'));
+    pmp_ctrl_o <= (others => (others => '0'));
+    if (PMP_USE = true) then
+      for i in 0 to PMP_NUM_REGIONS-1 loop
+        pmp_addr_o(i) <= csr.pmpaddr(i) & "00";
+        pmp_ctrl_o(i) <= csr.pmpcfg(i);
+      end loop; -- i
+    end if;
+  end process pmp_output;
+
 
   -- Control and Status Registers Read Access -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1887,8 +1903,8 @@ begin
           -- machine information registers --
           when csr_mvendorid_c => -- R/-: mvendorid - vendor ID
             csr.rdata <= (others => '0');
-          when csr_marchid_c => -- R/-: marchid - architecture ID
-            csr.rdata(4 downto 0) <= "10011"; -- official open-source arch ID
+          when csr_marchid_c => -- R/-: marchid - arch ID
+            csr.rdata(4 downto 0) <= "10011"; -- official RISC-V open-source arch ID
           when csr_mimpid_c => -- R/-: mimpid - implementation ID
             csr.rdata <= hw_version_c; -- NEORV32 hardware version
           when csr_mhartid_c => -- R/-: mhartid - hardware thread ID
@@ -1911,22 +1927,6 @@ begin
 
   -- CSR read data output --
   csr_rdata_o <= csr.rdata;
-
-  -- CPU's current privilege level --
-  priv_mode_o <= csr.privilege;
-
-  -- PMP output --
-  pmp_output: process(csr)
-  begin
-    pmp_addr_o <= (others => (others => '0'));
-    pmp_ctrl_o <= (others => (others => '0'));
-    if (PMP_USE = true) then
-      for i in 0 to PMP_NUM_REGIONS-1 loop
-        pmp_addr_o(i) <= csr.pmpaddr(i) & "00";
-        pmp_ctrl_o(i) <= csr.pmpcfg(i);
-      end loop; -- i
-    end if;
-  end process pmp_output;
 
 
 end neorv32_cpu_control_rtl;
