@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040507"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040508"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
@@ -456,16 +456,16 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
       -- Extension Options --
-      FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
-      FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
+      FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
+      FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
       -- Physical Memory Protection (PMP) --
-      PMP_USE                      : boolean := false; -- implement PMP?
-      PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
-      PMP_GRANULARITY              : natural := 14;    -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+      PMP_USE                      : boolean := false;  -- implement PMP?
+      PMP_NUM_REGIONS              : natural := 4;      -- number of regions (max 8)
+      PMP_GRANULARITY              : natural := 14;     -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
       -- Internal Instruction memory --
-      MEM_INT_IMEM_USE             : boolean := true;    -- implement processor-internal instruction memory
+      MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
-      MEM_INT_IMEM_ROM             : boolean := false;   -- implement processor-internal instruction memory as ROM
+      MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
       -- Internal Data memory --
       MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
@@ -486,40 +486,41 @@ package neorv32_package is
     );
     port (
       -- Global control --
-      clk_i      : in  std_ulogic := '0'; -- global clock, rising edge
-      rstn_i     : in  std_ulogic := '0'; -- global reset, low-active, async
+      clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
+      rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
       -- Wishbone bus interface --
-      wb_adr_o   : out std_ulogic_vector(31 downto 0); -- address
-      wb_dat_i   : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
-      wb_dat_o   : out std_ulogic_vector(31 downto 0); -- write data
-      wb_we_o    : out std_ulogic; -- read/write
-      wb_sel_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-      wb_stb_o   : out std_ulogic; -- strobe
-      wb_cyc_o   : out std_ulogic; -- valid cycle
-      wb_ack_i   : in  std_ulogic := '0'; -- transfer acknowledge
-      wb_err_i   : in  std_ulogic := '0'; -- transfer error
+      wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
+      wb_dat_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
+      wb_dat_o    : out std_ulogic_vector(31 downto 0); -- write data
+      wb_we_o     : out std_ulogic; -- read/write
+      wb_sel_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+      wb_stb_o    : out std_ulogic; -- strobe
+      wb_cyc_o    : out std_ulogic; -- valid cycle
+      wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
+      wb_err_i    : in  std_ulogic := '0'; -- transfer error
       -- Advanced memory control signals (available if MEM_EXT_USE = true) --
-      fence_o    : out std_ulogic; -- indicates an executed FENCE operation
-      fencei_o   : out std_ulogic; -- indicates an executed FENCEI operation
+      fence_o     : out std_ulogic; -- indicates an executed FENCE operation
+      fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
       -- GPIO --
-      gpio_o     : out std_ulogic_vector(31 downto 0); -- parallel output
-      gpio_i     : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
+      gpio_o      : out std_ulogic_vector(31 downto 0); -- parallel output
+      gpio_i      : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
       -- UART --
-      uart_txd_o : out std_ulogic; -- UART send data
-      uart_rxd_i : in  std_ulogic := '0'; -- UART receive data
+      uart_txd_o  : out std_ulogic; -- UART send data
+      uart_rxd_i  : in  std_ulogic := '0'; -- UART receive data
       -- SPI --
-      spi_sck_o  : out std_ulogic; -- SPI serial clock
-      spi_sdo_o  : out std_ulogic; -- controller data out, peripheral data in
-      spi_sdi_i  : in  std_ulogic := '0'; -- controller data in, peripheral data out
-      spi_csn_o  : out std_ulogic_vector(07 downto 0); -- SPI CS
+      spi_sck_o   : out std_ulogic; -- SPI serial clock
+      spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
+      spi_sdi_i   : in  std_ulogic := '0'; -- controller data in, peripheral data out
+      spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
       -- TWI --
-      twi_sda_io : inout std_logic := 'H'; -- twi serial data line
-      twi_scl_io : inout std_logic := 'H'; -- twi serial clock line
+      twi_sda_io  : inout std_logic := 'H'; -- twi serial data line
+      twi_scl_io  : inout std_logic := 'H'; -- twi serial clock line
       -- PWM --
-      pwm_o      : out std_ulogic_vector(03 downto 0);  -- pwm channels
+      pwm_o       : out std_ulogic_vector(03 downto 0);  -- pwm channels
       -- Interrupts --
-      msw_irq_i  : in  std_ulogic := '0'; -- machine software interrupt
-      mext_irq_i : in  std_ulogic := '0'  -- machine external interrupt
+      mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_USE = false
+      msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
+      mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
     );
   end component;
 

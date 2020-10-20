@@ -196,39 +196,41 @@ begin
   )
   port map (
     -- Global control --
-    clk_i      => clk_gen,         -- global clock, rising edge
-    rstn_i     => rst_gen,         -- global reset, low-active, async
+    clk_i       => clk_gen,         -- global clock, rising edge
+    rstn_i      => rst_gen,         -- global reset, low-active, async
     -- Wishbone bus interface --
-    wb_adr_o   => wb_cpu.addr,     -- address
-    wb_dat_i   => wb_cpu.rdata,    -- read data
-    wb_dat_o   => wb_cpu.wdata,    -- write data
-    wb_we_o    => wb_cpu.we,       -- read/write
-    wb_sel_o   => wb_cpu.sel,      -- byte enable
-    wb_stb_o   => wb_cpu.stb,      -- strobe
-    wb_cyc_o   => wb_cpu.cyc,      -- valid cycle
-    wb_ack_i   => wb_cpu.ack,      -- transfer acknowledge
-    wb_err_i   => wb_cpu.err,      -- transfer error
+    wb_adr_o    => wb_cpu.addr,     -- address
+    wb_dat_i    => wb_cpu.rdata,    -- read data
+    wb_dat_o    => wb_cpu.wdata,    -- write data
+    wb_we_o     => wb_cpu.we,       -- read/write
+    wb_sel_o    => wb_cpu.sel,      -- byte enable
+    wb_stb_o    => wb_cpu.stb,      -- strobe
+    wb_cyc_o    => wb_cpu.cyc,      -- valid cycle
+    wb_ack_i    => wb_cpu.ack,      -- transfer acknowledge
+    wb_err_i    => wb_cpu.err,      -- transfer error
     -- Advanced memory control signals --
-    fence_o    => open,            -- indicates an executed FENCE operation
-    fencei_o   => open,            -- indicates an executed FENCEI operation
+    fence_o     => open,            -- indicates an executed FENCE operation
+    fencei_o    => open,            -- indicates an executed FENCEI operation
     -- GPIO --
-    gpio_o     => gpio,            -- parallel output
-    gpio_i     => gpio,            -- parallel input
+    gpio_o      => gpio,            -- parallel output
+    gpio_i      => gpio,            -- parallel input
     -- UART --
-    uart_txd_o => uart_txd,        -- UART send data
-    uart_rxd_i => uart_txd,        -- UART receive data
+    uart_txd_o  => uart_txd,        -- UART send data
+    uart_rxd_i  => uart_txd,        -- UART receive data
     -- SPI --
-    spi_sck_o  => open,            -- SPI serial clock
-    spi_sdo_o  => spi_data,        -- controller data out, peripheral data in
-    spi_sdi_i  => spi_data,        -- controller data in, peripheral data out
-    spi_csn_o  => open,            -- SPI CS
+    spi_sck_o   => open,            -- SPI serial clock
+    spi_sdo_o   => spi_data,        -- controller data out, peripheral data in
+    spi_sdi_i   => spi_data,        -- controller data in, peripheral data out
+    spi_csn_o   => open,            -- SPI CS
     -- TWI --
-    twi_sda_io => twi_sda,         -- twi serial data line
-    twi_scl_io => twi_scl,         -- twi serial clock line
+    twi_sda_io  => twi_sda,         -- twi serial data line
+    twi_scl_io  => twi_scl,         -- twi serial clock line
     -- PWM --
-    pwm_o      => open,            -- pwm channels
+    pwm_o       => open,            -- pwm channels
     -- Interrupts --
-    mext_irq_i => '0'              -- machine external interrupt
+    mtime_irq_i => '0',             -- machine software interrupt, available if IO_MTIME_USE = false
+    msw_irq_i   => '0',             -- machine software interrupt
+    mext_irq_i  => '0'              -- machine external interrupt
   );
 
   -- TWI termination --

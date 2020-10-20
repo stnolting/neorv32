@@ -89,40 +89,41 @@ entity neorv32_top is
   );
   port (
     -- Global control --
-    clk_i      : in  std_ulogic := '0'; -- global clock, rising edge
-    rstn_i     : in  std_ulogic := '0'; -- global reset, low-active, async
+    clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
+    rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
     -- Wishbone bus interface (available if MEM_EXT_USE = true) --
-    wb_adr_o   : out std_ulogic_vector(31 downto 0); -- address
-    wb_dat_i   : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
-    wb_dat_o   : out std_ulogic_vector(31 downto 0); -- write data
-    wb_we_o    : out std_ulogic; -- read/write
-    wb_sel_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-    wb_stb_o   : out std_ulogic; -- strobe
-    wb_cyc_o   : out std_ulogic; -- valid cycle
-    wb_ack_i   : in  std_ulogic := '0'; -- transfer acknowledge
-    wb_err_i   : in  std_ulogic := '0'; -- transfer error
+    wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
+    wb_dat_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
+    wb_dat_o    : out std_ulogic_vector(31 downto 0); -- write data
+    wb_we_o     : out std_ulogic; -- read/write
+    wb_sel_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+    wb_stb_o    : out std_ulogic; -- strobe
+    wb_cyc_o    : out std_ulogic; -- valid cycle
+    wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
+    wb_err_i    : in  std_ulogic := '0'; -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_USE = true) --
-    fence_o    : out std_ulogic; -- indicates an executed FENCE operation
-    fencei_o   : out std_ulogic; -- indicates an executed FENCEI operation
+    fence_o     : out std_ulogic; -- indicates an executed FENCE operation
+    fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
     -- GPIO (available if IO_GPIO_USE = true) --
-    gpio_o     : out std_ulogic_vector(31 downto 0); -- parallel output
-    gpio_i     : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
+    gpio_o      : out std_ulogic_vector(31 downto 0); -- parallel output
+    gpio_i      : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
     -- UART (available if IO_UART_USE = true) --
-    uart_txd_o : out std_ulogic; -- UART send data
-    uart_rxd_i : in  std_ulogic := '0'; -- UART receive data
+    uart_txd_o  : out std_ulogic; -- UART send data
+    uart_rxd_i  : in  std_ulogic := '0'; -- UART receive data
     -- SPI (available if IO_SPI_USE = true) --
-    spi_sck_o  : out std_ulogic; -- SPI serial clock
-    spi_sdo_o  : out std_ulogic; -- controller data out, peripheral data in
-    spi_sdi_i  : in  std_ulogic := '0'; -- controller data in, peripheral data out
-    spi_csn_o  : out std_ulogic_vector(07 downto 0); -- SPI CS
+    spi_sck_o   : out std_ulogic; -- SPI serial clock
+    spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
+    spi_sdi_i   : in  std_ulogic := '0'; -- controller data in, peripheral data out
+    spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
     -- TWI (available if IO_TWI_USE = true) --
-    twi_sda_io : inout std_logic := 'H'; -- twi serial data line
-    twi_scl_io : inout std_logic := 'H'; -- twi serial clock line
+    twi_sda_io  : inout std_logic := 'H'; -- twi serial data line
+    twi_scl_io  : inout std_logic := 'H'; -- twi serial clock line
     -- PWM (available if IO_PWM_USE = true) --
-    pwm_o      : out std_ulogic_vector(03 downto 0); -- pwm channels
+    pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
     -- Interrupts --
-    msw_irq_i  : in  std_ulogic := '0'; -- machine software interrupt
-    mext_irq_i : in  std_ulogic := '0'  -- machine external interrupt
+    mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_USE = false
+    msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
+    mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
   );
 end neorv32_top;
 
@@ -671,7 +672,7 @@ begin
     mtime_rdata <= (others => '0');
     mtime_time  <= (others => '0');
     mtime_ack   <= '0';
-    mtime_irq   <= '0';
+    mtime_irq   <= mtime_irq_i; -- use external machine timer interrupt
   end generate;
 
 

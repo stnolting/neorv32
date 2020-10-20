@@ -83,40 +83,41 @@ entity neorv32_top_stdlogic is
   );
   port (
     -- Global control --
-    clk_i      : in  std_logic := '0'; -- global clock, rising edge
-    rstn_i     : in  std_logic := '0'; -- global reset, low-active, async
+    clk_i       : in  std_logic := '0'; -- global clock, rising edge
+    rstn_i      : in  std_logic := '0'; -- global reset, low-active, async
     -- Wishbone bus interface (available if MEM_EXT_USE = true) --
-    wb_adr_o   : out std_logic_vector(31 downto 0); -- address
-    wb_dat_i   : in  std_logic_vector(31 downto 0) := (others => '0'); -- read data
-    wb_dat_o   : out std_logic_vector(31 downto 0); -- write data
-    wb_we_o    : out std_logic; -- read/write
-    wb_sel_o   : out std_logic_vector(03 downto 0); -- byte enable
-    wb_stb_o   : out std_logic; -- strobe
-    wb_cyc_o   : out std_logic; -- valid cycle
-    wb_ack_i   : in  std_logic := '0'; -- transfer acknowledge
-    wb_err_i   : in  std_logic := '0'; -- transfer error
+    wb_adr_o    : out std_logic_vector(31 downto 0); -- address
+    wb_dat_i    : in  std_logic_vector(31 downto 0) := (others => '0'); -- read data
+    wb_dat_o    : out std_logic_vector(31 downto 0); -- write data
+    wb_we_o     : out std_logic; -- read/write
+    wb_sel_o    : out std_logic_vector(03 downto 0); -- byte enable
+    wb_stb_o    : out std_logic; -- strobe
+    wb_cyc_o    : out std_logic; -- valid cycle
+    wb_ack_i    : in  std_logic := '0'; -- transfer acknowledge
+    wb_err_i    : in  std_logic := '0'; -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_USE = true) --
-    fence_o    : out std_logic; -- indicates an executed FENCE operation
-    fencei_o   : out std_logic; -- indicates an executed FENCEI operation
+    fence_o     : out std_logic; -- indicates an executed FENCE operation
+    fencei_o    : out std_logic; -- indicates an executed FENCEI operation
     -- GPIO (available if IO_GPIO_USE = true) --
-    gpio_o     : out std_logic_vector(31 downto 0); -- parallel output
-    gpio_i     : in  std_logic_vector(31 downto 0) := (others => '0'); -- parallel input
+    gpio_o      : out std_logic_vector(31 downto 0); -- parallel output
+    gpio_i      : in  std_logic_vector(31 downto 0) := (others => '0'); -- parallel input
     -- UART (available if IO_UART_USE = true) --
-    uart_txd_o : out std_logic; -- UART send data
-    uart_rxd_i : in  std_logic := '0'; -- UART receive data
+    uart_txd_o  : out std_logic; -- UART send data
+    uart_rxd_i  : in  std_logic := '0'; -- UART receive data
     -- SPI (available if IO_SPI_USE = true) --
-    spi_sck_o  : out std_logic; -- SPI serial clock
-    spi_sdo_o  : out std_logic; -- controller data out, peripheral data in
-    spi_sdi_i  : in  std_logic := '0'; -- controller data in, peripheral data out
-    spi_csn_o  : out std_logic_vector(07 downto 0); -- SPI CS
+    spi_sck_o   : out std_logic; -- SPI serial clock
+    spi_sdo_o   : out std_logic; -- controller data out, peripheral data in
+    spi_sdi_i   : in  std_logic := '0'; -- controller data in, peripheral data out
+    spi_csn_o   : out std_logic_vector(07 downto 0); -- SPI CS
     -- TWI (available if IO_TWI_USE = true) --
-    twi_sda_io : inout std_logic := 'H'; -- twi serial data line
-    twi_scl_io : inout std_logic := 'H'; -- twi serial clock line
+    twi_sda_io  : inout std_logic := 'H'; -- twi serial data line
+    twi_scl_io  : inout std_logic := 'H'; -- twi serial clock line
     -- PWM (available if IO_PWM_USE = true) --
-    pwm_o      : out std_logic_vector(03 downto 0); -- pwm channels
+    pwm_o       : out std_logic_vector(03 downto 0); -- pwm channels
     -- Interrupts --
-    msw_irq_i  : in  std_logic := '0'; -- machine software interrupt
-    mext_irq_i : in  std_logic := '0'  -- machine external interrupt
+    mtime_irq_i : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_USE = false
+    msw_irq_i   : in  std_logic := '0'; -- machine software interrupt
+    mext_irq_i  : in  std_logic := '0'  -- machine external interrupt
   );
 end neorv32_top_stdlogic;
 
@@ -125,37 +126,38 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   -- type conversion --
   constant USER_CODE_INT : std_ulogic_vector(31 downto 0) := std_ulogic_vector(USER_CODE);
   --
-  signal clk_i_int      : std_ulogic;
-  signal rstn_i_int     : std_ulogic;
+  signal clk_i_int       : std_ulogic;
+  signal rstn_i_int      : std_ulogic;
   --
-  signal wb_adr_o_int   : std_ulogic_vector(31 downto 0);
-  signal wb_dat_i_int   : std_ulogic_vector(31 downto 0);
-  signal wb_dat_o_int   : std_ulogic_vector(31 downto 0);
-  signal wb_we_o_int    : std_ulogic;
-  signal wb_sel_o_int   : std_ulogic_vector(03 downto 0);
-  signal wb_stb_o_int   : std_ulogic;
-  signal wb_cyc_o_int   : std_ulogic;
-  signal wb_ack_i_int   : std_ulogic;
-  signal wb_err_i_int   : std_ulogic;
+  signal wb_adr_o_int    : std_ulogic_vector(31 downto 0);
+  signal wb_dat_i_int    : std_ulogic_vector(31 downto 0);
+  signal wb_dat_o_int    : std_ulogic_vector(31 downto 0);
+  signal wb_we_o_int     : std_ulogic;
+  signal wb_sel_o_int    : std_ulogic_vector(03 downto 0);
+  signal wb_stb_o_int    : std_ulogic;
+  signal wb_cyc_o_int    : std_ulogic;
+  signal wb_ack_i_int    : std_ulogic;
+  signal wb_err_i_int    : std_ulogic;
   --
-  signal fence_o_int    : std_ulogic;
-  signal fencei_o_int   : std_ulogic;
+  signal fence_o_int     : std_ulogic;
+  signal fencei_o_int    : std_ulogic;
   --
-  signal gpio_o_int     : std_ulogic_vector(31 downto 0);
-  signal gpio_i_int     : std_ulogic_vector(31 downto 0);
+  signal gpio_o_int      : std_ulogic_vector(31 downto 0);
+  signal gpio_i_int      : std_ulogic_vector(31 downto 0);
   --
-  signal uart_txd_o_int : std_ulogic;
-  signal uart_rxd_i_int : std_ulogic;
+  signal uart_txd_o_int  : std_ulogic;
+  signal uart_rxd_i_int  : std_ulogic;
   --
-  signal spi_sck_o_int  : std_ulogic;
-  signal spi_sdo_o_int  : std_ulogic;
-  signal spi_sdi_i_int  : std_ulogic;
-  signal spi_csn_o_int  : std_ulogic_vector(07 downto 0);
+  signal spi_sck_o_int   : std_ulogic;
+  signal spi_sdo_o_int   : std_ulogic;
+  signal spi_sdi_i_int   : std_ulogic;
+  signal spi_csn_o_int   : std_ulogic_vector(07 downto 0);
   --
-  signal pwm_o_int      : std_ulogic_vector(03 downto 0);
+  signal pwm_o_int       : std_ulogic_vector(03 downto 0);
   --
-  signal msw_irq_i_int  : std_ulogic;
-  signal mext_irq_i_int : std_ulogic;
+  signal mtime_irq_i_int : std_ulogic;
+  signal msw_irq_i_int   : std_ulogic;
+  signal mext_irq_i_int  : std_ulogic;
 
 begin
 
@@ -205,40 +207,41 @@ begin
   )
   port map (
     -- Global control --
-    clk_i      => clk_i_int,       -- global clock, rising edge
-    rstn_i     => rstn_i_int,      -- global reset, low-active, async
+    clk_i       => clk_i_int,       -- global clock, rising edge
+    rstn_i      => rstn_i_int,      -- global reset, low-active, async
     -- Wishbone bus interface --
-    wb_adr_o   => wb_adr_o_int,    -- address
-    wb_dat_i   => wb_dat_i_int,    -- read data
-    wb_dat_o   => wb_dat_o_int,    -- write data
-    wb_we_o    => wb_we_o_int,     -- read/write
-    wb_sel_o   => wb_sel_o_int,    -- byte enable
-    wb_stb_o   => wb_stb_o_int,    -- strobe
-    wb_cyc_o   => wb_cyc_o_int,    -- valid cycle
-    wb_ack_i   => wb_ack_i_int,    -- transfer acknowledge
-    wb_err_i   => wb_err_i_int,    -- transfer error
+    wb_adr_o    => wb_adr_o_int,    -- address
+    wb_dat_i    => wb_dat_i_int,    -- read data
+    wb_dat_o    => wb_dat_o_int,    -- write data
+    wb_we_o     => wb_we_o_int,     -- read/write
+    wb_sel_o    => wb_sel_o_int,    -- byte enable
+    wb_stb_o    => wb_stb_o_int,    -- strobe
+    wb_cyc_o    => wb_cyc_o_int,    -- valid cycle
+    wb_ack_i    => wb_ack_i_int,    -- transfer acknowledge
+    wb_err_i    => wb_err_i_int,    -- transfer error
     -- Advanced memory control signals --
-    fence_o    => fence_o_int,     -- indicates an executed FENCE operation
-    fencei_o   => fencei_o_int,    -- indicates an executed FENCEI operation
+    fence_o     => fence_o_int,     -- indicates an executed FENCE operation
+    fencei_o    => fencei_o_int,    -- indicates an executed FENCEI operation
     -- GPIO --
-    gpio_o     => gpio_o_int,      -- parallel output
-    gpio_i     => gpio_i_int,      -- parallel input
+    gpio_o      => gpio_o_int,      -- parallel output
+    gpio_i      => gpio_i_int,      -- parallel input
     -- UART --
-    uart_txd_o => uart_txd_o_int,  -- UART send data
-    uart_rxd_i => uart_rxd_i_int,  -- UART receive data
+    uart_txd_o  => uart_txd_o_int,  -- UART send data
+    uart_rxd_i  => uart_rxd_i_int,  -- UART receive data
     -- SPI --
-    spi_sck_o  => spi_sck_o_int,   -- SPI serial clock
-    spi_sdo_o  => spi_sdo_o_int,   -- controller data out, peripheral data in
-    spi_sdi_i  => spi_sdi_i_int,   -- controller data in, peripheral data out
-    spi_csn_o  => spi_csn_o_int,   -- SPI CS
+    spi_sck_o   => spi_sck_o_int,   -- SPI serial clock
+    spi_sdo_o   => spi_sdo_o_int,   -- controller data out, peripheral data in
+    spi_sdi_i   => spi_sdi_i_int,   -- controller data in, peripheral data out
+    spi_csn_o   => spi_csn_o_int,   -- SPI CS
     -- TWI --
-    twi_sda_io => twi_sda_io,      -- twi serial data line
-    twi_scl_io => twi_scl_io,      -- twi serial clock line
+    twi_sda_io  => twi_sda_io,      -- twi serial data line
+    twi_scl_io  => twi_scl_io,      -- twi serial clock line
     -- PWM --
-    pwm_o      => pwm_o_int,       -- pwm channels
+    pwm_o       => pwm_o_int,       -- pwm channels
     -- Interrupts --
-    msw_irq_i  => msw_irq_i_int,   -- machine software interrupt
-    mext_irq_i => mext_irq_i_int   -- machine external interrupt
+    mtime_irq_i => mtime_irq_i_int, -- machine timer interrupt, available if IO_MTIME_USE = false
+    msw_irq_i   => msw_irq_i_int,   -- machine software interrupt
+    mext_irq_i  => mext_irq_i_int   -- machine external interrupt
   );
 
   -- type conversion --
