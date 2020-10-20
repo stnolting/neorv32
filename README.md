@@ -52,17 +52,16 @@ This project comes with a complete software ecosystem that features core
 libraries for high-level usage of the provided functions and peripherals,
 makefiles, a runtime environment, several example programs to start with - including a free RTOS demo - and
 even a builtin bootloader for easy program upload via UART.
-All software source files provide a doxygen-based documentary (available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)).
 
 
 ### [How to get started?](#Getting-Started)
 
 The processor is intended to work "out of the box". Just synthesize the
 [test setup](#Create-a-new-Hardware-Project), upload it to your FPGA board of choice and start playing
-with the NEORV32. If you do not want to [compile the GCC toolchains](https://github.com/riscv/riscv-gnu-toolchain) by yourself, you can also
-download [pre-compiled toolchains](https://github.com/stnolting/riscv_gcc_prebuilt) for Linux.
+with the NEORV32. For more information take a look at the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
-For more information take a look at the [![NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
+To see the changes between releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
 
 ### Key Features
@@ -71,7 +70,7 @@ For more information take a look at the [![NEORV32 data sheet](https://raw.githu
 * GCC-based toolchain ([pre-compiled rv32i and rv32e toolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
 * Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
 * [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
-* [**Detailed data sheet**](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf)
+* [**Full-blown data sheet**](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf)
 * Completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
 * Fully synchronous design, no latches, no gated clocks
 * Small hardware footprint and high operating frequency
@@ -96,8 +95,6 @@ all the [provided example programs](https://github.com/stnolting/neorv32/tree/ma
 
 The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and `rv32Zifencei` [RISC-V compliance tests](https://github.com/riscv/riscv-compliance). 
 
-The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
-
 | Project component                                                               | CI status | Note     |
 |:--------------------------------------------------------------------------------|:----------|:---------|
 | [NEORV32 processor](https://github.com/stnolting/neorv32)                       | [![Build Status](https://travis-ci.com/stnolting/neorv32.svg?branch=master)](https://travis-ci.com/stnolting/neorv32) | [![sw doc](https://img.shields.io/badge/SW%20documentation-gh--pages-blue)](https://stnolting.github.io/neorv32/files.html) |
@@ -111,6 +108,7 @@ The project’s change log is available in the [CHANGELOG.md](https://github.com
 * Add AXI(-Lite) bridges
 * Synthesis results (+ wrappers?) for more platforms
 * Maybe port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
+* Use LaTeX for data sheet
 * Implement further CPU extensions:
   * Atomic operations (`A`)
   * Bitmanipulation operations (`B`), when they are "official"
@@ -120,7 +118,7 @@ The project’s change log is available in the [CHANGELOG.md](https://github.com
 
 ## Features
 
-The full-blown data sheet of the NEORV32 Processor/CPU is available as pdf file:
+The full-blown data sheet of the NEORV32 Processor and CPU is available as pdf file:
 [![NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 ### Processor Features
@@ -370,20 +368,20 @@ When the `C` extension is enabled, branches to an unaligned uncompressed instruc
 
 ## Top Entities
 
-The top entity of the **NEORV32 Processor** is [**neorv32_top.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) (from `rtl/core`).
-Just instantiate this file in your project and you are ready to go! All signals of this top entity are of type *std_ulogic* or *std_ulogic_vector*, respectively
-(except for the TWI signals, which are of type *std_logic*).
+The top entity of the **NEORV32 Processor** (SoC) is [**neorv32_top.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd)
+and the top entity of the **NEORV32 CPU** is [**neorv32_cpu.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd). Both
+top entities are located in `rtl/core`.
 
-The top entity of the **NEORV32 CPU** is [**neorv32_cpu.vhd**](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd) (from `rtl/core`).
-All signals of this top entity are of type *std_ulogic* or *std_ulogic_vector*, respectively.
-
-Use the generics to configure the processor/CPU according to your needs. Each generic is initilized with the default configuration.
-Detailed information regarding the signals and configuration generics can be found in
-the [NEORV32 documentary](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+All signals of the top entities are of type *std_ulogic* or *std_ulogic_vector*, respectively
+(except for the processor's TWI signals, which are of type *std_logic*). Leave all unused output ports unconnected (`open`) and tie all unused
+input ports to zero (`'0'` or `(others => '0')`, respectively).
 
 Alternative top entities, like the simplified ["hello world" test setup](#Create-a-new-Hardware-Project) or CPU/Processor
 wrappers with resolved port signal types (i.e. *std_logic*), can be found in [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates).
 
+Use the top's generics to configure the processor/CPU according to your needs. Each generic is initilized with the default configuration.
+Detailed information regarding the interface signals and configuration generics can be found in
+the [NEORV32 documentary](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 ### NEORV32 CPU
 
@@ -494,40 +492,41 @@ entity neorv32_top is
   );
   port (
     -- Global control --
-    clk_i      : in  std_ulogic := '0'; -- global clock, rising edge
-    rstn_i     : in  std_ulogic := '0'; -- global reset, low-active, async
+    clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
+    rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
     -- Wishbone bus interface (available if MEM_EXT_USE = true) --
-    wb_adr_o   : out std_ulogic_vector(31 downto 0); -- address
-    wb_dat_i   : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
-    wb_dat_o   : out std_ulogic_vector(31 downto 0); -- write data
-    wb_we_o    : out std_ulogic; -- read/write
-    wb_sel_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-    wb_stb_o   : out std_ulogic; -- strobe
-    wb_cyc_o   : out std_ulogic; -- valid cycle
-    wb_ack_i   : in  std_ulogic := '0'; -- transfer acknowledge
-    wb_err_i   : in  std_ulogic := '0'; -- transfer error
+    wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
+    wb_dat_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
+    wb_dat_o    : out std_ulogic_vector(31 downto 0); -- write data
+    wb_we_o     : out std_ulogic; -- read/write
+    wb_sel_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+    wb_stb_o    : out std_ulogic; -- strobe
+    wb_cyc_o    : out std_ulogic; -- valid cycle
+    wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
+    wb_err_i    : in  std_ulogic := '0'; -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_USE = true) --
-    fence_o    : out std_ulogic; -- indicates an executed FENCE operation
-    fencei_o   : out std_ulogic; -- indicates an executed FENCEI operation
+    fence_o     : out std_ulogic; -- indicates an executed FENCE operation
+    fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
     -- GPIO (available if IO_GPIO_USE = true) --
-    gpio_o     : out std_ulogic_vector(31 downto 0); -- parallel output
-    gpio_i     : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
+    gpio_o      : out std_ulogic_vector(31 downto 0); -- parallel output
+    gpio_i      : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
     -- UART (available if IO_UART_USE = true) --
-    uart_txd_o : out std_ulogic; -- UART send data
-    uart_rxd_i : in  std_ulogic := '0'; -- UART receive data
+    uart_txd_o  : out std_ulogic; -- UART send data
+    uart_rxd_i  : in  std_ulogic := '0'; -- UART receive data
     -- SPI (available if IO_SPI_USE = true) --
-    spi_sck_o  : out std_ulogic; -- SPI serial clock
-    spi_sdo_o  : out std_ulogic; -- controller data out, peripheral data in
-    spi_sdi_i  : in  std_ulogic := '0'; -- controller data in, peripheral data out
-    spi_csn_o  : out std_ulogic_vector(07 downto 0); -- SPI CS
+    spi_sck_o   : out std_ulogic; -- SPI serial clock
+    spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
+    spi_sdi_i   : in  std_ulogic := '0'; -- controller data in, peripheral data out
+    spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
     -- TWI (available if IO_TWI_USE = true) --
-    twi_sda_io : inout std_logic := 'H'; -- twi serial data line
-    twi_scl_io : inout std_logic := 'H'; -- twi serial clock line
+    twi_sda_io  : inout std_logic := 'H'; -- twi serial data line
+    twi_scl_io  : inout std_logic := 'H'; -- twi serial clock line
     -- PWM (available if IO_PWM_USE = true) --
-    pwm_o      : out std_ulogic_vector(03 downto 0); -- pwm channels
+    pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
     -- Interrupts --
-    msw_irq_i  : in  std_ulogic := '0'; -- machine software interrupt
-    mext_irq_i : in  std_ulogic := '0'  -- machine external interrupt
+    mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_USE = false
+    msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
+    mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
   );
 end neorv32_top;
 ```

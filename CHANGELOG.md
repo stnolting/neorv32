@@ -14,6 +14,7 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 20.10.2020 | 1.4.5.8 | *Machine timer interrupt* is available as processor input pin (`mtime_irq_i`) if internal `MTIME` is not implemented (`IO_MTIME_USE` = false) |
 | 18.10.2020 | 1.4.5.7 | Added new IO peripheral/Device: Second CFU (CFU1); renamed old CFU to CFU0; CFU VHDL files: `neorv32_cfu0.vhd` & `neorv32_cfu1.vhd`; removed CFU interrupt |
 | 17.10.2020 | 1.4.5.5 | New makefile target `upload` allows to directly upload an executable to the bootloader from the console |
 | 17.10.2020 | 1.4.5.4 | Added new CPU/Processor generic `FAST_SHIFT_EN` (default = *false*) to enable implementation of a fast (but large) barrel shifter for accelerating CPU shift instructions; updated CoreMark performance results |
