@@ -773,6 +773,8 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
     asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
 
     if (exception_handler_answer == TRAP_CODE_MTI) {
       test_ok();
@@ -804,6 +806,8 @@ int main() {
     neorv32_wdt_force(); // force watchdog into action
 
     // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    asm volatile("nop");
     asm volatile("nop");
     asm volatile("nop");
     asm volatile("nop");
@@ -867,6 +871,8 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
     asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
 
     // wait for UART to finish transmitting
     while(neorv32_uart_tx_busy());
@@ -908,6 +914,8 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
     asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
 
     if (exception_handler_answer == TRAP_CODE_FIRQ_3) {
       test_ok();
@@ -941,6 +949,8 @@ int main() {
     neorv32_twi_generate_stop();
 
     // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    asm volatile("nop");
     asm volatile("nop");
     asm volatile("nop");
     asm volatile("nop");
@@ -1075,7 +1085,7 @@ int main() {
 
 
     // ------ LOAD: should work ------
-    neorv32_uart_printf("\n[%i] PMP: U-mode [!X,!W,R] load test:  ", cnt_test);
+    neorv32_uart_printf("[%i] PMP: U-mode [!X,!W,R] load test:  ", cnt_test);
     cnt_test++;
     exception_handler_answer = 0xFFFFFFFF;
 
