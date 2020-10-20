@@ -8,7 +8,7 @@ homedir="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 homedir=$homedir/..
 
 # Run simulation
-sh $homedir/sim/ghdl/ghdl_sim.sh --stop-time=5ms
+sh $homedir/sim/ghdl/ghdl_sim.sh --stop-time=6ms
 
 # Check output
 echo "Checking NEORV32.UART_SIM_MODE text output. Should contain:"; cat $homedir/check_reference.out
