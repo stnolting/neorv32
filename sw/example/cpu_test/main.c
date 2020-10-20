@@ -121,7 +121,7 @@ int main() {
   // intro
   neorv32_uart_printf("\n\n--- PROCESSOR/CPU TEST ---\n");
   neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
-  neorv32_uart_printf("This test suite is intended to verify the default NEORV32 processor setup.\n\n");
+  neorv32_uart_printf("This test suite is intended to verify the default NEORV32 processor setup using the default testbench.\n\n");
 
   // show project credits
   neorv32_rte_print_credits();
@@ -834,9 +834,44 @@ int main() {
   exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("[%i] FIRQ1 (fast IRQ1) interrupt test (via GPIO): ", cnt_test);
 
-  // no test available yet
+  if (neorv32_gpio_available()) {
+    cnt_test++;
 
-  neorv32_uart_printf("skipped (no test available)\n");
+    // clear output port
+    neorv32_gpio_port_set(0);
+
+    // configure GPIO.in(31) for pin-change IRQ
+    neorv32_gpio_pin_change_config(0x80000000);
+
+    // trigger pin-change IRQ by setting GPIO.out(31)
+    // the testbench connects GPIO.out => GPIO.in
+    neorv32_gpio_pin_set(31);
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+
+    if (exception_handler_answer == TRAP_CODE_FIRQ_1) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+    // disable GPIO pin-change IRQ
+    neorv32_gpio_pin_change_config(0);
+
+    // clear output port
+    neorv32_gpio_port_set(0);
+  }
+  else {
+    neorv32_uart_printf("skipped (GPIO not implemented)\n");
+  }
+
 
 
   // ----------------------------------------------------------
