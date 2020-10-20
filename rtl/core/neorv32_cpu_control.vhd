@@ -800,13 +800,14 @@ begin
 
       when TRAP => -- Start trap environment (also used as cpu sleep state)
       -- ------------------------------------------------------------
-        fetch_engine.reset        <= '1';
-        execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
-        if (trap_ctrl.env_start = '1') then -- check here again if we came directly from DISPATCH
-          trap_ctrl.env_start_ack  <= '1';
-          execute_engine.pc_nxt    <= csr.mtvec;
-          execute_engine.sleep_nxt <= '0'; -- waky waky
-          execute_engine.state_nxt <= SYS_WAIT;
+        -- stay here for sleep
+        if (trap_ctrl.env_start = '1') then -- trap triggered?
+          fetch_engine.reset        <= '1';
+          execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
+          trap_ctrl.env_start_ack   <= '1';
+          execute_engine.pc_nxt     <= csr.mtvec;
+          execute_engine.sleep_nxt  <= '0'; -- waky waky
+          execute_engine.state_nxt  <= SYS_WAIT;
         end if;
 
       when EXECUTE => -- Decode and execute instruction
