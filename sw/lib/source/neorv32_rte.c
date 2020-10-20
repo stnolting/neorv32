@@ -308,8 +308,69 @@ void neorv32_rte_print_hw_config(void) {
   }
 
 
-  // Misc
-  neorv32_uart_printf("\n\n\n-- Processor --\n");
+  // check physical memory protection
+  neorv32_uart_printf("\n\nPhysical memory protection: ");
+  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_PMP))  {
+
+    // check granulartiy
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0);
+    neorv32_cpu_csr_write(CSR_PMPADDR0, 0xffffffff);
+    uint32_t pmp_test_g = neorv32_cpu_csr_read(0x3b0);
+
+    // find least-significat set bit
+    for (i=31; i!=0; i--) {
+      if (((pmp_test_g >> i) & 1) == 0) {
+        break;
+      }
+    }
+
+    neorv32_uart_printf("\n- Min granularity: ");
+    if (i < 29) {
+      neorv32_uart_printf("%u bytes per region (0x%x)\n", (uint32_t)(1 << (i+1+2)), pmp_test_g);
+    }
+    else {
+      neorv32_uart_printf("2^%u bytes per region\n", i+1+2);
+    }
+    
+
+    // test available modes
+    neorv32_uart_printf("- Mode TOR:   ");
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0x08);
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xFF) == 0x08) {
+      neorv32_uart_printf("available\n");
+    }
+    else {
+      neorv32_uart_printf("not implemented\n");
+    }
+
+    neorv32_uart_printf("- Mode NA4:   ");
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0x10);
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xFF) == 0x10) {
+      neorv32_uart_printf("available\n");
+    }
+    else {
+      neorv32_uart_printf("not implemented\n");
+    }
+
+    neorv32_uart_printf("- Mode NAPOT: ");
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0x18);
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xFF) == 0x18) {
+      neorv32_uart_printf("available\n");
+    }
+    else {
+      neorv32_uart_printf("not implemented\n");
+    }
+
+    // deactivate entry
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0);
+  }
+  else {
+    neorv32_uart_printf("not implemented\n");
+  }
+
+
+  // Misc - system
+  neorv32_uart_printf("\n\n-- Processor --\n");
   neorv32_uart_printf("Clock:   %u Hz\n", SYSINFO_CLK);
   neorv32_uart_printf("User ID: 0x%x\n", SYSINFO_USER_CODE);
 
