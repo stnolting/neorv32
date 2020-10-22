@@ -485,8 +485,8 @@ void neorv32_rte_print_hw_version(void) {
 
     // serial division
     cnt = 0;
-    while (tmp >= 10) {
-      tmp = tmp - 10;
+    while (tmp >= 16) {
+      tmp = tmp - 16;
       cnt++;
     }
 
