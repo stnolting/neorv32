@@ -551,7 +551,7 @@ begin
   instruction_buffer_data: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (i_buf.we = '1') and (i_buf.clear = '0') then
+      if (i_buf.we = '1') then
         i_buf.rdata <= i_buf.wdata;
       end if;
     end if;
@@ -1535,14 +1535,14 @@ begin
                   for j in 0 to 3 loop -- bytes in pmpcfg CSR
                     if ((j+1) <= PMP_NUM_REGIONS) then
                       if (csr.pmpcfg(0+j)(7) = '0') then -- unlocked pmpcfg access
-                        csr.pmpcfg(0+j)(0) <= csr.wdata(j*8+0); -- R
-                        csr.pmpcfg(0+j)(1) <= csr.wdata(j*8+1); -- W
-                        csr.pmpcfg(0+j)(2) <= csr.wdata(j*8+2); -- X
+                        csr.pmpcfg(0+j)(0) <= csr.wdata(j*8+0); -- R (rights.read)
+                        csr.pmpcfg(0+j)(1) <= csr.wdata(j*8+1); -- W (rights.write)
+                        csr.pmpcfg(0+j)(2) <= csr.wdata(j*8+2); -- X (rights.execute)
                         csr.pmpcfg(0+j)(3) <= csr.wdata(j*8+3) and csr.wdata(j*8+4); -- A_L
                         csr.pmpcfg(0+j)(4) <= csr.wdata(j*8+3) and csr.wdata(j*8+4); -- A_H - NAPOT/OFF only
                         csr.pmpcfg(0+j)(5) <= '0'; -- reserved
                         csr.pmpcfg(0+j)(6) <= '0'; -- reserved
-                        csr.pmpcfg(0+j)(7) <= csr.wdata(j*8+7); -- L
+                        csr.pmpcfg(0+j)(7) <= csr.wdata(j*8+7); -- L (locked / rights also enforced in m-mode)
                       end if;
                     end if;
                   end loop; -- j (bytes in CSR)
@@ -1553,14 +1553,14 @@ begin
                   for j in 0 to 3 loop -- bytes in pmpcfg CSR
                     if ((j+1+4) <= PMP_NUM_REGIONS) then
                       if (csr.pmpcfg(4+j)(7) = '0') then -- unlocked pmpcfg access
-                        csr.pmpcfg(4+j)(0) <= csr.wdata(j*8+0); -- R
-                        csr.pmpcfg(4+j)(1) <= csr.wdata(j*8+1); -- W
-                        csr.pmpcfg(4+j)(2) <= csr.wdata(j*8+2); -- X
+                        csr.pmpcfg(4+j)(0) <= csr.wdata(j*8+0); -- R (rights.read)
+                        csr.pmpcfg(4+j)(1) <= csr.wdata(j*8+1); -- W (rights.write)
+                        csr.pmpcfg(4+j)(2) <= csr.wdata(j*8+2); -- X (rights.execute)
                         csr.pmpcfg(4+j)(3) <= csr.wdata(j*8+3) and csr.wdata(j*8+4); -- A_L
                         csr.pmpcfg(4+j)(4) <= csr.wdata(j*8+3) and csr.wdata(j*8+4); -- A_H - NAPOT/OFF only
                         csr.pmpcfg(4+j)(5) <= '0'; -- reserved
                         csr.pmpcfg(4+j)(6) <= '0'; -- reserved
-                        csr.pmpcfg(4+j)(7) <= csr.wdata(j*8+7); -- L
+                        csr.pmpcfg(4+j)(7) <= csr.wdata(j*8+7); -- L (locked / rights also enforced in m-mode)
                       end if;
                     end if;
                   end loop; -- j (bytes in CSR)
@@ -1731,8 +1731,8 @@ begin
   csr_read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      csr.rdata <= (others => '0'); -- default
       csr.re    <= csr.re_nxt; -- read access?
+      csr.rdata <= (others => '0'); -- default output
       if (CPU_EXTENSION_RISCV_Zicsr = true) and (csr.re = '1') then
         case execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) is
 
@@ -1768,7 +1768,7 @@ begin
             csr.rdata <= csr.mscratch;
           when csr_mepc_c => -- R/W: mepc - machine exception program counter
             csr.rdata <= csr.mepc(data_width_c-1 downto 1) & '0';
-          when csr_mcause_c => -- R/-: mcause - machine trap cause
+          when csr_mcause_c => -- R/W: mcause - machine trap cause
             csr.rdata <= csr.mcause;
           when csr_mtval_c => -- R/W: mtval - machine bad address or instruction
             csr.rdata <= csr.mtval;

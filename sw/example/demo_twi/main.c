@@ -60,9 +60,9 @@ uint32_t hexstr_to_uint(char *buffer, uint8_t length);
 
 
 /**********************************************************************//**
- * This program generates a simple dimming sequence for PWM channel 0,1,2.
+ * This program provides an interactive console to communicate with TWI devices.
  *
- * @note This program requires the UART and the TWI to be synthesized.
+ * @note This program requires the UART and the PWM to be synthesized.
  *
  * @return Irrelevant.
  **************************************************************************/
