@@ -101,8 +101,8 @@ int main() {
   neorv32_uart_printf("This program allows to create TWI transfers by hand.\n"
                       "Type 'help' to see the help menu.\n\n");
 
-  // configure TWI, second slowest clock, no IRQ
-  neorv32_twi_setup(CLK_PRSC_2048, 0);
+  // configure TWI, second slowest clock, no IRQ, no clock-stretching
+  neorv32_twi_setup(CLK_PRSC_2048, 0, 0);
 
   // no active bus session yet
   bus_claimed = 0;

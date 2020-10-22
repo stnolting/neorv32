@@ -423,6 +423,7 @@ enum NEORV32_TWI_CT_enum {
   TWI_CT_PRSC1  =  5, /**< TWI control register(5) (r/w): Clock prescaler select bit 1 */
   TWI_CT_PRSC2  =  6, /**< TWI control register(6) (r/w): Clock prescaler select bit 2 */
   TWI_CT_MACK   =  7, /**< TWI control register(7) (r/w): Generate controller ACK for each transmission */
+  TWI_CT_CKSTEN =  8, /**< TWI control register(8) (r/w): Enable clock stretching (by peripheral) */
 
   TWI_CT_ACK    = 30, /**< TWI control register(30) (r/-): ACK received when set */
   TWI_CT_BUSY   = 31  /**< TWI control register(31) (r/-): Transfer in progress, busy flag */

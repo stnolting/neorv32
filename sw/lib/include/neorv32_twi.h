@@ -46,7 +46,7 @@
 
 // prototypes
 int neorv32_twi_available(void);
-void neorv32_twi_setup(uint8_t prsc, uint8_t irq_en);
+void neorv32_twi_setup(uint8_t prsc, uint8_t irq_en, uint8_t ckst_en);
 void neorv32_twi_disable(void);
 void neorv32_twi_mack_enable(void);
 int neorv32_twi_busy(void);
