@@ -227,7 +227,7 @@ static void __neorv32_rte_debug_exc_handler(void) {
   }
 
   // instruction address
-  neorv32_uart_print(" @ ");
+  neorv32_uart_print(" @ PC=");
   __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MSCRATCH)); // rte core stores actual mepc to mscratch
 
   // additional info
@@ -326,7 +326,7 @@ void neorv32_rte_print_hw_config(void) {
 
     neorv32_uart_printf("\n- Min granularity: ");
     if (i < 29) {
-      neorv32_uart_printf("%u bytes per region (0x%x)\n", (uint32_t)(1 << (i+1+2)), pmp_test_g);
+      neorv32_uart_printf("%u bytes per region\n", (uint32_t)(1 << (i+1+2)));
     }
     else {
       neorv32_uart_printf("2^%u bytes per region\n", i+1+2);

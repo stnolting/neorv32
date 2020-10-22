@@ -105,6 +105,10 @@ void neorv32_pwm_set(uint8_t channel, uint8_t duty) {
   duty_mask = duty_mask << (channel * 8);
   duty_new  = duty_new  << (channel * 8);
 
-  PWM_DUTY &= ~duty_mask; // clear previous duty cycle
-  PWM_DUTY |= duty_new; // set new duty cycle
+  uint32_t duty_cycle = PWM_DUTY;
+
+  duty_cycle &= ~duty_mask; // clear previous duty cycle
+  duty_cycle |= duty_new; // set new duty cycle
+
+  PWM_DUTY = duty_cycle;
 }

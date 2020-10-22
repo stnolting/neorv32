@@ -118,7 +118,7 @@ void neorv32_uart_setup(uint32_t baudrate, uint8_t rx_irq, uint8_t tx_irq) {
   /* Enable the UART for SIM mode. */
   /* Only use this for simulation! */
 #ifdef UART_SIM_MODE
-  #warning UART_SIM_MODE enabled! Sending all UART.TX to text.io simulation output instead of real UART transmitter. Use this for simulations only!
+  #warning UART_SIM_MODE enabled! Sending all UART.TX data to text.io simulation output instead of real UART transmitter. Use this for simulations only!
   uint32_t sim_mode = 1 << UART_CT_SIM_MODE;
 #else
   uint32_t sim_mode = 0;
