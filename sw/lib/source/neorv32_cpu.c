@@ -246,11 +246,11 @@ void neorv32_cpu_delay_ms(uint32_t time_ms) {
  **************************************************************************/
 void __attribute__((naked)) neorv32_cpu_goto_user_mode(void) {
 
-  register uint32_t mask = (1<<CPU_MSTATUS_MPP_H) | (1<<CPU_MSTATUS_MPP_L);
-  asm volatile ("csrrc zero, mstatus, %[input_j]" :  : [input_j] "r" (mask));
+  // make sure to use NO registers in here! -> naked
 
-  // return switching to user mode
-  asm volatile ("csrw mepc, ra");
-  asm volatile ("mret");
+  asm volatile ("csrw mepc, ra           \n\t" // move return address to mepc so we can return using "mret". also, we can use ra as general purpose register in here
+                "li ra, %[input_imm]     \n\t" // bit mask to clear the two MPP bits
+                "csrrc zero, mstatus, ra \n\t" // clear MPP bits -> MPP=u-mode
+                "mret                    \n\t" // return and switch to user mode
+                :  : [input_imm] "i" ((1<<CPU_MSTATUS_MPP_H) | (1<<CPU_MSTATUS_MPP_L)));
 }
-
