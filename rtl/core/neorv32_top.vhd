@@ -102,6 +102,7 @@ entity neorv32_top is
     wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
     wb_err_i    : in  std_ulogic := '0'; -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_USE = true) --
+    priv_o      : out std_ulogic_vector(1 downto 0); -- current CPU privilege level
     fence_o     : out std_ulogic; -- indicates an executed FENCE operation
     fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
     -- GPIO (available if IO_GPIO_USE = true) --
@@ -116,8 +117,8 @@ entity neorv32_top is
     spi_sdi_i   : in  std_ulogic := '0'; -- controller data in, peripheral data out
     spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
     -- TWI (available if IO_TWI_USE = true) --
-    twi_sda_io  : inout std_logic := 'H'; -- twi serial data line
-    twi_scl_io  : inout std_logic := 'H'; -- twi serial clock line
+    twi_sda_io  : inout std_logic; -- twi serial data line
+    twi_scl_io  : inout std_logic; -- twi serial clock line
     -- PWM (available if IO_PWM_USE = true) --
     pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
     -- Interrupts --
@@ -169,6 +170,7 @@ architecture neorv32_top_rtl of neorv32_top is
     ack    : std_ulogic; -- bus transfer acknowledge
     err    : std_ulogic; -- bus transfer error
     fence  : std_ulogic; -- fence(i) instruction executed
+    priv   : std_ulogic_vector(1 downto 0); -- current privilege level
   end record;
   signal cpu_i, cpu_d, p_bus : bus_interface_t;
 
@@ -344,6 +346,7 @@ begin
     i_bus_ack_i    => cpu_i.ack,    -- bus transfer acknowledge
     i_bus_err_i    => cpu_i.err,    -- bus transfer error
     i_bus_fence_o  => cpu_i.fence,  -- executed FENCEI operation
+    i_bus_priv_o   => cpu_i.priv,   -- privilege level
     -- data bus interface --
     d_bus_addr_o   => cpu_d.addr,   -- bus access address
     d_bus_rdata_i  => cpu_d.rdata,  -- bus read data
@@ -355,6 +358,7 @@ begin
     d_bus_ack_i    => cpu_d.ack,    -- bus transfer acknowledge
     d_bus_err_i    => cpu_d.err,    -- bus transfer error
     d_bus_fence_o  => cpu_d.fence,  -- executed FENCE operation
+    d_bus_priv_o   => cpu_d.priv,   -- privilege level
     -- system time input from MTIME --
     time_i         => mtime_time,   -- current system time
     -- interrupts (risc-v compliant) --
@@ -366,6 +370,7 @@ begin
   );
 
   -- advanced memory control --
+  priv_o   <= cpu_i.priv;  -- is the same as "cpu_d.priv"
   fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
 

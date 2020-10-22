@@ -96,6 +96,7 @@ entity neorv32_top_stdlogic is
     wb_ack_i    : in  std_logic := '0'; -- transfer acknowledge
     wb_err_i    : in  std_logic := '0'; -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_USE = true) --
+    priv_o      : out std_logic_vector(1 downto 0); -- current CPU privilege level
     fence_o     : out std_logic; -- indicates an executed FENCE operation
     fencei_o    : out std_logic; -- indicates an executed FENCEI operation
     -- GPIO (available if IO_GPIO_USE = true) --
@@ -110,8 +111,8 @@ entity neorv32_top_stdlogic is
     spi_sdi_i   : in  std_logic := '0'; -- controller data in, peripheral data out
     spi_csn_o   : out std_logic_vector(07 downto 0); -- SPI CS
     -- TWI (available if IO_TWI_USE = true) --
-    twi_sda_io  : inout std_logic := 'H'; -- twi serial data line
-    twi_scl_io  : inout std_logic := 'H'; -- twi serial clock line
+    twi_sda_io  : inout std_logic; -- twi serial data line
+    twi_scl_io  : inout std_logic; -- twi serial clock line
     -- PWM (available if IO_PWM_USE = true) --
     pwm_o       : out std_logic_vector(03 downto 0); -- pwm channels
     -- Interrupts --
@@ -139,6 +140,7 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   signal wb_ack_i_int    : std_ulogic;
   signal wb_err_i_int    : std_ulogic;
   --
+  signal priv_o_int      : std_ulogic_vector(1 downto 0);
   signal fence_o_int     : std_ulogic;
   signal fencei_o_int    : std_ulogic;
   --
@@ -220,6 +222,7 @@ begin
     wb_ack_i    => wb_ack_i_int,    -- transfer acknowledge
     wb_err_i    => wb_err_i_int,    -- transfer error
     -- Advanced memory control signals --
+    priv_o      => priv_o_int,      -- current CPU privilege level
     fence_o     => fence_o_int,     -- indicates an executed FENCE operation
     fencei_o    => fencei_o_int,    -- indicates an executed FENCEI operation
     -- GPIO --
@@ -258,6 +261,7 @@ begin
   wb_ack_i_int   <= std_ulogic(wb_ack_i);
   wb_err_i_int   <= std_ulogic(wb_err_i);
 
+  priv_o         <= std_logic_vector(priv_o_int);
   fence_o        <= std_logic(fence_o_int);
   fencei_o       <= std_logic(fencei_o_int);
 
@@ -276,6 +280,6 @@ begin
 
   msw_irq_i_int  <= std_ulogic(msw_irq_i);
   mext_irq_i_int <= std_ulogic(mext_irq_i);
-  
+
 
 end neorv32_top_stdlogic_rtl;

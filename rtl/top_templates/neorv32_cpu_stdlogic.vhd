@@ -74,6 +74,7 @@ entity neorv32_cpu_stdlogic is
     i_bus_ack_i    : in  std_logic := '0'; -- bus transfer acknowledge
     i_bus_err_i    : in  std_logic := '0'; -- bus transfer error
     i_bus_fence_o  : out std_logic; -- executed FENCEI operation
+    i_bus_priv_o   : out std_logic_vector(1 downto 0); -- privilege level
     -- data bus interface --
     d_bus_addr_o   : out std_logic_vector(data_width_c-1 downto 0); -- bus access address
     d_bus_rdata_i  : in  std_logic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
@@ -85,6 +86,7 @@ entity neorv32_cpu_stdlogic is
     d_bus_ack_i    : in  std_logic := '0'; -- bus transfer acknowledge
     d_bus_err_i    : in  std_logic := '0'; -- bus transfer error
     d_bus_fence_o  : out std_logic; -- executed FENCE operation
+    d_bus_priv_o   : out std_logic_vector(1 downto 0); -- privilege level
     -- system time input from MTIME --
     time_i         : in  std_logic_vector(63 downto 0) := (others => '0'); -- current system time
     -- interrupts (risc-v compliant) --
@@ -114,6 +116,7 @@ architecture neorv32_cpu_stdlogic_rtl of neorv32_cpu_stdlogic is
   signal i_bus_ack_i_int,    d_bus_ack_i_int    : std_ulogic;
   signal i_bus_err_i_int,    d_bus_err_i_int    : std_ulogic;
   signal i_bus_fence_o_int,  d_bus_fence_o_int  : std_ulogic;
+  signal i_bus_priv_o_int,   d_bus_priv_o_int   : std_ulogic_vector(1 downto 0);
   --
   signal time_i_int : std_ulogic_vector(63 downto 0);
   --
@@ -160,6 +163,7 @@ begin
     i_bus_ack_i    => i_bus_ack_i_int,    -- bus transfer acknowledge
     i_bus_err_i    => i_bus_err_i_int,    -- bus transfer error
     i_bus_fence_o  => i_bus_fence_o_int,  -- executed FENCEI operation
+    i_bus_priv_o   => i_bus_priv_o_int,   -- privilege level
     -- data bus interface --
     d_bus_addr_o   => d_bus_addr_o_int,   -- bus access address
     d_bus_rdata_i  => d_bus_rdata_i_int,  -- bus read data
@@ -171,6 +175,7 @@ begin
     d_bus_ack_i    => d_bus_ack_i_int,    -- bus transfer acknowledge
     d_bus_err_i    => d_bus_err_i_int,    -- bus transfer error
     d_bus_fence_o  => d_bus_fence_o_int,  -- executed FENCEI operation
+    d_bus_priv_o   => d_bus_priv_o_int,   -- privilege level
     -- system time input from MTIME --
     time_i         => time_i_int,         -- current system time
     -- interrupts (risc-v compliant) --
@@ -195,6 +200,7 @@ begin
   i_bus_ack_i_int    <= std_ulogic(i_bus_ack_i);
   i_bus_err_i_int    <= std_ulogic(i_bus_err_i);
   i_bus_fence_o      <= std_logic(i_bus_fence_o_int);
+  i_bus_priv_o       <= std_logic_vector(i_bus_priv_o_int);
 
   d_bus_addr_o       <= std_logic_vector(d_bus_addr_o_int);
   d_bus_rdata_i_int  <= std_ulogic_vector(d_bus_rdata_i);
@@ -206,6 +212,7 @@ begin
   d_bus_ack_i_int    <= std_ulogic(d_bus_ack_i);
   d_bus_err_i_int    <= std_ulogic(d_bus_err_i);
   d_bus_fence_o      <= std_logic(d_bus_fence_o_int);
+  d_bus_priv_o       <= std_logic_vector(d_bus_priv_o_int);
   
   time_i_int         <= std_ulogic_vector(time_i);
   

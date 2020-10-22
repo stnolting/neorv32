@@ -85,6 +85,7 @@ entity neorv32_cpu is
     i_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
     i_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
     i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
+    i_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
     -- data bus interface --
     d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
@@ -96,6 +97,7 @@ entity neorv32_cpu is
     d_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
     d_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
     d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
+    d_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
     -- system time input from MTIME --
     time_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
     -- interrupts (risc-v compliant) --
@@ -368,6 +370,10 @@ begin
     d_bus_err_i    => d_bus_err_i,    -- bus transfer error
     d_bus_fence_o  => d_bus_fence_o   -- fence operation
   );
+
+  -- current privilege level --
+  i_bus_priv_o <= priv_mode;
+  d_bus_priv_o <= priv_mode;
 
 
 end neorv32_cpu_rtl;
