@@ -185,15 +185,15 @@ begin
   --
   wb_stb_o <= stb_int_std when (WB_PIPELINED_MODE = false) else stb_int_pipe; -- standard or pipelined mode
 
-  -- cpu ack --
-  ack_o <= wb_ack_ff when (INTERFACE_REG_STAGES = 2) else wb_ack_i;
-
-  -- cpu err --
-  err_o <= wb_err_ff when (INTERFACE_REG_STAGES = 2) else wb_err_i;
-
   -- cpu read-data --
   rb_en  <= wb_access_ff_ff when (INTERFACE_REG_STAGES = 2) else wb_access_ff;
   data_o <= wb_rdata when (rb_en = '1') else (others => '0');
+
+  -- cpu ack --
+  ack_o <= (wb_ack_ff and rb_en) when (INTERFACE_REG_STAGES = 2) else (wb_ack_i and rb_en);
+
+  -- cpu err --
+  err_o <= (wb_err_ff and rb_en) when (INTERFACE_REG_STAGES = 2) else (wb_ack_i and rb_en);
 
 
   -- Bus Buffer -----------------------------------------------------------------------------
