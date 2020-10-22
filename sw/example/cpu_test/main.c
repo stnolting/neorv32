@@ -49,8 +49,6 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE 19200
-//** Set 1 to run external memory test */
-#define EXT_MEM_TEST     1
 //** Reachable unaligned address */
 #define ADDR_UNALIGNED   0x00000002
 //** Unreachable aligned address */
@@ -97,8 +95,8 @@ int cnt_test = 0;
  **************************************************************************/
 int main() {
 
-  register uint32_t tmp_a;
-  uint32_t i;
+  register uint32_t tmp_a, tmp_b, tmp_c;
+  uint32_t i, j;
   volatile uint32_t dummy_dst __attribute__((unused));
 
   union {
@@ -293,7 +291,7 @@ int main() {
 
       // check for access exception
       if (exception_handler_answer == 0xFFFFFFFF) { // no exception -> access ok -> CSR exists
-        neorv32_uart_printf("  + 0x%x\n", csr_addr_cnt);
+        neorv32_uart_printf(" + 0x%x\n", csr_addr_cnt);
         i++;
       }
     }
@@ -393,41 +391,43 @@ int main() {
   // External memory interface test
   // ----------------------------------------------------------
   exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("[%i] External memory access test: ", cnt_test);
-#if (EXT_MEM_TEST == 1)
-  cnt_test++;
+  neorv32_uart_printf("[%i] External memory access (@ 0x%x) test: ", cnt_test, (uint32_t)EXT_MEM_BASE);
 
-  // create test program in RAM
-  static const uint32_t dummy_ext_program[2] __attribute__((aligned(8))) = {
-    0x3407D073, // csrwi mscratch, 15
-    0x00008067  // ret (32-bit)
-  };
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT)) {
+    cnt_test++;
 
-  // copy to external memory
-  if (memcpy((void*)EXT_MEM_BASE, (void*)&dummy_ext_program, (size_t)sizeof(dummy_ext_program)) == NULL) {
-    test_fail();
-  }
-  else {
+    // create test program in RAM
+    static const uint32_t dummy_ext_program[2] __attribute__((aligned(8))) = {
+      0x3407D073, // csrwi mscratch, 15
+      0x00008067  // ret (32-bit)
+    };
 
-    // execute program
-    tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
-    asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
-  
-    if (exception_handler_answer == 0xFFFFFFFF) { // make sure there was no exception
-      if (neorv32_cpu_csr_read(CSR_MSCRATCH) == 15) { // make sure the program was executed in the right way
-        test_ok();
+    // copy to external memory
+    if (memcpy((void*)EXT_MEM_BASE, (void*)&dummy_ext_program, (size_t)sizeof(dummy_ext_program)) == NULL) {
+      test_fail();
+    }
+    else {
+
+      // execute program
+      tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
+      asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
+    
+      if (exception_handler_answer == 0xFFFFFFFF) { // make sure there was no exception
+        if (neorv32_cpu_csr_read(CSR_MSCRATCH) == 15) { // make sure the program was executed in the right way
+          test_ok();
+        }
+        else {
+          test_fail();
+        }
       }
       else {
         test_fail();
       }
     }
-    else {
-      test_fail();
-    }
   }
-#else
-  neorv32_uart_printf("skipped (disabled)\n");
-#endif
+  else {
+    neorv32_uart_printf("skipped (external memory interface not implemented)\n");
+  }
 
 
   // ----------------------------------------------------------
@@ -834,44 +834,48 @@ int main() {
   exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("[%i] FIRQ1 (fast IRQ1) interrupt test (via GPIO): ", cnt_test);
 
-  if (neorv32_gpio_available()) {
-    cnt_test++;
+  if (UART_CT & (1 << UART_CT_SIM_MODE)) { // check if this is a simulation
+    if (neorv32_gpio_available()) {
+      cnt_test++;
 
-    // clear output port
-    neorv32_gpio_port_set(0);
+      // clear output port
+      neorv32_gpio_port_set(0);
 
-    // configure GPIO.in(31) for pin-change IRQ
-    neorv32_gpio_pin_change_config(0x80000000);
+      // configure GPIO.in(31) for pin-change IRQ
+      neorv32_gpio_pin_change_config(0x80000000);
 
-    // trigger pin-change IRQ by setting GPIO.out(31)
-    // the testbench connects GPIO.out => GPIO.in
-    neorv32_gpio_pin_set(31);
+      // trigger pin-change IRQ by setting GPIO.out(31)
+      // the testbench connects GPIO.out => GPIO.in
+      neorv32_gpio_pin_set(31);
 
-    // wait some time for the IRQ to arrive the CPU
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
+      // wait some time for the IRQ to arrive the CPU
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
 
-    if (exception_handler_answer == TRAP_CODE_FIRQ_1) {
-      test_ok();
+      if (exception_handler_answer == TRAP_CODE_FIRQ_1) {
+        test_ok();
+      }
+      else {
+        test_fail();
+      }
+
+      // disable GPIO pin-change IRQ
+      neorv32_gpio_pin_change_config(0);
+
+      // clear output port
+      neorv32_gpio_port_set(0);
     }
     else {
-      test_fail();
+      neorv32_uart_printf("skipped (GPIO not implemented)\n");
     }
-
-    // disable GPIO pin-change IRQ
-    neorv32_gpio_pin_change_config(0);
-
-    // clear output port
-    neorv32_gpio_port_set(0);
   }
   else {
-    neorv32_uart_printf("skipped (GPIO not implemented)\n");
+    neorv32_uart_printf("skipped (on real hardware)\n");
   }
-
 
 
   // ----------------------------------------------------------
@@ -1097,7 +1101,6 @@ int main() {
   // ----------------------------------------------------------
   // Test physical memory protection
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("[%i] Physical memory protection (PMP): ", cnt_test);
 
   // check if PMP is implemented
@@ -1105,13 +1108,37 @@ int main() {
 
     // Test access to protected region
     // ---------------------------------------------
-    neorv32_uart_printf("Creating protected page (NAPOT, 64kB) @ 0xFFFFA000, [!x, !w, r]... ");
+    exception_handler_answer = 0xFFFFFFFF;
     cnt_test++;
 
-    neorv32_cpu_csr_write(CSR_PMPADDR0, 0xffffdfff); // 64k area @ 0xFFFFA000
-    neorv32_cpu_csr_write(CSR_PMPCFG0,  0b00011001); // NAPOT, read permission, NO write and NO execute permissions
+    // check min granulartiy
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0);
+    neorv32_cpu_csr_write(CSR_PMPADDR0, 0xffffffff);
+    tmp_a = neorv32_cpu_csr_read(0x3b0);
 
-    if ((neorv32_cpu_csr_read(CSR_PMPADDR0) == 0xffffdfff) && (neorv32_cpu_csr_read(CSR_PMPCFG0) == 0b00011001)) {
+    // find least-significat set bit
+    for (i=31; i!=0; i--) {
+      if (((tmp_a >> i) & 1) == 0) {
+        break;
+      }
+    }
+
+    tmp_a = SYSINFO_DSPACE_BASE; // base address of protected region
+
+    tmp_b = 0;
+    for (j=i; j!=0; j--) {
+      tmp_b = tmp_b << 1;
+      tmp_b = tmp_b | 1;
+    }
+    tmp_c = tmp_a & (~tmp_b); // clear LSBs in base address
+    tmp_c = tmp_c |   tmp_b;  // set region size config
+
+    neorv32_uart_printf("Creating protected page (NAPOT, [!X,!W,R], %u bytes) @ 0x%x (PMPADDR = 0x%x): ", (uint32_t)(1 << (i+1+2)), tmp_a, tmp_c);
+
+    neorv32_cpu_csr_write(CSR_PMPADDR0, tmp_c); // 64k area @ 0xFFFFA000
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0b00011001); // NAPOT, read permission, NO write and NO execute permissions
+
+    if ((neorv32_cpu_csr_read(CSR_PMPADDR0) == tmp_c) && (neorv32_cpu_csr_read(CSR_PMPCFG0) == 0b00011001) && (exception_handler_answer == 0xFFFFFFFF)) {
       test_ok();
     }
     else {
@@ -1119,15 +1146,40 @@ int main() {
     }
 
 
-    // ------ LOAD: should work ------
-    neorv32_uart_printf("[%i] PMP: U-mode [!X,!W,R] load test:  ", cnt_test);
+    // ------ EXECUTE: should fail ------
+    neorv32_uart_printf("[%i] - PMP: U-mode [!X,!W,R] eeecute test: ", cnt_test);
     cnt_test++;
     exception_handler_answer = 0xFFFFFFFF;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
     {
-      asm volatile ("lw zero, 0xFFFFFF90(zero)"); // MTIME load access, should work
+      asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a)); // call address to execute -> should fail
+    }
+
+    if (exception_handler_answer == 0xFFFFFFFF) {
+      // switch back to machine mode (if not allready)
+      asm volatile ("ecall");
+
+      test_fail();
+    }
+    else {
+      // switch back to machine mode (if not allready)
+      asm volatile ("ecall");
+
+      test_ok();
+    }
+
+
+    // ------ LOAD: should work ------
+    neorv32_uart_printf("[%i] - PMP: U-mode [!X,!W,R] read test:    ", cnt_test);
+    cnt_test++;
+    exception_handler_answer = 0xFFFFFFFF;
+
+    // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+    neorv32_cpu_goto_user_mode();
+    {
+      asm volatile ("lw zero, 0(%[input_i])" :  : [input_i] "r" (tmp_a)); // load access -> should work
     }
 
     if (exception_handler_answer == 0xFFFFFFFF) {
@@ -1145,14 +1197,14 @@ int main() {
 
 
     // ------ STORE: should fail ------
-    neorv32_uart_printf("[%i] PMP: U-mode [!X,!W,R] store test: ", cnt_test);
+    neorv32_uart_printf("[%i] - PMP: U-mode [!X,!W,R] write test:   ", cnt_test);
     cnt_test++;
     exception_handler_answer = 0xFFFFFFFF;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
     {
-      asm volatile ("sw zero, 0xFFFFFF90(zero)"); // MTIME store access, should fail
+      asm volatile ("sw zero, 0(%[input_i])" :  : [input_i] "r" (tmp_a)); // store access -> should fail
     }
 
     if (exception_handler_answer == TRAP_CODE_S_ACCESS) {
@@ -1169,18 +1221,37 @@ int main() {
     }
 
 
-    // ------ Lock test ------
-    neorv32_uart_printf("[%i] PMP: Locking pmpcfg0 [mode=off]:  ", cnt_test);
+    // ------ Lock test - pmpcfg0.0 ------
+    neorv32_uart_printf("[%i] - PMP: pmpcfg0.0 [mode=off] lock test: ", cnt_test);
     cnt_test++;
     exception_handler_answer = 0xFFFFFFFF;
 
-    neorv32_cpu_csr_write(CSR_PMPCFG0,  0b10000001); // locked but entry is deactivated (mode = off)
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0b10000001); // locked, but entry is deactivated (mode = off)
 
     // make sure a locked cfg cannot be written
     tmp_a = neorv32_cpu_csr_read(CSR_PMPCFG0);
     neorv32_cpu_csr_write(CSR_PMPCFG0, 0b00011001); // try to re-write CFG content
 
     if ((tmp_a != neorv32_cpu_csr_read(CSR_PMPCFG0)) || (exception_handler_answer != 0xFFFFFFFF)) {
+      test_fail();
+    }
+    else {
+      test_ok();
+    }
+
+
+    // ------ Lock test - pmpaddr0 ------
+    neorv32_uart_printf("[%i] - PMP: pmpaddr0 [mode=off] lock test:  ", cnt_test);
+    cnt_test++;
+    exception_handler_answer = 0xFFFFFFFF;
+
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0b10000001); // locked, but entry is deactivated (mode = off)
+
+    // make sure a locked cfg cannot be written
+    tmp_a = neorv32_cpu_csr_read(CSR_PMPADDR0);
+    neorv32_cpu_csr_write(CSR_PMPADDR0, 0xABABCDCD); // try to re-write ADDR content
+
+    if ((tmp_a != neorv32_cpu_csr_read(CSR_PMPADDR0)) || (exception_handler_answer != 0xFFFFFFFF)) {
       test_fail();
     }
     else {
@@ -1196,8 +1267,8 @@ int main() {
   // ----------------------------------------------------------
   // Final test reports
   // ----------------------------------------------------------
-  neorv32_uart_printf("\n\nExecuted instructions: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET));
-  neorv32_uart_printf(    "Required clock cycles: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));
+  neorv32_uart_printf("\nExecuted instructions: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET));
+  neorv32_uart_printf(  "Required clock cycles: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));
 
   neorv32_uart_printf("\nTest results:\nOK:     %i/%i\nFAILED: %i/%i\n\n", cnt_ok, cnt_test, cnt_fail, cnt_test);
 
