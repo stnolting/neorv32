@@ -74,7 +74,6 @@ entity neorv32_top is
     MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
     -- External memory interface --
     MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
-    MEM_EXT_REG_STAGES           : natural := 2;      -- number of interface register stages (0,1,2)
     -- Processor peripherals --
     IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
@@ -526,14 +525,13 @@ begin
   if (MEM_EXT_USE = true) generate
     neorv32_wishbone_inst: neorv32_wishbone
     generic map (
-      INTERFACE_REG_STAGES => MEM_EXT_REG_STAGES, -- number of interface register stages (0,1,2)
-      WB_PIPELINED_MODE    => wb_pipe_mode_c,     -- false: classic/standard wishbone mode, true: pipelined wishbone mode
+      WB_PIPELINED_MODE => wb_pipe_mode_c,     -- false: classic/standard wishbone mode, true: pipelined wishbone mode
       -- Internal instruction memory --
-      MEM_INT_IMEM_USE     => MEM_INT_IMEM_USE,   -- implement processor-internal instruction memory
-      MEM_INT_IMEM_SIZE    => MEM_INT_IMEM_SIZE,  -- size of processor-internal instruction memory in bytes
+      MEM_INT_IMEM_USE  => MEM_INT_IMEM_USE,   -- implement processor-internal instruction memory
+      MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE,  -- size of processor-internal instruction memory in bytes
       -- Internal data memory --
-      MEM_INT_DMEM_USE     => MEM_INT_DMEM_USE,   -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE    => MEM_INT_DMEM_SIZE   -- size of processor-internal data memory in bytes
+      MEM_INT_DMEM_USE  => MEM_INT_DMEM_USE,   -- implement processor-internal data memory
+      MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE   -- size of processor-internal data memory in bytes
     )
     port map (
       -- global control --
@@ -784,8 +782,8 @@ begin
   if (IO_TWI_USE = false) generate
     twi_rdata  <= (others => '0');
     twi_ack    <= '0';
---  twi_sda_io <= 'H';
---  twi_scl_io <= 'H';
+--  twi_sda_io <= 'Z';
+--  twi_scl_io <= 'Z';
     twi_cg_en  <= '0';
     twi_irq    <= '0';
   end generate;

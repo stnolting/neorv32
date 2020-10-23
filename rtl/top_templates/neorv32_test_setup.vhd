@@ -95,7 +95,6 @@ begin
     MEM_INT_DMEM_SIZE            => 8*1024, -- size of processor-internal data memory in bytes
     -- External memory interface --
     MEM_EXT_USE                  => false,  -- implement external memory bus interface?
-    MEM_EXT_REG_STAGES           => 2,      -- number of interface register stages (0,1,2)
     -- Processor peripherals --
     IO_GPIO_USE                  => true,  -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE                 => true,  -- implement machine system timer (MTIME)?

@@ -68,7 +68,6 @@ entity neorv32_top_stdlogic is
     MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
     -- External memory interface --
     MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
-    MEM_EXT_REG_STAGES           : natural := 2;      -- number of interface register stages (0,1,2)
     -- Processor peripherals --
     IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
@@ -194,7 +193,6 @@ begin
     MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE,  -- size of processor-internal data memory in bytes
     -- External memory interface --
     MEM_EXT_USE                  => MEM_EXT_USE,        -- implement external memory bus interface?
-    MEM_EXT_REG_STAGES           => MEM_EXT_REG_STAGES, -- number of interface register stages (0,1,2)
     -- Processor peripherals --
     IO_GPIO_USE                  => IO_GPIO_USE,        -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE                 => IO_MTIME_USE,       -- implement machine system timer (MTIME)?

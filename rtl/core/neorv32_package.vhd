@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040511"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040600"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
@@ -471,7 +471,6 @@ package neorv32_package is
       MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
       -- External memory interface --
       MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
-      MEM_EXT_REG_STAGES           : natural := 2;      -- number of interface register stages (0,1,2)
       -- Processor peripherals --
       IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
       IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
@@ -1068,14 +1067,13 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_wishbone
     generic (
-      INTERFACE_REG_STAGES : natural := 2; -- number of interface register stages (0,1,2)
-      WB_PIPELINED_MODE    : boolean := false; -- false: classic/standard wishbone mode, true: pipelined wishbone mode
+      WB_PIPELINED_MODE : boolean := false; -- false: classic/standard wishbone mode, true: pipelined wishbone mode
       -- Internal instruction memory --
-      MEM_INT_IMEM_USE     : boolean := true;   -- implement processor-internal instruction memory
-      MEM_INT_IMEM_SIZE    : natural := 8*1024; -- size of processor-internal instruction memory in bytes
+      MEM_INT_IMEM_USE  : boolean := true;   -- implement processor-internal instruction memory
+      MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
       -- Internal data memory --
-      MEM_INT_DMEM_USE     : boolean := true;   -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE    : natural := 4*1024  -- size of processor-internal data memory in bytes
+      MEM_INT_DMEM_USE  : boolean := true;   -- implement processor-internal data memory
+      MEM_INT_DMEM_SIZE : natural := 4*1024  -- size of processor-internal data memory in bytes
     );
     port (
       -- global control --
