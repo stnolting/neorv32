@@ -415,8 +415,9 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
  **************************************************************************/
 void get_exe(int src) {
 
-  // is instruction memory (IMEM) read-only?
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM_ROM)) {
+  // is MEM implemented and read-only?
+  if ((SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM_ROM)) &&
+      (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM)))  {
     system_error(ERROR_ROM);
   }
 
