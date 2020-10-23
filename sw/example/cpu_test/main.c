@@ -174,81 +174,10 @@ int main() {
   // intro2
   neorv32_uart_printf("\n\nStarting tests...\n\n");
 
-
   // enable global interrupts
   neorv32_cpu_eint();
 
   exception_handler_answer = 0xFFFFFFFF;
-
-
-  // ----------------------------------------------------------
-  // Instruction memory test
-  // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("[%i] Processor-internal IMEM test: ", cnt_test);
-
-  if ((UART_CT & (1 << UART_CT_SIM_MODE)) == 0) { // check if this is a simulation
-    cnt_test++;
-
-    register uint32_t dmem_probe_addr = SYSINFO_ISPACE_BASE;
-    uint32_t dmem_probe_cnt = 0;
-
-    while(1) {
-      asm volatile ("lb zero, 0(%[input_j])" :  : [input_j] "r" (dmem_probe_addr));
-      if (exception_handler_answer == TRAP_CODE_L_ACCESS) {
-        break;
-      }
-      dmem_probe_addr++;
-      dmem_probe_cnt++;
-    }
-    
-    neorv32_uart_printf("%u bytes (should be %u bytes) ", dmem_probe_cnt, SYSINFO_IMEM_SIZE);
-    neorv32_uart_printf("@ 0x%x  ", SYSINFO_ISPACE_BASE);
-    if (dmem_probe_cnt == SYSINFO_IMEM_SIZE) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    neorv32_uart_printf("skipped (disabled for simulation)\n");
-  }
-
-
-  // ----------------------------------------------------------
-  // Data memory test
-  // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
-  neorv32_uart_printf("[%i] Processor-internal DMEM test: ", cnt_test);
-
-  if ((UART_CT & (1 << UART_CT_SIM_MODE)) == 0) { // check if this is a simulation
-    cnt_test++;
-
-    register uint32_t imem_probe_addr = SYSINFO_DSPACE_BASE;
-    uint32_t imem_probe_cnt = 0;
-
-    while(1) {
-      asm volatile ("lb zero, 0(%[input_j])" :  : [input_j] "r" (imem_probe_addr));
-      if (exception_handler_answer == TRAP_CODE_L_ACCESS) {
-        break;
-      }
-      imem_probe_addr++;
-      imem_probe_cnt++;
-    }
-    
-    neorv32_uart_printf("%u bytes (should be %u bytes) ", imem_probe_cnt, SYSINFO_DMEM_SIZE);
-    neorv32_uart_printf("@ 0x%x  ", SYSINFO_DSPACE_BASE);
-    if (imem_probe_cnt == SYSINFO_DMEM_SIZE) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    neorv32_uart_printf("skipped (disabled for simulation)\n");
-  }
 
 
   // ----------------------------------------------------------
@@ -378,11 +307,11 @@ int main() {
 
   // this will timeout
   MMR_UNREACHABLE = 0;
+  tmp_a = neorv32_cpu_csr_read(CSR_CYCLE) - tmp_a;
 
   // wait for timeout
   while (exception_handler_answer == 0xFFFFFFFF);
 
-  tmp_a = neorv32_cpu_csr_read(CSR_CYCLE) - tmp_a;
   tmp_a = tmp_a / 4; // divide by average CPI
   neorv32_uart_printf("~%u cycles\n", tmp_a);
 
@@ -393,40 +322,45 @@ int main() {
   exception_handler_answer = 0xFFFFFFFF;
   neorv32_uart_printf("[%i] External memory access (@ 0x%x) test: ", cnt_test, (uint32_t)EXT_MEM_BASE);
 
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT)) {
-    cnt_test++;
+  if (UART_CT & (1 << UART_CT_SIM_MODE)) { // check if this is a simulation
+    if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT)) {
+      cnt_test++;
 
-    // create test program in RAM
-    static const uint32_t dummy_ext_program[2] __attribute__((aligned(8))) = {
-      0x3407D073, // csrwi mscratch, 15
-      0x00008067  // ret (32-bit)
-    };
+      // create test program in RAM
+      static const uint32_t dummy_ext_program[2] __attribute__((aligned(8))) = {
+        0x3407D073, // csrwi mscratch, 15
+        0x00008067  // ret (32-bit)
+      };
 
-    // copy to external memory
-    if (memcpy((void*)EXT_MEM_BASE, (void*)&dummy_ext_program, (size_t)sizeof(dummy_ext_program)) == NULL) {
-      test_fail();
-    }
-    else {
+      // copy to external memory
+      if (memcpy((void*)EXT_MEM_BASE, (void*)&dummy_ext_program, (size_t)sizeof(dummy_ext_program)) == NULL) {
+        test_fail();
+      }
+      else {
 
-      // execute program
-      tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
-      asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
-    
-      if (exception_handler_answer == 0xFFFFFFFF) { // make sure there was no exception
-        if (neorv32_cpu_csr_read(CSR_MSCRATCH) == 15) { // make sure the program was executed in the right way
-          test_ok();
+        // execute program
+        tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
+        asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
+      
+        if (exception_handler_answer == 0xFFFFFFFF) { // make sure there was no exception
+          if (neorv32_cpu_csr_read(CSR_MSCRATCH) == 15) { // make sure the program was executed in the right way
+            test_ok();
+          }
+          else {
+            test_fail();
+          }
         }
         else {
           test_fail();
         }
       }
-      else {
-        test_fail();
-      }
+    }
+    else {
+      neorv32_uart_printf("skipped (external memory interface not implemented)\n");
     }
   }
   else {
-    neorv32_uart_printf("skipped (external memory interface not implemented)\n");
+    neorv32_uart_printf("skipped (on real hardware)\n");
   }
 
 
@@ -980,10 +914,11 @@ int main() {
   if (neorv32_twi_available()) {
     cnt_test++;
 
-    // configure TWI, fastest clock, transfer-done IRQ enable
-    neorv32_twi_setup(CLK_PRSC_2, 1);
+    // configure TWI, fastest clock, transfer-done IRQ enable, disable peripheral clock stretching
+    neorv32_twi_setup(CLK_PRSC_2, 1, 0);
 
     // trigger TWI IRQ
+    neorv32_twi_generate_start();
     neorv32_twi_trans(0);
     neorv32_twi_generate_stop();
 
