@@ -181,7 +181,6 @@ begin
     MEM_INT_DMEM_SIZE            => 8*1024,        -- size of processor-internal data memory in bytes
     -- External memory interface --
     MEM_EXT_USE                  => true,          -- implement external memory bus interface?
-    MEM_EXT_REG_STAGES           => 2,             -- number of interface register stages (0,1,2)
     -- Processor peripherals --
     IO_GPIO_USE                  => true,          -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE                 => true,          -- implement machine system timer (MTIME)?
@@ -312,7 +311,7 @@ begin
       if (wb_mem_latency_c > 1) then
         for i in 1 to wb_mem_latency_c-1 loop
           wb_mem.rdata(i) <= wb_mem.rdata(i-1);
-          wb_mem.rb_en(i) <= wb_mem.rb_en(i-1);
+          wb_mem.rb_en(i) <= wb_mem.rb_en(i-1) and wb_cpu.cyc;
           wb_mem.ack(i)   <= wb_mem.ack(i-1) and wb_cpu.cyc;
         end loop;
       end if;
@@ -324,7 +323,7 @@ begin
 
   -- output to cpu --
   wb_cpu.rdata <= wb_mem.rdata(wb_mem_latency_c-1) when (wb_mem.rb_en(wb_mem_latency_c-1) = '1') else (others=> '0'); -- data output gate
-  wb_cpu.ack   <= wb_mem.ack(wb_mem_latency_c-1) and wb_cpu.cyc; -- another AND for classic/standard wishbone transactions
+  wb_cpu.ack   <= wb_mem.ack(wb_mem_latency_c-1);
   wb_cpu.err   <= '0';
 
 
