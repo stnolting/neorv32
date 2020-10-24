@@ -544,7 +544,7 @@ The AXI4-Lite interface has been tested using Xilinx Vivado 19.2 block designer:
 The processor was packed as custom IP using `neorv32_top_axi4lite.vhd` as top entity. The AXI interface is automatically detected by the packager.
 All remaining IO interfaces are available as custom signals. The configuration generics are available via the "customize IP" dialog.
 In the figure above the resulting IP block is named "neorv32_top_axi4lite_v1_0".
-*(Note: Use Syntheiss option "global" when generating the block design to maintain the internal TWI tri-state driver)*
+*(Note: Use Syntheiss option "global" when generating the block design to maintain the internal TWI tri-state drivers.)*
 
 The setup uses an AXI interconnect to attach two block RAMs to the processor. Since the processor in this example is configured *without* IMEM and DMEM,
 the attached block RAMs are used for storing instructions and data: the first RAM is used as instruction memory
