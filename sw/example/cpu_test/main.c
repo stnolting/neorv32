@@ -58,15 +58,6 @@
 /**@}*/
 
 
-/**********************************************************************//**
- * @name Exception handler acknowledges
- **************************************************************************/
-/**@{*/
-/** Global volatile variable to store exception handler answer */
-volatile uint32_t exception_handler_answer;
-/**@}*/
-
-
 // Prototypes
 void global_trap_handler(void);
 void test_ok(void);
@@ -113,7 +104,7 @@ int main() {
 
   neorv32_mtime_set_time(0);
   // set CMP of machine system timer MTIME to max to prevent an IRQ
-  uint64_t mtime_cmp_max = 0xFFFFFFFFFFFFFFFFL;
+  uint64_t mtime_cmp_max = 0xFFFFFFFFFFFFFFFFUL;
   neorv32_mtime_set_timecmp(mtime_cmp_max);
 
   // intro
@@ -177,7 +168,7 @@ int main() {
   // enable global interrupts
   neorv32_cpu_eint();
 
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
 
   // ----------------------------------------------------------
@@ -206,7 +197,7 @@ int main() {
 
     // iterate through full 12-bit CSR address space
     for (csr_addr_cnt=0x000; csr_addr_cnt<=0xfff; csr_addr_cnt++) {
-      exception_handler_answer = 0xFFFFFFFF;
+      neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
       // construct and store new CSR access instruction
       // 0x00006073 = csrrsi, 0x000, 0
@@ -219,7 +210,7 @@ int main() {
       asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
 
       // check for access exception
-      if (exception_handler_answer == 0xFFFFFFFF) { // no exception -> access ok -> CSR exists
+      if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) { // no exception -> access ok -> CSR exists
         neorv32_uart_printf(" + 0x%x\n", csr_addr_cnt);
         i++;
       }
@@ -239,7 +230,7 @@ int main() {
   // ----------------------------------------------------------
   // CFU0 test (default HW)
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Default CFU0 access test: ", cnt_test);
 
   // cfu0 implemented?
@@ -254,7 +245,7 @@ int main() {
 
     if ((CFU0_REG_0 == 0x01234567) && (CFU0_REG_1 == 0x76543210) &&
         (CFU0_REG_2 == 0xABCDABCD) && (CFU0_REG_3 == 0xFFAAFFAA) && // correct read-back
-        (exception_handler_answer == 0xFFFFFFFF)) { // no exception
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) { // no exception
       test_ok();
     }
     else {
@@ -262,14 +253,14 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (not implemented)\n");
+    neorv32_uart_printf("skipped (CFU0 not implemented)\n");
   }
 
 
   // ----------------------------------------------------------
   // CFU1 test (default HW)
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Default CFU1 access test: ", cnt_test);
 
   // cfu0 implemented?
@@ -284,7 +275,7 @@ int main() {
 
     if ((CFU1_REG_0 == 0x22334455) && (CFU1_REG_1 == 0x44782931) &&
         (CFU1_REG_2 == 0xDDAABBFF) && (CFU1_REG_3 == 0xA0B0D0C0) && // correct read-back
-        (exception_handler_answer == 0xFFFFFFFF)) { // no exception
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) { // no exception
       test_ok();
     }
     else {
@@ -292,14 +283,14 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (not implemented)\n");
+    neorv32_uart_printf("skipped (CFU1 not implemented)\n");
   }
 
 
   // ----------------------------------------------------------
   // Bus timeout latency estimation
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Estimate bus time-out latency: ", cnt_test);
 
   // start timing
@@ -310,7 +301,7 @@ int main() {
   tmp_a = neorv32_cpu_csr_read(CSR_CYCLE) - tmp_a;
 
   // wait for timeout
-  while (exception_handler_answer == 0xFFFFFFFF);
+  while (neorv32_cpu_csr_read(CSR_MCAUSE) == 0);
 
   tmp_a = tmp_a / 4; // divide by average CPI
   neorv32_uart_printf("~%u cycles\n", tmp_a);
@@ -319,7 +310,7 @@ int main() {
   // ----------------------------------------------------------
   // External memory interface test
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] External memory access (@ 0x%x) test: ", cnt_test, (uint32_t)EXT_MEM_BASE);
 
   if (UART_CT & (1 << UART_CT_SIM_MODE)) { // check if this is a simulation
@@ -342,7 +333,7 @@ int main() {
         tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
         asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
       
-        if (exception_handler_answer == 0xFFFFFFFF) { // make sure there was no exception
+        if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) { // make sure there was no exception
           if (neorv32_cpu_csr_read(CSR_MSCRATCH) == 15) { // make sure the program was executed in the right way
             test_ok();
           }
@@ -387,12 +378,12 @@ int main() {
   // ----------------------------------------------------------
   // Test fence instructions - make sure CPU does not crash here and throws no exception
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] FENCE instruction test: ", cnt_test);
   cnt_test++;
   asm volatile ("fence");
 
-  if (exception_handler_answer != 0xFFFFFFFF) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) != 0) {
     test_fail();
   }
   else {
@@ -404,18 +395,18 @@ int main() {
   // Test fencei instructions - make sure CPU does not crash here and throws no exception
   // a more complex test is provided by the RISC-V compliance test
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] FENCE.I instruction test: ", cnt_test);
   asm volatile ("fence.i");
 
-  if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
     neorv32_uart_printf("skipped (not implemented)\n");
   }
   else {
     cnt_test++;
-    exception_handler_answer = 0xFFFFFFFF;
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
     asm volatile ("fence.i");
-    if (exception_handler_answer == 0xFFFFFFFF) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
       test_ok();
     }
     else {
@@ -427,14 +418,14 @@ int main() {
   // ----------------------------------------------------------
   // Illegal CSR access (CSR not implemented)
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Illegal CSR (0xfff) access test: ", cnt_test);
 
   cnt_test++;
 
   neorv32_cpu_csr_read(0xfff); // CSR 0xfff not implemented
 
-  if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
     test_ok();
   }
   else {
@@ -445,14 +436,14 @@ int main() {
   // ----------------------------------------------------------
   // Write-access to read-only CSR
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Read-only CSR (time) write access test: ", cnt_test);
 
   cnt_test++;
 
   neorv32_cpu_csr_write(CSR_TIME, 0); // time CSR is read-only
 
-  if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
     test_ok();
   }
   else {
@@ -463,7 +454,7 @@ int main() {
   // ----------------------------------------------------------
   // No "real" CSR write access (because rs1 = r0)
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Read-only CSR (time) no-write (rs1=0) access test: ", cnt_test);
 
   cnt_test++;
@@ -472,7 +463,7 @@ int main() {
   // -> should cause no exception
   asm volatile("csrrs zero, time, zero");
 
-  if (exception_handler_answer == 0xFFFFFFFF) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
     test_ok();
   }
   else {
@@ -483,7 +474,7 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned instruction address
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] I_ALIGN (instruction alignment) exception test: ", cnt_test);
 
   // skip if C-mode is implemented
@@ -494,7 +485,7 @@ int main() {
     // call unaligned address
     ((void (*)(void))ADDR_UNALIGNED)();
 
-    if (exception_handler_answer == TRAP_CODE_I_MISALIGNED) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_MISALIGNED) {
       neorv32_uart_printf("ok\n");
       cnt_ok++;
     }
@@ -511,14 +502,14 @@ int main() {
   // ----------------------------------------------------------
   // Instruction access fault
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] I_ACC (instruction bus access) exception test: ", cnt_test);
   cnt_test++;
 
   // call unreachable aligned address
   ((void (*)(void))ADDR_UNREACHABLE)();
 
-  if (exception_handler_answer == TRAP_CODE_I_ACCESS) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ACCESS) {
     test_ok();
   }
   else {
@@ -529,7 +520,7 @@ int main() {
   // ----------------------------------------------------------
   // Illegal instruction
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] I_ILLEG (illegal instruction) exception test: ", cnt_test);
 
   cnt_test++;
@@ -537,7 +528,7 @@ int main() {
   asm volatile ("csrrw zero, 0xfff, zero"); // = 0xfff01073 : CSR 0xfff not implemented -> illegal instruction
 
   // make sure this has cause an illegal exception
-  if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
     // make sure this is really the instruction that caused the exception
     // for illegal instructions mtval contains the actual instruction word
     if (neorv32_cpu_csr_read(CSR_MTVAL) == 0xfff01073) {
@@ -555,7 +546,7 @@ int main() {
   // ----------------------------------------------------------
   // Illegal compressed instruction
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] CI_ILLEG (illegal compressed instruction) exception test: ", cnt_test);
 
   // skip if C-mode is not implemented
@@ -572,7 +563,7 @@ int main() {
     tmp_a = (uint32_t)&dummy_sub_program_ci; // call the dummy sub program
     asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
 
-    if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
       test_ok();
     }
     else {
@@ -587,13 +578,13 @@ int main() {
   // ----------------------------------------------------------
   // Breakpoint instruction
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] BREAK (break instruction) exception test: ", cnt_test);
   cnt_test++;
 
   asm volatile("EBREAK");
 
-  if (exception_handler_answer == TRAP_CODE_BREAKPOINT) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_BREAKPOINT) {
     test_ok();
   }
   else {
@@ -604,14 +595,14 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned load address
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] L_ALIGN (load address alignment) exception test: ", cnt_test);
   cnt_test++;
 
   // load from unaligned address
   asm volatile ("lw zero, %[input_i](zero)" :  : [input_i] "i" (ADDR_UNALIGNED));
 
-  if (exception_handler_answer == TRAP_CODE_L_MISALIGNED) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_MISALIGNED) {
     test_ok();
   }
   else {
@@ -622,14 +613,14 @@ int main() {
   // ----------------------------------------------------------
   // Load access fault
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] L_ACC (load bus access) exception test: ", cnt_test);
   cnt_test++;
 
   // load from unreachable aligned address
   dummy_dst = MMR_UNREACHABLE;
 
-  if (exception_handler_answer == TRAP_CODE_L_ACCESS) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) {
     test_ok();
   }
   else {
@@ -640,14 +631,14 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned store address
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] S_ALIGN (store address alignment) exception test: ", cnt_test);
   cnt_test++;
 
   // store to unaligned address
   asm volatile ("sw zero, %[input_i](zero)" :  : [input_i] "i" (ADDR_UNALIGNED));
 
-  if (exception_handler_answer == TRAP_CODE_S_MISALIGNED) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_MISALIGNED) {
     test_ok();
   }
   else {
@@ -658,14 +649,14 @@ int main() {
   // ----------------------------------------------------------
   // Store access fault
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] S_ACC (store bus access) exception test: ", cnt_test);
   cnt_test++;
 
   // store to unreachable aligned address
   MMR_UNREACHABLE = 0;
 
-  if (exception_handler_answer == TRAP_CODE_S_ACCESS) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) {
     test_ok();
   }
   else {
@@ -676,13 +667,13 @@ int main() {
   // ----------------------------------------------------------
   // Environment call
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] ENVCALL (ecall instruction) exception test: ", cnt_test);
   cnt_test++;
 
   asm volatile("ECALL");
 
-  if (exception_handler_answer == TRAP_CODE_MENV_CALL) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MENV_CALL) {
     test_ok();
   }
   else {
@@ -693,7 +684,7 @@ int main() {
   // ----------------------------------------------------------
   // Machine timer interrupt (MTIME)
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] MTI (machine timer) interrupt test: ", cnt_test);
 
   if (neorv32_mtime_available()) {
@@ -710,7 +701,7 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
 
-    if (exception_handler_answer == TRAP_CODE_MTI) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MTI) {
       test_ok();
     }
     else {
@@ -728,7 +719,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 0 (WDT)
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] FIRQ0 (fast IRQ0) interrupt test (via WDT): ", cnt_test);
 
   if (neorv32_wdt_available()) {
@@ -747,7 +738,7 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
 
-    if (exception_handler_answer == TRAP_CODE_FIRQ_0) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_0) {
       test_ok();
     }
     else {
@@ -765,7 +756,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 1 (GPIO)
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] FIRQ1 (fast IRQ1) interrupt test (via GPIO): ", cnt_test);
 
   if (UART_CT & (1 << UART_CT_SIM_MODE)) { // check if this is a simulation
@@ -790,7 +781,7 @@ int main() {
       asm volatile("nop");
       asm volatile("nop");
 
-      if (exception_handler_answer == TRAP_CODE_FIRQ_1) {
+      if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_1) {
         test_ok();
       }
       else {
@@ -815,7 +806,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 2 (UART)
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] FIRQ2 (fast IRQ2) interrupt test (via UART): ", cnt_test);
 
   if (neorv32_uart_available()) {
@@ -853,7 +844,7 @@ int main() {
     // re-enable UART sim_mode if it was enabled and disable UART TX done IRQ
     UART_CT = uart_ct_backup;
 
-    if (exception_handler_answer == TRAP_CODE_FIRQ_2) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_2) {
       test_ok();
     }
     else {
@@ -869,7 +860,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 3 (SPI)
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] FIRQ3 (fast IRQ3) interrupt test (via SPI): ", cnt_test);
 
   if (neorv32_spi_available()) {
@@ -890,7 +881,7 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
 
-    if (exception_handler_answer == TRAP_CODE_FIRQ_3) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_3) {
       test_ok();
     }
     else {
@@ -908,7 +899,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 3 (TWI)
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] FIRQ3 (fast IRQ3) interrupt test (via TWI): ", cnt_test);
 
   if (neorv32_twi_available()) {
@@ -930,7 +921,7 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
 
-    if (exception_handler_answer == TRAP_CODE_FIRQ_3) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_3) {
       test_ok();
     }
     else {
@@ -948,7 +939,7 @@ int main() {
   // ----------------------------------------------------------
   // Test WFI ("sleep") instructions, wakeup via MTIME
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] WFI (wait for interrupt / sleep instruction) test (wake-up via MTIME): ", cnt_test);
 
   if (neorv32_mtime_available()) {
@@ -960,7 +951,7 @@ int main() {
     // put CPU into sleep mode
     asm volatile ("wfi");
 
-    if (exception_handler_answer != TRAP_CODE_MTI) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_MTI) {
       test_fail();
     }
     else {
@@ -978,7 +969,7 @@ int main() {
   // ----------------------------------------------------------
   // Test invalid CSR access in user mode
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Invalid CSR access (mstatus) from user mode test: ", cnt_test);
 
   // skip if U-mode is not implemented
@@ -993,7 +984,7 @@ int main() {
       neorv32_cpu_csr_read(CSR_MSTATUS);
     }
 
-    if (exception_handler_answer == TRAP_CODE_I_ILLEGAL) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
       test_ok();
     }
     else {
@@ -1009,7 +1000,7 @@ int main() {
   // ----------------------------------------------------------
   // Test RTE debug handler
   // ----------------------------------------------------------
-  exception_handler_answer = 0xFFFFFFFF;
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] RTE (runtime environment) debug trap handler test: ", cnt_test);
 
   cnt_test++;
@@ -1021,12 +1012,12 @@ int main() {
   neorv32_cpu_csr_read(0xfff); // CSR not available
 
   neorv32_uart_printf(" ");
-  if (exception_handler_answer == 0xFFFFFFFF) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) != 0) {
     test_ok();
   }
   else {
     test_fail();
-    neorv32_uart_printf("answer: 0x%x", exception_handler_answer);
+    neorv32_uart_printf("answer: 0x%x", neorv32_cpu_csr_read(CSR_MCAUSE));
   }
 
   // restore original handler
@@ -1043,7 +1034,7 @@ int main() {
 
     // Test access to protected region
     // ---------------------------------------------
-    exception_handler_answer = 0xFFFFFFFF;
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
     cnt_test++;
 
     // check min granulartiy
@@ -1073,7 +1064,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_PMPADDR0, tmp_c); // 64k area @ 0xFFFFA000
     neorv32_cpu_csr_write(CSR_PMPCFG0, 0b00011001); // NAPOT, read permission, NO write and NO execute permissions
 
-    if ((neorv32_cpu_csr_read(CSR_PMPADDR0) == tmp_c) && (neorv32_cpu_csr_read(CSR_PMPCFG0) == 0b00011001) && (exception_handler_answer == 0xFFFFFFFF)) {
+    if ((neorv32_cpu_csr_read(CSR_PMPADDR0) == tmp_c) && (neorv32_cpu_csr_read(CSR_PMPCFG0) == 0b00011001) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
       test_ok();
     }
     else {
@@ -1082,9 +1073,9 @@ int main() {
 
 
     // ------ EXECUTE: should fail ------
-    neorv32_uart_printf("[%i] - PMP: U-mode [!X,!W,R] eeecute test: ", cnt_test);
+    neorv32_uart_printf("[%i] - PMP: U-mode [!X,!W,R] execute test:  ", cnt_test);
     cnt_test++;
-    exception_handler_answer = 0xFFFFFFFF;
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
@@ -1092,7 +1083,7 @@ int main() {
       asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a)); // call address to execute -> should fail
     }
 
-    if (exception_handler_answer == 0xFFFFFFFF) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
       // switch back to machine mode (if not allready)
       asm volatile ("ecall");
 
@@ -1107,9 +1098,9 @@ int main() {
 
 
     // ------ LOAD: should work ------
-    neorv32_uart_printf("[%i] - PMP: U-mode [!X,!W,R] read test:    ", cnt_test);
+    neorv32_uart_printf("[%i] - PMP: U-mode [!X,!W,R] read test:     ", cnt_test);
     cnt_test++;
-    exception_handler_answer = 0xFFFFFFFF;
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
@@ -1117,7 +1108,7 @@ int main() {
       asm volatile ("lw zero, 0(%[input_i])" :  : [input_i] "r" (tmp_a)); // load access -> should work
     }
 
-    if (exception_handler_answer == 0xFFFFFFFF) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
       // switch back to machine mode (if not allready)
       asm volatile ("ecall");
 
@@ -1132,9 +1123,9 @@ int main() {
 
 
     // ------ STORE: should fail ------
-    neorv32_uart_printf("[%i] - PMP: U-mode [!X,!W,R] write test:   ", cnt_test);
+    neorv32_uart_printf("[%i] - PMP: U-mode [!X,!W,R] write test:    ", cnt_test);
     cnt_test++;
-    exception_handler_answer = 0xFFFFFFFF;
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
@@ -1142,7 +1133,7 @@ int main() {
       asm volatile ("sw zero, 0(%[input_i])" :  : [input_i] "r" (tmp_a)); // store access -> should fail
     }
 
-    if (exception_handler_answer == TRAP_CODE_S_ACCESS) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) {
       // switch back to machine mode (if not allready)
       asm volatile ("ecall");
 
@@ -1159,7 +1150,7 @@ int main() {
     // ------ Lock test - pmpcfg0.0 ------
     neorv32_uart_printf("[%i] - PMP: pmpcfg0.0 [mode=off] lock test: ", cnt_test);
     cnt_test++;
-    exception_handler_answer = 0xFFFFFFFF;
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
     neorv32_cpu_csr_write(CSR_PMPCFG0, 0b10000001); // locked, but entry is deactivated (mode = off)
 
@@ -1167,7 +1158,7 @@ int main() {
     tmp_a = neorv32_cpu_csr_read(CSR_PMPCFG0);
     neorv32_cpu_csr_write(CSR_PMPCFG0, 0b00011001); // try to re-write CFG content
 
-    if ((tmp_a != neorv32_cpu_csr_read(CSR_PMPCFG0)) || (exception_handler_answer != 0xFFFFFFFF)) {
+    if ((tmp_a != neorv32_cpu_csr_read(CSR_PMPCFG0)) || (neorv32_cpu_csr_read(CSR_MCAUSE) != 0)) {
       test_fail();
     }
     else {
@@ -1178,7 +1169,7 @@ int main() {
     // ------ Lock test - pmpaddr0 ------
     neorv32_uart_printf("[%i] - PMP: pmpaddr0 [mode=off] lock test:  ", cnt_test);
     cnt_test++;
-    exception_handler_answer = 0xFFFFFFFF;
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
     neorv32_cpu_csr_write(CSR_PMPCFG0, 0b10000001); // locked, but entry is deactivated (mode = off)
 
@@ -1186,7 +1177,7 @@ int main() {
     tmp_a = neorv32_cpu_csr_read(CSR_PMPADDR0);
     neorv32_cpu_csr_write(CSR_PMPADDR0, 0xABABCDCD); // try to re-write ADDR content
 
-    if ((tmp_a != neorv32_cpu_csr_read(CSR_PMPADDR0)) || (exception_handler_answer != 0xFFFFFFFF)) {
+    if ((tmp_a != neorv32_cpu_csr_read(CSR_PMPADDR0)) || (neorv32_cpu_csr_read(CSR_MCAUSE) != 0)) {
       test_fail();
     }
     else {
@@ -1209,10 +1200,10 @@ int main() {
 
   // final result
   if (cnt_fail == 0) {
-    neorv32_uart_printf("%c[1mTEST OK!%c[0m\n", 27, 27);
+    neorv32_uart_printf("%c[1m[TEST OK!]%c[0m\n", 27, 27);
   }
   else {
-    neorv32_uart_printf("%c[1mTEST FAILED!%c[0m\n", 27, 27);
+    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
   }
 
   return 0;
@@ -1223,8 +1214,6 @@ int main() {
  * Trap handler for ALL exceptions/interrupts.
  **************************************************************************/
 void global_trap_handler(void) {
-
-  exception_handler_answer = neorv32_cpu_csr_read(CSR_MCAUSE);
 
   // hack: always come back in MACHINE MODE
   register uint32_t mask = (1<<CPU_MSTATUS_MPP_H) | (1<<CPU_MSTATUS_MPP_L);
