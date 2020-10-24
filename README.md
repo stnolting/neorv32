@@ -445,7 +445,6 @@ entity neorv32_cpu is
 end neorv32_cpu;
 ```
 
-
 ### NEORV32 Processor
 
 ```vhdl
@@ -532,13 +531,11 @@ entity neorv32_top is
 end neorv32_top;
 ```
 
-
 ### AXI4 Connectivity
 
-
 Via the [`rtl/top_templates/neorv32_top_axi4lite.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_top_axi4lite.vhd)
-wrapper the NEORV32 provides an **AXI4-Lite** compatible master interface. This wrapper instantiates the default NEORV32 processor top entitiy
-and implements a bi-directional Wishbone to AXI4-Lite bridge.
+wrapper the NEORV32 provides an **AXI4-Lite** compatible master interface. This wrapper instantiates the default
+[NEORV32 processor top entitiy](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) and implements a Wishbone to AXI4-Lite bridge.
 
 The AXI4-Lite interface has been tested using Xilinx Vivado 19.2 block designer:
 
@@ -547,10 +544,12 @@ The AXI4-Lite interface has been tested using Xilinx Vivado 19.2 block designer:
 The processor was packed as custom IP using `neorv32_top_axi4lite.vhd` as top entity. The AXI interface is automatically detected by the packager.
 All remaining IO interfaces are available as custom signals. The configuration generics are available via the "customize IP" dialog.
 In the figure above the resulting IP block is named "neorv32_top_axi4lite_v1_0".
+*(Note: Use Syntheiss option "global" when generating the block design to maintain the internal TWI tri-state driver)*
 
 The setup uses an AXI interconnect to attach two block RAMs to the processor. Since the processor in this example is configured *without* IMEM and DMEM,
 the attached block RAMs are used for storing instructions and data: the first RAM is used as instruction memory
 and is mapped to address `0x00000000 - 0x00003fff` (16kB), the second RAM is used as data memory and is mapped to address `0x80000000 - 0x80001fff` (8kB).
+
 
 
 ## Getting Started
