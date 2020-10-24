@@ -4,9 +4,6 @@
 [![license](https://img.shields.io/github/license/stnolting/neorv32)](https://github.com/stnolting/neorv32/blob/master/LICENSE)
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases)
 
-
-## Table of Content
-
 * [Overview](#Overview)
 * [Project Status](#Status)
 * [Features](#Features)
@@ -75,6 +72,7 @@ To see the changes between releases visit the project's [release page](https://g
 * Fully synchronous design, no latches, no gated clocks
 * Small hardware footprint and high operating frequency
 * Highly configurable CPU and processor setup
+* [AXI4-Lite connectivity](#AXI4-Connectivity) - compatible with Xilinx Vivado IP Packer
 * [FreeRTOS port](https://github.com/stnolting/neorv32/blob/master/sw/example/demo_freeRTOS) available
 
 
@@ -102,13 +100,13 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 | [RISC-V compliance test](https://github.com/stnolting/neorv32_riscv_compliance) | [![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) | |
 
 
-### To-Do / Wish List
+### To-Do / Wish List / [Help Wanted](#Contribute)
 
+* Add a cache for the external memory interface
+* Use LaTeX for data sheet
 * Further size and performance optimization
-* Add AXI(-Lite) bridges
 * Synthesis results (+ wrappers?) for more platforms
 * Maybe port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
-* Use LaTeX for data sheet
 * Implement further CPU extensions:
   * Atomic operations (`A`)
   * Bitmanipulation operations (`B`), when they are "official"
@@ -133,9 +131,10 @@ is highly customizable via the processor's top generics.
 * Optional machine system timer (**MTIME**), RISC-V-compliant
 * Optional universal asynchronous receiver and transmitter (**UART**) with simulation output option via text.io
 * Optional 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
-* Optional two wire serial interface controller (**TWI**), compatible to the I²C standard
+* Optional two wire serial interface controller (**TWI**), with optional clock-stretching, compatible to the I²C standard
 * Optional general purpose parallel IO port (**GPIO**), 32xOut & 32xIn, with pin-change interrupt
 * Optional 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**), *standard* or *pipelined* handshake/transactions mode
+* Optional wrapper for **AXI4-Lite Master Interface** (see [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates)), compatibility verified with Xilinx Vivado Block Desginer
 * Optional watchdog timer (**WDT**)
 * Optional PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
 * Optional GARO-based true random number generator (**TRNG**)
@@ -272,7 +271,7 @@ Results generated for hardware version `1.4.4.8`.
 | TWI       | Two-wire interface                                   |  74 |  44 |           0 |    0 |
 | UART      | Universal asynchronous receiver/transmitter          | 175 | 132 |           0 |    0 |
 | WDT       | Watchdog timer                                       |  58 |  45 |           0 |    0 |
-| WISHBONE  | External memory interface (`MEM_EXT_REG_STAGES` = 2) | 106 | 104 |           0 |    0 |
+| WISHBONE  | External memory interface                            | 106 | 104 |           0 |    0 |
 
 
 ### NEORV32 Processor - Exemplary FPGA Setups
@@ -479,7 +478,6 @@ entity neorv32_top is
     MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
     -- External memory interface --
     MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
-    MEM_EXT_REG_STAGES           : natural := 2;      -- number of interface register stages (0,1,2)
     -- Processor peripherals --
     IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
@@ -534,6 +532,25 @@ entity neorv32_top is
 end neorv32_top;
 ```
 
+
+### AXI4 Connectivity
+
+
+Via the [`rtl/top_templates/neorv32_top_axi4lite.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_top_axi4lite.vhd)
+wrapper the NEORV32 provides an **AXI4-Lite** compatible master interface. This wrapper instantiates the default NEORV32 processor top entitiy
+and implements a bi-directional Wishbone to AXI4-Lite bridge.
+
+The AXI4-Lite interface has been tested using Xilinx Vivado 19.2 block designer:
+
+![AXI-SoC](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_axi_soc.png)
+
+The processor was packed as custom IP using `neorv32_top_axi4lite.vhd` as top entity. The AXI interface is automatically detected by the packager.
+All remaining IO interfaces are available as custom signals. The configuration generics are available via the "customize IP" dialog.
+In the figure above the resulting IP block is named "neorv32_top_axi4lite_v1_0".
+
+The setup uses an AXI interconnect to attach two block RAMs to the processor. Since the processor in this example is configured *without* IMEM and DMEM,
+the attached block RAMs are used for storing instructions and data: the first RAM is used as instruction memory
+and is mapped to address `0x00000000 - 0x00003fff` (16kB), the second RAM is used as data memory and is mapped to address `0x80000000 - 0x80001fff` (8kB).
 
 
 ## Getting Started
@@ -740,13 +757,11 @@ link in question.
 
 "Artix" and "Vivado" are trademarks of Xilinx Inc.
 
-"Cyclone", "Quartus Prime", "Quartus Prime Lite" and "Avalon Bus" are trademarks of Intel Corporation.
+"Cyclone", "Quartus Prime Lite" and "Avalon Bus" are trademarks of Intel Corporation.
 
-"Artix" and "Vivado" are trademarks of Xilinx, Inc.
+"iCE40", "UltraPlus" and "Radiant" are trademarks of Lattice Semiconductor Corporation.
 
-"iCE40", "UltraPlus" and "Lattice Radiant" are trademarks of Lattice Semiconductor Corporation.
-
-"AXI" and "AXI-Lite" are trademarks of Arm Holdings plc.
+"AXI", "AXI4" and "AXI4-Lite" are trademarks of Arm Holdings plc.
 
 
 
