@@ -119,7 +119,7 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 The full-blown data sheet of the NEORV32 Processor and CPU is available as pdf file:
 [![NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
-### Processor Features
+### NEORV32 Processor (SoC)
 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_processor.png)
 
@@ -134,14 +134,14 @@ is highly customizable via the processor's top generics.
 * Optional two wire serial interface controller (**TWI**), with optional clock-stretching, compatible to the I²C standard
 * Optional general purpose parallel IO port (**GPIO**), 32xOut & 32xIn, with pin-change interrupt
 * Optional 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**), *standard* or *pipelined* handshake/transactions mode
-* Optional wrapper for **AXI4-Lite Master Interface** (see [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates)), compatibility verified with Xilinx Vivado Block Desginer
+* Optional wrapper for **AXI4-Lite Master Interface** (see [AXI Connectivity](#AXI4-Connectivity)), compatibility verified with Xilinx Vivado Block Desginer
 * Optional watchdog timer (**WDT**)
 * Optional PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
 * Optional GARO-based true random number generator (**TRNG**)
 * Optional custom functions units (**CFU0** and **CFU1**) for tightly-coupled custom co-processors
 * System configuration information memory to check hardware configuration by software (**SYSINFO**)
 
-### CPU Features
+### NEORV32 CPU
 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_cpu.png)
 
