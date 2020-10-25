@@ -25,24 +25,6 @@
  * 1 tab == 4 spaces!
  */
 
-/*
- * Modified for the NEORV32 processor by Stephan Nolting.
- */
-
-#ifdef RUN_FREERTOS_DEMO
-
-
-/* FreeRTOS kernel includes. */
-#include <FreeRTOS.h>
-#include <task.h>
-
-/* NEORV32 includes. */
-#include <neorv32.h>
-
-
-#define BAUD_RATE 19200
-
-
 /******************************************************************************
  * This project provides two demo applications.  A simple blinky style project,
  * and a more comprehensive test and demo application.  The
@@ -60,11 +42,51 @@
  *
  */
 
-extern void main_blinky( void );
+/*
+ * Modified for the NEORV32 processor by Stephan Nolting.
+ */
+
+#ifdef RUN_FREERTOS_DEMO
+
+#include <stdint.h>
+
+/* FreeRTOS kernel includes. */
+#include <FreeRTOS.h>
+#include <semphr.h>
+#include <queue.h>
+#include <task.h>
+
+/* NEORV32 includes. */
+#include <neorv32.h>
+
+/* misc */
+//#include "driver_wrapper/uart_serial.h"
+
+/* Set mainCREATE_SIMPLE_BLINKY_DEMO_ONLY to one to run the simple blinky demo,
+or 0 to run the more comprehensive test and demo application. */
+#define mainCREATE_SIMPLE_BLINKY_DEMO_ONLY	1
+
+/* UART hardware constants. */
+#define BAUD_RATE 19200
+
+/*-----------------------------------------------------------*/
+
+/*
+ * main_blinky() is used when mainCREATE_SIMPLE_BLINKY_DEMO_ONLY is set to 1.
+ * main_full() is used when mainCREATE_SIMPLE_BLINKY_DEMO_ONLY is set to 0.
+ */
+#if mainCREATE_SIMPLE_BLINKY_DEMO_ONLY == 1
+	extern void main_blinky( void );
+#else
+	extern void main_full( void );
+#endif /* #if mainCREATE_SIMPLE_BLINKY_DEMO_ONLY == 1 */
+
 extern void freertos_risc_v_trap_handler( void );
 
-/* Prototypes for the standard FreeRTOS callback/hook functions implemented
-within this file.  See https://www.freertos.org/a00016.html */
+/*
+ * Prototypes for the standard FreeRTOS callback/hook functions implemented
+ * within this file.  See https://www.freertos.org/a00016.html
+ */
 void vApplicationMallocFailedHook( void );
 void vApplicationIdleHook( void );
 void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName );
@@ -73,8 +95,9 @@ void vApplicationTickHook( void );
 /* Prepare hardware to run the demo. */
 static void prvSetupHardware( void );
 
-/* Send a message to the UART initialised in prvSetupHardware. */
-void vSendString( const char * const pcString );
+/* System */
+void vToggleLED( void );
+void vSendString( const char * pcString );
 
 /*-----------------------------------------------------------*/
 
@@ -82,9 +105,16 @@ int main( void )
 {
 	prvSetupHardware();
 
-  neorv32_uart_printf("FreeRTOS %s\n", tskKERNEL_VERSION_NUMBER);
+  /* say hi */
+  neorv32_uart_printf("FreeRTOS %s on NEORV32 Demo\n\n", tskKERNEL_VERSION_NUMBER);
 
-	main_blinky();
+	/* The mainCREATE_SIMPLE_BLINKY_DEMO_ONLY setting is described at the top
+	of this file. */
+#if( mainCREATE_SIMPLE_BLINKY_DEMO_ONLY == 1 )
+  main_blinky();
+#else
+  main_full();
+#endif
 }
 
 /*-----------------------------------------------------------*/
@@ -93,6 +123,9 @@ static void prvSetupHardware( void )
 {
   // configure trap handler entry point
   neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)&freertos_risc_v_trap_handler);
+
+  // clear GPIO.out port
+  neorv32_gpio_port_set(0);
 
   // configure UART for default baud rate, no rx interrupt, no tx interrupt
   neorv32_uart_setup(BAUD_RATE, 0, 0);
@@ -107,9 +140,9 @@ void vToggleLED( void )
 
 /*-----------------------------------------------------------*/
 
-void vSendString( const char * const pcString )
+void vSendString( const char * pcString )
 {
-	neorv32_uart_print( (char *)pcString );
+	neorv32_uart_print( ( const char * ) pcString );
 }
 
 /*-----------------------------------------------------------*/
@@ -127,7 +160,7 @@ void vApplicationMallocFailedHook( void )
 	to query the size of free heap space that remains (although it does not
 	provide information on how the remaining heap might be fragmented). */
 	taskDISABLE_INTERRUPTS();
-  neorv32_uart_print("FreeRTOS_FAULT: vApplicationMallocFailedHook\n");
+  neorv32_uart_print("FreeRTOS_FAULT: vApplicationMallocFailedHook (solution: increase 'configTOTAL_HEAP_SIZE' in FreeRTOSConfig.h)\n");
 	__asm volatile( "ebreak" );
 	for( ;; );
 }
@@ -167,7 +200,13 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
 
 void vApplicationTickHook( void )
 {
-
+  /* The tests in the full demo expect some interaction with interrupts. */
+#if( mainCREATE_SIMPLE_BLINKY_DEMO_ONLY != 1 )
+  {
+  extern void vFullDemoTickHook( void );
+  vFullDemoTickHook();
+  }
+#endif
 }
 
 /*-----------------------------------------------------------*/

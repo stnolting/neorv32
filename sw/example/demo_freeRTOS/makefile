@@ -75,20 +75,29 @@ ifneq (,$(findstring RUN_FREERTOS_DEMO,$(USER_FLAGS)))
 # FreeRTOS home folder (adapt this!)
 FREERTOS_HOME ?= /mnt/n/Projects/FreeRTOS/FreeRTOS
 
-# Application
-APP_SRC += blinky_demo/main_blinky.c
-
-# FreeRTOS core
-APP_SRC += $(wildcard $(FREERTOS_HOME)/Source/*.c)
-APP_SRC += $(wildcard $(FREERTOS_HOME)/Source/portable/MemMang/heap_1.c)
-
-APP_INC += -I $(FREERTOS_HOME)/Source/include
-
 # FreeRTOS RISC-V specific
 APP_SRC += $(wildcard $(FREERTOS_HOME)/Source/portable/GCC/RISC-V/*.c)
 APP_SRC += $(FREERTOS_HOME)/Source/portable/GCC/RISC-V/portASM.S
 
 APP_INC += -I $(FREERTOS_HOME)/Source/portable/GCC/RISC-V
+
+# FreeRTOS core
+APP_SRC += $(wildcard $(FREERTOS_HOME)/Source/*.c)
+APP_SRC += $(wildcard $(FREERTOS_HOME)/Source/portable/MemMang/heap_4.c)
+
+APP_INC += -I $(FREERTOS_HOME)/Source/include
+
+# FreeRTOS sources for the full_demo
+APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/blocktim.c
+APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/dynamic.c
+APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/EventGroupsDemo.c
+APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/GenQTest.c
+APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/recmutex.c
+APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/TaskNotify.c
+APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/TaskNotifyArray.c
+APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/TimerDemo.c
+
+APP_INC += -I $(FREERTOS_HOME)/Demo/Common/include
 
 # NEORV32 specific
 ASM_INC += -DportasmHANDLE_INTERRUPT=SystemIrqHandler
@@ -96,6 +105,14 @@ ASM_INC += -DportasmHANDLE_INTERRUPT=SystemIrqHandler
 APP_INC += -I chip_specific_extensions/neorv32
 
 ASM_INC += -I chip_specific_extensions/neorv32
+
+# Actual application
+APP_SRC += aux_printf/printf.c
+APP_INC += -I aux_printf/include
+
+APP_SRC += blinky_demo/main_blinky.c
+APP_SRC += full_demo/main_full.c
+APP_SRC += full_demo/RegTest.s
 endif
 
 
@@ -219,7 +236,7 @@ main.elf: $(OBJ)
 
 # Assembly listing file (for debugging)
 $(APP_ASM): main.elf
-	@$(OBJDUMP) -D -S -z  $< > $@
+	@$(OBJDUMP) -d -S -z  $< > $@
 
 # Generate final executable from .text + .rodata + .data (in THIS order!)
 main.bin: main.elf $(APP_ASM)

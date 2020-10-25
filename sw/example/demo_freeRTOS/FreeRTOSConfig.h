@@ -97,10 +97,11 @@
 #define configCPU_CLOCK_HZ				100000000
 #define configTICK_RATE_HZ				( ( TickType_t ) 100 )
 #define configMAX_PRIORITIES			( 5 )
-#define configMINIMAL_STACK_SIZE		( ( unsigned short ) 200 ) /* Can be as low as 60 but some of the demo tasks that use this constant require it to be higher. */
+#define configMINIMAL_STACK_SIZE		( ( unsigned short ) 128 ) /* Can be as low as 60 but some of the demo tasks that use this constant require it to be higher. */
+#define configSUPPORT_DYNAMIC_ALLOCATION  1
 #define configTOTAL_HEAP_SIZE			( ( size_t ) ( 7 * 1024 ) )
 #define configMAX_TASK_NAME_LEN			( 16 )
-#define configUSE_TRACE_FACILITY		0
+#define configUSE_TRACE_FACILITY		1
 #define configUSE_16_BIT_TICKS			0
 #define configIDLE_SHOULD_YIELD			0
 #define configUSE_MUTEXES				1
@@ -111,6 +112,8 @@
 #define configUSE_APPLICATION_TASK_TAG	0
 #define configUSE_COUNTING_SEMAPHORES	1
 #define configGENERATE_RUN_TIME_STATS	0
+#define configTASK_NOTIFICATION_ARRAY_ENTRIES 4
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION 1
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES 			0
@@ -142,15 +145,8 @@ to exclude the API function. */
 #define INCLUDE_xTaskGetHandle				1
 #define INCLUDE_xSemaphoreGetMutexHolder	1
 
-// get runtime stats
-#define configGENERATE_RUN_TIME_STATS 0
-
 /* Normal assert() semantics without relying on the provision of an assert.h
 header file. */
 #define configASSERT( x ) if( ( x ) == 0 ) { taskDISABLE_INTERRUPTS(); __asm volatile( "ebreak" ); for( ;; ); }
-
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION 0
-#define configKERNEL_INTERRUPT_PRIORITY 7
-
 
 #endif /* FREERTOS_CONFIG_H */

@@ -1,7 +1,8 @@
-# FreeRTOS Demo for the NEORV32 Processor
+  # FreeRTOS Demo for the NEORV32 Processor
 
-This is simple example shows the usage of [FreeRTOS](https://www.freertos.org/) on the NEORV32 processor. It uses the default *blink*
-demo application (`blinky_demo/main_blinky.c`). See the comments in that source file for more information.
+This example shows how to run [FreeRTOS](https://www.freertos.org/) on the NEORV32 processor. It features the default
+"blinky_demo" and the more sophisticated "full_demo" demo applications. See the comments in `main.c` and the according
+source files for more information.
 
 The chip-specific extensions folder (`chip_specific_extensions/neorv32`) should be in `$(FREERTOS_HOME)/Source/portable/GCC/RISC-V/chip_specific_extensions`,
 but is placed in this source directory for simplicity.
@@ -9,8 +10,8 @@ but is placed in this source directory for simplicity.
 
 ## Hardware Requirements
 
-* 8kB DMEM and 16kB IMEM
-* MTIME (machine timer)
+* 8kB DMEM and 16kB IMEM (*blinky_demo*) / 32kB+ DMEM and 32kB+ IMEM (*full_demo*)
+* MTIME (machine timer) + UART + GPIO
 * `Zicsr` CPU extension
 
 
