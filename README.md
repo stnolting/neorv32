@@ -22,7 +22,7 @@ The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC
 on the RISC-V-compliant NEORV32 CPU. The project consists of two main parts:
 
 
-### [NEORV32 CPU](#CPU-Features)
+### [NEORV32 CPU](#NEORV32-CPU-Features)
 
 The CPU implements a `rv32i RISC-V` core with optional `C`, `E`, `M`, `U`, `Zicsr`, `Zifencei` and
 `PMP` (physical memory protection) extensions. It passes the official [RISC-V compliance tests](https://github.com/stnolting/neorv32_riscv_compliance)
@@ -33,7 +33,7 @@ If you do not want to use the NEORV32 Processor setup, you can also use the CPU 
 stand-alone mode and build your own SoC around it.
 
 
-### [NEORV32 Processor](#Processor-Features)
+### [NEORV32 Processor](#NEORV32-Processor-Features)
 
 Based on the NEORV32 CPU, the NEORV32 Processor is a full-scale RISC-V microcontroller system (**SoC**)
 that already provides common peripherals like GPIO, serial interfaces, timers, embedded
@@ -114,12 +114,13 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
   * ...
 
 
+
 ## Features
 
 The full-blown data sheet of the NEORV32 Processor and CPU is available as pdf file:
 [![NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
-### NEORV32 Processor (SoC)
+### NEORV32 Processor Features
 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_processor.png)
 
@@ -127,7 +128,7 @@ The NEORV32 Processor provides a full-scale microcontroller-like SoC based on th
 is highly customizable via the processor's top generics.
 
 * Optional processor-internal data and instruction memories (**DMEM** / **IMEM**)
-* Optional internal **Bootloader** with UART console and automatic SPI flash boot option
+* Optional internal **Bootloader** with UART console and automatic application boot from SPI flash option
 * Optional machine system timer (**MTIME**), RISC-V-compliant
 * Optional universal asynchronous receiver and transmitter (**UART**) with simulation output option via text.io
 * Optional 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
@@ -141,7 +142,7 @@ is highly customizable via the processor's top generics.
 * Optional custom functions units (**CFU0** and **CFU1**) for tightly-coupled custom co-processors
 * System configuration information memory to check hardware configuration by software (**SYSINFO**)
 
-### NEORV32 CPU
+### NEORV32 CPU Features
 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_cpu.png)
 
@@ -382,7 +383,7 @@ Use the top's generics to configure the processor/CPU according to your needs. E
 Detailed information regarding the interface signals and configuration generics can be found in
 the [NEORV32 documentary](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
-### NEORV32 CPU
+### NEORV32 CPU Top Entity
 
 ```vhdl
 entity neorv32_cpu is
@@ -445,7 +446,7 @@ entity neorv32_cpu is
 end neorv32_cpu;
 ```
 
-### NEORV32 Processor
+### NEORV32 Processor Top Entity
 
 ```vhdl
 entity neorv32_top is
@@ -494,6 +495,7 @@ entity neorv32_top is
     clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
     rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
     -- Wishbone bus interface (available if MEM_EXT_USE = true) --
+    wb_tag_o    : out std_ulogic_vector(02 downto 0); -- tag
     wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
     wb_dat_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
     wb_dat_o    : out std_ulogic_vector(31 downto 0); -- write data
@@ -504,7 +506,6 @@ entity neorv32_top is
     wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
     wb_err_i    : in  std_ulogic := '0'; -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_USE = true) --
-    priv_o      : out std_ulogic_vector(1 downto 0); -- current CPU privilege level
     fence_o     : out std_ulogic; -- indicates an executed FENCE operation
     fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
     -- GPIO (available if IO_GPIO_USE = true) --
