@@ -57,7 +57,7 @@ MARCH ?= -march=rv32i
 MABI  ?= -mabi=ilp32
 
 # User flags for additional configuration (will be added to compiler flags)
-USER_FLAGS ?= 
+USER_FLAGS ?=
 
 # Serial port for executable upload via bootloer
 COM_PORT ?= /dev/ttyUSB0
@@ -187,7 +187,7 @@ main.elf: $(OBJ)
 
 # Assembly listing file (for debugging)
 $(APP_ASM): main.elf
-	@$(OBJDUMP) -D -S -z  $< > $@
+	@$(OBJDUMP) -d -S -z  $< > $@
 
 # Generate final executable from .text + .rodata + .data (in THIS order!)
 main.bin: main.elf $(APP_ASM)
