@@ -112,6 +112,7 @@ begin
     clk_i       => clk_i,           -- global clock, rising edge
     rstn_i      => rstn_i,          -- global reset, low-active, async
     -- Wishbone bus interface --
+    wb_tag_o    => open,            -- tag
     wb_adr_o    => open,            -- address
     wb_dat_i    => (others => '0'), -- read data
     wb_dat_o    => open,            -- write data
@@ -122,7 +123,6 @@ begin
     wb_ack_i    => '0',             -- transfer acknowledge
     wb_err_i    => '0',             -- transfer error
     -- Advanced memory control signals --
-    priv_o      => open,            -- current CPU privilege level
     fence_o     => open,            -- indicates an executed FENCE operation
     fencei_o    => open,            -- indicates an executed FENCEI operation
     -- GPIO --

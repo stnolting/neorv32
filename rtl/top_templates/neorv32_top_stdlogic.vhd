@@ -85,6 +85,7 @@ entity neorv32_top_stdlogic is
     clk_i       : in  std_logic := '0'; -- global clock, rising edge
     rstn_i      : in  std_logic := '0'; -- global reset, low-active, async
     -- Wishbone bus interface (available if MEM_EXT_USE = true) --
+    wb_tag_o    : out std_logic_vector(2 downto 0); -- tag
     wb_adr_o    : out std_logic_vector(31 downto 0); -- address
     wb_dat_i    : in  std_logic_vector(31 downto 0) := (others => '0'); -- read data
     wb_dat_o    : out std_logic_vector(31 downto 0); -- write data
@@ -95,7 +96,6 @@ entity neorv32_top_stdlogic is
     wb_ack_i    : in  std_logic := '0'; -- transfer acknowledge
     wb_err_i    : in  std_logic := '0'; -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_USE = true) --
-    priv_o      : out std_logic_vector(1 downto 0); -- current CPU privilege level
     fence_o     : out std_logic; -- indicates an executed FENCE operation
     fencei_o    : out std_logic; -- indicates an executed FENCEI operation
     -- GPIO (available if IO_GPIO_USE = true) --
@@ -129,6 +129,7 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   signal clk_i_int       : std_ulogic;
   signal rstn_i_int      : std_ulogic;
   --
+  signal wb_tag_o_int    : std_ulogic_vector(2 downto 0);
   signal wb_adr_o_int    : std_ulogic_vector(31 downto 0);
   signal wb_dat_i_int    : std_ulogic_vector(31 downto 0);
   signal wb_dat_o_int    : std_ulogic_vector(31 downto 0);
@@ -139,7 +140,6 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   signal wb_ack_i_int    : std_ulogic;
   signal wb_err_i_int    : std_ulogic;
   --
-  signal priv_o_int      : std_ulogic_vector(1 downto 0);
   signal fence_o_int     : std_ulogic;
   signal fencei_o_int    : std_ulogic;
   --
@@ -210,6 +210,7 @@ begin
     clk_i       => clk_i_int,       -- global clock, rising edge
     rstn_i      => rstn_i_int,      -- global reset, low-active, async
     -- Wishbone bus interface --
+    wb_tag_o    => wb_tag_o_int,    -- tag
     wb_adr_o    => wb_adr_o_int,    -- address
     wb_dat_i    => wb_dat_i_int,    -- read data
     wb_dat_o    => wb_dat_o_int,    -- write data
@@ -220,7 +221,6 @@ begin
     wb_ack_i    => wb_ack_i_int,    -- transfer acknowledge
     wb_err_i    => wb_err_i_int,    -- transfer error
     -- Advanced memory control signals --
-    priv_o      => priv_o_int,      -- current CPU privilege level
     fence_o     => fence_o_int,     -- indicates an executed FENCE operation
     fencei_o    => fencei_o_int,    -- indicates an executed FENCEI operation
     -- GPIO --
@@ -249,6 +249,7 @@ begin
   clk_i_int      <= std_ulogic(clk_i);
   rstn_i_int     <= std_ulogic(rstn_i);
 
+  wb_tag_o       <= std_logic_vector(wb_tag_o_int);
   wb_adr_o       <= std_logic_vector(wb_adr_o_int);
   wb_dat_i_int   <= std_ulogic_vector(wb_dat_i);
   wb_dat_o       <= std_logic_vector(wb_dat_o_int);
@@ -259,7 +260,6 @@ begin
   wb_ack_i_int   <= std_ulogic(wb_ack_i);
   wb_err_i_int   <= std_ulogic(wb_err_i);
 
-  priv_o         <= std_logic_vector(priv_o_int);
   fence_o        <= std_logic(fence_o_int);
   fencei_o       <= std_logic(fencei_o_int);
 

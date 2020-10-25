@@ -91,6 +91,7 @@ entity neorv32_top is
     clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
     rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
     -- Wishbone bus interface (available if MEM_EXT_USE = true) --
+    wb_tag_o    : out std_ulogic_vector(02 downto 0); -- tag
     wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
     wb_dat_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
     wb_dat_o    : out std_ulogic_vector(31 downto 0); -- write data
@@ -101,7 +102,6 @@ entity neorv32_top is
     wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
     wb_err_i    : in  std_ulogic := '0'; -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_USE = true) --
-    priv_o      : out std_ulogic_vector(1 downto 0); -- current CPU privilege level
     fence_o     : out std_ulogic; -- indicates an executed FENCE operation
     fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
     -- GPIO (available if IO_GPIO_USE = true) --
@@ -170,6 +170,7 @@ architecture neorv32_top_rtl of neorv32_top is
     err    : std_ulogic; -- bus transfer error
     fence  : std_ulogic; -- fence(i) instruction executed
     priv   : std_ulogic_vector(1 downto 0); -- current privilege level
+    src    : std_ulogic; -- access source
   end record;
   signal cpu_i, cpu_d, p_bus : bus_interface_t;
 
@@ -369,7 +370,6 @@ begin
   );
 
   -- advanced memory control --
-  priv_o   <= cpu_i.priv;  -- is the same as "cpu_d.priv"
   fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
 
@@ -412,6 +412,7 @@ begin
     cb_bus_ack_o    => cpu_i.ack,    -- bus transfer acknowledge
     cb_bus_err_o    => cpu_i.err,    -- bus transfer error
     -- peripheral bus --
+    p_bus_src_o     => p_bus.src,    -- access source: 0 = A (data), 1 = B (instructions)
     p_bus_addr_o    => p_bus.addr,   -- bus access address
     p_bus_rdata_i   => p_bus.rdata,  -- bus read data
     p_bus_wdata_o   => p_bus.wdata,  -- bus write data
@@ -433,6 +434,9 @@ begin
 
   -- processor bus: CPU data bus error input --
   p_bus.err <= wishbone_err;
+
+  -- current CPU privilege level --
+  p_bus.priv <= cpu_i.priv; -- cpu_i.priv == cpu_d.priv
 
 
   -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
@@ -538,6 +542,7 @@ begin
       clk_i    => clk_i,          -- global clock line
       rstn_i   => sys_rstn,       -- global reset line, low-active
       -- host access --
+      src_i    => p_bus.src,      -- access type (0: data, 1:instruction)
       addr_i   => p_bus.addr,     -- address
       rden_i   => p_bus.re,       -- read enable
       wren_i   => p_bus.we,       -- write enable
@@ -547,7 +552,9 @@ begin
       cancel_i => p_bus.cancel,   -- cancel current transaction
       ack_o    => wishbone_ack,   -- transfer acknowledge
       err_o    => wishbone_err,   -- transfer error
+      priv_i   => p_bus.priv,     -- current CPU privilege level
       -- wishbone interface --
+      wb_tag_o => wb_tag_o,       -- tag
       wb_adr_o => wb_adr_o,       -- address
       wb_dat_i => wb_dat_i,       -- read data
       wb_dat_o => wb_dat_o,       -- write data
@@ -572,6 +579,7 @@ begin
     wb_sel_o <= (others => '0');
     wb_stb_o <= '0';
     wb_cyc_o <= '0';
+    wb_tag_o <= (others => '0');
   end generate;
 
 

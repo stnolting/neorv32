@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040600"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040602"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
@@ -350,7 +350,7 @@ package neorv32_package is
   constant csr_mimpid_c     : std_ulogic_vector(11 downto 0) := x"f13"; -- mimpid
   constant csr_mhartid_c    : std_ulogic_vector(11 downto 0) := x"f14"; -- mhartid
   --
-  constant csr_mzext_c      : std_ulogic_vector(11 downto 0) := x"fc0"; -- mzext
+  constant csr_mzext_c      : std_ulogic_vector(11 downto 0) := x"fc0"; -- mzext (custom)
 
   -- Co-Processor Operations ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -488,6 +488,7 @@ package neorv32_package is
       clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
       rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
       -- Wishbone bus interface --
+      wb_tag_o    : out std_ulogic_vector(02 downto 0); -- tag
       wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
       wb_dat_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
       wb_dat_o    : out std_ulogic_vector(31 downto 0); -- write data
@@ -498,7 +499,6 @@ package neorv32_package is
       wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
       wb_err_i    : in  std_ulogic := '0'; -- transfer error
       -- Advanced memory control signals (available if MEM_EXT_USE = true) --
-      priv_o      : out std_ulogic_vector(1 downto 0); -- current CPU privilege level
       fence_o     : out std_ulogic; -- indicates an executed FENCE operation
       fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
       -- GPIO --
@@ -814,6 +814,7 @@ package neorv32_package is
       cb_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
       cb_bus_err_o    : out std_ulogic; -- bus transfer error
       -- peripheral bus --
+      p_bus_src_o     : out std_ulogic; -- access source: 0 = A, 1 = B
       p_bus_addr_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
       p_bus_rdata_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
       p_bus_wdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
@@ -1080,6 +1081,7 @@ package neorv32_package is
       clk_i    : in  std_ulogic; -- global clock line
       rstn_i   : in  std_ulogic; -- global reset line, low-active
       -- host access --
+      src_i    : in  std_ulogic; -- access type (0: data, 1:instruction)
       addr_i   : in  std_ulogic_vector(31 downto 0); -- address
       rden_i   : in  std_ulogic; -- read enable
       wren_i   : in  std_ulogic; -- write enable
@@ -1089,7 +1091,9 @@ package neorv32_package is
       cancel_i : in  std_ulogic; -- cancel current bus transaction
       ack_o    : out std_ulogic; -- transfer acknowledge
       err_o    : out std_ulogic; -- transfer error
+      priv_i   : in  std_ulogic_vector(1 downto 0); -- current CPU privilege level
       -- wishbone interface --
+      wb_tag_o : out std_ulogic_vector(2 downto 0); -- tag
       wb_adr_o : out std_ulogic_vector(31 downto 0); -- address
       wb_dat_i : in  std_ulogic_vector(31 downto 0); -- read data
       wb_dat_o : out std_ulogic_vector(31 downto 0); -- write data

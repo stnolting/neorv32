@@ -64,6 +64,7 @@ entity neorv32_wishbone is
     clk_i    : in  std_ulogic; -- global clock line
     rstn_i   : in  std_ulogic; -- global reset line, low-active
     -- host access --
+    src_i    : in  std_ulogic; -- access type (0: data, 1:instruction)
     addr_i   : in  std_ulogic_vector(31 downto 0); -- address
     rden_i   : in  std_ulogic; -- read enable
     wren_i   : in  std_ulogic; -- write enable
@@ -73,7 +74,9 @@ entity neorv32_wishbone is
     cancel_i : in  std_ulogic; -- cancel current bus transaction
     ack_o    : out std_ulogic; -- transfer acknowledge
     err_o    : out std_ulogic; -- transfer error
+    priv_i   : in  std_ulogic_vector(1 downto 0); -- current CPU privilege level
     -- wishbone interface --
+    wb_tag_o : out std_ulogic_vector(2 downto 0); -- tag
     wb_adr_o : out std_ulogic_vector(31 downto 0); -- address
     wb_dat_i : in  std_ulogic_vector(31 downto 0); -- read data
     wb_dat_o : out std_ulogic_vector(31 downto 0); -- write data
@@ -112,6 +115,8 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
     ack        : std_ulogic;
     err        : std_ulogic;
     timeout    : std_ulogic_vector(index_size_f(wb_timeout_c)-1 downto 0);
+    src        : std_ulogic;
+    priv       : std_ulogic_vector(1 downto 0);
   end record;
   signal ctrl : ctrl_t;
 
@@ -157,6 +162,8 @@ begin
       ctrl.timeout    <= (others => '0');
       ctrl.ack        <= '0';
       ctrl.err        <= '0';
+      ctrl.src        <= '0';
+      ctrl.priv       <= "00";
     elsif rising_edge(clk_i) then
       -- defaults --
       ctrl.state_prev <= ctrl.state;
@@ -177,6 +184,8 @@ begin
           ctrl.adr  <= addr_i;
           ctrl.wdat <= data_i;
           ctrl.sel  <= ben_i;
+          ctrl.src  <= src_i;
+          ctrl.priv <= priv_i;
           -- valid read/write access --
           if ((wb_access and (wren_i or ctrl.wr_req or rden_i or ctrl.rd_req)) = '1') then
             ctrl.state <= BUSY;
@@ -221,6 +230,10 @@ begin
   err_o    <= ctrl.err;
 
   -- wishbone interface --
+  wb_tag_o(0) <= '1' when (ctrl.priv = priv_mode_m_c) else '0'; -- privileged access when in machine mode
+  wb_tag_o(1) <= '0'; -- 0=secure, 1=non-secure
+  wb_tag_o(2) <= ctrl.src; -- 0=data access, 1=instruction access
+
   wb_adr_o <= ctrl.adr;
   wb_dat_o <= ctrl.wdat;
   wb_we_o  <= ctrl.we;

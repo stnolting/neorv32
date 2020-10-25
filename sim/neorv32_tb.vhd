@@ -103,6 +103,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
     cyc   : std_ulogic; -- valid cycle
     ack   : std_ulogic; -- transfer acknowledge
     err   : std_ulogic; -- transfer error
+    tag   : std_ulogic_vector(2 downto 0); -- tag
   end record;
   signal wb_cpu : wishbone_t;
 
@@ -198,6 +199,7 @@ begin
     clk_i       => clk_gen,         -- global clock, rising edge
     rstn_i      => rst_gen,         -- global reset, low-active, async
     -- Wishbone bus interface --
+    wb_tag_o    => wb_cpu.tag,      -- tag
     wb_adr_o    => wb_cpu.addr,     -- address
     wb_dat_i    => wb_cpu.rdata,    -- read data
     wb_dat_o    => wb_cpu.wdata,    -- write data

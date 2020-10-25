@@ -144,8 +144,6 @@ architecture neorv32_top_axi4lite_rtl of neorv32_top_axi4lite is
   signal gpio_o_int      : std_ulogic_vector(31 downto 0);
   signal gpio_i_int      : std_ulogic_vector(31 downto 0);
   --
-  signal priv_level      : std_ulogic_vector(1 downto 0);
-  --
   signal uart_txd_o_int  : std_ulogic;
   signal uart_rxd_i_int  : std_ulogic;
   --
@@ -171,6 +169,7 @@ architecture neorv32_top_axi4lite_rtl of neorv32_top_axi4lite is
     cyc : std_ulogic; -- valid cycle
     ack : std_ulogic; -- transfer acknowledge
     err : std_ulogic; -- transfer error
+    tag : std_ulogic_vector(2 downto 0); -- tag
   end record;
   signal wb_core : wb_bus_t;
 
@@ -240,6 +239,7 @@ begin
     clk_i       => clk_i_int,       -- global clock, rising edge
     rstn_i      => rstn_i_int,      -- global reset, low-active, async
     -- Wishbone bus interface --
+    wb_tag_o    => wb_core.tag,     -- tag
     wb_adr_o    => wb_core.adr,     -- address
     wb_dat_i    => wb_core.di,      -- read data
     wb_dat_o    => wb_core.do,      -- write data
@@ -250,7 +250,6 @@ begin
     wb_ack_i    => wb_core.ack,     -- transfer acknowledge
     wb_err_i    => wb_core.err,     -- transfer error
     -- Advanced memory control signals --
-    priv_o      => priv_level,      -- current CPU privilege level
     fence_o     => open,            -- indicates an executed FENCE operation
     fencei_o    => open,            -- indicates an executed FENCEI operation
     -- GPIO --
@@ -340,7 +339,10 @@ begin
   -- AXI4-Lite Read Address Channel --
   m_axi_araddr  <= std_logic_vector(wb_core.adr);
   m_axi_arvalid <= std_logic((wb_core.cyc and (not wb_core.we)) and (not ctrl.radr_received));
-  m_axi_arprot  <= "000"; -- recommended by Xilinx -- "001" when (priv_level = priv_mode_m_c) else "000"; -- always: data-access, secure; privileged only when CPU is in machine mode
+--m_axi_arprot  <= "000"; -- recommended by Xilinx
+  m_axi_arprot(0) <= wb_core.tag(0); -- 0:unprivileged access, 1:privileged access
+  m_axi_arprot(1) <= wb_core.tag(1); -- 0:secure access, 1:non-secure access
+  m_axi_arprot(2) <= wb_core.tag(2); -- 0:data access, 1:instruction access
 
   -- AXI4-Lite Read Data Channel --
   m_axi_rready  <= std_logic(wb_core.cyc and (not wb_core.we));
@@ -352,7 +354,10 @@ begin
   -- AXI4-Lite Write Address Channel --
   m_axi_awaddr  <= std_logic_vector(wb_core.adr);
   m_axi_awvalid <= std_logic((wb_core.cyc and wb_core.we) and (not ctrl.wadr_received));
-  m_axi_awprot  <= "000"; -- recommended by Xilinx -- "001" when (priv_level = priv_mode_m_c) else "000"; -- always: data-access, secure; privileged only when CPU is in machine mode
+--m_axi_awprot  <= "000"; -- recommended by Xilinx
+  m_axi_awprot(0) <= wb_core.tag(0); -- 0:unprivileged access, 1:privileged access
+  m_axi_awprot(1) <= wb_core.tag(1); -- 0:secure access, 1:non-secure access
+  m_axi_awprot(2) <= wb_core.tag(2); -- 0:data access, 1:instruction access
 
   -- AXI4-Lite Write Data Channel --
   m_axi_wdata   <= std_logic_vector(wb_core.do);
