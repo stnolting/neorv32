@@ -117,6 +117,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal imm        : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
   signal instr      : std_ulogic_vector(data_width_c-1 downto 0); -- new instruction
   signal rs1, rs2   : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
+  signal alu_opb    : std_ulogic_vector(data_width_c-1 downto 0); -- ALU operand b
   signal alu_res    : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
   signal rdata      : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
   signal alu_wait   : std_ulogic; -- alu is busy due to iterative unit
@@ -263,6 +264,7 @@ begin
     cmp_o       => alu_cmp,       -- comparator status
     res_o       => alu_res,       -- ALU result
     -- co-processor interface --
+    opb_o       => alu_opb,       -- ALU operand B
     cp0_start_o => cp0_start,     -- trigger co-processor 0
     cp0_data_i  => cp0_data,      -- co-processor 0 result
     cp0_valid_i => cp0_valid,     -- co-processor 0 result valid
@@ -287,8 +289,8 @@ begin
       clk_i   => clk_i,           -- global clock, rising edge
       rstn_i  => rstn_i,          -- global reset, low-active, async
       ctrl_i  => ctrl,            -- main control bus
-      -- data input --
       start_i => cp0_start,       -- trigger operation
+      -- data input --
       rs1_i   => rs1,             -- rf source 1
       rs2_i   => rs2,             -- rf source 2
       -- result and status --
@@ -304,8 +306,10 @@ begin
   end generate;
 
 
-  -- Co-Processor 1: Not Implemented Yet ----------------------------------------------------
+  -- Co-Processor 1: ????????????????????? --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- control: ctrl cp1_start
+  -- inputs:  rs1 rs2 alu_cmp alu_opb
   cp1_data  <= (others => '0');
   cp1_valid <= '0';
 

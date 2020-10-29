@@ -61,6 +61,7 @@ entity neorv32_cpu_alu is
     cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
     res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
     -- co-processor interface --
+    opb_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU operand B
     cp0_start_o : out std_ulogic; -- trigger co-processor 0
     cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
     cp0_valid_i : in  std_ulogic; -- co-processor 0 result valid
@@ -118,6 +119,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   opa <= pc2_i when (ctrl_i(ctrl_alu_opa_mux_c) = '1') else rs1_i; -- operand a (first ALU input operand)
   opb <= imm_i when (ctrl_i(ctrl_alu_opb_mux_c) = '1') else rs2_i; -- operand b (second ALU input operand)
+  --
+  opb_o <= opb; -- output for co-processors
 
 
   -- Comparator Unit ------------------------------------------------------------------------

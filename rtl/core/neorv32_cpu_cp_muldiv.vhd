@@ -106,7 +106,6 @@ begin
   begin
     if (rstn_i = '0') then
       state        <= IDLE;
-      cp_op        <= (others => '0');
       opx          <= (others => '0');
       opy          <= (others => '0');
       cnt          <= (others => '0');
@@ -125,7 +124,6 @@ begin
           opx <= rs1_i;
           opy <= rs2_i;
           if (start_i = '1') then
-            cp_op <= ctrl_i(ctrl_cp_cmd2_c downto ctrl_cp_cmd0_c);
             state <= DECODE;
           end if;
 
@@ -188,6 +186,9 @@ begin
       end case;
     end if;
   end process coprocessor_ctrl;
+
+  -- co-processor command --
+  cp_op <= ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c);
 
   -- operation --
   operation <= '1' when (cp_op = cp_op_div_c) or (cp_op = cp_op_divu_c) or (cp_op = cp_op_rem_c) or (cp_op = cp_op_remu_c) else '0';

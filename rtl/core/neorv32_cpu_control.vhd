@@ -450,6 +450,7 @@ begin
 
     -- instruction buffer interface defaults --
     i_buf.we    <= '0';
+    -- i_buf = <illegal_compressed_instruction> & <bus_error & alignment_error> & <is_compressed_instrucion> & <32-bit_instruction_word>
     i_buf.wdata <= '0' & ipb.rdata(33 downto 32) & '0' & ipb.rdata(31 downto 0);
 
     -- state machine --
@@ -461,30 +462,28 @@ begin
 
           if (issue_engine.align = '0') or (CPU_EXTENSION_RISCV_C = false) then -- begin check in LOW instruction half-word
             if (i_buf.free = '1') then
+              i_buf.we <= '1';
               issue_engine.buf_nxt <= ipb.rdata(33 downto 32) & ipb.rdata(31 downto 16); -- store high half-word - we might need it for an unaligned uncompressed instruction
               if (ipb.rdata(1 downto 0) = "11") or (CPU_EXTENSION_RISCV_C = false) then -- uncompressed and "aligned"
                 ipb.re      <= '1';
                 i_buf.wdata <= '0' & ipb.rdata(33 downto 32) & '0' & ipb.rdata(31 downto 0);
-                i_buf.we    <= '1';
               else -- compressed
                 ipb.re      <= '1';
                 i_buf.wdata <= ci_illegal & ipb.rdata(33 downto 32) & '1' & ci_instr32;
-                i_buf.we    <= '1';
                 issue_engine.align_nxt <= '1';
               end if;
             end if;
 
           else -- begin check in HIGH instruction half-word
             if (i_buf.free = '1') then
+              i_buf.we <= '1';
               issue_engine.buf_nxt <= ipb.rdata(33 downto 32) & ipb.rdata(31 downto 16); -- store high half-word - we might need it for an unaligned uncompressed instruction
               if (issue_engine.buf(1 downto 0) = "11") then -- uncompressed and "unaligned"
                 ipb.re      <= '1';
                 i_buf.wdata <= '0' & issue_engine.buf(17 downto 16) & '0' & (ipb.rdata(15 downto 0) & issue_engine.buf(15 downto 0));
-                i_buf.we    <= '1';
               else -- compressed
-                --ipb.re      <= '1';
+                -- do not read from ipb here!
                 i_buf.wdata <= ci_illegal & ipb.rdata(33 downto 32) & '1' & ci_instr32;
-                i_buf.we    <= '1';
                 issue_engine.align_nxt <= '0';
               end if;
             end if;
@@ -682,14 +681,16 @@ begin
   -- -------------------------------------------------------------------------------------------
   ctrl_output: process(ctrl, fetch_engine, trap_ctrl, bus_fast_ir, execute_engine)
   begin
+    -- signals from execute engine --
     ctrl_o <= ctrl;
     -- fast bus access requests --
-    ctrl_o(ctrl_bus_if_c) <= ctrl(ctrl_bus_if_c) or bus_fast_ir;
+    ctrl_o(ctrl_bus_if_c) <= bus_fast_ir;
     -- bus error control --
     ctrl_o(ctrl_bus_ierr_ack_c) <= fetch_engine.bus_err_ack;
     ctrl_o(ctrl_bus_derr_ack_c) <= trap_ctrl.env_start_ack;
-    -- co-processor operation --
-    ctrl_o(ctrl_cp_cmd2_c downto ctrl_cp_cmd0_c) <= execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c);
+    -- instruction's function blocks (for co-processors) --
+    ctrl_o(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_0_c) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c);
+    ctrl_o(ctrl_ir_funct3_2_c   downto ctrl_ir_funct3_0_c)  <= execute_engine.i_reg(instr_funct3_msb_c  downto instr_funct3_lsb_c);
   end process ctrl_output;
 
 

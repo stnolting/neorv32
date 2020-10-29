@@ -118,9 +118,9 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
     src        : std_ulogic;
     priv       : std_ulogic_vector(1 downto 0);
   end record;
-  signal ctrl : ctrl_t;
-
-  signal stb_int, cyc_int : std_ulogic;
+  signal ctrl    : ctrl_t;
+  signal stb_int : std_ulogic;
+  signal cyc_int : std_ulogic;
 
 begin
 
@@ -222,7 +222,6 @@ begin
       end case;
     end if;
   end process bus_arbiter;
-
 
   -- host access --
   data_o   <= ctrl.rdat;
