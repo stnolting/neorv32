@@ -14,7 +14,8 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 25.10.2020 | 1.4.6.2 | Removed processors's `priv_o`; privilege level is now encoded in Wishbone *tag* signal; Added tag signal (`wb_tag_o`) to processor's Wishbone bus; added a more sophisticated **FreeRTOS** example ("full_demo") |
+| 29.10.2020 | 1.4.6.3 | rtl code clean-up; made preparations for additional co-processors (bit manipulation) |
+| 25.10.2020 | 1.4.6.2 | Added tag signal (`wb_tag_o`) to processor's Wishbone bus; removed processors's `priv_o` - privilege level is now encoded in Wishbone *tag* signal; added a more sophisticated **FreeRTOS** example ("full_demo") |
 | 24.10.2020 | [**:rocket:1.4.6.0**](https://github.com/stnolting/neorv32/releases/tag/v1.4.6.0) | Completely reworked external memory interface (WISHBONE), removed now-obsolete processor generic `MEM_EXT_REG_STAGES`; added processor wrapper with **AXI4-Lite master interface** |
 | 22.10.2020 | 1.4.5.11 | TWI: Added new control register flag to enable/disable SCL clock stretching by peripheral devices |
 | 22.10.2020 | 1.4.5.10 | Added `i_bus_priv_o` and `d_bus_priv_o` signals to CPU_top and `priv_o` to Processor_top to show privilege level of bus access (from `mstatus` MPP); :warning: Fixed bug in external memory interface [WISHBONE] (non-standard Wishbone components were able to corrupt processor-internal ACK/ERR signal logic) |
