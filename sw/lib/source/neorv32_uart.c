@@ -71,7 +71,7 @@ int neorv32_uart_available(void) {
 /**********************************************************************//**
  * Enable and configure UART.
  *
- * @warning The 'UART_SIM_MODE' compiler flag will redirect all UART TX data to the simulation output. Use this for simulations only!
+ * @warning The 'UART_SIM_MODE' compiler flag will configure UART for simulation mode: all UART TX data will be redirected to simulation output. Use this for simulations only!
  * @warning To enable simulation mode add <USER_FLAGS+=-DUART_SIM_MODE> when compiling.
  *
  * @param[in] baudrate Targeted BAUD rate (e.g. 9600).
@@ -82,14 +82,21 @@ void neorv32_uart_setup(uint32_t baudrate, uint8_t rx_irq, uint8_t tx_irq) {
 
   UART_CT = 0; // reset
 
-  // raw baud rate prescaler
   uint32_t clock = SYSINFO_CLK;
   uint16_t i = 0; // BAUD rate divisor
-  uint8_t p = 0; // prsc = CLK/2
+  uint8_t p = 0; // initial prsc = CLK/2
+
+  // raw clock prescaler
+#ifdef __riscv_div
+  // use div instructions
+  i = (uint16_t)(clock / (2*baudrate));
+#else
+  // division via repeated subtraction
   while (clock >= 2*baudrate) {
     clock -= 2*baudrate;
     i++;
   }
+#endif
 
   // find clock prsc
   while (i >= 0x0fff) {

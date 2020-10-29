@@ -52,8 +52,8 @@ entity neorv32_cpu_cp_muldiv is
     clk_i   : in  std_ulogic; -- global clock, rising edge
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
-    -- data input --
     start_i : in  std_ulogic; -- trigger operation
+    -- data input --
     rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
     rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
     -- result and status --
