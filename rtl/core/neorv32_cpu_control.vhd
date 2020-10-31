@@ -73,7 +73,8 @@ entity neorv32_cpu_control is
     -- data input --
     instr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- instruction
     cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
-    alu_res_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU processing result
+    alu_add_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU address result
+    rs1_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
     -- data output --
     imm_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- immediate
     fetch_pc_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
@@ -91,7 +92,6 @@ entity neorv32_cpu_control is
     -- physical memory protection --
     pmp_addr_o    : out pmp_addr_if_t; -- addresses
     pmp_ctrl_o    : out pmp_ctrl_if_t; -- configs
-    priv_mode_o   : out std_ulogic_vector(1 downto 0); -- current CPU privilege level
     -- bus access exceptions --
     mar_i         : in  std_ulogic_vector(data_width_c-1 downto 0);  -- memory address register
     ma_instr_i    : in  std_ulogic; -- misaligned instruction address
@@ -359,35 +359,26 @@ begin
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  instr_prefetch_buffer_ctrl: process(rstn_i, clk_i)
+  instr_prefetch_buffer: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      ipb.w_pnt <= (others => '0');
-      ipb.r_pnt <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       -- write port --
       if (ipb.clear = '1') then
         ipb.w_pnt <= (others => '0');
       elsif (ipb.we = '1') then
         ipb.w_pnt <= std_ulogic_vector(unsigned(ipb.w_pnt) + 1);
       end if;
-      -- read ports --
+      if (ipb.we = '1') then -- write port
+        ipb.data(to_integer(unsigned(ipb.w_pnt(ipb.w_pnt'left-1 downto 0)))) <= ipb.wdata;
+      end if;
+      -- read port --
       if (ipb.clear = '1') then
         ipb.r_pnt <= (others => '0');
       elsif (ipb.re = '1') then
         ipb.r_pnt <= std_ulogic_vector(unsigned(ipb.r_pnt) + 1);
       end if;
     end if;
-  end process instr_prefetch_buffer_ctrl;
-
-  instr_prefetch_buffer_data: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (ipb.we = '1') then -- write port
-        ipb.data(to_integer(unsigned(ipb.w_pnt(ipb.w_pnt'left-1 downto 0)))) <= ipb.wdata;
-      end if;
-    end if;
-  end process instr_prefetch_buffer_data;
+  end process instr_prefetch_buffer;
 
   -- async read --
   ipb.rdata <= ipb.data(to_integer(unsigned(ipb.r_pnt(ipb.r_pnt'left-1 downto 0))));
@@ -532,11 +523,9 @@ begin
 
   -- Instruction Buffer ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  instruction_buffer_ctrl: process(rstn_i, clk_i)
+  instruction_buffer: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      i_buf.status <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (i_buf.clear = '1') then
         i_buf.status <= '0';
       elsif (i_buf.we = '1') then
@@ -544,17 +533,11 @@ begin
       elsif (i_buf.re = '1') then
         i_buf.status <= '0';
       end if;
-    end if;
-  end process instruction_buffer_ctrl;
-
-  instruction_buffer_data: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
       if (i_buf.we = '1') then
         i_buf.rdata <= i_buf.wdata;
       end if;
     end if;
-  end process instruction_buffer_data;
+  end process instruction_buffer;
 
   -- status --
   i_buf.free  <= not i_buf.status;
@@ -597,9 +580,6 @@ begin
           imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
           imm_o(04 downto 01) <= execute_engine.i_reg(24 downto 21);
           imm_o(00)           <= '0';
-        when opcode_syscsr_c => -- CSR-immediate (uimm5)
-          imm_o(31 downto 05) <= (others => '0');
-          imm_o(04 downto 00) <= execute_engine.i_reg(19 downto 15);
         when others => -- I-immediate
           imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
           imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
@@ -679,10 +659,16 @@ begin
 
   -- CPU Control Bus Output -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_output: process(ctrl, fetch_engine, trap_ctrl, bus_fast_ir, execute_engine)
+  ctrl_output: process(ctrl, fetch_engine, trap_ctrl, bus_fast_ir, execute_engine, csr.privilege)
   begin
     -- signals from execute engine --
     ctrl_o <= ctrl;
+    -- current privilege level --
+    ctrl_o(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c) <= csr.privilege;
+    -- register addresses --
+    ctrl_o(ctrl_rf_rs1_adr4_c  downto ctrl_rf_rs1_adr0_c) <= execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c);
+    ctrl_o(ctrl_rf_rs2_adr4_c  downto ctrl_rf_rs2_adr0_c) <= execute_engine.i_reg(instr_rs2_msb_c downto instr_rs2_lsb_c);
+    ctrl_o(ctrl_rf_rd_adr4_c   downto ctrl_rf_rd_adr0_c)  <= execute_engine.i_reg(instr_rd_msb_c  downto instr_rd_lsb_c);
     -- fast bus access requests --
     ctrl_o(ctrl_bus_if_c) <= bus_fast_ir;
     -- bus error control --
@@ -697,7 +683,7 @@ begin
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   execute_engine_fsm_comb: process(execute_engine, fetch_engine, i_buf, trap_ctrl, csr, ctrl, csr_acc_valid,
-                                   alu_res_i, alu_wait_i, bus_d_wait_i, ma_load_i, be_load_i, ma_store_i, be_store_i)
+                                   alu_add_i, alu_wait_i, bus_d_wait_i, ma_load_i, be_load_i, ma_store_i, be_store_i)
     variable alu_immediate_v : std_ulogic;
     variable rs1_is_r0_v     : std_ulogic;
   begin
@@ -732,20 +718,17 @@ begin
     csr.re_nxt                 <= '0';
 
     -- control defaults --
-    ctrl_nxt <= (others => '0'); -- all off at first
+    ctrl_nxt <= (others => '0'); -- default: all off
     if (execute_engine.i_reg(instr_opcode_lsb_c+4) = '1') then -- ALU ops
-      ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- unsigned ALU operation (SLTIU, SLTU)
+      ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- unsigned ALU operation? (SLTIU, SLTU)
     else -- branches
-      ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- unsigned branches (BLTU, BGEU)
+      ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- unsigned branches? (BLTU, BGEU)
     end if;
     ctrl_nxt(ctrl_bus_unsigned_c)  <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
     ctrl_nxt(ctrl_alu_shift_dir_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- shift direction (left/right)
     ctrl_nxt(ctrl_alu_shift_ar_c)  <= execute_engine.i_reg(30); -- is arithmetic shift
     ctrl_nxt(ctrl_alu_cmd2_c     downto ctrl_alu_cmd0_c)     <= alu_cmd_addsub_c; -- default ALU operation: ADD(I)
     ctrl_nxt(ctrl_cp_id_msb_c    downto ctrl_cp_id_lsb_c)    <= cp_sel_muldiv_c; -- only CP0 (=MULDIV) implemented yet
-    ctrl_nxt(ctrl_rf_rd_adr4_c   downto ctrl_rf_rd_adr0_c)   <= ctrl(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c); -- keep rd addr
-    ctrl_nxt(ctrl_rf_rs1_adr4_c  downto ctrl_rf_rs1_adr0_c)  <= ctrl(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- keep rs1 addr
-    ctrl_nxt(ctrl_rf_rs2_adr4_c  downto ctrl_rf_rs2_adr0_c)  <= ctrl(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c); -- keep rs2 addr
     ctrl_nxt(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c); -- mem transfer size
 
     -- is immediate ALU operation? --
@@ -762,31 +745,25 @@ begin
       -- ------------------------------------------------------------
         -- set reg_file's r0 to zero --
         if (rf_r0_is_reg_c = true) then -- is r0 implemented as physical register, which has to be set to zero?
-          ctrl_nxt(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) <= (others => '0'); -- rd addr = r0
           ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output (hacky! results zero since there is no valid CSR_read request)
-          ctrl_nxt(ctrl_rf_r0_we_c) <= '1'; -- allow write access to r0
+          ctrl_nxt(ctrl_rf_r0_we_c) <= '1'; -- allow write access to r0 and force rd=r0
           ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
         end if;
         --
         execute_engine.state_nxt <= DISPATCH;
 
-      when DISPATCH => -- Get new command from instruction buffer (I_BUF)
+      when DISPATCH => -- Get new command from instruction buffer (i_buf)
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= i_buf.rdata(instr_rd_msb_c  downto instr_rd_lsb_c); -- rd addr
-        ctrl_nxt(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= i_buf.rdata(instr_rs1_msb_c downto instr_rs1_lsb_c); -- rs1 addr
-        ctrl_nxt(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= i_buf.rdata(instr_rs2_msb_c downto instr_rs2_lsb_c); -- rs2 addr
-        --
         if (i_buf.avail = '1') then -- instruction available?
           i_buf.re <= '1';
           --
-          execute_engine.is_ci_nxt  <= i_buf.rdata(32); -- flag to indicate this is a de-compressed instruction beeing executed
-          execute_engine.i_reg_nxt  <= i_buf.rdata(31 downto 0);
+          execute_engine.is_ci_nxt <= i_buf.rdata(32); -- flag to indicate this is a de-compressed instruction beeing executed
+          execute_engine.i_reg_nxt <= i_buf.rdata(31 downto 0);
+          trap_ctrl.instr_ma       <= i_buf.rdata(33); -- misaligned instruction fetch address
+          trap_ctrl.instr_be       <= i_buf.rdata(34); -- bus access fault during instrucion fetch
+          illegal_compressed       <= i_buf.rdata(35); -- invalid decompressed instruction
+          --
           execute_engine.if_rst_nxt <= '0';
-          --
-          trap_ctrl.instr_ma <= i_buf.rdata(33); -- misaligned instruction fetch address
-          trap_ctrl.instr_be <= i_buf.rdata(34); -- bus access fault during instrucion fetch
-          illegal_compressed <= i_buf.rdata(35); -- invalid decompressed instruction
-          --
           if (execute_engine.if_rst = '0') then -- if there was NO non-linear PC modification
             execute_engine.pc_nxt <= execute_engine.next_pc;
           end if;
@@ -902,6 +879,7 @@ begin
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
+            execute_engine.state_nxt <= SYS_WAIT;
             -- for simplicity: internally, fence and fence.i perform the same operations (flush and reload of instruction prefetch buffer)
             -- FENCE.I --
             if (CPU_EXTENSION_RISCV_Zifencei = true) then
@@ -916,29 +894,26 @@ begin
             if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fence_c(0)) then
               ctrl_nxt(ctrl_bus_fence_c) <= '1';
             end if;
-            --
-            execute_engine.state_nxt <= SYS_WAIT;
 
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= ctrl(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- copy rs1_addr to rs2_addr (for CSR mod)
-            --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system
-              case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
-                when funct12_ecall_c => -- ECALL
-                  trap_ctrl.env_call <= '1';
-                when funct12_ebreak_c => -- EBREAK
-                  trap_ctrl.break_point <= '1';
-                when funct12_mret_c => -- MRET
-                  trap_ctrl.env_end <= '1';
-                  execute_engine.pc_nxt <= csr.mepc;
-                  fetch_engine.reset <= '1';
-                  execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
-                when funct12_wfi_c => -- WFI (CPU sleep)
-                  execute_engine.sleep_nxt <= '1'; -- good night
-                when others => -- undefined
-                  NULL;
-              end case;
+              -- no need to decode the whole funct12 field; illegal instruction check is precise ;)
+              if (execute_engine.i_reg(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = funct12_ecall_c(2 downto 0)) then -- ECALL
+                trap_ctrl.env_call <= '1';
+              end if;
+              if (execute_engine.i_reg(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = funct12_ebreak_c(2 downto 0)) then -- EBREAK
+                trap_ctrl.break_point <= '1';
+              end if;
+              if (execute_engine.i_reg(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = funct12_mret_c(2 downto 0)) then -- MRET
+                trap_ctrl.env_end <= '1';
+                execute_engine.pc_nxt <= csr.mepc;
+                fetch_engine.reset <= '1';
+                execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
+              end if;
+              if (execute_engine.i_reg(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = funct12_wfi_c(2 downto 0)) then
+                execute_engine.sleep_nxt <= '1'; -- good night
+              end if;
               execute_engine.state_nxt <= SYS_WAIT;
             else -- CSR access
               csr.re_nxt <= '1'; -- always read CSR (internally)
@@ -953,8 +928,6 @@ begin
 
       when CSR_ACCESS => -- write CSR data to RF, write ALU.res to CSR
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_alu_opb_mux_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- OPB = rs2 (which is rs1 here) / immediate
-        ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_movb_c; -- actual ALU operation = MOVB
         -- CSR write access --
         case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
           when funct3_csrrw_c | funct3_csrrwi_c => -- CSRRW(I)
@@ -987,7 +960,7 @@ begin
       when BRANCH => -- update PC for taken branches and jumps
       -- ------------------------------------------------------------
         if (execute_engine.is_jump = '1') or (execute_engine.branch_taken = '1') then
-          execute_engine.pc_nxt     <= alu_res_i; -- branch/jump destination
+          execute_engine.pc_nxt     <= alu_add_i; -- branch/jump destination
           fetch_engine.reset        <= '1'; -- trigger new instruction fetch from modified PC
           execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
           execute_engine.state_nxt  <= SYS_WAIT;
@@ -1017,7 +990,7 @@ begin
           execute_engine.state_nxt <= SYS_WAIT;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then -- LOAD
-            ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
+            ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back (keep writing back all the time)
           end if;
           execute_engine.state_nxt <= DISPATCH;
         end if;
@@ -1452,13 +1425,21 @@ begin
 
   -- Control and Status Registers Write Data ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_write_data: process(execute_engine.i_reg, csr.rdata, alu_res_i)
+  csr_write_data: process(execute_engine.i_reg, csr.rdata, rs1_i)
+    variable csr_operand_v : std_ulogic_vector(data_width_c-1 downto 0);
   begin
+    -- CSR operand source --
+    if (execute_engine.i_reg(instr_funct3_msb_c) = '1') then -- immediate
+      csr_operand_v := (others => '0');
+      csr_operand_v(4 downto 0) := execute_engine.i_reg(19 downto 15);
+    else -- register
+      csr_operand_v := rs1_i;
+    end if;
     -- "mini ALU" for CSR update operations --
     case execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c) is
-      when "10"   => csr.wdata <= csr.rdata or alu_res_i; -- CSRRS(I)
-      when "11"   => csr.wdata <= csr.rdata and (not alu_res_i); -- CSRRC(I)
-      when others => csr.wdata <= alu_res_i; -- CSRRW(I)
+      when "10"   => csr.wdata <= csr.rdata or csr_operand_v; -- CSRRS(I)
+      when "11"   => csr.wdata <= csr.rdata and (not csr_operand_v); -- CSRRC(I)
+      when others => csr.wdata <= csr_operand_v; -- CSRRW(I)
     end case;
   end process csr_write_data;
 
@@ -1479,7 +1460,7 @@ begin
       csr.mie_mtie     <= '0';
       csr.mie_firqe    <= (others => '0');
       csr.mtvec        <= (others => '0');
-      csr.mscratch     <= (others => '0');
+      csr.mscratch     <= x"19880704"; -- :)
       csr.mepc         <= (others => '0');
       csr.mcause       <= (others => '0');
       csr.mtval        <= (others => '0');
@@ -1568,6 +1549,7 @@ begin
                 end if;
               end if;
             end if;
+
             -- pmpaddr --
             if (execute_engine.i_reg(27 downto 24) = csr_pmpaddr0_c(7 downto 4)) then
               for i in 0 to PMP_NUM_REGIONS-1 loop
@@ -1676,12 +1658,12 @@ begin
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
 
         -- mcycle (cycle) --
-        mcycle_msb <= csr.mcycle(csr.mcycle'left);
         if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_mcycle_c) then -- write access
-          csr.mcycle(31 downto 0) <= csr.wdata;
-          csr.mcycle(32) <= '0';
+          csr.mcycle <= '0' & csr.wdata;
+          mcycle_msb <= '0';
         elsif (execute_engine.sleep = '0') then -- automatic update (if CPU is not in sleep mode)
           csr.mcycle <= std_ulogic_vector(unsigned(csr.mcycle) + 1);
+          mcycle_msb <= csr.mcycle(csr.mcycle'left);
         end if;
 
         -- mcycleh (cycleh) --
@@ -1692,12 +1674,12 @@ begin
         end if;
 
         -- minstret (instret) --
-        minstret_msb <= csr.minstret(csr.minstret'left);
         if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_minstret_c) then -- write access
-          csr.minstret(31 downto 0) <= csr.wdata;
-          csr.minstret(32) <= '0';
-        elsif (execute_engine.state_prev /= EXECUTE) and (execute_engine.state = EXECUTE) then -- automatic update
+          csr.minstret <= '0' & csr.wdata;
+          minstret_msb <= '0';
+        elsif (execute_engine.state_prev /= EXECUTE) and (execute_engine.state = EXECUTE) then -- automatic update (if CPU commits an instruction)
           csr.minstret <= std_ulogic_vector(unsigned(csr.minstret) + 1);
+          minstret_msb <= csr.minstret(csr.minstret'left);
         end if;
 
         -- minstreth (instreth) --
@@ -1709,9 +1691,6 @@ begin
       end if;
     end if;
   end process csr_write_access;
-
-  -- CPU's current privilege level --
-  priv_mode_o <= csr.privilege;
 
   -- PMP output --
   pmp_output: process(csr)
@@ -1744,6 +1723,8 @@ begin
             csr.rdata(11) <= csr.mstatus_mpp(0); -- MPP: machine previous privilege mode low
             csr.rdata(12) <= csr.mstatus_mpp(1); -- MPP: machine previous privilege mode high
           when csr_misa_c => -- R/-: misa - ISA and extensions
+            csr.rdata(00) <= '0';                                         -- A CPU extension
+            csr.rdata(01) <= '0';                                         -- B CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
             csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
             csr.rdata(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
