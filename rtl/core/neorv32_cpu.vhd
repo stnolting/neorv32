@@ -2,13 +2,13 @@
 -- # << NEORV32 - CPU Top Entity >>                                                                #
 -- # ********************************************************************************************* #
 -- # NEORV32 CPU:                                                                                  #
--- # * neorv32_cpu.vhd                  : CPU top entity                                           #
--- #   * neorv32_cpu_alu.vhd            : Arithmetic/logic unit                                    #
--- #   * neorv32_cpu_bus.vhd            : Instruction and data bus interface unit                  #
--- #   * neorv32_cpu_cp_muldiv.vhd      : MULDIV co-processor                                      #
--- #   * neorv32_cpu_ctrl.vhd           : CPU control and CSR system                               #
--- #     * neorv32_cpu_decompressor.vhd : Compressed instructions decoder                          #
--- #   * neorv32_cpu_regfile.vhd        : Data register file                                       #
+-- # * neorv32_cpu.vhd                  - CPU top entity                                           #
+-- #   * neorv32_cpu_alu.vhd            - Arithmetic/logic unit                                    #
+-- #   * neorv32_cpu_bus.vhd            - Instruction and data bus interface unit                  #
+-- #   * neorv32_cpu_cp_muldiv.vhd      - MULDIV co-processor                                      #
+-- #   * neorv32_cpu_ctrl.vhd           - CPU control and CSR system                               #
+-- #     * neorv32_cpu_decompressor.vhd - Compressed instructions decoder                          #
+-- #   * neorv32_cpu_regfile.vhd        - Data register file                                       #
 -- #                                                                                               #
 -- # Check out the processor's data sheet for more information: docs/NEORV32.pdf                   #
 -- # ********************************************************************************************* #
@@ -119,6 +119,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal rs1, rs2   : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
   signal alu_opb    : std_ulogic_vector(data_width_c-1 downto 0); -- ALU operand b
   signal alu_res    : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
+  signal alu_add    : std_ulogic_vector(data_width_c-1 downto 0); -- alu address result
   signal rdata      : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
   signal alu_wait   : std_ulogic; -- alu is busy due to iterative unit
   signal bus_i_wait : std_ulogic; -- wait for current bus instruction fetch
@@ -143,14 +144,13 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   -- pmp interface --
   signal pmp_addr  : pmp_addr_if_t;
   signal pmp_ctrl  : pmp_ctrl_if_t;
-  signal priv_mode : std_ulogic_vector(1 downto 0); -- current CPU privilege level
 
 begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- CSR system --
-  assert not (CPU_EXTENSION_RISCV_Zicsr = false) report "NEORV32 CPU CONFIG WARNING! No exception/interrupt/machine features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;
+  assert not (CPU_EXTENSION_RISCV_Zicsr = false) report "NEORV32 CPU CONFIG WARNING! No exception/interrupt/trap/machine features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;
   -- U-extension requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report "NEORV32 CPU CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
   -- PMP requires Zicsr extension --
@@ -158,7 +158,7 @@ begin
   -- PMP regions --
   assert not ((PMP_NUM_REGIONS > pmp_max_r_c) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions out of valid range." severity error;
   -- PMP granulartiy --
-  assert not (((PMP_GRANULARITY < 1) or (PMP_GRANULARITY > 32)) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Invalid PMP granulartiy (0 < G < 33)." severity error;
+  assert not (((PMP_GRANULARITY < 1) or (PMP_GRANULARITY > 32)) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Invalid PMP granulartiy (0 < PMP_GRANULARITY < 33)." severity error;
 
 
   -- Control Unit ---------------------------------------------------------------------------
@@ -192,7 +192,8 @@ begin
     -- data input --
     instr_i       => instr,       -- instruction
     cmp_i         => alu_cmp,     -- comparator status
-    alu_res_i     => alu_res,     -- ALU processing result
+    alu_add_i     => alu_add,     -- ALU address result
+    rs1_i         => rs1,         -- rf source 1
     -- data output --
     imm_o         => imm,         -- immediate
     fetch_pc_o    => fetch_pc,    -- PC for instruction fetch
@@ -210,7 +211,6 @@ begin
     -- physical memory protection --
     pmp_addr_o    => pmp_addr,    -- addresses
     pmp_ctrl_o    => pmp_ctrl,    -- configs
-    priv_mode_o   => priv_mode,   -- current CPU privilege level
     -- bus access exceptions --
     mar_i         => mar,         -- memory address register
     ma_instr_i    => ma_instr,    -- misaligned instruction address
@@ -263,8 +263,9 @@ begin
     -- data output --
     cmp_o       => alu_cmp,       -- comparator status
     res_o       => alu_res,       -- ALU result
-    -- co-processor interface --
+    add_o       => alu_add,       -- address computation result
     opb_o       => alu_opb,       -- ALU operand B
+    -- co-processor interface --
     cp0_start_o => cp0_start,     -- trigger co-processor 0
     cp0_data_i  => cp0_data,      -- co-processor 0 result
     cp0_valid_i => cp0_valid,     -- co-processor 0 result valid
@@ -306,7 +307,7 @@ begin
   end generate;
 
 
-  -- Co-Processor 1: ????????????????????? --------------------------------------------------
+  -- Co-Processor 1: Bit Manipulation Unit --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- control: ctrl cp1_start
   -- inputs:  rs1 rs2 alu_cmp alu_opb
@@ -327,7 +328,6 @@ begin
   port map (
     -- global control --
     clk_i          => clk_i,          -- global clock, rising edge
-    rstn_i         => rstn_i,         -- global reset, low-active, async
     ctrl_i         => ctrl,           -- main control bus
     -- cpu instruction fetch interface --
     fetch_pc_i     => fetch_pc,       -- PC for instruction fetch
@@ -350,7 +350,6 @@ begin
     -- physical memory protection --
     pmp_addr_i     => pmp_addr,       -- addresses
     pmp_ctrl_i     => pmp_ctrl,       -- configs
-    priv_mode_i    => priv_mode,      -- current CPU privilege level
     -- instruction bus --
     i_bus_addr_o   => i_bus_addr_o,   -- bus access address
     i_bus_rdata_i  => i_bus_rdata_i,  -- bus read data
@@ -376,8 +375,8 @@ begin
   );
 
   -- current privilege level --
-  i_bus_priv_o <= priv_mode;
-  d_bus_priv_o <= priv_mode;
+  i_bus_priv_o <= ctrl(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c);
+  d_bus_priv_o <= ctrl(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c);
 
 
 end neorv32_cpu_rtl;

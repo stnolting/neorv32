@@ -60,8 +60,9 @@ entity neorv32_cpu_alu is
     -- data output --
     cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
     res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
-    -- co-processor interface --
+    add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- address computation result
     opb_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU operand B
+    -- co-processor interface --
     cp0_start_o : out std_ulogic; -- trigger co-processor 0
     cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
     cp0_valid_i : in  std_ulogic; -- co-processor 0 result valid
@@ -79,14 +80,13 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal opa, opb : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- results --
-  signal addsub_res : std_ulogic_vector(data_width_c-1 downto 0);
+  signal addsub_res : std_ulogic_vector(data_width_c downto 0);
   signal cp_res     : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- comparator --
-  signal cmp_opx   : std_ulogic_vector(data_width_c downto 0);
-  signal cmp_opy   : std_ulogic_vector(data_width_c downto 0);
-  signal cmp_sub   : std_ulogic_vector(data_width_c downto 0);
-  signal cmp_less  : std_ulogic;
+  signal cmp_opx : std_ulogic_vector(data_width_c downto 0);
+  signal cmp_opy : std_ulogic_vector(data_width_c downto 0);
+  signal cmp_sub : std_ulogic_vector(data_width_c downto 0);
 
   -- shifter --
   type shifter_t is record
@@ -117,10 +117,10 @@ begin
 
   -- Operand Mux ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  opa <= pc2_i when (ctrl_i(ctrl_alu_opa_mux_c) = '1') else rs1_i; -- operand a (first ALU input operand)
+  opa <= pc2_i when (ctrl_i(ctrl_alu_opa_mux_c) = '1') else rs1_i; -- operand a (first ALU input operand), only required for arithmetic ops
   opb <= imm_i when (ctrl_i(ctrl_alu_opb_mux_c) = '1') else rs2_i; -- operand b (second ALU input operand)
   --
-  opb_o <= opb; -- output for co-processors
+  opb_o <= opb;
 
 
   -- Comparator Unit ------------------------------------------------------------------------
@@ -155,19 +155,17 @@ begin
       cin_v(0) := '0';
     end if;
 
-    -- adder core --
-    res_v := std_ulogic_vector(unsigned(op_a_v) + unsigned(op_y_v) + unsigned(cin_v(0 downto 0)));
-
-    -- output --
-    cmp_less    <= res_v(32);
-    addsub_res  <= res_v(31 downto 0);
-    addsub_res  <= res_v(31 downto 0);
+    -- adder core (result + carry/borrow) --
+    addsub_res <= std_ulogic_vector(unsigned(op_a_v) + unsigned(op_y_v) + unsigned(cin_v(0 downto 0)));
   end process binary_arithmetic_core;
+
+  -- direct output of address result --
+  add_o <= addsub_res(data_width_c-1 downto 0);
 
 
   -- Shifter Unit ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  shifter_unit: process(rstn_i, clk_i)
+  shifter_unit: process(clk_i)
     variable bs_input_v   : std_ulogic_vector(data_width_c-1 downto 0);
     variable bs_level_4_v : std_ulogic_vector(data_width_c-1 downto 0);
     variable bs_level_3_v : std_ulogic_vector(data_width_c-1 downto 0);
@@ -175,15 +173,7 @@ begin
     variable bs_level_1_v : std_ulogic_vector(data_width_c-1 downto 0);
     variable bs_level_0_v : std_ulogic_vector(data_width_c-1 downto 0);
   begin
-    if (rstn_i = '0') then
-      shifter.sreg   <= (others => '0');
-      shifter.cnt    <= (others => '0');
-      shifter.cmd_ff <= '0';
-      if (FAST_SHIFT_EN = true) then
-        shifter.bs_d_in <= (others => '0');
-        shifter.bs_a_in <= (others => '0');
-      end if;
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       shifter.cmd_ff <= shifter.cmd;
 
       -- --------------------------------------------------------------------------------
@@ -192,7 +182,7 @@ begin
       if (FAST_SHIFT_EN = false) then
 
         if (shifter.start = '1') then -- trigger new shift
-          shifter.sreg <= opa; -- shift operand
+          shifter.sreg <= rs1_i; -- shift operand (can only be rs1; opa would also contain pc)
           shifter.cnt  <= opb(index_size_f(data_width_c)-1 downto 0); -- shift amount
         elsif (shifter.run = '1') then -- running shift
           -- coarse shift: multiples of 4 --
@@ -224,7 +214,7 @@ begin
 
         -- operands and cycle control --
         if (shifter.start = '1') then -- trigger new shift
-          shifter.bs_d_in <= opa; -- shift data
+          shifter.bs_d_in <= rs1_i; -- shift operand (can only be rs1; opa would also contain pc)
           shifter.bs_a_in <= opb(index_size_f(data_width_c)-1 downto 0); -- shift amount
           shifter.cnt     <= (others => '0');
         end if;
@@ -321,22 +311,22 @@ begin
   cp_ctrl.halt <= cp_ctrl.busy or cp_ctrl.start;
 
   -- co-processor result --
-  cp_res <= cp0_data_i or cp1_data_i; -- only the **actaully selected** co-processor should output data != 0
+  cp_res <= cp0_data_i or cp1_data_i; -- only the *actually selected* co-processor may output data != 0
 
 
   -- ALU Function Select --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  alu_function_mux: process(ctrl_i, opa, opb, addsub_res, cp_res, cmp_less, shifter.sreg)
+  alu_function_mux: process(ctrl_i, rs1_i, opb, addsub_res, cp_res, shifter.sreg)
   begin
     case ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) is
-      when alu_cmd_xor_c    => res_o <= opa xor opb;
-      when alu_cmd_or_c     => res_o <= opa or  opb;
-      when alu_cmd_and_c    => res_o <= opa and opb;
+      when alu_cmd_xor_c    => res_o <= rs1_i xor opb; -- only rs1 required for logic ops (opa would also contain pc)
+      when alu_cmd_or_c     => res_o <= rs1_i or  opb;
+      when alu_cmd_and_c    => res_o <= rs1_i and opb;
       when alu_cmd_movb_c   => res_o <= opb;
-      when alu_cmd_addsub_c => res_o <= addsub_res;
+      when alu_cmd_addsub_c => res_o <= addsub_res(data_width_c-1 downto 0);
       when alu_cmd_cp_c     => res_o <= cp_res;
       when alu_cmd_shift_c  => res_o <= shifter.sreg;
-      when alu_cmd_slt_c    => res_o <= (others => '0'); res_o(0) <= cmp_less;
+      when alu_cmd_slt_c    => res_o <= (others => '0'); res_o(0) <= addsub_res(addsub_res'left); -- => carry/borrow
       when others           => res_o <= opb; -- undefined
     end case;
   end process alu_function_mux;

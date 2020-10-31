@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040603"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040604"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
@@ -50,7 +50,7 @@ package neorv32_package is
   constant ispace_base_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"00000000"; -- default instruction memory address space base address
   constant dspace_base_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"80000000"; -- default data memory address space base address
   constant bus_timeout_c  : natural := 127; -- cycles after which a valid bus access will timeout and triggers an access exception
-  constant wb_pipe_mode_c : boolean := false; -- false: classic/standard wishbone mode, true: pipelined wishbone mode (better timing)
+  constant wb_pipe_mode_c : boolean := false; -- false: classic/standard wishbone mode, true: pipelined wishbone mode
   constant ipb_entries_c  : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero by the CPU HW
 
@@ -179,7 +179,7 @@ package neorv32_package is
   constant ctrl_rf_rd_adr3_c    : natural := 15; -- destiantion register address bit 3
   constant ctrl_rf_rd_adr4_c    : natural := 16; -- destiantion register address bit 4
   constant ctrl_rf_wb_en_c      : natural := 17; -- write back enable
-  constant ctrl_rf_r0_we_c      : natural := 18; -- allow write access to r0 (zero)
+  constant ctrl_rf_r0_we_c      : natural := 18; -- allow write access to r0 (zero) and force rd=r0
   -- alu --
   constant ctrl_alu_cmd0_c      : natural := 19; -- ALU command bit 0
   constant ctrl_alu_cmd1_c      : natural := 20; -- ALU command bit 1
@@ -207,24 +207,27 @@ package neorv32_package is
   -- co-processors --
   constant ctrl_cp_id_lsb_c     : natural := 41; -- cp select ID lsb
   constant ctrl_cp_id_msb_c     : natural := 42; -- cp select ID msb
+  -- current privilege level --
+  constant ctrl_priv_lvl_lsb_c  : natural := 43; -- privilege level lsb
+  constant ctrl_priv_lvl_msb_c  : natural := 44; -- privilege level msb
   -- instruction's control blocks --
-  constant ctrl_ir_funct3_0_c   : natural := 43; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 44; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 45; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 46; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 47; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 48; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 49; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 50; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 51; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 52; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 53; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 54; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 55; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 56; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 57; -- funct12 bit 11
+  constant ctrl_ir_funct3_0_c   : natural := 45; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 46; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 47; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 48; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 49; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 50; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 51; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 52; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 53; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 54; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 55; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 56; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 57; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 58; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 59; -- funct12 bit 11
   -- control bus size --
-  constant ctrl_width_c         : natural := 58; -- control bus size
+  constant ctrl_width_c         : natural := 60; -- control bus size
 
   -- ALU Comparator Bus ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -631,7 +634,8 @@ package neorv32_package is
       -- data input --
       instr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- instruction
       cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
-      alu_res_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU processing result
+      alu_add_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU address result
+      rs1_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
       -- data output --
       imm_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- immediate
       fetch_pc_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
@@ -649,7 +653,6 @@ package neorv32_package is
       -- physical memory protection --
       pmp_addr_o    : out pmp_addr_if_t; -- addresses
       pmp_ctrl_o    : out pmp_ctrl_if_t; -- configs
-      priv_mode_o   : out std_ulogic_vector(1 downto 0); -- current CPU privilege level
       -- bus access exceptions --
       mar_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory address register
       ma_instr_i    : in  std_ulogic; -- misaligned instruction address
@@ -702,8 +705,9 @@ package neorv32_package is
       -- data output --
       cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
       res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
-      -- co-processor interface --
+      add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- address computation result
       opb_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU operand B
+      -- co-processor interface --
       cp0_start_o : out std_ulogic; -- trigger co-processor 0
       cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
       cp0_valid_i : in  std_ulogic; -- co-processor 0 result valid
@@ -749,7 +753,6 @@ package neorv32_package is
     port (
       -- global control --
       clk_i          : in  std_ulogic; -- global clock, rising edge
-      rstn_i         : in  std_ulogic; -- global reset, low-active, async
       ctrl_i         : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
       -- cpu instruction fetch interface --
       fetch_pc_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
@@ -772,7 +775,6 @@ package neorv32_package is
       -- physical memory protection --
       pmp_addr_i     : in  pmp_addr_if_t; -- addresses
       pmp_ctrl_i     : in  pmp_ctrl_if_t; -- configs
-      priv_mode_i    : in  std_ulogic_vector(1 downto 0); -- current CPU privilege level
       -- instruction bus --
       i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
       i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data

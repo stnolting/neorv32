@@ -116,26 +116,25 @@ begin
 
           when "000" => -- Illegal_instruction, C.ADDI4SPN
           -- ----------------------------------------------------------------------------------------------------------
-            if (ci_instr16_i(12 downto 2) = "00000000000") then -- "official" illegal instruction
+            if (ci_instr16_i(12 downto 2) = "00000000000") then -- "official illegal instruction"
               ci_illegal_o <= '1';
-
-            else -- C.ADDI4SPN
-              ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
-              ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
-              ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c)         <= "01" & ci_instr16_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c);
-              ci_instr32_o(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_subadd_c;
-              ci_instr32_o(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= (others => '0'); -- zero extend
-              ci_instr32_o(instr_imm12_lsb_c + 0)                        <= '0';
-              ci_instr32_o(instr_imm12_lsb_c + 1)                        <= '0';
-              ci_instr32_o(instr_imm12_lsb_c + 2)                        <= ci_instr16_i(6);
-              ci_instr32_o(instr_imm12_lsb_c + 3)                        <= ci_instr16_i(5);
-              ci_instr32_o(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(11);
-              ci_instr32_o(instr_imm12_lsb_c + 5)                        <= ci_instr16_i(12);
-              ci_instr32_o(instr_imm12_lsb_c + 6)                        <= ci_instr16_i(7);
-              ci_instr32_o(instr_imm12_lsb_c + 7)                        <= ci_instr16_i(8);
-              ci_instr32_o(instr_imm12_lsb_c + 8)                        <= ci_instr16_i(9);
-              ci_instr32_o(instr_imm12_lsb_c + 9)                        <= ci_instr16_i(10);
             end if;
+            -- C.ADDI4SPN
+            ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
+            ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
+            ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c)         <= "01" & ci_instr16_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c);
+            ci_instr32_o(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_subadd_c;
+            ci_instr32_o(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= (others => '0'); -- zero extend
+            ci_instr32_o(instr_imm12_lsb_c + 0)                        <= '0';
+            ci_instr32_o(instr_imm12_lsb_c + 1)                        <= '0';
+            ci_instr32_o(instr_imm12_lsb_c + 2)                        <= ci_instr16_i(6);
+            ci_instr32_o(instr_imm12_lsb_c + 3)                        <= ci_instr16_i(5);
+            ci_instr32_o(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(11);
+            ci_instr32_o(instr_imm12_lsb_c + 5)                        <= ci_instr16_i(12);
+            ci_instr32_o(instr_imm12_lsb_c + 6)                        <= ci_instr16_i(7);
+            ci_instr32_o(instr_imm12_lsb_c + 7)                        <= ci_instr16_i(8);
+            ci_instr32_o(instr_imm12_lsb_c + 8)                        <= ci_instr16_i(9);
+            ci_instr32_o(instr_imm12_lsb_c + 9)                        <= ci_instr16_i(10);
 
           when "010" => -- C.LW
           -- ----------------------------------------------------------------------------------------------------------

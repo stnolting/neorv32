@@ -52,7 +52,6 @@ entity neorv32_cpu_bus is
   port (
     -- global control --
     clk_i          : in  std_ulogic; -- global clock, rising edge
-    rstn_i         : in  std_ulogic; -- global reset, low-active, async
     ctrl_i         : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     -- cpu instruction fetch interface --
     fetch_pc_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
@@ -75,7 +74,6 @@ entity neorv32_cpu_bus is
     -- physical memory protection --
     pmp_addr_i     : in  pmp_addr_if_t; -- addresses
     pmp_ctrl_i     : in  pmp_ctrl_if_t; -- configs
-    priv_mode_i    : in  std_ulogic_vector(1 downto 0); -- current CPU privilege level
     -- instruction bus --
     i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -105,8 +103,8 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
 
   -- PMP modes --
   constant pmp_off_mode_c   : std_ulogic_vector(1 downto 0) := "00"; -- null region (disabled)
-  constant pmp_tor_mode_c   : std_ulogic_vector(1 downto 0) := "01"; -- top of range
-  constant pmp_na4_mode_c   : std_ulogic_vector(1 downto 0) := "10"; -- naturally aligned four-byte region
+--constant pmp_tor_mode_c   : std_ulogic_vector(1 downto 0) := "01"; -- top of range
+--constant pmp_na4_mode_c   : std_ulogic_vector(1 downto 0) := "10"; -- naturally aligned four-byte region
   constant pmp_napot_mode_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (>= 8 bytes)
 
   -- PMP configuration register bits --
@@ -163,7 +161,7 @@ begin
 
   -- Data Interface: Access Address ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_adr_reg: process(rstn_i, clk_i)
+  mem_adr_reg: process(clk_i)
   begin
     if rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mar_we_c) = '1') then
@@ -201,7 +199,7 @@ begin
   begin
     if rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mdo_we_c) = '1') then
-        mdo <= wdata_i;
+        mdo <= wdata_i; -- memory data out register (MDO)
       end if;
     end if;
   end process mem_do_reg;
@@ -237,9 +235,8 @@ begin
   mem_out_buf: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- memory data in register (MDI) --
       if (ctrl_i(ctrl_bus_mdi_we_c) = '1') then
-        mdi <= d_bus_rdata;
+        mdi <= d_bus_rdata; -- memory data in register (MDI)
       end if;
     end if;
   end process mem_out_buf;
@@ -297,17 +294,9 @@ begin
 
   -- Instruction Fetch Arbiter --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ifetch_arbiter: process(rstn_i, clk_i)
+  ifetch_arbiter: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      i_arbiter.rd_req    <= '0';
-      i_arbiter.wr_req    <= '0';
-      i_arbiter.err_align <= '0';
-      i_arbiter.err_bus   <= '0';
-      i_arbiter.timeout   <= (others => '0');
-    elsif rising_edge(clk_i) then
-      i_arbiter.wr_req <= '0'; -- instruction fetch is read-only
-
+    if rising_edge(clk_i) then
       -- instruction fetch request --
       if (i_arbiter.rd_req = '0') then -- idle
         i_arbiter.rd_req    <= ctrl_i(ctrl_bus_if_c);
@@ -318,16 +307,14 @@ begin
         i_arbiter.timeout   <= std_ulogic_vector(unsigned(i_arbiter.timeout) - 1);
         i_arbiter.err_align <= (i_arbiter.err_align or i_misaligned)                                     and (not ctrl_i(ctrl_bus_ierr_ack_c));
         i_arbiter.err_bus   <= (i_arbiter.err_bus   or (not or_all_f(i_arbiter.timeout)) or i_bus_err_i) and (not ctrl_i(ctrl_bus_ierr_ack_c));
-        --if (i_arbiter.err_align = '1') or (i_arbiter.err_bus = '1') then -- any error?
-        --  if (ctrl_i(ctrl_bus_ierr_ack_c) = '1') then -- wait for controller to acknowledge error
-        --    i_arbiter.rd_req <= '0';
-        --  end if;
         if (i_bus_ack_i = '1') or (ctrl_i(ctrl_bus_ierr_ack_c) = '1') then -- wait for normal termination / CPU abort
           i_arbiter.rd_req <= '0';
         end if;
       end if;
     end if;
   end process ifetch_arbiter;
+
+  i_arbiter.wr_req <= '0'; -- instruction fetch is read-only
 
   -- cancel bus access --
   i_bus_cancel_o <= i_arbiter.rd_req and ctrl_i(ctrl_bus_ierr_ack_c);
@@ -351,16 +338,9 @@ begin
 
   -- Data Access Arbiter --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  data_access_arbiter: process(rstn_i, clk_i)
+  data_access_arbiter: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      d_arbiter.rd_req    <= '0';
-      d_arbiter.wr_req    <= '0';
-      d_arbiter.err_align <= '0';
-      d_arbiter.err_bus   <= '0';
-      d_arbiter.timeout   <= (others => '0');
-    elsif rising_edge(clk_i) then
-
+    if rising_edge(clk_i) then
       -- data access request --
       if (d_arbiter.wr_req = '0') and (d_arbiter.rd_req = '0') then -- idle
         d_arbiter.wr_req    <= ctrl_i(ctrl_bus_wr_c);
@@ -372,11 +352,6 @@ begin
         d_arbiter.timeout   <= std_ulogic_vector(unsigned(d_arbiter.timeout) - 1);
         d_arbiter.err_align <= (d_arbiter.err_align or d_misaligned)                                     and (not ctrl_i(ctrl_bus_derr_ack_c));
         d_arbiter.err_bus   <= (d_arbiter.err_bus   or (not or_all_f(d_arbiter.timeout)) or d_bus_err_i) and (not ctrl_i(ctrl_bus_derr_ack_c));
-        --if (d_arbiter.err_align = '1') or (d_arbiter.err_bus = '1') then -- any error?
-        --  if (ctrl_i(ctrl_bus_derr_ack_c) = '1') then -- wait for controller to acknowledge error
-        --    d_arbiter.wr_req <= '0';
-        --    d_arbiter.rd_req <= '0';
-        --  end if;
         if (d_bus_ack_i = '1') or (ctrl_i(ctrl_bus_derr_ack_c) = '1') then -- wait for normal termination / CPU abort
           d_arbiter.wr_req <= '0';
           d_arbiter.rd_req <= '0';
@@ -456,11 +431,11 @@ begin
 
 
   -- check access type and regions's permissions --
-  pmp_check_permission: process(pmp, pmp_ctrl_i, priv_mode_i)
+  pmp_check_permission: process(pmp, pmp_ctrl_i, ctrl_i)
   begin
     for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
-      if ((priv_mode_i = priv_mode_u_c) or (pmp_ctrl_i(r)(pmp_cfg_l_c) = '1')) and -- user privilege level or locked pmp entry -> enforce permissions also for machine mode
-          (pmp_ctrl_i(r)(pmp_cfg_ah_c downto pmp_cfg_al_c) /= pmp_off_mode_c) then -- active entry
+      if ((ctrl_i(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c) = priv_mode_u_c) or (pmp_ctrl_i(r)(pmp_cfg_l_c) = '1')) and -- user privilege level or locked pmp entry -> enforce permissions also for machine mode
+         (pmp_ctrl_i(r)(pmp_cfg_ah_c downto pmp_cfg_al_c) /= pmp_off_mode_c) then -- active entry
         pmp.if_fault(r) <= pmp.i_match(r) and (not pmp_ctrl_i(r)(pmp_cfg_x_c)); -- fetch access match no execute permission
         pmp.ld_fault(r) <= pmp.d_match(r) and (not pmp_ctrl_i(r)(pmp_cfg_r_c)); -- load access match no read permission
         pmp.st_fault(r) <= pmp.d_match(r) and (not pmp_ctrl_i(r)(pmp_cfg_w_c)); -- store access match no write permission

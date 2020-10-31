@@ -1,11 +1,11 @@
 -- #################################################################################################
--- # << NEORV32 - Simple Testbench >>                                                              #
+-- # << NEORV32 - Default Testbench >>                                                             #
 -- # ********************************************************************************************* #
 -- # This testbench provides a virtual UART receiver connected to the processor's uart_txd_o       #
--- # signals. The received chars are shown in the simulator console and also written to a file     #
--- # ("neorv32.testbench_uart.out").                                                               #
--- # Futhermore, this testbench provides a simple RAM connected to the external Wishbone bus.      #
--- # The testbench configures the processor with all optional element enabled by default.          #
+-- # signal. The received chars are shown in the simulator console and also written to a file      #
+-- # ("neorv32.testbench_uart.out"). Futhermore, this testbench provides a simple RAM connected    #
+-- # to the external Wishbone bus. The testbench configures the processor with all optional        #
+-- # elements enabled by default.                                                                  #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -127,8 +127,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- How to simulate a boot from an external memory --
   -- ---------------------------------------------- --
   -- The simulated Wishbone memory can be initialized with the compiled application init.
-  -- 1. Uncomment the init_wbmen function below; this will initialize the simulated wishbone memory with the neorv32_application_image.vhd image
-  -- 2. Increase the wb_mem_size_c constant above to (at least) the size of the application image (like 16kB)
+  -- 1. Uncomment the init_wbmem function below; this will initialize the simulated wishbone memory with the neorv32_application_image.vhd image
+  -- 2. Increase the wb_mem_size_c constant above to (at least) the size of the application image (like 16kB -> 16*1024)
   -- 3. Disable the processor-internal IMEM in the processor instantiation below (MEM_INT_IMEM_USE => false)
   -- 4. Set the Wishbone memory base address wb_mem_base_addr_c (above) to zero (constant wb_mem_base_addr_c : std_ulogic_vector(31 downto 0) := x"00000000";)
   -- 5. Simulate!
@@ -158,7 +158,7 @@ begin
     -- General --
     CLOCK_FREQUENCY              => f_clock_nat_c, -- clock frequency of clk_i in Hz
     BOOTLOADER_USE               => false,         -- implement processor-internal bootloader?
-    USER_CODE                    => x"19880704",   -- custom user code
+    USER_CODE                    => x"12345678",   -- custom user code
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        => true,          -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => false,         -- implement embedded RF extension?
@@ -234,7 +234,7 @@ begin
     mext_irq_i  => '0'              -- machine external interrupt
   );
 
-  -- TWI termination --
+  -- TWI termination (pull-ups) --
   twi_scl <= 'H';
   twi_sda <= 'H';
 
