@@ -1200,10 +1200,10 @@ int main() {
 
   // final result
   if (cnt_fail == 0) {
-    neorv32_uart_printf("%c[1m[TEST OK!]%c[0m\n", 27, 27);
+    neorv32_uart_printf("%c[1m[CPU TEST COMPLETED SUCCESSFULLY!]%c[0m\n", 27, 27);
   }
   else {
-    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart_printf("%c[1m[CPU TEST FAILED!]%c[0m\n", 27, 27);
   }
 
   return 0;

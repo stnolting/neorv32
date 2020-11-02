@@ -33,4 +33,4 @@ make -C $test_app_dir clean_all USER_FLAGS+=-DUART_SIM_MODE MARCH=-march=rv32imc
 # Verification reference string
 touch $homedir/check_reference.out
 chmod 777 $homedir/check_reference.out
-echo "TEST OK!" > $homedir/check_reference.out
+echo "CPU TEST COMPLETED SUCCESSFULLY!" > $homedir/check_reference.out
