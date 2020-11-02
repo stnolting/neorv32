@@ -372,6 +372,10 @@ begin
     firq_i         => fast_irq
   );
 
+  -- misc --
+  cpu_i.src <= '1';
+  cpu_d.src <= '0';
+
   -- advanced memory control --
   fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
