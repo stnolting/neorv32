@@ -4,6 +4,7 @@
 -- # Multiplier and Divider unit. Implements the RISC-V RV32-M CPU extension.                      #
 -- # Multiplier core (signed/unsigned) uses serial algorithm. -> 32+4 cycles latency               #
 -- # Divider core (unsigned) uses serial algorithm. -> 32+6 cycles latency                         #
+-- # Multiplications can be mapped to DSP block when FAST_MUL_EN = true.                           #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -200,11 +201,12 @@ begin
   opy_is_signed <= '1' when (cp_op = cp_op_mulh_c) or (cp_op = cp_op_div_c) or (cp_op = cp_op_rem_c) else '0';
 
 
-  -- Multiplier Core (signed) ---------------------------------------------------------------
+  -- Multiplier Core (signed/unsigned) ------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   multiplier_core: process(clk_i)
   begin
     if rising_edge(clk_i) then
+      -- ---------------------------------------------------------
       if (FAST_MUL_EN = false) then -- use small iterative computation
         if (start = '1') then -- start new multiplication
           mul_product(63 downto 32) <= (others => '0');
@@ -213,6 +215,7 @@ begin
           mul_product(63 downto 31) <= mul_do_add(32 downto 0);
           mul_product(30 downto 00) <= mul_product(31 downto 1);
         end if;
+      -- ---------------------------------------------------------
       else -- use direct approach using (several!) DSP blocks
         if (start = '1') then
           mul_op_x <= signed((opx(opx'left) and opx_is_signed) & opx);

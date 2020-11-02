@@ -41,7 +41,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040604"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040605"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
@@ -179,7 +179,7 @@ package neorv32_package is
   constant ctrl_rf_rd_adr3_c    : natural := 15; -- destiantion register address bit 3
   constant ctrl_rf_rd_adr4_c    : natural := 16; -- destiantion register address bit 4
   constant ctrl_rf_wb_en_c      : natural := 17; -- write back enable
-  constant ctrl_rf_r0_we_c      : natural := 18; -- allow write access to r0 (zero) and force rd=r0
+  constant ctrl_rf_r0_we_c      : natural := 18; -- force write access and force rd=r0
   -- alu --
   constant ctrl_alu_cmd0_c      : natural := 19; -- ALU command bit 0
   constant ctrl_alu_cmd1_c      : natural := 20; -- ALU command bit 1
@@ -325,64 +325,66 @@ package neorv32_package is
 
   -- RISC-V CSR Addresses -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant csr_mstatus_c    : std_ulogic_vector(11 downto 0) := x"300"; -- mstatus
-  constant csr_misa_c       : std_ulogic_vector(11 downto 0) := x"301"; -- misa
-  constant csr_mie_c        : std_ulogic_vector(11 downto 0) := x"304"; -- mie
-  constant csr_mtvec_c      : std_ulogic_vector(11 downto 0) := x"305"; -- mtvec
+  constant csr_mstatus_c   : std_ulogic_vector(11 downto 0) := x"300"; -- mstatus
+  constant csr_misa_c      : std_ulogic_vector(11 downto 0) := x"301"; -- misa
+  constant csr_mie_c       : std_ulogic_vector(11 downto 0) := x"304"; -- mie
+  constant csr_mtvec_c     : std_ulogic_vector(11 downto 0) := x"305"; -- mtvec
   --
-  constant csr_mscratch_c   : std_ulogic_vector(11 downto 0) := x"340"; -- mscratch
-  constant csr_mepc_c       : std_ulogic_vector(11 downto 0) := x"341"; -- mepc
-  constant csr_mcause_c     : std_ulogic_vector(11 downto 0) := x"342"; -- mcause
-  constant csr_mtval_c      : std_ulogic_vector(11 downto 0) := x"343"; -- mtval
-  constant csr_mip_c        : std_ulogic_vector(11 downto 0) := x"344"; -- mip
+  constant csr_mscratch_c  : std_ulogic_vector(11 downto 0) := x"340"; -- mscratch
+  constant csr_mepc_c      : std_ulogic_vector(11 downto 0) := x"341"; -- mepc
+  constant csr_mcause_c    : std_ulogic_vector(11 downto 0) := x"342"; -- mcause
+  constant csr_mtval_c     : std_ulogic_vector(11 downto 0) := x"343"; -- mtval
+  constant csr_mip_c       : std_ulogic_vector(11 downto 0) := x"344"; -- mip
   --
-  constant csr_pmpcfg0_c    : std_ulogic_vector(11 downto 0) := x"3a0"; -- pmpcfg0
-  constant csr_pmpcfg1_c    : std_ulogic_vector(11 downto 0) := x"3a1"; -- pmpcfg1
+  constant csr_pmpcfg0_c   : std_ulogic_vector(11 downto 0) := x"3a0"; -- pmpcfg0
+  constant csr_pmpcfg1_c   : std_ulogic_vector(11 downto 0) := x"3a1"; -- pmpcfg1
   --
-  constant csr_pmpaddr0_c   : std_ulogic_vector(11 downto 0) := x"3b0"; -- pmpaddr0
-  constant csr_pmpaddr1_c   : std_ulogic_vector(11 downto 0) := x"3b1"; -- pmpaddr1
-  constant csr_pmpaddr2_c   : std_ulogic_vector(11 downto 0) := x"3b2"; -- pmpaddr2
-  constant csr_pmpaddr3_c   : std_ulogic_vector(11 downto 0) := x"3b3"; -- pmpaddr3
-  constant csr_pmpaddr4_c   : std_ulogic_vector(11 downto 0) := x"3b4"; -- pmpaddr4
-  constant csr_pmpaddr5_c   : std_ulogic_vector(11 downto 0) := x"3b5"; -- pmpaddr5
-  constant csr_pmpaddr6_c   : std_ulogic_vector(11 downto 0) := x"3b6"; -- pmpaddr6
-  constant csr_pmpaddr7_c   : std_ulogic_vector(11 downto 0) := x"3b7"; -- pmpaddr7
+  constant csr_pmpaddr0_c  : std_ulogic_vector(11 downto 0) := x"3b0"; -- pmpaddr0
+  constant csr_pmpaddr1_c  : std_ulogic_vector(11 downto 0) := x"3b1"; -- pmpaddr1
+  constant csr_pmpaddr2_c  : std_ulogic_vector(11 downto 0) := x"3b2"; -- pmpaddr2
+  constant csr_pmpaddr3_c  : std_ulogic_vector(11 downto 0) := x"3b3"; -- pmpaddr3
+  constant csr_pmpaddr4_c  : std_ulogic_vector(11 downto 0) := x"3b4"; -- pmpaddr4
+  constant csr_pmpaddr5_c  : std_ulogic_vector(11 downto 0) := x"3b5"; -- pmpaddr5
+  constant csr_pmpaddr6_c  : std_ulogic_vector(11 downto 0) := x"3b6"; -- pmpaddr6
+  constant csr_pmpaddr7_c  : std_ulogic_vector(11 downto 0) := x"3b7"; -- pmpaddr7
   --
-  constant csr_mcycle_c     : std_ulogic_vector(11 downto 0) := x"b00"; -- mcycle
-  constant csr_minstret_c   : std_ulogic_vector(11 downto 0) := x"b02"; -- minstret
+  constant csr_mcycle_c    : std_ulogic_vector(11 downto 0) := x"b00"; -- mcycle
+  constant csr_minstret_c  : std_ulogic_vector(11 downto 0) := x"b02"; -- minstret
   --
-  constant csr_mcycleh_c    : std_ulogic_vector(11 downto 0) := x"b80"; -- mcycleh
-  constant csr_minstreth_c  : std_ulogic_vector(11 downto 0) := x"b82"; -- minstreth
+  constant csr_mcycleh_c   : std_ulogic_vector(11 downto 0) := x"b80"; -- mcycleh
+  constant csr_minstreth_c : std_ulogic_vector(11 downto 0) := x"b82"; -- minstreth
   --
-  constant csr_cycle_c      : std_ulogic_vector(11 downto 0) := x"c00"; -- cycle
-  constant csr_time_c       : std_ulogic_vector(11 downto 0) := x"c01"; -- time
-  constant csr_instret_c    : std_ulogic_vector(11 downto 0) := x"c02"; -- instret
+  constant csr_cycle_c     : std_ulogic_vector(11 downto 0) := x"c00"; -- cycle
+  constant csr_time_c      : std_ulogic_vector(11 downto 0) := x"c01"; -- time
+  constant csr_instret_c   : std_ulogic_vector(11 downto 0) := x"c02"; -- instret
   --
-  constant csr_cycleh_c     : std_ulogic_vector(11 downto 0) := x"c80"; -- cycleh
-  constant csr_timeh_c      : std_ulogic_vector(11 downto 0) := x"c81"; -- timeh
-  constant csr_instreth_c   : std_ulogic_vector(11 downto 0) := x"c82"; -- instreth
+  constant csr_cycleh_c    : std_ulogic_vector(11 downto 0) := x"c80"; -- cycleh
+  constant csr_timeh_c     : std_ulogic_vector(11 downto 0) := x"c81"; -- timeh
+  constant csr_instreth_c  : std_ulogic_vector(11 downto 0) := x"c82"; -- instreth
   --
-  constant csr_mvendorid_c  : std_ulogic_vector(11 downto 0) := x"f11"; -- mvendorid
-  constant csr_marchid_c    : std_ulogic_vector(11 downto 0) := x"f12"; -- marchid
-  constant csr_mimpid_c     : std_ulogic_vector(11 downto 0) := x"f13"; -- mimpid
-  constant csr_mhartid_c    : std_ulogic_vector(11 downto 0) := x"f14"; -- mhartid
+  constant csr_mvendorid_c : std_ulogic_vector(11 downto 0) := x"f11"; -- mvendorid
+  constant csr_marchid_c   : std_ulogic_vector(11 downto 0) := x"f12"; -- marchid
+  constant csr_mimpid_c    : std_ulogic_vector(11 downto 0) := x"f13"; -- mimpid
+  constant csr_mhartid_c   : std_ulogic_vector(11 downto 0) := x"f14"; -- mhartid
   --
-  constant csr_mzext_c      : std_ulogic_vector(11 downto 0) := x"fc0"; -- mzext (custom)
+  constant csr_mzext_c     : std_ulogic_vector(11 downto 0) := x"fc0"; -- mzext (custom)
 
   -- Co-Processor Operations ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- cp ids --
-  constant cp_sel_muldiv_c   : std_ulogic_vector(1 downto 0) := "00"; -- MULDIV CP
-  constant cp_sel_bitmanip_c : std_ulogic_vector(1 downto 0) := "01"; -- BITMANIP CP
+  constant cp_sel_muldiv_c   : std_ulogic_vector(1 downto 0) := "00"; -- MULDIV
+  constant cp_sel_bitmanip_c : std_ulogic_vector(1 downto 0) := "01"; -- BITMANIP
+--constant cp_sel_reserved_c : std_ulogic_vector(1 downto 0) := "10"; -- reserved
+--constant cp_sel_reserved_c : std_ulogic_vector(1 downto 0) := "11"; -- reserved
   -- muldiv cp --
-  constant cp_op_mul_c     : std_ulogic_vector(2 downto 0) := "000"; -- mul
-  constant cp_op_mulh_c    : std_ulogic_vector(2 downto 0) := "001"; -- mulh
-  constant cp_op_mulhsu_c  : std_ulogic_vector(2 downto 0) := "010"; -- mulhsu
-  constant cp_op_mulhu_c   : std_ulogic_vector(2 downto 0) := "011"; -- mulhu
-  constant cp_op_div_c     : std_ulogic_vector(2 downto 0) := "100"; -- div
-  constant cp_op_divu_c    : std_ulogic_vector(2 downto 0) := "101"; -- divu
-  constant cp_op_rem_c     : std_ulogic_vector(2 downto 0) := "110"; -- rem
-  constant cp_op_remu_c    : std_ulogic_vector(2 downto 0) := "111"; -- remu
+  constant cp_op_mul_c    : std_ulogic_vector(2 downto 0) := "000"; -- mul
+  constant cp_op_mulh_c   : std_ulogic_vector(2 downto 0) := "001"; -- mulh
+  constant cp_op_mulhsu_c : std_ulogic_vector(2 downto 0) := "010"; -- mulhsu
+  constant cp_op_mulhu_c  : std_ulogic_vector(2 downto 0) := "011"; -- mulhu
+  constant cp_op_div_c    : std_ulogic_vector(2 downto 0) := "100"; -- div
+  constant cp_op_divu_c   : std_ulogic_vector(2 downto 0) := "101"; -- divu
+  constant cp_op_rem_c    : std_ulogic_vector(2 downto 0) := "110"; -- rem
+  constant cp_op_remu_c   : std_ulogic_vector(2 downto 0) := "111"; -- remu
 
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -714,6 +716,12 @@ package neorv32_package is
       cp1_start_o : out std_ulogic; -- trigger co-processor 1
       cp1_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 1 result
       cp1_valid_i : in  std_ulogic; -- co-processor 1 result valid
+      cp2_start_o : out std_ulogic; -- trigger co-processor 2
+      cp2_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 2 result
+      cp2_valid_i : in  std_ulogic; -- co-processor 2 result valid
+      cp3_start_o : out std_ulogic; -- trigger co-processor 3
+      cp3_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 3 result
+      cp3_valid_i : in  std_ulogic; -- co-processor 3 result valid
       -- status --
       wait_o      : out std_ulogic -- busy due to iterative processing units
     );

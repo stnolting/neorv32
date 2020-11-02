@@ -137,9 +137,9 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal next_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- next pc (for next to-be-executed instruction)
 
   -- co-processor interface --
-  signal cp0_data,  cp1_data  : std_ulogic_vector(data_width_c-1 downto 0);
-  signal cp0_valid, cp1_valid : std_ulogic;
-  signal cp0_start, cp1_start : std_ulogic;
+  signal cp0_data,  cp1_data,  cp2_data,  cp3_data  : std_ulogic_vector(data_width_c-1 downto 0);
+  signal cp0_valid, cp1_valid, cp2_valid, cp3_valid : std_ulogic;
+  signal cp0_start, cp1_start, cp2_start, cp3_start : std_ulogic;
 
   -- pmp interface --
   signal pmp_addr  : pmp_addr_if_t;
@@ -272,6 +272,12 @@ begin
     cp1_start_o => cp1_start,     -- trigger co-processor 1
     cp1_data_i  => cp1_data,      -- co-processor 1 result
     cp1_valid_i => cp1_valid,     -- co-processor 1 result valid
+    cp2_start_o => cp2_start,     -- trigger co-processor 2
+    cp2_data_i  => cp2_data,      -- co-processor 2 result
+    cp2_valid_i => cp2_valid,     -- co-processor 2 result valid
+    cp3_start_o => cp3_start,     -- trigger co-processor 3
+    cp3_data_i  => cp3_data,      -- co-processor 3 result
+    cp3_valid_i => cp3_valid,     -- co-processor 3 result valid
     -- status --
     wait_o      => alu_wait       -- busy due to iterative processing units
   );
@@ -307,12 +313,28 @@ begin
   end generate;
 
 
-  -- Co-Processor 1: Bit Manipulation Unit --------------------------------------------------
+  -- Co-Processor 1: Not implemented yet ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- control: ctrl cp1_start
   -- inputs:  rs1 rs2 alu_cmp alu_opb
   cp1_data  <= (others => '0');
   cp1_valid <= '0';
+
+
+  -- Co-Processor 2: Not implemented yet ----------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- control: ctrl cp2_start
+  -- inputs:  rs1 rs2 alu_cmp alu_opb
+  cp2_data  <= (others => '0');
+  cp2_valid <= '0';
+
+
+  -- Co-Processor 3: Not implemented yet ----------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- control: ctrl cp3_start
+  -- inputs:  rs1 rs2 alu_cmp alu_opb
+  cp3_data  <= (others => '0');
+  cp3_valid <= '0';
 
 
   -- Bus Interface Unit ---------------------------------------------------------------------

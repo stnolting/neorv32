@@ -2,7 +2,6 @@
 -- # << NEORV32 - Arithmetical/Logical Unit >>                                                     #
 -- # ********************************************************************************************* #
 -- # Main data and address ALU. Includes comparator unit and co-processor interface/arbiter.       #
--- # The shifter sub-unit uses an iterative approach.                                              #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -69,6 +68,12 @@ entity neorv32_cpu_alu is
     cp1_start_o : out std_ulogic; -- trigger co-processor 1
     cp1_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 1 result
     cp1_valid_i : in  std_ulogic; -- co-processor 1 result valid
+    cp2_start_o : out std_ulogic; -- trigger co-processor 2
+    cp2_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 2 result
+    cp2_valid_i : in  std_ulogic; -- co-processor 2 result valid
+    cp3_start_o : out std_ulogic; -- trigger co-processor 3
+    cp3_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 3 result
+    cp3_valid_i : in  std_ulogic; -- co-processor 3 result valid
     -- status --
     wait_o      : out std_ulogic -- busy due to iterative processing units
   );
@@ -150,7 +155,7 @@ begin
     if (ctrl_i(ctrl_alu_addsub_c) = '1') then -- subtraction
       op_y_v   := not op_b_v;
       cin_v(0) := '1';
-    else-- addition
+    else -- addition
       op_y_v   := op_b_v;
       cin_v(0) := '0';
     end if;
@@ -291,7 +296,7 @@ begin
         cp_ctrl.cmd_ff <= cp_ctrl.cmd;
         if (cp_ctrl.start = '1') then
           cp_ctrl.busy <= '1';
-        elsif ((cp0_valid_i or cp1_valid_i) = '1') then -- cp computation done?
+        elsif ((cp0_valid_i or cp1_valid_i or cp2_valid_i or cp3_valid_i) = '1') then -- cp computation done?
           cp_ctrl.busy <= '0';
         end if;
       else -- no co-processor(s) implemented
@@ -304,14 +309,16 @@ begin
   -- is co-processor operation? --
   cp_ctrl.cmd   <= '1' when (ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) = alu_cmd_cp_c) else '0';
   cp_ctrl.start <= '1' when (cp_ctrl.cmd = '1') and (cp_ctrl.cmd_ff = '0') else '0';
-  cp0_start_o   <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = cp_sel_muldiv_c) else '0'; -- MULDIV CP
-  cp1_start_o   <= '0'; -- not yet implemented
+  cp0_start_o   <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "00") else '0'; -- CP0: MULDIV CP
+  cp1_start_o   <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "01") else '0'; -- CP1: not implemented yet
+  cp2_start_o   <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "10") else '0'; -- CP2: not implemented yet
+  cp3_start_o   <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "11") else '0'; -- CP3: not implemented yet
 
   -- co-processor operation running? --
   cp_ctrl.halt <= cp_ctrl.busy or cp_ctrl.start;
 
   -- co-processor result --
-  cp_res <= cp0_data_i or cp1_data_i; -- only the *actually selected* co-processor may output data != 0
+  cp_res <= cp0_data_i or cp1_data_i or cp2_data_i or cp3_data_i; -- only the *actually selected* co-processor may output data != 0
 
 
   -- ALU Function Select --------------------------------------------------------------------

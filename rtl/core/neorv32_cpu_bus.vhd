@@ -213,8 +213,12 @@ begin
         d_bus_wdata(15 downto 08) <= mdo(07 downto 00);
         d_bus_wdata(23 downto 16) <= mdo(07 downto 00);
         d_bus_wdata(31 downto 24) <= mdo(07 downto 00);
-        d_bus_ben <= (others => '0');
-        d_bus_ben(to_integer(unsigned(mar(1 downto 0)))) <= '1';
+        case mar(1 downto 0) is
+          when "00"   => d_bus_ben <= "0001";
+          when "01"   => d_bus_ben <= "0010";
+          when "10"   => d_bus_ben <= "0100";
+          when others => d_bus_ben <= "1000";
+        end case;
       when "01" => -- half-word
         d_bus_wdata(31 downto 16) <= mdo(15 downto 00);
         d_bus_wdata(15 downto 00) <= mdo(15 downto 00);
@@ -243,33 +247,24 @@ begin
 
   -- input data alignment and sign extension --
   read_align: process(mdi, mar, ctrl_i)
-    variable signed_v : std_ulogic;
+    variable byte_in_v  : std_ulogic_vector(07 downto 0); 
+    variable hword_in_v : std_ulogic_vector(15 downto 0);
   begin
-    signed_v := not ctrl_i(ctrl_bus_unsigned_c);
-    case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is -- data size
+    -- sub-word input --
+    case mar(1 downto 0) is
+      when "00"   => byte_in_v := mdi(07 downto 00); hword_in_v := mdi(15 downto 00); -- byte 0 / half-word 0
+      when "01"   => byte_in_v := mdi(15 downto 08); hword_in_v := mdi(15 downto 00); -- byte 1 / half-word 0
+      when "10"   => byte_in_v := mdi(23 downto 16); hword_in_v := mdi(31 downto 16); -- byte 2 / half-word 1
+      when others => byte_in_v := mdi(31 downto 24); hword_in_v := mdi(31 downto 16); -- byte 3 / half-word 1
+    end case;
+    -- actual data size --
+    case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is
       when "00" => -- byte
-        case mar(1 downto 0) is
-          when "00" =>
-            rdata_o(31 downto 08) <= (others => (signed_v and mdi(07)));
-            rdata_o(07 downto 00) <= mdi(07 downto 00); -- byte 0
-          when "01" =>
-            rdata_o(31 downto 08) <= (others => (signed_v and mdi(15)));
-            rdata_o(07 downto 00) <= mdi(15 downto 08); -- byte 1
-          when "10" =>
-            rdata_o(31 downto 08) <= (others => (signed_v and mdi(23)));
-            rdata_o(07 downto 00) <= mdi(23 downto 16); -- byte 2
-          when others =>
-            rdata_o(31 downto 08) <= (others => (signed_v and mdi(31)));
-            rdata_o(07 downto 00) <= mdi(31 downto 24); -- byte 3
-        end case;
+        rdata_o(31 downto 08) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and byte_in_v(7))); -- sign extension
+        rdata_o(07 downto 00) <= byte_in_v;
       when "01" => -- half-word
-        if (mar(1) = '0') then
-          rdata_o(31 downto 16) <= (others => (signed_v and mdi(15)));
-          rdata_o(15 downto 00) <= mdi(15 downto 00); -- low half-word
-        else
-          rdata_o(31 downto 16) <= (others => (signed_v and mdi(31)));
-          rdata_o(15 downto 00) <= mdi(31 downto 16); -- high half-word
-        end if;
+        rdata_o(31 downto 16) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and hword_in_v(15))); -- sign extension
+        rdata_o(15 downto 00) <= hword_in_v; -- high half-word
       when others => -- word
         rdata_o <= mdi; -- full word
     end case;

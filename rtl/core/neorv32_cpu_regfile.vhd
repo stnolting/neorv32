@@ -72,7 +72,8 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   signal reg_file      : reg_file_t;
   signal reg_file_emb  : reg_file_emb_t;
   signal rf_write_data : std_ulogic_vector(data_width_c-1 downto 0); -- actual write-back data
-  signal valid_wr      : std_ulogic; -- writing not to r0
+  signal rd_is_r0      : std_ulogic; -- writing to r0?
+  signal rf_we         : std_ulogic;
   signal dst_addr      : std_ulogic_vector(4 downto 0); -- destination address
 
 begin
@@ -89,9 +90,12 @@ begin
     end case;
   end process input_mux;
 
-  -- only write if destination is not x0; except we are forcing a r0 write access --
-  valid_wr <= or_all_f(ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c)) or ctrl_i(ctrl_rf_r0_we_c) when (CPU_EXTENSION_RISCV_E = false) else
-              or_all_f(ctrl_i(ctrl_rf_rd_adr3_c downto ctrl_rf_rd_adr0_c)) or ctrl_i(ctrl_rf_r0_we_c);
+  -- check if we are writing to x0 --
+  rd_is_r0 <= not or_all_f(ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c)) when (CPU_EXTENSION_RISCV_E = false) else
+              not or_all_f(ctrl_i(ctrl_rf_rd_adr3_c downto ctrl_rf_rd_adr0_c));
+
+  -- valid RF write access --
+  rf_we <= (ctrl_i(ctrl_rf_wb_en_c) and (not rd_is_r0)) or ctrl_i(ctrl_rf_r0_we_c);
 
   -- destination address --
   dst_addr <= ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) when (ctrl_i(ctrl_rf_r0_we_c) = '0') else (others => '0'); -- force dst=r0?
@@ -103,14 +107,14 @@ begin
   begin
     if rising_edge(clk_i) then -- sync read and write
       if (CPU_EXTENSION_RISCV_E = false) then -- normal register file with 32 entries
-        if (ctrl_i(ctrl_rf_wb_en_c) = '1') and ((valid_wr = '1') or (rf_r0_is_reg_c = false)) then -- valid write-back
+        if (rf_we = '1') then
           reg_file(to_integer(unsigned(dst_addr(4 downto 0)))) <= rf_write_data;
         else -- read
           rs1_o <= reg_file(to_integer(unsigned(ctrl_i(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c))));
           rs2_o <= reg_file(to_integer(unsigned(ctrl_i(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c))));
         end if;
       else -- embedded register file with 16 entries
-        if (ctrl_i(ctrl_rf_wb_en_c) = '1') and ((valid_wr = '1') or (rf_r0_is_reg_c = false)) then -- valid write-back
+        if (rf_we = '1') then
           reg_file_emb(to_integer(unsigned(dst_addr(3 downto 0)))) <= rf_write_data;
         else -- read
           rs1_o <= reg_file_emb(to_integer(unsigned(ctrl_i(ctrl_rf_rs1_adr3_c downto ctrl_rf_rs1_adr0_c))));
