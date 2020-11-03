@@ -189,12 +189,12 @@ int main(void) {
   // get clock speed (in Hz)
   uint32_t clock_speed = SYSINFO_CLK;
 
-  // init SPI for 8-bit, clock-mode 0, MSB-first, no interrupt
+  // init SPI for 8-bit, clock-mode 0, no interrupt
   if (clock_speed < 40000000) {
-    neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0, 0);
+    neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0);
   }
   else {
-    neorv32_spi_setup(CLK_PRSC_128, 0, 0, 0, 0);
+    neorv32_spi_setup(CLK_PRSC_128, 0, 0, 0);
   }
 
   // init UART (no interrupts)

@@ -14,7 +14,8 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 02.11.2020 | 1.4.6.5 | CPU rtl code optimizations - further reduced hardware footprint; rtl code clean-ups |
+| 03.11.2020 | 1.4.6.6 | Removed SPI module's *buggy* "LSB-first mode", SPI module now always sends data MSB-first; removed SPI.CTRL `SPI_CT_DIR` bit; modfied bit order in SPI CTRL register; updated SPI SW library |
+| 02.11.2020 | 1.4.6.5 | :warning: Fixed bug in CPU's illegal instruction detection logic; CPU rtl code optimizations - further reduced hardware footprint; rtl code clean-ups |
 | 01.11.2020 | 1.4.6.4 | :warning: Fixed bug in `[m]instret[h]` and `[m]cycle[h]` carry logic; CPU hardware optimizations (area reduction, shortend critical path) |
 | 29.10.2020 | 1.4.6.3 | rtl code clean-up; made preparations for additional co-processors |
 | 25.10.2020 | 1.4.6.2 | Added tag signal (`wb_tag_o`) to processor's Wishbone bus; removed processors's `priv_o` - privilege level is now encoded in Wishbone *tag* signal; added a more sophisticated **FreeRTOS** example ("full_demo") |

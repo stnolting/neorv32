@@ -393,11 +393,9 @@ enum NEORV32_SPI_CT_enum {
   SPI_CT_PRSC0  = 10, /**< UART control register(10) (r/w): Clock prescaler select bit 0 */
   SPI_CT_PRSC1  = 11, /**< UART control register(11) (r/w): Clock prescaler select bit 1 */
   SPI_CT_PRSC2  = 12, /**< UART control register(12) (r/w): Clock prescaler select bit 2 */
-  SPI_CT_DIR    = 13, /**< UART control register(13) (r/w): Shift direction (0: MSB first, 1: LSB first) */
-  SPI_CT_SIZE0  = 14, /**< UART control register(14) (r/w): Transfer data size lsb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
-  SPI_CT_SIZE1  = 15, /**< UART control register(15) (r/w): Transfer data size lsb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
-
-  SPI_CT_IRQ_EN = 16, /**< UART control register(16) (r/w): Transfer done interrupt enable */
+  SPI_CT_SIZE0  = 13, /**< UART control register(13) (r/w): Transfer data size lsb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
+  SPI_CT_SIZE1  = 14, /**< UART control register(14) (r/w): Transfer data size msb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
+  SPI_CT_IRQ_EN = 15, /**< UART control register(15) (r/w): Transfer done interrupt enable */
 
   SPI_CT_BUSY   = 31  /**< UART control register(31) (r/-): SPI busy flag */
 };

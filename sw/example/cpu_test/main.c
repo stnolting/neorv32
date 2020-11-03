@@ -867,7 +867,7 @@ int main() {
     cnt_test++;
 
     // configure SPI, enable transfer-done IRQ
-    neorv32_spi_setup(CLK_PRSC_2, 0, 0, 0, 1);
+    neorv32_spi_setup(CLK_PRSC_2, 0, 0, 1);
 
     // trigger SPI IRQ
     neorv32_spi_trans(0);

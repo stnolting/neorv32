@@ -1,8 +1,9 @@
 -- #################################################################################################
 -- # << NEORV32 - Serial Peripheral Interface Controller (SPI) >>                                  #
 -- # ********************************************************************************************* #
--- # Frame format: 8/16/24/32-bit RTX, MSB or LSB first, 2 clock modes, 8 clock speeds,            #
--- # 8 dedicated CS lines (low-active). Interrupt: SPI_transfer_done                               #
+-- # Frame format: 8/16/24/32-bit receive/transmit data, always MSB first, 2 clock modes,          #
+-- # 8 clock speeds (derived from system clock), 8 dedicated chip-select lines (low-active).       #
+-- # Interrupt: SPI_transfer_done                                                                  #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -86,11 +87,9 @@ architecture neorv32_spi_rtl of neorv32_spi is
   constant ctrl_spi_prsc0_c  : natural := 10; -- r/w: spi prescaler select bit 0
   constant ctrl_spi_prsc1_c  : natural := 11; -- r/w: spi prescaler select bit 1
   constant ctrl_spi_prsc2_c  : natural := 12; -- r/w: spi prescaler select bit 2
-  constant ctrl_spi_dir_c    : natural := 13; -- r/w: shift direction (0: MSB first, 1: LSB first)
-  constant ctrl_spi_size0_c  : natural := 14; -- r/w: data size (00:  8-bit, 01: 16-bit)
-  constant ctrl_spi_size1_c  : natural := 15; -- r/w: data size (10: 24-bit, 11: 32-bit)
-  --
-  constant ctrl_spi_irq_en_c : natural := 16; -- r/w: spi transmission done interrupt enable
+  constant ctrl_spi_size0_c  : natural := 13; -- r/w: data size (00:  8-bit, 01: 16-bit)
+  constant ctrl_spi_size1_c  : natural := 14; -- r/w: data size (10: 24-bit, 11: 32-bit)
+  constant ctrl_spi_irq_en_c : natural := 15; -- r/w: spi transmission done interrupt enable
   --
   constant ctrl_spi_busy_c   : natural := 31; -- r/-: spi transceiver is busy
 
@@ -101,22 +100,24 @@ architecture neorv32_spi_rtl of neorv32_spi is
   signal rden   : std_ulogic; -- read enable
 
   -- accessible regs --
-  signal ctrl    : std_ulogic_vector(16 downto 0);
-  signal tx_data : std_ulogic_vector(31 downto 0);
+  signal ctrl        : std_ulogic_vector(15 downto 0);
+  signal tx_data_reg : std_ulogic_vector(31 downto 0);
+  signal rx_data     : std_ulogic_vector(31 downto 0);
 
   -- clock generator --
   signal spi_clk : std_ulogic;
 
   -- spi transceiver --
-  signal spi_start    : std_ulogic;
-  signal spi_busy     : std_ulogic;
-  signal spi_state0   : std_ulogic;
-  signal spi_state1   : std_ulogic;
-  signal spi_rtx_sreg : std_ulogic_vector(31 downto 0);
-  signal spi_rx_data  : std_ulogic_vector(31 downto 0);
-  signal spi_bitcnt   : std_ulogic_vector(05 downto 0);
-  signal spi_sdi_ff0  : std_ulogic;
-  signal spi_sdi_ff1  : std_ulogic;
+  signal spi_start      : std_ulogic;
+  signal spi_busy       : std_ulogic;
+  signal spi_state0     : std_ulogic;
+  signal spi_state1     : std_ulogic;
+  signal spi_rtx_sreg   : std_ulogic_vector(31 downto 0);
+  signal spi_rx_data    : std_ulogic_vector(31 downto 0);
+  signal spi_bitcnt     : std_ulogic_vector(05 downto 0);
+  signal spi_bitcnt_max : std_ulogic_vector(05 downto 0);
+  signal spi_sdi_ff0    : std_ulogic;
+  signal spi_sdi_ff1    : std_ulogic;
 
 begin
 
@@ -134,17 +135,15 @@ begin
   begin
     if rising_edge(clk_i) then
       ack_o <= acc_en and (rden_i or wren_i);
-      spi_start <= '0';
       -- write access --
+      spi_start <= '0';
       if (wren = '1') then
-        -- control regsiter --
-        if (addr = spi_ctrl_addr_c) then
+        if (addr = spi_ctrl_addr_c) then -- control
           ctrl <= data_i(ctrl'left downto 0);
         end if;
-        -- data regsiter --
-        if (addr = spi_rtx_addr_c) then
-          tx_data   <= data_i;
-          spi_start <= '1';
+        if (addr = spi_rtx_addr_c) then -- tx data
+          tx_data_reg <= data_i;
+          spi_start   <= '1';
         end if;
       end if;
       -- read access --
@@ -165,29 +164,20 @@ begin
           data_o(ctrl_spi_prsc0_c)  <= ctrl(ctrl_spi_prsc0_c);
           data_o(ctrl_spi_prsc1_c)  <= ctrl(ctrl_spi_prsc1_c);
           data_o(ctrl_spi_prsc2_c)  <= ctrl(ctrl_spi_prsc2_c);
-          data_o(ctrl_spi_dir_c)    <= ctrl(ctrl_spi_dir_c);
           data_o(ctrl_spi_size0_c)  <= ctrl(ctrl_spi_size0_c);
           data_o(ctrl_spi_size1_c)  <= ctrl(ctrl_spi_size1_c);
-          --
           data_o(ctrl_spi_irq_en_c) <= ctrl(ctrl_spi_irq_en_c);
           --
           data_o(ctrl_spi_busy_c)   <= spi_busy;
         else -- spi_rtx_addr_c
-          data_o <= spi_rx_data;
+          data_o <= rx_data;
         end if;
       end if;
     end if;
   end process rw_access;
 
-  -- direct CS (output is low-active) --  
-  spi_csn_o(0) <= '0' when (ctrl(ctrl_spi_cs0_c) = '1') else '1';
-  spi_csn_o(1) <= '0' when (ctrl(ctrl_spi_cs1_c) = '1') else '1';
-  spi_csn_o(2) <= '0' when (ctrl(ctrl_spi_cs2_c) = '1') else '1';
-  spi_csn_o(3) <= '0' when (ctrl(ctrl_spi_cs3_c) = '1') else '1';
-  spi_csn_o(4) <= '0' when (ctrl(ctrl_spi_cs4_c) = '1') else '1';
-  spi_csn_o(5) <= '0' when (ctrl(ctrl_spi_cs5_c) = '1') else '1';
-  spi_csn_o(6) <= '0' when (ctrl(ctrl_spi_cs6_c) = '1') else '1';
-  spi_csn_o(7) <= '0' when (ctrl(ctrl_spi_cs7_c) = '1') else '1';
+  -- direct chip-select (CS) (output is low-active) --  
+  spi_csn_o(7 downto 0) <= not ctrl(ctrl_spi_cs7_c downto ctrl_spi_cs0_c);
 
 
   -- Clock Selection ------------------------------------------------------------------------
@@ -211,61 +201,50 @@ begin
       -- serial engine --
       spi_irq_o <= '0';
       if (spi_state0 = '0') or (ctrl(ctrl_spi_en_c) = '0') then -- idle or disabled
-        case ctrl(ctrl_spi_size1_c downto ctrl_spi_size0_c) is
-          when "00"   => spi_bitcnt <= "001000"; -- 8-bit mode
-          when "01"   => spi_bitcnt <= "010000"; -- 16-bit mode
-          when "10"   => spi_bitcnt <= "011000"; -- 24-bit mode
-          when others => spi_bitcnt <= "100000"; -- 32-bit mode
-        end case;
+      -- --------------------------------------------------------------
+        spi_bitcnt <= (others => '0');
         spi_state1 <= '0';
-        spi_sdo_o <= '0';
-        spi_sck_o <= '0';
+        spi_sdo_o  <= '0';
+        spi_sck_o  <= '0';
         if (ctrl(ctrl_spi_en_c) = '0') then -- disabled
           spi_busy <= '0';
         elsif (spi_start = '1') then -- start new transmission
-          case ctrl(ctrl_spi_size1_c downto ctrl_spi_size0_c) is
-            when "00"   => spi_rtx_sreg <= tx_data(07 downto 0) & x"000000"; -- 8-bit mode
-            when "01"   => spi_rtx_sreg <= tx_data(15 downto 0) & x"0000"; -- 16-bit mode
-            when "10"   => spi_rtx_sreg <= tx_data(23 downto 0) & x"00"; -- 24-bit mode
-            when others => spi_rtx_sreg <= tx_data(31 downto 0); -- 32-bit mode
-          end case;
-          spi_busy <= '1';
+          spi_rtx_sreg <= tx_data_reg;
+          spi_busy     <= '1';
         end if;
         spi_state0 <= spi_busy and spi_clk; -- start with next new clock pulse
 
       else -- transmission in progress
+      -- --------------------------------------------------------------
         if (spi_state1 = '0') then -- first half of transmission
-
+        -- --------------------------------------------------------------
           spi_sck_o <= ctrl(ctrl_spi_cpha_c);
-          if (ctrl(ctrl_spi_dir_c) = '0') then
-            spi_sdo_o <= spi_rtx_sreg(31); -- MSB first
-          else
-            spi_sdo_o <= spi_rtx_sreg(0); -- LSB first
-          end if;
+
+          case ctrl(ctrl_spi_size1_c downto ctrl_spi_size0_c) is
+            when "00"   => spi_sdo_o <= spi_rtx_sreg(07); -- 8-bit mode
+            when "01"   => spi_sdo_o <= spi_rtx_sreg(15); -- 16-bit mode
+            when "10"   => spi_sdo_o <= spi_rtx_sreg(23); -- 24-bit mode
+            when others => spi_sdo_o <= spi_rtx_sreg(31); -- 32-bit mode
+          end case;
+
           if (spi_clk = '1') then
             spi_state1 <= '1';
             if (ctrl(ctrl_spi_cpha_c) = '0') then
-              if (ctrl(ctrl_spi_dir_c) = '0') then
-                spi_rtx_sreg <= spi_rtx_sreg(30 downto 0) & spi_sdi_ff1; -- MSB first
-              else
-                spi_rtx_sreg <= spi_sdi_ff1 & spi_rtx_sreg(31 downto 1); -- LSB first
-              end if;
+              spi_rtx_sreg <= spi_rtx_sreg(30 downto 0) & spi_sdi_ff1;
             end if;
-            spi_bitcnt <= std_ulogic_vector(unsigned(spi_bitcnt) - 1);
+            spi_bitcnt <= std_ulogic_vector(unsigned(spi_bitcnt) + 1);
           end if;
-        else -- second half of transmission
 
+        else -- second half of transmission
+        -- --------------------------------------------------------------
           spi_sck_o <= not ctrl(ctrl_spi_cpha_c);
+
           if (spi_clk = '1') then
             spi_state1 <= '0';
             if (ctrl(ctrl_spi_cpha_c) = '1') then
-              if (ctrl(ctrl_spi_dir_c) = '0') then
-                spi_rtx_sreg <= spi_rtx_sreg(30 downto 0) & spi_sdi_ff1; -- MSB first
-              else
-                spi_rtx_sreg <= spi_sdi_ff1 & spi_rtx_sreg(31 downto 1); -- LSB first
-              end if;
+              spi_rtx_sreg <= spi_rtx_sreg(30 downto 0) & spi_sdi_ff1;
             end if;
-            if (spi_bitcnt = "000000") then
+            if (spi_bitcnt = spi_bitcnt_max) then
               spi_state0 <= '0';
               spi_busy   <= '0';
               spi_irq_o  <= ctrl(ctrl_spi_irq_en_c);
@@ -276,16 +255,31 @@ begin
     end if;
   end process spi_rtx_unit;
 
-  -- SPI receiver output --
-  spi_rx_output: process(ctrl, spi_rtx_sreg)
+
+  -- RTX Data size ------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  data_size: process(ctrl)
   begin
     case ctrl(ctrl_spi_size1_c downto ctrl_spi_size0_c) is
-      when "00"   => spi_rx_data <= x"000000" & spi_rtx_sreg(7 downto 0); -- 8-bit mode
-      when "01"   => spi_rx_data <= x"0000" & spi_rtx_sreg(15 downto 0); -- 16-bit mode
-      when "10"   => spi_rx_data <= x"00" & spi_rtx_sreg(23 downto 0); -- 24-bit mode
-      when others => spi_rx_data <= spi_rtx_sreg(31 downto 0); -- 32-bit mode
+      when "00"   => spi_bitcnt_max <= "001000"; -- 8-bit mode
+      when "01"   => spi_bitcnt_max <= "010000"; -- 16-bit mode
+      when "10"   => spi_bitcnt_max <= "011000"; -- 24-bit mode
+      when others => spi_bitcnt_max <= "100000"; -- 32-bit mode
     end case;
-  end process spi_rx_output;
+  end process data_size;
+
+
+  -- RX-Data Masking ------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  rx_mapping: process(ctrl, spi_rtx_sreg)
+  begin
+    case ctrl(ctrl_spi_size1_c downto ctrl_spi_size0_c) is
+      when "00"   => rx_data <= x"000000" & spi_rtx_sreg(07 downto 0); -- 8-bit mode
+      when "01"   => rx_data <= x"0000"   & spi_rtx_sreg(15 downto 0); -- 16-bit mode
+      when "10"   => rx_data <= x"00"     & spi_rtx_sreg(23 downto 0); -- 24-bit mode
+      when others => rx_data <=             spi_rtx_sreg(31 downto 0); -- 32-bit mode
+    end case;
+  end process rx_mapping;
 
 
 end neorv32_spi_rtl;
