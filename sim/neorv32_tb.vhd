@@ -159,6 +159,7 @@ begin
     CLOCK_FREQUENCY              => f_clock_nat_c, -- clock frequency of clk_i in Hz
     BOOTLOADER_USE               => false,         -- implement processor-internal bootloader?
     USER_CODE                    => x"12345678",   -- custom user code
+    HW_THREAD_ID                 => x"00000000",   -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        => true,          -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => false,         -- implement embedded RF extension?

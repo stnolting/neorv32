@@ -46,7 +46,8 @@ entity neorv32_top_axi4lite is
     -- General --
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
     BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
-    USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
+    USER_CODE                    : std_logic_vector(31 downto 0) := x"00000000"; -- custom user code
+    HW_THREAD_ID                 : std_logic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
@@ -136,7 +137,8 @@ end neorv32_top_axi4lite;
 architecture neorv32_top_axi4lite_rtl of neorv32_top_axi4lite is
 
   -- type conversion --
-  constant USER_CODE_INT : std_ulogic_vector(31 downto 0) := std_ulogic_vector(USER_CODE);
+  constant USER_CODE_INT    : std_ulogic_vector(31 downto 0) := std_ulogic_vector(USER_CODE);
+  constant HW_THREAD_ID_INT : std_ulogic_vector(31 downto 0) := std_ulogic_vector(HW_THREAD_ID);
   --
   signal clk_i_int       : std_ulogic;
   signal rstn_i_int      : std_ulogic;
@@ -199,6 +201,7 @@ begin
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,    -- clock frequency of clk_i in Hz
     BOOTLOADER_USE               => BOOTLOADER_USE,     -- implement processor-internal bootloader?
     USER_CODE                    => USER_CODE_INT,      -- custom user code
+    HW_THREAD_ID                 => HW_THREAD_ID_INT,   -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?

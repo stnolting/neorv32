@@ -51,6 +51,7 @@ entity neorv32_top is
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
     BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
     USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
+    HW_THREAD_ID                 : std_ulogic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
@@ -317,7 +318,7 @@ begin
   neorv32_cpu_inst: neorv32_cpu
   generic map (
     -- General --
-    HW_THREAD_ID                 => (others => '0'), -- hardware thread id
+    HW_THREAD_ID                 => HW_THREAD_ID,    -- hardware thread id
     CPU_BOOT_ADDR                => cpu_boot_addr_c, -- cpu boot address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
