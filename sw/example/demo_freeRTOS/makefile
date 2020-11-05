@@ -106,10 +106,7 @@ APP_INC += -I chip_specific_extensions/neorv32
 
 ASM_INC += -I chip_specific_extensions/neorv32
 
-# Actual application
-APP_SRC += aux_printf/printf.c
-APP_INC += -I aux_printf/include
-
+# Demo application
 APP_SRC += blinky_demo/main_blinky.c
 APP_SRC += full_demo/main_full.c
 APP_SRC += full_demo/RegTest.s
