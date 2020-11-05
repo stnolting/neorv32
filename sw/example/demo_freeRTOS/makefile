@@ -73,31 +73,31 @@ NEORV32_HOME ?= ../../..
 # -----------------------------------------------------------------------------
 ifneq (,$(findstring RUN_FREERTOS_DEMO,$(USER_FLAGS)))
 # FreeRTOS home folder (adapt this!)
-FREERTOS_HOME ?= /mnt/n/Projects/FreeRTOS/FreeRTOS
+FREERTOS_HOME ?= /mnt/n/Projects/FreeRTOSv10.4.1
 
 # FreeRTOS RISC-V specific
-APP_SRC += $(wildcard $(FREERTOS_HOME)/Source/portable/GCC/RISC-V/*.c)
-APP_SRC += $(FREERTOS_HOME)/Source/portable/GCC/RISC-V/portASM.S
+APP_SRC += $(wildcard $(FREERTOS_HOME)/FreeRTOS/Source/portable/GCC/RISC-V/*.c)
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Source/portable/GCC/RISC-V/portASM.S
 
-APP_INC += -I $(FREERTOS_HOME)/Source/portable/GCC/RISC-V
+APP_INC += -I $(FREERTOS_HOME)/FreeRTOS/Source/portable/GCC/RISC-V
 
 # FreeRTOS core
-APP_SRC += $(wildcard $(FREERTOS_HOME)/Source/*.c)
-APP_SRC += $(wildcard $(FREERTOS_HOME)/Source/portable/MemMang/heap_4.c)
+APP_SRC += $(wildcard $(FREERTOS_HOME)/FreeRTOS/Source/*.c)
+APP_SRC += $(wildcard $(FREERTOS_HOME)/FreeRTOS/Source/portable/MemMang/heap_4.c)
 
-APP_INC += -I $(FREERTOS_HOME)/Source/include
+APP_INC += -I $(FREERTOS_HOME)/FreeRTOS/Source/include
 
 # FreeRTOS sources for the full_demo
-APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/blocktim.c
-APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/dynamic.c
-APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/EventGroupsDemo.c
-APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/GenQTest.c
-APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/recmutex.c
-APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/TaskNotify.c
-APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/TaskNotifyArray.c
-APP_SRC += $(FREERTOS_HOME)/Demo/Common/Minimal/TimerDemo.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/blocktim.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/dynamic.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/EventGroupsDemo.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/GenQTest.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/recmutex.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/TaskNotify.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/TaskNotifyArray.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/TimerDemo.c
 
-APP_INC += -I $(FREERTOS_HOME)/Demo/Common/include
+APP_INC += -I $(FREERTOS_HOME)/FreeRTOS/Demo/Common/include
 
 # NEORV32 specific
 ASM_INC += -DportasmHANDLE_INTERRUPT=SystemIrqHandler
@@ -113,6 +113,33 @@ APP_INC += -I aux_printf/include
 APP_SRC += blinky_demo/main_blinky.c
 APP_SRC += full_demo/main_full.c
 APP_SRC += full_demo/RegTest.s
+endif
+
+# -----------------
+# FreeRTOS-Plus-CLI
+# -----------------
+ifneq (,$(findstring FREERTOS_PLUS_CLI,$(USER_FLAGS)))
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-CLI/FreeRTOS_CLI.c
+
+APP_INC += -I $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-CLI
+endif
+
+# -----------------
+# FreeRTOS-Plus-TCP
+# -----------------
+ifneq (,$(findstring FREERTOS_PLUS_TCP,$(USER_FLAGS)))
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_ARP.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_DHCP.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_DNS.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_IP.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_Sockets.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_Stream_Buffer.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_TCP_IP.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_TCP_WIN.c
+APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_UDP_IP.c
+
+APP_INC += -I $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/include
+APP_INC += -I $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/portable/Compiler/GCC
 endif
 
 

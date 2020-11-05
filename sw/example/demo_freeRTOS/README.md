@@ -10,20 +10,20 @@ but is placed in this source directory for simplicity.
 
 ## Hardware Requirements
 
-* 8kB DMEM and 16kB IMEM (*blinky_demo*) / 32kB+ DMEM and 32kB+ IMEM (*full_demo*)
+* DMEM/IMEM requriements depend on the actual application (for example: 8kB DMEM and 16kB IMEM for *blinky_demo*)
 * MTIME (machine timer) + UART + GPIO
 * `Zicsr` CPU extension
 
 
 ## Instructions
 
-Download FreeRTOS from the [official GitHub repository](https://github.com/FreeRTOS/FreeRTOS).
+Download FreeRTOS from the [official GitHub repository](https://github.com/FreeRTOS/FreeRTOS) or from the its official homepage.
 
     $ git clone https://github.com/FreeRTOS/FreeRTOS.git
 
-Open the makefile from this example folder and configure the `FREERTOS_HOME` variable to point to the `FreeRTOS/FreeRTOS` home folder.
+Open the makefile from this example folder and configure the `FREERTOS_HOME` variable to point to your FreeRTOS home folder.
 
-    FREERTOS_HOME ?= /mnt/n/Projects/FreeRTOS/FreeRTOS
+    FREERTOS_HOME ?= /mnt/n/Projects/FreeRTOSv10.4.1
 
 Compile the NEORV32 executable. Do not forget the `RUN_FREERTOS_DEMO` switch.
 
@@ -39,14 +39,25 @@ Awaiting neorv32_exe.bin... OK
 CMD:> e
 Booting...
 
-FreeRTOS V10.3.1
+FreeRTOS V10.4.1
 Blink
 Blink
 Blink
 ```
 
+## FreeRTOS Plus
 
-## Note
+To automatically add source and include files from FreeRTOS plus extensions add one (or more) of the following arguments when invoking `make`:
+
+* FreeRTOS-Plus-CLI: `USER_FLAGS+=-FREERTOS_PLUS_CLI`
+* FreeRTOS-Plus-TCP: `USER_FLAGS+=-FREERTOS_PLUS_TCP`
+
+Example:
+
+    $ make USER_FLAGS+=-DRUN_FREERTOS_DEMO USER_FLAGS+=-FREERTOS_PLUS_TCP clean_all exe
+
+
+## Notes
 
 The onfiguration of the FreeRTOS home folder (via `FREERTOS_HOME`) is corrupted if the compiler shows the following error:
 
