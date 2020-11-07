@@ -506,10 +506,31 @@ void neorv32_rte_print_hw_version(void) {
  **************************************************************************/
 void neorv32_rte_print_credits(void) {
 
-  neorv32_uart_print("\n\nThe NEORV32 Processor Project\n"
-                     "by Stephan Nolting\n"
+  neorv32_uart_print("\nThe NEORV32 Processor Project, by Stephan Nolting\n"
                      "https://github.com/stnolting/neorv32\n"
-                     "made in Hannover, Germany\n\n");
+                     "made in Hannover, Germany EU\n\n");
+}
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Print project credits
+ **************************************************************************/
+void neorv32_rte_print_logo(void) {
+
+  neorv32_uart_print(
+    "\n"
+    "                                                                                       ##\n"
+    "                                                                                       ##         ##   ##  ##\n"
+    " ##     ##   #########   ########    ########   ##      ##   ########    ########      ##       ###############\n"  
+    "####    ##  ##          ##      ##  ##      ##  ##      ##  ##      ##  ##      ##     ##     ####           ####\n"
+    "## ##   ##  ##          ##      ##  ##      ##  ##      ##          ##         ##      ##       ##   #####   ##\n"
+    "##  ##  ##  #########   ##      ##  #########   ##      ##      #####        ##        ##     ####   #####   ####\n"
+    "##   ## ##  ##          ##      ##  ##    ##    ##      ##          ##     ##          ##       ##   #####   ##\n"
+    "##    ####  ##          ##      ##  ##     ##    ##    ##   ##      ##   ##            ##     ####           ####\n"
+    "##     ##    #########   ########   ##      ##     ####      ########   ##########     ##       ###############\n"
+    "                                                                                       ##         ##   ##  ##\n"
+    "                                                                                       ##\n"
+    "\n");
 }
 
 
@@ -519,7 +540,6 @@ void neorv32_rte_print_credits(void) {
 void neorv32_rte_print_license(void) {
 
   neorv32_uart_print(
-  "\n"
   "\n"
   "BSD 3-Clause License\n"
   "\n"
@@ -548,8 +568,6 @@ void neorv32_rte_print_license(void) {
   "AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\n"
   "NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED\n"
   "OF THE POSSIBILITY OF SUCH DAMAGE.\n"
-  "\n"
-  "The NEORV32 Processor - https://github.com/stnolting/neorv32 (c) Stephan Nolting\n"
   "\n"
   "\n"
   );
