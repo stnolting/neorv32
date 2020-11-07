@@ -165,13 +165,13 @@ uint32_t get_exe_word(int src, uint32_t addr);
 void system_error(uint8_t err_code);
 void print_hex_word(uint32_t num);
 
-// SPI flash access
+// SPI flash driver functions
 uint8_t spi_flash_read_byte(uint32_t addr);
 void spi_flash_write_byte(uint32_t addr, uint8_t wdata);
 void spi_flash_write_word(uint32_t addr, uint32_t wdata);
 void spi_flash_erase_sector(uint32_t addr);
-uint8_t spi_flash_read_status(void);
 uint8_t spi_flash_read_1st_id(void);
+void spi_flash_write_wait(void);
 void spi_flash_write_enable(void);
 void spi_flash_write_addr(uint32_t addr);
 
@@ -223,7 +223,7 @@ int main(void) {
   // ------------------------------------------------
   neorv32_uart_print("\n\n\n\n<< NEORV32 Bootloader >>\n\n"
                      "BLDV: "__DATE__"\nHWV:  ");
-  neorv32_rte_print_hw_version();
+  print_hex_word(neorv32_cpu_csr_read(CSR_MIMPID));
   neorv32_uart_print("\nCLK:  ");
   print_hex_word(SYSINFO_CLK);
   neorv32_uart_print(" Hz\nUSER: ");
@@ -608,7 +608,7 @@ void print_hex_word(uint32_t num) {
 
 
 // -------------------------------------------------------------------------------------
-// SPI flash functions
+// SPI flash driver functions
 // -------------------------------------------------------------------------------------
 
 /**********************************************************************//**
@@ -649,12 +649,7 @@ void spi_flash_write_byte(uint32_t addr, uint8_t wdata) {
 
   neorv32_spi_cs_dis(SPI_FLASH_CS);
 
-  while (1) {
-    uint8_t tmp = spi_flash_read_status();
-    if ((tmp & 0x01) == 0) { // write in progress flag cleared?
-      break;
-    }
-  }
+  spi_flash_write_wait(); // wait for write operation to finish
 }
 
 
@@ -696,30 +691,7 @@ void spi_flash_erase_sector(uint32_t addr) {
 
   neorv32_spi_cs_dis(SPI_FLASH_CS);
 
-  while (1) {
-    uint8_t tmp = spi_flash_read_status();
-    if ((tmp & 0x01) == 0) { // write in progress flag cleared?
-      break;
-    }
-  }
-}
-
-
-/**********************************************************************//**
- * Read status register.
- *
- * @return Status register.
- **************************************************************************/
-uint8_t spi_flash_read_status(void) {
-
-  neorv32_spi_cs_en(SPI_FLASH_CS);
-
-  neorv32_spi_trans(SPI_FLASH_CMD_READ_STATUS);
-  uint8_t status = (uint8_t)neorv32_spi_trans(0);
-
-  neorv32_spi_cs_dis(SPI_FLASH_CS);
-
-  return status;
+  spi_flash_write_wait(); // wait for write operation to finish
 }
 
 
@@ -740,6 +712,27 @@ uint8_t spi_flash_read_1st_id(void) {
   neorv32_spi_cs_dis(SPI_FLASH_CS);
 
   return id;
+}
+
+
+/**********************************************************************//**
+ * Wait for flash write operation to finisch.
+ **************************************************************************/
+void spi_flash_write_wait(void) {
+
+  while(1) {
+
+    neorv32_spi_cs_en(SPI_FLASH_CS);
+
+    neorv32_spi_trans(SPI_FLASH_CMD_READ_STATUS);
+    uint8_t status = (uint8_t)neorv32_spi_trans(0);
+
+    neorv32_spi_cs_dis(SPI_FLASH_CS);
+
+    if ((status & 0x01) == 0) { // write in progress flag cleared?
+      break;
+    }
+  }
 }
 
 
@@ -772,4 +765,3 @@ void spi_flash_write_addr(uint32_t addr) {
   neorv32_spi_trans(address.uint8[1]);
   neorv32_spi_trans(address.uint8[0]);
 }
-
