@@ -83,6 +83,7 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 ### To-Do / Wish List / [Help Wanted](#Contribute)
 
 * Use LaTeX for data sheet
+* More support for FreeRTOS
 * Further size and performance optimization
 * Add a cache for the external memory interface
 * Synthesis results (+ wrappers?) for more/specific platforms
@@ -500,8 +501,8 @@ Use the bootloader console to upload the `neorv32_exe.bin` executable and run yo
 ```
   << NEORV32 Bootloader >>
   
-  BLDV: Jul  6 2020
-  HWV:  1.0.1.0
+  BLDV: Nov  7 2020
+  HWV:  0x01040606
   CLK:  0x0134FD90 Hz
   USER: 0x0001CE40
   MISA: 0x42801104
@@ -550,7 +551,7 @@ to [open a new issue](https://github.com/stnolting/neorv32/issues) or directly [
 This project is released under the BSD 3-Clause license. No copyright infringement intended.
 Other implied or used projects might have different licensing - see their documentation to get more information.
 
-#### Citation
+#### Citing
 
 If you are using the NEORV32 or some parts of the project in some kind of publication, please cite it as follows:
 

@@ -14,6 +14,7 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 07.11.2020 | 1.4.6.7 | Updated bootloader (size optimization) and changed processor version output; added project logo; minor data sheet edits |
 | 03.11.2020 | 1.4.6.6 | Removed SPI module's *buggy* "LSB-first mode", SPI module now always sends data MSB-first; removed SPI.CTRL `SPI_CT_DIR` bit; modfied bit order in SPI CTRL register; updated SPI SW library |
 | 02.11.2020 | 1.4.6.5 | :warning: Fixed bug in CPU's illegal instruction detection logic; CPU rtl code optimizations - further reduced hardware footprint; rtl code clean-ups |
 | 01.11.2020 | 1.4.6.4 | :warning: Fixed bug in `[m]instret[h]` and `[m]cycle[h]` carry logic; CPU hardware optimizations (area reduction, shortend critical path) |
