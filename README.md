@@ -1,4 +1,6 @@
-# [The NEORV32 Processor](https://github.com/stnolting/neorv32) (RISC-V)
+[![NEORV32](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_logo_white_bg.png)](https://github.com/stnolting/neorv32)
+
+# The NEORV32 RISC-V Processor
 
 [![Build Status](https://travis-ci.com/stnolting/neorv32.svg?branch=master)](https://travis-ci.com/stnolting/neorv32)
 [![license](https://img.shields.io/github/license/stnolting/neorv32)](https://github.com/stnolting/neorv32/blob/master/LICENSE)
