@@ -20,7 +20,7 @@ ls -al $srcdir_bootloader
 make -C $test_app_dir check
 
 # Generate executables for all example projects
-make -C $srcdir_examples clean_all exe
+make -C $srcdir_examples MARCH=-march=rv32imc clean_all exe
 
 # Compile and install bootloader
 make -C $srcdir_bootloader clean_all info bootloader

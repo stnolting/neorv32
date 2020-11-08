@@ -107,10 +107,12 @@ int main() {
   uint64_t mtime_cmp_max = 0xFFFFFFFFFFFFFFFFUL;
   neorv32_mtime_set_timecmp(mtime_cmp_max);
 
+
   // intro
-  neorv32_uart_printf("\n\n--- PROCESSOR/CPU TEST ---\n");
-  neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
-  neorv32_uart_printf("This test suite is intended to verify the default NEORV32 processor setup using the default testbench.\n\n");
+  // -----------------------------------------------
+
+  // logo
+  neorv32_rte_print_logo();
 
   // show project credits
   neorv32_rte_print_credits();
@@ -149,21 +151,24 @@ int main() {
   }
 
   // enable interrupt sources
-  install_err  = neorv32_cpu_irq_enable(CPU_MIE_MSIE);  // activate software interrupt
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_MTIE);  // activate timer interrupt
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_MEIE);  // activate external interrupt
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ0E);// activate fast interrupt channel 0
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ1E);// activate fast interrupt channel 1
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ2E);// activate fast interrupt channel 2
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ3E);// activate fast interrupt channel 3
+  install_err  = neorv32_cpu_irq_enable(CPU_MIE_MSIE);   // activate software interrupt
+  install_err += neorv32_cpu_irq_enable(CPU_MIE_MTIE);   // activate timer interrupt
+  install_err += neorv32_cpu_irq_enable(CPU_MIE_MEIE);   // activate external interrupt
+  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ0E); // activate fast interrupt channel 0
+  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ1E); // activate fast interrupt channel 1
+  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ2E); // activate fast interrupt channel 2
+  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ3E); // activate fast interrupt channel 3
 
   if (install_err) {
     neorv32_uart_printf("IRQ enable error (%i)!\n", install_err);
     return 0;
   }
 
-  // intro2
-  neorv32_uart_printf("\n\nStarting tests...\n\n");
+  // test intro
+  neorv32_uart_printf("\n--- PROCESSOR/CPU TEST ---\n");
+  neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
+  neorv32_uart_printf("This test suite is intended to verify the default NEORV32 processor setup using the default testbench.\n\n");
+  neorv32_uart_printf("Starting tests...\n\n");
 
   // enable global interrupts
   neorv32_cpu_eint();
