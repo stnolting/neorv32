@@ -10,11 +10,5 @@ homedir=$homedir/..
 # Run simulation
 sh $homedir/sim/ghdl/ghdl_sim.sh --stop-time=6ms
 
-# Check output
-echo "Checking NEORV32.UART_SIM_MODE text output. Should contain:"; cat $homedir/check_reference.out
-echo ""
-echo "Checking NEORV32.UART_SIM_MODE text output. NEORV32.UART_SIM_MODE text output is:"
-cat neorv32.uart.sim_mode.text.out
-
 # Check if reference can be found in output
 grep -qf $homedir/check_reference.out neorv32.uart.sim_mode.text.out && echo "Hardware test completed successfully!"
