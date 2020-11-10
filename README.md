@@ -22,14 +22,14 @@
 
 The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC) that is based
 on the RISC-V-compliant NEORV32 CPU. The processor is intended as *ready-to-go* auxiliary processor within a larger SoC
-designs or as stand-alone custom microcontroller. Its top entity can be directly synthesized for *any* target technology without modifications.
+designs or as stand-alone custom microcontroller.
 
 
 ### Key Features
 
-* RISC-V-[compliant](#Status) 32-bit `rv32i` [**NEORV32 CPU**](#NEORV32-CPU-Features)
-  * Compliant to *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
-  * Compliant to *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
+* RISC-V-[compliant](#Status) 32-bit `rv32i` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
+  * Subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
+  * Subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
 * Optional CPU extensions
   * `C` - compressed instructions (16-bit)
   * `E` - embedded CPU (reduced register file)
@@ -38,20 +38,20 @@ designs or as stand-alone custom microcontroller. Its top entity can be directly
   * `Zicsr` - control and status register access instructions (+ exception/irq system)
   * `Zifencei` - instruction stream synchronization
   * `PMP` - physical memory protection
+* Full-scale RISC-V microcontroller system (**SoC**): [**NEORV32 Processor**](#NEORV32-Processor-Features)
+  * optional embedded memories, timers, serial interfaces, external interfaces (Wishbone / [AXI4](#AXI4-Connectivity)), ...
 * Software framework
-  * Core libraries for high-level usage of the provided functions and peripherals
-  * Application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
+  * core libraries for high-level usage of the provided functions and peripherals
+  * application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
   * GCC-based toolchain ([pre-compiled toolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
   * runtime environment
   * several example programs
-  * [Doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation of the software framework: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
+  * [doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
   * [FreeRTOS port](https://github.com/stnolting/neorv32/blob/master/sw/example/demo_freeRTOS) available
 * [**Full-blown data sheet**](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf)
 * Completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
 * Fully synchronous design, no latches, no gated clocks
 * Small hardware footprint and high operating frequency
-* Full-scale RISC-V microcontroller system (**SoC**): [**NEORV32 Processor**](#NEORV32-Processor-Features)
-  * Optional embedded memories, timers, serial interfaces, external interfaces (Wishbone or [AXI4-Lite](#AXI4-Connectivity)) ...
 
 The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
 To see the changes between releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
@@ -118,7 +118,7 @@ is highly customizable via the processor's top generics.
 * Optional two wire serial interface controller (**TWI**), with optional clock-stretching, compatible to the I²C standard
 * Optional general purpose parallel IO port (**GPIO**), 32xOut & 32xIn, with pin-change interrupt
 * Optional 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**), *standard* or *pipelined* handshake/transactions mode
-* Optional wrapper for **AXI4-Lite Master Interface** (see [AXI Connectivity](#AXI4-Connectivity)), compatibility verified with Xilinx Vivado Block Desginer
+* Optional wrapper for **AXI4-Lite Master Interface** (see [AXI Connectivity](#AXI4-Connectivity))
 * Optional watchdog timer (**WDT**)
 * Optional PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
 * Optional GARO-based true random number generator (**TRNG**)
@@ -626,6 +626,6 @@ This project is not affiliated with or endorsed by the Open Source Initiative (h
 
 --------
 
-This repository was created on June 23th, 2020.
+This repository was created on June 23rd, 2020.
 
 Made with :coffee: in Hannover, Germany :eu:
