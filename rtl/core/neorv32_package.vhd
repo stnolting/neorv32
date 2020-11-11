@@ -50,7 +50,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040607"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040700"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
@@ -367,7 +367,7 @@ package neorv32_package is
   constant csr_mimpid_c    : std_ulogic_vector(11 downto 0) := x"f13"; -- mimpid
   constant csr_mhartid_c   : std_ulogic_vector(11 downto 0) := x"f14"; -- mhartid
   --
-  constant csr_mzext_c     : std_ulogic_vector(11 downto 0) := x"fc0"; -- mzext (custom)
+  constant csr_mzext_c     : std_ulogic_vector(11 downto 0) := x"fc0"; -- mzext (neorv32-custom)
 
   -- Co-Processor Operations ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

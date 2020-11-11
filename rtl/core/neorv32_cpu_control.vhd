@@ -156,18 +156,12 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal issue_engine : issue_engine_t;
 
-  -- instruction buffer ("FIFO" with just one entry) --
-  type i_buf_t is record
-    wdata  : std_ulogic_vector(35 downto 0); -- 4-bit status + 32-bit instruction
-    rdata  : std_ulogic_vector(35 downto 0); -- 4-bit status + 32-bit instruction
-    status : std_ulogic;
-    clear  : std_ulogic;
-    we     : std_ulogic;
-    re     : std_ulogic;
-    free   : std_ulogic;
-    avail  : std_ulogic;
+  -- instruction issue interface --
+  type cmd_issue_t is record
+    data  : std_ulogic_vector(35 downto 0); -- 4-bit status + 32-bit instruction
+    valid : std_ulogic; -- data word is valid when set
   end record;
-  signal i_buf : i_buf_t;
+  signal cmd_issue : cmd_issue_t;
 
   -- instruction execution engine --
   type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP, EXECUTE, ALU_WAIT, BRANCH, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, CSR_ACCESS);
@@ -196,8 +190,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     if_rst_nxt   : std_ulogic; -- instruction fetch was reset
   end record;
   signal execute_engine : execute_engine_t;
-
-  signal next_pc_tmp : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- trap controller --
   type trap_ctrl_t is record
@@ -369,7 +361,7 @@ begin
       elsif (ipb.we = '1') then
         ipb.w_pnt <= std_ulogic_vector(unsigned(ipb.w_pnt) + 1);
       end if;
-      if (ipb.we = '1') then -- write port
+      if (ipb.we = '1') then -- write data
         ipb.data(to_integer(unsigned(ipb.w_pnt(ipb.w_pnt'left-1 downto 0)))) <= ipb.wdata;
       end if;
       -- read port --
@@ -430,7 +422,7 @@ begin
 
   -- Issue Engine FSM Comb ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  issue_engine_fsm_comb: process(issue_engine, ipb, i_buf, execute_engine, ci_illegal, ci_instr32)
+  issue_engine_fsm_comb: process(issue_engine, ipb, execute_engine, ci_illegal, ci_instr32)
   begin
     -- arbiter defaults --
     issue_engine.state_nxt <= issue_engine.state;
@@ -440,10 +432,10 @@ begin
     -- instruction prefetch buffer interface defaults --
     ipb.re <= '0';
 
-    -- instruction buffer interface defaults --
-    i_buf.we    <= '0';
-    -- i_buf = <illegal_compressed_instruction> & <bus_error & alignment_error> & <is_compressed_instrucion> & <32-bit_instruction_word>
-    i_buf.wdata <= '0' & ipb.rdata(33 downto 32) & '0' & ipb.rdata(31 downto 0);
+    -- instruction issue interface defaults --
+    -- cmd_issue.data = <illegal_compressed_instruction> & <bus_error & alignment_error> & <is_compressed_instrucion> & <32-bit_instruction_word>
+    cmd_issue.data  <= '0' & ipb.rdata(33 downto 32) & '0' & ipb.rdata(31 downto 0);
+    cmd_issue.valid <= '0';
 
     -- state machine --
     case issue_engine.state is
@@ -453,29 +445,29 @@ begin
         if (ipb.avail = '1') then -- instructions available?
 
           if (issue_engine.align = '0') or (CPU_EXTENSION_RISCV_C = false) then -- begin check in LOW instruction half-word
-            if (i_buf.free = '1') then
-              i_buf.we <= '1';
+            if (execute_engine.state = DISPATCH) then
+              cmd_issue.valid <= '1';
               issue_engine.buf_nxt <= ipb.rdata(33 downto 32) & ipb.rdata(31 downto 16); -- store high half-word - we might need it for an unaligned uncompressed instruction
               if (ipb.rdata(1 downto 0) = "11") or (CPU_EXTENSION_RISCV_C = false) then -- uncompressed and "aligned"
-                ipb.re      <= '1';
-                i_buf.wdata <= '0' & ipb.rdata(33 downto 32) & '0' & ipb.rdata(31 downto 0);
+                ipb.re <= '1';
+                cmd_issue.data <= '0' & ipb.rdata(33 downto 32) & '0' & ipb.rdata(31 downto 0);
               else -- compressed
-                ipb.re      <= '1';
-                i_buf.wdata <= ci_illegal & ipb.rdata(33 downto 32) & '1' & ci_instr32;
+                ipb.re <= '1';
+                cmd_issue.data <= ci_illegal & ipb.rdata(33 downto 32) & '1' & ci_instr32;
                 issue_engine.align_nxt <= '1';
               end if;
             end if;
 
           else -- begin check in HIGH instruction half-word
-            if (i_buf.free = '1') then
-              i_buf.we <= '1';
+            if (execute_engine.state = DISPATCH) then
+              cmd_issue.valid <= '1';
               issue_engine.buf_nxt <= ipb.rdata(33 downto 32) & ipb.rdata(31 downto 16); -- store high half-word - we might need it for an unaligned uncompressed instruction
               if (issue_engine.buf(1 downto 0) = "11") then -- uncompressed and "unaligned"
-                ipb.re      <= '1';
-                i_buf.wdata <= '0' & issue_engine.buf(17 downto 16) & '0' & (ipb.rdata(15 downto 0) & issue_engine.buf(15 downto 0));
+                ipb.re <= '1';
+                cmd_issue.data <= '0' & issue_engine.buf(17 downto 16) & '0' & (ipb.rdata(15 downto 0) & issue_engine.buf(15 downto 0));
               else -- compressed
                 -- do not read from ipb here!
-                i_buf.wdata <= ci_illegal & ipb.rdata(33 downto 32) & '1' & ci_instr32;
+                cmd_issue.data <= ci_illegal & ipb.rdata(33 downto 32) & '1' & ci_instr32;
                 issue_engine.align_nxt <= '0';
               end if;
             end if;
@@ -522,32 +514,6 @@ begin
   end generate;
 
 
-  -- Instruction Buffer ---------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  instruction_buffer: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (i_buf.clear = '1') then
-        i_buf.status <= '0';
-      elsif (i_buf.we = '1') then
-        i_buf.status <= '1';
-      elsif (i_buf.re = '1') then
-        i_buf.status <= '0';
-      end if;
-      if (i_buf.we = '1') then
-        i_buf.rdata <= i_buf.wdata;
-      end if;
-    end if;
-  end process instruction_buffer;
-
-  -- status --
-  i_buf.free  <= not i_buf.status;
-  i_buf.avail <= i_buf.status;
-
-  -- clear i_buf when clearing ipb --
-  i_buf.clear <= ipb.clear;
-
-
 -- ****************************************************************************************************************************
 -- Instruction Execution
 -- ****************************************************************************************************************************
@@ -556,9 +522,11 @@ begin
   -- Immediate Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   imm_gen: process(clk_i)
+    variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     if rising_edge(clk_i) then
-      case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
+      opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
+      case opcode_v is -- save some bits here, LSBs are always 11 for rv32
         when opcode_store_c => -- S-immediate
           imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
           imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
@@ -644,18 +612,20 @@ begin
       if (execute_engine.state = EXECUTE) then
         execute_engine.i_reg_last <= execute_engine.i_reg;
       end if;
+      -- next PC --
+      if (execute_engine.is_ci = '1') then -- compressed instruction?
+        execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + 2);
+      else
+        execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + 4);
+      end if;
       --
       ctrl <= ctrl_nxt;
     end if;
   end process execute_engine_fsm_sync;
 
-  -- next PC --
-  next_pc_tmp <= std_ulogic_vector(unsigned(execute_engine.pc) + 2) when (execute_engine.is_ci = '1') else std_ulogic_vector(unsigned(execute_engine.pc) + 4);
-  execute_engine.next_pc <= next_pc_tmp(data_width_c-1 downto 1) & '0';
-
   -- PC output --
   curr_pc_o <= execute_engine.pc(data_width_c-1 downto 1) & '0';
-  next_pc_o <= next_pc_tmp(data_width_c-1 downto 1) & '0';
+  next_pc_o <= execute_engine.next_pc(data_width_c-1 downto 1) & '0';
 
 
   -- CPU Control Bus Output -----------------------------------------------------------------
@@ -683,7 +653,7 @@ begin
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(execute_engine, fetch_engine, i_buf, trap_ctrl, csr, ctrl, csr_acc_valid,
+  execute_engine_fsm_comb: process(execute_engine, fetch_engine, cmd_issue, trap_ctrl, csr, ctrl, csr_acc_valid,
                                    alu_add_i, alu_wait_i, bus_d_wait_i, ma_load_i, be_load_i, ma_store_i, be_store_i)
     variable alu_immediate_v : std_ulogic;
     variable rs1_is_r0_v     : std_ulogic;
@@ -701,23 +671,22 @@ begin
     execute_engine.if_rst_nxt   <= execute_engine.if_rst;
 
     -- instruction dispatch --
-    fetch_engine.reset         <= '0';
-    i_buf.re                   <= '0';
+    fetch_engine.reset          <= '0';
 
     -- trap environment control --
-    trap_ctrl.env_start_ack    <= '0';
-    trap_ctrl.env_end          <= '0';
+    trap_ctrl.env_start_ack     <= '0';
+    trap_ctrl.env_end           <= '0';
 
     -- exception trigger --
-    trap_ctrl.instr_be         <= '0';
-    trap_ctrl.instr_ma         <= '0';
-    trap_ctrl.env_call         <= '0';
-    trap_ctrl.break_point      <= '0';
-    illegal_compressed         <= '0';
+    trap_ctrl.instr_be          <= '0';
+    trap_ctrl.instr_ma          <= '0';
+    trap_ctrl.env_call          <= '0';
+    trap_ctrl.break_point       <= '0';
+    illegal_compressed          <= '0';
 
     -- CSR access --
-    csr.we_nxt                 <= '0';
-    csr.re_nxt                 <= '0';
+    csr.we_nxt                  <= '0';
+    csr.re_nxt                  <= '0';
 
     -- control defaults --
     ctrl_nxt <= (others => '0'); -- default: all off
@@ -747,30 +716,28 @@ begin
       -- ------------------------------------------------------------
         -- set reg_file's r0 to zero --
         if (rf_r0_is_reg_c = true) then -- is r0 implemented as physical register, which has to be set to zero?
-          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output (hacky! results zero since there is no valid CSR_read request)
+          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output (hacky! results zero since there is no valid CSR_read)
           ctrl_nxt(ctrl_rf_r0_we_c) <= '1'; -- force RF write access and force rd=r0
         end if;
         --
         execute_engine.state_nxt <= DISPATCH;
 
-      when DISPATCH => -- Get new command from instruction buffer (i_buf)
+      when DISPATCH => -- Get new command from instruction issue engine
       -- ------------------------------------------------------------
-        if (i_buf.avail = '1') then -- instruction available?
-          i_buf.re <= '1';
-          --
-          execute_engine.is_ci_nxt <= i_buf.rdata(32); -- flag to indicate this is a de-compressed instruction beeing executed
-          execute_engine.i_reg_nxt <= i_buf.rdata(31 downto 0);
-          trap_ctrl.instr_ma       <= i_buf.rdata(33); -- misaligned instruction fetch address
-          trap_ctrl.instr_be       <= i_buf.rdata(34); -- bus access fault during instrucion fetch
-          illegal_compressed       <= i_buf.rdata(35); -- invalid decompressed instruction
-          --
+        if (cmd_issue.valid = '1') then -- instruction available?
+          -- IR update --
+          execute_engine.is_ci_nxt <= cmd_issue.data(32); -- flag to indicate this is a de-compressed instruction beeing executed
+          execute_engine.i_reg_nxt <= cmd_issue.data(31 downto 0);
+          trap_ctrl.instr_ma       <= cmd_issue.data(33); -- misaligned instruction fetch address
+          trap_ctrl.instr_be       <= cmd_issue.data(34); -- bus access fault during instrucion fetch
+          illegal_compressed       <= cmd_issue.data(35); -- invalid decompressed instruction
+          -- PC update --
           execute_engine.if_rst_nxt <= '0';
           if (execute_engine.if_rst = '0') then -- if there was NO non-linear PC modification
-            execute_engine.pc_nxt <= execute_engine.next_pc;
+            execute_engine.pc_nxt <= execute_engine.next_pc(data_width_c-1 downto 1) & '0';
           end if;
-          --
-          -- any reason to go FAST to trap state? --
-          if (execute_engine.sleep = '1') or (trap_ctrl.env_start = '1') or (trap_ctrl.exc_fire = '1') or ((i_buf.rdata(33) or i_buf.rdata(34)) = '1') then
+          -- any reason to go to trap state FAST? --
+          if (execute_engine.sleep = '1') or (trap_ctrl.env_start = '1') or (trap_ctrl.exc_fire = '1') or ((cmd_issue.data(33) or cmd_issue.data(34)) = '1') then
             execute_engine.state_nxt <= TRAP;
           else
             execute_engine.state_nxt <= EXECUTE;
@@ -885,7 +852,7 @@ begin
             -- for simplicity: internally, fence and fence.i perform the same operations (clear and reload instruction prefetch buffer)
             -- FENCE.I --
             if (CPU_EXTENSION_RISCV_Zifencei = true) then
-              execute_engine.pc_nxt     <= execute_engine.next_pc; -- "refetch" next instruction
+              execute_engine.pc_nxt     <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- "refetch" next instruction
               execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
               fetch_engine.reset        <= '1';
               if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) then
@@ -987,8 +954,8 @@ begin
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_bus_mdi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for LOAD)
         ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "01"; -- RF input = memory input (only relevant for LOAD)
-        if (ma_load_i = '1') or (be_load_i = '1') or (ma_store_i = '1') or (be_store_i = '1') then -- abort if exception
-          execute_engine.state_nxt <= SYS_WAIT;
+        if ((ma_load_i or be_load_i or ma_store_i or be_store_i) = '1') then -- abort if exception
+          execute_engine.state_nxt <= DISPATCH;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then -- LOAD
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back (keep writing back all the time)
@@ -1751,7 +1718,7 @@ begin
             csr.rdata(18) <= trap_ctrl.irq_buf(interrupt_firq_2_c);
             csr.rdata(19) <= trap_ctrl.irq_buf(interrupt_firq_3_c);
 
-          -- physical memory protection --
+          -- physical memory protection - configuration --
           when csr_pmpcfg0_c => -- R/W: pmpcfg0 - physical memory protection configuration register 0
             if (PMP_USE = true) then
               if (PMP_NUM_REGIONS >= 1) then
@@ -1783,6 +1750,7 @@ begin
               end if;
             end if;
 
+          -- physical memory protection - addresses --
           when csr_pmpaddr0_c => -- R/W: pmpaddr0 - physical memory protection address register 0
             if (PMP_USE = true) and (PMP_NUM_REGIONS >= 1) then
               csr.rdata <= csr.pmpaddr(0);
