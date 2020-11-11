@@ -38,8 +38,12 @@ designs or as stand-alone custom microcontroller.
   * `Zicsr` - control and status register access instructions (+ exception/irq system)
   * `Zifencei` - instruction stream synchronization
   * `PMP` - physical memory protection
-* Full-scale RISC-V microcontroller system (**SoC**): [**NEORV32 Processor**](#NEORV32-Processor-Features)
-  * optional embedded memories, timers, serial interfaces, external interfaces (Wishbone / [AXI4](#AXI4-Connectivity)), ...
+* Full-scale RISC-V microcontroller system (**SoC**) [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
+  * optional embedded memories (instruction/data/bootloader, RAM/ROM)
+  * timers (watch dog, RISC-V-compliant machine timer)
+  * serial interfaces (SPI, TWI, UART)
+  * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
+  * [more ...](#NEORV32-Processor-Features)
 * Software framework
   * core libraries for high-level usage of the provided functions and peripherals
   * application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
@@ -108,22 +112,22 @@ The full-blown data sheet of the NEORV32 Processor and CPU is available as pdf f
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_processor.png)
 
 The NEORV32 Processor provides a full-scale microcontroller-like SoC based on the NEORV32 CPU. The setup
-is highly customizable via the processor's top generics.
+is highly customizable via the processor's top generics and already provides the following *optional* modules:
 
-* Optional processor-internal data and instruction memories (**DMEM** / **IMEM**)
-* Optional internal **Bootloader** with UART console and automatic application boot from SPI flash option
-* Optional machine system timer (**MTIME**), RISC-V-compliant
-* Optional universal asynchronous receiver and transmitter (**UART**) with simulation output option via text.io
-* Optional 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
-* Optional two wire serial interface controller (**TWI**), with optional clock-stretching, compatible to the I²C standard
-* Optional general purpose parallel IO port (**GPIO**), 32xOut & 32xIn, with pin-change interrupt
-* Optional 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**), *standard* or *pipelined* handshake/transactions mode
-* Optional wrapper for **AXI4-Lite Master Interface** (see [AXI Connectivity](#AXI4-Connectivity))
-* Optional watchdog timer (**WDT**)
-* Optional PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
-* Optional GARO-based true random number generator (**TRNG**)
-* Optional custom functions units (**CFU0** and **CFU1**) for tightly-coupled custom co-processors
-* System configuration information memory to check hardware configuration by software (**SYSINFO**)
+* processor-internal data and instruction memories (**DMEM** / **IMEM**)
+* internal **Bootloader** with UART console and automatic application boot from SPI flash option
+* machine system timer (**MTIME**), RISC-V-compliant
+* watchdog timer (**WDT**)
+* universal asynchronous receiver and transmitter (**UART**) with simulation output option via text.io
+* 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
+* two wire serial interface controller (**TWI**), with optional clock-stretching, compatible to the I²C standard
+* general purpose parallel IO port (**GPIO**), 32xOut & 32xIn, with pin-change interrupt
+* 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**), *standard* or *pipelined* handshake/transactions mode
+* wrapper for **AXI4-Lite Master Interface** (see [AXI Connectivity](#AXI4-Connectivity))
+* PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
+* GARO-based true random number generator (**TRNG**)
+* custom functions units (**CFU0** and **CFU1**) for tightly-coupled custom co-processors
+* system configuration information memory to check hardware configuration by software (**SYSINFO**, mandatory - not *optional*)
 
 ### NEORV32 CPU Features
 
@@ -219,41 +223,41 @@ The NEORV32-specific extensions are always enabled and are indicated via the `X`
 ### NEORV32 CPU
 
 This chapter shows exemplary implementation results of the NEORV32 CPU for an **Intel Cyclone IV EP4CE22F17C6N FPGA** on
-a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 19.1** ("balanced implementation"). The timing
+a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 20.1** ("balanced implementation"). The timing
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
 of the CPU's generics is assumed (for example no PMP). No constraints were used at all.
 
-Results generated for hardware version `1.4.4.8`.
+Results generated for hardware version `1.4.7.0`.
 
 | CPU Configuration                      | LEs        | FFs      | Memory bits | DSPs | f_max    |
 |:---------------------------------------|:----------:|:--------:|:-----------:|:----:|:--------:|
-| `rv32i`                                |        983 |      438 |       2048  |    0 | ~120 MHz |
-| `rv32i`   + `u` + `Zicsr` + `Zifencei` |       1877 |      802 |       2048  |    0 | ~112 MHz |
-| `rv32im`  + `u` + `Zicsr` + `Zifencei` |       2374 |     1048 |       2048  |    0 | ~110 MHz |
-| `rv32imc` + `u` + `Zicsr` + `Zifencei` |       2650 |     1064 |       2048  |    0 | ~110 MHz |
-| `rv32emc` + `u` + `Zicsr` + `Zifencei` |       2680 |     1061 |       1024  |    0 | ~110 MHz |
+| `rv32i`                                |        932 |      413 |       2048  |    0 | ~120 MHz |
+| `rv32i`   + `u` + `Zicsr` + `Zifencei` |       1800 |      815 |       2048  |    0 | ~118 MHz |
+| `rv32im`  + `u` + `Zicsr` + `Zifencei` |       2368 |     1058 |       2048  |    0 | ~117 MHz |
+| `rv32imc` + `u` + `Zicsr` + `Zifencei` |       2604 |     1073 |       2048  |    0 | ~113 MHz |
+| `rv32emc` + `u` + `Zicsr` + `Zifencei` |       2613 |     1073 |       1024  |    0 | ~113 MHz |
 
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version `1.4.4.8`.
+Results generated for hardware version `1.4.7.0`.
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
-| BOOT ROM  | Bootloader ROM (default 4kB)                         |   4 |   1 |      32 768 |    0 |
-| BUSSWITCH | Mux for CPU I & D interfaces                         |  62 |   8 |           0 |    0 |
+| BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |    0 |
+| BUSSWITCH | Mux for CPU I & D interfaces                         |  63 |   8 |           0 |    0 |
 | CFU0      | Custom functions unit 0                              |   - |   - |           - |    - |
 | CFU1      | Custom functions unit 1                              |   - |   - |           - |    - |
-| DMEM      | Processor-internal data memory (default 8kB)         |  13 |   2 |      65 536 |    0 |
+| DMEM      | Processor-internal data memory (default 8kB)         |  12 |   2 |      65 536 |    0 |
 | GPIO      | General purpose input/output ports                   |  66 |  65 |           0 |    0 |
 | IMEM      | Processor-internal instruction memory (default 16kb) |   7 |   2 |     131 072 |    0 |
-| MTIME     | Machine system timer                                 | 268 | 166 |           0 |    0 |
+| MTIME     | Machine system timer                                 | 272 | 166 |           0 |    0 |
 | PWM       | Pulse-width modulation controller                    |  72 |  69 |           0 |    0 |
-| SPI       | Serial peripheral interface                          | 184 | 125 |           0 |    0 |
+| SPI       | Serial peripheral interface                          | 142 | 124 |           0 |    0 |
 | SYSINFO   | System configuration information memory              |  11 |   9 |           0 |    0 |
 | TRNG      | True random number generator                         | 132 | 105 |           0 |    0 |
-| TWI       | Two-wire interface                                   |  74 |  44 |           0 |    0 |
-| UART      | Universal asynchronous receiver/transmitter          | 175 | 132 |           0 |    0 |
+| TWI       | Two-wire interface                                   |  77 |  44 |           0 |    0 |
+| UART      | Universal asynchronous receiver/transmitter          | 173 | 132 |           0 |    0 |
 | WDT       | Watchdog timer                                       |  58 |  45 |           0 |    0 |
 | WISHBONE  | External memory interface                            | 106 | 104 |           0 |    0 |
 
@@ -265,13 +269,13 @@ no external memory interface and only internal instruction and data memories. IM
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
 to FPGA pins - except for the Wishbone bus and the interrupt signals.
 
-Results generated for hardware version `1.4.4.8`.
+Results generated for hardware version `1.4.7.0`.
 
 | Vendor  | FPGA                              | Board            | Toolchain                  | Strategy | CPU Configuration                              | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency     |
 |:--------|:----------------------------------|:-----------------|:---------------------------|:-------- |:-----------------------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|--------------:|
-| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 19.1    | balanced | `rv32imc` + `u` + `Zicsr` + `Zifencei` + `PMP` | 4008 (18%) | 1849  (9%) | 0 (0%) | 231424 (38%) |          - |        - |       105 MHz |
-| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (Synplify Pro) | default  | `rv32ic`  + `u` + `Zicsr` + `Zifencei`         | 4296 (81%) | 1611 (30%) | 0 (0%) |            - |   12 (40%) | 4 (100%) |  *c* 22.5 MHz |
-| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2              | default  | `rv32imc` + `u` + `Zicsr` + `Zifencei` + `PMP` | 2390 (11%) | 1888  (5%) | 0 (0%) |            - |    8 (16%) |        - |   *c* 100 MHz |
+| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 20.1    | balanced | `rv32imc` + `u` + `Zicsr` + `Zifencei` + `PMP` | 3892 (17%) | 1859  (8%) | 0 (0%) | 231424 (38%) |          - |        - |       113 MHz |
+| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (Synplify Pro) | default  | `rv32ic`  + `u` + `Zicsr` + `Zifencei`         | 4331 (82%) | 1673 (31%) | 0 (0%) |            - |   12 (40%) | 4 (100%) |  *c* 22.5 MHz |
+| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2              | default  | `rv32imc` + `u` + `Zicsr` + `Zifencei` + `PMP` | 2416 (12%) | 1900  (5%) | 0 (0%) |            - |    8 (16%) |        - |   *c* 100 MHz |
 
 **_Notes_**
 * The Lattice iCE40 UltraPlus setup uses the FPGA's SPRAM memory primitives for the internal IMEM and DMEM (each 64kb).
@@ -291,7 +295,7 @@ The [CoreMark CPU benchmark](https://www.eembc.org/coremark) was executed on the
 [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) project folder. This benchmark
 tests the capabilities of a CPU itself rather than the functions provided by the whole system / SoC.
 
-Results generated for hardware version `1.4.5.4`.
+Results generated for hardware version `1.4.7.0`.
 
 ~~~
 **Configuration**
@@ -304,11 +308,11 @@ Peripherals: UART for printing the results
 
 | CPU                                         | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
 |:--------------------------------------------|:---------------:|:------------:|:--------------:|:-------------:|
-| `rv32i`                                     |    26 940 bytes |        `-O3` |          33.89 |    **0.3389** |
-| `rv32im`                                    |    25 772 bytes |        `-O3` |          64.51 |    **0.6451** |
-| `rv32imc`                                   |    20 524 bytes |        `-O3` |          64.51 |    **0.6451** |
-| `rv32imc` + `FAST_MUL_EN`                   |    20 524 bytes |        `-O3` |          80.00 |    **0.8000** |
-| `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |    20 524 bytes |        `-O3` |          83.33 |    **0.8333** |
+| `rv32i`                                     |    27 424 bytes |        `-O3` |          35.71 |    **0.3571** |
+| `rv32im`                                    |    26 232 bytes |        `-O3` |          66.66 |    **0.6666** |
+| `rv32imc`                                   |    20 876 bytes |        `-O3` |          66.66 |    **0.6666** |
+| `rv32imc` + `FAST_MUL_EN`                   |    20 876 bytes |        `-O3` |          83.33 |    **0.8333** |
+| `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |    20 876 bytes |        `-O3` |          86.96 |    **0.8696** |
 
 The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic). The `FAST_SHIFT_EN` configuration
 uses a barrel shifter for CPU shift operations (enabled via the `FAST_SHIFT_EN` generic).
@@ -331,15 +335,15 @@ iterations, which reflects a pretty good "real-life" work load. The average CPI 
 dividing the total number of required clock cycles (only the timed core to avoid distortion due to IO wait cycles; sampled via the `cycle[h]` CSRs)
 by the number of executed instructions (`instret[h]` CSRs). The executables were generated using optimization `-O3`.
 
-Results generated for hardware version `1.4.5.4`.
+Results generated for hardware version `1.4.7.0`.
 
 | CPU                                         | Required Clock Cycles | Executed Instructions | Average CPI |
 |:--------------------------------------------|----------------------:|----------------------:|:-----------:|
-| `rv32i`                                     |         5 945 938 586 |         1 469 587 406 |    **4.05** |
-| `rv32im`                                    |         3 110 282 586 |           602 225 760 |    **5.16** |
-| `rv32imc`                                   |         3 172 969 968 |           615 388 890 |    **5.16** |
-| `rv32imc` + `FAST_MUL_EN`                   |         2 590 417 968 |           615 388 890 |    **4.21** |
-| `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |         2 456 318 408 |           615 388 890 |    **3.99** |
+| `rv32i`                                     |         5 648 997 774 |         1 469 233 238 |    **3.84** |
+| `rv32im`                                    |         3 036 749 774 |           601 871 338 |    **5.05** |
+| `rv32imc`                                   |         3 036 959 882 |           615 034 616 |    **4.94** |
+| `rv32imc` + `FAST_MUL_EN`                   |         2 454 407 882 |           615 034 588 |    **3.99** |
+| `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |         2 320 308 322 |           615 034 676 |    **3.77** |
 
 
 The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic). The `FAST_SHIFT_EN` configuration
