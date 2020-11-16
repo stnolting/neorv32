@@ -1361,7 +1361,9 @@ package body neorv32_package is
   -- -------------------------------------------------------------------------------------------
   function is_power_of_two_f(input : natural) return boolean is
   begin
-    if ((input / 2) /= 0) and ((input mod 2) = 0) then
+    if (input = 1) then -- 2^0
+      return true;
+    elsif ((input / 2) /= 0) and ((input mod 2) = 0) then
       return true;
     else
       return false;
