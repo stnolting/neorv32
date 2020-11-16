@@ -299,11 +299,11 @@ Results generated for hardware version `1.4.7.0`.
 
 ~~~
 **Configuration**
-Hardware:    32kB IMEM, 16kB DMEM, 100MHz clock
-CoreMark:    2000 iterations, MEM_METHOD is MEM_STACK
-Compiler:    RISCV32-GCC 10.1.0 (rv32i toolchain)
-Flags:       default, see makefile
-Peripherals: UART for printing the results
+Hardware:       32kB IMEM, 16kB DMEM, 100MHz clock
+CoreMark:       2000 iterations, MEM_METHOD is MEM_STACK
+Compiler:       RISCV32-GCC 10.1.0 (rv32i toolchain)
+Compiler flags: default, see makefile
+Peripherals:    UART for printing the results
 ~~~
 
 | CPU                                         | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
