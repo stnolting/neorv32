@@ -296,20 +296,25 @@ int main() {
   // Bus timeout latency estimation
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Estimate bus time-out latency: ", cnt_test);
+  neorv32_uart_printf("[%i] Estimating bus time-out latency: ", cnt_test);
+  cnt_test++;
 
   // start timing
   tmp_a = neorv32_cpu_csr_read(CSR_CYCLE);
 
-  // this will timeout
+  // this store access will timeout
   MMR_UNREACHABLE = 0;
+
   tmp_a = neorv32_cpu_csr_read(CSR_CYCLE) - tmp_a;
 
-  // wait for timeout
-  while (neorv32_cpu_csr_read(CSR_MCAUSE) == 0);
-
-  tmp_a = tmp_a / 4; // divide by average CPI
-  neorv32_uart_printf("~%u cycles\n", tmp_a);
+  // make sure there was a time-out
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) {
+    neorv32_uart_printf("~%u cycles ", tmp_a/4); // divide by average CPI
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
 
 
   // ----------------------------------------------------------
