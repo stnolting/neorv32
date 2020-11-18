@@ -86,6 +86,17 @@ int cnt_test = 0;
  **************************************************************************/
 int main() {
 
+// Disable cpu_test compilation by default
+#ifndef RUN_CPUTEST
+  #warning cpu_test HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_CPUTEST clean_all exe<< to compile it.
+
+  // inform the user if you are actually executing this
+  neorv32_uart_printf("ERROR! cpu_test has not been compiled. Use >>make USER_FLAGS+=-DRUN_CPUTEST clean_all exe<< to compile it.\n");
+
+  return 0;
+#endif
+
+
   register uint32_t tmp_a, tmp_b, tmp_c;
   uint32_t i, j;
   volatile uint32_t dummy_dst __attribute__((unused));
