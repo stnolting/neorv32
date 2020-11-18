@@ -82,6 +82,8 @@ int cnt_test = 0;
  * This program uses mostly synthetic case to trigger all implemented exceptions.
  * Each exception is captured and evaluated for correct detection.
  *
+ * @note Applications has to be compiler with <USER_FLAGS+=-DRUN_CPUTEST>
+ *
  * @return Irrelevant.
  **************************************************************************/
 int main() {

@@ -1233,7 +1233,7 @@ begin
 
 
 -- ****************************************************************************************************************************
--- Exception and Interrupt Control
+-- Exception and Interrupt (= Trap) Control
 -- ****************************************************************************************************************************
 
 
@@ -1305,7 +1305,7 @@ begin
     trap_ctrl.cause_nxt   <= (others => '0');
     trap_ctrl.irq_ack_nxt <= (others => '0');
 
-    -- the following traps are caused by asynchronous exceptions (-> interrupts)
+    -- the following traps are caused by *asynchronous* exceptions (= interrupts)
     -- here we do need a specific acknowledge mask since several sources can trigger at once
 
     -- interrupt: 1.11 machine external interrupt --
@@ -1345,45 +1345,45 @@ begin
       trap_ctrl.irq_ack_nxt(interrupt_firq_3_c) <= '1';
 
 
-    -- the following traps are caused by synchronous exceptions
+    -- the following traps are caused by *synchronous* exceptions (= classic exceptions)
     -- here we do not need a specific acknowledge mask since only one exception (the one
-    -- with highest priority) can trigger at once
+    -- with highest priority) is evaluated at once
 
-    -- trap/fault: 0.1 instruction access fault --
+    -- exception: 0.1 instruction access fault --
     elsif (trap_ctrl.exc_buf(exception_iaccess_c) = '1') then
       trap_ctrl.cause_nxt <= trap_iba_c;
 
-    -- trap/fault: 0.2 illegal instruction --
+    -- exception: 0.2 illegal instruction --
     elsif (trap_ctrl.exc_buf(exception_iillegal_c) = '1') then
       trap_ctrl.cause_nxt <= trap_iil_c;
 
-    -- trap/fault: 0.0 instruction address misaligned --
+    -- exception: 0.0 instruction address misaligned --
     elsif (trap_ctrl.exc_buf(exception_ialign_c) = '1') then
       trap_ctrl.cause_nxt <= trap_ima_c;
 
 
-    -- trap/fault: 0.11 environment call from M-mode --
+    -- exception: 0.11 environment call from M-mode --
     elsif (trap_ctrl.exc_buf(exception_m_envcall_c) = '1') then
       trap_ctrl.cause_nxt <= trap_menv_c;
 
-    -- trap/fault: 0.3 breakpoint --
+    -- exception: 0.3 breakpoint --
     elsif (trap_ctrl.exc_buf(exception_break_c) = '1') then
       trap_ctrl.cause_nxt <= trap_brk_c;
 
 
-    -- trap/fault: 0.6 store address misaligned -
+    -- exception: 0.6 store address misaligned -
     elsif (trap_ctrl.exc_buf(exception_salign_c) = '1') then
       trap_ctrl.cause_nxt <= trap_sma_c;
 
-    -- trap/fault: 0.4 load address misaligned --
+    -- exception: 0.4 load address misaligned --
     elsif (trap_ctrl.exc_buf(exception_lalign_c) = '1') then
       trap_ctrl.cause_nxt <= trap_lma_c;
 
-    -- trap/fault: 0.7 store access fault --
+    -- exception: 0.7 store access fault --
     elsif (trap_ctrl.exc_buf(exception_saccess_c) = '1') then
       trap_ctrl.cause_nxt <= trap_sbe_c;
 
-    -- trap/fault: 0.5 load access fault --
+    -- exception: 0.5 load access fault --
     elsif (trap_ctrl.exc_buf(exception_laccess_c) = '1') then
       trap_ctrl.cause_nxt <= trap_lbe_c;
 
@@ -1407,11 +1407,11 @@ begin
     -- CSR operand source --
     if (execute_engine.i_reg(instr_funct3_msb_c) = '1') then -- immediate
       csr_operand_v := (others => '0');
-      csr_operand_v(4 downto 0) := execute_engine.i_reg(19 downto 15);
+      csr_operand_v(4 downto 0) := execute_engine.i_reg(19 downto 15); -- uimm5
     else -- register
       csr_operand_v := rs1_i;
     end if;
-    -- "mini ALU" for CSR update operations --
+    -- tiny ALU for CSR access operations --
     case execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c) is
       when "10"   => csr.wdata <= csr.rdata or csr_operand_v; -- CSRRS(I)
       when "11"   => csr.wdata <= csr.rdata and (not csr_operand_v); -- CSRRC(I)
@@ -1680,7 +1680,9 @@ begin
             csr.rdata(00) <= '0';                                         -- A CPU extension
             csr.rdata(01) <= '0';                                         -- B CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
+            csr.rdata(03) <= '0';                                         -- D CPU extension
             csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
+            csr.rdata(05) <= '0';                                         -- F CPU extension
             csr.rdata(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
             csr.rdata(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_M);     -- M CPU extension
             csr.rdata(20) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);     -- U CPU extension
