@@ -42,7 +42,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   constant ispace_base_c  : std_ulogic_vector(31 downto 0) := x"00000000"; -- default instruction memory address space base address
   constant dspace_base_c  : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
-  constant bus_timeout_c  : natural := 127; -- cycles after which a valid bus access will timeout and trigger an access exception
+  constant bus_timeout_c  : natural := 127; -- cycles after which an *unacknwoledged* bus access will timeout and trigger an access exception
   constant wb_pipe_mode_c : boolean := false; -- false: classic/standard wishbone mode, true: pipelined wishbone mode
   constant ipb_entries_c  : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero by the CPU HW
@@ -1361,7 +1361,9 @@ package body neorv32_package is
   -- -------------------------------------------------------------------------------------------
   function is_power_of_two_f(input : natural) return boolean is
   begin
-    if ((input / 2) /= 0) and ((input mod 2) = 0) then
+    if (input = 1) then -- 2^0
+      return true;
+    elsif ((input / 2) /= 0) and ((input mod 2) = 0) then
       return true;
     else
       return false;

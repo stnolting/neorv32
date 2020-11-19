@@ -10,6 +10,8 @@
 -- #     * neorv32_cpu_decompressor.vhd - Compressed instructions decoder                          #
 -- #   * neorv32_cpu_regfile.vhd        - Data register file                                       #
 -- #                                                                                               #
+-- #   * neorv32_package.vhd            - Main CPU/processor package file                          #
+-- #                                                                                               #
 -- # Check out the processor's data sheet for more information: docs/NEORV32.pdf                   #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
@@ -159,6 +161,8 @@ begin
   assert not ((PMP_NUM_REGIONS > pmp_max_r_c) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions out of valid range." severity error;
   -- PMP granulartiy --
   assert not (((PMP_GRANULARITY < 1) or (PMP_GRANULARITY > 32)) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Invalid PMP granulartiy (0 < PMP_GRANULARITY < 33)." severity error;
+  -- Instruction prefetch buffer size --
+  assert not (is_power_of_two_f(ipb_entries_c) = false) report "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <ipb_entries_c> has to be a power of two." severity error;
 
 
   -- Control Unit ---------------------------------------------------------------------------
