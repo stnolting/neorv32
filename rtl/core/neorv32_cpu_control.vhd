@@ -521,11 +521,11 @@ begin
 
   -- Immediate Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  imm_gen: process(clk_i)
+  imm_gen: process(execute_engine.i_reg, clk_i)
     variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
+    opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
     if rising_edge(clk_i) then
-      opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
       case opcode_v is -- save some bits here, LSBs are always 11 for rv32
         when opcode_store_c => -- S-immediate
           imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
