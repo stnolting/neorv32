@@ -50,7 +50,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040700"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040701"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
@@ -880,7 +880,6 @@ package neorv32_package is
       rden_i : in  std_ulogic; -- read enable
       wren_i : in  std_ulogic; -- write enable
       ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
-      upen_i : in  std_ulogic; -- update enable
       addr_i : in  std_ulogic_vector(31 downto 0); -- address
       data_i : in  std_ulogic_vector(31 downto 0); -- data in
       data_o : out std_ulogic_vector(31 downto 0); -- data out

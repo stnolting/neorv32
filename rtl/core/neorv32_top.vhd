@@ -463,7 +463,6 @@ begin
       rden_i => p_bus.re,    -- read enable
       wren_i => p_bus.we,    -- write enable
       ben_i  => p_bus.ben,   -- byte write enable
-      upen_i => '1',         -- update enable
       addr_i => p_bus.addr,  -- address
       data_i => p_bus.wdata, -- data in
       data_o => imem_rdata,  -- data out

@@ -57,7 +57,6 @@ entity neorv32_imem is
     rden_i : in  std_ulogic; -- read enable
     wren_i : in  std_ulogic; -- write enable
     ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
-    upen_i : in  std_ulogic; -- update enable
     addr_i : in  std_ulogic_vector(31 downto 0); -- address
     data_i : in  std_ulogic_vector(31 downto 0); -- data in
     data_o : out std_ulogic_vector(31 downto 0); -- data out
@@ -167,7 +166,7 @@ begin
           rdata(31 downto 24) <= imem_file_rom_hh(to_integer(unsigned(addr)));
 
         elsif (BOOTLOADER_USE = true) then -- implement IMEM as non-initialized RAM
-          if (wren_i = '1') and (upen_i = '1') then
+          if (wren_i = '1') then
             if (ben_i(0) = '1') then
               imem_file_ram_ll(to_integer(unsigned(addr))) <= data_i(07 downto 00);
             end if;
@@ -187,7 +186,7 @@ begin
           rdata(31 downto 24) <= imem_file_ram_hh(to_integer(unsigned(addr)));
 
         else -- implement IMEM as PRE-INITIALIZED RAM
-          if (wren_i = '1') and (upen_i = '1') then
+          if (wren_i = '1') then
             if (ben_i(0) = '1') then
               imem_file_init_ram_ll(to_integer(unsigned(addr))) <= data_i(07 downto 00);
             end if;
