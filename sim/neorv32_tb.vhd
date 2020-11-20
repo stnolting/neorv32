@@ -3,9 +3,14 @@
 -- # ********************************************************************************************* #
 -- # This testbench provides a virtual UART receiver connected to the processor's uart_txd_o       #
 -- # signal. The received chars are shown in the simulator console and also written to a file      #
--- # ("neorv32.testbench_uart.out"). Futhermore, this testbench provides a simple RAM connected    #
--- # to the external Wishbone bus. The testbench configures the processor with all optional        #
--- # elements enabled by default.                                                                  #
+-- # ("neorv32.testbench_uart.out").                                                               #
+-- #                                                                                               #
+-- # Furthermore, this testbench provides two external memories (ext_mem_a and ext_mem_b) coupled  #
+-- # via Wishbone. ext_mem_a is initialized with the application_init_image and can be used as     #
+-- # external boot memory (external IMEM).                                                         #
+-- # ext_mem_b is a small uninitialized memory that can be uased as external memory-mapped IO.     #
+-- #                                                                                               #
+-- # Use the "User Configuration" section to configure the testbench according to your need.       #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -55,22 +60,31 @@ architecture neorv32_tb_rtl of neorv32_tb is
 
   -- User Configuration ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant t_clock_c          : time := 10 ns; -- main clock period
-  constant f_clock_c          : real := 100000000.0; -- main clock in Hz
-  constant f_clock_nat_c      : natural := 100000000; -- main clock in Hz
-  constant baud_rate_c        : real := 19200.0; -- standard UART baudrate
-  --
-  constant wb_mem_base_addr_c : std_ulogic_vector(31 downto 0) := x"F0000000"; -- wishbone memory base address
-  constant wb_mem_size_c      : natural := 256; -- wishbone memory size in bytes
-  constant wb_mem_latency_c   : natural := 8; -- latency in clock cycles (min 1)
+  -- general --
+  constant boot_external_c       : boolean := false; -- false: boot from proc-internal IMEM, true: boot from (initialized) simulated ext. mem A
+  constant imem_size_c           : natural := 16*1024; -- size in bytes of processor-internal IMEM / external mem A
+  constant f_clock_c             : natural := 100000000; -- main clock in Hz
+  -- UART --
+  constant baud_rate_c           : natural := 19200; -- standard UART baudrate
+  -- simulated external Wishbone memory A (can be used as external IMEM) --
+  constant ext_mem_a_base_addr_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- wishbone memory base address (IMEM base)
+  constant ext_mem_a_size_c      : natural := imem_size_c; -- wishbone memory size in bytes
+  constant ext_mem_a_latency_c   : natural := 8; -- latency in clock cycles (min 1, max 255), plus 1 cycle initiali delay
+  -- simulated external Wishbone memory B (can be used as external IO) --
+  constant ext_mem_b_base_addr_c : std_ulogic_vector(31 downto 0) := x"F0000000"; -- wishbone memory base address (default begin of EXTERNAL IO area)
+  constant ext_mem_b_size_c      : natural := 64; -- wishbone memory size in bytes
+  constant ext_mem_b_latency_c   : natural := 3; -- latency in clock cycles (min 1, max 255), plus 1 cycle initiali delay
   -- -------------------------------------------------------------------------------------------
+
+  -- internals - hands off! --
+  constant boot_imem_c : boolean := not boot_external_c;
 
   -- text.io --
   file file_uart_tx_out : text open write_mode is "neorv32.testbench_uart.out";
 
   -- internal configuration --
-  constant baud_val_c : real    := f_clock_c / baud_rate_c;
-  constant f_clk_c    : natural := natural(f_clock_c);
+  constant baud_val_c : real := real(f_clock_c) / real(baud_rate_c);
+  constant t_clock_c  : time := (1 sec) / f_clock_c;
 
   -- generators --
   signal clk_gen, rst_gen : std_ulogic := '0';
@@ -105,16 +119,17 @@ architecture neorv32_tb_rtl of neorv32_tb is
     err   : std_ulogic; -- transfer error
     tag   : std_ulogic_vector(2 downto 0); -- tag
   end record;
-  signal wb_cpu : wishbone_t;
+  signal wb_cpu, wb_mem_a, wb_mem_b : wishbone_t;
 
-  -- Wishbone memory --
-  type wb_mem_ram_t is array (0 to wb_mem_size_c/4-1) of std_ulogic_vector(31 downto 0);
-  type wb_mem_read_latency_t is array (0 to wb_mem_latency_c-1) of std_ulogic_vector(31 downto 0);
+  -- Wishbone memories --
+  type ext_mem_a_ram_t is array (0 to ext_mem_a_size_c/4-1) of std_ulogic_vector(31 downto 0);
+  type ext_mem_b_ram_t is array (0 to ext_mem_b_size_c/4-1) of std_ulogic_vector(31 downto 0);
+  type ext_mem_read_latency_t is array (0 to 255) of std_ulogic_vector(31 downto 0);
 
   -- init function --
   -- impure function: returns NOT the same result every time it is evaluated with the same arguments since the source file might have changed
-  impure function init_wbmem(init : application_init_image_t) return wb_mem_ram_t is
-    variable mem_v : wb_mem_ram_t;
+  impure function init_wbmem(init : application_init_image_t) return ext_mem_a_ram_t is
+    variable mem_v : ext_mem_a_ram_t;
   begin
     mem_v := (others => (others => '0'));
     for i in 0 to init'length-1 loop -- init only in range of source data array
@@ -123,25 +138,16 @@ architecture neorv32_tb_rtl of neorv32_tb is
     return mem_v;
   end function init_wbmem;
 
-  -- ---------------------------------------------- --
-  -- How to simulate a boot from an external memory --
-  -- ---------------------------------------------- --
-  -- The simulated Wishbone memory can be initialized with the compiled application init.
-  -- 1. Uncomment the init_wbmem function below; this will initialize the simulated wishbone memory with the neorv32_application_image.vhd image
-  -- 2. Increase the wb_mem_size_c constant above to (at least) the size of the application image (like 16kB -> 16*1024)
-  -- 3. Disable the processor-internal IMEM in the processor instantiation below (MEM_INT_IMEM_USE => false)
-  -- 4. Set the Wishbone memory base address wb_mem_base_addr_c (above) to zero (constant wb_mem_base_addr_c : std_ulogic_vector(31 downto 0) := x"00000000";)
-  -- 5. Simulate!
+  -- external memory components --
+  signal ext_ram_a : ext_mem_a_ram_t := init_wbmem(application_init_image); -- initialized, used to simulate external instruction boot memory
+  signal ext_ram_b : ext_mem_b_ram_t; -- uninitialized, used to simulate external IO
 
-  signal wb_ram : wb_mem_ram_t;-- := init_wbmem(application_init_image); -- uncomment if you want to init the WB ram with app image
-
-  type wb_mem_t is record
-    rdata  : wb_mem_read_latency_t;
+  type ext_mem_t is record
+    rdata  : ext_mem_read_latency_t;
     acc_en : std_ulogic;
-    ack    : std_ulogic_vector(wb_mem_latency_c-1 downto 0);
-    rb_en  : std_ulogic_vector(wb_mem_latency_c-1 downto 0);
+    ack    : std_ulogic_vector(ext_mem_a_latency_c-1 downto 0);
   end record;
-  signal wb_mem : wb_mem_t;
+  signal ext_mem_a, ext_mem_b : ext_mem_t;
 
 begin
 
@@ -156,7 +162,7 @@ begin
   neorv32_top_inst: neorv32_top
   generic map (
     -- General --
-    CLOCK_FREQUENCY              => f_clock_nat_c, -- clock frequency of clk_i in Hz
+    CLOCK_FREQUENCY              => f_clock_c,     -- clock frequency of clk_i in Hz
     BOOTLOADER_USE               => false,         -- implement processor-internal bootloader?
     USER_CODE                    => x"12345678",   -- custom user code
     HW_THREAD_ID                 => x"00000000",   -- hardware thread id (hartid)
@@ -175,8 +181,8 @@ begin
     PMP_NUM_REGIONS              => 4,             -- number of regions (max 16)
     PMP_GRANULARITY              => 14,            -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Internal Instruction memory --
-    MEM_INT_IMEM_USE             => true,          -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE            => 16*1024,       -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_USE             => boot_imem_c,   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE            => imem_size_c,   -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM             => false,         -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
     MEM_INT_DMEM_USE             => true,          -- implement processor-internal data memory
@@ -259,7 +265,7 @@ begin
           uart_rx_busy <= '1';
         end if;
       else
-        if (uart_rx_baud_cnt = 0.0) then
+        if (uart_rx_baud_cnt <= 0.0) then
           if (uart_rx_bitcnt = 1) then
             uart_rx_baud_cnt <= round(0.5 * baud_val_c);
           else
@@ -292,42 +298,110 @@ begin
   end process uart_rx_console;
 
 
-  -- Wishbone Memory (simulated external memory) --------------------------------------------
+  -- Wishbone Fabric ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  wb_mem_ram_access: process(clk_gen)
+  -- CPU broadcast signals --
+  wb_mem_a.addr  <= wb_cpu.addr;
+  wb_mem_b.addr  <= wb_cpu.addr;
+  wb_mem_a.wdata <= wb_cpu.wdata;
+  wb_mem_b.wdata <= wb_cpu.wdata;
+  wb_mem_a.we    <= wb_cpu.we;
+  wb_mem_b.we    <= wb_cpu.we;
+  wb_mem_a.sel   <= wb_cpu.sel;
+  wb_mem_b.sel   <= wb_cpu.sel;
+  wb_mem_a.tag   <= wb_cpu.tag;
+  wb_mem_b.tag   <= wb_cpu.tag;
+  wb_mem_a.cyc   <= wb_cpu.cyc;
+  wb_mem_b.cyc   <= wb_cpu.cyc;
+  
+  -- CPU read-back signals (no mux here since peripherals have "output gates") --
+  wb_cpu.rdata <= wb_mem_a.rdata or wb_mem_b.rdata;
+  wb_cpu.ack   <= wb_mem_a.ack   or wb_mem_b.ack;
+  wb_cpu.err   <= wb_mem_a.err   or wb_mem_b.err;
+
+  -- peripheral select via STROBE signal --
+  wb_mem_a.stb <= wb_cpu.stb when (wb_cpu.addr >= ext_mem_a_base_addr_c) and (wb_cpu.addr < std_ulogic_vector(unsigned(ext_mem_a_base_addr_c) + ext_mem_a_size_c)) else '0';
+  wb_mem_b.stb <= wb_cpu.stb when (wb_cpu.addr >= ext_mem_b_base_addr_c) and (wb_cpu.addr < std_ulogic_vector(unsigned(ext_mem_b_base_addr_c) + ext_mem_b_size_c)) else '0';
+
+
+  -- Wishbone Memory A (simulated external memory) ------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  ext_mem_a_access: process(clk_gen)
   begin
     if rising_edge(clk_gen) then
       -- control --
-      wb_mem.rb_en(0) <= wb_cpu.cyc and wb_cpu.stb and wb_mem.acc_en and (not wb_cpu.we); -- read-back control
-      wb_mem.ack(0)   <= wb_cpu.cyc and wb_cpu.stb and wb_mem.acc_en; -- wishbone acknowledge
+      ext_mem_a.ack(0) <= wb_mem_a.cyc and wb_mem_a.stb; -- wishbone acknowledge
+
       -- write access --
-      if ((wb_cpu.cyc and wb_cpu.stb and wb_mem.acc_en and wb_cpu.we) = '1') then -- valid write access
+      if ((wb_mem_a.cyc and wb_mem_a.stb and wb_mem_a.we) = '1') then -- valid write access
         for i in 0 to 3 loop
-          if (wb_cpu.sel(i) = '1') then
-            wb_ram(to_integer(unsigned(wb_cpu.addr(index_size_f(wb_mem_size_c/4)+1 downto 2))))(7+i*8 downto 0+i*8) <= wb_cpu.wdata(7+i*8 downto 0+i*8);
+          if (wb_mem_a.sel(i) = '1') then
+            ext_ram_a(to_integer(unsigned(wb_mem_a.addr(index_size_f(ext_mem_a_size_c/4)+1 downto 2))))(7+i*8 downto 0+i*8) <= wb_mem_a.wdata(7+i*8 downto 0+i*8);
           end if;
         end loop; -- i
       end if;
+
       -- read access --
-      wb_mem.rdata(0) <= wb_ram(to_integer(unsigned(wb_cpu.addr(index_size_f(wb_mem_size_c/4)+1 downto 2)))); -- word aligned
+      ext_mem_a.rdata(0) <= ext_ram_a(to_integer(unsigned(wb_mem_a.addr(index_size_f(ext_mem_a_size_c/4)+1 downto 2)))); -- word aligned
       -- virtual read and ack latency --
-      if (wb_mem_latency_c > 1) then
-        for i in 1 to wb_mem_latency_c-1 loop
-          wb_mem.rdata(i) <= wb_mem.rdata(i-1);
-          wb_mem.rb_en(i) <= wb_mem.rb_en(i-1) and wb_cpu.cyc;
-          wb_mem.ack(i)   <= wb_mem.ack(i-1) and wb_cpu.cyc;
+      if (ext_mem_a_latency_c > 1) then
+        for i in 1 to ext_mem_a_latency_c-1 loop
+          ext_mem_a.rdata(i) <= ext_mem_a.rdata(i-1);
+          ext_mem_a.ack(i)   <= ext_mem_a.ack(i-1) and wb_mem_a.cyc;
         end loop;
       end if;
+
+      -- bus output register --
+      wb_mem_a.err <= '0';
+      if (ext_mem_a.ack(ext_mem_a_latency_c-1) = '1') and (wb_mem_b.cyc = '1') then
+        wb_mem_a.rdata <= ext_mem_a.rdata(ext_mem_a_latency_c-1);
+        wb_mem_a.ack   <= '1';
+      else
+        wb_mem_a.rdata <= (others => '0');
+        wb_mem_a.ack   <= '0';
+      end if;
     end if;
-  end process wb_mem_ram_access;
+  end process ext_mem_a_access;
 
-  -- wishbone memory access? --
-  wb_mem.acc_en <= '1' when (wb_cpu.addr >= wb_mem_base_addr_c) and (wb_cpu.addr < std_ulogic_vector(unsigned(wb_mem_base_addr_c) + wb_mem_size_c)) else '0';
 
-  -- output to cpu --
-  wb_cpu.rdata <= wb_mem.rdata(wb_mem_latency_c-1) when (wb_mem.rb_en(wb_mem_latency_c-1) = '1') else (others=> '0'); -- data output gate
-  wb_cpu.ack   <= wb_mem.ack(wb_mem_latency_c-1);
-  wb_cpu.err   <= '0';
+  -- Wishbone Memory B (simulated external memory) ------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  ext_mem_b_access: process(clk_gen)
+  begin
+    if rising_edge(clk_gen) then
+      -- control --
+      ext_mem_b.ack(0) <= wb_mem_b.cyc and wb_mem_b.stb; -- wishbone acknowledge
+
+      -- write access --
+      if ((wb_mem_b.cyc and wb_mem_b.stb and wb_mem_b.we) = '1') then -- valid write access
+        for i in 0 to 3 loop
+          if (wb_mem_b.sel(i) = '1') then
+            ext_ram_b(to_integer(unsigned(wb_mem_b.addr(index_size_f(ext_mem_b_size_c/4)+1 downto 2))))(7+i*8 downto 0+i*8) <= wb_mem_b.wdata(7+i*8 downto 0+i*8);
+          end if;
+        end loop; -- i
+      end if;
+
+      -- read access --
+      ext_mem_b.rdata(0) <= ext_ram_b(to_integer(unsigned(wb_mem_b.addr(index_size_f(ext_mem_b_size_c/4)+1 downto 2)))); -- word aligned
+      -- virtual read and ack latency --
+      if (ext_mem_b_latency_c > 1) then
+        for i in 1 to ext_mem_b_latency_c-1 loop
+          ext_mem_b.rdata(i) <= ext_mem_b.rdata(i-1);
+          ext_mem_b.ack(i)   <= ext_mem_b.ack(i-1) and wb_mem_b.cyc;
+        end loop;
+      end if;
+
+      -- bus output register --
+      wb_mem_b.err <= '0';
+      if (ext_mem_b.ack(ext_mem_b_latency_c-1) = '1') and (wb_mem_b.cyc = '1') then
+        wb_mem_b.rdata <= ext_mem_b.rdata(ext_mem_b_latency_c-1);
+        wb_mem_b.ack   <= '1';
+      else
+        wb_mem_b.rdata <= (others => '0');
+        wb_mem_b.ack   <= '0';
+      end if;
+    end if;
+  end process ext_mem_b_access;
 
 
 end neorv32_tb_rtl;

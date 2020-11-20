@@ -12,15 +12,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="953250fs"></ZoomStartTime>
-      <ZoomEndTime time="1057351fs"></ZoomEndTime>
-      <Cursor1Time time="997350fs"></Cursor1Time>
+      <ZoomStartTime time="5295000fs"></ZoomStartTime>
+      <ZoomEndTime time="5412501fs"></ZoomEndTime>
+      <Cursor1Time time="5715000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="203"></NameColumnWidth>
-      <ValueColumnWidth column_width="78"></ValueColumnWidth>
+      <ValueColumnWidth column_width="111"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="111" />
+   <WVObjectSize size="108" />
    <wvobject type="divider" fp_name="divider273">
       <obj_property name="label">CPU: Control.FETCH</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -70,56 +70,6 @@
       <obj_property name="ElementShortName">ipb</obj_property>
       <obj_property name="ObjectShortName">ipb</obj_property>
       <obj_property name="isExpanded"></obj_property>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ipb.wdata" type="array">
-         <obj_property name="ElementShortName">.wdata[33:0]</obj_property>
-         <obj_property name="ObjectShortName">.wdata[33:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ipb.we" type="logic">
-         <obj_property name="ElementShortName">.we</obj_property>
-         <obj_property name="ObjectShortName">.we</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ipb.free" type="logic">
-         <obj_property name="ElementShortName">.free</obj_property>
-         <obj_property name="ObjectShortName">.free</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ipb.clear" type="logic">
-         <obj_property name="ElementShortName">.clear</obj_property>
-         <obj_property name="ObjectShortName">.clear</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ipb.rdata" type="array">
-         <obj_property name="ElementShortName">.rdata[33:0]</obj_property>
-         <obj_property name="ObjectShortName">.rdata[33:0]</obj_property>
-         <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ipb.re" type="logic">
-         <obj_property name="ElementShortName">.re</obj_property>
-         <obj_property name="ObjectShortName">.re</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ipb.avail" type="logic">
-         <obj_property name="ElementShortName">.avail</obj_property>
-         <obj_property name="ObjectShortName">.avail</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ipb.w_pnt" type="array">
-         <obj_property name="ElementShortName">.w_pnt[1:0]</obj_property>
-         <obj_property name="ObjectShortName">.w_pnt[1:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ipb.r_pnt" type="array">
-         <obj_property name="ElementShortName">.r_pnt[1:0]</obj_property>
-         <obj_property name="ObjectShortName">.r_pnt[1:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ipb.empty" type="logic">
-         <obj_property name="ElementShortName">.empty</obj_property>
-         <obj_property name="ObjectShortName">.empty</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ipb.full" type="logic">
-         <obj_property name="ElementShortName">.full</obj_property>
-         <obj_property name="ObjectShortName">.full</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ipb.data" type="array">
-         <obj_property name="ElementShortName">.data[0:1][33:0]</obj_property>
-         <obj_property name="ObjectShortName">.data[0:1][33:0]</obj_property>
-      </wvobject>
    </wvobject>
    <wvobject type="divider" fp_name="divider273">
       <obj_property name="label">CPU: Control.ISSUE</obj_property>
@@ -141,45 +91,6 @@
    <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ci_illegal" type="logic">
       <obj_property name="ElementShortName">ci_illegal</obj_property>
       <obj_property name="ObjectShortName">ci_illegal</obj_property>
-   </wvobject>
-   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/i_buf" type="array">
-      <obj_property name="ElementShortName">i_buf</obj_property>
-      <obj_property name="ObjectShortName">i_buf</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/i_buf.wdata" type="array">
-         <obj_property name="ElementShortName">.wdata[35:0]</obj_property>
-         <obj_property name="ObjectShortName">.wdata[35:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/i_buf.rdata" type="array">
-         <obj_property name="ElementShortName">.rdata[35:0]</obj_property>
-         <obj_property name="ObjectShortName">.rdata[35:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/i_buf.status" type="logic">
-         <obj_property name="ElementShortName">.status</obj_property>
-         <obj_property name="ObjectShortName">.status</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/i_buf.clear" type="logic">
-         <obj_property name="ElementShortName">.clear</obj_property>
-         <obj_property name="ObjectShortName">.clear</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/i_buf.we" type="logic">
-         <obj_property name="ElementShortName">.we</obj_property>
-         <obj_property name="ObjectShortName">.we</obj_property>
-         <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/i_buf.re" type="logic">
-         <obj_property name="ElementShortName">.re</obj_property>
-         <obj_property name="ObjectShortName">.re</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/i_buf.free" type="logic">
-         <obj_property name="ElementShortName">.free</obj_property>
-         <obj_property name="ObjectShortName">.free</obj_property>
-      </wvobject>
-      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/i_buf.avail" type="logic">
-         <obj_property name="ElementShortName">.avail</obj_property>
-         <obj_property name="ObjectShortName">.avail</obj_property>
-      </wvobject>
    </wvobject>
    <wvobject type="divider" fp_name="divider273">
       <obj_property name="label">CPU: Control.EXECUTE</obj_property>
@@ -206,8 +117,8 @@
       <obj_property name="ObjectShortName">be_store_i</obj_property>
    </wvobject>
    <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ctrl_o" type="array">
-      <obj_property name="ElementShortName">ctrl_o[45:0]</obj_property>
-      <obj_property name="ObjectShortName">ctrl_o[45:0]</obj_property>
+      <obj_property name="ElementShortName">ctrl_o[59:0]</obj_property>
+      <obj_property name="ObjectShortName">ctrl_o[59:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/ci_instr32" type="array">
       <obj_property name="ElementShortName">ci_instr32[31:0]</obj_property>
@@ -261,6 +172,10 @@
          <obj_property name="ElementShortName">.i_reg_nxt[31:0]</obj_property>
          <obj_property name="ObjectShortName">.i_reg_nxt[31:0]</obj_property>
       </wvobject>
+      <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.i_reg_last" type="array">
+         <obj_property name="ElementShortName">.i_reg_last[31:0]</obj_property>
+         <obj_property name="ObjectShortName">.i_reg_last[31:0]</obj_property>
+      </wvobject>
       <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.is_ci" type="logic">
          <obj_property name="ElementShortName">.is_ci</obj_property>
          <obj_property name="ObjectShortName">.is_ci</obj_property>
@@ -292,12 +207,12 @@
       <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.pc" type="array">
          <obj_property name="ElementShortName">.pc[31:0]</obj_property>
          <obj_property name="ObjectShortName">.pc[31:0]</obj_property>
-         <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.pc_nxt" type="array">
          <obj_property name="ElementShortName">.pc_nxt[31:0]</obj_property>
          <obj_property name="ObjectShortName">.pc_nxt[31:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_control_inst/execute_engine.next_pc" type="array">
          <obj_property name="ElementShortName">.next_pc[31:0]</obj_property>
@@ -406,10 +321,6 @@
       <obj_property name="label">CPU: BUS_UNIT</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
-   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/rstn_i" type="logic">
-      <obj_property name="ElementShortName">rstn_i</obj_property>
-      <obj_property name="ObjectShortName">rstn_i</obj_property>
-   </wvobject>
    <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/clk_i" type="logic">
       <obj_property name="ElementShortName">clk_i</obj_property>
       <obj_property name="ObjectShortName">clk_i</obj_property>
@@ -500,10 +411,6 @@
       <obj_property name="ElementShortName">pmp_ctrl_i[0:7][7:0]</obj_property>
       <obj_property name="ObjectShortName">pmp_ctrl_i[0:7][7:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/priv_mode_i" type="array">
-      <obj_property name="ElementShortName">priv_mode_i[1:0]</obj_property>
-      <obj_property name="ObjectShortName">priv_mode_i[1:0]</obj_property>
-   </wvobject>
    <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cpu_inst/neorv32_cpu_bus_inst/if_pmp_fault" type="logic">
       <obj_property name="ElementShortName">if_pmp_fault</obj_property>
       <obj_property name="ObjectShortName">if_pmp_fault</obj_property>
@@ -584,6 +491,10 @@
       <obj_property name="label">EXT_MEM Interface</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
+   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_wishbone_inst_true/neorv32_wishbone_inst/ctrl" type="array">
+      <obj_property name="ElementShortName">ctrl</obj_property>
+      <obj_property name="ObjectShortName">ctrl</obj_property>
+   </wvobject>
    <wvobject fp_name="/neorv32_tb/neorv32_top_inst/wb_adr_o" type="array">
       <obj_property name="ElementShortName">wb_adr_o[31:0]</obj_property>
       <obj_property name="ObjectShortName">wb_adr_o[31:0]</obj_property>
@@ -629,23 +540,20 @@
       <obj_property name="ObjectShortName">fencei_o</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider238">
-      <obj_property name="label">IO: CFU</obj_property>
+      <obj_property name="label">Testbench memory busses</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
-   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cfu_inst_true/neorv32_cfu_inst/wr_en" type="logic">
-      <obj_property name="ElementShortName">wr_en</obj_property>
-      <obj_property name="ObjectShortName">wr_en</obj_property>
+   <wvobject fp_name="/neorv32_tb/wb_cpu" type="array">
+      <obj_property name="ElementShortName">wb_cpu</obj_property>
+      <obj_property name="ObjectShortName">wb_cpu</obj_property>
+      <obj_property name="isExpanded"></obj_property>
    </wvobject>
-   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cfu_inst_true/neorv32_cfu_inst/rd_en" type="logic">
-      <obj_property name="ElementShortName">rd_en</obj_property>
-      <obj_property name="ObjectShortName">rd_en</obj_property>
+   <wvobject fp_name="/neorv32_tb/wb_mem_a" type="array">
+      <obj_property name="ElementShortName">wb_mem_a</obj_property>
+      <obj_property name="ObjectShortName">wb_mem_a</obj_property>
    </wvobject>
-   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cfu_inst_true/neorv32_cfu_inst/cfu_reg_in" type="array">
-      <obj_property name="ElementShortName">cfu_reg_in[0:3][31:0]</obj_property>
-      <obj_property name="ObjectShortName">cfu_reg_in[0:3][31:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/neorv32_tb/neorv32_top_inst/neorv32_cfu_inst_true/neorv32_cfu_inst/cfu_reg_out" type="array">
-      <obj_property name="ElementShortName">cfu_reg_out[0:3][31:0]</obj_property>
-      <obj_property name="ObjectShortName">cfu_reg_out[0:3][31:0]</obj_property>
+   <wvobject fp_name="/neorv32_tb/wb_mem_b" type="array">
+      <obj_property name="ElementShortName">wb_mem_b</obj_property>
+      <obj_property name="ObjectShortName">wb_mem_b</obj_property>
    </wvobject>
 </wave_config>
