@@ -354,6 +354,7 @@ begin
   port map (
     -- global control --
     clk_i          => clk_i,          -- global clock, rising edge
+    rstn_i         => rstn_i,         -- global reset, low-active, async
     ctrl_i         => ctrl,           -- main control bus
     -- cpu instruction fetch interface --
     fetch_pc_i     => fetch_pc,       -- PC for instruction fetch
