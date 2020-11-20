@@ -101,7 +101,7 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
   signal wb_access                       : std_ulogic;
 
   -- bus arbiter
-  type ctrl_state_t is (IDLE, BUSY, CANCELED);
+  type ctrl_state_t is (IDLE, BUSY, CANCELED, RESYNC);
   type ctrl_t is record
     state      : ctrl_state_t;
     state_prev : ctrl_state_t;
@@ -204,7 +204,7 @@ begin
             ctrl.state <= IDLE;
           end if;
 
-        when CANCELED => -- 
+        when CANCELED => -- wait for cycle to be completed either by peripheral or by timeout (ignore result of transfer)
         -- ------------------------------------------------------------
           ctrl.wr_req <= ctrl.wr_req or wren_i; -- buffer new request
           ctrl.rd_req <= ctrl.rd_req or rden_i; -- buffer new request
@@ -212,6 +212,12 @@ begin
           -- or wait for a timeout and force termination
           ctrl.timeout <= std_ulogic_vector(unsigned(ctrl.timeout) - 1); -- timeout counter
           if (wb_ack_i = '1') or (or_all_f(ctrl.timeout) = '0') then
+            ctrl.state <= RESYNC;
+          end if;
+
+        when RESYNC => -- make sure transfer is done!
+        -- ------------------------------------------------------------
+          if (wb_ack_i = '0') then
             ctrl.state <= IDLE;
           end if;
 
@@ -241,7 +247,7 @@ begin
   wb_cyc_o <= cyc_int;
 
   stb_int  <= '1' when ((ctrl.state = BUSY) and (ctrl.state_prev = IDLE)) else '0';
-  cyc_int  <= '0' when (ctrl.state = IDLE) else '1';
+  cyc_int  <= '0' when ((ctrl.state = IDLE) or (ctrl.state = RESYNC)) else '1';
 
 
 end neorv32_wishbone_rtl;
