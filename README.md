@@ -91,15 +91,15 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 * Use LaTeX for data sheet
 * More support for FreeRTOS
 * Further size and performance optimization
-* Add a cache for the external memory interface
 * Synthesis results (+ wrappers?) for more/specific platforms
 * Maybe port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
-* Implement further CPU extensions:
-  * Bitmanipulation operations (`B`) - when they are *official*
-  * Floating-point instructions (`F`)
-  * ...
+* Implement further RISC-V (or custom?) CPU extensions (like floating-point operations ('F'))
 * ...
 
+#### Work-in-progress
+
+* A cache for the external memory/bus interface (also providing burst mode?)
+* RISC-V `B` extension ([bitmanipulation](https://github.com/riscv/riscv-bitmanip))
 
 
 ## Features
@@ -180,13 +180,13 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
   * Machine CSRs: `mstatus` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mvendorid` [`marchid`](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) `mimpid` `mhartid` `mzext`(custom)
   * Supported exceptions and interrupts:
     * Misaligned instruction address
-    * Instruction access fault
+    * Instruction access fault (via unacknowledged bus access after timeout)
     * Illegal instruction
     * Breakpoint (via `ebreak` instruction)
     * Load address misaligned
-    * Load access fault
+    * Load access fault (via unacknowledged bus access after timeout)
     * Store address misaligned
-    * Store access fault
+    * Store access fault (via unacknowledged bus access after timeout)
     * Environment call from M-mode (via `ecall` instruction)
     * Machine timer interrupt `mti` (via processor's MTIME unit)
     * Machine software interrupt `msi` (via external signal)

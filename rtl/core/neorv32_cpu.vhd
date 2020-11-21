@@ -293,7 +293,7 @@ begin
   if (CPU_EXTENSION_RISCV_M = true) generate
     neorv32_cpu_cp_muldiv_inst: neorv32_cpu_cp_muldiv
     generic map (
-      FAST_MUL_EN => FAST_MUL_EN -- use DSPs for faster multiplication
+      FAST_MUL_EN => FAST_MUL_EN  -- use DSPs for faster multiplication
     )
     port map (
       -- global control --
@@ -317,7 +317,7 @@ begin
   end generate;
 
 
-  -- Co-Processor 1: Not implemented yet ----------------------------------------------------
+  -- Co-Processor 1: Not implemented (yet) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- control: ctrl cp1_start
   -- inputs:  rs1 rs2 alu_cmp alu_opb
@@ -325,7 +325,7 @@ begin
   cp1_valid <= '0';
 
 
-  -- Co-Processor 2: Not implemented yet ----------------------------------------------------
+  -- Co-Processor 2: Not implemented (yet) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- control: ctrl cp2_start
   -- inputs:  rs1 rs2 alu_cmp alu_opb
@@ -333,7 +333,7 @@ begin
   cp2_valid <= '0';
 
 
-  -- Co-Processor 3: Not implemented yet ----------------------------------------------------
+  -- Co-Processor 3: Not implemented (yet) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- control: ctrl cp3_start
   -- inputs:  rs1 rs2 alu_cmp alu_opb
@@ -354,6 +354,7 @@ begin
   port map (
     -- global control --
     clk_i          => clk_i,          -- global clock, rising edge
+    rstn_i         => rstn_i,         -- global reset, low-active, async
     ctrl_i         => ctrl,           -- main control bus
     -- cpu instruction fetch interface --
     fetch_pc_i     => fetch_pc,       -- PC for instruction fetch

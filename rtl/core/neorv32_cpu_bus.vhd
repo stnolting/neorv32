@@ -52,6 +52,7 @@ entity neorv32_cpu_bus is
   port (
     -- global control --
     clk_i          : in  std_ulogic; -- global clock, rising edge
+    rstn_i         : in  std_ulogic := '0'; -- global reset, low-active, async
     ctrl_i         : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     -- cpu instruction fetch interface --
     fetch_pc_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
@@ -289,9 +290,14 @@ begin
 
   -- Instruction Fetch Arbiter --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ifetch_arbiter: process(clk_i)
+  ifetch_arbiter: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      i_arbiter.rd_req    <= '0';
+      i_arbiter.err_align <= '0';
+      i_arbiter.err_bus   <= '0';
+      i_arbiter.timeout   <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- instruction fetch request --
       if (i_arbiter.rd_req = '0') then -- idle
         i_arbiter.rd_req    <= ctrl_i(ctrl_bus_if_c);
@@ -333,9 +339,15 @@ begin
 
   -- Data Access Arbiter --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  data_access_arbiter: process(clk_i)
+  data_access_arbiter: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      d_arbiter.wr_req    <= '0';
+      d_arbiter.rd_req    <= '0';
+      d_arbiter.err_align <= '0';
+      d_arbiter.err_bus   <= '0';
+      d_arbiter.timeout   <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- data access request --
       if (d_arbiter.wr_req = '0') and (d_arbiter.rd_req = '0') then -- idle
         d_arbiter.wr_req    <= ctrl_i(ctrl_bus_wr_c);
