@@ -64,7 +64,7 @@ For more information take a look at the [NEORV32 data sheet](https://raw.githubu
 
 ### Design Principles
 
- * From zero to `main()`: Completely open source and documented.
+ * From zero to *hello_world*: Completely open source and documented.
  * Plain VHDL without technology-specific parts like attributes, macros or primitives.
  * Easy to use – working out of the box.
  * Clean synchronous design, no wacky combinatorial interfaces.
@@ -86,20 +86,20 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 | [RISC-V compliance test](https://github.com/stnolting/neorv32_riscv_compliance) | [![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) | |
 
 
-### To-Do / Wish List / [Help Wanted](#Contribute)
+### To-Do / Wish List / Help Wanted
 
 * Use LaTeX for data sheet
-* More support for FreeRTOS
-* Further size and performance optimization
+* Further size and performance optimization [**work in progress**]
+* A cache for the external memory/bus interface [**work in progress**]
+* Burst mode for the external memory/bus interface
+* RISC-V `B` extension ([bitmanipulation](https://github.com/riscv/riscv-bitmanip)) [**work in progress**]
 * Synthesis results (+ wrappers?) for more/specific platforms
+* More support for FreeRTOS
 * Maybe port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
 * Implement further RISC-V (or custom?) CPU extensions (like floating-point operations ('F'))
 * ...
+* [Ideas?](#Contribute)
 
-#### Work-in-progress
-
-* A cache for the external memory/bus interface (also providing burst mode?)
-* RISC-V `B` extension ([bitmanipulation](https://github.com/riscv/riscv-bitmanip))
 
 
 ## Features
