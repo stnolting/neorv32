@@ -331,7 +331,6 @@ begin
       when IFETCH_ISSUE => -- store instruction data to prefetch buffer
       -- ------------------------------------------------------------
         if (bus_i_wait_i = '0') or (be_instr_i = '1') or (ma_instr_i = '1') then -- wait for bus response
---fetch_engine.bus_err_ack <= '1'; -- acknowledge any instruction bus errors, the execute engine has to take care of them / terminate current transfer [unnecessary!]
           fetch_engine.pc_nxt    <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
           ipb.we                 <= '1';
           fetch_engine.state_nxt <= IFETCH_REQUEST;
