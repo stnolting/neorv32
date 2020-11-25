@@ -190,7 +190,7 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG ERROR: AXI4-Lite bridge requires STANDARD Wishbone mode (package.wb_pipe_mode_c = false)!" severity error;
+  assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG ERROR: AXI4-Lite bridge requires STANDARD/CLASSIC Wishbone mode (package.wb_pipe_mode_c = false)." severity error;
 
 
   -- The Core Of The Problem ----------------------------------------------------------------
