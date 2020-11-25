@@ -164,7 +164,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal cmd_issue : cmd_issue_t;
 
   -- instruction execution engine --
-  type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP, EXECUTE, ALU_WAIT, BRANCH, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, CSR_ACCESS);
+  type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP, EXECUTE, ALU_WAIT, BRANCH, FENCE_OP, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, CSR_ACCESS);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_prev   : execute_engine_state_t;
@@ -848,21 +848,7 @@ begin
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
-            execute_engine.state_nxt <= SYS_WAIT;
-            -- for simplicity: internally, fence and fence.i perform the same operations (clear and reload instruction prefetch buffer)
-            -- FENCE.I --
-            if (CPU_EXTENSION_RISCV_Zifencei = true) then
-              execute_engine.pc_nxt     <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- "refetch" next instruction
-              execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
-              fetch_engine.reset        <= '1';
-              if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) then
-                ctrl_nxt(ctrl_bus_fencei_c) <= '1';
-              end if;
-            end if;
-            -- FENCE --
-            if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fence_c(0)) then
-              ctrl_nxt(ctrl_bus_fence_c) <= '1';
-            end if;
+            execute_engine.state_nxt <= FENCE_OP;
 
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
@@ -934,6 +920,21 @@ begin
           execute_engine.state_nxt  <= SYS_WAIT;
         else
           execute_engine.state_nxt <= DISPATCH;
+        end if;
+
+      when FENCE_OP => -- fence operations - execution
+      -- ------------------------------------------------------------
+        execute_engine.state_nxt <= SYS_WAIT;
+        -- FENCE.I --
+        if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) and (CPU_EXTENSION_RISCV_Zifencei = true) then
+          execute_engine.pc_nxt       <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- "refetch" next instruction
+          execute_engine.if_rst_nxt   <= '1'; -- this is a non-linear PC modification
+          fetch_engine.reset          <= '1';
+          ctrl_nxt(ctrl_bus_fencei_c) <= '1';
+        end if;
+        -- FENCE --
+        if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fence_c(0)) then
+          ctrl_nxt(ctrl_bus_fence_c) <= '1';
         end if;
 
       when LOADSTORE_0 => -- trigger memory request
