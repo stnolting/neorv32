@@ -2,11 +2,16 @@
 -- # << NEORV32 - External Bus Interface (WISHBONE) >>                                             #
 -- # ********************************************************************************************* #
 -- # The interface provides registers for all outgoing signals. If the host cancels a running      #
--- # transfer, the Wishbone arbiter still waits some time for the bus system to ACK to transfer.   #
+-- # transfer, the Wishbone arbiter still waits some time for the bus system to ACK the transfer   #
+-- # before the arbiter forces termination.                                                        #
 -- # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
--- # All bus accesses from the CPU, which do not target the internal IO region, the internal boot- #
--- # loader or the internal instruction or data memories (if implemented), are delegated via this  #
--- # Wishbone gateway to the external bus interface.                                               #
+-- # Even if all processor-internal memories and IO devices are disabled, the external address     #
+-- # space ends at address 0xffff0000 (begin of internal BOOTROM address space).                   #
+-- # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+-- # All bus accesses from the CPU, which do not target the internal IO region / the internal      #
+-- # bootlloader / the internal instruction or data memories (if implemented), are delegated via   #
+-- # this Wishbone gateway to the external bus interface. Accessed peripherals can have a response #
+-- # latency of up to neorv32_package.vhd:bus_timeout_c - 2 cycles.                                #
 -- # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 -- # This interface supports classic/standard Wishbone transactions (WB_PIPELINED_MODE = false)    #
 -- # and also pipelined transactions (WB_PIPELINED_MODE = true).                                   #
@@ -51,7 +56,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_wishbone is
   generic (
-    WB_PIPELINED_MODE : boolean := false; -- false: classic/standard wishbone mode, true: pipelined wishbone mode
+    WB_PIPELINED_MODE : boolean := false;  -- false: classic/standard wishbone mode, true: pipelined wishbone mode
     -- Internal instruction memory --
     MEM_INT_IMEM_USE  : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
@@ -92,31 +97,30 @@ end neorv32_wishbone;
 architecture neorv32_wishbone_rtl of neorv32_wishbone is
 
   -- constants --
-  constant wb_timeout_c : natural := bus_timeout_c/2;
+  constant xbus_timeout_c : natural := bus_timeout_c/4;
 
   -- access control --
-  signal int_imem_acc, int_imem_acc_real : std_ulogic;
-  signal int_dmem_acc, int_dmem_acc_real : std_ulogic;
-  signal int_boot_acc                    : std_ulogic;
-  signal wb_access                       : std_ulogic;
+  signal int_imem_acc : std_ulogic;
+  signal int_dmem_acc : std_ulogic;
+  signal int_boot_acc : std_ulogic;
+  signal xbus_access  : std_ulogic;
 
   -- bus arbiter
   type ctrl_state_t is (IDLE, BUSY, CANCELED, RESYNC);
   type ctrl_t is record
-    state      : ctrl_state_t;
-    state_prev : ctrl_state_t;
-    we         : std_ulogic;
-    rd_req     : std_ulogic;
-    wr_req     : std_ulogic;
-    adr        : std_ulogic_vector(31 downto 0);
-    wdat       : std_ulogic_vector(31 downto 0);
-    rdat       : std_ulogic_vector(31 downto 0);
-    sel        : std_ulogic_vector(3 downto 0);
-    ack        : std_ulogic;
-    err        : std_ulogic;
-    timeout    : std_ulogic_vector(index_size_f(wb_timeout_c)-1 downto 0);
-    src        : std_ulogic;
-    priv       : std_ulogic_vector(1 downto 0);
+    state   : ctrl_state_t;
+    we      : std_ulogic;
+    rd_req  : std_ulogic;
+    wr_req  : std_ulogic;
+    adr     : std_ulogic_vector(31 downto 0);
+    wdat    : std_ulogic_vector(31 downto 0);
+    rdat    : std_ulogic_vector(31 downto 0);
+    sel     : std_ulogic_vector(3 downto 0);
+    ack     : std_ulogic;
+    err     : std_ulogic;
+    timeout : std_ulogic_vector(index_size_f(xbus_timeout_c)-1 downto 0);
+    src     : std_ulogic;
+    priv    : std_ulogic_vector(1 downto 0);
   end record;
   signal ctrl    : ctrl_t;
   signal stb_int : std_ulogic;
@@ -126,51 +130,43 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (bus_timeout_c <= 15) report "NEORV32 PROCESSOR CONFIG ERROR: Bus timeout (bus_timeout_c) should be >16 for interfacing external modules." severity error;
+  assert not (bus_timeout_c <= 32) report "NEORV32 PROCESSOR CONFIG ERROR: Bus timeout (neorv32_package.vhd:bus_timeout_c) should be >32 when using external bus interface." severity error;
 
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- access to internal IMEM or DMEM? --
-  int_imem_acc <= '1' when (addr_i(31 downto index_size_f(MEM_INT_IMEM_SIZE)) = imem_base_c(31 downto index_size_f(MEM_INT_IMEM_SIZE))) else '0';
-  int_dmem_acc <= '1' when (addr_i(31 downto index_size_f(MEM_INT_DMEM_SIZE)) = dmem_base_c(31 downto index_size_f(MEM_INT_DMEM_SIZE))) else '0';
-  int_imem_acc_real <= int_imem_acc when (MEM_INT_IMEM_USE = true) else '0';
-  int_dmem_acc_real <= int_dmem_acc when (MEM_INT_DMEM_USE = true) else '0';
-
-  -- access to internal BOOTROM or IO devices? --
-  int_boot_acc <= '1' when (addr_i >= boot_rom_base_c) else '0'; -- this also covers access to the IO space
---int_boot_acc <= '1' when (addr_i(31 downto index_size_f(2*boot_rom_max_size_c)) = boot_rom_base_c(31 downto index_size_f(2*boot_rom_max_size_c))) else '0'; -- this also covers access to the IO space
---int_io_acc   <= '1' when (addr_i >= io_base_c) else '0';
-
+  -- access to processor-internal IMEM or DMEM? --
+  int_imem_acc <= '1' when (addr_i(31 downto index_size_f(MEM_INT_IMEM_SIZE)) = imem_base_c(31 downto index_size_f(MEM_INT_IMEM_SIZE))) and (MEM_INT_IMEM_USE = true) else '0';
+  int_dmem_acc <= '1' when (addr_i(31 downto index_size_f(MEM_INT_DMEM_SIZE)) = dmem_base_c(31 downto index_size_f(MEM_INT_DMEM_SIZE))) and (MEM_INT_DMEM_USE = true) else '0';
+  -- access to processor-internal BOOTROM or IO devices? --
+  int_boot_acc <= '1' when (addr_i(31 downto 16) = boot_rom_base_c(31 downto 16)) else '0'; -- hacky!
   -- actual external bus access? --
-  wb_access <= (not int_imem_acc_real) and (not int_dmem_acc_real) and (not int_boot_acc);
+  xbus_access <= (not int_imem_acc) and (not int_dmem_acc) and (not int_boot_acc);
 
   -- Bus Arbiter -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bus_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl.state      <= IDLE;
-      ctrl.state_prev <= IDLE;
-      ctrl.we         <= '0';
-      ctrl.rd_req     <= '0';
-      ctrl.wr_req     <= '0';
-      ctrl.adr        <= (others => '0');
-      ctrl.wdat       <= (others => '0');
-      ctrl.rdat       <= (others => '0');
-      ctrl.sel        <= (others => '0');
-      ctrl.timeout    <= (others => '0');
-      ctrl.ack        <= '0';
-      ctrl.err        <= '0';
-      ctrl.src        <= '0';
-      ctrl.priv       <= "00";
+      ctrl.state   <= IDLE;
+      ctrl.we      <= '0';
+      ctrl.rd_req  <= '0';
+      ctrl.wr_req  <= '0';
+      ctrl.adr     <= (others => '0');
+      ctrl.wdat    <= (others => '0');
+      ctrl.rdat    <= (others => '0');
+      ctrl.sel     <= (others => '0');
+      ctrl.timeout <= (others => '0');
+      ctrl.ack     <= '0';
+      ctrl.err     <= '0';
+      ctrl.src     <= '0';
+      ctrl.priv    <= "00";
     elsif rising_edge(clk_i) then
       -- defaults --
-      ctrl.state_prev <= ctrl.state;
-      ctrl.rdat       <= (others => '0');
-      ctrl.ack        <= '0';
-      ctrl.err        <= '0';
-      ctrl.timeout    <= std_ulogic_vector(to_unsigned(wb_timeout_c, index_size_f(wb_timeout_c)));
+      ctrl.rdat    <= (others => '0');
+      ctrl.ack     <= '0';
+      ctrl.err     <= '0';
+      ctrl.timeout <= std_ulogic_vector(to_unsigned(xbus_timeout_c, index_size_f(xbus_timeout_c)));
 
       -- state machine --
       case ctrl.state is
@@ -186,8 +182,8 @@ begin
           ctrl.sel  <= ben_i;
           ctrl.src  <= src_i;
           ctrl.priv <= priv_i;
-          -- valid read/write access --
-          if ((wb_access and (wren_i or ctrl.wr_req or rden_i or ctrl.rd_req)) = '1') then
+          -- valid new or buffered read/write request --
+          if ((xbus_access and (wren_i or ctrl.wr_req or rden_i or ctrl.rd_req)) = '1') then
             ctrl.state <= BUSY;
           end if;
 
@@ -230,14 +226,14 @@ begin
   end process bus_arbiter;
 
   -- host access --
-  data_o   <= ctrl.rdat;
-  ack_o    <= ctrl.ack;
-  err_o    <= ctrl.err;
+  data_o <= ctrl.rdat;
+  ack_o  <= ctrl.ack;
+  err_o  <= ctrl.err;
 
   -- wishbone interface --
   wb_tag_o(0) <= '1' when (ctrl.priv = priv_mode_m_c) else '0'; -- privileged access when in machine mode
-  wb_tag_o(1) <= '0'; -- 0=secure, 1=non-secure
-  wb_tag_o(2) <= ctrl.src; -- 0=data access, 1=instruction access
+  wb_tag_o(1) <= '0'; -- 0 = secure, 1 = non-secure
+  wb_tag_o(2) <= ctrl.src; -- 0 = data access, 1 = instruction access
 
   wb_adr_o <= ctrl.adr;
   wb_dat_o <= ctrl.wdat;
@@ -246,8 +242,8 @@ begin
   wb_stb_o <= stb_int when (WB_PIPELINED_MODE = true) else cyc_int;
   wb_cyc_o <= cyc_int;
 
-  stb_int  <= '1' when ((ctrl.state = BUSY) and (ctrl.state_prev = IDLE)) else '0';
-  cyc_int  <= '0' when ((ctrl.state = IDLE) or (ctrl.state = RESYNC)) else '1';
+  stb_int <= '1' when (ctrl.state = BUSY) else '0';
+  cyc_int <= '0' when (ctrl.state = IDLE) or (ctrl.state = RESYNC) else '1';
 
 
 end neorv32_wishbone_rtl;
