@@ -397,7 +397,7 @@ void neorv32_rte_print_hw_config(void) {
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT));
 
   // peripherals
-  neorv32_uart_printf("\n-- Processor Peripherals --\n");
+  neorv32_uart_printf("\n-- Available Processor Peripherals --\n");
 
   tmp = SYSINFO_FEATURES;
 
