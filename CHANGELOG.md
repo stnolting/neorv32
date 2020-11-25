@@ -14,8 +14,9 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 25.11.2020 | 1.4.7.4 | :warning: fixed bug in `FENCE.I` instruction that corrupted instruction fetch when executing code from processor-external memory; default testbench (`sim/neorv32_tb.vhd`) now features external IMEM, external DMEM and external IO connected via external bus interface; simulation now allows CPU to execute code using external memories only (no internal IMEM/DMEM); optimized CPU's instruction fetch interface (no more unnecessary transfer cancel requests) |
 | 20.11.2020 | 1.4.7.2 | :warning: fixed bug in CPU bus unit that caused a memory exception after reset in some cases; added second simulated external (Wishbone) memory to testbench (one memory for simulating an external IMEM, one memory for simulating external memory-mapped IO); external bus interface (`wishbone`) now makes sure that a canceled bus transfer is really understood by the accessed peripheral |
-| 20.11.2020 | 1.4.7.1 | Removed legacy (and unused) "update_enable signal" from IMEM |
+| 20.11.2020 | 1.4.7.1 | Removed deprecated "update_enable signal" from IMEM |
 | 11.11.2020 | [**:rocket:1.4.7.0**](https://github.com/stnolting/neorv32/releases/tag/v1.4.7.0) | Further optimized pipeline front-end: Jumps and branches are one cycle faster (+5% coremark performance); updated synthesis results; updated performance results; added `hello_world` example program |
 | 07.11.2020 | 1.4.6.7 | Updated bootloader (size optimization) and changed processor version output; added project logo; minor data sheet edits |
 | 03.11.2020 | 1.4.6.6 | Removed SPI module's *buggy* "LSB-first mode", SPI module now always sends data MSB-first; removed SPI.CTRL `SPI_CT_DIR` bit; modfied bit order in SPI CTRL register; updated SPI SW library |
