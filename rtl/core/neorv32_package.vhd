@@ -50,7 +50,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040704"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040705"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
@@ -196,38 +196,37 @@ package neorv32_package is
   constant ctrl_bus_rd_c        : natural := 30; -- read data request
   constant ctrl_bus_wr_c        : natural := 31; -- write data request
   constant ctrl_bus_if_c        : natural := 32; -- instruction fetch request
-  constant ctrl_bus_mar_we_c    : natural := 33; -- memory address register write enable
-  constant ctrl_bus_mdo_we_c    : natural := 34; -- memory data out register write enable
-  constant ctrl_bus_mdi_we_c    : natural := 35; -- memory data in register write enable
-  constant ctrl_bus_unsigned_c  : natural := 36; -- is unsigned load
-  constant ctrl_bus_ierr_ack_c  : natural := 37; -- acknowledge instruction fetch bus exceptions
-  constant ctrl_bus_derr_ack_c  : natural := 38; -- acknowledge data access bus exceptions
-  constant ctrl_bus_fence_c     : natural := 39; -- executed fence operation
-  constant ctrl_bus_fencei_c    : natural := 40; -- executed fencei operation
+  constant ctrl_bus_mo_we_c     : natural := 33; -- memory address and data output register write enable
+  constant ctrl_bus_mi_we_c     : natural := 34; -- memory data input register write enable
+  constant ctrl_bus_unsigned_c  : natural := 35; -- is unsigned load
+  constant ctrl_bus_ierr_ack_c  : natural := 36; -- acknowledge instruction fetch bus exceptions
+  constant ctrl_bus_derr_ack_c  : natural := 37; -- acknowledge data access bus exceptions
+  constant ctrl_bus_fence_c     : natural := 38; -- executed fence operation
+  constant ctrl_bus_fencei_c    : natural := 39; -- executed fencei operation
   -- co-processors --
-  constant ctrl_cp_id_lsb_c     : natural := 41; -- cp select ID lsb
-  constant ctrl_cp_id_msb_c     : natural := 42; -- cp select ID msb
+  constant ctrl_cp_id_lsb_c     : natural := 40; -- cp select ID lsb
+  constant ctrl_cp_id_msb_c     : natural := 41; -- cp select ID msb
   -- current privilege level --
-  constant ctrl_priv_lvl_lsb_c  : natural := 43; -- privilege level lsb
-  constant ctrl_priv_lvl_msb_c  : natural := 44; -- privilege level msb
+  constant ctrl_priv_lvl_lsb_c  : natural := 42; -- privilege level lsb
+  constant ctrl_priv_lvl_msb_c  : natural := 43; -- privilege level msb
   -- instruction's control blocks --
-  constant ctrl_ir_funct3_0_c   : natural := 45; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 46; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 47; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 48; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 49; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 50; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 51; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 52; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 53; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 54; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 55; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 56; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 57; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 58; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 59; -- funct12 bit 11
+  constant ctrl_ir_funct3_0_c   : natural := 44; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 45; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 46; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 47; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 48; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 49; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 50; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 51; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 52; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 53; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 54; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 55; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 56; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 57; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 58; -- funct12 bit 11
   -- control bus size --
-  constant ctrl_width_c         : natural := 60; -- control bus size
+  constant ctrl_width_c         : natural := 59; -- control bus size
 
   -- ALU Comparator Bus ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

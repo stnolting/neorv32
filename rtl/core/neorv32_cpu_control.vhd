@@ -164,7 +164,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal cmd_issue : cmd_issue_t;
 
   -- instruction execution engine --
-  type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP, EXECUTE, ALU_WAIT, BRANCH, FENCE_OP, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, CSR_ACCESS);
+  type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP, EXECUTE, ALU_WAIT, BRANCH, FENCE_OP, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, SYS_ENV, CSR_ACCESS);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_prev   : execute_engine_state_t;
@@ -721,6 +721,7 @@ begin
         --
         execute_engine.state_nxt <= DISPATCH;
 
+
       when DISPATCH => -- Get new command from instruction issue engine
       -- ------------------------------------------------------------
         if (cmd_issue.valid = '1') then -- instruction available?
@@ -743,6 +744,7 @@ begin
           end if;
         end if;
 
+
       when TRAP => -- Start trap environment (also used as cpu sleep state)
       -- ------------------------------------------------------------
         -- stay here for sleep
@@ -754,6 +756,7 @@ begin
           execute_engine.sleep_nxt  <= '0'; -- waky waky
           execute_engine.state_nxt  <= SYS_WAIT;
         end if;
+
 
       when EXECUTE => -- Decode and execute instruction
       -- ------------------------------------------------------------
@@ -824,10 +827,8 @@ begin
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
-            ctrl_nxt(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) <= alu_cmd_addsub_c; -- actual ALU operation = ADD
-            ctrl_nxt(ctrl_bus_mar_we_c) <= '1'; -- write to MAR
-            ctrl_nxt(ctrl_bus_mdo_we_c) <= '1'; -- write to MDO (only relevant for stores)
-            execute_engine.state_nxt    <= LOADSTORE_0;
+            ctrl_nxt(ctrl_bus_mo_we_c)   <= '1'; -- write to MAR and MDO (only relevant for stores)
+            execute_engine.state_nxt     <= LOADSTORE_0;
 
           when opcode_branch_c | opcode_jal_c | opcode_jalr_c => -- branch / jump and link (with register)
           -- ------------------------------------------------------------
@@ -851,25 +852,10 @@ begin
 
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
-            if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system
-              case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
-                when funct12_ecall_c => -- ECALL
-                  trap_ctrl.env_call <= '1';
-                when funct12_ebreak_c => -- EBREAK
-                  trap_ctrl.break_point <= '1';
-                when funct12_mret_c => -- MRET
-                  trap_ctrl.env_end <= '1';
-                  execute_engine.pc_nxt <= csr.mepc;
-                  fetch_engine.reset <= '1';
-                  execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
-                when funct12_wfi_c => -- WFI
-                  execute_engine.sleep_nxt <= '1'; -- good night
-                when others => -- undefined
-                  NULL;
-              end case;
-              execute_engine.state_nxt <= SYS_WAIT;
+            csr.re_nxt <= '1'; -- always read CSR (internally), only relevant for CSR-instructions
+            if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system/environment
+              execute_engine.state_nxt <= SYS_ENV;
             else -- CSR access
-              csr.re_nxt <= '1'; -- always read CSR (internally)
               execute_engine.state_nxt <= CSR_ACCESS;
             end if;
 
@@ -879,7 +865,28 @@ begin
 
         end case;
 
-      when CSR_ACCESS => -- write CSR data to RF, write ALU.res to CSR
+
+      when SYS_ENV => -- system environment operation - execution
+      -- ------------------------------------------------------------
+        case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
+          when funct12_ecall_c => -- ECALL
+            trap_ctrl.env_call <= '1';
+          when funct12_ebreak_c => -- EBREAK
+            trap_ctrl.break_point <= '1';
+          when funct12_mret_c => -- MRET
+            trap_ctrl.env_end <= '1';
+            execute_engine.pc_nxt <= csr.mepc;
+            fetch_engine.reset <= '1';
+            execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
+          when funct12_wfi_c => -- WFI
+            execute_engine.sleep_nxt <= '1'; -- good night
+          when others => -- undefined
+            NULL;
+        end case;
+        execute_engine.state_nxt <= SYS_WAIT;
+
+
+      when CSR_ACCESS => -- read & write status and control register (CSR)
       -- ------------------------------------------------------------
         -- CSR write access --
         case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
@@ -893,7 +900,8 @@ begin
         -- register file write back --
         ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output
         ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-        execute_engine.state_nxt  <= SYS_WAIT; -- have another cycle to let side-effects kick in (FIXME?)
+        execute_engine.state_nxt  <= DISPATCH;
+
 
       when ALU_WAIT => -- wait for multi-cycle ALU operation (shifter or CP) to finish
       -- ------------------------------------------------------------
@@ -910,6 +918,7 @@ begin
           execute_engine.state_nxt <= DISPATCH;
         end if;
 
+
       when BRANCH => -- update PC for taken branches and jumps
       -- ------------------------------------------------------------
         if (execute_engine.is_jump = '1') or (execute_engine.branch_taken = '1') then
@@ -920,6 +929,7 @@ begin
         else
           execute_engine.state_nxt <= DISPATCH;
         end if;
+
 
       when FENCE_OP => -- fence operations - execution
       -- ------------------------------------------------------------
@@ -936,6 +946,7 @@ begin
           ctrl_nxt(ctrl_bus_fence_c) <= '1';
         end if;
 
+
       when LOADSTORE_0 => -- trigger memory request
       -- ------------------------------------------------------------
         if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then -- LOAD
@@ -947,12 +958,12 @@ begin
 
       when LOADSTORE_1 => -- memory latency
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_mdi_we_c) <= '1'; -- write input data to MDI (only relevant for LOAD)
+        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- write input data to MDI (only relevant for LOAD)
         execute_engine.state_nxt <= LOADSTORE_2;
 
       when LOADSTORE_2 => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_mdi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for LOAD)
+        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for LOAD)
         ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "01"; -- RF input = memory input (only relevant for LOAD)
         if ((ma_load_i or be_load_i or ma_store_i or be_store_i) = '1') then -- abort if exception
           execute_engine.state_nxt <= DISPATCH;
@@ -1677,12 +1688,8 @@ begin
             csr.rdata(11) <= csr.mstatus_mpp(0); -- MPP: machine previous privilege mode low
             csr.rdata(12) <= csr.mstatus_mpp(1); -- MPP: machine previous privilege mode high
           when csr_misa_c => -- R/-: misa - ISA and extensions
-            csr.rdata(00) <= '0';                                         -- A CPU extension
-            csr.rdata(01) <= '0';                                         -- B CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
-            csr.rdata(03) <= '0';                                         -- D CPU extension
             csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
-            csr.rdata(05) <= '0';                                         -- F CPU extension
             csr.rdata(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
             csr.rdata(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_M);     -- M CPU extension
             csr.rdata(20) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);     -- U CPU extension
