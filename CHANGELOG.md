@@ -14,6 +14,7 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 26.11.2020 | 1.4.7.5 | Minor rtl clean-up; CSR access instructions are one cycle faster now (3 cycles now); system/environemnt instructions (`ecall` `ebreak` `mret` `wfi`) need one additional cycle (4 cycles now) |
 | 25.11.2020 | 1.4.7.4 | :warning: fixed bug in `FENCE.I` instruction that corrupted instruction fetch when executing code from processor-external memory; default testbench (`sim/neorv32_tb.vhd`) now features external IMEM, external DMEM and external IO connected via external bus interface; simulation now allows CPU to execute code using external memories only (no internal IMEM/DMEM); optimized CPU's instruction fetch interface (no more unnecessary transfer cancel requests) |
 | 20.11.2020 | 1.4.7.2 | :warning: fixed bug in CPU bus unit that caused a memory exception after reset in some cases; added second simulated external (Wishbone) memory to testbench (one memory for simulating an external IMEM, one memory for simulating external memory-mapped IO); external bus interface (`wishbone`) now makes sure that a canceled bus transfer is really understood by the accessed peripheral |
 | 20.11.2020 | 1.4.7.1 | Removed deprecated "update_enable signal" from IMEM |
