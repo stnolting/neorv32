@@ -506,9 +506,8 @@ void neorv32_rte_print_hw_version(void) {
  **************************************************************************/
 void neorv32_rte_print_credits(void) {
 
-  neorv32_uart_print("\nThe NEORV32 Processor Project, by Stephan Nolting\n"
-                     "https://github.com/stnolting/neorv32\n"
-                     "made in Hannover, Germany EU\n\n");
+  neorv32_uart_print("The NEORV32 Processor Project by Stephan Nolting\n"
+                     "https://github.com/stnolting/neorv32\n\n");
 }
 
 

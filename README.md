@@ -96,7 +96,7 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 * Synthesis results (+ wrappers?) for more/specific platforms
 * More support for FreeRTOS
 * Maybe port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
-* Implement further RISC-V (or custom?) CPU extensions (like floating-point operations ('F'))
+* Implement further RISC-V (or custom?) CPU extensions (like floating-point extension `F`)
 * ...
 * [Ideas?](#Contribute)
 
