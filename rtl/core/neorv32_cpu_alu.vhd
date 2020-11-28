@@ -86,7 +86,10 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
 
   -- results --
   signal addsub_res : std_ulogic_vector(data_width_c downto 0);
+  --
   signal cp_res     : std_ulogic_vector(data_width_c-1 downto 0);
+  signal arith_res  : std_ulogic_vector(data_width_c-1 downto 0);
+  signal logic_res  : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- comparator --
   signal cmp_opx : std_ulogic_vector(data_width_c downto 0);
@@ -166,6 +169,17 @@ begin
 
   -- direct output of address result --
   add_o <= addsub_res(data_width_c-1 downto 0);
+
+  -- ALU arithmetic logic core --
+  arithmetic_core: process(ctrl_i, addsub_res)
+  begin
+    if (ctrl_i(ctrl_alu_arith_c) = alu_arith_cmd_addsub_c) then -- ADD/SUB
+      arith_res <= addsub_res(data_width_c-1 downto 0);
+    else -- SLT
+      arith_res <= (others => '0');
+      arith_res(0) <= addsub_res(addsub_res'left); -- => carry/borrow
+    end if;
+  end process arithmetic_core;
 
 
   -- Shifter Unit ---------------------------------------------------------------------------
@@ -276,7 +290,7 @@ begin
   end process shifter_unit;
 
   -- is shift operation? --
-  shifter.cmd   <= '1' when (ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) = alu_cmd_shift_c) else '0';
+  shifter.cmd   <= '1' when (ctrl_i(ctrl_alu_func1_c downto ctrl_alu_func0_c) = alu_func_cmd_shift_c) else '0';
   shifter.start <= '1' when (shifter.cmd = '1') and (shifter.cmd_ff = '0') else '0';
 
   -- shift operation running? --
@@ -307,7 +321,7 @@ begin
   end process cp_arbiter;
 
   -- is co-processor operation? --
-  cp_ctrl.cmd   <= '1' when (ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) = alu_cmd_cp_c) else '0';
+  cp_ctrl.cmd   <= '1' when (ctrl_i(ctrl_alu_func1_c downto ctrl_alu_func0_c) = alu_func_cmd_copro_c) else '0';
   cp_ctrl.start <= '1' when (cp_ctrl.cmd = '1') and (cp_ctrl.cmd_ff = '0') else '0';
   cp0_start_o   <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "00") else '0'; -- CP0: MULDIV CP
   cp1_start_o   <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "01") else '0'; -- CP1: not implemented yet
@@ -321,20 +335,30 @@ begin
   cp_res <= cp0_data_i or cp1_data_i or cp2_data_i or cp3_data_i; -- only the *actually selected* co-processor may output data != 0
 
 
+  -- ALU Logic Core -------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  alu_logic_core: process(ctrl_i, rs1_i, opb)
+  begin
+    case ctrl_i(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) is
+      when alu_logic_cmd_movb_c => logic_res <= opb; -- (default)
+      when alu_logic_cmd_xor_c  => logic_res <= rs1_i xor opb; -- only rs1 required for logic ops (opa would also contain pc)
+      when alu_logic_cmd_or_c   => logic_res <= rs1_i or  opb;
+      when alu_logic_cmd_and_c  => logic_res <= rs1_i and opb;
+      when others               => logic_res <= opb; -- undefined
+    end case;
+  end process alu_logic_core;
+
+
   -- ALU Function Select --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  alu_function_mux: process(ctrl_i, rs1_i, opb, addsub_res, cp_res, shifter.sreg)
+  alu_function_mux: process(ctrl_i, arith_res, logic_res, shifter.sreg, cp_res)
   begin
-    case ctrl_i(ctrl_alu_cmd2_c downto ctrl_alu_cmd0_c) is
-      when alu_cmd_xor_c    => res_o <= rs1_i xor opb; -- only rs1 required for logic ops (opa would also contain pc)
-      when alu_cmd_or_c     => res_o <= rs1_i or  opb;
-      when alu_cmd_and_c    => res_o <= rs1_i and opb;
-      when alu_cmd_movb_c   => res_o <= opb;
-      when alu_cmd_addsub_c => res_o <= addsub_res(data_width_c-1 downto 0);
-      when alu_cmd_cp_c     => res_o <= cp_res;
-      when alu_cmd_shift_c  => res_o <= shifter.sreg;
-      when alu_cmd_slt_c    => res_o <= (others => '0'); res_o(0) <= addsub_res(addsub_res'left); -- => carry/borrow
-      when others           => res_o <= opb; -- undefined
+    case ctrl_i(ctrl_alu_func1_c downto ctrl_alu_func0_c) is
+      when alu_func_cmd_arith_c => res_o <= arith_res; -- (default)
+      when alu_func_cmd_logic_c => res_o <= logic_res;
+      when alu_func_cmd_shift_c => res_o <= shifter.sreg;
+      when alu_func_cmd_copro_c => res_o <= cp_res;
+      when others               => res_o <= arith_res; -- undefined
     end case;
   end process alu_function_mux;
 

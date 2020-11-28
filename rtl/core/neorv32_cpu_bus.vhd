@@ -165,7 +165,7 @@ begin
   mem_adr_reg: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (ctrl_i(ctrl_bus_mar_we_c) = '1') then
+      if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
         mar <= addr_i;
       end if;
     end if;
@@ -199,7 +199,7 @@ begin
   mem_do_reg: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (ctrl_i(ctrl_bus_mdo_we_c) = '1') then
+      if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
         mdo <= wdata_i; -- memory data out register (MDO)
       end if;
     end if;
@@ -240,7 +240,7 @@ begin
   mem_out_buf: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (ctrl_i(ctrl_bus_mdi_we_c) = '1') then
+      if (ctrl_i(ctrl_bus_mi_we_c) = '1') then
         mdi <= d_bus_rdata; -- memory data in register (MDI)
       end if;
     end if;
@@ -270,71 +270,6 @@ begin
         rdata_o <= mdi; -- full word
     end case;
   end process read_align;
-
-
-  -- Instruction Interface: Check for Misaligned Access -------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  misaligned_i_check: process(ctrl_i, fetch_pc_i)
-  begin
-    -- check instruction access --
-    i_misaligned <= '0'; -- default
-    if (CPU_EXTENSION_RISCV_C = true) then -- 16-bit and 32-bit instruction accesses
-      i_misaligned <= '0'; -- no alignment exceptions possible
-    else -- 32-bit instruction accesses only
-      if (fetch_pc_i(1) = '1') then -- PC(0) is always zero
-        i_misaligned <= '1';
-      end if; 
-    end if;
-  end process misaligned_i_check;
-
-
-  -- Instruction Fetch Arbiter --------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  ifetch_arbiter: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      i_arbiter.rd_req    <= '0';
-      i_arbiter.err_align <= '0';
-      i_arbiter.err_bus   <= '0';
-      i_arbiter.timeout   <= (others => '0');
-    elsif rising_edge(clk_i) then
-      -- instruction fetch request --
-      if (i_arbiter.rd_req = '0') then -- idle
-        i_arbiter.rd_req    <= ctrl_i(ctrl_bus_if_c);
-        i_arbiter.err_align <= i_misaligned;
-        i_arbiter.err_bus   <= '0';
-        i_arbiter.timeout   <= std_ulogic_vector(to_unsigned(bus_timeout_c, index_size_f(bus_timeout_c)));
-      else -- in progress
-        i_arbiter.timeout   <= std_ulogic_vector(unsigned(i_arbiter.timeout) - 1);
-        i_arbiter.err_align <= (i_arbiter.err_align or i_misaligned)                                     and (not ctrl_i(ctrl_bus_ierr_ack_c));
-        i_arbiter.err_bus   <= (i_arbiter.err_bus   or (not or_all_f(i_arbiter.timeout)) or i_bus_err_i) and (not ctrl_i(ctrl_bus_ierr_ack_c));
-        if (i_bus_ack_i = '1') or (ctrl_i(ctrl_bus_ierr_ack_c) = '1') then -- wait for normal termination / CPU abort
-          i_arbiter.rd_req <= '0';
-        end if;
-      end if;
-    end if;
-  end process ifetch_arbiter;
-
-  i_arbiter.wr_req <= '0'; -- instruction fetch is read-only
-
-  -- cancel bus access --
-  i_bus_cancel_o <= i_arbiter.rd_req and ctrl_i(ctrl_bus_ierr_ack_c);
-
-  -- wait for bus transaction to finish --
-  i_wait_o <= i_arbiter.rd_req and (not i_bus_ack_i);
-
-  -- output instruction fetch error to controller --
-  ma_instr_o <= i_arbiter.err_align;
-  be_instr_o <= i_arbiter.err_bus;
-
-  -- instruction bus (read-only) --
-  i_bus_addr_o  <= fetch_pc_i(data_width_c-1 downto 2) & "00"; -- instruction access is always 4-byte aligned (even for compressed instructions)
-  i_bus_wdata_o <= (others => '0');
-  i_bus_ben_o   <= (others => '0');
-  i_bus_we_o    <= '0';
-  i_bus_re_o    <= ctrl_i(ctrl_bus_if_c) and (not i_misaligned) and (not if_pmp_fault); -- no actual read when misaligned or PMP fault
-  i_bus_fence_o <= ctrl_i(ctrl_bus_fencei_c);
-  instr_o       <= i_bus_rdata_i;
 
 
   -- Data Access Arbiter --------------------------------------------------------------------
@@ -387,6 +322,60 @@ begin
   d_bus_re_o    <= ctrl_i(ctrl_bus_rd_c) and (not d_misaligned) and (not ld_pmp_fault); -- no actual read when misaligned or PMP fault
   d_bus_fence_o <= ctrl_i(ctrl_bus_fence_c);
   d_bus_rdata   <= d_bus_rdata_i;
+
+
+  -- Instruction Fetch Arbiter --------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  ifetch_arbiter: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      i_arbiter.rd_req    <= '0';
+      i_arbiter.err_align <= '0';
+      i_arbiter.err_bus   <= '0';
+      i_arbiter.timeout   <= (others => '0');
+    elsif rising_edge(clk_i) then
+      -- instruction fetch request --
+      if (i_arbiter.rd_req = '0') then -- idle
+        i_arbiter.rd_req    <= ctrl_i(ctrl_bus_if_c);
+        i_arbiter.err_align <= i_misaligned;
+        i_arbiter.err_bus   <= '0';
+        i_arbiter.timeout   <= std_ulogic_vector(to_unsigned(bus_timeout_c, index_size_f(bus_timeout_c)));
+      else -- in progress
+        i_arbiter.timeout   <= std_ulogic_vector(unsigned(i_arbiter.timeout) - 1);
+        i_arbiter.err_align <= (i_arbiter.err_align or i_misaligned)                                     and (not ctrl_i(ctrl_bus_ierr_ack_c));
+        i_arbiter.err_bus   <= (i_arbiter.err_bus   or (not or_all_f(i_arbiter.timeout)) or i_bus_err_i) and (not ctrl_i(ctrl_bus_ierr_ack_c));
+        if (i_bus_ack_i = '1') or (ctrl_i(ctrl_bus_ierr_ack_c) = '1') then -- wait for normal termination / CPU abort
+          i_arbiter.rd_req <= '0';
+        end if;
+      end if;
+    end if;
+  end process ifetch_arbiter;
+
+  i_arbiter.wr_req <= '0'; -- instruction fetch is read-only
+
+  -- cancel bus access --
+  i_bus_cancel_o <= i_arbiter.rd_req and ctrl_i(ctrl_bus_ierr_ack_c);
+
+  -- wait for bus transaction to finish --
+  i_wait_o <= i_arbiter.rd_req and (not i_bus_ack_i);
+
+  -- output instruction fetch error to controller --
+  ma_instr_o <= i_arbiter.err_align;
+  be_instr_o <= i_arbiter.err_bus;
+
+  -- instruction bus (read-only) --
+  i_bus_addr_o  <= fetch_pc_i(data_width_c-1 downto 2) & "00"; -- instruction access is always 4-byte aligned (even for compressed instructions)
+  i_bus_wdata_o <= (others => '0');
+  i_bus_ben_o   <= (others => '0');
+  i_bus_we_o    <= '0';
+  i_bus_re_o    <= ctrl_i(ctrl_bus_if_c) and (not i_misaligned) and (not if_pmp_fault); -- no actual read when misaligned or PMP fault
+  i_bus_fence_o <= ctrl_i(ctrl_bus_fencei_c);
+  instr_o       <= i_bus_rdata_i;
+
+
+  -- check instruction access --
+  i_misaligned <= '0' when (CPU_EXTENSION_RISCV_C = true) else -- no alignment exceptions possible when using C-extension
+                  '1' when (fetch_pc_i(1) = '1') else '0'; -- 32-bit accesses only
 
 
   -- Physical Memory Protection (PMP) -------------------------------------------------------

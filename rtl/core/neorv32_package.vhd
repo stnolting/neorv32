@@ -50,7 +50,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040702"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040706"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
@@ -76,9 +76,9 @@ package neorv32_package is
   -- Processor-Internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- Internal Instruction Memory (IMEM) and Date Memory (DMEM) --
-  constant imem_base_c : std_ulogic_vector(data_width_c-1 downto 0) := ispace_base_c; -- internal instruction memory base address
-  constant dmem_base_c : std_ulogic_vector(data_width_c-1 downto 0) := dspace_base_c; -- internal data memory base address
-  --> sizea are configured via top's generic
+  constant imem_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := ispace_base_c; -- internal instruction memory base address
+  constant dmem_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := dspace_base_c; -- internal data memory base address
+  --> memory sizes are configured via top's generics
 
   -- Internal Bootloader ROM --
   constant boot_rom_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFF0000"; -- bootloader base address, fixed!
@@ -181,53 +181,54 @@ package neorv32_package is
   constant ctrl_rf_wb_en_c      : natural := 17; -- write back enable
   constant ctrl_rf_r0_we_c      : natural := 18; -- force write access and force rd=r0
   -- alu --
-  constant ctrl_alu_cmd0_c      : natural := 19; -- ALU command bit 0
-  constant ctrl_alu_cmd1_c      : natural := 20; -- ALU command bit 1
-  constant ctrl_alu_cmd2_c      : natural := 21; -- ALU command bit 2
-  constant ctrl_alu_addsub_c    : natural := 22; -- 0=ADD, 1=SUB
-  constant ctrl_alu_opa_mux_c   : natural := 23; -- operand A select (0=rs1, 1=PC)
-  constant ctrl_alu_opb_mux_c   : natural := 24; -- operand B select (0=rs2, 1=IMM)
-  constant ctrl_alu_unsigned_c  : natural := 25; -- is unsigned ALU operation
-  constant ctrl_alu_shift_dir_c : natural := 26; -- shift direction (0=left, 1=right)
-  constant ctrl_alu_shift_ar_c  : natural := 27; -- is arithmetic shift
+  constant ctrl_alu_arith_c     : natural := 19; -- ALU arithmetic command
+  constant ctrl_alu_logic0_c    : natural := 20; -- ALU logic command bit 0
+  constant ctrl_alu_logic1_c    : natural := 21; -- ALU logic command bit 1
+  constant ctrl_alu_func0_c     : natural := 22; -- ALU function select command bit 0
+  constant ctrl_alu_func1_c     : natural := 23; -- ALU function select command bit 1
+  constant ctrl_alu_addsub_c    : natural := 24; -- 0=ADD, 1=SUB
+  constant ctrl_alu_opa_mux_c   : natural := 25; -- operand A select (0=rs1, 1=PC)
+  constant ctrl_alu_opb_mux_c   : natural := 26; -- operand B select (0=rs2, 1=IMM)
+  constant ctrl_alu_unsigned_c  : natural := 27; -- is unsigned ALU operation
+  constant ctrl_alu_shift_dir_c : natural := 28; -- shift direction (0=left, 1=right)
+  constant ctrl_alu_shift_ar_c  : natural := 29; -- is arithmetic shift
   -- bus interface --
-  constant ctrl_bus_size_lsb_c  : natural := 28; -- transfer size lsb (00=byte, 01=half-word)
-  constant ctrl_bus_size_msb_c  : natural := 29; -- transfer size msb (10=word, 11=?)
-  constant ctrl_bus_rd_c        : natural := 30; -- read data request
-  constant ctrl_bus_wr_c        : natural := 31; -- write data request
-  constant ctrl_bus_if_c        : natural := 32; -- instruction fetch request
-  constant ctrl_bus_mar_we_c    : natural := 33; -- memory address register write enable
-  constant ctrl_bus_mdo_we_c    : natural := 34; -- memory data out register write enable
-  constant ctrl_bus_mdi_we_c    : natural := 35; -- memory data in register write enable
-  constant ctrl_bus_unsigned_c  : natural := 36; -- is unsigned load
-  constant ctrl_bus_ierr_ack_c  : natural := 37; -- acknowledge instruction fetch bus exceptions
-  constant ctrl_bus_derr_ack_c  : natural := 38; -- acknowledge data access bus exceptions
-  constant ctrl_bus_fence_c     : natural := 39; -- executed fence operation
-  constant ctrl_bus_fencei_c    : natural := 40; -- executed fencei operation
+  constant ctrl_bus_size_lsb_c  : natural := 30; -- transfer size lsb (00=byte, 01=half-word)
+  constant ctrl_bus_size_msb_c  : natural := 31; -- transfer size msb (10=word, 11=?)
+  constant ctrl_bus_rd_c        : natural := 32; -- read data request
+  constant ctrl_bus_wr_c        : natural := 33; -- write data request
+  constant ctrl_bus_if_c        : natural := 34; -- instruction fetch request
+  constant ctrl_bus_mo_we_c     : natural := 35; -- memory address and data output register write enable
+  constant ctrl_bus_mi_we_c     : natural := 36; -- memory data input register write enable
+  constant ctrl_bus_unsigned_c  : natural := 37; -- is unsigned load
+  constant ctrl_bus_ierr_ack_c  : natural := 38; -- acknowledge instruction fetch bus exceptions
+  constant ctrl_bus_derr_ack_c  : natural := 39; -- acknowledge data access bus exceptions
+  constant ctrl_bus_fence_c     : natural := 40; -- executed fence operation
+  constant ctrl_bus_fencei_c    : natural := 41; -- executed fencei operation
   -- co-processors --
-  constant ctrl_cp_id_lsb_c     : natural := 41; -- cp select ID lsb
-  constant ctrl_cp_id_msb_c     : natural := 42; -- cp select ID msb
+  constant ctrl_cp_id_lsb_c     : natural := 42; -- cp select ID lsb
+  constant ctrl_cp_id_msb_c     : natural := 43; -- cp select ID msb
   -- current privilege level --
-  constant ctrl_priv_lvl_lsb_c  : natural := 43; -- privilege level lsb
-  constant ctrl_priv_lvl_msb_c  : natural := 44; -- privilege level msb
+  constant ctrl_priv_lvl_lsb_c  : natural := 44; -- privilege level lsb
+  constant ctrl_priv_lvl_msb_c  : natural := 45; -- privilege level msb
   -- instruction's control blocks --
-  constant ctrl_ir_funct3_0_c   : natural := 45; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 46; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 47; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 48; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 49; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 50; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 51; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 52; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 53; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 54; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 55; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 56; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 57; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 58; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 59; -- funct12 bit 11
+  constant ctrl_ir_funct3_0_c   : natural := 46; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 47; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 48; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 49; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 50; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 51; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 52; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 53; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 54; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 55; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 56; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 57; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 58; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 59; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 60; -- funct12 bit 11
   -- control bus size --
-  constant ctrl_width_c         : natural := 60; -- control bus size
+  constant ctrl_width_c         : natural := 61; -- control bus size
 
   -- ALU Comparator Bus ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -388,36 +389,41 @@ package neorv32_package is
 
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant alu_cmd_addsub_c : std_ulogic_vector(2 downto 0) := "000"; -- r <= A +/- B
-  constant alu_cmd_slt_c    : std_ulogic_vector(2 downto 0) := "001"; -- r <= A < B
-  constant alu_cmd_cp_c     : std_ulogic_vector(2 downto 0) := "010"; -- r <= CP result (iterative)
-  constant alu_cmd_shift_c  : std_ulogic_vector(2 downto 0) := "011"; -- r <= A <</>> B (iterative)
-  constant alu_cmd_movb_c   : std_ulogic_vector(2 downto 0) := "100"; -- r <= B
-  constant alu_cmd_xor_c    : std_ulogic_vector(2 downto 0) := "101"; -- r <= A xor B
-  constant alu_cmd_or_c     : std_ulogic_vector(2 downto 0) := "110"; -- r <= A or B
-  constant alu_cmd_and_c    : std_ulogic_vector(2 downto 0) := "111"; -- r <= A and B
+  -- arithmetic core --
+  constant alu_arith_cmd_addsub_c : std_ulogic := '0'; -- r.arith <= A +/- B
+  constant alu_arith_cmd_slt_c    : std_ulogic := '1'; -- r.arith <= A < B
+  -- logic core --
+  constant alu_logic_cmd_movb_c   : std_ulogic_vector(1 downto 0) := "00"; -- r.logic <= B
+  constant alu_logic_cmd_xor_c    : std_ulogic_vector(1 downto 0) := "01"; -- r.logic <= A xor B
+  constant alu_logic_cmd_or_c     : std_ulogic_vector(1 downto 0) := "10"; -- r.logic <= A or B
+  constant alu_logic_cmd_and_c    : std_ulogic_vector(1 downto 0) := "11"; -- r.logic <= A and B
+  -- function select (actual alu result) --
+  constant alu_func_cmd_arith_c   : std_ulogic_vector(1 downto 0) := "00"; -- r <= r.arith
+  constant alu_func_cmd_logic_c   : std_ulogic_vector(1 downto 0) := "01"; -- r <= r.logic
+  constant alu_func_cmd_shift_c   : std_ulogic_vector(1 downto 0) := "10"; -- r <= A <</>> B (iterative)
+  constant alu_func_cmd_copro_c   : std_ulogic_vector(1 downto 0) := "11"; -- r <= CP result (iterative)
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- risc-v compliant --
-  constant trap_ima_c   : std_ulogic_vector(5 downto 0) := "000000"; -- 0.0:  instruction misaligned
-  constant trap_iba_c   : std_ulogic_vector(5 downto 0) := "000001"; -- 0.1:  instruction access fault
-  constant trap_iil_c   : std_ulogic_vector(5 downto 0) := "000010"; -- 0.2:  illegal instruction
-  constant trap_brk_c   : std_ulogic_vector(5 downto 0) := "000011"; -- 0.3:  breakpoint
-  constant trap_lma_c   : std_ulogic_vector(5 downto 0) := "000100"; -- 0.4:  load address misaligned
-  constant trap_lbe_c   : std_ulogic_vector(5 downto 0) := "000101"; -- 0.5:  load access fault
-  constant trap_sma_c   : std_ulogic_vector(5 downto 0) := "000110"; -- 0.6:  store address misaligned
-  constant trap_sbe_c   : std_ulogic_vector(5 downto 0) := "000111"; -- 0.7:  store access fault
-  constant trap_menv_c  : std_ulogic_vector(5 downto 0) := "001011"; -- 0.11: environment call from m-mode
-  --
-  constant trap_msi_c   : std_ulogic_vector(5 downto 0) := "100011"; -- 1.3:  machine software interrupt
-  constant trap_mti_c   : std_ulogic_vector(5 downto 0) := "100111"; -- 1.7:  machine timer interrupt
-  constant trap_mei_c   : std_ulogic_vector(5 downto 0) := "101011"; -- 1.11: machine external interrupt
-  -- custom --
-  constant trap_firq0_c : std_ulogic_vector(5 downto 0) := "110000"; -- 1.16: fast interrupt 0
-  constant trap_firq1_c : std_ulogic_vector(5 downto 0) := "110001"; -- 1.17: fast interrupt 1
-  constant trap_firq2_c : std_ulogic_vector(5 downto 0) := "110010"; -- 1.18: fast interrupt 2
-  constant trap_firq3_c : std_ulogic_vector(5 downto 0) := "110011"; -- 1.19: fast interrupt 3
+  -- RISC-V compliant exceptions --
+  constant trap_ima_c   : std_ulogic_vector(5 downto 0) := "0" & "00000"; -- 0.0:  instruction misaligned
+  constant trap_iba_c   : std_ulogic_vector(5 downto 0) := "0" & "00001"; -- 0.1:  instruction access fault
+  constant trap_iil_c   : std_ulogic_vector(5 downto 0) := "0" & "00010"; -- 0.2:  illegal instruction
+  constant trap_brk_c   : std_ulogic_vector(5 downto 0) := "0" & "00011"; -- 0.3:  breakpoint
+  constant trap_lma_c   : std_ulogic_vector(5 downto 0) := "0" & "00100"; -- 0.4:  load address misaligned
+  constant trap_lbe_c   : std_ulogic_vector(5 downto 0) := "0" & "00101"; -- 0.5:  load access fault
+  constant trap_sma_c   : std_ulogic_vector(5 downto 0) := "0" & "00110"; -- 0.6:  store address misaligned
+  constant trap_sbe_c   : std_ulogic_vector(5 downto 0) := "0" & "00111"; -- 0.7:  store access fault
+  constant trap_menv_c  : std_ulogic_vector(5 downto 0) := "0" & "01011"; -- 0.11: environment call from m-mode
+  -- RISC-V compliant interrupts --
+  constant trap_msi_c   : std_ulogic_vector(5 downto 0) := "1" & "00011"; -- 1.3:  machine software interrupt
+  constant trap_mti_c   : std_ulogic_vector(5 downto 0) := "1" & "00111"; -- 1.7:  machine timer interrupt
+  constant trap_mei_c   : std_ulogic_vector(5 downto 0) := "1" & "01011"; -- 1.11: machine external interrupt
+  -- NEORV32-specific (custom) interrupts --
+  constant trap_firq0_c : std_ulogic_vector(5 downto 0) := "1" & "10000"; -- 1.16: fast interrupt 0
+  constant trap_firq1_c : std_ulogic_vector(5 downto 0) := "1" & "10001"; -- 1.17: fast interrupt 1
+  constant trap_firq2_c : std_ulogic_vector(5 downto 0) := "1" & "10010"; -- 1.18: fast interrupt 2
+  constant trap_firq3_c : std_ulogic_vector(5 downto 0) := "1" & "10011"; -- 1.19: fast interrupt 3
 
   -- CPU Control Exception System -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

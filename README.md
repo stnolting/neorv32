@@ -64,7 +64,7 @@ For more information take a look at the [NEORV32 data sheet](https://raw.githubu
 
 ### Design Principles
 
- * From zero to `main()`: Completely open source and documented.
+ * From zero to *hello_world*: Completely open source and documented.
  * Plain VHDL without technology-specific parts like attributes, macros or primitives.
  * Easy to use – working out of the box.
  * Clean synchronous design, no wacky combinatorial interfaces.
@@ -86,20 +86,20 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 | [RISC-V compliance test](https://github.com/stnolting/neorv32_riscv_compliance) | [![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) | |
 
 
-### To-Do / Wish List / [Help Wanted](#Contribute)
+### To-Do / Wish List / Help Wanted
 
 * Use LaTeX for data sheet
-* More support for FreeRTOS
-* Further size and performance optimization
+* Further size and performance optimization [**work in progress**]
+* A cache for the external memory/bus interface [**work in progress**]
+* Burst mode for the external memory/bus interface
+* RISC-V `B` extension ([bitmanipulation](https://github.com/riscv/riscv-bitmanip)) [**work in progress**]
 * Synthesis results (+ wrappers?) for more/specific platforms
+* More support for FreeRTOS
 * Maybe port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
-* Implement further RISC-V (or custom?) CPU extensions (like floating-point operations ('F'))
+* Implement further RISC-V (or custom?) CPU extensions (like floating-point extension `F`)
 * ...
+* [Ideas?](#Contribute)
 
-#### Work-in-progress
-
-* A cache for the external memory/bus interface (also providing burst mode?)
-* RISC-V `B` extension ([bitmanipulation](https://github.com/riscv/riscv-bitmanip))
 
 
 ## Features
@@ -131,9 +131,7 @@ is highly customizable via the processor's top generics and already provides the
 
 ### NEORV32 CPU Features
 
-![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_cpu.png)
-
-The CPU is [compliant](https://github.com/stnolting/neorv32_riscv_compliance) to the
+The NEORV32 CPU is [compliant](https://github.com/stnolting/neorv32_riscv_compliance) to the
 [official RISC-V specifications (2.2)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf) including a subset of the 
 [RISC-V privileged architecture specifications (1.12-draft)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf).
 
@@ -546,7 +544,7 @@ to [open a new issue](https://github.com/stnolting/neorv32/issues) or directly [
 0. Check out the project's [code of conduct](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md)
 1. [Fork](https://github.com/stnolting/neorv32/fork) this repository and clone the fork
 2. Create a feature branch in your fork: `git checkout -b awesome_new_feature_branch`
-3. Create a new remote for the upstream repo: `git remote add https://github.com/stnolting/neorv32`
+3. Create a new remote for the upstream repo: `git remote add upstream https://github.com/stnolting/neorv32`
 3. Commit your modifications: `git commit -m "Awesome new feature!"`
 4. Push to the branch: `git push origin awesome_new_feature_branch`
 5. Create a new [pull request](https://github.com/stnolting/neorv32/pulls)
