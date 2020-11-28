@@ -130,7 +130,11 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- max bus timeout latency lower than recommended --
   assert not (bus_timeout_c <= 32) report "NEORV32 PROCESSOR CONFIG ERROR: Bus timeout (neorv32_package.vhd:bus_timeout_c) should be >32 when using external bus interface." severity error;
+  -- external memory iterface protocol + max timeout latency notifier (warning) --
+  assert not (wb_pipe_mode_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using STANDARD Wishbone protocol with max latency = " & integer'image(bus_timeout_c) & " cycles." severity warning;
+  assert not (wb_pipe_mode_c =  true) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using PIEPLINED Wishbone protocol with max latency = " & integer'image(bus_timeout_c) & " cycles." severity warning;
 
 
   -- Access Control -------------------------------------------------------------------------

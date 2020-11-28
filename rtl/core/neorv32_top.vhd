@@ -248,11 +248,6 @@ begin
   -- memory system - layout warning --
   assert not (ispace_base_c /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framework." severity warning;
   assert not (dspace_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framework." severity warning;
-  -- (external) memory latency notifier (warning) --
-  assert not (MEM_EXT_USE = true) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface with max latency = " & integer'image(bus_timeout_c) & " cycles." severity warning;
-  -- external memory iterface protocol notifier (warning) --
-  assert not ((MEM_EXT_USE = true) and (wb_pipe_mode_c = false)) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using STANDARD Wishbone protocol." severity warning;
-  assert not ((MEM_EXT_USE = true) and (wb_pipe_mode_c =  true)) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using PIEPLINED Wishbone protocol." severity warning;
 
 
   -- Reset Generator ------------------------------------------------------------------------
