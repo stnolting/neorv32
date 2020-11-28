@@ -131,9 +131,7 @@ is highly customizable via the processor's top generics and already provides the
 
 ### NEORV32 CPU Features
 
-![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_cpu.png)
-
-The CPU is [compliant](https://github.com/stnolting/neorv32_riscv_compliance) to the
+The NEORV32 CPU is [compliant](https://github.com/stnolting/neorv32_riscv_compliance) to the
 [official RISC-V specifications (2.2)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf) including a subset of the 
 [RISC-V privileged architecture specifications (1.12-draft)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf).
 
@@ -546,7 +544,7 @@ to [open a new issue](https://github.com/stnolting/neorv32/issues) or directly [
 0. Check out the project's [code of conduct](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md)
 1. [Fork](https://github.com/stnolting/neorv32/fork) this repository and clone the fork
 2. Create a feature branch in your fork: `git checkout -b awesome_new_feature_branch`
-3. Create a new remote for the upstream repo: `git remote add https://github.com/stnolting/neorv32`
+3. Create a new remote for the upstream repo: `git remote add upstream https://github.com/stnolting/neorv32`
 3. Commit your modifications: `git commit -m "Awesome new feature!"`
 4. Push to the branch: `git push origin awesome_new_feature_branch`
 5. Create a new [pull request](https://github.com/stnolting/neorv32/pulls)
