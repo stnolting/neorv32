@@ -2,10 +2,9 @@
 -- # << NEORV32 - CPU Data Register File >>                                                        #
 -- # ********************************************************************************************* #
 -- # General purpose data register file. 32 entries for normal mode (I), 16 entries for embedded   #
--- # mode (E) when RISC-V "E" extension is enabled. Register zero (r0) is a normal physical        #
--- # registers, that has to be initialized to zero by the CPU control system. For normal           #
--- # operations r0 cannot be written. The register file uses synchronous reads. Hence it can be    #
--- # mapped to FPGA block RAM.                                                                     #
+-- # mode (E) when RISC-V "E" extension is enabled. Register zero (r0) is a "normal" physical reg  #
+-- # that has to be initialized to zero by the CPU control system. For normal operations r0 cannot #
+-- # be written. The register file uses synchronous reads so it can be mapped to FPGA block RAM.   #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
