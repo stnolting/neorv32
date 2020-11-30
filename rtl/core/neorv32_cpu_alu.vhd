@@ -308,10 +308,10 @@ begin
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_M = true) then
         cp_ctrl.cmd_ff <= cp_ctrl.cmd;
-        if (cp_ctrl.start = '1') then
-          cp_ctrl.busy <= '1';
-        elsif ((cp0_valid_i or cp1_valid_i or cp2_valid_i or cp3_valid_i) = '1') then -- cp computation done?
+        if ((cp0_valid_i or cp1_valid_i or cp2_valid_i or cp3_valid_i) = '1') then -- cp computation done?
           cp_ctrl.busy <= '0';
+        elsif (cp_ctrl.start = '1') then
+          cp_ctrl.busy <= '1';
         end if;
       else -- no co-processor(s) implemented
         cp_ctrl.cmd_ff <= '0';
@@ -323,16 +323,23 @@ begin
   -- is co-processor operation? --
   cp_ctrl.cmd   <= '1' when (ctrl_i(ctrl_alu_func1_c downto ctrl_alu_func0_c) = alu_func_cmd_copro_c) else '0';
   cp_ctrl.start <= '1' when (cp_ctrl.cmd = '1') and (cp_ctrl.cmd_ff = '0') else '0';
-  cp0_start_o   <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "00") else '0'; -- CP0: MULDIV CP
-  cp1_start_o   <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "01") else '0'; -- CP1: not implemented yet
-  cp2_start_o   <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "10") else '0'; -- CP2: not implemented yet
-  cp3_start_o   <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "11") else '0'; -- CP3: not implemented yet
 
-  -- co-processor operation running? --
-  cp_ctrl.halt <= cp_ctrl.busy or cp_ctrl.start;
+  -- co-processor select --
+  cp0_start_o <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "00") else '0';
+  cp1_start_o <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "01") else '0';
+  cp2_start_o <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "10") else '0';
+  cp3_start_o <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "11") else '0';
+
+  -- co-processor operation (still) running? --
+  cp_ctrl.halt <= (cp_ctrl.busy and (not (cp0_valid_i or cp1_valid_i or cp2_valid_i or cp3_valid_i))) or cp_ctrl.start;
 
   -- co-processor result --
-  cp_res <= cp0_data_i or cp1_data_i or cp2_data_i or cp3_data_i; -- only the *actually selected* co-processor may output data != 0
+  cp_read_back: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      cp_res <= cp0_data_i or cp1_data_i or cp2_data_i or cp3_data_i; -- only the *actually selected* co-processor may output data != 0
+    end if;
+  end process cp_read_back;
 
 
   -- ALU Logic Core -------------------------------------------------------------------------

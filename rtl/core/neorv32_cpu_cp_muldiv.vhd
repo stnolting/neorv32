@@ -80,6 +80,7 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   signal opy_is_signed : std_ulogic;
   signal opy_is_zero   : std_ulogic;
   signal div_res_corr  : std_ulogic;
+  signal valid         : std_ulogic;
 
   -- divider core --
   signal remainder        : std_ulogic_vector(data_width_c-1 downto 0);
@@ -111,13 +112,13 @@ begin
       opy          <= (others => '0');
       cnt          <= (others => '0');
       start        <= '0';
-      valid_o      <= '0';
+      valid        <= '0';
       div_res_corr <= '0';
       opy_is_zero  <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
-      start   <= '0';
-      valid_o <= '0';
+      start <= '0';
+      valid <= '0';
 
       -- FSM --
       case state is
@@ -182,11 +183,14 @@ begin
           state <= COMPLETED;
 
         when COMPLETED =>
-          valid_o <= '1';
-          state   <= IDLE;
+          valid <= '1';
+          state <= IDLE;
       end case;
     end if;
   end process coprocessor_ctrl;
+
+  -- processing done? --
+  valid_o <= valid;
 
   -- co-processor command --
   cp_op <= ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c);
@@ -286,10 +290,9 @@ begin
 
   -- Data Output ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  operation_result: process(clk_i)
+  operation_result: process(valid, cp_op, mul_product, div_res, quotient, opy_is_zero, opx, remainder)
   begin
-    if rising_edge(clk_i) then
-      res_o <= (others => '0'); -- default
+    if (valid = '1') then
       case cp_op is
         when cp_op_mul_c =>
           res_o <= mul_product(31 downto 00);
@@ -305,11 +308,11 @@ begin
           else
             res_o <= opx;
           end if;
-        when cp_op_remu_c =>
+        when others => -- cp_op_remu_c
           res_o <= remainder;
-        when others => -- undefined
-          res_o <= (others => '0');
       end case;
+    else
+      res_o <= (others => '0');
     end if;
   end process operation_result;
 
