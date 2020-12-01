@@ -74,10 +74,11 @@ begin
     USER_CODE                    => x"00000000", -- custom user code
     HW_THREAD_ID                 => x"00000000", -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        => true,   -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        => true,   -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => false,  -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        => false,  -- implement muld/div extension?
-    CPU_EXTENSION_RISCV_U        => false,  -- implement user mode extension?
+    CPU_EXTENSION_RISCV_M        => true,   -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_U        => true,   -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    => true,   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => true,   -- implement instruction stream sync.?
     -- Extension Options --
@@ -121,6 +122,7 @@ begin
     wb_sel_o    => open,            -- byte enable
     wb_stb_o    => open,            -- strobe
     wb_cyc_o    => open,            -- valid cycle
+    wb_lock_o   => open,            -- locked/exclusive bus access
     wb_ack_i    => '0',             -- transfer acknowledge
     wb_err_i    => '0',             -- transfer error
     -- Advanced memory control signals --

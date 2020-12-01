@@ -47,12 +47,13 @@ entity neorv32_top_stdlogic is
     USER_CODE                    : std_logic_vector(31 downto 0) := x"00000000"; -- custom user code
     HW_THREAD_ID                 : std_logic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
@@ -94,6 +95,7 @@ entity neorv32_top_stdlogic is
     wb_sel_o    : out std_logic_vector(03 downto 0); -- byte enable
     wb_stb_o    : out std_logic; -- strobe
     wb_cyc_o    : out std_logic; -- valid cycle
+    wb_lock_o   : out std_logic; -- locked/exclusive bus access
     wb_ack_i    : in  std_logic := '0'; -- transfer acknowledge
     wb_err_i    : in  std_logic := '0'; -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_USE = true) --
@@ -139,6 +141,7 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   signal wb_sel_o_int    : std_ulogic_vector(03 downto 0);
   signal wb_stb_o_int    : std_ulogic;
   signal wb_cyc_o_int    : std_ulogic;
+  signal wb_lock_o_int   : std_ulogic;
   signal wb_ack_i_int    : std_ulogic;
   signal wb_err_i_int    : std_ulogic;
   --
@@ -174,6 +177,7 @@ begin
     USER_CODE                    => USER_CODE_INT,      -- custom user code
     HW_THREAD_ID                 => HW_THREAD_ID_INT,   -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
@@ -221,6 +225,7 @@ begin
     wb_sel_o    => wb_sel_o_int,    -- byte enable
     wb_stb_o    => wb_stb_o_int,    -- strobe
     wb_cyc_o    => wb_cyc_o_int,    -- valid cycle
+    wb_lock_o   => wb_lock_o_int,   -- locked/exclusive bus access
     wb_ack_i    => wb_ack_i_int,    -- transfer acknowledge
     wb_err_i    => wb_err_i_int,    -- transfer error
     -- Advanced memory control signals --
@@ -260,6 +265,7 @@ begin
   wb_sel_o       <= std_logic_vector(wb_sel_o_int);
   wb_stb_o       <= std_logic(wb_stb_o_int);
   wb_cyc_o       <= std_logic(wb_cyc_o_int);
+  wb_lock_o      <= std_logic(wb_lock_o_int);
   wb_ack_i_int   <= std_ulogic(wb_ack_i);
   wb_err_i_int   <= std_ulogic(wb_err_i);
 
