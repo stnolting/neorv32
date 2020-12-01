@@ -30,8 +30,8 @@ designs or as stand-alone custom microcontroller.
 * RISC-V-[compliant](#Status) 32-bit `rv32i` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
   * Subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
   * Subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
-* Optional CPU extensions
-  * `A` - atomic memory access instruction
+* Optional RISC-V CPU extensions
+  * `A` - atomic memory access instructions
   * `C` - compressed instructions (16-bit)
   * `E` - embedded CPU (reduced register file)
   * `M` - integer multiplication and division hardware
@@ -40,9 +40,9 @@ designs or as stand-alone custom microcontroller.
   * `Zifencei` - instruction stream synchronization
   * `PMP` - physical memory protection
 * Full-scale RISC-V microcontroller system / **SoC** [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
-  * optional embedded memories (instruction/data/bootloader, RAM/ROM)
+  * optional embedded memories (instructions/data/bootloader, RAM/ROM)
   * timers (watch dog, RISC-V-compliant machine timer)
-  * serial interfaces (SPI, TWI, UART)
+  * serial interfaces (SPI, TWI, UART) and general purpose IO
   * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
   * [more ...](#NEORV32-Processor-Features)
 * Software framework
