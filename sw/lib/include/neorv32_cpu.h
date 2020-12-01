@@ -52,6 +52,7 @@ void neorv32_cpu_set_minstret(uint64_t value);
 uint64_t neorv32_cpu_get_systime(void);
 void neorv32_cpu_delay_ms(uint32_t time_ms);
 void __attribute__((naked)) neorv32_cpu_goto_user_mode(void);
+int neorv32_cpu_atomic_cas(uint32_t addr, uint32_t expected, uint32_t desired);
 
 
 /**********************************************************************//**
