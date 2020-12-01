@@ -50,6 +50,7 @@ entity neorv32_cpu_control is
     HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= x"00000000"; -- hardware thread id
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
@@ -183,11 +184,11 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pc_nxt       : std_ulogic_vector(data_width_c-1 downto 0);
     next_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- next PC, corresponding to next instruction to be executed
     last_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- PC of last executed instruction
-    last_pc_nxt  : std_ulogic_vector(data_width_c-1 downto 0); -- PC of last executed instruction
+    last_pc_nxt  : std_ulogic_vector(data_width_c-1 downto 0);
     sleep        : std_ulogic; -- CPU in sleep mode
-    sleep_nxt    : std_ulogic; -- CPU in sleep mode
+    sleep_nxt    : std_ulogic;
     if_rst       : std_ulogic; -- instruction fetch was reset
-    if_rst_nxt   : std_ulogic; -- instruction fetch was reset
+    if_rst_nxt   : std_ulogic;
   end record;
   signal execute_engine : execute_engine_t;
 
@@ -214,6 +215,16 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     break_point   : std_ulogic;
   end record;
   signal trap_ctrl : trap_ctrl_t;
+
+  -- atomic operations controller --
+  type atomic_ctrl_t is record
+    env_start  : std_ulogic; -- begin atomic operations
+    env_end    : std_ulogic; -- end atomic operations
+    env_end_ff : std_ulogic; -- end atomic operations dealyed
+    env_abort  : std_ulogic; -- atomic operations abort (results in failure)
+    lock       : std_ulogic; -- lock status
+  end record;
+  signal atomic_ctrl : atomic_ctrl_t;
   
   -- CPU control signals --
   signal ctrl_nxt, ctrl : std_ulogic_vector(ctrl_width_c-1 downto 0);
@@ -548,6 +559,8 @@ begin
           imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
           imm_o(04 downto 01) <= execute_engine.i_reg(24 downto 21);
           imm_o(00)           <= '0';
+        when opcode_atomic_c => -- atomic memory access
+          imm_o               <= (others => '0'); -- effective address is reg + 0
         when others => -- I-immediate
           imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
           imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
@@ -629,7 +642,7 @@ begin
 
   -- CPU Control Bus Output -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_output: process(ctrl, fetch_engine, trap_ctrl, bus_fast_ir, execute_engine, csr.privilege)
+  ctrl_output: process(ctrl, fetch_engine, trap_ctrl, atomic_ctrl, bus_fast_ir, execute_engine, csr.privilege)
   begin
     -- signals from execute engine --
     ctrl_o <= ctrl;
@@ -647,6 +660,8 @@ begin
     -- instruction's function blocks (for co-processors) --
     ctrl_o(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_0_c) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c);
     ctrl_o(ctrl_ir_funct3_2_c   downto ctrl_ir_funct3_0_c)  <= execute_engine.i_reg(instr_funct3_msb_c  downto instr_funct3_lsb_c);
+    -- locked bus operation (for atomica memory operations) --
+    ctrl_o(ctrl_bus_lock_c) <= atomic_ctrl.lock; -- (bus) lock status
   end process ctrl_output;
 
 
@@ -657,6 +672,8 @@ begin
     variable alu_immediate_v : std_ulogic;
     variable rs1_is_r0_v     : std_ulogic;
     variable opcode_v        : std_ulogic_vector(6 downto 0);
+    variable is_atomic_lr_v  : std_ulogic;
+    variable is_atomic_sc_v  : std_ulogic;
   begin
     -- arbiter defaults --
     execute_engine.state_nxt    <= execute_engine.state;
@@ -687,6 +704,11 @@ begin
     csr.we_nxt                  <= '0';
     csr.re_nxt                  <= '0';
 
+    -- atomic operations control --
+    atomic_ctrl.env_start       <= '0';
+    atomic_ctrl.env_end         <= '0';
+    atomic_ctrl.env_abort       <= '0';
+
     -- CONTROL DEFAULTS --
     ctrl_nxt <= (others => '0'); -- default: all off
     if (execute_engine.i_reg(instr_opcode_lsb_c+4) = '1') then -- ALU ops
@@ -706,13 +728,22 @@ begin
     ctrl_nxt(ctrl_alu_arith_c)                           <= alu_arith_cmd_addsub_c; -- default ALU arithmetic operation: ADDSUB
     ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_movb_c; -- default ALU logic operation: MOVB
     -- co-processor id --
-    ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- only CP0 (=MULDIV) implemented yet
+    ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- default CP = MULDIV
 
     -- is immediate ALU operation? --
     alu_immediate_v := not execute_engine.i_reg(instr_opcode_msb_c-1);
 
     -- is rs1 == r0? --
     rs1_is_r0_v := not or_all_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c));
+
+    -- is atomic load-reservate/store-conditional? --
+    if (CPU_EXTENSION_RISCV_A = true) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') then -- valid atomic sub-opcode
+      is_atomic_lr_v := not execute_engine.i_reg(instr_funct5_lsb_c);
+      is_atomic_sc_v :=     execute_engine.i_reg(instr_funct5_lsb_c);
+    else
+      is_atomic_lr_v := '0';
+      is_atomic_sc_v := '0';
+    end if;
 
 
     -- state machine --
@@ -840,12 +871,23 @@ begin
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
             execute_engine.state_nxt  <= DISPATCH;
 
-          when opcode_load_c | opcode_store_c => -- load/store
+          when opcode_load_c | opcode_store_c | opcode_atomic_c => -- load/store / atomic memory access
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
             ctrl_nxt(ctrl_bus_mo_we_c)   <= '1'; -- write to MAR and MDO (MDO only relevant for store)
-            execute_engine.state_nxt     <= LOADSTORE_0;
+            --
+            if (CPU_EXTENSION_RISCV_A = false) or (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') then -- atomic (A) extension disabled or normal load/store
+              execute_engine.state_nxt <= LOADSTORE_0;
+            else -- atomic operation
+              atomic_ctrl.env_start <= not execute_engine.i_reg(instr_funct5_lsb_c); -- LR: start LOCKED memory access environment
+              if (execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c) = funct5_a_sc_c) or -- store-conditional
+                 (execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c) = funct5_a_lr_c) then -- load-reservate
+                execute_engine.state_nxt <= LOADSTORE_0;
+              else -- unimplemented (atomic) instruction
+                execute_engine.state_nxt <= SYS_WAIT;
+              end if;
+            end if;
 
           when opcode_branch_c | opcode_jal_c | opcode_jalr_c => -- branch / jump and link (with register)
           -- ------------------------------------------------------------
@@ -879,7 +921,7 @@ begin
 
           when others => -- undefined
           -- ------------------------------------------------------------
-            execute_engine.state_nxt <= DISPATCH;
+            execute_engine.state_nxt <= SYS_WAIT;
 
         end case;
 
@@ -967,30 +1009,47 @@ begin
 
       when LOADSTORE_0 => -- trigger memory request
       -- ------------------------------------------------------------
-        if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then -- LOAD
+        if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (is_atomic_lr_v = '1') then -- normal load or atomic load-reservate
           ctrl_nxt(ctrl_bus_rd_c) <= '1'; -- read request
-        else -- STORE
+        else -- store
           ctrl_nxt(ctrl_bus_wr_c) <= '1'; -- write request
         end if;
         execute_engine.state_nxt <= LOADSTORE_1;
 
+
       when LOADSTORE_1 => -- memory latency
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- write input data to MDI (only relevant for LOAD)
-        execute_engine.state_nxt <= LOADSTORE_2;
+        execute_engine.state_nxt   <= LOADSTORE_2;
+
 
       when LOADSTORE_2 => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for LOAD)
-        ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "01"; -- RF input = memory input (only relevant for LOAD)
+        if (CPU_EXTENSION_RISCV_A = true) then -- only relevant for atomic operations
+          ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_atomic_c; -- SC: result comes from "atomic co-processor"
+          ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
+        end if;
+        -- 
+        if (is_atomic_sc_v = '1') then
+          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "00"; -- RF input = ALU.res
+        else
+          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "01"; -- RF input = memory input (only relevant for LOAD)
+        end if;
+        --
+        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load operations)
+        -- wait for memory response --
         if ((ma_load_i or be_load_i or ma_store_i or be_store_i) = '1') then -- abort if exception
-          execute_engine.state_nxt <= DISPATCH;
+          atomic_ctrl.env_abort     <= '1'; -- LOCKED (atomic) memory access environment failed (forces SC result to be non-zero => failure)
+          ctrl_nxt(ctrl_rf_wb_en_c) <= is_atomic_sc_v; -- SC failes: allow write back of non-zero result
+          execute_engine.state_nxt  <= DISPATCH;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
-          if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then -- LOAD
-            ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back (keep writing back all the time)
+          if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (is_atomic_lr_v = '1') or (is_atomic_sc_v = '1') then -- load / load-reservate / store conditional
+            ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
           end if;
+          atomic_ctrl.env_end      <= '1'; -- normal end of LOCKED (atomic) memory access environment
           execute_engine.state_nxt <= DISPATCH;
         end if;
+
 
       when others => -- undefined
       -- ------------------------------------------------------------
@@ -1246,6 +1305,15 @@ begin
             illegal_instruction <= '1';
           end if;
 
+        when opcode_atomic_c => -- atomic instructions --
+          if (CPU_EXTENSION_RISCV_A = true) and -- atomic memory operations (A extension) enabled
+             ((execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c) = funct5_a_lr_c) or -- LR
+              (execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c) = funct5_a_sc_c)) then -- SC
+            illegal_instruction <= '0';
+          else
+            illegal_instruction <= '1';
+          end if;
+
         when others => -- undefined instruction -> illegal!
           illegal_instruction <= '1';
 
@@ -1421,6 +1489,31 @@ begin
       trap_ctrl.irq_ack_nxt <= (others => '0');
     end if;
   end process trap_priority;
+
+
+  -- Atomic Operation Controller ------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  atomics_controller: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      atomic_ctrl.lock       <= '0';
+      atomic_ctrl.env_end_ff <= '0';
+    elsif rising_edge(clk_i) then
+      if (CPU_EXTENSION_RISCV_A = true) then
+        if (atomic_ctrl.env_end_ff = '1') or -- normal termination
+           (atomic_ctrl.env_abort = '1') or  -- fast temrination (error)
+           (trap_ctrl.env_start = '1') then -- triggered trap -> failure
+          atomic_ctrl.lock <= '0';
+        elsif (atomic_ctrl.env_start = '1') then
+          atomic_ctrl.lock <= '1';
+        end if;
+        atomic_ctrl.env_end_ff <= atomic_ctrl.env_end;
+      else
+        atomic_ctrl.lock       <= '0';
+        atomic_ctrl.env_end_ff <= '0';
+      end if;
+    end if;
+  end process atomics_controller;
   
 
 -- ****************************************************************************************************************************
@@ -1705,6 +1798,7 @@ begin
             csr.rdata(11) <= csr.mstatus_mpp(0); -- MPP: machine previous privilege mode low
             csr.rdata(12) <= csr.mstatus_mpp(1); -- MPP: machine previous privilege mode high
           when csr_misa_c => -- R/-: misa - ISA and extensions
+            csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
             csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
             csr.rdata(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)

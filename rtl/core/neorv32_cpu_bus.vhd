@@ -86,6 +86,7 @@ entity neorv32_cpu_bus is
     i_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
     i_bus_err_i    : in  std_ulogic; -- bus transfer error
     i_bus_fence_o  : out std_ulogic; -- fence operation
+    i_bus_lock_o   : out std_ulogic; -- locked/exclusive access
     -- data bus --
     d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -96,7 +97,8 @@ entity neorv32_cpu_bus is
     d_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
     d_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
     d_bus_err_i    : in  std_ulogic; -- bus transfer error
-    d_bus_fence_o  : out std_ulogic  -- fence operation
+    d_bus_fence_o  : out std_ulogic; -- fence operation
+    d_bus_lock_o   : out std_ulogic  -- locked/exclusive access
   );
 end neorv32_cpu_bus;
 
@@ -322,6 +324,7 @@ begin
   d_bus_re_o    <= ctrl_i(ctrl_bus_rd_c) and (not d_misaligned) and (not ld_pmp_fault); -- no actual read when misaligned or PMP fault
   d_bus_fence_o <= ctrl_i(ctrl_bus_fence_c);
   d_bus_rdata   <= d_bus_rdata_i;
+  d_bus_lock_o  <= ctrl_i(ctrl_bus_lock_c);
 
 
   -- Instruction Fetch Arbiter --------------------------------------------------------------
@@ -371,6 +374,7 @@ begin
   i_bus_re_o    <= ctrl_i(ctrl_bus_if_c) and (not i_misaligned) and (not if_pmp_fault); -- no actual read when misaligned or PMP fault
   i_bus_fence_o <= ctrl_i(ctrl_bus_fencei_c);
   instr_o       <= i_bus_rdata_i;
+  i_bus_lock_o  <= '0'; -- instruction fetch cannot be atomic
 
 
   -- check instruction access --
@@ -390,7 +394,7 @@ begin
           if (i = PMP_GRANULARITY+1) then
             pmp.addr_mask(r)(i) <= '0';
           else -- current bit = not AND(all previous bits)
-            pmp.addr_mask(r)(i) <= not (and_all_f(pmp_addr_i(r)(i-1 downto PMP_GRANULARITY)));
+            pmp.addr_mask(r)(i) <= not and_all_f(pmp_addr_i(r)(i-1 downto PMP_GRANULARITY));
           end if;
         end loop; -- i
       end loop; -- r
