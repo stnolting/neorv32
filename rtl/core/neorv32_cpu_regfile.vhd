@@ -108,14 +108,14 @@ begin
       if (CPU_EXTENSION_RISCV_E = false) then -- normal register file with 32 entries
         if (rf_we = '1') then
           reg_file(to_integer(unsigned(dst_addr(4 downto 0)))) <= rf_write_data;
-        else -- read
+        else
           rs1_o <= reg_file(to_integer(unsigned(ctrl_i(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c))));
           rs2_o <= reg_file(to_integer(unsigned(ctrl_i(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c))));
         end if;
       else -- embedded register file with 16 entries
         if (rf_we = '1') then
           reg_file_emb(to_integer(unsigned(dst_addr(3 downto 0)))) <= rf_write_data;
-        else -- read
+        else
           rs1_o <= reg_file_emb(to_integer(unsigned(ctrl_i(ctrl_rf_rs1_adr3_c downto ctrl_rf_rs1_adr0_c))));
           rs2_o <= reg_file_emb(to_integer(unsigned(ctrl_i(ctrl_rf_rs2_adr3_c downto ctrl_rf_rs2_adr0_c))));
         end if;
