@@ -122,6 +122,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
     ack   : std_ulogic; -- transfer acknowledge
     err   : std_ulogic; -- transfer error
     tag   : std_ulogic_vector(2 downto 0); -- tag
+    lock  : std_ulogic; -- locked/exclusive bus access
   end record;
   signal wb_cpu, wb_mem_a, wb_mem_b, wb_mem_c : wishbone_t;
 
@@ -173,6 +174,7 @@ begin
     USER_CODE                    => x"12345678",   -- custom user code
     HW_THREAD_ID                 => x"00000000",   -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        => true,          -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        => true,          -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => false,         -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => true,          -- implement muld/div extension?
@@ -203,7 +205,7 @@ begin
     IO_TWI_USE                   => true,          -- implement two-wire interface (TWI)?
     IO_PWM_USE                   => true,          -- implement pulse-width modulation unit (PWM)?
     IO_WDT_USE                   => true,          -- implement watch dog timer (WDT)?
-    IO_TRNG_USE                  => false,         -- DEFAULT TRNG CONFIG CANNOT BE SIMULATED!
+    IO_TRNG_USE                  => false,         -- trng cannot be simulated
     IO_CFU0_USE                  => true,          -- implement custom functions unit 0 (CFU0)?
     IO_CFU1_USE                  => true           -- implement custom functions unit 1 (CFU1)?
   )
@@ -220,6 +222,7 @@ begin
     wb_sel_o    => wb_cpu.sel,      -- byte enable
     wb_stb_o    => wb_cpu.stb,      -- strobe
     wb_cyc_o    => wb_cpu.cyc,      -- valid cycle
+    wb_lock_o   => wb_cpu.lock,     -- locked/exclusive bus access
     wb_ack_i    => wb_cpu.ack,      -- transfer acknowledge
     wb_err_i    => wb_cpu.err,      -- transfer error
     -- Advanced memory control signals --
@@ -313,6 +316,7 @@ begin
   wb_mem_a.sel   <= wb_cpu.sel;
   wb_mem_a.tag   <= wb_cpu.tag;
   wb_mem_a.cyc   <= wb_cpu.cyc;
+  wb_mem_a.lock  <= wb_cpu.lock;
 
   wb_mem_b.addr  <= wb_cpu.addr;
   wb_mem_b.wdata <= wb_cpu.wdata;
@@ -320,6 +324,7 @@ begin
   wb_mem_b.sel   <= wb_cpu.sel;
   wb_mem_b.tag   <= wb_cpu.tag;
   wb_mem_b.cyc   <= wb_cpu.cyc;
+  wb_mem_b.lock  <= wb_cpu.lock;
 
   wb_mem_c.addr  <= wb_cpu.addr;
   wb_mem_c.wdata <= wb_cpu.wdata;
@@ -327,6 +332,7 @@ begin
   wb_mem_c.sel   <= wb_cpu.sel;
   wb_mem_c.tag   <= wb_cpu.tag;
   wb_mem_c.cyc   <= wb_cpu.cyc;
+  wb_mem_c.lock  <= wb_cpu.lock;
 
   -- CPU read-back signals (no mux here since peripherals have "output gates") --
   wb_cpu.rdata <= wb_mem_a.rdata or wb_mem_b.rdata or wb_mem_c.rdata;
@@ -446,8 +452,10 @@ begin
         end loop;
       end if;
 
+      -- error to simulate interrupted LOCKED/EXCLUSIVE bus access --
+      wb_mem_c.err <= wb_mem_c.cyc and wb_mem_c.stb and wb_mem_c.lock and wb_mem_c.addr(2); -- locked access to odd word-addresses will fail
+
       -- bus output register --
-      wb_mem_c.err <= '0';
       if (ext_mem_c.ack(ext_mem_c_latency_c-1) = '1') and (wb_mem_c.cyc = '1') then
         wb_mem_c.rdata <= ext_mem_c.rdata(ext_mem_c_latency_c-1);
         wb_mem_c.ack   <= '1';

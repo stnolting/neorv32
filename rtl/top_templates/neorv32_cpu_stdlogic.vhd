@@ -45,12 +45,13 @@ entity neorv32_cpu_stdlogic is
     HW_THREAD_ID                 : std_logic_vector(31 downto 0):= (others => '0'); -- hardware thread id
     CPU_BOOT_ADDR                : std_logic_vector(31 downto 0):= (others => '0'); -- cpu boot address
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
@@ -75,6 +76,7 @@ entity neorv32_cpu_stdlogic is
     i_bus_err_i    : in  std_logic := '0'; -- bus transfer error
     i_bus_fence_o  : out std_logic; -- executed FENCEI operation
     i_bus_priv_o   : out std_logic_vector(1 downto 0); -- privilege level
+    i_bus_lock_o   : out std_logic; -- locked/exclusive access
     -- data bus interface --
     d_bus_addr_o   : out std_logic_vector(data_width_c-1 downto 0); -- bus access address
     d_bus_rdata_i  : in  std_logic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
@@ -87,6 +89,7 @@ entity neorv32_cpu_stdlogic is
     d_bus_err_i    : in  std_logic := '0'; -- bus transfer error
     d_bus_fence_o  : out std_logic; -- executed FENCE operation
     d_bus_priv_o   : out std_logic_vector(1 downto 0); -- privilege level
+    d_bus_lock_o   : out std_logic; -- locked/exclusive access
     -- system time input from MTIME --
     time_i         : in  std_logic_vector(63 downto 0) := (others => '0'); -- current system time
     -- interrupts (risc-v compliant) --
@@ -117,6 +120,7 @@ architecture neorv32_cpu_stdlogic_rtl of neorv32_cpu_stdlogic is
   signal i_bus_err_i_int,    d_bus_err_i_int    : std_ulogic;
   signal i_bus_fence_o_int,  d_bus_fence_o_int  : std_ulogic;
   signal i_bus_priv_o_int,   d_bus_priv_o_int   : std_ulogic_vector(1 downto 0);
+  signal i_bus_lock_o_int,   d_bus_lock_o_int   : std_ulogic;
   --
   signal time_i_int : std_ulogic_vector(63 downto 0);
   --
@@ -134,6 +138,7 @@ begin
     HW_THREAD_ID                 => HW_THREAD_ID_INT,             -- hardware thread id
     CPU_BOOT_ADDR                => CPU_BOOT_ADDR_INT,            -- cpu boot address
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
@@ -164,6 +169,7 @@ begin
     i_bus_err_i    => i_bus_err_i_int,    -- bus transfer error
     i_bus_fence_o  => i_bus_fence_o_int,  -- executed FENCEI operation
     i_bus_priv_o   => i_bus_priv_o_int,   -- privilege level
+    i_bus_lock_o   => i_bus_lock_o_int,   -- locked/exclusive access
     -- data bus interface --
     d_bus_addr_o   => d_bus_addr_o_int,   -- bus access address
     d_bus_rdata_i  => d_bus_rdata_i_int,  -- bus read data
@@ -176,6 +182,7 @@ begin
     d_bus_err_i    => d_bus_err_i_int,    -- bus transfer error
     d_bus_fence_o  => d_bus_fence_o_int,  -- executed FENCEI operation
     d_bus_priv_o   => d_bus_priv_o_int,   -- privilege level
+    d_bus_lock_o   => d_bus_lock_o_int,   -- locked/exclusive access
     -- system time input from MTIME --
     time_i         => time_i_int,         -- current system time
     -- interrupts (risc-v compliant) --
@@ -201,6 +208,7 @@ begin
   i_bus_err_i_int    <= std_ulogic(i_bus_err_i);
   i_bus_fence_o      <= std_logic(i_bus_fence_o_int);
   i_bus_priv_o       <= std_logic_vector(i_bus_priv_o_int);
+  i_bus_lock_o       <= std_logic(i_bus_lock_o_int);
 
   d_bus_addr_o       <= std_logic_vector(d_bus_addr_o_int);
   d_bus_rdata_i_int  <= std_ulogic_vector(d_bus_rdata_i);
@@ -213,6 +221,7 @@ begin
   d_bus_err_i_int    <= std_ulogic(d_bus_err_i);
   d_bus_fence_o      <= std_logic(d_bus_fence_o_int);
   d_bus_priv_o       <= std_logic_vector(d_bus_priv_o_int);
+  d_bus_lock_o       <= std_logic(d_bus_lock_o_int);
   
   time_i_int         <= std_ulogic_vector(time_i);
   

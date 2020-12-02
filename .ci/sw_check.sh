@@ -26,9 +26,9 @@ make -C $srcdir_examples clean_all exe
 make -C $srcdir_bootloader clean_all info bootloader
 
 # Compile and install test application
-# Redirect UART TX to text.iosimulation_output via <UART_SIM_MODE> user flag
-echo "Compiling and installing test application"
-make -C $test_app_dir clean_all USER_FLAGS+=-DRUN_CPUTEST USER_FLAGS+=-DUART_SIM_MODE MARCH=-march=rv32imc info all
+# Redirect UART TX to text.io simulation output via <UART_SIM_MODE> user flag
+echo "Compiling and installing CPU (/Processor) test application"
+make -C $test_app_dir clean_all USER_FLAGS+=-DRUN_CPUTEST USER_FLAGS+=-DUART_SIM_MODE MARCH=-march=rv32imac info all
 
 # Verification reference string
 touch $homedir/check_reference.out

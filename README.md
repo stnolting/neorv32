@@ -30,7 +30,8 @@ designs or as stand-alone custom microcontroller.
 * RISC-V-[compliant](#Status) 32-bit `rv32i` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
   * Subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
   * Subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
-* Optional CPU extensions
+* Optional RISC-V CPU extensions
+  * `A` - atomic memory access instructions
   * `C` - compressed instructions (16-bit)
   * `E` - embedded CPU (reduced register file)
   * `M` - integer multiplication and division hardware
@@ -38,10 +39,10 @@ designs or as stand-alone custom microcontroller.
   * `Zicsr` - control and status register access instructions (+ exception/irq system)
   * `Zifencei` - instruction stream synchronization
   * `PMP` - physical memory protection
-* Full-scale RISC-V microcontroller system (**SoC**) [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
-  * optional embedded memories (instruction/data/bootloader, RAM/ROM)
+* Full-scale RISC-V microcontroller system / **SoC** [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
+  * optional embedded memories (instructions/data/bootloader, RAM/ROM)
   * timers (watch dog, RISC-V-compliant machine timer)
-  * serial interfaces (SPI, TWI, UART)
+  * serial interfaces (SPI, TWI, UART) and general purpose IO
   * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
   * [more ...](#NEORV32-Processor-Features)
 * Software framework
@@ -89,10 +90,10 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 ### To-Do / Wish List / Help Wanted
 
 * Use LaTeX for data sheet
-* Further size and performance optimization [**work in progress**]
-* A cache for the external memory/bus interface [**work in progress**]
+* Further size and performance optimization *(work in progress)*
+* A cache for the external memory/bus interface *(work in progress)*
 * Burst mode for the external memory/bus interface
-* RISC-V `B` extension ([bitmanipulation](https://github.com/riscv/riscv-bitmanip)) [**work in progress**]
+* RISC-V `B` extension ([bitmanipulation](https://github.com/riscv/riscv-bitmanip))
 * Synthesis results (+ wrappers?) for more/specific platforms
 * More support for FreeRTOS
 * Maybe port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
@@ -170,6 +171,10 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
   * By default, the multiplier and divider cores use an iterative bit-serial processing scheme
   * Multiplications can be mapped to DSPs via the `FAST_MUL_EN` generic to increase performance
 
+**Atomic memory access** (`A` extension):
+  * Supported instruction: `LR.W` `SC.W`
+  * By default, the multiplier and divider cores use an iterative bit-serial processing scheme
+
 **Privileged architecture / CSR access** (`Zicsr` extension):
   * Privilege levels: `M-mode` (Machine mode)
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
@@ -205,6 +210,7 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
 
 * `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime; for compatibility: write accesses (in m-mode) are ignored and do not cause an exception
 * The physical memory protection (**PMP**) only supports `NAPOT` mode, a minimal granularity of 8 bytes and only up to 8 regions
+* The `A` extension only implements `lr.w` and `sc.w` instructions yet. However, these instructions are sufficient to emulate all further AMO operations
 
 
 ### NEORV32-Specific CPU Extensions
@@ -225,39 +231,41 @@ a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 20
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
 of the CPU's generics is assumed (for example no PMP). No constraints were used at all.
 
-Results generated for hardware version `1.4.7.0`.
+Results generated for hardware version `1.4.8.0`.
 
-| CPU Configuration                      | LEs        | FFs      | Memory bits | DSPs | f_max    |
-|:---------------------------------------|:----------:|:--------:|:-----------:|:----:|:--------:|
-| `rv32i`                                |        932 |      413 |       2048  |    0 | ~120 MHz |
-| `rv32i`   + `u` + `Zicsr` + `Zifencei` |       1800 |      815 |       2048  |    0 | ~118 MHz |
-| `rv32im`  + `u` + `Zicsr` + `Zifencei` |       2368 |     1058 |       2048  |    0 | ~117 MHz |
-| `rv32imc` + `u` + `Zicsr` + `Zifencei` |       2604 |     1073 |       2048  |    0 | ~113 MHz |
-| `rv32emc` + `u` + `Zicsr` + `Zifencei` |       2613 |     1073 |       1024  |    0 | ~113 MHz |
+| CPU Configuration                       | LEs        | FFs      | Memory bits | DSPs | f_max    |
+|:----------------------------------------|:----------:|:--------:|:-----------:|:----:|:--------:|
+| `rv32i`                                 |        945 |      417 |       2048  |    0 | ~122 MHz |
+| `rv32i`    + `u` + `Zicsr` + `Zifencei` |       1944 |      901 |       2048  |    0 | ~119 MHz |
+| `rv32im`   + `u` + `Zicsr` + `Zifencei` |       2551 |     1147 |       2048  |    0 | ~117 MHz |
+| `rv32imc`  + `u` + `Zicsr` + `Zifencei` |       2800 |     1162 |       2048  |    0 | ~113 MHz |
+| `rv32imac` + `u` + `Zicsr` + `Zifencei` |       1796 |     1165 |       2048  |    0 | ~113 MHz |
+
+Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utilization and identical f_max. However, the size of the register file is cut in half. 
 
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version `1.4.7.0`.
+Results generated for hardware version `1.4.8.0`.
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
 | BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |    0 |
-| BUSSWITCH | Mux for CPU I & D interfaces                         |  63 |   8 |           0 |    0 |
+| BUSSWITCH | Mux for CPU I & D interfaces                         |  82 |   8 |           0 |    0 |
 | CFU0      | Custom functions unit 0                              |   - |   - |           - |    - |
 | CFU1      | Custom functions unit 1                              |   - |   - |           - |    - |
-| DMEM      | Processor-internal data memory (default 8kB)         |  12 |   2 |      65 536 |    0 |
+| DMEM      | Processor-internal data memory (default 8kB)         |   6 |   2 |      65 536 |    0 |
 | GPIO      | General purpose input/output ports                   |  66 |  65 |           0 |    0 |
-| IMEM      | Processor-internal instruction memory (default 16kb) |   7 |   2 |     131 072 |    0 |
-| MTIME     | Machine system timer                                 | 272 | 166 |           0 |    0 |
-| PWM       | Pulse-width modulation controller                    |  72 |  69 |           0 |    0 |
-| SPI       | Serial peripheral interface                          | 142 | 124 |           0 |    0 |
-| SYSINFO   | System configuration information memory              |  11 |   9 |           0 |    0 |
+| IMEM      | Processor-internal instruction memory (default 16kb) |   6 |   2 |     131 072 |    0 |
+| MTIME     | Machine system timer                                 | 282 | 166 |           0 |    0 |
+| PWM       | Pulse-width modulation controller                    |  71 |  69 |           0 |    0 |
+| SPI       | Serial peripheral interface                          | 129 | 124 |           0 |    0 |
+| SYSINFO   | System configuration information memory              |   9 |   9 |           0 |    0 |
 | TRNG      | True random number generator                         | 132 | 105 |           0 |    0 |
 | TWI       | Two-wire interface                                   |  77 |  44 |           0 |    0 |
-| UART      | Universal asynchronous receiver/transmitter          | 173 | 132 |           0 |    0 |
-| WDT       | Watchdog timer                                       |  58 |  45 |           0 |    0 |
-| WISHBONE  | External memory interface                            | 106 | 104 |           0 |    0 |
+| UART      | Universal asynchronous receiver/transmitter          | 175 | 132 |           0 |    0 |
+| WDT       | Watchdog timer                                       |  59 |  45 |           0 |    0 |
+| WISHBONE  | External memory interface                            | 129 | 104 |           0 |    0 |
 
 
 ### NEORV32 Processor - Exemplary FPGA Setups

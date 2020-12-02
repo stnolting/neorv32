@@ -58,6 +58,7 @@ entity neorv32_cpu is
     HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= (others => '0'); -- hardware thread id
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= (others => '0'); -- cpu boot address
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
@@ -88,6 +89,7 @@ entity neorv32_cpu is
     i_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
     i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
     i_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
+    i_bus_lock_o   : out std_ulogic; -- locked/exclusive access
     -- data bus interface --
     d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
@@ -100,6 +102,7 @@ entity neorv32_cpu is
     d_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
     d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
     d_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
+    d_bus_lock_o   : out std_ulogic; -- locked/exclusive access
     -- system time input from MTIME --
     time_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
     -- interrupts (risc-v compliant) --
@@ -173,6 +176,7 @@ begin
     HW_THREAD_ID                 => HW_THREAD_ID,    -- hardware thread id
     CPU_BOOT_ADDR                => CPU_BOOT_ADDR,   -- cpu boot address
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
@@ -317,12 +321,21 @@ begin
   end generate;
 
 
-  -- Co-Processor 1: Not implemented (yet) --------------------------------------------------
+  -- Co-Processor 1: Atomic Memory Access (SC - store-conditional) --------------------------
   -- -------------------------------------------------------------------------------------------
-  -- control: ctrl cp1_start
-  -- inputs:  rs1 rs2 alu_cmp alu_opb
-  cp1_data  <= (others => '0');
-  cp1_valid <= '0';
+  atomic_op_cp: process(ctrl, cp1_start)
+  begin
+    -- "fake" co-processor for atomic operations
+    -- used to get the result of a store-conditional operation into the data path
+    if (CPU_EXTENSION_RISCV_A = true) and (cp1_start = '1') then
+      cp1_data    <= (others => '0');
+      cp1_data(0) <= not ctrl(ctrl_bus_lock_c);
+      cp1_valid   <= '1';
+    else
+      cp1_data  <= (others => '0');
+      cp1_valid <= '0';
+    end if;
+  end process;
 
 
   -- Co-Processor 2: Not implemented (yet) --------------------------------------------------
@@ -388,6 +401,7 @@ begin
     i_bus_ack_i    => i_bus_ack_i,    -- bus transfer acknowledge
     i_bus_err_i    => i_bus_err_i,    -- bus transfer error
     i_bus_fence_o  => i_bus_fence_o,  -- fence operation
+    i_bus_lock_o   => i_bus_lock_o,   -- locked/exclusive access
     -- data bus --
     d_bus_addr_o   => d_bus_addr_o,   -- bus access address
     d_bus_rdata_i  => d_bus_rdata_i,  -- bus read data
@@ -398,7 +412,8 @@ begin
     d_bus_cancel_o => d_bus_cancel_o, -- cancel current bus transaction
     d_bus_ack_i    => d_bus_ack_i,    -- bus transfer acknowledge
     d_bus_err_i    => d_bus_err_i,    -- bus transfer error
-    d_bus_fence_o  => d_bus_fence_o   -- fence operation
+    d_bus_fence_o  => d_bus_fence_o,  -- fence operation
+    d_bus_lock_o   => d_bus_lock_o    -- locked/exclusive access
   );
 
   -- current privilege level --

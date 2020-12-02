@@ -79,6 +79,17 @@ int cnt_test = 0;
 
 
 /**********************************************************************//**
+ * "Simulated external IO" - exclusive access will always succeed
+ **************************************************************************/
+# define ATOMIC_SUCCESS (*(IO_REG32 (EXT_MEM_BASE + 0)))
+
+/**********************************************************************//**
+ * "Simulated external IO" - exclusive access will always fail
+ **************************************************************************/
+# define ATOMIC_FAILURE (*(IO_REG32 (EXT_MEM_BASE + 4)))
+
+
+/**********************************************************************//**
  * This program uses mostly synthetic case to trigger all implemented exceptions.
  * Each exception is captured and evaluated for correct detection.
  *
@@ -1211,6 +1222,72 @@ int main() {
   else {
     neorv32_uart_printf("not implemented\n");
   }
+
+
+  // ----------------------------------------------------------
+  // Test atomic LR/SC operation - should succeed
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] Atomic access (LR+SC) test (succeeding access): ", cnt_test);
+
+  if ((UART_CT & (1 << UART_CT_SIM_MODE)) != 0) { // check if this is a simulation
+
+    // skip if A-mode is implemented
+    if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_A_EXT)) != 0) {
+
+      cnt_test++;
+
+      ATOMIC_SUCCESS = 0x11223344;
+
+      // atomic compare-and-swap
+      if ((neorv32_cpu_atomic_cas((uint32_t)(&ATOMIC_SUCCESS), 0x11223344, 0xAABBCCDD) == 0) &&
+          (ATOMIC_SUCCESS == 0xAABBCCDD) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+        test_ok();
+      }
+      else {
+        test_fail();
+      }
+    }
+    else {
+      neorv32_uart_printf("skipped (A extension not implemented)\n");
+    }
+  }
+  else {
+    neorv32_uart_printf("skipped (on real hardware)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Test atomic LR/SC operation - should fail
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] Atomic access (LR+SC) test (failing access): ", cnt_test);
+
+  if ((UART_CT & (1 << UART_CT_SIM_MODE)) != 0) { // check if this is a simulation
+
+    // skip if A-mode is implemented
+    if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_A_EXT)) != 0) {
+
+      cnt_test++;
+
+      ATOMIC_FAILURE = 0x55667788;
+
+      // atomic compare-and-swap
+      if ((neorv32_cpu_atomic_cas((uint32_t)(&ATOMIC_FAILURE), 0x55667788, 0xEEFFDDBB) != 0) && (ATOMIC_FAILURE == 0x55667788)) {
+        test_ok();
+      }
+      else {
+        test_fail();
+      }
+    }
+    else {
+      neorv32_uart_printf("skipped (A extension not implemented)\n");
+    }
+  }
+  else {
+    neorv32_uart_printf("skipped (on real hardware)\n");
+  }
+
 
 
   // ----------------------------------------------------------

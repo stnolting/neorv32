@@ -53,15 +53,16 @@ entity neorv32_top is
     USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     HW_THREAD_ID                 : std_ulogic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
+    FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
     PMP_USE                      : boolean := false;  -- implement PMP?
     PMP_NUM_REGIONS              : natural := 4;      -- number of regions (max 8)
@@ -100,6 +101,7 @@ entity neorv32_top is
     wb_sel_o    : out std_ulogic_vector(03 downto 0); -- byte enable
     wb_stb_o    : out std_ulogic; -- strobe
     wb_cyc_o    : out std_ulogic; -- valid cycle
+    wb_lock_o   : out std_ulogic; -- locked/exclusive bus access
     wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
     wb_err_i    : in  std_ulogic := '0'; -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_USE = true) --
@@ -172,6 +174,7 @@ architecture neorv32_top_rtl of neorv32_top is
     fence  : std_ulogic; -- fence(i) instruction executed
     priv   : std_ulogic_vector(1 downto 0); -- current privilege level
     src    : std_ulogic; -- access source
+    lock   : std_ulogic; -- locked/exclusive (=atomic) access
   end record;
   signal cpu_i, cpu_d, p_bus : bus_interface_t;
 
@@ -316,6 +319,7 @@ begin
     HW_THREAD_ID                 => HW_THREAD_ID,    -- hardware thread id
     CPU_BOOT_ADDR                => cpu_boot_addr_c, -- cpu boot address
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
@@ -346,6 +350,7 @@ begin
     i_bus_err_i    => cpu_i.err,    -- bus transfer error
     i_bus_fence_o  => cpu_i.fence,  -- executed FENCEI operation
     i_bus_priv_o   => cpu_i.priv,   -- privilege level
+    i_bus_lock_o   => cpu_i.lock,   -- locked/exclusive access
     -- data bus interface --
     d_bus_addr_o   => cpu_d.addr,   -- bus access address
     d_bus_rdata_i  => cpu_d.rdata,  -- bus read data
@@ -358,6 +363,7 @@ begin
     d_bus_err_i    => cpu_d.err,    -- bus transfer error
     d_bus_fence_o  => cpu_d.fence,  -- executed FENCE operation
     d_bus_priv_o   => cpu_d.priv,   -- privilege level
+    d_bus_lock_o   => cpu_d.lock,   -- locked/exclusive access
     -- system time input from MTIME --
     time_i         => mtime_time,   -- current system time
     -- interrupts (risc-v compliant) --
@@ -402,6 +408,7 @@ begin
     ca_bus_we_i     => cpu_d.we,     -- write enable
     ca_bus_re_i     => cpu_d.re,     -- read enable
     ca_bus_cancel_i => cpu_d.cancel, -- cancel current bus transaction
+    ca_bus_lock_i   => cpu_d.lock,   -- locked/exclusive access
     ca_bus_ack_o    => cpu_d.ack,    -- bus transfer acknowledge
     ca_bus_err_o    => cpu_d.err,    -- bus transfer error
     -- controller interface b --
@@ -412,6 +419,7 @@ begin
     cb_bus_we_i     => cpu_i.we,     -- write enable
     cb_bus_re_i     => cpu_i.re,     -- read enable
     cb_bus_cancel_i => cpu_i.cancel, -- cancel current bus transaction
+    cb_bus_lock_i   => cpu_i.lock,   -- locked/exclusive access
     cb_bus_ack_o    => cpu_i.ack,    -- bus transfer acknowledge
     cb_bus_err_o    => cpu_i.err,    -- bus transfer error
     -- peripheral bus --
@@ -423,6 +431,7 @@ begin
     p_bus_we_o      => p_bus.we,     -- write enable
     p_bus_re_o      => p_bus.re,     -- read enable
     p_bus_cancel_o  => p_bus.cancel, -- cancel current bus transaction
+    p_bus_lock_o    => p_bus.lock,   -- locked/exclusive access
     p_bus_ack_i     => p_bus.ack,    -- bus transfer acknowledge
     p_bus_err_i     => p_bus.err     -- bus transfer error
   );
@@ -541,31 +550,33 @@ begin
     )
     port map (
       -- global control --
-      clk_i    => clk_i,          -- global clock line
-      rstn_i   => sys_rstn,       -- global reset line, low-active
+      clk_i     => clk_i,          -- global clock line
+      rstn_i    => sys_rstn,       -- global reset line, low-active
       -- host access --
-      src_i    => p_bus.src,      -- access type (0: data, 1:instruction)
-      addr_i   => p_bus.addr,     -- address
-      rden_i   => p_bus.re,       -- read enable
-      wren_i   => p_bus.we,       -- write enable
-      ben_i    => p_bus.ben,      -- byte write enable
-      data_i   => p_bus.wdata,    -- data in
-      data_o   => wishbone_rdata, -- data out
-      cancel_i => p_bus.cancel,   -- cancel current transaction
-      ack_o    => wishbone_ack,   -- transfer acknowledge
-      err_o    => wishbone_err,   -- transfer error
-      priv_i   => p_bus.priv,     -- current CPU privilege level
+      src_i     => p_bus.src,      -- access type (0: data, 1:instruction)
+      addr_i    => p_bus.addr,     -- address
+      rden_i    => p_bus.re,       -- read enable
+      wren_i    => p_bus.we,       -- write enable
+      ben_i     => p_bus.ben,      -- byte write enable
+      data_i    => p_bus.wdata,    -- data in
+      data_o    => wishbone_rdata, -- data out
+      cancel_i  => p_bus.cancel,   -- cancel current transaction
+      lock_i    => p_bus.lock,     -- locked/exclusive bus access
+      ack_o     => wishbone_ack,   -- transfer acknowledge
+      err_o     => wishbone_err,   -- transfer error
+      priv_i    => p_bus.priv,     -- current CPU privilege level
       -- wishbone interface --
-      wb_tag_o => wb_tag_o,       -- tag
-      wb_adr_o => wb_adr_o,       -- address
-      wb_dat_i => wb_dat_i,       -- read data
-      wb_dat_o => wb_dat_o,       -- write data
-      wb_we_o  => wb_we_o,        -- read/write
-      wb_sel_o => wb_sel_o,       -- byte enable
-      wb_stb_o => wb_stb_o,       -- strobe
-      wb_cyc_o => wb_cyc_o,       -- valid cycle
-      wb_ack_i => wb_ack_i,       -- transfer acknowledge
-      wb_err_i => wb_err_i        -- transfer error
+      wb_tag_o  => wb_tag_o,       -- tag
+      wb_adr_o  => wb_adr_o,       -- address
+      wb_dat_i  => wb_dat_i,       -- read data
+      wb_dat_o  => wb_dat_o,       -- write data
+      wb_we_o   => wb_we_o,        -- read/write
+      wb_sel_o  => wb_sel_o,       -- byte enable
+      wb_stb_o  => wb_stb_o,       -- strobe
+      wb_cyc_o  => wb_cyc_o,       -- valid cycle
+      wb_lock_o => wb_lock_o,      -- locked/exclusive bus access
+      wb_ack_i  => wb_ack_i,       -- transfer acknowledge
+      wb_err_i  => wb_err_i        -- transfer error
     );
   end generate;
 
@@ -575,13 +586,14 @@ begin
     wishbone_ack   <= '0';
     wishbone_err   <= '0';
     --
-    wb_adr_o <= (others => '0');
-    wb_dat_o <= (others => '0');
-    wb_we_o  <= '0';
-    wb_sel_o <= (others => '0');
-    wb_stb_o <= '0';
-    wb_cyc_o <= '0';
-    wb_tag_o <= (others => '0');
+    wb_adr_o  <= (others => '0');
+    wb_dat_o  <= (others => '0');
+    wb_we_o   <= '0';
+    wb_sel_o  <= (others => '0');
+    wb_stb_o  <= '0';
+    wb_cyc_o  <= '0';
+    wb_lock_o <= '0';
+    wb_tag_o  <= (others => '0');
   end generate;
 
 

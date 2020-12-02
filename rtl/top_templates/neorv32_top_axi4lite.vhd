@@ -49,12 +49,13 @@ entity neorv32_top_axi4lite is
     USER_CODE                    : std_logic_vector(31 downto 0) := x"00000000"; -- custom user code
     HW_THREAD_ID                 : std_logic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei : boolean := true;   -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
@@ -191,6 +192,7 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG ERROR: AXI4-Lite bridge requires STANDARD/CLASSIC Wishbone mode (package.wb_pipe_mode_c = false)." severity error;
+  assert not (CPU_EXTENSION_RISCV_A = true) report "NEORV32 PROCESSOR CONFIG WARNING: AXI4-Lite provides NO support for atomic memory operations." severity warning;
 
 
   -- The Core Of The Problem ----------------------------------------------------------------
@@ -203,6 +205,7 @@ begin
     USER_CODE                    => USER_CODE_INT,      -- custom user code
     HW_THREAD_ID                 => HW_THREAD_ID_INT,   -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
@@ -250,6 +253,7 @@ begin
     wb_sel_o    => wb_core.sel,     -- byte enable
     wb_stb_o    => wb_core.stb,     -- strobe
     wb_cyc_o    => wb_core.cyc,     -- valid cycle
+    wb_lock_o   => open,            -- locked/exclusive bus access
     wb_ack_i    => wb_core.ack,     -- transfer acknowledge
     wb_err_i    => wb_core.err,     -- transfer error
     -- Advanced memory control signals --

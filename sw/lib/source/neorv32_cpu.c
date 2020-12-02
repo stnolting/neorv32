@@ -244,16 +244,54 @@ void neorv32_cpu_delay_ms(uint32_t time_ms) {
 /**********************************************************************//**
  * Switch from privilege mode MACHINE to privilege mode USER.
  *
- * @note This function requires the U extension to be implemented.
- * @note Maybe you should do a fence.i after this.
+ * @warning This function requires the U extension to be implemented.
  **************************************************************************/
 void __attribute__((naked)) neorv32_cpu_goto_user_mode(void) {
 
   // make sure to use NO registers in here! -> naked
 
-  asm volatile ("csrw mepc, ra           \n\t" // move return address to mepc so we can return using "mret". also, we can use ra as general purpose register in here
+  asm volatile ("csrw mepc, ra           \n\t" // move return address to mepc so we can return using "mret". also, we can now use ra as general purpose register in here
                 "li ra, %[input_imm]     \n\t" // bit mask to clear the two MPP bits
                 "csrrc zero, mstatus, ra \n\t" // clear MPP bits -> MPP=u-mode
                 "mret                    \n\t" // return and switch to user mode
                 :  : [input_imm] "i" ((1<<CPU_MSTATUS_MPP_H) | (1<<CPU_MSTATUS_MPP_L)));
+}
+
+
+/**********************************************************************//**
+ * Atomic compare-and-swap operation (for implemeneting semaphores and mutexes).
+ *
+ * @warning This function requires the A (atomic) CPU extension.
+ *
+ * @param[in] addr Address of memory location.
+ * @param[in] expected Expected value (for comparison).
+ * @param[in] desired Desired value (new value).
+ * @return Returns 0 on success, 1 on failure.
+ **************************************************************************/
+int __attribute__ ((noinline)) neorv32_cpu_atomic_cas(uint32_t addr, uint32_t expected, uint32_t desired) {
+#ifdef __riscv_atomic
+
+  register uint32_t addr_reg = addr;
+  register uint32_t des_reg = desired;
+  register uint32_t tmp_reg;
+
+  // load original value + reservation (lock)
+  asm volatile ("lr.w %[result], (%[input])" : [result] "=r" (tmp_reg) : [input] "r" (addr_reg));
+
+  if (tmp_reg != expected) {
+    asm volatile ("lw x0, 0(%[input])" : : [input] "r" (addr_reg)); // clear reservation lock
+    return 1;
+  }
+
+  // store-conditional
+  asm volatile ("sc.w %[result], %[input_i], (%[input_j])" : [result] "=r" (tmp_reg) : [input_i] "r" (des_reg), [input_j] "r" (addr_reg));
+
+  if (tmp_reg) {
+    return 1;
+  }
+
+  return 0;
+#else
+  return 1; // A extension not implemented -Y always fail
+#endif
 }

@@ -143,8 +143,11 @@ enum NEORV32_CPU_MIP_enum {
  * CPU <b>misa</b> CSR (r/-): Machine instruction set extensions (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MISA_enum {
+  CPU_MISA_A_EXT      =  0, /**< CPU misa CSR  (0): A: Atomic instructions CPU extension available (r/-)*/
+  CPU_MISA_B_EXT      =  1, /**< CPU misa CSR  (1): B: Bit manipulation CPU extension available (r/-)*/
   CPU_MISA_C_EXT      =  2, /**< CPU misa CSR  (2): C: Compressed instructions CPU extension available (r/-)*/
-  CPU_MISA_E_EXT      =  4, /**< CPU misa CSR  (3): E: Embedded CPU extension available (r/-) */
+  CPU_MISA_E_EXT      =  4, /**< CPU misa CSR  (4): E: Embedded CPU extension available (r/-) */
+  CPU_MISA_F_EXT      =  4, /**< CPU misa CSR  (5): F: Floating point (single-precision) extension available (r/-) */
   CPU_MISA_I_EXT      =  8, /**< CPU misa CSR  (8): I: Base integer ISA CPU extension available (r/-) */
   CPU_MISA_M_EXT      = 12, /**< CPU misa CSR (12): M: Multiplier/divider CPU extension available (r/-)*/
   CPU_MISA_U_EXT      = 20, /**< CPU misa CSR (20): U: User mode CPU extension available (r/-)*/
