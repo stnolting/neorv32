@@ -104,7 +104,7 @@ __crt0_status_init:
 
 
 // *********************************************************
-// Setup pointers using linker script symbol
+// Setup pointers using linker script symbols
 // *********************************************************
 __crt0_pointer_init:
 .option push
@@ -117,7 +117,7 @@ __crt0_pointer_init:
 
 
 // *********************************************************
-// Init trap handler base address
+// Initialize dummy trap handler base address
 // *********************************************************
 __crt0_neorv32_trap_init:
   la    x11, __crt0_dummy_trap_handler
@@ -174,12 +174,19 @@ __crt0_copy_data_loop_end:
 
 
 // *********************************************************
-// Call main function (with argc = argv = 0)
+// Call main function
 // *********************************************************
 __crt0_main_entry:
 
+  // setup arguments for calling main
   addi x10, zero, 0 // argc = 0
   addi x11, zero, 0 // argv = 0
+
+  // clear cycle and instruction counters
+  csrw mcycle,    zero
+  csrw mcycleh,   zero
+  csrw minstret,  zero
+  csrw minstreth, zero
 
   jal ra, main
 
@@ -189,8 +196,10 @@ __crt0_main_entry:
 // *********************************************************
 __crt0_this_is_the_end:
   csrrci zero, mstatus, 8 // mstatus: disable global IRQs (MIE)
+  nop
   wfi
-  j . // in case WFI is not available
+__crt0_this_is_the_end_my_friend:
+  j __crt0_this_is_the_end_my_friend // in case WFI is not available
 
 
 // *********************************************************
