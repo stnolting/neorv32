@@ -80,7 +80,6 @@ entity neorv32_cpu_control is
     imm_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- immediate
     fetch_pc_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
     curr_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- current PC (corresponding to current instruction)
-    next_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- next PC (corresponding to current instruction)
     csr_rdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
     -- interrupts (risc-v compliant) --
     msw_irq_i     : in  std_ulogic; -- machine software interrupt
@@ -170,21 +169,25 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     state        : execute_engine_state_t;
     state_prev   : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
+    --
     i_reg        : std_ulogic_vector(31 downto 0);
     i_reg_nxt    : std_ulogic_vector(31 downto 0);
     i_reg_last   : std_ulogic_vector(31 downto 0); -- last executed instruction
+    --
     is_ci        : std_ulogic; -- current instruction is de-compressed instruction
     is_ci_nxt    : std_ulogic;
     is_jump      : std_ulogic; -- current instruction is jump instruction
     is_jump_nxt  : std_ulogic;
     is_cp_op     : std_ulogic; -- current instruction is a co-processor operation
     is_cp_op_nxt : std_ulogic;
+    --
     branch_taken : std_ulogic; -- branch condition fullfilled
     pc           : std_ulogic_vector(data_width_c-1 downto 0); -- actual PC, corresponding to current executed instruction
-    pc_nxt       : std_ulogic_vector(data_width_c-1 downto 0);
+    pc_mux_sel   : std_ulogic_vector(1 downto 0); -- source select for PC update
+    pc_we        : std_ulogic; -- PC update enabled
     next_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- next PC, corresponding to next instruction to be executed
     last_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- PC of last executed instruction
-    last_pc_nxt  : std_ulogic_vector(data_width_c-1 downto 0);
+    --
     sleep        : std_ulogic; -- CPU in sleep mode
     sleep_nxt    : std_ulogic;
     if_rst       : std_ulogic; -- instruction fetch was reset
@@ -536,37 +539,41 @@ begin
   begin
     opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
     if rising_edge(clk_i) then
-      case opcode_v is -- save some bits here, LSBs are always 11 for rv32
-        when opcode_store_c => -- S-immediate
-          imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
-          imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
-          imm_o(04 downto 01) <= execute_engine.i_reg(11 downto 08);
-          imm_o(00)           <= execute_engine.i_reg(07);
-        when opcode_branch_c => -- B-immediate
-          imm_o(31 downto 12) <= (others => execute_engine.i_reg(31)); -- sign extension
-          imm_o(11)           <= execute_engine.i_reg(07);
-          imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
-          imm_o(04 downto 01) <= execute_engine.i_reg(11 downto 08);
-          imm_o(00)           <= '0';
-        when opcode_lui_c | opcode_auipc_c => -- U-immediate
-          imm_o(31 downto 20) <= execute_engine.i_reg(31 downto 20);
-          imm_o(19 downto 12) <= execute_engine.i_reg(19 downto 12);
-          imm_o(11 downto 00) <= (others => '0');
-        when opcode_jal_c => -- J-immediate
-          imm_o(31 downto 20) <= (others => execute_engine.i_reg(31)); -- sign extension
-          imm_o(19 downto 12) <= execute_engine.i_reg(19 downto 12);
-          imm_o(11)           <= execute_engine.i_reg(20);
-          imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
-          imm_o(04 downto 01) <= execute_engine.i_reg(24 downto 21);
-          imm_o(00)           <= '0';
-        when opcode_atomic_c => -- atomic memory access
-          imm_o               <= (others => '0'); -- effective address is reg + 0
-        when others => -- I-immediate
-          imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
-          imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
-          imm_o(04 downto 01) <= execute_engine.i_reg(24 downto 21);
-          imm_o(00)           <= execute_engine.i_reg(20);
-      end case;
+      if (execute_engine.state = BRANCH) then -- next_PC as immediate fro jump-and-link operations (=return address)
+        imm_o <= execute_engine.next_pc;
+      else -- "nromal" immediate from instruction
+        case opcode_v is -- save some bits here, LSBs are always 11 for rv32
+          when opcode_store_c => -- S-immediate
+            imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
+            imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
+            imm_o(04 downto 01) <= execute_engine.i_reg(11 downto 08);
+            imm_o(00)           <= execute_engine.i_reg(07);
+          when opcode_branch_c => -- B-immediate
+            imm_o(31 downto 12) <= (others => execute_engine.i_reg(31)); -- sign extension
+            imm_o(11)           <= execute_engine.i_reg(07);
+            imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
+            imm_o(04 downto 01) <= execute_engine.i_reg(11 downto 08);
+            imm_o(00)           <= '0';
+          when opcode_lui_c | opcode_auipc_c => -- U-immediate
+            imm_o(31 downto 20) <= execute_engine.i_reg(31 downto 20);
+            imm_o(19 downto 12) <= execute_engine.i_reg(19 downto 12);
+            imm_o(11 downto 00) <= (others => '0');
+          when opcode_jal_c => -- J-immediate
+            imm_o(31 downto 20) <= (others => execute_engine.i_reg(31)); -- sign extension
+            imm_o(19 downto 12) <= execute_engine.i_reg(19 downto 12);
+            imm_o(11)           <= execute_engine.i_reg(20);
+            imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
+            imm_o(04 downto 01) <= execute_engine.i_reg(24 downto 21);
+            imm_o(00)           <= '0';
+          when opcode_atomic_c => -- atomic memory access
+            imm_o               <= (others => '0'); -- effective address is reg + 0
+          when others => -- I-immediate
+            imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
+            imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
+            imm_o(04 downto 01) <= execute_engine.i_reg(24 downto 21);
+            imm_o(00)           <= execute_engine.i_reg(20);
+        end case;
+      end if;
     end if;
   end process imm_gen;
 
@@ -597,13 +604,20 @@ begin
   begin
     if (rstn_i = '0') then
       execute_engine.pc      <= CPU_BOOT_ADDR(data_width_c-1 downto 1) & '0';
-      execute_engine.last_pc <= CPU_BOOT_ADDR(data_width_c-1 downto 1) & '0';
       execute_engine.state   <= SYS_WAIT;
       execute_engine.sleep   <= '0';
       execute_engine.if_rst  <= '1'; -- instruction fetch is reset after system reset
     elsif rising_edge(clk_i) then
-      execute_engine.pc      <= execute_engine.pc_nxt(data_width_c-1 downto 1) & '0';
-      execute_engine.last_pc <= execute_engine.last_pc_nxt;
+      -- PC update --
+      if (execute_engine.pc_we = '1') then
+        case execute_engine.pc_mux_sel is
+          when "00"   => execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment
+          when "01"   => execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/branch
+          when "10"   => execute_engine.pc <= csr.mtvec(data_width_c-1 downto 1) & '0'; -- trap
+          when others => execute_engine.pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap return
+        end case;
+      end if;
+      --
       execute_engine.state   <= execute_engine.state_nxt;
       execute_engine.sleep   <= execute_engine.sleep_nxt;
       execute_engine.if_rst  <= execute_engine.if_rst_nxt;
@@ -620,24 +634,24 @@ begin
       execute_engine.is_ci      <= execute_engine.is_ci_nxt;
       execute_engine.is_jump    <= execute_engine.is_jump_nxt;
       execute_engine.is_cp_op   <= execute_engine.is_cp_op_nxt;
-      --
-      if (execute_engine.state = EXECUTE) then
-        execute_engine.i_reg_last <= execute_engine.i_reg;
-      end if;
-      -- next PC --
+      -- next PC (next linear instruction) --
       if (execute_engine.is_ci = '1') then -- compressed instruction?
         execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + 2);
       else
         execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + 4);
       end if;
-      --
+      -- PC & IR of last "executed" instruction --
+      if (execute_engine.state = EXECUTE) then
+        execute_engine.last_pc   <= execute_engine.pc;
+        execute_engine.i_reg_last <= execute_engine.i_reg;
+      end if;
+      -- main control bus --
       ctrl <= ctrl_nxt;
     end if;
   end process execute_engine_fsm_sync;
 
   -- PC output --
-  curr_pc_o <= execute_engine.pc(data_width_c-1 downto 1) & '0';
-  next_pc_o <= execute_engine.next_pc(data_width_c-1 downto 1) & '0';
+  curr_pc_o <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- PC for ALU ops
 
 
   -- CPU Control Bus Output -----------------------------------------------------------------
@@ -668,7 +682,7 @@ begin
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   execute_engine_fsm_comb: process(execute_engine, fetch_engine, cmd_issue, trap_ctrl, csr, ctrl, csr_acc_valid,
-                                   alu_add_i, alu_wait_i, bus_d_wait_i, ma_load_i, be_load_i, ma_store_i, be_store_i)
+                                   alu_wait_i, bus_d_wait_i, ma_load_i, be_load_i, ma_store_i, be_store_i)
     variable alu_immediate_v : std_ulogic;
     variable rs1_is_r0_v     : std_ulogic;
     variable opcode_v        : std_ulogic_vector(6 downto 0);
@@ -681,10 +695,11 @@ begin
     execute_engine.is_jump_nxt  <= '0';
     execute_engine.is_cp_op_nxt <= execute_engine.is_cp_op;
     execute_engine.is_ci_nxt    <= execute_engine.is_ci;
-    execute_engine.pc_nxt       <= execute_engine.pc;
-    execute_engine.last_pc_nxt  <= execute_engine.last_pc;
     execute_engine.sleep_nxt    <= execute_engine.sleep;
     execute_engine.if_rst_nxt   <= execute_engine.if_rst;
+    --
+    execute_engine.pc_mux_sel   <= (others => '0');
+    execute_engine.pc_we        <= '0';
 
     -- instruction dispatch --
     fetch_engine.reset          <= '0';
@@ -762,6 +777,7 @@ begin
 
       when DISPATCH => -- Get new command from instruction issue engine
       -- ------------------------------------------------------------
+        execute_engine.pc_mux_sel <= "00"; -- linear next PC
         if (cmd_issue.valid = '1') then -- instruction available?
           -- IR update --
           execute_engine.is_ci_nxt <= cmd_issue.data(32); -- flag to indicate this is a de-compressed instruction beeing executed
@@ -772,7 +788,7 @@ begin
           -- PC update --
           execute_engine.if_rst_nxt <= '0';
           if (execute_engine.if_rst = '0') then -- if there was NO non-linear PC modification
-            execute_engine.pc_nxt <= execute_engine.next_pc(data_width_c-1 downto 1) & '0';
+            execute_engine.pc_we <= '1';
           end if;
           -- any reason to go to trap state FAST? --
           if (execute_engine.sleep = '1') or (trap_ctrl.env_start = '1') or (trap_ctrl.exc_fire = '1') or ((cmd_issue.data(33) or cmd_issue.data(34)) = '1') then
@@ -785,12 +801,13 @@ begin
 
       when TRAP => -- Start trap environment (also used as cpu sleep state)
       -- ------------------------------------------------------------
+        execute_engine.pc_mux_sel <= "10"; -- csr.mtvec (trap)
         -- stay here for sleep
         if (trap_ctrl.env_start = '1') then -- trap triggered?
           fetch_engine.reset        <= '1';
           execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
           trap_ctrl.env_start_ack   <= '1';
-          execute_engine.pc_nxt     <= csr.mtvec;
+          execute_engine.pc_we      <= '1';
           execute_engine.sleep_nxt  <= '0'; -- waky waky
           execute_engine.state_nxt  <= SYS_WAIT;
         end if;
@@ -798,16 +815,14 @@ begin
 
       when EXECUTE => -- Decode and execute instruction
       -- ------------------------------------------------------------
-        execute_engine.last_pc_nxt <= execute_engine.pc; -- store address of current instruction for commit
-        --
         opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11"; -- save some bits here, LSBs are always 11 for rv32
         case opcode_v is
 
           when opcode_alu_c | opcode_alui_c => -- (immediate) ALU operation
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA
-            ctrl_nxt(ctrl_alu_opb_mux_c) <= alu_immediate_v; -- use IMM as ALU.OPB for immediate operations
-            ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "00"; -- RF input = ALU result
+            ctrl_nxt(ctrl_alu_opa_mux_c)   <= '0'; -- use RS1 as ALU.OPA
+            ctrl_nxt(ctrl_alu_opb_mux_c)   <= alu_immediate_v; -- use IMM as ALU.OPB for immediate operations
+            ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU result
 
             -- ALU arithmetic operation type and ADD/SUB --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_slt_c) or
@@ -862,14 +877,16 @@ begin
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opa_mux_c) <= '1'; -- ALU.OPA = PC (for AUIPC only)
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
+            ctrl_nxt(ctrl_alu_arith_c)   <= alu_arith_cmd_addsub_c; -- actual ALU operation = ADD
+            ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_movb_c; -- MOVB
             if (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_lui_c(5)) then -- LUI
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_logic_c; -- actual ALU operation = MOVB
             else -- AUIPC
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_arith_c; -- actual ALU operation = ADD
             end if;
-            ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "00"; -- RF input = ALU result
-            ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-            execute_engine.state_nxt  <= DISPATCH;
+            ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU result
+            ctrl_nxt(ctrl_rf_wb_en_c)      <= '1'; -- valid RF write-back
+            execute_engine.state_nxt       <= DISPATCH;
 
           when opcode_load_c | opcode_store_c | opcode_atomic_c => -- load/store / atomic memory access
           -- ------------------------------------------------------------
@@ -891,18 +908,16 @@ begin
 
           when opcode_branch_c | opcode_jal_c | opcode_jalr_c => -- branch / jump and link (with register)
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_alu_arith_c)                         <= alu_arith_cmd_addsub_c; -- actual ALU operation = ADD
-            ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_arith_c; -- actual ALU operation = ADD
             -- compute target address --
+            ctrl_nxt(ctrl_alu_arith_c) <= alu_arith_cmd_addsub_c; -- actual ALU operation = ADD
+            ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_arith_c; -- actual ALU operation = ADD
             if (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = opcode_jalr_c(3 downto 2)) then -- JALR
               ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA (branch target address base)
             else -- JAL / branch
               ctrl_nxt(ctrl_alu_opa_mux_c) <= '1'; -- use PC as ALU.OPA (branch target address base)
             end if;
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB (branch target address offset)
-            -- save return address --
-            ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "10"; -- RF input = next PC (save return address)
-            ctrl_nxt(ctrl_rf_wb_en_c)  <= execute_engine.i_reg(instr_opcode_lsb_c+2); -- valid RF write-back? (for JAL/JALR)
+            --
             execute_engine.is_jump_nxt <= execute_engine.i_reg(instr_opcode_lsb_c+2); -- is this is a jump operation? (for JAL/JALR)
             execute_engine.state_nxt   <= BRANCH;
 
@@ -928,15 +943,16 @@ begin
 
       when SYS_ENV => -- system environment operation - execution
       -- ------------------------------------------------------------
+        execute_engine.pc_mux_sel <= "11"; -- csr.mepc (only for MRET)
         case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
           when funct12_ecall_c => -- ECALL
             trap_ctrl.env_call <= '1';
           when funct12_ebreak_c => -- EBREAK
             trap_ctrl.break_point <= '1';
           when funct12_mret_c => -- MRET
-            trap_ctrl.env_end <= '1';
-            execute_engine.pc_nxt <= csr.mepc;
-            fetch_engine.reset <= '1';
+            trap_ctrl.env_end    <= '1';
+            execute_engine.pc_we <= '1'; -- linear next PC
+            fetch_engine.reset   <= '1';
             execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
           when funct12_wfi_c => -- WFI
             execute_engine.sleep_nxt <= '1'; -- good night
@@ -965,8 +981,8 @@ begin
 
       when ALU_WAIT => -- wait for multi-cycle ALU operation (shifter or CP) to finish
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "00"; -- RF input = ALU result
-        ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back (permanent write-back)
+        ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU result
+        ctrl_nxt(ctrl_rf_wb_en_c)      <= '1'; -- valid RF write-back (permanent write-back)
         -- cp access or alu shift? --
         if (execute_engine.is_cp_op = '1') then
           ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
@@ -981,8 +997,16 @@ begin
 
       when BRANCH => -- update PC for taken branches and jumps
       -- ------------------------------------------------------------
+        -- get and store return address (only relevant for jump-and-link operations) --
+        ctrl_nxt(ctrl_alu_opb_mux_c)                         <= '1'; -- use IMM as ALU.OPB (next_pc from immediate generator = return address)
+        ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_movb_c; -- MOVB
+        ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c)   <= alu_func_cmd_logic_c; -- actual ALU operation = MOVB
+        ctrl_nxt(ctrl_rf_in_mux_msb_c)                       <= '0'; -- RF input = ALU result
+        ctrl_nxt(ctrl_rf_wb_en_c)                            <= execute_engine.is_jump; -- valid RF write-back? (is jump-and-link?)
+        -- destination address --
+        execute_engine.pc_mux_sel <= "01"; -- alu.add = branch/jump destination
         if (execute_engine.is_jump = '1') or (execute_engine.branch_taken = '1') then
-          execute_engine.pc_nxt     <= alu_add_i; -- branch/jump destination
+          execute_engine.pc_we      <= '1'; -- update PC
           fetch_engine.reset        <= '1'; -- trigger new instruction fetch from modified PC
           execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
           execute_engine.state_nxt  <= SYS_WAIT;
@@ -993,10 +1017,11 @@ begin
 
       when FENCE_OP => -- fence operations - execution
       -- ------------------------------------------------------------
-        execute_engine.state_nxt <= SYS_WAIT;
+        execute_engine.state_nxt  <= SYS_WAIT;
+        execute_engine.pc_mux_sel <= "00"; -- linear next PC = "refetch" next instruction
         -- FENCE.I --
         if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) and (CPU_EXTENSION_RISCV_Zifencei = true) then
-          execute_engine.pc_nxt       <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- "refetch" next instruction
+          execute_engine.pc_we        <= '1';
           execute_engine.if_rst_nxt   <= '1'; -- this is a non-linear PC modification
           fetch_engine.reset          <= '1';
           ctrl_nxt(ctrl_bus_fencei_c) <= '1';
@@ -1029,11 +1054,12 @@ begin
           ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_atomic_c; -- SC: result comes from "atomic co-processor"
           ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
         end if;
-        -- 
+        --
+        ctrl_nxt(ctrl_rf_in_mux_lsb_c) <= '0'; -- RF input = ALU.res or MEM
         if (is_atomic_sc_v = '1') then
-          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "00"; -- RF input = ALU.res
+          ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU.res
         else
-          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "01"; -- RF input = memory input (only relevant for LOAD)
+          ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '1'; -- RF input = memory input (only relevant for LOAD)
         end if;
         --
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load operations)

@@ -139,7 +139,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal be_store   : std_ulogic; -- bus error on store data access
   signal fetch_pc   : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
   signal curr_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
-  signal next_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- next pc (for next to-be-executed instruction)
 
   -- co-processor interface --
   signal cp0_data,  cp1_data,  cp2_data,  cp3_data  : std_ulogic_vector(data_width_c-1 downto 0);
@@ -166,6 +165,8 @@ begin
   assert not (((PMP_GRANULARITY < 1) or (PMP_GRANULARITY > 32)) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Invalid PMP granulartiy (0 < PMP_GRANULARITY < 33)." severity error;
   -- Instruction prefetch buffer size --
   assert not (is_power_of_two_f(ipb_entries_c) = false) report "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <ipb_entries_c> has to be a power of two." severity error;
+  -- A extension - only lr.w and sc.w supported yet --
+  assert not (CPU_EXTENSION_RISCV_A = true) report "NEORV32 CPU CONFIG WARNING! Atomic operations extension (A) only supports >lr.w< and >sc.w< instructions yet." severity warning;
 
 
   -- Control Unit ---------------------------------------------------------------------------
@@ -206,7 +207,6 @@ begin
     imm_o         => imm,         -- immediate
     fetch_pc_o    => fetch_pc,    -- PC for instruction fetch
     curr_pc_o     => curr_pc,     -- current PC (corresponding to current instruction)
-    next_pc_o     => next_pc,     -- next PC (corresponding to current instruction
     csr_rdata_o   => csr_rdata,   -- CSR read data
     -- interrupts (risc-v compliant) --
     msw_irq_i     => msw_irq_i,   -- machine software interrupt
@@ -244,7 +244,6 @@ begin
     mem_i  => rdata,              -- memory read data
     alu_i  => alu_res,            -- ALU result
     csr_i  => csr_rdata,          -- CSR read data
-    pc_i   => next_pc,            -- next pc (for linking)
     -- data output --
     rs1_o  => rs1,                -- operand 1
     rs2_o  => rs2                 -- operand 2

@@ -50,7 +50,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040800"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040801"; -- no touchy!
   constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
@@ -161,8 +161,8 @@ package neorv32_package is
   -- Main Control Bus -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- register file --
-  constant ctrl_rf_in_mux_lsb_c : natural :=  0; -- input source select lsb (00=ALU, 01=MEM)
-  constant ctrl_rf_in_mux_msb_c : natural :=  1; -- input source select msb (10=PC,  11=CSR)
+  constant ctrl_rf_in_mux_lsb_c : natural :=  0; -- input source select lsb (10=MEM, 11=CSR)
+  constant ctrl_rf_in_mux_msb_c : natural :=  1; -- input source select msb (0-=ALU)
   constant ctrl_rf_rs1_adr0_c   : natural :=  2; -- source register 1 address bit 0
   constant ctrl_rf_rs1_adr1_c   : natural :=  3; -- source register 1 address bit 1
   constant ctrl_rf_rs1_adr2_c   : natural :=  4; -- source register 1 address bit 2
@@ -666,7 +666,6 @@ package neorv32_package is
       imm_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- immediate
       fetch_pc_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
       curr_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- current PC (corresponding to current instruction)
-      next_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- next PC (corresponding to current instruction)
       csr_rdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
       -- interrupts (risc-v compliant) --
       msw_irq_i     : in  std_ulogic; -- machine software interrupt
@@ -704,7 +703,6 @@ package neorv32_package is
       mem_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
       alu_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
       csr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
-      pc_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- current pc
       -- data output --
       rs1_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 1
       rs2_o  : out std_ulogic_vector(data_width_c-1 downto 0)  -- operand 2
