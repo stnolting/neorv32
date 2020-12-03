@@ -238,7 +238,7 @@ int main(void) {
 #ifdef SPI_DIRECT_BOOT_EN
   #warning Compiling bootloader in 'SPI direct boot mode'. Bootloader will directly boot from SPI memory. No user UART console will be available.
 
-  neorv32_uart_print("\nNEORV32 bootloader\nAccessing SPI flash @ 0x");
+  neorv32_uart_print("\nNEORV32 bootloader\nAccessing SPI flash at ");
   print_hex_word((uint32_t)SPI_FLASH_BOOT_ADR);
   neorv32_uart_print("\n");
 
