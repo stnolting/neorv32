@@ -14,7 +14,8 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 01.12.2020 | 1.4.8.0 | :warning: fixed bug in CPU-internal co-processor interface; optimized multiplier unit (~1 faster); added CPU `A` (atomic) extension support (only `lr.w` and `sc.w` instructions yet); added `lock` signal to CPU and processor's external bus interface |
+| 03.12.2020 | 1.4.8.1 | Optimized CPU program counter (PC) update logic and "next PC" computation (shortend critical path); updated bootloader (configuration option for direct-boot-from-SPI-flash only) and *customization* text in neorv32.pdf |
+| 01.12.2020 | [**:rocket:1.4.8.0**](https://github.com/stnolting/neorv32/releases/tag/v1.4.8.0) | :warning: fixed bug in CPU-internal co-processor interface; optimized multiplier unit (~1 faster); added CPU `A` (atomic) extension support (only `lr.w` and `sc.w` instructions yet); added `lock` signal to CPU and processor's external bus interface |
 | 28.11.2020 | 1.4.7.6 | Split ALU core operations: shortened  critical path - replaced ALU output 8:1 mux by a 4:1 mux |
 | 26.11.2020 | 1.4.7.5 | Minor rtl clean-up; CSR access instructions are one cycle faster now (3 cycles now); system/environemnt instructions (`ecall` `ebreak` `mret` `wfi`) need one additional cycle (4 cycles now) |
 | 25.11.2020 | 1.4.7.4 | :warning: fixed bug in `FENCE.I` instruction that corrupted instruction fetch when executing code from processor-external memory; default testbench (`sim/neorv32_tb.vhd`) now features external IMEM, external DMEM and external IO connected via external bus interface; simulation now allows CPU to execute code using external memories only (no internal IMEM/DMEM); optimized CPU's instruction fetch interface (no more unnecessary transfer cancel requests) |
