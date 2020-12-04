@@ -14,6 +14,7 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 04.12.2020 | 1.4.8.2 | Added PMA (physical memory attribute) to processor-internal IO region: `NO EXECUTE`; added *3.3.Address Space/Physical Memory Attributes (PMAs)* section to neorv32.pdf |
 | 03.12.2020 | 1.4.8.1 | Optimized CPU program counter (PC) update logic and "next PC" computation (shortend critical path); updated bootloader (configuration option for direct-boot-from-SPI-flash only) and *customization* text in neorv32.pdf |
 | 01.12.2020 | [**:rocket:1.4.8.0**](https://github.com/stnolting/neorv32/releases/tag/v1.4.8.0) | :warning: fixed bug in CPU-internal co-processor interface; optimized multiplier unit (~1 faster); added CPU `A` (atomic) extension support (only `lr.w` and `sc.w` instructions yet); added `lock` signal to CPU and processor's external bus interface |
 | 28.11.2020 | 1.4.7.6 | Split ALU core operations: shortened  critical path - replaced ALU output 8:1 mux by a 4:1 mux |
