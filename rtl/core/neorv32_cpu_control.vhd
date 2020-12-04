@@ -176,8 +176,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     --
     is_ci        : std_ulogic; -- current instruction is de-compressed instruction
     is_ci_nxt    : std_ulogic;
-    is_jump      : std_ulogic; -- current instruction is jump instruction
-    is_jump_nxt  : std_ulogic;
     is_cp_op     : std_ulogic; -- current instruction is a co-processor operation
     is_cp_op_nxt : std_ulogic;
     --
@@ -632,7 +630,6 @@ begin
       execute_engine.state_prev <= execute_engine.state;
       execute_engine.i_reg      <= execute_engine.i_reg_nxt;
       execute_engine.is_ci      <= execute_engine.is_ci_nxt;
-      execute_engine.is_jump    <= execute_engine.is_jump_nxt;
       execute_engine.is_cp_op   <= execute_engine.is_cp_op_nxt;
       -- next PC (next linear instruction) --
       if (execute_engine.is_ci = '1') then -- compressed instruction?
@@ -692,7 +689,6 @@ begin
     -- arbiter defaults --
     execute_engine.state_nxt    <= execute_engine.state;
     execute_engine.i_reg_nxt    <= execute_engine.i_reg;
-    execute_engine.is_jump_nxt  <= '0';
     execute_engine.is_cp_op_nxt <= execute_engine.is_cp_op;
     execute_engine.is_ci_nxt    <= execute_engine.is_ci;
     execute_engine.sleep_nxt    <= execute_engine.sleep;
@@ -845,8 +841,7 @@ begin
             case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is -- actual ALU.logic operation (re-coding)
               when funct3_xor_c => ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_xor_c; -- XOR(I)
               when funct3_or_c  => ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_or_c;  -- OR(I)
-              when funct3_and_c => ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_and_c; -- AND(I)
-              when others       => ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_movb_c; -- undefined
+              when others       => ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_and_c; -- AND(I)
             end case;
 
             -- cp access? --
@@ -918,8 +913,7 @@ begin
             end if;
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB (branch target address offset)
             --
-            execute_engine.is_jump_nxt <= execute_engine.i_reg(instr_opcode_lsb_c+2); -- is this is a jump operation? (for JAL/JALR)
-            execute_engine.state_nxt   <= BRANCH;
+            execute_engine.state_nxt <= BRANCH;
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
@@ -943,7 +937,7 @@ begin
 
       when SYS_ENV => -- system environment operation - execution
       -- ------------------------------------------------------------
-        execute_engine.pc_mux_sel <= "11"; -- csr.mepc (only for MRET)
+        execute_engine.pc_mux_sel <= "11"; -- csr.mepc (only relevant for MRET)
         case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
           when funct12_ecall_c => -- ECALL
             trap_ctrl.env_call <= '1';
@@ -951,7 +945,7 @@ begin
             trap_ctrl.break_point <= '1';
           when funct12_mret_c => -- MRET
             trap_ctrl.env_end    <= '1';
-            execute_engine.pc_we <= '1'; -- linear next PC
+            execute_engine.pc_we <= '1'; -- update PC from MEPC
             fetch_engine.reset   <= '1';
             execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
           when funct12_wfi_c => -- WFI
@@ -1002,10 +996,10 @@ begin
         ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_movb_c; -- MOVB
         ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c)   <= alu_func_cmd_logic_c; -- actual ALU operation = MOVB
         ctrl_nxt(ctrl_rf_in_mux_msb_c)                       <= '0'; -- RF input = ALU result
-        ctrl_nxt(ctrl_rf_wb_en_c)                            <= execute_engine.is_jump; -- valid RF write-back? (is jump-and-link?)
+        ctrl_nxt(ctrl_rf_wb_en_c)                            <= execute_engine.i_reg(instr_opcode_lsb_c+2); -- valid RF write-back? (is jump-and-link?)
         -- destination address --
         execute_engine.pc_mux_sel <= "01"; -- alu.add = branch/jump destination
-        if (execute_engine.is_jump = '1') or (execute_engine.branch_taken = '1') then
+        if (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') or (execute_engine.branch_taken = '1') then -- JAL/JALR or taken branch
           execute_engine.pc_we      <= '1'; -- update PC
           fetch_engine.reset        <= '1'; -- trigger new instruction fetch from modified PC
           execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
@@ -1018,7 +1012,7 @@ begin
       when FENCE_OP => -- fence operations - execution
       -- ------------------------------------------------------------
         execute_engine.state_nxt  <= SYS_WAIT;
-        execute_engine.pc_mux_sel <= "00"; -- linear next PC = "refetch" next instruction
+        execute_engine.pc_mux_sel <= "00"; -- linear next PC = "refetch" next instruction (only relevant for fence.i)
         -- FENCE.I --
         if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) and (CPU_EXTENSION_RISCV_Zifencei = true) then
           execute_engine.pc_we        <= '1';
