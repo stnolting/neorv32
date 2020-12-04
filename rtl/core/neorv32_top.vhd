@@ -173,7 +173,7 @@ architecture neorv32_top_rtl of neorv32_top is
     err    : std_ulogic; -- bus transfer error
     fence  : std_ulogic; -- fence(i) instruction executed
     priv   : std_ulogic_vector(1 downto 0); -- current privilege level
-    src    : std_ulogic; -- access source
+    src    : std_ulogic; -- access source (1=instruction fetch, 0=data access)
     lock   : std_ulogic; -- locked/exclusive (=atomic) access
   end record;
   signal cpu_i, cpu_d, p_bus : bus_interface_t;
@@ -375,8 +375,8 @@ begin
   );
 
   -- misc --
-  cpu_i.src <= '1';
-  cpu_d.src <= '0';
+  cpu_i.src <= '1'; -- initialized but unused
+  cpu_d.src <= '0'; -- initialized but unused
 
   -- advanced memory control --
   fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
@@ -600,9 +600,9 @@ begin
   -- IO Access? -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   io_acc  <= '1' when (p_bus.addr(data_width_c-1 downto index_size_f(io_size_c)) = io_base_c(data_width_c-1 downto index_size_f(io_size_c))) else '0';
-  io_rden <= io_acc and p_bus.re;
+  io_rden <= io_acc and p_bus.re and (not p_bus.src); -- PMA: no_execute for IO region
   -- the peripheral/IO devices in the IO area can only be written in word mode (reduces HW complexity)
-  io_wren <= io_acc and p_bus.we and p_bus.ben(3) and p_bus.ben(2) and p_bus.ben(1) and p_bus.ben(0);
+  io_wren <= io_acc and p_bus.we and and_all_f(p_bus.ben) and (not p_bus.src); -- PMA: no_execute for IO region
 
 
   -- General Purpose Input/Output Port (GPIO) -----------------------------------------------
