@@ -109,9 +109,8 @@ int main() {
   return 0;
 #endif
 
-
-  register uint32_t tmp_a, tmp_b, tmp_c;
-  uint32_t i, j;
+  register uint32_t tmp_a, tmp_b;
+  int i;
   volatile uint32_t dummy_dst __attribute__((unused));
 
   union {
@@ -324,12 +323,12 @@ int main() {
   cnt_test++;
 
   // start timing
-  tmp_a = neorv32_cpu_csr_read(CSR_CYCLE);
+  neorv32_cpu_csr_write(CSR_MCYCLE, 0);
 
   // this store access will timeout
   MMR_UNREACHABLE = 0;
 
-  tmp_a = neorv32_cpu_csr_read(CSR_CYCLE) - tmp_a;
+  tmp_a = neorv32_cpu_csr_read(CSR_MCYCLE);
 
   // make sure there was a time-out
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) {
@@ -1071,34 +1070,16 @@ int main() {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
     cnt_test++;
 
-    // check min granulartiy
-    neorv32_cpu_csr_write(CSR_PMPCFG0, 0);
-    neorv32_cpu_csr_write(CSR_PMPADDR0, 0xffffffff);
-    tmp_a = neorv32_cpu_csr_read(0x3b0);
-
-    // find least-significat set bit
-    for (i=31; i!=0; i--) {
-      if (((tmp_a >> i) & 1) == 0) {
-        break;
-      }
-    }
+    // find out mininmal region size (granulartiy)
+    tmp_b = neorv32_cpu_pmp_get_granularity();
 
     tmp_a = SYSINFO_DSPACE_BASE; // base address of protected region
+    neorv32_uart_printf("Creating protected page (NAPOT, [!X,!W,R], %u bytes) @ 0x%x: ", tmp_b, tmp_a);
 
-    tmp_b = 0;
-    for (j=i; j!=0; j--) {
-      tmp_b = tmp_b << 1;
-      tmp_b = tmp_b | 1;
-    }
-    tmp_c = tmp_a & (~tmp_b); // clear LSBs in base address
-    tmp_c = tmp_c |   tmp_b;  // set region size config
+    // configure
+    int pmp_return = neorv32_cpu_pmp_configure_region(0, tmp_a, tmp_b, 0b00011001); // NAPOT, read permission, NO write and NO execute permissions
 
-    neorv32_uart_printf("Creating protected page (NAPOT, [!X,!W,R], %u bytes) @ 0x%x (PMPADDR = 0x%x): ", (uint32_t)(1 << (i+1+2)), tmp_a, tmp_c);
-
-    neorv32_cpu_csr_write(CSR_PMPADDR0, tmp_c); // 64k area @ 0xFFFFA000
-    neorv32_cpu_csr_write(CSR_PMPCFG0, 0b00011001); // NAPOT, read permission, NO write and NO execute permissions
-
-    if ((neorv32_cpu_csr_read(CSR_PMPADDR0) == tmp_c) && (neorv32_cpu_csr_read(CSR_PMPCFG0) == 0b00011001) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+    if ((pmp_return == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
       test_ok();
     }
     else {
