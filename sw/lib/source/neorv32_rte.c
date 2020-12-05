@@ -312,26 +312,8 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("\n\nPhysical memory protection: ");
   if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_PMP))  {
 
-    // check granulartiy
-    neorv32_cpu_csr_write(CSR_PMPCFG0, 0);
-    neorv32_cpu_csr_write(CSR_PMPADDR0, 0xffffffff);
-    uint32_t pmp_test_g = neorv32_cpu_csr_read(0x3b0);
-
-    // find least-significat set bit
-    for (i=31; i!=0; i--) {
-      if (((pmp_test_g >> i) & 1) == 0) {
-        break;
-      }
-    }
-
-    neorv32_uart_printf("\n- Min granularity: ");
-    if (i < 29) {
-      neorv32_uart_printf("%u bytes per region\n", (uint32_t)(1 << (i+1+2)));
-    }
-    else {
-      neorv32_uart_printf("2^%u bytes per region\n", i+1+2);
-    }
-    
+    // get minimal region siz (granulartiy)
+    neorv32_uart_printf("\n- Minimal granularity: %u bytes per region\n", neorv32_cpu_pmp_get_granularity());
 
     // test available modes
     neorv32_uart_printf("- Mode TOR:   ");
