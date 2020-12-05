@@ -85,9 +85,7 @@ begin
     FAST_MUL_EN                  => false, -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => false, -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      => false,  -- implement PMP?
-    PMP_NUM_REGIONS              => 4,      -- number of regions (max 16)
-    PMP_GRANULARITY              => 14,     -- region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+    PMP_USE                      => true,  -- implement PMP?
     -- Internal Instruction memory --
     MEM_INT_IMEM_USE             => true,    -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => 16*1024, -- size of processor-internal instruction memory in bytes

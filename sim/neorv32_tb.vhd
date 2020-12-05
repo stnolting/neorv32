@@ -186,8 +186,6 @@ begin
     FAST_SHIFT_EN                => false,         -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
     PMP_USE                      => true,          -- implement PMP?
-    PMP_NUM_REGIONS              => 4,             -- number of regions (max 16)
-    PMP_GRANULARITY              => 14,            -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
     -- Internal Instruction memory --
     MEM_INT_IMEM_USE             => int_imem_c ,   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => imem_size_c,   -- size of processor-internal instruction memory in bytes

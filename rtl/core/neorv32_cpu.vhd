@@ -69,9 +69,7 @@ entity neorv32_cpu is
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      : boolean := false; -- implement PMP?
-    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
-    PMP_GRANULARITY              : natural := 14     -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+    PMP_USE                      : boolean := false  -- implement PMP?
   );
   port (
     -- global control --
@@ -159,23 +157,28 @@ begin
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report "NEORV32 CPU CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
   -- PMP requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
-  -- PMP regions --
-  assert not ((PMP_NUM_REGIONS > pmp_max_r_c) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions out of valid range." severity error;
-  -- PMP granulartiy --
-  assert not (((PMP_GRANULARITY < 1) or (PMP_GRANULARITY > 32)) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Invalid PMP granulartiy (0 < PMP_GRANULARITY < 33)." severity error;
+
   -- Instruction prefetch buffer size --
   assert not (is_power_of_two_f(ipb_entries_c) = false) report "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <ipb_entries_c> has to be a power of two." severity error;
   -- A extension - only lr.w and sc.w supported yet --
   assert not (CPU_EXTENSION_RISCV_A = true) report "NEORV32 CPU CONFIG WARNING! Atomic operations extension (A) only supports >lr.w< and >sc.w< instructions yet." severity warning;
 
+  -- PMP regions check --
+  assert not ((pmp_num_regions_c > pmp_max_r_c) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <pmp_num_regions_c> out of valid range." severity error;
+  -- PMP granulartiy --
+  assert not ((is_power_of_two_f(pmp_min_granularity_c) = false) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! PMP granulartiy has to be a power of two." severity error;
+  assert not ((pmp_min_granularity_c < 8) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! PMP granulartiy has to be >= 8 bytes." severity error;
+
+  -- PMP notifier --
+  assert not (PMP_USE = true) report "NEORV32 CPU CONFIG NOTE: Implementing physical memory protection (PMP) with " & integer'image(pmp_num_regions_c) & " regions and " & integer'image(pmp_min_granularity_c) & " bytes minimal region size (granulartiy)." severity note;
 
   -- Control Unit ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_control_inst: neorv32_cpu_control
   generic map (
     -- General --
-    HW_THREAD_ID                 => HW_THREAD_ID,    -- hardware thread id
-    CPU_BOOT_ADDR                => CPU_BOOT_ADDR,   -- cpu boot address
+    HW_THREAD_ID                 => HW_THREAD_ID,  -- hardware thread id
+    CPU_BOOT_ADDR                => CPU_BOOT_ADDR, -- cpu boot address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
@@ -185,9 +188,7 @@ begin
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     -- Physical memory protection (PMP) --
-    PMP_USE                      => PMP_USE,         -- implement physical memory protection?
-    PMP_NUM_REGIONS              => PMP_NUM_REGIONS, -- number of regions (1..4)
-    PMP_GRANULARITY              => PMP_GRANULARITY  -- granularity (0=none, 1=8B, 2=16B, 3=32B, ...)
+    PMP_USE                      => PMP_USE        -- implement physical memory protection?
   )
   port map (
     -- global control --
@@ -359,9 +360,7 @@ begin
   generic map (
     CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
     -- Physical memory protection (PMP) --
-    PMP_USE               => PMP_USE,               -- implement physical memory protection?
-    PMP_NUM_REGIONS       => PMP_NUM_REGIONS,       -- number of regions (1..4)
-    PMP_GRANULARITY       => PMP_GRANULARITY        -- granularity (0=none, 1=8B, 2=16B, 3=32B, ...)
+    PMP_USE               => PMP_USE                -- implement physical memory protection?
   )
   port map (
     -- global control --

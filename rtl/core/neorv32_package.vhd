@@ -40,19 +40,28 @@ package neorv32_package is
 
   -- Architecture Configuration -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant ispace_base_c  : std_ulogic_vector(31 downto 0) := x"00000000"; -- default instruction memory address space base address
-  constant dspace_base_c  : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
-  constant bus_timeout_c  : natural := 127; -- cycles after which an *unacknowledged* bus access will timeout and trigger an access exception
-  constant wb_pipe_mode_c : boolean := false; -- false: classic/standard wishbone mode, true: pipelined wishbone mode
-  constant ipb_entries_c  : natural := 2; -- entries in instruction prefetch buffer, must be a power of 2, default=2
-  constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero by the CPU HW
+  -- address space --
+  constant ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- default instruction memory address space base address
+  constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
+
+  -- (exteranl) bus interface --
+  constant bus_timeout_c  : natural := 127; -- cycles after which an *unacknowledged* bus access will timeout and trigger a bus access exception
+  constant wb_pipe_mode_c : boolean := false; -- *external* bus protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+
+  -- CPU core --
+  constant ipb_entries_c : natural := 2; -- entries in CPU instruction prefetch buffer, must be a power of 2, default=2
+
+  -- physical memory protection (PMP) --
+  constant pmp_num_regions_c     : natural := 2; -- number of regions (1..8)
+  constant pmp_min_granularity_c : natural := 64*1024; -- minimal region size (granularity), min 8 bytes, has to be a power of 2
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant data_width_c : natural := 32; -- data width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01040802"; -- no touchy!
-  constant pmp_max_r_c  : natural := 8; -- max PMP regions - FIXED!
-  constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
+  constant data_width_c   : natural := 32; -- data width - do not change!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040804"; -- no touchy!
+  constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
+  constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
+  constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero by the HW
 
   -- Helper Functions -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -499,8 +508,6 @@ package neorv32_package is
       FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
       -- Physical Memory Protection (PMP) --
       PMP_USE                      : boolean := false;  -- implement PMP?
-      PMP_NUM_REGIONS              : natural := 4;      -- number of regions (max 8)
-      PMP_GRANULARITY              : natural := 14;     -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
       -- Internal Instruction memory --
       MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
@@ -583,9 +590,7 @@ package neorv32_package is
       FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
       -- Physical Memory Protection (PMP) --
-      PMP_USE                      : boolean := false; -- implement PMP?
-      PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
-      PMP_GRANULARITY              : natural := 14     -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+      PMP_USE                      : boolean := false  -- implement PMP?
     );
     port (
       -- global control --
@@ -644,9 +649,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
       -- Physical memory protection (PMP) --
-      PMP_USE                      : boolean := false; -- implement physical memory protection?
-      PMP_NUM_REGIONS              : natural := 4; -- number of regions (1..4)
-      PMP_GRANULARITY              : natural := 0  -- granularity (0=none, 1=8B, 2=16B, 3=32B, ...)
+      PMP_USE                      : boolean := false  -- implement physical memory protection?
     );
     port (
       -- global control --
@@ -774,11 +777,9 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_bus
     generic (
-      CPU_EXTENSION_RISCV_C : boolean := true; -- implement compressed extension?
+      CPU_EXTENSION_RISCV_C : boolean := true;  -- implement compressed extension?
       -- Physical memory protection (PMP) --
-      PMP_USE               : boolean := false; -- implement physical memory protection?
-      PMP_NUM_REGIONS       : natural := 4; -- number of regions (1..4)
-      PMP_GRANULARITY       : natural := 0  -- granularity (1=8B, 2=16B, 3=32B, ...)
+      PMP_USE               : boolean := false  -- implement physical memory protection?
     );
     port (
       -- global control --
