@@ -98,6 +98,7 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 * More support for FreeRTOS
 * Maybe port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
 * Implement further RISC-V (or custom?) CPU extensions (like floating-point extension `F`)
+* Port new RISC-V compliance test framework
 * ...
 * [Ideas?](#Contribute)
 
@@ -289,7 +290,7 @@ The FPGA-specific memory components can be found in [`rtl/fpga_specific`](https:
 * The clock frequencies marked with a "c" are constrained clocks. The remaining ones are _f_max_ results from the place and route timing reports.
 * The Upduino and the Arty board have on-board SPI flash memories for storing the FPGA configuration. These device can also be used by the default NEORV32
 bootloader to store and automatically boot an application program after reset (both tested successfully).
-* The setups with `PMP` implement 2 regions with a minimal granularity of 32kB.
+* The setups with `PMP` implement 2 regions with a minimal granularity of 64kB.
 
 
 

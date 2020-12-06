@@ -56,9 +56,7 @@ entity neorv32_cpu_stdlogic is
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      : boolean := false; -- implement PMP?
-    PMP_NUM_REGIONS              : natural := 4;     -- number of regions (max 8)
-    PMP_GRANULARITY              : natural := 14     -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+    PMP_USE                      : boolean := false  -- implement PMP?
   );
   port (
     -- global control --
@@ -149,9 +147,7 @@ begin
     FAST_MUL_EN                  => FAST_MUL_EN,                  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,                -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      => PMP_USE,                      -- implement PMP?
-    PMP_NUM_REGIONS              => PMP_NUM_REGIONS,              -- number of regions (max 8)
-    PMP_GRANULARITY              => PMP_GRANULARITY               -- minimal region granularity (1=8B, 2=16B, 3=32B, ...) default is 64k
+    PMP_USE                      => PMP_USE                       -- implement PMP?
   )
   port map (
     -- global control --

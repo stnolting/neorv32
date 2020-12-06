@@ -45,9 +45,7 @@ entity neorv32_cpu_bus is
   generic (
     CPU_EXTENSION_RISCV_C : boolean := true; -- implement compressed extension?
     -- Physical memory protection (PMP) --
-    PMP_USE               : boolean := false; -- implement physical memory protection?
-    PMP_NUM_REGIONS       : natural := 4; -- number of regions (1..4)
-    PMP_GRANULARITY       : natural := 16 -- granularity (1=8B, 2=16B, 3=32B, ...)
+    PMP_USE               : boolean := false -- implement physical memory protection?
   );
   port (
     -- global control --
@@ -110,6 +108,9 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
 --constant pmp_na4_mode_c   : std_ulogic_vector(1 downto 0) := "10"; -- naturally aligned four-byte region
   constant pmp_napot_mode_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (>= 8 bytes)
 
+  -- PMP granularity --
+  constant pmp_g_c : natural := index_size_f(pmp_min_granularity_c);
+
   -- PMP configuration register bits --
   constant pmp_cfg_r_c  : natural := 0; -- read permit
   constant pmp_cfg_w_c  : natural := 1; -- write permit
@@ -140,18 +141,17 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   signal i_arbiter, d_arbiter : bus_arbiter_t;
 
   -- physical memory protection --
-  type pmp_addr34_t is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c+1 downto 0);
-  type pmp_addr_t   is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-1 downto 0);
+  type pmp_addr_t is array (0 to pmp_num_regions_c-1) of std_ulogic_vector(data_width_c-1 downto 0);
   type pmp_t is record
-    addr_mask     : pmp_addr34_t; -- 34-bit physical address
-    region_base   : pmp_addr_t; -- masked region base address for comparator
+    addr_mask     : pmp_addr_t;
+    region_base   : pmp_addr_t; -- region config base address
     region_i_addr : pmp_addr_t; -- masked instruction access base address for comparator
     region_d_addr : pmp_addr_t; -- masked data access base address for comparator
-    i_match       : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for instruction interface
-    d_match       : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for data interface
-    if_fault      : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for fetch operation
-    ld_fault      : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for load operation
-    st_fault      : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for store operation
+    i_match       : std_ulogic_vector(pmp_num_regions_c-1 downto 0); -- region match for instruction interface
+    d_match       : std_ulogic_vector(pmp_num_regions_c-1 downto 0); -- region match for data interface
+    if_fault      : std_ulogic_vector(pmp_num_regions_c-1 downto 0); -- region access fault for fetch operation
+    ld_fault      : std_ulogic_vector(pmp_num_regions_c-1 downto 0); -- region access fault for load operation
+    st_fault      : std_ulogic_vector(pmp_num_regions_c-1 downto 0); -- region access fault for store operation
   end record;
   signal pmp : pmp_t;
 
@@ -294,8 +294,9 @@ begin
         d_arbiter.timeout   <= std_ulogic_vector(to_unsigned(bus_timeout_c, index_size_f(bus_timeout_c)));
       else -- in progress
         d_arbiter.timeout   <= std_ulogic_vector(unsigned(d_arbiter.timeout) - 1);
-        d_arbiter.err_align <= (d_arbiter.err_align or d_misaligned)                                     and (not ctrl_i(ctrl_bus_derr_ack_c));
-        d_arbiter.err_bus   <= (d_arbiter.err_bus   or (not or_all_f(d_arbiter.timeout)) or d_bus_err_i) and (not ctrl_i(ctrl_bus_derr_ack_c));
+        d_arbiter.err_align <= (d_arbiter.err_align or d_misaligned) and (not ctrl_i(ctrl_bus_derr_ack_c));
+        d_arbiter.err_bus   <= (d_arbiter.err_bus   or (not or_all_f(d_arbiter.timeout)) or d_bus_err_i or 
+                                (st_pmp_fault and d_arbiter.wr_req) or (ld_pmp_fault and d_arbiter.rd_req)) and (not ctrl_i(ctrl_bus_derr_ack_c));
         if (d_bus_ack_i = '1') or (ctrl_i(ctrl_bus_derr_ack_c) = '1') then -- wait for normal termination / CPU abort
           d_arbiter.wr_req <= '0';
           d_arbiter.rd_req <= '0';
@@ -345,8 +346,8 @@ begin
         i_arbiter.timeout   <= std_ulogic_vector(to_unsigned(bus_timeout_c, index_size_f(bus_timeout_c)));
       else -- in progress
         i_arbiter.timeout   <= std_ulogic_vector(unsigned(i_arbiter.timeout) - 1);
-        i_arbiter.err_align <= (i_arbiter.err_align or i_misaligned)                                     and (not ctrl_i(ctrl_bus_ierr_ack_c));
-        i_arbiter.err_bus   <= (i_arbiter.err_bus   or (not or_all_f(i_arbiter.timeout)) or i_bus_err_i) and (not ctrl_i(ctrl_bus_ierr_ack_c));
+        i_arbiter.err_align <= (i_arbiter.err_align or i_misaligned)                                                     and (not ctrl_i(ctrl_bus_ierr_ack_c));
+        i_arbiter.err_bus   <= (i_arbiter.err_bus   or (not or_all_f(i_arbiter.timeout)) or i_bus_err_i or if_pmp_fault) and (not ctrl_i(ctrl_bus_ierr_ack_c));
         if (i_bus_ack_i = '1') or (ctrl_i(ctrl_bus_ierr_ack_c) = '1') then -- wait for normal termination / CPU abort
           i_arbiter.rd_req <= '0';
         end if;
@@ -384,56 +385,36 @@ begin
 
   -- Physical Memory Protection (PMP) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- compute address masks --
+  -- compute address masks (ITERATIVE!!!) --
   pmp_masks: process(clk_i)
   begin
-    if rising_edge(clk_i) then -- address configuration (not the actual address check!) has a latency of +1 cycles
-      for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
-        pmp.addr_mask(r) <= (others => '0'); -- default
-        for i in PMP_GRANULARITY+1 to 33 loop
-          if (i = PMP_GRANULARITY+1) then
-            pmp.addr_mask(r)(i) <= '0';
-          else -- current bit = not AND(all previous bits)
-            pmp.addr_mask(r)(i) <= not and_all_f(pmp_addr_i(r)(i-1 downto PMP_GRANULARITY));
-          end if;
+    if rising_edge(clk_i) then -- address mask computation (not the actual address check!) has a latency of max +32 cycles
+      for r in 0 to pmp_num_regions_c-1 loop -- iterate over all regions
+        pmp.addr_mask(r) <= (others => '0');
+        for i in pmp_g_c to data_width_c-1 loop
+          pmp.addr_mask(r)(i) <= pmp.addr_mask(r)(i-1) or (not pmp_addr_i(r)(i-1));
         end loop; -- i
       end loop; -- r
     end if;
   end process pmp_masks;
 
 
-  -- compute operands for comparator --
-  pmp_prepare_check:
-  for r in 0 to PMP_NUM_REGIONS-1 generate -- iterate over all regions
-    -- ignore lowest 3 bits of access addresses -> minimal region size = 8 bytes
-    pmp.region_i_addr(r) <= (fetch_pc_i(31 downto 3) & "000") and pmp.addr_mask(r)(33 downto 2);
-    pmp.region_d_addr(r) <= (mar(31 downto 3) & "000")        and pmp.addr_mask(r)(33 downto 2);
-    pmp.region_base(r)   <= pmp_addr_i(r)(33 downto 2)        and pmp.addr_mask(r)(33 downto 2);
+  -- address access check --
+  pmp_address_check:
+  for r in 0 to pmp_num_regions_c-1 generate -- iterate over all regions
+    pmp.region_i_addr(r) <= fetch_pc_i                             and pmp.addr_mask(r);
+    pmp.region_d_addr(r) <= mar                                    and pmp.addr_mask(r);
+    pmp.region_base(r)   <= pmp_addr_i(r)(data_width_c+1 downto 2) and pmp.addr_mask(r);
+    --
+    pmp.i_match(r) <= '1' when (pmp.region_i_addr(r)(data_width_c-1 downto pmp_g_c) = pmp.region_base(r)(data_width_c-1 downto pmp_g_c)) else '0';
+    pmp.d_match(r) <= '1' when (pmp.region_d_addr(r)(data_width_c-1 downto pmp_g_c) = pmp.region_base(r)(data_width_c-1 downto pmp_g_c)) else '0';
   end generate; -- r
-
-
-  -- check for access address match --
-  pmp_addr_check: process (pmp)
-  begin
-    for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
-      -- instruction interface --
-      pmp.i_match(r) <= '0';
-      if (pmp.region_i_addr(r)(31 downto PMP_GRANULARITY+2) = pmp.region_base(r)(31 downto PMP_GRANULARITY+2)) then
-        pmp.i_match(r) <= '1';
-      end if;
-      -- data interface --
-      pmp.d_match(r) <= '0';
-      if (pmp.region_d_addr(r)(31 downto PMP_GRANULARITY+2) = pmp.region_base(r)(31 downto PMP_GRANULARITY+2)) then
-        pmp.d_match(r) <= '1';
-      end if;
-    end loop; -- r
-  end process pmp_addr_check;
 
 
   -- check access type and regions's permissions --
   pmp_check_permission: process(pmp, pmp_ctrl_i, ctrl_i)
   begin
-    for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
+    for r in 0 to pmp_num_regions_c-1 loop -- iterate over all regions
       if ((ctrl_i(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c) = priv_mode_u_c) or (pmp_ctrl_i(r)(pmp_cfg_l_c) = '1')) and -- user privilege level or locked pmp entry -> enforce permissions also for machine mode
          (pmp_ctrl_i(r)(pmp_cfg_ah_c downto pmp_cfg_al_c) /= pmp_off_mode_c) then -- active entry
         pmp.if_fault(r) <= pmp.i_match(r) and (not pmp_ctrl_i(r)(pmp_cfg_x_c)); -- fetch access match no execute permission

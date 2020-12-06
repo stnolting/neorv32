@@ -69,6 +69,8 @@
 #define AUTOBOOT_TIMEOUT       8
 /** Set to 0 to disable bootloader status LED */
 #define STATUS_LED_EN          (1)
+/** SPI_DIRECT_BOOT_EN: Define/uncomment to enable SPI direct boot (disables the entire user console!) */
+//#define SPI_DIRECT_BOOT_EN
 /** Bootloader status LED at GPIO output port */
 #define STATUS_LED             (0)
 /** SPI flash boot image base address (warning! address might wrap-around!) */
@@ -181,8 +183,24 @@ void spi_flash_write_addr(uint32_t addr);
  **************************************************************************/
 int main(void) {
 
+#ifdef __riscv_compressed
+  #warning In order to allow the bootloader to run on any CPU configuration it should be compiled using the base ISA (rv32i/e) only.
+#endif
+
+  // global variable for executable size; 0 means there is no exe available
+  exe_available = 0;
+
   // ------------------------------------------------
-  // Processor hardware initialization
+  // Minimal CPU hardware initialization
+  // - all IO devices are reset and disabled by the crt0 code
+  // ------------------------------------------------
+
+  // confiure trap handler (bare-metal, no neorv32 rte available)
+  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&bootloader_trap_handler));
+
+
+  // ------------------------------------------------
+  // Minimal processor hardware initialization
   // - all IO devices are reset and disabled by the crt0 code
   // ------------------------------------------------
 
@@ -197,25 +215,39 @@ int main(void) {
     neorv32_spi_setup(CLK_PRSC_128, 0, 0, 0);
   }
 
+  if (STATUS_LED_EN == 1) {
+    // activate status LED, clear all others
+    neorv32_gpio_port_set(1 << STATUS_LED);
+  }
+
   // init UART (no interrupts)
   neorv32_uart_setup(BAUD_RATE, 0, 0);
 
   // Configure machine system timer interrupt for ~2Hz
   neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (clock_speed/4));
 
-  // confiure trap handler (bare-metal, no neorv32 rte available)
-  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&bootloader_trap_handler));
-
   neorv32_cpu_csr_write(CSR_MIE, 1 << CPU_MIE_MTIE); // activate MTIME IRQ source
   neorv32_cpu_eint(); // enable global interrupts
 
-  if (STATUS_LED_EN == 1) {
-    // activate status LED, clear all others
-    neorv32_gpio_port_set(1 << STATUS_LED);
-  }
 
-  // global variable to executable size; 0 means there is no exe available
-  exe_available = 0;
+  // ------------------------------------------------
+  // Fast boot mode: Direct SPI boot
+  // Bootloader will directly boot and execute image from SPI memory.
+  // No user UART console is available in this mode!
+  // ------------------------------------------------
+#ifdef SPI_DIRECT_BOOT_EN
+  #warning Compiling bootloader in 'SPI direct boot mode'. Bootloader will directly boot from SPI memory. No user UART console will be available.
+
+  neorv32_uart_print("\nNEORV32 bootloader\nAccessing SPI flash at ");
+  print_hex_word((uint32_t)SPI_FLASH_BOOT_ADR);
+  neorv32_uart_print("\n");
+
+  get_exe(EXE_STREAM_FLASH);
+  neorv32_uart_print("\n");
+  start_app();
+
+  return 0;
+#endif
 
 
   // ------------------------------------------------
@@ -352,9 +384,9 @@ void start_app(void) {
     return;
   }
 
-  // no need to shut down or reset the used peripherals
+  // no need to shut down/reset the used peripherals
   // no need to disable interrupt sources
-  // -> this will be done by application's crt0
+  // -> crt0 will do a clean CPU/processor reset/setup
 
   // deactivate global IRQs
   neorv32_cpu_dint();
@@ -363,12 +395,6 @@ void start_app(void) {
 
   // wait for UART to finish transmitting
   while ((UART_CT & (1<<UART_CT_TX_BUSY)) != 0);
-
-  // reset performance counters (to benchmark actual application)
-  asm volatile ("csrw mcycle,    zero"); // also clears 'cycle'
-  asm volatile ("csrw mcycleh,   zero"); // also clears 'cycleh'
-  asm volatile ("csrw minstret,  zero"); // also clears 'instret'
-  asm volatile ("csrw minstreth, zero"); // also clears 'instreth'
 
   // start app at instruction space base address
   register uint32_t app_base = SYSINFO_ISPACE_BASE;
@@ -668,7 +694,7 @@ void spi_flash_write_word(uint32_t addr, uint32_t wdata) {
 
   data.uint32 = wdata;
 
-  uint32_t i;
+  int i;
   for (i=0; i<4; i++) {
     spi_flash_write_byte(addr + i, data.uint8[3-i]);
   }
@@ -761,7 +787,8 @@ void spi_flash_write_addr(uint32_t addr) {
 
   address.uint32 = addr;
 
-  neorv32_spi_trans(address.uint8[2]);
-  neorv32_spi_trans(address.uint8[1]);
-  neorv32_spi_trans(address.uint8[0]);
+  int i;
+  for (i=2; i>=0; i--) {
+    neorv32_spi_trans(address.uint8[i]);
+  }
 }

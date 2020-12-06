@@ -295,3 +295,123 @@ int __attribute__ ((noinline)) neorv32_cpu_atomic_cas(uint32_t addr, uint32_t ex
   return 1; // A extension not implemented -Y always fail
 #endif
 }
+
+
+/**********************************************************************//**
+ * Physical memory protection (PMP): Get minimal region size (granularity). 
+ *
+ * @warning This function overrides PMPCFG0[0] and PMPADDR0 CSRs.
+ *
+ * @warning This function requires the PMP CPU extension.
+ *
+ * @return Returns minimal region size in bytes; Returns 0 on failure.
+ **************************************************************************/
+uint32_t neorv32_cpu_pmp_get_granularity(void) {
+
+  if ((neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_PMP)) == 0) {
+    return 0; // PMP not implemented
+  }
+
+  // check min granulartiy
+  uint32_t tmp = neorv32_cpu_csr_read(CSR_PMPCFG0);
+  tmp &= 0xffffff00; // disable entry 0
+  neorv32_cpu_csr_write(CSR_PMPCFG0, tmp);
+  neorv32_cpu_csr_write(CSR_PMPADDR0, 0xffffffff);
+  uint32_t tmp_a = neorv32_cpu_csr_read(CSR_PMPADDR0);
+
+  uint32_t i;
+
+  // find least-significat set bit
+  for (i=31; i!=0; i--) {
+    if (((tmp_a >> i) & 1) == 0) {
+      break;
+    }
+  }
+
+  return (uint32_t)(1 << (i+1+2));
+}
+
+
+/**********************************************************************//**
+ * Physical memory protection (PMP): Configure region.
+ *
+ * @note Using NAPOT mode - page base address has to be naturally aligned.
+ *
+ * @warning This function requires the PMP CPU extension.
+ *
+ * @param[in] index Region number (index, 0..max_regions-1).
+ * @param[in] base Region base address (has to be naturally aligned!).
+ * @param[in] size Region size, has to be a power of 2 (min 8 bytes or according to HW's PMP.granularity configuration).
+ * @param[in] config Region configuration (attributes) byte (for PMPCFGx).
+ * @return Returns 0 on success, 1 on failure.
+ **************************************************************************/
+int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint32_t size, uint8_t config) {
+
+  if ((neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_PMP)) == 0) {
+    return 1; // PMP not implemented
+  }
+
+  if (size < 8) {
+    return 1; // minimal region size is 8 bytes
+  }
+
+  if ((size & (size - 1)) != 0) {
+    return 1; // region size is not a power of two
+  }
+
+  // setup configuration
+  uint32_t tmp;
+  uint32_t config_int  = ((uint32_t)config) << ((index%4)*8);
+  uint32_t config_mask = ((uint32_t)0xFF)   << ((index%4)*8);
+  config_mask = ~config_mask;
+
+  // clear old configuration
+  if (index < 3) {
+    tmp = neorv32_cpu_csr_read(CSR_PMPCFG0);
+    tmp &= config_mask; // clear old config
+    neorv32_cpu_csr_write(CSR_PMPCFG0, tmp);
+  }
+  else {
+    tmp = neorv32_cpu_csr_read(CSR_PMPCFG1);
+    tmp &= config_mask; // clear old config
+    neorv32_cpu_csr_write(CSR_PMPCFG1, tmp);
+  }
+
+  // set base address and region size
+  uint32_t addr_mask = ~((size - 1) >> 2);
+  uint32_t size_mask = (size - 1) >> 3;
+
+  tmp = base & addr_mask;
+  tmp = tmp | size_mask;
+
+  switch(index & 7) {
+    case 0: neorv32_cpu_csr_write(CSR_PMPADDR0, tmp); break;
+    case 1: neorv32_cpu_csr_write(CSR_PMPADDR1, tmp); break;
+    case 2: neorv32_cpu_csr_write(CSR_PMPADDR2, tmp); break;
+    case 3: neorv32_cpu_csr_write(CSR_PMPADDR3, tmp); break;
+    case 4: neorv32_cpu_csr_write(CSR_PMPADDR4, tmp); break;
+    case 5: neorv32_cpu_csr_write(CSR_PMPADDR5, tmp); break;
+    case 6: neorv32_cpu_csr_write(CSR_PMPADDR6, tmp); break;
+    case 7: neorv32_cpu_csr_write(CSR_PMPADDR7, tmp); break;
+    default: break;
+  }
+
+  // wait for HW to computer PMP-internal stuff (address masks)
+  for (tmp=0; tmp<16; tmp++) {
+    asm volatile ("nop");
+  }
+
+  // set new configuration
+  if (index < 3) {
+    tmp = neorv32_cpu_csr_read(CSR_PMPCFG0);
+    tmp |= config_int; // set new config
+    neorv32_cpu_csr_write(CSR_PMPCFG0, tmp);
+  }
+  else {
+    tmp = neorv32_cpu_csr_read(CSR_PMPCFG1);
+    tmp |= config_int; // set new config
+    neorv32_cpu_csr_write(CSR_PMPCFG1, tmp);
+  }
+
+  return 0;
+}
