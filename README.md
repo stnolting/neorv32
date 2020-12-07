@@ -174,7 +174,7 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
   * Multiplications can be mapped to DSPs via the `FAST_MUL_EN` generic to increase performance
 
 **Atomic memory access** (`A` extension):
-  * Supported instruction: `LR.W` `SC.W`
+  * Supported instructions: `LR.W` (load-reservate) `SC.W` (store-conditional)
 
 **Privileged architecture / CSR access** (`Zicsr` extension):
   * Privilege levels: `M-mode` (Machine mode)
@@ -200,7 +200,7 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
 **Privileged architecture / User mode** (`U` extension, requires `Zicsr` extension):
   * Privilege levels: `M-mode` (Machine mode) + `U-mode` (User mode)
 
-**Privileged architecture / FENCE.I** (`Zifencei` extension):
+**Privileged architecture / instruction stream synchronization** (`Zifencei` extension):
   * System instructions: `FENCE.I`
 
 **Privileged architecture / Physical memory protection** (`PMP`, requires `Zicsr` extension):

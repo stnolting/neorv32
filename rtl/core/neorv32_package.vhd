@@ -44,8 +44,8 @@ package neorv32_package is
   constant ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- default instruction memory address space base address
   constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
 
-  -- (exteranl) bus interface --
-  constant bus_timeout_c  : natural := 127; -- cycles after which an *unacknowledged* bus access will timeout and trigger a bus access exception
+  -- (external) bus interface --
+  constant bus_timeout_c  : natural := 127; -- cycles after which an *unacknowledged* bus access will timeout and trigger a bus access exception (min 3)
   constant wb_pipe_mode_c : boolean := false; -- *external* bus protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
 
   -- CPU core --
