@@ -14,6 +14,7 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 07.12.2020 | 1.4.8.5 | :warning: fixed bug in next-PC logic (introduced with version 1.4.8.1) that caused instruction fetch from memories with more than 1 cycle latency to fail |
 | 05.12.2020 | 1.4.8.4 | :warning: fixed bug in physical memory protection (PMP): region size configuration was incorrect; removed `PMP_NUM_REGIONS` and `PMP_GRANULARITY` CPU/processor generics (PMP configuration now via package constants); reworked section *2.4. Instruction Sets and CPU Extensions* of neorv32.pdf |
 | 04.12.2020 | 1.4.8.2 | Added PMA (physical memory attribute) to processor-internal IO region: `NO EXECUTE`; added *3.3.Address Space/Physical Memory Attributes (PMAs)* section to neorv32.pdf |
 | 03.12.2020 | 1.4.8.1 | Optimized CPU program counter (PC) update logic and "next PC" computation (shortend critical path); updated bootloader (configuration option for direct-boot-from-SPI-flash only) and *customization* text in neorv32.pdf |
