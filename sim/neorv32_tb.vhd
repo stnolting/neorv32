@@ -70,15 +70,15 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- simulated external Wishbone memory A (can be used as external IMEM) --
   constant ext_mem_a_base_addr_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- wishbone memory base address (external IMEM base)
   constant ext_mem_a_size_c      : natural := imem_size_c; -- wishbone memory size in bytes
-  constant ext_mem_a_latency_c   : natural := 8; -- latency in clock cycles (min 1, max 255), plus 1 cycle initiali delay
+  constant ext_mem_a_latency_c   : natural := 8; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
   -- simulated external Wishbone memory B (can be used as external DMEM) --
   constant ext_mem_b_base_addr_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- wishbone memory base address (external DMEM base)
   constant ext_mem_b_size_c      : natural := dmem_size_c; -- wishbone memory size in bytes
-  constant ext_mem_b_latency_c   : natural := 8; -- latency in clock cycles (min 1, max 255), plus 1 cycle initiali delay
+  constant ext_mem_b_latency_c   : natural := 8; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
   -- simulated external Wishbone memory C (can be used as external IO) --
   constant ext_mem_c_base_addr_c : std_ulogic_vector(31 downto 0) := x"F0000000"; -- wishbone memory base address (default begin of EXTERNAL IO area)
   constant ext_mem_c_size_c      : natural := 64; -- wishbone memory size in bytes
-  constant ext_mem_c_latency_c   : natural := 3; -- latency in clock cycles (min 1, max 255), plus 1 cycle initiali delay
+  constant ext_mem_c_latency_c   : natural := 3; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
   -- -------------------------------------------------------------------------------------------
 
   -- internals - hands off! --
