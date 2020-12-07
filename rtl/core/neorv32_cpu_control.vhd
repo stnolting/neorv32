@@ -534,9 +534,9 @@ begin
   begin
     opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
     if rising_edge(clk_i) then
-      if (execute_engine.state = BRANCH) then -- next_PC as immediate fro jump-and-link operations (=return address)
+      if (execute_engine.state = BRANCH) then -- next_PC as immediate for jump-and-link operations (=return address)
         imm_o <= execute_engine.next_pc;
-      else -- "nromal" immediate from instruction
+      else -- "normal" immediate from instruction
         case opcode_v is -- save some bits here, LSBs are always 11 for rv32
           when opcode_store_c => -- S-immediate
             imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
@@ -608,7 +608,7 @@ begin
         case execute_engine.pc_mux_sel is
           when "00"   => execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment
           when "01"   => execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/branch
-          when "10"   => execute_engine.pc <= csr.mtvec(data_width_c-1 downto 1) & '0'; -- trap
+          when "10"   => execute_engine.pc <= csr.mtvec(data_width_c-1 downto 1) & '0'; -- trap enter
           when others => execute_engine.pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap return
         end case;
       end if;
@@ -628,10 +628,12 @@ begin
       execute_engine.is_ci    <= execute_engine.is_ci_nxt;
       execute_engine.is_cp_op <= execute_engine.is_cp_op_nxt;
       -- next PC (next linear instruction) --
-      if (execute_engine.is_ci = '1') then -- compressed instruction?
-        execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + 2);
-      else
-        execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + 4);
+      if (execute_engine.state = EXECUTE) then
+        if (execute_engine.is_ci = '1') then -- compressed instruction?
+          execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + 2);
+        else
+          execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + 4);
+        end if;
       end if;
       -- PC & IR of last "executed" instruction --
       if (execute_engine.state = EXECUTE) then
@@ -777,8 +779,8 @@ begin
           trap_ctrl.instr_be <= cmd_issue.data(34); -- bus access fault during instruction fetch
           illegal_compressed <= cmd_issue.data(35); -- invalid decompressed instruction
           -- PC update --
-          execute_engine.pc_we      <= not execute_engine.if_rst; -- update PC with linear next_pc if there was NO non-linear PC modification
           execute_engine.if_rst_nxt <= '0';
+          execute_engine.pc_we      <= not execute_engine.if_rst; -- update PC with linear next_pc if there was NO non-linear PC modification
           -- any reason to go to trap state? --
           if (execute_engine.sleep = '1') or (trap_ctrl.env_start = '1') or (trap_ctrl.exc_fire = '1') or ((cmd_issue.data(33) or cmd_issue.data(34)) = '1') then
             execute_engine.state_nxt <= TRAP;
