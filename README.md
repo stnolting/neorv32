@@ -24,6 +24,10 @@ The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC
 on the RISC-V-compliant NEORV32 CPU. The processor is intended as *ready-to-go* auxiliary processor within a larger SoC
 designs or as stand-alone custom microcontroller.
 
+The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
+To see the changes between releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
+For more detailed information take a look at the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
+
 
 ### Key Features
 
@@ -58,10 +62,6 @@ designs or as stand-alone custom microcontroller.
 * Fully synchronous design, no latches, no gated clocks
 * Small hardware footprint and high operating frequency
 
-The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
-To see the changes between releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
-For more information take a look at the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
-
 
 ### Design Principles
 
@@ -70,7 +70,7 @@ For more information take a look at the [NEORV32 data sheet](https://raw.githubu
  * Easy to use – working out of the box.
  * Clean synchronous design, no wacky combinatorial interfaces.
  * Be as small as possible – but with a reasonable size-performance tradeoff.
- * The processor has to fit in a Lattice iCE40 UltraPlus 5k FPGA running at 20+ MHz.
+ * The processor has to fit in a Lattice iCE40 UltraPlus 5k low-power FPGA running at 20+ MHz.
 
 
 ### Status
@@ -93,12 +93,13 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 * Further size and performance optimization *(work in progress)*
 * A cache for the external memory/bus interface *(work in progress)*
 * Burst mode for the external memory/bus interface
-* RISC-V `B` extension ([bitmanipulation](https://github.com/riscv/riscv-bitmanip))
+* RISC-V `B` extension ([bitmanipulation](https://github.com/riscv/riscv-bitmanip)) *(shelved)*
 * Synthesis results (+ wrappers?) for more/specific platforms
 * More support for FreeRTOS
-* Maybe port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
-* Implement further RISC-V (or custom?) CPU extensions (like floating-point extension `F`)
-* Port new RISC-V compliance test framework
+* Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
+* Single-precision floating point unit (`F`) *(planned)*
+* Implement further RISC-V (or custom?) CPU extensions
+* Port new RISC-V compliance test framework *(scheduled)*
 * ...
 * [Ideas?](#Contribute)
 
@@ -174,7 +175,6 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
 
 **Atomic memory access** (`A` extension):
   * Supported instruction: `LR.W` `SC.W`
-  * By default, the multiplier and divider cores use an iterative bit-serial processing scheme
 
 **Privileged architecture / CSR access** (`Zicsr` extension):
   * Privilege levels: `M-mode` (Machine mode)
@@ -240,7 +240,7 @@ Results generated for hardware version `1.4.8.0`.
 | `rv32i`    + `u` + `Zicsr` + `Zifencei` |       1944 |      901 |       2048  |    0 | ~119 MHz |
 | `rv32im`   + `u` + `Zicsr` + `Zifencei` |       2551 |     1147 |       2048  |    0 | ~117 MHz |
 | `rv32imc`  + `u` + `Zicsr` + `Zifencei` |       2800 |     1162 |       2048  |    0 | ~113 MHz |
-| `rv32imac` + `u` + `Zicsr` + `Zifencei` |       1796 |     1165 |       2048  |    0 | ~113 MHz |
+| `rv32imac` + `u` + `Zicsr` + `Zifencei` |       2796 |     1165 |       2048  |    0 | ~113 MHz |
 
 Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utilization and identical f_max. However, the size of the register file is cut in half. 
 
