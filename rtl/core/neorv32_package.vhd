@@ -58,7 +58,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040805"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040806"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero by the HW
@@ -440,6 +440,7 @@ package neorv32_package is
   constant trap_mti_c   : std_ulogic_vector(5 downto 0) := "1" & "00111"; -- 1.7:  machine timer interrupt
   constant trap_mei_c   : std_ulogic_vector(5 downto 0) := "1" & "01011"; -- 1.11: machine external interrupt
   -- NEORV32-specific (custom) interrupts --
+  constant trap_reset_c : std_ulogic_vector(5 downto 0) := "1" & "10000"; -- 1.0:  system reset
   constant trap_firq0_c : std_ulogic_vector(5 downto 0) := "1" & "10000"; -- 1.16: fast interrupt 0
   constant trap_firq1_c : std_ulogic_vector(5 downto 0) := "1" & "10001"; -- 1.17: fast interrupt 1
   constant trap_firq2_c : std_ulogic_vector(5 downto 0) := "1" & "10010"; -- 1.18: fast interrupt 2
