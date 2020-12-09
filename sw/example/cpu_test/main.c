@@ -159,6 +159,7 @@ int main() {
   install_err += neorv32_rte_exception_install(RTE_TRAP_L_ACCESS,     global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_S_MISALIGNED, global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_S_ACCESS,     global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_UENV_CALL,    global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_MENV_CALL,    global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_MTI,          global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_MSI,          global_trap_handler);
@@ -698,10 +699,10 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Environment call
+  // Environment call from M-mode
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] ENVCALL (ecall instruction) exception test: ", cnt_test);
+  neorv32_uart_printf("[%i] ENVCALL (ecall instruction) from M-mode exception test: ", cnt_test);
   cnt_test++;
 
   asm volatile("ECALL");
@@ -711,6 +712,37 @@ int main() {
   }
   else {
     test_fail();
+  }
+
+
+  // ----------------------------------------------------------
+  // Environment call from U-mode
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] ENVCALL (ecall instruction) from U-mode exception test: ", cnt_test);
+
+  // skip if U-mode is not implemented
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_U_EXT)) {
+
+    cnt_test++;
+
+    // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+    neorv32_cpu_goto_user_mode();
+    {
+      // access to misa not allowed for user-level programs
+      asm volatile("ECALL");
+    }
+
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_UENV_CALL) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+  }
+  else {
+    neorv32_uart_printf("skipped (not possible when U-EXT disabled)\n");
   }
 
 
