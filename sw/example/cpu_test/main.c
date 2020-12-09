@@ -1013,12 +1013,18 @@ int main() {
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
     {
-      // access to mstatus not allowed for user mode programs
-      neorv32_cpu_csr_read(CSR_MSTATUS);
+      // access to misa not allowed for user-level programs
+      tmp_a = neorv32_cpu_csr_read(CSR_MISA);
     }
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
-      test_ok();
+      if (tmp_a == 0) { // make sure user-level code CANNOT read machine-level CSR content!
+        test_ok();
+      }
+      else {
+        neorv32_uart_printf("SECURITY VIOLATION! ");
+        test_fail();
+      }
     }
     else {
       test_fail();
@@ -1031,7 +1037,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test RTE debug handler
+  // Test RTE debug trap handler
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] RTE (runtime environment) debug trap handler test: ", cnt_test);
