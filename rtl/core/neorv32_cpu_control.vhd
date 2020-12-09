@@ -770,7 +770,7 @@ begin
       -- ------------------------------------------------------------
         execute_engine.pc_mux_sel <= "00"; -- linear next PC
         -- IR update --
-        execute_engine.is_ci_nxt <= cmd_issue.data(32); -- flag to indicate this is a de-compressed instruction beeing executed
+        execute_engine.is_ci_nxt <= cmd_issue.data(32); -- flag to indicate a de-compressed instruction beeing executed
         execute_engine.i_reg_nxt <= cmd_issue.data(31 downto 0);
         --
         if (cmd_issue.valid = '1') then -- instruction available?
@@ -803,7 +803,7 @@ begin
         end if;
 
 
-      when EXECUTE => -- Decode and execute instruction
+      when EXECUTE => -- Decode and execute instruction (control has to be here for excatly 1 cyle in any case!)
       -- ------------------------------------------------------------
         opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11"; -- save some bits here, LSBs are always 11 for rv32
         case opcode_v is
@@ -839,6 +839,7 @@ begin
             end case;
 
             -- cp access? --
+            ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- just in case a mul/div operation
             if (CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_lsb_c) = '1') then -- MULDIV CP op?
               execute_engine.is_cp_op_nxt                        <= '1'; -- this is a CP operation
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
@@ -915,7 +916,7 @@ begin
 
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
-            csr.re_nxt <= '1'; -- always read CSR (internally), only relevant for CSR-instructions
+            csr.re_nxt <= csr_acc_valid; -- always read CSR if valid access, only relevant for CSR-instructions
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system/environment
               execute_engine.state_nxt <= SYS_ENV;
             else -- CSR access
@@ -1357,7 +1358,7 @@ begin
       trap_ctrl.irq_buf   <= (others => '0');
       trap_ctrl.exc_ack   <= '0';
       trap_ctrl.irq_ack   <= (others => '0');
-      trap_ctrl.cause     <= (others => '0');
+      trap_ctrl.cause     <= trap_reset_c;
       trap_ctrl.env_start <= '0';
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
