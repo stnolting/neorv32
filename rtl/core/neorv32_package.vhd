@@ -58,7 +58,7 @@ package neorv32_package is
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040806"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040807"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero by the HW
@@ -434,6 +434,7 @@ package neorv32_package is
   constant trap_lbe_c   : std_ulogic_vector(5 downto 0) := "0" & "00101"; -- 0.5:  load access fault
   constant trap_sma_c   : std_ulogic_vector(5 downto 0) := "0" & "00110"; -- 0.6:  store address misaligned
   constant trap_sbe_c   : std_ulogic_vector(5 downto 0) := "0" & "00111"; -- 0.7:  store access fault
+  constant trap_uenv_c  : std_ulogic_vector(5 downto 0) := "0" & "01000"; -- 0.8:  environment call from u-mode
   constant trap_menv_c  : std_ulogic_vector(5 downto 0) := "0" & "01011"; -- 0.11: environment call from m-mode
   -- RISC-V compliant interrupts --
   constant trap_msi_c   : std_ulogic_vector(5 downto 0) := "1" & "00011"; -- 1.3:  machine software interrupt
@@ -453,13 +454,14 @@ package neorv32_package is
   constant exception_iillegal_c  : natural := 1; -- illegal instrution
   constant exception_ialign_c    : natural := 2; -- instrution address misaligned
   constant exception_m_envcall_c : natural := 3; -- ENV call from m-mode
-  constant exception_break_c     : natural := 4; -- breakpoint
-  constant exception_salign_c    : natural := 5; -- store address misaligned
-  constant exception_lalign_c    : natural := 6; -- load address misaligned
-  constant exception_saccess_c   : natural := 7; -- store access fault
-  constant exception_laccess_c   : natural := 8; -- load access fault
+  constant exception_u_envcall_c : natural := 4; -- ENV call from u-mode
+  constant exception_break_c     : natural := 5; -- breakpoint
+  constant exception_salign_c    : natural := 6; -- store address misaligned
+  constant exception_lalign_c    : natural := 7; -- load address misaligned
+  constant exception_saccess_c   : natural := 8; -- store access fault
+  constant exception_laccess_c   : natural := 9; -- load access fault
   --
-  constant exception_width_c     : natural := 9; -- length of this list in bits
+  constant exception_width_c     : natural := 10; -- length of this list in bits
   -- interrupt source bits --
   constant interrupt_msw_irq_c   : natural := 0; -- machine software interrupt
   constant interrupt_mtime_irq_c : natural := 1; -- machine timer interrupt
