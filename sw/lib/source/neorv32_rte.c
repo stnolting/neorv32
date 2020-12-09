@@ -45,7 +45,7 @@
 /**********************************************************************//**
  * The >private< trap vector look-up table of the NEORV32 RTE.
  **************************************************************************/
-static uint32_t __neorv32_rte_vector_lut[16] __attribute__((unused)); // trap handler vector table
+static uint32_t __neorv32_rte_vector_lut[17] __attribute__((unused)); // trap handler vector table
 
 // private functions
 static void __attribute__((__interrupt__)) __neorv32_rte_core(void) __attribute__((aligned(16))) __attribute__((unused));
@@ -94,8 +94,8 @@ int neorv32_rte_exception_install(uint8_t id, void (*handler)(void)) {
 
   // id valid?
   if ((id == RTE_TRAP_I_MISALIGNED) || (id == RTE_TRAP_I_ACCESS)     || (id == RTE_TRAP_I_ILLEGAL) ||
-      (id == RTE_TRAP_BREAKPOINT)   || (id == RTE_TRAP_L_MISALIGNED) || (id == RTE_TRAP_L_ACCESS)  || 
-      (id == RTE_TRAP_S_MISALIGNED) || (id == RTE_TRAP_S_ACCESS)     || (id == RTE_TRAP_MENV_CALL) || 
+      (id == RTE_TRAP_BREAKPOINT)   || (id == RTE_TRAP_L_MISALIGNED) || (id == RTE_TRAP_L_ACCESS)  ||
+      (id == RTE_TRAP_S_MISALIGNED) || (id == RTE_TRAP_S_ACCESS)     || (id == RTE_TRAP_MENV_CALL) || (id == RTE_TRAP_UENV_CALL) || 
       (id == RTE_TRAP_MSI)          || (id == RTE_TRAP_MTI)          || (id == RTE_TRAP_MEI)       ||
       (id == RTE_TRAP_FIRQ_0)       || (id == RTE_TRAP_FIRQ_1)       || (id == RTE_TRAP_FIRQ_2)    || (id == RTE_TRAP_FIRQ_3)) {
 
@@ -121,8 +121,8 @@ int neorv32_rte_exception_uninstall(uint8_t id) {
 
   // id valid?
   if ((id == RTE_TRAP_I_MISALIGNED) || (id == RTE_TRAP_I_ACCESS)     || (id == RTE_TRAP_I_ILLEGAL) ||
-      (id == RTE_TRAP_BREAKPOINT)   || (id == RTE_TRAP_L_MISALIGNED) || (id == RTE_TRAP_L_ACCESS)  || 
-      (id == RTE_TRAP_S_MISALIGNED) || (id == RTE_TRAP_S_ACCESS)     || (id == RTE_TRAP_MENV_CALL) || 
+      (id == RTE_TRAP_BREAKPOINT)   || (id == RTE_TRAP_L_MISALIGNED) || (id == RTE_TRAP_L_ACCESS)  ||
+      (id == RTE_TRAP_S_MISALIGNED) || (id == RTE_TRAP_S_ACCESS)     || (id == RTE_TRAP_MENV_CALL) || (id == RTE_TRAP_UENV_CALL) ||
       (id == RTE_TRAP_MSI)          || (id == RTE_TRAP_MTI)          || (id == RTE_TRAP_MEI)       ||
       (id == RTE_TRAP_FIRQ_0)       || (id == RTE_TRAP_FIRQ_1)       || (id == RTE_TRAP_FIRQ_2)    || (id == RTE_TRAP_FIRQ_3)) {
 
@@ -177,6 +177,7 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(16)))  __neorv
     case TRAP_CODE_L_ACCESS:     rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_L_ACCESS]; break;
     case TRAP_CODE_S_MISALIGNED: rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_S_MISALIGNED]; break;
     case TRAP_CODE_S_ACCESS:     rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_S_ACCESS]; break;
+    case TRAP_CODE_UENV_CALL:    rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_UENV_CALL]; break;
     case TRAP_CODE_MENV_CALL:    rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_MENV_CALL]; break;
     case TRAP_CODE_MSI:          rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_MSI]; break;
     case TRAP_CODE_MTI:          rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_MTI]; break;
@@ -215,7 +216,8 @@ static void __neorv32_rte_debug_exc_handler(void) {
     case TRAP_CODE_L_ACCESS:     neorv32_uart_print("Load access fault"); break;
     case TRAP_CODE_S_MISALIGNED: neorv32_uart_print("Store address misaligned"); break;
     case TRAP_CODE_S_ACCESS:     neorv32_uart_print("Store access fault"); break;
-    case TRAP_CODE_MENV_CALL:    neorv32_uart_print("Environment call"); break;
+    case TRAP_CODE_UENV_CALL:    neorv32_uart_print("Environment call from U-mode"); break;
+    case TRAP_CODE_MENV_CALL:    neorv32_uart_print("Environment call from M-mode"); break;
     case TRAP_CODE_MSI:          neorv32_uart_print("Machine software interrupt"); break;
     case TRAP_CODE_MTI:          neorv32_uart_print("Machine timer interrupt"); break;
     case TRAP_CODE_MEI:          neorv32_uart_print("Machine external interrupt"); break;
