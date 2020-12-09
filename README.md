@@ -1,4 +1,4 @@
-[![NEORV32](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_logo_white_bg.png)](https://github.com/stnolting/neorv32)
+[![NEORV32](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_logo_inverse.png)](https://github.com/stnolting/neorv32)
 
 # The NEORV32 RISC-V Processor
 
@@ -191,7 +191,8 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
     * Load access fault (via unacknowledged bus access after timeout)
     * Store address misaligned
     * Store access fault (via unacknowledged bus access after timeout)
-    * Environment call from M-mode (via `ecall` instruction)
+    * Environment call from U-mode (via `ecall` instruction in user mode)
+    * Environment call from M-mode (via `ecall` instruction in machine mode)
     * Machine timer interrupt `mti` (via processor's MTIME unit)
     * Machine software interrupt `msi` (via external signal)
     * Machine external interrupt `mei` (via external signal)
@@ -232,7 +233,7 @@ a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 20
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
 of the CPU's generics is assumed (for example no PMP). No constraints were used at all.
 
-Results generated for hardware version `1.4.8.0`.
+Results generated for hardware version [`1.4.8.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | CPU Configuration                       | LEs        | FFs      | Memory bits | DSPs | f_max    |
 |:----------------------------------------|:----------:|:--------:|:-----------:|:----:|:--------:|
@@ -247,7 +248,7 @@ Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utiliz
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version `1.4.8.0`.
+Results generated for hardware version [`1.4.8.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
@@ -276,7 +277,7 @@ no external memory interface and only internal instruction and data memories. IM
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
 to FPGA pins - except for the Wishbone bus and the interrupt signals.
 
-Results generated for hardware version `1.4.7.0`.
+Results generated for hardware version [`1.4.7.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | Vendor  | FPGA                              | Board            | Toolchain                  | Strategy | CPU Configuration                              | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency     |
 |:--------|:----------------------------------|:-----------------|:---------------------------|:-------- |:-----------------------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|--------------:|
@@ -302,7 +303,7 @@ The [CoreMark CPU benchmark](https://www.eembc.org/coremark) was executed on the
 [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) project folder. This benchmark
 tests the capabilities of a CPU itself rather than the functions provided by the whole system / SoC.
 
-Results generated for hardware version `1.4.7.0`.
+Results generated for hardware version [`1.4.7.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 ~~~
 **Configuration**
@@ -342,7 +343,7 @@ iterations, which reflects a pretty good "real-life" work load. The average CPI 
 dividing the total number of required clock cycles (only the timed core to avoid distortion due to IO wait cycles; sampled via the `cycle[h]` CSRs)
 by the number of executed instructions (`instret[h]` CSRs). The executables were generated using optimization `-O3`.
 
-Results generated for hardware version `1.4.7.0`.
+Results generated for hardware version [`1.4.7.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | CPU                                         | Required Clock Cycles | Executed Instructions | Average CPI |
 |:--------------------------------------------|----------------------:|----------------------:|:-----------:|
