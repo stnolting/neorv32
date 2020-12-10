@@ -1100,6 +1100,7 @@ begin
     -- check CSR access --
     case execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) is
       when csr_mstatus_c   => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+      when csr_mstatush_c  => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
       when csr_misa_c      => csr_acc_valid <= csr.priv_m_mode;-- and (not csr_wacc_v); -- M-mode only, MISA is read-only in the NEORV32 but we don't cause an exception here for compatibility
       when csr_mie_c       => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
       when csr_mtvec_c     => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
@@ -1819,6 +1820,8 @@ begin
             csr.rdata(07) <= csr.mstatus_mpie; -- MPIE
             csr.rdata(11) <= csr.mstatus_mpp(0); -- MPP: machine previous privilege mode low
             csr.rdata(12) <= csr.mstatus_mpp(1); -- MPP: machine previous privilege mode high
+          when csr_mstatush_c => -- R/-: mstatush - machine status register - high part
+            csr.rdata(05) <= '1'; -- MBE: CPU/Processor is BIG-ENDIAN
           when csr_misa_c => -- R/-: misa - ISA and extensions
             csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension

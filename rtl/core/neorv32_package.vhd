@@ -45,8 +45,9 @@ package neorv32_package is
   constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
 
   -- (external) bus interface --
-  constant bus_timeout_c  : natural := 127; -- cycles after which an *unacknowledged* bus access will timeout and trigger a bus access exception (min 3)
-  constant wb_pipe_mode_c : boolean := false; -- *external* bus protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+  constant bus_timeout_c     : natural := 127; -- cycles after which an *unacknowledged* bus access will timeout and trigger a bus access exception (min 3)
+  constant wb_pipe_mode_c    : boolean := false; -- *external* bus protocol: false=classic/standard wishbone mode (default), true=pipelined wishbone mode
+  constant xbus_big_endian_c : boolean := true; -- external memory access byte order: true=big endian (default); false=little endian
 
   -- CPU core --
   constant ipb_entries_c : natural := 2; -- entries in CPU instruction prefetch buffer, must be a power of 2, default=2
@@ -55,10 +56,10 @@ package neorv32_package is
   constant pmp_num_regions_c     : natural := 2; -- number of regions (1..8)
   constant pmp_min_granularity_c : natural := 64*1024; -- minimal region size (granularity), min 8 bytes, has to be a power of 2
 
-  -- Architecture Constants -----------------------------------------------------------------
+  -- Architecture Constants (do not modify!)= -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040807"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040808"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero by the HW
@@ -76,6 +77,7 @@ package neorv32_package is
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
+  function bswap32_f(input : std_ulogic_vector) return std_ulogic_vector;
 
   -- Internal Types -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -350,6 +352,7 @@ package neorv32_package is
   constant csr_misa_c      : std_ulogic_vector(11 downto 0) := x"301"; -- misa
   constant csr_mie_c       : std_ulogic_vector(11 downto 0) := x"304"; -- mie
   constant csr_mtvec_c     : std_ulogic_vector(11 downto 0) := x"305"; -- mtvec
+  constant csr_mstatush_c  : std_ulogic_vector(11 downto 0) := x"310"; -- mstatush
   --
   constant csr_mscratch_c  : std_ulogic_vector(11 downto 0) := x"340"; -- mscratch
   constant csr_mepc_c      : std_ulogic_vector(11 downto 0) := x"341"; -- mepc
@@ -1401,5 +1404,17 @@ package body neorv32_package is
       return false;
     end if;
   end function is_power_of_two_f;
+
+  -- Function: Swap all bytes of a 32-bit word (endianness conversion) ----------------------
+  -- -------------------------------------------------------------------------------------------
+  function bswap32_f(input : std_ulogic_vector) return std_ulogic_vector is
+    variable output_v : std_ulogic_vector(input'range);
+  begin
+    output_v(07 downto 00) := input(31 downto 24);
+    output_v(15 downto 08) := input(23 downto 16);
+    output_v(23 downto 16) := input(15 downto 08);
+    output_v(31 downto 24) := input(07 downto 00);
+    return output_v;
+  end function bswap32_f;
 
 end neorv32_package;
