@@ -13,7 +13,7 @@
 * [Performance](#Performance)
 * [Top Entities](#Top-Entities)
 * [**Getting Started**](#Getting-Started)
-* [Contribute](#Contribute)
+* [Contribute/Feedback/Questions](#ContributeFeedbackQuestions)
 * [Legal](#Legal)
 
 
@@ -26,7 +26,7 @@ designs or as stand-alone custom microcontroller.
 
 The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
 To see the changes between releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
-For more detailed information take a look at the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
+For more detailed information take a look at the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
 
 ### Key Features
@@ -100,6 +100,7 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 * Single-precision floating point unit (`F`) *(planned)*
 * Implement further RISC-V (or custom?) CPU extensions
 * Port new RISC-V compliance test framework *(scheduled)*
+* Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))
 * ...
 * [Ideas?](#Contribute)
 
@@ -139,14 +140,14 @@ The NEORV32 CPU is [compliant](https://github.com/stnolting/neorv32_riscv_compli
 [RISC-V privileged architecture specifications (1.12-draft)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf).
 
 More information regarding the CPU including a detailed list of the instruction set and the available CSRs can be found in
-the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 
 **General**:
   * Modified Harvard architecture (separate CPU interfaces for data and instructions; NEORV32 processor: Single processor-internal bus via I/D mux)
   * Two stages in-order pipeline (FETCH, EXECUTE); each stage uses a multi-cycle processing scheme
   * No hardware support of unaligned accesses - they will trigger an exception
-  * Little-endian byte order
+  * BIG-ENDIAN byte-order, processor's external memory interface allows Endianness configuration to connect to system with differen Endianness
   * All reserved or unimplemented instructions will raise an illegal instruction exception
   * Privilege levels: `machine` mode, `user` mode (if enabled via `U` extension)
   * Official [RISC-V open-source architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
@@ -181,7 +182,7 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
   * System instructions: `MRET` `WFI`
   * Counter CSRs: `cycle` `cycleh` `instret` `instreth` `time` `timeh` `mcycle` `mcycleh` `minstret` `minstreth`
-  * Machine CSRs: `mstatus` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mvendorid` [`marchid`](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) `mimpid` `mhartid` `mzext`(custom)
+  * Machine CSRs: `mstatus` `mstatush` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mvendorid` [`marchid`](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) `mimpid` `mhartid` `mzext`(custom)
   * Supported exceptions and interrupts:
     * Misaligned instruction address
     * Instruction access fault (via unacknowledged bus access after timeout)
@@ -210,6 +211,7 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
 
 ### Non-RISC-V-Compliant Issues
 
+* CPU and Processor are BIG-ENDIAN, but this is should be no problem as the external memory bus interface provides big- and little-endian configuration
 * `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime; for compatibility: write accesses (in m-mode) are ignored and do not cause an exception
 * The physical memory protection (**PMP**) only supports `NAPOT` mode, a minimal granularity of 8 bytes and only up to 8 regions
 * The `A` extension only implements `lr.w` and `sc.w` instructions yet. However, these instructions are sufficient to emulate all further AMO operations
@@ -371,7 +373,7 @@ input ports to zero (`'0'` or `(others => '0')`, respectively).
 
 Use the top's generics to configure the system according to your needs. Each generic is initilized with the default configuration.
 Detailed information regarding the interface signals and configuration generics can be found in
-the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
+the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
 
 ### Using the CPU in Stand-Alone Mode
@@ -379,7 +381,7 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
 If you do not want to use the NEORV32 processor setup, you can also use the CPU in stand-alone mode and build your own system around it.
 The top entity of the stand-alone **NEORV32 CPU** is [`rtl/core/neorv32_cpu.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd).
 Note that the CPU uses a proprietary interface for accessing data and instruction memory. More information can be found in the
-[NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+[:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 :warning: It is recommended to use the processor setup even if you only want to use the CPU. Simply disable all the processor-internal modules via the generics
 and you will get a "CPU wrapper" that provides a minimal CPU environment and an external memory interface (like AXI4). This setup also allows to further use the default
@@ -432,9 +434,8 @@ To build the toolchain by yourself, follow the official [build instructions](htt
 Make sure to use the `ilp32` or `ilp32e` ABI.
 
 **Alternatively**, you can download a prebuilt toolchain. I have uploaded the toolchains I am using to GitHub. These toolchains
-were compiled on a 64-bit x86 Ubuntu 20.04 LTS (Ubuntu on Windows, actually). Download the toolchain of choice:
-
-[https://github.com/stnolting/riscv_gcc_prebuilt](https://github.com/stnolting/riscv_gcc_prebuilt)
+were compiled on a 64-bit x86 Ubuntu 20.04 LTS (Ubuntu on Windows, actually). Download the toolchain of choice: 
+[:octocat: github.com/stnolting/riscv_gcc_prebuilt](https://github.com/stnolting/riscv_gcc_prebuilt)
 
 
 ### Dowload the NEORV32 Project
@@ -546,10 +547,13 @@ Going further: Take a look at the _Let's Get It Started!_ chapter of the [:page_
 
 
 
-## Contribute
+## Contribute/Feedback/Questions
 
 I'm always thankful for help! So if you have any questions, bug reports, ideas or if you want to give some kind of feedback, feel free
-to [open a new issue](https://github.com/stnolting/neorv32/issues) or directly [drop me a line](mailto:stnolting@gmail.com). If you'd like to contribute:
+to [:bulb: open a new issue](https://github.com/stnolting/neorv32/issues), start a new [:sparkles: discussion on GitHub](https://github.com/stnolting/neorv32/discussions)
+or directly [:e-mail: drop me a line](mailto:stnolting@gmail.com).
+
+If you'd like to directly contribute to this repository:
 
 0. Check out the project's [code of conduct](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md)
 1. [Fork](https://github.com/stnolting/neorv32/fork) this repository and clone the fork
