@@ -80,7 +80,7 @@ architecture neorv32_imem_rtl of neorv32_imem is
   begin
     mem_v := (others => (others => '0'));
     for i in 0 to init'length-1 loop -- init only in range of source data array
-        mem_v(i) := init(i)(byte*8+7 downto byte*8+0);
+      mem_v(i) := init(i)(byte*8+7 downto byte*8+0);
     end loop; -- i
     return mem_v;
   end function init_imem;

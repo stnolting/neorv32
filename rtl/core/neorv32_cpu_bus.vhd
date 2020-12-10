@@ -369,7 +369,7 @@ begin
 
   -- instruction bus (read-only) --
   i_bus_addr_o  <= fetch_pc_i(data_width_c-1 downto 2) & "00"; -- instruction access is always 4-byte aligned (even for compressed instructions)
-  i_bus_wdata_o <= (others => '0');
+  i_bus_wdata_o <= (others => '0'); -- instruction fetch is read-only
   i_bus_ben_o   <= (others => '0');
   i_bus_we_o    <= '0';
   i_bus_re_o    <= ctrl_i(ctrl_bus_if_c) and (not i_misaligned) and (not if_pmp_fault); -- no actual read when misaligned or PMP fault
