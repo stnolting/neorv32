@@ -14,6 +14,7 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 10.12.2020 | 1.4.8.8 | Added option to configure external bus interface for BIG- or little-endian byte-order, configured via VHDL package `xbus_big_endian_c` constant; default = BIG-endian, software can check endianness of the interface via SYSINFO's `SYSINFO_FEATURES(SYSINFO_FEATURES_MEM_EXT_ENDIAN)` flag; added `mstatush` CSR and endianness information to data sheet |
 | 09.12.2020 | 1.4.8.7 | Added missing *environment call from U-mode* exception (via `ecall` instruction in user-mode); added environment call from U-mode to data sheet |
 | 09.12.2020 | 1.4.8.6 | :warning: fixed bugs in ALU's co-processor interface: ATOMIC `A` extension could not be used without MULDIV `M` extension, CPU might have permanently stalled when executing an instruction from a disabled ISA extension; :lock: added security feature: illegal user-level CSR read access will always return zero; added new section *Execution Safety* to neorv32.pdf data sheet |
 | 07.12.2020 | 1.4.8.5 | :warning: fixed bug in next-PC logic (introduced with version 1.4.8.1) that caused instruction fetch from memories with more than 1 cycle latency to fail |
