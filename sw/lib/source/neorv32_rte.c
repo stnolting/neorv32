@@ -251,7 +251,7 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("\n\n<< Hardware Configuration Overview >>\n");
 
   // CPU configuration
-  neorv32_uart_printf("\n-- Central Processing Unit --\n");
+  neorv32_uart_printf("\n---- Central Processing Unit ----\n");
 
   // ID
   neorv32_uart_printf("Hart ID:           0x%x\n", neorv32_cpu_csr_read(CSR_MHARTID));
@@ -284,6 +284,15 @@ void neorv32_rte_print_hw_config(void) {
   }
   if (tmp == 3) {
     neorv32_uart_printf("RV128");
+  }
+  
+  // CPU extensions
+  neorv32_uart_printf("\nEndianness:        ");
+  if (neorv32_cpu_csr_read(CSR_MSTATUSH) & (1<<CPU_MSTATUSH_MBE)) {
+    neorv32_uart_printf("big\n");
+  }
+  else {
+    neorv32_uart_printf("little\n");
   }
   
   // CPU extensions
@@ -354,13 +363,13 @@ void neorv32_rte_print_hw_config(void) {
 
 
   // Misc - system
-  neorv32_uart_printf("\n\n-- Processor --\n");
+  neorv32_uart_printf("\n\n---- Processor - General ----\n");
   neorv32_uart_printf("Clock:   %u Hz\n", SYSINFO_CLK);
   neorv32_uart_printf("User ID: 0x%x\n", SYSINFO_USER_CODE);
 
 
   // Memory configuration
-  neorv32_uart_printf("\n-- Processor Memory Configuration --\n");
+  neorv32_uart_printf("\n---- Processor - Memory Configuration ----\n");
 
   neorv32_uart_printf("Instr. base address:  0x%x\n", SYSINFO_ISPACE_BASE);
   neorv32_uart_printf("Internal IMEM:        ");
@@ -369,7 +378,7 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("Internal IMEM as ROM: ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM_ROM));
 
-  neorv32_uart_printf("Data base address:    0x%x\n", SYSINFO_DSPACE_BASE);
+  neorv32_uart_printf("\nData base address:    0x%x\n", SYSINFO_DSPACE_BASE);
   neorv32_uart_printf("Internal DMEM:        ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_DMEM));
   neorv32_uart_printf("DMEM size:            %u bytes\n", SYSINFO_DMEM_SIZE);
@@ -377,11 +386,18 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("Bootloader:           ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_BOOTLOADER));
 
-  neorv32_uart_printf("External M interface: ");
+  neorv32_uart_printf("\nExternal memory bus interface:  ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT));
+  neorv32_uart_printf("External memory bus Endianness: ");
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT_ENDIAN)) {
+    neorv32_uart_printf("big\n");
+  }
+  else {
+    neorv32_uart_printf("little\n");
+  }
 
   // peripherals
-  neorv32_uart_printf("\n-- Available Processor Peripherals --\n");
+  neorv32_uart_printf("\n\n---- Processor - Peripherals ----\n");
 
   tmp = SYSINFO_FEATURES;
 
