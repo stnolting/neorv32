@@ -53,10 +53,11 @@
  * Available CPU Control and Status Registers (CSRs)
  **************************************************************************/
 enum NEORV32_CPU_CSRS_enum {
-  CSR_MSTATUS     = 0x300, /**< 0x300 - mstatus (r/w): Machine status register */
-  CSR_MISA        = 0x301, /**< 0x301 - misa    (r/-): CPU ISA and extensions (read-only in NEORV32) */
-  CSR_MIE         = 0x304, /**< 0x304 - mie     (r/w): Machine interrupt-enable register */
-  CSR_MTVEC       = 0x305, /**< 0x305 - mtvec   (r/w): Machine trap-handler base address (for ALL traps) */
+  CSR_MSTATUS     = 0x300, /**< 0x300 - mstatus  (r/w): Machine status register */
+  CSR_MISA        = 0x301, /**< 0x301 - misa     (r/-): CPU ISA and extensions (read-only in NEORV32) */
+  CSR_MIE         = 0x304, /**< 0x304 - mie      (r/w): Machine interrupt-enable register */
+  CSR_MTVEC       = 0x305, /**< 0x305 - mtvec    (r/w): Machine trap-handler base address (for ALL traps) */
+  CSR_MSTATUSH    = 0x310, /**< 0x310 - mstatush (r/-): Machine status register - high word */
 
   CSR_MSCRATCH    = 0x340, /**< 0x340 - mscratch (r/w): Machine scratch register */
   CSR_MEPC        = 0x341, /**< 0x341 - mepc     (r/w): Machine exception program counter */
@@ -103,10 +104,18 @@ enum NEORV32_CPU_CSRS_enum {
  * CPU <b>mstatus</b> CSR (r/w): Machine status (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MSTATUS_enum {
-  CPU_MSTATUS_MIE   =  3, /**< CPU mstatus CSR (3): Machine interrupt enable bit (r/w) */
-  CPU_MSTATUS_MPIE  =  7, /**< CPU mstatus CSR (7): Machine previous interrupt enable bit (r/w) */
-  CPU_MSTATUS_MPP_L = 11, /**< CPU mstatus CSR (11): Machine previous privilege mode bit low (r/w) */
-  CPU_MSTATUS_MPP_H = 12  /**< CPU mstatus CSR (12): Machine previous privilege mode bit high (r/w) */
+  CPU_MSTATUS_MIE   =  3, /**< CPU mstatus CSR (3): MIE - Machine interrupt enable bit (r/w) */
+  CPU_MSTATUS_MPIE  =  7, /**< CPU mstatus CSR (7): MPIE - Machine previous interrupt enable bit (r/w) */
+  CPU_MSTATUS_MPP_L = 11, /**< CPU mstatus CSR (11): MPP_L - Machine previous privilege mode bit low (r/w) */
+  CPU_MSTATUS_MPP_H = 12  /**< CPU mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
+};
+
+
+/**********************************************************************//**
+ * CPU <b>mstatush</b> CSR (r/-): Machine status - high word(RISC-V spec.)
+ **************************************************************************/
+enum NEORV32_CPU_MSTATUSH_enum {
+  CPU_MSTATUSH_MBE = 5 /**< CPU mstatush CSR (5): MBE - Machine endianness (little-endian=0, big-endian=1) (r/w) */
 };
 
 
@@ -114,13 +123,13 @@ enum NEORV32_CPU_MSTATUS_enum {
  * CPU <b>mie</b> CSR (r/w): Machine interrupt enable (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MIE_enum {
-  CPU_MIE_MSIE   =  3, /**< CPU mie CSR (3): Machine software interrupt enable (r/w) */
-  CPU_MIE_MTIE   =  7, /**< CPU mie CSR (7): Machine timer interrupt enable bit (r/w) */
-  CPU_MIE_MEIE   = 11, /**< CPU mie CSR (11): Machine external interrupt enable bit (r/w) */
-  CPU_MIE_FIRQ0E = 16, /**< CPU mie CSR (16): Fast interrupt channel 0 enable bit (r/w) */
-  CPU_MIE_FIRQ1E = 17, /**< CPU mie CSR (17): Fast interrupt channel 1 enable bit (r/w) */
-  CPU_MIE_FIRQ2E = 18, /**< CPU mie CSR (18): Fast interrupt channel 2 enable bit (r/w) */
-  CPU_MIE_FIRQ3E = 19  /**< CPU mie CSR (19): Fast interrupt channel 3 enable bit (r/w) */
+  CPU_MIE_MSIE   =  3, /**< CPU mie CSR (3): MSIE - Machine software interrupt enable (r/w) */
+  CPU_MIE_MTIE   =  7, /**< CPU mie CSR (7): MTIE - Machine timer interrupt enable bit (r/w) */
+  CPU_MIE_MEIE   = 11, /**< CPU mie CSR (11): MEIE - Machine external interrupt enable bit (r/w) */
+  CPU_MIE_FIRQ0E = 16, /**< CPU mie CSR (16): FIRQ0E - Fast interrupt channel 0 enable bit (r/w) */
+  CPU_MIE_FIRQ1E = 17, /**< CPU mie CSR (17): FIRQ1E - Fast interrupt channel 1 enable bit (r/w) */
+  CPU_MIE_FIRQ2E = 18, /**< CPU mie CSR (18): FIRQ2E - Fast interrupt channel 2 enable bit (r/w) */
+  CPU_MIE_FIRQ3E = 19  /**< CPU mie CSR (19): FIRQ3E - Fast interrupt channel 3 enable bit (r/w) */
 };
 
 
@@ -128,14 +137,14 @@ enum NEORV32_CPU_MIE_enum {
  * CPU <b>mip</b> CSR (r/-): Machine interrupt pending (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MIP_enum {
-  CPU_MIP_MSIP   =  3, /**< CPU mip CSR (3): Machine software interrupt pending (r/-) */
-  CPU_MIP_MTIP   =  7, /**< CPU mip CSR (7): Machine timer interrupt pending (r/-) */
-  CPU_MIP_MEIP   = 11, /**< CPU mip CSR (11): Machine external interrupt pending (r/-) */
+  CPU_MIP_MSIP   =  3, /**< CPU mip CSR (3): MSIP - Machine software interrupt pending (r/-) */
+  CPU_MIP_MTIP   =  7, /**< CPU mip CSR (7): MTIP - Machine timer interrupt pending (r/-) */
+  CPU_MIP_MEIP   = 11, /**< CPU mip CSR (11): MEIP - Machine external interrupt pending (r/-) */
 
-  CPU_MIP_FIRQ0P = 16, /**< CPU mip CSR (16): Fast interrupt channel 0 pending (r/-) */
-  CPU_MIP_FIRQ1P = 17, /**< CPU mip CSR (17): Fast interrupt channel 1 pending (r/-) */
-  CPU_MIP_FIRQ2P = 18, /**< CPU mip CSR (18): Fast interrupt channel 2 pending (r/-) */
-  CPU_MIP_FIRQ3P = 19  /**< CPU mip CSR (19): Fast interrupt channel 3 pending (r/-) */
+  CPU_MIP_FIRQ0P = 16, /**< CPU mip CSR (16): FIRQ0P - Fast interrupt channel 0 pending (r/-) */
+  CPU_MIP_FIRQ1P = 17, /**< CPU mip CSR (17): FIRQ1P - Fast interrupt channel 1 pending (r/-) */
+  CPU_MIP_FIRQ2P = 18, /**< CPU mip CSR (18): FIRQ2P - Fast interrupt channel 2 pending (r/-) */
+  CPU_MIP_FIRQ3P = 19  /**< CPU mip CSR (19): FIRQ3P - Fast interrupt channel 3 pending (r/-) */
 };
 
 
@@ -179,7 +188,7 @@ enum NEORV32_EXCEPTION_CODES_enum {
   TRAP_CODE_L_ACCESS     = 0x00000005, /**< 0.5:  Load (bus) access fault */
   TRAP_CODE_S_MISALIGNED = 0x00000006, /**< 0.6:  Store address misaligned */
   TRAP_CODE_S_ACCESS     = 0x00000007, /**< 0.7:  Store (bus) access fault */
-  TRAP_CODE_UENV_CALL    = 0x00000008, /**< 0.8: Environment call from user mode (ECALL instruction) */
+  TRAP_CODE_UENV_CALL    = 0x00000008, /**< 0.8:  Environment call from user mode (ECALL instruction) */
   TRAP_CODE_MENV_CALL    = 0x0000000b, /**< 0.11: Environment call from machine mode (ECALL instruction) */
   TRAP_CODE_RESET        = 0x80000000, /**< 1.0:  Hardware reset */
   TRAP_CODE_MSI          = 0x80000003, /**< 1.3:  Machine software interrupt */
@@ -533,6 +542,7 @@ enum NEORV32_PWM_DUTY_enum {
   SYSINFO_FEATURES_MEM_INT_IMEM     =  2, /**< SYSINFO_FEATURES  (2) (r/-): Processor-internal instruction memory implemented when 1 (via MEM_INT_IMEM_USE generic) */
   SYSINFO_FEATURES_MEM_INT_IMEM_ROM =  3, /**< SYSINFO_FEATURES  (3) (r/-): Processor-internal instruction memory implemented as ROM when 1 (via MEM_INT_IMEM_ROM generic) */
   SYSINFO_FEATURES_MEM_INT_DMEM     =  4, /**< SYSINFO_FEATURES  (4) (r/-): Processor-internal data memory implemented when 1 (via MEM_INT_DMEM_USE generic) */
+  SYSINFO_FEATURES_MEM_EXT_ENDIAN   =  5, /**< SYSINFO_FEATURES  (5) (r/-): External bus interface uses BIG-endian byte-order when 1 (via package.xbus_big_endian_c constant) */
 
   SYSINFO_FEATURES_IO_GPIO          = 16, /**< SYSINFO_FEATURES (16) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_USE generic) */
   SYSINFO_FEATURES_IO_MTIME         = 17, /**< SYSINFO_FEATURES (17) (r/-): Machine system timer implemented when 1 (via IO_MTIME_USE generic) */

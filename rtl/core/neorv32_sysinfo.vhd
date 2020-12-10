@@ -116,24 +116,25 @@ begin
 
   -- SYSINFO(2): Implemented processor devices/features --
   -- Memory --
-  sysinfo_mem(2)(00) <= bool_to_ulogic_f(BOOTLOADER_USE);   -- processor-internal bootloader implemented?
-  sysinfo_mem(2)(01) <= bool_to_ulogic_f(MEM_EXT_USE);      -- external memory bus interface implemented?
-  sysinfo_mem(2)(02) <= bool_to_ulogic_f(MEM_INT_IMEM_USE); -- processor-internal instruction memory implemented?
-  sysinfo_mem(2)(03) <= bool_to_ulogic_f(MEM_INT_IMEM_ROM); -- processor-internal instruction memory implemented as ROM?
-  sysinfo_mem(2)(04) <= bool_to_ulogic_f(MEM_INT_DMEM_USE); -- processor-internal data memory implemented?
+  sysinfo_mem(2)(00) <= bool_to_ulogic_f(BOOTLOADER_USE);    -- processor-internal bootloader implemented?
+  sysinfo_mem(2)(01) <= bool_to_ulogic_f(MEM_EXT_USE);       -- external memory bus interface implemented?
+  sysinfo_mem(2)(02) <= bool_to_ulogic_f(MEM_INT_IMEM_USE);  -- processor-internal instruction memory implemented?
+  sysinfo_mem(2)(03) <= bool_to_ulogic_f(MEM_INT_IMEM_ROM);  -- processor-internal instruction memory implemented as ROM?
+  sysinfo_mem(2)(04) <= bool_to_ulogic_f(MEM_INT_DMEM_USE);  -- processor-internal data memory implemented?
+  sysinfo_mem(2)(05) <= bool_to_ulogic_f(xbus_big_endian_c); -- is external memory bus interface using BIG-endian byte-order?
   --
-  sysinfo_mem(2)(15 downto 05) <= (others => '0'); -- reserved
+  sysinfo_mem(2)(15 downto 06) <= (others => '0'); -- reserved
   -- IO --
-  sysinfo_mem(2)(16) <= bool_to_ulogic_f(IO_GPIO_USE);      -- general purpose input/output port unit (GPIO) implemented?
-  sysinfo_mem(2)(17) <= bool_to_ulogic_f(IO_MTIME_USE);     -- machine system timer (MTIME) implemented?
-  sysinfo_mem(2)(18) <= bool_to_ulogic_f(IO_UART_USE);      -- universal asynchronous receiver/transmitter (UART) implemented?
-  sysinfo_mem(2)(19) <= bool_to_ulogic_f(IO_SPI_USE);       -- serial peripheral interface (SPI) implemented?
-  sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_USE);       -- two-wire interface (TWI) implemented?
-  sysinfo_mem(2)(21) <= bool_to_ulogic_f(IO_PWM_USE);       -- pulse-width modulation unit (PWM) implemented?
-  sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_USE);       -- watch dog timer (WDT) implemented?
-  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFU0_USE);      -- custom functions unit 0 (CFU0) implemented?
-  sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_USE);      -- true random number generator (TRNG) implemented?
-  sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_CFU1_USE);      -- custom functions unit 1 (CFU1) implemented?
+  sysinfo_mem(2)(16) <= bool_to_ulogic_f(IO_GPIO_USE);  -- general purpose input/output port unit (GPIO) implemented?
+  sysinfo_mem(2)(17) <= bool_to_ulogic_f(IO_MTIME_USE); -- machine system timer (MTIME) implemented?
+  sysinfo_mem(2)(18) <= bool_to_ulogic_f(IO_UART_USE);  -- universal asynchronous receiver/transmitter (UART) implemented?
+  sysinfo_mem(2)(19) <= bool_to_ulogic_f(IO_SPI_USE);   -- serial peripheral interface (SPI) implemented?
+  sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_USE);   -- two-wire interface (TWI) implemented?
+  sysinfo_mem(2)(21) <= bool_to_ulogic_f(IO_PWM_USE);   -- pulse-width modulation unit (PWM) implemented?
+  sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_USE);   -- watch dog timer (WDT) implemented?
+  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFU0_USE);  -- custom functions unit 0 (CFU0) implemented?
+  sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_USE);  -- true random number generator (TRNG) implemented?
+  sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_CFU1_USE);  -- custom functions unit 1 (CFU1) implemented?
   --
   sysinfo_mem(2)(31 downto 26) <= (others => '0'); -- reserved
 
