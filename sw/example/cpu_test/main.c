@@ -317,7 +317,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Bus timeout latency estimation
+  // Bus timeout latency estimation (very unprecise!)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Estimating bus time-out latency: ", cnt_test);
