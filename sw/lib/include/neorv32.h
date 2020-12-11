@@ -172,7 +172,8 @@ enum NEORV32_CPU_MISA_enum {
 enum NEORV32_CPU_MZEXT_enum {
   CPU_MZEXT_ZICSR    = 0, /**< CPU mzext CSR (0): Zicsr extension available when set (r/-) */
   CPU_MZEXT_ZIFENCEI = 1, /**< CPU mzext CSR (1): Zifencei extension available when set (r/-) */
-  CPU_MZEXT_PMP      = 2  /**< CPU mzext CSR (2): PMP extension available when set (r/-) */
+  CPU_MZEXT_PMP      = 2, /**< CPU mzext CSR (2): PMP extension available when set (r/-) */
+  CPU_MZEXT_ZICNT    = 3  /**< CPU mzext CSR (3): Standard RISC-V performance counters ([m]cycle[h] & [m]instret[h]) available when set (r/-) */
 };
 
 
