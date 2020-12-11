@@ -282,7 +282,7 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (CFU0 not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -312,7 +312,71 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (CFU1 not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Test standard RISC-V performance counter [m]cycle[h]
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] Testing [m]instret[h] counters: ", cnt_test);
+
+  // check if counters are implemented
+  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_ZICNT))  {
+    cnt_test++;
+
+    // get current cycle counter
+    volatile uint64_t cycle_csr_test = neorv32_cpu_get_cycle();
+
+    // wait some time to have a nice increment
+    asm volatile ("nop");
+    asm volatile ("nop");
+    asm volatile ("nop");
+
+    // make sure cycle counter has incremented and there was no exception during access
+    if ((neorv32_cpu_get_cycle() > cycle_csr_test) &&
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    neorv32_uart_printf("skipped (not implemented)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Test standard RISC-V performance counter [m]instret[h]
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] Testing [m]cycle[h] counters: ", cnt_test);
+
+  // check if counters are implemented
+  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_ZICNT))  {
+    cnt_test++;
+
+    // get current instruction counter
+    volatile uint64_t instret_csr_test = neorv32_cpu_get_instret();
+
+    // wait some time to have a nice increment
+    asm volatile ("nop");
+    asm volatile ("nop");
+    asm volatile ("nop");
+
+    // make sure instruction counter has incremented and there was no exception during access
+    if ((neorv32_cpu_get_instret() > instret_csr_test) &&
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -381,7 +445,7 @@ int main() {
       }
     }
     else {
-      neorv32_uart_printf("skipped (external memory interface not implemented)\n");
+      neorv32_uart_printf("skipped (not implemented)\n");
     }
   }
   else {
@@ -777,7 +841,7 @@ int main() {
     neorv32_mtime_set_timecmp(-1);
   }
   else {
-    neorv32_uart_printf("skipped (WDT not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -814,7 +878,7 @@ int main() {
     neorv32_wdt_disable();
   }
   else {
-    neorv32_uart_printf("skipped (WDT not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -860,7 +924,7 @@ int main() {
       neorv32_gpio_port_set(0);
     }
     else {
-      neorv32_uart_printf("skipped (GPIO not implemented)\n");
+      neorv32_uart_printf("skipped (not implemented)\n");
     }
   }
   else {
@@ -918,7 +982,7 @@ int main() {
 
   }
   else {
-    neorv32_uart_printf("skipped (UART not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -957,7 +1021,7 @@ int main() {
     neorv32_spi_disable();
   }
   else {
-    neorv32_uart_printf("skipped (SPI not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -997,7 +1061,7 @@ int main() {
     neorv32_twi_disable();
   }
   else {
-    neorv32_uart_printf("skipped (TWI not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -1027,7 +1091,7 @@ int main() {
     neorv32_mtime_set_timecmp(-1);
   }
   else {
-    neorv32_uart_printf("skipped (MTIME not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -1239,7 +1303,7 @@ int main() {
 
   }
   else {
-    neorv32_uart_printf("not implemented\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -1268,7 +1332,7 @@ int main() {
       }
     }
     else {
-      neorv32_uart_printf("skipped (A extension not implemented)\n");
+      neorv32_uart_printf("skipped (not implemented)\n");
     }
   }
   else {
@@ -1300,7 +1364,7 @@ int main() {
       }
     }
     else {
-      neorv32_uart_printf("skipped (A extension not implemented)\n");
+      neorv32_uart_printf("skipped (not implemented)\n");
     }
   }
   else {
