@@ -157,6 +157,8 @@ begin
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report "NEORV32 CPU CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
   -- PMP requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
+  -- RISC-V standard performance counters -
+  assert not ((CPU_EXTENSION_RISCV_Zicsr = true) and (zicnt_en_c = false)) report "NEORV32 CPU CONFIG WARNING! Standard RISC-V peformance counters ([m]cycle[h], [m]instret[h]) will not be implemented (not RISC-V-compliant!)." severity warning;
 
   -- Instruction prefetch buffer size --
   assert not (is_power_of_two_f(ipb_entries_c) = false) report "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <ipb_entries_c> has to be a power of two." severity error;

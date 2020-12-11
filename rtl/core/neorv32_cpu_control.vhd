@@ -1122,19 +1122,19 @@ begin
       when csr_pmpaddr6_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(pmp_num_regions_c >= 7)) and csr.priv_m_mode; -- M-mode only
       when csr_pmpaddr7_c  => csr_acc_valid <= bool_to_ulogic_f(PMP_USE) and bool_to_ulogic_f(boolean(pmp_num_regions_c >= 8)) and csr.priv_m_mode; -- M-mode only
       --
-      when csr_mcycle_c    => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_minstret_c  => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+      when csr_mcycle_c    => csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(zicnt_en_c); -- M-mode only and "Zicnt" = true
+      when csr_minstret_c  => csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(zicnt_en_c); -- M-mode only and "Zicnt" = true
       --
-      when csr_mcycleh_c   => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_minstreth_c => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+      when csr_mcycleh_c   => csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(zicnt_en_c); -- M-mode only and "Zicnt" = true
+      when csr_minstreth_c => csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(zicnt_en_c); -- M-mode only and "Zicnt" = true
       --
-      when csr_cycle_c     => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
+      when csr_cycle_c     => csr_acc_valid <= (not csr_wacc_v) and bool_to_ulogic_f(zicnt_en_c); -- all modes, read-only and "Zicnt" = true
       when csr_time_c      => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
-      when csr_instret_c   => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
+      when csr_instret_c   => csr_acc_valid <= (not csr_wacc_v) and bool_to_ulogic_f(zicnt_en_c); -- all modes, read-only and "Zicnt" = true
       --
-      when csr_cycleh_c    => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
+      when csr_cycleh_c    => csr_acc_valid <= (not csr_wacc_v) and bool_to_ulogic_f(zicnt_en_c); -- all modes, read-only and "Zicnt" = true
       when csr_timeh_c     => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
-      when csr_instreth_c  => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
+      when csr_instreth_c  => csr_acc_valid <= (not csr_wacc_v) and bool_to_ulogic_f(zicnt_en_c); -- all modes, read-only and "Zicnt" = true
       --
       when csr_mvendorid_c => csr_acc_valid <= csr.priv_m_mode and (not csr_wacc_v); -- M-mode only, read-only
       when csr_marchid_c   => csr_acc_valid <= csr.priv_m_mode and (not csr_wacc_v); -- M-mode only, read-only
@@ -1746,39 +1746,47 @@ begin
         end if; -- hardware csr access
 
       -- --------------------------------------------------------------------------------
-      -- Counter CSRs
+      -- Counter CSRs (each counter is split in 2 32-bit counters)
       -- --------------------------------------------------------------------------------
+        if (zicnt_en_c = true) then -- implement standard RISC-V performance counters?
+          -- [m]cycle --
+          if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_mcycle_c) then -- write access
+            csr.mcycle <= '0' & csr.wdata;
+            mcycle_msb <= '0';
+          elsif (execute_engine.sleep = '0') then -- automatic update (if CPU is not in sleep mode)
+            csr.mcycle <= std_ulogic_vector(unsigned(csr.mcycle) + 1);
+            mcycle_msb <= csr.mcycle(csr.mcycle'left);
+          end if;
 
-        -- [m]cycle --
-        if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_mcycle_c) then -- write access
-          csr.mcycle <= '0' & csr.wdata;
-          mcycle_msb <= '0';
-        elsif (execute_engine.sleep = '0') then -- automatic update (if CPU is not in sleep mode)
-          csr.mcycle <= std_ulogic_vector(unsigned(csr.mcycle) + 1);
-          mcycle_msb <= csr.mcycle(csr.mcycle'left);
-        end if;
+          -- [m]cycleh --
+          if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_mcycleh_c) then -- write access
+            csr.mcycleh <= csr.wdata(csr.mcycleh'left downto 0);
+          elsif ((mcycle_msb xor csr.mcycle(csr.mcycle'left)) = '1') then -- automatic update
+            csr.mcycleh <= std_ulogic_vector(unsigned(csr.mcycleh) + 1);
+          end if;
 
-        -- [m]cycleh --
-        if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_mcycleh_c) then -- write access
-          csr.mcycleh <= csr.wdata(csr.mcycleh'left downto 0);
-        elsif ((mcycle_msb xor csr.mcycle(csr.mcycle'left)) = '1') then -- automatic update
-          csr.mcycleh <= std_ulogic_vector(unsigned(csr.mcycleh) + 1);
-        end if;
+          -- [m]instret --
+          if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_minstret_c) then -- write access
+            csr.minstret <= '0' & csr.wdata;
+            minstret_msb <= '0';
+          elsif (execute_engine.state = EXECUTE) then -- automatic update (if CPU actually executes an instruction)
+            csr.minstret <= std_ulogic_vector(unsigned(csr.minstret) + 1);
+            minstret_msb <= csr.minstret(csr.minstret'left);
+          end if;
 
-        -- [m]instret --
-        if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_minstret_c) then -- write access
-          csr.minstret <= '0' & csr.wdata;
-          minstret_msb <= '0';
-        elsif (execute_engine.state = EXECUTE) then -- automatic update (if CPU commits an instruction)
-          csr.minstret <= std_ulogic_vector(unsigned(csr.minstret) + 1);
-          minstret_msb <= csr.minstret(csr.minstret'left);
-        end if;
-
-        -- [m]instreth --
-        if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_minstreth_c) then -- write access
-          csr.minstreth <= csr.wdata(csr.minstreth'left downto 0);
-        elsif ((minstret_msb xor csr.minstret(csr.minstret'left)) = '1') then -- automatic update
-          csr.minstreth <= std_ulogic_vector(unsigned(csr.minstreth) + 1);
+          -- [m]instreth --
+          if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_minstreth_c) then -- write access
+            csr.minstreth <= csr.wdata(csr.minstreth'left downto 0);
+          elsif ((minstret_msb xor csr.minstret(csr.minstret'left)) = '1') then -- automatic update
+            csr.minstreth <= std_ulogic_vector(unsigned(csr.minstreth) + 1);
+          end if;
+        else -- performance counters NOT implemented (not RISC-V-compliant!)
+          csr.mcycle    <= (others => '0');
+          csr.minstret  <= (others => '0');
+          csr.mcycleh   <= (others => '0');
+          csr.minstreth <= (others => '0');
+          mcycle_msb    <= '0';
+          minstret_msb  <= '0';
         end if;
 
       end if;
@@ -1982,6 +1990,7 @@ begin
             csr.rdata(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- RISC-V.Zicsr CPU extension
             csr.rdata(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- RISC-V.Zifencei CPU extension
             csr.rdata(2) <= bool_to_ulogic_f(PMP_USE);                      -- RISC-V physical memory protection
+            csr.rdata(3) <= bool_to_ulogic_f(zicnt_en_c);                   -- RISC-V performance counters ([m]cycle[h] & [m]instret[h]) implemented
 
           -- undefined/unavailable --
           when others =>

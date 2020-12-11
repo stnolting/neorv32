@@ -51,6 +51,7 @@ package neorv32_package is
 
   -- CPU core --
   constant ipb_entries_c : natural := 2; -- entries in CPU instruction prefetch buffer, must be a power of 2, default=2
+  constant zicnt_en_c    : boolean := true; -- enable RISC-V performance counters ([m]cycle[h], [m]instret[h]), default=true
 
   -- physical memory protection (PMP) --
   constant pmp_num_regions_c     : natural := 2; -- number of regions (1..8)
@@ -59,7 +60,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!)= -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040808"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040809"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero by the HW
@@ -569,7 +570,9 @@ package neorv32_package is
       twi_sda_io  : inout std_logic; -- twi serial data line
       twi_scl_io  : inout std_logic; -- twi serial clock line
       -- PWM --
-      pwm_o       : out std_ulogic_vector(03 downto 0);  -- pwm channels
+      pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
+      -- system time input from external MTIME (available if IO_MTIME_USE = false) --
+      mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
       -- Interrupts --
       mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_USE = false
       msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
