@@ -102,7 +102,7 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 * Port new RISC-V compliance test framework *(scheduled)*
 * Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))
 * ...
-* [Ideas?](#Contribute)
+* [Ideas?](#ContributeFeedbackQuestions)
 
 
 
@@ -147,7 +147,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Modified Harvard architecture (separate CPU interfaces for data and instructions; NEORV32 processor: Single processor-internal bus via I/D mux)
   * Two stages in-order pipeline (FETCH, EXECUTE); each stage uses a multi-cycle processing scheme
   * No hardware support of unaligned accesses - they will trigger an exception
-  * BIG-ENDIAN byte-order, processor's external memory interface allows Endianness configuration to connect to system with differen Endianness
+  * BIG-ENDIAN byte-order, processor's external memory interface allows endianness configuration to connect to system with different endianness
   * All reserved or unimplemented instructions will raise an illegal instruction exception
   * Privilege levels: `machine` mode, `user` mode (if enabled via `U` extension)
   * Official [RISC-V open-source architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
@@ -158,12 +158,14 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Jump and branch instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
   * Memory instructions: `LB` `LH` `LW` `LBU` `LHU` `SB` `SH` `SW`
   * System instructions: `ECALL` `EBREAK` `FENCE`
+  * Pseudo-instructions are not listed
 
 **Compressed instructions** (`C` extension):
   * ALU instructions: `C.ADDI4SPN` `C.ADDI` `C.ADD` `C.ADDI16SP` `C.LI` `C.LUI` `C.SLLI` `C.SRLI` `C.SRAI` `C.ANDI` `C.SUB` `C.XOR` `C.OR` `C.AND` `C.MV` `C.NOP`
   * Jump and branch instructions: `C.J` `C.JAL` `C.JR` `C.JALR` `C.BEQZ` `C.BNEZ`
   * Memory instructions: `C.LW` `C.SW` `C.LWSP` `C.SWSP`
   * System instructions: `C.EBREAK` (only with `Zicsr` extension)
+  * Pseudo-instructions are not listed
 
 **Embedded CPU version** (`E` extension):
   * Reduced register file (only the 16 lowest registers)
@@ -181,6 +183,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Privilege levels: `M-mode` (Machine mode)
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
   * System instructions: `MRET` `WFI`
+  * Pseudo-instructions are not listed
   * Counter CSRs: `cycle` `cycleh` `instret` `instreth` `time` `timeh` `mcycle` `mcycleh` `minstret` `minstreth`
   * Machine CSRs: `mstatus` `mstatush` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mvendorid` [`marchid`](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) `mimpid` `mhartid` `mzext`(custom)
   * Supported exceptions and interrupts:
@@ -211,7 +214,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
 ### Non-RISC-V-Compliant Issues
 
-* CPU and Processor are BIG-ENDIAN, but this is should be no problem as the external memory bus interface provides big- and little-endian configuration
+* CPU and Processor are BIG-ENDIAN, but this should be no problem as the external memory bus interface provides big- and little-endian configurations
 * `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime; for compatibility: write accesses (in m-mode) are ignored and do not cause an exception
 * The physical memory protection (**PMP**) only supports `NAPOT` mode, a minimal granularity of 8 bytes and only up to 8 regions
 * The `A` extension only implements `lr.w` and `sc.w` instructions yet. However, these instructions are sufficient to emulate all further AMO operations
@@ -453,9 +456,12 @@ of this project as [`*.zip` file](https://github.com/stnolting/neorv32/archive/m
 Create a new project with your FPGA design tool of choice. Add all the `*.vhd` files from the [`rtl/core`](https://github.com/stnolting/neorv32/blob/master/rtl)
 folder to this project. Make sure to add these files to a **new design library** called `neorv32`.
 
-You can either instantiate the [processor's top entity](https://github.com/stnolting/neorv32#top-entity) or one of its
+You can either instantiate the [processor's top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) or one of its
 [wrappers](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) in your own project. If you just want to try out the processor,
 you can use the simple [test setup](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd) as top entity.
+
+![neorv32 test setup](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_test_setup.png)
+
 
 This test setup instantiates the processor and implements most of the peripherals and some ISA extensions. Only the UART lines, clock, reset and some GPIO output signals are
 propagated as actual entity signals. Basically, it is a FPGA "hello world" example:
@@ -555,13 +561,14 @@ or directly [:e-mail: drop me a line](mailto:stnolting@gmail.com).
 
 If you'd like to directly contribute to this repository:
 
-0. Check out the project's [code of conduct](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md)
-1. [Fork](https://github.com/stnolting/neorv32/fork) this repository and clone the fork
-2. Create a feature branch in your fork: `git checkout -b awesome_new_feature_branch`
-3. Create a new remote for the upstream repo: `git remote add upstream https://github.com/stnolting/neorv32`
-3. Commit your modifications: `git commit -m "Awesome new feature!"`
-4. Push to the branch: `git push origin awesome_new_feature_branch`
-5. Create a new [pull request](https://github.com/stnolting/neorv32/pulls)
+0. :star: this repository ;)
+1. Check out the project's [code of conduct](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md)
+2. [Fork](https://github.com/stnolting/neorv32/fork) this repository and clone the fork
+3. Create a feature branch in your fork: `git checkout -b awesome_new_feature_branch`
+4. Create a new remote for the upstream repo: `git remote add upstream https://github.com/stnolting/neorv32`
+5. Commit your modifications: `git commit -m "Awesome new feature!"`
+6. Push to the branch: `git push origin awesome_new_feature_branch`
+7. Create a new [pull request](https://github.com/stnolting/neorv32/pulls)
 
 
 ## Legal
