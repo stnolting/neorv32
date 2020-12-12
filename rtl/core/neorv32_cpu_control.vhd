@@ -1575,7 +1575,11 @@ begin
       csr.mtvec        <= (others => '0');
       csr.mscratch     <= x"19880704"; -- :)
       csr.mepc         <= (others => '0');
-      csr.mcause       <= (others => '0');
+      -- mcause = TRAP_CODE_RESET (hardware reset, 0x80000000)
+      csr.mcause                               <= (others => '0');
+      csr.mcause(csr.mcause'left)              <= trap_reset_c(trap_reset_c'left);
+      csr.mcause(trap_reset_c'left-1 downto 0) <= trap_reset_c(trap_reset_c'left-1 downto 0);
+      --
       csr.mtval        <= (others => '0');
       csr.pmpcfg       <= (others => (others => '0'));
       csr.pmpaddr      <= (others => (others => '1'));
