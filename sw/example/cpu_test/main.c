@@ -99,6 +99,19 @@ int cnt_test = 0;
  **************************************************************************/
 int main() {
 
+  register uint32_t tmp_a, tmp_b;
+  int i;
+  volatile uint32_t dummy_dst __attribute__((unused));
+
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } cpu_systime;
+
+
+  // init UART at default baud rate, no rx interrupt, no tx interrupt
+  neorv32_uart_setup(BAUD_RATE, 0, 0);
+
 // Disable cpu_test compilation by default
 #ifndef RUN_CPUTEST
   #warning cpu_test HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_CPUTEST clean_all exe<< to compile it.
@@ -109,21 +122,23 @@ int main() {
   return 0;
 #endif
 
-  register uint32_t tmp_a, tmp_b;
-  int i;
-  volatile uint32_t dummy_dst __attribute__((unused));
+  neorv32_uart_printf("\n--- PROCESSOR/CPU TEST ---\n");
+  neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
+  neorv32_uart_printf("This test suite is intended to verify the default NEORV32 processor setup using the default testbench.\n\n");
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/2];
-  } cpu_systime;
+  // check if we came from hardware reset
+  neorv32_uart_printf("Coming from hardware reset? ");
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_RESET) {
+    neorv32_uart_printf("true\n");
+  }
+  else {
+    neorv32_uart_printf("unknown (mcause != TRAP_CODE_RESET)\n");
+  }
+
 
   // reset performance counter
   neorv32_cpu_set_minstret(0);
   neorv32_cpu_set_mcycle(0);
-
-  // init UART at default baud rate, no rx interrupt, no tx interrupt
-  neorv32_uart_setup(BAUD_RATE, 0, 0);
 
   neorv32_mtime_set_time(0);
   // set CMP of machine system timer MTIME to max to prevent an IRQ
@@ -189,20 +204,16 @@ int main() {
   }
 
   // test intro
-  neorv32_uart_printf("\n--- PROCESSOR/CPU TEST ---\n");
-  neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
-  neorv32_uart_printf("This test suite is intended to verify the default NEORV32 processor setup using the default testbench.\n\n");
   neorv32_uart_printf("Starting tests...\n\n");
 
   // enable global interrupts
   neorv32_cpu_eint();
 
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-
 
   // ----------------------------------------------------------
   // List all accessible CSRs
   // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] List all accessible CSRs: ", cnt_test);
 
   if ((UART_CT & (1 << UART_CT_SIM_MODE)) == 0) { // check if this is a simulation
