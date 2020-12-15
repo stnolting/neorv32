@@ -136,8 +136,11 @@ begin
   -- max bus timeout latency lower than recommended --
   assert not (bus_timeout_c <= 32) report "NEORV32 PROCESSOR CONFIG ERROR: Bus timeout (neorv32_package.vhd:bus_timeout_c) should be >32 when using external bus interface." severity error;
   -- external memory iterface protocol + max timeout latency notifier (warning) --
-  assert not (wb_pipe_mode_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using STANDARD Wishbone protocol with max latency = " & integer'image(bus_timeout_c) & " cycles." severity warning;
-  assert not (wb_pipe_mode_c =  true) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using PIEPLINED Wishbone protocol with max latency = " & integer'image(bus_timeout_c) & " cycles." severity warning;
+  assert not (wb_pipe_mode_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using STANDARD Wishbone protocol with max latency = " & integer'image(bus_timeout_c) & " cycles." severity note;
+  assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG WARNING! Implementing external memory interface using PIEPLINED Wishbone protocol with max latency = " & integer'image(bus_timeout_c) & " cycles." severity warning;
+  -- endianness --
+  assert not (xbus_big_endian_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: Using LITTLE-ENDIAN byte order for external memory interface." severity note;
+  assert not (xbus_big_endian_c = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Using BIG-ENDIAN byte order for external memory interface." severity note;
 
 
   -- Access Control -------------------------------------------------------------------------
@@ -186,8 +189,13 @@ begin
           -- buffer all outgoing signals --
           ctrl.we   <= wren_i;
           ctrl.adr  <= addr_i;
-          ctrl.wdat <= data_i;
-          ctrl.sel  <= ben_i;
+          if (xbus_big_endian_c = true) then -- endianness conversion
+            ctrl.wdat <= data_i;
+            ctrl.sel  <= ben_i;
+          else
+            ctrl.wdat <= bswap32_f(data_i);
+            ctrl.sel  <= bit_rev_f(ben_i);
+          end if;
           ctrl.src  <= src_i;
           ctrl.lock <= lock_i;
           ctrl.priv <= priv_i;
@@ -235,7 +243,7 @@ begin
   end process bus_arbiter;
 
   -- host access --
-  data_o <= ctrl.rdat;
+  data_o <= ctrl.rdat when (xbus_big_endian_c = true) else bswap32_f(ctrl.rdat); -- endianness conversion
   ack_o  <= ctrl.ack;
   err_o  <= ctrl.err;
 

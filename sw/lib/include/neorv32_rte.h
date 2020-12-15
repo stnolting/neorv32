@@ -54,14 +54,15 @@ enum NEORV32_RTE_TRAP_enum {
   RTE_TRAP_L_ACCESS     =  5, /**< Load (bus) access fault */
   RTE_TRAP_S_MISALIGNED =  6, /**< Store address misaligned */
   RTE_TRAP_S_ACCESS     =  7, /**< Store (bus) access fault */
-  RTE_TRAP_MENV_CALL    =  8, /**< Environment call from machine mode (ECALL instruction) */
-  RTE_TRAP_MSI          =  9, /**< Machine software interrupt */
-  RTE_TRAP_MTI          = 10, /**< Machine timer interrupt */
-  RTE_TRAP_MEI          = 11, /**< Machine external interrupt */
-  RTE_TRAP_FIRQ_0       = 12, /**< Fast interrupt channel 0 */
-  RTE_TRAP_FIRQ_1       = 13, /**< Fast interrupt channel 1 */
-  RTE_TRAP_FIRQ_2       = 14, /**< Fast interrupt channel 2 */
-  RTE_TRAP_FIRQ_3       = 15  /**< Fast interrupt channel 3 */
+  RTE_TRAP_UENV_CALL    =  8, /**< Environment call from user mode (ECALL instruction) */
+  RTE_TRAP_MENV_CALL    =  9, /**< Environment call from machine mode (ECALL instruction) */
+  RTE_TRAP_MSI          = 10, /**< Machine software interrupt */
+  RTE_TRAP_MTI          = 11, /**< Machine timer interrupt */
+  RTE_TRAP_MEI          = 12, /**< Machine external interrupt */
+  RTE_TRAP_FIRQ_0       = 13, /**< Fast interrupt channel 0 */
+  RTE_TRAP_FIRQ_1       = 14, /**< Fast interrupt channel 1 */
+  RTE_TRAP_FIRQ_2       = 15, /**< Fast interrupt channel 2 */
+  RTE_TRAP_FIRQ_3       = 16  /**< Fast interrupt channel 3 */
 };
 
 // prototypes

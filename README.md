@@ -1,4 +1,4 @@
-[![NEORV32](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_logo_white_bg.png)](https://github.com/stnolting/neorv32)
+[![NEORV32](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_logo.png)](https://github.com/stnolting/neorv32)
 
 # The NEORV32 RISC-V Processor
 
@@ -13,7 +13,7 @@
 * [Performance](#Performance)
 * [Top Entities](#Top-Entities)
 * [**Getting Started**](#Getting-Started)
-* [Contribute](#Contribute)
+* [Contribute/Feedback/Questions](#ContributeFeedbackQuestions)
 * [Legal](#Legal)
 
 
@@ -26,7 +26,7 @@ designs or as stand-alone custom microcontroller.
 
 The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
 To see the changes between releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
-For more detailed information take a look at the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
+For more detailed information take a look at the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
 
 ### Key Features
@@ -100,15 +100,16 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 * Single-precision floating point unit (`F`) *(planned)*
 * Implement further RISC-V (or custom?) CPU extensions
 * Port new RISC-V compliance test framework *(scheduled)*
+* Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))
 * ...
-* [Ideas?](#Contribute)
+* [Ideas?](#ContributeFeedbackQuestions)
 
 
 
 ## Features
 
 The full-blown data sheet of the NEORV32 Processor and CPU is available as pdf file:
-[![NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+[:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 ### NEORV32 Processor Features
 
@@ -139,14 +140,14 @@ The NEORV32 CPU is [compliant](https://github.com/stnolting/neorv32_riscv_compli
 [RISC-V privileged architecture specifications (1.12-draft)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf).
 
 More information regarding the CPU including a detailed list of the instruction set and the available CSRs can be found in
-the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 
 **General**:
   * Modified Harvard architecture (separate CPU interfaces for data and instructions; NEORV32 processor: Single processor-internal bus via I/D mux)
   * Two stages in-order pipeline (FETCH, EXECUTE); each stage uses a multi-cycle processing scheme
   * No hardware support of unaligned accesses - they will trigger an exception
-  * Little-endian byte order
+  * BIG-ENDIAN byte-order, processor's external memory interface allows endianness configuration to connect to system with different endianness
   * All reserved or unimplemented instructions will raise an illegal instruction exception
   * Privilege levels: `machine` mode, `user` mode (if enabled via `U` extension)
   * Official [RISC-V open-source architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
@@ -157,12 +158,14 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
   * Jump and branch instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
   * Memory instructions: `LB` `LH` `LW` `LBU` `LHU` `SB` `SH` `SW`
   * System instructions: `ECALL` `EBREAK` `FENCE`
+  * Pseudo-instructions are not listed
 
 **Compressed instructions** (`C` extension):
   * ALU instructions: `C.ADDI4SPN` `C.ADDI` `C.ADD` `C.ADDI16SP` `C.LI` `C.LUI` `C.SLLI` `C.SRLI` `C.SRAI` `C.ANDI` `C.SUB` `C.XOR` `C.OR` `C.AND` `C.MV` `C.NOP`
   * Jump and branch instructions: `C.J` `C.JAL` `C.JR` `C.JALR` `C.BEQZ` `C.BNEZ`
   * Memory instructions: `C.LW` `C.SW` `C.LWSP` `C.SWSP`
   * System instructions: `C.EBREAK` (only with `Zicsr` extension)
+  * Pseudo-instructions are not listed
 
 **Embedded CPU version** (`E` extension):
   * Reduced register file (only the 16 lowest registers)
@@ -174,14 +177,15 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
   * Multiplications can be mapped to DSPs via the `FAST_MUL_EN` generic to increase performance
 
 **Atomic memory access** (`A` extension):
-  * Supported instruction: `LR.W` `SC.W`
+  * Supported instructions: `LR.W` (load-reservate) `SC.W` (store-conditional)
 
 **Privileged architecture / CSR access** (`Zicsr` extension):
   * Privilege levels: `M-mode` (Machine mode)
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
   * System instructions: `MRET` `WFI`
+  * Pseudo-instructions are not listed
   * Counter CSRs: `cycle` `cycleh` `instret` `instreth` `time` `timeh` `mcycle` `mcycleh` `minstret` `minstreth`
-  * Machine CSRs: `mstatus` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mvendorid` [`marchid`](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) `mimpid` `mhartid` `mzext`(custom)
+  * Machine CSRs: `mstatus` `mstatush` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mvendorid` [`marchid`](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) `mimpid` `mhartid` `mzext`(custom)
   * Supported exceptions and interrupts:
     * Misaligned instruction address
     * Instruction access fault (via unacknowledged bus access after timeout)
@@ -191,7 +195,8 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
     * Load access fault (via unacknowledged bus access after timeout)
     * Store address misaligned
     * Store access fault (via unacknowledged bus access after timeout)
-    * Environment call from M-mode (via `ecall` instruction)
+    * Environment call from U-mode (via `ecall` instruction in user mode)
+    * Environment call from M-mode (via `ecall` instruction in machine mode)
     * Machine timer interrupt `mti` (via processor's MTIME unit)
     * Machine software interrupt `msi` (via external signal)
     * Machine external interrupt `mei` (via external signal)
@@ -200,7 +205,7 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
 **Privileged architecture / User mode** (`U` extension, requires `Zicsr` extension):
   * Privilege levels: `M-mode` (Machine mode) + `U-mode` (User mode)
 
-**Privileged architecture / FENCE.I** (`Zifencei` extension):
+**Privileged architecture / instruction stream synchronization** (`Zifencei` extension):
   * System instructions: `FENCE.I`
 
 **Privileged architecture / Physical memory protection** (`PMP`, requires `Zicsr` extension):
@@ -209,6 +214,7 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
 
 ### Non-RISC-V-Compliant Issues
 
+* CPU and Processor are BIG-ENDIAN, but this should be no problem as the external memory bus interface provides big- and little-endian configurations
 * `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime; for compatibility: write accesses (in m-mode) are ignored and do not cause an exception
 * The physical memory protection (**PMP**) only supports `NAPOT` mode, a minimal granularity of 8 bytes and only up to 8 regions
 * The `A` extension only implements `lr.w` and `sc.w` instructions yet. However, these instructions are sufficient to emulate all further AMO operations
@@ -232,7 +238,7 @@ a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 20
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
 of the CPU's generics is assumed (for example no PMP). No constraints were used at all.
 
-Results generated for hardware version `1.4.8.0`.
+Results generated for hardware version [`1.4.8.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | CPU Configuration                       | LEs        | FFs      | Memory bits | DSPs | f_max    |
 |:----------------------------------------|:----------:|:--------:|:-----------:|:----:|:--------:|
@@ -247,7 +253,7 @@ Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utiliz
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version `1.4.8.0`.
+Results generated for hardware version [`1.4.8.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
@@ -276,7 +282,7 @@ no external memory interface and only internal instruction and data memories. IM
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
 to FPGA pins - except for the Wishbone bus and the interrupt signals.
 
-Results generated for hardware version `1.4.7.0`.
+Results generated for hardware version [`1.4.7.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | Vendor  | FPGA                              | Board            | Toolchain                  | Strategy | CPU Configuration                              | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency     |
 |:--------|:----------------------------------|:-----------------|:---------------------------|:-------- |:-----------------------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|--------------:|
@@ -302,7 +308,7 @@ The [CoreMark CPU benchmark](https://www.eembc.org/coremark) was executed on the
 [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) project folder. This benchmark
 tests the capabilities of a CPU itself rather than the functions provided by the whole system / SoC.
 
-Results generated for hardware version `1.4.7.0`.
+Results generated for hardware version [`1.4.7.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 ~~~
 **Configuration**
@@ -342,7 +348,7 @@ iterations, which reflects a pretty good "real-life" work load. The average CPI 
 dividing the total number of required clock cycles (only the timed core to avoid distortion due to IO wait cycles; sampled via the `cycle[h]` CSRs)
 by the number of executed instructions (`instret[h]` CSRs). The executables were generated using optimization `-O3`.
 
-Results generated for hardware version `1.4.7.0`.
+Results generated for hardware version [`1.4.7.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | CPU                                         | Required Clock Cycles | Executed Instructions | Average CPI |
 |:--------------------------------------------|----------------------:|----------------------:|:-----------:|
@@ -370,7 +376,7 @@ input ports to zero (`'0'` or `(others => '0')`, respectively).
 
 Use the top's generics to configure the system according to your needs. Each generic is initilized with the default configuration.
 Detailed information regarding the interface signals and configuration generics can be found in
-the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
+the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
 
 ### Using the CPU in Stand-Alone Mode
@@ -378,7 +384,7 @@ the [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/mas
 If you do not want to use the NEORV32 processor setup, you can also use the CPU in stand-alone mode and build your own system around it.
 The top entity of the stand-alone **NEORV32 CPU** is [`rtl/core/neorv32_cpu.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd).
 Note that the CPU uses a proprietary interface for accessing data and instruction memory. More information can be found in the
-[NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+[:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 :warning: It is recommended to use the processor setup even if you only want to use the CPU. Simply disable all the processor-internal modules via the generics
 and you will get a "CPU wrapper" that provides a minimal CPU environment and an external memory interface (like AXI4). This setup also allows to further use the default
@@ -416,7 +422,7 @@ and is mapped to address `0x00000000 - 0x00003fff` (16kB), the second RAM is use
 
 This overview is just a short excerpt from the *Let's Get It Started* section of the NEORV32 documentary:
 
-[![NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
+[:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
 
 
 ### Toolchain
@@ -431,9 +437,8 @@ To build the toolchain by yourself, follow the official [build instructions](htt
 Make sure to use the `ilp32` or `ilp32e` ABI.
 
 **Alternatively**, you can download a prebuilt toolchain. I have uploaded the toolchains I am using to GitHub. These toolchains
-were compiled on a 64-bit x86 Ubuntu 20.04 LTS (Ubuntu on Windows, actually). Download the toolchain of choice:
-
-[https://github.com/stnolting/riscv_gcc_prebuilt](https://github.com/stnolting/riscv_gcc_prebuilt)
+were compiled on a 64-bit x86 Ubuntu 20.04 LTS (Ubuntu on Windows, actually). Download the toolchain of choice: 
+[:octocat: github.com/stnolting/riscv_gcc_prebuilt](https://github.com/stnolting/riscv_gcc_prebuilt)
 
 
 ### Dowload the NEORV32 Project
@@ -451,9 +456,12 @@ of this project as [`*.zip` file](https://github.com/stnolting/neorv32/archive/m
 Create a new project with your FPGA design tool of choice. Add all the `*.vhd` files from the [`rtl/core`](https://github.com/stnolting/neorv32/blob/master/rtl)
 folder to this project. Make sure to add these files to a **new design library** called `neorv32`.
 
-You can either instantiate the [processor's top entity](https://github.com/stnolting/neorv32#top-entity) or one of its
+You can either instantiate the [processor's top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) or one of its
 [wrappers](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) in your own project. If you just want to try out the processor,
 you can use the simple [test setup](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd) as top entity.
+
+![neorv32 test setup](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_test_setup.png)
+
 
 This test setup instantiates the processor and implements most of the peripherals and some ISA extensions. Only the UART lines, clock, reset and some GPIO output signals are
 propagated as actual entity signals. Basically, it is a FPGA "hello world" example:
@@ -541,22 +549,26 @@ Use the bootloader console to upload the `neorv32_exe.bin` executable and run yo
   Blinking LED demo program
 ```
 
-Going further: Take a look at the _Let's Get It Started!_ chapter of the [![NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/PDF_32.png) NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+Going further: Take a look at the _Let's Get It Started!_ chapter of the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 
 
-## Contribute
+## Contribute/Feedback/Questions
 
 I'm always thankful for help! So if you have any questions, bug reports, ideas or if you want to give some kind of feedback, feel free
-to [open a new issue](https://github.com/stnolting/neorv32/issues) or directly [drop me a line](mailto:stnolting@gmail.com). If you'd like to contribute:
+to [:bulb: open a new issue](https://github.com/stnolting/neorv32/issues), start a new [:sparkles: discussion on GitHub](https://github.com/stnolting/neorv32/discussions)
+or directly [:e-mail: drop me a line](mailto:stnolting@gmail.com).
 
-0. Check out the project's [code of conduct](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md)
-1. [Fork](https://github.com/stnolting/neorv32/fork) this repository and clone the fork
-2. Create a feature branch in your fork: `git checkout -b awesome_new_feature_branch`
-3. Create a new remote for the upstream repo: `git remote add upstream https://github.com/stnolting/neorv32`
-3. Commit your modifications: `git commit -m "Awesome new feature!"`
-4. Push to the branch: `git push origin awesome_new_feature_branch`
-5. Create a new [pull request](https://github.com/stnolting/neorv32/pulls)
+If you'd like to directly contribute to this repository:
+
+0. :star: this repository ;)
+1. Check out the project's [code of conduct](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md)
+2. [Fork](https://github.com/stnolting/neorv32/fork) this repository and clone the fork
+3. Create a feature branch in your fork: `git checkout -b awesome_new_feature_branch`
+4. Create a new remote for the upstream repo: `git remote add upstream https://github.com/stnolting/neorv32`
+5. Commit your modifications: `git commit -m "Awesome new feature!"`
+6. Push to the branch: `git push origin awesome_new_feature_branch`
+7. Create a new [pull request](https://github.com/stnolting/neorv32/pulls)
 
 
 ## Legal

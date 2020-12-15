@@ -306,16 +306,11 @@ begin
       cp_ctrl.cmd_ff <= '0';
       cp_ctrl.busy   <= '0';
     elsif rising_edge(clk_i) then
-      if (CPU_EXTENSION_RISCV_M = true) then
-        cp_ctrl.cmd_ff <= cp_ctrl.cmd;
-        if ((cp0_valid_i or cp1_valid_i or cp2_valid_i or cp3_valid_i) = '1') then -- cp computation done?
-          cp_ctrl.busy <= '0';
-        elsif (cp_ctrl.start = '1') then
-          cp_ctrl.busy <= '1';
-        end if;
-      else -- no co-processor(s) implemented
-        cp_ctrl.cmd_ff <= '0';
-        cp_ctrl.busy   <= '0';
+      cp_ctrl.cmd_ff <= cp_ctrl.cmd;
+      if ((cp0_valid_i or cp1_valid_i or cp2_valid_i or cp3_valid_i) = '1') then -- cp computation done?
+        cp_ctrl.busy <= '0';
+      elsif (cp_ctrl.start = '1') then
+        cp_ctrl.busy <= '1';
       end if;
     end if;
   end process cp_arbiter;

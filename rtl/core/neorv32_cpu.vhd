@@ -157,6 +157,8 @@ begin
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report "NEORV32 CPU CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
   -- PMP requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
+  -- RISC-V standard performance counters -
+  assert not ((CPU_EXTENSION_RISCV_Zicsr = true) and (zicnt_en_c = false)) report "NEORV32 CPU CONFIG WARNING! Standard RISC-V peformance counters ([m]cycle[h], [m]instret[h]) will not be implemented (not RISC-V-compliant!)." severity warning;
 
   -- Instruction prefetch buffer size --
   assert not (is_power_of_two_f(ipb_entries_c) = false) report "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <ipb_entries_c> has to be a power of two." severity error;
@@ -317,25 +319,30 @@ begin
   neorv32_cpu_cp_muldiv_inst_false:
   if (CPU_EXTENSION_RISCV_M = false) generate
     cp0_data  <= (others => '0');
-    cp0_valid <= '0';
+    cp0_valid <= cp0_start; -- to make sure CPU does not get stalled if there is an accidental access
   end generate;
 
 
   -- Co-Processor 1: Atomic Memory Access (SC - store-conditional) --------------------------
   -- -------------------------------------------------------------------------------------------
-  atomic_op_cp: process(ctrl, cp1_start)
+  atomic_op_cp: process(cp1_start, ctrl)
   begin
     -- "fake" co-processor for atomic operations
     -- used to get the result of a store-conditional operation into the data path
-    if (CPU_EXTENSION_RISCV_A = true) and (cp1_start = '1') then
-      cp1_data    <= (others => '0');
-      cp1_data(0) <= not ctrl(ctrl_bus_lock_c);
-      cp1_valid   <= '1';
+    if (CPU_EXTENSION_RISCV_A = true) then
+      if (cp1_start = '1') then
+        cp1_data    <= (others => '0');
+        cp1_data(0) <= not ctrl(ctrl_bus_lock_c);
+        cp1_valid   <= '1';
+      else
+        cp1_data  <= (others => '0');
+        cp1_valid <= '0';
+      end if;
     else
       cp1_data  <= (others => '0');
-      cp1_valid <= '0';
+      cp1_valid <= cp1_start; -- to make sure CPU does not get stalled if there is an accidental access
     end if;
-  end process;
+  end process atomic_op_cp;
 
 
   -- Co-Processor 2: Not implemented (yet) --------------------------------------------------
@@ -343,7 +350,7 @@ begin
   -- control: ctrl cp2_start
   -- inputs:  rs1 rs2 alu_cmp alu_opb
   cp2_data  <= (others => '0');
-  cp2_valid <= '0';
+  cp2_valid <= cp2_start; -- to make sure CPU does not get stalled if there is an accidental access
 
 
   -- Co-Processor 3: Not implemented (yet) --------------------------------------------------
@@ -351,7 +358,7 @@ begin
   -- control: ctrl cp3_start
   -- inputs:  rs1 rs2 alu_cmp alu_opb
   cp3_data  <= (others => '0');
-  cp3_valid <= '0';
+  cp3_valid <= cp3_start; -- to make sure CPU does not get stalled if there is an accidental access
 
 
   -- Bus Interface Unit ---------------------------------------------------------------------

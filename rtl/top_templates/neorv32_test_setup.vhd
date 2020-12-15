@@ -142,6 +142,8 @@ begin
     twi_scl_io  => open,            -- twi serial clock line
     -- PWM --
     pwm_o       => open,            -- pwm channels
+    -- system time input from external MTIME (available if IO_MTIME_USE = false) --
+    mtime_i     => (others => '0'), -- current system time
     -- Interrupts --
     mtime_irq_i => '0',             -- machine timer interrupt, available if IO_MTIME_USE = false
     msw_irq_i   => '0',             -- machine software interrupt

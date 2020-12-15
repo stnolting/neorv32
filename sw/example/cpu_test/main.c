@@ -99,6 +99,19 @@ int cnt_test = 0;
  **************************************************************************/
 int main() {
 
+  register uint32_t tmp_a, tmp_b;
+  int i;
+  volatile uint32_t dummy_dst __attribute__((unused));
+
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } cpu_systime;
+
+
+  // init UART at default baud rate, no rx interrupt, no tx interrupt
+  neorv32_uart_setup(BAUD_RATE, 0, 0);
+
 // Disable cpu_test compilation by default
 #ifndef RUN_CPUTEST
   #warning cpu_test HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_CPUTEST clean_all exe<< to compile it.
@@ -109,21 +122,23 @@ int main() {
   return 0;
 #endif
 
-  register uint32_t tmp_a, tmp_b;
-  int i;
-  volatile uint32_t dummy_dst __attribute__((unused));
+  neorv32_uart_printf("\n--- PROCESSOR/CPU TEST ---\n");
+  neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
+  neorv32_uart_printf("This test suite is intended to verify the default NEORV32 processor setup using the default testbench.\n\n");
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/2];
-  } cpu_systime;
+  // check if we came from hardware reset
+  neorv32_uart_printf("Coming from hardware reset? ");
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_RESET) {
+    neorv32_uart_printf("true\n");
+  }
+  else {
+    neorv32_uart_printf("unknown (mcause != TRAP_CODE_RESET)\n");
+  }
+
 
   // reset performance counter
   neorv32_cpu_set_minstret(0);
   neorv32_cpu_set_mcycle(0);
-
-  // init UART at default baud rate, no rx interrupt, no tx interrupt
-  neorv32_uart_setup(BAUD_RATE, 0, 0);
 
   neorv32_mtime_set_time(0);
   // set CMP of machine system timer MTIME to max to prevent an IRQ
@@ -159,6 +174,7 @@ int main() {
   install_err += neorv32_rte_exception_install(RTE_TRAP_L_ACCESS,     global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_S_MISALIGNED, global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_S_ACCESS,     global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_UENV_CALL,    global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_MENV_CALL,    global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_MTI,          global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_MSI,          global_trap_handler);
@@ -188,20 +204,16 @@ int main() {
   }
 
   // test intro
-  neorv32_uart_printf("\n--- PROCESSOR/CPU TEST ---\n");
-  neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
-  neorv32_uart_printf("This test suite is intended to verify the default NEORV32 processor setup using the default testbench.\n\n");
   neorv32_uart_printf("Starting tests...\n\n");
 
   // enable global interrupts
   neorv32_cpu_eint();
 
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-
 
   // ----------------------------------------------------------
   // List all accessible CSRs
   // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] List all accessible CSRs: ", cnt_test);
 
   if ((UART_CT & (1 << UART_CT_SIM_MODE)) == 0) { // check if this is a simulation
@@ -281,7 +293,7 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (CFU0 not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -311,12 +323,76 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (CFU1 not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
   // ----------------------------------------------------------
-  // Bus timeout latency estimation
+  // Test standard RISC-V performance counter [m]cycle[h]
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] Testing [m]instret[h] counters: ", cnt_test);
+
+  // check if counters are implemented
+  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_ZICNT))  {
+    cnt_test++;
+
+    // get current cycle counter
+    volatile uint64_t cycle_csr_test = neorv32_cpu_get_cycle();
+
+    // wait some time to have a nice increment
+    asm volatile ("nop");
+    asm volatile ("nop");
+    asm volatile ("nop");
+
+    // make sure cycle counter has incremented and there was no exception during access
+    if ((neorv32_cpu_get_cycle() > cycle_csr_test) &&
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    neorv32_uart_printf("skipped (not implemented)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Test standard RISC-V performance counter [m]instret[h]
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] Testing [m]cycle[h] counters: ", cnt_test);
+
+  // check if counters are implemented
+  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_ZICNT))  {
+    cnt_test++;
+
+    // get current instruction counter
+    volatile uint64_t instret_csr_test = neorv32_cpu_get_instret();
+
+    // wait some time to have a nice increment
+    asm volatile ("nop");
+    asm volatile ("nop");
+    asm volatile ("nop");
+
+    // make sure instruction counter has incremented and there was no exception during access
+    if ((neorv32_cpu_get_instret() > instret_csr_test) &&
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    neorv32_uart_printf("skipped (not implemented)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Bus timeout latency estimation (very unprecise!)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Estimating bus time-out latency: ", cnt_test);
@@ -380,7 +456,7 @@ int main() {
       }
     }
     else {
-      neorv32_uart_printf("skipped (external memory interface not implemented)\n");
+      neorv32_uart_printf("skipped (not implemented)\n");
     }
   }
   else {
@@ -698,10 +774,10 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Environment call
+  // Environment call from M-mode
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] ENVCALL (ecall instruction) exception test: ", cnt_test);
+  neorv32_uart_printf("[%i] ENVCALL (ecall instruction) from M-mode exception test: ", cnt_test);
   cnt_test++;
 
   asm volatile("ECALL");
@@ -711,6 +787,37 @@ int main() {
   }
   else {
     test_fail();
+  }
+
+
+  // ----------------------------------------------------------
+  // Environment call from U-mode
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] ENVCALL (ecall instruction) from U-mode exception test: ", cnt_test);
+
+  // skip if U-mode is not implemented
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_U_EXT)) {
+
+    cnt_test++;
+
+    // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+    neorv32_cpu_goto_user_mode();
+    {
+      // access to misa not allowed for user-level programs
+      asm volatile("ECALL");
+    }
+
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_UENV_CALL) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+  }
+  else {
+    neorv32_uart_printf("skipped (not possible when U-EXT disabled)\n");
   }
 
 
@@ -745,7 +852,7 @@ int main() {
     neorv32_mtime_set_timecmp(-1);
   }
   else {
-    neorv32_uart_printf("skipped (WDT not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -782,7 +889,7 @@ int main() {
     neorv32_wdt_disable();
   }
   else {
-    neorv32_uart_printf("skipped (WDT not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -828,7 +935,7 @@ int main() {
       neorv32_gpio_port_set(0);
     }
     else {
-      neorv32_uart_printf("skipped (GPIO not implemented)\n");
+      neorv32_uart_printf("skipped (not implemented)\n");
     }
   }
   else {
@@ -886,7 +993,7 @@ int main() {
 
   }
   else {
-    neorv32_uart_printf("skipped (UART not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -925,7 +1032,7 @@ int main() {
     neorv32_spi_disable();
   }
   else {
-    neorv32_uart_printf("skipped (SPI not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -965,7 +1072,7 @@ int main() {
     neorv32_twi_disable();
   }
   else {
-    neorv32_uart_printf("skipped (TWI not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -995,7 +1102,7 @@ int main() {
     neorv32_mtime_set_timecmp(-1);
   }
   else {
-    neorv32_uart_printf("skipped (MTIME not implemented)\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -1013,12 +1120,18 @@ int main() {
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
     {
-      // access to mstatus not allowed for user mode programs
-      neorv32_cpu_csr_read(CSR_MSTATUS);
+      // access to misa not allowed for user-level programs
+      tmp_a = neorv32_cpu_csr_read(CSR_MISA);
     }
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
-      test_ok();
+      if (tmp_a == 0) { // make sure user-level code CANNOT read machine-level CSR content!
+        test_ok();
+      }
+      else {
+        neorv32_uart_printf("SECURITY VIOLATION! ");
+        test_fail();
+      }
     }
     else {
       test_fail();
@@ -1031,7 +1144,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test RTE debug handler
+  // Test RTE debug trap handler
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] RTE (runtime environment) debug trap handler test: ", cnt_test);
@@ -1201,7 +1314,7 @@ int main() {
 
   }
   else {
-    neorv32_uart_printf("not implemented\n");
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -1230,7 +1343,7 @@ int main() {
       }
     }
     else {
-      neorv32_uart_printf("skipped (A extension not implemented)\n");
+      neorv32_uart_printf("skipped (not implemented)\n");
     }
   }
   else {
@@ -1262,7 +1375,7 @@ int main() {
       }
     }
     else {
-      neorv32_uart_printf("skipped (A extension not implemented)\n");
+      neorv32_uart_printf("skipped (not implemented)\n");
     }
   }
   else {

@@ -55,6 +55,7 @@
 // Prototypes
 void read_memory(void);
 void write_memory(void);
+void atomic_cas(void);
 void dump_memory(void);
 uint32_t hexstr_to_uint(char *buffer, uint8_t length);
 
@@ -103,14 +104,19 @@ int main() {
     // decode input and execute command
     if (!strcmp(buffer, "help")) {
       neorv32_uart_printf("Available commands:\n"
-                          " help  - show this text\n"
-                          " read  - read single word from address\n"
-                          " write - write single word to address\n"
-                          " dump  - dumpe several words from base address\n\n");
+                          " help   - show this text\n"
+                          " read   - read single word from address\n"
+                          " write  - write single word to address\n"
+                          " atomic - perform atomic compare-and-swap operation\n"
+                          " dump   - dumpe several words from base address\n");
     }
 
     else if (!strcmp(buffer, "read")) {
       read_memory();
+    }
+
+    else if (!strcmp(buffer, "atomic")) {
+      atomic_cas();
     }
 
     else if (!strcmp(buffer, "write")) {
@@ -138,10 +144,9 @@ void read_memory(void) {
   char terminal_buffer[16];
 
   // enter address
-  neorv32_uart_printf("Enter address (8 hex chars): ");
+  neorv32_uart_printf("Enter address (8 hex chars): 0x");
   neorv32_uart_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
   register uint32_t mem_address = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
-  mem_address = mem_address & 0xFFFFFFFCUL; // align to 32-bit boundary
 
   // perform read access
   neorv32_uart_printf("\n[0x%x] = ", mem_address);
@@ -169,13 +174,12 @@ void write_memory(void) {
   char terminal_buffer[16];
 
   // enter address
-  neorv32_uart_printf("Enter address (8 hex chars): ");
+  neorv32_uart_printf("Enter address (8 hex chars): 0x");
   neorv32_uart_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
   register uint32_t mem_address = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
-  mem_address = mem_address & 0xFFFFFFFCUL; // align to 32-bit boundary
 
   // enter data
-  neorv32_uart_printf("\nEnter data (8 hex chars): ");
+  neorv32_uart_printf("\nEnter data (8 hex chars): 0x");
   neorv32_uart_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
   register uint32_t mem_data = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
@@ -197,6 +201,45 @@ void write_memory(void) {
 
 
 /**********************************************************************//**
+ * Perform atomic compare-and-swap operation
+ **************************************************************************/
+void atomic_cas(void) {
+
+  char terminal_buffer[16];
+  uint32_t mem_address, cas_expected, cas_desired;
+
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_A_EXT)) != 0) {
+
+    // enter memory address
+    neorv32_uart_printf("Enter memory address (8 hex chars): 0x");
+    neorv32_uart_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
+    mem_address = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+
+    // enter expected value
+    neorv32_uart_printf("\nEnter expected value @0x%x (8 hex chars): 0x", mem_address);
+    neorv32_uart_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
+    cas_expected = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+
+    // enter desired value
+    neorv32_uart_printf("\nEnter desired (new) value @0x%x (8 hex chars): 0x", mem_address);
+    neorv32_uart_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
+    cas_desired = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+
+    // try to execute atomic compare-and-swap
+    if (neorv32_cpu_atomic_cas(mem_address, cas_expected, cas_desired)) {
+      neorv32_uart_printf("\nAtomic-CAS: Failed!\n");
+    }
+    else {
+      neorv32_uart_printf("\nAtomic-CAS: Successful!\n");
+    }
+  }
+  else {
+    neorv32_uart_printf("Atomic operations not implemented/enabled!\n");
+  }
+}
+
+
+/**********************************************************************//**
  * Read several words from memory base address
  **************************************************************************/
 void dump_memory(void) {
@@ -204,10 +247,9 @@ void dump_memory(void) {
   char terminal_buffer[16];
 
   // enter base address
-  neorv32_uart_printf("Enter base address (8 hex chars): ");
+  neorv32_uart_printf("Enter base address (8 hex chars): 0x");
   neorv32_uart_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
   register uint32_t mem_address = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
-  mem_address = mem_address & 0xFFFFFFFCUL; // align to 32-bit boundary
 
   neorv32_uart_printf("\nPress key to start dumping. Press any key to abort.\n");
 

@@ -7,13 +7,19 @@ A list of all releases can be found [here](https://github.com/stnolting/neorv32/
 can be found [here](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
 The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 2x4-bit decimal-coded representation is used. Leading
-zeros are optional. Example: `CSR(mimpid) = 0x01040312 -> 01.04.03.12 -> Version 1.4.3.12 = v1.4.3.12 = v01.04.03.12`
+zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 => Version 1.4.3.12 = v1.4.3.12 = v01.04.03.12`
 
 For the HDL sources the version number is globally defined by the `hw_version_c` constant in the main VHDL package file
 [`rtl/core/neorv32_package.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 12.12.2020 | 1.4.8.10 | :warning: fixed wrong `trap_reset_c` encoding (in it's expanded form it should be 0x80000000) and reset logic: hardware `mcause` register is now set to `trap_reset_c` after a hardware reset; crt0.S start-up code now sets `mcause` to `trap_reset_c` after finishing hardware setup |
+| 11.12.2020 | 1.4.8.9 | Added option to exclude standard RISC-V performance counters (`[m]cycle[h]` and `[m]instret[h]`) for size-constrained implementations; disabled by setting VHDL package's `zicnt_en_c` constant to false; software can determine state of `zicnt_en_c` via `mzext` CSR's `CPU_MZEXT_ZICNT` bit; added new signal to processor top entity: `mtime_i`, this signal is used for updateting the `time[h]` CSRs if the processor-internal MTIME unit is disabled (via `IO_MTIME_USE` = `false`) |
+| 10.12.2020 | 1.4.8.8 | Added missing `mstatush` CSR (only bit `MBE` is implemented yet); added option to configure external bus interface for BIG- or little-endian byte-order, configured via VHDL package `xbus_big_endian_c` constant, default = BIG-endian, software can check endianness of the interface via SYSINFO's `SYSINFO_FEATURES(SYSINFO_FEATURES_MEM_EXT_ENDIAN)` flag; added `mstatush` CSR and endianness information to data sheet |
+| 09.12.2020 | 1.4.8.7 | Added missing *environment call from U-mode* exception (via `ecall` instruction in user-mode); added environment call from U-mode to data sheet |
+| 09.12.2020 | 1.4.8.6 | :warning: fixed bugs in ALU's co-processor interface: ATOMIC `A` extension could not be used without MULDIV `M` extension, CPU might have permanently stalled when executing an instruction from a disabled ISA extension; :lock: added security feature: illegal user-level CSR read access will always return zero; added new section *Execution Safety* to neorv32.pdf data sheet |
+| 07.12.2020 | 1.4.8.5 | :warning: fixed bug in next-PC logic (introduced with version 1.4.8.1) that caused instruction fetch from memories with more than 1 cycle latency to fail |
 | 05.12.2020 | 1.4.8.4 | :warning: fixed bug in physical memory protection (PMP): region size configuration was incorrect; removed `PMP_NUM_REGIONS` and `PMP_GRANULARITY` CPU/processor generics (PMP configuration now via package constants); reworked section *2.4. Instruction Sets and CPU Extensions* of neorv32.pdf |
 | 04.12.2020 | 1.4.8.2 | Added PMA (physical memory attribute) to processor-internal IO region: `NO EXECUTE`; added *3.3.Address Space/Physical Memory Attributes (PMAs)* section to neorv32.pdf |
 | 03.12.2020 | 1.4.8.1 | Optimized CPU program counter (PC) update logic and "next PC" computation (shortend critical path); updated bootloader (configuration option for direct-boot-from-SPI-flash only) and *customization* text in neorv32.pdf |

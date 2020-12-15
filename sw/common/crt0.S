@@ -188,6 +188,11 @@ __crt0_main_entry:
   csrw minstret,  zero
   csrw minstreth, zero
 
+  // restore mcause reset value (so that 'main' knows we are coming from reset)
+  li x12, 0x80000000
+  csrw mcause, x12
+
+  // call actual app's main function
   jal ra, main
 
 

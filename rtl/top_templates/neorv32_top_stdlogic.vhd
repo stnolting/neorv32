@@ -115,6 +115,8 @@ entity neorv32_top_stdlogic is
     twi_scl_io  : inout std_logic; -- twi serial clock line
     -- PWM (available if IO_PWM_USE = true) --
     pwm_o       : out std_logic_vector(03 downto 0); -- pwm channels
+    -- system time input from external MTIME (available if IO_MTIME_USE = false) --
+    mtime_i     : in  std_logic_vector(63 downto 0) := (others => '0'); -- current system time
     -- Interrupts --
     mtime_irq_i : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_USE = false
     msw_irq_i   : in  std_logic := '0'; -- machine software interrupt
@@ -158,6 +160,8 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   signal spi_csn_o_int   : std_ulogic_vector(07 downto 0);
   --
   signal pwm_o_int       : std_ulogic_vector(03 downto 0);
+  --
+  signal mtime_i_int     : std_ulogic_vector(63 downto 0);
   --
   signal mtime_irq_i_int : std_ulogic;
   signal msw_irq_i_int   : std_ulogic;
@@ -243,6 +247,8 @@ begin
     twi_scl_io  => twi_scl_io,      -- twi serial clock line
     -- PWM --
     pwm_o       => pwm_o_int,       -- pwm channels
+    -- system time input from external MTIME (available if IO_MTIME_USE = false) --
+    mtime_i     => mtime_i_int,     -- current system time
     -- Interrupts --
     mtime_irq_i => mtime_irq_i_int, -- machine timer interrupt, available if IO_MTIME_USE = false
     msw_irq_i   => msw_irq_i_int,   -- machine software interrupt
@@ -280,6 +286,8 @@ begin
   spi_csn_o      <= std_logic_vector(spi_csn_o_int);
 
   pwm_o          <= std_logic_vector(pwm_o_int);
+
+  mtime_i_int    <= std_ulogic_vector(mtime_i);
 
   msw_irq_i_int  <= std_ulogic(msw_irq_i);
   mext_irq_i_int <= std_ulogic(mext_irq_i);

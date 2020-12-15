@@ -121,6 +121,8 @@ entity neorv32_top is
     twi_scl_io  : inout std_logic; -- twi serial clock line
     -- PWM (available if IO_PWM_USE = true) --
     pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
+    -- system time input from external MTIME (available if IO_MTIME_USE = false) --
+    mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
     -- Interrupts --
     mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_USE = false
     msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
@@ -691,7 +693,7 @@ begin
   neorv32_mtime_inst_false:
   if (IO_MTIME_USE = false) generate
     mtime_rdata <= (others => '0');
-    mtime_time  <= (others => '0');
+    mtime_time  <= mtime_i; -- use external machine timer time signal
     mtime_ack   <= '0';
     mtime_irq   <= mtime_irq_i; -- use external machine timer interrupt
   end generate;
