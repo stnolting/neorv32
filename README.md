@@ -226,6 +226,7 @@ The NEORV32-specific extensions are always enabled and are indicated via the `X`
 
 * Four *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
 * `mzext` CSR to check for implemented `Z*` CPU extensions (like `Zifencei`)
+* All undefined/umimplemented/malformed/illegal instructions do raise an illegal instruction exception
 
 
 
