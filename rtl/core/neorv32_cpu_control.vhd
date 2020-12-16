@@ -1056,15 +1056,17 @@ begin
         else
           ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
         end if;
-        if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (is_atomic_lr_v = '1') or (is_atomic_sc_v = '1') then -- load / load-reservate / store conditional
-            ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back (all the time!); if atomic.SC and atomic.SC fails: allow write-back of non-zero result
-        end if;
-        -- wait for memory response --
+        --
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load operations)
+        -- wait for memory response --
         if ((ma_load_i or be_load_i or ma_store_i or be_store_i) = '1') then -- abort if exception
-          atomic_ctrl.env_abort    <= '1'; -- LOCKED (atomic) memory access environment failed (forces SC result to be non-zero => failure)
-          execute_engine.state_nxt <= DISPATCH;
+          atomic_ctrl.env_abort     <= '1'; -- LOCKED (atomic) memory access environment failed (forces SC result to be non-zero => failure)
+          ctrl_nxt(ctrl_rf_wb_en_c) <= is_atomic_sc_v; -- SC failes: allow write back of non-zero result
+          execute_engine.state_nxt  <= DISPATCH;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
+          if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (is_atomic_lr_v = '1') or (is_atomic_sc_v = '1') then -- load / load-reservate / store conditional
+            ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
+          end if;
           atomic_ctrl.env_end      <= '1'; -- normal end of LOCKED (atomic) memory access environment
           execute_engine.state_nxt <= DISPATCH;
         end if;
@@ -1717,33 +1719,32 @@ begin
         -- --------------------------------------------------------------------------------
         else
 
-          -- mepc & mtval: machine exception PC & machine trap value register --
+          -- mcause, mepc, mtval: machine trap cause, PC and value register --
           -- --------------------------------------------------------------------
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
-            -- trap ID code --
+            -- trap cause ID code --
             csr.mcause <= (others => '0');
             csr.mcause(csr.mcause'left) <= trap_ctrl.cause(trap_ctrl.cause'left); -- 1: interrupt, 0: exception
             csr.mcause(4 downto 0)      <= trap_ctrl.cause(4 downto 0); -- identifier
+            -- trap PC --
             if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS
               csr.mepc  <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
-              csr.mtval <= (others => '0'); -- mtval is zero for interrupts
-            else -- for EXCEPTIONS (according to their priority)
+            else -- for EXCEPTIONS
               csr.mepc <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
-              if (trap_ctrl.cause(4 downto 0) = trap_brk_c(4 downto 0)) or -- breakpoint OR
-                 (trap_ctrl.cause(4 downto 0) = trap_ima_c(4 downto 0)) or -- misaligned instruction address OR
-                 (trap_ctrl.cause(4 downto 0) = trap_iba_c(4 downto 0)) then -- instruction access error OR
-                csr.mtval <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction
-              elsif (trap_ctrl.cause(4 downto 0) = trap_lma_c(4 downto 0)) or -- misaligned load address OR
-                    (trap_ctrl.cause(4 downto 0) = trap_lbe_c(4 downto 0)) or -- load access error OR
-                    (trap_ctrl.cause(4 downto 0) = trap_sma_c(4 downto 0)) or -- misaligned store address OR
-                    (trap_ctrl.cause(4 downto 0) = trap_sbe_c(4 downto 0)) then -- store access error
-                csr.mtval <= mar_i; -- faulting data access address
-              elsif (trap_ctrl.cause(4 downto 0) = trap_iil_c(4 downto 0)) then -- illegal instruction
-                csr.mtval <= execute_engine.i_reg_last; -- faulting instruction itself
-              else -- anything else
-                csr.mtval <= (others => '0');
-              end if;
             end if;
+            -- trap value --
+            case trap_ctrl.cause is
+              when trap_ima_c | trap_iba_c => -- misaligned instruction address OR instruction access error
+                csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction
+              when trap_brk_c => -- breakpoint
+                csr.mtval <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- address of breakpoint instruction
+              when trap_lma_c | trap_lbe_c | trap_sma_c | trap_sbe_c => -- misaligned load/store address OR load/store access error
+                csr.mtval <= mar_i; -- faulting data access address
+              when trap_iil_c => -- illegal instruction
+                csr.mtval <= execute_engine.i_reg_last; -- faulting instruction itself
+              when others => -- everything else including interrupts
+                csr.mtval <= (others => '0');
+            end case;
           end if;
 
           -- mstatus: context switch --

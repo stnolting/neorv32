@@ -14,6 +14,7 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 16.12.2020 | 1.4.8.12 | :warning: fixed (another) bug in `mtval` CSR generation (wrong value for "breakpoint" trap); updated `mtval` value table in data sheet; fixed bug in load/store operation (intoroduced in version 1.4.8.10) |
 | 16.12.2020 | 1.4.8.11 | :warning: fixed bug in `mtval` CSR generation (wrong values for some traps); fixed bug in `mip` CSR (writing zero to implemented bits now actually clears pending interrupts); fixed bug in IRQ priority encoding (machine software interrupt `MSI` comes before machine timer interrupt `MTI`) |
 | 12.12.2020 | 1.4.8.10 | :warning: fixed wrong `trap_reset_c` encoding (in it's expanded form it should be 0x80000000) and reset logic: hardware `mcause` register is now set to `trap_reset_c` after a hardware reset; crt0.S start-up code now sets `mcause` to `trap_reset_c` after finishing hardware setup |
 | 11.12.2020 | 1.4.8.9 | Added option to exclude standard RISC-V performance counters (`[m]cycle[h]` and `[m]instret[h]`) for size-constrained implementations; disabled by setting VHDL package's `zicnt_en_c` constant to false; software can determine state of `zicnt_en_c` via `mzext` CSR's `CPU_MZEXT_ZICNT` bit; added new signal to processor top entity: `mtime_i`, this signal is used for updateting the `time[h]` CSRs if the processor-internal MTIME unit is disabled (via `IO_MTIME_USE` = `false`) |
