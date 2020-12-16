@@ -78,13 +78,13 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
 The processor is [synthesizable](#FPGA-Implementation-Results) (tested on *real hardware* using Intel Quartus Prime, Xilinx Vivado and Lattice Radiant/Synplify Pro) and can successfully execute
 all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the [CoreMark benchmark](#CoreMark-Benchmark).
 
-The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and `rv32Zifencei` [RISC-V compliance tests](https://github.com/riscv/riscv-compliance). 
+The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and `rv32Zifencei` [RISC-V compliance tests (:warning: framework v1.0)](https://github.com/riscv/riscv-compliance). 
 
-| Project component                                                               | CI status | Note     |
-|:--------------------------------------------------------------------------------|:----------|:---------|
-| [NEORV32 processor](https://github.com/stnolting/neorv32)                       | [![Build Status](https://travis-ci.com/stnolting/neorv32.svg?branch=master)](https://travis-ci.com/stnolting/neorv32) | [![sw doc](https://img.shields.io/badge/SW%20documentation-gh--pages-blue)](https://stnolting.github.io/neorv32/files.html) |
-| [Pre-built toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)          | [![Build Status](https://travis-ci.com/stnolting/riscv_gcc_prebuilt.svg?branch=master)](https://travis-ci.com/stnolting/riscv_gcc_prebuilt) | |
-| [RISC-V compliance test](https://github.com/stnolting/neorv32_riscv_compliance) | [![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) | |
+| Project component                                                                      | CI status | Note     |
+|:---------------------------------------------------------------------------------------|:----------|:---------|
+| [NEORV32 processor](https://github.com/stnolting/neorv32)                              | [![Build Status](https://travis-ci.com/stnolting/neorv32.svg?branch=master)](https://travis-ci.com/stnolting/neorv32) | [![sw doc](https://img.shields.io/badge/SW%20documentation-gh--pages-blue)](https://stnolting.github.io/neorv32/files.html) |
+| [Pre-built toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)                 | [![Build Status](https://travis-ci.com/stnolting/riscv_gcc_prebuilt.svg?branch=master)](https://travis-ci.com/stnolting/riscv_gcc_prebuilt) | |
+| [RISC-V compliance test (v1.0)](https://github.com/stnolting/neorv32_riscv_compliance) | [![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) | |
 
 
 ### To-Do / Wish List / Help Wanted
@@ -99,7 +99,7 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 * Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
 * Single-precision floating point unit (`F`) *(planned)*
 * Implement further RISC-V (or custom?) CPU extensions
-* Port new RISC-V compliance test framework *(scheduled)*
+* Port new RISC-V compliance test framework - add simulation support to simulate executable of ~2MB size *(scheduled)*
 * Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))
 * ...
 * [Ideas?](#ContributeFeedbackQuestions)
