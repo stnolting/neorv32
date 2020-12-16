@@ -1426,15 +1426,15 @@ begin
       trap_ctrl.cause_nxt <= trap_mei_c;
       trap_ctrl.irq_ack_nxt(interrupt_mext_irq_c) <= '1';
 
-    -- interrupt: 1.7 machine timer interrupt --
-    elsif (trap_ctrl.irq_buf(interrupt_mtime_irq_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_mti_c;
-      trap_ctrl.irq_ack_nxt(interrupt_mtime_irq_c) <= '1';
-
     -- interrupt: 1.3 machine SW interrupt --
     elsif (trap_ctrl.irq_buf(interrupt_msw_irq_c) = '1') then
       trap_ctrl.cause_nxt <= trap_msi_c;
       trap_ctrl.irq_ack_nxt(interrupt_msw_irq_c) <= '1';
+
+    -- interrupt: 1.7 machine timer interrupt --
+    elsif (trap_ctrl.irq_buf(interrupt_mtime_irq_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_mti_c;
+      trap_ctrl.irq_ack_nxt(interrupt_mtime_irq_c) <= '1';
 
 
     -- interrupt: 1.16 fast interrupt channel 0 --
