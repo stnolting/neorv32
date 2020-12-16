@@ -202,7 +202,7 @@ begin
   begin
     if rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
-        mdo <= wdata_i; -- memory data out register (MDO)
+        mdo <= wdata_i; -- memory data output register (MDO)
       end if;
     end if;
   end process mem_do_reg;
@@ -243,7 +243,7 @@ begin
   begin
     if rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mi_we_c) = '1') then
-        mdi <= d_bus_rdata; -- memory data in register (MDI)
+        mdi <= d_bus_rdata; -- memory data input register (MDI)
       end if;
     end if;
   end process mem_out_buf;

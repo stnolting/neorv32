@@ -293,7 +293,6 @@ begin
   operation_result: process(valid, cp_op_ff, mul_product, div_res, quotient, opy_is_zero, rs1_i, remainder)
   begin
     if (valid = '1') then
-      valid_o <= '1';
       case cp_op_ff is
         when cp_op_mul_c =>
           res_o <= mul_product(31 downto 00);
@@ -313,10 +312,12 @@ begin
           res_o <= remainder;
       end case;
     else
-      valid_o <= '0';
-      res_o   <= (others => '0');
+      res_o <= (others => '0');
     end if;
   end process operation_result;
+
+  -- status output --
+  valid_o <= valid;
 
 
 end neorv32_cpu_cp_muldiv_rtl;
