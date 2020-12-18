@@ -14,6 +14,7 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 18.12.2020 | 1.4.8.13 | Added additional simulation files: simulation-optimized IMEM-ROM (so far, this is only relevant for the *new* [NEORV32 RISC-V Compliance test framework v2.0](https://github.com/stnolting/neorv32_riscv_compliance)) |
 | 16.12.2020 | 1.4.8.12 | :warning: fixed (another) bug in `mtval` CSR generation (wrong value for "breakpoint" trap); updated `mtval` value table in data sheet; fixed bug in load/store operation (intoroduced in version 1.4.8.10) |
 | 16.12.2020 | 1.4.8.11 | :warning: fixed bug in `mtval` CSR generation (wrong values for some traps); fixed bug in `mip` CSR (writing zero to implemented bits now actually clears pending interrupts); fixed bug in IRQ priority encoding (machine software interrupt `MSI` comes before machine timer interrupt `MTI`) |
 | 12.12.2020 | 1.4.8.10 | :warning: fixed wrong `trap_reset_c` encoding (in it's expanded form it should be 0x80000000) and reset logic: hardware `mcause` register is now set to `trap_reset_c` after a hardware reset; crt0.S start-up code now sets `mcause` to `trap_reset_c` after finishing hardware setup |
