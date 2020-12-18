@@ -81,4 +81,4 @@ chmod 777 neorv32.uart.sim_mode.data.out
 
 # Run simulation
 ghdl -e --work=neorv32 neorv32_tb
-ghdl -r --work=neorv32 neorv32_tb --max-stack-alloc=1048576 --ieee-asserts=disable --assert-level=error $SIM_CONFIG
+ghdl -r --work=neorv32 neorv32_tb --max-stack-alloc=0 --ieee-asserts=disable --assert-level=error $SIM_CONFIG

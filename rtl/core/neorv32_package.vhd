@@ -60,7 +60,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!)= -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040810"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040813"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero by the HW
@@ -76,6 +76,7 @@ package neorv32_package is
   function xor_all_f(a : std_ulogic_vector) return std_ulogic;
   function xnor_all_f(a : std_ulogic_vector) return std_ulogic;
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
+  function hexchar_to_stdulogicvector_f(input : character) return std_ulogic_vector;
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
   function bswap32_f(input : std_ulogic_vector) return std_ulogic_vector;
@@ -1357,7 +1358,7 @@ package body neorv32_package is
     return tmp_v;
   end function xnor_all_f;
 
-  -- Function: Convert to hex char ----------------------------------------------------------
+  -- Function: Convert std_ulogic_vector to hex char ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character is
     variable output_v : character;
@@ -1383,6 +1384,33 @@ package body neorv32_package is
     end case;
     return output_v;
   end function to_hexchar_f;
+
+  -- Function: Convert hex char to std_ulogic_vector ----------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function hexchar_to_stdulogicvector_f(input : character) return std_ulogic_vector is
+    variable hex_value_v : std_ulogic_vector(3 downto 0);
+  begin
+    case input is
+      when '0'       => hex_value_v := x"0";
+      when '1'       => hex_value_v := x"1";
+      when '2'       => hex_value_v := x"2";
+      when '3'       => hex_value_v := x"3"; 
+      when '4'       => hex_value_v := x"4";
+      when '5'       => hex_value_v := x"5";
+      when '6'       => hex_value_v := x"6";
+      when '7'       => hex_value_v := x"7";
+      when '8'       => hex_value_v := x"8";
+      when '9'       => hex_value_v := x"9";
+      when 'a' | 'A' => hex_value_v := x"a";
+      when 'b' | 'B' => hex_value_v := x"b";
+      when 'c' | 'C' => hex_value_v := x"c";
+      when 'd' | 'D' => hex_value_v := x"d";
+      when 'e' | 'E' => hex_value_v := x"e";
+      when 'f' | 'F' => hex_value_v := x"f";
+      when others    => hex_value_v := (others => 'X');
+    end case;
+    return hex_value_v;
+  end function hexchar_to_stdulogicvector_f;
 
   -- Function: Bit reversal -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
