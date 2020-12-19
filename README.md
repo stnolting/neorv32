@@ -101,7 +101,6 @@ The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/pr
 * Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
 * Single-precision floating point unit (`F`) *(planned)*
 * Implement further RISC-V (or custom?) CPU extensions
-* Port new RISC-V compliance test framework - add simulation support to simulate executable of ~2MB size *(scheduled)*
 * Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))
 * ...
 * [Ideas?](#ContributeFeedbackQuestions)
