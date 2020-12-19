@@ -182,6 +182,8 @@ int main() {
   neorv32_rte_print_hw_config();
 
   // configure RTE
+  neorv32_uart_printf("\n\nInitializing NEORV32 run-time environment (RTE)... ");
+
   neorv32_rte_setup(); // this will install a full-detailed debug handler for all traps
 
   int install_err = 0;
@@ -224,7 +226,7 @@ int main() {
   }
 
   // test intro
-  neorv32_uart_printf("Starting tests...\n\n");
+  neorv32_uart_printf("\nStarting tests...\n\n");
 
   // enable global interrupts
   neorv32_cpu_eint();
@@ -910,24 +912,29 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] MSI (via testbench) interrupt test: ", cnt_test);
 
-  cnt_test++;
+  if (UART_CT & (1 << UART_CT_SIM_MODE)) { // check if this is a simulation
+    cnt_test++;
 
-  // trigger IRQ
-  sim_trigger_msi();
+    // trigger IRQ
+    sim_trigger_msi();
 
-  // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
-  asm volatile("nop");
-  asm volatile("nop");
-  asm volatile("nop");
-  asm volatile("nop");
-  asm volatile("nop");
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
 
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MSI) {
-    test_ok();
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MSI) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
   }
   else {
-    test_fail();
+    neorv32_uart_printf("skipped (on real hardware)\n");
   }
 
 
@@ -937,24 +944,29 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] MEI (via testbench) interrupt test: ", cnt_test);
 
-  cnt_test++;
+  if (UART_CT & (1 << UART_CT_SIM_MODE)) { // check if this is a simulation
+    cnt_test++;
 
-  // trigger IRQ
-  sim_trigger_mei();
+    // trigger IRQ
+    sim_trigger_mei();
 
-  // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
-  asm volatile("nop");
-  asm volatile("nop");
-  asm volatile("nop");
-  asm volatile("nop");
-  asm volatile("nop");
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
 
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MEI) {
-    test_ok();
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MEI) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
   }
   else {
-    test_fail();
+    neorv32_uart_printf("skipped (on real hardware)\n");
   }
 
 

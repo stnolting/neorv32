@@ -1,4 +1,4 @@
-# NEORV32 RISC-V Compliance Test
+# NEORV32 RISC-V-Compliance Test Framework
 
 **:sparkles: This setup uses the new [RISC-V Compliance Test Framework v2.0](https://github.com/riscv/riscv-compliance/releases/tag/v2.0) :sparkles:**
 
