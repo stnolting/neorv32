@@ -30,7 +30,7 @@ then
     git clone $REPOSRC $LOCALREPO
 else
     echo ">>> Repository already exists. Checking for updates..."
-    git status -uno $LOCALREPO
+    (cd work/riscv-compliance ; git status -uno)
 fi
 
 # Copy NEORV32 files
