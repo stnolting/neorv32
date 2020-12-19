@@ -1,16 +1,8 @@
 -- #################################################################################################
 -- # << NEORV32 - Default Testbench >>                                                             #
 -- # ********************************************************************************************* #
--- # This testbench provides a virtual UART receiver connected to the processor's uart_txd_o       #
--- # signal. The received chars are shown in the simulator console and also written to a file      #
--- # ("neorv32.testbench_uart.out").                                                               #
--- #                                                                                               #
--- # Furthermore, this testbench provides two external memories (ext_mem_a and ext_mem_b) coupled  #
--- # via Wishbone. ext_mem_a is initialized with the application_init_image and can be used as     #
--- # external boot memory (external IMEM).                                                         #
--- # ext_mem_b is a small uninitialized memory that can be uased as external memory-mapped IO.     #
--- #                                                                                               #
 -- # Use the "User Configuration" section to configure the testbench according to your need.       #
+-- # See NEORV32 data sheet (docs/NEORV32.pdf) for more information.                               #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -79,6 +71,9 @@ architecture neorv32_tb_rtl of neorv32_tb is
   constant ext_mem_c_base_addr_c : std_ulogic_vector(31 downto 0) := x"F0000000"; -- wishbone memory base address (default begin of EXTERNAL IO area)
   constant ext_mem_c_size_c      : natural := 64; -- wishbone memory size in bytes
   constant ext_mem_c_latency_c   : natural := 3; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
+  -- machine interrupt triggers --
+  constant msi_trigger_c         : std_ulogic_vector(31 downto 0) := x"FF000000"; -- machine software interrupt
+  constant mei_trigger_c         : std_ulogic_vector(31 downto 0) := x"FF000004"; -- machine external interrupt
   -- -------------------------------------------------------------------------------------------
 
   -- internals - hands off! --
@@ -108,7 +103,10 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal twi_scl, twi_sda : std_logic;
 
   -- spi --
-  signal spi_data : std_logic;
+  signal spi_data : std_ulogic;
+
+  -- irq --
+  signal msi_ring, mei_ring : std_ulogic;
 
   -- Wishbone bus --
   type wishbone_t is record
@@ -124,7 +122,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
     tag   : std_ulogic_vector(2 downto 0); -- tag
     lock  : std_ulogic; -- locked/exclusive bus access
   end record;
-  signal wb_cpu, wb_mem_a, wb_mem_b, wb_mem_c : wishbone_t;
+  signal wb_cpu, wb_mem_a, wb_mem_b, wb_mem_c, wb_msi, wb_mei : wishbone_t;
 
   -- Wishbone memories --
   type ext_mem_a_ram_t is array (0 to ext_mem_a_size_c/4-1) of std_ulogic_vector(31 downto 0);
@@ -250,8 +248,8 @@ begin
     mtime_i     => (others => '0'), -- current system time
     -- Interrupts --
     mtime_irq_i => '0',             -- machine software interrupt, available if IO_MTIME_USE = false
-    msw_irq_i   => '0',             -- machine software interrupt
-    mext_irq_i  => '0'              -- machine external interrupt
+    msw_irq_i   => msi_ring,        -- machine software interrupt
+    mext_irq_i  => mei_ring         -- machine external interrupt
   );
 
   -- TWI termination (pull-ups) --
@@ -338,15 +336,33 @@ begin
   wb_mem_c.cyc   <= wb_cpu.cyc;
   wb_mem_c.lock  <= wb_cpu.lock;
 
+  wb_msi.addr    <= wb_cpu.addr;
+  wb_msi.wdata   <= wb_cpu.wdata;
+  wb_msi.we      <= wb_cpu.we;
+  wb_msi.sel     <= wb_cpu.sel;
+  wb_msi.tag     <= wb_cpu.tag;
+  wb_msi.cyc     <= wb_cpu.cyc;
+  wb_msi.lock    <= wb_cpu.lock;
+
+  wb_mei.addr    <= wb_cpu.addr;
+  wb_mei.wdata   <= wb_cpu.wdata;
+  wb_mei.we      <= wb_cpu.we;
+  wb_mei.sel     <= wb_cpu.sel;
+  wb_mei.tag     <= wb_cpu.tag;
+  wb_mei.cyc     <= wb_cpu.cyc;
+  wb_mei.lock    <= wb_cpu.lock;
+
   -- CPU read-back signals (no mux here since peripherals have "output gates") --
-  wb_cpu.rdata <= wb_mem_a.rdata or wb_mem_b.rdata or wb_mem_c.rdata;
-  wb_cpu.ack   <= wb_mem_a.ack   or wb_mem_b.ack   or wb_mem_c.ack;
-  wb_cpu.err   <= wb_mem_a.err   or wb_mem_b.err   or wb_mem_c.err;
+  wb_cpu.rdata <= wb_mem_a.rdata or wb_mem_b.rdata or wb_mem_c.rdata or wb_mei.rdata or wb_msi.rdata;
+  wb_cpu.ack   <= wb_mem_a.ack   or wb_mem_b.ack   or wb_mem_c.ack   or wb_mei.ack   or wb_msi.ack;
+  wb_cpu.err   <= wb_mem_a.err   or wb_mem_b.err   or wb_mem_c.err   or wb_mei.err   or wb_msi.err;
 
   -- peripheral select via STROBE signal --
   wb_mem_a.stb <= wb_cpu.stb when (wb_cpu.addr >= ext_mem_a_base_addr_c) and (wb_cpu.addr < std_ulogic_vector(unsigned(ext_mem_a_base_addr_c) + ext_mem_a_size_c)) else '0';
   wb_mem_b.stb <= wb_cpu.stb when (wb_cpu.addr >= ext_mem_b_base_addr_c) and (wb_cpu.addr < std_ulogic_vector(unsigned(ext_mem_b_base_addr_c) + ext_mem_b_size_c)) else '0';
   wb_mem_c.stb <= wb_cpu.stb when (wb_cpu.addr >= ext_mem_c_base_addr_c) and (wb_cpu.addr < std_ulogic_vector(unsigned(ext_mem_c_base_addr_c) + ext_mem_c_size_c)) else '0';
+  wb_msi.stb   <= wb_cpu.stb when (wb_cpu.addr = msi_trigger_c) else '0';
+  wb_mei.stb   <= wb_cpu.stb when (wb_cpu.addr = mei_trigger_c) else '0';
 
 
   -- Wishbone Memory A (simulated external IMEM) --------------------------------------------
@@ -469,6 +485,36 @@ begin
       end if;
     end if;
   end process ext_mem_c_access;
+
+
+  -- Wishbone IRQ Triggers ------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  ext_irq_trigger: process(clk_gen)
+  begin
+    if rising_edge(clk_gen) then
+      -- default --
+      msi_ring     <= '0';
+      wb_msi.rdata <= (others => '0');
+      wb_msi.ack   <= '0';
+      wb_msi.err   <= '0';
+      mei_ring     <= '0';
+      wb_mei.rdata <= (others => '0');
+      wb_mei.ack   <= '0';
+      wb_mei.err   <= '0';
+
+      -- machine software interrupt --
+      if ((wb_msi.cyc and wb_msi.stb and wb_msi.we) = '1') then
+        msi_ring   <= '1';
+        wb_msi.ack <= '1';
+      end if;
+
+      -- machine external interrupt --
+      if ((wb_mei.cyc and wb_mei.stb and wb_mei.we) = '1') then
+        mei_ring   <= '1';
+        wb_mei.ack <= '1';
+      end if;
+    end if;
+  end process ext_irq_trigger;
 
 
 end neorv32_tb_rtl;
