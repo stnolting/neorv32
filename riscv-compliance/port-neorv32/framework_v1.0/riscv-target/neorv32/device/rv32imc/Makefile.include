@@ -1,0 +1,41 @@
+ifndef NEORV32_HOME
+    $(error NEORV32_HOME is undefined)
+endif
+
+LDSCRIPT      = $(ROOTDIR)/riscv-target/neorv32/device/.ld_script/link.ld
+TARGET_SIM   ?= ghdl
+TARGET_FLAGS ?= $(RISCV_TARGET_FLAGS)
+
+
+ifeq ($(shell command -v $(TARGET_SIM) 2> /dev/null),)
+    $(error Target simulator executable '$(TARGET_SIM)` not found)
+endif
+
+RUN_TARGET=\
+	cd $(work_dir_isa); \
+	rm -f $(work_dir_isa)/*.out; \
+	sed -i '/CPU_EXTENSION_RISCV_C/c\  CPU_EXTENSION_RISCV_C => true, -- MOD. BY RISCV-COMPL. TEST SCRIPT' $(NEORV32_HOME)/sim/neorv32_tb.vhd; \
+	sed -i '/CPU_EXTENSION_RISCV_M/c\  CPU_EXTENSION_RISCV_M => true, -- MOD. BY RISCV-COMPL. TEST SCRIPT' $(NEORV32_HOME)/sim/neorv32_tb.vhd; \
+	sed -i '/CPU_EXTENSION_RISCV_Zicsr/c\  CPU_EXTENSION_RISCV_Zicsr => true, -- MOD. BY RISCV-COMPL. TEST SCRIPT' $(NEORV32_HOME)/sim/neorv32_tb.vhd; \
+	make -C $(NEORV32_HOME)/sw/example/blink_led main.elf; \
+	cp -f $< $(NEORV32_HOME)/sw/example/blink_led/main.elf; \
+	make -C $(NEORV32_HOME)/sw/example/blink_led main.bin; \
+	make -C $(NEORV32_HOME)/sw/example/blink_led install; \
+	sh $(NEORV32_HOME)/sim/ghdl/ghdl_sim.sh --stop-time=100us >> /dev/null; \
+	cp $(work_dir_isa)/neorv32.uart.sim_mode.data.out $(*).signature.output;
+
+
+RISCV_PREFIX   ?= riscv32-unknown-elf-
+RISCV_GCC      ?= $(RISCV_PREFIX)gcc
+RISCV_OBJDUMP  ?= $(RISCV_PREFIX)objdump
+RISCV_OBJCOPY  ?= $(RISCV_PREFIX)objcopy
+RISCV_READELF  ?= $(RISCV_PREFIX)readelf
+RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=rv32imc
+
+COMPILE_TARGET=\
+	$$(RISCV_GCC) $(2) $$(RISCV_GCC_OPTS) \
+		-I$(ROOTDIR)/riscv-test-env/ \
+		-I$(ROOTDIR)/riscv-test-env/p/ \
+		-I$(TARGETDIR)/$(RISCV_TARGET)/ \
+		-T$(LDSCRIPT) $$< \
+		-o $$@;
