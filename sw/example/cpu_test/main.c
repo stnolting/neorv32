@@ -59,6 +59,8 @@
 
 
 // Prototypes
+void sim_trigger_msi(void);
+void sim_trigger_mei(void);
 void global_trap_handler(void);
 void test_ok(void);
 void test_fail(void);
@@ -87,6 +89,24 @@ int cnt_test = 0;
  * "Simulated external IO" - exclusive access will always fail
  **************************************************************************/
 # define ATOMIC_FAILURE (*(IO_REG32 (EXT_MEM_BASE + 4)))
+
+
+/**********************************************************************//**
+ * Simulation-based function to trigger CPU MSI (machine software interrupt).
+ **************************************************************************/
+void sim_trigger_msi(void) {
+
+  *(IO_REG32 (0xFF000000)) = 1;
+}
+
+
+/**********************************************************************//**
+ * Simulation-based function to trigger CPU MEI (machine external interrupt).
+ **************************************************************************/
+void sim_trigger_mei(void) {
+
+  *(IO_REG32 (0xFF000004)) = 1;
+}
 
 
 /**********************************************************************//**
@@ -178,7 +198,7 @@ int main() {
   install_err += neorv32_rte_exception_install(RTE_TRAP_MENV_CALL,    global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_MTI,          global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_MSI,          global_trap_handler);
-  install_err += neorv32_rte_exception_install(RTE_TRAP_MTI,          global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_MEI,          global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_0,       global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_1,       global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_2,       global_trap_handler);
@@ -264,66 +284,6 @@ int main() {
   }
   else {
     neorv32_uart_printf("skipped (disabled for simulation)\n");
-  }
-
-
-  // ----------------------------------------------------------
-  // CFU0 test (default HW)
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Default CFU0 access test: ", cnt_test);
-
-  // cfu0 implemented?
-  if (neorv32_cfu0_available()) {
-    cnt_test++;
-
-    // write test data
-    CFU0_REG_0 = 0x01234567;
-    CFU0_REG_1 = 0x76543210;
-    CFU0_REG_2 = 0xABCDABCD;
-    CFU0_REG_3 = 0xFFAAFFAA;
-
-    if ((CFU0_REG_0 == 0x01234567) && (CFU0_REG_1 == 0x76543210) &&
-        (CFU0_REG_2 == 0xABCDABCD) && (CFU0_REG_3 == 0xFFAAFFAA) && // correct read-back
-        (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) { // no exception
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    neorv32_uart_printf("skipped (not implemented)\n");
-  }
-
-
-  // ----------------------------------------------------------
-  // CFU1 test (default HW)
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Default CFU1 access test: ", cnt_test);
-
-  // cfu0 implemented?
-  if (neorv32_cfu1_available()) {
-    cnt_test++;
-
-    // write test data
-    CFU1_REG_0 = 0x22334455;
-    CFU1_REG_1 = 0x44782931;
-    CFU1_REG_2 = 0xDDAABBFF;
-    CFU1_REG_3 = 0xA0B0D0C0;
-
-    if ((CFU1_REG_0 == 0x22334455) && (CFU1_REG_1 == 0x44782931) &&
-        (CFU1_REG_2 == 0xDDAABBFF) && (CFU1_REG_3 == 0xA0B0D0C0) && // correct read-back
-        (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) { // no exception
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -941,6 +901,60 @@ int main() {
   }
   else {
     neorv32_uart_printf("skipped (not implemented)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Machine software interrupt (MSI) via testbench
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] MSI (via testbench) interrupt test: ", cnt_test);
+
+  cnt_test++;
+
+  // trigger IRQ
+  sim_trigger_msi();
+
+  // wait some time for the IRQ to arrive the CPU
+  asm volatile("nop");
+  asm volatile("nop");
+  asm volatile("nop");
+  asm volatile("nop");
+  asm volatile("nop");
+  asm volatile("nop");
+
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MSI) {
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
+
+
+  // ----------------------------------------------------------
+  // Machine external interrupt (MEI) via testbench
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] MEI (via testbench) interrupt test: ", cnt_test);
+
+  cnt_test++;
+
+  // trigger IRQ
+  sim_trigger_mei();
+
+  // wait some time for the IRQ to arrive the CPU
+  asm volatile("nop");
+  asm volatile("nop");
+  asm volatile("nop");
+  asm volatile("nop");
+  asm volatile("nop");
+  asm volatile("nop");
+
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MEI) {
+    test_ok();
+  }
+  else {
+    test_fail();
   }
 
 
