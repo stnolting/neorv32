@@ -102,6 +102,7 @@ The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/pr
 * Single-precision floating point unit (`F`) *(planned)*
 * Implement further RISC-V (or custom?) CPU extensions
 * Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))
+* Add memory-mapped trigger to testbench to quit simulation (using VHDL2008's `use std.env.finish;`) - but how? :thinking:
 * ...
 * [Ideas?](#ContributeFeedbackQuestions)
 
