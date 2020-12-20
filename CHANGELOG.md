@@ -7,7 +7,7 @@ A list of all releases can be found [here](https://github.com/stnolting/neorv32/
 can be found [here](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
 The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 2x4-bit decimal-coded representation is used. Leading
-zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 => Version 1.4.3.12 = v1.4.3.12 = v01.04.03.12`
+zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`
 
 For the HDL sources the version number is globally defined by the `hw_version_c` constant in the main VHDL package file
 [`rtl/core/neorv32_package.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
