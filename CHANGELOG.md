@@ -7,14 +7,15 @@ A list of all releases can be found [here](https://github.com/stnolting/neorv32/
 can be found [here](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
 The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 2x4-bit decimal-coded representation is used. Leading
-zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 => Version 1.4.3.12 = v1.4.3.12 = v01.04.03.12`
+zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`
 
 For the HDL sources the version number is globally defined by the `hw_version_c` constant in the main VHDL package file
 [`rtl/core/neorv32_package.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 18.12.2020 | 1.4.8.13 | Added additional simulation files: simulation-optimized IMEM-ROM (so far, this is only relevant for the *new* [NEORV32 RISC-V Compliance test framework v2.0](https://github.com/stnolting/neorv32_riscv_compliance)) |
+| 19.12.2020 | 1.4.9.0 | Testbench: added memory-mapped triggers to trigger core's "machine software & external interrupts"; `sw/example/cpu_test`: removed CFU tests, added `MEI` and `MSI` tests; added **RISC-V-Compliance Test Framework** to repository (`riscv-compliance/`), core passes all `rv32` tests (riscv-compliance v2.1) |
+| 18.12.2020 | 1.4.8.13 | Added additional simulation files: simulation-optimized IMEM-ROM (so far, this is only relevant for the *new* NEORV32 RISC-V Compliance test framework v2.0); **:sparkles: Processor now passes all `rv32` tests of the new [RISC-V Compliance Test Framework v2.0](https://github.com/riscv/riscv-compliance/releases/tag/v2.0) :sparkles:** |
 | 16.12.2020 | 1.4.8.12 | :warning: fixed (another) bug in `mtval` CSR generation (wrong value for "breakpoint" trap); updated `mtval` value table in data sheet; fixed bug in load/store operation (intoroduced in version 1.4.8.10) |
 | 16.12.2020 | 1.4.8.11 | :warning: fixed bug in `mtval` CSR generation (wrong values for some traps); fixed bug in `mip` CSR (writing zero to implemented bits now actually clears pending interrupts); fixed bug in IRQ priority encoding (machine software interrupt `MSI` comes before machine timer interrupt `MTI`) |
 | 12.12.2020 | 1.4.8.10 | :warning: fixed wrong `trap_reset_c` encoding (in it's expanded form it should be 0x80000000) and reset logic: hardware `mcause` register is now set to `trap_reset_c` after a hardware reset; crt0.S start-up code now sets `mcause` to `trap_reset_c` after finishing hardware setup |

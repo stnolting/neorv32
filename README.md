@@ -70,6 +70,7 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
  * Easy to use – working out of the box.
  * Clean synchronous design, no wacky combinatorial interfaces.
  * Be as small as possible – but with a reasonable size-performance tradeoff.
+ * Be as RISC-V-compliant as possible.
  * The processor has to fit in a Lattice iCE40 UltraPlus 5k low-power FPGA running at 20+ MHz.
 
 
@@ -78,13 +79,14 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
 The processor is [synthesizable](#FPGA-Implementation-Results) (tested on *real hardware* using Intel Quartus Prime, Xilinx Vivado and Lattice Radiant/Synplify Pro) and can successfully execute
 all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the [CoreMark benchmark](#CoreMark-Benchmark).
 
-The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and `rv32Zifencei` [RISC-V compliance tests (:warning: framework v1.0)](https://github.com/riscv/riscv-compliance). 
+The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/privilege` and `rv32_m/Zifencei`
+[RISC-V compliance tests (new framework v2)](https://github.com/riscv/riscv-compliance). 
 
-| Project component                                                                      | CI status | Note     |
-|:---------------------------------------------------------------------------------------|:----------|:---------|
-| [NEORV32 processor](https://github.com/stnolting/neorv32)                              | [![Build Status](https://travis-ci.com/stnolting/neorv32.svg?branch=master)](https://travis-ci.com/stnolting/neorv32) | [![sw doc](https://img.shields.io/badge/SW%20documentation-gh--pages-blue)](https://stnolting.github.io/neorv32/files.html) |
-| [Pre-built toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)                 | [![Build Status](https://travis-ci.com/stnolting/riscv_gcc_prebuilt.svg?branch=master)](https://travis-ci.com/stnolting/riscv_gcc_prebuilt) | |
-| [RISC-V compliance test (v1.0)](https://github.com/stnolting/neorv32_riscv_compliance) | [![Build Status](https://travis-ci.com/stnolting/neorv32_riscv_compliance.svg?branch=master)](https://travis-ci.com/stnolting/neorv32_riscv_compliance) | |
+| Project component | CI status | Note     |
+|:----------------- |:----------|:---------|
+| [NEORV32 processor](https://github.com/stnolting/neorv32) | [![Build Status](https://travis-ci.com/stnolting/neorv32.svg?branch=master)](https://travis-ci.com/stnolting/neorv32) | [![sw doc](https://img.shields.io/badge/SW%20documentation-gh--pages-blue)](https://stnolting.github.io/neorv32/files.html) |
+| [Pre-built toolchain](https://github.com/stnolting/riscv_gcc_prebuilt) | [![Build Status](https://travis-ci.com/stnolting/riscv_gcc_prebuilt.svg?branch=master)](https://travis-ci.com/stnolting/riscv_gcc_prebuilt) | |
+| RISC-V compliance test | | See [riscv-compliance/README.md](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md) |
 
 
 ### To-Do / Wish List / Help Wanted
@@ -99,8 +101,8 @@ The processor passes the official `rv32i`, `rv32im`, `rv32imc`, `rv32Zicsr` and 
 * Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
 * Single-precision floating point unit (`F`) *(planned)*
 * Implement further RISC-V (or custom?) CPU extensions
-* Port new RISC-V compliance test framework - add simulation support to simulate executable of ~2MB size *(scheduled)*
 * Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))
+* Add memory-mapped trigger to testbench to quit simulation (using VHDL2008's `use std.env.finish;`) - but how? :thinking:
 * ...
 * [Ideas?](#ContributeFeedbackQuestions)
 
@@ -135,9 +137,11 @@ is highly customizable via the processor's top generics and already provides the
 
 ### NEORV32 CPU Features
 
-The NEORV32 CPU is [compliant](https://github.com/stnolting/neorv32_riscv_compliance) to the
+The NEORV32 CPU is **compliant** to the
 [official RISC-V specifications (2.2)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf) including a subset of the 
-[RISC-V privileged architecture specifications (1.12-draft)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf).
+[RISC-V privileged architecture specifications (1.12-draft)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf)
+tested via the [official RISC-V Compliance Test Framework](https://github.com/riscv/riscv-compliance)
+(see [`riscv-compliance/README`](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md)).
 
 More information regarding the CPU including a detailed list of the instruction set and the available CSRs can be found in
 the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
@@ -197,7 +201,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
     * Store access fault (via unacknowledged bus access after timeout)
     * Environment call from U-mode (via `ecall` instruction in user mode)
     * Environment call from M-mode (via `ecall` instruction in machine mode)
-    * Machine timer interrupt `mti` (via processor's MTIME unit)
+    * Machine timer interrupt `mti` (via processor's MTIME unit / external signal)
     * Machine software interrupt `msi` (via external signal)
     * Machine external interrupt `mei` (via external signal)
     * Four fast interrupt requests (custom extension)
@@ -218,6 +222,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 * `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime; for compatibility: write accesses (in m-mode) are ignored and do not cause an exception
 * The physical memory protection (**PMP**) only supports `NAPOT` mode, a minimal granularity of 8 bytes and only up to 8 regions
 * The `A` extension only implements `lr.w` and `sc.w` instructions yet. However, these instructions are sufficient to emulate all further AMO operations
+* The `mcause` trap code `0x80000000` (originally reserved in the RISC-V specs) is used to indicate a hardware reset (non-maskable reset).
 
 
 ### NEORV32-Specific CPU Extensions
@@ -237,42 +242,43 @@ The NEORV32-specific extensions are always enabled and are indicated via the `X`
 This chapter shows exemplary implementation results of the NEORV32 CPU for an **Intel Cyclone IV EP4CE22F17C6N FPGA** on
 a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 20.1** ("balanced implementation"). The timing
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
-of the CPU's generics is assumed (for example no PMP). No constraints were used at all.
+of the CPU's generics is assumed (for example no PMP). No constraints were used at all. The `u` and `Zifencei` extensions have
+a negligible impact on the hardware requirements.
 
-Results generated for hardware version [`1.4.8.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.4.9.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
-| CPU Configuration                       | LEs        | FFs      | Memory bits | DSPs | f_max    |
-|:----------------------------------------|:----------:|:--------:|:-----------:|:----:|:--------:|
-| `rv32i`                                 |        945 |      417 |       2048  |    0 | ~122 MHz |
-| `rv32i`    + `u` + `Zicsr` + `Zifencei` |       1944 |      901 |       2048  |    0 | ~119 MHz |
-| `rv32im`   + `u` + `Zicsr` + `Zifencei` |       2551 |     1147 |       2048  |    0 | ~117 MHz |
-| `rv32imc`  + `u` + `Zicsr` + `Zifencei` |       2800 |     1162 |       2048  |    0 | ~113 MHz |
-| `rv32imac` + `u` + `Zicsr` + `Zifencei` |       2796 |     1165 |       2048  |    0 | ~113 MHz |
+| CPU Configuration                       | LEs        | FFs      | Memory bits | DSPs | f_max   |
+|:----------------------------------------|:----------:|:--------:|:-----------:|:----:|:-------:|
+| `rv32i`                                 |       1190 |      512 |       2048  |    0 | 120 MHz |
+| `rv32i`    + `u` + `Zicsr` + `Zifencei` |       1927 |      903 |       2048  |    0 | 123 MHz |
+| `rv32im`   + `u` + `Zicsr` + `Zifencei` |       2471 |     1148 |       2048  |    0 | 120 MHz |
+| `rv32imc`  + `u` + `Zicsr` + `Zifencei` |       2716 |     1165 |       2048  |    0 | 120 MHz |
+| `rv32imac` + `u` + `Zicsr` + `Zifencei` |       2736 |     1168 |       2048  |    0 | 122 MHz |
 
 Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utilization and identical f_max. However, the size of the register file is cut in half. 
 
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version [`1.4.8.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.4.9.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
 | BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |    0 |
-| BUSSWITCH | Mux for CPU I & D interfaces                         |  82 |   8 |           0 |    0 |
+| BUSSWITCH | Mux for CPU I & D interfaces                         |  65 |   8 |           0 |    0 |
 | CFU0      | Custom functions unit 0                              |   - |   - |           - |    - |
 | CFU1      | Custom functions unit 1                              |   - |   - |           - |    - |
 | DMEM      | Processor-internal data memory (default 8kB)         |   6 |   2 |      65 536 |    0 |
-| GPIO      | General purpose input/output ports                   |  66 |  65 |           0 |    0 |
+| GPIO      | General purpose input/output ports                   |  67 |  65 |           0 |    0 |
 | IMEM      | Processor-internal instruction memory (default 16kb) |   6 |   2 |     131 072 |    0 |
-| MTIME     | Machine system timer                                 | 282 | 166 |           0 |    0 |
+| MTIME     | Machine system timer                                 | 274 | 166 |           0 |    0 |
 | PWM       | Pulse-width modulation controller                    |  71 |  69 |           0 |    0 |
-| SPI       | Serial peripheral interface                          | 129 | 124 |           0 |    0 |
-| SYSINFO   | System configuration information memory              |   9 |   9 |           0 |    0 |
+| SPI       | Serial peripheral interface                          | 138 | 124 |           0 |    0 |
+| SYSINFO   | System configuration information memory              |  11 |  10 |           0 |    0 |
 | TRNG      | True random number generator                         | 132 | 105 |           0 |    0 |
-| TWI       | Two-wire interface                                   |  77 |  44 |           0 |    0 |
-| UART      | Universal asynchronous receiver/transmitter          | 175 | 132 |           0 |    0 |
-| WDT       | Watchdog timer                                       |  59 |  45 |           0 |    0 |
+| TWI       | Two-wire interface                                   |  77 |  46 |           0 |    0 |
+| UART      | Universal asynchronous receiver/transmitter          | 176 | 132 |           0 |    0 |
+| WDT       | Watchdog timer                                       |  60 |  45 |           0 |    0 |
 | WISHBONE  | External memory interface                            | 129 | 104 |           0 |    0 |
 
 
@@ -281,15 +287,15 @@ Results generated for hardware version [`1.4.8.0`](https://github.com/stnolting/
 Exemplary processor implementation results for different FPGA platforms. The processor setup uses *the default peripheral configuration* (like no _CFUs_ and no _TRNG_),
 no external memory interface and only internal instruction and data memories. IMEM uses 16kB and DMEM uses 8kB memory space. The setup's top entity connects most of the
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
-to FPGA pins - except for the Wishbone bus and the interrupt signals.
+to FPGA pins - except for the Wishbone bus and the interrupt signals. The "default" strategy of each toolchain is used.
 
-Results generated for hardware version [`1.4.7.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.4.9.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
-| Vendor  | FPGA                              | Board            | Toolchain                  | Strategy | CPU Configuration                              | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency     |
-|:--------|:----------------------------------|:-----------------|:---------------------------|:-------- |:-----------------------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|--------------:|
-| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 20.1    | balanced | `rv32imc` + `u` + `Zicsr` + `Zifencei` + `PMP` | 3892 (17%) | 1859  (8%) | 0 (0%) | 231424 (38%) |          - |        - |       113 MHz |
-| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (Synplify Pro) | default  | `rv32ic`  + `u` + `Zicsr` + `Zifencei`         | 4331 (82%) | 1673 (31%) | 0 (0%) |            - |   12 (40%) | 4 (100%) |  *c* 22.5 MHz |
-| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2              | default  | `rv32imc` + `u` + `Zicsr` + `Zifencei` + `PMP` | 2416 (12%) | 1900  (5%) | 0 (0%) |            - |    8 (16%) |        - |   *c* 100 MHz |
+| Vendor  | FPGA                              | Board            | Toolchain                  | CPU Configuration                              | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency     |
+|:--------|:----------------------------------|:-----------------|:---------------------------|:-----------------------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|--------------:|
+| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 20.1    | `rv32imc` + `u` + `Zicsr` + `Zifencei`         | 3813 (17%) | 1904  (8%) | 0 (0%) | 231424 (38%) |          - |        - |       119 MHz |
+| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (Synplify Pro) | `rv32ic`  + `u` + `Zicsr` + `Zifencei`         | 4397 (83%) | 1679 (31%) | 0 (0%) |            - |   12 (40%) | 4 (100%) | *c* 22.15 MHz |
+| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2              | `rv32imc` + `u` + `Zicsr` + `Zifencei` + `PMP` | 2465 (12%) | 1912  (5%) | 0 (0%) |            - |    8 (16%) |        - |   *c* 100 MHz |
 
 **_Notes_**
 * The Lattice iCE40 UltraPlus setup uses the FPGA's SPRAM memory primitives for the internal IMEM and DMEM (each 64kb).
@@ -649,7 +655,5 @@ Continous integration provided by [Travis CI](https://travis-ci.com/stnolting/ne
 This project is not affiliated with or endorsed by the Open Source Initiative (https://www.oshwa.org / https://opensource.org).
 
 --------
-
-This repository was created on June 23rd, 2020.
 
 Made with :coffee: in Hannover, Germany :eu:
