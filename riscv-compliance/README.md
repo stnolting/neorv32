@@ -1,11 +1,11 @@
 # NEORV32 RISC-V-Compliance Test Framework
 
-**:sparkles: This setup uses the new [RISC-V Compliance Test Framework v2.0](https://github.com/riscv/riscv-compliance/releases/tag/v2.0) :sparkles:**
+**:sparkles: This setup uses the new [RISC-V Compliance Test Framework v2.1](https://github.com/riscv/riscv-compliance/releases/tag/v2.0) :sparkles:**
 
 ## Overview
 
 This sub-project folder tests the [NEORV32 Processor Core](https://github.com/stnolting/neorv32) for **RISC-V compliance** by
-using the [official RISC-V compliance test suite v2.0](https://github.com/riscv/riscv-compliance). The core's HDL sources are *simulated* using
+using the [official RISC-V compliance test suite v2+](https://github.com/riscv/riscv-compliance). The core's HDL sources are *simulated* using
 `GHDL` to provide a virtual execution platform for the test framework.
 
 The following tests are supported yet:
@@ -45,4 +45,6 @@ For more information regarding the NEORV32 Processor see the :page_facing_up:
 [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 :information_source: The port files for the *old framework (v1.0)* can be found in
-[`port-neorv32/framework_v2.0`](https://github.com/stnolting/neorv32_riscv_compliance/blob/master/port-neorv32/framework_v1.0/riscv-target).
+[`port-neorv32/framework_v1.0`](https://github.com/stnolting/neorv32/tree/master/riscv-compliance/port-neorv32/framework_v1.0/riscv-target).
+
+:information_source: If the simulation of a test does not generate any signature outputs at all try increasing the simulation time in the NEORV32 port's device makefiles.

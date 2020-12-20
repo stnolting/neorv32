@@ -80,7 +80,7 @@ The processor is [synthesizable](#FPGA-Implementation-Results) (tested on *real 
 all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the [CoreMark benchmark](#CoreMark-Benchmark).
 
 The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/privilege` and `rv32_m/Zifencei`
-[RISC-V compliance tests (new framework v2.0)](https://github.com/riscv/riscv-compliance). 
+[RISC-V compliance tests (new framework v2)](https://github.com/riscv/riscv-compliance). 
 
 | Project component | CI status | Note     |
 |:----------------- |:----------|:---------|
@@ -140,7 +140,7 @@ is highly customizable via the processor's top generics and already provides the
 The NEORV32 CPU is **compliant** to the
 [official RISC-V specifications (2.2)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf) including a subset of the 
 [RISC-V privileged architecture specifications (1.12-draft)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf)
-tested via the (official RISC-V Compliance Test Framework)](https://github.com/riscv/riscv-compliance)
+tested via the [official RISC-V Compliance Test Framework](https://github.com/riscv/riscv-compliance)
 (see [`riscv-compliance/README`](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md)).
 
 More information regarding the CPU including a detailed list of the instruction set and the available CSRs can be found in
@@ -201,7 +201,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
     * Store access fault (via unacknowledged bus access after timeout)
     * Environment call from U-mode (via `ecall` instruction in user mode)
     * Environment call from M-mode (via `ecall` instruction in machine mode)
-    * Machine timer interrupt `mti` (via processor's MTIME unit)
+    * Machine timer interrupt `mti` (via processor's MTIME unit / external signal)
     * Machine software interrupt `msi` (via external signal)
     * Machine external interrupt `mei` (via external signal)
     * Four fast interrupt requests (custom extension)
@@ -655,7 +655,5 @@ Continous integration provided by [Travis CI](https://travis-ci.com/stnolting/ne
 This project is not affiliated with or endorsed by the Open Source Initiative (https://www.oshwa.org / https://opensource.org).
 
 --------
-
-This repository was created on June 23rd, 2020.
 
 Made with :coffee: in Hannover, Germany :eu:
