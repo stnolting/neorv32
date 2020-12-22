@@ -344,6 +344,7 @@ begin
 
       when IFETCH_ISSUE => -- store instruction data to prefetch buffer
       -- ------------------------------------------------------------
+        fetch_engine.bus_err_ack <= be_instr_i or ma_instr_i; -- ACK bus/alignment errors
         if (bus_i_wait_i = '0') or (be_instr_i = '1') or (ma_instr_i = '1') then -- wait for bus response
           fetch_engine.pc_nxt    <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
           ipb.we                 <= '1';
