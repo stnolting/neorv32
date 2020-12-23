@@ -57,6 +57,7 @@ entity neorv32_cpu is
     -- General --
     HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= (others => '0'); -- hardware thread id
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= (others => '0'); -- cpu boot address
+    BUS_TIMEOUT                  : natural := 63;    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
@@ -159,6 +160,9 @@ begin
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
   -- RISC-V standard performance counters -
   assert not ((CPU_EXTENSION_RISCV_Zicsr = true) and (zicnt_en_c = false)) report "NEORV32 CPU CONFIG WARNING! Standard RISC-V peformance counters ([m]cycle[h], [m]instret[h]) will not be implemented (not RISC-V-compliant!)." severity warning;
+
+  -- Bus timeout --
+  assert not (BUS_TIMEOUT < 2) report "NEORV32 CPU CONFIG ERROR! Invalid bus access timeout value <BUS_TIMEOUT>. Has to be >= 2." severity error;
 
   -- Instruction prefetch buffer size --
   assert not (is_power_of_two_f(ipb_entries_c) = false) report "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <ipb_entries_c> has to be a power of two." severity error;
@@ -367,7 +371,9 @@ begin
   generic map (
     CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
     -- Physical memory protection (PMP) --
-    PMP_USE               => PMP_USE                -- implement physical memory protection?
+    PMP_USE               => PMP_USE,               -- implement physical memory protection?
+    -- Bus Timeout --
+    BUS_TIMEOUT           => BUS_TIMEOUT          -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
   )
   port map (
     -- global control --
