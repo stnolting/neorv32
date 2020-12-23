@@ -277,13 +277,13 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart_printf("unknown");
   }
   if (tmp == 1) {
-    neorv32_uart_printf("RV32");
+    neorv32_uart_printf("rv32");
   }
   if (tmp == 2) {
-    neorv32_uart_printf("RV64");
+    neorv32_uart_printf("rv64");
   }
   if (tmp == 3) {
-    neorv32_uart_printf("RV128");
+    neorv32_uart_printf("rv128");
   }
   
   // CPU extensions
