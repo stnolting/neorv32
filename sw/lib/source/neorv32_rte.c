@@ -386,7 +386,46 @@ void neorv32_rte_print_hw_config(void) {
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_DMEM));
   neorv32_uart_printf("DMEM size:            %u bytes\n", SYSINFO_DMEM_SIZE);
 
-  neorv32_uart_printf("Bootloader:           ");
+  neorv32_uart_printf("\nInternal i-cache:     ");
+  __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_ICACHE));
+  neorv32_uart_printf("- ");
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_ICACHE)) {
+    uint32_t ic_block_size = (SYSINFO_CACHE >> SYSINFO_CACHE_IC_BLOCK_SIZE_0) & 0x0F;
+    if (ic_block_size) {
+      ic_block_size = 1 << ic_block_size;
+    }
+    else {
+      ic_block_size = 0;
+    }
+
+    uint32_t ic_num_blocks = (SYSINFO_CACHE >> SYSINFO_CACHE_IC_NUM_BLOCKS_0) & 0x0F;
+    if (ic_num_blocks) {
+      ic_num_blocks = 1 << ic_num_blocks;
+    }
+    else {
+      ic_num_blocks = 0;
+    }
+
+    uint32_t ic_associativity = (SYSINFO_CACHE >> SYSINFO_CACHE_IC_ASSOCIATIVITY_0) & 0x0F;
+    ic_associativity = 1 << ic_associativity;
+
+    neorv32_uart_printf("%u bytes (%u set(s), %u block(s) per set, %u bytes per block), ",
+                        ic_associativity*ic_num_blocks*ic_block_size, ic_associativity, ic_num_blocks, ic_block_size);
+    if (ic_associativity == 0) {
+      neorv32_uart_printf("direct-mapped\n");
+    }
+    else if (ic_associativity == ic_num_blocks) {
+      neorv32_uart_printf("%u-way set-associative\n", ic_associativity);
+    }
+    else {
+      neorv32_uart_printf("fully-associative\n");
+    }
+  }
+  else {
+    neorv32_uart_printf("-\n");
+  }
+
+  neorv32_uart_printf("\nBootloader:           ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_BOOTLOADER));
 
   neorv32_uart_printf("\nExternal memory bus interface:  ");
