@@ -72,6 +72,10 @@ entity neorv32_top is
     -- Internal Data memory --
     MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
+    -- Internal Cache memory --
+    ICACHE_USE                   : boolean := false;  -- implement instruction cache
+    ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 2), has to be a power of 2
+    ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface --
     MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
     -- Processor peripherals --
@@ -135,6 +139,10 @@ architecture neorv32_top_rtl of neorv32_top is
   -- CPU boot address --
   constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(BOOTLOADER_USE, boot_rom_base_c, ispace_base_c);
 
+  -- Bus timeout --
+  constant bus_timeout_temp_c : natural := 2**index_size_f(bus_timeout_c); -- round to next power-of-two
+  constant bus_timeout_proc_c : natural := cond_sel_natural_f(ICACHE_USE, ((ICACHE_BLOCK_SIZE/4)*bus_timeout_temp_c)-1, bus_timeout_c);
+
   -- alignment check for internal memories --
   constant imem_align_check_c : std_ulogic_vector(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) := (others => '0');
   constant dmem_align_check_c : std_ulogic_vector(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) := (others => '0');
@@ -176,7 +184,7 @@ architecture neorv32_top_rtl of neorv32_top is
     src    : std_ulogic; -- access source (1=instruction fetch, 0=data access)
     lock   : std_ulogic; -- locked/exclusive (=atomic) access
   end record;
-  signal cpu_i, cpu_d, p_bus : bus_interface_t;
+  signal cpu_i, i_cache, cpu_d, p_bus : bus_interface_t;
 
   -- io space access --
   signal io_acc  : std_ulogic;
@@ -251,6 +259,10 @@ begin
   -- memory system - layout warning --
   assert not (ispace_base_c /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framework." severity warning;
   assert not (dspace_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framework." severity warning;
+  -- memory system - the i-cache is intended to accelerate instruction fetch via the external memory interface only --
+  assert not ((ICACHE_USE = true) and (MEM_EXT_USE = false)) report "NEORV32 PROCESSOR CONFIG NOTE. Implementing i-cache without having the external memory interface implemented. The i-cache is intended to accelerate instruction fetch via the external memory interface." severity note;
+  -- memory system - cached instruction fetch latency check --
+  assert not (ICACHE_USE = true) report "NEORV32 PROCESSOR CONFIG WARNING! Implementing i-cache. Increasing bus access timeout from " & integer'image(bus_timeout_c) & " cycles to " & integer'image(bus_timeout_proc_c) & " cycles." severity warning;
 
 
   -- Reset Generator ------------------------------------------------------------------------
@@ -316,8 +328,9 @@ begin
   neorv32_cpu_inst: neorv32_cpu
   generic map (
     -- General --
-    HW_THREAD_ID                 => HW_THREAD_ID,    -- hardware thread id
-    CPU_BOOT_ADDR                => cpu_boot_addr_c, -- cpu boot address
+    HW_THREAD_ID                 => HW_THREAD_ID,        -- hardware thread id
+    CPU_BOOT_ADDR                => cpu_boot_addr_c,     -- cpu boot address
+    BUS_TIMEOUT                  => bus_timeout_proc_c,  -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
@@ -327,10 +340,10 @@ begin
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     -- Extension Options --
-    FAST_MUL_EN                  => FAST_MUL_EN,     -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN                => FAST_SHIFT_EN,   -- use barrel shifter for shift operations
+    FAST_MUL_EN                  => FAST_MUL_EN,         -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN                => FAST_SHIFT_EN,       -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      => PMP_USE          -- implement PMP?
+    PMP_USE                      => PMP_USE              -- implement PMP?
   )
   port map (
     -- global control --
@@ -387,6 +400,60 @@ begin
   fast_irq(3) <= spi_irq or twi_irq; -- lowest priority, can be triggered by SPI or TWI
 
 
+  -- CPU Instruction Cache ------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_icache_inst_true:
+  if (ICACHE_USE = true) generate
+    neorv32_icache_inst: neorv32_cache
+    generic map (
+      CACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS, -- number of blocks (min 2), has to be a power of 2
+      CACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE  -- block size in bytes (min 4), has to be a power of 2
+    )
+    port map (
+      -- global control --
+      clk_i         => clk_i,          -- global clock, rising edge
+      rstn_i        => sys_rstn,       -- global reset, low-active, async
+      clear_i       => cpu_i.fence,    -- cache clear
+      -- host controller interface --
+      host_addr_i   => cpu_i.addr,     -- bus access address
+      host_rdata_o  => cpu_i.rdata,    -- bus read data
+      host_wdata_i  => cpu_i.wdata,    -- bus write data
+      host_ben_i    => cpu_i.ben,      -- byte enable
+      host_we_i     => cpu_i.we,       -- write enable
+      host_re_i     => cpu_i.re,       -- read enable
+      host_cancel_i => cpu_i.cancel,   -- cancel current bus transaction
+      host_lock_i   => cpu_i.lock,     -- locked/exclusive access
+      host_ack_o    => cpu_i.ack,      -- bus transfer acknowledge
+      host_err_o    => cpu_i.err,      -- bus transfer error
+      -- peripheral bus interface --
+      bus_addr_o    => i_cache.addr,   -- bus access address
+      bus_rdata_i   => i_cache.rdata,  -- bus read data
+      bus_wdata_o   => i_cache.wdata,  -- bus write data
+      bus_ben_o     => i_cache.ben,    -- byte enable
+      bus_we_o      => i_cache.we,     -- write enable
+      bus_re_o      => i_cache.re,     -- read enable
+      bus_cancel_o  => i_cache.cancel, -- cancel current bus transaction
+      bus_lock_o    => i_cache.lock,   -- locked/exclusive access
+      bus_ack_i     => i_cache.ack,    -- bus transfer acknowledge
+      bus_err_i     => i_cache.err     -- bus transfer error
+    );
+  end generate;
+
+  neorv32_icache_inst_false:
+  if (ICACHE_USE = false) generate
+    i_cache.addr   <= cpu_i.addr;
+    cpu_i.rdata    <= i_cache.rdata;
+    i_cache.wdata  <= cpu_i.wdata;
+    i_cache.ben    <= cpu_i.ben;
+    i_cache.we     <= cpu_i.we;
+    i_cache.re     <= cpu_i.re;
+    i_cache.cancel <= cpu_i.cancel;
+    i_cache.lock   <= cpu_i.lock;
+    cpu_i.ack      <= i_cache.ack;
+    cpu_i.err      <= i_cache.err;
+  end generate;
+
+
   -- CPU Crossbar Switch --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_busswitch_inst: neorv32_busswitch
@@ -396,42 +463,42 @@ begin
   )
   port map (
     -- global control --
-    clk_i           => clk_i,        -- global clock, rising edge
-    rstn_i          => sys_rstn,     -- global reset, low-active, async
+    clk_i           => clk_i,          -- global clock, rising edge
+    rstn_i          => sys_rstn,       -- global reset, low-active, async
     -- controller interface a --
-    ca_bus_addr_i   => cpu_d.addr,   -- bus access address
-    ca_bus_rdata_o  => cpu_d.rdata,  -- bus read data
-    ca_bus_wdata_i  => cpu_d.wdata,  -- bus write data
-    ca_bus_ben_i    => cpu_d.ben,    -- byte enable
-    ca_bus_we_i     => cpu_d.we,     -- write enable
-    ca_bus_re_i     => cpu_d.re,     -- read enable
-    ca_bus_cancel_i => cpu_d.cancel, -- cancel current bus transaction
-    ca_bus_lock_i   => cpu_d.lock,   -- locked/exclusive access
-    ca_bus_ack_o    => cpu_d.ack,    -- bus transfer acknowledge
-    ca_bus_err_o    => cpu_d.err,    -- bus transfer error
+    ca_bus_addr_i   => cpu_d.addr,     -- bus access address
+    ca_bus_rdata_o  => cpu_d.rdata,    -- bus read data
+    ca_bus_wdata_i  => cpu_d.wdata,    -- bus write data
+    ca_bus_ben_i    => cpu_d.ben,      -- byte enable
+    ca_bus_we_i     => cpu_d.we,       -- write enable
+    ca_bus_re_i     => cpu_d.re,       -- read enable
+    ca_bus_cancel_i => cpu_d.cancel,   -- cancel current bus transaction
+    ca_bus_lock_i   => cpu_d.lock,     -- locked/exclusive access
+    ca_bus_ack_o    => cpu_d.ack,      -- bus transfer acknowledge
+    ca_bus_err_o    => cpu_d.err,      -- bus transfer error
     -- controller interface b --
-    cb_bus_addr_i   => cpu_i.addr,   -- bus access address
-    cb_bus_rdata_o  => cpu_i.rdata,  -- bus read data
-    cb_bus_wdata_i  => cpu_i.wdata,  -- bus write data
-    cb_bus_ben_i    => cpu_i.ben,    -- byte enable
-    cb_bus_we_i     => cpu_i.we,     -- write enable
-    cb_bus_re_i     => cpu_i.re,     -- read enable
-    cb_bus_cancel_i => cpu_i.cancel, -- cancel current bus transaction
-    cb_bus_lock_i   => cpu_i.lock,   -- locked/exclusive access
-    cb_bus_ack_o    => cpu_i.ack,    -- bus transfer acknowledge
-    cb_bus_err_o    => cpu_i.err,    -- bus transfer error
+    cb_bus_addr_i   => i_cache.addr,   -- bus access address
+    cb_bus_rdata_o  => i_cache.rdata,  -- bus read data
+    cb_bus_wdata_i  => i_cache.wdata,  -- bus write data
+    cb_bus_ben_i    => i_cache.ben,    -- byte enable
+    cb_bus_we_i     => i_cache.we,     -- write enable
+    cb_bus_re_i     => i_cache.re,     -- read enable
+    cb_bus_cancel_i => i_cache.cancel, -- cancel current bus transaction
+    cb_bus_lock_i   => i_cache.lock,   -- locked/exclusive access
+    cb_bus_ack_o    => i_cache.ack,    -- bus transfer acknowledge
+    cb_bus_err_o    => i_cache.err,    -- bus transfer error
     -- peripheral bus --
-    p_bus_src_o     => p_bus.src,    -- access source: 0 = A (data), 1 = B (instructions)
-    p_bus_addr_o    => p_bus.addr,   -- bus access address
-    p_bus_rdata_i   => p_bus.rdata,  -- bus read data
-    p_bus_wdata_o   => p_bus.wdata,  -- bus write data
-    p_bus_ben_o     => p_bus.ben,    -- byte enable
-    p_bus_we_o      => p_bus.we,     -- write enable
-    p_bus_re_o      => p_bus.re,     -- read enable
-    p_bus_cancel_o  => p_bus.cancel, -- cancel current bus transaction
-    p_bus_lock_o    => p_bus.lock,   -- locked/exclusive access
-    p_bus_ack_i     => p_bus.ack,    -- bus transfer acknowledge
-    p_bus_err_i     => p_bus.err     -- bus transfer error
+    p_bus_src_o     => p_bus.src,      -- access source: 0 = A (data), 1 = B (instructions)
+    p_bus_addr_o    => p_bus.addr,     -- bus access address
+    p_bus_rdata_i   => p_bus.rdata,    -- bus read data
+    p_bus_wdata_o   => p_bus.wdata,    -- bus write data
+    p_bus_ben_o     => p_bus.ben,      -- byte enable
+    p_bus_we_o      => p_bus.we,       -- write enable
+    p_bus_re_o      => p_bus.re,       -- read enable
+    p_bus_cancel_o  => p_bus.cancel,   -- cancel current bus transaction
+    p_bus_lock_o    => p_bus.lock,     -- locked/exclusive access
+    p_bus_ack_i     => p_bus.ack,      -- bus transfer acknowledge
+    p_bus_err_i     => p_bus.err       -- bus transfer error
   );
 
   -- processor bus: CPU data input --
@@ -931,29 +998,34 @@ begin
   neorv32_sysinfo_inst: neorv32_sysinfo
   generic map (
     -- General --
-    CLOCK_FREQUENCY   => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
-    BOOTLOADER_USE    => BOOTLOADER_USE,    -- implement processor-internal bootloader?
-    USER_CODE         => USER_CODE,         -- custom user code
+    CLOCK_FREQUENCY      => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
+    BOOTLOADER_USE       => BOOTLOADER_USE,    -- implement processor-internal bootloader?
+    USER_CODE            => USER_CODE,         -- custom user code
     -- internal Instruction memory --
-    MEM_INT_IMEM_USE  => MEM_INT_IMEM_USE,  -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM  => MEM_INT_IMEM_ROM,  -- implement processor-internal instruction memory as ROM
+    MEM_INT_IMEM_USE     => MEM_INT_IMEM_USE,  -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE    => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_ROM     => MEM_INT_IMEM_ROM,  -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
-    MEM_INT_DMEM_USE  => MEM_INT_DMEM_USE,  -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_USE     => MEM_INT_DMEM_USE,  -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE    => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
+    -- Internal Cache memory --
+    ICACHE_USE           => ICACHE_USE,        -- implement instruction cache
+    ICACHE_NUM_BLOCKS    => ICACHE_NUM_BLOCKS, -- i-cache: number of blocks (min 2), has to be a power of 2
+    ICACHE_BLOCK_SIZE    => ICACHE_BLOCK_SIZE, -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_ASSOCIATIVITY => 1,                 -- i-cache: associativity (min 1), has to be a power 2
     -- External memory interface --
-    MEM_EXT_USE       => MEM_EXT_USE,       -- implement external memory bus interface?
+    MEM_EXT_USE          => MEM_EXT_USE,       -- implement external memory bus interface?
     -- Processor peripherals --
-    IO_GPIO_USE       => IO_GPIO_USE,       -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE      => IO_MTIME_USE,      -- implement machine system timer (MTIME)?
-    IO_UART_USE       => IO_UART_USE,       -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE        => IO_SPI_USE,        -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE        => IO_TWI_USE,        -- implement two-wire interface (TWI)?
-    IO_PWM_USE        => IO_PWM_USE,        -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE        => IO_WDT_USE,        -- implement watch dog timer (WDT)?
-    IO_TRNG_USE       => IO_TRNG_USE,       -- implement true random number generator (TRNG)?
-    IO_CFU0_USE       => IO_CFU0_USE,       -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_USE       => IO_CFU1_USE        -- implement custom functions unit 1 (CFU1)?
+    IO_GPIO_USE          => IO_GPIO_USE,       -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_USE         => IO_MTIME_USE,      -- implement machine system timer (MTIME)?
+    IO_UART_USE          => IO_UART_USE,       -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_USE           => IO_SPI_USE,        -- implement serial peripheral interface (SPI)?
+    IO_TWI_USE           => IO_TWI_USE,        -- implement two-wire interface (TWI)?
+    IO_PWM_USE           => IO_PWM_USE,        -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_USE           => IO_WDT_USE,        -- implement watch dog timer (WDT)?
+    IO_TRNG_USE          => IO_TRNG_USE,       -- implement true random number generator (TRNG)?
+    IO_CFU0_USE          => IO_CFU0_USE,       -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_USE          => IO_CFU1_USE        -- implement custom functions unit 1 (CFU1)?
   )
   port map (
     -- host access --

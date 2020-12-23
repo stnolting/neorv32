@@ -11,7 +11,7 @@
 -- # All bus accesses from the CPU, which do not target the internal IO region / the internal      #
 -- # bootlloader / the internal instruction or data memories (if implemented), are delegated via   #
 -- # this Wishbone gateway to the external bus interface. Accessed peripherals can have a response #
--- # latency of up to neorv32_package.vhd:bus_timeout_c - 2 cycles.                                #
+-- # latency of up to BUS_TIMEOUT - 2 cycles.                                                      #
 -- # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 -- # This interface supports classic/standard Wishbone transactions (WB_PIPELINED_MODE = false)    #
 -- # and also pipelined transactions (WB_PIPELINED_MODE = true).                                   #
@@ -62,7 +62,9 @@ entity neorv32_wishbone is
     MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
     -- Internal data memory --
     MEM_INT_DMEM_USE  : boolean := true;   -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE : natural := 4*1024  -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_SIZE : natural := 4*1024; -- size of processor-internal data memory in bytes
+    -- Bus Timeout --
+    BUS_TIMEOUT       : natural := 63      -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
   );
   port (
     -- global control --
@@ -99,7 +101,7 @@ end neorv32_wishbone;
 architecture neorv32_wishbone_rtl of neorv32_wishbone is
 
   -- constants --
-  constant xbus_timeout_c : natural := bus_timeout_c/4;
+  constant xbus_timeout_c : natural := BUS_TIMEOUT/4;
 
   -- access control --
   signal int_imem_acc : std_ulogic;
@@ -134,10 +136,10 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- max bus timeout latency lower than recommended --
-  assert not (bus_timeout_c <= 32) report "NEORV32 PROCESSOR CONFIG ERROR: Bus timeout (neorv32_package.vhd:bus_timeout_c) should be >32 when using external bus interface." severity error;
+  assert not (BUS_TIMEOUT <= 32) report "NEORV32 PROCESSOR CONFIG ERROR: Bus timeout should be >32 when using external bus interface." severity error;
   -- external memory iterface protocol + max timeout latency notifier (warning) --
-  assert not (wb_pipe_mode_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using STANDARD Wishbone protocol with max latency = " & integer'image(bus_timeout_c) & " cycles." severity note;
-  assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG WARNING! Implementing external memory interface using PIEPLINED Wishbone protocol with max latency = " & integer'image(bus_timeout_c) & " cycles." severity warning;
+  assert not (wb_pipe_mode_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using STANDARD Wishbone protocol." severity note;
+  assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG NOTE! Implementing external memory interface using PIEPLINED Wishbone protocol." severity note;
   -- endianness --
   assert not (xbus_big_endian_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: Using LITTLE-ENDIAN byte order for external memory interface." severity note;
   assert not (xbus_big_endian_c = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Using BIG-ENDIAN byte order for external memory interface." severity note;
