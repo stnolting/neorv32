@@ -93,6 +93,10 @@ begin
     -- Internal Data memory --
     MEM_INT_DMEM_USE             => true,   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => 8*1024, -- size of processor-internal data memory in bytes
+    -- Internal Cache memory --
+    ICACHE_USE                   => false,  -- implement instruction cache
+    ICACHE_NUM_BLOCKS            => 4,      -- i-cache: number of blocks (min 2), has to be a power of 2
+    ICACHE_BLOCK_SIZE            => 64,     -- i-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface --
     MEM_EXT_USE                  => false,  -- implement external memory bus interface?
     -- Processor peripherals --

@@ -68,6 +68,10 @@ entity neorv32_top_axi4lite is
     -- Internal Data memory --
     MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
+    -- Internal Cache memory --
+    ICACHE_USE                   : boolean := false;  -- implement instruction cache
+    ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 2), has to be a power of 2
+    ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
     -- Processor peripherals --
     IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
@@ -222,6 +226,10 @@ begin
     -- Internal Data memory --
     MEM_INT_DMEM_USE             => MEM_INT_DMEM_USE,   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE,  -- size of processor-internal data memory in bytes
+    -- Internal Cache memory --
+    ICACHE_USE                   => ICACHE_USE,         -- implement instruction cache
+    ICACHE_NUM_BLOCKS            => ICACHE_NUM_BLOCKS,  -- i-cache: number of blocks (min 2), has to be a power of 2
+    ICACHE_BLOCK_SIZE            => ICACHE_BLOCK_SIZE,  -- i-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface --
     MEM_EXT_USE                  => true,               -- implement external memory bus interface?
     -- Processor peripherals --
