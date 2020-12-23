@@ -1,10 +1,13 @@
 ## Project Change Log
 
 The most recent **NEORV32** project version can be found on top of this list.
-"Officially released" versions are linked and highlighted (:rocket:).
+"Officially released" versions are linked and highlighted :rocket:.
 The latest release is [![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases).
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases). The most recent version of the *NEORV32 data sheet*
 can be found [here](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
+
+::information_source: To see a list of all commits
+between release run `git log v1.4.7.0..v1.4.8.0` (example to to see commits between v1.4.7.0 and v1.4.8.0).
 
 The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 2x4-bit decimal-coded representation is used. Leading
 zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`
@@ -14,7 +17,9 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 19.12.2020 | 1.4.9.0 | Testbench: added memory-mapped triggers to trigger core's "machine software & external interrupts"; `sw/example/cpu_test`: removed CFU tests, added `MEI` and `MSI` tests; added **RISC-V-Compliance Test Framework** to repository (`riscv-compliance/`), core passes all `rv32` tests (riscv-compliance v2.1) |
+| 23.12.2020 | 1.4.9.2 | :sparkles: added processor-internal instruction cache (direct mapped); new configuration generics: `ICACHE_USE` (implement cache), `ICACHE_BLOCK_SIZE` (cache block/page/line size), `ICACHE_NUM_BLOCKS` (number of cache blocks); added `SYSINFO_CACHE` register to SYSINFO to check cache configuration by software  |
+| 20.12.2020 | 1.4.9.1 | :bug: fixed bug in CPU's instruction fetch engine (alignment_errros/bus_errors were not acknowledged correctly); added `BUS_TIMEOUT` generic to CPU (defines the amount of cycles after which an *unacknowledged* bus access will get terminated and raises a bus access fault exception) |
+| 19.12.2020 | [**:rocket:1.4.9.0**](https://github.com/stnolting/neorv32/releases/tag/v1.4.9.0) | Testbench: added memory-mapped triggers to trigger core's "machine software & external interrupts"; `sw/example/cpu_test`: removed CFU tests, added `MEI` and `MSI` tests; added **RISC-V-Compliance Test Framework** to repository (`riscv-compliance/`), core passes all `rv32` tests (riscv-compliance v2.1) |
 | 18.12.2020 | 1.4.8.13 | Added additional simulation files: simulation-optimized IMEM-ROM (so far, this is only relevant for the *new* NEORV32 RISC-V Compliance test framework v2.0); **:sparkles: Processor now passes all `rv32` tests of the new [RISC-V Compliance Test Framework v2.0](https://github.com/riscv/riscv-compliance/releases/tag/v2.0) :sparkles:** |
 | 16.12.2020 | 1.4.8.12 | :warning: fixed (another) bug in `mtval` CSR generation (wrong value for "breakpoint" trap); updated `mtval` value table in data sheet; fixed bug in load/store operation (intoroduced in version 1.4.8.10) |
 | 16.12.2020 | 1.4.8.11 | :warning: fixed bug in `mtval` CSR generation (wrong values for some traps); fixed bug in `mip` CSR (writing zero to implemented bits now actually clears pending interrupts); fixed bug in IRQ priority encoding (machine software interrupt `MSI` comes before machine timer interrupt `MTI`) |
