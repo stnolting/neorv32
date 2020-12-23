@@ -32,7 +32,7 @@ RUN_TARGET=\
 	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led main.bin; \
 	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led install; \
 	sed -i '/type application_init_image_t/c\type application_init_image_t is array (0 to ((2*1024*1024)/4)-1) of std_ulogic_vector(31 downto 0); -- MOD. BY RISCV-COMPL. TEST SCRIPT' $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_application_image.vhd; \
-	sh $(NEORV32_LOCAL_COPY)/sim/ghdl/ghdl_sim.sh --stop-time=800us >> /dev/null; \
+	sh $(NEORV32_LOCAL_COPY)/sim/ghdl/ghdl_sim.sh --stop-time=900us >> /dev/null; \
 	cp $(work_dir_isa)/neorv32.uart.sim_mode.data.out $(*).signature.output;
 
 
