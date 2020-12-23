@@ -121,8 +121,8 @@ The full-blown data sheet of the NEORV32 Processor and CPU is available as pdf f
 The NEORV32 Processor provides a full-scale microcontroller-like SoC based on the NEORV32 CPU. The setup
 is highly customizable via the processor's top generics and already provides the following *optional* modules:
 
-* processor-internal data and instruction memories (**DMEM** / **IMEM**) + cache (iCACHE)
-* internal bootloader (**BOOTLDROM**) with UART console and automatic application boot from SPI flash option
+* processor-internal data and instruction memories (**DMEM** / **IMEM**) & cache (**iCACHE**)
+* bootloader (**BOOTLDROM**) with UART console and automatic application boot from SPI flash option
 * machine system timer (**MTIME**), RISC-V-compliant
 * watchdog timer (**WDT**)
 * universal asynchronous receiver and transmitter (**UART**) with simulation output option via text.io
