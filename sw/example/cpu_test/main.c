@@ -72,6 +72,8 @@ int cnt_fail = 0;
 int cnt_ok   = 0;
 /// Global counter for total number of tests
 int cnt_test = 0;
+/// Global timestamp for traps (stores mcycle.low on trap enter)
+uint32_t trap_timestamp32 = 0;
 
 
 /**********************************************************************//**
@@ -181,7 +183,9 @@ int main() {
   // show full HW config report
   neorv32_rte_print_hw_config();
 
+
   // configure RTE
+  // -----------------------------------------------
   neorv32_uart_printf("\n\nInitializing NEORV32 run-time environment (RTE)... ");
 
   neorv32_rte_setup(); // this will install a full-detailed debug handler for all traps
@@ -355,20 +359,18 @@ int main() {
   // Bus timeout latency estimation
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Estimating bus time-out latency (very imprecise): ", cnt_test);
+  neorv32_uart_printf("[%i] Estimating bus time-out latency: ", cnt_test);
   cnt_test++;
 
   // start timing
   neorv32_cpu_csr_write(CSR_MCYCLE, 0);
 
   // this store access will timeout
-  MMR_UNREACHABLE = 0;
-
-  tmp_a = neorv32_cpu_csr_read(CSR_MCYCLE);
+  MMR_UNREACHABLE = 0; // trap handler will stor mcycle.low to "trap_timestamp32"
 
   // make sure there was a time-out
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) {
-    neorv32_uart_printf("~%u cycles ", tmp_a/4); // divide by average CPI
+    neorv32_uart_printf("~%u cycles ", trap_timestamp32-178); // remove trap handler overhead - empiric value ;)
     test_ok();
   }
   else {
@@ -1525,6 +1527,9 @@ int main() {
  * Trap handler for ALL exceptions/interrupts.
  **************************************************************************/
 void global_trap_handler(void) {
+
+  // store time stamp
+  trap_timestamp32 = neorv32_cpu_csr_read(CSR_MCYCLE);
 
   // hack: always come back in MACHINE MODE
   register uint32_t mask = (1<<CPU_MSTATUS_MPP_H) | (1<<CPU_MSTATUS_MPP_L);
