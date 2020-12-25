@@ -50,7 +50,7 @@ package neorv32_package is
   constant xbus_big_endian_c : boolean := true; -- external memory access byte order: true=big endian (default); false=little endian
 
   -- CPU core --
-  constant ipb_entries_c : natural := 2; -- entries in CPU instruction prefetch buffer, must be a power of 2, default=2
+  constant ipb_entries_c : natural := 2; -- entries in CPU instruction prefetch buffer, has to be a power of 2, default=2
   constant zicnt_en_c    : boolean := true; -- enable RISC-V performance counters ([m]cycle[h], [m]instret[h]), default=true
 
   -- physical memory protection (PMP) --
@@ -525,7 +525,7 @@ package neorv32_package is
       MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
       -- Internal Cache memory --
       ICACHE_USE                   : boolean := false;  -- implement instruction cache
-      ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 2), has to be a power of 2
+      ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
       ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
       -- External memory interface --
       MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
@@ -855,7 +855,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cache
     generic (
-      CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 2), has to be a power of 2
+      CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 1), has to be a power of 2
       CACHE_BLOCK_SIZE : natural := 16 -- block size in bytes (min 4), has to be a power of 2
     );
     port (

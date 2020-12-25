@@ -43,7 +43,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cache is
   generic (
-    CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 2), has to be a power of 2
+    CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 1), has to be a power of 2
     CACHE_BLOCK_SIZE : natural := 16 -- block size in bytes (min 4), has to be a power of 2
   );
   port (
@@ -86,7 +86,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   -- cache memory --
   component neorv32_cache_memory
   generic (
-    CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 2), has to be a power of 2
+    CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 1), has to be a power of 2
     CACHE_BLOCK_SIZE : natural := 16 -- block size in bytes (min 4), has to be a power of 2
   );
   port (
@@ -152,7 +152,7 @@ begin
   -- configuration --
   assert not (is_power_of_two_f(CACHE_NUM_BLOCKS) = false) report "NEORV32 PROCESSOR CONFIG ERROR! Cache number of blocks <NUM_BLOCKS> has to be a power of 2." severity error;
   assert not (is_power_of_two_f(CACHE_BLOCK_SIZE) = false) report "NEORV32 PROCESSOR CONFIG ERROR! Cache block size <BLOCK_SIZE> has to be a power of 2." severity error;
-  assert not (CACHE_NUM_BLOCKS < 2) report "NEORV32 PROCESSOR CONFIG ERROR! Cache number of block <NUM_BLOCKS> has to be >= 2." severity error;
+  assert not (CACHE_NUM_BLOCKS < 1) report "NEORV32 PROCESSOR CONFIG ERROR! Cache number of blocks <NUM_BLOCKS> has to be >= 1." severity error;
   assert not (CACHE_BLOCK_SIZE < 4) report "NEORV32 PROCESSOR CONFIG ERROR! Cache block size <BLOCK_SIZE> has to be >= 4." severity error;
 
 
@@ -321,7 +321,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cache_memory_inst: neorv32_cache_memory
   generic map (
-    CACHE_NUM_BLOCKS => CACHE_NUM_BLOCKS,     -- number of blocks (min 2), has to be a power of 2
+    CACHE_NUM_BLOCKS => CACHE_NUM_BLOCKS,     -- number of blocks (min 1), has to be a power of 2
     CACHE_BLOCK_SIZE => CACHE_BLOCK_SIZE      -- block size in bytes (min 4), has to be a power of 2
   )
   port map (
@@ -397,7 +397,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cache_memory is
   generic (
-    CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 2), has to be a power of 2
+    CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 1), has to be a power of 2
     CACHE_BLOCK_SIZE : natural := 16 -- block size in bytes (min 4), has to be a power of 2
   );
   port (
