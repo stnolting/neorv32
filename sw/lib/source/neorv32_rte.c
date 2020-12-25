@@ -318,7 +318,7 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart_printf("PMP ");
   }
   if (tmp & (1<<CPU_MZEXT_ZICNT)) {
-    neorv32_uart_printf("Zicnt ");
+    neorv32_uart_printf("(Zicnt) "); // not a "real" RISC-V extension
   }
 
 
