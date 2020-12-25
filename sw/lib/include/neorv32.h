@@ -105,6 +105,7 @@ enum NEORV32_CPU_CSRS_enum {
  **************************************************************************/
 enum NEORV32_CPU_MSTATUS_enum {
   CPU_MSTATUS_MIE   =  3, /**< CPU mstatus CSR (3): MIE - Machine interrupt enable bit (r/w) */
+  CPU_MSTATUS_UBE   =  6, /**< CPU mstatus CSR (6): UBE - User mode endianness (little-endian=0, big-endian=1) (r/-) */
   CPU_MSTATUS_MPIE  =  7, /**< CPU mstatus CSR (7): MPIE - Machine previous interrupt enable bit (r/w) */
   CPU_MSTATUS_MPP_L = 11, /**< CPU mstatus CSR (11): MPP_L - Machine previous privilege mode bit low (r/w) */
   CPU_MSTATUS_MPP_H = 12  /**< CPU mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
@@ -115,7 +116,7 @@ enum NEORV32_CPU_MSTATUS_enum {
  * CPU <b>mstatush</b> CSR (r/-): Machine status - high word(RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MSTATUSH_enum {
-  CPU_MSTATUSH_MBE = 5 /**< CPU mstatush CSR (5): MBE - Machine endianness (little-endian=0, big-endian=1) (r/w) */
+  CPU_MSTATUSH_MBE = 5 /**< CPU mstatush CSR (5): MBE - Machine endianness (little-endian=0, big-endian=1) (r/-) */
 };
 
 
