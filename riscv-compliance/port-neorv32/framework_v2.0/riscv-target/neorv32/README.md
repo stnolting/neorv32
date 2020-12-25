@@ -17,6 +17,13 @@ The following tasks are executed by the device makefiles:
   * the according code can be found in the `RVMODEL_HALT` macro in `model_test.h`
   * data output (the "signature") is zero-padded to be always a multiple of 16 bytes
 
+
+**Notes**
+
 :warning: The `Zifencei` test requires the r/w/e capabilities of the original IMEM rtl file.
 Hence, the original file is restored for this test. Also, this test uses `link.imem_ram.ld` as linker script since the
 IMEM is used as RAM to allow self-modifying code.
+
+:information_source: The `RVMODEL_BOOT` macro in `model_test.h` provides a simple "dummy trap handler" that just advances to the next instruction. This trap handler is required
+for some `C` tests as the NEORV32 will raise an illegal instruction exception for **all** unimplemented instructions. The trap handler is overriden (by changing `mtval` CSR) if
+a test uses the defualt trap handler of the test framework.
