@@ -77,11 +77,11 @@ echo "--------------------------------------------------------------------------
 make -C $homedir/work/riscv-compliance NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME XLEN=32 RISCV_TARGET=neorv32 clean
 
 # Run tests and check results
-make --silent -C $homedir/work/riscv-compliance NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=I build run verify
-make --silent -C $homedir/work/riscv-compliance NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=C build run verify
-make --silent -C $homedir/work/riscv-compliance NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=M build run verify
-make --silent -C $homedir/work/riscv-compliance NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=privilege build run verify
-make --silent -C $homedir/work/riscv-compliance NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=Zifencei RISCV_TARGET_FLAGS=-DNEORV32_NO_DATA_INIT build run verify
+make --silent -C $homedir/work/riscv-compliance NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME SIM_TIME=600us XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=I build run verify
+make --silent -C $homedir/work/riscv-compliance NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME SIM_TIME=400us XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=C build run verify
+make --silent -C $homedir/work/riscv-compliance NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME SIM_TIME=800us XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=M build run verify
+make --silent -C $homedir/work/riscv-compliance NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME SIM_TIME=200us XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=privilege build run verify
+make --silent -C $homedir/work/riscv-compliance NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME SIM_TIME=200us XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=Zifencei RISCV_TARGET_FLAGS=-DNEORV32_NO_DATA_INIT build run verify
 
 echo ""
 echo "Compliance tests completed"
