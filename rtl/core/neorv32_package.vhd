@@ -45,7 +45,7 @@ package neorv32_package is
   constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
 
   -- (external) bus interface --
-  constant bus_timeout_c     : natural := 63; -- cycles after which an *unacknowledged* bus access fetch will timeout and trigger a bus fault exception (min 2)
+  constant bus_timeout_c     : natural := 127; -- cycles after which an *unacknowledged* bus access fetch will timeout and trigger a bus fault exception (min 2)
   constant wb_pipe_mode_c    : boolean := false; -- *external* bus protocol: false=classic/standard wishbone mode (default), true=pipelined wishbone mode
   constant xbus_big_endian_c : boolean := true; -- external memory access byte order: true=big endian (default); false=little endian
 
@@ -350,6 +350,7 @@ package neorv32_package is
 
   -- RISC-V CSR Addresses -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- read/write CSRs --
   constant csr_mstatus_c   : std_ulogic_vector(11 downto 0) := x"300"; -- mstatus
   constant csr_misa_c      : std_ulogic_vector(11 downto 0) := x"301"; -- misa
   constant csr_mie_c       : std_ulogic_vector(11 downto 0) := x"304"; -- mie
@@ -379,7 +380,7 @@ package neorv32_package is
   --
   constant csr_mcycleh_c   : std_ulogic_vector(11 downto 0) := x"b80"; -- mcycleh
   constant csr_minstreth_c : std_ulogic_vector(11 downto 0) := x"b82"; -- minstreth
-  --
+  -- read-only CSRs --
   constant csr_cycle_c     : std_ulogic_vector(11 downto 0) := x"c00"; -- cycle
   constant csr_time_c      : std_ulogic_vector(11 downto 0) := x"c01"; -- time
   constant csr_instret_c   : std_ulogic_vector(11 downto 0) := x"c02"; -- instret

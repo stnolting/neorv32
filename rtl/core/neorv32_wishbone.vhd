@@ -1,18 +1,18 @@
 -- #################################################################################################
 -- # << NEORV32 - External Bus Interface (WISHBONE) >>                                             #
 -- # ********************************************************************************************* #
--- # The interface provides registers for all outgoing signals. If the host cancels a running      #
--- # transfer, the Wishbone arbiter still waits some time for the bus system to ACK the transfer   #
--- # before the arbiter forces termination.                                                        #
--- # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+-- # The interface provides registers for all outgoing and for all incoming signals. If the host   #
+-- # cancels an activetransfer, the Wishbone arbiter still waits some time for the bus system to   #
+-- # ACK/ERR the transfer before the arbiter forces termination.                                   #
+-- #                                                                                               #
 -- # Even when all processor-internal memories and IO devices are disabled, the EXTERNAL address   #
 -- # space ENDS at address 0xffff0000 (begin of internal BOOTROM address space).                   #
--- # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+-- #                                                                                               #
 -- # All bus accesses from the CPU, which do not target the internal IO region / the internal      #
 -- # bootlloader / the internal instruction or data memories (if implemented), are delegated via   #
 -- # this Wishbone gateway to the external bus interface. Accessed peripherals can have a response #
 -- # latency of up to BUS_TIMEOUT - 2 cycles.                                                      #
--- # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+-- #                                                                                               #
 -- # This interface supports classic/standard Wishbone transactions (WB_PIPELINED_MODE = false)    #
 -- # and also pipelined transactions (WB_PIPELINED_MODE = true).                                   #
 -- # ********************************************************************************************* #
@@ -136,7 +136,7 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- max bus timeout latency lower than recommended --
-  assert not (BUS_TIMEOUT <= 32) report "NEORV32 PROCESSOR CONFIG ERROR: Bus timeout should be >32 when using external bus interface." severity error;
+  assert not (BUS_TIMEOUT <= 32) report "NEORV32 PROCESSOR CONFIG WARNING: Bus timeout should be >32 when using external bus interface." severity warning;
   -- external memory iterface protocol + max timeout latency notifier (warning) --
   assert not (wb_pipe_mode_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using STANDARD Wishbone protocol." severity note;
   assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG NOTE! Implementing external memory interface using PIEPLINED Wishbone protocol." severity note;

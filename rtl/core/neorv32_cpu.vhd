@@ -153,13 +153,13 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- CSR system --
-  assert not (CPU_EXTENSION_RISCV_Zicsr = false) report "NEORV32 CPU CONFIG WARNING! No exception/interrupt/trap/machine features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;
+  assert not (CPU_EXTENSION_RISCV_Zicsr = false) report "NEORV32 CPU CONFIG WARNING! No exception/interrupt/trap/privileged features available when CPU_EXTENSION_RISCV_Zicsr = false." severity warning;
   -- U-extension requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report "NEORV32 CPU CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
   -- PMP requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
   -- RISC-V standard performance counters -
-  assert not ((CPU_EXTENSION_RISCV_Zicsr = true) and (zicnt_en_c = false)) report "NEORV32 CPU CONFIG WARNING! Standard RISC-V peformance counters ([m]cycle[h], [m]instret[h]) will not be implemented (not RISC-V-compliant!)." severity warning;
+  assert not ((CPU_EXTENSION_RISCV_Zicsr = true) and (zicnt_en_c = false)) report "NEORV32 CPU CONFIG WARNING! Standard RISC-V peformance counters ([m]cycle[h] & [m]instret[h]) will not be implemented (not RISC-V-compliant!)." severity warning;
 
   -- Bus timeout --
   assert not (BUS_TIMEOUT < 2) report "NEORV32 CPU CONFIG ERROR! Invalid bus access timeout value <BUS_TIMEOUT>. Has to be >= 2." severity error;
@@ -177,6 +177,7 @@ begin
 
   -- PMP notifier --
   assert not (PMP_USE = true) report "NEORV32 CPU CONFIG NOTE: Implementing physical memory protection (PMP) with " & integer'image(pmp_num_regions_c) & " regions and " & integer'image(pmp_min_granularity_c) & " bytes minimal region size (granulartiy)." severity note;
+
 
   -- Control Unit ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -373,7 +374,7 @@ begin
     -- Physical memory protection (PMP) --
     PMP_USE               => PMP_USE,               -- implement physical memory protection?
     -- Bus Timeout --
-    BUS_TIMEOUT           => BUS_TIMEOUT          -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
+    BUS_TIMEOUT           => BUS_TIMEOUT            -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
   )
   port map (
     -- global control --

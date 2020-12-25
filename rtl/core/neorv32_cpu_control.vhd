@@ -234,6 +234,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type pmp_ctrl_t is array (0 to pmp_max_r_c-1) of std_ulogic_vector(7 downto 0);
   type pmp_addr_t is array (0 to pmp_max_r_c-1) of std_ulogic_vector(data_width_c-1 downto 0);
   type csr_t is record
+    addr         : std_ulogic_vector(11 downto 0); -- csr address
     we           : std_ulogic; -- csr write enable
     we_nxt       : std_ulogic;
     re           : std_ulogic; -- csr read enable
@@ -459,7 +460,7 @@ begin
         if (ipb.avail = '1') then -- instructions available?
 
           if (issue_engine.align = '0') or (CPU_EXTENSION_RISCV_C = false) then -- begin check in LOW instruction half-word
-            if (execute_engine.state = DISPATCH) then
+            if (execute_engine.state = DISPATCH) then -- ready to issue new command?
               cmd_issue.valid      <= '1';
               issue_engine.buf_nxt <= ipb.rdata(33 downto 32) & ipb.rdata(31 downto 16); -- store high half-word - we might need it for an unaligned uncompressed instruction
               if (ipb.rdata(1 downto 0) = "11") or (CPU_EXTENSION_RISCV_C = false) then -- uncompressed and "aligned"
@@ -473,7 +474,7 @@ begin
             end if;
 
           else -- begin check in HIGH instruction half-word
-            if (execute_engine.state = DISPATCH) then
+            if (execute_engine.state = DISPATCH) then -- ready to issue new command?
               cmd_issue.valid      <= '1';
               issue_engine.buf_nxt <= ipb.rdata(33 downto 32) & ipb.rdata(31 downto 16); -- store high half-word - we might need it for an unaligned uncompressed instruction
               if (issue_engine.buf(1 downto 0) = "11") then -- uncompressed and "unaligned"
@@ -503,7 +504,7 @@ begin
     end case;
   end process issue_engine_fsm_comb;
 
-  -- 16-bit instruction: half-word select --
+  -- 16-bit instructions: half-word select --
   ci_instr16 <= ipb.rdata(15 downto 0) when (issue_engine.align = '0') else issue_engine.buf(15 downto 0);
 
 
@@ -613,9 +614,9 @@ begin
       if (execute_engine.pc_we = '1') then
         case execute_engine.pc_mux_sel is
           when "00"   => execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment
-          when "01"   => execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/branch
+          when "01"   => execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/taken_branch
           when "10"   => execute_engine.pc <= csr.mtvec(data_width_c-1 downto 1) & '0'; -- trap enter
-          when others => execute_engine.pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap return
+          when others => execute_engine.pc <= csr.mepc(data_width_c-1 downto 1) & '0';  -- trap exit
         end case;
       end if;
       --
@@ -650,6 +651,9 @@ begin
       ctrl <= ctrl_nxt;
     end if;
   end process execute_engine_fsm_sync;
+
+  -- CSR access address --
+  csr.addr <= execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c);
 
   -- PC output --
   curr_pc_o <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- PC for ALU ops
@@ -844,7 +848,7 @@ begin
               when others       => ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_and_c; -- AND(I)
             end case;
 
-            -- cp access? --
+            -- co-processor (cp) access? --
             ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- just in case a mul/div operation
             if (CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_lsb_c) = '1') then -- MULDIV CP op?
               execute_engine.is_cp_op_nxt                        <= '1'; -- this is a CP operation
@@ -1103,7 +1107,8 @@ begin
     end if;
 
     -- check CSR access --
-    case execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) is
+    case csr.addr is
+      -- standard read/write CSRs --
       when csr_mstatus_c   => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
       when csr_mstatush_c  => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
       when csr_misa_c      => csr_acc_valid <= csr.priv_m_mode;-- and (not csr_wacc_v); -- M-mode only, MISA is read-only in the NEORV32 but we don't cause an exception here for compatibility
@@ -1132,7 +1137,7 @@ begin
       --
       when csr_mcycleh_c   => csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(zicnt_en_c); -- M-mode only and "Zicnt" = true
       when csr_minstreth_c => csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(zicnt_en_c); -- M-mode only and "Zicnt" = true
-      --
+      -- standard read-only CSRs --
       when csr_cycle_c     => csr_acc_valid <= (not csr_wacc_v) and bool_to_ulogic_f(zicnt_en_c); -- all modes, read-only and "Zicnt" = true
       when csr_time_c      => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
       when csr_instret_c   => csr_acc_valid <= (not csr_wacc_v) and bool_to_ulogic_f(zicnt_en_c); -- all modes, read-only and "Zicnt" = true
@@ -1141,12 +1146,12 @@ begin
       when csr_timeh_c     => csr_acc_valid <= (not csr_wacc_v); -- all modes, read-only
       when csr_instreth_c  => csr_acc_valid <= (not csr_wacc_v) and bool_to_ulogic_f(zicnt_en_c); -- all modes, read-only and "Zicnt" = true
       --
-      when csr_mvendorid_c => csr_acc_valid <= csr.priv_m_mode and (not csr_wacc_v); -- M-mode only, read-only
-      when csr_marchid_c   => csr_acc_valid <= csr.priv_m_mode and (not csr_wacc_v); -- M-mode only, read-only
-      when csr_mimpid_c    => csr_acc_valid <= csr.priv_m_mode and (not csr_wacc_v); -- M-mode only, read-only
-      when csr_mhartid_c   => csr_acc_valid <= csr.priv_m_mode and (not csr_wacc_v); -- M-mode only, read-only
-      --
-      when csr_mzext_c     => csr_acc_valid <= csr.priv_m_mode and (not csr_wacc_v); -- M-mode only, read-only
+      when csr_mvendorid_c => csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
+      when csr_marchid_c   => csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
+      when csr_mimpid_c    => csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
+      when csr_mhartid_c   => csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
+      -- custom read-only CSRs --
+      when csr_mzext_c     => csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
       --
       when others => csr_acc_valid <= '0'; -- undefined, invalid access
     end case;
@@ -1611,7 +1616,7 @@ begin
         -- CSR access by application software
         -- --------------------------------------------------------------------------------
         if (csr.we = '1') then -- manual update
-          case execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) is
+          case csr.addr is
           
             -- machine trap setup --
             -- --------------------------------------------------------------------
@@ -1653,10 +1658,10 @@ begin
               csr.mip_clear(interrupt_mtime_irq_c) <= not csr.wdata(07);
               csr.mip_clear(interrupt_mext_irq_c)  <= not csr.wdata(11);
               --
-              csr.mip_clear(interrupt_firq_0_c)    <= not csr.wdata(16); 
-              csr.mip_clear(interrupt_firq_1_c)    <= not csr.wdata(17); 
-              csr.mip_clear(interrupt_firq_2_c)    <= not csr.wdata(18); 
-              csr.mip_clear(interrupt_firq_3_c)    <= not csr.wdata(19); 
+              csr.mip_clear(interrupt_firq_0_c)    <= not csr.wdata(16);
+              csr.mip_clear(interrupt_firq_1_c)    <= not csr.wdata(17);
+              csr.mip_clear(interrupt_firq_2_c)    <= not csr.wdata(18);
+              csr.mip_clear(interrupt_firq_3_c)    <= not csr.wdata(19);
 
             -- physical memory protection - configuration --
             -- --------------------------------------------------------------------
@@ -1701,7 +1706,7 @@ begin
                  csr_pmpaddr4_c | csr_pmpaddr5_c | csr_pmpaddr6_c | csr_pmpaddr7_c => -- R/W: pmpaddr0..7 - PMP address register 0..7
               if (PMP_USE = true) then
                 for i in 0 to pmp_num_regions_c-1 loop
-                  if (execute_engine.i_reg(23 downto 20) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
+                  if (csr.addr(2 downto 0) = std_ulogic_vector(to_unsigned(i, 3))) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
                     csr.pmpaddr(i) <= csr.wdata;
                     csr.pmpaddr(i)(index_size_f(pmp_min_granularity_c)-4 downto 0) <= (others => '1');
                   end if;
@@ -1774,11 +1779,11 @@ begin
         end if; -- hardware csr access
 
       -- --------------------------------------------------------------------------------
-      -- Counter CSRs (each counter is split in 2 32-bit counters)
+      -- Counter CSRs (each counter is split in two 32-bit counters)
       -- --------------------------------------------------------------------------------
         if (zicnt_en_c = true) then -- implement standard RISC-V performance counters?
           -- [m]cycle --
-          if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_mcycle_c) then -- write access
+          if (csr.we = '1') and (csr.addr = csr_mcycle_c) then -- write access
             csr.mcycle <= '0' & csr.wdata;
             mcycle_msb <= '0';
           elsif (execute_engine.sleep = '0') then -- automatic update (if CPU is not in sleep mode)
@@ -1787,14 +1792,14 @@ begin
           end if;
 
           -- [m]cycleh --
-          if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_mcycleh_c) then -- write access
-            csr.mcycleh <= csr.wdata(csr.mcycleh'left downto 0);
+          if (csr.we = '1') and (csr.addr = csr_mcycleh_c) then -- write access
+            csr.mcycleh <= csr.wdata;
           elsif ((mcycle_msb xor csr.mcycle(csr.mcycle'left)) = '1') then -- automatic update
             csr.mcycleh <= std_ulogic_vector(unsigned(csr.mcycleh) + 1);
           end if;
 
           -- [m]instret --
-          if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_minstret_c) then -- write access
+          if (csr.we = '1') and (csr.addr = csr_minstret_c) then -- write access
             csr.minstret <= '0' & csr.wdata;
             minstret_msb <= '0';
           elsif (execute_engine.state = EXECUTE) then -- automatic update (if CPU actually executes an instruction)
@@ -1803,8 +1808,8 @@ begin
           end if;
 
           -- [m]instreth --
-          if (csr.we = '1') and (execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) = csr_minstreth_c) then -- write access
-            csr.minstreth <= csr.wdata(csr.minstreth'left downto 0);
+          if (csr.we = '1') and (csr.addr = csr_minstreth_c) then -- write access
+            csr.minstreth <= csr.wdata;
           elsif ((minstret_msb xor csr.minstret(csr.minstret'left)) = '1') then -- automatic update
             csr.minstreth <= std_ulogic_vector(unsigned(csr.minstreth) + 1);
           end if;
@@ -1848,11 +1853,12 @@ begin
       csr.re    <= csr.re_nxt; -- read access?
       csr.rdata <= (others => '0'); -- default output
       if (CPU_EXTENSION_RISCV_Zicsr = true) and (csr.re = '1') then
-        case execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c) is
+        case csr.addr is
 
           -- machine trap setup --
           when csr_mstatus_c => -- R/W: mstatus - machine status register
-            csr.rdata(03) <= csr.mstatus_mie;  -- MIE
+            csr.rdata(03) <= csr.mstatus_mie; -- MIE
+            csr.rdata(06) <= '1' and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- UBE: CPU/Processor is BIG-ENDIAN
             csr.rdata(07) <= csr.mstatus_mpie; -- MPIE
             csr.rdata(11) <= csr.mstatus_mpp(0); -- MPP: machine previous privilege mode low
             csr.rdata(12) <= csr.mstatus_mpp(1); -- MPP: machine previous privilege mode high
