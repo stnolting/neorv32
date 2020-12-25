@@ -277,13 +277,13 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart_printf("unknown");
   }
   if (tmp == 1) {
-    neorv32_uart_printf("RV32");
+    neorv32_uart_printf("rv32");
   }
   if (tmp == 2) {
-    neorv32_uart_printf("RV64");
+    neorv32_uart_printf("rv64");
   }
   if (tmp == 3) {
-    neorv32_uart_printf("RV128");
+    neorv32_uart_printf("rv128");
   }
   
   // CPU extensions
@@ -318,7 +318,7 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart_printf("PMP ");
   }
   if (tmp & (1<<CPU_MZEXT_ZICNT)) {
-    neorv32_uart_printf("Zicnt ");
+    neorv32_uart_printf("(Zicnt) "); // not a "real" RISC-V extension
   }
 
 
@@ -386,7 +386,43 @@ void neorv32_rte_print_hw_config(void) {
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_DMEM));
   neorv32_uart_printf("DMEM size:            %u bytes\n", SYSINFO_DMEM_SIZE);
 
-  neorv32_uart_printf("Bootloader:           ");
+  neorv32_uart_printf("\nInternal i-cache:     ");
+  __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_ICACHE));
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_ICACHE)) {
+    neorv32_uart_printf("- ");
+
+    uint32_t ic_block_size = (SYSINFO_CACHE >> SYSINFO_CACHE_IC_BLOCK_SIZE_0) & 0x0F;
+    if (ic_block_size) {
+      ic_block_size = 1 << ic_block_size;
+    }
+    else {
+      ic_block_size = 0;
+    }
+
+    uint32_t ic_num_blocks = (SYSINFO_CACHE >> SYSINFO_CACHE_IC_NUM_BLOCKS_0) & 0x0F;
+    if (ic_num_blocks) {
+      ic_num_blocks = 1 << ic_num_blocks;
+    }
+    else {
+      ic_num_blocks = 0;
+    }
+
+    uint32_t ic_associativity = (SYSINFO_CACHE >> SYSINFO_CACHE_IC_ASSOCIATIVITY_0) & 0x0F;
+    ic_associativity = 1 << ic_associativity;
+
+    neorv32_uart_printf("%u bytes (%u set(s), %u block(s) per set, %u bytes per block), ", ic_associativity*ic_num_blocks*ic_block_size, ic_associativity, ic_num_blocks, ic_block_size);
+    if (ic_associativity == 0) {
+      neorv32_uart_printf("direct-mapped\n");
+    }
+    else if (ic_associativity == ic_num_blocks) {
+      neorv32_uart_printf("%u-way set-associative\n", ic_associativity);
+    }
+    else {
+      neorv32_uart_printf("fully-associative\n");
+    }
+  }
+
+  neorv32_uart_printf("\nBootloader:           ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_BOOTLOADER));
 
   neorv32_uart_printf("\nExternal memory bus interface:  ");
@@ -475,7 +511,7 @@ void __neorv32_rte_print_hex_word(uint32_t num) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment: Function to show the processor version in human-readable format.
+ * NEORV32 runtime environment: Print the processor version in human-readable format.
  **************************************************************************/
 void neorv32_rte_print_hw_version(void) {
 
@@ -515,7 +551,7 @@ void neorv32_rte_print_credits(void) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment: Print project credits
+ * NEORV32 runtime environment: Print project logo
  **************************************************************************/
 void neorv32_rte_print_logo(void) {
 

@@ -44,6 +44,7 @@ entity neorv32_cpu_stdlogic is
     -- General --
     HW_THREAD_ID                 : std_logic_vector(31 downto 0):= (others => '0'); -- hardware thread id
     CPU_BOOT_ADDR                : std_logic_vector(31 downto 0):= (others => '0'); -- cpu boot address
+    BUS_TIMEOUT                  : natural := 63;    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
@@ -135,6 +136,7 @@ begin
     -- General --
     HW_THREAD_ID                 => HW_THREAD_ID_INT,             -- hardware thread id
     CPU_BOOT_ADDR                => CPU_BOOT_ADDR_INT,            -- cpu boot address
+    BUS_TIMEOUT                  => BUS_TIMEOUT,                  -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?

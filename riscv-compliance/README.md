@@ -47,4 +47,5 @@ For more information regarding the NEORV32 Processor see the :page_facing_up:
 :information_source: The port files for the *old framework (v1.0)* can be found in
 [`port-neorv32/framework_v1.0`](https://github.com/stnolting/neorv32/tree/master/riscv-compliance/port-neorv32/framework_v1.0/riscv-target).
 
-:information_source: If the simulation of a test does not generate any signature outputs at all try increasing the simulation time in the NEORV32 port's device makefiles.
+:information_source: If the simulation of a test does not generate any signature output at all or if the signature is truncated
+try increasing the simulation time by modiying the `SIM_TIME` variable when calling the test makefiles in 'run_compliance_test.sh'.

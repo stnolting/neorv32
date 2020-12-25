@@ -105,6 +105,7 @@ enum NEORV32_CPU_CSRS_enum {
  **************************************************************************/
 enum NEORV32_CPU_MSTATUS_enum {
   CPU_MSTATUS_MIE   =  3, /**< CPU mstatus CSR (3): MIE - Machine interrupt enable bit (r/w) */
+  CPU_MSTATUS_UBE   =  6, /**< CPU mstatus CSR (6): UBE - User mode endianness (little-endian=0, big-endian=1) (r/-) */
   CPU_MSTATUS_MPIE  =  7, /**< CPU mstatus CSR (7): MPIE - Machine previous interrupt enable bit (r/w) */
   CPU_MSTATUS_MPP_L = 11, /**< CPU mstatus CSR (11): MPP_L - Machine previous privilege mode bit low (r/w) */
   CPU_MSTATUS_MPP_H = 12  /**< CPU mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
@@ -115,7 +116,7 @@ enum NEORV32_CPU_MSTATUS_enum {
  * CPU <b>mstatush</b> CSR (r/-): Machine status - high word(RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MSTATUSH_enum {
-  CPU_MSTATUSH_MBE = 5 /**< CPU mstatush CSR (5): MBE - Machine endianness (little-endian=0, big-endian=1) (r/w) */
+  CPU_MSTATUSH_MBE = 5 /**< CPU mstatush CSR (5): MBE - Machine endianness (little-endian=0, big-endian=1) (r/-) */
 };
 
 
@@ -521,8 +522,8 @@ enum NEORV32_PWM_DUTY_enum {
 #define SYSINFO_USER_CODE   (*(IO_ROM32 0xFFFFFFE4UL))
 /** SYSINFO(2): Clock speed */
 #define SYSINFO_FEATURES    (*(IO_ROM32 0xFFFFFFE8UL))
-/** SYSINFO(3): reserved */
-#define SYSINFO_reserved    (*(IO_ROM32 0xFFFFFFECUL))
+/** SYSINFO(3): Cache configuration */
+#define SYSINFO_CACHE       (*(IO_ROM32 0xFFFFFFECUL))
 /** SYSINFO(4): Instruction memory address space base */
 #define SYSINFO_ISPACE_BASE (*(IO_ROM32 0xFFFFFFF0UL))
 /** SYSINFO(5): Data memory address space base */
@@ -532,7 +533,6 @@ enum NEORV32_PWM_DUTY_enum {
 /** SYSINFO(7): Internal data memory (DMEM) size in bytes */
 #define SYSINFO_DMEM_SIZE   (*(IO_ROM32 0xFFFFFFFCUL))
 /**@}*/
-
 
 /**********************************************************************//**
  * SYSINFO_FEATURES (r/-): Implemented processor devices/features
@@ -544,6 +544,7 @@ enum NEORV32_PWM_DUTY_enum {
   SYSINFO_FEATURES_MEM_INT_IMEM_ROM =  3, /**< SYSINFO_FEATURES  (3) (r/-): Processor-internal instruction memory implemented as ROM when 1 (via MEM_INT_IMEM_ROM generic) */
   SYSINFO_FEATURES_MEM_INT_DMEM     =  4, /**< SYSINFO_FEATURES  (4) (r/-): Processor-internal data memory implemented when 1 (via MEM_INT_DMEM_USE generic) */
   SYSINFO_FEATURES_MEM_EXT_ENDIAN   =  5, /**< SYSINFO_FEATURES  (5) (r/-): External bus interface uses BIG-endian byte-order when 1 (via package.xbus_big_endian_c constant) */
+  SYSINFO_FEATURES_ICACHE           =  6, /**< SYSINFO_FEATURES  (6) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_USE generic) */
 
   SYSINFO_FEATURES_IO_GPIO          = 16, /**< SYSINFO_FEATURES (16) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_USE generic) */
   SYSINFO_FEATURES_IO_MTIME         = 17, /**< SYSINFO_FEATURES (17) (r/-): Machine system timer implemented when 1 (via IO_MTIME_USE generic) */
@@ -555,6 +556,26 @@ enum NEORV32_PWM_DUTY_enum {
   SYSINFO_FEATURES_IO_CFU0          = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions unit 0 implemented when 1 (via IO_CFU0_USE generic) */
   SYSINFO_FEATURES_IO_TRNG          = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_USE generic) */
   SYSINFO_FEATURES_IO_CFU1          = 25  /**< SYSINFO_FEATURES (25) (r/-): Custom functions unit 1 implemented when 1 (via IO_CFU1_USE generic) */
+};
+
+/**********************************************************************//**
+ * SYSINFO_CACHE (r/-): Cache configuration
+ **************************************************************************/
+ enum NEORV32_SYSINFO_CACHE_enum {
+  SYSINFO_CACHE_IC_BLOCK_SIZE_0    =  0, /**< SYSINFO_CACHE  (0) (r/-): i-cache: log2(Block size in bytes), bit 0 (via ICACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_IC_BLOCK_SIZE_1    =  1, /**< SYSINFO_CACHE  (1) (r/-): i-cache: log2(Block size in bytes), bit 1 (via ICACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_IC_BLOCK_SIZE_2    =  2, /**< SYSINFO_CACHE  (2) (r/-): i-cache: log2(Block size in bytes), bit 2 (via ICACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_IC_BLOCK_SIZE_3    =  3, /**< SYSINFO_CACHE  (3) (r/-): i-cache: log2(Block size in bytes), bit 3 (via ICACHE_BLOCK_SIZE generic) */
+
+  SYSINFO_CACHE_IC_NUM_BLOCKS_0    =  4, /**< SYSINFO_CACHE  (4) (r/-): i-cache: log2(Number of cache blocks/pages/lines), bit 0 (via ICACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_IC_NUM_BLOCKS_1    =  5, /**< SYSINFO_CACHE  (5) (r/-): i-cache: log2(Number of cache blocks/pages/lines), bit 1 (via ICACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_IC_NUM_BLOCKS_2    =  6, /**< SYSINFO_CACHE  (6) (r/-): i-cache: log2(Number of cache blocks/pages/lines), bit 2 (via ICACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_IC_NUM_BLOCKS_3    =  7, /**< SYSINFO_CACHE  (7) (r/-): i-cache: log2(Number of cache blocks/pages/lines), bit 3 (via ICACHE_NUM_BLOCKS generic) */
+
+  SYSINFO_CACHE_IC_ASSOCIATIVITY_0 =  8, /**< SYSINFO_CACHE (10) (r/-): i-cache: log2(associativity), bit 0 (always 0 -> direct mapped) */
+  SYSINFO_CACHE_IC_ASSOCIATIVITY_1 =  9, /**< SYSINFO_CACHE (11) (r/-): i-cache: log2(associativity), bit 1 (always 0 -> direct mapped) */
+  SYSINFO_CACHE_IC_ASSOCIATIVITY_2 = 10, /**< SYSINFO_CACHE (12) (r/-): i-cache: log2(associativity), bit 2 (always 0 -> direct mapped) */
+  SYSINFO_CACHE_IC_ASSOCIATIVITY_3 = 11, /**< SYSINFO_CACHE (13) (r/-): i-cache: log2(associativity), bit 3 (always 0 -> direct mapped) */
 };
 
 

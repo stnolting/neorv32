@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - CPU Compressed Instructions (C-extension) Decoder >>                             #
+-- # << NEORV32 - CPU Compressed Instructions (RISC-V C-extension) Decoder >>                      #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -238,16 +238,16 @@ begin
               ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
               ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c)         <= "00010"; -- stack pointer
               ci_instr32_o(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= (others => ci_instr16_i(12)); -- sign extend
-              ci_instr32_o(instr_imm12_lsb_c + 00)                       <= '0';
-              ci_instr32_o(instr_imm12_lsb_c + 01)                       <= '0';
-              ci_instr32_o(instr_imm12_lsb_c + 02)                       <= '0';
-              ci_instr32_o(instr_imm12_lsb_c + 03)                       <= '0';
-              ci_instr32_o(instr_imm12_lsb_c + 04)                       <= ci_instr16_i(6);
-              ci_instr32_o(instr_imm12_lsb_c + 05)                       <= ci_instr16_i(2);
-              ci_instr32_o(instr_imm12_lsb_c + 06)                       <= ci_instr16_i(5);
-              ci_instr32_o(instr_imm12_lsb_c + 07)                       <= ci_instr16_i(3);
-              ci_instr32_o(instr_imm12_lsb_c + 08)                       <= ci_instr16_i(4);
-              ci_instr32_o(instr_imm12_lsb_c + 09)                       <= ci_instr16_i(12);
+              ci_instr32_o(instr_imm12_lsb_c + 0)                        <= '0';
+              ci_instr32_o(instr_imm12_lsb_c + 1)                        <= '0';
+              ci_instr32_o(instr_imm12_lsb_c + 2)                        <= '0';
+              ci_instr32_o(instr_imm12_lsb_c + 3)                        <= '0';
+              ci_instr32_o(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(6);
+              ci_instr32_o(instr_imm12_lsb_c + 5)                        <= ci_instr16_i(2);
+              ci_instr32_o(instr_imm12_lsb_c + 6)                        <= ci_instr16_i(5);
+              ci_instr32_o(instr_imm12_lsb_c + 7)                        <= ci_instr16_i(3);
+              ci_instr32_o(instr_imm12_lsb_c + 8)                        <= ci_instr16_i(4);
+              ci_instr32_o(instr_imm12_lsb_c + 9)                        <= ci_instr16_i(12);
 
             else -- C.LUI
               ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_lui_c;

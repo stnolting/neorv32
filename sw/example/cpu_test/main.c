@@ -72,6 +72,8 @@ int cnt_fail = 0;
 int cnt_ok   = 0;
 /// Global counter for total number of tests
 int cnt_test = 0;
+/// Global timestamp for traps (stores mcycle.low on trap enter)
+uint32_t trap_timestamp32 = 0;
 
 
 /**********************************************************************//**
@@ -181,7 +183,9 @@ int main() {
   // show full HW config report
   neorv32_rte_print_hw_config();
 
+
   // configure RTE
+  // -----------------------------------------------
   neorv32_uart_printf("\n\nInitializing NEORV32 run-time environment (RTE)... ");
 
   neorv32_rte_setup(); // this will install a full-detailed debug handler for all traps
@@ -305,7 +309,6 @@ int main() {
     // wait some time to have a nice increment
     asm volatile ("nop");
     asm volatile ("nop");
-    asm volatile ("nop");
 
     // make sure cycle counter has incremented and there was no exception during access
     if ((neorv32_cpu_get_cycle() > cycle_csr_test) &&
@@ -337,7 +340,6 @@ int main() {
     // wait some time to have a nice increment
     asm volatile ("nop");
     asm volatile ("nop");
-    asm volatile ("nop");
 
     // make sure instruction counter has incremented and there was no exception during access
     if ((neorv32_cpu_get_instret() > instret_csr_test) &&
@@ -354,7 +356,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Bus timeout latency estimation (very unprecise!)
+  // Bus timeout latency estimation
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Estimating bus time-out latency: ", cnt_test);
@@ -364,13 +366,11 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCYCLE, 0);
 
   // this store access will timeout
-  MMR_UNREACHABLE = 0;
-
-  tmp_a = neorv32_cpu_csr_read(CSR_MCYCLE);
+  MMR_UNREACHABLE = 0; // trap handler will stor mcycle.low to "trap_timestamp32"
 
   // make sure there was a time-out
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) {
-    neorv32_uart_printf("~%u cycles ", tmp_a/4); // divide by average CPI
+    neorv32_uart_printf("~%u cycles ", trap_timestamp32-178); // remove trap handler overhead - empiric value ;)
     test_ok();
   }
   else {
@@ -560,7 +560,6 @@ int main() {
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
     asm volatile("nop");
-    asm volatile("nop");
 
     // no more mtime interrupts
     neorv32_mtime_set_timecmp(-1);
@@ -597,7 +596,6 @@ int main() {
     neorv32_mtime_set_timecmp(0);
 
     // wait some time for the IRQ to arrive the CPU
-    asm volatile("nop");
     asm volatile("nop");
     asm volatile("nop");
 
@@ -886,10 +884,6 @@ int main() {
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
     asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MTI) {
       test_ok();
@@ -921,10 +915,6 @@ int main() {
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
     asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MSI) {
       test_ok();
@@ -951,10 +941,6 @@ int main() {
     sim_trigger_mei();
 
     // wait some time for the IRQ to arrive the CPU
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
     asm volatile("nop");
     asm volatile("nop");
 
@@ -985,10 +971,6 @@ int main() {
     neorv32_wdt_force(); // force watchdog into action
 
     // wait some time for the IRQ to arrive the CPU
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
     asm volatile("nop");
     asm volatile("nop");
 
@@ -1028,10 +1010,6 @@ int main() {
       neorv32_gpio_pin_set(31);
 
       // wait some time for the IRQ to arrive the CPU
-      asm volatile("nop");
-      asm volatile("nop");
-      asm volatile("nop");
-      asm volatile("nop");
       asm volatile("nop");
       asm volatile("nop");
 
@@ -1087,10 +1065,6 @@ int main() {
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
     asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
 
     // wait for UART to finish transmitting
     while(neorv32_uart_tx_busy());
@@ -1130,10 +1104,6 @@ int main() {
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
     asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_3) {
       test_ok();
@@ -1168,10 +1138,6 @@ int main() {
     neorv32_twi_generate_stop();
 
     // wait some time for the IRQ to arrive the CPU
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
-    asm volatile("nop");
     asm volatile("nop");
     asm volatile("nop");
 
@@ -1438,9 +1404,10 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Atomic access (LR+SC) test (succeeding access): ", cnt_test);
 
+#ifdef __riscv_atomic
   if ((UART_CT & (1 << UART_CT_SIM_MODE)) != 0) { // check if this is a simulation
 
-    // skip if A-mode is implemented
+    // skip if A-mode is not implemented
     if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_A_EXT)) != 0) {
 
       cnt_test++;
@@ -1463,6 +1430,9 @@ int main() {
   else {
     neorv32_uart_printf("skipped (on real hardware)\n");
   }
+#else
+  neorv32_uart_printf("skipped (not implemented)\n");
+#endif
 
 
   // ----------------------------------------------------------
@@ -1471,9 +1441,10 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Atomic access (LR+SC) test (failing access): ", cnt_test);
 
+#ifdef __riscv_atomic
   if ((UART_CT & (1 << UART_CT_SIM_MODE)) != 0) { // check if this is a simulation
 
-    // skip if A-mode is implemented
+    // skip if A-mode is not implemented
     if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_A_EXT)) != 0) {
 
       cnt_test++;
@@ -1495,6 +1466,41 @@ int main() {
   else {
     neorv32_uart_printf("skipped (on real hardware)\n");
   }
+#else
+  neorv32_uart_printf("skipped (not implemented)\n");
+#endif
+
+
+  // ----------------------------------------------------------
+  // Test AMO atomic operation - should raise illegal instruction exception
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] Atomic AMOSWAP test (should raise illegal CMD exception): ", cnt_test);
+
+#ifdef __riscv_atomic
+  // skip if A-mode is not implemented
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_A_EXT)) != 0) {
+
+    cnt_test++;
+
+    // AMO operations are not implemented!
+    // this should cause an illegal instruction exception
+    asm volatile ("amoswap.w x0, x0, (x0)");
+
+    // atomic compare-and-swap
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    neorv32_uart_printf("skipped (not implemented)\n");
+  }
+#else
+  neorv32_uart_printf("skipped (not implemented)\n");
+#endif
 
 
   // ----------------------------------------------------------
@@ -1521,6 +1527,9 @@ int main() {
  * Trap handler for ALL exceptions/interrupts.
  **************************************************************************/
 void global_trap_handler(void) {
+
+  // store time stamp
+  trap_timestamp32 = neorv32_cpu_csr_read(CSR_MCYCLE);
 
   // hack: always come back in MACHINE MODE
   register uint32_t mask = (1<<CPU_MSTATUS_MPP_H) | (1<<CPU_MSTATUS_MPP_L);

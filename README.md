@@ -44,7 +44,7 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
   * `Zifencei` - instruction stream synchronization
   * `PMP` - physical memory protection
 * Full-scale RISC-V microcontroller system / **SoC** [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
-  * optional embedded memories (instructions/data/bootloader, RAM/ROM)
+  * optional embedded memories (instructions/data/bootloader, RAM/ROM) and caches
   * timers (watch dog, RISC-V-compliant machine timer)
   * serial interfaces (SPI, TWI, UART) and general purpose IO
   * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
@@ -93,7 +93,8 @@ The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/pr
 
 * Use LaTeX for data sheet
 * Further size and performance optimization *(work in progress)*
-* A cache for the external memory/bus interface *(work in progress)*
+* Add associativity configuration for instruction cache
+* Add a data cache
 * Burst mode for the external memory/bus interface
 * RISC-V `B` extension ([bitmanipulation](https://github.com/riscv/riscv-bitmanip)) *(shelved)*
 * Synthesis results (+ wrappers?) for more/specific platforms
@@ -120,8 +121,8 @@ The full-blown data sheet of the NEORV32 Processor and CPU is available as pdf f
 The NEORV32 Processor provides a full-scale microcontroller-like SoC based on the NEORV32 CPU. The setup
 is highly customizable via the processor's top generics and already provides the following *optional* modules:
 
-* processor-internal data and instruction memories (**DMEM** / **IMEM**)
-* internal **Bootloader** with UART console and automatic application boot from SPI flash option
+* processor-internal data and instruction memories (**DMEM** / **IMEM**) & cache (**iCACHE**)
+* bootloader (**BOOTLDROM**) with UART console and automatic application boot from SPI flash option
 * machine system timer (**MTIME**), RISC-V-compliant
 * watchdog timer (**WDT**)
 * universal asynchronous receiver and transmitter (**UART**) with simulation output option via text.io
@@ -210,7 +211,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Privilege levels: `M-mode` (Machine mode) + `U-mode` (User mode)
 
 **Privileged architecture / instruction stream synchronization** (`Zifencei` extension):
-  * System instructions: `FENCE.I`
+  * System instructions: `FENCE.I` (among others, used to clear and reload instruction cache)
 
 **Privileged architecture / Physical memory protection** (`PMP`, requires `Zicsr` extension):
   * Additional machine CSRs: `pmpcfg0` `pmpcfg1` `pmpaddr0` `pmpaddr1` `pmpaddr2` `pmpaddr3` `pmpaddr4` `pmpaddr5` `pmpaddr6` `pmpaddr7`
@@ -245,7 +246,7 @@ information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not o
 of the CPU's generics is assumed (for example no PMP). No constraints were used at all. The `u` and `Zifencei` extensions have
 a negligible impact on the hardware requirements.
 
-Results generated for hardware version [`1.4.9.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.4.9.2`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | CPU Configuration                       | LEs        | FFs      | Memory bits | DSPs | f_max   |
 |:----------------------------------------|:----------:|:--------:|:-----------:|:----:|:-------:|
@@ -260,12 +261,13 @@ Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utiliz
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version [`1.4.9.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.4.9.2`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
 | BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |    0 |
 | BUSSWITCH | Mux for CPU I & D interfaces                         |  65 |   8 |           0 |    0 |
+| iCACHE    | Proc.-int. nstruction cache (default 1x4x54 bytes)   | 234 | 156 |       8 192 |    0 |
 | CFU0      | Custom functions unit 0                              |   - |   - |           - |    - |
 | CFU1      | Custom functions unit 1                              |   - |   - |           - |    - |
 | DMEM      | Processor-internal data memory (default 8kB)         |   6 |   2 |      65 536 |    0 |
@@ -319,7 +321,7 @@ Results generated for hardware version [`1.4.7.0`](https://github.com/stnolting/
 
 ~~~
 **Configuration**
-Hardware:       32kB IMEM, 16kB DMEM, 100MHz clock
+Hardware:       32kB IMEM, 16kB DMEM, no caches, 100MHz clock
 CoreMark:       2000 iterations, MEM_METHOD is MEM_STACK
 Compiler:       RISCV32-GCC 10.1.0 (rv32i toolchain)
 Compiler flags: default, see makefile

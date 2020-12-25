@@ -45,12 +45,12 @@ package neorv32_package is
   constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
 
   -- (external) bus interface --
-  constant bus_timeout_c     : natural := 127; -- cycles after which an *unacknowledged* bus access will timeout and trigger a bus access exception (min 3)
+  constant bus_timeout_c     : natural := 127; -- cycles after which an *unacknowledged* bus access fetch will timeout and trigger a bus fault exception (min 2)
   constant wb_pipe_mode_c    : boolean := false; -- *external* bus protocol: false=classic/standard wishbone mode (default), true=pipelined wishbone mode
   constant xbus_big_endian_c : boolean := true; -- external memory access byte order: true=big endian (default); false=little endian
 
   -- CPU core --
-  constant ipb_entries_c : natural := 2; -- entries in CPU instruction prefetch buffer, must be a power of 2, default=2
+  constant ipb_entries_c : natural := 2; -- entries in CPU instruction prefetch buffer, has to be a power of 2, default=2
   constant zicnt_en_c    : boolean := true; -- enable RISC-V performance counters ([m]cycle[h], [m]instret[h]), default=true
 
   -- physical memory protection (PMP) --
@@ -60,7 +60,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!)= -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040900"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040903"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero by the HW
@@ -350,6 +350,7 @@ package neorv32_package is
 
   -- RISC-V CSR Addresses -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- read/write CSRs --
   constant csr_mstatus_c   : std_ulogic_vector(11 downto 0) := x"300"; -- mstatus
   constant csr_misa_c      : std_ulogic_vector(11 downto 0) := x"301"; -- misa
   constant csr_mie_c       : std_ulogic_vector(11 downto 0) := x"304"; -- mie
@@ -379,7 +380,7 @@ package neorv32_package is
   --
   constant csr_mcycleh_c   : std_ulogic_vector(11 downto 0) := x"b80"; -- mcycleh
   constant csr_minstreth_c : std_ulogic_vector(11 downto 0) := x"b82"; -- minstreth
-  --
+  -- read-only CSRs --
   constant csr_cycle_c     : std_ulogic_vector(11 downto 0) := x"c00"; -- cycle
   constant csr_time_c      : std_ulogic_vector(11 downto 0) := x"c01"; -- time
   constant csr_instret_c   : std_ulogic_vector(11 downto 0) := x"c02"; -- instret
@@ -523,6 +524,10 @@ package neorv32_package is
       -- Internal Data memory --
       MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
+      -- Internal Cache memory --
+      ICACHE_USE                   : boolean := false;  -- implement instruction cache
+      ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
+      ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
       -- External memory interface --
       MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
       -- Processor peripherals --
@@ -588,6 +593,7 @@ package neorv32_package is
       -- General --
       HW_THREAD_ID                 : std_ulogic_vector(31 downto 0) := (others => '0'); -- hardware thread id
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0) := (others => '0'); -- cpu boot address
+      BUS_TIMEOUT                  : natural := 63;    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
@@ -789,7 +795,9 @@ package neorv32_package is
     generic (
       CPU_EXTENSION_RISCV_C : boolean := true;  -- implement compressed extension?
       -- Physical memory protection (PMP) --
-      PMP_USE               : boolean := false  -- implement physical memory protection?
+      PMP_USE               : boolean := false; -- implement physical memory protection?
+      -- Bus Timeout --
+      BUS_TIMEOUT           : natural := 63     -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     );
     port (
       -- global control --
@@ -841,6 +849,43 @@ package neorv32_package is
       d_bus_err_i    : in  std_ulogic; -- bus transfer error
       d_bus_fence_o  : out std_ulogic; -- fence operation
       d_bus_lock_o   : out std_ulogic  -- locked/exclusive access
+    );
+  end component;
+
+  -- Component: CPU Cache -------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_cache
+    generic (
+      CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 1), has to be a power of 2
+      CACHE_BLOCK_SIZE : natural := 16 -- block size in bytes (min 4), has to be a power of 2
+    );
+    port (
+      -- global control --
+      clk_i         : in  std_ulogic; -- global clock, rising edge
+      rstn_i        : in  std_ulogic; -- global reset, low-active, async
+      clear_i       : in  std_ulogic; -- cache clear
+      -- host controller interface --
+      host_addr_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+      host_rdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+      host_wdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+      host_ben_i    : in  std_ulogic_vector(03 downto 0); -- byte enable
+      host_we_i     : in  std_ulogic; -- write enable
+      host_re_i     : in  std_ulogic; -- read enable
+      host_cancel_i : in  std_ulogic; -- cancel current bus transaction
+      host_lock_i   : in  std_ulogic; -- locked/exclusive access
+      host_ack_o    : out std_ulogic; -- bus transfer acknowledge
+      host_err_o    : out std_ulogic; -- bus transfer error
+      -- peripheral bus interface --
+      bus_addr_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+      bus_rdata_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+      bus_wdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+      bus_ben_o     : out std_ulogic_vector(03 downto 0); -- byte enable
+      bus_we_o      : out std_ulogic; -- write enable
+      bus_re_o      : out std_ulogic; -- read enable
+      bus_cancel_o  : out std_ulogic; -- cancel current bus transaction
+      bus_lock_o    : out std_ulogic; -- locked/exclusive access
+      bus_ack_i     : in  std_ulogic; -- bus transfer acknowledge
+      bus_err_i     : in  std_ulogic  -- bus transfer error
     );
   end component;
 
@@ -1219,29 +1264,34 @@ package neorv32_package is
   component neorv32_sysinfo
     generic (
       -- General --
-      CLOCK_FREQUENCY   : natural := 0;      -- clock frequency of clk_i in Hz
-      BOOTLOADER_USE    : boolean := true;   -- implement processor-internal bootloader?
-      USER_CODE         : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
+      CLOCK_FREQUENCY      : natural := 0;      -- clock frequency of clk_i in Hz
+      BOOTLOADER_USE       : boolean := true;   -- implement processor-internal bootloader?
+      USER_CODE            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
       -- Internal Instruction memory --
-      MEM_INT_IMEM_USE  : boolean := true;   -- implement processor-internal instruction memory
-      MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
-      MEM_INT_IMEM_ROM  : boolean := false;  -- implement processor-internal instruction memory as ROM
+      MEM_INT_IMEM_USE     : boolean := true;   -- implement processor-internal instruction memory
+      MEM_INT_IMEM_SIZE    : natural := 8*1024; -- size of processor-internal instruction memory in bytes
+      MEM_INT_IMEM_ROM     : boolean := false;  -- implement processor-internal instruction memory as ROM
       -- Internal Data memory --
-      MEM_INT_DMEM_USE  : boolean := true;   -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE : natural := 4*1024; -- size of processor-internal data memory in bytes
+      MEM_INT_DMEM_USE     : boolean := true;   -- implement processor-internal data memory
+      MEM_INT_DMEM_SIZE    : natural := 4*1024; -- size of processor-internal data memory in bytes
+      -- Internal Cache memory --
+      ICACHE_USE           : boolean := true;   -- implement instruction cache
+      ICACHE_NUM_BLOCKS    : natural := 4;      -- i-cache: number of blocks (min 2), has to be a power of 2
+      ICACHE_BLOCK_SIZE    : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
+      ICACHE_ASSOCIATIVITY : natural := 1;      -- i-cache: associativity (min 1), has to be a power 2
       -- External memory interface --
-      MEM_EXT_USE       : boolean := false;  -- implement external memory bus interface?
+      MEM_EXT_USE          : boolean := false;  -- implement external memory bus interface?
       -- Processor peripherals --
-      IO_GPIO_USE       : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-      IO_MTIME_USE      : boolean := true;   -- implement machine system timer (MTIME)?
-      IO_UART_USE       : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-      IO_SPI_USE        : boolean := true;   -- implement serial peripheral interface (SPI)?
-      IO_TWI_USE        : boolean := true;   -- implement two-wire interface (TWI)?
-      IO_PWM_USE        : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-      IO_WDT_USE        : boolean := true;   -- implement watch dog timer (WDT)?
-      IO_TRNG_USE       : boolean := true;   -- implement true random number generator (TRNG)?
-      IO_CFU0_USE       : boolean := true;   -- implement custom functions unit 0 (CFU0)?
-      IO_CFU1_USE       : boolean := true    -- implement custom functions unit 1 (CFU1)?
+      IO_GPIO_USE          : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+      IO_MTIME_USE         : boolean := true;   -- implement machine system timer (MTIME)?
+      IO_UART_USE          : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+      IO_SPI_USE           : boolean := true;   -- implement serial peripheral interface (SPI)?
+      IO_TWI_USE           : boolean := true;   -- implement two-wire interface (TWI)?
+      IO_PWM_USE           : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+      IO_WDT_USE           : boolean := true;   -- implement watch dog timer (WDT)?
+      IO_TRNG_USE          : boolean := true;   -- implement true random number generator (TRNG)?
+      IO_CFU0_USE          : boolean := true;   -- implement custom functions unit 0 (CFU0)?
+      IO_CFU1_USE          : boolean := true    -- implement custom functions unit 1 (CFU1)?
     );
     port (
       -- host access --
