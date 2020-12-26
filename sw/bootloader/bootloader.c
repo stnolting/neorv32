@@ -226,7 +226,7 @@ int main(void) {
   // Configure machine system timer interrupt for ~2Hz
   neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (clock_speed/4));
 
-  neorv32_cpu_csr_write(CSR_MIE, 1 << CPU_MIE_MTIE); // activate MTIME IRQ source
+  neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate MTIME IRQ source
   neorv32_cpu_eint(); // enable global interrupts
 
 

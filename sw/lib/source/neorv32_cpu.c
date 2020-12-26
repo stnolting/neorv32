@@ -48,13 +48,13 @@
  *
  * @note Interrupts have to be globally enabled via neorv32_cpu_eint(void), too.
  *
- * @param[in] irq_sel CPU interrupt select. See #NEORV32_CPU_MIE_enum.
+ * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
  * @return 0 if success, 1 if error (invalid irq_sel).
  **************************************************************************/
 int neorv32_cpu_irq_enable(uint8_t irq_sel) {
 
-  if ((irq_sel != CPU_MIE_MSIE) && (irq_sel != CPU_MIE_MTIE) && (irq_sel != CPU_MIE_MEIE) &&
-      (irq_sel != CPU_MIE_FIRQ0E) && (irq_sel != CPU_MIE_FIRQ1E) && (irq_sel != CPU_MIE_FIRQ2E) && (irq_sel != CPU_MIE_FIRQ3E)) {
+  if ((irq_sel != CSR_MIE_MSIE) && (irq_sel != CSR_MIE_MTIE) && (irq_sel != CSR_MIE_MEIE) &&
+      (irq_sel != CSR_MIE_FIRQ0E) && (irq_sel != CSR_MIE_FIRQ1E) && (irq_sel != CSR_MIE_FIRQ2E) && (irq_sel != CSR_MIE_FIRQ3E)) {
     return 1;
   }
 
@@ -67,13 +67,13 @@ int neorv32_cpu_irq_enable(uint8_t irq_sel) {
 /**********************************************************************//**
  * Disable specific CPU interrupt.
  *
- * @param[in] irq_sel CPU interrupt select. See #NEORV32_CPU_MIE_enum.
+ * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
  * @return 0 if success, 1 if error (invalid irq_sel).
  **************************************************************************/
 int neorv32_cpu_irq_disable(uint8_t irq_sel) {
 
-  if ((irq_sel != CPU_MIE_MSIE) && (irq_sel != CPU_MIE_MTIE) && (irq_sel != CPU_MIE_MEIE) &&
-      (irq_sel != CPU_MIE_FIRQ0E) && (irq_sel != CPU_MIE_FIRQ1E) && (irq_sel != CPU_MIE_FIRQ2E) && (irq_sel != CPU_MIE_FIRQ3E)) {
+  if ((irq_sel != CSR_MIE_MSIE) && (irq_sel != CSR_MIE_MTIE) && (irq_sel != CSR_MIE_MEIE) &&
+      (irq_sel != CSR_MIE_FIRQ0E) && (irq_sel != CSR_MIE_FIRQ1E) && (irq_sel != CSR_MIE_FIRQ2E) && (irq_sel != CSR_MIE_FIRQ3E)) {
     return 1;
   }
 
@@ -254,7 +254,7 @@ void __attribute__((naked)) neorv32_cpu_goto_user_mode(void) {
                 "li ra, %[input_imm]     \n\t" // bit mask to clear the two MPP bits
                 "csrrc zero, mstatus, ra \n\t" // clear MPP bits -> MPP=u-mode
                 "mret                    \n\t" // return and switch to user mode
-                :  : [input_imm] "i" ((1<<CPU_MSTATUS_MPP_H) | (1<<CPU_MSTATUS_MPP_L)));
+                :  : [input_imm] "i" ((1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L)));
 }
 
 
@@ -308,7 +308,7 @@ int __attribute__ ((noinline)) neorv32_cpu_atomic_cas(uint32_t addr, uint32_t ex
  **************************************************************************/
 uint32_t neorv32_cpu_pmp_get_granularity(void) {
 
-  if ((neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_PMP)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CSR_MZEXT_PMP)) == 0) {
     return 0; // PMP not implemented
   }
 
@@ -347,7 +347,7 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
  **************************************************************************/
 int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint32_t size, uint8_t config) {
 
-  if ((neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_PMP)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CSR_MZEXT_PMP)) == 0) {
     return 1; // PMP not implemented
   }
 

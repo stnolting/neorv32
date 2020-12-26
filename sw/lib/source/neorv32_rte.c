@@ -288,7 +288,7 @@ void neorv32_rte_print_hw_config(void) {
   
   // CPU extensions
   neorv32_uart_printf("\nEndianness:        ");
-  if (neorv32_cpu_csr_read(CSR_MSTATUSH) & (1<<CPU_MSTATUSH_MBE)) {
+  if (neorv32_cpu_csr_read(CSR_MSTATUSH) & (1<<CSR_MSTATUSH_MBE)) {
     neorv32_uart_printf("big\n");
   }
   else {
@@ -308,20 +308,20 @@ void neorv32_rte_print_hw_config(void) {
   
   // Z* CPU extensions (from custom "mzext" CSR)
   tmp = neorv32_cpu_csr_read(CSR_MZEXT);
-  if (tmp & (1<<CPU_MZEXT_ZICSR)) {
+  if (tmp & (1<<CSR_MZEXT_ZICSR)) {
     neorv32_uart_printf("Zicsr ");
   }
-  if (tmp & (1<<CPU_MZEXT_ZIFENCEI)) {
+  if (tmp & (1<<CSR_MZEXT_ZIFENCEI)) {
     neorv32_uart_printf("Zifencei ");
   }
-  if (tmp & (1<<CPU_MZEXT_PMP)) {
+  if (tmp & (1<<CSR_MZEXT_PMP)) {
     neorv32_uart_printf("PMP ");
   }
 
 
   // check physical memory protection
   neorv32_uart_printf("\n\nPhysical memory protection: ");
-  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_PMP))  {
+  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CSR_MZEXT_PMP))  {
 
     // get minimal region siz (granulartiy)
     neorv32_uart_printf("\n- Minimal granularity: %u bytes per region\n", neorv32_cpu_pmp_get_granularity());

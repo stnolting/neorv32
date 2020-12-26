@@ -52,7 +52,7 @@
 /**********************************************************************//**
  * Available CPU Control and Status Registers (CSRs)
  **************************************************************************/
-enum NEORV32_CPU_CSRS_enum {
+enum NEORV32_CSR_enum {
   CSR_MSTATUS       = 0x300, /**< 0x300 - mstatus    (r/w): Machine status register */
   CSR_MISA          = 0x301, /**< 0x301 - misa       (r/-): CPU ISA and extensions (read-only in NEORV32) */
   CSR_MIE           = 0x304, /**< 0x304 - mie        (r/w): Machine interrupt-enable register */
@@ -106,96 +106,96 @@ enum NEORV32_CPU_CSRS_enum {
 /**********************************************************************//**
  * CPU <b>mstatus</b> CSR (r/w): Machine status (RISC-V spec.)
  **************************************************************************/
-enum NEORV32_CPU_MSTATUS_enum {
-  CPU_MSTATUS_MIE   =  3, /**< CPU mstatus CSR (3): MIE - Machine interrupt enable bit (r/w) */
-  CPU_MSTATUS_UBE   =  6, /**< CPU mstatus CSR (6): UBE - User-mode endianness (little-endian=0, big-endian=1) (r/-) */
-  CPU_MSTATUS_MPIE  =  7, /**< CPU mstatus CSR (7): MPIE - Machine previous interrupt enable bit (r/w) */
-  CPU_MSTATUS_MPP_L = 11, /**< CPU mstatus CSR (11): MPP_L - Machine previous privilege mode bit low (r/w) */
-  CPU_MSTATUS_MPP_H = 12  /**< CPU mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
+enum NEORV32_CSR_MSTATUS_enum {
+  CSR_MSTATUS_MIE   =  3, /**< CPU mstatus CSR (3): MIE - Machine interrupt enable bit (r/w) */
+  CSR_MSTATUS_UBE   =  6, /**< CPU mstatus CSR (6): UBE - User-mode endianness (little-endian=0, big-endian=1) (r/-) */
+  CSR_MSTATUS_MPIE  =  7, /**< CPU mstatus CSR (7): MPIE - Machine previous interrupt enable bit (r/w) */
+  CSR_MSTATUS_MPP_L = 11, /**< CPU mstatus CSR (11): MPP_L - Machine previous privilege mode bit low (r/w) */
+  CSR_MSTATUS_MPP_H = 12  /**< CPU mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
 };
 
 
 /**********************************************************************//**
  * CPU <b>mstatush</b> CSR (r/-): Machine status - high word (RISC-V spec.)
  **************************************************************************/
-enum NEORV32_CPU_MSTATUSH_enum {
-  CPU_MSTATUSH_MBE = 5 /**< CPU mstatush CSR (5): MBE - Machine-mode endianness (little-endian=0, big-endian=1) (r/-) */
+enum NEORV32_CSR_MSTATUSH_enum {
+  CSR_MSTATUSH_MBE = 5 /**< CPU mstatush CSR (5): MBE - Machine-mode endianness (little-endian=0, big-endian=1) (r/-) */
 };
 
 
 /**********************************************************************//**
  * CPU <b>mcounteren</b> CSR (r/w): Machine counter enable (RISC-V spec.)
  **************************************************************************/
-enum NEORV32_CPU_MCOUNTEREN_enum {
-  CPU_MCOUNTEREN_CY = 0, /**< CPU mcounteren CSR (0): CY - Allow access to cycle[h] CSRs from U-mode when set (r/w) */
-  CPU_MCOUNTEREN_TM = 1, /**< CPU mcounteren CSR (1): TM - Allow access to time[h] CSRs from U-mode when set (r/w) */
-  CPU_MCOUNTEREN_IR = 2  /**< CPU mcounteren CSR (2): IR - Allow access to instret[h] CSRs from U-mode when set (r/w) */
+enum NEORV32_CSR_MCOUNTEREN_enum {
+  CSR_MCOUNTEREN_CY = 0, /**< CPU mcounteren CSR (0): CY - Allow access to cycle[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_TM = 1, /**< CPU mcounteren CSR (1): TM - Allow access to time[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_IR = 2  /**< CPU mcounteren CSR (2): IR - Allow access to instret[h] CSRs from U-mode when set (r/w) */
 };
 
 
 /**********************************************************************//**
  * CPU <b>mcountinhibit</b> CSR (r/w): Machine counter-inhibit (RISC-V spec.)
  **************************************************************************/
-enum NEORV32_CPU_MCOUNTINHIBIT_enum {
-  CPU_MCOUNTINHIBIT_CY = 0, /**< CPU mcountinhibit CSR (0): CY - Enable auto-increment of [m]cycle[h] CSR when set (r/w) */
-  CPU_MCOUNTINHIBIT_IR = 2  /**< CPU mcountinhibit CSR (2): IR - Enable auto-increment of [m]instret[h] CSR when set (r/w) */
+enum NEORV32_CSR_MCOUNTINHIBIT_enum {
+  CSR_MCOUNTINHIBIT_CY = 0, /**< CPU mcountinhibit CSR (0): CY - Enable auto-increment of [m]cycle[h] CSR when set (r/w) */
+  CSR_MCOUNTINHIBIT_IR = 2  /**< CPU mcountinhibit CSR (2): IR - Enable auto-increment of [m]instret[h] CSR when set (r/w) */
 };
 
 
 /**********************************************************************//**
  * CPU <b>mie</b> CSR (r/w): Machine interrupt enable (RISC-V spec.)
  **************************************************************************/
-enum NEORV32_CPU_MIE_enum {
-  CPU_MIE_MSIE   =  3, /**< CPU mie CSR (3): MSIE - Machine software interrupt enable (r/w) */
-  CPU_MIE_MTIE   =  7, /**< CPU mie CSR (7): MTIE - Machine timer interrupt enable bit (r/w) */
-  CPU_MIE_MEIE   = 11, /**< CPU mie CSR (11): MEIE - Machine external interrupt enable bit (r/w) */
-  CPU_MIE_FIRQ0E = 16, /**< CPU mie CSR (16): FIRQ0E - Fast interrupt channel 0 enable bit (r/w) */
-  CPU_MIE_FIRQ1E = 17, /**< CPU mie CSR (17): FIRQ1E - Fast interrupt channel 1 enable bit (r/w) */
-  CPU_MIE_FIRQ2E = 18, /**< CPU mie CSR (18): FIRQ2E - Fast interrupt channel 2 enable bit (r/w) */
-  CPU_MIE_FIRQ3E = 19  /**< CPU mie CSR (19): FIRQ3E - Fast interrupt channel 3 enable bit (r/w) */
+enum NEORV32_CSR_MIE_enum {
+  CSR_MIE_MSIE   =  3, /**< CPU mie CSR (3): MSIE - Machine software interrupt enable (r/w) */
+  CSR_MIE_MTIE   =  7, /**< CPU mie CSR (7): MTIE - Machine timer interrupt enable bit (r/w) */
+  CSR_MIE_MEIE   = 11, /**< CPU mie CSR (11): MEIE - Machine external interrupt enable bit (r/w) */
+  CSR_MIE_FIRQ0E = 16, /**< CPU mie CSR (16): FIRQ0E - Fast interrupt channel 0 enable bit (r/w) */
+  CSR_MIE_FIRQ1E = 17, /**< CPU mie CSR (17): FIRQ1E - Fast interrupt channel 1 enable bit (r/w) */
+  CSR_MIE_FIRQ2E = 18, /**< CPU mie CSR (18): FIRQ2E - Fast interrupt channel 2 enable bit (r/w) */
+  CSR_MIE_FIRQ3E = 19  /**< CPU mie CSR (19): FIRQ3E - Fast interrupt channel 3 enable bit (r/w) */
 };
 
 
 /**********************************************************************//**
  * CPU <b>mip</b> CSR (r/-): Machine interrupt pending (RISC-V spec.)
  **************************************************************************/
-enum NEORV32_CPU_MIP_enum {
-  CPU_MIP_MSIP   =  3, /**< CPU mip CSR (3): MSIP - Machine software interrupt pending (r/-) */
-  CPU_MIP_MTIP   =  7, /**< CPU mip CSR (7): MTIP - Machine timer interrupt pending (r/-) */
-  CPU_MIP_MEIP   = 11, /**< CPU mip CSR (11): MEIP - Machine external interrupt pending (r/-) */
+enum NEORV32_CSR_MIP_enum {
+  CSR_MIP_MSIP   =  3, /**< CPU mip CSR (3): MSIP - Machine software interrupt pending (r/-) */
+  CSR_MIP_MTIP   =  7, /**< CPU mip CSR (7): MTIP - Machine timer interrupt pending (r/-) */
+  CSR_MIP_MEIP   = 11, /**< CPU mip CSR (11): MEIP - Machine external interrupt pending (r/-) */
 
-  CPU_MIP_FIRQ0P = 16, /**< CPU mip CSR (16): FIRQ0P - Fast interrupt channel 0 pending (r/-) */
-  CPU_MIP_FIRQ1P = 17, /**< CPU mip CSR (17): FIRQ1P - Fast interrupt channel 1 pending (r/-) */
-  CPU_MIP_FIRQ2P = 18, /**< CPU mip CSR (18): FIRQ2P - Fast interrupt channel 2 pending (r/-) */
-  CPU_MIP_FIRQ3P = 19  /**< CPU mip CSR (19): FIRQ3P - Fast interrupt channel 3 pending (r/-) */
+  CSR_MIP_FIRQ0P = 16, /**< CPU mip CSR (16): FIRQ0P - Fast interrupt channel 0 pending (r/-) */
+  CSR_MIP_FIRQ1P = 17, /**< CPU mip CSR (17): FIRQ1P - Fast interrupt channel 1 pending (r/-) */
+  CSR_MIP_FIRQ2P = 18, /**< CPU mip CSR (18): FIRQ2P - Fast interrupt channel 2 pending (r/-) */
+  CSR_MIP_FIRQ3P = 19  /**< CPU mip CSR (19): FIRQ3P - Fast interrupt channel 3 pending (r/-) */
 };
 
 
 /**********************************************************************//**
  * CPU <b>misa</b> CSR (r/-): Machine instruction set extensions (RISC-V spec.)
  **************************************************************************/
-enum NEORV32_CPU_MISA_enum {
-  CPU_MISA_A_EXT      =  0, /**< CPU misa CSR  (0): A: Atomic instructions CPU extension available (r/-)*/
-  CPU_MISA_B_EXT      =  1, /**< CPU misa CSR  (1): B: Bit manipulation CPU extension available (r/-)*/
-  CPU_MISA_C_EXT      =  2, /**< CPU misa CSR  (2): C: Compressed instructions CPU extension available (r/-)*/
-  CPU_MISA_E_EXT      =  4, /**< CPU misa CSR  (4): E: Embedded CPU extension available (r/-) */
-  CPU_MISA_F_EXT      =  4, /**< CPU misa CSR  (5): F: Floating point (single-precision) extension available (r/-) */
-  CPU_MISA_I_EXT      =  8, /**< CPU misa CSR  (8): I: Base integer ISA CPU extension available (r/-) */
-  CPU_MISA_M_EXT      = 12, /**< CPU misa CSR (12): M: Multiplier/divider CPU extension available (r/-)*/
-  CPU_MISA_U_EXT      = 20, /**< CPU misa CSR (20): U: User mode CPU extension available (r/-)*/
-  CPU_MISA_X_EXT      = 23, /**< CPU misa CSR (23): X: Non-standard CPU extension available (r/-) */
-  CPU_MISA_MXL_LO_EXT = 30, /**< CPU misa CSR (30): MXL.lo: CPU data width (r/-) */
-  CPU_MISA_MXL_HI_EXT = 31  /**< CPU misa CSR (31): MXL.Hi: CPU data width (r/-) */
+enum NEORV32_CSR_MISA_enum {
+  CSR_MISA_A_EXT      =  0, /**< CPU misa CSR  (0): A: Atomic instructions CPU extension available (r/-)*/
+  CSR_MISA_B_EXT      =  1, /**< CPU misa CSR  (1): B: Bit manipulation CPU extension available (r/-)*/
+  CSR_MISA_C_EXT      =  2, /**< CPU misa CSR  (2): C: Compressed instructions CPU extension available (r/-)*/
+  CSR_MISA_E_EXT      =  4, /**< CPU misa CSR  (4): E: Embedded CPU extension available (r/-) */
+  CSR_MISA_F_EXT      =  4, /**< CPU misa CSR  (5): F: Floating point (single-precision) extension available (r/-) */
+  CSR_MISA_I_EXT      =  8, /**< CPU misa CSR  (8): I: Base integer ISA CPU extension available (r/-) */
+  CSR_MISA_M_EXT      = 12, /**< CPU misa CSR (12): M: Multiplier/divider CPU extension available (r/-)*/
+  CSR_MISA_U_EXT      = 20, /**< CPU misa CSR (20): U: User mode CPU extension available (r/-)*/
+  CSR_MISA_X_EXT      = 23, /**< CPU misa CSR (23): X: Non-standard CPU extension available (r/-) */
+  CSR_MISA_MXL_LO_EXT = 30, /**< CPU misa CSR (30): MXL.lo: CPU data width (r/-) */
+  CSR_MISA_MXL_HI_EXT = 31  /**< CPU misa CSR (31): MXL.Hi: CPU data width (r/-) */
 };
 
 
 /**********************************************************************//**
  * CPU <b>mzext</b> custom CSR (r/-): Implemented Z* CPU extensions
  **************************************************************************/
-enum NEORV32_CPU_MZEXT_enum {
-  CPU_MZEXT_ZICSR    = 0, /**< CPU mzext CSR (0): Zicsr extension available when set (r/-) */
-  CPU_MZEXT_ZIFENCEI = 1, /**< CPU mzext CSR (1): Zifencei extension available when set (r/-) */
-  CPU_MZEXT_PMP      = 2  /**< CPU mzext CSR (2): PMP extension available when set (r/-) */
+enum NEORV32_CSR_MZEXT_enum {
+  CSR_MZEXT_ZICSR    = 0, /**< CPU mzext CSR (0): Zicsr extension available when set (r/-) */
+  CSR_MZEXT_ZIFENCEI = 1, /**< CPU mzext CSR (1): Zifencei extension available when set (r/-) */
+  CSR_MZEXT_PMP      = 2  /**< CPU mzext CSR (2): PMP extension available when set (r/-) */
 };
 
 

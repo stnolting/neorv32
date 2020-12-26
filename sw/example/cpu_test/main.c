@@ -220,13 +220,13 @@ int main() {
   }
 
   // enable interrupt sources
-  install_err  = neorv32_cpu_irq_enable(CPU_MIE_MSIE);   // activate software interrupt
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_MTIE);   // activate timer interrupt
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_MEIE);   // activate external interrupt
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ0E); // activate fast interrupt channel 0
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ1E); // activate fast interrupt channel 1
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ2E); // activate fast interrupt channel 2
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ3E); // activate fast interrupt channel 3
+  install_err  = neorv32_cpu_irq_enable(CSR_MIE_MSIE);   // activate software interrupt
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_MTIE);   // activate timer interrupt
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_MEIE);   // activate external interrupt
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ0E); // activate fast interrupt channel 0
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ1E); // activate fast interrupt channel 1
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ2E); // activate fast interrupt channel 2
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ3E); // activate fast interrupt channel 3
 
   if (install_err) {
     neorv32_uart_printf("IRQ enable error (%i)!\n", install_err);
@@ -357,7 +357,7 @@ int main() {
 
   // inhibit [m]cycle CSR
   tmp_a = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT);
-  tmp_a |= (1<<CPU_MCOUNTINHIBIT_CY); // inhibit cycle counter auto-increment
+  tmp_a |= (1<<CSR_MCOUNTINHIBIT_CY); // inhibit cycle counter auto-increment
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, tmp_a);
 
   // get current cycle counter
@@ -379,7 +379,7 @@ int main() {
 
   // re-enable [m]cycle CSR
   tmp_a = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT);
-  tmp_a &= ~(1<<CPU_MCOUNTINHIBIT_CY); // clear inhibit of cycle counter auto-increment
+  tmp_a &= ~(1<<CSR_MCOUNTINHIBIT_CY); // clear inhibit of cycle counter auto-increment
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, tmp_a);
 
 
@@ -393,7 +393,7 @@ int main() {
 
   // do not allow user-level code to access cycle[h] CSRs
   tmp_a = neorv32_cpu_csr_read(CSR_MCOUNTEREN);
-  tmp_a &= ~(1<<CPU_MCOUNTEREN_CY); // clear access right
+  tmp_a &= ~(1<<CSR_MCOUNTEREN_CY); // clear access right
   neorv32_cpu_csr_write(CSR_MCOUNTEREN, tmp_a);
 
   // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
@@ -420,7 +420,7 @@ int main() {
 
   // re-allow user-level code to access cycle[h] CSRs
   tmp_a = neorv32_cpu_csr_read(CSR_MCOUNTEREN);
-  tmp_a |= (1<<CPU_MCOUNTEREN_CY); // re-allow access right
+  tmp_a |= (1<<CSR_MCOUNTEREN_CY); // re-allow access right
   neorv32_cpu_csr_write(CSR_MCOUNTEREN, tmp_a);
 
 
@@ -672,7 +672,7 @@ int main() {
     neorv32_mtime_set_timecmp(-1);
 
 
-    if (neorv32_cpu_csr_read(CSR_MIP) & (1 << CPU_MIP_MTIP)) { // make sure MTIP is pending
+    if (neorv32_cpu_csr_read(CSR_MIP) & (1 << CSR_MIP_MTIP)) { // make sure MTIP is pending
 
       neorv32_cpu_csr_write(CSR_MIP, 0); // just clear all pending IRQs
       neorv32_cpu_eint(); // re-enable global interrupts
@@ -704,7 +704,7 @@ int main() {
   neorv32_uart_printf("[%i] I_ALIGN (instruction alignment) exception test: ", cnt_test);
 
   // skip if C-mode is implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_C_EXT)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C_EXT)) == 0) {
 
     cnt_test++;
 
@@ -776,7 +776,7 @@ int main() {
   neorv32_uart_printf("[%i] CI_ILLEG (illegal compressed instruction) exception test: ", cnt_test);
 
   // skip if C-mode is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_C_EXT)) != 0) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C_EXT)) != 0) {
 
     cnt_test++;
 
@@ -914,7 +914,7 @@ int main() {
   neorv32_uart_printf("[%i] ENVCALL (ecall instruction) from U-mode exception test: ", cnt_test);
 
   // skip if U-mode is not implemented
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_U_EXT)) {
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_U_EXT)) {
 
     cnt_test++;
 
@@ -1261,7 +1261,7 @@ int main() {
   neorv32_uart_printf("[%i] Invalid CSR access (mstatus) from user mode test: ", cnt_test);
 
   // skip if U-mode is not implemented
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_U_EXT)) {
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_U_EXT)) {
 
     cnt_test++;
 
@@ -1324,7 +1324,7 @@ int main() {
   neorv32_uart_printf("[%i] Physical memory protection (PMP): ", cnt_test);
 
   // check if PMP is implemented
-  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_PMP))  {
+  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CSR_MZEXT_PMP))  {
 
     // Test access to protected region
     // ---------------------------------------------
@@ -1476,7 +1476,7 @@ int main() {
   if ((UART_CT & (1 << UART_CT_SIM_MODE)) != 0) { // check if this is a simulation
 
     // skip if A-mode is not implemented
-    if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_A_EXT)) != 0) {
+    if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A_EXT)) != 0) {
 
       cnt_test++;
 
@@ -1513,7 +1513,7 @@ int main() {
   if ((UART_CT & (1 << UART_CT_SIM_MODE)) != 0) { // check if this is a simulation
 
     // skip if A-mode is not implemented
-    if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_A_EXT)) != 0) {
+    if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A_EXT)) != 0) {
 
       cnt_test++;
 
@@ -1547,7 +1547,7 @@ int main() {
 
 #ifdef __riscv_atomic
   // skip if A-mode is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CPU_MISA_A_EXT)) != 0) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A_EXT)) != 0) {
 
     cnt_test++;
 
@@ -1600,7 +1600,7 @@ void global_trap_handler(void) {
   trap_timestamp32 = neorv32_cpu_csr_read(CSR_MCYCLE);
 
   // hack: always come back in MACHINE MODE
-  register uint32_t mask = (1<<CPU_MSTATUS_MPP_H) | (1<<CPU_MSTATUS_MPP_L);
+  register uint32_t mask = (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L);
   asm volatile ("csrrs zero, mstatus, %[input_j]" :  : [input_j] "r" (mask));
 }
 

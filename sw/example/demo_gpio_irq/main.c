@@ -115,7 +115,7 @@ int main() {
   }
 
   // activate fast interrupt channel 1 (which is GPIO_PIN_CHANGE)
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ1E);
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ1E);
 
   // activate GPIO pin-change irq only for input pins 0 to 7
   neorv32_gpio_pin_change_config(0x000000ff);

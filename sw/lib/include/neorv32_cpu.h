@@ -60,7 +60,7 @@ int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint32_t siz
 /**********************************************************************//**
  * Read data from CPU configuration and status register (CSR).
  *
- * @param[in] csr_id ID of CSR to read. See #NEORV32_CPU_CSRS_enum.
+ * @param[in] csr_id ID of CSR to read. See #NEORV32_CSR_enum.
  * @return Read data (uint32_t).
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int csr_id) {
@@ -76,7 +76,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int c
 /**********************************************************************//**
  * Write data to CPU configuration and status register (CSR).
  *
- * @param[in] csr_id ID of CSR to write. See #NEORV32_CPU_CSRS_enum.
+ * @param[in] csr_id ID of CSR to write. See #NEORV32_CSR_enum.
  * @param[in] data Data to write (uint32_t).
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_csr_write(const int csr_id, uint32_t data) {
@@ -108,7 +108,7 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_sleep(void) {
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_eint(void) {
 
-  asm volatile ("csrrsi zero, mstatus, %0" : : "i" (1 << CPU_MSTATUS_MIE));
+  asm volatile ("csrrsi zero, mstatus, %0" : : "i" (1 << CSR_MSTATUS_MIE));
   asm volatile ("nop");
   asm volatile ("nop");
 }
@@ -119,7 +119,7 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_eint(void) {
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_dint(void) {
 
-  asm volatile ("csrrci zero, mstatus, %0" : : "i" (1 << CPU_MSTATUS_MIE));
+  asm volatile ("csrrci zero, mstatus, %0" : : "i" (1 << CSR_MSTATUS_MIE));
   asm volatile ("nop");
   asm volatile ("nop");
 }
