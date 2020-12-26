@@ -162,6 +162,10 @@ int main() {
   neorv32_cpu_set_minstret(0);
   neorv32_cpu_set_mcycle(0);
 
+  // enable performance counter auto increment
+  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0);
+  neorv32_cpu_csr_write(CSR_MCOUNTEREN, 7); // allow access from user-mode code
+
   neorv32_mtime_set_time(0);
   // set CMP of machine system timer MTIME to max to prevent an IRQ
   uint64_t mtime_cmp_max = 0xFFFFFFFFFFFFFFFFUL;
@@ -299,28 +303,22 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Testing [m]instret[h] counters: ", cnt_test);
 
-  // check if counters are implemented
-  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_ZICNT))  {
-    cnt_test++;
+  cnt_test++;
 
-    // get current cycle counter
-    volatile uint64_t cycle_csr_test = neorv32_cpu_get_cycle();
+  // get current cycle counter
+  tmp_a = neorv32_cpu_get_cycle();
 
-    // wait some time to have a nice increment
-    asm volatile ("nop");
-    asm volatile ("nop");
+  // wait some time to have a nice increment
+  asm volatile ("nop");
+  asm volatile ("nop");
 
-    // make sure cycle counter has incremented and there was no exception during access
-    if ((neorv32_cpu_get_cycle() > cycle_csr_test) &&
-        (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
+  // make sure cycle counter has incremented and there was no exception during access
+  if ((neorv32_cpu_get_cycle() > tmp_a) &&
+      (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+    test_ok();
   }
   else {
-    neorv32_uart_printf("skipped (not implemented)\n");
+    test_fail();
   }
 
 
@@ -330,29 +328,100 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Testing [m]cycle[h] counters: ", cnt_test);
 
-  // check if counters are implemented
-  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_ZICNT))  {
-    cnt_test++;
+  cnt_test++;
 
-    // get current instruction counter
-    volatile uint64_t instret_csr_test = neorv32_cpu_get_instret();
+  // get current instruction counter
+  tmp_a = neorv32_cpu_get_instret();
 
-    // wait some time to have a nice increment
-    asm volatile ("nop");
-    asm volatile ("nop");
+  // wait some time to have a nice increment
+  asm volatile ("nop");
+  asm volatile ("nop");
 
-    // make sure instruction counter has incremented and there was no exception during access
-    if ((neorv32_cpu_get_instret() > instret_csr_test) &&
-        (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+  // make sure instruction counter has incremented and there was no exception during access
+  if ((neorv32_cpu_get_instret() > tmp_a) &&
+      (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
+
+
+  // ----------------------------------------------------------
+  // Test mcountinhibt: inhibit auto-inc of [m]cycle
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] Testing mcountINHIBT.cy CSR: ", cnt_test);
+
+  cnt_test++;
+
+  // inhibit [m]cycle CSR
+  tmp_a = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT);
+  tmp_a |= (1<<CPU_MCOUNTINHIBIT_CY); // inhibit cycle counter auto-increment
+  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, tmp_a);
+
+  // get current cycle counter
+  tmp_a = neorv32_cpu_csr_read(CSR_CYCLE);
+
+  // wait some time to have a nice "increment" (there should be NO increment at all!)
+  asm volatile ("nop");
+  asm volatile ("nop");
+
+  tmp_b = neorv32_cpu_csr_read(CSR_CYCLE);
+
+  // make sure instruction counter has NOT incremented and there was no exception during access
+  if ((tmp_a == tmp_b) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
+
+  // re-enable [m]cycle CSR
+  tmp_a = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT);
+  tmp_a &= ~(1<<CPU_MCOUNTINHIBIT_CY); // clear inhibit of cycle counter auto-increment
+  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, tmp_a);
+
+
+  // ----------------------------------------------------------
+  // Test mcounteren: do not allow cycle[h] access from user-mode
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] Testing mcounterEN.cy CSR: ", cnt_test);
+
+  cnt_test++;
+
+  // do not allow user-level code to access cycle[h] CSRs
+  tmp_a = neorv32_cpu_csr_read(CSR_MCOUNTEREN);
+  tmp_a &= ~(1<<CPU_MCOUNTEREN_CY); // clear access right
+  neorv32_cpu_csr_write(CSR_MCOUNTEREN, tmp_a);
+
+  // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+  neorv32_cpu_goto_user_mode();
+  {
+    // access to cycle CSR is no longer allowed
+    tmp_a = neorv32_cpu_csr_read(CSR_CYCLE);
+  }
+
+  // make sure there was an illegal instruction trap
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+    if (tmp_a == 0) { // make sure user-level code CANNOT read locked CSR content!
       test_ok();
     }
     else {
+      neorv32_uart_printf("SECURITY VIOLATION! ");
       test_fail();
     }
   }
   else {
-    neorv32_uart_printf("skipped (not implemented)\n");
+    test_fail();
   }
+
+
+  // re-allow user-level code to access cycle[h] CSRs
+  tmp_a = neorv32_cpu_csr_read(CSR_MCOUNTEREN);
+  tmp_a |= (1<<CPU_MCOUNTEREN_CY); // re-allow access right
+  neorv32_cpu_csr_write(CSR_MCOUNTEREN, tmp_a);
 
 
   // ----------------------------------------------------------
@@ -852,7 +921,6 @@ int main() {
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
     {
-      // access to misa not allowed for user-level programs
       asm volatile("ECALL");
     }
 
