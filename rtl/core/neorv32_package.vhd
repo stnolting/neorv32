@@ -45,13 +45,12 @@ package neorv32_package is
   constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
 
   -- (external) bus interface --
-  constant bus_timeout_c     : natural := 127; -- cycles after which an *unacknowledged* bus access fetch will timeout and trigger a bus fault exception (min 2)
+  constant bus_timeout_c     : natural := 127; -- cycles after which an *unacknowledged* bus access will timeout and trigger a bus fault exception (min 2)
   constant wb_pipe_mode_c    : boolean := false; -- *external* bus protocol: false=classic/standard wishbone mode (default), true=pipelined wishbone mode
   constant xbus_big_endian_c : boolean := true; -- external memory access byte order: true=big endian (default); false=little endian
 
   -- CPU core --
   constant ipb_entries_c : natural := 2; -- entries in CPU instruction prefetch buffer, has to be a power of 2, default=2
-  constant zicnt_en_c    : boolean := true; -- enable RISC-V performance counters ([m]cycle[h], [m]instret[h]), default=true
 
   -- physical memory protection (PMP) --
   constant pmp_num_regions_c     : natural := 2; -- number of regions (1..8)
@@ -60,7 +59,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!)= -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040903"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040904"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero by the HW
@@ -351,50 +350,53 @@ package neorv32_package is
   -- RISC-V CSR Addresses -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- read/write CSRs --
-  constant csr_mstatus_c   : std_ulogic_vector(11 downto 0) := x"300"; -- mstatus
-  constant csr_misa_c      : std_ulogic_vector(11 downto 0) := x"301"; -- misa
-  constant csr_mie_c       : std_ulogic_vector(11 downto 0) := x"304"; -- mie
-  constant csr_mtvec_c     : std_ulogic_vector(11 downto 0) := x"305"; -- mtvec
-  constant csr_mstatush_c  : std_ulogic_vector(11 downto 0) := x"310"; -- mstatush
+  constant csr_mstatus_c       : std_ulogic_vector(11 downto 0) := x"300"; -- mstatus
+  constant csr_misa_c          : std_ulogic_vector(11 downto 0) := x"301"; -- misa
+  constant csr_mie_c           : std_ulogic_vector(11 downto 0) := x"304"; -- mie
+  constant csr_mtvec_c         : std_ulogic_vector(11 downto 0) := x"305"; -- mtvec
+  constant csr_mcounteren_c    : std_ulogic_vector(11 downto 0) := x"306"; -- mcounteren
+  constant csr_mstatush_c      : std_ulogic_vector(11 downto 0) := x"310"; -- mstatush
   --
-  constant csr_mscratch_c  : std_ulogic_vector(11 downto 0) := x"340"; -- mscratch
-  constant csr_mepc_c      : std_ulogic_vector(11 downto 0) := x"341"; -- mepc
-  constant csr_mcause_c    : std_ulogic_vector(11 downto 0) := x"342"; -- mcause
-  constant csr_mtval_c     : std_ulogic_vector(11 downto 0) := x"343"; -- mtval
-  constant csr_mip_c       : std_ulogic_vector(11 downto 0) := x"344"; -- mip
+  constant csr_mcountinhibit_c : std_ulogic_vector(11 downto 0) := x"320"; -- mcountinhibit
   --
-  constant csr_pmpcfg0_c   : std_ulogic_vector(11 downto 0) := x"3a0"; -- pmpcfg0
-  constant csr_pmpcfg1_c   : std_ulogic_vector(11 downto 0) := x"3a1"; -- pmpcfg1
+  constant csr_mscratch_c      : std_ulogic_vector(11 downto 0) := x"340"; -- mscratch
+  constant csr_mepc_c          : std_ulogic_vector(11 downto 0) := x"341"; -- mepc
+  constant csr_mcause_c        : std_ulogic_vector(11 downto 0) := x"342"; -- mcause
+  constant csr_mtval_c         : std_ulogic_vector(11 downto 0) := x"343"; -- mtval
+  constant csr_mip_c           : std_ulogic_vector(11 downto 0) := x"344"; -- mip
   --
-  constant csr_pmpaddr0_c  : std_ulogic_vector(11 downto 0) := x"3b0"; -- pmpaddr0
-  constant csr_pmpaddr1_c  : std_ulogic_vector(11 downto 0) := x"3b1"; -- pmpaddr1
-  constant csr_pmpaddr2_c  : std_ulogic_vector(11 downto 0) := x"3b2"; -- pmpaddr2
-  constant csr_pmpaddr3_c  : std_ulogic_vector(11 downto 0) := x"3b3"; -- pmpaddr3
-  constant csr_pmpaddr4_c  : std_ulogic_vector(11 downto 0) := x"3b4"; -- pmpaddr4
-  constant csr_pmpaddr5_c  : std_ulogic_vector(11 downto 0) := x"3b5"; -- pmpaddr5
-  constant csr_pmpaddr6_c  : std_ulogic_vector(11 downto 0) := x"3b6"; -- pmpaddr6
-  constant csr_pmpaddr7_c  : std_ulogic_vector(11 downto 0) := x"3b7"; -- pmpaddr7
+  constant csr_pmpcfg0_c       : std_ulogic_vector(11 downto 0) := x"3a0"; -- pmpcfg0
+  constant csr_pmpcfg1_c       : std_ulogic_vector(11 downto 0) := x"3a1"; -- pmpcfg1
   --
-  constant csr_mcycle_c    : std_ulogic_vector(11 downto 0) := x"b00"; -- mcycle
-  constant csr_minstret_c  : std_ulogic_vector(11 downto 0) := x"b02"; -- minstret
+  constant csr_pmpaddr0_c      : std_ulogic_vector(11 downto 0) := x"3b0"; -- pmpaddr0
+  constant csr_pmpaddr1_c      : std_ulogic_vector(11 downto 0) := x"3b1"; -- pmpaddr1
+  constant csr_pmpaddr2_c      : std_ulogic_vector(11 downto 0) := x"3b2"; -- pmpaddr2
+  constant csr_pmpaddr3_c      : std_ulogic_vector(11 downto 0) := x"3b3"; -- pmpaddr3
+  constant csr_pmpaddr4_c      : std_ulogic_vector(11 downto 0) := x"3b4"; -- pmpaddr4
+  constant csr_pmpaddr5_c      : std_ulogic_vector(11 downto 0) := x"3b5"; -- pmpaddr5
+  constant csr_pmpaddr6_c      : std_ulogic_vector(11 downto 0) := x"3b6"; -- pmpaddr6
+  constant csr_pmpaddr7_c      : std_ulogic_vector(11 downto 0) := x"3b7"; -- pmpaddr7
   --
-  constant csr_mcycleh_c   : std_ulogic_vector(11 downto 0) := x"b80"; -- mcycleh
-  constant csr_minstreth_c : std_ulogic_vector(11 downto 0) := x"b82"; -- minstreth
+  constant csr_mcycle_c        : std_ulogic_vector(11 downto 0) := x"b00"; -- mcycle
+  constant csr_minstret_c      : std_ulogic_vector(11 downto 0) := x"b02"; -- minstret
+  --
+  constant csr_mcycleh_c       : std_ulogic_vector(11 downto 0) := x"b80"; -- mcycleh
+  constant csr_minstreth_c     : std_ulogic_vector(11 downto 0) := x"b82"; -- minstreth
   -- read-only CSRs --
-  constant csr_cycle_c     : std_ulogic_vector(11 downto 0) := x"c00"; -- cycle
-  constant csr_time_c      : std_ulogic_vector(11 downto 0) := x"c01"; -- time
-  constant csr_instret_c   : std_ulogic_vector(11 downto 0) := x"c02"; -- instret
+  constant csr_cycle_c         : std_ulogic_vector(11 downto 0) := x"c00"; -- cycle
+  constant csr_time_c          : std_ulogic_vector(11 downto 0) := x"c01"; -- time
+  constant csr_instret_c       : std_ulogic_vector(11 downto 0) := x"c02"; -- instret
   --
-  constant csr_cycleh_c    : std_ulogic_vector(11 downto 0) := x"c80"; -- cycleh
-  constant csr_timeh_c     : std_ulogic_vector(11 downto 0) := x"c81"; -- timeh
-  constant csr_instreth_c  : std_ulogic_vector(11 downto 0) := x"c82"; -- instreth
+  constant csr_cycleh_c        : std_ulogic_vector(11 downto 0) := x"c80"; -- cycleh
+  constant csr_timeh_c         : std_ulogic_vector(11 downto 0) := x"c81"; -- timeh
+  constant csr_instreth_c      : std_ulogic_vector(11 downto 0) := x"c82"; -- instreth
   --
-  constant csr_mvendorid_c : std_ulogic_vector(11 downto 0) := x"f11"; -- mvendorid
-  constant csr_marchid_c   : std_ulogic_vector(11 downto 0) := x"f12"; -- marchid
-  constant csr_mimpid_c    : std_ulogic_vector(11 downto 0) := x"f13"; -- mimpid
-  constant csr_mhartid_c   : std_ulogic_vector(11 downto 0) := x"f14"; -- mhartid
+  constant csr_mvendorid_c     : std_ulogic_vector(11 downto 0) := x"f11"; -- mvendorid
+  constant csr_marchid_c       : std_ulogic_vector(11 downto 0) := x"f12"; -- marchid
+  constant csr_mimpid_c        : std_ulogic_vector(11 downto 0) := x"f13"; -- mimpid
+  constant csr_mhartid_c       : std_ulogic_vector(11 downto 0) := x"f14"; -- mhartid
   --
-  constant csr_mzext_c     : std_ulogic_vector(11 downto 0) := x"fc0"; -- mzext (neorv32-custom)
+  constant csr_mzext_c         : std_ulogic_vector(11 downto 0) := x"fc0"; -- mzext (neorv32-custom)
 
   -- Co-Processor Operations ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1307,7 +1309,7 @@ end neorv32_package;
 
 package body neorv32_package is
 
-  -- Function: Minimal required bit width ---------------------------------------------------
+  -- Function: Minimal required number of bits to represent input number --------------------
   -- -------------------------------------------------------------------------------------------
   function index_size_f(input : natural) return natural is
   begin
