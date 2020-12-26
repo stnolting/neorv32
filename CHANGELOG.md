@@ -6,10 +6,10 @@ The latest release is [![release](https://img.shields.io/github/v/release/stnolt
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases). The most recent version of the *NEORV32 data sheet*
 can be found [here](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
-::information_source: To see a list of all commits
+:information_source: To see a list of all commits
 between release run `git log v1.4.7.0..v1.4.8.0` (example to to see commits between v1.4.7.0 and v1.4.8.0).
 
-The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 2x4-bit decimal-coded representation is used. Leading
+The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 8x4-bit BCD representation is used. Leading
 zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`
 
 For the HDL sources the version number is globally defined by the `hw_version_c` constant in the main VHDL package file
@@ -17,7 +17,8 @@ For the HDL sources the version number is globally defined by the `hw_version_c`
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 25.12.2020 | 1.4.9.3 | Added missing `UBE` flag to `mstatus` CSR, indicates Endianness for load/stores in user mode (always set indicating BIG-endian mode), is a copy of `mstatus.mbe` flag |
+| 26.12.2020 | 1.4.9.4 | removed `zicnt_en` option (was used to discard the standard RISC-V counters and timers from implementation); added missing `mcounteren` CSR (to allow read-access from user-level code to `cycle[h]` / `time[h]` / `[m]instret[h]` CSRs); available bits: 0: `CY`, 1: `TM`, 2: `IR`; added missing `mcountinhibit` CSR (to disable auto-increment of `[m]cycle[h]` / `[m]instret[h]` CSRs); available bits: 0: `CY`, 2: `IR` |
+| 25.12.2020 | 1.4.9.3 | Added missing `UBE` flag to `mstatus` CSR, indicates Endianness for load/stores in user mode (always set indicating BIG-endian mode), is a copy of `mstatush.mbe` |
 | 23.12.2020 | 1.4.9.2 | :sparkles: added processor-internal instruction cache `rtl/core/neorv32_cache.vhd` (direct mapped); new configuration generics: `ICACHE_USE` (implement cache), `ICACHE_BLOCK_SIZE` (cache block/page/line size), `ICACHE_NUM_BLOCKS` (number of cache blocks); added `SYSINFO_CACHE` register to SYSINFO to check cache configuration by software  |
 | 20.12.2020 | 1.4.9.1 | :bug: fixed bug in CPU's instruction fetch engine (alignment_errros/bus_errors were not acknowledged correctly); added `BUS_TIMEOUT` generic to CPU (defines the amount of cycles after which an *unacknowledged* bus access will get terminated and raises a bus access fault exception) |
 | 19.12.2020 | [**:rocket:1.4.9.0**](https://github.com/stnolting/neorv32/releases/tag/v1.4.9.0) | Testbench: added memory-mapped triggers to trigger core's "machine software & external interrupts"; `sw/example/cpu_test`: removed CFU tests, added `MEI` and `MSI` tests; added **RISC-V-Compliance Test Framework** to repository (`riscv-compliance/`), core passes all `rv32` tests (riscv-compliance v2.1) |
