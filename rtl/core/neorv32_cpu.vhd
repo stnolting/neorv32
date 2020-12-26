@@ -158,8 +158,6 @@ begin
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report "NEORV32 CPU CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
   -- PMP requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
-  -- RISC-V standard performance counters -
-  assert not ((CPU_EXTENSION_RISCV_Zicsr = true) and (zicnt_en_c = false)) report "NEORV32 CPU CONFIG WARNING! Standard RISC-V peformance counters ([m]cycle[h] & [m]instret[h]) will not be implemented (not RISC-V-compliant!)." severity warning;
 
   -- Bus timeout --
   assert not (BUS_TIMEOUT < 2) report "NEORV32 CPU CONFIG ERROR! Invalid bus access timeout value <BUS_TIMEOUT>. Has to be >= 2." severity error;
