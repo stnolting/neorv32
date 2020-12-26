@@ -53,50 +53,53 @@
  * Available CPU Control and Status Registers (CSRs)
  **************************************************************************/
 enum NEORV32_CPU_CSRS_enum {
-  CSR_MSTATUS     = 0x300, /**< 0x300 - mstatus  (r/w): Machine status register */
-  CSR_MISA        = 0x301, /**< 0x301 - misa     (r/-): CPU ISA and extensions (read-only in NEORV32) */
-  CSR_MIE         = 0x304, /**< 0x304 - mie      (r/w): Machine interrupt-enable register */
-  CSR_MTVEC       = 0x305, /**< 0x305 - mtvec    (r/w): Machine trap-handler base address (for ALL traps) */
-  CSR_MSTATUSH    = 0x310, /**< 0x310 - mstatush (r/-): Machine status register - high word */
+  CSR_MSTATUS       = 0x300, /**< 0x300 - mstatus    (r/w): Machine status register */
+  CSR_MISA          = 0x301, /**< 0x301 - misa       (r/-): CPU ISA and extensions (read-only in NEORV32) */
+  CSR_MIE           = 0x304, /**< 0x304 - mie        (r/w): Machine interrupt-enable register */
+  CSR_MTVEC         = 0x305, /**< 0x305 - mtvec      (r/w): Machine trap-handler base address (for ALL traps) */
+  CSR_MCOUNTEREN    = 0x306, /**< 0x305 - mcounteren (r/w): Machine counter enable register (controls access rights from U-mode) */
+  CSR_MSTATUSH      = 0x310, /**< 0x310 - mstatush   (r/-): Machine status register - high word */
 
-  CSR_MSCRATCH    = 0x340, /**< 0x340 - mscratch (r/w): Machine scratch register */
-  CSR_MEPC        = 0x341, /**< 0x341 - mepc     (r/w): Machine exception program counter */
-  CSR_MCAUSE      = 0x342, /**< 0x342 - mcause   (r/w): Machine trap cause */
-  CSR_MTVAL       = 0x343, /**< 0x343 - mtval    (r/w): Machine bad address or instruction */
-  CSR_MIP         = 0x344, /**< 0x344 - mip      (r/w): Machine interrupt pending register */
+  CSR_MCOUNTINHIBIT = 0x320, /**< 0x320 - mcountinhibit (r/w): Machine counter-inhibit register */
 
-  CSR_PMPCFG0     = 0x3a0, /**< 0x3a0 - pmpcfg0 (r/w): Physical memory protection configuration register 0 */
-  CSR_PMPCFG1     = 0x3a1, /**< 0x3a1 - pmpcfg1 (r/w): Physical memory protection configuration register 1 */
+  CSR_MSCRATCH      = 0x340, /**< 0x340 - mscratch (r/w): Machine scratch register */
+  CSR_MEPC          = 0x341, /**< 0x341 - mepc     (r/w): Machine exception program counter */
+  CSR_MCAUSE        = 0x342, /**< 0x342 - mcause   (r/w): Machine trap cause */
+  CSR_MTVAL         = 0x343, /**< 0x343 - mtval    (r/w): Machine bad address or instruction */
+  CSR_MIP           = 0x344, /**< 0x344 - mip      (r/w): Machine interrupt pending register */
 
-  CSR_PMPADDR0    = 0x3b0, /**< 0x3b0 - pmpaddr0 (r/w): Physical memory protection address register 0 */
-  CSR_PMPADDR1    = 0x3b1, /**< 0x3b1 - pmpaddr1 (r/w): Physical memory protection address register 1 */
-  CSR_PMPADDR2    = 0x3b2, /**< 0x3b2 - pmpaddr2 (r/w): Physical memory protection address register 2 */
-  CSR_PMPADDR3    = 0x3b3, /**< 0x3b3 - pmpaddr3 (r/w): Physical memory protection address register 3 */
-  CSR_PMPADDR4    = 0x3b4, /**< 0x3b4 - pmpaddr4 (r/w): Physical memory protection address register 4 */
-  CSR_PMPADDR5    = 0x3b5, /**< 0x3b5 - pmpaddr5 (r/w): Physical memory protection address register 5 */
-  CSR_PMPADDR6    = 0x3b6, /**< 0x3b6 - pmpaddr6 (r/w): Physical memory protection address register 6 */
-  CSR_PMPADDR7    = 0x3b7, /**< 0x3b7 - pmpaddr7 (r/w): Physical memory protection address register 7 */
+  CSR_PMPCFG0       = 0x3a0, /**< 0x3a0 - pmpcfg0 (r/w): Physical memory protection configuration register 0 */
+  CSR_PMPCFG1       = 0x3a1, /**< 0x3a1 - pmpcfg1 (r/w): Physical memory protection configuration register 1 */
 
-  CSR_MCYCLE      = 0xb00, /**< 0xb00 - mcycle    (r/w): Machine cycle counter low word */
-  CSR_MINSTRET    = 0xb02, /**< 0xb02 - minstret  (r/w): Machine instructions-retired counter low word */
+  CSR_PMPADDR0      = 0x3b0, /**< 0x3b0 - pmpaddr0 (r/w): Physical memory protection address register 0 */
+  CSR_PMPADDR1      = 0x3b1, /**< 0x3b1 - pmpaddr1 (r/w): Physical memory protection address register 1 */
+  CSR_PMPADDR2      = 0x3b2, /**< 0x3b2 - pmpaddr2 (r/w): Physical memory protection address register 2 */
+  CSR_PMPADDR3      = 0x3b3, /**< 0x3b3 - pmpaddr3 (r/w): Physical memory protection address register 3 */
+  CSR_PMPADDR4      = 0x3b4, /**< 0x3b4 - pmpaddr4 (r/w): Physical memory protection address register 4 */
+  CSR_PMPADDR5      = 0x3b5, /**< 0x3b5 - pmpaddr5 (r/w): Physical memory protection address register 5 */
+  CSR_PMPADDR6      = 0x3b6, /**< 0x3b6 - pmpaddr6 (r/w): Physical memory protection address register 6 */
+  CSR_PMPADDR7      = 0x3b7, /**< 0x3b7 - pmpaddr7 (r/w): Physical memory protection address register 7 */
 
-  CSR_MCYCLEH     = 0xb80, /**< 0xb80 - mcycleh   (r/w): Machine cycle counter high word */
-  CSR_MINSTRETH   = 0xb82, /**< 0xb82 - minstreth (r/w): Machine instructions-retired counter high word */
+  CSR_MCYCLE        = 0xb00, /**< 0xb00 - mcycle    (r/w): Machine cycle counter low word */
+  CSR_MINSTRET      = 0xb02, /**< 0xb02 - minstret  (r/w): Machine instructions-retired counter low word */
 
-  CSR_CYCLE       = 0xc00, /**< 0xc00 - cycle    (r/-): Cycle counter low word (from MCYCLE) */
-  CSR_TIME        = 0xc01, /**< 0xc01 - time     (r/-): Timer low word (from MTIME.TIME_LO) */
-  CSR_INSTRET     = 0xc02, /**< 0xc02 - instret  (r/-): Instructions-retired counter low word (from MINSTRET) */
+  CSR_MCYCLEH       = 0xb80, /**< 0xb80 - mcycleh   (r/w): Machine cycle counter high word */
+  CSR_MINSTRETH     = 0xb82, /**< 0xb82 - minstreth (r/w): Machine instructions-retired counter high word */
 
-  CSR_CYCLEH      = 0xc80, /**< 0xc80 - cycleh   (r/-): Cycle counter high word (from MCYCLEH) */
-  CSR_TIMEH       = 0xc81, /**< 0xc81 - timeh    (r/-): Timer high word (from MTIME.TIME_HI) */
-  CSR_INSTRETH    = 0xc82, /**< 0xc82 - instreth (r/-): Instructions-retired counter high word (from MINSTRETH) */
+  CSR_CYCLE         = 0xc00, /**< 0xc00 - cycle    (r/-): Cycle counter low word (from MCYCLE) */
+  CSR_TIME          = 0xc01, /**< 0xc01 - time     (r/-): Timer low word (from MTIME.TIME_LO) */
+  CSR_INSTRET       = 0xc02, /**< 0xc02 - instret  (r/-): Instructions-retired counter low word (from MINSTRET) */
 
-  CSR_MVENDORID   = 0xf11, /**< 0xf11 - mvendorid (r/-): Vendor ID */
-  CSR_MARCHID     = 0xf12, /**< 0xf12 - marchid   (r/-): Architecture ID */
-  CSR_MIMPID      = 0xf13, /**< 0xf13 - mimpid    (r/-): Implementation ID/version */
-  CSR_MHARTID     = 0xf14, /**< 0xf14 - mhartid   (r/-): Hardware thread ID (always 0) */
+  CSR_CYCLEH        = 0xc80, /**< 0xc80 - cycleh   (r/-): Cycle counter high word (from MCYCLEH) */
+  CSR_TIMEH         = 0xc81, /**< 0xc81 - timeh    (r/-): Timer high word (from MTIME.TIME_HI) */
+  CSR_INSTRETH      = 0xc82, /**< 0xc82 - instreth (r/-): Instructions-retired counter high word (from MINSTRETH) */
 
-  CSR_MZEXT       = 0xfc0  /**< 0xfc0 - mzext (custom CSR) (r/-): Available Z* CPU extensions */
+  CSR_MVENDORID     = 0xf11, /**< 0xf11 - mvendorid (r/-): Vendor ID */
+  CSR_MARCHID       = 0xf12, /**< 0xf12 - marchid   (r/-): Architecture ID */
+  CSR_MIMPID        = 0xf13, /**< 0xf13 - mimpid    (r/-): Implementation ID/version */
+  CSR_MHARTID       = 0xf14, /**< 0xf14 - mhartid   (r/-): Hardware thread ID (always 0) */
+
+  CSR_MZEXT         = 0xfc0  /**< 0xfc0 - mzext (custom CSR) (r/-): Available Z* CPU extensions */
 };
 
 
@@ -105,7 +108,7 @@ enum NEORV32_CPU_CSRS_enum {
  **************************************************************************/
 enum NEORV32_CPU_MSTATUS_enum {
   CPU_MSTATUS_MIE   =  3, /**< CPU mstatus CSR (3): MIE - Machine interrupt enable bit (r/w) */
-  CPU_MSTATUS_UBE   =  6, /**< CPU mstatus CSR (6): UBE - User mode endianness (little-endian=0, big-endian=1) (r/-) */
+  CPU_MSTATUS_UBE   =  6, /**< CPU mstatus CSR (6): UBE - User-mode endianness (little-endian=0, big-endian=1) (r/-) */
   CPU_MSTATUS_MPIE  =  7, /**< CPU mstatus CSR (7): MPIE - Machine previous interrupt enable bit (r/w) */
   CPU_MSTATUS_MPP_L = 11, /**< CPU mstatus CSR (11): MPP_L - Machine previous privilege mode bit low (r/w) */
   CPU_MSTATUS_MPP_H = 12  /**< CPU mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
@@ -113,10 +116,29 @@ enum NEORV32_CPU_MSTATUS_enum {
 
 
 /**********************************************************************//**
- * CPU <b>mstatush</b> CSR (r/-): Machine status - high word(RISC-V spec.)
+ * CPU <b>mstatush</b> CSR (r/-): Machine status - high word (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CPU_MSTATUSH_enum {
-  CPU_MSTATUSH_MBE = 5 /**< CPU mstatush CSR (5): MBE - Machine endianness (little-endian=0, big-endian=1) (r/-) */
+  CPU_MSTATUSH_MBE = 5 /**< CPU mstatush CSR (5): MBE - Machine-mode endianness (little-endian=0, big-endian=1) (r/-) */
+};
+
+
+/**********************************************************************//**
+ * CPU <b>mcounteren</b> CSR (r/w): Machine counter enable (RISC-V spec.)
+ **************************************************************************/
+enum NEORV32_CPU_MCOUNTEREN_enum {
+  CPU_MCOUNTEREN_CY = 0, /**< CPU mcounteren CSR (0): CY - Allow access to cycle[h] CSRs from U-mode when set (r/w) */
+  CPU_MCOUNTEREN_TM = 1, /**< CPU mcounteren CSR (1): TM - Allow access to time[h] CSRs from U-mode when set (r/w) */
+  CPU_MCOUNTEREN_IR = 2  /**< CPU mcounteren CSR (2): IR - Allow access to instret[h] CSRs from U-mode when set (r/w) */
+};
+
+
+/**********************************************************************//**
+ * CPU <b>mcountinhibit</b> CSR (r/w): Machine counter-inhibit (RISC-V spec.)
+ **************************************************************************/
+enum NEORV32_CPU_MCOUNTINHIBIT_enum {
+  CPU_MCOUNTINHIBIT_CY = 0, /**< CPU mcountinhibit CSR (0): CY - Enable auto-increment of [m]cycle[h] CSR when set (r/w) */
+  CPU_MCOUNTINHIBIT_IR = 2  /**< CPU mcountinhibit CSR (2): IR - Enable auto-increment of [m]instret[h] CSR when set (r/w) */
 };
 
 
@@ -173,8 +195,7 @@ enum NEORV32_CPU_MISA_enum {
 enum NEORV32_CPU_MZEXT_enum {
   CPU_MZEXT_ZICSR    = 0, /**< CPU mzext CSR (0): Zicsr extension available when set (r/-) */
   CPU_MZEXT_ZIFENCEI = 1, /**< CPU mzext CSR (1): Zifencei extension available when set (r/-) */
-  CPU_MZEXT_PMP      = 2, /**< CPU mzext CSR (2): PMP extension available when set (r/-) */
-  CPU_MZEXT_ZICNT    = 3  /**< CPU mzext CSR (3): Standard RISC-V performance counters ([m]cycle[h] & [m]instret[h]) available when set (r/-) */
+  CPU_MZEXT_PMP      = 2  /**< CPU mzext CSR (2): PMP extension available when set (r/-) */
 };
 
 
