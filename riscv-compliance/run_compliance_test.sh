@@ -48,9 +48,16 @@ echo "> Copying neorv32 test-target into compliance framework..."
 echo "--------------------------------------------------------------------------"
 cp -rf port-neorv32/framework_v2.0/riscv-target/neorv32 work/riscv-compliance/riscv-target/.
 
+# Use simulation-optimized DMEM
+echo ""
+echo ">>> Replacing default DMEM *vhd file with simulation-optimized one..."
+echo ""
+rm -rf work/neorv32/rtl/core/neorv32_dmem.vhd
+cp  work/neorv32/sim/rtl_modules/neorv32_dmem.vhd work/neorv32/rtl/core/.
+
 # Make a local copy of the original IMEM rtl file
 echo ""
-echo ">>> Making local backup if original IMEM rtl file (work/neorv32/rtl/core/neorv32_imem.vhd)..."
+echo ">>> Making local backup if original IMEM rtl file (work/neorv32/rtl/core/neorv32_imem.ORIGINAL)..."
 echo ""
 cp work/neorv32/rtl/core/neorv32_imem.vhd work/neorv32/rtl/core/neorv32_imem.ORIGINAL
 
