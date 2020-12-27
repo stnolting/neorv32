@@ -70,7 +70,7 @@ ghdl -a --work=neorv32 $srcdir_top_templates/neorv32_test_setup.vhd
 ghdl -a --work=neorv32 $srcdir_top_templates/neorv32_top_axi4lite.vhd
 ghdl -a --work=neorv32 $srcdir_top_templates/neorv32_top_stdlogic.vhd
 #
-ghdl -a --work=neorv32 $srcdir_sim/*.vhd
+ghdl -a --work=neorv32 $srcdir_sim/neorv32_tb.vhd
 
 # Prepare simulation output files
 touch neorv32.testbench_uart.out
