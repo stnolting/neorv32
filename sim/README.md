@@ -6,7 +6,7 @@ This folder contains a script for simulating the processor using GHDL.
 
 ### [`rtl_modules`](https://github.com/stnolting/neorv32/tree/master/sim/rtl_modules)
 
-This folder provides additional/alternative simulation components. The the comments in the according files for more information.
+This folder provides additional/alternative simulation components (mainly optimized memory components yet). See the comments in the according files for more information.
 
 ### [`vivado`](https://github.com/stnolting/neorv32/tree/master/sim/vivado)
 
