@@ -46,6 +46,9 @@
  * Modified for the NEORV32 processor by Stephan Nolting.
  */
 
+/* UART hardware constants. */
+#define BAUD_RATE 19200
+
 #ifdef RUN_FREERTOS_DEMO
 
 #include <stdint.h>
@@ -65,9 +68,6 @@
 /* Set mainCREATE_SIMPLE_BLINKY_DEMO_ONLY to one to run the simple blinky demo,
 or 0 to run the more comprehensive test and demo application. */
 #define mainCREATE_SIMPLE_BLINKY_DEMO_ONLY	1
-
-/* UART hardware constants. */
-#define BAUD_RATE 19200
 
 /*-----------------------------------------------------------*/
 
