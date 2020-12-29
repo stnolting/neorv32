@@ -1,8 +1,8 @@
 -- #################################################################################################
 -- # << NEORV32 - Universal Asynchronous Receiver and Transmitter (UART) >>                        #
 -- # ********************************************************************************************* #
--- # Fixed frame config: 8-bit, no parity bit, 1 stop bit, programmable BAUD rate (via clock pre-  #
--- # scaler and BAUD value config register.                                                        #
+-- # Frame configuration: 1 start bit, 8 bit data, optional parity bit (even/odd), 1 stop bit,     #
+-- # programmable BAUD rate via clock pre-scaler and BAUD value config register.                   #
 -- # Interrupt: UART_RX_available or UART_TX_done                                                  #
 -- #                                                                                               #
 -- # SIMULATION:                                                                                   #
@@ -104,17 +104,22 @@ architecture neorv32_uart_rtl of neorv32_uart is
   --
   constant ctrl_uart_sim_en_c  : natural := 12; -- r/w: UART SIMULATION OUTPUT enable
   --
+  constant ctrl_uart_pmode0_c  : natural := 22; -- r/w: Parity config (0=even; 1=odd)
+  constant ctrl_uart_pmode1_c  : natural := 23; -- r/w: Enable parity bit
   constant ctrl_uart_prsc0_c   : natural := 24; -- r/w: UART baud prsc bit 0
   constant ctrl_uart_prsc1_c   : natural := 25; -- r/w: UART baud prsc bit 1
   constant ctrl_uart_prsc2_c   : natural := 26; -- r/w: UART baud prsc bit 2
-  constant ctrl_uart_rxovr_c   : natural := 27; -- r/-: UART RX overrun
+  --
   constant ctrl_uart_en_c      : natural := 28; -- r/w: UART enable
   constant ctrl_uart_rx_irq_c  : natural := 29; -- r/w: UART rx done interrupt enable
   constant ctrl_uart_tx_irq_c  : natural := 30; -- r/w: UART tx done interrupt enable
   constant ctrl_uart_tx_busy_c : natural := 31; -- r/-: UART transmitter is busy
 
   -- data register flags --
-  constant data_rx_avail_c : natural := 31; -- r/-: Rx data available/valid
+  constant data_rx_avail_c : natural := 31; -- r/-: Rx data available
+  constant data_rx_overr_c : natural := 30; -- r/-: Rx data overrun
+  constant data_rx_ferr_c  : natural := 29; -- r/-: Rx frame error
+  constant data_rx_perr_c  : natural := 28; -- r/-: Rx parity error
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
@@ -125,22 +130,33 @@ architecture neorv32_uart_rtl of neorv32_uart is
   -- clock generator --
   signal uart_clk : std_ulogic;
 
+  -- numbers of bits in transmission frame --
+  signal num_bits : std_ulogic_vector(03 downto 0);
+
   -- uart tx unit --
-  signal uart_tx_busy     : std_ulogic;
-  signal uart_tx_done     : std_ulogic;
-  signal uart_tx_bitcnt   : std_ulogic_vector(03 downto 0);
-  signal uart_tx_sreg     : std_ulogic_vector(09 downto 0) := (others => '1'); -- just for simulation
-  signal uart_tx_baud_cnt : std_ulogic_vector(11 downto 0);
+  type uart_tx_t is record
+    busy     : std_ulogic;
+    done     : std_ulogic;
+    bitcnt   : std_ulogic_vector(03 downto 0);
+    sreg     : std_ulogic_vector(10 downto 0);
+    baud_cnt : std_ulogic_vector(11 downto 0);
+  end record;
+  signal uart_tx : uart_tx_t;
 
   -- uart rx unit --
-  signal uart_rx_sync     : std_ulogic_vector(04 downto 0);
-  signal uart_rx_avail    : std_ulogic_vector(01 downto 0);
-  signal uart_rx_busy     : std_ulogic;
-  signal uart_rx_busy_ff  : std_ulogic;
-  signal uart_rx_bitcnt   : std_ulogic_vector(03 downto 0);
-  signal uart_rx_sreg     : std_ulogic_vector(08 downto 0);
-  signal uart_rx_reg      : std_ulogic_vector(07 downto 0);
-  signal uart_rx_baud_cnt : std_ulogic_vector(11 downto 0);
+  type uart_rx_t is record
+    sync     : std_ulogic_vector(04 downto 0);
+    avail    : std_ulogic_vector(01 downto 0);
+    busy     : std_ulogic;
+    busy_ff  : std_ulogic;
+    bitcnt   : std_ulogic_vector(03 downto 0);
+    sreg     : std_ulogic_vector(09 downto 0);
+    data     : std_ulogic_vector(07 downto 0);
+    baud_cnt : std_ulogic_vector(11 downto 0);
+    ferr     : std_ulogic; -- frame error (stop bit not set)
+    perr     : std_ulogic; -- parity error
+  end record;
+  signal uart_rx : uart_rx_t;
 
 begin
 
@@ -161,23 +177,43 @@ begin
       -- write access --
       if (wr_en = '1') then
         if (addr = uart_ctrl_addr_c) then
-          ctrl <= data_i;
+          ctrl <= (others => '0');
+          ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud00_c) <= data_i(ctrl_uart_baud11_c downto ctrl_uart_baud00_c);
+          ctrl(ctrl_uart_sim_en_c)                           <= data_i(ctrl_uart_sim_en_c);
+          ctrl(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c) <= data_i(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c);
+          ctrl(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c)  <= data_i(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c);
+          ctrl(ctrl_uart_en_c)                               <= data_i(ctrl_uart_en_c);
+          ctrl(ctrl_uart_rx_irq_c)                           <= data_i(ctrl_uart_rx_irq_c);
+          ctrl(ctrl_uart_tx_irq_c)                           <= data_i(ctrl_uart_tx_irq_c);
         end if;
       end if;
       -- read access --
       data_o <= (others => '0');
       if (rd_en = '1') then
         if (addr = uart_ctrl_addr_c) then
-          data_o <= ctrl; -- default
-          data_o(ctrl_uart_rxovr_c)   <= uart_rx_avail(0) and uart_rx_avail(1);
-          data_o(ctrl_uart_tx_busy_c) <= uart_tx_busy;
+          data_o(ctrl_uart_baud11_c downto ctrl_uart_baud00_c) <= ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud00_c);
+          data_o(ctrl_uart_sim_en_c)                           <= ctrl(ctrl_uart_sim_en_c);
+          data_o(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c) <= ctrl(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c);
+          data_o(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c)  <= ctrl(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c);
+          data_o(ctrl_uart_en_c)                               <= ctrl(ctrl_uart_en_c);
+          data_o(ctrl_uart_rx_irq_c)                           <= ctrl(ctrl_uart_rx_irq_c);
+          data_o(ctrl_uart_tx_irq_c)                           <= ctrl(ctrl_uart_tx_irq_c);
+          data_o(ctrl_uart_tx_busy_c)                          <= uart_tx.busy;
         else -- uart_rtx_addr_c
-          data_o(data_rx_avail_c) <= uart_rx_avail(0);
-          data_o(07 downto 0)     <= uart_rx_reg;
+          data_o(data_rx_avail_c) <= uart_rx.avail(0);
+          data_o(data_rx_overr_c) <= uart_rx.avail(0) and uart_rx.avail(1);
+          data_o(data_rx_ferr_c)  <= uart_rx.ferr;
+          data_o(data_rx_perr_c)  <= uart_rx.perr;
+          data_o(07 downto 0)     <= uart_rx.data;
         end if;
       end if;
     end if;
   end process rw_access;
+
+  -- number of bits to be sampled --
+  -- if parity flag is ENABLED:  11 bit (1 start bit + 8 data bits + 1 parity bit + 1 stop bit)
+  -- if parity flag is DISABLED: 10 bit (1 start bit + 8 data bits + 1 stop bit)
+  num_bits <= "1011" when (ctrl(ctrl_uart_pmode1_c) = '1') else "1010";
 
 
   -- Clock Selection ------------------------------------------------------------------------
@@ -195,30 +231,35 @@ begin
   begin
     if rising_edge(clk_i) then
       -- serial engine --
-      uart_tx_done <= '0';
-      if (uart_tx_busy = '0') or (ctrl(ctrl_uart_en_c) = '0') or (ctrl(ctrl_uart_sim_en_c) = '1') then -- idle or disabled or in SIM mode
-        uart_tx_busy     <= '0';
-        uart_tx_baud_cnt <= ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud00_c);
-        uart_tx_bitcnt   <= "1010"; -- 10 bit
+      uart_tx.done <= '0';
+      if (uart_tx.busy = '0') or (ctrl(ctrl_uart_en_c) = '0') or (ctrl(ctrl_uart_sim_en_c) = '1') then -- idle or disabled or in SIM mode
+        uart_tx.busy     <= '0';
+        uart_tx.baud_cnt <= ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud00_c);
+        uart_tx.bitcnt   <= num_bits;
+        uart_tx.sreg(0)  <= '1';
         if (wr_en = '1') and (ctrl(ctrl_uart_en_c) = '1') and (addr = uart_rtx_addr_c) and (ctrl(ctrl_uart_sim_en_c) = '0') then -- write trigger and not in SIM mode
-          uart_tx_sreg <= '1' & data_i(7 downto 0) & '0'; -- stopbit & data & startbit
-          uart_tx_busy <= '1';
+          if (ctrl(ctrl_uart_pmode1_c) = '1') then -- add parity flag
+            uart_tx.sreg <= '1' & (xor_all_f(data_i(7 downto 0)) xor ctrl(ctrl_uart_pmode0_c)) & data_i(7 downto 0) & '0'; -- stopbit & parity bit & data & startbit
+          else
+            uart_tx.sreg <= '1' & '1' & data_i(7 downto 0) & '0'; -- (dummy fill-bit &) stopbit & data & startbit
+          end if;
+          uart_tx.busy <= '1';
         end if;
       elsif (uart_clk = '1') then
-        if (uart_tx_baud_cnt = x"000") then
-          uart_tx_baud_cnt <= ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud00_c);
-          uart_tx_bitcnt   <= std_ulogic_vector(unsigned(uart_tx_bitcnt) - 1);
-          uart_tx_sreg     <= '1' & uart_tx_sreg(9 downto 1);
-          if (uart_tx_bitcnt = "0000") then
-            uart_tx_busy <= '0'; -- done
-            uart_tx_done <= '1';
-          end if;
+        if (uart_tx.baud_cnt = x"000") then
+          uart_tx.baud_cnt <= ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud00_c);
+          uart_tx.bitcnt   <= std_ulogic_vector(unsigned(uart_tx.bitcnt) - 1);
+          uart_tx.sreg     <= '1' & uart_tx.sreg(uart_tx.sreg'left downto 1);
         else
-          uart_tx_baud_cnt <= std_ulogic_vector(unsigned(uart_tx_baud_cnt) - 1);
+          uart_tx.baud_cnt <= std_ulogic_vector(unsigned(uart_tx.baud_cnt) - 1);
+        end if;
+        if (uart_tx.bitcnt = "0000") then
+          uart_tx.busy <= '0'; -- done
+          uart_tx.done <= '1';
         end if;
       end if;
       -- transmitter output --
-      uart_txd_o <= uart_tx_sreg(0);
+      uart_txd_o <= uart_tx.sreg(0);
     end if;
   end process uart_tx_unit;
 
@@ -229,38 +270,46 @@ begin
   begin
     if rising_edge(clk_i) then
       -- input synchronizer --
-      uart_rx_sync <= uart_rxd_i & uart_rx_sync(4 downto 1);
+      uart_rx.sync <= uart_rxd_i & uart_rx.sync(4 downto 1);
 
       -- serial engine --
-      if (uart_rx_busy = '0') or (ctrl(ctrl_uart_en_c) = '0') then -- idle or disabled
-        uart_rx_busy     <= '0';
-        uart_rx_baud_cnt <= '0' & ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud01_c); -- half baud rate to sample in middle of bit
-        uart_rx_bitcnt   <= "1001"; -- 9 bit (startbit + 8 data bits, ignore stop bit/s)
-        if (ctrl(ctrl_uart_en_c) = '0') then
-          uart_rx_reg <= (others => '0'); -- to ensure defined state when reading
-        elsif (uart_rx_sync(2 downto 0) = "001") then -- start bit? (falling edge)
-          uart_rx_busy <= '1';
+      if (uart_rx.busy = '0') or (ctrl(ctrl_uart_en_c) = '0') then -- idle or disabled
+        uart_rx.busy     <= '0';
+        uart_rx.baud_cnt <= '0' & ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud01_c); -- half baud delay at the beginning to sample in the middle of each bit
+        uart_rx.bitcnt   <= num_bits;
+        if (ctrl(ctrl_uart_en_c) = '0') then -- to ensure defined state when reading
+          uart_rx.perr <= '0';
+          uart_rx.ferr <= '0';
+          uart_rx.data <= (others => '0');
+        elsif (uart_rx.sync(2 downto 0) = "001") then -- start bit? (falling edge)
+          uart_rx.busy <= '1';
         end if;
       elsif (uart_clk = '1') then
-        if (uart_rx_baud_cnt = x"000") then
-          uart_rx_baud_cnt <= ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud00_c);
-          uart_rx_bitcnt   <= std_ulogic_vector(unsigned(uart_rx_bitcnt) - 1);
-          uart_rx_sreg     <= uart_rx_sync(0) & uart_rx_sreg(8 downto 1);
-          if (uart_rx_bitcnt = "0000") then
-            uart_rx_busy <= '0'; -- done
-            uart_rx_reg  <= uart_rx_sreg(8 downto 1);
-          end if;
+        if (uart_rx.baud_cnt = x"000") then
+          uart_rx.baud_cnt <= ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud00_c);
+          uart_rx.bitcnt   <= std_ulogic_vector(unsigned(uart_rx.bitcnt) - 1);
+          uart_rx.sreg     <= uart_rx.sync(0) & uart_rx.sreg(uart_rx.sreg'left downto 1);
         else
-          uart_rx_baud_cnt <= std_ulogic_vector(unsigned(uart_rx_baud_cnt) - 1);
+          uart_rx.baud_cnt <= std_ulogic_vector(unsigned(uart_rx.baud_cnt) - 1);
+        end if;
+        if (uart_rx.bitcnt = "0000") then
+          uart_rx.busy <= '0'; -- done
+          uart_rx.perr <= ctrl(ctrl_uart_pmode1_c) and (xor_all_f(uart_rx.sreg(8 downto 0)) xor ctrl(ctrl_uart_pmode0_c));
+          uart_rx.ferr <= not uart_rx.sreg(9); -- check stop bit (error if not set)
+          if (ctrl(ctrl_uart_pmode1_c) = '1') then -- add parity flag
+            uart_rx.data <= uart_rx.sreg(7 downto 0);
+          else
+            uart_rx.data <= uart_rx.sreg(8 downto 1);
+          end if;
         end if;
       end if;
 
       -- RX available flag --
-      uart_rx_busy_ff <= uart_rx_busy;
-      if (ctrl(ctrl_uart_en_c) = '0') or (((uart_rx_avail(0) = '1') or (uart_rx_avail(1) = '1')) and (rd_en = '1') and (addr = uart_rtx_addr_c)) then
-        uart_rx_avail <= "00";
-      elsif (uart_rx_busy_ff = '1') and (uart_rx_busy = '0') then
-        uart_rx_avail <= uart_rx_avail(0) & '1';
+      uart_rx.busy_ff <= uart_rx.busy;
+      if (ctrl(ctrl_uart_en_c) = '0') or (((uart_rx.avail(0) = '1') or (uart_rx.avail(1) = '1')) and (rd_en = '1') and (addr = uart_rtx_addr_c)) then -- off/RX read access
+        uart_rx.avail <= "00";
+      elsif (uart_rx.busy_ff = '1') and (uart_rx.busy = '0') then -- RX done
+        uart_rx.avail <= uart_rx.avail(0) & '1';
       end if;
     end if;
   end process uart_rx_unit;
@@ -269,7 +318,7 @@ begin
   -- Interrupt ------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- UART Rx data available [OR] UART Tx complete
-  uart_irq_o <= (uart_rx_busy_ff and (not uart_rx_busy) and ctrl(ctrl_uart_rx_irq_c)) or (uart_tx_done and ctrl(ctrl_uart_tx_irq_c));
+  uart_irq_o <= (uart_rx.busy_ff and (not uart_rx.busy) and ctrl(ctrl_uart_rx_irq_c)) or (uart_tx.done and ctrl(ctrl_uart_tx_irq_c));
 
 
   -- SIMULATION Output ----------------------------------------------------------------------
