@@ -72,8 +72,8 @@ int main() {
   // setup run-time environment for interrupts and exceptions
   neorv32_rte_setup();
 
-  // init UART at default baud rate, no rx interrupt, no tx interrupt
-  neorv32_uart_setup(BAUD_RATE, 0, 0);
+  // init UART at default baud rate, no parity bits, no rx interrupt, no tx interrupt
+  neorv32_uart_setup(BAUD_RATE, 0b00, 0, 0);
 
 
   // check if GPIO unit is implemented at all

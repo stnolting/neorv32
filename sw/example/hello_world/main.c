@@ -61,12 +61,12 @@
  **************************************************************************/
 int main() {
 
-  // init UART at default baud rate, no rx interrupt, no tx interrupt
-  neorv32_uart_setup(BAUD_RATE, 0, 0);
-
   // capture all exceptions and give debug info via UART
   // this is not required, but keeps us safe
   neorv32_rte_setup();
+
+  // init UART at default baud rate, no parity bits, no rx interrupt, no tx interrupt
+  neorv32_uart_setup(BAUD_RATE, 0b00, 0, 0);
 
   // print project logo via UART
   neorv32_rte_print_logo();

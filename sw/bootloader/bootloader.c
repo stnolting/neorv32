@@ -6,7 +6,7 @@
 // # ********************************************************************************************* #
 // # Boot from (internal) instruction memory, UART or SPI Flash.                                   #
 // #                                                                                               #
-// # UART configuration: 8 data bits, no parity bit, 1 stop bit, 19200 baud                        #
+// # UART configuration: 8 data bits, NO parity bit, 1 stop bit, 19200 baud (19200-8N1)            #
 // # Boot Flash: 8-bit SPI, 24-bit addresses (like Micron N25Q032A) @ neorv32.spi_csn_o(0)         #
 // # neorv32.gpio_o(0) is used as high-active status LED (can be disabled via #STATUS_LED_EN).     #
 // #                                                                                               #
@@ -220,8 +220,8 @@ int main(void) {
     neorv32_gpio_port_set(1 << STATUS_LED);
   }
 
-  // init UART (no interrupts)
-  neorv32_uart_setup(BAUD_RATE, 0, 0);
+  // init UART (no parity bit, no interrupts)
+  neorv32_uart_setup(BAUD_RATE, 0, 0, 0);
 
   // Configure machine system timer interrupt for ~2Hz
   neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (clock_speed/4));

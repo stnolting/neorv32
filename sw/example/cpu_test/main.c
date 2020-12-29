@@ -131,8 +131,8 @@ int main() {
   } cpu_systime;
 
 
-  // init UART at default baud rate, no rx interrupt, no tx interrupt
-  neorv32_uart_setup(BAUD_RATE, 0, 0);
+  // init UART at default baud rate, no parity bits, no rx interrupt, no tx interrupt
+  neorv32_uart_setup(BAUD_RATE, 0b00, 0, 0);
 
 // Disable cpu_test compilation by default
 #ifndef RUN_CPUTEST
