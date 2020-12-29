@@ -1406,7 +1406,7 @@ begin
              ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP))) then -- sample IRQs in EXECUTE or TRAP state only to continue execution even if permanent IRQ
             trap_ctrl.cause     <= trap_ctrl.cause_nxt;   -- capture source ID for program (for mcause csr)
             trap_ctrl.exc_ack   <= '1';                   -- clear execption
-            trap_ctrl.irq_ack   <= trap_ctrl.irq_ack_nxt; -- capture and clear with interrupt ACK mask
+            trap_ctrl.irq_ack   <= trap_ctrl.irq_ack_nxt; -- clear interrupt with interrupt ACK mask
             trap_ctrl.env_start <= '1';                   -- now execute engine can start trap handler
           end if;
         else -- trap waiting to get started
@@ -1428,7 +1428,7 @@ begin
   csr.mip_status <= trap_ctrl.irq_buf;
 
 
-  -- Trap Priority Detector -----------------------------------------------------------------
+  -- Trap Priority Encoder ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   trap_priority: process(trap_ctrl)
   begin
@@ -1476,7 +1476,7 @@ begin
       trap_ctrl.irq_ack_nxt(interrupt_firq_3_c) <= '1';
 
 
-    -- the following traps are caused by *synchronous* exceptions (= classic exceptions)
+    -- the following traps are caused by *synchronous* exceptions (= 'classic' exceptions)
     -- here we do not need a specific acknowledge mask since only one exception (the one
     -- with highest priority) is evaluated at once
 
@@ -1522,7 +1522,7 @@ begin
     elsif (trap_ctrl.exc_buf(exception_laccess_c) = '1') then
       trap_ctrl.cause_nxt <= trap_lbe_c;
 
-    -- undefined / not implemented --
+    -- not implemented --
     else
       trap_ctrl.cause_nxt   <= (others => '0');
       trap_ctrl.irq_ack_nxt <= (others => '0');
