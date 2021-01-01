@@ -14,12 +14,6 @@ provided peripherals and provides a very simple and basic interface - only the c
 of the GPIO output port are propagated to the outer world.
 
 
-### [`neorv32_cpu_stdlogic.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_cpu_stdlogic.vhd)
-
-Same entity (generics and interface ports) as the default NEORV32 CPU top entity (`rtl/core/neorv32_cpu.vhd`),
-but with _resolved_ port signals: All ports are of type `std_logic` or `std_logic_vector`, respectively.
-
-
 ### [`neorv32_top_axi4lite.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_top_axi4lite)
 
 This setup provides all the peripheal/IO signals of the default processor top entity, but features an **AXI4-Lite**-compatible bus interface
