@@ -92,18 +92,18 @@ The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/pr
 ### To-Do / Wish List / Help Wanted
 
 * Use LaTeX for data sheet
-* Further size and performance optimization *(work in progress)*
+* Further size and performance optimization *[work in progress]*
 * Add associativity configuration for instruction cache
-* Add a data cache
+* Add *data* cache
 * Burst mode for the external memory/bus interface
-* RISC-V `B` extension ([bitmanipulation](https://github.com/riscv/riscv-bitmanip)) *(shelved)*
+* RISC-V `F` (using `Zfinx`?) CPU extension (single-precision floating point) *[planning]*
+* RISC-V `B` CPU extension ([bitmanipulation](https://github.com/riscv/riscv-bitmanip)) *[shelved]*
 * Synthesis results (+ wrappers?) for more/specific platforms
-* More support for FreeRTOS
+* More support for FreeRTOS (like *all* traps)
 * Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
-* Single-precision floating point unit (`F`) *(planned)*
 * Implement further RISC-V (or custom?) CPU extensions
 * Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))
-* Add memory-mapped trigger to testbench to quit simulation (using VHDL2008's `use std.env.finish;`) - but how? :thinking:
+* Add memory-mapped trigger to testbench to quit simulation (maybe using VHDL2008's `use std.env.finish`?)
 * ...
 * [Ideas?](#ContributeFeedbackQuestions)
 
@@ -189,8 +189,8 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
   * System instructions: `MRET` `WFI`
   * Pseudo-instructions are not listed
-  * Counter CSRs: `cycle` `cycleh` `instret` `instreth` `time` `timeh` `mcycle` `mcycleh` `minstret` `minstreth` `mcounteren` `mcountinhibit`
-  * Machine CSRs: `mstatus` `mstatush` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mvendorid` [`marchid`](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) `mimpid` `mhartid` `mzext`(custom)
+  * Counter CSRs: `[m]cycle[h]` `[m]instret[m]` `time[h]` `[m]hpmcounter*[h]`(3..29, configurable) `mcounteren` `mcountinhibit` `mhpmevent*`(3..29, configurable)
+  * Machine CSRs: `mstatus[h]` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mvendorid` [`marchid`](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) `mimpid` `mhartid` `mzext`(custom)
   * Supported exceptions and interrupts:
     * Misaligned instruction address
     * Instruction access fault (via unacknowledged bus access after timeout)
@@ -214,14 +214,15 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * System instructions: `FENCE.I` (among others, used to clear and reload instruction cache)
 
 **Privileged architecture / Physical memory protection** (`PMP`, requires `Zicsr` extension):
-  * Additional machine CSRs: `pmpcfg0` `pmpcfg1` `pmpaddr0` `pmpaddr1` `pmpaddr2` `pmpaddr3` `pmpaddr4` `pmpaddr5` `pmpaddr6` `pmpaddr7`
+  * Configurable number of regions
+  * Additional machine CSRs: `pmpcfg*`(0..15) `pmpaddr*`(0..63)
 
 
 ### Non-RISC-V-Compliant Issues
 
 * CPU and Processor are BIG-ENDIAN, but this should be no problem as the external memory bus interface provides big- and little-endian configurations
 * `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime; for compatibility: write accesses (in m-mode) are ignored and do not cause an exception
-* The physical memory protection (**PMP**) only supports `NAPOT` mode, a minimal granularity of 8 bytes and only up to 8 regions
+* The physical memory protection (**PMP**) only supports `NAPOT` mode yet and a minimal granularity of 8 bytes
 * The `A` extension only implements `lr.w` and `sc.w` instructions yet. However, these instructions are sufficient to emulate all further AMO operations
 * The `mcause` trap code `0x80000000` (originally reserved in the RISC-V specs) is used to indicate a hardware reset (as "non-maskable interrupt").
 
@@ -243,8 +244,8 @@ The NEORV32-specific extensions are always enabled and are indicated via the `X`
 This chapter shows exemplary implementation results of the NEORV32 CPU for an **Intel Cyclone IV EP4CE22F17C6N FPGA** on
 a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 20.1** ("balanced implementation"). The timing
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
-of the CPU's generics is assumed (for example no PMP). No constraints were used at all. The `u` and `Zifencei` extensions have
-a negligible impact on the hardware requirements.
+of the CPU's generics is assumed (e.g. no physical memory protection, no hardware performance monitors).
+No constraints were used at all. The `u` and `Zifencei` extensions have a negligible impact on the hardware requirements.
 
 Results generated for hardware version [`1.4.9.2`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
@@ -593,7 +594,7 @@ If you are using the NEORV32 or some parts of the project in some kind of public
 
 #### BSD 3-Clause License
 
-Copyright (c) 2020, Stephan Nolting. All rights reserved.
+Copyright (c) 2021, Stephan Nolting. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are
 permitted provided that the following conditions are met:
