@@ -3,8 +3,8 @@
 The top entity of the NEORV32 processor is `rtl/core/neorv32_top.vhd`. This folder provides additional
 top entities/wrappers that instantiate the processor's top entity to provide a different interface.
 
-If you want to use one of the provides top entities from this folder, *also* add the according file to the project's
-HDL file list and select the according top_template file as top entity or instatiate the top_template file in your design.
+If you want to use one of the provided top entities from this folder, *also* add the according file to the project's
+HDL file list and select the according top_template file as top entity or instatiate the top_template within in your design.
 
 
 ### [`neorv32_test_setup.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd)
