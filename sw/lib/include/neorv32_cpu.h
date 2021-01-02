@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -53,8 +53,10 @@ uint64_t neorv32_cpu_get_systime(void);
 void neorv32_cpu_delay_ms(uint32_t time_ms);
 void __attribute__((naked)) neorv32_cpu_goto_user_mode(void);
 int neorv32_cpu_atomic_cas(uint32_t addr, uint32_t expected, uint32_t desired);
+uint32_t neorv32_cpu_pmp_get_num_regions(void);
 uint32_t neorv32_cpu_pmp_get_granularity(void);
 int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint32_t size, uint8_t config);
+uint32_t neorv32_cpu_hpm_get_counters(void);
 
 
 /**********************************************************************//**
