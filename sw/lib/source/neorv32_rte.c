@@ -513,7 +513,7 @@ void neorv32_rte_print_hw_version(void) {
  **************************************************************************/
 void neorv32_rte_print_credits(void) {
 
-  neorv32_uart_print("The NEORV32 Processor Project"
+  neorv32_uart_print("The NEORV32 Processor Project\n"
                      "Copyright 2021, Stephan Nolting\n"
                      "BSD 3-Clause License\n"
                      "https://github.com/stnolting/neorv32\n\n");
