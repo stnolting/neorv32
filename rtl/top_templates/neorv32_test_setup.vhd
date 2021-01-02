@@ -8,7 +8,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -74,42 +74,45 @@ begin
     USER_CODE                    => x"00000000", -- custom user code
     HW_THREAD_ID                 => x"00000000", -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        => true,   -- implement atomic extension?
-    CPU_EXTENSION_RISCV_C        => true,   -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        => false,  -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        => true,   -- implement muld/div extension?
-    CPU_EXTENSION_RISCV_U        => true,   -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zicsr    => true,   -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei => true,   -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_A        => true,        -- implement atomic extension?
+    CPU_EXTENSION_RISCV_C        => true,        -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        => false,       -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        => true,        -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_U        => true,        -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zicsr    => true,        -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei => true,        -- implement instruction stream sync.?
     -- Extension Options --
-    FAST_MUL_EN                  => false, -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN                => false, -- use barrel shifter for shift operations
+    FAST_MUL_EN                  => false,       -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN                => false,       -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      => true,  -- implement PMP?
+    PMP_NUM_REGIONS              => 2,           -- number of regions (0..64)
+    PMP_MIN_GRANULARITY          => 64*1024,     -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    -- Hardware Performance Monitors (HPM) --
+    HPM_NUM_CNTS                 => 2,           -- number of inmplemnted HPM counters (0..29)
     -- Internal Instruction memory --
-    MEM_INT_IMEM_USE             => true,    -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE            => 16*1024, -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM             => false,   -- implement processor-internal instruction memory as ROM
+    MEM_INT_IMEM_USE             => true,        -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE            => 16*1024,     -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_ROM             => false,       -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
-    MEM_INT_DMEM_USE             => true,   -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE            => 8*1024, -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_USE             => true,        -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE            => 8*1024,      -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_USE                   => false,  -- implement instruction cache
-    ICACHE_NUM_BLOCKS            => 4,      -- i-cache: number of blocks (min 1), has to be a power of 2
-    ICACHE_BLOCK_SIZE            => 64,     -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_USE                   => false,       -- implement instruction cache
+    ICACHE_NUM_BLOCKS            => 4,           -- i-cache: number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE            => 64,          -- i-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface --
-    MEM_EXT_USE                  => false,  -- implement external memory bus interface?
+    MEM_EXT_USE                  => false,       -- implement external memory bus interface?
     -- Processor peripherals --
-    IO_GPIO_USE                  => true,  -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE                 => true,  -- implement machine system timer (MTIME)?
-    IO_UART_USE                  => true,  -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                   => false, -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                   => false, -- implement two-wire interface (TWI)?
-    IO_PWM_USE                   => false, -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                   => true,  -- implement watch dog timer (WDT)?
-    IO_TRNG_USE                  => false, -- implement true random number generator (TRNG)?
-    IO_CFU0_USE                  => false, -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_USE                  => false  -- implement custom functions unit 1 (CFU1)?
+    IO_GPIO_USE                  => true,        -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_USE                 => true,        -- implement machine system timer (MTIME)?
+    IO_UART_USE                  => true,        -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_USE                   => false,       -- implement serial peripheral interface (SPI)?
+    IO_TWI_USE                   => false,       -- implement two-wire interface (TWI)?
+    IO_PWM_USE                   => false,       -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_USE                   => true,        -- implement watch dog timer (WDT)?
+    IO_TRNG_USE                  => false,       -- implement true random number generator (TRNG)?
+    IO_CFU0_USE                  => false,       -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_USE                  => false        -- implement custom functions unit 1 (CFU1)?
   )
   port map (
     -- Global control --
