@@ -16,7 +16,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -70,7 +70,10 @@ entity neorv32_cpu is
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      : boolean := false  -- implement PMP?
+    PMP_NUM_REGIONS              : natural := 0; -- number of regions (0..64)
+    PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    -- Hardware Performance Monitors (HPM) --
+    HPM_NUM_CNTS                 : natural := 0      -- number of inmplemnted HPM counters (0..29)
   );
   port (
     -- global control --
@@ -157,7 +160,9 @@ begin
   -- U-extension requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report "NEORV32 CPU CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
   -- PMP requires Zicsr extension --
-  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
+  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
+  -- HPM CNT requires Zicsr extension --
+  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (HPM_NUM_CNTS > 0)) report "NEORV32 CPU CONFIG ERROR! Performance monitors (HMP) require CPU_EXTENSION_RISCV_Zicsr extension." severity error;
 
   -- Bus timeout --
   assert not (BUS_TIMEOUT < 2) report "NEORV32 CPU CONFIG ERROR! Invalid bus access timeout value <BUS_TIMEOUT>. Has to be >= 2." severity error;
@@ -168,13 +173,17 @@ begin
   assert not (CPU_EXTENSION_RISCV_A = true) report "NEORV32 CPU CONFIG WARNING! Atomic operations extension (A) only supports >lr.w< and >sc.w< instructions yet." severity warning;
 
   -- PMP regions check --
-  assert not ((pmp_num_regions_c > pmp_max_r_c) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <pmp_num_regions_c> out of valid range." severity error;
+  assert not (PMP_NUM_REGIONS > 64) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out of valid range (0..64)." severity error;
   -- PMP granulartiy --
-  assert not ((is_power_of_two_f(pmp_min_granularity_c) = false) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! PMP granulartiy has to be a power of two." severity error;
-  assert not ((pmp_min_granularity_c < 8) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! PMP granulartiy has to be >= 8 bytes." severity error;
-
+  assert not ((is_power_of_two_f(PMP_MIN_GRANULARITY) = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! PMP granulartiy has to be a power of two." severity error;
+  assert not ((PMP_MIN_GRANULARITY < 8) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! PMP granulartiy has to be >= 8 bytes." severity error;
   -- PMP notifier --
-  assert not (PMP_USE = true) report "NEORV32 CPU CONFIG NOTE: Implementing physical memory protection (PMP) with " & integer'image(pmp_num_regions_c) & " regions and " & integer'image(pmp_min_granularity_c) & " bytes minimal region size (granulartiy)." severity note;
+  assert not (PMP_NUM_REGIONS > 0) report "NEORV32 CPU CONFIG NOTE: Implementing physical memory protection (PMP) with " & integer'image(PMP_NUM_REGIONS) & " regions and a minimal granularity of " & integer'image(PMP_MIN_GRANULARITY) & " bytes." severity note;
+
+  -- HPM counters check --
+  assert not (HPM_NUM_CNTS > 29) report "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..29)." severity error;
+  -- HPM counters notifier --
+  assert not (HPM_NUM_CNTS > 0) report "NEORV32 CPU CONFIG NOTE: Implementing " & integer'image(HPM_NUM_CNTS) & " HPM counters." severity note;
 
 
   -- Control Unit ---------------------------------------------------------------------------
@@ -193,7 +202,10 @@ begin
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     -- Physical memory protection (PMP) --
-    PMP_USE                      => PMP_USE        -- implement physical memory protection?
+    PMP_NUM_REGIONS              => PMP_NUM_REGIONS,              -- number of regions (0..64)
+    PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY,          -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    -- Hardware Performance Monitors (HPM) --
+    HPM_NUM_CNTS                 => HPM_NUM_CNTS                  -- number of inmplemnted HPM counters (0..29)
   )
   port map (
     -- global control --
@@ -370,7 +382,8 @@ begin
   generic map (
     CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
     -- Physical memory protection (PMP) --
-    PMP_USE               => PMP_USE,               -- implement physical memory protection?
+    PMP_NUM_REGIONS       => PMP_NUM_REGIONS,       -- number of regions (0..64)
+    PMP_MIN_GRANULARITY   => PMP_MIN_GRANULARITY,   -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Bus Timeout --
     BUS_TIMEOUT           => BUS_TIMEOUT            -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
   )
