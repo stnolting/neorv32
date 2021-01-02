@@ -65,7 +65,6 @@ ghdl -a --work=neorv32 $srcdir_core/neorv32_uart.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_wdt.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_wishbone.vhd
 #
-ghdl -a --work=neorv32 $srcdir_top_templates/neorv32_cpu_stdlogic.vhd
 ghdl -a --work=neorv32 $srcdir_top_templates/neorv32_test_setup.vhd
 ghdl -a --work=neorv32 $srcdir_top_templates/neorv32_top_axi4lite.vhd
 ghdl -a --work=neorv32 $srcdir_top_templates/neorv32_top_stdlogic.vhd
