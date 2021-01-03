@@ -319,17 +319,13 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("\nPMP:               ");
   uint32_t pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
   if (pmp_num_regions != 0)  {
-    // get number of available regions
-    neorv32_uart_printf("\n- Available regions:   %u\n", pmp_num_regions);
-
-    // get minimal region size (granulartiy)
-    neorv32_uart_printf("- Minimal granularity: %u bytes per region\n", neorv32_cpu_pmp_get_granularity());
+    neorv32_uart_printf("%u regions, %u bytes minimal granularity\n", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
   }
   else {
     neorv32_uart_printf("not implemented\n");
   }
 
-  // check physical memory protection
+  // check hardware performance monitors
   neorv32_uart_printf("HPM Counters:      %u\n", neorv32_cpu_hpm_get_counters());
 
 
