@@ -189,7 +189,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
   * System instructions: `MRET` `WFI`
   * Pseudo-instructions are not listed
-  * Counter CSRs: `[m]cycle[h]` `[m]instret[m]` `time[h]` `[m]hpmcounter*[h]`(3..29, configurable) `mcounteren` `mcountinhibit` `mhpmevent*`(3..29, configurable)
+  * Counter CSRs: `[m]cycle[h]` `[m]instret[m]` `time[h]` `[m]hpmcounter*[h]`(3..31, configurable) `mcounteren` `mcountinhibit` `mhpmevent*`(3..31, configurable)
   * Machine CSRs: `mstatus[h]` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mvendorid` [`marchid`](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) `mimpid` `mhartid` `mzext`(custom)
   * Supported exceptions and interrupts:
     * Misaligned instruction address
@@ -307,6 +307,7 @@ The FPGA-specific memory components can be found in [`rtl/fpga_specific`](https:
 * The Upduino and the Arty board have on-board SPI flash memories for storing the FPGA configuration. These device can also be used by the default NEORV32
 bootloader to store and automatically boot an application program after reset (both tested successfully).
 * The setups with `PMP` implement 2 regions with a minimal granularity of 64kB.
+* No HPM counters are implemented.
 
 
 
@@ -318,24 +319,24 @@ The [CoreMark CPU benchmark](https://www.eembc.org/coremark) was executed on the
 [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) project folder. This benchmark
 tests the capabilities of a CPU itself rather than the functions provided by the whole system / SoC.
 
-Results generated for hardware version [`1.4.7.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
-
 ~~~
 **Configuration**
-Hardware:       32kB IMEM, 16kB DMEM, no caches, 100MHz clock
+Hardware:       32kB IMEM, 16kB DMEM, no caches(!), 100MHz clock
 CoreMark:       2000 iterations, MEM_METHOD is MEM_STACK
 Compiler:       RISCV32-GCC 10.1.0 (rv32i toolchain)
 Compiler flags: default, see makefile
 Peripherals:    UART for printing the results
 ~~~
 
-| CPU                                         | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
+Results generated for hardware version [`1.4.9.8`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+
+| CPU (including `Zicsr`)                     | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
 |:--------------------------------------------|:---------------:|:------------:|:--------------:|:-------------:|
-| `rv32i`                                     |    27 424 bytes |        `-O3` |          35.71 |    **0.3571** |
-| `rv32im`                                    |    26 232 bytes |        `-O3` |          66.66 |    **0.6666** |
-| `rv32imc`                                   |    20 876 bytes |        `-O3` |          66.66 |    **0.6666** |
-| `rv32imc` + `FAST_MUL_EN`                   |    20 876 bytes |        `-O3` |          83.33 |    **0.8333** |
-| `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |    20 876 bytes |        `-O3` |          86.96 |    **0.8696** |
+| `rv32i`                                     |    28 756 bytes |        `-O3` |          36.36 |    **0.3636** |
+| `rv32im`                                    |    27 516 bytes |        `-O3` |          68.97 |    **0.6897** |
+| `rv32imc`                                   |    22 008 bytes |        `-O3` |          68.97 |    **0.6897** |
+| `rv32imc` + `FAST_MUL_EN`                   |    22 008 bytes |        `-O3` |          86.96 |    **0.8696** |
+| `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |    22 008 bytes |        `-O3` |          90.91 |    **0.9091** |
 
 The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic). The `FAST_SHIFT_EN` configuration
 uses a barrel shifter for CPU shift operations (enabled via the `FAST_SHIFT_EN` generic).
@@ -348,9 +349,7 @@ When the `C` extension is enabled, branches to an unaligned uncompressed instruc
 The NEORV32 CPU is based on a two-stages pipelined architecutre. Each stage uses a multi-cycle processing scheme. Hence,
 each instruction requires several clock cycles to execute (2 cycles for ALU operations, ..., 40 cycles for divisions).
 The average CPI (cycles per instruction) depends on the instruction mix of a specific applications and also on the available
-CPU extensions.
-
-Please note that by default the CPU-internal shifter (e.g. for the `SLL` instruction) as well as the multiplier and divider of the
+CPU extensions. *By default* the CPU-internal shifter (e.g. for the `SLL` instruction) as well as the multiplier and divider of the
 `M` extension use a bit-serial approach and require several cycles for completion.
 
 The following table shows the performance results for successfully running 2000 CoreMark
@@ -358,16 +357,15 @@ iterations, which reflects a pretty good "real-life" work load. The average CPI 
 dividing the total number of required clock cycles (only the timed core to avoid distortion due to IO wait cycles; sampled via the `cycle[h]` CSRs)
 by the number of executed instructions (`instret[h]` CSRs). The executables were generated using optimization `-O3`.
 
-Results generated for hardware version [`1.4.7.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.4.9.8`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
-| CPU                                         | Required Clock Cycles | Executed Instructions | Average CPI |
+| CPU  (including `Zicsr`)                    | Required Clock Cycles | Executed Instructions | Average CPI |
 |:--------------------------------------------|----------------------:|----------------------:|:-----------:|
-| `rv32i`                                     |         5 648 997 774 |         1 469 233 238 |    **3.84** |
-| `rv32im`                                    |         3 036 749 774 |           601 871 338 |    **5.05** |
-| `rv32imc`                                   |         3 036 959 882 |           615 034 616 |    **4.94** |
-| `rv32imc` + `FAST_MUL_EN`                   |         2 454 407 882 |           615 034 588 |    **3.99** |
-| `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |         2 320 308 322 |           615 034 676 |    **3.77** |
-
+| `rv32i`                                     |         5 595 750 503 |         1 466 028 607 |    **3.82** |
+| `rv32im`                                    |         2 966 086 503 |           598 651 143 |    **4.95** |
+| `rv32imc`                                   |         2 981 786 734 |           611 814 918 |    **4.87** |
+| `rv32imc` + `FAST_MUL_EN`                   |         2 399 234 734 |           611 814 918 |    **3.92** |
+| `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |         2 265 135 174 |           611 814 948 |    **3.70** |
 
 The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic). The `FAST_SHIFT_EN` configuration
 uses a barrel shifter for CPU shift operations (enabled via the `FAST_SHIFT_EN` generic).
