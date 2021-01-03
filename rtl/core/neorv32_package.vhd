@@ -55,7 +55,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!)= -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040907"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040908"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -702,6 +702,25 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   constant priv_mode_m_c : std_ulogic_vector(1 downto 0) := "11"; -- machine mode
   constant priv_mode_u_c : std_ulogic_vector(1 downto 0) := "00"; -- user mode
+
+  -- HPM Event System -----------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  constant hpmcnt_event_cy_c      : natural := 0;  -- Active cycle
+  constant hpmcnt_event_never_c   : natural := 1;
+  constant hpmcnt_event_ir_c      : natural := 2;  -- Retired instruction
+  constant hpmcnt_event_cir_c     : natural := 3;  -- Retired compressed instruction
+  constant hpmcnt_event_wait_if_c : natural := 4;  -- Instruction fetch memory wait cycle
+  constant hpmcnt_event_wait_ii_c : natural := 5;  -- Instruction issue wait cycle
+  constant hpmcnt_event_load_c    : natural := 6;  -- Load operation
+  constant hpmcnt_event_store_c   : natural := 7;  -- Store operation
+  constant hpmcnt_event_wait_ls_c : natural := 8;  -- Load/store memory wait cycle
+  constant hpmcnt_event_jump_c    : natural := 9;  -- Unconditional jump
+  constant hpmcnt_event_branch_c  : natural := 10; -- Conditional branch (taken or not taken)
+  constant hpmcnt_event_tbranch_c : natural := 11; -- Conditional taken branch
+  constant hpmcnt_event_trap_c    : natural := 12; -- Entered trap
+  constant hpmcnt_event_illegal_c : natural := 13; -- Illegal instruction exception
+  --
+  constant hpmcnt_event_size_c    : natural := 14; -- length of this list
 
   -- Clock Generator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

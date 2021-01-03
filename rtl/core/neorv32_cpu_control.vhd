@@ -240,10 +240,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type pmp_addr_t     is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-1 downto 0);
   type pmp_ctrl_rd_t  is array (0 to 63) of std_ulogic_vector(7 downto 0);
   type pmp_addr_rd_t  is array (0 to 63) of std_ulogic_vector(data_width_c-1 downto 0);
-  type mhpmevent_t    is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(12 downto 0);
+  type mhpmevent_t    is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
   type mhpmcnt_t      is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(32 downto 0);
   type mhpmcnth_t     is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(31 downto 0);
-  type mhpmevent_rd_t is array (0 to 29) of std_ulogic_vector(12 downto 0);
+  type mhpmevent_rd_t is array (0 to 29) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
   type mhpmcnt_rd_t   is array (0 to 29) of std_ulogic_vector(32 downto 0);
   type mhpmcnth_rd_t  is array (0 to 29) of std_ulogic_vector(31 downto 0);
   type csr_t is record
@@ -313,7 +313,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal mhpmcounter_msb : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0);
 
   -- (hpm) counter events --
-  signal cnt_event, cnt_event_nxt : std_ulogic_vector(12 downto 0);
+  signal cnt_event, cnt_event_nxt : std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
   signal hpmcnt_trigger           : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0);
 
   -- illegal instruction check --
@@ -1978,7 +1978,7 @@ begin
       if (csr.we = '1') and (csr.addr = csr_mcycle_c) then -- write access
         csr.mcycle <= '0' & csr.wdata;
         mcycle_msb <= '0';
-      elsif (csr.mcountinhibit_cy = '0') and (cnt_event(0) = '1') then -- non-inhibited automatic update
+      elsif (csr.mcountinhibit_cy = '0') and (cnt_event(hpmcnt_event_cy_c) = '1') then -- non-inhibited automatic update
         csr.mcycle <= std_ulogic_vector(unsigned(csr.mcycle) + 1);
         mcycle_msb <= csr.mcycle(csr.mcycle'left);
       end if;
@@ -1994,7 +1994,7 @@ begin
       if (csr.we = '1') and (csr.addr = csr_minstret_c) then -- write access
         csr.minstret <= '0' & csr.wdata;
         minstret_msb <= '0';
-      elsif (csr.mcountinhibit_ir = '0') and (cnt_event(2) = '1') then -- non-inhibited automatic update
+      elsif (csr.mcountinhibit_ir = '0') and (cnt_event(hpmcnt_event_ir_c) = '1') and (cnt_event(hpmcnt_event_cy_c) = '1') then -- non-inhibited automatic update
         csr.minstret <= std_ulogic_vector(unsigned(csr.minstret) + 1);
         minstret_msb <= csr.minstret(csr.minstret'left);
       end if;
@@ -2050,30 +2050,34 @@ begin
       cnt_event      <= cnt_event_nxt;
       hpmcnt_trigger <= (others => '0'); -- default
       for i in 0 to HPM_NUM_CNTS-1 loop
-        hpmcnt_trigger(i) <= or_all_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0));
+        -- enabled selected triggers by ANDing events and configuration bits --
+        -- OR everything to see if counter should increment --
+        -- AND with inverted sleep flag to increment only when CPU is awake --
+        hpmcnt_trigger(i) <= (or_all_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0))) and (not execute_engine.sleep);
       end loop; -- i
     end if;
   end process hpmcnt_ctrl;
 
-  -- counter event trigger (RISC-V specified) --
-  cnt_event_nxt(0)  <= '1' when (execute_engine.sleep = '0') else '0'; -- active cycle
-  cnt_event_nxt(1)  <= '0'; -- undefined
-  cnt_event_nxt(2)  <= '1' when (execute_engine.state = EXECUTE) else '0'; -- retired instruction
+  -- counter event trigger - RISC-V specific --
+  cnt_event_nxt(hpmcnt_event_cy_c)    <= not execute_engine.sleep; -- active cycle
+  cnt_event_nxt(hpmcnt_event_never_c) <= '0'; -- undefined (never)
+  cnt_event_nxt(hpmcnt_event_ir_c)    <= '1' when (execute_engine.state = EXECUTE) else '0'; -- retired instruction
 
-  -- counter event trigger (custom / NEORV32-specific) --
-  cnt_event_nxt(3)  <= '1' when (execute_engine.state = EXECUTE)     and (execute_engine.is_ci = '1')                       else '0'; -- retired compressed instruction
-  cnt_event_nxt(4)  <= '1' when (fetch_engine.state = IFETCH_ISSUE)  and (fetch_engine.state_prev = IFETCH_ISSUE)           else '0'; -- instruction fetch memory wait cycle
+  -- counter event trigger - custom / NEORV32-specific --
+  cnt_event_nxt(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)    and (execute_engine.is_ci = '1')             else '0'; -- retired compressed instruction
+  cnt_event_nxt(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state = IFETCH_ISSUE) and (fetch_engine.state_prev = IFETCH_ISSUE) else '0'; -- instruction fetch memory wait cycle
+  cnt_event_nxt(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)   and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle
 
-  cnt_event_nxt(5)  <= '1' when (execute_engine.state = LOADSTORE_1) and (ctrl(ctrl_bus_rd_c) = '1')                        else '0'; -- load operation
-  cnt_event_nxt(6)  <= '1' when (execute_engine.state = LOADSTORE_1) and (ctrl(ctrl_bus_wr_c) = '1')                        else '0'; -- store operation
-  cnt_event_nxt(7)  <= '1' when (execute_engine.state = LOADSTORE_2) and (execute_engine.state_prev = LOADSTORE_2)          else '0'; -- load/store memory wait cycle
+  cnt_event_nxt(hpmcnt_event_load_c)    <= '1' when (execute_engine.state = LOADSTORE_1) and (ctrl(ctrl_bus_rd_c) = '1')               else '0'; -- load operation
+  cnt_event_nxt(hpmcnt_event_store_c)   <= '1' when (execute_engine.state = LOADSTORE_1) and (ctrl(ctrl_bus_wr_c) = '1')               else '0'; -- store operation
+  cnt_event_nxt(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = LOADSTORE_2) and (execute_engine.state_prev = LOADSTORE_2) else '0'; -- load/store memory wait cycle
 
-  cnt_event_nxt(8)  <= '1' when (execute_engine.state = BRANCH)      and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') else '0'; -- jump (unconditional)
-  cnt_event_nxt(9)  <= '1' when (execute_engine.state = BRANCH)      and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') else '0'; -- branch (conditional, taken or not taken)
-  cnt_event_nxt(10) <= '1' when (execute_engine.state = BRANCH)      and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') and (execute_engine.branch_taken = '1') else '0'; -- taken branch (conditional)
+  cnt_event_nxt(hpmcnt_event_jump_c)    <= '1' when (execute_engine.state = BRANCH) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') else '0'; -- jump (unconditional)
+  cnt_event_nxt(hpmcnt_event_branch_c)  <= '1' when (execute_engine.state = BRANCH) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') else '0'; -- branch (conditional, taken or not taken)
+  cnt_event_nxt(hpmcnt_event_tbranch_c) <= '1' when (execute_engine.state = BRANCH) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') and (execute_engine.branch_taken = '1') else '0'; -- taken branch (conditional)
 
-  cnt_event_nxt(11) <= '1' when (trap_ctrl.env_start_ack = '1')                                                             else '0'; -- entered trap
-  cnt_event_nxt(12) <= '1' when (trap_ctrl.env_start_ack = '1')      and (trap_ctrl.cause = trap_iil_c)                     else '0'; -- illegal operation
+  cnt_event_nxt(hpmcnt_event_trap_c)    <= '1' when (trap_ctrl.env_start_ack = '1')                                    else '0'; -- entered trap
+  cnt_event_nxt(hpmcnt_event_illegal_c) <= '1' when (trap_ctrl.env_start_ack = '1') and (trap_ctrl.cause = trap_iil_c) else '0'; -- illegal operation
 
 
   -- Control and Status Registers Read Access -----------------------------------------------
