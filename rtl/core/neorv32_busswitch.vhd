@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -90,25 +90,16 @@ end neorv32_busswitch;
 
 architecture neorv32_busswitch_rtl of neorv32_busswitch is
 
-  -- access buffer --
-  signal ca_rd_req_buf : std_ulogic;
-  signal ca_wr_req_buf : std_ulogic;
-  signal cb_rd_req_buf : std_ulogic;
-  signal cb_wr_req_buf : std_ulogic;
-
   -- access requests --
-  signal ca_req_current  : std_ulogic;
-  signal cb_req_current  : std_ulogic;
-  signal ca_req_buffered : std_ulogic;
-  signal cb_req_buffered : std_ulogic;
+  signal ca_rd_req_buf,  ca_wr_req_buf   : std_ulogic;
+  signal cb_rd_req_buf,  cb_wr_req_buf   : std_ulogic;
+  signal ca_req_current, ca_req_buffered : std_ulogic;
+  signal cb_req_current, cb_req_buffered : std_ulogic;
 
   -- internal bus lines --
-  signal ca_bus_ack : std_ulogic;
-  signal cb_bus_ack : std_ulogic;
-  signal ca_bus_err : std_ulogic;
-  signal cb_bus_err : std_ulogic;
-  signal p_bus_we   : std_ulogic;
-  signal p_bus_re   : std_ulogic;
+  signal ca_bus_ack, cb_bus_ack : std_ulogic;
+  signal ca_bus_err, cb_bus_err : std_ulogic;
+  signal p_bus_we,   p_bus_re   : std_ulogic;
 
   -- access arbiter --
   type arbiter_state_t is (IDLE, BUSY, RETIRE, BUSY_SWITCHED, RETIRE_SWITCHED);
@@ -242,7 +233,11 @@ begin
         if (cb_bus_cancel_i = '1') or -- controller cancels access
            (p_bus_err_i = '1') or -- peripheral cancels access
            (p_bus_ack_i = '1') then -- normal termination
-          arbiter.state_nxt <= IDLE;
+          if (ca_req_buffered = '1') or (ca_req_current = '1') then -- any request from A?
+            arbiter.state_nxt <= RETIRE;
+          else
+            arbiter.state_nxt <= IDLE;
+          end if;
         end if;
 
       when RETIRE_SWITCHED => -- retire pending switched access
