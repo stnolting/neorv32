@@ -1,6 +1,6 @@
 # Check NEORV32 software framework and test processor using cpu_test program
 
-name: '⚙️ SW & HW Test'
+name: 'SW & HW Test'
 
 # Controls when the action will run. 
 on:
@@ -27,6 +27,13 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+
+      # Get native gcc toolchain
+      - name: '🔧 Setup native GCC'
+        run: |
+          sudo apt update
+          sudo apt install gcc-10 g++-10
+          shell: bash
 
       # Get gcc toolchain
       - name: '🔧 Setup RISC-V GCC'
