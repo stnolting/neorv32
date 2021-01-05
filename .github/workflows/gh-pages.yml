@@ -22,7 +22,7 @@ jobs:
         mkdir $(GITHUB_WORKSPACE)/docs/doxygen_build"
         ls -al ./docs
         ls -al $(GITHUB_WORKSPACE)
-        sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' $(GITHUB_WORKSPACE)/docs/Doxyfile
+        sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' ./docs/Doxyfile
 
     - name: '📚 Generate Doxygen Documentation'
       uses: mattnotmitt/doxygen-action@v1.2.1
