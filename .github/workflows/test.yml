@@ -1,0 +1,46 @@
+# Check NEORV32 software framework and test processor using cpu_test program
+
+name: 'Processor Check TEST'
+
+on:
+  push:
+    branches:
+    - master
+    - releases/*
+  workflow_dispatch:
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    name: '🐧 Ubuntu-Latest'
+
+    steps:
+
+      - name: '🧰 Repository Checkout'
+        uses: actions/checkout@v2
+
+      - name: '🔧 Setup Environment Variables'
+        run: |
+          echo "$GITHUB_WORKSPACE/riscv/bin" >> $GITHUB_PATH
+          echo $GITHUB_WORKSPACE
+
+      - name: '🔧 Setup RISC-V GCC'
+        run: |
+          git clone https://github.com/stnolting/riscv_gcc_prebuilt.git
+          mkdir riscv
+          tar -xzf riscv_gcc_prebuilt/data/riscv32-unknown-elf.gcc-10.1.0.rv32i.ilp32.newlib.tar.gz -C riscv/
+          ls -al .
+          ls -al riscv_gcc_prebuilt
+          ls -al riscv
+
+      - name: '🔧 Setup GHDL Simulator'
+        uses: ghdl/setup-ghdl-ci@nightly
+        with:
+          backend: gcc
+
+      - name: '⚙️ Run Software Framework Tests'
+        run: /bin/bash -c "chmod u+x ./.ci/sw_check.sh && ./.ci/sw_check.sh"
+
+      - name: '⚙️ Run Processor Hardware Tests'
+        run: /bin/bash -c "chmod u+x ./.ci/hw_check.sh && ./.ci/hw_check.sh"
