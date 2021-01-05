@@ -31,6 +31,11 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: '💾 Checkout'
         uses: actions/checkout@v2
+
+      # Get gcc toolchain
+      - name: '🔧 Setup RISC-V GCC'
+        run: |
+          /bin/bash -c "chmod u+x ./.ci/install.sh && ./.ci/install.sh"
   
       # Run software fremwork tests
       - name: '▶️ Run SW Tests'
