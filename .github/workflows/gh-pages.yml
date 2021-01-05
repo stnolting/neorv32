@@ -29,12 +29,12 @@ jobs:
       uses: mattnotmitt/doxygen-action@v1.2.1
       with:
         # Path to Doxyfile
-        doxyfile-path: "./docs/Doxyfile" # default is ./Doxyfile
+        doxyfile-path: "$GITHUB_WORKSPACE/docs/Doxyfile" # default is ./Doxyfile
         # Working directory
-        working-directory: "./docs/doxygen_build" # default is .
+        working-directory: "$GITHUB_WORKSPACE/docs/doxygen_build" # default is .
 
     - name: '🚀 Deploy to GitHub-Pages'
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: "./docs/doxygen_build/html"
+        publish_dir: "$GITHUB_WORKSPACE/docs/doxygen_build/html"
