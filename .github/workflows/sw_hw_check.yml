@@ -56,3 +56,7 @@ jobs:
       # Run software framework tests
       - name: '▶️ Run SW Tests'
         run: /bin/bash -c "chmod u+x ./.ci/sw_check.sh && ./.ci/sw_check.sh"
+
+      # Run hardware fremwork tests
+      - name: '▶️ Run HW Tests'
+        run: /bin/bash -c "chmod u+x ./.ci/hw_check.sh && ./.ci/hw_check.sh"
