@@ -22,6 +22,7 @@ jobs:
         mkdir $GITHUB_WORKSPACE/docs/doxygen_build
         ls -al
         ls -al $GITHUB_WORKSPACE/docs
+        ls -al $GITHUB_WORKSPACE/docs/Doxyfile
         ls -al ./docs/doxygen_build
         sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' $GITHUB_WORKSPACE/docs/Doxyfile
 
