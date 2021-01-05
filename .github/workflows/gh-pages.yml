@@ -21,7 +21,6 @@ jobs:
       run: |
         ls -al ./docs
         sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' ./docs/Doxyfile
-        cat ./docs/Doxyfile
 
     - name: '📚 Generate Doxygen Documentation'
       uses: mattnotmitt/doxygen-action@v1.2.1
@@ -35,8 +34,8 @@ jobs:
         ls -al .
         echo docs
         ls -al docs
-        echo docs/build
-        ls -al docs/doxygen_build
+        echo ./build
+        ls -al doxygen_build
 
     - name: '🚀 Deploy to GitHub-Pages'
       uses: peaceiris/actions-gh-pages@v3
