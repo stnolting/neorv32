@@ -24,9 +24,9 @@ jobs:
       uses: mattnotmitt/doxygen-action@v1.1.0
       with:
         # Path to Doxyfile
-        doxyfile-path: "./Doxyfile" # default is ./Doxyfile
+        doxyfile-path: "$GITHUB_WORKSPACE/docs/doxygen_makefile_sw" # default is ./Doxyfile
         # Working directory
-        working-directory: "." # default is .
+        working-directory: "$GITHUB_WORKSPACE/docs/doxygen_build" # default is .
     
     - name: '🚀 Deploy to GitHub-Pages'
       uses: peaceiris/actions-gh-pages@v3
