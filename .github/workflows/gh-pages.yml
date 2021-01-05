@@ -28,15 +28,6 @@ jobs:
         working-directory: '.'
         doxyfile-path: 'docs/Doxyfile'
 
-    - name: '🛠️ Checking Results'
-      run: |
-        echo home
-        ls -al .
-        echo docs
-        ls -al docs
-        echo ./build
-        ls -al doxygen_build
-
     - name: '🚀 Deploy to GitHub-Pages'
       uses: peaceiris/actions-gh-pages@v3
       with:
