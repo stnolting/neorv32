@@ -2,9 +2,6 @@
 
 name: 'SW & HW Test'
 
-env:
-  RISCV_TOOLCHAIN: ./riscv/bin/riscv32-unknown-elf
-
 # Controls when the action will run. 
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
@@ -20,6 +17,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
@@ -37,11 +35,14 @@ jobs:
         run: |
           /bin/bash -c "chmod u+x ./.ci/install.sh && ./.ci/install.sh"
           ls -al $HOME
+          echo $PATH
           echo "$HOME/riscv/bin" >> $GITHUB_PATH
+          echo $PATH
 
       # Run software fremwork tests
       - name: '▶️ Run SW Tests'
         run: |
+          echo $PATH
           ls -al
           ls -al ./riscv/bin
           riscv32-unknown-elf-gcc -v
