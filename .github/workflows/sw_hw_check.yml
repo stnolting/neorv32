@@ -36,12 +36,15 @@ jobs:
       - name: '🔧 Setup RISC-V GCC'
         run: |
           /bin/bash -c "chmod u+x ./.ci/install.sh && ./.ci/install.sh"
-  
+          ls -al $HOME
+          echo "$HOME/riscv/bin" >> $GITHUB_PATH
+
       # Run software fremwork tests
       - name: '▶️ Run SW Tests'
         run: |
           ls -al
           ls -al ./riscv/bin
+          riscv32-unknown-elf-gcc -v
           /bin/bash -c "chmod u+x ./.ci/sw_check.sh && ./.ci/sw_check.sh"  
 
       # Run hardware tests
