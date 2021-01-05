@@ -1,6 +1,6 @@
 # Check NEORV32 software framework and test processor using cpu_test program
 
-name: 'Processor Check'
+name: 'Processor Check TEST'
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
 
       - name: '🔧 Setup RISC-V GCC'
         run: |
-          clone https://github.com/stnolting/riscv_gcc_prebuilt.git
+          git clone https://github.com/stnolting/riscv_gcc_prebuilt.git
           mkdir riscv
           tar -xzf riscv_gcc_prebuilt/data/riscv32-unknown-elf.gcc-10.1.0.rv32i.ilp32.newlib.tar.gz -C riscv/
           /bin/bash -c "chmod u+x ./.ci/install.sh && ./.ci/install.sh"
