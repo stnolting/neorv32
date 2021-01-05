@@ -12,24 +12,26 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    name: '🐧 Linux'
+    name: '🐧 Running on Ubunut'
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: 'Checkout'
+      - name: '💾 Checkout'
         uses: actions/checkout@v2
 
       # Get gcc toolchain
-      - name: 'Install RISC-V GCC Toolchain'
-        run: /bin/bash -c "chmod u+x ./.ci/install.sh && ./.ci/install.sh"
+      - name: '🔧 Setup RISC-V GCC'
+        run: |
+          /bin/bash -c "chmod u+x ./.ci/install.sh && ./.ci/install.sh"
+          echo "./risc/bin" >> $GITHUB_PATH
 
       # Get GHDL simulator
-      - name: 'Setup GHDL'
+      - name: '🔧 Setup GHDL'
         uses: ghdl/setup-ghdl-ci@nightly
         with:
           backend: gcc
 
       # Run compliance test framework
-      - name: 'Setup GHDL'
+      - name: '▶️ Run Compliance Tests'
         run: /bin/bash -c "chmod u+x ./riscv-compliance/run_compliance_test.sh && ././riscv-compliance/run_compliance_test.sh"
