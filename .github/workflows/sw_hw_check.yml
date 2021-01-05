@@ -7,7 +7,7 @@ on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
     branches:
-    - main
+    - master
     - releases/*
   pull_request:
     branches:
@@ -53,10 +53,6 @@ jobs:
       - name: '🔧 Check Environment Variables'
         run: echo $PATH
   
-      # Run software framework tests
-      - name: '▶️ Run SW Tests'
-        run: /bin/bash -c "chmod u+x ./.ci/sw_check.sh && ./.ci/sw_check.sh"
-  
-      # Run hardware fremwork tests
-      - name: '▶️ Run HW Tests'
-        run: /bin/bash -c "chmod u+x ./.ci/hw_check.sh && ./.ci/hw_check.sh"
+      # Run test
+      - name: '▶️ Tes'
+        run: /bin/bash -c "riscv32-unknown-elf-gcc -v"
