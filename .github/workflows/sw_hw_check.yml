@@ -40,7 +40,8 @@ jobs:
       # Run software fremwork tests
       - name: '▶️ Run SW Tests'
         run: |
-          g++ -v
+          ls -al
+          ls -al ./riscv/bin
           /bin/bash -c "chmod u+x ./.ci/sw_check.sh && ./.ci/sw_check.sh"  
 
       # Run hardware tests
