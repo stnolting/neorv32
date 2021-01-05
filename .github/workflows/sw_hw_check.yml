@@ -30,10 +30,9 @@ jobs:
       # Set env variables
       - name: '💻 Set environement variables'
         run: |
-          echo $PATH
+          echo $GITHUB_PATH
           echo "$HOME/riscv/bin" >> $GITHUB_PATH
-          echo "PATH=$PATH:$HOME/riscv/bin" >> $GITHUB_ENV
-          echo $PATH
+          echo $GITHUB_PATH
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: '💾 Checkout'
