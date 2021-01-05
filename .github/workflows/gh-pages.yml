@@ -27,8 +27,8 @@ jobs:
     - name: '📚 Generate Doxygen Documentation'
       uses: mattnotmitt/doxygen-action@v1.2.1
       with:
-        working-directory: './docs/doxygen_build/'
-        doxyfile-path: '../Doxyfile'
+        working-directory: '.'
+        doxyfile-path: 'docs/Doxyfile'
 
     - name: '🚀 Deploy to GitHub-Pages'
       uses: peaceiris/actions-gh-pages@v3
