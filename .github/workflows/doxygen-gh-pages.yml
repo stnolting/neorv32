@@ -24,7 +24,7 @@ jobs:
       uses: mattnotmitt/doxygen-action@v1.1.0
       with:
         # Path to Doxyfile
-        doxyfile-path: "$GITHUB_WORKSPACE/docs/doxygen_makefile_sw" # default is ./Doxyfile
+        doxyfile-path: "$GITHUB_WORKSPACE/docs/Doxyfile" # default is ./Doxyfile
         # Working directory
         working-directory: "$GITHUB_WORKSPACE/docs/doxygen_build" # default is .
     
