@@ -45,7 +45,10 @@ jobs:
   
       # Run software fremwork tests
       - name: '▶️ Run SW Tests'
-        run: /bin/bash -c "chmod u+x ./.ci/sw_check.sh && ./.ci/sw_check.sh"  
+        run: |
+          gcc -v
+          g++ -v
+          /bin/bash -c "chmod u+x ./.ci/sw_check.sh && ./.ci/sw_check.sh"  
 
       # Run hardware tests
       - name: '▶️ Run HW Tests'
