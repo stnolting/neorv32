@@ -27,13 +27,6 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
 
-      # Set env variables
-      - name: '💻 Set environement variables'
-        run: |
-          echo $GITHUB_PATH
-          echo "$HOME/riscv/bin" >> $GITHUB_PATH
-          echo $GITHUB_PATH
-
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: '💾 Checkout'
         uses: actions/checkout@v2
@@ -42,6 +35,14 @@ jobs:
       - name: '🔧 Setup RISC-V GCC'
         run: |
           /bin/bash -c "chmod u+x ./.ci/install.sh && ./.ci/install.sh"
+          ls -al
+          ls -al riscv
+          echo $GITHUB_PATH
+          echo $PATH
+          echo "$HOME/riscv/bin" >> $GITHUB_PATH
+          echo "home/runner/riscv/bin" >> $GITHUB_PATH
+          echo $GITHUB_PATH
+          echo $PATH
 
       # Run software fremwork tests
       - name: '▶️ Run SW Tests'
