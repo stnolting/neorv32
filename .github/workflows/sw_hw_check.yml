@@ -31,23 +31,6 @@ jobs:
       - name: '🔧 Setup Environment Variables'
         run: echo "$HOME/riscv/bin" >> $GITHUB_PATH
 
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: '💾 Checkout'
-        uses: actions/checkout@v2
-
       # Get gcc toolchain
-      - name: '🔧 Setup RISC-V GCC'
-        run: |
-          echo $PATH
-          /bin/bash -c "chmod u+x ./.ci/install.sh && ./.ci/install.sh"
-
-      # Run software framework tests
-      - name: '▶️ Run SW Tests'
-        run: |
-          echo $PATH
-          riscv32-unknown-elf-gcc -v
-          /bin/bash -c "chmod u+x ./.ci/sw_check.sh && ./.ci/sw_check.sh"  
-
-      # Run hardware tests
-      - name: '▶️ Run HW Tests'
-        run: /bin/bash -c "chmod u+x ./.ci/hw_check.sh && ./.ci/hw_check.sh"
+      - name: '🔧 Check Environment Variables'
+        run: echo $PATH
