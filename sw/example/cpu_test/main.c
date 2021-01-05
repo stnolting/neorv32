@@ -413,7 +413,7 @@ int main() {
 
   // make sure there was a timeout
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) {
-    neorv32_uart_printf("~%u cycles ", trap_timestamp32-178); // remove trap handler overhead - empiric value ;)
+    neorv32_uart_printf("~%u cycles ", trap_timestamp32-175); // remove trap handler overhead - empiric value ;)
     test_ok();
   }
   else {
