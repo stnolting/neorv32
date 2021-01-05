@@ -18,16 +18,15 @@ jobs:
 
     - name: '🛠️ Modifying Doxyfile'
       run: |
-        rm -rf $GITHUB_WORKSPACE/docs/doxygen_build
-        mkdir $GITHUB_WORKSPACE/docs/doxygen_build
+        /bin/bash -c "rm -rf $GITHUB_WORKSPACE/docs/doxygen_build && mkdir $GITHUB_WORKSPACE/docs/doxygen_build"
         ls -al ./docs
-        sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' $GITHUB_WORKSPACE/docs/Doxyfile
+        /bin/bash -c "sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' $(GITHUB_WORKSPACE)/docs/Doxyfile"
 
     - name: '📚 Generate Doxygen Documentation'
       uses: mattnotmitt/doxygen-action@v1.2.1
       with:
         working-directory: 'docs/doxygen_build/'
-        doxyfile-path: 'docs/Doxygen'
+        doxyfile-path: '../Doxyfile'
 
     - name: '🚀 Deploy to GitHub-Pages'
       uses: peaceiris/actions-gh-pages@v3
