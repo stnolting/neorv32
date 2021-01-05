@@ -19,8 +19,9 @@ jobs:
 
     - name: '🛠️ Modifying Doxyfile'
       run: |
-        /bin/bash -c "rm -rf $GITHUB_WORKSPACE/docs/doxygen_build && mkdir $GITHUB_WORKSPACE/docs/doxygen_build"
+        mkdir $(GITHUB_WORKSPACE)/docs/doxygen_build"
         ls -al ./docs
+        ls -al $(GITHUB_WORKSPACE)
         sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' $(GITHUB_WORKSPACE)/docs/Doxyfile
 
     - name: '📚 Generate Doxygen Documentation'
