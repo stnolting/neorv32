@@ -52,7 +52,7 @@ jobs:
       # Get gcc toolchain
       - name: '🔧 Check Environment Variables'
         run: echo $PATH
-  
-      # Run test
-      - name: '▶️ Tes'
-        run: /bin/bash -c "riscv32-unknown-elf-gcc -v"
+
+      # Run software framework tests
+      - name: '▶️ Run SW Tests'
+        run: /bin/bash -c "chmod u+x ./.ci/sw_check.sh && ./.ci/sw_check.sh"
