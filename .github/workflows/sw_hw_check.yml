@@ -31,22 +31,10 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: '💾 Checkout'
         uses: actions/checkout@v2
-
-      # Get gcc toolchain
-      - name: '🔧 Setup RISC-V GCC'
-        run: |
-          /bin/bash -c "chmod u+x ./.ci/install.sh && ./.ci/install.sh"
-
-      # Get GHDL simulator
-      - name: '🔧 Setup GHDL'
-        uses: ghdl/setup-ghdl-ci@nightly
-        with:
-          backend: gcc
   
       # Run software fremwork tests
       - name: '▶️ Run SW Tests'
         run: |
-          gcc -v
           g++ -v
           /bin/bash -c "chmod u+x ./.ci/sw_check.sh && ./.ci/sw_check.sh"  
 
