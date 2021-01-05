@@ -3,13 +3,6 @@
 name: 'Processor Check'
 
 on:
-  push:
-    branches:
-    - master
-    - releases/*
-  pull_request:
-    branches:
-    - master
   workflow_dispatch:
 
 jobs:
