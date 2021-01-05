@@ -27,9 +27,21 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
 
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: '💾 Checkout'
+        uses: actions/checkout@v2
+
       # Setup system env variables
       - name: '🔧 Setup Environment Variables'
-        run: echo "$HOME/riscv/bin" >> $GITHUB_PATH
+        run: |
+          echo "$GITHUB_WORKSPACE/riscv/bin" >> $GITHUB_PATH
+          echo $GITHUB_WORKSPACE
+
+      # Get gcc toolchain
+      - name: '🔧 Setup RISC-V GCC'
+        run: |
+          /bin/bash -c "chmod u+x ./.ci/install.sh && ./.ci/install.sh"
+          echo $GITHUB_WORKSPACE
 
       # Get gcc toolchain
       - name: '🔧 Check Environment Variables'
