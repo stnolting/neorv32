@@ -19,7 +19,10 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-        
+
+    - name: '🛠️ Modifying Doxyfile'
+      run: sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' $GITHUB_WORKSPACE/docs/Doxyfile
+
     - name: '📚 Generate Doxygen Documentation'
       uses: mattnotmitt/doxygen-action@v1.1.0
       with:
@@ -27,7 +30,7 @@ jobs:
         doxyfile-path: "$GITHUB_WORKSPACE/docs/Doxyfile" # default is ./Doxyfile
         # Working directory
         working-directory: "$GITHUB_WORKSPACE/docs/doxygen_build" # default is .
-    
+
     - name: '🚀 Deploy to GitHub-Pages'
       uses: peaceiris/actions-gh-pages@v3
       with:
