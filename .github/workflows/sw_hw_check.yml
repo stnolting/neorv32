@@ -31,9 +31,8 @@ jobs:
       # Get native gcc toolchain
       - name: '🔧 Setup native GCC'
         run: |
-          sudo apt update
-          sudo apt install gcc-10 g++-10
-          shell: bash
+          gcc -v
+          g++ -v
 
       # Get gcc toolchain
       - name: '🔧 Setup RISC-V GCC'
