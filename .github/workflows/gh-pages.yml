@@ -20,22 +20,19 @@ jobs:
       run: |
         rm -rf $GITHUB_WORKSPACE/docs/doxygen_build
         mkdir $GITHUB_WORKSPACE/docs/doxygen_build
-        ls -al
-        ls -al $GITHUB_WORKSPACE/docs
-        ls -al $GITHUB_WORKSPACE/docs/Doxyfile
-        ls -al ./docs/doxygen_build
+        ls -al ./docs
         sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' $GITHUB_WORKSPACE/docs/Doxyfile
 
     - name: '📚 Generate Doxygen Documentation'
       uses: mattnotmitt/doxygen-action@v1.2.1
       with:
         # Path to Doxyfile
-        doxyfile-path: "$(GITHUB_WORKSPACE)/docs/Doxyfile" # default is ./Doxyfile
+        doxyfile-path: "./docs/Doxyfile" # default is ./Doxyfile
         # Working directory
-        working-directory: "$(GITHUB_WORKSPACE)/docs/doxygen_build" # default is .
+        working-directory: "./docs/doxygen_build" # default is .
 
     - name: '🚀 Deploy to GitHub-Pages'
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: "$(GITHUB_WORKSPACE)/docs/doxygen_build/html"
+        publish_dir: "./docs/doxygen_build/html"
