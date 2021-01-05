@@ -21,6 +21,8 @@ jobs:
       run: |
         ls -al ./docs
         ls -al $(GITHUB_WORKSPACE)
+        sed -i 's/$(PWD)\/../$(TRAVIS_BUILD_DIR)/g' $(GITHUB_WORKSPACE)/docs/Doxyfile
+        cat $(GITHUB_WORKSPACE)/docs/Doxyfile
 
     - name: '📚 Generate Doxygen Documentation'
       uses: mattnotmitt/doxygen-action@v1.2.1
@@ -32,4 +34,4 @@ jobs:
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs/doxygen_build/html
+        publish_dir: ./html
