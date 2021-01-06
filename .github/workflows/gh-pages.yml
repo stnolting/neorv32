@@ -1,10 +1,12 @@
+# Generate doxygen-based documentation and deploy it to neorv32 github-pages
+
 name: 'Deploy SW Framework Documentation to GitHub-Pages'
 
 on:
   push:
     branches: [ master ]
   workflow_dispatch:
-  
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
