@@ -83,11 +83,13 @@ all the [provided example programs](https://github.com/stnolting/neorv32/tree/ma
 The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/privilege` and `rv32_m/Zifencei`
 [RISC-V compliance tests (new framework v2)](https://github.com/riscv/riscv-compliance). 
 
-| Project component | CI status | Note     |
-|:----------------- |:----------|:---------|
-| [NEORV32 processor](https://github.com/stnolting/neorv32) | [![Processor Check](https://github.com/stnolting/neorv32/workflows/Processor%20Check/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22Processor+Check%22) | [![sw doc](https://img.shields.io/badge/SW%20documentation-gh--pages-blue)](https://stnolting.github.io/neorv32/files.html) |
-| [Pre-built toolchain](https://github.com/stnolting/riscv_gcc_prebuilt) | [![Test Toolchains](https://github.com/stnolting/riscv_gcc_prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv_gcc_prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) | |
-| RISC-V compliance test | [![RISC-V Compliance](https://github.com/stnolting/neorv32/workflows/RISC-V%20Compliance/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22RISC-V+Compliance%22) | See [riscv-compliance/README.md](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md) |
+| Project component | CI status |
+|:----------------- |:----------|
+| [NEORV32 processor](https://github.com/stnolting/neorv32)                                             | [![Processor Check](https://github.com/stnolting/neorv32/workflows/Processor%20Check/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22Processor+Check%22) |
+| [SW Framework Documentation (online)](https://stnolting.github.io/neorv32/files.html)                 | [![Doc@GitHub-pages](https://github.com/stnolting/neorv32/workflows/Deploy%20SW%20Framework%20Documentation%20to%20GitHub-Pages/badge.svg)](https://stnolting.github.io/neorv32/files.html) |
+| [Pre-built toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)                                | [![Test Toolchains](https://github.com/stnolting/riscv_gcc_prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv_gcc_prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) |
+| [RISC-V compliance test](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md) | [![RISC-V Compliance](https://github.com/stnolting/neorv32/workflows/RISC-V%20Compliance/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22RISC-V+Compliance%22) |
+
 
 
 ### To-Do / Wish List / Help Wanted
@@ -529,33 +531,33 @@ uses the following default UART configuration:
 Use the bootloader console to upload the `neorv32_exe.bin` executable and run your application image.
 
 ```
-  << NEORV32 Bootloader >>
-  
-  BLDV: Nov  7 2020
-  HWV:  0x01040606
-  CLK:  0x0134FD90 Hz
-  USER: 0x0001CE40
-  MISA: 0x42801104
-  PROC: 0x03FF0035
-  IMEM: 0x00010000 bytes @ 0x00000000
-  DMEM: 0x00010000 bytes @ 0x80000000
-  
-  Autoboot in 8s. Press key to abort.
-  Aborted.
-  
-  Available CMDs:
-   h: Help
-   r: Restart
-   u: Upload
-   s: Store to flash
-   l: Load from flash
-   e: Execute
-  CMD:> u
-  Awaiting neorv32_exe.bin... OK
-  CMD:> e
-  Booting...
-  
-  Blinking LED demo program
+<< NEORV32 Bootloader >>
+
+BLDV: Nov  7 2020
+HWV:  0x01040606
+CLK:  0x0134FD90 Hz
+USER: 0x0001CE40
+MISA: 0x42801104
+PROC: 0x03FF0035
+IMEM: 0x00010000 bytes @ 0x00000000
+DMEM: 0x00010000 bytes @ 0x80000000
+
+Autoboot in 8s. Press key to abort.
+Aborted.
+
+Available CMDs:
+ h: Help
+ r: Restart
+ u: Upload
+ s: Store to flash
+ l: Load from flash
+ e: Execute
+CMD:> u
+Awaiting neorv32_exe.bin... OK
+CMD:> e
+Booting...
+
+Blinking LED demo program
 ```
 
 Going further: Take a look at the _Let's Get It Started!_ chapter of the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
