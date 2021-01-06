@@ -5,14 +5,19 @@ name: 'Deploy SW Framework Documentation to GitHub-Pages'
 on:
   push:
     branches: [ master ]
+    paths:
+    - 'sw/**'
+  pull_request:
+    branches: [ master ]
+    paths:
+    - 'sw/**'
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    name: '🐧 Ubuntu-Latest'
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
