@@ -142,7 +142,6 @@ int main() {
 
   neorv32_uart_printf("\n--- PROCESSOR/CPU TEST ---\n");
   neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
-  neorv32_uart_printf("This test suite is intended to verify the default NEORV32 processor setup using the default testbench.\n\n");
 
   // check if we came from hardware reset
   neorv32_uart_printf("Coming from hardware reset? ");
@@ -152,6 +151,9 @@ int main() {
   else {
     neorv32_uart_printf("unknown (mcause != TRAP_CODE_RESET)\n");
   }
+
+  // check available hardware extensions and compare with compiler flags
+  neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
 
   // reset performance counter
