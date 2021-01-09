@@ -314,6 +314,9 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<CSR_MZEXT_ZIFENCEI)) {
     neorv32_uart_printf("Zifencei ");
   }
+  if (tmp & (1<<CSR_MZEXT_ZBB)) {
+    neorv32_uart_printf("Zbb ");
+  }
 
   // check physical memory protection
   neorv32_uart_printf("\nPMP:               ");
@@ -594,5 +597,73 @@ void neorv32_rte_print_license(void) {
   "\n"
   "\n"
   );
+}
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Get MISA CSR value according to *compiler/toolchain configuration*.
+ *
+ * @return MISA content according to compiler configuration.
+ **************************************************************************/
+uint32_t neorv32_rte_get_compiler_isa(void) {
+
+  uint32_t misa_cc = 0;
+
+#ifdef __riscv_atomic
+  misa_cc |= 1 << CSR_MISA_A_EXT;
+#endif
+
+#ifdef __riscv_compressed
+  misa_cc |= 1 << CSR_MISA_C_EXT;
+#endif
+
+#ifdef __riscv_32e
+  misa_cc |= 1 << CSR_MISA_E_EXT;
+#else
+  misa_cc |= 1 << CSR_MISA_I_EXT;
+#endif
+
+#ifdef __riscv_mul
+  misa_cc |= 1 << CSR_MISA_M_EXT;
+#endif
+
+#if (__riscv_xlen == 32)
+  misa_cc |= 1 << CSR_MISA_MXL_LO_EXT;
+#elif (__riscv_xlen == 64)
+  misa_cc |= 2 << CSR_MISA_MXL_LO_EXT;
+#else
+  misa_cc |= 3 << CSR_MISA_MXL_LO_EXT;
+#endif
+
+  return misa_cc;
+}
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Check required ISA extensions (via compiler flags) against available ISA extensions (via MISA csr).
+ *
+ * @param[in] silent Show error message (via neorv32.uart) if isa_sw > isa_hw when != 0.
+ * @return MISA content according to compiler configuration.
+ **************************************************************************/
+int neorv32_rte_check_isa(int silent) {
+
+  uint32_t misa_sw = neorv32_rte_get_compiler_isa();
+  uint32_t misa_hw = neorv32_cpu_csr_read(CSR_MISA);
+
+  // mask hardware features that are not used by software
+  uint32_t check = misa_hw & misa_sw;
+
+  //
+  if (check == misa_sw) {
+    return 0;
+  }
+  else {
+    if (silent == 0) {
+      neorv32_uart_printf("\nWARNING! SW_ISA (features required) vs HW_ISA (features available) mismatch!\n"
+                          "SW_ISA = 0x%x (compiler flags)\n"
+                          "HW_ISA = 0x%x (misa csr)\n\n", misa_sw, misa_hw);
+    }
+    return 1;
+  }
 }
 
