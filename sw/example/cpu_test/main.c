@@ -140,7 +140,7 @@ int main() {
   return 0;
 #endif
 
-  neorv32_uart_printf("\n--- PROCESSOR/CPU TEST ---\n");
+  neorv32_uart_printf("\n<< PROCESSOR/CPU TEST >>\n");
   neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
 
   // check if we came from hardware reset
@@ -1211,7 +1211,7 @@ int main() {
   // Test RTE debug trap handler
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] RTE (runtime environment) debug trap handler test: ", cnt_test);
+  neorv32_uart_printf("[%i] RTE (runtime env.) debug trap handler test: ", cnt_test);
 
   cnt_test++;
 
