@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - CPU Co-Processor: MULDIV unit >>                                                 #
+-- # << NEORV32 - CPU Co-Processor: MULDIV unit (RISC-V "M" Extension)>>                           #
 -- # ********************************************************************************************* #
 -- # Multiplier and Divider unit. Implements the RISC-V RV32-M CPU extension.                      #
 -- # Multiplier core (signed/unsigned) uses serial algorithm. -> 32+4 cycles latency               #
@@ -8,7 +8,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -67,6 +67,16 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
 
   -- advanced configuration --
   constant dsp_add_reg_stage_c : boolean := false; -- add another register stage to DSP-based multiplication for timing-closure
+
+  -- operations --
+  constant cp_op_mul_c    : std_ulogic_vector(2 downto 0) := "000"; -- mul
+  constant cp_op_mulh_c   : std_ulogic_vector(2 downto 0) := "001"; -- mulh
+  constant cp_op_mulhsu_c : std_ulogic_vector(2 downto 0) := "010"; -- mulhsu
+  constant cp_op_mulhu_c  : std_ulogic_vector(2 downto 0) := "011"; -- mulhu
+  constant cp_op_div_c    : std_ulogic_vector(2 downto 0) := "100"; -- div
+  constant cp_op_divu_c   : std_ulogic_vector(2 downto 0) := "101"; -- divu
+  constant cp_op_rem_c    : std_ulogic_vector(2 downto 0) := "110"; -- rem
+  constant cp_op_remu_c   : std_ulogic_vector(2 downto 0) := "111"; -- remu
 
   -- controller --
   type state_t is (IDLE, DECODE, INIT_OPX, INIT_OPY, PROCESSING, FINALIZE, COMPLETED, FAST_MUL);
