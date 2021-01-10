@@ -70,7 +70,7 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY              => 100000000,   -- clock frequency of clk_i in Hz
-    BOOTLOADER_USE               => true,        -- implement processor-internal bootloader?
+    BOOTLOADER_EN                => true,        -- implement processor-internal bootloader?
     USER_CODE                    => x"00000000", -- custom user code
     HW_THREAD_ID                 => x"00000000", -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
@@ -91,29 +91,29 @@ begin
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 => 2,           -- number of inmplemnted HPM counters (0..29)
     -- Internal Instruction memory --
-    MEM_INT_IMEM_USE             => true,        -- implement processor-internal instruction memory
+    MEM_INT_IMEM_EN              => true,        -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => 16*1024,     -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM             => false,       -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
-    MEM_INT_DMEM_USE             => true,        -- implement processor-internal data memory
+    MEM_INT_DMEM_EN              => true,        -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => 8*1024,      -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_USE                   => false,       -- implement instruction cache
+    ICACHE_EN                    => false,       -- implement instruction cache
     ICACHE_NUM_BLOCKS            => 4,           -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            => 64,          -- i-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface --
-    MEM_EXT_USE                  => false,       -- implement external memory bus interface?
+    MEM_EXT_EN                   => false,       -- implement external memory bus interface?
     -- Processor peripherals --
-    IO_GPIO_USE                  => true,        -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE                 => true,        -- implement machine system timer (MTIME)?
-    IO_UART_USE                  => true,        -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                   => false,       -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                   => false,       -- implement two-wire interface (TWI)?
-    IO_PWM_USE                   => false,       -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                   => true,        -- implement watch dog timer (WDT)?
-    IO_TRNG_USE                  => false,       -- implement true random number generator (TRNG)?
-    IO_CFU0_USE                  => false,       -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_USE                  => false        -- implement custom functions unit 1 (CFU1)?
+    IO_GPIO_EN                   => true,        -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN                  => true,        -- implement machine system timer (MTIME)?
+    IO_UART_EN                   => true,        -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_EN                    => false,       -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN                    => false,       -- implement two-wire interface (TWI)?
+    IO_PWM_EN                    => false,       -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_EN                    => true,        -- implement watch dog timer (WDT)?
+    IO_TRNG_EN                   => false,       -- implement true random number generator (TRNG)?
+    IO_CFU0_EN                   => false,       -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_EN                   => false        -- implement custom functions unit 1 (CFU1)?
   )
   port map (
     -- Global control --
@@ -150,10 +150,10 @@ begin
     twi_scl_io  => open,            -- twi serial clock line
     -- PWM --
     pwm_o       => open,            -- pwm channels
-    -- system time input from external MTIME (available if IO_MTIME_USE = false) --
+    -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     => (others => '0'), -- current system time
     -- Interrupts --
-    mtime_irq_i => '0',             -- machine timer interrupt, available if IO_MTIME_USE = false
+    mtime_irq_i => '0',             -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => '0',             -- machine software interrupt
     mext_irq_i  => '0'              -- machine external interrupt
   );

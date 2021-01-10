@@ -55,7 +55,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!)= -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040910"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050000"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -736,7 +736,7 @@ package neorv32_package is
     generic (
       -- General --
       CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
-      BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
+      BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
       USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
       HW_THREAD_ID                 : std_ulogic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
       -- RISC-V CPU Extensions --
@@ -757,29 +757,29 @@ package neorv32_package is
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS                 : natural := 0;      -- number of inmplemnted HPM counters (0..29)
       -- Internal Instruction memory --
-      MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
+      MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
       MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
       -- Internal Data memory --
-      MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
+      MEM_INT_DMEM_EN              : boolean := true;   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
       -- Internal Cache memory --
-      ICACHE_USE                   : boolean := false;  -- implement instruction cache
+      ICACHE_EN                    : boolean := false;  -- implement instruction cache
       ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
       ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
       -- External memory interface --
-      MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
+      MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
       -- Processor peripherals --
-      IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-      IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
-      IO_UART_USE                  : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-      IO_SPI_USE                   : boolean := true;   -- implement serial peripheral interface (SPI)?
-      IO_TWI_USE                   : boolean := true;   -- implement two-wire interface (TWI)?
-      IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-      IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
-      IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-      IO_CFU0_USE                  : boolean := false;  -- implement custom functions unit 0 (CFU0)?
-      IO_CFU1_USE                  : boolean := false   -- implement custom functions unit 1 (CFU1)?
+      IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+      IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
+      IO_UART_EN                   : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+      IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
+      IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
+      IO_PWM_EN                    : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+      IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
+      IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
+      IO_CFU0_EN                   : boolean := false;  -- implement custom functions unit 0 (CFU0)?
+      IO_CFU1_EN                   : boolean := false   -- implement custom functions unit 1 (CFU1)?
     );
     port (
       -- Global control --
@@ -797,7 +797,7 @@ package neorv32_package is
       wb_lock_o   : out std_ulogic; -- locked/exclusive bus access
       wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
       wb_err_i    : in  std_ulogic := '0'; -- transfer error
-      -- Advanced memory control signals (available if MEM_EXT_USE = true) --
+      -- Advanced memory control signals (available if MEM_EXT_EN = true) --
       fence_o     : out std_ulogic; -- indicates an executed FENCE operation
       fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
       -- GPIO --
@@ -816,10 +816,10 @@ package neorv32_package is
       twi_scl_io  : inout std_logic; -- twi serial clock line
       -- PWM --
       pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
-      -- system time input from external MTIME (available if IO_MTIME_USE = false) --
+      -- system time input from external MTIME (available if IO_MTIME_EN = false) --
       mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
       -- Interrupts --
-      mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_USE = false
+      mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
       msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
       mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
     );
@@ -1222,7 +1222,7 @@ package neorv32_package is
       IMEM_BASE      : std_ulogic_vector(31 downto 0) := x"00000000"; -- memory base address
       IMEM_SIZE      : natural := 4*1024; -- processor-internal instruction memory size in bytes
       IMEM_AS_ROM    : boolean := false;  -- implement IMEM as read-only memory?
-      BOOTLOADER_USE : boolean := true    -- implement and use bootloader?
+      BOOTLOADER_EN  : boolean := true    -- implement and use bootloader?
     );
     port (
       clk_i  : in  std_ulogic; -- global clock line
@@ -1445,10 +1445,10 @@ package neorv32_package is
     generic (
       WB_PIPELINED_MODE : boolean := false; -- false: classic/standard wishbone mode, true: pipelined wishbone mode
       -- Internal instruction memory --
-      MEM_INT_IMEM_USE  : boolean := true;   -- implement processor-internal instruction memory
+      MEM_INT_IMEM_EN   : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
       -- Internal data memory --
-      MEM_INT_DMEM_USE  : boolean := true;   -- implement processor-internal data memory
+      MEM_INT_DMEM_EN   : boolean := true;   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE : natural := 4*1024  -- size of processor-internal data memory in bytes
     );
     port (
@@ -1531,33 +1531,33 @@ package neorv32_package is
     generic (
       -- General --
       CLOCK_FREQUENCY      : natural := 0;      -- clock frequency of clk_i in Hz
-      BOOTLOADER_USE       : boolean := true;   -- implement processor-internal bootloader?
+      BOOTLOADER_EN        : boolean := true;   -- implement processor-internal bootloader?
       USER_CODE            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
       -- Internal Instruction memory --
-      MEM_INT_IMEM_USE     : boolean := true;   -- implement processor-internal instruction memory
+      MEM_INT_IMEM_EN      : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE    : natural := 8*1024; -- size of processor-internal instruction memory in bytes
       MEM_INT_IMEM_ROM     : boolean := false;  -- implement processor-internal instruction memory as ROM
       -- Internal Data memory --
-      MEM_INT_DMEM_USE     : boolean := true;   -- implement processor-internal data memory
+      MEM_INT_DMEM_EN      : boolean := true;   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE    : natural := 4*1024; -- size of processor-internal data memory in bytes
       -- Internal Cache memory --
-      ICACHE_USE           : boolean := true;   -- implement instruction cache
+      ICACHE_EN            : boolean := true;   -- implement instruction cache
       ICACHE_NUM_BLOCKS    : natural := 4;      -- i-cache: number of blocks (min 2), has to be a power of 2
       ICACHE_BLOCK_SIZE    : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
       ICACHE_ASSOCIATIVITY : natural := 1;      -- i-cache: associativity (min 1), has to be a power 2
       -- External memory interface --
-      MEM_EXT_USE          : boolean := false;  -- implement external memory bus interface?
+      MEM_EXT_EN           : boolean := false;  -- implement external memory bus interface?
       -- Processor peripherals --
-      IO_GPIO_USE          : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-      IO_MTIME_USE         : boolean := true;   -- implement machine system timer (MTIME)?
-      IO_UART_USE          : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-      IO_SPI_USE           : boolean := true;   -- implement serial peripheral interface (SPI)?
-      IO_TWI_USE           : boolean := true;   -- implement two-wire interface (TWI)?
-      IO_PWM_USE           : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-      IO_WDT_USE           : boolean := true;   -- implement watch dog timer (WDT)?
-      IO_TRNG_USE          : boolean := true;   -- implement true random number generator (TRNG)?
-      IO_CFU0_USE          : boolean := true;   -- implement custom functions unit 0 (CFU0)?
-      IO_CFU1_USE          : boolean := true    -- implement custom functions unit 1 (CFU1)?
+      IO_GPIO_EN           : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+      IO_MTIME_EN          : boolean := true;   -- implement machine system timer (MTIME)?
+      IO_UART_EN           : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+      IO_SPI_EN            : boolean := true;   -- implement serial peripheral interface (SPI)?
+      IO_TWI_EN            : boolean := true;   -- implement two-wire interface (TWI)?
+      IO_PWM_EN            : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+      IO_WDT_EN            : boolean := true;   -- implement watch dog timer (WDT)?
+      IO_TRNG_EN           : boolean := true;   -- implement true random number generator (TRNG)?
+      IO_CFU0_EN           : boolean := true;   -- implement custom functions unit 0 (CFU0)?
+      IO_CFU1_EN           : boolean := true    -- implement custom functions unit 1 (CFU1)?
     );
     port (
       -- host access --

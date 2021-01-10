@@ -43,7 +43,7 @@ entity neorv32_top_stdlogic is
   generic (
     -- General --
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
-    BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
+    BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
     USER_CODE                    : std_logic_vector(31 downto 0) := x"00000000"; -- custom user code
     HW_THREAD_ID                 : std_logic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
@@ -64,35 +64,35 @@ entity neorv32_top_stdlogic is
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 : natural := 0;      -- number of inmplemnted HPM counters (0..29)
     -- Internal Instruction memory --
-    MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
-    MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
+    MEM_INT_DMEM_EN              : boolean := true;   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_USE                   : boolean := false;  -- implement instruction cache
+    ICACHE_EN                    : boolean := false;  -- implement instruction cache
     ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface --
-    MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
+    MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
     -- Processor peripherals --
-    IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
-    IO_UART_USE                  : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                   : boolean := true;   -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                   : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
-    IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-    IO_CFU0_USE                  : boolean := false;  -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_USE                  : boolean := false   -- implement custom functions unit 1 (CFU1)?
+    IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
+    IO_UART_EN                   : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
+    IO_PWM_EN                    : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
+    IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
+    IO_CFU0_EN                   : boolean := false;  -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_EN                   : boolean := false   -- implement custom functions unit 1 (CFU1)?
   );
   port (
     -- Global control --
     clk_i       : in  std_logic := '0'; -- global clock, rising edge
     rstn_i      : in  std_logic := '0'; -- global reset, low-active, async
-    -- Wishbone bus interface (available if MEM_EXT_USE = true) --
+    -- Wishbone bus interface (available if MEM_EXT_EN = true) --
     wb_tag_o    : out std_logic_vector(2 downto 0); -- tag
     wb_adr_o    : out std_logic_vector(31 downto 0); -- address
     wb_dat_i    : in  std_logic_vector(31 downto 0) := (others => '0'); -- read data
@@ -104,29 +104,29 @@ entity neorv32_top_stdlogic is
     wb_lock_o   : out std_logic; -- locked/exclusive bus access
     wb_ack_i    : in  std_logic := '0'; -- transfer acknowledge
     wb_err_i    : in  std_logic := '0'; -- transfer error
-    -- Advanced memory control signals (available if MEM_EXT_USE = true) --
+    -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o     : out std_logic; -- indicates an executed FENCE operation
     fencei_o    : out std_logic; -- indicates an executed FENCEI operation
-    -- GPIO (available if IO_GPIO_USE = true) --
+    -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      : out std_logic_vector(31 downto 0); -- parallel output
     gpio_i      : in  std_logic_vector(31 downto 0) := (others => '0'); -- parallel input
-    -- UART (available if IO_UART_USE = true) --
+    -- UART (available if IO_UART_EN = true) --
     uart_txd_o  : out std_logic; -- UART send data
     uart_rxd_i  : in  std_logic := '0'; -- UART receive data
-    -- SPI (available if IO_SPI_USE = true) --
+    -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   : out std_logic; -- SPI serial clock
     spi_sdo_o   : out std_logic; -- controller data out, peripheral data in
     spi_sdi_i   : in  std_logic := '0'; -- controller data in, peripheral data out
     spi_csn_o   : out std_logic_vector(07 downto 0); -- SPI CS
-    -- TWI (available if IO_TWI_USE = true) --
+    -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  : inout std_logic; -- twi serial data line
     twi_scl_io  : inout std_logic; -- twi serial clock line
-    -- PWM (available if IO_PWM_USE = true) --
+    -- PWM (available if IO_PWM_EN = true) --
     pwm_o       : out std_logic_vector(03 downto 0); -- pwm channels
-    -- system time input from external MTIME (available if IO_MTIME_USE = false) --
+    -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     : in  std_logic_vector(63 downto 0) := (others => '0'); -- current system time
     -- Interrupts --
-    mtime_irq_i : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_USE = false
+    mtime_irq_i : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   : in  std_logic := '0'; -- machine software interrupt
     mext_irq_i  : in  std_logic := '0'  -- machine external interrupt
   );
@@ -183,7 +183,7 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,    -- clock frequency of clk_i in Hz
-    BOOTLOADER_USE               => BOOTLOADER_USE,     -- implement processor-internal bootloader?
+    BOOTLOADER_EN                => BOOTLOADER_EN,      -- implement processor-internal bootloader?
     USER_CODE                    => USER_CODE_INT,      -- custom user code
     HW_THREAD_ID                 => HW_THREAD_ID_INT,   -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
@@ -204,29 +204,29 @@ begin
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 => HPM_NUM_CNTS,       -- number of inmplemnted HPM counters (0..29)
     -- Internal Instruction memory --
-    MEM_INT_IMEM_USE             => MEM_INT_IMEM_USE,   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_EN              => MEM_INT_IMEM_EN,    -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE,  -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM             => MEM_INT_IMEM_ROM,   -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
-    MEM_INT_DMEM_USE             => MEM_INT_DMEM_USE,   -- implement processor-internal data memory
+    MEM_INT_DMEM_EN              => MEM_INT_DMEM_EN,    -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE,  -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_USE                   => ICACHE_USE,         -- implement instruction cache
+    ICACHE_EN                    => ICACHE_EN,          -- implement instruction cache
     ICACHE_NUM_BLOCKS            => ICACHE_NUM_BLOCKS,  -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            => ICACHE_BLOCK_SIZE,  -- i-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface --
-    MEM_EXT_USE                  => MEM_EXT_USE,        -- implement external memory bus interface?
+    MEM_EXT_EN                   => MEM_EXT_EN,         -- implement external memory bus interface?
     -- Processor peripherals --
-    IO_GPIO_USE                  => IO_GPIO_USE,        -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE                 => IO_MTIME_USE,       -- implement machine system timer (MTIME)?
-    IO_UART_USE                  => IO_UART_USE,        -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                   => IO_SPI_USE,         -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                   => IO_TWI_USE,         -- implement two-wire interface (TWI)?
-    IO_PWM_USE                   => IO_PWM_USE,         -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                   => IO_WDT_USE,         -- implement watch dog timer (WDT)?
-    IO_TRNG_USE                  => IO_TRNG_USE,        -- implement true random number generator (TRNG)?
-    IO_CFU0_USE                  => IO_CFU0_USE,        -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_USE                  => IO_CFU1_USE         -- implement custom functions unit 1 (CFU1)?
+    IO_GPIO_EN                   => IO_GPIO_EN,         -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN                  => IO_MTIME_EN,        -- implement machine system timer (MTIME)?
+    IO_UART_EN                   => IO_UART_EN,         -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_EN                    => IO_SPI_EN,          -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN                    => IO_TWI_EN,          -- implement two-wire interface (TWI)?
+    IO_PWM_EN                    => IO_PWM_EN,          -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_EN                    => IO_WDT_EN,          -- implement watch dog timer (WDT)?
+    IO_TRNG_EN                   => IO_TRNG_EN,         -- implement true random number generator (TRNG)?
+    IO_CFU0_EN                   => IO_CFU0_EN,         -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_EN                   => IO_CFU1_EN          -- implement custom functions unit 1 (CFU1)?
   )
   port map (
     -- Global control --
@@ -263,10 +263,10 @@ begin
     twi_scl_io  => twi_scl_io,      -- twi serial clock line
     -- PWM --
     pwm_o       => pwm_o_int,       -- pwm channels
-    -- system time input from external MTIME (available if IO_MTIME_USE = false) --
+    -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     => mtime_i_int,     -- current system time
     -- Interrupts --
-    mtime_irq_i => mtime_irq_i_int, -- machine timer interrupt, available if IO_MTIME_USE = false
+    mtime_irq_i => mtime_irq_i_int, -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => msw_irq_i_int,   -- machine software interrupt
     mext_irq_i  => mext_irq_i_int   -- machine external interrupt
   );

@@ -18,7 +18,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -58,10 +58,10 @@ entity neorv32_wishbone is
   generic (
     WB_PIPELINED_MODE : boolean := false;  -- false: classic/standard wishbone mode, true: pipelined wishbone mode
     -- Internal instruction memory --
-    MEM_INT_IMEM_USE  : boolean := true;   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_EN   : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
     -- Internal data memory --
-    MEM_INT_DMEM_USE  : boolean := true;   -- implement processor-internal data memory
+    MEM_INT_DMEM_EN   : boolean := true;   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE : natural := 4*1024; -- size of processor-internal data memory in bytes
     -- Bus Timeout --
     BUS_TIMEOUT       : natural := 63      -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
@@ -148,8 +148,8 @@ begin
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- access to processor-internal IMEM or DMEM? --
-  int_imem_acc <= '1' when (addr_i(31 downto index_size_f(MEM_INT_IMEM_SIZE)) = imem_base_c(31 downto index_size_f(MEM_INT_IMEM_SIZE))) and (MEM_INT_IMEM_USE = true) else '0';
-  int_dmem_acc <= '1' when (addr_i(31 downto index_size_f(MEM_INT_DMEM_SIZE)) = dmem_base_c(31 downto index_size_f(MEM_INT_DMEM_SIZE))) and (MEM_INT_DMEM_USE = true) else '0';
+  int_imem_acc <= '1' when (addr_i(31 downto index_size_f(MEM_INT_IMEM_SIZE)) = imem_base_c(31 downto index_size_f(MEM_INT_IMEM_SIZE))) and (MEM_INT_IMEM_EN = true) else '0';
+  int_dmem_acc <= '1' when (addr_i(31 downto index_size_f(MEM_INT_DMEM_SIZE)) = dmem_base_c(31 downto index_size_f(MEM_INT_DMEM_SIZE))) and (MEM_INT_DMEM_EN = true) else '0';
   -- access to processor-internal BOOTROM or IO devices? --
   int_boot_acc <= '1' when (addr_i(31 downto 16) = boot_rom_base_c(31 downto 16)) else '0'; -- hacky!
   -- actual external bus access? --

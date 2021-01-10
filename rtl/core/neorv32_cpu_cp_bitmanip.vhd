@@ -127,8 +127,8 @@ begin
   --
   cmd(op_orcb_c)  <= '1' when (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") else '0';
   --
-  cmd(op_min_c)   <= '1' when (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_5_c) = "000101") and (ctrl_i(ctrl_ir_funct3_1_c) = '0') else '0';
-  cmd(op_max_c)   <= '1' when (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_5_c) = "000101") and (ctrl_i(ctrl_ir_funct3_1_c) = '1') else '0';
+  cmd(op_min_c)   <= '1' when (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_7_c downto ctrl_ir_funct12_5_c) = "101") and (ctrl_i(ctrl_ir_funct3_1_c) = '0') else '0';
+  cmd(op_max_c)   <= '1' when (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_7_c downto ctrl_ir_funct12_5_c) = "101") and (ctrl_i(ctrl_ir_funct3_1_c) = '1') else '0';
   --
   cmd(op_andn_c)  <= '1' when (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "11") else '0';
   cmd(op_orn_c)   <= '1' when (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "10") else '0';
