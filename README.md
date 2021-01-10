@@ -195,7 +195,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
 **Bit manipulation instructions** (`B` extension implying `Zbb` extension):
   * :warning: RISC-V `B` extensions is not officially ratified yet!
-  * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/blob/master/sw/example/bit_manipulation/README.md`))
+  * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
   * Only the `Zbb` base subset is supported yet
   * Supported instructions: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR` `RORI` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
 
@@ -244,7 +244,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 * The physical memory protection (**PMP**) only supports `NAPOT` mode yet and a minimal granularity of 8 bytes
 * The `A` extension only implements `lr.w` and `sc.w` instructions yet. However, these instructions are sufficient to emulate all further AMO operations
 * The `mcause` trap code `0x80000000` (originally reserved in the RISC-V specs) is used to indicate a hardware reset (as "non-maskable interrupt")
-* The bit manipulation extension is not yet officially ratified, but is expected to stay unchanged. There is no software support in the upstream GCC RISC-V port yet. However, an intrinsic library is provided to utilize the provided bit manipulation extension from C-language code (see `sw/example/bit_manipulation`). NEORV32 `B` extension is compliant to spec. version "0.94-draft".
+* The bit manipulation extension is not yet officially ratified, but is expected to stay unchanged. There is no software support in the upstream GCC RISC-V port yet. However, an intrinsic library is provided to utilize the provided bit manipulation extension from C-language code (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation)). NEORV32's `B`/`Zbb` extension is compliant to spec. version "0.94-draft".
 
 ### NEORV32-Specific CPU Extensions
 
