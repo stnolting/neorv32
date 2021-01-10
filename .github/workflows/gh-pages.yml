@@ -4,11 +4,13 @@ name: 'Deploy SW Framework Documentation to GitHub-Pages'
 
 on:
   push:
-    branches: [ master ]
+    branches:
+    - master
     paths:
     - 'sw/**'
   pull_request:
-    branches: [ master ]
+    branches:
+    - master
     paths:
     - 'sw/**'
   workflow_dispatch:

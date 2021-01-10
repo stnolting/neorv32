@@ -4,13 +4,15 @@ name: 'Processor Check'
 
 on:
   push:
-    branches: [ master ]
+    branches:
+    - master
     paths:
     - 'rtl/**'
     - 'sw/**'
     - 'sim/**'
   pull_request:
-    branches: [ master ]
+    branches:
+    - master
     paths:
     - 'rtl/**'
     - 'sw/**'
