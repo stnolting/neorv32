@@ -37,7 +37,7 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
   * Subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
 * Configurable RISC-V CPU extensions
   * `A` - atomic memory access instructions (optional)
-  * `B` - Bit manipulation instructions (optional) (not officially ratified yet!)
+  * `B` - Bit manipulation instructions (optional)
   * `C` - compressed instructions (16-bit) (optional)
   * `E` - embedded CPU (reduced register file (optional)
   * `I` - base integer instruction set (always enabled)
@@ -233,7 +233,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Additional machine CSRs: `pmpcfg*`(0..15) `pmpaddr*`(0..63)
 
 **Privileged architecture / Hardware performance monitors** (`HPM`, requires `Zicsr` extension):
-  * Configurable number of counter (0..29)
+  * Configurable number of counters (0..29)
   * Additional machine CSRs: `mhpmevent*`(3..31) `[m]hpmcounter*[h]`(3..31)
 
 
