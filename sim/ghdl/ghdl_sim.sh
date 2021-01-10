@@ -48,6 +48,7 @@ ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_alu.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_bus.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_control.vhd
+ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_cp_bitmanip.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_cp_muldiv.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_decompressor.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_regfile.vhd
