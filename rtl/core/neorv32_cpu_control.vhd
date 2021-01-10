@@ -4,7 +4,8 @@
 -- # CPU operation is split into a fetch engine (responsible for fetching instruction data), an    #
 -- # issue engine (for recoding compressed instructions and for constructing 32-bit instruction    #
 -- # words) and an execute engine (responsible for actually executing the instructions), a trap    #
--- # handling controller and the RISC-V status and control register set (CSRs).                    #
+-- # handling controller and the RISC-V status and control register set (CSRs) including the       #
+-- # hardware performance monitor counters.                                                        #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -51,6 +52,7 @@ entity neorv32_cpu_control is
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
@@ -164,6 +166,17 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     valid : std_ulogic; -- data word is valid when set
   end record;
   signal cmd_issue : cmd_issue_t;
+
+  -- instruction decoding helper logic --
+  type decode_aux_t is record
+    alu_immediate   : std_ulogic;
+    rs1_is_r0       : std_ulogic;
+    is_atomic_lr    : std_ulogic;
+    is_atomic_sc    : std_ulogic;
+    is_bitmanip_imm : std_ulogic;
+    is_bitmanip_reg : std_ulogic;
+  end record;
+  signal decode_aux : decode_aux_t;
 
   -- instruction execution engine --
   type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP, EXECUTE, ALU_WAIT, BRANCH, FENCE_OP, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, SYS_ENV, CSR_ACCESS);
@@ -721,6 +734,7 @@ begin
     ctrl_o(ctrl_bus_ierr_ack_c) <= fetch_engine.bus_err_ack;
     ctrl_o(ctrl_bus_derr_ack_c) <= trap_ctrl.env_start_ack;
     -- instruction's function blocks (for co-processors) --
+    ctrl_o(ctrl_ir_opcode7_6_c  downto ctrl_ir_opcode7_0_c) <= execute_engine.i_reg(instr_opcode_msb_c  downto instr_opcode_lsb_c);
     ctrl_o(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_0_c) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c);
     ctrl_o(ctrl_ir_funct3_2_c   downto ctrl_ir_funct3_0_c)  <= execute_engine.i_reg(instr_funct3_msb_c  downto instr_funct3_lsb_c);
     -- locked bus operation (for atomica memory operations) --
@@ -728,15 +742,68 @@ begin
   end process ctrl_output;
 
 
+  -- Decoding Helper Logic ------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  decode_helper: process(execute_engine)
+  begin
+    -- defaults --
+    decode_aux.alu_immediate   <= '0';
+    decode_aux.rs1_is_r0       <= '0';
+    decode_aux.is_atomic_lr    <= '0';
+    decode_aux.is_atomic_sc    <= '0';
+    decode_aux.is_bitmanip_imm <= '0';
+    decode_aux.is_bitmanip_reg <= '0';
+
+    -- is immediate ALU operation? --
+    decode_aux.alu_immediate <= not execute_engine.i_reg(instr_opcode_msb_c-1);
+
+    -- is rs1 == r0? --
+    decode_aux.rs1_is_r0 <= not or_all_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c));
+
+    -- is atomic load-reservate/store-conditional? --
+    if (CPU_EXTENSION_RISCV_A = true) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') then -- valid atomic sub-opcode
+      decode_aux.is_atomic_lr <= not execute_engine.i_reg(instr_funct5_lsb_c);
+      decode_aux.is_atomic_sc <=     execute_engine.i_reg(instr_funct5_lsb_c);
+    end if;
+
+    -- is BITMANIP.Zbb instruction? --
+    -- pretty complex as we have to extract this from the ALU/ALUI instruction space --
+    -- immediate operation --
+    if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001") and
+         (
+          (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00000") or -- CLZ
+          (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00001") or -- CTZ
+          (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00010") or -- PCNT
+          (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00100") or -- SEXT.B
+          (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00101")    -- SEXT.H
+         )
+       ) or
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- RORI
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and (execute_engine.i_reg(instr_imm12_lsb_c+6 downto instr_imm12_lsb_c) = "0000111")) or -- GORCI.b 7 (orc.b)
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and (execute_engine.i_reg(instr_imm12_lsb_c+6 downto instr_imm12_lsb_c) = "0011000")) then -- GREVI.-8 (rev8)
+      decode_aux.is_bitmanip_imm <= '1';
+    end if;
+    -- register operation --
+    if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.i_reg(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- ROR / ROL
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.i_reg(instr_funct3_msb_c) = '1')) or -- MIN[U] / MAX[U]
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")) or -- PACK
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100000") and
+        (
+         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "111") or -- ANDN
+         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "110") or -- ORN
+         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")    -- XORN
+         )
+        ) then
+      decode_aux.is_bitmanip_reg <= '1';
+    end if;
+  end process decode_helper;
+
+
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(execute_engine, fetch_engine, cmd_issue, trap_ctrl, csr, ctrl, csr_acc_valid,
+  execute_engine_fsm_comb: process(execute_engine, decode_aux, fetch_engine, cmd_issue, trap_ctrl, csr, ctrl, csr_acc_valid,
                                    alu_wait_i, bus_d_wait_i, ma_load_i, be_load_i, ma_store_i, be_store_i)
-    variable alu_immediate_v : std_ulogic;
-    variable rs1_is_r0_v     : std_ulogic;
-    variable opcode_v        : std_ulogic_vector(6 downto 0);
-    variable is_atomic_lr_v  : std_ulogic;
-    variable is_atomic_sc_v  : std_ulogic;
+    variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     -- arbiter defaults --
     execute_engine.state_nxt    <= execute_engine.state;
@@ -790,30 +857,15 @@ begin
     ctrl_nxt(ctrl_alu_func1_c  downto ctrl_alu_func0_c) <= alu_func_cmd_arith_c; -- default ALU function select: arithmetic
     ctrl_nxt(ctrl_alu_arith_c)                          <= alu_arith_cmd_addsub_c; -- default ALU arithmetic operation: ADDSUB
 
-    -- is immediate ALU operation? --
-    alu_immediate_v := not execute_engine.i_reg(instr_opcode_msb_c-1);
-
-    -- is rs1 == r0? --
-    rs1_is_r0_v := not or_all_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c));
-
-    -- is atomic load-reservate/store-conditional? --
-    if (CPU_EXTENSION_RISCV_A = true) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') then -- valid atomic sub-opcode
-      is_atomic_lr_v := not execute_engine.i_reg(instr_funct5_lsb_c);
-      is_atomic_sc_v :=     execute_engine.i_reg(instr_funct5_lsb_c);
-    else
-      is_atomic_lr_v := '0';
-      is_atomic_sc_v := '0';
-    end if;
-
 
     -- state machine --
     case execute_engine.state is
 
-      when SYS_WAIT => -- System delay cycle (used to wait for side effects to kick in) ((and to init r0 with zero if it is a physical register))
+      when SYS_WAIT => -- System delay cycle (used to wait for side effects to kick in) [and to init r0 with zero if it is a physical register]
       -- ------------------------------------------------------------
         -- set reg_file's r0 to zero --
         if (rf_r0_is_reg_c = true) then -- is r0 implemented as physical register, which has to be set to zero?
-          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output (hacky! results zero since there is no valid CSR_read)
+          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output (hacky! results zero since there is no valid CSR-read)
           ctrl_nxt(ctrl_rf_r0_we_c) <= '1'; -- force RF write access and force rd=r0
         end if;
         --
@@ -865,7 +917,7 @@ begin
           when opcode_alu_c | opcode_alui_c => -- (immediate) ALU operation
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opa_mux_c)   <= '0'; -- use RS1 as ALU.OPA
-            ctrl_nxt(ctrl_alu_opb_mux_c)   <= alu_immediate_v; -- use IMM as ALU.OPB for immediate operations
+            ctrl_nxt(ctrl_alu_opb_mux_c)   <= decode_aux.alu_immediate; -- use IMM as ALU.OPB for immediate operations
             ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU result
 
             -- ALU arithmetic operation type and ADD/SUB --
@@ -877,7 +929,7 @@ begin
             end if;
 
             -- ADD/SUB --
-            if ((alu_immediate_v = '0') and (execute_engine.i_reg(instr_funct7_msb_c-1) = '1')) or -- not an immediate op and funct7.6 set => SUB
+            if ((decode_aux.alu_immediate = '0') and (execute_engine.i_reg(instr_funct7_msb_c-1) = '1')) or -- not an immediate op and funct7.6 set => SUB
                (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_slt_c) or -- SLT operation
                (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sltu_c) then -- SLTU operation
               ctrl_nxt(ctrl_alu_addsub_c) <= '1'; -- SUB/SLT
@@ -892,12 +944,19 @@ begin
               when others       => ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_and_c; -- AND(I)
             end case;
 
-            -- co-processor (cp) access? --
-            ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- just in case a mul/div operation
-            if (CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_lsb_c) = '1') then -- MULDIV CP op?
+            -- co-processor MULDIV operation? --
+            if (CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000001") then -- MULDIV CP op?
+              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- use MULDIV CP
               execute_engine.is_cp_op_nxt                        <= '1'; -- this is a CP operation
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
-            -- ALU operation - function select --
+            -- co-processor bit manipulation operation? --
+            elsif (CPU_EXTENSION_RISCV_B = true) and
+              (((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_bitmanip_reg = '1')) or -- register operation
+               ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_bitmanip_imm = '1'))) then -- immediate operation
+              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_bitmanip_c; -- use BITMANIP CP
+              execute_engine.is_cp_op_nxt                        <= '1'; -- this is a CP operation
+              ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
+            -- ALU operation, function select --
             else
               execute_engine.is_cp_op_nxt <= '0'; -- no CP operation
               case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is -- actual ALU.func operation (re-coding)
@@ -910,7 +969,10 @@ begin
             -- multi cycle alu operation? --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or -- SLL shift operation?
                (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) or -- SR shift operation?
-               ((CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_lsb_c) = '1')) then -- MULDIV CP op?
+               ((CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_lsb_c) = '1')) or -- MULDIV CP op?
+               ((CPU_EXTENSION_RISCV_B = true) and (
+                 ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_bitmanip_reg = '1')) or -- BITMANIP CP register operation?
+                 ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_bitmanip_imm = '1'))) ) then -- BITMANIP CP immediate operation?
               execute_engine.state_nxt <= ALU_WAIT;
             else -- single cycle ALU operation
               ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
@@ -1012,7 +1074,7 @@ begin
           when funct3_csrrw_c | funct3_csrrwi_c => -- CSRRW(I)
             csr.we_nxt <= csr_acc_valid; -- always write CSR if valid access
           when funct3_csrrs_c | funct3_csrrsi_c | funct3_csrrc_c | funct3_csrrci_c => -- CSRRS(I) / CSRRC(I)
-            csr.we_nxt <= (not rs1_is_r0_v) and csr_acc_valid; -- write CSR if rs1/imm is not zero and if valid access
+            csr.we_nxt <= (not decode_aux.rs1_is_r0) and csr_acc_valid; -- write CSR if rs1/imm is not zero and if valid access
           when others => -- invalid
             csr.we_nxt <= '0';
         end case;
@@ -1026,7 +1088,7 @@ begin
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU result
         ctrl_nxt(ctrl_rf_wb_en_c)      <= '1'; -- valid RF write-back (permanent write-back)
-        -- cp access or alu shift? --
+        -- cp access or alu.shift? --
         if (execute_engine.is_cp_op = '1') then
           ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
         else
@@ -1077,7 +1139,7 @@ begin
 
       when LOADSTORE_0 => -- trigger memory request
       -- ------------------------------------------------------------
-        if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (is_atomic_lr_v = '1') then -- normal load or atomic load-reservate
+        if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') then -- normal load or atomic load-reservate
           ctrl_nxt(ctrl_bus_rd_c) <= '1'; -- read request
         else -- store
           ctrl_nxt(ctrl_bus_wr_c) <= '1'; -- write request
@@ -1100,7 +1162,7 @@ begin
         end if;
         -- register file write-back --
         ctrl_nxt(ctrl_rf_in_mux_lsb_c) <= '0'; -- RF input = ALU.res or MEM
-        if (is_atomic_sc_v = '1') then
+        if (decode_aux.is_atomic_sc = '1') then
           ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU.res (only relevant for atomic.SC)
         else
           ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
@@ -1110,10 +1172,10 @@ begin
         -- wait for memory response --
         if ((ma_load_i or be_load_i or ma_store_i or be_store_i) = '1') then -- abort if exception
           atomic_ctrl.env_abort     <= '1'; -- LOCKED (atomic) memory access environment failed (forces SC result to be non-zero => failure)
-          ctrl_nxt(ctrl_rf_wb_en_c) <= is_atomic_sc_v; -- SC failes: allow write back of non-zero result
+          ctrl_nxt(ctrl_rf_wb_en_c) <= decode_aux.is_atomic_sc; -- SC failes: allow write back of non-zero result
           execute_engine.state_nxt  <= DISPATCH;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
-          if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (is_atomic_lr_v = '1') or (is_atomic_sc_v = '1') then -- load / load-reservate / store conditional
+          if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') or (decode_aux.is_atomic_sc = '1') then -- load / load-reservate / store conditional
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
           end if;
           atomic_ctrl.env_end      <= '1'; -- normal end of LOCKED (atomic) memory access environment
@@ -1138,8 +1200,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   invalid_csr_access_check: process(execute_engine.i_reg, csr)
     variable csr_wacc_v           : std_ulogic; -- to check access to read-only CSRs
+--  variable csr_racc_v           : std_ulogic; -- to check access to write-only CSRs
     variable csr_mcounteren_hpm_v : std_ulogic_vector(28 downto 0); -- max 29 HPM counters
---  variable csr_racc_v : std_ulogic; -- to check access to write-only CSRs
   begin
     -- is this CSR instruction really going to write/read to/from a CSR? --
     if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
@@ -1218,16 +1280,16 @@ begin
       when csr_time_c          => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_tm); -- M-mode, U-mode if authorized, read-only
       when csr_instret_c       => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_ir); -- M-mode, U-mode if authorized, read-only
       --
-      when csr_hpmcounter3_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(0)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter4_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(1)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter5_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(2)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter6_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(3)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter7_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(4)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter8_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(5)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter9_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(6)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter10_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(7)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter11_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(8)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter12_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(9)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter3_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(00)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter4_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(01)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter5_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(02)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter6_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(03)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter7_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(04)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter8_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(05)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter9_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(06)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter10_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(07)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter11_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(08)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter12_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(09)); -- M-mode, U-mode if authorized, read-only
       when csr_hpmcounter13_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(10)); -- M-mode, U-mode if authorized, read-only
       when csr_hpmcounter14_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(11)); -- M-mode, U-mode if authorized, read-only
       when csr_hpmcounter15_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(12)); -- M-mode, U-mode if authorized, read-only
@@ -1252,16 +1314,16 @@ begin
       when csr_timeh_c         => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_tm); -- M-mode, U-mode if authorized, read-only
       when csr_instreth_c      => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_ir); -- M-mode, U-mode if authorized, read-only
       --
-      when csr_hpmcounter3h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(0)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter4h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(1)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter5h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(2)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter6h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(3)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter7h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(4)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter8h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(5)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter9h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(6)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter10h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(7)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter11h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(8)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter12h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(9)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter3h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(00)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter4h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(01)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter5h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(02)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter6h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(03)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter7h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(04)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter8h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(05)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter9h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(06)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter10h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(07)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter11h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(08)); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter12h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(09)); -- M-mode, U-mode if authorized, read-only
       when csr_hpmcounter13h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(10)); -- M-mode, U-mode if authorized, read-only
       when csr_hpmcounter14h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(11)); -- M-mode, U-mode if authorized, read-only
       when csr_hpmcounter15h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(12)); -- M-mode, U-mode if authorized, read-only
@@ -1296,7 +1358,7 @@ begin
 
   -- Illegal Instruction Check --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  illegal_instruction_check: process(execute_engine, csr_acc_valid)
+  illegal_instruction_check: process(execute_engine, decode_aux, csr_acc_valid)
     variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     -- illegal instructions are checked in the EXECUTE stage
@@ -1317,7 +1379,7 @@ begin
       opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
       case opcode_v is
 
-        -- OPCODE check sufficient: LUI, UIPC, JAL --
+        -- check sufficient LUI, UIPC, JAL (only check actual OPCODE) --
         when opcode_lui_c | opcode_auipc_c | opcode_jal_c =>
           illegal_instruction <= '0';
           -- illegal E-CPU register? --
@@ -1325,8 +1387,35 @@ begin
             illegal_register <= '1';
           end if;
 
-        when opcode_alui_c => -- check ALUI funct7
-          if ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) and
+        when opcode_alu_c => -- check ALU.funct3 & ALU.funct7
+          if (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000001") then -- MULDIV
+            if (CPU_EXTENSION_RISCV_M = false) then -- not implemented
+              illegal_instruction <= '1';
+            end if;
+          elsif (decode_aux.is_bitmanip_reg = '1') then -- bit manipulation
+            if (CPU_EXTENSION_RISCV_B = false) then -- not implemented
+              illegal_instruction <= '1';
+            end if;
+          elsif ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) or
+                 (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c)) and -- ADD/SUB or SRA/SRL check
+                ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) /= "0000000") and
+                 (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) /= "0100000")) then -- ADD/SUB or SRA/SRL select
+            illegal_instruction <= '1';
+          else
+            illegal_instruction <= '0';
+          end if;
+          -- illegal E-CPU register? --
+          if (CPU_EXTENSION_RISCV_E = true) and
+             ((execute_engine.i_reg(instr_rs2_msb_c) = '1') or (execute_engine.i_reg(instr_rs1_msb_c) = '1') or (execute_engine.i_reg(instr_rd_msb_c) = '1')) then
+            illegal_register <= '1';
+          end if;
+
+        when opcode_alui_c => -- check ALUI.funct7
+          if (decode_aux.is_bitmanip_imm = '1') then -- bit manipulation
+            if (CPU_EXTENSION_RISCV_B = false) then -- not implemented
+              illegal_instruction <= '1';
+            end if;
+          elsif ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) and
               (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) /= "0000000")) or -- shift logical left
              ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) and
               ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) /= "0000000") and
@@ -1340,7 +1429,7 @@ begin
             illegal_register <= '1';
           end if;
 
-        when opcode_load_c => -- check LOAD funct3
+        when opcode_load_c => -- check LOAD.funct3
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_lb_c) or
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_lh_c) or
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_lw_c) or
@@ -1355,7 +1444,7 @@ begin
             illegal_register <= '1';
           end if;
 
-        when opcode_store_c => -- check STORE funct3
+        when opcode_store_c => -- check STORE.funct3
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sb_c) or
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sh_c) or
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sw_c) then
@@ -1368,7 +1457,7 @@ begin
             illegal_register <= '1';
           end if;
 
-        when opcode_branch_c => -- check BRANCH funct3
+        when opcode_branch_c => -- check BRANCH.funct3
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_beq_c) or
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_bne_c) or
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_blt_c) or
@@ -1384,7 +1473,7 @@ begin
             illegal_register <= '1';
           end if;
 
-        when opcode_jalr_c => -- check JALR funct3
+        when opcode_jalr_c => -- check JALR.funct3
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "000") then
             illegal_instruction <= '0';
           else
@@ -1392,25 +1481,6 @@ begin
           end if;
           -- illegal E-CPU register? --
           if (CPU_EXTENSION_RISCV_E = true) and ((execute_engine.i_reg(instr_rs1_msb_c) = '1') or (execute_engine.i_reg(instr_rd_msb_c) = '1')) then
-            illegal_register <= '1';
-          end if;
-
-        when opcode_alu_c => -- check ALU funct3 & funct7
-          if (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000001") then -- MULDIV
-            if (CPU_EXTENSION_RISCV_M = false) then -- not implemented
-              illegal_instruction <= '1';
-            end if;
-          elsif ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) or
-                 (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c)) and -- ADD/SUB or SRA/SRL check
-                ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) /= "0000000") and
-                 (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) /= "0100000")) then -- ADD/SUB or SRA/SRL select
-            illegal_instruction <= '1';
-          else
-            illegal_instruction <= '0';
-          end if;
-          -- illegal E-CPU register? --
-          if (CPU_EXTENSION_RISCV_E = true) and
-             ((execute_engine.i_reg(instr_rs2_msb_c) = '1') or (execute_engine.i_reg(instr_rs1_msb_c) = '1') or (execute_engine.i_reg(instr_rd_msb_c) = '1')) then
             illegal_register <= '1';
           end if;
 
@@ -2050,7 +2120,7 @@ begin
       cnt_event      <= cnt_event_nxt;
       hpmcnt_trigger <= (others => '0'); -- default
       for i in 0 to HPM_NUM_CNTS-1 loop
-        -- enabled selected triggers by ANDing events and configuration bits --
+        -- enable selected triggers by ANDing events and configuration bits --
         -- OR everything to see if counter should increment --
         -- AND with inverted sleep flag to increment only when CPU is awake --
         hpmcnt_trigger(i) <= (or_all_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0))) and (not execute_engine.sleep);
@@ -2101,6 +2171,7 @@ begin
             csr.rdata(05) <= '1'; -- MBE: CPU/Processor is BIG-ENDIAN (in machine-mode)
           when csr_misa_c => -- R/-: misa - ISA and extensions
             csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
+            csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);     -- B CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
             csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
             csr.rdata(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
@@ -2353,9 +2424,10 @@ begin
             csr.rdata <= HW_THREAD_ID;
 
           -- custom machine read-only CSRs --
-          when csr_mzext_c => -- R/-: mzext - available Z* extensions
-            csr.rdata(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- RISC-V.Zicsr CPU extension
-            csr.rdata(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- RISC-V.Zifencei CPU extension
+          when csr_mzext_c => -- R/-: mzext - available RISC-V Z* extensions
+            csr.rdata(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr
+            csr.rdata(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei
+            csr.rdata(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B); -- Zbb
 
           -- undefined/unavailable --
           when others =>

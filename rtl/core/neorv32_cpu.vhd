@@ -9,7 +9,6 @@
 -- #   * neorv32_cpu_ctrl.vhd           - CPU control and CSR system                               #
 -- #     * neorv32_cpu_decompressor.vhd - Compressed instructions decoder                          #
 -- #   * neorv32_cpu_regfile.vhd        - Data register file                                       #
--- #                                                                                               #
 -- #   * neorv32_package.vhd            - Main CPU/processor package file                          #
 -- #                                                                                               #
 -- # Check out the processor's data sheet for more information: docs/NEORV32.pdf                   #
@@ -60,6 +59,7 @@ entity neorv32_cpu is
     BUS_TIMEOUT                  : natural := 63;    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
@@ -124,7 +124,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal imm        : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
   signal instr      : std_ulogic_vector(data_width_c-1 downto 0); -- new instruction
   signal rs1, rs2   : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
-  signal alu_opb    : std_ulogic_vector(data_width_c-1 downto 0); -- ALU operand b
   signal alu_res    : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
   signal alu_add    : std_ulogic_vector(data_width_c-1 downto 0); -- alu address result
   signal rdata      : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
@@ -172,6 +171,9 @@ begin
   -- A extension - only lr.w and sc.w supported yet --
   assert not (CPU_EXTENSION_RISCV_A = true) report "NEORV32 CPU CONFIG WARNING! Atomic operations extension (A) only supports >lr.w< and >sc.w< instructions yet." severity warning;
 
+  -- Bit manipulation notifier --
+  assert not (CPU_EXTENSION_RISCV_B = true) report "NEORV32 CPU CONFIG WARNING! Bit manipulation extension (B) only supports 'base' instruction sub-set (Zbb) yet and is still 'unofficial' (not-ratified)." severity warning;
+
   -- PMP regions check --
   assert not (PMP_NUM_REGIONS > 64) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out of valid range (0..64)." severity error;
   -- PMP granulartiy --
@@ -195,6 +197,7 @@ begin
     CPU_BOOT_ADDR                => CPU_BOOT_ADDR, -- cpu boot address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
@@ -289,7 +292,6 @@ begin
     cmp_o       => alu_cmp,       -- comparator status
     res_o       => alu_res,       -- ALU result
     add_o       => alu_add,       -- address computation result
-    opb_o       => alu_opb,       -- ALU operand B
     -- co-processor interface --
     cp0_start_o => cp0_start,     -- trigger co-processor 0
     cp0_data_i  => cp0_data,      -- co-processor 0 result
@@ -338,7 +340,7 @@ begin
   end generate;
 
 
-  -- Co-Processor 1: Atomic Memory Access (SC - store-conditional) --------------------------
+  -- Co-Processor 1: Atomic Memory Access, SC - store-conditional ('M' extension) -----------
   -- -------------------------------------------------------------------------------------------
   atomic_op_cp: process(cp1_start, ctrl)
   begin
@@ -362,16 +364,36 @@ begin
 
   -- Co-Processor 2: Not implemented (yet) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- control: ctrl cp2_start
-  -- inputs:  rs1 rs2 alu_cmp alu_opb
-  cp2_data  <= (others => '0');
-  cp2_valid <= cp2_start; -- to make sure CPU does not get stalled if there is an accidental access
+  neorv32_cpu_cp_bitmanip_inst_true:
+  if (CPU_EXTENSION_RISCV_B = true) generate
+    neorv32_cpu_cp_bitmanip_inst: neorv32_cpu_cp_bitmanip
+    port map (
+      -- global control --
+      clk_i   => clk_i,           -- global clock, rising edge
+      rstn_i  => rstn_i,          -- global reset, low-active, async
+      ctrl_i  => ctrl,            -- main control bus
+      start_i => cp2_start,       -- trigger operation
+      -- data input --
+      cmp_i   => alu_cmp,         -- comparator status
+      rs1_i   => rs1,             -- rf source 1
+      rs2_i   => rs2,             -- rf source 2
+      -- result and status --
+      res_o   => cp2_data,        -- operation result
+      valid_o => cp2_valid        -- data output valid
+    );
+  end generate;
+
+  neorv32_cpu_cp_bitmanip_inst_false:
+  if (CPU_EXTENSION_RISCV_B = false) generate
+    cp2_data  <= (others => '0');
+    cp2_valid <= cp2_start; -- to make sure CPU does not get stalled if there is an accidental access
+  end generate;
 
 
   -- Co-Processor 3: Not implemented (yet) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- control: ctrl cp3_start
-  -- inputs:  rs1 rs2 alu_cmp alu_opb
+  -- inputs:  rs1 rs2 alu_cmp
   cp3_data  <= (others => '0');
   cp3_valid <= cp3_start; -- to make sure CPU does not get stalled if there is an accidental access
 

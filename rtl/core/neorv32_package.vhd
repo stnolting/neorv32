@@ -55,7 +55,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!)= -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040908"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040910"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -220,7 +220,7 @@ package neorv32_package is
   -- current privilege level --
   constant ctrl_priv_lvl_lsb_c  : natural := 45; -- privilege level lsb
   constant ctrl_priv_lvl_msb_c  : natural := 46; -- privilege level msb
-  -- instruction's control blocks --
+  -- instruction's control blocks (used by cpu co-processors) --
   constant ctrl_ir_funct3_0_c   : natural := 47; -- funct3 bit 0
   constant ctrl_ir_funct3_1_c   : natural := 48; -- funct3 bit 1
   constant ctrl_ir_funct3_2_c   : natural := 49; -- funct3 bit 2
@@ -236,8 +236,15 @@ package neorv32_package is
   constant ctrl_ir_funct12_9_c  : natural := 59; -- funct12 bit 9
   constant ctrl_ir_funct12_10_c : natural := 60; -- funct12 bit 10
   constant ctrl_ir_funct12_11_c : natural := 61; -- funct12 bit 11
+  constant ctrl_ir_opcode7_0_c  : natural := 62; -- opcode7 bit 0
+  constant ctrl_ir_opcode7_1_c  : natural := 63; -- opcode7 bit 1
+  constant ctrl_ir_opcode7_2_c  : natural := 64; -- opcode7 bit 2
+  constant ctrl_ir_opcode7_3_c  : natural := 65; -- opcode7 bit 3
+  constant ctrl_ir_opcode7_4_c  : natural := 66; -- opcode7 bit 4
+  constant ctrl_ir_opcode7_5_c  : natural := 67; -- opcode7 bit 5
+  constant ctrl_ir_opcode7_6_c  : natural := 68; -- opcode7 bit 6
   -- control bus size --
-  constant ctrl_width_c         : natural := 62; -- control bus size
+  constant ctrl_width_c         : natural := 69; -- control bus size
 
   -- ALU Comparator Bus ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -615,22 +622,12 @@ package neorv32_package is
   -- custom read-only CSRs --
   constant csr_mzext_c          : std_ulogic_vector(11 downto 0) := x"fc0";
 
-  -- Co-Processor Operations ----------------------------------------------------------------
+  -- Co-Processor IDs -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- cp ids --
-  constant cp_sel_muldiv_c : std_ulogic_vector(1 downto 0) := "00"; -- MULDIV
-  constant cp_sel_atomic_c : std_ulogic_vector(1 downto 0) := "01"; -- atomic operations success/failure evaluation
---constant cp_sel_reserv_c : std_ulogic_vector(1 downto 0) := "10"; -- reserved
---constant cp_sel_reserv_c : std_ulogic_vector(1 downto 0) := "11"; -- reserved
-  -- muldiv cp --
-  constant cp_op_mul_c    : std_ulogic_vector(2 downto 0) := "000"; -- mul
-  constant cp_op_mulh_c   : std_ulogic_vector(2 downto 0) := "001"; -- mulh
-  constant cp_op_mulhsu_c : std_ulogic_vector(2 downto 0) := "010"; -- mulhsu
-  constant cp_op_mulhu_c  : std_ulogic_vector(2 downto 0) := "011"; -- mulhu
-  constant cp_op_div_c    : std_ulogic_vector(2 downto 0) := "100"; -- div
-  constant cp_op_divu_c   : std_ulogic_vector(2 downto 0) := "101"; -- divu
-  constant cp_op_rem_c    : std_ulogic_vector(2 downto 0) := "110"; -- rem
-  constant cp_op_remu_c   : std_ulogic_vector(2 downto 0) := "111"; -- remu
+  constant cp_sel_muldiv_c   : std_ulogic_vector(1 downto 0) := "00"; -- multiplication/division operations ('M' extension)
+  constant cp_sel_atomic_c   : std_ulogic_vector(1 downto 0) := "01"; -- atomic operations; success/failure evaluation ('A' extension)
+  constant cp_sel_bitmanip_c : std_ulogic_vector(1 downto 0) := "10"; -- bit manipulation ('B' extension)
+--constant cp_sel_float32_c  : std_ulogic_vector(1 downto 0) := "11"; -- reserved -- single-precision floating point operations ('F' extension)
 
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -744,6 +741,7 @@ package neorv32_package is
       HW_THREAD_ID                 : std_ulogic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
+      CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit manipulation extensions?
       CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
@@ -837,6 +835,7 @@ package neorv32_package is
       BUS_TIMEOUT                  : natural := 63;    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
+      CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
@@ -902,6 +901,7 @@ package neorv32_package is
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
+      CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
@@ -996,7 +996,6 @@ package neorv32_package is
       cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
       res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
       add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- address computation result
-      opb_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU operand B
       -- co-processor interface --
       cp0_start_o : out std_ulogic; -- trigger co-processor 0
       cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
@@ -1015,7 +1014,7 @@ package neorv32_package is
     );
   end component;
 
-  -- Component: CPU Co-Processor MULDIV -----------------------------------------------------
+  -- Component: CPU Co-Processor MULDIV ('M' extension) -------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_muldiv
     generic (
@@ -1028,6 +1027,25 @@ package neorv32_package is
       ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
       start_i : in  std_ulogic; -- trigger operation
       -- data input --
+      rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
+      rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
+      -- result and status --
+      res_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
+      valid_o : out std_ulogic -- data output valid
+    );
+  end component;
+
+  -- Component: CPU Co-Processor Bit Manipulation ('B' extension) ---------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_cpu_cp_bitmanip
+    port (
+      -- global control --
+      clk_i   : in  std_ulogic; -- global clock, rising edge
+      rstn_i  : in  std_ulogic; -- global reset, low-active, async
+      ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      start_i : in  std_ulogic; -- trigger operation
+      -- data input --
+      cmp_i   : in  std_ulogic_vector(1 downto 0); -- comparator status
       rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
       rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
       -- result and status --
