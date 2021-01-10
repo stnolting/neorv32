@@ -35,15 +35,19 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
 * RISC-V-[compliant](#Status) 32-bit `rv32i` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
   * Subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
   * Subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
-* Optional RISC-V CPU extensions
-  * `A` - atomic memory access instructions
-  * `C` - compressed instructions (16-bit)
-  * `E` - embedded CPU (reduced register file)
-  * `M` - integer multiplication and division hardware
-  * `U` - less-privileged *user mode*
-  * `Zicsr` - control and status register access instructions (+ exception/irq system)
-  * `Zifencei` - instruction stream synchronization
-  * `PMP` - physical memory protection
+* Configurable RISC-V CPU extensions
+  * `A` - atomic memory access instructions (optional)
+  * `B` - Bit manipulation instructions (optional) (not officially ratified yet!)
+  * `C` - compressed instructions (16-bit) (optional)
+  * `E` - embedded CPU (reduced register file (optional)
+  * `I` - base integer instruction set (always enabled)
+  * `M` - integer multiplication and division hardware (optional)
+  * `U` - less-privileged *user mode* (optional)
+  * `X` - NEORV32_specific extensions (always enabled)
+  * `Zicsr` - control and status register access instructions (+ exception/irq system) (optional)
+  * `Zifencei` - instruction stream synchronization (optional)
+  * `PMP` - physical memory protection (optional)
+  * `HPM` - hardware performance monitors (optional)
 * Full-scale RISC-V microcontroller system / **SoC** [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
   * optional embedded memories (instructions/data/bootloader, RAM/ROM) and caches
   * timers (watch dog, RISC-V-compliant machine timer)
@@ -95,12 +99,12 @@ The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/pr
 ### To-Do / Wish List / Help Wanted
 
 * Use LaTeX for data sheet
-* Further size and performance optimization *[work in progress]*
+* Further size and performance optimization
 * Add associativity configuration for instruction cache
 * Add *data* cache
 * Burst mode for the external memory/bus interface
-* RISC-V `F` (using `Zfinx`?) CPU extension (single-precision floating point) *[planning]*
-* RISC-V `B` (using `Zbb`?) CPU extension ([bitmanipulation](https://github.com/riscv/riscv-bitmanip)) *[planning]*
+* RISC-V `F` (using `[Zfinx](https://github.com/riscv/riscv-zfinx/blob/master/Zfinx_spec.adoc)`?) CPU extension (single-precision floating point)
+* Add template (HW module + intrinsics skeleton) for custom instructions?
 * Synthesis results (+ wrappers?) for more/specific platforms
 * More support for FreeRTOS (like *all* traps)
 * Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
@@ -116,6 +120,7 @@ The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/pr
 
 The full-blown data sheet of the NEORV32 Processor and CPU is available as pdf file:
 [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+
 
 ### NEORV32 Processor Features
 
@@ -138,6 +143,7 @@ is highly customizable via the processor's top generics and already provides the
 * GARO-based true random number generator (**TRNG**)
 * custom functions units (**CFU0** and **CFU1**) for tightly-coupled custom co-processors
 * system configuration information memory to check hardware configuration by software (**SYSINFO**, mandatory - not *optional*)
+
 
 ### NEORV32 CPU Features
 
@@ -187,6 +193,12 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 **Atomic memory access** (`A` extension):
   * Supported instructions: `LR.W` (load-reservate) `SC.W` (store-conditional)
 
+**Bit manipulation instructions** (`B` extension implying `Zbb` extension):
+  * :warning: RISC-V `B` extensions is not officially ratified yet!
+  * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/blob/master/sw/example/bit_manipulation/README.md`))
+  * Only the `Zbb` base subset is supported yet
+  * Supported instructions: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR` `RORI` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
+
 **Privileged architecture / CSR access** (`Zicsr` extension):
   * Privilege levels: `M-mode` (Machine mode)
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
@@ -213,22 +225,26 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 **Privileged architecture / User mode** (`U` extension, requires `Zicsr` extension):
   * Privilege levels: `M-mode` (Machine mode) + `U-mode` (User mode)
 
-**Privileged architecture / instruction stream synchronization** (`Zifencei` extension):
+**Privileged architecture / Instruction stream synchronization** (`Zifencei` extension):
   * System instructions: `FENCE.I` (among others, used to clear and reload instruction cache)
 
 **Privileged architecture / Physical memory protection** (`PMP`, requires `Zicsr` extension):
-  * Configurable number of regions
+  * Configurable number of regions (0..63)
   * Additional machine CSRs: `pmpcfg*`(0..15) `pmpaddr*`(0..63)
 
+**Privileged architecture / Hardware performance monitors** (`HPM`, requires `Zicsr` extension):
+  * Configurable number of counter (0..29)
+  * Additional machine CSRs: `mhpmevent*`(3..31) `[m]hpmcounter*[h]`(3..31)
 
-### Non-RISC-V-Compliant Issues
+
+### :warning: Non-RISC-V-Compliant Issues
 
 * CPU and Processor are BIG-ENDIAN, but this should be no problem as the external memory bus interface provides big- and little-endian configurations
 * `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime; for compatibility: write accesses (in m-mode) are ignored and do not cause an exception
 * The physical memory protection (**PMP**) only supports `NAPOT` mode yet and a minimal granularity of 8 bytes
 * The `A` extension only implements `lr.w` and `sc.w` instructions yet. However, these instructions are sufficient to emulate all further AMO operations
-* The `mcause` trap code `0x80000000` (originally reserved in the RISC-V specs) is used to indicate a hardware reset (as "non-maskable interrupt").
-
+* The `mcause` trap code `0x80000000` (originally reserved in the RISC-V specs) is used to indicate a hardware reset (as "non-maskable interrupt")
+* The bit manipulation extension is not yet officially ratified, but is expected to stay unchanged. There is no software support in the upstream GCC RISC-V port yet. However, an intrinsic library is provided to utilize the provided bit manipulation extension from C-language code (see `sw/example/bit_manipulation`). NEORV32 `B` extension is compliant to spec. version "0.94-draft".
 
 ### NEORV32-Specific CPU Extensions
 
@@ -250,22 +266,23 @@ information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not o
 of the CPU's generics is assumed (e.g. no physical memory protection, no hardware performance monitors).
 No constraints were used at all. The `u` and `Zifencei` extensions have a negligible impact on the hardware requirements.
 
-Results generated for hardware version [`1.4.9.2`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.4.9.10`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
-| CPU Configuration                       | LEs        | FFs      | Memory bits | DSPs | f_max   |
-|:----------------------------------------|:----------:|:--------:|:-----------:|:----:|:-------:|
-| `rv32i`                                 |       1190 |      512 |       2048  |    0 | 120 MHz |
-| `rv32i`    + `u` + `Zicsr` + `Zifencei` |       1927 |      903 |       2048  |    0 | 123 MHz |
-| `rv32im`   + `u` + `Zicsr` + `Zifencei` |       2471 |     1148 |       2048  |    0 | 120 MHz |
-| `rv32imc`  + `u` + `Zicsr` + `Zifencei` |       2716 |     1165 |       2048  |    0 | 120 MHz |
-| `rv32imac` + `u` + `Zicsr` + `Zifencei` |       2736 |     1168 |       2048  |    0 | 122 MHz |
+| CPU Configuration                        | LEs        | FFs      | Memory bits | DSPs | f_max   |
+|:-----------------------------------------|:----------:|:--------:|:-----------:|:----:|:-------:|
+| `rv32i`                                  |       1190 |      512 |       2048  |    0 | 120 MHz |
+| `rv32i`     + `u` + `Zicsr` + `Zifencei` |       1927 |      903 |       2048  |    0 | 123 MHz |
+| `rv32im`    + `u` + `Zicsr` + `Zifencei` |       2471 |     1148 |       2048  |    0 | 120 MHz |
+| `rv32imc`   + `u` + `Zicsr` + `Zifencei` |       2716 |     1165 |       2048  |    0 | 120 MHz |
+| `rv32imac`  + `u` + `Zicsr` + `Zifencei` |       2736 |     1168 |       2048  |    0 | 120 MHz |
+| `rv32imacb` + `u` + `Zicsr` + `Zifencei` |       3045 |     1260 |       2048  |    0 | 114 MHz |
 
 Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utilization and identical f_max. However, the size of the register file is cut in half. 
 
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version [`1.4.9.2`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.4.9.10`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
