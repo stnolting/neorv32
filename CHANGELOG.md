@@ -9,14 +9,13 @@ can be found [here](https://raw.githubusercontent.com/stnolting/neorv32/master/d
 :information_source: To see a list of all commits
 between release run `git log v1.4.7.0..v1.4.8.0` (example to to see commits between v1.4.7.0 and v1.4.8.0).
 
-The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 8x4-bit BCD representation is used. Leading
-zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`
-
-For the HDL sources the version number is globally defined by the `hw_version_c` constant in the main VHDL package file
-[`rtl/core/neorv32_package.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
+:information_source: The processor can determine it's version from the `mimpid` CSR (at CSR address 0xf13). A 8x4-bit BCD representation is used. Leading
+zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`. The version number is globally defined by the
+`hw_version_c` constant in the main VHDL package file [`rtl/core/neorv32_package.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 10.01.2021 | 1.4.9.10 | :sparkles: Added support for [**bit manipulation extension (`B`)**](https://github.com/riscv/riscv-bitmanip) - base subset `Zbb` only (:warning: RISC-V `B` (sub-)extensions are not officially ratified yet; compatible to version "0.94-draft"); enabled via new configuration constant `CPU_EXTENSION_RISCV_B` (default = false); uported `Zbb` instructions: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR` `RORI` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`); added `B` flag to `misa` CSR; added `Zbb` flag to `mzext` CSR |
 | 03.01.2021 | 1.4.9.8 | Added HPM trigger for instruction issue wait cycle (caused by pipeline flush); all HPM counters do not increment if CPU is sleep mode; fixed CoreMark timer overflow issues; `rtl/core/neorv32_busswitch.vhd`: removed wait states, less load/store wait cycles -> faster execution; updated CoreMark results |
 | 02.01.2021 | 1.4.9.7 | :sparkles: added RISC-V hardware performance monitors (`HPM`); new CSRs: `mhpmevent*`(3..31), `[m]hpmcounter*[h]`(3..31), amount configurable via top's generic `HPM_NUM_CNTS`; supported counter events: active cycle, retired instruction, retired compressed instruction, instruction fetcch memory wait cycle, load operation, store operation, load/store memory wait cycle, unconditional jump, conditional branche (all), conditional taken branch, entered trap, illegal instruction exception; PMP can now have up to 64 regions; number of regions configured via top's `PMP_NUM_REGIONS` generic; removed obsolete top's `PMP_USE` generic; removed PMP flag from `mzext` CSR; minimal region granularity (in bytes) configured via top's `PMP_MIN_GRANULARITY` generic, has to be a power of two and >= 8 bytes; :bug: fixed bug in sleep (`wfi`) instruction |
 | 29.12.2020 | 1.4.9.5 | New UART features: "frame check" (test if stop bit is set), error indicated via `UART_DATA` reg's `UART_DATA_FERR` flag; configurable parity bit (`UART_CT.UART_CT_PMODE1:UART_CT_PMODE0`, 00=no parity; 10=even parity; 11=odd parity); parity error indicated via `UART_DATA` reg's `UART_DATA_PERR` flag; moved UART's RX overrun flag to `UART_DATA.UART_DATA_OVERR` |
