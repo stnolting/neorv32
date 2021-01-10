@@ -5,7 +5,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -45,11 +45,12 @@ entity neorv32_top_axi4lite is
   generic (
     -- General --
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
-    BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
+    BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
     USER_CODE                    : std_logic_vector(31 downto 0) := x"00000000"; -- custom user code
     HW_THREAD_ID                 : std_logic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
@@ -60,29 +61,32 @@ entity neorv32_top_axi4lite is
     FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      : boolean := false;  -- implement PMP?
+    PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..64)
+    PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    -- Hardware Performance Monitors (HPM) --
+    HPM_NUM_CNTS                 : natural := 0;      -- number of inmplemnted HPM counters (0..29)
     -- Internal Instruction memory --
-    MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
-    MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
+    MEM_INT_DMEM_EN              : boolean := true;   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_USE                   : boolean := false;  -- implement instruction cache
+    ICACHE_EN                    : boolean := false;  -- implement instruction cache
     ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
     -- Processor peripherals --
-    IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
-    IO_UART_USE                  : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                   : boolean := true;   -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                   : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
-    IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-    IO_CFU0_USE                  : boolean := false;  -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_USE                  : boolean := false   -- implement custom functions unit 1 (CFU1)?
+    IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
+    IO_UART_EN                   : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
+    IO_PWM_EN                    : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
+    IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
+    IO_CFU0_EN                   : boolean := false;  -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_EN                   : boolean := false   -- implement custom functions unit 1 (CFU1)?
   );
   port (
     -- AXI Lite-Compatible Master Interface --
@@ -131,7 +135,7 @@ entity neorv32_top_axi4lite is
     -- PWM --
     pwm_o       : out std_logic_vector(03 downto 0);  -- pwm channels
     -- Interrupts --
-    mtime_irq_i : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_USE = false
+    mtime_irq_i : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   : in  std_logic := '0'; -- machine software interrupt
     mext_irq_i  : in  std_logic := '0'  -- machine external interrupt
   );
@@ -203,11 +207,12 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,    -- clock frequency of clk_i in Hz
-    BOOTLOADER_USE               => BOOTLOADER_USE,     -- implement processor-internal bootloader?
+    BOOTLOADER_EN                => BOOTLOADER_EN ,     -- implement processor-internal bootloader?
     USER_CODE                    => USER_CODE_INT,      -- custom user code
     HW_THREAD_ID                 => HW_THREAD_ID_INT,   -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
@@ -218,31 +223,34 @@ begin
     FAST_MUL_EN                  => FAST_MUL_EN,        -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,      -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      => PMP_USE,            -- implement PMP?
+    PMP_NUM_REGIONS              => PMP_NUM_REGIONS,    -- number of regions (0..64)
+    PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY, -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    -- Hardware Performance Monitors (HPM) --
+    HPM_NUM_CNTS                 => HPM_NUM_CNTS,       -- number of inmplemnted HPM counters (0..29)
     -- Internal Instruction memory --
-    MEM_INT_IMEM_USE             => MEM_INT_IMEM_USE,   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_EN              => MEM_INT_IMEM_EN,    -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE,  -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM             => MEM_INT_IMEM_ROM,   -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
-    MEM_INT_DMEM_USE             => MEM_INT_DMEM_USE,   -- implement processor-internal data memory
+    MEM_INT_DMEM_EN              => MEM_INT_DMEM_EN,    -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE,  -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_USE                   => ICACHE_USE,         -- implement instruction cache
+    ICACHE_EN                    => ICACHE_EN,          -- implement instruction cache
     ICACHE_NUM_BLOCKS            => ICACHE_NUM_BLOCKS,  -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            => ICACHE_BLOCK_SIZE,  -- i-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface --
-    MEM_EXT_USE                  => true,               -- implement external memory bus interface?
+    MEM_EXT_EN                   => true,               -- implement external memory bus interface?
     -- Processor peripherals --
-    IO_GPIO_USE                  => IO_GPIO_USE,        -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE                 => IO_MTIME_USE,       -- implement machine system timer (MTIME)?
-    IO_UART_USE                  => IO_UART_USE,        -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                   => IO_SPI_USE,         -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                   => IO_TWI_USE,         -- implement two-wire interface (TWI)?
-    IO_PWM_USE                   => IO_PWM_USE,         -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                   => IO_WDT_USE,         -- implement watch dog timer (WDT)?
-    IO_TRNG_USE                  => IO_TRNG_USE,        -- implement true random number generator (TRNG)?
-    IO_CFU0_USE                  => IO_CFU0_USE,        -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_USE                  => IO_CFU1_USE         -- implement custom functions unit 1 (CFU1)?
+    IO_GPIO_EN                   => IO_GPIO_EN,         -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN                  => IO_MTIME_EN,        -- implement machine system timer (MTIME)?
+    IO_UART_EN                   => IO_UART_EN,         -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_EN                    => IO_SPI_EN,          -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN                    => IO_TWI_EN,          -- implement two-wire interface (TWI)?
+    IO_PWM_EN                    => IO_PWM_EN,          -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_EN                    => IO_WDT_EN,          -- implement watch dog timer (WDT)?
+    IO_TRNG_EN                   => IO_TRNG_EN,         -- implement true random number generator (TRNG)?
+    IO_CFU0_EN                   => IO_CFU0_EN,         -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_EN                   => IO_CFU1_EN          -- implement custom functions unit 1 (CFU1)?
   )
   port map (
     -- Global control --
@@ -279,10 +287,10 @@ begin
     twi_scl_io  => twi_scl_io,      -- twi serial clock line
     -- PWM --
     pwm_o       => pwm_o_int,       -- pwm channels
-    -- system time input from external MTIME (available if IO_MTIME_USE = false) --
+    -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     => (others => '0'), -- current system time
     -- Interrupts --
-    mtime_irq_i => mtime_irq_i_int, -- machine timer interrupt, available if IO_MTIME_USE = false
+    mtime_irq_i => mtime_irq_i_int, -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => msw_irq_i_int,   -- machine software interrupt
     mext_irq_i  => mext_irq_i_int   -- machine external interrupt
   );

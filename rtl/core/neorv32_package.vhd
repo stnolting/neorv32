@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -45,25 +45,20 @@ package neorv32_package is
   constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
 
   -- (external) bus interface --
-  constant bus_timeout_c     : natural := 127; -- cycles after which an *unacknowledged* bus access fetch will timeout and trigger a bus fault exception (min 2)
+  constant bus_timeout_c     : natural := 127; -- cycles after which an *unacknowledged* bus access will timeout and trigger a bus fault exception (min 2)
   constant wb_pipe_mode_c    : boolean := false; -- *external* bus protocol: false=classic/standard wishbone mode (default), true=pipelined wishbone mode
   constant xbus_big_endian_c : boolean := true; -- external memory access byte order: true=big endian (default); false=little endian
 
   -- CPU core --
   constant ipb_entries_c : natural := 2; -- entries in CPU instruction prefetch buffer, has to be a power of 2, default=2
-  constant zicnt_en_c    : boolean := true; -- enable RISC-V performance counters ([m]cycle[h], [m]instret[h]), default=true
-
-  -- physical memory protection (PMP) --
-  constant pmp_num_regions_c     : natural := 2; -- number of regions (1..8)
-  constant pmp_min_granularity_c : natural := 64*1024; -- minimal region size (granularity), min 8 bytes, has to be a power of 2
 
   -- Architecture Constants (do not modify!)= -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01040903"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050000"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
-  constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a physical register that has to be initialized to zero by the HW
+  constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
 
   -- Helper Functions -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -83,15 +78,15 @@ package neorv32_package is
 
   -- Internal Types -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  type pmp_ctrl_if_t is array (0 to pmp_max_r_c-1) of std_ulogic_vector(7 downto 0);
-  type pmp_addr_if_t is array (0 to pmp_max_r_c-1) of std_ulogic_vector(33 downto 0);
+  type pmp_ctrl_if_t is array (0 to 63) of std_ulogic_vector(07 downto 0);
+  type pmp_addr_if_t is array (0 to 63) of std_ulogic_vector(33 downto 0);
 
   -- Processor-Internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- Internal Instruction Memory (IMEM) and Date Memory (DMEM) --
   constant imem_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := ispace_base_c; -- internal instruction memory base address
   constant dmem_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := dspace_base_c; -- internal data memory base address
-  --> memory sizes are configured via top's generics
+  --> internal data/instruction memory sizes are configured via top's generics
 
   -- Internal Bootloader ROM --
   constant boot_rom_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFF0000"; -- bootloader base address, fixed!
@@ -225,7 +220,7 @@ package neorv32_package is
   -- current privilege level --
   constant ctrl_priv_lvl_lsb_c  : natural := 45; -- privilege level lsb
   constant ctrl_priv_lvl_msb_c  : natural := 46; -- privilege level msb
-  -- instruction's control blocks --
+  -- instruction's control blocks (used by cpu co-processors) --
   constant ctrl_ir_funct3_0_c   : natural := 47; -- funct3 bit 0
   constant ctrl_ir_funct3_1_c   : natural := 48; -- funct3 bit 1
   constant ctrl_ir_funct3_2_c   : natural := 49; -- funct3 bit 2
@@ -241,8 +236,15 @@ package neorv32_package is
   constant ctrl_ir_funct12_9_c  : natural := 59; -- funct12 bit 9
   constant ctrl_ir_funct12_10_c : natural := 60; -- funct12 bit 10
   constant ctrl_ir_funct12_11_c : natural := 61; -- funct12 bit 11
+  constant ctrl_ir_opcode7_0_c  : natural := 62; -- opcode7 bit 0
+  constant ctrl_ir_opcode7_1_c  : natural := 63; -- opcode7 bit 1
+  constant ctrl_ir_opcode7_2_c  : natural := 64; -- opcode7 bit 2
+  constant ctrl_ir_opcode7_3_c  : natural := 65; -- opcode7 bit 3
+  constant ctrl_ir_opcode7_4_c  : natural := 66; -- opcode7 bit 4
+  constant ctrl_ir_opcode7_5_c  : natural := 67; -- opcode7 bit 5
+  constant ctrl_ir_opcode7_6_c  : natural := 68; -- opcode7 bit 6
   -- control bus size --
-  constant ctrl_width_c         : natural := 62; -- control bus size
+  constant ctrl_width_c         : natural := 69; -- control bus size
 
   -- ALU Comparator Bus ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -326,7 +328,6 @@ package neorv32_package is
   constant funct3_csrrw_c  : std_ulogic_vector(2 downto 0) := "001"; -- atomic r/w
   constant funct3_csrrs_c  : std_ulogic_vector(2 downto 0) := "010"; -- atomic read & set bit
   constant funct3_csrrc_c  : std_ulogic_vector(2 downto 0) := "011"; -- atomic read & clear bit
-  --
   constant funct3_csrrwi_c : std_ulogic_vector(2 downto 0) := "101"; -- atomic r/w immediate
   constant funct3_csrrsi_c : std_ulogic_vector(2 downto 0) := "110"; -- atomic read & set bit immediate
   constant funct3_csrrci_c : std_ulogic_vector(2 downto 0) := "111"; -- atomic read & clear bit immediate
@@ -351,67 +352,282 @@ package neorv32_package is
   -- RISC-V CSR Addresses -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- read/write CSRs --
-  constant csr_mstatus_c   : std_ulogic_vector(11 downto 0) := x"300"; -- mstatus
-  constant csr_misa_c      : std_ulogic_vector(11 downto 0) := x"301"; -- misa
-  constant csr_mie_c       : std_ulogic_vector(11 downto 0) := x"304"; -- mie
-  constant csr_mtvec_c     : std_ulogic_vector(11 downto 0) := x"305"; -- mtvec
-  constant csr_mstatush_c  : std_ulogic_vector(11 downto 0) := x"310"; -- mstatush
+  constant csr_mstatus_c        : std_ulogic_vector(11 downto 0) := x"300";
+  constant csr_misa_c           : std_ulogic_vector(11 downto 0) := x"301";
+  constant csr_mie_c            : std_ulogic_vector(11 downto 0) := x"304";
+  constant csr_mtvec_c          : std_ulogic_vector(11 downto 0) := x"305";
+  constant csr_mcounteren_c     : std_ulogic_vector(11 downto 0) := x"306";
+  constant csr_mstatush_c       : std_ulogic_vector(11 downto 0) := x"310";
   --
-  constant csr_mscratch_c  : std_ulogic_vector(11 downto 0) := x"340"; -- mscratch
-  constant csr_mepc_c      : std_ulogic_vector(11 downto 0) := x"341"; -- mepc
-  constant csr_mcause_c    : std_ulogic_vector(11 downto 0) := x"342"; -- mcause
-  constant csr_mtval_c     : std_ulogic_vector(11 downto 0) := x"343"; -- mtval
-  constant csr_mip_c       : std_ulogic_vector(11 downto 0) := x"344"; -- mip
+  constant csr_mcountinhibit_c  : std_ulogic_vector(11 downto 0) := x"320";
   --
-  constant csr_pmpcfg0_c   : std_ulogic_vector(11 downto 0) := x"3a0"; -- pmpcfg0
-  constant csr_pmpcfg1_c   : std_ulogic_vector(11 downto 0) := x"3a1"; -- pmpcfg1
+  constant csr_mhpmevent3_c     : std_ulogic_vector(11 downto 0) := x"323";
+  constant csr_mhpmevent4_c     : std_ulogic_vector(11 downto 0) := x"324";
+  constant csr_mhpmevent5_c     : std_ulogic_vector(11 downto 0) := x"325";
+  constant csr_mhpmevent6_c     : std_ulogic_vector(11 downto 0) := x"326";
+  constant csr_mhpmevent7_c     : std_ulogic_vector(11 downto 0) := x"327";
+  constant csr_mhpmevent8_c     : std_ulogic_vector(11 downto 0) := x"328";
+  constant csr_mhpmevent9_c     : std_ulogic_vector(11 downto 0) := x"329";
+  constant csr_mhpmevent10_c    : std_ulogic_vector(11 downto 0) := x"32a";
+  constant csr_mhpmevent11_c    : std_ulogic_vector(11 downto 0) := x"32b";
+  constant csr_mhpmevent12_c    : std_ulogic_vector(11 downto 0) := x"32c";
+  constant csr_mhpmevent13_c    : std_ulogic_vector(11 downto 0) := x"32d";
+  constant csr_mhpmevent14_c    : std_ulogic_vector(11 downto 0) := x"32e";
+  constant csr_mhpmevent15_c    : std_ulogic_vector(11 downto 0) := x"32f";
+  constant csr_mhpmevent16_c    : std_ulogic_vector(11 downto 0) := x"330";
+  constant csr_mhpmevent17_c    : std_ulogic_vector(11 downto 0) := x"331";
+  constant csr_mhpmevent18_c    : std_ulogic_vector(11 downto 0) := x"332";
+  constant csr_mhpmevent19_c    : std_ulogic_vector(11 downto 0) := x"333";
+  constant csr_mhpmevent20_c    : std_ulogic_vector(11 downto 0) := x"334";
+  constant csr_mhpmevent21_c    : std_ulogic_vector(11 downto 0) := x"335";
+  constant csr_mhpmevent22_c    : std_ulogic_vector(11 downto 0) := x"336";
+  constant csr_mhpmevent23_c    : std_ulogic_vector(11 downto 0) := x"337";
+  constant csr_mhpmevent24_c    : std_ulogic_vector(11 downto 0) := x"338";
+  constant csr_mhpmevent25_c    : std_ulogic_vector(11 downto 0) := x"339";
+  constant csr_mhpmevent26_c    : std_ulogic_vector(11 downto 0) := x"33a";
+  constant csr_mhpmevent27_c    : std_ulogic_vector(11 downto 0) := x"33b";
+  constant csr_mhpmevent28_c    : std_ulogic_vector(11 downto 0) := x"33c";
+  constant csr_mhpmevent29_c    : std_ulogic_vector(11 downto 0) := x"33d";
+  constant csr_mhpmevent30_c    : std_ulogic_vector(11 downto 0) := x"33e";
+  constant csr_mhpmevent31_c    : std_ulogic_vector(11 downto 0) := x"33f";
   --
-  constant csr_pmpaddr0_c  : std_ulogic_vector(11 downto 0) := x"3b0"; -- pmpaddr0
-  constant csr_pmpaddr1_c  : std_ulogic_vector(11 downto 0) := x"3b1"; -- pmpaddr1
-  constant csr_pmpaddr2_c  : std_ulogic_vector(11 downto 0) := x"3b2"; -- pmpaddr2
-  constant csr_pmpaddr3_c  : std_ulogic_vector(11 downto 0) := x"3b3"; -- pmpaddr3
-  constant csr_pmpaddr4_c  : std_ulogic_vector(11 downto 0) := x"3b4"; -- pmpaddr4
-  constant csr_pmpaddr5_c  : std_ulogic_vector(11 downto 0) := x"3b5"; -- pmpaddr5
-  constant csr_pmpaddr6_c  : std_ulogic_vector(11 downto 0) := x"3b6"; -- pmpaddr6
-  constant csr_pmpaddr7_c  : std_ulogic_vector(11 downto 0) := x"3b7"; -- pmpaddr7
+  constant csr_mscratch_c       : std_ulogic_vector(11 downto 0) := x"340";
+  constant csr_mepc_c           : std_ulogic_vector(11 downto 0) := x"341";
+  constant csr_mcause_c         : std_ulogic_vector(11 downto 0) := x"342";
+  constant csr_mtval_c          : std_ulogic_vector(11 downto 0) := x"343";
+  constant csr_mip_c            : std_ulogic_vector(11 downto 0) := x"344";
   --
-  constant csr_mcycle_c    : std_ulogic_vector(11 downto 0) := x"b00"; -- mcycle
-  constant csr_minstret_c  : std_ulogic_vector(11 downto 0) := x"b02"; -- minstret
+  constant csr_pmpcfg0_c        : std_ulogic_vector(11 downto 0) := x"3a0";
+  constant csr_pmpcfg1_c        : std_ulogic_vector(11 downto 0) := x"3a1";
+  constant csr_pmpcfg2_c        : std_ulogic_vector(11 downto 0) := x"3a2";
+  constant csr_pmpcfg3_c        : std_ulogic_vector(11 downto 0) := x"3a3";
+  constant csr_pmpcfg4_c        : std_ulogic_vector(11 downto 0) := x"3a4";
+  constant csr_pmpcfg5_c        : std_ulogic_vector(11 downto 0) := x"3a5";
+  constant csr_pmpcfg6_c        : std_ulogic_vector(11 downto 0) := x"3a6";
+  constant csr_pmpcfg7_c        : std_ulogic_vector(11 downto 0) := x"3a7";
+  constant csr_pmpcfg8_c        : std_ulogic_vector(11 downto 0) := x"3a8";
+  constant csr_pmpcfg9_c        : std_ulogic_vector(11 downto 0) := x"3a9";
+  constant csr_pmpcfg10_c       : std_ulogic_vector(11 downto 0) := x"3aa";
+  constant csr_pmpcfg11_c       : std_ulogic_vector(11 downto 0) := x"3ab";
+  constant csr_pmpcfg12_c       : std_ulogic_vector(11 downto 0) := x"3ac";
+  constant csr_pmpcfg13_c       : std_ulogic_vector(11 downto 0) := x"3ad";
+  constant csr_pmpcfg14_c       : std_ulogic_vector(11 downto 0) := x"3ae";
+  constant csr_pmpcfg15_c       : std_ulogic_vector(11 downto 0) := x"3af";
   --
-  constant csr_mcycleh_c   : std_ulogic_vector(11 downto 0) := x"b80"; -- mcycleh
-  constant csr_minstreth_c : std_ulogic_vector(11 downto 0) := x"b82"; -- minstreth
-  -- read-only CSRs --
-  constant csr_cycle_c     : std_ulogic_vector(11 downto 0) := x"c00"; -- cycle
-  constant csr_time_c      : std_ulogic_vector(11 downto 0) := x"c01"; -- time
-  constant csr_instret_c   : std_ulogic_vector(11 downto 0) := x"c02"; -- instret
+  constant csr_pmpaddr0_c       : std_ulogic_vector(11 downto 0) := x"3b0";
+  constant csr_pmpaddr1_c       : std_ulogic_vector(11 downto 0) := x"3b1";
+  constant csr_pmpaddr2_c       : std_ulogic_vector(11 downto 0) := x"3b2";
+  constant csr_pmpaddr3_c       : std_ulogic_vector(11 downto 0) := x"3b3";
+  constant csr_pmpaddr4_c       : std_ulogic_vector(11 downto 0) := x"3b4";
+  constant csr_pmpaddr5_c       : std_ulogic_vector(11 downto 0) := x"3b5";
+  constant csr_pmpaddr6_c       : std_ulogic_vector(11 downto 0) := x"3b6";
+  constant csr_pmpaddr7_c       : std_ulogic_vector(11 downto 0) := x"3b7";
+  constant csr_pmpaddr8_c       : std_ulogic_vector(11 downto 0) := x"3b8";
+  constant csr_pmpaddr9_c       : std_ulogic_vector(11 downto 0) := x"3b9";
+  constant csr_pmpaddr10_c      : std_ulogic_vector(11 downto 0) := x"3ba";
+  constant csr_pmpaddr11_c      : std_ulogic_vector(11 downto 0) := x"3bb";
+  constant csr_pmpaddr12_c      : std_ulogic_vector(11 downto 0) := x"3bc";
+  constant csr_pmpaddr13_c      : std_ulogic_vector(11 downto 0) := x"3bd";
+  constant csr_pmpaddr14_c      : std_ulogic_vector(11 downto 0) := x"3be";
+  constant csr_pmpaddr15_c      : std_ulogic_vector(11 downto 0) := x"3bf";
+  constant csr_pmpaddr16_c      : std_ulogic_vector(11 downto 0) := x"3c0";
+  constant csr_pmpaddr17_c      : std_ulogic_vector(11 downto 0) := x"3c1";
+  constant csr_pmpaddr18_c      : std_ulogic_vector(11 downto 0) := x"3c2";
+  constant csr_pmpaddr19_c      : std_ulogic_vector(11 downto 0) := x"3c3";
+  constant csr_pmpaddr20_c      : std_ulogic_vector(11 downto 0) := x"3c4";
+  constant csr_pmpaddr21_c      : std_ulogic_vector(11 downto 0) := x"3c5";
+  constant csr_pmpaddr22_c      : std_ulogic_vector(11 downto 0) := x"3c6";
+  constant csr_pmpaddr23_c      : std_ulogic_vector(11 downto 0) := x"3c7";
+  constant csr_pmpaddr24_c      : std_ulogic_vector(11 downto 0) := x"3c8";
+  constant csr_pmpaddr25_c      : std_ulogic_vector(11 downto 0) := x"3c9";
+  constant csr_pmpaddr26_c      : std_ulogic_vector(11 downto 0) := x"3ca";
+  constant csr_pmpaddr27_c      : std_ulogic_vector(11 downto 0) := x"3cb";
+  constant csr_pmpaddr28_c      : std_ulogic_vector(11 downto 0) := x"3cc";
+  constant csr_pmpaddr29_c      : std_ulogic_vector(11 downto 0) := x"3cd";
+  constant csr_pmpaddr30_c      : std_ulogic_vector(11 downto 0) := x"3ce";
+  constant csr_pmpaddr31_c      : std_ulogic_vector(11 downto 0) := x"3cf";
+  constant csr_pmpaddr32_c      : std_ulogic_vector(11 downto 0) := x"3d0";
+  constant csr_pmpaddr33_c      : std_ulogic_vector(11 downto 0) := x"3d1";
+  constant csr_pmpaddr34_c      : std_ulogic_vector(11 downto 0) := x"3d2";
+  constant csr_pmpaddr35_c      : std_ulogic_vector(11 downto 0) := x"3d3";
+  constant csr_pmpaddr36_c      : std_ulogic_vector(11 downto 0) := x"3d4";
+  constant csr_pmpaddr37_c      : std_ulogic_vector(11 downto 0) := x"3d5";
+  constant csr_pmpaddr38_c      : std_ulogic_vector(11 downto 0) := x"3d6";
+  constant csr_pmpaddr39_c      : std_ulogic_vector(11 downto 0) := x"3d7";
+  constant csr_pmpaddr40_c      : std_ulogic_vector(11 downto 0) := x"3d8";
+  constant csr_pmpaddr41_c      : std_ulogic_vector(11 downto 0) := x"3d9";
+  constant csr_pmpaddr42_c      : std_ulogic_vector(11 downto 0) := x"3da";
+  constant csr_pmpaddr43_c      : std_ulogic_vector(11 downto 0) := x"3db";
+  constant csr_pmpaddr44_c      : std_ulogic_vector(11 downto 0) := x"3dc";
+  constant csr_pmpaddr45_c      : std_ulogic_vector(11 downto 0) := x"3dd";
+  constant csr_pmpaddr46_c      : std_ulogic_vector(11 downto 0) := x"3de";
+  constant csr_pmpaddr47_c      : std_ulogic_vector(11 downto 0) := x"3df";
+  constant csr_pmpaddr48_c      : std_ulogic_vector(11 downto 0) := x"3e0";
+  constant csr_pmpaddr49_c      : std_ulogic_vector(11 downto 0) := x"3e1";
+  constant csr_pmpaddr50_c      : std_ulogic_vector(11 downto 0) := x"3e2";
+  constant csr_pmpaddr51_c      : std_ulogic_vector(11 downto 0) := x"3e3";
+  constant csr_pmpaddr52_c      : std_ulogic_vector(11 downto 0) := x"3e4";
+  constant csr_pmpaddr53_c      : std_ulogic_vector(11 downto 0) := x"3e5";
+  constant csr_pmpaddr54_c      : std_ulogic_vector(11 downto 0) := x"3e6";
+  constant csr_pmpaddr55_c      : std_ulogic_vector(11 downto 0) := x"3e7";
+  constant csr_pmpaddr56_c      : std_ulogic_vector(11 downto 0) := x"3e8";
+  constant csr_pmpaddr57_c      : std_ulogic_vector(11 downto 0) := x"3e9";
+  constant csr_pmpaddr58_c      : std_ulogic_vector(11 downto 0) := x"3ea";
+  constant csr_pmpaddr59_c      : std_ulogic_vector(11 downto 0) := x"3eb";
+  constant csr_pmpaddr60_c      : std_ulogic_vector(11 downto 0) := x"3ec";
+  constant csr_pmpaddr61_c      : std_ulogic_vector(11 downto 0) := x"3ed";
+  constant csr_pmpaddr62_c      : std_ulogic_vector(11 downto 0) := x"3ee";
+  constant csr_pmpaddr63_c      : std_ulogic_vector(11 downto 0) := x"3ef";
   --
-  constant csr_cycleh_c    : std_ulogic_vector(11 downto 0) := x"c80"; -- cycleh
-  constant csr_timeh_c     : std_ulogic_vector(11 downto 0) := x"c81"; -- timeh
-  constant csr_instreth_c  : std_ulogic_vector(11 downto 0) := x"c82"; -- instreth
+  constant csr_mcycle_c         : std_ulogic_vector(11 downto 0) := x"b00";
+  constant csr_minstret_c       : std_ulogic_vector(11 downto 0) := x"b02";
   --
-  constant csr_mvendorid_c : std_ulogic_vector(11 downto 0) := x"f11"; -- mvendorid
-  constant csr_marchid_c   : std_ulogic_vector(11 downto 0) := x"f12"; -- marchid
-  constant csr_mimpid_c    : std_ulogic_vector(11 downto 0) := x"f13"; -- mimpid
-  constant csr_mhartid_c   : std_ulogic_vector(11 downto 0) := x"f14"; -- mhartid
+  constant csr_mhpmcounter3_c   : std_ulogic_vector(11 downto 0) := x"b03";
+  constant csr_mhpmcounter4_c   : std_ulogic_vector(11 downto 0) := x"b04";
+  constant csr_mhpmcounter5_c   : std_ulogic_vector(11 downto 0) := x"b05";
+  constant csr_mhpmcounter6_c   : std_ulogic_vector(11 downto 0) := x"b06";
+  constant csr_mhpmcounter7_c   : std_ulogic_vector(11 downto 0) := x"b07";
+  constant csr_mhpmcounter8_c   : std_ulogic_vector(11 downto 0) := x"b08";
+  constant csr_mhpmcounter9_c   : std_ulogic_vector(11 downto 0) := x"b09";
+  constant csr_mhpmcounter10_c  : std_ulogic_vector(11 downto 0) := x"b0a";
+  constant csr_mhpmcounter11_c  : std_ulogic_vector(11 downto 0) := x"b0b";
+  constant csr_mhpmcounter12_c  : std_ulogic_vector(11 downto 0) := x"b0c";
+  constant csr_mhpmcounter13_c  : std_ulogic_vector(11 downto 0) := x"b0d";
+  constant csr_mhpmcounter14_c  : std_ulogic_vector(11 downto 0) := x"b0e";
+  constant csr_mhpmcounter15_c  : std_ulogic_vector(11 downto 0) := x"b0f";
+  constant csr_mhpmcounter16_c  : std_ulogic_vector(11 downto 0) := x"b10";
+  constant csr_mhpmcounter17_c  : std_ulogic_vector(11 downto 0) := x"b11";
+  constant csr_mhpmcounter18_c  : std_ulogic_vector(11 downto 0) := x"b12";
+  constant csr_mhpmcounter19_c  : std_ulogic_vector(11 downto 0) := x"b13";
+  constant csr_mhpmcounter20_c  : std_ulogic_vector(11 downto 0) := x"b14";
+  constant csr_mhpmcounter21_c  : std_ulogic_vector(11 downto 0) := x"b15";
+  constant csr_mhpmcounter22_c  : std_ulogic_vector(11 downto 0) := x"b16";
+  constant csr_mhpmcounter23_c  : std_ulogic_vector(11 downto 0) := x"b17";
+  constant csr_mhpmcounter24_c  : std_ulogic_vector(11 downto 0) := x"b18";
+  constant csr_mhpmcounter25_c  : std_ulogic_vector(11 downto 0) := x"b19";
+  constant csr_mhpmcounter26_c  : std_ulogic_vector(11 downto 0) := x"b1a";
+  constant csr_mhpmcounter27_c  : std_ulogic_vector(11 downto 0) := x"b1b";
+  constant csr_mhpmcounter28_c  : std_ulogic_vector(11 downto 0) := x"b1c";
+  constant csr_mhpmcounter29_c  : std_ulogic_vector(11 downto 0) := x"b1d";
+  constant csr_mhpmcounter30_c  : std_ulogic_vector(11 downto 0) := x"b1e";
+  constant csr_mhpmcounter31_c  : std_ulogic_vector(11 downto 0) := x"b1f";
   --
-  constant csr_mzext_c     : std_ulogic_vector(11 downto 0) := x"fc0"; -- mzext (neorv32-custom)
+  constant csr_mcycleh_c        : std_ulogic_vector(11 downto 0) := x"b80";
+  constant csr_minstreth_c      : std_ulogic_vector(11 downto 0) := x"b82";
+  --
+  constant csr_mhpmcounter3h_c  : std_ulogic_vector(11 downto 0) := x"b83";
+  constant csr_mhpmcounter4h_c  : std_ulogic_vector(11 downto 0) := x"b84";
+  constant csr_mhpmcounter5h_c  : std_ulogic_vector(11 downto 0) := x"b85";
+  constant csr_mhpmcounter6h_c  : std_ulogic_vector(11 downto 0) := x"b86";
+  constant csr_mhpmcounter7h_c  : std_ulogic_vector(11 downto 0) := x"b87";
+  constant csr_mhpmcounter8h_c  : std_ulogic_vector(11 downto 0) := x"b88";
+  constant csr_mhpmcounter9h_c  : std_ulogic_vector(11 downto 0) := x"b89";
+  constant csr_mhpmcounter10h_c : std_ulogic_vector(11 downto 0) := x"b8a";
+  constant csr_mhpmcounter11h_c : std_ulogic_vector(11 downto 0) := x"b8b";
+  constant csr_mhpmcounter12h_c : std_ulogic_vector(11 downto 0) := x"b8c";
+  constant csr_mhpmcounter13h_c : std_ulogic_vector(11 downto 0) := x"b8d";
+  constant csr_mhpmcounter14h_c : std_ulogic_vector(11 downto 0) := x"b8e";
+  constant csr_mhpmcounter15h_c : std_ulogic_vector(11 downto 0) := x"b8f";
+  constant csr_mhpmcounter16h_c : std_ulogic_vector(11 downto 0) := x"b90";
+  constant csr_mhpmcounter17h_c : std_ulogic_vector(11 downto 0) := x"b91";
+  constant csr_mhpmcounter18h_c : std_ulogic_vector(11 downto 0) := x"b92";
+  constant csr_mhpmcounter19h_c : std_ulogic_vector(11 downto 0) := x"b93";
+  constant csr_mhpmcounter20h_c : std_ulogic_vector(11 downto 0) := x"b94";
+  constant csr_mhpmcounter21h_c : std_ulogic_vector(11 downto 0) := x"b95";
+  constant csr_mhpmcounter22h_c : std_ulogic_vector(11 downto 0) := x"b96";
+  constant csr_mhpmcounter23h_c : std_ulogic_vector(11 downto 0) := x"b97";
+  constant csr_mhpmcounter24h_c : std_ulogic_vector(11 downto 0) := x"b98";
+  constant csr_mhpmcounter25h_c : std_ulogic_vector(11 downto 0) := x"b99";
+  constant csr_mhpmcounter26h_c : std_ulogic_vector(11 downto 0) := x"b9a";
+  constant csr_mhpmcounter27h_c : std_ulogic_vector(11 downto 0) := x"b9b";
+  constant csr_mhpmcounter28h_c : std_ulogic_vector(11 downto 0) := x"b9c";
+  constant csr_mhpmcounter29h_c : std_ulogic_vector(11 downto 0) := x"b9d";
+  constant csr_mhpmcounter30h_c : std_ulogic_vector(11 downto 0) := x"b9e";
+  constant csr_mhpmcounter31h_c : std_ulogic_vector(11 downto 0) := x"b9f";
 
-  -- Co-Processor Operations ----------------------------------------------------------------
+  -- read-only CSRs --
+  constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
+  constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
+  constant csr_instret_c        : std_ulogic_vector(11 downto 0) := x"c02";
+  --
+  constant csr_hpmcounter3_c    : std_ulogic_vector(11 downto 0) := x"c03";
+  constant csr_hpmcounter4_c    : std_ulogic_vector(11 downto 0) := x"c04";
+  constant csr_hpmcounter5_c    : std_ulogic_vector(11 downto 0) := x"c05";
+  constant csr_hpmcounter6_c    : std_ulogic_vector(11 downto 0) := x"c06";
+  constant csr_hpmcounter7_c    : std_ulogic_vector(11 downto 0) := x"c07";
+  constant csr_hpmcounter8_c    : std_ulogic_vector(11 downto 0) := x"c08";
+  constant csr_hpmcounter9_c    : std_ulogic_vector(11 downto 0) := x"c09";
+  constant csr_hpmcounter10_c   : std_ulogic_vector(11 downto 0) := x"c0a";
+  constant csr_hpmcounter11_c   : std_ulogic_vector(11 downto 0) := x"c0b";
+  constant csr_hpmcounter12_c   : std_ulogic_vector(11 downto 0) := x"c0c";
+  constant csr_hpmcounter13_c   : std_ulogic_vector(11 downto 0) := x"c0d";
+  constant csr_hpmcounter14_c   : std_ulogic_vector(11 downto 0) := x"c0e";
+  constant csr_hpmcounter15_c   : std_ulogic_vector(11 downto 0) := x"c0f";
+  constant csr_hpmcounter16_c   : std_ulogic_vector(11 downto 0) := x"c10";
+  constant csr_hpmcounter17_c   : std_ulogic_vector(11 downto 0) := x"c11";
+  constant csr_hpmcounter18_c   : std_ulogic_vector(11 downto 0) := x"c12";
+  constant csr_hpmcounter19_c   : std_ulogic_vector(11 downto 0) := x"c13";
+  constant csr_hpmcounter20_c   : std_ulogic_vector(11 downto 0) := x"c14";
+  constant csr_hpmcounter21_c   : std_ulogic_vector(11 downto 0) := x"c15";
+  constant csr_hpmcounter22_c   : std_ulogic_vector(11 downto 0) := x"c16";
+  constant csr_hpmcounter23_c   : std_ulogic_vector(11 downto 0) := x"c17";
+  constant csr_hpmcounter24_c   : std_ulogic_vector(11 downto 0) := x"c18";
+  constant csr_hpmcounter25_c   : std_ulogic_vector(11 downto 0) := x"c19";
+  constant csr_hpmcounter26_c   : std_ulogic_vector(11 downto 0) := x"c1a";
+  constant csr_hpmcounter27_c   : std_ulogic_vector(11 downto 0) := x"c1b";
+  constant csr_hpmcounter28_c   : std_ulogic_vector(11 downto 0) := x"c1c";
+  constant csr_hpmcounter29_c   : std_ulogic_vector(11 downto 0) := x"c1d";
+  constant csr_hpmcounter30_c   : std_ulogic_vector(11 downto 0) := x"c1e";
+  constant csr_hpmcounter31_c   : std_ulogic_vector(11 downto 0) := x"c1f";
+  --
+  constant csr_cycleh_c         : std_ulogic_vector(11 downto 0) := x"c80";
+  constant csr_timeh_c          : std_ulogic_vector(11 downto 0) := x"c81";
+  constant csr_instreth_c       : std_ulogic_vector(11 downto 0) := x"c82";
+  --
+  constant csr_hpmcounter3h_c   : std_ulogic_vector(11 downto 0) := x"c83";
+  constant csr_hpmcounter4h_c   : std_ulogic_vector(11 downto 0) := x"c84";
+  constant csr_hpmcounter5h_c   : std_ulogic_vector(11 downto 0) := x"c85";
+  constant csr_hpmcounter6h_c   : std_ulogic_vector(11 downto 0) := x"c86";
+  constant csr_hpmcounter7h_c   : std_ulogic_vector(11 downto 0) := x"c87";
+  constant csr_hpmcounter8h_c   : std_ulogic_vector(11 downto 0) := x"c88";
+  constant csr_hpmcounter9h_c   : std_ulogic_vector(11 downto 0) := x"c89";
+  constant csr_hpmcounter10h_c  : std_ulogic_vector(11 downto 0) := x"c8a";
+  constant csr_hpmcounter11h_c  : std_ulogic_vector(11 downto 0) := x"c8b";
+  constant csr_hpmcounter12h_c  : std_ulogic_vector(11 downto 0) := x"c8c";
+  constant csr_hpmcounter13h_c  : std_ulogic_vector(11 downto 0) := x"c8d";
+  constant csr_hpmcounter14h_c  : std_ulogic_vector(11 downto 0) := x"c8e";
+  constant csr_hpmcounter15h_c  : std_ulogic_vector(11 downto 0) := x"c8f";
+  constant csr_hpmcounter16h_c  : std_ulogic_vector(11 downto 0) := x"c90";
+  constant csr_hpmcounter17h_c  : std_ulogic_vector(11 downto 0) := x"c91";
+  constant csr_hpmcounter18h_c  : std_ulogic_vector(11 downto 0) := x"c92";
+  constant csr_hpmcounter19h_c  : std_ulogic_vector(11 downto 0) := x"c93";
+  constant csr_hpmcounter20h_c  : std_ulogic_vector(11 downto 0) := x"c94";
+  constant csr_hpmcounter21h_c  : std_ulogic_vector(11 downto 0) := x"c95";
+  constant csr_hpmcounter22h_c  : std_ulogic_vector(11 downto 0) := x"c96";
+  constant csr_hpmcounter23h_c  : std_ulogic_vector(11 downto 0) := x"c97";
+  constant csr_hpmcounter24h_c  : std_ulogic_vector(11 downto 0) := x"c98";
+  constant csr_hpmcounter25h_c  : std_ulogic_vector(11 downto 0) := x"c99";
+  constant csr_hpmcounter26h_c  : std_ulogic_vector(11 downto 0) := x"c9a";
+  constant csr_hpmcounter27h_c  : std_ulogic_vector(11 downto 0) := x"c9b";
+  constant csr_hpmcounter28h_c  : std_ulogic_vector(11 downto 0) := x"c9c";
+  constant csr_hpmcounter29h_c  : std_ulogic_vector(11 downto 0) := x"c9d";
+  constant csr_hpmcounter30h_c  : std_ulogic_vector(11 downto 0) := x"c9e";
+  constant csr_hpmcounter31h_c  : std_ulogic_vector(11 downto 0) := x"c9f";
+  --
+  constant csr_mvendorid_c      : std_ulogic_vector(11 downto 0) := x"f11";
+  constant csr_marchid_c        : std_ulogic_vector(11 downto 0) := x"f12";
+  constant csr_mimpid_c         : std_ulogic_vector(11 downto 0) := x"f13";
+  constant csr_mhartid_c        : std_ulogic_vector(11 downto 0) := x"f14";
+
+  -- custom read-only CSRs --
+  constant csr_mzext_c          : std_ulogic_vector(11 downto 0) := x"fc0";
+
+  -- Co-Processor IDs -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- cp ids --
-  constant cp_sel_muldiv_c : std_ulogic_vector(1 downto 0) := "00"; -- MULDIV
-  constant cp_sel_atomic_c : std_ulogic_vector(1 downto 0) := "01"; -- atomic operations success/failure evaluation
---constant cp_sel_reserv_c : std_ulogic_vector(1 downto 0) := "10"; -- reserved
---constant cp_sel_reserv_c : std_ulogic_vector(1 downto 0) := "11"; -- reserved
-  -- muldiv cp --
-  constant cp_op_mul_c    : std_ulogic_vector(2 downto 0) := "000"; -- mul
-  constant cp_op_mulh_c   : std_ulogic_vector(2 downto 0) := "001"; -- mulh
-  constant cp_op_mulhsu_c : std_ulogic_vector(2 downto 0) := "010"; -- mulhsu
-  constant cp_op_mulhu_c  : std_ulogic_vector(2 downto 0) := "011"; -- mulhu
-  constant cp_op_div_c    : std_ulogic_vector(2 downto 0) := "100"; -- div
-  constant cp_op_divu_c   : std_ulogic_vector(2 downto 0) := "101"; -- divu
-  constant cp_op_rem_c    : std_ulogic_vector(2 downto 0) := "110"; -- rem
-  constant cp_op_remu_c   : std_ulogic_vector(2 downto 0) := "111"; -- remu
+  constant cp_sel_muldiv_c   : std_ulogic_vector(1 downto 0) := "00"; -- multiplication/division operations ('M' extension)
+  constant cp_sel_atomic_c   : std_ulogic_vector(1 downto 0) := "01"; -- atomic operations; success/failure evaluation ('A' extension)
+  constant cp_sel_bitmanip_c : std_ulogic_vector(1 downto 0) := "10"; -- bit manipulation ('B' extension)
+--constant cp_sel_float32_c  : std_ulogic_vector(1 downto 0) := "11"; -- reserved -- single-precision floating point operations ('F' extension)
 
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -484,6 +700,25 @@ package neorv32_package is
   constant priv_mode_m_c : std_ulogic_vector(1 downto 0) := "11"; -- machine mode
   constant priv_mode_u_c : std_ulogic_vector(1 downto 0) := "00"; -- user mode
 
+  -- HPM Event System -----------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  constant hpmcnt_event_cy_c      : natural := 0;  -- Active cycle
+  constant hpmcnt_event_never_c   : natural := 1;
+  constant hpmcnt_event_ir_c      : natural := 2;  -- Retired instruction
+  constant hpmcnt_event_cir_c     : natural := 3;  -- Retired compressed instruction
+  constant hpmcnt_event_wait_if_c : natural := 4;  -- Instruction fetch memory wait cycle
+  constant hpmcnt_event_wait_ii_c : natural := 5;  -- Instruction issue wait cycle
+  constant hpmcnt_event_load_c    : natural := 6;  -- Load operation
+  constant hpmcnt_event_store_c   : natural := 7;  -- Store operation
+  constant hpmcnt_event_wait_ls_c : natural := 8;  -- Load/store memory wait cycle
+  constant hpmcnt_event_jump_c    : natural := 9;  -- Unconditional jump
+  constant hpmcnt_event_branch_c  : natural := 10; -- Conditional branch (taken or not taken)
+  constant hpmcnt_event_tbranch_c : natural := 11; -- Conditional taken branch
+  constant hpmcnt_event_trap_c    : natural := 12; -- Entered trap
+  constant hpmcnt_event_illegal_c : natural := 13; -- Illegal instruction exception
+  --
+  constant hpmcnt_event_size_c    : natural := 14; -- length of this list
+
   -- Clock Generator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant clk_div2_c    : natural := 0;
@@ -501,11 +736,12 @@ package neorv32_package is
     generic (
       -- General --
       CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
-      BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
+      BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
       USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
       HW_THREAD_ID                 : std_ulogic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
+      CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit manipulation extensions?
       CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
@@ -516,31 +752,34 @@ package neorv32_package is
       FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
       -- Physical Memory Protection (PMP) --
-      PMP_USE                      : boolean := false;  -- implement PMP?
+      PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..64)
+      PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+      -- Hardware Performance Monitors (HPM) --
+      HPM_NUM_CNTS                 : natural := 0;      -- number of inmplemnted HPM counters (0..29)
       -- Internal Instruction memory --
-      MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
+      MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
       MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
       -- Internal Data memory --
-      MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
+      MEM_INT_DMEM_EN              : boolean := true;   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
       -- Internal Cache memory --
-      ICACHE_USE                   : boolean := false;  -- implement instruction cache
+      ICACHE_EN                    : boolean := false;  -- implement instruction cache
       ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
       ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
       -- External memory interface --
-      MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
+      MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
       -- Processor peripherals --
-      IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-      IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
-      IO_UART_USE                  : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-      IO_SPI_USE                   : boolean := true;   -- implement serial peripheral interface (SPI)?
-      IO_TWI_USE                   : boolean := true;   -- implement two-wire interface (TWI)?
-      IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-      IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
-      IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-      IO_CFU0_USE                  : boolean := false;  -- implement custom functions unit 0 (CFU0)?
-      IO_CFU1_USE                  : boolean := false   -- implement custom functions unit 1 (CFU1)?
+      IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+      IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
+      IO_UART_EN                   : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+      IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
+      IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
+      IO_PWM_EN                    : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+      IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
+      IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
+      IO_CFU0_EN                   : boolean := false;  -- implement custom functions unit 0 (CFU0)?
+      IO_CFU1_EN                   : boolean := false   -- implement custom functions unit 1 (CFU1)?
     );
     port (
       -- Global control --
@@ -558,7 +797,7 @@ package neorv32_package is
       wb_lock_o   : out std_ulogic; -- locked/exclusive bus access
       wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
       wb_err_i    : in  std_ulogic := '0'; -- transfer error
-      -- Advanced memory control signals (available if MEM_EXT_USE = true) --
+      -- Advanced memory control signals (available if MEM_EXT_EN = true) --
       fence_o     : out std_ulogic; -- indicates an executed FENCE operation
       fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
       -- GPIO --
@@ -577,10 +816,10 @@ package neorv32_package is
       twi_scl_io  : inout std_logic; -- twi serial clock line
       -- PWM --
       pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
-      -- system time input from external MTIME (available if IO_MTIME_USE = false) --
+      -- system time input from external MTIME (available if IO_MTIME_EN = false) --
       mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
       -- Interrupts --
-      mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_USE = false
+      mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
       msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
       mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
     );
@@ -596,6 +835,7 @@ package neorv32_package is
       BUS_TIMEOUT                  : natural := 63;    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
+      CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
@@ -606,7 +846,10 @@ package neorv32_package is
       FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
       -- Physical Memory Protection (PMP) --
-      PMP_USE                      : boolean := false  -- implement PMP?
+      PMP_NUM_REGIONS              : natural := 0; -- number of regions (0..64)
+      PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+      -- Hardware Performance Monitors (HPM) --
+      HPM_NUM_CNTS                 : natural := 0      -- number of inmplemnted HPM counters (0..29)
     );
     port (
       -- global control --
@@ -658,6 +901,7 @@ package neorv32_package is
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
+      CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
@@ -665,7 +909,10 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
       -- Physical memory protection (PMP) --
-      PMP_USE                      : boolean := false  -- implement physical memory protection?
+      PMP_NUM_REGIONS              : natural := 0; -- number of regions (0..64)
+      PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+      -- Hardware Performance Monitors (HPM) --
+      HPM_NUM_CNTS                 : natural := 0      -- number of inmplemnted HPM counters (0..29)
     );
     port (
       -- global control --
@@ -749,7 +996,6 @@ package neorv32_package is
       cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
       res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
       add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- address computation result
-      opb_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU operand B
       -- co-processor interface --
       cp0_start_o : out std_ulogic; -- trigger co-processor 0
       cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
@@ -768,7 +1014,7 @@ package neorv32_package is
     );
   end component;
 
-  -- Component: CPU Co-Processor MULDIV -----------------------------------------------------
+  -- Component: CPU Co-Processor MULDIV ('M' extension) -------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_muldiv
     generic (
@@ -789,13 +1035,33 @@ package neorv32_package is
     );
   end component;
 
+  -- Component: CPU Co-Processor Bit Manipulation ('B' extension) ---------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_cpu_cp_bitmanip
+    port (
+      -- global control --
+      clk_i   : in  std_ulogic; -- global clock, rising edge
+      rstn_i  : in  std_ulogic; -- global reset, low-active, async
+      ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      start_i : in  std_ulogic; -- trigger operation
+      -- data input --
+      cmp_i   : in  std_ulogic_vector(1 downto 0); -- comparator status
+      rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
+      rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
+      -- result and status --
+      res_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
+      valid_o : out std_ulogic -- data output valid
+    );
+  end component;
+
   -- Component: CPU Bus Interface -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_bus
     generic (
       CPU_EXTENSION_RISCV_C : boolean := true;  -- implement compressed extension?
       -- Physical memory protection (PMP) --
-      PMP_USE               : boolean := false; -- implement physical memory protection?
+      PMP_NUM_REGIONS       : natural := 0;       -- number of regions (0..64)
+      PMP_MIN_GRANULARITY   : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
       -- Bus Timeout --
       BUS_TIMEOUT           : natural := 63     -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     );
@@ -956,7 +1222,7 @@ package neorv32_package is
       IMEM_BASE      : std_ulogic_vector(31 downto 0) := x"00000000"; -- memory base address
       IMEM_SIZE      : natural := 4*1024; -- processor-internal instruction memory size in bytes
       IMEM_AS_ROM    : boolean := false;  -- implement IMEM as read-only memory?
-      BOOTLOADER_USE : boolean := true    -- implement and use bootloader?
+      BOOTLOADER_EN  : boolean := true    -- implement and use bootloader?
     );
     port (
       clk_i  : in  std_ulogic; -- global clock line
@@ -1179,10 +1445,10 @@ package neorv32_package is
     generic (
       WB_PIPELINED_MODE : boolean := false; -- false: classic/standard wishbone mode, true: pipelined wishbone mode
       -- Internal instruction memory --
-      MEM_INT_IMEM_USE  : boolean := true;   -- implement processor-internal instruction memory
+      MEM_INT_IMEM_EN   : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
       -- Internal data memory --
-      MEM_INT_DMEM_USE  : boolean := true;   -- implement processor-internal data memory
+      MEM_INT_DMEM_EN   : boolean := true;   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE : natural := 4*1024  -- size of processor-internal data memory in bytes
     );
     port (
@@ -1265,33 +1531,33 @@ package neorv32_package is
     generic (
       -- General --
       CLOCK_FREQUENCY      : natural := 0;      -- clock frequency of clk_i in Hz
-      BOOTLOADER_USE       : boolean := true;   -- implement processor-internal bootloader?
+      BOOTLOADER_EN        : boolean := true;   -- implement processor-internal bootloader?
       USER_CODE            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
       -- Internal Instruction memory --
-      MEM_INT_IMEM_USE     : boolean := true;   -- implement processor-internal instruction memory
+      MEM_INT_IMEM_EN      : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE    : natural := 8*1024; -- size of processor-internal instruction memory in bytes
       MEM_INT_IMEM_ROM     : boolean := false;  -- implement processor-internal instruction memory as ROM
       -- Internal Data memory --
-      MEM_INT_DMEM_USE     : boolean := true;   -- implement processor-internal data memory
+      MEM_INT_DMEM_EN      : boolean := true;   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE    : natural := 4*1024; -- size of processor-internal data memory in bytes
       -- Internal Cache memory --
-      ICACHE_USE           : boolean := true;   -- implement instruction cache
+      ICACHE_EN            : boolean := true;   -- implement instruction cache
       ICACHE_NUM_BLOCKS    : natural := 4;      -- i-cache: number of blocks (min 2), has to be a power of 2
       ICACHE_BLOCK_SIZE    : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
       ICACHE_ASSOCIATIVITY : natural := 1;      -- i-cache: associativity (min 1), has to be a power 2
       -- External memory interface --
-      MEM_EXT_USE          : boolean := false;  -- implement external memory bus interface?
+      MEM_EXT_EN           : boolean := false;  -- implement external memory bus interface?
       -- Processor peripherals --
-      IO_GPIO_USE          : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-      IO_MTIME_USE         : boolean := true;   -- implement machine system timer (MTIME)?
-      IO_UART_USE          : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-      IO_SPI_USE           : boolean := true;   -- implement serial peripheral interface (SPI)?
-      IO_TWI_USE           : boolean := true;   -- implement two-wire interface (TWI)?
-      IO_PWM_USE           : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-      IO_WDT_USE           : boolean := true;   -- implement watch dog timer (WDT)?
-      IO_TRNG_USE          : boolean := true;   -- implement true random number generator (TRNG)?
-      IO_CFU0_USE          : boolean := true;   -- implement custom functions unit 0 (CFU0)?
-      IO_CFU1_USE          : boolean := true    -- implement custom functions unit 1 (CFU1)?
+      IO_GPIO_EN           : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+      IO_MTIME_EN          : boolean := true;   -- implement machine system timer (MTIME)?
+      IO_UART_EN           : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+      IO_SPI_EN            : boolean := true;   -- implement serial peripheral interface (SPI)?
+      IO_TWI_EN            : boolean := true;   -- implement two-wire interface (TWI)?
+      IO_PWM_EN            : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+      IO_WDT_EN            : boolean := true;   -- implement watch dog timer (WDT)?
+      IO_TRNG_EN           : boolean := true;   -- implement true random number generator (TRNG)?
+      IO_CFU0_EN           : boolean := true;   -- implement custom functions unit 0 (CFU0)?
+      IO_CFU1_EN           : boolean := true    -- implement custom functions unit 1 (CFU1)?
     );
     port (
       -- host access --
@@ -1307,7 +1573,7 @@ end neorv32_package;
 
 package body neorv32_package is
 
-  -- Function: Minimal required bit width ---------------------------------------------------
+  -- Function: Minimal required number of bits to represent input number --------------------
   -- -------------------------------------------------------------------------------------------
   function index_size_f(input : natural) return natural is
   begin

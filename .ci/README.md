@@ -1,6 +1,6 @@
 ## Scripts for Continous Integration
 
-These scripts are called by the Travis CI job configuration file `.travis.yml` in the repository's root directory.
+These scripts are called by the GitHub Actions workflows in `.github/workflows`.
 
 ### `install.sh`
 

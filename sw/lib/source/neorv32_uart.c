@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -38,7 +38,7 @@
  * @author Stephan Nolting
  * @brief Universal asynchronous receiver/transmitter (UART) HW driver source file.
  *
- * @note These functions should only be used if the UART unit was synthesized (IO_UART_USE = true).
+ * @note These functions should only be used if the UART unit was synthesized (IO_UART_EN = true).
  **************************************************************************/
 
 #include "neorv32.h"
@@ -75,10 +75,11 @@ int neorv32_uart_available(void) {
  * @warning To enable simulation mode add <USER_FLAGS+=-DUART_SIM_MODE> when compiling.
  *
  * @param[in] baudrate Targeted BAUD rate (e.g. 9600).
+ * @param[in] parity PArity configuration (00=off, 10=even, 11=odd).
  * @param[in] rx_irq Enable RX interrupt (data received) when 1.
  * @param[in] tx_irq Enable TX interrupt (transmission done) when 1.
  **************************************************************************/
-void neorv32_uart_setup(uint32_t baudrate, uint8_t rx_irq, uint8_t tx_irq) {
+void neorv32_uart_setup(uint32_t baudrate, uint8_t parity, uint8_t rx_irq, uint8_t tx_irq) {
 
   UART_CT = 0; // reset
 
@@ -116,6 +117,9 @@ void neorv32_uart_setup(uint32_t baudrate, uint8_t rx_irq, uint8_t tx_irq) {
   uint32_t uart_en = 1;
   uart_en = uart_en << UART_CT_EN;
 
+  uint32_t parity_config = (uint32_t)(parity & 3);
+  parity_config = parity_config << UART_CT_PMODE0;
+
   uint32_t rx_irq_en = (uint32_t)(rx_irq & 1);
   rx_irq_en = rx_irq_en << UART_CT_RX_IRQ;
 
@@ -123,7 +127,7 @@ void neorv32_uart_setup(uint32_t baudrate, uint8_t rx_irq, uint8_t tx_irq) {
   tx_irq_en = tx_irq_en << UART_CT_TX_IRQ;
 
   /* Enable the UART for SIM mode. */
-  /* Only use this for simulation! */
+  /* USE THIS ONLY FOR SIMULATION! */
 #ifdef UART_SIM_MODE
   #warning UART_SIM_MODE enabled! Sending all UART.TX data to text.io simulation output instead of real UART transmitter. Use this for simulations only!
   uint32_t sim_mode = 1 << UART_CT_SIM_MODE;
@@ -131,7 +135,7 @@ void neorv32_uart_setup(uint32_t baudrate, uint8_t rx_irq, uint8_t tx_irq) {
   uint32_t sim_mode = 0;
 #endif
 
-  UART_CT = prsc | baud | uart_en | rx_irq_en | tx_irq_en | sim_mode;
+  UART_CT = prsc | baud | uart_en | parity_config | rx_irq_en | tx_irq_en | sim_mode;
 }
 
 
@@ -182,7 +186,7 @@ int neorv32_uart_tx_busy(void) {
 /**********************************************************************//**
  * Get char from UART.
  *
- * @note This function is blocking.
+ * @note This function is blocking and does not check for UART frame/parity errors.
  *
  * @return Received char.
  **************************************************************************/
@@ -199,7 +203,47 @@ char neorv32_uart_getc(void) {
 
 
 /**********************************************************************//**
- * Check if UARt has received a char.
+ * Get char from UART (and check errors).
+ *
+ * @note This function is non-blocking and checks for frame and parity errors.
+ *
+ * @param[in,out] data Received char.
+ * @return Status code (0=nothing received, 1: char received without errors; -1: char received with frame error; -2: char received with parity error; -3 char received with frame & parity error).
+ **************************************************************************/
+int neorv32_uart_getc_secure(char *data) {
+
+  uint32_t uart_rx = UART_DATA;
+  if (uart_rx & (1<<UART_DATA_AVAIL)) { // char available at all?
+
+    int status = 0;
+
+    // check for frame error
+    if (uart_rx & (1<<UART_DATA_FERR)) {
+      status -= 1;
+    }
+
+    // check for parity error
+    if (uart_rx & (1<<UART_DATA_PERR)) {
+      status -= 2;
+    }
+
+    if (status == 0) {
+      status = 1;
+    }
+
+    // get received byte
+    *data =  (char)uart_rx;
+
+    return status;
+  }
+  else {
+    return 0;
+  }
+}
+
+
+/**********************************************************************//**
+ * Check if UART has received a char.
  *
  * @note This function is non-blocking.
  * @note Use neorv32_uart_char_received_get(void) to get the char.

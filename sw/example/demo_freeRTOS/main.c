@@ -46,6 +46,9 @@
  * Modified for the NEORV32 processor by Stephan Nolting.
  */
 
+/* UART hardware constants. */
+#define BAUD_RATE 19200
+
 #ifdef RUN_FREERTOS_DEMO
 
 #include <stdint.h>
@@ -65,9 +68,6 @@
 /* Set mainCREATE_SIMPLE_BLINKY_DEMO_ONLY to one to run the simple blinky demo,
 or 0 to run the more comprehensive test and demo application. */
 #define mainCREATE_SIMPLE_BLINKY_DEMO_ONLY	1
-
-/* UART hardware constants. */
-#define BAUD_RATE 19200
 
 /*-----------------------------------------------------------*/
 
@@ -127,8 +127,11 @@ static void prvSetupHardware( void )
   // clear GPIO.out port
   neorv32_gpio_port_set(0);
 
-  // configure UART for default baud rate, no rx interrupt, no tx interrupt
-  neorv32_uart_setup(BAUD_RATE, 0, 0);
+  // init UART at default baud rate, no parity bits, no rx interrupt, no tx interrupt
+  neorv32_uart_setup(BAUD_RATE, 0b00, 0, 0);
+
+  // check available hardware extensions and compare with compiler flags
+  neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 }
 
 /*-----------------------------------------------------------*/
@@ -228,7 +231,8 @@ void SystemIrqHandler( uint32_t mcause )
 #include <neorv32.h>
 int main() {
 
-  neorv32_uart_setup(19200, 0, 0);
+  // init UART at default baud rate, no parity bits, no rx interrupt, no tx interrupt
+  neorv32_uart_setup(BAUD_RATE, 0b00, 0, 0);
   neorv32_uart_print("ERROR! FreeRTOS has not been compiled. Use >>make USER_FLAGS+=-DRUN_FREERTOS_DEMO clean_all exe<< to compile it.\n");
   return 0;
 }

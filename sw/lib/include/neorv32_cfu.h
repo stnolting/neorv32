@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -41,7 +41,7 @@
  * @warning There are no "real" CFU driver functions available here, because these functions are defined by the actual hardware.
  * @warning Hence, the CFU designer has to provide the actual driver functions.
  *
- * @note These functions should only be used if the CFU0/CFU1 was synthesized (IO_CFU0_USE/IO_CFU1_USE = true).
+ * @note These functions should only be used if the CFU0/CFU1 was synthesized (IO_CFU0_EN/IO_CFU1_EN = true).
  **************************************************************************/
 
 #ifndef neorv32_cfu_h

@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -53,14 +53,16 @@ uint64_t neorv32_cpu_get_systime(void);
 void neorv32_cpu_delay_ms(uint32_t time_ms);
 void __attribute__((naked)) neorv32_cpu_goto_user_mode(void);
 int neorv32_cpu_atomic_cas(uint32_t addr, uint32_t expected, uint32_t desired);
+uint32_t neorv32_cpu_pmp_get_num_regions(void);
 uint32_t neorv32_cpu_pmp_get_granularity(void);
 int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint32_t size, uint8_t config);
+uint32_t neorv32_cpu_hpm_get_counters(void);
 
 
 /**********************************************************************//**
  * Read data from CPU configuration and status register (CSR).
  *
- * @param[in] csr_id ID of CSR to read. See #NEORV32_CPU_CSRS_enum.
+ * @param[in] csr_id ID of CSR to read. See #NEORV32_CSR_enum.
  * @return Read data (uint32_t).
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int csr_id) {
@@ -76,7 +78,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int c
 /**********************************************************************//**
  * Write data to CPU configuration and status register (CSR).
  *
- * @param[in] csr_id ID of CSR to write. See #NEORV32_CPU_CSRS_enum.
+ * @param[in] csr_id ID of CSR to write. See #NEORV32_CSR_enum.
  * @param[in] data Data to write (uint32_t).
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_csr_write(const int csr_id, uint32_t data) {
@@ -108,7 +110,7 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_sleep(void) {
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_eint(void) {
 
-  asm volatile ("csrrsi zero, mstatus, %0" : : "i" (1 << CPU_MSTATUS_MIE));
+  asm volatile ("csrrsi zero, mstatus, %0" : : "i" (1 << CSR_MSTATUS_MIE));
   asm volatile ("nop");
   asm volatile ("nop");
 }
@@ -119,7 +121,7 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_eint(void) {
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_dint(void) {
 
-  asm volatile ("csrrci zero, mstatus, %0" : : "i" (1 << CPU_MSTATUS_MIE));
+  asm volatile ("csrrci zero, mstatus, %0" : : "i" (1 << CSR_MSTATUS_MIE));
   asm volatile ("nop");
   asm volatile ("nop");
 }

@@ -5,7 +5,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -60,7 +60,6 @@ entity neorv32_cpu_alu is
     cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
     res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
     add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- address computation result
-    opb_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU operand B
     -- co-processor interface --
     cp0_start_o : out std_ulogic; -- trigger co-processor 0
     cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
@@ -127,8 +126,6 @@ begin
   -- -------------------------------------------------------------------------------------------
   opa <= pc2_i when (ctrl_i(ctrl_alu_opa_mux_c) = '1') else rs1_i; -- operand a (first ALU input operand), only required for arithmetic ops
   opb <= imm_i when (ctrl_i(ctrl_alu_opb_mux_c) = '1') else rs2_i; -- operand b (second ALU input operand)
-  --
-  opb_o <= opb;
 
 
   -- Comparator Unit ------------------------------------------------------------------------

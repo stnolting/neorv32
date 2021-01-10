@@ -9,7 +9,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -49,11 +49,12 @@ entity neorv32_top is
   generic (
     -- General --
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
-    BOOTLOADER_USE               : boolean := true;   -- implement processor-internal bootloader?
+    BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
     USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     HW_THREAD_ID                 : std_ulogic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
@@ -64,37 +65,40 @@ entity neorv32_top is
     FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      : boolean := false;  -- implement PMP?
+    PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..64)
+    PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    -- Hardware Performance Monitors (HPM) --
+    HPM_NUM_CNTS                 : natural := 0;      -- number of inmplemnted HPM counters (0..29)
     -- Internal Instruction memory --
-    MEM_INT_IMEM_USE             : boolean := true;   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
-    MEM_INT_DMEM_USE             : boolean := true;   -- implement processor-internal data memory
+    MEM_INT_DMEM_EN              : boolean := true;   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_USE                   : boolean := false;  -- implement instruction cache
+    ICACHE_EN                    : boolean := false;  -- implement instruction cache
     ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface --
-    MEM_EXT_USE                  : boolean := false;  -- implement external memory bus interface?
+    MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
     -- Processor peripherals --
-    IO_GPIO_USE                  : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE                 : boolean := true;   -- implement machine system timer (MTIME)?
-    IO_UART_USE                  : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                   : boolean := true;   -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                   : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_USE                   : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                   : boolean := true;   -- implement watch dog timer (WDT)?
-    IO_TRNG_USE                  : boolean := false;  -- implement true random number generator (TRNG)?
-    IO_CFU0_USE                  : boolean := false;  -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_USE                  : boolean := false   -- implement custom functions unit 1 (CFU1)?
+    IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
+    IO_UART_EN                   : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
+    IO_PWM_EN                    : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
+    IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
+    IO_CFU0_EN                   : boolean := false;  -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_EN                   : boolean := false   -- implement custom functions unit 1 (CFU1)?
   );
   port (
     -- Global control --
     clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
     rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
-    -- Wishbone bus interface (available if MEM_EXT_USE = true) --
+    -- Wishbone bus interface (available if MEM_EXT_EN = true) --
     wb_tag_o    : out std_ulogic_vector(02 downto 0); -- tag
     wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
     wb_dat_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
@@ -106,29 +110,29 @@ entity neorv32_top is
     wb_lock_o   : out std_ulogic; -- locked/exclusive bus access
     wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
     wb_err_i    : in  std_ulogic := '0'; -- transfer error
-    -- Advanced memory control signals (available if MEM_EXT_USE = true) --
+    -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o     : out std_ulogic; -- indicates an executed FENCE operation
     fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
-    -- GPIO (available if IO_GPIO_USE = true) --
+    -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      : out std_ulogic_vector(31 downto 0); -- parallel output
     gpio_i      : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
-    -- UART (available if IO_UART_USE = true) --
+    -- UART (available if IO_UART_EN = true) --
     uart_txd_o  : out std_ulogic; -- UART send data
     uart_rxd_i  : in  std_ulogic := '0'; -- UART receive data
-    -- SPI (available if IO_SPI_USE = true) --
+    -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   : out std_ulogic; -- SPI serial clock
     spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
     spi_sdi_i   : in  std_ulogic := '0'; -- controller data in, peripheral data out
     spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
-    -- TWI (available if IO_TWI_USE = true) --
+    -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  : inout std_logic; -- twi serial data line
     twi_scl_io  : inout std_logic; -- twi serial clock line
-    -- PWM (available if IO_PWM_USE = true) --
+    -- PWM (available if IO_PWM_EN = true) --
     pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
-    -- system time input from external MTIME (available if IO_MTIME_USE = false) --
+    -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
     -- Interrupts --
-    mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_USE = false
+    mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
     mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
   );
@@ -137,11 +141,11 @@ end neorv32_top;
 architecture neorv32_top_rtl of neorv32_top is
 
   -- CPU boot address --
-  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(BOOTLOADER_USE, boot_rom_base_c, ispace_base_c);
+  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(BOOTLOADER_EN, boot_rom_base_c, ispace_base_c);
 
   -- Bus timeout --
   constant bus_timeout_temp_c : natural := 2**index_size_f(bus_timeout_c); -- round to next power-of-two
-  constant bus_timeout_proc_c : natural := cond_sel_natural_f(ICACHE_USE, ((ICACHE_BLOCK_SIZE/4)*bus_timeout_temp_c)-1, bus_timeout_c);
+  constant bus_timeout_proc_c : natural := cond_sel_natural_f(ICACHE_EN, ((ICACHE_BLOCK_SIZE/4)*bus_timeout_temp_c)-1, bus_timeout_c);
 
   -- alignment check for internal memories --
   constant imem_align_check_c : std_ulogic_vector(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) := (others => '0');
@@ -243,26 +247,26 @@ begin
   -- clock --
   assert not (CLOCK_FREQUENCY = 0) report "NEORV32 PROCESSOR CONFIG ERROR! Core clock frequency (CLOCK_FREQUENCY) not specified." severity error;
   -- internal bootloader ROM --
-  assert not ((BOOTLOADER_USE = true) and (boot_rom_size_c > boot_rom_max_size_c)) report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range." severity error;
-  assert not ((BOOTLOADER_USE = true) and (MEM_INT_IMEM_ROM = true)) report "NEORV32 PROCESSOR CONFIG WARNING! IMEM is configured as read-only. Bootloader will not be able to load new executables." severity warning;
+  assert not ((BOOTLOADER_EN = true) and (boot_rom_size_c > boot_rom_max_size_c)) report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range." severity error;
+  assert not ((BOOTLOADER_EN = true) and (MEM_INT_IMEM_ROM = true)) report "NEORV32 PROCESSOR CONFIG WARNING! IMEM is configured as read-only. Bootloader will not be able to load new executables." severity warning;
   -- memory system - data/instruction fetch --
-  assert not ((MEM_EXT_USE = false) and (MEM_INT_DMEM_USE = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal data memory." severity error;
-  assert not ((MEM_EXT_USE = false) and (MEM_INT_IMEM_USE = false) and (BOOTLOADER_USE = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal data memory and bootloader." severity error;
+  assert not ((MEM_EXT_EN = false) and (MEM_INT_DMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal data memory." severity error;
+  assert not ((MEM_EXT_EN = false) and (MEM_INT_IMEM_EN = false) and (BOOTLOADER_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal data memory and bootloader." severity error;
   -- memory system - size --
-  assert not ((MEM_INT_DMEM_USE = true) and (is_power_of_two_f(MEM_INT_IMEM_SIZE) = false)) report "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_IMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
-  assert not ((MEM_INT_IMEM_USE = true) and (is_power_of_two_f(MEM_INT_DMEM_SIZE) = false)) report "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_DMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
+  assert not ((MEM_INT_DMEM_EN = true) and (is_power_of_two_f(MEM_INT_IMEM_SIZE) = false)) report "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_IMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
+  assert not ((MEM_INT_IMEM_EN = true) and (is_power_of_two_f(MEM_INT_DMEM_SIZE) = false)) report "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_DMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
   -- memory system - alignment --
   assert not (ispace_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address must be 4-byte-aligned." severity error;
   assert not (dspace_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 4-byte-aligned." severity error;
-  assert not ((ispace_base_c(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) /= imem_align_check_c) and (MEM_INT_IMEM_USE = true)) report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address has to be aligned to IMEM size." severity error;
-  assert not ((dspace_base_c(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) /= dmem_align_check_c) and (MEM_INT_DMEM_USE = true)) report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address has to be aligned to DMEM size." severity error;
+  assert not ((ispace_base_c(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) /= imem_align_check_c) and (MEM_INT_IMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address has to be aligned to IMEM size." severity error;
+  assert not ((dspace_base_c(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) /= dmem_align_check_c) and (MEM_INT_DMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address has to be aligned to DMEM size." severity error;
   -- memory system - layout warning --
   assert not (ispace_base_c /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framework." severity warning;
   assert not (dspace_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framework." severity warning;
   -- memory system - the i-cache is intended to accelerate instruction fetch via the external memory interface only --
-  assert not ((ICACHE_USE = true) and (MEM_EXT_USE = false)) report "NEORV32 PROCESSOR CONFIG NOTE. Implementing i-cache without having the external memory interface implemented. The i-cache is intended to accelerate instruction fetch via the external memory interface." severity note;
+  assert not ((ICACHE_EN = true) and (MEM_EXT_EN = false)) report "NEORV32 PROCESSOR CONFIG NOTE. Implementing i-cache without having the external memory interface implemented. The i-cache is intended to accelerate instruction fetch via the external memory interface." severity note;
   -- memory system - cached instruction fetch latency check --
-  assert not (ICACHE_USE = true) report "NEORV32 PROCESSOR CONFIG WARNING! Implementing i-cache. Increasing bus access timeout from " & integer'image(bus_timeout_c) & " cycles to " & integer'image(bus_timeout_proc_c) & " cycles." severity warning;
+  assert not (ICACHE_EN = true) report "NEORV32 PROCESSOR CONFIG WARNING! Implementing i-cache. Increasing bus access timeout from " & integer'image(bus_timeout_c) & " cycles to " & integer'image(bus_timeout_proc_c) & " cycles." severity warning;
 
 
   -- Reset Generator ------------------------------------------------------------------------
@@ -333,6 +337,7 @@ begin
     BUS_TIMEOUT                  => bus_timeout_proc_c,  -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
@@ -343,7 +348,10 @@ begin
     FAST_MUL_EN                  => FAST_MUL_EN,         -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,       -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      => PMP_USE              -- implement PMP?
+    PMP_NUM_REGIONS              => PMP_NUM_REGIONS,     -- number of regions (0..64)
+    PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY, -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    -- Hardware Performance Monitors (HPM) --
+    HPM_NUM_CNTS                 => HPM_NUM_CNTS         -- number of inmplemnted HPM counters (0..29)
   )
   port map (
     -- global control --
@@ -403,7 +411,7 @@ begin
   -- CPU Instruction Cache ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_icache_inst_true:
-  if (ICACHE_USE = true) generate
+  if (ICACHE_EN = true) generate
     neorv32_icache_inst: neorv32_cache
     generic map (
       CACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS, -- number of blocks (min 2), has to be a power of 2
@@ -440,7 +448,7 @@ begin
   end generate;
 
   neorv32_icache_inst_false:
-  if (ICACHE_USE = false) generate
+  if (ICACHE_EN = false) generate
     i_cache.addr   <= cpu_i.addr;
     cpu_i.rdata    <= i_cache.rdata;
     i_cache.wdata  <= cpu_i.wdata;
@@ -519,13 +527,13 @@ begin
   -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_int_imem_inst_true:
-  if (MEM_INT_IMEM_USE = true) generate
+  if (MEM_INT_IMEM_EN = true) generate
     neorv32_int_imem_inst: neorv32_imem
     generic map (
       IMEM_BASE      => imem_base_c,       -- memory base address
       IMEM_SIZE      => MEM_INT_IMEM_SIZE, -- processor-internal instruction memory size in bytes
       IMEM_AS_ROM    => MEM_INT_IMEM_ROM,  -- implement IMEM as read-only memory?
-      BOOTLOADER_USE => BOOTLOADER_USE     -- implement and use bootloader?
+      BOOTLOADER_EN => BOOTLOADER_EN     -- implement and use bootloader?
     )
     port map (
       clk_i  => clk_i,       -- global clock line
@@ -540,7 +548,7 @@ begin
   end generate;
 
   neorv32_int_imem_inst_false:
-  if (MEM_INT_IMEM_USE = false) generate
+  if (MEM_INT_IMEM_EN = false) generate
     imem_rdata <= (others => '0');
     imem_ack   <= '0';
   end generate;
@@ -549,7 +557,7 @@ begin
   -- Processor-Internal Data Memory (DMEM) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_int_dmem_inst_true:
-  if (MEM_INT_DMEM_USE = true) generate
+  if (MEM_INT_DMEM_EN = true) generate
     neorv32_int_dmem_inst: neorv32_dmem
     generic map (
       DMEM_BASE => dmem_base_c,      -- memory base address
@@ -568,7 +576,7 @@ begin
   end generate;
 
   neorv32_int_dmem_inst_false:
-  if (MEM_INT_DMEM_USE = false) generate
+  if (MEM_INT_DMEM_EN = false) generate
     dmem_rdata <= (others => '0');
     dmem_ack   <= '0';
   end generate;
@@ -577,7 +585,7 @@ begin
   -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_boot_rom_inst_true:
-  if (BOOTLOADER_USE = true) generate
+  if (BOOTLOADER_EN = true) generate
     neorv32_boot_rom_inst: neorv32_boot_rom
     generic map (
       BOOTROM_BASE => boot_rom_base_c, -- boot ROM base address
@@ -593,7 +601,7 @@ begin
   end generate;
 
   neorv32_boot_rom_inst_false:
-  if (BOOTLOADER_USE = false) generate
+  if (BOOTLOADER_EN = false) generate
     bootrom_rdata <= (others => '0');
     bootrom_ack   <= '0';
   end generate;
@@ -602,15 +610,15 @@ begin
   -- External Wishbone Gateway (WISHBONE) ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_wishbone_inst_true:
-  if (MEM_EXT_USE = true) generate
+  if (MEM_EXT_EN = true) generate
     neorv32_wishbone_inst: neorv32_wishbone
     generic map (
       WB_PIPELINED_MODE => wb_pipe_mode_c,     -- false: classic/standard wishbone mode, true: pipelined wishbone mode
       -- Internal instruction memory --
-      MEM_INT_IMEM_USE  => MEM_INT_IMEM_USE,   -- implement processor-internal instruction memory
+      MEM_INT_IMEM_EN  => MEM_INT_IMEM_EN,   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE,  -- size of processor-internal instruction memory in bytes
       -- Internal data memory --
-      MEM_INT_DMEM_USE  => MEM_INT_DMEM_USE,   -- implement processor-internal data memory
+      MEM_INT_DMEM_EN  => MEM_INT_DMEM_EN,   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE   -- size of processor-internal data memory in bytes
     )
     port map (
@@ -646,7 +654,7 @@ begin
   end generate;
 
   neorv32_wishbone_inst_false:
-  if (MEM_EXT_USE = false) generate
+  if (MEM_EXT_EN = false) generate
     wishbone_rdata <= (others => '0');
     wishbone_ack   <= '0';
     wishbone_err   <= '0';
@@ -673,7 +681,7 @@ begin
   -- General Purpose Input/Output Port (GPIO) -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_gpio_inst_true:
-  if (IO_GPIO_USE = true) generate
+  if (IO_GPIO_EN = true) generate
     neorv32_gpio_inst: neorv32_gpio
     port map (
       -- host access --
@@ -693,7 +701,7 @@ begin
   end generate;
 
   neorv32_gpio_inst_false:
-  if (IO_GPIO_USE = false) generate
+  if (IO_GPIO_EN = false) generate
     gpio_rdata <= (others => '0');
     gpio_ack   <= '0';
     gpio_o     <= (others => '0');
@@ -704,7 +712,7 @@ begin
   -- Watch Dog Timer (WDT) ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_wdt_inst_true:
-  if (IO_WDT_USE = true) generate
+  if (IO_WDT_EN = true) generate
     neorv32_wdt_inst: neorv32_wdt
     port map (
       -- host access --
@@ -726,7 +734,7 @@ begin
   end generate;
 
   neorv32_wdt_inst_false:
-  if (IO_WDT_USE = false) generate
+  if (IO_WDT_EN = false) generate
     wdt_rdata <= (others => '0');
     wdt_ack   <= '0';
     wdt_irq   <= '0';
@@ -738,7 +746,7 @@ begin
   -- Machine System Timer (MTIME) -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_mtime_inst_true:
-  if (IO_MTIME_USE = true) generate
+  if (IO_MTIME_EN = true) generate
     neorv32_mtime_inst: neorv32_mtime
     port map (
       -- host access --
@@ -758,7 +766,7 @@ begin
   end generate;
 
   neorv32_mtime_inst_false:
-  if (IO_MTIME_USE = false) generate
+  if (IO_MTIME_EN = false) generate
     mtime_rdata <= (others => '0');
     mtime_time  <= mtime_i; -- use external machine timer time signal
     mtime_ack   <= '0';
@@ -769,7 +777,7 @@ begin
   -- Universal Asynchronous Receiver/Transmitter (UART) -------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_uart_inst_true:
-  if (IO_UART_USE = true) generate
+  if (IO_UART_EN = true) generate
     neorv32_uart_inst: neorv32_uart
     port map (
       -- host access --
@@ -792,7 +800,7 @@ begin
   end generate;
 
   neorv32_uart_inst_false:
-  if (IO_UART_USE = false) generate
+  if (IO_UART_EN = false) generate
     uart_rdata <= (others => '0');
     uart_ack   <= '0';
     uart_txd_o <= '0';
@@ -804,7 +812,7 @@ begin
   -- Serial Peripheral Interface (SPI) ------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_spi_inst_true:
-  if (IO_SPI_USE = true) generate
+  if (IO_SPI_EN = true) generate
     neorv32_spi_inst: neorv32_spi
     port map (
       -- host access --
@@ -829,7 +837,7 @@ begin
   end generate;
 
   neorv32_spi_inst_false:
-  if (IO_SPI_USE = false) generate
+  if (IO_SPI_EN = false) generate
     spi_rdata  <= (others => '0');
     spi_ack    <= '0';
     spi_sck_o  <= '0';
@@ -843,7 +851,7 @@ begin
   -- Two-Wire Interface (TWI) ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_twi_inst_true:
-  if (IO_TWI_USE = true) generate
+  if (IO_TWI_EN = true) generate
     neorv32_twi_inst: neorv32_twi
     port map (
       -- host access --
@@ -866,7 +874,7 @@ begin
   end generate;
 
   neorv32_twi_inst_false:
-  if (IO_TWI_USE = false) generate
+  if (IO_TWI_EN = false) generate
     twi_rdata  <= (others => '0');
     twi_ack    <= '0';
 --  twi_sda_io <= 'Z';
@@ -879,7 +887,7 @@ begin
   -- Pulse-Width Modulation Controller (PWM) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_pwm_inst_true:
-  if (IO_PWM_USE = true) generate
+  if (IO_PWM_EN = true) generate
     neorv32_pwm_inst: neorv32_pwm
     port map (
       -- host access --
@@ -899,7 +907,7 @@ begin
   end generate;
 
   neorv32_pwm_inst_false:
-  if (IO_PWM_USE = false) generate
+  if (IO_PWM_EN = false) generate
     pwm_rdata <= (others => '0');
     pwm_ack   <= '0';
     pwm_cg_en <= '0';
@@ -910,7 +918,7 @@ begin
   -- True Random Number Generator (TRNG) ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_trng_inst_true:
-  if (IO_TRNG_USE = true) generate
+  if (IO_TRNG_EN = true) generate
     neorv32_trng_inst: neorv32_trng
     port map (
       -- host access --
@@ -925,7 +933,7 @@ begin
   end generate;
 
   neorv32_trng_inst_false:
-  if (IO_TRNG_USE = false) generate
+  if (IO_TRNG_EN = false) generate
     trng_rdata <= (others => '0');
     trng_ack   <= '0';
   end generate;
@@ -934,7 +942,7 @@ begin
   -- Custom Functions Unit 0 (CFU0) ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cfu0_inst_true:
-  if (IO_CFU0_USE = true) generate
+  if (IO_CFU0_EN = true) generate
     neorv32_cfu0_inst: neorv32_cfu0
     port map (
       -- host access --
@@ -955,7 +963,7 @@ begin
   end generate;
 
   neorv32_cfu0_inst_false:
-  if (IO_CFU0_USE = false) generate
+  if (IO_CFU0_EN = false) generate
     cfu0_rdata <= (others => '0');
     cfu0_ack   <= '0';
     cfu0_cg_en <= '0';
@@ -965,7 +973,7 @@ begin
   -- Custom Functions Unit 1 (CFU1) ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cfu1_inst_true:
-  if (IO_CFU1_USE = true) generate
+  if (IO_CFU1_EN = true) generate
     neorv32_cfu1_inst: neorv32_cfu1
     port map (
       -- host access --
@@ -986,7 +994,7 @@ begin
   end generate;
 
   neorv32_cfu1_inst_false:
-  if (IO_CFU1_USE = false) generate
+  if (IO_CFU1_EN = false) generate
     cfu1_rdata <= (others => '0');
     cfu1_ack   <= '0';
     cfu1_cg_en <= '0';
@@ -999,33 +1007,33 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY      => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
-    BOOTLOADER_USE       => BOOTLOADER_USE,    -- implement processor-internal bootloader?
+    BOOTLOADER_EN        => BOOTLOADER_EN,     -- implement processor-internal bootloader?
     USER_CODE            => USER_CODE,         -- custom user code
     -- internal Instruction memory --
-    MEM_INT_IMEM_USE     => MEM_INT_IMEM_USE,  -- implement processor-internal instruction memory
+    MEM_INT_IMEM_EN      => MEM_INT_IMEM_EN,   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE    => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM     => MEM_INT_IMEM_ROM,  -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
-    MEM_INT_DMEM_USE     => MEM_INT_DMEM_USE,  -- implement processor-internal data memory
+    MEM_INT_DMEM_EN      => MEM_INT_DMEM_EN,   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE    => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_USE           => ICACHE_USE,        -- implement instruction cache
+    ICACHE_EN            => ICACHE_EN,         -- implement instruction cache
     ICACHE_NUM_BLOCKS    => ICACHE_NUM_BLOCKS, -- i-cache: number of blocks (min 2), has to be a power of 2
     ICACHE_BLOCK_SIZE    => ICACHE_BLOCK_SIZE, -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY => 1,                 -- i-cache: associativity (min 1), has to be a power 2
     -- External memory interface --
-    MEM_EXT_USE          => MEM_EXT_USE,       -- implement external memory bus interface?
+    MEM_EXT_EN           => MEM_EXT_EN,        -- implement external memory bus interface?
     -- Processor peripherals --
-    IO_GPIO_USE          => IO_GPIO_USE,       -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE         => IO_MTIME_USE,      -- implement machine system timer (MTIME)?
-    IO_UART_USE          => IO_UART_USE,       -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE           => IO_SPI_USE,        -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE           => IO_TWI_USE,        -- implement two-wire interface (TWI)?
-    IO_PWM_USE           => IO_PWM_USE,        -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE           => IO_WDT_USE,        -- implement watch dog timer (WDT)?
-    IO_TRNG_USE          => IO_TRNG_USE,       -- implement true random number generator (TRNG)?
-    IO_CFU0_USE          => IO_CFU0_USE,       -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_USE          => IO_CFU1_USE        -- implement custom functions unit 1 (CFU1)?
+    IO_GPIO_EN           => IO_GPIO_EN,        -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN          => IO_MTIME_EN,       -- implement machine system timer (MTIME)?
+    IO_UART_EN           => IO_UART_EN,        -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_EN            => IO_SPI_EN,         -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN            => IO_TWI_EN,         -- implement two-wire interface (TWI)?
+    IO_PWM_EN            => IO_PWM_EN,         -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_EN            => IO_WDT_EN,         -- implement watch dog timer (WDT)?
+    IO_TRNG_EN           => IO_TRNG_EN,        -- implement true random number generator (TRNG)?
+    IO_CFU0_EN           => IO_CFU0_EN,        -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_EN           => IO_CFU1_EN         -- implement custom functions unit 1 (CFU1)?
   )
   port map (
     -- host access --

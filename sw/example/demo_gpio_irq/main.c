@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -72,8 +72,11 @@ int main() {
   // setup run-time environment for interrupts and exceptions
   neorv32_rte_setup();
 
-  // init UART at default baud rate, no rx interrupt, no tx interrupt
-  neorv32_uart_setup(BAUD_RATE, 0, 0);
+  // init UART at default baud rate, no parity bits, no rx interrupt, no tx interrupt
+  neorv32_uart_setup(BAUD_RATE, 0b00, 0, 0);
+
+  // check available hardware extensions and compare with compiler flags
+  neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
 
   // check if GPIO unit is implemented at all
@@ -115,7 +118,7 @@ int main() {
   }
 
   // activate fast interrupt channel 1 (which is GPIO_PIN_CHANGE)
-  install_err += neorv32_cpu_irq_enable(CPU_MIE_FIRQ1E);
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ1E);
 
   // activate GPIO pin-change irq only for input pins 0 to 7
   neorv32_gpio_pin_change_config(0x000000ff);

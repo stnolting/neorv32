@@ -48,6 +48,7 @@ ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_alu.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_bus.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_control.vhd
+ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_cp_bitmanip.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_cp_muldiv.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_decompressor.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_regfile.vhd
@@ -65,12 +66,11 @@ ghdl -a --work=neorv32 $srcdir_core/neorv32_uart.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_wdt.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_wishbone.vhd
 #
-ghdl -a --work=neorv32 $srcdir_top_templates/neorv32_cpu_stdlogic.vhd
 ghdl -a --work=neorv32 $srcdir_top_templates/neorv32_test_setup.vhd
 ghdl -a --work=neorv32 $srcdir_top_templates/neorv32_top_axi4lite.vhd
 ghdl -a --work=neorv32 $srcdir_top_templates/neorv32_top_stdlogic.vhd
 #
-ghdl -a --work=neorv32 $srcdir_sim/*.vhd
+ghdl -a --work=neorv32 $srcdir_sim/neorv32_tb.vhd
 
 # Prepare simulation output files
 touch neorv32.testbench_uart.out

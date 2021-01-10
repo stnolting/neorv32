@@ -9,14 +9,13 @@
 -- #   * neorv32_cpu_ctrl.vhd           - CPU control and CSR system                               #
 -- #     * neorv32_cpu_decompressor.vhd - Compressed instructions decoder                          #
 -- #   * neorv32_cpu_regfile.vhd        - Data register file                                       #
--- #                                                                                               #
 -- #   * neorv32_package.vhd            - Main CPU/processor package file                          #
 -- #                                                                                               #
 -- # Check out the processor's data sheet for more information: docs/NEORV32.pdf                   #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -60,6 +59,7 @@ entity neorv32_cpu is
     BUS_TIMEOUT                  : natural := 63;    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
@@ -70,7 +70,10 @@ entity neorv32_cpu is
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      : boolean := false  -- implement PMP?
+    PMP_NUM_REGIONS              : natural := 0; -- number of regions (0..64)
+    PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    -- Hardware Performance Monitors (HPM) --
+    HPM_NUM_CNTS                 : natural := 0      -- number of inmplemnted HPM counters (0..29)
   );
   port (
     -- global control --
@@ -121,7 +124,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal imm        : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
   signal instr      : std_ulogic_vector(data_width_c-1 downto 0); -- new instruction
   signal rs1, rs2   : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
-  signal alu_opb    : std_ulogic_vector(data_width_c-1 downto 0); -- ALU operand b
   signal alu_res    : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
   signal alu_add    : std_ulogic_vector(data_width_c-1 downto 0); -- alu address result
   signal rdata      : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
@@ -157,9 +159,7 @@ begin
   -- U-extension requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report "NEORV32 CPU CONFIG ERROR! User mode requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
   -- PMP requires Zicsr extension --
-  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
-  -- RISC-V standard performance counters -
-  assert not ((CPU_EXTENSION_RISCV_Zicsr = true) and (zicnt_en_c = false)) report "NEORV32 CPU CONFIG WARNING! Standard RISC-V peformance counters ([m]cycle[h] & [m]instret[h]) will not be implemented (not RISC-V-compliant!)." severity warning;
+  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires CPU_EXTENSION_RISCV_Zicsr extension." severity error;
 
   -- Bus timeout --
   assert not (BUS_TIMEOUT < 2) report "NEORV32 CPU CONFIG ERROR! Invalid bus access timeout value <BUS_TIMEOUT>. Has to be >= 2." severity error;
@@ -169,14 +169,23 @@ begin
   -- A extension - only lr.w and sc.w supported yet --
   assert not (CPU_EXTENSION_RISCV_A = true) report "NEORV32 CPU CONFIG WARNING! Atomic operations extension (A) only supports >lr.w< and >sc.w< instructions yet." severity warning;
 
-  -- PMP regions check --
-  assert not ((pmp_num_regions_c > pmp_max_r_c) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <pmp_num_regions_c> out of valid range." severity error;
-  -- PMP granulartiy --
-  assert not ((is_power_of_two_f(pmp_min_granularity_c) = false) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! PMP granulartiy has to be a power of two." severity error;
-  assert not ((pmp_min_granularity_c < 8) and (PMP_USE = true)) report "NEORV32 CPU CONFIG ERROR! PMP granulartiy has to be >= 8 bytes." severity error;
+  -- Bit manipulation notifier --
+  assert not (CPU_EXTENSION_RISCV_B = true) report "NEORV32 CPU CONFIG WARNING! Bit manipulation extension (B) only supports 'base' instruction sub-set (Zbb) yet and is still 'unofficial' (not-ratified)." severity warning;
 
+  -- PMP regions check --
+  assert not (PMP_NUM_REGIONS > 64) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out of valid range (0..64)." severity error;
+  -- PMP granulartiy --
+  assert not ((is_power_of_two_f(PMP_MIN_GRANULARITY) = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! PMP granulartiy has to be a power of two." severity error;
+  assert not ((PMP_MIN_GRANULARITY < 8) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! PMP granulartiy has to be >= 8 bytes." severity error;
   -- PMP notifier --
-  assert not (PMP_USE = true) report "NEORV32 CPU CONFIG NOTE: Implementing physical memory protection (PMP) with " & integer'image(pmp_num_regions_c) & " regions and " & integer'image(pmp_min_granularity_c) & " bytes minimal region size (granulartiy)." severity note;
+  assert not (PMP_NUM_REGIONS > 0) report "NEORV32 CPU CONFIG NOTE: Implementing physical memory protection (PMP) with " & integer'image(PMP_NUM_REGIONS) & " regions and a minimal granularity of " & integer'image(PMP_MIN_GRANULARITY) & " bytes." severity note;
+
+  -- HPM counters check --
+  assert not (HPM_NUM_CNTS > 29) report "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..29)." severity error;
+  -- HPM counters notifier --
+  assert not (HPM_NUM_CNTS > 0) report "NEORV32 CPU CONFIG NOTE: Implementing " & integer'image(HPM_NUM_CNTS) & " HPM counters." severity note;
+  -- HPM CNT requires Zicsr extension --
+  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (HPM_NUM_CNTS > 0)) report "NEORV32 CPU CONFIG ERROR! Performance monitors (HMP) require CPU_EXTENSION_RISCV_Zicsr extension." severity error;
 
 
   -- Control Unit ---------------------------------------------------------------------------
@@ -188,6 +197,7 @@ begin
     CPU_BOOT_ADDR                => CPU_BOOT_ADDR, -- cpu boot address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
@@ -195,7 +205,10 @@ begin
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     -- Physical memory protection (PMP) --
-    PMP_USE                      => PMP_USE        -- implement physical memory protection?
+    PMP_NUM_REGIONS              => PMP_NUM_REGIONS,              -- number of regions (0..64)
+    PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY,          -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    -- Hardware Performance Monitors (HPM) --
+    HPM_NUM_CNTS                 => HPM_NUM_CNTS                  -- number of inmplemnted HPM counters (0..29)
   )
   port map (
     -- global control --
@@ -279,7 +292,6 @@ begin
     cmp_o       => alu_cmp,       -- comparator status
     res_o       => alu_res,       -- ALU result
     add_o       => alu_add,       -- address computation result
-    opb_o       => alu_opb,       -- ALU operand B
     -- co-processor interface --
     cp0_start_o => cp0_start,     -- trigger co-processor 0
     cp0_data_i  => cp0_data,      -- co-processor 0 result
@@ -328,7 +340,7 @@ begin
   end generate;
 
 
-  -- Co-Processor 1: Atomic Memory Access (SC - store-conditional) --------------------------
+  -- Co-Processor 1: Atomic Memory Access, SC - store-conditional ('M' extension) -----------
   -- -------------------------------------------------------------------------------------------
   atomic_op_cp: process(cp1_start, ctrl)
   begin
@@ -352,16 +364,36 @@ begin
 
   -- Co-Processor 2: Not implemented (yet) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- control: ctrl cp2_start
-  -- inputs:  rs1 rs2 alu_cmp alu_opb
-  cp2_data  <= (others => '0');
-  cp2_valid <= cp2_start; -- to make sure CPU does not get stalled if there is an accidental access
+  neorv32_cpu_cp_bitmanip_inst_true:
+  if (CPU_EXTENSION_RISCV_B = true) generate
+    neorv32_cpu_cp_bitmanip_inst: neorv32_cpu_cp_bitmanip
+    port map (
+      -- global control --
+      clk_i   => clk_i,           -- global clock, rising edge
+      rstn_i  => rstn_i,          -- global reset, low-active, async
+      ctrl_i  => ctrl,            -- main control bus
+      start_i => cp2_start,       -- trigger operation
+      -- data input --
+      cmp_i   => alu_cmp,         -- comparator status
+      rs1_i   => rs1,             -- rf source 1
+      rs2_i   => rs2,             -- rf source 2
+      -- result and status --
+      res_o   => cp2_data,        -- operation result
+      valid_o => cp2_valid        -- data output valid
+    );
+  end generate;
+
+  neorv32_cpu_cp_bitmanip_inst_false:
+  if (CPU_EXTENSION_RISCV_B = false) generate
+    cp2_data  <= (others => '0');
+    cp2_valid <= cp2_start; -- to make sure CPU does not get stalled if there is an accidental access
+  end generate;
 
 
   -- Co-Processor 3: Not implemented (yet) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- control: ctrl cp3_start
-  -- inputs:  rs1 rs2 alu_cmp alu_opb
+  -- inputs:  rs1 rs2 alu_cmp
   cp3_data  <= (others => '0');
   cp3_valid <= cp3_start; -- to make sure CPU does not get stalled if there is an accidental access
 
@@ -372,7 +404,8 @@ begin
   generic map (
     CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
     -- Physical memory protection (PMP) --
-    PMP_USE               => PMP_USE,               -- implement physical memory protection?
+    PMP_NUM_REGIONS       => PMP_NUM_REGIONS,       -- number of regions (0..64)
+    PMP_MIN_GRANULARITY   => PMP_MIN_GRANULARITY,   -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Bus Timeout --
     BUS_TIMEOUT           => BUS_TIMEOUT            -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
   )

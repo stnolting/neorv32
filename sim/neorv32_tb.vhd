@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -55,7 +55,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- general --
   constant ext_imem_c            : boolean := false; -- false: use and boot from proc-internal IMEM, true: use and boot from external (initialized) simulated IMEM (ext. mem A)
   constant ext_dmem_c            : boolean := false; -- false: use proc-internal DMEM, true: use external simulated DMEM (ext. mem B)
-  constant icache_use_c          : boolean := false; -- set true to use processor-internal instruction cache
+  constant icache_en_c           : boolean := false; -- set true to use processor-internal instruction cache
   constant imem_size_c           : natural := 16*1024; -- size in bytes of processor-internal IMEM / external mem A
   constant dmem_size_c           : natural := 8*1024; -- size in bytes of processor-internal DMEM / external mem B
   constant f_clock_c             : natural := 100000000; -- main clock in Hz
@@ -173,11 +173,12 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY              => f_clock_c,     -- clock frequency of clk_i in Hz
-    BOOTLOADER_USE               => false,         -- implement processor-internal bootloader?
+    BOOTLOADER_EN                => false,         -- implement processor-internal bootloader?
     USER_CODE                    => x"12345678",   -- custom user code
     HW_THREAD_ID                 => x"00000000",   -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => true,          -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        => true,          -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        => true,          -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => false,         -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => true,          -- implement muld/div extension?
@@ -188,31 +189,34 @@ begin
     FAST_MUL_EN                  => false,         -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => false,         -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_USE                      => true,          -- implement PMP?
+    PMP_NUM_REGIONS              => 5,             -- number of regions (0..64)
+    PMP_MIN_GRANULARITY          => 64*1024,       -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    -- Hardware Performance Monitors (HPM) --
+    HPM_NUM_CNTS                 => 12,            -- number of inmplemnted HPM counters (0..29)
     -- Internal Instruction memory --
-    MEM_INT_IMEM_USE             => int_imem_c ,   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_EN              => int_imem_c ,   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => imem_size_c,   -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM             => false,         -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
-    MEM_INT_DMEM_USE             => int_dmem_c,    -- implement processor-internal data memory
+    MEM_INT_DMEM_EN              => int_dmem_c,    -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => dmem_size_c,   -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_USE                   => icache_use_c,  -- implement instruction cache
+    ICACHE_EN                    => icache_en_c,   -- implement instruction cache
     ICACHE_NUM_BLOCKS            => 8,             -- i-cache: number of blocks (min 2), has to be a power of 2
     ICACHE_BLOCK_SIZE            => 64,            -- i-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface --
-    MEM_EXT_USE                  => true,          -- implement external memory bus interface?
+    MEM_EXT_EN                   => true,          -- implement external memory bus interface?
     -- Processor peripherals --
-    IO_GPIO_USE                  => true,          -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE                 => true,          -- implement machine system timer (MTIME)?
-    IO_UART_USE                  => true,          -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE                   => true,          -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE                   => true,          -- implement two-wire interface (TWI)?
-    IO_PWM_USE                   => true,          -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE                   => true,          -- implement watch dog timer (WDT)?
-    IO_TRNG_USE                  => false,         -- trng cannot be simulated
-    IO_CFU0_USE                  => true,          -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_USE                  => true           -- implement custom functions unit 1 (CFU1)?
+    IO_GPIO_EN                   => true,          -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN                  => true,          -- implement machine system timer (MTIME)?
+    IO_UART_EN                   => true,          -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_EN                    => true,          -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN                    => true,          -- implement two-wire interface (TWI)?
+    IO_PWM_EN                    => true,          -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_EN                    => true,          -- implement watch dog timer (WDT)?
+    IO_TRNG_EN                   => false,         -- trng cannot be simulated
+    IO_CFU0_EN                   => true,          -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_EN                   => true           -- implement custom functions unit 1 (CFU1)?
   )
   port map (
     -- Global control --
@@ -249,10 +253,10 @@ begin
     twi_scl_io  => twi_scl,         -- twi serial clock line
     -- PWM --
     pwm_o       => open,            -- pwm channels
-    -- system time input from external MTIME (available if IO_MTIME_USE = false) --
+    -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     => (others => '0'), -- current system time
     -- Interrupts --
-    mtime_irq_i => '0',             -- machine software interrupt, available if IO_MTIME_USE = false
+    mtime_irq_i => '0',             -- machine software interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => msi_ring,        -- machine software interrupt
     mext_irq_i  => mei_ring         -- machine external interrupt
   );

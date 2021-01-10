@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -288,7 +288,7 @@ void neorv32_rte_print_hw_config(void) {
   
   // CPU extensions
   neorv32_uart_printf("\nEndianness:        ");
-  if (neorv32_cpu_csr_read(CSR_MSTATUSH) & (1<<CPU_MSTATUSH_MBE)) {
+  if (neorv32_cpu_csr_read(CSR_MSTATUSH) & (1<<CSR_MSTATUSH_MBE)) {
     neorv32_uart_printf("big\n");
   }
   else {
@@ -296,7 +296,7 @@ void neorv32_rte_print_hw_config(void) {
   }
   
   // CPU extensions
-  neorv32_uart_printf("\nExtensions:        ");
+  neorv32_uart_printf("Extensions:        ");
   tmp = neorv32_cpu_csr_read(CSR_MISA);
   for (i=0; i<26; i++) {
     if (tmp & (1 << i)) {
@@ -308,61 +308,28 @@ void neorv32_rte_print_hw_config(void) {
   
   // Z* CPU extensions (from custom "mzext" CSR)
   tmp = neorv32_cpu_csr_read(CSR_MZEXT);
-  if (tmp & (1<<CPU_MZEXT_ZICSR)) {
+  if (tmp & (1<<CSR_MZEXT_ZICSR)) {
     neorv32_uart_printf("Zicsr ");
   }
-  if (tmp & (1<<CPU_MZEXT_ZIFENCEI)) {
+  if (tmp & (1<<CSR_MZEXT_ZIFENCEI)) {
     neorv32_uart_printf("Zifencei ");
   }
-  if (tmp & (1<<CPU_MZEXT_PMP)) {
-    neorv32_uart_printf("PMP ");
+  if (tmp & (1<<CSR_MZEXT_ZBB)) {
+    neorv32_uart_printf("Zbb ");
   }
-  if (tmp & (1<<CPU_MZEXT_ZICNT)) {
-    neorv32_uart_printf("(Zicnt) "); // not a "real" RISC-V extension
-  }
-
 
   // check physical memory protection
-  neorv32_uart_printf("\n\nPhysical memory protection: ");
-  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CPU_MZEXT_PMP))  {
-
-    // get minimal region siz (granulartiy)
-    neorv32_uart_printf("\n- Minimal granularity: %u bytes per region\n", neorv32_cpu_pmp_get_granularity());
-
-    // test available modes
-    neorv32_uart_printf("- Mode TOR:   ");
-    neorv32_cpu_csr_write(CSR_PMPCFG0, 0x08);
-    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xFF) == 0x08) {
-      neorv32_uart_printf("available\n");
-    }
-    else {
-      neorv32_uart_printf("not implemented\n");
-    }
-
-    neorv32_uart_printf("- Mode NA4:   ");
-    neorv32_cpu_csr_write(CSR_PMPCFG0, 0x10);
-    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xFF) == 0x10) {
-      neorv32_uart_printf("available\n");
-    }
-    else {
-      neorv32_uart_printf("not implemented\n");
-    }
-
-    neorv32_uart_printf("- Mode NAPOT: ");
-    neorv32_cpu_csr_write(CSR_PMPCFG0, 0x18);
-    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xFF) == 0x18) {
-      neorv32_uart_printf("available\n");
-    }
-    else {
-      neorv32_uart_printf("not implemented\n");
-    }
-
-    // deactivate entry
-    neorv32_cpu_csr_write(CSR_PMPCFG0, 0);
+  neorv32_uart_printf("\nPMP:               ");
+  uint32_t pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
+  if (pmp_num_regions != 0)  {
+    neorv32_uart_printf("%u regions, %u bytes minimal granularity\n", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
   }
   else {
     neorv32_uart_printf("not implemented\n");
   }
+
+  // check hardware performance monitors
+  neorv32_uart_printf("HPM Counters:      %u\n", neorv32_cpu_hpm_get_counters());
 
 
   // Misc - system
@@ -381,12 +348,12 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("Internal IMEM as ROM: ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM_ROM));
 
-  neorv32_uart_printf("\nData base address:    0x%x\n", SYSINFO_DSPACE_BASE);
+  neorv32_uart_printf("Data base address:    0x%x\n", SYSINFO_DSPACE_BASE);
   neorv32_uart_printf("Internal DMEM:        ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_DMEM));
   neorv32_uart_printf("DMEM size:            %u bytes\n", SYSINFO_DMEM_SIZE);
 
-  neorv32_uart_printf("\nInternal i-cache:     ");
+  neorv32_uart_printf("Internal i-cache:     ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_ICACHE));
   if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_ICACHE)) {
     neorv32_uart_printf("- ");
@@ -422,12 +389,12 @@ void neorv32_rte_print_hw_config(void) {
     }
   }
 
-  neorv32_uart_printf("\nBootloader:           ");
+  neorv32_uart_printf("Bootloader:           ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_BOOTLOADER));
 
-  neorv32_uart_printf("\nExternal memory bus interface:  ");
+  neorv32_uart_printf("Ext. bus interface:   ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT));
-  neorv32_uart_printf("External memory bus Endianness: ");
+  neorv32_uart_printf("Ext. bus Endianness:  ");
   if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT_ENDIAN)) {
     neorv32_uart_printf("big\n");
   }
@@ -545,7 +512,9 @@ void neorv32_rte_print_hw_version(void) {
  **************************************************************************/
 void neorv32_rte_print_credits(void) {
 
-  neorv32_uart_print("The NEORV32 Processor Project by Stephan Nolting\n"
+  neorv32_uart_print("The NEORV32 Processor Project\n"
+                     "Copyright 2021, Stephan Nolting\n"
+                     "BSD 3-Clause License\n"
                      "https://github.com/stnolting/neorv32\n\n");
 }
 
@@ -600,7 +569,7 @@ void neorv32_rte_print_license(void) {
   "\n"
   "BSD 3-Clause License\n"
   "\n"
-  "Copyright (c) 2020, Stephan Nolting. All rights reserved.\n"
+  "Copyright (c) 2021, Stephan Nolting. All rights reserved.\n"
   "\n"
   "Redistribution and use in source and binary forms, with or without modification, are\n"
   "permitted provided that the following conditions are met:\n"
@@ -628,5 +597,73 @@ void neorv32_rte_print_license(void) {
   "\n"
   "\n"
   );
+}
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Get MISA CSR value according to *compiler/toolchain configuration*.
+ *
+ * @return MISA content according to compiler configuration.
+ **************************************************************************/
+uint32_t neorv32_rte_get_compiler_isa(void) {
+
+  uint32_t misa_cc = 0;
+
+#ifdef __riscv_atomic
+  misa_cc |= 1 << CSR_MISA_A_EXT;
+#endif
+
+#ifdef __riscv_compressed
+  misa_cc |= 1 << CSR_MISA_C_EXT;
+#endif
+
+#ifdef __riscv_32e
+  misa_cc |= 1 << CSR_MISA_E_EXT;
+#else
+  misa_cc |= 1 << CSR_MISA_I_EXT;
+#endif
+
+#ifdef __riscv_mul
+  misa_cc |= 1 << CSR_MISA_M_EXT;
+#endif
+
+#if (__riscv_xlen == 32)
+  misa_cc |= 1 << CSR_MISA_MXL_LO_EXT;
+#elif (__riscv_xlen == 64)
+  misa_cc |= 2 << CSR_MISA_MXL_LO_EXT;
+#else
+  misa_cc |= 3 << CSR_MISA_MXL_LO_EXT;
+#endif
+
+  return misa_cc;
+}
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Check required ISA extensions (via compiler flags) against available ISA extensions (via MISA csr).
+ *
+ * @param[in] silent Show error message (via neorv32.uart) if isa_sw > isa_hw when != 0.
+ * @return MISA content according to compiler configuration.
+ **************************************************************************/
+int neorv32_rte_check_isa(int silent) {
+
+  uint32_t misa_sw = neorv32_rte_get_compiler_isa();
+  uint32_t misa_hw = neorv32_cpu_csr_read(CSR_MISA);
+
+  // mask hardware features that are not used by software
+  uint32_t check = misa_hw & misa_sw;
+
+  //
+  if (check == misa_sw) {
+    return 0;
+  }
+  else {
+    if (silent == 0) {
+      neorv32_uart_printf("\nWARNING! SW_ISA (features required) vs HW_ISA (features available) mismatch!\n"
+                          "SW_ISA = 0x%x (compiler flags)\n"
+                          "HW_ISA = 0x%x (misa csr)\n\n", misa_sw, misa_hw);
+    }
+    return 1;
+  }
 }
 

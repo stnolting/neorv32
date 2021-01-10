@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -38,7 +38,7 @@
  * @author Stephan Nolting
  * @brief Watchdog Timer (WDT) HW driver header file.
  *
- * @note These functions should only be used if the WDT unit was synthesized (IO_WDT_USE = true).
+ * @note These functions should only be used if the WDT unit was synthesized (IO_WDT_EN = true).
  **************************************************************************/
 
 #ifndef neorv32_wdt_h

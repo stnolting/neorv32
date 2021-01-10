@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -46,33 +46,33 @@ entity neorv32_sysinfo is
   generic (
     -- General --
     CLOCK_FREQUENCY      : natural := 0;      -- clock frequency of clk_i in Hz
-    BOOTLOADER_USE       : boolean := true;   -- implement processor-internal bootloader?
+    BOOTLOADER_EN        : boolean := true;   -- implement processor-internal bootloader?
     USER_CODE            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     -- Internal Instruction memory --
-    MEM_INT_IMEM_USE     : boolean := true;   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_EN      : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE    : natural := 8*1024; -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM     : boolean := false;  -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
-    MEM_INT_DMEM_USE     : boolean := true;   -- implement processor-internal data memory
+    MEM_INT_DMEM_EN      : boolean := true;   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE    : natural := 4*1024; -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_USE           : boolean := true;   -- implement instruction cache
+    ICACHE_EN            : boolean := true;   -- implement instruction cache
     ICACHE_NUM_BLOCKS    : natural := 4;      -- i-cache: number of blocks (min 2), has to be a power of 2
     ICACHE_BLOCK_SIZE    : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY : natural := 1;      -- i-cache: associativity (min 1), has to be a power 2
     -- External memory interface --
-    MEM_EXT_USE          : boolean := false;  -- implement external memory bus interface?
+    MEM_EXT_EN           : boolean := false;  -- implement external memory bus interface?
     -- Processor peripherals --
-    IO_GPIO_USE          : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_USE         : boolean := true;   -- implement machine system timer (MTIME)?
-    IO_UART_USE          : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_USE           : boolean := true;   -- implement serial peripheral interface (SPI)?
-    IO_TWI_USE           : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_USE           : boolean := true;   -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_USE           : boolean := true;   -- implement watch dog timer (WDT)?
-    IO_TRNG_USE          : boolean := true;   -- implement true random number generator (TRNG)?
-    IO_CFU0_USE          : boolean := true;   -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_USE          : boolean := true    -- implement custom functions unit 1 (CFU1)?
+    IO_GPIO_EN           : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN          : boolean := true;   -- implement machine system timer (MTIME)?
+    IO_UART_EN           : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_EN            : boolean := true;   -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN            : boolean := true;   -- implement two-wire interface (TWI)?
+    IO_PWM_EN            : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_EN            : boolean := true;   -- implement watch dog timer (WDT)?
+    IO_TRNG_EN           : boolean := true;   -- implement true random number generator (TRNG)?
+    IO_CFU0_EN           : boolean := true;   -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_EN           : boolean := true    -- implement custom functions unit 1 (CFU1)?
   );
   port (
     -- host access --
@@ -121,33 +121,33 @@ begin
 
   -- SYSINFO(2): Implemented processor devices/features --
   -- Memory --
-  sysinfo_mem(2)(00) <= bool_to_ulogic_f(BOOTLOADER_USE);    -- processor-internal bootloader implemented?
-  sysinfo_mem(2)(01) <= bool_to_ulogic_f(MEM_EXT_USE);       -- external memory bus interface implemented?
-  sysinfo_mem(2)(02) <= bool_to_ulogic_f(MEM_INT_IMEM_USE);  -- processor-internal instruction memory implemented?
+  sysinfo_mem(2)(00) <= bool_to_ulogic_f(BOOTLOADER_EN);     -- processor-internal bootloader implemented?
+  sysinfo_mem(2)(01) <= bool_to_ulogic_f(MEM_EXT_EN);        -- external memory bus interface implemented?
+  sysinfo_mem(2)(02) <= bool_to_ulogic_f(MEM_INT_IMEM_EN);   -- processor-internal instruction memory implemented?
   sysinfo_mem(2)(03) <= bool_to_ulogic_f(MEM_INT_IMEM_ROM);  -- processor-internal instruction memory implemented as ROM?
-  sysinfo_mem(2)(04) <= bool_to_ulogic_f(MEM_INT_DMEM_USE);  -- processor-internal data memory implemented?
+  sysinfo_mem(2)(04) <= bool_to_ulogic_f(MEM_INT_DMEM_EN);   -- processor-internal data memory implemented?
   sysinfo_mem(2)(05) <= bool_to_ulogic_f(xbus_big_endian_c); -- is external memory bus interface using BIG-endian byte-order?
-  sysinfo_mem(2)(06) <= bool_to_ulogic_f(ICACHE_USE);        -- processor-internal instruction cache implemented?
+  sysinfo_mem(2)(06) <= bool_to_ulogic_f(ICACHE_EN);         -- processor-internal instruction cache implemented?
   --
   sysinfo_mem(2)(15 downto 07) <= (others => '0'); -- reserved
   -- IO --
-  sysinfo_mem(2)(16) <= bool_to_ulogic_f(IO_GPIO_USE);  -- general purpose input/output port unit (GPIO) implemented?
-  sysinfo_mem(2)(17) <= bool_to_ulogic_f(IO_MTIME_USE); -- machine system timer (MTIME) implemented?
-  sysinfo_mem(2)(18) <= bool_to_ulogic_f(IO_UART_USE);  -- universal asynchronous receiver/transmitter (UART) implemented?
-  sysinfo_mem(2)(19) <= bool_to_ulogic_f(IO_SPI_USE);   -- serial peripheral interface (SPI) implemented?
-  sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_USE);   -- two-wire interface (TWI) implemented?
-  sysinfo_mem(2)(21) <= bool_to_ulogic_f(IO_PWM_USE);   -- pulse-width modulation unit (PWM) implemented?
-  sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_USE);   -- watch dog timer (WDT) implemented?
-  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFU0_USE);  -- custom functions unit 0 (CFU0) implemented?
-  sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_USE);  -- true random number generator (TRNG) implemented?
-  sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_CFU1_USE);  -- custom functions unit 1 (CFU1) implemented?
+  sysinfo_mem(2)(16) <= bool_to_ulogic_f(IO_GPIO_EN);  -- general purpose input/output port unit (GPIO) implemented?
+  sysinfo_mem(2)(17) <= bool_to_ulogic_f(IO_MTIME_EN); -- machine system timer (MTIME) implemented?
+  sysinfo_mem(2)(18) <= bool_to_ulogic_f(IO_UART_EN);  -- universal asynchronous receiver/transmitter (UART) implemented?
+  sysinfo_mem(2)(19) <= bool_to_ulogic_f(IO_SPI_EN);   -- serial peripheral interface (SPI) implemented?
+  sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_EN);   -- two-wire interface (TWI) implemented?
+  sysinfo_mem(2)(21) <= bool_to_ulogic_f(IO_PWM_EN);   -- pulse-width modulation unit (PWM) implemented?
+  sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_EN);   -- watch dog timer (WDT) implemented?
+  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFU0_EN);  -- custom functions unit 0 (CFU0) implemented?
+  sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_EN);  -- true random number generator (TRNG) implemented?
+  sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_CFU1_EN);  -- custom functions unit 1 (CFU1) implemented?
   --
   sysinfo_mem(2)(31 downto 26) <= (others => '0'); -- reserved
 
   -- SYSINFO(3): Cache configuration --
-  sysinfo_mem(3)(03 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE), 4))    when (ICACHE_USE = true) else (others => '0'); -- i-cache: log2(block_size_in_bytes)
-  sysinfo_mem(3)(07 downto 04) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_NUM_BLOCKS), 4))    when (ICACHE_USE = true) else (others => '0'); -- i-cache: log2(number_of_block)
-  sysinfo_mem(3)(11 downto 08) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_ASSOCIATIVITY), 4)) when (ICACHE_USE = true) else (others => '0'); -- i-cache: log2(associativity)
+  sysinfo_mem(3)(03 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE), 4))    when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(block_size_in_bytes)
+  sysinfo_mem(3)(07 downto 04) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_NUM_BLOCKS), 4))    when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(number_of_block)
+  sysinfo_mem(3)(11 downto 08) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_ASSOCIATIVITY), 4)) when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(associativity)
   sysinfo_mem(3)(15 downto 12) <= (others => '0'); -- replacement strategy (irrelevant since i-cache is read-only)
   --
   sysinfo_mem(3)(19 downto 16) <= (others => '0'); -- reserved (for d-cache.block_size)
@@ -162,10 +162,10 @@ begin
   sysinfo_mem(5) <= dspace_base_c; -- defined in neorv32_package.vhd file
 
   -- SYSINFO(6): Size of IMEM in bytes --
-  sysinfo_mem(6) <= std_ulogic_vector(to_unsigned(MEM_INT_IMEM_SIZE, 32)) when (MEM_INT_IMEM_USE = true) else (others => '0');
+  sysinfo_mem(6) <= std_ulogic_vector(to_unsigned(MEM_INT_IMEM_SIZE, 32)) when (MEM_INT_IMEM_EN = true) else (others => '0');
 
   -- SYSINFO(7): Size of DMEM in bytes --
-  sysinfo_mem(7) <= std_ulogic_vector(to_unsigned(MEM_INT_DMEM_SIZE, 32)) when (MEM_INT_DMEM_USE = true) else (others => '0');
+  sysinfo_mem(7) <= std_ulogic_vector(to_unsigned(MEM_INT_DMEM_SIZE, 32)) when (MEM_INT_DMEM_EN = true) else (others => '0');
 
 
   -- Read Access ----------------------------------------------------------------------------

@@ -193,7 +193,7 @@ OBJCOPY = $(RISCV_TOOLCHAIN)-objcopy
 SIZE    = $(RISCV_TOOLCHAIN)-size
 
 # Host native compiler
-CC_X86 = gcc -Wall -O -g
+CC_X86 = g++ -Wall -O -g
 
 # NEORV32 executable image generator
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
