@@ -194,9 +194,10 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Supported instructions: `LR.W` (load-reservate) `SC.W` (store-conditional)
 
 **Bit manipulation instructions** (`B` extension implying `Zbb` extension):
-  * :warning: RISC-V `B` extensions is not officially ratified yet!
+  * :warning: RISC-V `B` extension is not officially ratified yet!
+  * Compatible to [v0.94-draft](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/bitmanip-draft.pdf) of the bit manipulation spec
   * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
-  * Only the `Zbb` base subset is supported yet
+  * Only the `Zbb` base instructions subset is supported yet
   * Supported instructions: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR` `RORI` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
 
 **Privileged architecture / CSR access** (`Zicsr` extension):
