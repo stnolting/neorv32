@@ -146,7 +146,7 @@ int main() {
   // check if we came from hardware reset
   neorv32_uart_printf("Coming from hardware reset? ");
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_RESET) {
-    neorv32_uart_printf("true\n");
+    neorv32_uart_printf("yes\n");
   }
   else {
     neorv32_uart_printf("unknown (mcause != TRAP_CODE_RESET)\n");
@@ -185,7 +185,7 @@ int main() {
 
   // configure RTE
   // -----------------------------------------------
-  neorv32_uart_printf("\n\nInitializing NEORV32 run-time environment (RTE)... ");
+  neorv32_uart_printf("\n\nInitializing NEORV32 RTE... ");
 
   neorv32_rte_setup(); // this will install a full-detailed debug handler for all traps
 
@@ -210,7 +210,7 @@ int main() {
   install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_3,       global_trap_handler);
 
   if (install_err) {
-    neorv32_uart_printf("RTE install error (%i)!\n", install_err);
+    neorv32_uart_printf("RTE error (%i)!\n", install_err);
     return 0;
   }
 
@@ -239,7 +239,7 @@ int main() {
   // Test standard RISC-V performance counter [m]cycle[h]
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Testing [m]instret[h] counters: ", cnt_test);
+  neorv32_uart_printf("[%i] [m]instret[h] counter test: ", cnt_test);
 
   cnt_test++;
 
@@ -264,7 +264,7 @@ int main() {
   // Test standard RISC-V performance counter [m]instret[h]
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Testing [m]cycle[h] counters: ", cnt_test);
+  neorv32_uart_printf("[%i] [m]cycle[h] counter test: ", cnt_test);
 
   cnt_test++;
 
@@ -289,7 +289,7 @@ int main() {
   // Test mcountinhibt: inhibit auto-inc of [m]cycle
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Testing mcountINHIBT.cy CSR: ", cnt_test);
+  neorv32_uart_printf("[%i] mcountinhibt.cy CSR test: ", cnt_test);
 
   cnt_test++;
 
@@ -325,7 +325,7 @@ int main() {
   // Test mcounteren: do not allow cycle[h] access from user-mode
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Testing mcounterEN.cy CSR: ", cnt_test);
+  neorv32_uart_printf("[%i] mcounteren.cy CSR test: ", cnt_test);
 
   cnt_test++;
 
@@ -1491,7 +1491,7 @@ int main() {
   // HPM reports
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
-  neorv32_uart_printf("\n\nHPM results:\n");
+  neorv32_uart_printf("\n\n-- HPM results --\n");
   if (num_hpm_cnts_global == 0) {neorv32_uart_printf("no HPMs available\n"); }
   if (num_hpm_cnts_global > 0)  {neorv32_uart_printf("# Retired compr. instructions:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3)); }
   if (num_hpm_cnts_global > 1)  {neorv32_uart_printf("# I-fetch wait cycles:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4)); }
@@ -1510,8 +1510,8 @@ int main() {
   // ----------------------------------------------------------
   // Final test reports
   // ----------------------------------------------------------
-  neorv32_uart_printf("\nExecuted instructions: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET));
-  neorv32_uart_printf(  "Required clock cycles: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));
+  neorv32_uart_printf("\n# Instructions: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET));
+  neorv32_uart_printf(  "# Clock cycles: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));
 
   neorv32_uart_printf("\nTest results:\nOK:     %i/%i\nFAILED: %i/%i\n\n", cnt_ok, cnt_test, cnt_fail, cnt_test);
 
