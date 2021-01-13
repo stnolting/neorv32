@@ -86,7 +86,9 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   signal cmd, cmd_buf : std_ulogic_vector(op_width_c-1 downto 0);
 
   -- operand buffers --
-  signal rs1_reg, rs2_reg : std_ulogic_vector(data_width_c-1 downto 0);
+  signal rs1_reg : std_ulogic_vector(data_width_c-1 downto 0);
+  signal rs2_reg : std_ulogic_vector(data_width_c-1 downto 0);
+  signal less_ff : std_ulogic;
 
   -- shift amount (immediate or register) --
   signal shamt : std_ulogic_vector(index_size_f(data_width_c)-1 downto 0);
@@ -146,6 +148,7 @@ begin
       cmd_buf       <= (others => '0');
       rs1_reg       <= (others => '0');
       rs2_reg       <= (others => '0');
+      less_ff       <= '0';
       shifter.start <= '0';
       valid_o       <= '0';
     elsif rising_edge(clk_i) then
@@ -158,6 +161,7 @@ begin
 
         when S_IDLE => -- wait for operation trigger
         -- ------------------------------------------------------------
+          less_ff <= cmp_i(alu_cmp_less_c);
           if (start_i = '1') then
             cmd_buf <= cmd;
             rs1_reg <= rs1_i;
@@ -262,8 +266,8 @@ begin
   res_int(op_cpop_c)(shifter.bcnt'left downto 0) <= shifter.bcnt;
 
   -- min/max select --
-  res_int(op_min_c) <= rs1_reg when (cmp_i(alu_cmp_less_c) = '1') else rs2_reg;
-  res_int(op_max_c) <= rs2_reg when (cmp_i(alu_cmp_less_c) = '1') else rs1_reg;
+  res_int(op_min_c) <= rs1_reg when (less_ff = '1') else rs2_reg;
+  res_int(op_max_c) <= rs2_reg when (less_ff = '1') else rs1_reg;
 
   -- sign-extension --
   res_int(op_sextb_c)(data_width_c-1 downto 8) <= (others => rs1_reg(7));
