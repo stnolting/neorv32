@@ -1119,9 +1119,9 @@ package neorv32_package is
     );
   end component;
 
-  -- Component: CPU Cache -------------------------------------------------------------------
+  -- Component: CPU Instruction Cache -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  component neorv32_cache
+  component neorv32_icache
     generic (
       CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 1), has to be a power of 2
       CACHE_BLOCK_SIZE : natural := 16 -- block size in bytes (min 4), has to be a power of 2
