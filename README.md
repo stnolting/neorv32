@@ -54,8 +54,8 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
   * optional embedded memories (instructions/data/bootloader, RAM/ROM) and caches
   * timers (watch dog, RISC-V-compliant machine timer)
   * serial interfaces (SPI, TWI, UART) and general purpose IO
-  * 
-  * [more ...](#NEORV32-Processor-Featurexternal bus interface (Wishbone / [AXI4](#AXI4-Connectivity))es)
+  * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
+  * [more ...](#NEORV32-Processor-Features)
 * Software framework
   * core libraries for high-level usage of the provided functions and peripherals
   * application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
