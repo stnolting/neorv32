@@ -15,6 +15,7 @@ zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 14.01.2021 | 1.5.0.1 | added new HPM trigger event: multi-cycle ALU operation wait cycle (`HPMCNT_EVENT_WAIT_MC`); renamed `neorv32_cache.vhd` -> `neorv32_icache.vhd` |
 | 10.01.2021 | [**:rocket:1.5.0.0**](https://github.com/stnolting/neorv32/releases/tag/v1.5.0.0) | Renamed configuration generics: `*_USE` -> `*_EN` |
 | 10.01.2021 | 1.4.9.10 | :sparkles: Added support for [**bit manipulation extension (`B`)**](https://github.com/riscv/riscv-bitmanip) - base subset `Zbb` only (:warning: RISC-V `B` (sub-)extensions are not officially ratified yet; compatible to version "0.94-draft"); enabled via new configuration constant `CPU_EXTENSION_RISCV_B` (default = false); uported `Zbb` instructions: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR` `RORI` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`); added `B` flag to `misa` CSR; added `Zbb` flag to `mzext` CSR |
 | 03.01.2021 | 1.4.9.8 | Added HPM trigger for instruction issue wait cycle (caused by pipeline flush); all HPM counters do not increment if CPU is sleep mode; fixed CoreMark timer overflow issues; `rtl/core/neorv32_busswitch.vhd`: removed wait states, less load/store wait cycles -> faster execution; updated CoreMark results |
