@@ -8,7 +8,8 @@ The provided test program `main.c` verifies all instructions of the `B.Zbb` exte
 The emulation functions as well as the available **intrinsics** for the `B` extension are located in `neorv32_b_extension_intrinsics.h`.
 
 :information_source: More information regarding the RISC-V bit manipulation extension can be found in the officail GitHub repo:
-[github.com/riscv/riscv-bitmanip]((https://github.com/riscv/riscv-bitmanip))
+[github.com/riscv/riscv-bitmanip](https://github.com/riscv/riscv-bitmanip). The current specification of the bitmanipulation spec supported by the NEORV32
+can be found in `docs/bitmanip-draft.pdf`.
 
 :information_source: Compiling the test program (`main.c`) and/or the intriniscs library using the `MARCH` `b` flag should be avoided (might add further instructions from the `B` extension
 that are not part of the `Zbb` subset).

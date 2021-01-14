@@ -144,9 +144,9 @@ int main() {
   neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
 
   // check if we came from hardware reset
-  neorv32_uart_printf("Coming from hardware reset? ");
+  neorv32_uart_printf("Coming from HW reset? ");
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_RESET) {
-    neorv32_uart_printf("true\n");
+    neorv32_uart_printf("yes\n");
   }
   else {
     neorv32_uart_printf("unknown (mcause != TRAP_CODE_RESET)\n");
@@ -185,7 +185,7 @@ int main() {
 
   // configure RTE
   // -----------------------------------------------
-  neorv32_uart_printf("\n\nInitializing NEORV32 run-time environment (RTE)... ");
+  neorv32_uart_printf("\n\nInitializing NEORV32 RTE... ");
 
   neorv32_rte_setup(); // this will install a full-detailed debug handler for all traps
 
@@ -210,7 +210,7 @@ int main() {
   install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_3,       global_trap_handler);
 
   if (install_err) {
-    neorv32_uart_printf("RTE install error (%i)!\n", install_err);
+    neorv32_uart_printf("RTE error (%i)!\n", install_err);
     return 0;
   }
 
@@ -239,7 +239,7 @@ int main() {
   // Test standard RISC-V performance counter [m]cycle[h]
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Testing [m]instret[h] counters: ", cnt_test);
+  neorv32_uart_printf("[%i] [m]instret[h] counter test: ", cnt_test);
 
   cnt_test++;
 
@@ -264,7 +264,7 @@ int main() {
   // Test standard RISC-V performance counter [m]instret[h]
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Testing [m]cycle[h] counters: ", cnt_test);
+  neorv32_uart_printf("[%i] [m]cycle[h] counter test: ", cnt_test);
 
   cnt_test++;
 
@@ -289,7 +289,7 @@ int main() {
   // Test mcountinhibt: inhibit auto-inc of [m]cycle
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Testing mcountINHIBT.cy CSR: ", cnt_test);
+  neorv32_uart_printf("[%i] mcountinhibt.cy CSR test: ", cnt_test);
 
   cnt_test++;
 
@@ -325,7 +325,7 @@ int main() {
   // Test mcounteren: do not allow cycle[h] access from user-mode
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Testing mcounterEN.cy CSR: ", cnt_test);
+  neorv32_uart_printf("[%i] mcounteren.cy CSR test: ", cnt_test);
 
   cnt_test++;
 
@@ -347,7 +347,6 @@ int main() {
       test_ok();
     }
     else {
-      neorv32_uart_printf("SECURITY VIOLATION! ");
       test_fail();
     }
   }
@@ -375,15 +374,16 @@ int main() {
 
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT3,  1 << HPMCNT_EVENT_CIR);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_WAIT_IF);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_WAIT_II);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_LOAD);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_STORE);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_WAIT_LS);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_JUMP);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_BRANCH);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_TBRANCH);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT12, 1 << HPMCNT_EVENT_TRAP);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER12, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT13, 1 << HPMCNT_EVENT_ILLEGAL);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_WAIT_II);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_WAIT_MC);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_LOAD);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_STORE);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_WAIT_LS);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_JUMP);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_BRANCH);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER12, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT12, 1 << HPMCNT_EVENT_TBRANCH);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT13, 1 << HPMCNT_EVENT_TRAP);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT14, 1 << HPMCNT_EVENT_ILLEGAL);
 
     neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable all counters
 
@@ -467,7 +467,7 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (on real hardware)\n");
+    neorv32_uart_printf("skipped (on real HW)\n");
   }
 
 
@@ -908,7 +908,7 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (on real hardware)\n");
+    neorv32_uart_printf("skipped (on real HW)\n");
   }
 
 
@@ -936,7 +936,7 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (on real hardware)\n");
+    neorv32_uart_printf("skipped (on real HW)\n");
   }
 
 
@@ -1015,7 +1015,7 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (on real hardware)\n");
+    neorv32_uart_printf("skipped (on real HW)\n");
   }
 
 
@@ -1193,7 +1193,6 @@ int main() {
         test_ok();
       }
       else {
-        neorv32_uart_printf("SECURITY VIOLATION! ");
         test_fail();
       }
     }
@@ -1412,7 +1411,7 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (on real hardware)\n");
+    neorv32_uart_printf("skipped (on real HW)\n");
   }
 #else
   neorv32_uart_printf("skipped (not implemented)\n");
@@ -1448,7 +1447,7 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (on real hardware)\n");
+    neorv32_uart_printf("skipped (on real HW)\n");
   }
 #else
   neorv32_uart_printf("skipped (not implemented)\n");
@@ -1491,29 +1490,27 @@ int main() {
   // HPM reports
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
-  neorv32_uart_printf("\n\nHPM results:\n");
-  if (num_hpm_cnts_global == 0) {neorv32_uart_printf("no HPMs available\n"); }
-  if (num_hpm_cnts_global > 0)  {neorv32_uart_printf("# Retired compr. instructions:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3)); }
-  if (num_hpm_cnts_global > 1)  {neorv32_uart_printf("# I-fetch wait cycles:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4)); }
-  if (num_hpm_cnts_global > 2)  {neorv32_uart_printf("# I-issue wait cycles:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5)); }
-  if (num_hpm_cnts_global > 3)  {neorv32_uart_printf("# Load operations:              %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6)); }
-  if (num_hpm_cnts_global > 4)  {neorv32_uart_printf("# Store operations:             %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7)); }
-  if (num_hpm_cnts_global > 5)  {neorv32_uart_printf("# Load/store wait cycles:       %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8)); }
-  if (num_hpm_cnts_global > 6)  {neorv32_uart_printf("# Unconditional jumps:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9)); }
-  if (num_hpm_cnts_global > 7)  {neorv32_uart_printf("# Conditional branches (all):   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10)); }
-  if (num_hpm_cnts_global > 8)  {neorv32_uart_printf("# Conditional branches (taken): %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11)); }
-  if (num_hpm_cnts_global > 9)  {neorv32_uart_printf("# Entered traps:                %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER12)); }
-  if (num_hpm_cnts_global > 10) {neorv32_uart_printf("# Illegal operations:           %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER13)); }
-  neorv32_uart_printf("\n");
+  neorv32_uart_printf("\n\n-- HPM reports (%u HPMs available) --\n", num_hpm_cnts_global);
+  neorv32_uart_printf("#00 - Total number of instructions: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET)); // = HPM_0
+  neorv32_uart_printf("#02 - Total number of clock cycles: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));   // = HPM_2
+  neorv32_uart_printf("#03 - Retired compr. instructions:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));
+  neorv32_uart_printf("#04 - I-fetch wait cycles:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));
+  neorv32_uart_printf("#05 - I-issue wait cycles:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5));
+  neorv32_uart_printf("#06 - Multi-cycle ALU wait cycles:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6));
+  neorv32_uart_printf("#07 - Load operations:              %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7));
+  neorv32_uart_printf("#08 - Store operations:             %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8));
+  neorv32_uart_printf("#09 - Load/store wait cycles:       %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9));
+  neorv32_uart_printf("#10 - Unconditional jumps:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10));
+  neorv32_uart_printf("#11 - Conditional branches (all):   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11));
+  neorv32_uart_printf("#12 - Conditional branches (taken): %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER12));
+  neorv32_uart_printf("#13 - Entered traps:                %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER13));
+  neorv32_uart_printf("#14 - Illegal operations:           %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER14));
 
 
   // ----------------------------------------------------------
   // Final test reports
   // ----------------------------------------------------------
-  neorv32_uart_printf("\nExecuted instructions: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET));
-  neorv32_uart_printf(  "Required clock cycles: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));
-
-  neorv32_uart_printf("\nTest results:\nOK:     %i/%i\nFAILED: %i/%i\n\n", cnt_ok, cnt_test, cnt_fail, cnt_test);
+  neorv32_uart_printf("\n\nTest results:\nOK: %i/%i\nFAILED: %i/%i\n\n", cnt_ok, cnt_test, cnt_fail, cnt_test);
 
   // final result
   if (cnt_fail == 0) {

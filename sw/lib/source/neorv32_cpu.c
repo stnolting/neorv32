@@ -292,7 +292,7 @@ int __attribute__ ((noinline)) neorv32_cpu_atomic_cas(uint32_t addr, uint32_t ex
 
   return 0;
 #else
-  return 1; // A extension not implemented -Y always fail
+  return 1; // A extension not implemented - function always fails
 #endif
 }
 

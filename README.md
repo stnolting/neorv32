@@ -27,6 +27,8 @@ designs or as stand-alone custom microcontroller.
 
 The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
 To see the changes between releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
+
+The documentation of the software framework is available online on [GitHub-pages](https://stnolting.github.io/neorv32/files.html).
 For more detailed information take a look at the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
 
@@ -35,7 +37,7 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
 * RISC-V-[compliant](#Status) 32-bit `rv32i` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
   * Subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
   * Subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
-* Configurable RISC-V CPU extensions
+* Configurable RISC-V-compliant CPU extensions
   * `A` - atomic memory access instructions (optional)
   * `B` - Bit manipulation instructions (optional)
   * `C` - compressed instructions (16-bit) (optional)
@@ -52,12 +54,13 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
   * optional embedded memories (instructions/data/bootloader, RAM/ROM) and caches
   * timers (watch dog, RISC-V-compliant machine timer)
   * serial interfaces (SPI, TWI, UART) and general purpose IO
-  * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
-  * [more ...](#NEORV32-Processor-Features)
+  * 
+  * [more ...](#NEORV32-Processor-Featurexternal bus interface (Wishbone / [AXI4](#AXI4-Connectivity))es)
 * Software framework
   * core libraries for high-level usage of the provided functions and peripherals
   * application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
   * GCC-based toolchain ([pre-compiled toolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
+  * bootloader with UART interface console
   * runtime environment
   * several example programs
   * [doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
@@ -194,9 +197,10 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Supported instructions: `LR.W` (load-reservate) `SC.W` (store-conditional)
 
 **Bit manipulation instructions** (`B` extension implying `Zbb` extension):
-  * :warning: RISC-V `B` extensions is not officially ratified yet!
+  * :warning: RISC-V `B` extension is not officially ratified yet!
+  * Compatible to [v0.94-draft](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/bitmanip-draft.pdf) of the bit manipulation spec
   * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
-  * Only the `Zbb` base subset is supported yet
+  * Only the `Zbb` base instructions subset is supported yet
   * Supported instructions: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR` `RORI` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
 
 **Privileged architecture / CSR access** (`Zicsr` extension):
@@ -458,15 +462,18 @@ This overview is just a short excerpt from the *Let's Get It Started* section of
 At first you need the **RISC-V GCC toolchain**. You can either [download the sources](https://github.com/riscv/riscv-gnu-toolchain)
 and build the toolchain by yourself, or you can download a prebuilt one and install it.
 
-:warning: Keep in mind that – for instance – a `rv32imc` toolchain only provides library code compiled with compressed and
-`mul`/`div` instructions! Hence, this code cannot be executed (without emulation) on an architecture without these extensions!
-
 To build the toolchain by yourself, follow the official [build instructions](https://github.com/riscv/riscv-gnu-toolchain).
 Make sure to use the `ilp32` or `ilp32e` ABI.
 
 **Alternatively**, you can download a prebuilt toolchain. I have uploaded the toolchains I am using to GitHub. These toolchains
 were compiled on a 64-bit x86 Ubuntu 20.04 LTS (Ubuntu on Windows, actually). Download the toolchain of choice: 
 [:octocat: github.com/stnolting/riscv_gcc_prebuilt](https://github.com/stnolting/riscv_gcc_prebuilt)
+
+You can also use the toolchains provided by [SiFive](https://github.com/sifive/freedom-tools/releases). These are 64-bit toolchains that can also emit 32-bit
+RISC-V code. They were compiled for more sophisticated machines (`imac`) so the according hardware extensions are *mandatory*
+
+:warning: Keep in mind that – for instance – a `rv32imc` toolchain only provides library code compiled with compressed and
+`mul`/`div` instructions! Hence, this code cannot be executed (without emulation) on an architecture without these extensions!
 
 
 ### Dowload the NEORV32 Project

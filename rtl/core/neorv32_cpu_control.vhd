@@ -1051,16 +1051,16 @@ begin
         execute_engine.pc_mux_sel <= "11"; -- csr.mepc (only relevant for MRET)
         case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
           when funct12_ecall_c => -- ECALL
-            trap_ctrl.env_call <= '1';
+            trap_ctrl.env_call        <= '1';
           when funct12_ebreak_c => -- EBREAK
-            trap_ctrl.break_point <= '1';
+            trap_ctrl.break_point     <= '1';
           when funct12_mret_c => -- MRET
-            trap_ctrl.env_end    <= '1';
-            execute_engine.pc_we <= '1'; -- update PC from MEPC
-            fetch_engine.reset   <= '1';
+            trap_ctrl.env_end         <= '1';
+            execute_engine.pc_we      <= '1'; -- update PC from MEPC
+            fetch_engine.reset        <= '1';
             execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
           when funct12_wfi_c => -- WFI
-            execute_engine.sleep_nxt <= '1'; -- good night
+            execute_engine.sleep_nxt  <= '1'; -- good night
           when others => -- undefined
             NULL;
         end case;
@@ -1079,7 +1079,7 @@ begin
             csr.we_nxt <= '0';
         end case;
         -- register file write back --
-        ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output
+        ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input <= CSR output
         ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
         execute_engine.state_nxt  <= DISPATCH;
 
@@ -1122,10 +1122,10 @@ begin
 
       when FENCE_OP => -- fence operations - execution
       -- ------------------------------------------------------------
-        execute_engine.state_nxt  <= SYS_WAIT;
+        execute_engine.state_nxt  <= DISPATCH;
         execute_engine.pc_mux_sel <= "00"; -- linear next PC = "refetch" next instruction (only relevant for fence.i)
         -- FENCE.I --
-        if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) and (CPU_EXTENSION_RISCV_Zifencei = true) then
+        if (CPU_EXTENSION_RISCV_Zifencei = true) and (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) then
           execute_engine.pc_we        <= '1';
           execute_engine.if_rst_nxt   <= '1'; -- this is a non-linear PC modification
           fetch_engine.reset          <= '1';
@@ -2076,7 +2076,7 @@ begin
         csr.minstreth <= std_ulogic_vector(unsigned(csr.minstreth) + 1);
       end if;
 
-      -- [machine] high performance counters --
+      -- [machine] hardware performance monitors (counters) --
       for i in 0 to HPM_NUM_CNTS-1 loop
         -- [m]hpmcounter* --
         if (csr.we = '1') and (csr.addr = std_ulogic_vector(unsigned(csr_mhpmcounter3_c) + i)) then -- write access
@@ -2137,6 +2137,7 @@ begin
   cnt_event_nxt(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)    and (execute_engine.is_ci = '1')             else '0'; -- retired compressed instruction
   cnt_event_nxt(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state = IFETCH_ISSUE) and (fetch_engine.state_prev = IFETCH_ISSUE) else '0'; -- instruction fetch memory wait cycle
   cnt_event_nxt(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)   and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle
+  cnt_event_nxt(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)   and (execute_engine.state_prev = ALU_WAIT)   else '0'; -- multi-cycle alu-operation wait cycle
 
   cnt_event_nxt(hpmcnt_event_load_c)    <= '1' when (execute_engine.state = LOADSTORE_1) and (ctrl(ctrl_bus_rd_c) = '1')               else '0'; -- load operation
   cnt_event_nxt(hpmcnt_event_store_c)   <= '1' when (execute_engine.state = LOADSTORE_1) and (ctrl(ctrl_bus_wr_c) = '1')               else '0'; -- store operation

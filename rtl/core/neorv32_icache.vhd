@@ -41,7 +41,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_cache is
+entity neorv32_icache is
   generic (
     CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 1), has to be a power of 2
     CACHE_BLOCK_SIZE : natural := 16 -- block size in bytes (min 4), has to be a power of 2
@@ -74,9 +74,9 @@ entity neorv32_cache is
     bus_ack_i     : in  std_ulogic; -- bus transfer acknowledge
     bus_err_i     : in  std_ulogic  -- bus transfer error
   );
-end neorv32_cache;
+end neorv32_icache;
 
-architecture neorv32_cache_rtl of neorv32_cache is
+architecture neorv32_icache_rtl of neorv32_icache is
 
   -- cache layout --
   constant cache_offset_size_c : natural := index_size_f(CACHE_BLOCK_SIZE/4); -- offset addresses full 32-bit words
@@ -84,7 +84,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   constant cache_tag_size_c    : natural := 32 - (cache_offset_size_c + cache_index_size_c + 2); -- 2 additonal bits for byte offset
 
   -- cache memory --
-  component neorv32_cache_memory
+  component neorv32_icache_memory
   generic (
     CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 1), has to be a power of 2
     CACHE_BLOCK_SIZE : natural := 16 -- block size in bytes (min 4), has to be a power of 2
@@ -319,7 +319,7 @@ begin
 
 	-- Cache Memory ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cache_memory_inst: neorv32_cache_memory
+  neorv32_icache_memory_inst: neorv32_icache_memory
   generic map (
     CACHE_NUM_BLOCKS => CACHE_NUM_BLOCKS,     -- number of blocks (min 1), has to be a power of 2
     CACHE_BLOCK_SIZE => CACHE_BLOCK_SIZE      -- block size in bytes (min 4), has to be a power of 2
@@ -344,7 +344,7 @@ begin
     ctrl_invalid_i   => cache.ctrl_invalid_we -- make selected block invalid
   );
 
-end neorv32_cache_rtl;
+end neorv32_icache_rtl;
 
 
 -- ###########################################################################################################################################
@@ -395,7 +395,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_cache_memory is
+entity neorv32_icache_memory is
   generic (
     CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 1), has to be a power of 2
     CACHE_BLOCK_SIZE : natural := 16 -- block size in bytes (min 4), has to be a power of 2
@@ -419,9 +419,9 @@ entity neorv32_cache_memory is
     ctrl_valid_i     : in  std_ulogic; -- make selected block valid
     ctrl_invalid_i   : in  std_ulogic  -- make selected block invalid
   );
-end neorv32_cache_memory;
+end neorv32_icache_memory;
 
-architecture neorv32_cache_memory_rtl of neorv32_cache_memory is
+architecture neorv32_icache_memory_rtl of neorv32_icache_memory is
 
   -- cache layout --
   constant cache_offset_size_c : natural := index_size_f(CACHE_BLOCK_SIZE/4); -- offset addresses full 32-bit words
@@ -535,4 +535,4 @@ begin
   cache_we     <= '0'                  when (ctrl_en_i = '0') else ctrl_we_i;
 
 
-end neorv32_cache_memory_rtl;
+end neorv32_icache_memory_rtl;

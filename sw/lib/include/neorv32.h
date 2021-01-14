@@ -428,16 +428,17 @@ enum NEORV32_HPMCNT_EVENT_enum {
   HPMCNT_EVENT_CIR     = 3,  /**< CPU mhpmevent CSR (3):  Retired compressed instruction */
   HPMCNT_EVENT_WAIT_IF = 4,  /**< CPU mhpmevent CSR (4):  Instruction fetch memory wait cycle */
   HPMCNT_EVENT_WAIT_II = 5,  /**< CPU mhpmevent CSR (5):  Instruction issue wait cycle */
-  HPMCNT_EVENT_LOAD    = 6,  /**< CPU mhpmevent CSR (6):  Load operation */
-  HPMCNT_EVENT_STORE   = 7,  /**< CPU mhpmevent CSR (7):  Store operation */
-  HPMCNT_EVENT_WAIT_LS = 8,  /**< CPU mhpmevent CSR (8):  Load/store memory wait cycle */
+  HPMCNT_EVENT_WAIT_MC = 6,  /**< CPU mhpmevent CSR (6):  Multi-cycle ALU-operation wait cycle */
+  HPMCNT_EVENT_LOAD    = 7,  /**< CPU mhpmevent CSR (7):  Load operation */
+  HPMCNT_EVENT_STORE   = 8,  /**< CPU mhpmevent CSR (8):  Store operation */
+  HPMCNT_EVENT_WAIT_LS = 9,  /**< CPU mhpmevent CSR (9):  Load/store memory wait cycle */
 
-  HPMCNT_EVENT_JUMP    = 9,  /**< CPU mhpmevent CSR (9):  Unconditional jump */
-  HPMCNT_EVENT_BRANCH  = 10, /**< CPU mhpmevent CSR (10): Conditional branch (taken or not taken) */
-  HPMCNT_EVENT_TBRANCH = 11, /**< CPU mhpmevent CSR (11): Conditional taken branch */
+  HPMCNT_EVENT_JUMP    = 10, /**< CPU mhpmevent CSR (10): Unconditional jump */
+  HPMCNT_EVENT_BRANCH  = 11, /**< CPU mhpmevent CSR (11): Conditional branch (taken or not taken) */
+  HPMCNT_EVENT_TBRANCH = 12, /**< CPU mhpmevent CSR (12): Conditional taken branch */
 
-  HPMCNT_EVENT_TRAP    = 12, /**< CPU mhpmevent CSR (12): Entered trap */
-  HPMCNT_EVENT_ILLEGAL = 13  /**< CPU mhpmevent CSR (13): Illegal instruction exception */
+  HPMCNT_EVENT_TRAP    = 13, /**< CPU mhpmevent CSR (13): Entered trap */
+  HPMCNT_EVENT_ILLEGAL = 14  /**< CPU mhpmevent CSR (14): Illegal instruction exception */
 };
 
 
