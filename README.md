@@ -27,6 +27,8 @@ designs or as stand-alone custom microcontroller.
 
 The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
 To see the changes between releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
+
+The documentation of the software framework is available online on [GitHub-pages](https://stnolting.github.io/neorv32/files.html).
 For more detailed information take a look at the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
 
@@ -35,7 +37,7 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
 * RISC-V-[compliant](#Status) 32-bit `rv32i` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
   * Subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
   * Subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
-* Configurable RISC-V CPU extensions
+* Configurable RISC-V-compliant CPU extensions
   * `A` - atomic memory access instructions (optional)
   * `B` - Bit manipulation instructions (optional)
   * `C` - compressed instructions (16-bit) (optional)
@@ -58,6 +60,7 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
   * core libraries for high-level usage of the provided functions and peripherals
   * application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
   * GCC-based toolchain ([pre-compiled toolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
+  * bootloader with UART interface console
   * runtime environment
   * several example programs
   * [doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
