@@ -52,8 +52,8 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
   * optional embedded memories (instructions/data/bootloader, RAM/ROM) and caches
   * timers (watch dog, RISC-V-compliant machine timer)
   * serial interfaces (SPI, TWI, UART) and general purpose IO
-  * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
-  * [more ...](#NEORV32-Processor-Features)
+  * 
+  * [more ...](#NEORV32-Processor-Featurexternal bus interface (Wishbone / [AXI4](#AXI4-Connectivity))es)
 * Software framework
   * core libraries for high-level usage of the provided functions and peripherals
   * application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
@@ -459,15 +459,18 @@ This overview is just a short excerpt from the *Let's Get It Started* section of
 At first you need the **RISC-V GCC toolchain**. You can either [download the sources](https://github.com/riscv/riscv-gnu-toolchain)
 and build the toolchain by yourself, or you can download a prebuilt one and install it.
 
-:warning: Keep in mind that – for instance – a `rv32imc` toolchain only provides library code compiled with compressed and
-`mul`/`div` instructions! Hence, this code cannot be executed (without emulation) on an architecture without these extensions!
-
 To build the toolchain by yourself, follow the official [build instructions](https://github.com/riscv/riscv-gnu-toolchain).
 Make sure to use the `ilp32` or `ilp32e` ABI.
 
 **Alternatively**, you can download a prebuilt toolchain. I have uploaded the toolchains I am using to GitHub. These toolchains
 were compiled on a 64-bit x86 Ubuntu 20.04 LTS (Ubuntu on Windows, actually). Download the toolchain of choice: 
 [:octocat: github.com/stnolting/riscv_gcc_prebuilt](https://github.com/stnolting/riscv_gcc_prebuilt)
+
+You can also use the toolchains provided by [SiFive](https://github.com/sifive/freedom-tools/releases). These are 64-bit toolchains that can also emit 32-bit
+RISC-V code. They were compiled for more sophisticated machines (`imac`) so the according hardware extensions are *mandatory*
+
+:warning: Keep in mind that – for instance – a `rv32imc` toolchain only provides library code compiled with compressed and
+`mul`/`div` instructions! Hence, this code cannot be executed (without emulation) on an architecture without these extensions!
 
 
 ### Dowload the NEORV32 Project
