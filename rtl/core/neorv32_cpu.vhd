@@ -253,7 +253,7 @@ begin
 
   -- Register File --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_regfile_inst: neorv32_cpu_regfile
+  neorv32_cpu_regfile_inst: neorv32_cpu_regfile
   generic map (
     CPU_EXTENSION_RISCV_E => CPU_EXTENSION_RISCV_E -- implement embedded RF extension?
   )
