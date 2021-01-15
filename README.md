@@ -94,7 +94,7 @@ The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/pr
 |:----------------- |:----------|
 | [NEORV32 processor](https://github.com/stnolting/neorv32)                                             | [![Processor Check](https://github.com/stnolting/neorv32/workflows/Processor%20Check/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22Processor+Check%22) |
 | [SW Framework Documentation (online)](https://stnolting.github.io/neorv32/files.html)                 | [![Doc@GitHub-pages](https://github.com/stnolting/neorv32/workflows/Deploy%20SW%20Framework%20Documentation%20to%20GitHub-Pages/badge.svg)](https://stnolting.github.io/neorv32/files.html) |
-| [Pre-built toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)                                | [![Test Toolchains](https://github.com/stnolting/riscv_gcc_prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv_gcc_prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) |
+| [Pre-built toolchains](https://github.com/stnolting/riscv_gcc_prebuilt)                               | [![Test Toolchains](https://github.com/stnolting/riscv_gcc_prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv_gcc_prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) |
 | [RISC-V compliance test](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md) | [![RISC-V Compliance](https://github.com/stnolting/neorv32/workflows/RISC-V%20Compliance/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22RISC-V+Compliance%22) |
 
 
@@ -103,14 +103,15 @@ The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/pr
 
 * Use LaTeX for data sheet
 * Further size and performance optimization
-* Add associativity configuration for instruction cache
-* Add *data* cache
+* Further expand associativity configuration of instruction cache (4x/8x set-associativity)
+* Add data cache
 * Burst mode for the external memory/bus interface
 * RISC-V `F` (using `[Zfinx](https://github.com/riscv/riscv-zfinx/blob/master/Zfinx_spec.adoc)`?) CPU extension (single-precision floating point)
 * Add template (HW module + intrinsics skeleton) for custom instructions?
 * Synthesis results (+ wrappers?) for more/specific platforms
 * More support for FreeRTOS (like *all* traps)
 * Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
+* Maybe port [CircuitPython](https://circuitpython.org/) (just for fun)
 * Implement further RISC-V (or custom?) CPU extensions
 * Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))
 * Add memory-mapped trigger to testbench to quit simulation (maybe using VHDL2008's `use std.env.finish`?)
@@ -292,7 +293,7 @@ Results generated for hardware version [`1.4.9.10`](https://github.com/stnolting
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
 | BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |    0 |
 | BUSSWITCH | Mux for CPU I & D interfaces                         |  65 |   8 |           0 |    0 |
-| iCACHE    | Proc.-int. nstruction cache (default 1x4x54 bytes)   | 234 | 156 |       8 192 |    0 |
+| iCACHE    | Proc.-int. nstruction cache (default 1x4x64 bytes)   | 234 | 156 |       8 192 |    0 |
 | CFU0      | Custom functions unit 0                              |   - |   - |           - |    - |
 | CFU1      | Custom functions unit 1                              |   - |   - |           - |    - |
 | DMEM      | Processor-internal data memory (default 8kB)         |   6 |   2 |      65 536 |    0 |
@@ -345,7 +346,7 @@ tests the capabilities of a CPU itself rather than the functions provided by the
 
 ~~~
 **Configuration**
-Hardware:       32kB IMEM, 16kB DMEM, no caches(!), 100MHz clock
+Hardware:       32kB IMEM, 16kB DMEM, no caches, 100MHz clock
 CoreMark:       2000 iterations, MEM_METHOD is MEM_STACK
 Compiler:       RISCV32-GCC 10.1.0 (rv32i toolchain)
 Compiler flags: default, see makefile
