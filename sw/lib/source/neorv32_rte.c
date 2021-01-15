@@ -377,15 +377,15 @@ void neorv32_rte_print_hw_config(void) {
     uint32_t ic_associativity = (SYSINFO_CACHE >> SYSINFO_CACHE_IC_ASSOCIATIVITY_0) & 0x0F;
     ic_associativity = 1 << ic_associativity;
 
-    neorv32_uart_printf("%u bytes (%u set(s), %u block(s) per set, %u bytes per block), ", ic_associativity*ic_num_blocks*ic_block_size, ic_associativity, ic_num_blocks, ic_block_size);
-    if (ic_associativity == 0) {
-      neorv32_uart_printf("direct-mapped\n");
+    neorv32_uart_printf("%u bytes: %u set(s), %u block(s) per set, %u bytes per block", ic_associativity*ic_num_blocks*ic_block_size, ic_associativity, ic_num_blocks, ic_block_size);
+    if (ic_associativity == 1) {
+      neorv32_uart_printf(" (direct-mapped)\n");
     }
-    else if (ic_associativity == ic_num_blocks) {
-      neorv32_uart_printf("%u-way set-associative\n", ic_associativity);
+    else if (((SYSINFO_CACHE >> SYSINFO_CACHE_IC_REPLACEMENT_0) & 0x0F) == 1) {
+      neorv32_uart_printf(" (LRU replacement policy)\n");
     }
     else {
-      neorv32_uart_printf("fully-associative\n");
+      neorv32_uart_printf("\n");
     }
   }
 
