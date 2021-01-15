@@ -1,7 +1,8 @@
 -- #################################################################################################
 -- # << NEORV32 - Default Testbench >>                                                             #
 -- # ********************************************************************************************* #
--- # Use the "User Configuration" section to configure the testbench according to your need.       #
+-- # The processor is configured to use a maximum of functional units (for testing purpose).       #
+-- # Use the "User Configuration" section to configure the testbench according to your needs.      #
 -- # See NEORV32 data sheet (docs/NEORV32.pdf) for more information.                               #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
@@ -204,6 +205,7 @@ begin
     ICACHE_EN                    => icache_en_c,   -- implement instruction cache
     ICACHE_NUM_BLOCKS            => 8,             -- i-cache: number of blocks (min 2), has to be a power of 2
     ICACHE_BLOCK_SIZE            => 64,            -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_ASSOCIATIVITY         => 2,             -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
     -- External memory interface --
     MEM_EXT_EN                   => true,          -- implement external memory bus interface?
     -- Processor peripherals --
@@ -498,7 +500,7 @@ begin
 
   -- Wishbone IRQ Triggers ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ext_irq_trigger: process(clk_gen)
+  irq_trigger: process(clk_gen)
   begin
     if rising_edge(clk_gen) then
       -- default --
@@ -523,7 +525,7 @@ begin
         wb_mei.ack <= '1';
       end if;
     end if;
-  end process ext_irq_trigger;
+  end process irq_trigger;
 
 
 end neorv32_tb_rtl;
