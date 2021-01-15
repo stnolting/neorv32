@@ -144,7 +144,7 @@ int main() {
   neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
 
   // check if we came from hardware reset
-  neorv32_uart_printf("Coming from HW reset? ");
+  neorv32_uart_printf("\nComing from HW reset? ");
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_RESET) {
     neorv32_uart_printf("yes\n");
   }
@@ -468,6 +468,31 @@ int main() {
   }
   else {
     neorv32_uart_printf("skipped (on real HW)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Test FENCE.I instruction (clear & reload i-cache)
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] Testing FENCE.I operation: ", cnt_test);
+
+  // check if implemented
+  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1 << CSR_MZEXT_ZIFENCEI)) {
+    cnt_test++;
+
+    asm volatile ("fence.i");
+
+    // make sure there was no exception (and that the cpu did not crash...)
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
@@ -1491,8 +1516,8 @@ int main() {
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
   neorv32_uart_printf("\n\n-- HPM reports (%u HPMs available) --\n", num_hpm_cnts_global);
-  neorv32_uart_printf("#00 - Total number of instructions: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET)); // = HPM_0
-  neorv32_uart_printf("#02 - Total number of clock cycles: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));   // = HPM_2
+  neorv32_uart_printf("#IR - Total number of instructions: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET)); // = HPM_0
+  neorv32_uart_printf("#CY - Total number of clock cycles: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));   // = HPM_2
   neorv32_uart_printf("#03 - Retired compr. instructions:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));
   neorv32_uart_printf("#04 - I-fetch wait cycles:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));
   neorv32_uart_printf("#05 - I-issue wait cycles:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5));
