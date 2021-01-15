@@ -145,15 +145,15 @@ begin
   sysinfo_mem(2)(31 downto 26) <= (others => '0'); -- reserved
 
   -- SYSINFO(3): Cache configuration --
-  sysinfo_mem(3)(03 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE), 4))    when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(block_size_in_bytes)
-  sysinfo_mem(3)(07 downto 04) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_NUM_BLOCKS), 4))    when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(number_of_block)
+  sysinfo_mem(3)(03 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE),    4)) when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(block_size_in_bytes)
+  sysinfo_mem(3)(07 downto 04) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_NUM_BLOCKS),    4)) when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(number_of_block)
   sysinfo_mem(3)(11 downto 08) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_ASSOCIATIVITY), 4)) when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(associativity)
-  sysinfo_mem(3)(15 downto 12) <= (others => '0'); -- replacement strategy (irrelevant since i-cache is read-only)
+  sysinfo_mem(3)(15 downto 12) <= "0001" when (ICACHE_ASSOCIATIVITY > 1) and (ICACHE_EN = true) else (others => '0'); -- i-cache: replacement strategy (LRU only (yet))
   --
-  sysinfo_mem(3)(19 downto 16) <= (others => '0'); -- reserved (for d-cache.block_size)
-  sysinfo_mem(3)(23 downto 20) <= (others => '0'); -- reserved (for d-cache.num_blocks)
-  sysinfo_mem(3)(27 downto 24) <= (others => '0'); -- reserved (for d-cache.associativity)
-  sysinfo_mem(3)(31 downto 28) <= (others => '0'); -- reserved (for d-cache.replacement_Strategy)
+  sysinfo_mem(3)(19 downto 16) <= (others => '0'); -- reserved - d-cache: log2(block_size)
+  sysinfo_mem(3)(23 downto 20) <= (others => '0'); -- reserved - d-cache: log2(num_blocks)
+  sysinfo_mem(3)(27 downto 24) <= (others => '0'); -- reserved - d-cache: log2(associativity)
+  sysinfo_mem(3)(31 downto 28) <= (others => '0'); -- reserved - d-cache: replacement strategy
 
   -- SYSINFO(4): Base address of instruction memory space --
   sysinfo_mem(4) <= ispace_base_c; -- defined in neorv32_package.vhd file

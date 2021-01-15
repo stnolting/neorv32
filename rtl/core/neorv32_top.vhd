@@ -80,6 +80,7 @@ entity neorv32_top is
     ICACHE_EN                    : boolean := false;  -- implement instruction cache
     ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
     -- External memory interface --
     MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
     -- Processor peripherals --
@@ -327,7 +328,7 @@ begin
   end process clock_generator_edge;
 
 
-  -- CPU ------------------------------------------------------------------------------------
+  -- CPU Core -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_inst: neorv32_cpu
   generic map (
@@ -414,8 +415,9 @@ begin
   if (ICACHE_EN = true) generate
     neorv32_icache_inst: neorv32_icache
     generic map (
-      CACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS, -- number of blocks (min 2), has to be a power of 2
-      CACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE  -- block size in bytes (min 4), has to be a power of 2
+      CACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,   -- number of blocks (min 2), has to be a power of 2
+      CACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE,   -- block size in bytes (min 4), has to be a power of 2
+      CACHE_NUM_SETS   => ICACHE_ASSOCIATIVITY -- associativity / number of sets (1=direct_mapped), has to be a power of 2
     )
     port map (
       -- global control --
@@ -462,7 +464,7 @@ begin
   end generate;
 
 
-  -- CPU Crossbar Switch --------------------------------------------------------------------
+  -- CPU Bus Switch -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_busswitch_inst: neorv32_busswitch
   generic map (
@@ -613,13 +615,13 @@ begin
   if (MEM_EXT_EN = true) generate
     neorv32_wishbone_inst: neorv32_wishbone
     generic map (
-      WB_PIPELINED_MODE => wb_pipe_mode_c,     -- false: classic/standard wishbone mode, true: pipelined wishbone mode
+      WB_PIPELINED_MODE => wb_pipe_mode_c,    -- false: classic/standard wishbone mode, true: pipelined wishbone mode
       -- Internal instruction memory --
-      MEM_INT_IMEM_EN  => MEM_INT_IMEM_EN,   -- implement processor-internal instruction memory
-      MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE,  -- size of processor-internal instruction memory in bytes
+      MEM_INT_IMEM_EN   => MEM_INT_IMEM_EN,   -- implement processor-internal instruction memory
+      MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
       -- Internal data memory --
-      MEM_INT_DMEM_EN  => MEM_INT_DMEM_EN,   -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE   -- size of processor-internal data memory in bytes
+      MEM_INT_DMEM_EN   => MEM_INT_DMEM_EN,   -- implement processor-internal data memory
+      MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE  -- size of processor-internal data memory in bytes
     )
     port map (
       -- global control --
@@ -1006,34 +1008,34 @@ begin
   neorv32_sysinfo_inst: neorv32_sysinfo
   generic map (
     -- General --
-    CLOCK_FREQUENCY      => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
-    BOOTLOADER_EN        => BOOTLOADER_EN,     -- implement processor-internal bootloader?
-    USER_CODE            => USER_CODE,         -- custom user code
+    CLOCK_FREQUENCY      => CLOCK_FREQUENCY,      -- clock frequency of clk_i in Hz
+    BOOTLOADER_EN        => BOOTLOADER_EN,        -- implement processor-internal bootloader?
+    USER_CODE            => USER_CODE,            -- custom user code
     -- internal Instruction memory --
-    MEM_INT_IMEM_EN      => MEM_INT_IMEM_EN,   -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE    => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM     => MEM_INT_IMEM_ROM,  -- implement processor-internal instruction memory as ROM
+    MEM_INT_IMEM_EN      => MEM_INT_IMEM_EN,      -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE    => MEM_INT_IMEM_SIZE,    -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_ROM     => MEM_INT_IMEM_ROM,     -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
-    MEM_INT_DMEM_EN      => MEM_INT_DMEM_EN,   -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE    => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_EN      => MEM_INT_DMEM_EN,      -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE    => MEM_INT_DMEM_SIZE,    -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_EN            => ICACHE_EN,         -- implement instruction cache
-    ICACHE_NUM_BLOCKS    => ICACHE_NUM_BLOCKS, -- i-cache: number of blocks (min 2), has to be a power of 2
-    ICACHE_BLOCK_SIZE    => ICACHE_BLOCK_SIZE, -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY => 1,                 -- i-cache: associativity (min 1), has to be a power 2
+    ICACHE_EN            => ICACHE_EN,            -- implement instruction cache
+    ICACHE_NUM_BLOCKS    => ICACHE_NUM_BLOCKS,    -- i-cache: number of blocks (min 2), has to be a power of 2
+    ICACHE_BLOCK_SIZE    => ICACHE_BLOCK_SIZE,    -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_ASSOCIATIVITY => ICACHE_ASSOCIATIVITY, -- i-cache: associativity (min 1), has to be a power 2
     -- External memory interface --
-    MEM_EXT_EN           => MEM_EXT_EN,        -- implement external memory bus interface?
+    MEM_EXT_EN           => MEM_EXT_EN,           -- implement external memory bus interface?
     -- Processor peripherals --
-    IO_GPIO_EN           => IO_GPIO_EN,        -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_EN          => IO_MTIME_EN,       -- implement machine system timer (MTIME)?
-    IO_UART_EN           => IO_UART_EN,        -- implement universal asynchronous receiver/transmitter (UART)?
-    IO_SPI_EN            => IO_SPI_EN,         -- implement serial peripheral interface (SPI)?
-    IO_TWI_EN            => IO_TWI_EN,         -- implement two-wire interface (TWI)?
-    IO_PWM_EN            => IO_PWM_EN,         -- implement pulse-width modulation unit (PWM)?
-    IO_WDT_EN            => IO_WDT_EN,         -- implement watch dog timer (WDT)?
-    IO_TRNG_EN           => IO_TRNG_EN,        -- implement true random number generator (TRNG)?
-    IO_CFU0_EN           => IO_CFU0_EN,        -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_EN           => IO_CFU1_EN         -- implement custom functions unit 1 (CFU1)?
+    IO_GPIO_EN           => IO_GPIO_EN,           -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN          => IO_MTIME_EN,          -- implement machine system timer (MTIME)?
+    IO_UART_EN           => IO_UART_EN,           -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_SPI_EN            => IO_SPI_EN,            -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN            => IO_TWI_EN,            -- implement two-wire interface (TWI)?
+    IO_PWM_EN            => IO_PWM_EN,            -- implement pulse-width modulation unit (PWM)?
+    IO_WDT_EN            => IO_WDT_EN,            -- implement watch dog timer (WDT)?
+    IO_TRNG_EN           => IO_TRNG_EN,           -- implement true random number generator (TRNG)?
+    IO_CFU0_EN           => IO_CFU0_EN,           -- implement custom functions unit 0 (CFU0)?
+    IO_CFU1_EN           => IO_CFU1_EN            -- implement custom functions unit 1 (CFU1)?
   )
   port map (
     -- host access --

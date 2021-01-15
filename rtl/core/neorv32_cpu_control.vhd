@@ -1122,7 +1122,7 @@ begin
 
       when FENCE_OP => -- fence operations - execution
       -- ------------------------------------------------------------
-        execute_engine.state_nxt  <= DISPATCH;
+        execute_engine.state_nxt  <= SYS_WAIT;
         execute_engine.pc_mux_sel <= "00"; -- linear next PC = "refetch" next instruction (only relevant for fence.i)
         -- FENCE.I --
         if (CPU_EXTENSION_RISCV_Zifencei = true) and (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) then
