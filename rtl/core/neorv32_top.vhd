@@ -535,7 +535,7 @@ begin
       IMEM_BASE      => imem_base_c,       -- memory base address
       IMEM_SIZE      => MEM_INT_IMEM_SIZE, -- processor-internal instruction memory size in bytes
       IMEM_AS_ROM    => MEM_INT_IMEM_ROM,  -- implement IMEM as read-only memory?
-      BOOTLOADER_EN => BOOTLOADER_EN     -- implement and use bootloader?
+      BOOTLOADER_EN  => BOOTLOADER_EN      -- implement and use bootloader?
     )
     port map (
       clk_i  => clk_i,       -- global clock line

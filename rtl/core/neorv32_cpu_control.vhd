@@ -1032,11 +1032,15 @@ begin
 
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
-            csr.re_nxt <= csr_acc_valid; -- always read CSR if valid access, only relevant for CSR-instructions
-            if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system/environment
-              execute_engine.state_nxt <= SYS_ENV;
-            else -- CSR access
-              execute_engine.state_nxt <= CSR_ACCESS;
+            if (CPU_EXTENSION_RISCV_Zicsr = true) then
+              csr.re_nxt <= csr_acc_valid; -- always read CSR if valid access, only relevant for CSR-instructions
+              if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system/environment
+                execute_engine.state_nxt <= SYS_ENV;
+              else -- CSR access
+                execute_engine.state_nxt <= CSR_ACCESS;
+              end if;
+            else
+              execute_engine.state_nxt <= SYS_WAIT;
             end if;
 
           when others => -- undefined
