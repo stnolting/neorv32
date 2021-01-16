@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -48,7 +48,7 @@ entity neorv32_imem is
     IMEM_BASE      : std_ulogic_vector(31 downto 0) := x"00000000"; -- memory base address
     IMEM_SIZE      : natural := 4*1024; -- processor-internal instruction memory size in bytes
     IMEM_AS_ROM    : boolean := false;  -- implement IMEM as read-only memory?
-    BOOTLOADER_USE : boolean := true    -- implement and use bootloader?
+    BOOTLOADER_EN  : boolean := true    -- implement and use bootloader?
   );
   port (
     clk_i  : in  std_ulogic; -- global clock line
