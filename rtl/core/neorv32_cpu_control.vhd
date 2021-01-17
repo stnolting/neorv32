@@ -669,8 +669,8 @@ begin
       -- PC update --
       if (execute_engine.pc_we = '1') then
         case execute_engine.pc_mux_sel is
-          when "00"   => execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment
-          when "01"   => execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/taken_branch
+          when "00"   => execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/taken_branch
+          when "01"   => execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment
           when "10"   => execute_engine.pc <= csr.mtvec(data_width_c-1 downto 1) & '0'; -- trap enter
           when others => execute_engine.pc <= csr.mepc(data_width_c-1 downto 1) & '0';  -- trap exit
         end case;
@@ -813,7 +813,7 @@ begin
     execute_engine.sleep_nxt    <= execute_engine.sleep;
     execute_engine.if_rst_nxt   <= execute_engine.if_rst;
     --
-    execute_engine.pc_mux_sel   <= (others => '0');
+    execute_engine.pc_mux_sel   <= (others => '0'); -- select "slowest path" as default
     execute_engine.pc_we        <= '0';
 
     -- instruction dispatch --
@@ -874,10 +874,10 @@ begin
 
       when DISPATCH => -- Get new command from instruction issue engine
       -- ------------------------------------------------------------
-        execute_engine.pc_mux_sel <= "00"; -- linear next PC
         -- IR update --
-        execute_engine.is_ci_nxt <= cmd_issue.data(32); -- flag to indicate a de-compressed instruction beeing executed
-        execute_engine.i_reg_nxt <= cmd_issue.data(31 downto 0);
+        execute_engine.pc_mux_sel <= "01"; -- linear next PC
+        execute_engine.is_ci_nxt  <= cmd_issue.data(32); -- flag to indicate a de-compressed instruction beeing executed
+        execute_engine.i_reg_nxt  <= cmd_issue.data(31 downto 0);
         --
         if (cmd_issue.valid = '1') then -- instruction available?
           -- IR update - exceptions --
@@ -1113,7 +1113,7 @@ begin
         ctrl_nxt(ctrl_rf_in_mux_msb_c)                       <= '0'; -- RF input = ALU result
         ctrl_nxt(ctrl_rf_wb_en_c)                            <= execute_engine.i_reg(instr_opcode_lsb_c+2); -- valid RF write-back? (is jump-and-link?)
         -- destination address --
-        execute_engine.pc_mux_sel <= "01"; -- alu.add = branch/jump destination
+        execute_engine.pc_mux_sel <= "00"; -- alu.add = branch/jump destination
         if (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') or (execute_engine.branch_taken = '1') then -- JAL/JALR or taken branch
           execute_engine.pc_we      <= '1'; -- update PC
           fetch_engine.reset        <= '1'; -- trigger new instruction fetch from modified PC
@@ -1127,7 +1127,7 @@ begin
       when FENCE_OP => -- fence operations - execution
       -- ------------------------------------------------------------
         execute_engine.state_nxt  <= SYS_WAIT;
-        execute_engine.pc_mux_sel <= "00"; -- linear next PC = "refetch" next instruction (only relevant for fence.i)
+        execute_engine.pc_mux_sel <= "01"; -- linear next PC = "refetch" next instruction (only relevant for fence.i)
         -- FENCE.I --
         if (CPU_EXTENSION_RISCV_Zifencei = true) and (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) then
           execute_engine.pc_we        <= '1';
