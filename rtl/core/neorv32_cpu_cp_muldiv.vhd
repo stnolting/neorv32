@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - CPU Co-Processor: MULDIV unit (RISC-V "M" Extension)>>                           #
+-- # << NEORV32 - CPU Co-Processor: Integer Multiplier/Divider Unit (RISC-V "M" Extension)>>       #
 -- # ********************************************************************************************* #
 -- # Multiplier and Divider unit. Implements the RISC-V RV32-M CPU extension.                      #
 -- # Multiplier core (signed/unsigned) uses serial algorithm. -> 32+4 cycles latency               #
@@ -86,7 +86,7 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   signal cp_op_ff      : std_ulogic_vector(2 downto 0); -- operation that was executed
   signal start         : std_ulogic;
   signal operation     : std_ulogic;
-  signal opx, opy      : std_ulogic_vector(data_width_c-1 downto 0); -- input operands
+  signal rs1, opx, opy : std_ulogic_vector(data_width_c-1 downto 0); -- input operands
   signal opx_is_signed : std_ulogic;
   signal opy_is_signed : std_ulogic;
   signal opy_is_zero   : std_ulogic;
@@ -121,6 +121,7 @@ begin
       state        <= IDLE;
       opx          <= (others => '0');
       opy          <= (others => '0');
+      rs1          <= (others => '0');
       cnt          <= (others => '0');
       start        <= '0';
       valid        <= '0';
@@ -136,9 +137,10 @@ begin
       -- FSM --
       case state is
         when IDLE =>
-          opx <= rs1_i;
-          opy <= rs2_i;
           if (start_i = '1') then
+            opx   <= rs1_i;
+            rs1   <= rs1_i;
+            opy   <= rs2_i;
             state <= DECODE;
           end if;
 
@@ -300,7 +302,7 @@ begin
 
   -- Data Output ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  operation_result: process(valid, cp_op_ff, mul_product, div_res, quotient, opy_is_zero, rs1_i, remainder)
+  operation_result: process(valid, cp_op_ff, mul_product, div_res, quotient, opy_is_zero, rs1, remainder)
   begin
     if (valid = '1') then
       case cp_op_ff is
@@ -316,7 +318,7 @@ begin
           if (opy_is_zero = '0') then
             res_o <= div_res;
           else
-            res_o <= rs1_i;
+            res_o <= rs1;
           end if;
         when others => -- cp_op_remu_c
           res_o <= remainder;
