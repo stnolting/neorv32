@@ -106,15 +106,13 @@ The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/pr
 * Further expand associativity configuration of instruction cache (4x/8x set-associativity)
 * Add data cache
 * Burst mode for the external memory/bus interface
-* RISC-V `F` (using `[Zfinx](https://github.com/riscv/riscv-zfinx/blob/master/Zfinx_spec.adoc)`?) CPU extension (single-precision floating point)
+* RISC-V `F` (using [`Zfinx`](https://github.com/riscv/riscv-zfinx/blob/master/Zfinx_spec.adoc)?) CPU extension (single-precision floating point)
 * Add template (HW module + intrinsics skeleton) for custom instructions?
-* Synthesis results (+ wrappers?) for more/specific platforms
+* Implement further RISC-V (or custom?) CPU extensions
 * More support for FreeRTOS (like *all* traps)
 * Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
 * Maybe port [CircuitPython](https://circuitpython.org/) (just for fun)
-* Implement further RISC-V (or custom?) CPU extensions
 * Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))
-* Add memory-mapped trigger to testbench to quit simulation (maybe using VHDL2008's `use std.env.finish`?)
 * ...
 * [Ideas?](#ContributeFeedbackQuestions)
 
@@ -271,29 +269,29 @@ information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not o
 of the CPU's generics is assumed (e.g. no physical memory protection, no hardware performance monitors).
 No constraints were used at all. The `u` and `Zifencei` extensions have a negligible impact on the hardware requirements.
 
-Results generated for hardware version [`1.4.9.10`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.5.0.3`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | CPU Configuration                        | LEs        | FFs      | Memory bits | DSPs | f_max   |
 |:-----------------------------------------|:----------:|:--------:|:-----------:|:----:|:-------:|
-| `rv32i`                                  |       1190 |      512 |       2048  |    0 | 120 MHz |
-| `rv32i`     + `u` + `Zicsr` + `Zifencei` |       1927 |      903 |       2048  |    0 | 123 MHz |
-| `rv32im`    + `u` + `Zicsr` + `Zifencei` |       2471 |     1148 |       2048  |    0 | 120 MHz |
-| `rv32imc`   + `u` + `Zicsr` + `Zifencei` |       2716 |     1165 |       2048  |    0 | 120 MHz |
-| `rv32imac`  + `u` + `Zicsr` + `Zifencei` |       2736 |     1168 |       2048  |    0 | 120 MHz |
-| `rv32imacb` + `u` + `Zicsr` + `Zifencei` |       3045 |     1260 |       2048  |    0 | 114 MHz |
+| `rv32i`                                  |       1190 |      512 |        1024 |    0 | 120 MHz |
+| `rv32i`     + `u` + `Zicsr` + `Zifencei` |       1927 |      903 |        1024 |    0 | 123 MHz |
+| `rv32im`    + `u` + `Zicsr` + `Zifencei` |       2471 |     1148 |        1024 |    0 | 120 MHz |
+| `rv32imc`   + `u` + `Zicsr` + `Zifencei` |       2716 |     1165 |        1024 |    0 | 120 MHz |
+| `rv32imac`  + `u` + `Zicsr` + `Zifencei` |       2736 |     1168 |        1024 |    0 | 120 MHz |
+| `rv32imacb` + `u` + `Zicsr` + `Zifencei` |       3045 |     1260 |        1024 |    0 | 114 MHz |
 
 Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utilization and identical f_max. However, the size of the register file is cut in half. 
 
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version [`1.4.9.10`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.5.0.3`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
 | BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |    0 |
 | BUSSWITCH | Mux for CPU I & D interfaces                         |  65 |   8 |           0 |    0 |
-| iCACHE    | Proc.-int. nstruction cache (default 1x4x64 bytes)   | 234 | 156 |       8 192 |    0 |
+| i-CACHE   | Proc.-int. nstruction cache (default 1x4x64 bytes)   | 234 | 156 |       8 192 |    0 |
 | CFU0      | Custom functions unit 0                              |   - |   - |           - |    - |
 | CFU1      | Custom functions unit 1                              |   - |   - |           - |    - |
 | DMEM      | Processor-internal data memory (default 8kB)         |   6 |   2 |      65 536 |    0 |
@@ -660,7 +658,7 @@ link in question.
 
 "Artix" and "Vivado" are trademarks of Xilinx Inc.
 
-"Cyclone", "Quartus Prime Lite" and "Avalon Bus" are trademarks of Intel Corporation.
+"Cyclone" and "Quartus Prime Lite" are trademarks of Intel Corporation.
 
 "iCE40", "UltraPlus" and "Radiant" are trademarks of Lattice Semiconductor Corporation.
 
@@ -675,7 +673,6 @@ link in question.
 [RISC-V](https://riscv.org/) - Instruction Sets Want To Be Free!
 
 Continous integration provided by [:octocat: GitHub Actions](https://github.com/features/actions) and powered by [GHDL](https://github.com/ghdl/ghdl).
-
 
 ![Open Source Hardware Logo https://www.oshwa.org](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/oshw_logo.png)
 
