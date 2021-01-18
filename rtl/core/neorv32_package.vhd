@@ -55,7 +55,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!)= -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050001"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050003"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -768,6 +768,7 @@ package neorv32_package is
       ICACHE_EN                    : boolean := false;  -- implement instruction cache
       ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
       ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
+      ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
       -- External memory interface --
       MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
       -- Processor peripherals --
@@ -1123,8 +1124,9 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_icache
     generic (
-      CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 1), has to be a power of 2
-      CACHE_BLOCK_SIZE : natural := 16 -- block size in bytes (min 4), has to be a power of 2
+      CACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
+      CACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
+      CACHE_NUM_SETS   : natural := 1   -- associativity / number of sets (1=direct_mapped), has to be a power of 2
     );
     port (
       -- global control --

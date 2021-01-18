@@ -1,8 +1,9 @@
 -- #################################################################################################
 -- # << NEORV32 - CPU Co-Processor: Bit manipulation unit (RISC-V "B" Extension) >>                #
 -- # ********************************************************************************************* #
--- # The bit manipulation unit is implemted as co-processor that has a processing latency of at    #
--- # least 3 cycles. Only the "base" bit manipulation subset ('Zbb') is supported yet.             #
+-- # The bit manipulation unit is implemted as co-processor that has a processing latency of 1     #
+-- # cycle for logic/arithmetic operations and 3+shamt (=shift amount) cycles for shift(-related)  #
+-- # operations.                                                                                   #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -81,9 +82,10 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   constant op_width_c : natural := 15;
 
   -- controller --
-  type ctrl_state_t is (S_IDLE, S_START_SHIFT, S_BUSY_SHIFT, S_BUSY_LOGIC);
+  type ctrl_state_t is (S_IDLE, S_START_SHIFT, S_BUSY_SHIFT);
   signal ctrl_state   : ctrl_state_t;
   signal cmd, cmd_buf : std_ulogic_vector(op_width_c-1 downto 0);
+  signal valid        : std_ulogic;
 
   -- operand buffers --
   signal rs1_reg : std_ulogic_vector(data_width_c-1 downto 0);
@@ -150,19 +152,19 @@ begin
       rs2_reg       <= (others => '0');
       less_ff       <= '0';
       shifter.start <= '0';
-      valid_o       <= '0';
+      valid         <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
       shifter.start <= '0';
-      valid_o       <= '0';
+      valid         <= '0';
 
       -- fsm --
       case ctrl_state is
 
         when S_IDLE => -- wait for operation trigger
         -- ------------------------------------------------------------
-          less_ff <= cmp_i(alu_cmp_less_c);
           if (start_i = '1') then
+            less_ff <= cmp_i(alu_cmp_less_c);
             cmd_buf <= cmd;
             rs1_reg <= rs1_i;
             rs2_reg <= rs2_i;
@@ -170,7 +172,8 @@ begin
               shifter.start <= '1';
               ctrl_state <= S_START_SHIFT;
             else
-              ctrl_state <= S_BUSY_LOGIC;
+              valid      <= '1';
+              ctrl_state <= S_IDLE;
             end if;
           end if;
 
@@ -181,13 +184,9 @@ begin
         when S_BUSY_SHIFT => -- wait for multi-cycle shift operation to finish
         -- ------------------------------------------------------------
           if (shifter.run = '0') then
-            ctrl_state <= S_BUSY_LOGIC;
+            valid      <= '1';
+            ctrl_state <= S_IDLE;
           end if;
-
-        when S_BUSY_LOGIC => -- single-cycle logic operation (and output)
-        -- ------------------------------------------------------------
-          valid_o    <= '1';
-          ctrl_state <= S_IDLE;
 
         when others => -- undefined
         -- ------------------------------------------------------------
@@ -318,22 +317,24 @@ begin
 
   -- Output Gate ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  output_gate: process(clk_i)
+  output_gate: process(valid, res_out)
   begin
-    if rising_edge(clk_i) then
+    if (valid = '1') then
+      res_o <= res_out(op_clz_c)   or res_out(op_ctz_c)   or res_out(op_cpop_c) or
+               res_out(op_min_c)   or res_out(op_max_c)   or
+               res_out(op_sextb_c) or res_out(op_sexth_c) or
+               res_out(op_andn_c)  or res_out(op_orn_c)   or res_out(op_xnor_c) or
+               res_out(op_pack_c)  or
+               res_out(op_ror_c)   or res_out(op_rol_c)   or
+               res_out(op_rev8_c)  or
+               res_out(op_orcb_c);
+    else
       res_o <= (others => '0');
-      if (ctrl_state = S_BUSY_LOGIC) then
-        res_o <= res_out(op_clz_c)   or res_out(op_ctz_c)   or res_out(op_cpop_c) or
-                 res_out(op_min_c)   or res_out(op_max_c)   or
-                 res_out(op_sextb_c) or res_out(op_sexth_c) or
-                 res_out(op_andn_c)  or res_out(op_orn_c)   or res_out(op_xnor_c) or
-                 res_out(op_pack_c)  or
-                 res_out(op_ror_c)   or res_out(op_rol_c)   or
-                 res_out(op_rev8_c)  or
-                 res_out(op_orcb_c);
-      end if;
     end if;
   end process output_gate;
+
+  -- valid output --
+  valid_o <= valid;
 
 
 end neorv32_cpu_cp_bitmanip_rtl;

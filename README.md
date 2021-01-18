@@ -54,8 +54,8 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
   * optional embedded memories (instructions/data/bootloader, RAM/ROM) and caches
   * timers (watch dog, RISC-V-compliant machine timer)
   * serial interfaces (SPI, TWI, UART) and general purpose IO
-  * 
-  * [more ...](#NEORV32-Processor-Featurexternal bus interface (Wishbone / [AXI4](#AXI4-Connectivity))es)
+  * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
+  * [more ...](#NEORV32-Processor-Features)
 * Software framework
   * core libraries for high-level usage of the provided functions and peripherals
   * application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
@@ -94,7 +94,7 @@ The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/pr
 |:----------------- |:----------|
 | [NEORV32 processor](https://github.com/stnolting/neorv32)                                             | [![Processor Check](https://github.com/stnolting/neorv32/workflows/Processor%20Check/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22Processor+Check%22) |
 | [SW Framework Documentation (online)](https://stnolting.github.io/neorv32/files.html)                 | [![Doc@GitHub-pages](https://github.com/stnolting/neorv32/workflows/Deploy%20SW%20Framework%20Documentation%20to%20GitHub-Pages/badge.svg)](https://stnolting.github.io/neorv32/files.html) |
-| [Pre-built toolchain](https://github.com/stnolting/riscv_gcc_prebuilt)                                | [![Test Toolchains](https://github.com/stnolting/riscv_gcc_prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv_gcc_prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) |
+| [Pre-built toolchains](https://github.com/stnolting/riscv_gcc_prebuilt)                               | [![Test Toolchains](https://github.com/stnolting/riscv_gcc_prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv_gcc_prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) |
 | [RISC-V compliance test](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md) | [![RISC-V Compliance](https://github.com/stnolting/neorv32/workflows/RISC-V%20Compliance/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22RISC-V+Compliance%22) |
 
 
@@ -103,17 +103,16 @@ The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/pr
 
 * Use LaTeX for data sheet
 * Further size and performance optimization
-* Add associativity configuration for instruction cache
-* Add *data* cache
+* Further expand associativity configuration of instruction cache (4x/8x set-associativity)
+* Add data cache
 * Burst mode for the external memory/bus interface
-* RISC-V `F` (using `[Zfinx](https://github.com/riscv/riscv-zfinx/blob/master/Zfinx_spec.adoc)`?) CPU extension (single-precision floating point)
+* RISC-V `F` (using [`Zfinx`](https://github.com/riscv/riscv-zfinx/blob/master/Zfinx_spec.adoc)?) CPU extension (single-precision floating point)
 * Add template (HW module + intrinsics skeleton) for custom instructions?
-* Synthesis results (+ wrappers?) for more/specific platforms
+* Implement further RISC-V (or custom?) CPU extensions
 * More support for FreeRTOS (like *all* traps)
 * Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
-* Implement further RISC-V (or custom?) CPU extensions
+* Maybe port [CircuitPython](https://circuitpython.org/) (just for fun)
 * Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))
-* Add memory-mapped trigger to testbench to quit simulation (maybe using VHDL2008's `use std.env.finish`?)
 * ...
 * [Ideas?](#ContributeFeedbackQuestions)
 
@@ -270,29 +269,29 @@ information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not o
 of the CPU's generics is assumed (e.g. no physical memory protection, no hardware performance monitors).
 No constraints were used at all. The `u` and `Zifencei` extensions have a negligible impact on the hardware requirements.
 
-Results generated for hardware version [`1.4.9.10`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.5.0.3`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | CPU Configuration                        | LEs        | FFs      | Memory bits | DSPs | f_max   |
 |:-----------------------------------------|:----------:|:--------:|:-----------:|:----:|:-------:|
-| `rv32i`                                  |       1190 |      512 |       2048  |    0 | 120 MHz |
-| `rv32i`     + `u` + `Zicsr` + `Zifencei` |       1927 |      903 |       2048  |    0 | 123 MHz |
-| `rv32im`    + `u` + `Zicsr` + `Zifencei` |       2471 |     1148 |       2048  |    0 | 120 MHz |
-| `rv32imc`   + `u` + `Zicsr` + `Zifencei` |       2716 |     1165 |       2048  |    0 | 120 MHz |
-| `rv32imac`  + `u` + `Zicsr` + `Zifencei` |       2736 |     1168 |       2048  |    0 | 120 MHz |
-| `rv32imacb` + `u` + `Zicsr` + `Zifencei` |       3045 |     1260 |       2048  |    0 | 114 MHz |
+| `rv32i`                                  |       1190 |      512 |        1024 |    0 | 120 MHz |
+| `rv32i`     + `u` + `Zicsr` + `Zifencei` |       1927 |      903 |        1024 |    0 | 123 MHz |
+| `rv32im`    + `u` + `Zicsr` + `Zifencei` |       2471 |     1148 |        1024 |    0 | 120 MHz |
+| `rv32imc`   + `u` + `Zicsr` + `Zifencei` |       2716 |     1165 |        1024 |    0 | 120 MHz |
+| `rv32imac`  + `u` + `Zicsr` + `Zifencei` |       2736 |     1168 |        1024 |    0 | 120 MHz |
+| `rv32imacb` + `u` + `Zicsr` + `Zifencei` |       3045 |     1260 |        1024 |    0 | 114 MHz |
 
 Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utilization and identical f_max. However, the size of the register file is cut in half. 
 
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version [`1.4.9.10`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.5.0.3`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
 | BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |    0 |
 | BUSSWITCH | Mux for CPU I & D interfaces                         |  65 |   8 |           0 |    0 |
-| iCACHE    | Proc.-int. nstruction cache (default 1x4x54 bytes)   | 234 | 156 |       8 192 |    0 |
+| i-CACHE   | Proc.-int. nstruction cache (default 1x4x64 bytes)   | 234 | 156 |       8 192 |    0 |
 | CFU0      | Custom functions unit 0                              |   - |   - |           - |    - |
 | CFU1      | Custom functions unit 1                              |   - |   - |           - |    - |
 | DMEM      | Processor-internal data memory (default 8kB)         |   6 |   2 |      65 536 |    0 |
@@ -345,7 +344,7 @@ tests the capabilities of a CPU itself rather than the functions provided by the
 
 ~~~
 **Configuration**
-Hardware:       32kB IMEM, 16kB DMEM, no caches(!), 100MHz clock
+Hardware:       32kB IMEM, 16kB DMEM, no caches, 100MHz clock
 CoreMark:       2000 iterations, MEM_METHOD is MEM_STACK
 Compiler:       RISCV32-GCC 10.1.0 (rv32i toolchain)
 Compiler flags: default, see makefile
@@ -659,7 +658,7 @@ link in question.
 
 "Artix" and "Vivado" are trademarks of Xilinx Inc.
 
-"Cyclone", "Quartus Prime Lite" and "Avalon Bus" are trademarks of Intel Corporation.
+"Cyclone" and "Quartus Prime Lite" are trademarks of Intel Corporation.
 
 "iCE40", "UltraPlus" and "Radiant" are trademarks of Lattice Semiconductor Corporation.
 
@@ -674,7 +673,6 @@ link in question.
 [RISC-V](https://riscv.org/) - Instruction Sets Want To Be Free!
 
 Continous integration provided by [:octocat: GitHub Actions](https://github.com/features/actions) and powered by [GHDL](https://github.com/ghdl/ghdl).
-
 
 ![Open Source Hardware Logo https://www.oshwa.org](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/oshw_logo.png)
 

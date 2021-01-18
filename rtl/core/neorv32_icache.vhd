@@ -1,7 +1,8 @@
 -- #################################################################################################
 -- # << NEORV32 - Processor-Internal Instruction Cache >>                                          #
 -- # ********************************************************************************************* #
--- # Direct-mapped instruction cache.                                                              #
+-- # Direct mapped (CACHE_NUM_SETS = 1) or 2-way set-associative (CACHE_NUM_SETS = 2).             #
+-- # Least recently used replacement policy (if CACHE_NUM_SETS > 1).                               #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -43,8 +44,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_icache is
   generic (
-    CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE : natural := 16 -- block size in bytes (min 4), has to be a power of 2
+    CACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
+    CACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
+    CACHE_NUM_SETS   : natural := 1   -- associativity / number of sets (1=direct_mapped), has to be a power of 2
   );
   port (
     -- global control --
@@ -86,16 +88,17 @@ architecture neorv32_icache_rtl of neorv32_icache is
   -- cache memory --
   component neorv32_icache_memory
   generic (
-    CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE : natural := 16 -- block size in bytes (min 4), has to be a power of 2
+    CACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
+    CACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
+    CACHE_NUM_SETS   : natural := 1   -- associativity; 0=direct-mapped, 1=2-way set-associative
   );
   port (
     -- global control --
     clk_i          : in  std_ulogic; -- global clock, rising edge
-    rstn_i         : in  std_ulogic; -- global reset, low-active, async
     invalidate_i   : in  std_ulogic; -- invalidate whole cache
     -- host cache access (read-only) --
     host_addr_i    : in  std_ulogic_vector(31 downto 0); -- access address
+    host_re_i      : in  std_ulogic; -- read enable
     host_rdata_o   : out std_ulogic_vector(31 downto 0); -- read data
     -- access status (1 cycle delay to access) --
     hit_o          : out std_ulogic; -- hit access
@@ -152,8 +155,10 @@ begin
   -- configuration --
   assert not (is_power_of_two_f(CACHE_NUM_BLOCKS) = false) report "NEORV32 PROCESSOR CONFIG ERROR! Cache number of blocks <NUM_BLOCKS> has to be a power of 2." severity error;
   assert not (is_power_of_two_f(CACHE_BLOCK_SIZE) = false) report "NEORV32 PROCESSOR CONFIG ERROR! Cache block size <BLOCK_SIZE> has to be a power of 2." severity error;
+  assert not ((is_power_of_two_f(CACHE_NUM_SETS) = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Cache associativity <CACHE_NUM_SETS> has to be a power of 2." severity error;
   assert not (CACHE_NUM_BLOCKS < 1) report "NEORV32 PROCESSOR CONFIG ERROR! Cache number of blocks <NUM_BLOCKS> has to be >= 1." severity error;
   assert not (CACHE_BLOCK_SIZE < 4) report "NEORV32 PROCESSOR CONFIG ERROR! Cache block size <BLOCK_SIZE> has to be >= 4." severity error;
+  assert not ((CACHE_NUM_SETS = 0) or (CACHE_NUM_SETS > 2)) report "NEORV32 PROCESSOR CONFIG ERROR! Cache associativity <CACHE_NUM_SETS> has to be 1 (direct-mapped) or 2 (2-way set-associative)." severity error;
 
 
   -- Control Engine FSM Sync ----------------------------------------------------------------
@@ -162,7 +167,7 @@ begin
   ctrl_engine_fsm_sync_rst: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl.state      <= S_IDLE;
+      ctrl.state      <= S_CACHE_CLEAR;
       ctrl.re_buf     <= '0';
       ctrl.cancel_buf <= '0';
     elsif rising_edge(clk_i) then
@@ -322,15 +327,16 @@ begin
   neorv32_icache_memory_inst: neorv32_icache_memory
   generic map (
     CACHE_NUM_BLOCKS => CACHE_NUM_BLOCKS,     -- number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE => CACHE_BLOCK_SIZE      -- block size in bytes (min 4), has to be a power of 2
+    CACHE_BLOCK_SIZE => CACHE_BLOCK_SIZE,     -- block size in bytes (min 4), has to be a power of 2
+    CACHE_NUM_SETS   => CACHE_NUM_SETS        -- associativity; 0=direct-mapped, 1=2-way set-associative
   )
   port map (
     -- global control --
     clk_i            => clk_i,                -- global clock, rising edge
-    rstn_i           => rstn_i,               -- global reset, low-active, async
     invalidate_i     => cache.clear,          -- invalidate whole cache
     -- host cache access (read-only)          --
     host_addr_i      => cache.host_addr,      -- access address
+    host_re_i        => host_re_i,            -- read enable
     host_rdata_o     => cache.host_rdata,     -- read data
     -- access status (1 cycle delay to access) --
     hit_o            => cache.hit,            -- hit access
@@ -354,8 +360,12 @@ end neorv32_icache_rtl;
 -- #################################################################################################
 -- # << NEORV32 - Cache Memory >>                                                                  #
 -- # ********************************************************************************************* #
--- # Direct mapped (fixed). Read-only for host, write-only for control. All output signals have    #
--- # one cycle latency.                                                                            #
+-- # Direct mapped (CACHE_NUM_SETS = 1) or 2-way set-associative (CACHE_NUM_SETS = 2).             #
+-- # Least recently used replacement policy (if CACHE_NUM_SETS > 1).                               #
+-- # Read-only for host, write-only for control. All output signals have one cycle latency.        #
+-- #                                                                                               #
+-- # Cache sets are mapped to individual memory components - no multi-dimensional memory arrays    #
+-- # are used as some synthesis tools have problems to map these to actual BRAM primitives.        #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -397,16 +407,17 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_icache_memory is
   generic (
-    CACHE_NUM_BLOCKS : natural := 4; -- number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE : natural := 16 -- block size in bytes (min 4), has to be a power of 2
+    CACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
+    CACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
+    CACHE_NUM_SETS   : natural := 1   -- associativity; 1=direct-mapped, 2=2-way set-associative
   );
   port (
     -- global control --
     clk_i            : in  std_ulogic; -- global clock, rising edge
-    rstn_i           : in  std_ulogic; -- global reset, low-active, async
     invalidate_i     : in  std_ulogic; -- invalidate whole cache
     -- host cache access (read-only) --
     host_addr_i      : in  std_ulogic_vector(31 downto 0); -- access address
+    host_re_i        : in  std_ulogic; -- read enable
     host_rdata_o     : out std_ulogic_vector(31 downto 0); -- read data
     -- access status (1 cycle delay to access) --
     hit_o            : out std_ulogic; -- hit access
@@ -427,19 +438,22 @@ architecture neorv32_icache_memory_rtl of neorv32_icache_memory is
   constant cache_offset_size_c : natural := index_size_f(CACHE_BLOCK_SIZE/4); -- offset addresses full 32-bit words
   constant cache_index_size_c  : natural := index_size_f(CACHE_NUM_BLOCKS);
   constant cache_tag_size_c    : natural := 32 - (cache_offset_size_c + cache_index_size_c + 2); -- 2 additonal bits for byte offset
-  constant cache_entries_c     : natural := CACHE_NUM_BLOCKS * (CACHE_BLOCK_SIZE/4); -- number of 32-bit entries
+  constant cache_entries_c     : natural := CACHE_NUM_BLOCKS * (CACHE_BLOCK_SIZE/4); -- number of 32-bit entries (per set)
 
   -- status flag memory --
-  signal valid_flag : std_ulogic_vector(CACHE_NUM_BLOCKS-1 downto 0);
-  signal valid      : std_ulogic; -- flag read data
+  signal valid_flag_s0 : std_ulogic_vector(CACHE_NUM_BLOCKS-1 downto 0);
+  signal valid_flag_s1 : std_ulogic_vector(CACHE_NUM_BLOCKS-1 downto 0);
+  signal valid         : std_ulogic_vector(1 downto 0); -- valid flag read data
 
   -- tag memory --
   type tag_mem_t is array (0 to CACHE_NUM_BLOCKS-1) of std_ulogic_vector(cache_tag_size_c-1 downto 0);
-  signal tag_mem : tag_mem_t;
-  signal tag     : std_ulogic_vector(cache_tag_size_c-1 downto 0);
+  signal tag_mem_s0 : tag_mem_t;
+  signal tag_mem_s1 : tag_mem_t;
+  type tag_rd_t is array (0 to 1) of std_ulogic_vector(cache_tag_size_c-1 downto 0);
+  signal tag : tag_rd_t; -- tag read data
 
   -- access status --
-  signal hit : std_ulogic;
+  signal hit : std_ulogic_vector(1 downto 0);
 
   -- access address decomposition --
   type acc_addr_t is record
@@ -451,13 +465,25 @@ architecture neorv32_icache_memory_rtl of neorv32_icache_memory is
 
   -- cache data memory --
   type cache_mem_t is array (0 to cache_entries_c-1) of std_ulogic_vector(31 downto 0);
-  signal cache_data_memory : cache_mem_t;
+  signal cache_data_memory_s0 : cache_mem_t; -- set 0
+  signal cache_data_memory_s1 : cache_mem_t; -- set 1
 
   -- cache data memory access --
+  type cache_rdata_t is array (0 to 1) of std_ulogic_vector(31 downto 0);
+  signal cache_rdata  : cache_rdata_t;
   signal cache_index  : std_ulogic_vector(cache_index_size_c-1 downto 0);
   signal cache_offset : std_ulogic_vector(cache_offset_size_c-1 downto 0);
-  signal cache_addr   : std_ulogic_vector((cache_index_size_c+cache_offset_size_c)-1 downto 0); -- = index & offset
+  signal cache_addr   : std_ulogic_vector((cache_index_size_c+cache_offset_size_c)-1 downto 0); -- index & offset
   signal cache_we     : std_ulogic; -- write enable (full-word)
+  signal set_select   : std_ulogic;
+
+  -- access history --
+  type history_t is record
+    re_ff          : std_ulogic;
+    last_used_set  : std_ulogic_vector(CACHE_NUM_BLOCKS-1 downto 0);
+    to_be_replaced : std_ulogic;
+  end record;
+  signal history : history_t;
 
 begin
 
@@ -472,25 +498,52 @@ begin
   ctrl_acc_addr.offset <= ctrl_addr_i(2+(cache_offset_size_c-1) downto 2); -- discard byte offset
 
 
+	-- Cache Access History -------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  access_history: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      history.re_ff <= host_re_i;
+      if (invalidate_i = '1') then -- invalidate whole cache
+        history.last_used_set <= (others => '1');
+      elsif (history.re_ff = '1') and (or_all_f(hit) = '1') then -- store last accessed set that caused a hit
+        history.last_used_set(to_integer(unsigned(cache_index))) <= not hit(0);
+      end if;
+      history.to_be_replaced <= history.last_used_set(to_integer(unsigned(cache_index)));
+    end if;
+  end process access_history;
+
+  -- which set is going to be replaced? -> opposite of last used set = least recently used set --
+  set_select <= '0' when (CACHE_NUM_SETS = 1) else (not history.to_be_replaced);
+
+
 	-- Status flag memory ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  status_memory: process(rstn_i, clk_i)
+  status_memory: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      valid_flag <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       -- write access --
       if (invalidate_i = '1') then -- invalidate whole cache
-        valid_flag <= (others => '0');
-      elsif (ctrl_en_i = '1') then 
+        valid_flag_s0 <= (others => '0');
+        valid_flag_s1 <= (others => '0');
+      elsif (ctrl_en_i = '1') then
         if (ctrl_invalid_i = '1') then -- make current block invalid
-          valid_flag(to_integer(unsigned(cache_index))) <= '0';
+          if (set_select = '0') then
+            valid_flag_s0(to_integer(unsigned(cache_index))) <= '0';
+          else
+            valid_flag_s1(to_integer(unsigned(cache_index))) <= '0';
+          end if;
         elsif (ctrl_valid_i = '1') then -- make current block valid
-          valid_flag(to_integer(unsigned(cache_index))) <= '1';
+          if (set_select = '0') then
+            valid_flag_s0(to_integer(unsigned(cache_index))) <= '1';
+          else
+            valid_flag_s1(to_integer(unsigned(cache_index))) <= '1';
+          end if;
         end if;
       end if;
       -- read access (sync) --
-      valid <= valid_flag(to_integer(unsigned(cache_index)));
+      valid(0) <= valid_flag_s0(to_integer(unsigned(cache_index)));
+      valid(1) <= valid_flag_s1(to_integer(unsigned(cache_index)));
     end if;
   end process status_memory;
 
@@ -501,16 +554,31 @@ begin
   begin
     if rising_edge(clk_i) then
       if (ctrl_en_i = '1') and (ctrl_tag_we_i = '1') then -- write access
-        tag_mem(to_integer(unsigned(cache_index))) <= ctrl_acc_addr.tag;
+        if (set_select = '0') then
+          tag_mem_s0(to_integer(unsigned(cache_index))) <= ctrl_acc_addr.tag;
+        else
+          tag_mem_s1(to_integer(unsigned(cache_index))) <= ctrl_acc_addr.tag;
+        end if;
       else -- read access
-        tag <= tag_mem(to_integer(unsigned(cache_index)));
+        tag(0) <= tag_mem_s0(to_integer(unsigned(cache_index)));
+        tag(1) <= tag_mem_s1(to_integer(unsigned(cache_index)));
       end if;
     end if;
   end process tag_memory;
 
-  -- compare tag entry with adress tag --
-  hit   <= '1' when (host_acc_addr.tag = tag) and (valid = '1') else '0';
-  hit_o <= hit;
+  -- comparator --
+  comparator: process(host_acc_addr, tag, valid)
+  begin
+    hit <= (others => '0');
+    for i in 0 to CACHE_NUM_SETS-1 loop
+      if (host_acc_addr.tag = tag(i)) and (valid(i) = '1') then
+        hit(i) <= '1';
+      end if;
+    end loop; -- i
+  end process comparator;
+
+  -- global hit --
+  hit_o <= or_all_f(hit);
 
 
 	-- Cache Data Memory ----------------------------------------------------------------------
@@ -519,12 +587,20 @@ begin
   begin
     if rising_edge(clk_i) then
       if (cache_we = '1') then -- write access from control (full-word)
-        cache_data_memory(to_integer(unsigned(cache_addr))) <= ctrl_wdata_i;
+        if (set_select = '0') then
+          cache_data_memory_s0(to_integer(unsigned(cache_addr))) <= ctrl_wdata_i;
+        else
+          cache_data_memory_s1(to_integer(unsigned(cache_addr))) <= ctrl_wdata_i;
+        end if;
       else -- read access from host (full-word)
-        host_rdata_o <= cache_data_memory(to_integer(unsigned(cache_addr)));
+        cache_rdata(0) <= cache_data_memory_s0(to_integer(unsigned(cache_addr)));
+        cache_rdata(1) <= cache_data_memory_s1(to_integer(unsigned(cache_addr)));
       end if;
     end if;
   end process cache_mem_access;
+
+  -- data output --
+  host_rdata_o <= cache_rdata(0) when (hit(0) = '1') or (CACHE_NUM_SETS = 1) else cache_rdata(1);
 
   -- cache block ram access address --
   cache_addr <= cache_index & cache_offset;
