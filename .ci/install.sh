@@ -4,15 +4,16 @@
 set -e
 
 # Toolchain to be used 
-TOOLCHAIN_V=riscv32-unknown-elf.gcc-10.1.0.rv32i.ilp32.newlib
+RELEASE=rv32i-1.0.0
+TOOLCHAIN=riscv32-unknown-elf.gcc-10.1.0.rv32i.ilp32.newlib
 
 # Download toolchain
-echo "Downloading prebuilt RISC-V GCC toolchain ($TOOLCHAIN_V)..."
-wget https://github.com/stnolting/riscv_gcc_prebuilt/raw/master/data/$TOOLCHAIN_V.tar.gz
+echo "Downloading prebuilt RISC-V GCC toolchain ($RELEASE : $TOOLCHAIN)..."
+wget https://github.com/stnolting/riscv-gcc-prebuilt/releases/download/$RELEASE/$TOOLCHAIN.tar.gz
 
 # Decompress
 mkdir riscv
-tar -xzf $TOOLCHAIN_V.tar.gz -C riscv/
+tar -xzf $TOOLCHAIN.tar.gz -C riscv/
 pwd
 ls -al
 ls -al riscv/
