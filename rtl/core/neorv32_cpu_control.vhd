@@ -63,7 +63,7 @@ entity neorv32_cpu_control is
     PMP_NUM_REGIONS              : natural := 0;       -- number of regions (0..64)
     PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 : natural := 0      -- number of inmplemnted HPM counters (0..29)
+    HPM_NUM_CNTS                 : natural := 0      -- number of implemented HPM counters (0..29)
   );
   port (
     -- global control --
