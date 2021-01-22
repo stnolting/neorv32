@@ -1124,9 +1124,9 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_icache
     generic (
-      CACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
-      CACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
-      CACHE_NUM_SETS   : natural := 1   -- associativity / number of sets (1=direct_mapped), has to be a power of 2
+      ICACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
+      ICACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
+      ICACHE_NUM_SETS   : natural := 1   -- associativity / number of sets (1=direct_mapped), has to be a power of 2
     );
     port (
       -- global control --

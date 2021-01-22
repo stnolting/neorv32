@@ -64,7 +64,7 @@ entity neorv32_top_axi4lite is
     PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..64)
     PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 : natural := 0;      -- number of inmplemnted HPM counters (0..29)
+    HPM_NUM_CNTS                 : natural := 0;      -- number of implemented HPM counters (0..29)
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
@@ -227,7 +227,7 @@ begin
     PMP_NUM_REGIONS              => PMP_NUM_REGIONS,    -- number of regions (0..64)
     PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY, -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 => HPM_NUM_CNTS,       -- number of inmplemnted HPM counters (0..29)
+    HPM_NUM_CNTS                 => HPM_NUM_CNTS,       -- number of implemented HPM counters (0..29)
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              => MEM_INT_IMEM_EN,    -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE,  -- size of processor-internal instruction memory in bytes

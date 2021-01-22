@@ -4,7 +4,7 @@ These scripts are called by the GitHub Actions workflows in `.github/workflows`.
 
 ### `install.sh`
 
-This scripts download a pre-built toolchain from the [`stnolting/riscv_gcc_prebuilt`](https://github.com/stnolting/riscv_gcc_prebuilt)
+This scripts download a pre-built toolchain from the [`stnolting/riscv-gcc-prebuilt`](https://github.com/stnolting/riscv-gcc-prebuilt)
 repository, extracts the archive and installs the toolchain into new `riscv` folder.
 
 ### `sw_check.sh`
