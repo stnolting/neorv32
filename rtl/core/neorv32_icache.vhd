@@ -1,8 +1,8 @@
 -- #################################################################################################
 -- # << NEORV32 - Processor-Internal Instruction Cache >>                                          #
 -- # ********************************************************************************************* #
--- # Direct mapped (CACHE_NUM_SETS = 1) or 2-way set-associative (CACHE_NUM_SETS = 2).             #
--- # Least recently used replacement policy (if CACHE_NUM_SETS > 1).                               #
+-- # Direct mapped (ICACHE_NUM_SETS = 1) or 2-way set-associative (ICACHE_NUM_SETS = 2).           #
+-- # Least recently used replacement policy (if ICACHE_NUM_SETS > 1).                              #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -44,9 +44,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_icache is
   generic (
-    CACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
-    CACHE_NUM_SETS   : natural := 1   -- associativity / number of sets (1=direct_mapped), has to be a power of 2
+    ICACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
+    ICACHE_NUM_SETS   : natural := 1   -- associativity / number of sets (1=direct_mapped), has to be a power of 2
   );
   port (
     -- global control --
@@ -81,16 +81,16 @@ end neorv32_icache;
 architecture neorv32_icache_rtl of neorv32_icache is
 
   -- cache layout --
-  constant cache_offset_size_c : natural := index_size_f(CACHE_BLOCK_SIZE/4); -- offset addresses full 32-bit words
-  constant cache_index_size_c  : natural := index_size_f(CACHE_NUM_BLOCKS);
+  constant cache_offset_size_c : natural := index_size_f(ICACHE_BLOCK_SIZE/4); -- offset addresses full 32-bit words
+  constant cache_index_size_c  : natural := index_size_f(ICACHE_NUM_BLOCKS);
   constant cache_tag_size_c    : natural := 32 - (cache_offset_size_c + cache_index_size_c + 2); -- 2 additonal bits for byte offset
 
   -- cache memory --
   component neorv32_icache_memory
   generic (
-    CACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
-    CACHE_NUM_SETS   : natural := 1   -- associativity; 0=direct-mapped, 1=2-way set-associative
+    ICACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
+    ICACHE_NUM_SETS   : natural := 1   -- associativity; 0=direct-mapped, 1=2-way set-associative
   );
   port (
     -- global control --
@@ -153,12 +153,12 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- configuration --
-  assert not (is_power_of_two_f(CACHE_NUM_BLOCKS) = false) report "NEORV32 PROCESSOR CONFIG ERROR! Cache number of blocks <NUM_BLOCKS> has to be a power of 2." severity error;
-  assert not (is_power_of_two_f(CACHE_BLOCK_SIZE) = false) report "NEORV32 PROCESSOR CONFIG ERROR! Cache block size <BLOCK_SIZE> has to be a power of 2." severity error;
-  assert not ((is_power_of_two_f(CACHE_NUM_SETS) = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Cache associativity <CACHE_NUM_SETS> has to be a power of 2." severity error;
-  assert not (CACHE_NUM_BLOCKS < 1) report "NEORV32 PROCESSOR CONFIG ERROR! Cache number of blocks <NUM_BLOCKS> has to be >= 1." severity error;
-  assert not (CACHE_BLOCK_SIZE < 4) report "NEORV32 PROCESSOR CONFIG ERROR! Cache block size <BLOCK_SIZE> has to be >= 4." severity error;
-  assert not ((CACHE_NUM_SETS = 0) or (CACHE_NUM_SETS > 2)) report "NEORV32 PROCESSOR CONFIG ERROR! Cache associativity <CACHE_NUM_SETS> has to be 1 (direct-mapped) or 2 (2-way set-associative)." severity error;
+  assert not (is_power_of_two_f(ICACHE_NUM_BLOCKS) = false) report "NEORV32 PROCESSOR CONFIG ERROR! i-cache number of blocks <ICACHE_NUM_BLOCKS> has to be a power of 2." severity error;
+  assert not (is_power_of_two_f(ICACHE_BLOCK_SIZE) = false) report "NEORV32 PROCESSOR CONFIG ERROR! i-cache block size <ICACHE_BLOCK_SIZE> has to be a power of 2." severity error;
+  assert not ((is_power_of_two_f(ICACHE_NUM_SETS) = false)) report "NEORV32 PROCESSOR CONFIG ERROR! i-cache associativity <ICACHE_NUM_SETS> has to be a power of 2." severity error;
+  assert not (ICACHE_NUM_BLOCKS < 1) report "NEORV32 PROCESSOR CONFIG ERROR! i-cache number of blocks <ICACHE_NUM_BLOCKS> has to be >= 1." severity error;
+  assert not (ICACHE_BLOCK_SIZE < 4) report "NEORV32 PROCESSOR CONFIG ERROR! i-cache block size <ICACHE_BLOCK_SIZE> has to be >= 4." severity error;
+  assert not ((ICACHE_NUM_SETS = 0) or (ICACHE_NUM_SETS > 2)) report "NEORV32 PROCESSOR CONFIG ERROR! i-cache associativity <ICACHE_NUM_SETS> has to be 1 (direct-mapped) or 2 (2-way set-associative)." severity error;
 
 
   -- Control Engine FSM Sync ----------------------------------------------------------------
@@ -326,9 +326,9 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_icache_memory_inst: neorv32_icache_memory
   generic map (
-    CACHE_NUM_BLOCKS => CACHE_NUM_BLOCKS,     -- number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE => CACHE_BLOCK_SIZE,     -- block size in bytes (min 4), has to be a power of 2
-    CACHE_NUM_SETS   => CACHE_NUM_SETS        -- associativity; 0=direct-mapped, 1=2-way set-associative
+    ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,     -- number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE,     -- block size in bytes (min 4), has to be a power of 2
+    ICACHE_NUM_SETS   => ICACHE_NUM_SETS        -- associativity; 0=direct-mapped, 1=2-way set-associative
   )
   port map (
     -- global control --
@@ -360,8 +360,8 @@ end neorv32_icache_rtl;
 -- #################################################################################################
 -- # << NEORV32 - Cache Memory >>                                                                  #
 -- # ********************************************************************************************* #
--- # Direct mapped (CACHE_NUM_SETS = 1) or 2-way set-associative (CACHE_NUM_SETS = 2).             #
--- # Least recently used replacement policy (if CACHE_NUM_SETS > 1).                               #
+-- # Direct mapped (ICACHE_NUM_SETS = 1) or 2-way set-associative (ICACHE_NUM_SETS = 2).           #
+-- # Least recently used replacement policy (if ICACHE_NUM_SETS > 1).                              #
 -- # Read-only for host, write-only for control. All output signals have one cycle latency.        #
 -- #                                                                                               #
 -- # Cache sets are mapped to individual memory components - no multi-dimensional memory arrays    #
@@ -407,9 +407,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_icache_memory is
   generic (
-    CACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
-    CACHE_NUM_SETS   : natural := 1   -- associativity; 1=direct-mapped, 2=2-way set-associative
+    ICACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
+    ICACHE_NUM_SETS   : natural := 1   -- associativity; 1=direct-mapped, 2=2-way set-associative
   );
   port (
     -- global control --
@@ -435,18 +435,18 @@ end neorv32_icache_memory;
 architecture neorv32_icache_memory_rtl of neorv32_icache_memory is
 
   -- cache layout --
-  constant cache_offset_size_c : natural := index_size_f(CACHE_BLOCK_SIZE/4); -- offset addresses full 32-bit words
-  constant cache_index_size_c  : natural := index_size_f(CACHE_NUM_BLOCKS);
+  constant cache_offset_size_c : natural := index_size_f(ICACHE_BLOCK_SIZE/4); -- offset addresses full 32-bit words
+  constant cache_index_size_c  : natural := index_size_f(ICACHE_NUM_BLOCKS);
   constant cache_tag_size_c    : natural := 32 - (cache_offset_size_c + cache_index_size_c + 2); -- 2 additonal bits for byte offset
-  constant cache_entries_c     : natural := CACHE_NUM_BLOCKS * (CACHE_BLOCK_SIZE/4); -- number of 32-bit entries (per set)
+  constant cache_entries_c     : natural := ICACHE_NUM_BLOCKS * (ICACHE_BLOCK_SIZE/4); -- number of 32-bit entries (per set)
 
   -- status flag memory --
-  signal valid_flag_s0 : std_ulogic_vector(CACHE_NUM_BLOCKS-1 downto 0);
-  signal valid_flag_s1 : std_ulogic_vector(CACHE_NUM_BLOCKS-1 downto 0);
+  signal valid_flag_s0 : std_ulogic_vector(ICACHE_NUM_BLOCKS-1 downto 0);
+  signal valid_flag_s1 : std_ulogic_vector(ICACHE_NUM_BLOCKS-1 downto 0);
   signal valid         : std_ulogic_vector(1 downto 0); -- valid flag read data
 
   -- tag memory --
-  type tag_mem_t is array (0 to CACHE_NUM_BLOCKS-1) of std_ulogic_vector(cache_tag_size_c-1 downto 0);
+  type tag_mem_t is array (0 to ICACHE_NUM_BLOCKS-1) of std_ulogic_vector(cache_tag_size_c-1 downto 0);
   signal tag_mem_s0 : tag_mem_t;
   signal tag_mem_s1 : tag_mem_t;
   type tag_rd_t is array (0 to 1) of std_ulogic_vector(cache_tag_size_c-1 downto 0);
@@ -480,7 +480,7 @@ architecture neorv32_icache_memory_rtl of neorv32_icache_memory is
   -- access history --
   type history_t is record
     re_ff          : std_ulogic;
-    last_used_set  : std_ulogic_vector(CACHE_NUM_BLOCKS-1 downto 0);
+    last_used_set  : std_ulogic_vector(ICACHE_NUM_BLOCKS-1 downto 0);
     to_be_replaced : std_ulogic;
   end record;
   signal history : history_t;
@@ -514,7 +514,7 @@ begin
   end process access_history;
 
   -- which set is going to be replaced? -> opposite of last used set = least recently used set --
-  set_select <= '0' when (CACHE_NUM_SETS = 1) else (not history.to_be_replaced);
+  set_select <= '0' when (ICACHE_NUM_SETS = 1) else (not history.to_be_replaced);
 
 
 	-- Status flag memory ---------------------------------------------------------------------
@@ -570,7 +570,7 @@ begin
   comparator: process(host_acc_addr, tag, valid)
   begin
     hit <= (others => '0');
-    for i in 0 to CACHE_NUM_SETS-1 loop
+    for i in 0 to ICACHE_NUM_SETS-1 loop
       if (host_acc_addr.tag = tag(i)) and (valid(i) = '1') then
         hit(i) <= '1';
       end if;
@@ -600,7 +600,7 @@ begin
   end process cache_mem_access;
 
   -- data output --
-  host_rdata_o <= cache_rdata(0) when (hit(0) = '1') or (CACHE_NUM_SETS = 1) else cache_rdata(1);
+  host_rdata_o <= cache_rdata(0) when (hit(0) = '1') or (ICACHE_NUM_SETS = 1) else cache_rdata(1);
 
   -- cache block ram access address --
   cache_addr <= cache_index & cache_offset;

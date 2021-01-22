@@ -8,7 +8,7 @@
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases)
 
 * [Overview](#Overview)
-* [Project Status](#Status)
+* [Status](#Status)
 * [Features](#Features)
 * [FPGA Implementation Results](#FPGA-Implementation-Results)
 * [Performance](#Performance)
@@ -41,11 +41,11 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
   * `A` - atomic memory access instructions (optional)
   * `B` - Bit manipulation instructions (optional)
   * `C` - compressed instructions (16-bit) (optional)
-  * `E` - embedded CPU (reduced register file (optional)
+  * `E` - embedded CPU (reduced register file size) (optional)
   * `I` - base integer instruction set (always enabled)
   * `M` - integer multiplication and division hardware (optional)
   * `U` - less-privileged *user mode* (optional)
-  * `X` - NEORV32_specific extensions (always enabled)
+  * `X` - NEORV32-specific extensions (always enabled)
   * `Zicsr` - control and status register access instructions (+ exception/irq system) (optional)
   * `Zifencei` - instruction stream synchronization (optional)
   * `PMP` - physical memory protection (optional)
@@ -59,7 +59,7 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
 * Software framework
   * core libraries for high-level usage of the provided functions and peripherals
   * application compilation based on [GNU makefiles](https://github.com/stnolting/neorv32/blob/master/sw/example/blink_led/makefile)
-  * GCC-based toolchain ([pre-compiled toolchains available](https://github.com/stnolting/riscv_gcc_prebuilt))
+  * GCC-based toolchain ([pre-compiled toolchains available](https://github.com/stnolting/riscv-gcc-prebuilt))
   * bootloader with UART interface console
   * runtime environment
   * several example programs
@@ -94,7 +94,7 @@ The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/pr
 |:----------------- |:----------|
 | [NEORV32 processor](https://github.com/stnolting/neorv32)                                             | [![Processor Check](https://github.com/stnolting/neorv32/workflows/Processor%20Check/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22Processor+Check%22) |
 | [SW Framework Documentation (online)](https://stnolting.github.io/neorv32/files.html)                 | [![Doc@GitHub-pages](https://github.com/stnolting/neorv32/workflows/Deploy%20SW%20Framework%20Documentation%20to%20GitHub-Pages/badge.svg)](https://stnolting.github.io/neorv32/files.html) |
-| [Pre-built toolchains](https://github.com/stnolting/riscv_gcc_prebuilt)                               | [![Test Toolchains](https://github.com/stnolting/riscv_gcc_prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv_gcc_prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) |
+| [Pre-built toolchains](https://github.com/stnolting/riscv-gcc-prebuilt)                               | [![Test Toolchains](https://github.com/stnolting/riscv-gcc-prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv-gcc-prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) |
 | [RISC-V compliance test](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md) | [![RISC-V Compliance](https://github.com/stnolting/neorv32/workflows/RISC-V%20Compliance/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22RISC-V+Compliance%22) |
 
 
@@ -466,7 +466,7 @@ Make sure to use the `ilp32` or `ilp32e` ABI.
 
 **Alternatively**, you can download a prebuilt toolchain. I have uploaded the toolchains I am using to GitHub. These toolchains
 were compiled on a 64-bit x86 Ubuntu 20.04 LTS (Ubuntu on Windows, actually). Download the toolchain of choice: 
-[:octocat: github.com/stnolting/riscv_gcc_prebuilt](https://github.com/stnolting/riscv_gcc_prebuilt)
+[:octocat: github.com/stnolting/riscv-gcc-prebuilt](https://github.com/stnolting/riscv-gcc-prebuilt)
 
 You can also use the toolchains provided by [SiFive](https://github.com/sifive/freedom-tools/releases). These are 64-bit toolchains that can also emit 32-bit
 RISC-V code. They were compiled for more sophisticated machines (`imac`) so the according hardware extensions are *mandatory*
