@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 --  This file is a part of the NEORV32 project
---  Copyleft (ɔ) 2021, Susanin Crew
+--  Copyleft (ɔ) 2021, Susanin Crew / ArtfulChips
 --
 --  This program is free software; you can redistribute it and/or modify
 --  it under the terms of the GNU General Public License as published by
@@ -16,49 +16,55 @@
 --  along with this program; if not, write to the Free Software
 --  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --  ------------------------------------------------------------------------  --
--- Entity: 	neorv32_marsohod3
--- File:	neorv32_marsohod3.vhd
--- Author:	Serge Knigovedov, hitche/at\yandex.com, Susanin Crew / ArtfulChips
--- Description:	Top level NEORV32 SoC for Marsohod3 board for
---   testing synthesis only yet
+--  Entity: 	   marsokhod3_neorv32
+--  File:	       marsokhod3_neorv32.vhd
+--  Author:	     Serge Knigovedov, hitche/at\yandex.com
+--  Description: Top level NEORV32 SoC for Marsokhod3 board for
+--               synthesis testing only yet
 --------------------------------------------------------------------------------
 
-library ieee;
-    use ieee.std_logic_1164.all;
-    use ieee.numeric_std.all;
+library IEEE;
+    use IEEE.STD_LOGIC_1164.all;
+    use IEEE.NUMERIC_STD.all;
 
 library neorv32;
-use neorv32.neorv32_package.all;
+    use neorv32.neorv32_package.all;
 
-entity neorv32_marsohod3 is
+entity marsokhod3 is
   generic (
-    DIV       : natural := 2    -- Coefficient of division input clock 100 MHz
+    DIV       : natural := 2                          -- Coefficient of division input clock 100 MHz
   );
   port (
     -- Buttons
-    KEY0      : in std_logic;   -- reset
-    KEY1      : in std_logic;   -- gpio_in(0)
+    KEY0      : in std_ulogic;
+    KEY1      : in std_ulogic;
     -- Quartz generator
-    CLK100MHZ : in std_logic;
-    -- 2th channel of FT2232H - /dev/ttyUSB1
-    FTDI_BD0  : in std_logic;   -- TXD/TCK/SK
-    FTDI_BD1  : out std_logic;  -- RXD/TDI/DO (MOSI)
-    -- Inputs/outputs
+    CLK100MHZ : in std_ulogic;
+    -- FT2232H
+    FTDI_AD   : inout std_ulogic_vector(7 downto 0);  -- 1th channel - /dev/ttyUSB0
+                                                      -- 0: TXD/TCK/SK
+                                                      -- 1: RXD/TDI/DO
+    FTDI_AC   : inout std_ulogic_vector(7 downto 0);
+    FTDI_BD   : inout std_ulogic_vector(3 downto 0);  -- 2th channel - /dev/ttyUSB1
+                                                      -- 0: TXD/TCK/SK
+                                                      -- 1: RXD/TDI/DO
+    -- GPIO
     IO        : inout std_ulogic_vector(19 downto 0);
     -- LEDs
     LED       : out std_ulogic_vector(7 downto 0)
   );
-end neorv32_marsohod3;
+end marsokhod3;
 
-architecture rtl of neorv32_marsohod3 is
+architecture rtl of marsokhod3 is
 
-  signal clk      : std_logic;
-
-  -- gpio
+  signal clk      : std_ulogic;
+  signal rs_n     : std_ulogic;
   signal gpio_out : std_ulogic_vector(31 downto 0);
   signal gpio_in  : std_ulogic_vector(31 downto 0);
 
 begin
+
+  rs_n <= KEY0;
 
 -- PLL                                                                        --
   my_pll: entity work.my_pll
@@ -92,7 +98,7 @@ begin
       FAST_MUL_EN                   => true,        -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                 => true,        -- use barrel shifter for shift operations
       -- Physical Memory Protection (PMP) --
-      PMP_NUM_REGIONS               => 2,           -- number of regions (0..64)
+      PMP_NUM_REGIONS               => 0,           -- number of regions (0..64)
       PMP_MIN_GRANULARITY           => 64*1024,     -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS                  => 2,           -- number of implemented HPM counters (0..29)
@@ -125,7 +131,7 @@ begin
     port map (
       -- Global control --
       clk_i       => clk,             -- global clock, rising edge
-      rstn_i      => KEY0,            -- global reset, low-active, async
+      rstn_i      => rs_n,            -- global reset, low-active, async
       -- Wishbone bus interface --
       wb_tag_o    => open,            -- tag
       wb_adr_o    => open,            -- address
@@ -145,8 +151,8 @@ begin
       gpio_o      => gpio_out,        -- parallel output
       gpio_i      => gpio_in,         -- parallel input
       -- UART --
-      uart_txd_o  => FTDI_BD1,        -- UART send data
-      uart_rxd_i  => FTDI_BD0,        -- UART receive data
+      uart_txd_o  => FTDI_BD(1),      -- UART send data
+      uart_rxd_i  => FTDI_BD(0),      -- UART receive data
       -- SPI --
       spi_sck_o   => IO(16),          -- SPI serial clock
       spi_sdo_o   => IO(15),          -- controller data out, peripheral data in

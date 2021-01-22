@@ -1,4 +1,4 @@
-project_new neorv32_on_mars3 -overwrite
+project_new marsokhod3_double_core -overwrite
 
 # Project-Wide Assignments
 # ========================
@@ -13,7 +13,7 @@ set_global_assignment -name FLOW_ENABLE_POWER_ANALYZER ON
 
 # Analysis & Synthesis Assignments
 # ================================
-set_global_assignment -name TOP_LEVEL_ENTITY neorv32_marsohod3
+set_global_assignment -name TOP_LEVEL_ENTITY marsokhod3_double_core
 set_global_assignment -name FAMILY "MAX 10"
 set_global_assignment -name OPTIMIZATION_MODE BALANCED
 
@@ -42,10 +42,26 @@ set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY1
 
 # Pin & Location Assignments
 # ==========================
-set_location_assignment PIN_141 -to FTDI_BD0
-set_location_assignment PIN_140 -to FTDI_BD1
-set_location_assignment PIN_138 -to FTDI_BD2
-set_location_assignment PIN_136 -to FTDI_BD3
+set_location_assignment PIN_20 -to FTDI_AD[0]
+set_location_assignment PIN_135 -to FTDI_AD[1]
+set_location_assignment PIN_133 -to FTDI_AD[2]
+set_location_assignment PIN_134 -to FTDI_AD[3]
+set_location_assignment PIN_23 -to FTDI_AD[4]
+set_location_assignment PIN_22 -to FTDI_AD[5]
+set_location_assignment PIN_21 -to FTDI_AD[6]
+set_location_assignment PIN_15 -to FTDI_AD[7]
+set_location_assignment PIN_14 -to FTDI_AC[0]
+set_location_assignment PIN_13 -to FTDI_AC[1]
+set_location_assignment PIN_12 -to FTDI_AC[2]
+set_location_assignment PIN_11 -to FTDI_AC[3]
+set_location_assignment PIN_10 -to FTDI_AC[4]
+set_location_assignment PIN_8 -to FTDI_AC[5]
+set_location_assignment PIN_7 -to FTDI_AC[6]
+set_location_assignment PIN_6 -to FTDI_AC[7]
+set_location_assignment PIN_141 -to FTDI_BD[0]
+set_location_assignment PIN_140 -to FTDI_BD[1]
+set_location_assignment PIN_138 -to FTDI_BD[2]
+set_location_assignment PIN_136 -to FTDI_BD[3]
 
 set_location_assignment PIN_27 -to SDRAM_DQ[15]
 set_location_assignment PIN_28 -to SDRAM_DQ[14]
@@ -101,23 +117,6 @@ set_location_assignment PIN_126 -to TMDS[3]
 set_location_assignment PIN_125 -to TMDS[2]
 set_location_assignment PIN_124 -to TMDS[1]
 set_location_assignment PIN_120 -to TMDS[0]
-
-set_location_assignment PIN_20 -to FTD[0]
-set_location_assignment PIN_135 -to FTD[1]
-set_location_assignment PIN_133 -to FTD[2]
-set_location_assignment PIN_134 -to FTD[3]
-set_location_assignment PIN_23 -to FTD[4]
-set_location_assignment PIN_22 -to FTD[5]
-set_location_assignment PIN_21 -to FTD[6]
-set_location_assignment PIN_15 -to FTD[7]
-set_location_assignment PIN_14 -to FTC[0]
-set_location_assignment PIN_13 -to FTC[1]
-set_location_assignment PIN_12 -to FTC[2]
-set_location_assignment PIN_11 -to FTC[3]
-set_location_assignment PIN_10 -to FTC[4]
-set_location_assignment PIN_8 -to FTC[5]
-set_location_assignment PIN_7 -to FTC[6]
-set_location_assignment PIN_6 -to FTC[7]
 
 set_location_assignment PIN_89 -to IO[0]
 set_location_assignment PIN_90 -to IO[1]
@@ -188,8 +187,10 @@ set_global_assignment -name TIMING_ANALYZER_MULTICORNER_ANALYSIS ON
 
 # Source files Assignments
 # ===================================
-set_global_assignment -name VHDL_FILE ../../backend/marsohod3/src/my_pll.vhd
-set_global_assignment -name VHDL_FILE ../../backend/marsohod3/src/neorv32_marsohod3.vhd
+set_global_assignment -name VHDL_FILE ../../backend/wishbone_package.vhd
+set_global_assignment -name VHDL_FILE ../../backend/intel_altera/rtl/my_pll.vhd
+set_global_assignment -name VHDL_FILE ../../backend/marsokhod3_double_core/rtl/marsokhod3_double_core.vhd
+set_global_assignment -name VHDL_FILE ../../backend/marsokhod3_double_core/rtl/wb_dp_ram.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_application_image.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_bootloader_image.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_boot_rom.vhd

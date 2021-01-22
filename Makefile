@@ -1,6 +1,6 @@
 ################################################################################
 #  This file is a part of the NEORV32 project
-#  Copyleft (ɔ) 2021, Susanin Crew
+#  Copyleft (ɔ) 2021, Susanin Crew / ArtfulChips
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -16,10 +16,10 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #  ##########################################################################  #
-#  File: Makefile
-#  Author: Serge Knigovedov, hitche/at\yandex.com, Susanin Crew & ArtfulChips
+#  File: 				Makefile
+#  Author: 		  Serge Knigovedov, hitche/at\yandex.com
 #  Description: Makefile for control development flow in NEORV32 project
-#    Dependencies:
+#  Dependencies:
 #    1. GNU Make & Coreutils (of course :)
 #    2. GHDL
 #    3. GNU compression utilities
@@ -32,7 +32,8 @@
 # Some words about this project
 PROJECT		= neorv32
 TESTBENCH	= neorv32_tb
-Q_PROJECT	= $(PROJECT)_on_mars3
+Q_PROJECT	= marsokhod3
+# marsokhod3 marsokhod3_double_core
 ROOT			= $(shell pwd)
 SIM_DIR		= $(ROOT)/build/simulation
 IMPL_DIR	= $(ROOT)/build/$(Q_PROJECT)
@@ -124,10 +125,10 @@ view :
 	@gunzip --stdout $(SIM_DIR)/$(TESTBENCH).vcdgz | $(WAVEFORM_CMD) --vcd $(GTKWavePrefPATH)
 
 implement_mars3 :
-	@echo "\n*** Start implementation for Marsohod3 board at $(shell date +%T)\n"
+	@echo "\n*** Start implementation for Marsokhod3 board at $(shell date +%T)\n"
 	@mkdir -p $(IMPL_DIR)
 	@echo "\n*** Start Project Settings\n"
-	@cd $(IMPL_DIR) && quartus_sh -t $(ROOT)/backend/marsohod3/setup_quartus_proj.tcl
+	@cd $(IMPL_DIR) && quartus_sh -t $(ROOT)/backend/$(Q_PROJECT)/setup_quartus_proj.tcl
 	@echo "\n*** Start Analysis and Synthesis\n"
 	@cd $(IMPL_DIR) && quartus_map $(Q_PROJECT)
 	@echo "\n*** Start Fitter\n"
