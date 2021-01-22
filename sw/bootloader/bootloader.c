@@ -153,7 +153,13 @@ enum NEORV32_EXECUTABLE {
  * This global variable keeps the size of the available executable in bytes.
  * If =0 no executable is available (yet).
  **************************************************************************/
-uint32_t exe_available = 0;
+volatile uint32_t exe_available = 0;
+
+
+/**********************************************************************//**
+ * Only set during executable fetch (required for cpaturing STORE-BUS-TIMOUT exception).
+ **************************************************************************/
+volatile uint32_t getting_exe = 0;
 
 
 // Function prototypes
@@ -187,17 +193,8 @@ int main(void) {
   #warning In order to allow the bootloader to run on any CPU configuration it should be compiled using the base ISA (rv32i/e) only.
 #endif
 
-  // global variable for executable size; 0 means there is no exe available
-  exe_available = 0;
-
-  // ------------------------------------------------
-  // Minimal CPU hardware initialization
-  // - all IO devices are reset and disabled by the crt0 code
-  // ------------------------------------------------
-
-  // confiure trap handler (bare-metal, no neorv32 rte available)
-  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&bootloader_trap_handler));
-
+  exe_available = 0; // global variable for executable size; 0 means there is no exe available
+  getting_exe   = 0; // we are not trying to get an executable yet
 
   // ------------------------------------------------
   // Minimal processor hardware initialization
@@ -226,6 +223,10 @@ int main(void) {
   // Configure machine system timer interrupt for ~2Hz
   neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (clock_speed/4));
 
+  // confiure trap handler (bare-metal, no neorv32 rte available)
+  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&bootloader_trap_handler));
+
+  // active timer IRQ
   neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate MTIME IRQ source
   neorv32_cpu_eint(); // enable global interrupts
 
@@ -405,12 +406,13 @@ void start_app(void) {
 
 /**********************************************************************//**
  * Bootloader trap handler. Used for the MTIME tick and to capture any other traps.
- * @warning Since we have no runtime environment, we have to use the interrupt attribute here. Here, and only here!
+ * @warning Since we have no runtime environment, we have to use the interrupt attribute here. Here and only here!
  **************************************************************************/
 void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
 
-  // make sure this was caused by MTIME IRQ
   uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
+
+  // make sure this was caused by MTIME IRQ
   if (cause == TRAP_CODE_MTI) { // raw exception code for MTI
     if (STATUS_LED_EN == 1) {
       // toggle status LED
@@ -419,17 +421,20 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
     // set time for next IRQ
     neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (SYSINFO_CLK/4));
   }
-
-  else if (cause == TRAP_CODE_S_ACCESS) { // seems like executable is too large
-    system_error(ERROR_SIZE);
-  }
-
   else {
-    neorv32_uart_print("\n\nEXC (");
-    print_hex_word(cause);
-    neorv32_uart_print(") @ 0x");
-    print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
-    system_error(ERROR_SYSTEM);
+    // store bus access error during get_exe
+    // -> seems like executable is too large
+    if ((cause == TRAP_CODE_S_ACCESS) && (getting_exe)) {
+      system_error(ERROR_SIZE);
+    }
+    // unknown error
+    else {
+      neorv32_uart_print("\n\nEXC (");
+      print_hex_word(cause);
+      neorv32_uart_print(") @ 0x");
+      print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
+      system_error(ERROR_SYSTEM);
+    }
   }
 }
 
@@ -440,6 +445,8 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
  * @param src Source of executable stream data. See #EXE_STREAM_SOURCE.
  **************************************************************************/
 void get_exe(int src) {
+
+  getting_exe = 1; // to inform trap handler we were trying to get an executable
 
   // is MEM implemented and read-only?
   if ((SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM_ROM)) &&
@@ -493,6 +500,8 @@ void get_exe(int src) {
     neorv32_uart_print("OK");
     exe_available = size; // store exe size
   }
+
+  getting_exe = 0; // to inform trap handler we are done getting an executable
 }
 
 
