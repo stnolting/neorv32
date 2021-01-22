@@ -46,10 +46,10 @@
 
 // prototypes
 int neorv32_wdt_available(void);
-void neorv32_wdt_setup(uint8_t clk_prsc, uint8_t timeout_mode);
-void neorv32_wdt_disable(void);
+void neorv32_wdt_setup(uint8_t prsc, uint8_t mode, uint8_t lock);
+int neorv32_wdt_disable(void);
 void neorv32_wdt_reset(void);
-uint8_t neorv32_wdt_get_cause(void);
+int neorv32_wdt_get_cause(void);
 void neorv32_wdt_force(void);
 
 #endif // neorv32_wdt_h
