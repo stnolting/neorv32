@@ -31,6 +31,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_marsohod3 is
+  generic (
+    DIV       : natural := 2    -- Coefficient of division input clock 100 MHz
+  );
   port (
     -- Buttons
     KEY0      : in std_logic;   -- reset
@@ -59,11 +62,14 @@ begin
 
 -- PLL                                                                        --
   my_pll: entity work.my_pll
-	port map (
-    areset  => '0',
-		inclk0  => CLK100MHZ,
-		c0      => clk
-	);
+    generic map (
+      clk0_divide_by  => DIV
+    )
+    port map (
+      areset  => '0',
+      inclk0  => CLK100MHZ,
+      c0      => clk
+    );
 
 -- SoC                                                                        --
   neorv32_top_inst: neorv32_top

@@ -41,6 +41,10 @@ LIBRARY altera_mf;
 USE altera_mf.all;
 
 ENTITY my_pll IS
+  GENERIC
+  (
+    clk0_divide_by : NATURAL
+  );
 	PORT
 	(
 		areset		: IN STD_LOGIC  := '0';
@@ -136,7 +140,7 @@ BEGIN
 	altpll_component : altpll
 	GENERIC MAP (
 		bandwidth_type => "AUTO",
-		clk0_divide_by => 2,
+		clk0_divide_by => clk0_divide_by,
 		clk0_duty_cycle => 50,
 		clk0_multiply_by => 1,
 		clk0_phase_shift => "0",
