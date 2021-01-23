@@ -265,7 +265,7 @@ end neorv32_trng_rtl;
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -317,7 +317,7 @@ architecture neorv32_trng_ring_osc_rtl of neorv32_trng_ring_osc is
 
   signal inv_chain   : std_ulogic_vector(NUM_INV-1 downto 0); -- oscillator chain
   signal enable_sreg : std_ulogic_vector(NUM_INV-1 downto 0); -- enable shift register
-  signal sync_ff     : std_ulogic_vector(1 downto 0); -- synchronizer
+  signal sync_ff     : std_ulogic_vector(1 downto 0); -- output signal synchronizer
 
 begin
 
@@ -330,12 +330,12 @@ begin
   -- -------------------------------------------------------------------------------------------
   ring_osc: process(enable_i, enable_sreg, inv_chain)
   begin
+    -- Using individual enable signals for each inverter - derived from a shift register - to prevent the synthesis tool
+    -- from removing all but one inverter (since they implement "logical identical functions").
+    -- This also allows to make the TRNG platform independent.
     for i in 0 to NUM_INV-1 loop -- inverters in chain
       if (enable_i = '0') then -- start with a defined state (latch reset)
         inv_chain(i) <= '0';
-      -- Using individual enable signals for each inverter - derived from a shift register - to prevent the synthesis tool
-      -- from removing all but one inverter (since they implement "logical identical functions").
-      -- This also allows to make the TRNG platform independent.
       elsif (enable_sreg(i) = '1') then
         -- here we have the inverter chain --
         if (i = NUM_INV-1) then -- left-most inverter?
