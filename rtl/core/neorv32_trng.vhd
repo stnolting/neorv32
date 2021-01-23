@@ -1,17 +1,14 @@
 -- #################################################################################################
 -- # << NEORV32 - True Random Number Generator (TRNG) >>                                           #
 -- # ********************************************************************************************* #
--- # This unit implements a true random number generator which uses several GARO chain as entropy  #
--- # source. The outputs of all chains are XORed and de-biased using a John von Neumann randomness #
--- # extractor. The de-biased signal is further processed by a simple LFSR for improved whitening. #
--- #                                                                                               #
--- # Sources:                                                                                      #
--- #  - Von Neumann De-Biasing: "Iterating Von Neumann's Post-Processing under Hardware            #
--- #    Constraints" by Vladimir Rozic, Bohan Yang, Wim Dehaene and Ingrid Verbauwhede, 2016       #
+-- # This unit implements a *true* random number generator which uses several ring oscillators as  #
+-- # entropy source. The outputs of all chains are XORed and de-biased using a John von Neumann    #
+-- # randomness extractor. The de-biased signal is further processed by a simple LFSR for improved #
+-- # whitening.                                                                                    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -62,43 +59,35 @@ end neorv32_trng;
 
 architecture neorv32_trng_rtl of neorv32_trng is
 
-  -- advanced configuration --------------------------------------------------------------------------------
-  constant num_inv_c   : natural := 15; -- length of GARO inverter chain (default=15, has to be odd)
-  constant num_garos_c : natural := 2; -- number of GARO elements (default=2)
-  constant lfsr_taps_c : std_ulogic_vector(7 downto 0) := "10111000"; -- Fibonacci post-processing LFSR feedback taps
-  constant lfsr_en_c   : boolean := true; -- use LFSR-based post-processing
-  type tap_mask_t is array (0 to num_garos_c-1) of std_ulogic_vector(num_inv_c-2 downto 0);
-  constant tap_mask : tap_mask_t := ( -- GARO tap masks, sum of set bits has to be even
-    "11110000000000",
-    "00000011000000"
-  );
+  -- Advanced Configuration --------------------------------------------------------------------------------
+  constant num_roscs_c     : natural := 4; -- total number of ring oscillators
+  constant num_inv_start_c : natural := 5; -- number of inverters in FIRST ring oscillator (has to be odd)
+  constant num_inv_inc_c   : natural := 2; -- number of inverters increment for each next ring oscillator (has to be even)
+  constant lfsr_en_c       : boolean := true; -- use LFSR-based post-processing
+  constant lfsr_taps_c     : std_ulogic_vector(7 downto 0) := "10111000"; -- Fibonacci post-processing LFSR feedback taps
   -- -------------------------------------------------------------------------------------------------------
 
   -- control register bits --
-  constant ctrl_data_lsb_c   : natural :=  0; -- r/-: Random data bit LSB
-  constant ctrl_data_msb_c   : natural :=  7; -- r/-: Random data bit MSB
-  constant ctrl_data_valid_c : natural := 15; -- r/-: Output data valid
-  constant ctrl_err_zero_c   : natural := 16; -- r/-: stuck at 0 error
-  constant ctrl_err_one_c    : natural := 17; -- r/-: stuck at 1 error
-  constant ctrl_en_c         : natural := 31; -- r/w: TRNG enable
+  constant ctrl_data_lsb_c : natural :=  0; -- r/-: Random data byte LSB
+  constant ctrl_data_msb_c : natural :=  7; -- r/-: Random data byte MSB
+  --
+  constant ctrl_en_c       : natural := 30; -- r/w: TRNG enable
+  constant ctrl_valid_c    : natural := 31; -- r/-: Output data valid
 
   -- IO space: module base address --
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(trng_size_c); -- low address boundary bit
 
-  -- Component: GARO Element --
-  component neorv32_trng_garo_element
+  -- Component: Ring-Oscillator --
+  component neorv32_trng_ring_osc
     generic (
       NUM_INV : natural := 16 -- number of inverters in chain
     );
     port (
       clk_i    : in  std_ulogic;
-      enable_i : in  std_ulogic;
-      enable_o : out std_ulogic;
-      mask_i   : in  std_ulogic_vector(NUM_INV-2 downto 0);
-      data_o   : out std_ulogic;
-      error0_o : out std_ulogic;
-      error1_o : out std_ulogic
+      enable_i : in  std_ulogic; -- enable chain input
+      enable_o : out std_ulogic; -- enable chain output
+      data_o   : out std_ulogic  -- sync random bit
     );
   end component;
 
@@ -107,34 +96,37 @@ architecture neorv32_trng_rtl of neorv32_trng is
   signal wren   : std_ulogic; -- full word write enable
   signal rden   : std_ulogic; -- read enable
 
-  -- garo array --
-  signal garo_en_in    : std_ulogic_vector(num_garos_c-1 downto 0);
-  signal garo_en_out   : std_ulogic_vector(num_garos_c-1 downto 0);
-  signal garo_data     : std_ulogic_vector(num_garos_c-1 downto 0);
-  signal garo_err_zero : std_ulogic_vector(num_garos_c-1 downto 0);
-  signal garo_err_one  : std_ulogic_vector(num_garos_c-1 downto 0);
-  signal garo_res      : std_ulogic;
-  signal garo_err0     : std_ulogic;
-  signal garo_err1     : std_ulogic;
+  -- ring-oscillator array --
+  signal osc_array_en_in  : std_ulogic_vector(num_roscs_c-1 downto 0);
+  signal osc_array_en_out : std_ulogic_vector(num_roscs_c-1 downto 0);
+  signal osc_array_data   : std_ulogic_vector(num_roscs_c-1 downto 0);
 
-  -- de-biasing --
-  signal db_data     : std_ulogic_vector(2 downto 0);
-  signal db_state    : std_ulogic; -- process de-biasing every second cycle
-  signal rnd_valid   : std_ulogic;
-  signal rnd_data    : std_ulogic;
+  -- von-Neumann de-biasing --
+  type debiasing_t is record
+    sreg  : std_ulogic_vector(1 downto 0);
+    state : std_ulogic; -- process de-biasing every second cycle
+    valid : std_ulogic; -- de-biased data
+    data  : std_ulogic; -- de-biased data valid
+  end record;
+  signal debiasing : debiasing_t;
 
-  -- processing core --
-  signal rnd_enable : std_ulogic;
-  signal rnd_cnt    : std_ulogic_vector(3 downto 0);
-  signal rnd_sreg   : std_ulogic_vector(7 downto 0);
-  signal rnd_output : std_ulogic_vector(7 downto 0);
-  signal rnd_ready  : std_ulogic;
-
-  -- health check --
-  signal rnd_error_zero : std_ulogic; -- stuck at zero
-  signal rnd_error_one  : std_ulogic; -- stuck at one
+  -- (post-)processing core --
+  type processing_t is record
+    enable : std_ulogic; -- TRNG enable flag
+    cnt    : std_ulogic_vector(3 downto 0); -- bit counter
+    sreg   : std_ulogic_vector(7 downto 0); -- data shift register
+    output : std_ulogic_vector(7 downto 0); -- output register
+    valid  : std_ulogic; -- data output valid flag
+  end record;
+  signal processing : processing_t;
 
 begin
+
+  -- Sanity Checks --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert not (num_roscs_c = 0) report "NEORV32 PROCESSOR CONFIG NOTE: TRNG - Total number of ring-oscillators has to be >0." severity error;
+  assert not ((num_inv_start_c mod 2)  = 0) report "NEORV32 PROCESSOR CONFIG NOTE: TRNG - Number of inverters in fisrt ring has to be odd." severity error;
+  assert not ((num_inv_inc_c   mod 2) /= 0) report "NEORV32 PROCESSOR CONFIG NOTE: TRNG - Number of inverters increment for each next ring has to be even." severity error;
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -148,19 +140,17 @@ begin
   rw_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o <= acc_en and (rden_i or wren_i);
+      ack_o <= wren or rden;
       -- write access --
       if (wren = '1') then
-        rnd_enable <= data_i(ctrl_en_c);
+        processing.enable <= data_i(ctrl_en_c);
       end if;
       -- read access --
       data_o <= (others => '0');
       if (rden = '1') then
-        data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= rnd_output;
-        data_o(ctrl_data_valid_c) <= rnd_ready;
-        data_o(ctrl_err_zero_c)   <= rnd_error_zero;
-        data_o(ctrl_err_one_c)    <= rnd_error_one;
-        data_o(ctrl_en_c)         <= rnd_enable;
+        data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= processing.output;
+        data_o(ctrl_en_c)                              <= processing.enable;
+        data_o(ctrl_valid_c)                           <= processing.valid;
       end if;
     end if;
   end process rw_access;
@@ -168,75 +158,55 @@ begin
 
   -- Entropy Source -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_trng_garo_element_inst:
-  for i in 0 to num_garos_c-1 generate
-    neorv32_trng_garo_element_inst_i: neorv32_trng_garo_element
+  neorv32_trng_ring_osc_inst:
+  for i in 0 to num_roscs_c-1 generate
+    neorv32_trng_ring_osc_inst_i: neorv32_trng_ring_osc
     generic map (
-      NUM_INV => num_inv_c -- number of inverters in chain
+      NUM_INV => num_inv_start_c + (i*num_inv_inc_c) -- number of inverters in chain
     )
     port map (
       clk_i    => clk_i,
-      enable_i => garo_en_in(i),
-      enable_o => garo_en_out(i),
-      mask_i   => tap_mask(i),
-      data_o   => garo_data(i),
-      error0_o => garo_err_zero(i),
-      error1_o => garo_err_one(i)
+      enable_i => osc_array_en_in(i),
+      enable_o => osc_array_en_out(i),
+      data_o   => osc_array_data(i)
     );
   end generate;
 
-  -- GARO element connection --
-  garo_intercon: process(rnd_enable, garo_en_out, garo_data, garo_err_zero, garo_err_one)
-    variable data_v : std_ulogic;
-    variable err0_v : std_ulogic;
-    variable err1_v : std_ulogic;
+  -- RO enable chain --
+  array_intercon: process(processing.enable, osc_array_en_out)
   begin
-    -- enable chain --
-    for i in 0 to num_garos_c-1 loop
-      if (i = 0) then
-        garo_en_in(i) <= rnd_enable;
+    for i in 0 to num_roscs_c-1 loop
+      if (i = 0) then -- start of enable chain
+        osc_array_en_in(i) <= processing.enable;
       else
-        garo_en_in(i) <= garo_en_out(i-1);
+        osc_array_en_in(i) <= osc_array_en_out(i-1);
       end if;
     end loop; -- i
-    -- data & status --
-    data_v := garo_data(0);
-    err0_v := garo_err_zero(0);
-    err1_v := garo_err_one(0);
-    for i in 1 to num_garos_c-1 loop
-      data_v := data_v xor garo_data(i);
-      err0_v := err0_v or garo_err_zero(i);
-      err1_v := err1_v or garo_err_one(i);
-    end loop; -- i
-    garo_res  <= data_v;
-    garo_err0 <= err0_v;
-    garo_err1 <= err1_v;
-  end process garo_intercon;
+  end process array_intercon;
 
 
-  -- De-Biasing -----------------------------------------------------------------------------
+  -- John von Neumann De-Biasing ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  jvn_debiasing_sync: process(clk_i)
+  neumann_debiasing_sync: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      db_data  <= db_data(db_data'left-1 downto 0) & garo_res;
-      db_state <= (not db_state) and rnd_enable; -- just toggle when enabled -> process in every second cycle
+      debiasing.sreg  <= debiasing.sreg(debiasing.sreg'left-1 downto 0) & xor_all_f(osc_array_data);
+      debiasing.state <= (not debiasing.state) and osc_array_en_out(num_roscs_c-1); -- start toggling when last RO is enabled -> process in every second cycle
     end if;
-  end process jvn_debiasing_sync;
+  end process neumann_debiasing_sync;
 
-
-  -- John von Neumann De-Biasing --
-  jvn_debiasing: process(db_state, db_data)
+  -- Edge detector --
+  neumann_debiasing_comb: process(debiasing)
     variable tmp_v : std_ulogic_vector(2 downto 0);
   begin
     -- check groups of two non-overlapping bits from the input stream
-    tmp_v := db_state & db_data(db_data'left downto db_data'left-1);
+    tmp_v := debiasing.state & debiasing.sreg;
     case tmp_v is
-      when "101"  => rnd_valid <= '1'; rnd_data <= '1'; -- rising edge -> '1'
-      when "110"  => rnd_valid <= '1'; rnd_data <= '0'; -- falling edge -> '0'
-      when others => rnd_valid <= '0'; rnd_data <= '-'; -- invalid
+      when "101"  => debiasing.valid <= '1'; debiasing.data <= '1'; -- rising edge  -> '1'
+      when "110"  => debiasing.valid <= '1'; debiasing.data <= '0'; -- falling edge -> '0'
+      when others => debiasing.valid <= '0'; debiasing.data <= '0'; -- no valid data
     end case;
-  end process jvn_debiasing;
+  end process neumann_debiasing_comb;
 
 
   -- Processing Core ------------------------------------------------------------------------
@@ -244,42 +214,33 @@ begin
   processing_core: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- sample random data and apply post-processing --
-      if (rnd_enable = '0') then
-        rnd_cnt  <= (others => '0');
-        rnd_sreg <= (others => '0');
-      elsif (rnd_valid = '1') and (garo_en_out(garo_en_out'left) = '1') then -- valid random sample and GAROs ready?
-        if (rnd_cnt = "1000") then
-          rnd_cnt <= (others => '0');
+      -- sample random data bit and apply post-processing --
+      if (processing.enable = '0') then
+        processing.cnt  <= (others => '0');
+        processing.sreg <= (others => '0');
+      elsif (debiasing.valid = '1') then -- valid random sample?
+        if (processing.cnt = "1000") then
+          processing.cnt <= (others => '0');
         else
-          rnd_cnt <= std_ulogic_vector(unsigned(rnd_cnt) + 1);
+          processing.cnt <= std_ulogic_vector(unsigned(processing.cnt) + 1);
         end if;
         if (lfsr_en_c = true) then -- LFSR post-processing
-          rnd_sreg <= rnd_sreg(rnd_sreg'left-1 downto 0) & (xnor_all_f(rnd_sreg and lfsr_taps_c) xnor rnd_data);
+          processing.sreg <= processing.sreg(processing.sreg'left-1 downto 0) & (xnor_all_f(processing.sreg and lfsr_taps_c) xnor debiasing.data);
         else -- NO post-processing
-          rnd_sreg <= rnd_sreg(rnd_sreg'left-1 downto 0) & rnd_data;
+          processing.sreg <= processing.sreg(processing.sreg'left-1 downto 0) & debiasing.data;
         end if;
       end if;
 
       -- data output register --
-      if (rnd_cnt = "1000") then
-        rnd_output <= rnd_sreg;
+      if (processing.cnt = "1000") then
+        processing.output <= processing.sreg;
       end if;
 
-      -- health check error --
-      if (rnd_enable = '0') then
-        rnd_error_zero <= '0';
-        rnd_error_one  <= '0';
-      else
-        rnd_error_zero <= rnd_error_zero or garo_err0;
-        rnd_error_one  <= rnd_error_one  or garo_err1;
-      end if;
-
-      -- data ready flag --
-      if (rnd_cnt = "1000") then -- new sample ready?
-        rnd_ready <= '1';
-      elsif (rnd_enable = '0') or (rden = '1') then -- clear when deactivated or on data read
-        rnd_ready <= '0';
+      -- data ready/valid flag --
+      if (processing.cnt = "1000") then -- new sample ready?
+        processing.valid <= '1';
+      elsif (processing.enable = '0') or (rden = '1') then -- clear when deactivated or on data read
+        processing.valid <= '0';
       end if;
     end if;
   end process processing_core;
@@ -293,21 +254,14 @@ end neorv32_trng_rtl;
 
 
 -- #################################################################################################
--- # << NEORV32 - True Random Number Generator (TRNG) - GARO Chain-Based Entropy Source >>         #
+-- # << NEORV32 - True Random Number Generator (TRNG) - Ring-Oscillator-Based Entropy Source >>    #
 -- # ********************************************************************************************* #
--- # An inverter chain (ring oscillator) is used as entropy source. The inverter chain is          #
--- # constructed as GARO (Galois Ring Oscillator) TRNG, which is an "asynchronous" LFSR. The       #
--- # single inverters are connected via latches that are used to enbale/disable the TRNG. Also,    #
--- # these latches are used as additional delay element. By using unique enable signals for each   #
--- # latch, the synthesis tool cannot "optimize" (=remove) any of the inverters out of the design. #
--- # Furthermore, the latches prevent the synthesis tool from detecting combinatorial loops.       #
--- #                                                                                               #
--- # Sources:                                                                                      #
--- #  - GARO: "Experimental Assessment of FIRO- and GARO-based Noise Sources for Digital TRNG      #
--- #    Designs on FPGAs" by Martin Schramm, Reiner Dojen and Michael Heigly, 2017                 #
--- #  - Latches for platform independence: "Extended Abstract: The Butterfly PUF Protecting IP     #
--- #    on every FPGA" by Sandeep S. Kumar, Jorge Guajardo, Roel Maesyz, Geert-Jan Schrijen and    #
--- #    Pim Tuyls, Philips Research Europe, 2008                                                   #
+-- # An inverter chain (ring oscillator) is used as entropy source.                                #
+-- # The inverter chain is constructed as an "asynchronous" LFSR. The single inverters are         #
+-- # connected via latches that are used to enable/disable the TRNG. Also, these latches are used  #
+-- # as additional delay element. By using unique enable signals for each latch, the synthesis     #
+-- # tool cannot "optimize" (=remove) any of the inverters out of the design. Furthermore, the     #
+-- # latches prevent the synthesis tool from detecting combinatorial loops.                        #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -347,71 +301,51 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_trng_garo_element is
+entity neorv32_trng_ring_osc is
   generic (
     NUM_INV : natural := 15 -- number of inverters in chain
   );
   port (
     clk_i    : in  std_ulogic;
-    enable_i : in  std_ulogic;
-    enable_o : out std_ulogic;
-    mask_i   : in  std_ulogic_vector(NUM_INV-2 downto 0);
-    data_o   : out std_ulogic;
-    error0_o : out std_ulogic;
-    error1_o : out std_ulogic
+    enable_i : in  std_ulogic; -- enable chain input
+    enable_o : out std_ulogic; -- enable chain output
+    data_o   : out std_ulogic  -- sync random bit
   );
-end neorv32_trng_garo_element;
+end neorv32_trng_ring_osc;
 
-architecture neorv32_trng_garo_element_rtl of neorv32_trng_garo_element is
-
-  -- debugging --
-  constant is_sim_c : boolean := false;
+architecture neorv32_trng_ring_osc_rtl of neorv32_trng_ring_osc is
 
   signal inv_chain   : std_ulogic_vector(NUM_INV-1 downto 0); -- oscillator chain
   signal enable_sreg : std_ulogic_vector(NUM_INV-1 downto 0); -- enable shift register
-  signal sync_ff     : std_ulogic_vector(2 downto 0); -- synchronizer
-
-  signal cnt_zero, cnt_one : std_ulogic_vector(5 downto 0); -- stuck-at-0/1 counters
+  signal sync_ff     : std_ulogic_vector(1 downto 0); -- synchronizer
 
 begin
 
-  -- Sanity Check ---------------------------------------------------------------------------
+  -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert ((NUM_INV mod 2) /= 0) report "NEORV32 TRNG.GARO_element: NUM_INV has to be odd." severity error;
+  assert not ((NUM_INV mod 2) = 0) report "NEORV32 PROCESSOR CONFIG NOTE: TNRG.ring_oscillator - Number of inverters in ring has to be odd." severity error;
 
 
-  -- Entropy Source -------------------------------------------------------------------------
+  -- Ring Oscillator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  garo_chain: process(clk_i, enable_i, enable_sreg, mask_i, inv_chain)
+  ring_osc: process(enable_i, enable_sreg, inv_chain)
   begin
-    if (is_sim_c = false) then
-      for i in 0 to NUM_INV-1 loop -- inverters in chain
-        if (enable_i = '0') then -- start with a defined state (latch reset)
-          inv_chain(i) <= '0';
-        -- Using individual enable signals for each inverter - derived from a shift register - to prevent the synthesis tool
-        -- from removing all but one inverter (since they implement "logical identical functions").
-        -- This also allows to make the TRNG platform independent.
-        elsif (enable_sreg(i) = '1') then
-          -- here we have the inverter chain --
-          if (i = NUM_INV-1) then -- left-most inverter?
-            inv_chain(i) <= not inv_chain(0); -- direct input of right most inverter (= output signal)
-          else
-            -- if tap switch is ON:  use final output XORed with previous inverter's output
-            -- if tap switch is OFF: just use previous inverter's output
-            inv_chain(i) <= not (inv_chain(i+1) xor (inv_chain(0) and mask_i(i)));
-          end if;
-        end if;
-      end loop; -- i
-    else -- simulate as simple LFSR
-      if rising_edge(clk_i) then
-        if (enable_i = '0') then
-          inv_chain <= (others => '0');
+    for i in 0 to NUM_INV-1 loop -- inverters in chain
+      if (enable_i = '0') then -- start with a defined state (latch reset)
+        inv_chain(i) <= '0';
+      -- Using individual enable signals for each inverter - derived from a shift register - to prevent the synthesis tool
+      -- from removing all but one inverter (since they implement "logical identical functions").
+      -- This also allows to make the TRNG platform independent.
+      elsif (enable_sreg(i) = '1') then
+        -- here we have the inverter chain --
+        if (i = NUM_INV-1) then -- left-most inverter?
+          inv_chain(i) <= not inv_chain(0);
         else
-          inv_chain(NUM_INV-1 downto 0) <= inv_chain(inv_chain'left-1 downto 0) & xnor_all_f(inv_chain(NUM_INV-2 downto 0) and mask_i);
+          inv_chain(i) <= not inv_chain(i+1);
         end if;
       end if;
-    end if;
-  end process garo_chain;
+    end loop; -- i
+  end process ring_osc;
 
 
   -- Control --------------------------------------------------------------------------------
@@ -420,7 +354,7 @@ begin
   begin
     if rising_edge(clk_i) then
       enable_sreg <= enable_sreg(enable_sreg'left-1 downto 0) & enable_i; -- activate right-most inverter first
-      sync_ff     <= sync_ff(sync_ff'left-1 downto 0) & inv_chain(0); -- synchronize to prevent metastability 
+      sync_ff     <= sync_ff(0) & inv_chain(0); -- synchronize to prevent metastability 
     end if;
   end process ctrl_unit;
 
@@ -428,43 +362,7 @@ begin
   enable_o <= enable_sreg(enable_sreg'left);
 
   -- rnd output --
-  data_o <= sync_ff(sync_ff'left);
+  data_o <= sync_ff(1);
 
 
-  -- Health Check ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  health_check: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (enable_sreg(enable_sreg'left) = '0') then
-        cnt_zero <= (others => '0');
-        cnt_one  <= (others => '0');
-      else
-        -- stuck-at-zero --
-        if (and_all_f(cnt_zero) = '0') then -- max not reached yet
-          error0_o <= '0';
-          if (sync_ff(sync_ff'left) = '0') then
-            cnt_zero <= std_ulogic_vector(unsigned(cnt_zero) + 1);
-          else
-            cnt_zero <= (others => '0');
-          end if;
-        else
-          error0_o <= '1';
-        end if;
-        -- stuck-at-one --
-        if (and_all_f(cnt_one) = '0') then -- max not reached yet
-          error1_o <= '0';
-          if (sync_ff(sync_ff'left) = '1') then
-            cnt_one <= std_ulogic_vector(unsigned(cnt_one) + 1);
-          else
-            cnt_one <= (others => '0');
-          end if;
-        else
-          error1_o <= '1';
-        end if;
-      end if;
-    end if;
-  end process health_check;
-
-
-end neorv32_trng_garo_element_rtl;
+end neorv32_trng_ring_osc_rtl;
