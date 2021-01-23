@@ -471,14 +471,14 @@ enum NEORV32_EXCEPTION_CODES_enum {
  * Processor clock prescalers 
  **************************************************************************/
 enum NEORV32_CLOCK_PRSC_enum {
-  CLK_PRSC_2    =  0, /**< CPU_CLK / 2 */
-  CLK_PRSC_4    =  1, /**< CPU_CLK / 4 */
-  CLK_PRSC_8    =  2, /**< CPU_CLK / 8 */
-  CLK_PRSC_64   =  3, /**< CPU_CLK / 64 */
-  CLK_PRSC_128  =  4, /**< CPU_CLK / 128 */
-  CLK_PRSC_1024 =  5, /**< CPU_CLK / 1024 */
-  CLK_PRSC_2048 =  6, /**< CPU_CLK / 2048 */
-  CLK_PRSC_4096 =  7  /**< CPU_CLK / 4096 */
+  CLK_PRSC_2    = 0, /**< CPU_CLK (from clk_i top signal) / 2 */
+  CLK_PRSC_4    = 1, /**< CPU_CLK (from clk_i top signal) / 4 */
+  CLK_PRSC_8    = 2, /**< CPU_CLK (from clk_i top signal) / 8 */
+  CLK_PRSC_64   = 3, /**< CPU_CLK (from clk_i top signal) / 64 */
+  CLK_PRSC_128  = 4, /**< CPU_CLK (from clk_i top signal) / 128 */
+  CLK_PRSC_1024 = 5, /**< CPU_CLK (from clk_i top signal) / 1024 */
+  CLK_PRSC_2048 = 6, /**< CPU_CLK (from clk_i top signal) / 2048 */
+  CLK_PRSC_4096 = 7  /**< CPU_CLK (from clk_i top signal) / 4096 */
 };
 
 
@@ -547,12 +547,11 @@ enum NEORV32_CLOCK_PRSC_enum {
 
 /** TRNG control/data register bits */
 enum NEORV32_TRNG_CT_enum {
-  TRNG_CT_DATA_LSB =  0, /**< TRNG data/control register(0)  (r/-): Random data (8-bit) LSB */
-  TRNG_CT_DATA_MSB =  7, /**< TRNG data/control register(7)  (r/-): Random data (8-bit) MSB */
-  TRNG_CT_VALID    = 15, /**< TRNG data/control register(15) (r/-): Random data output valid */
-  TRNG_CT_ERROR_0  = 16, /**< TRNG data/control register(16) (r/-): Stuck-at-zero error */
-  TRNG_CT_ERROR_1  = 17, /**< TRNG data/control register(17) (r/-): Stuck-at-one error */
-  TRNG_CT_EN       = 31  /**< TRNG data/control register(31) (r/w): TRNG enable */
+  TRNG_CT_DATA_LSB =  0, /**< TRNG data/control register(0)  (r/-): Random data byte LSB */
+  TRNG_CT_DATA_MSB =  7, /**< TRNG data/control register(7)  (r/-): Random data byte MSB */
+
+  TRNG_CT_EN       = 30, /**< TRNG data/control register(30) (r/w): TRNG enable */
+  TRNG_CT_VALID    = 31  /**< TRNG data/control register(31) (r/-): Random data output valid */
 };
 /**@}*/
 
@@ -641,6 +640,7 @@ enum NEORV32_UART_CT_enum {
 enum NEORV32_UART_DATA_enum {
   UART_DATA_LSB   =  0, /**< UART receive/transmit data register(0)  (r/w): Receive/transmit data LSB (bit 0) */
   UART_DATA_MSB   =  7, /**< UART receive/transmit data register(7)  (r/w): Receive/transmit data MSB (bit 7) */
+
   UART_DATA_PERR  = 28, /**< UART receive/transmit data register(18) (r/-): RX parity error detected when set */
   UART_DATA_FERR  = 29, /**< UART receive/transmit data register(29) (r/-): RX frame error (not valid stop bit) wdetected when set */
   UART_DATA_OVERR = 30, /**< UART receive/transmit data register(30) (r/-): RX data overrun when set */

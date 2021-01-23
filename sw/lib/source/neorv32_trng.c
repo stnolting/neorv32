@@ -70,13 +70,13 @@ void neorv32_trng_enable(void) {
 
   TRNG_CT = 0; // reset
 
-  for (i=0; i<1000; i++) {
+  for (i=0; i<256; i++) {
     asm volatile ("nop");
   }
 
   TRNG_CT = 1 << TRNG_CT_EN; // activate
 
-  for (i=0; i<1000; i++) {
+  for (i=0; i<256; i++) {
     asm volatile ("nop");
   }
 }
@@ -87,37 +87,32 @@ void neorv32_trng_enable(void) {
  **************************************************************************/
 void neorv32_trng_disable(void) {
 
-  TRNG_CT &= ~((uint32_t)(1 << TRNG_CT_EN));
+  TRNG_CT = 0;
 }
 
 
 /**********************************************************************//**
- * Get random data from TRNG.
+ * Get random data byte from TRNG.
  *
- * @note The TRNG is automatically reset if a stuck-at-one/stuck-at-zero error is detected.
- *
- * @param[in,out] data uint8_t pointer for storing random data word
- * @return Data is valid when 0, stuck-at-zero error when 1, stuck-at-one error when 2, data not (yet) valid when 3
+ * @param[in,out] data uint8_t pointer for storing random data byte.
+ * @return Data is valid when 0 and invalid otherwise.
  **************************************************************************/
 int neorv32_trng_get(uint8_t *data) {
 
-  uint32_t trng_ct_reg = TRNG_CT;
+  const int retries = 3;
+  int i;
+  uint32_t ct_reg;
 
-  if (trng_ct_reg & (1<<TRNG_CT_ERROR_0)) { // stuck at zero error
-    neorv32_trng_enable(); // reset TRNG
-    return 1;
+  for (i=0; i<retries; i++) {
+    ct_reg = TRNG_CT;
+
+    if ((ct_reg & (1<<TRNG_CT_VALID)) == 0) { // output data valid?
+      continue;
+    }
+
+    *data = (uint8_t)(ct_reg >> TRNG_CT_DATA_LSB);
+    return 0; // valid data
   }
 
-  if (trng_ct_reg & (1<<TRNG_CT_ERROR_1)) { // stuck at one error
-    neorv32_trng_enable(); // reset TRNG
-    return 2;
-  }
-
-  if ((trng_ct_reg & (1<<TRNG_CT_VALID)) == 0) { // output data valid (yet)?
-    return 3;
-  }
-
-  *data = (uint8_t)(trng_ct_reg >> TRNG_CT_DATA_LSB);
-  return 0; // valid data
+  return -1; // no valid data available
 }
-
