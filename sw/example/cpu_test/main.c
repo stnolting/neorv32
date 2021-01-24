@@ -969,14 +969,14 @@ int main() {
   // Fast interrupt channel 0 (WDT)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] FIRQ0 (fast IRQ0) interrupt test (via WDT): ", cnt_test);
+  neorv32_uart_printf("[%i] FIRQ0 (fast interrupt 0) test (via WDT): ", cnt_test);
 
   if (neorv32_wdt_available()) {
     cnt_test++;
 
     // configure WDT
-    neorv32_wdt_setup(CLK_PRSC_2, 0); // lowest clock prescaler, trigger IRQ on timeout
-    neorv32_wdt_reset(); // reset watchdog
+    neorv32_wdt_setup(CLK_PRSC_4096, 0, 1); // highest clock prescaler, trigger IRQ on timeout, lock access
+    WDT_CT = 0; // try to deactivate WDT (should fail as access is loced)
     neorv32_wdt_force(); // force watchdog into action
 
     // wait some time for the IRQ to arrive the CPU
@@ -1002,7 +1002,7 @@ int main() {
   // Fast interrupt channel 1 (GPIO)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] FIRQ1 (fast IRQ1) interrupt test (via GPIO): ", cnt_test);
+  neorv32_uart_printf("[%i] FIRQ1 (fast interrupt 1) test (via GPIO): ", cnt_test);
 
   if (UART_CT & (1 << UART_CT_SIM_MODE)) { // check if this is a simulation
     if (neorv32_gpio_available()) {
@@ -1048,7 +1048,7 @@ int main() {
   // Fast interrupt channel 2 (UART)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] FIRQ2 (fast IRQ2) interrupt test (via UART): ", cnt_test);
+  neorv32_uart_printf("[%i] FIRQ2 (fast interrupt 2) test (via UART): ", cnt_test);
 
   if (neorv32_uart_available()) {
     cnt_test++;
@@ -1098,7 +1098,7 @@ int main() {
   // Fast interrupt channel 3 (SPI)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] FIRQ3 (fast IRQ3) interrupt test (via SPI): ", cnt_test);
+  neorv32_uart_printf("[%i] FIRQ3 (fast interrupt 3) test (via SPI): ", cnt_test);
 
   if (neorv32_spi_available()) {
     cnt_test++;
@@ -1133,7 +1133,7 @@ int main() {
   // Fast interrupt channel 3 (TWI)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] FIRQ3 (fast IRQ3) interrupt test (via TWI): ", cnt_test);
+  neorv32_uart_printf("[%i] FIRQ3 (fast interrupt 3) test (via TWI): ", cnt_test);
 
   if (neorv32_twi_available()) {
     cnt_test++;

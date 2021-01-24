@@ -53,7 +53,8 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
 * Full-scale RISC-V microcontroller system / **SoC** [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
   * optional embedded memories (instructions/data/bootloader, RAM/ROM) and caches
   * timers (watch dog, RISC-V-compliant machine timer)
-  * serial interfaces (SPI, TWI, UART) and general purpose IO
+  * serial interfaces (SPI, TWI, UART)
+  * general purpose IO and PWM channels
   * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
   * [more ...](#NEORV32-Processor-Features)
 * Software framework

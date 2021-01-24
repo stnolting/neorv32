@@ -471,14 +471,14 @@ enum NEORV32_EXCEPTION_CODES_enum {
  * Processor clock prescalers 
  **************************************************************************/
 enum NEORV32_CLOCK_PRSC_enum {
-  CLK_PRSC_2    =  0, /**< CPU_CLK / 2 */
-  CLK_PRSC_4    =  1, /**< CPU_CLK / 4 */
-  CLK_PRSC_8    =  2, /**< CPU_CLK / 8 */
-  CLK_PRSC_64   =  3, /**< CPU_CLK / 64 */
-  CLK_PRSC_128  =  4, /**< CPU_CLK / 128 */
-  CLK_PRSC_1024 =  5, /**< CPU_CLK / 1024 */
-  CLK_PRSC_2048 =  6, /**< CPU_CLK / 2048 */
-  CLK_PRSC_4096 =  7  /**< CPU_CLK / 4096 */
+  CLK_PRSC_2    = 0, /**< CPU_CLK (from clk_i top signal) / 2 */
+  CLK_PRSC_4    = 1, /**< CPU_CLK (from clk_i top signal) / 4 */
+  CLK_PRSC_8    = 2, /**< CPU_CLK (from clk_i top signal) / 8 */
+  CLK_PRSC_64   = 3, /**< CPU_CLK (from clk_i top signal) / 64 */
+  CLK_PRSC_128  = 4, /**< CPU_CLK (from clk_i top signal) / 128 */
+  CLK_PRSC_1024 = 5, /**< CPU_CLK (from clk_i top signal) / 1024 */
+  CLK_PRSC_2048 = 6, /**< CPU_CLK (from clk_i top signal) / 2048 */
+  CLK_PRSC_4096 = 7  /**< CPU_CLK (from clk_i top signal) / 4096 */
 };
 
 
@@ -547,12 +547,11 @@ enum NEORV32_CLOCK_PRSC_enum {
 
 /** TRNG control/data register bits */
 enum NEORV32_TRNG_CT_enum {
-  TRNG_CT_DATA_LSB =  0, /**< TRNG data/control register(0)  (r/-): Random data (8-bit) LSB */
-  TRNG_CT_DATA_MSB =  7, /**< TRNG data/control register(7)  (r/-): Random data (8-bit) MSB */
-  TRNG_CT_VALID    = 15, /**< TRNG data/control register(15) (r/-): Random data output valid */
-  TRNG_CT_ERROR_0  = 16, /**< TRNG data/control register(16) (r/-): Stuck-at-zero error */
-  TRNG_CT_ERROR_1  = 17, /**< TRNG data/control register(17) (r/-): Stuck-at-one error */
-  TRNG_CT_EN       = 31  /**< TRNG data/control register(31) (r/w): TRNG enable */
+  TRNG_CT_DATA_LSB =  0, /**< TRNG data/control register(0)  (r/-): Random data byte LSB */
+  TRNG_CT_DATA_MSB =  7, /**< TRNG data/control register(7)  (r/-): Random data byte MSB */
+
+  TRNG_CT_EN       = 30, /**< TRNG data/control register(30) (r/w): TRNG enable */
+  TRNG_CT_VALID    = 31  /**< TRNG data/control register(31) (r/-): Random data output valid */
 };
 /**@}*/
 
@@ -566,20 +565,16 @@ enum NEORV32_TRNG_CT_enum {
 
 /** WTD control register bits */
 enum NEORV32_WDT_CT_enum {
-  WDT_CT_CLK_SEL0     =  0, /**< WDT control register(0) (r/w): Clock prescaler select bit 0 */
-  WDT_CT_CLK_SEL1     =  1, /**< WDT control register(1) (r/w): Clock prescaler select bit 1 */
-  WDT_CT_CLK_SEL2     =  2, /**< WDT control register(2) (r/w): Clock prescaler select bit 2 */
-  WDT_CT_EN           =  3, /**< WDT control register(3) (r/w): Watchdog enable */
-  WDT_CT_MODE         =  4, /**< WDT control register(4) (r/w): Watchdog mode; when 0: timeout causes interrupt; when 1: timeout causes processor reset */
-  WDT_CT_CAUSE        =  5, /**< WDT control register(5) (r/-): Last action (reset/IRQ) cause (0: external reset, 1: watchdog timeout) */
-  WDT_CT_PWFAIL       =  6, /**< WDT control register(6) (r/-): Last Watchdog action (reset/IRQ) caused by wrong password when 1 */
-
-  WDT_CT_PASSWORD_LSB =  8, /**< WDT control register(8)  (-/w): First bit / position begin for watchdog access password */
-  WDT_CT_PASSWORD_MSB = 15  /**< WDT control register(15) (-/w): Last bit / position end for watchdog access password */
+  WDT_CT_EN       = 0, /**< WDT control register(0) (r/w): Watchdog enable */
+  WDT_CT_CLK_SEL0 = 1, /**< WDT control register(1) (r/w): Clock prescaler select bit 0 */
+  WDT_CT_CLK_SEL1 = 2, /**< WDT control register(2) (r/w): Clock prescaler select bit 1 */
+  WDT_CT_CLK_SEL2 = 3, /**< WDT control register(3) (r/w): Clock prescaler select bit 2 */
+  WDT_CT_MODE     = 4, /**< WDT control register(4) (r/w): Watchdog mode: 0=timeout causes interrupt, 1=timeout causes processor reset */
+  WDT_CT_RCAUSE   = 5, /**< WDT control register(5) (r/-): Cause of last system reset: 0=external reset, 1=watchdog */
+  WDT_CT_RESET    = 6, /**< WDT control register(6) (-/w): Reset WDT counter when set, auto-clears */
+  WDT_CT_FORCE    = 7, /**< WDT control register(7) (-/w): Force WDT action, auto-clears */
+  WDT_CT_LOCK     = 8  /**< WDT control register(8) (r/w): Lock write access to control register, clears on reset (HW or WDT) only */
 };
-
-/** Watchdog access passwort, must be set in WDT_CT bits 15:8 for every control register access */
-#define WDT_PASSWORD 0x47
 /**@}*/
 
 
@@ -645,6 +640,7 @@ enum NEORV32_UART_CT_enum {
 enum NEORV32_UART_DATA_enum {
   UART_DATA_LSB   =  0, /**< UART receive/transmit data register(0)  (r/w): Receive/transmit data LSB (bit 0) */
   UART_DATA_MSB   =  7, /**< UART receive/transmit data register(7)  (r/w): Receive/transmit data MSB (bit 7) */
+
   UART_DATA_PERR  = 28, /**< UART receive/transmit data register(18) (r/-): RX parity error detected when set */
   UART_DATA_FERR  = 29, /**< UART receive/transmit data register(29) (r/-): RX frame error (not valid stop bit) wdetected when set */
   UART_DATA_OVERR = 30, /**< UART receive/transmit data register(30) (r/-): RX data overrun when set */

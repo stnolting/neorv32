@@ -75,7 +75,6 @@ int main() {
   // this is not required, but keeps us safe
   neorv32_rte_setup();
 
-
   // init UART at default baud rate, no parity bits, no rx interrupt, no tx interrupt
   neorv32_uart_setup(BAUD_RATE, 0b00, 0, 0);
 
@@ -90,25 +89,23 @@ int main() {
   neorv32_uart_print("Cause of last processor reset: ");
   uint8_t wdt_cause = neorv32_wdt_get_cause();
 
-  if (wdt_cause == 1) {
+  if (wdt_cause == 0) {
     neorv32_uart_print("External reset\n");
   }
-  else if (wdt_cause == 2) {
-    neorv32_uart_print("Watchdog timeout\n");
-  }
-  else if (wdt_cause == 3) {
-    neorv32_uart_print("Watchdog access fault\n");
+  else if (wdt_cause == 1) {
+    neorv32_uart_print("Watchdog\n");
   }
   else {
     neorv32_uart_print("Undefined\n");
   }
 
 
-  // the watchod has a 20-bit counter, which trigger either an interrupt or a system reset
+  // the watchod has a 20-bit counter, which triggers either an interrupt or a system reset
   // when overflowing
 
-  // init watchdog (watchdog timer increment = cpu_clock/64, trigger reset on overflow)
-  neorv32_wdt_setup(CLK_PRSC_64, 1);
+  // init watchdog (watchdog timer increment = cpu_clock/64, trigger reset on overflow, lock
+  // access so nobody can alter the configuration until next reset)
+  neorv32_wdt_setup(CLK_PRSC_64, 1, 1);
 
 
 

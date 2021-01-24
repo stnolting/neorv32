@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file demo_trng/main.c
  * @author Stephan Nolting
- * @brief TRNG demo program.
+ * @brief True random number generator demo program.
  **************************************************************************/
 
 #include <neorv32.h>
@@ -51,23 +51,19 @@
 /**@}*/
 
 
+// prototypes
+void print_random_data(void);
+void generate_histogram(void);
+
 
 /**********************************************************************//**
- * This program generates a simple dimming sequence for PWM channel 0,1,2.
+ * Simple true random number test/demo program.
  *
  * @note This program requires the UART and the TRNG to be synthesized.
  *
  * @return Irrelevant.
  **************************************************************************/
 int main(void) {
-
-  uint8_t lucky_numbers_5of50[5];
-  uint8_t lucky_numbers_2of10[2];
-
-  int err;
-  uint8_t i, j, probe;
-  uint8_t trng_data;
-  unsigned int num_samples;
 
   // check if UART unit is implemented at all
   if (neorv32_uart_available() == 0) {
@@ -102,111 +98,108 @@ int main(void) {
     // main menu
     neorv32_uart_printf("\nCommands:\n"
                         " n: Print 8-bit random numbers (abort by pressing any key)\n"
-                        " l: Print your lucky numbers\n");
+                        " h: Generate and print histogram\n");
 
     neorv32_uart_printf("CMD:> ");
     char cmd = neorv32_uart_getc();
     neorv32_uart_putc(cmd); // echo
     neorv32_uart_printf("\n");
 
-    // output RND data
     if (cmd == 'n') {
-      num_samples = 0;
-      while(1) {
-        err = neorv32_trng_get(&trng_data);
-        if (err) {
-          neorv32_uart_printf("\nTRNG error (%i)!\n", err);
-          break;
-        }
-        neorv32_uart_printf("%u ", (uint32_t)(trng_data));
-        num_samples++;
-        if (neorv32_uart_char_received()) { // abort when key pressed
-          neorv32_uart_printf("\nPrinted samples: %u", num_samples);
-          break;
-        }
-      }
+      print_random_data();
     }
-
-    // print lucky numbers
-    if (cmd == 'l') {
-      // reset arrays
-      for (i=0; i<5; i++) {
-        lucky_numbers_5of50[i] = 0;
-      }
-      lucky_numbers_2of10[0] = 0;
-      lucky_numbers_2of10[1] = 0;
-
-      // get numbers
-      i = 0;
-      while (i<5) {
-        err = neorv32_trng_get(&trng_data);
-        if (err) {
-          neorv32_uart_printf("\nTRNG error (%i)!\n", err);
-          break;
-        }
-        // valid range?
-        if ((trng_data == 0) || (trng_data > 50)) {
-          continue;
-        }
-        // already sampled?
-        probe = 0;
-        for (j=0; j<5; j++) {
-          if (lucky_numbers_5of50[j] == trng_data) {
-            probe++;
-          }
-        }
-        if (probe) {
-          continue;
-        }
-        else {
-          lucky_numbers_5of50[i] = trng_data;
-          i++;
-        }
-      }
-
-      // get numbers part 2
-      i = 0;
-      while (i<2) {
-        err = neorv32_trng_get(&trng_data);
-        if (err) {
-          neorv32_uart_printf("\nTRNG error (%i)!\n", err);
-          break;
-        }
-        // valid range?
-        if ((trng_data == 0) || (trng_data > 10)) {
-          continue;
-        }
-        // already sampled?
-        probe = 0;
-        for (j=0; j<2; j++) {
-          if (lucky_numbers_2of10[j] == trng_data) {
-            probe++;
-          }
-        }
-        if (probe) {
-          continue;
-        }
-        else {
-          lucky_numbers_2of10[i] = trng_data;
-          i++;
-        }
-      }
-
-      // output
-      neorv32_uart_printf("\n");
-      for (j=0; j<5; j++) {
-        if (i==4) {
-          neorv32_uart_printf("%u", (uint32_t)lucky_numbers_5of50[j]);
-        }
-        else {
-          neorv32_uart_printf("%u, ", (uint32_t)lucky_numbers_5of50[j]);
-        }
-      }
-      neorv32_uart_printf("\nLucky numbers: %u, %u\n", (uint32_t)lucky_numbers_2of10[0], (uint32_t)lucky_numbers_2of10[1]);
-      
+    else if (cmd == 'h') {
+      generate_histogram();
+    }
+    else {
+      neorv32_uart_printf("Invalid command.\n");
     }
   }
 
   return 0;
 }
 
+
+/**********************************************************************//**
+ * Print random numbers until a key is pressed.
+ **************************************************************************/
+void print_random_data(void) {
+
+  uint32_t num_samples = 0;
+  int err = 0;
+  uint8_t trng_data;
+
+  while(1) {
+    err = neorv32_trng_get(&trng_data);
+    if (err) {
+      neorv32_uart_printf("\nTRNG error!\n");
+      break;
+    }
+    neorv32_uart_printf("%u ", (uint32_t)(trng_data));
+    num_samples++;
+    if (neorv32_uart_char_received()) { // abort when key pressed
+      break;
+    }
+  }
+  neorv32_uart_printf("\nPrinted samples: %u\n", num_samples);
+}
+
+
+/**********************************************************************//**
+ * Generate and print histogram. Samples random data until a key is pressed.
+ **************************************************************************/
+void generate_histogram(void) {
+
+  uint32_t hist[256];
+  uint32_t i;
+  uint32_t cnt = 0;
+  int err = 0;
+  uint8_t trng_data;
+
+  neorv32_uart_printf("Press any key to start.\n");
+
+  while(neorv32_uart_char_received() == 0);
+  neorv32_uart_printf("Sampling... Press any key to stop.\n");
+
+  // clear histogram
+  for (i=0; i<256; i++) {
+    hist[i] = 0;
+  }
+
+  // sample random data
+  while(1) {
+
+    err = neorv32_trng_get(&trng_data);
+    hist[trng_data & 0xff]++;
+    cnt++;
+
+    if (err) {
+      neorv32_uart_printf("\nTRNG error!\n");
+      break;
+    }
+
+    if (neorv32_uart_char_received()) { // abort when key pressed
+      break;
+    }
+
+    if (cnt & 0x80000000UL) { // to prevent overflow
+      break;
+    }
+  }
+
+  // print histogram
+  neorv32_uart_printf("Histogram [random data value] : [# occurences]\n");
+  for (i=0; i<256; i++) {
+    neorv32_uart_printf("%u: %u\n", (uint32_t)i, hist[i]);
+  }
+
+  neorv32_uart_printf("\nSamples: %u\n", cnt);
+
+  // average
+  uint64_t average = 0;
+  for (i=0; i<256; i++) {
+    average += (uint64_t)hist[i] * i;
+  }
+  average = average / ((uint64_t)cnt);
+  neorv32_uart_printf("Average value: %u\n", (uint32_t)average);
+}
