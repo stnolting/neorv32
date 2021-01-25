@@ -4,6 +4,9 @@
 -- # The bit manipulation unit is implemted as co-processor that has a processing latency of 1     #
 -- # cycle for logic/arithmetic operations and 3+shamt (=shift amount) cycles for shift(-related)  #
 -- # operations.                                                                                   #
+-- #                                                                                               #
+-- # Supported sub-extensions (Zb*):                                                               #
+-- # - Zbb: Base instructions (madatory)                                                           #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -257,16 +260,15 @@ begin
   -- count leading/trailing zeros --
   res_int(op_clz_c)(data_width_c-1 downto shifter.cnt'left+1) <= (others => '0');
   res_int(op_clz_c)(shifter.cnt'left downto 0) <= shifter.cnt;
-  res_int(op_ctz_c)(data_width_c-1 downto shifter.cnt'left+1) <= (others => '0');
-  res_int(op_ctz_c)(shifter.cnt'left downto 0) <= shifter.cnt;
+  res_int(op_ctz_c) <= (others => '0'); -- unused/redundant
 
   -- count set bits --
   res_int(op_cpop_c)(data_width_c-1 downto shifter.bcnt'left+1) <= (others => '0');
   res_int(op_cpop_c)(shifter.bcnt'left downto 0) <= shifter.bcnt;
 
   -- min/max select --
-  res_int(op_min_c) <= rs1_reg when (less_ff = '1') else rs2_reg;
-  res_int(op_max_c) <= rs2_reg when (less_ff = '1') else rs1_reg;
+  res_int(op_min_c) <= rs1_reg when ((less_ff xor cmd_buf(op_max_c)) = '1') else rs2_reg;
+  res_int(op_max_c) <= (others => '0'); -- unused/redundant
 
   -- sign-extension --
   res_int(op_sextb_c)(data_width_c-1 downto 8) <= (others => rs1_reg(7));
@@ -298,11 +300,11 @@ begin
 
   -- Output Selector ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  res_out(op_clz_c)   <= res_int(op_clz_c)   when (cmd_buf(op_clz_c)   = '1') else (others => '0');
-  res_out(op_ctz_c)   <= res_int(op_ctz_c)   when (cmd_buf(op_ctz_c)   = '1') else (others => '0');
+  res_out(op_clz_c)   <= res_int(op_clz_c)   when ((cmd_buf(op_clz_c) or cmd_buf(op_ctz_c)) = '1') else (others => '0');
+  res_out(op_ctz_c)   <= (others => '0'); -- unused/redundant
   res_out(op_cpop_c)  <= res_int(op_cpop_c)  when (cmd_buf(op_cpop_c)  = '1') else (others => '0');
-  res_out(op_min_c)   <= res_int(op_min_c)   when (cmd_buf(op_min_c)   = '1') else (others => '0');
-  res_out(op_max_c)   <= res_int(op_max_c)   when (cmd_buf(op_max_c)   = '1') else (others => '0');
+  res_out(op_min_c)   <= res_int(op_min_c)   when ((cmd_buf(op_min_c) or cmd_buf(op_max_c)) = '1') else (others => '0');
+  res_out(op_max_c)   <= (others => '0'); -- unused/redundant
   res_out(op_sextb_c) <= res_int(op_sextb_c) when (cmd_buf(op_sextb_c) = '1') else (others => '0');
   res_out(op_sexth_c) <= res_int(op_sexth_c) when (cmd_buf(op_sexth_c) = '1') else (others => '0');
   res_out(op_andn_c)  <= res_int(op_andn_c)  when (cmd_buf(op_andn_c)  = '1') else (others => '0');
@@ -320,8 +322,8 @@ begin
   output_gate: process(valid, res_out)
   begin
     if (valid = '1') then
-      res_o <= res_out(op_clz_c)   or res_out(op_ctz_c)   or res_out(op_cpop_c) or
-               res_out(op_min_c)   or res_out(op_max_c)   or
+      res_o <= res_out(op_clz_c)   or res_out(op_cpop_c) or -- res_out(op_ctz_c) is unused here
+               res_out(op_min_c)   or -- res_out(op_max_c) is unused here
                res_out(op_sextb_c) or res_out(op_sexth_c) or
                res_out(op_andn_c)  or res_out(op_orn_c)   or res_out(op_xnor_c) or
                res_out(op_pack_c)  or
