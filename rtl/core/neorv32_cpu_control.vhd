@@ -2121,13 +2121,13 @@ begin
   hpmcnt_ctrl: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      cnt_event      <= cnt_event_nxt;
+      -- buffer event sources --
+      cnt_event <= cnt_event_nxt;
+      -- enable selected triggers by ANDing actual events and according CSR configuration bits --
+      -- OR everything to see if counter should increment --
       hpmcnt_trigger <= (others => '0'); -- default
       for i in 0 to HPM_NUM_CNTS-1 loop
-        -- enable selected triggers by ANDing events and configuration bits --
-        -- OR everything to see if counter should increment --
-        -- AND with inverted sleep flag to increment only when CPU is awake --
-        hpmcnt_trigger(i) <= (or_all_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0))) and (not execute_engine.sleep);
+        hpmcnt_trigger(i) <= or_all_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0));
       end loop; -- i
     end if;
   end process hpmcnt_ctrl;
@@ -2138,10 +2138,10 @@ begin
   cnt_event_nxt(hpmcnt_event_ir_c)    <= '1' when (execute_engine.state = EXECUTE) else '0'; -- retired instruction
 
   -- counter event trigger - custom / NEORV32-specific --
-  cnt_event_nxt(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)    and (execute_engine.is_ci = '1')             else '0'; -- retired compressed instruction
-  cnt_event_nxt(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state = IFETCH_ISSUE) and (fetch_engine.state_prev = IFETCH_ISSUE) else '0'; -- instruction fetch memory wait cycle
-  cnt_event_nxt(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)   and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle
-  cnt_event_nxt(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)   and (execute_engine.state_prev = ALU_WAIT)   else '0'; -- multi-cycle alu-operation wait cycle
+  cnt_event_nxt(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)      and (execute_engine.is_ci = '1')             else '0'; -- retired compressed instruction
+  cnt_event_nxt(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state   = IFETCH_ISSUE) and (fetch_engine.state_prev = IFETCH_ISSUE) else '0'; -- instruction fetch memory wait cycle
+  cnt_event_nxt(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)     and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle
+  cnt_event_nxt(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)     and (execute_engine.state_prev = ALU_WAIT)   else '0'; -- multi-cycle alu-operation wait cycle
 
   cnt_event_nxt(hpmcnt_event_load_c)    <= '1' when (execute_engine.state = LOADSTORE_1) and (ctrl(ctrl_bus_rd_c) = '1')               else '0'; -- load operation
   cnt_event_nxt(hpmcnt_event_store_c)   <= '1' when (execute_engine.state = LOADSTORE_1) and (ctrl(ctrl_bus_wr_c) = '1')               else '0'; -- store operation
