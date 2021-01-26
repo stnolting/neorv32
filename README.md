@@ -279,7 +279,7 @@ Results generated for hardware version [`1.5.0.3`](https://github.com/stnolting/
 | `rv32im`    + `u` + `Zicsr` + `Zifencei` |       2471 |     1148 |        1024 |    0 | 120 MHz |
 | `rv32imc`   + `u` + `Zicsr` + `Zifencei` |       2716 |     1165 |        1024 |    0 | 120 MHz |
 | `rv32imac`  + `u` + `Zicsr` + `Zifencei` |       2736 |     1168 |        1024 |    0 | 120 MHz |
-| `rv32imacb` + `u` + `Zicsr` + `Zifencei` |       3045 |     1260 |        1024 |    0 | 114 MHz |
+| `rv32imacb` + `u` + `Zicsr` + `Zifencei` |       3045 |     1260 |        1024 |    0 | 116 MHz |
 
 Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utilization and identical f_max. However, the size of the register file is cut in half. 
 
