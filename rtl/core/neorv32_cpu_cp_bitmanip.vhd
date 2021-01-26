@@ -6,7 +6,7 @@
 -- # operations.                                                                                   #
 -- #                                                                                               #
 -- # Supported sub-extensions (Zb*):                                                               #
--- # - Zbb: Base instructions (madatory)                                                           #
+-- # - Zbb: Base instructions (mandatory)                                                          #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -167,7 +167,7 @@ begin
         when S_IDLE => -- wait for operation trigger
         -- ------------------------------------------------------------
           if (start_i = '1') then
-            less_ff <= cmp_i(alu_cmp_less_c);
+            less_ff <= cmp_i(cmp_less_c);
             cmd_buf <= cmd;
             rs1_reg <= rs1_i;
             rs2_reg <= rs2_i;
@@ -319,19 +319,20 @@ begin
 
   -- Output Gate ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  output_gate: process(valid, res_out)
+  output_gate: process(clk_i)
   begin
-    if (valid = '1') then
-      res_o <= res_out(op_clz_c)   or res_out(op_cpop_c) or -- res_out(op_ctz_c) is unused here
-               res_out(op_min_c)   or -- res_out(op_max_c) is unused here
-               res_out(op_sextb_c) or res_out(op_sexth_c) or
-               res_out(op_andn_c)  or res_out(op_orn_c)   or res_out(op_xnor_c) or
-               res_out(op_pack_c)  or
-               res_out(op_ror_c)   or res_out(op_rol_c)   or
-               res_out(op_rev8_c)  or
-               res_out(op_orcb_c);
-    else
+    if rising_edge(clk_i) then
       res_o <= (others => '0');
+      if (valid = '1') then
+        res_o <= res_out(op_clz_c)   or res_out(op_cpop_c) or -- res_out(op_ctz_c) is unused here
+                 res_out(op_min_c)   or -- res_out(op_max_c) is unused here
+                 res_out(op_sextb_c) or res_out(op_sexth_c) or
+                 res_out(op_andn_c)  or res_out(op_orn_c)   or res_out(op_xnor_c) or
+                 res_out(op_pack_c)  or
+                 res_out(op_ror_c)   or res_out(op_rol_c)   or
+                 res_out(op_rev8_c)  or
+                 res_out(op_orcb_c);
+      end if;
     end if;
   end process output_gate;
 

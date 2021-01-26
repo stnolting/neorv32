@@ -302,29 +302,30 @@ begin
 
   -- Data Output ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  operation_result: process(valid, cp_op_ff, mul_product, div_res, quotient, opy_is_zero, rs1, remainder)
+  operation_result: process(clk_i)
   begin
-    if (valid = '1') then
-      case cp_op_ff is
-        when cp_op_mul_c =>
-          res_o <= mul_product(31 downto 00);
-        when cp_op_mulh_c | cp_op_mulhsu_c | cp_op_mulhu_c =>
-          res_o <= mul_product(63 downto 32);
-        when cp_op_div_c =>
-          res_o <= div_res;
-        when cp_op_divu_c =>
-          res_o <= quotient;
-        when cp_op_rem_c =>
-          if (opy_is_zero = '0') then
-            res_o <= div_res;
-          else
-            res_o <= rs1;
-          end if;
-        when others => -- cp_op_remu_c
-          res_o <= remainder;
-      end case;
-    else
+    if rising_edge(clk_i) then
       res_o <= (others => '0');
+      if (valid = '1') then
+        case cp_op_ff is
+          when cp_op_mul_c =>
+            res_o <= mul_product(31 downto 00);
+          when cp_op_mulh_c | cp_op_mulhsu_c | cp_op_mulhu_c =>
+            res_o <= mul_product(63 downto 32);
+          when cp_op_div_c =>
+            res_o <= div_res;
+          when cp_op_divu_c =>
+            res_o <= quotient;
+          when cp_op_rem_c =>
+            if (opy_is_zero = '0') then
+              res_o <= div_res;
+            else
+              res_o <= rs1;
+            end if;
+          when others => -- cp_op_remu_c
+            res_o <= remainder;
+        end case;
+      end if;
     end if;
   end process operation_result;
 
