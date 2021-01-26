@@ -138,8 +138,8 @@ begin
 
   -- Comparator Unit (for conditional branches) ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cmp_opx <= (rs1(rs1'left) and (not ctrl_i(ctrl_rf_unsigned_c))) & rs1;
-  cmp_opy <= (rs2(rs2'left) and (not ctrl_i(ctrl_rf_unsigned_c))) & rs2;
+  cmp_opx <= (rs1(rs1'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs1;
+  cmp_opy <= (rs2(rs2'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs2;
 
   cmp_o(cmp_equal_c) <= '1' when (rs1 = rs2) else '0';
   cmp_o(cmp_less_c)  <= '1' when (signed(cmp_opx) < signed(cmp_opy)) else '0';

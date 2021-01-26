@@ -731,13 +731,10 @@ begin
     -- fast bus access requests --
     ctrl_o(ctrl_bus_if_c) <= bus_fast_ir;
     -- bus error control --
-    ctrl_o(ctrl_bus_ierr_ack_c) <= fetch_engine.bus_err_ack;
-    ctrl_o(ctrl_bus_derr_ack_c) <= trap_ctrl.env_start_ack;
-    -- sign control --
-    ctrl_o(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- unsigned ALU operation? (SLTIU, SLTU)
-    ctrl_o(ctrl_rf_unsigned_c)  <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- unsigned branch comparison? (BLTU, BGEU)
+    ctrl_o(ctrl_bus_ierr_ack_c) <= fetch_engine.bus_err_ack; -- instruction fetch bus access error ACK
+    ctrl_o(ctrl_bus_derr_ack_c) <= trap_ctrl.env_start_ack; -- data access bus error access ACK
+    -- memory access size / sign --
     ctrl_o(ctrl_bus_unsigned_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
-    -- memory access size --
     ctrl_o(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c); -- mem transfer size
     -- alu.shifter --
     ctrl_o(ctrl_alu_shift_dir_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- shift direction (left/right)
@@ -854,6 +851,12 @@ begin
     ctrl_nxt(ctrl_alu_addsub_c) <= '0'; -- ADD(I)
     ctrl_nxt(ctrl_alu_func1_c  downto ctrl_alu_func0_c) <= alu_func_cmd_arith_c; -- default ALU function select: arithmetic
     ctrl_nxt(ctrl_alu_arith_c) <= alu_arith_cmd_addsub_c; -- default ALU arithmetic operation: ADDSUB
+    -- ALU sign control --
+    if (execute_engine.i_reg(instr_opcode_lsb_c+4) = '1') then -- ALU ops
+      ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- unsigned ALU operation? (SLTIU, SLTU)
+    else -- branches
+      ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- unsigned branches? (BLTU, BGEU)
+    end if;
 
 
     -- state machine --
