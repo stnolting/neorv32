@@ -63,7 +63,8 @@ entity neorv32_cpu_regfile is
     csr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
     -- data output --
     rs1_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 1
-    rs2_o  : out std_ulogic_vector(data_width_c-1 downto 0)  -- operand 2
+    rs2_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 2
+    cmp_o  : out std_ulogic_vector(1 downto 0) -- comparator status
   );
 end neorv32_cpu_regfile;
 
@@ -81,6 +82,11 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   signal dst_addr      : std_ulogic_vector(4 downto 0); -- destination address
   signal opa_addr      : std_ulogic_vector(4 downto 0); -- rs1/dst address
   signal opb_addr      : std_ulogic_vector(4 downto 0); -- rs2 address
+  signal rs1, rs2      : std_ulogic_vector(data_width_c-1 downto 0);
+
+  -- comparator --
+  signal cmp_opx : std_ulogic_vector(data_width_c downto 0);
+  signal cmp_opy : std_ulogic_vector(data_width_c downto 0);
 
 begin
 
@@ -99,14 +105,14 @@ begin
         if (rf_we = '1') then
           reg_file(to_integer(unsigned(opa_addr(4 downto 0)))) <= rf_write_data;
         end if;
-        rs1_o <= reg_file(to_integer(unsigned(opa_addr(4 downto 0))));
-        rs2_o <= reg_file(to_integer(unsigned(opb_addr(4 downto 0))));
+        rs1 <= reg_file(to_integer(unsigned(opa_addr(4 downto 0))));
+        rs2 <= reg_file(to_integer(unsigned(opb_addr(4 downto 0))));
       else -- embedded register file with 16 entries
         if (rf_we = '1') then
           reg_file_emb(to_integer(unsigned(opa_addr(3 downto 0)))) <= rf_write_data;
         end if;
-        rs1_o <= reg_file_emb(to_integer(unsigned(opa_addr(3 downto 0))));
-        rs2_o <= reg_file_emb(to_integer(unsigned(opb_addr(3 downto 0))));
+        rs1 <= reg_file_emb(to_integer(unsigned(opa_addr(3 downto 0))));
+        rs2 <= reg_file_emb(to_integer(unsigned(opb_addr(3 downto 0))));
       end if;
     end if;
   end process rf_access;
@@ -124,6 +130,19 @@ begin
   -- access addresses --
   opa_addr <= dst_addr when (rf_we = '1') else ctrl_i(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- rd/rs1
   opb_addr <= ctrl_i(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c); -- rs2
+
+  -- data output --
+  rs1_o <= rs1;
+  rs2_o <= rs2;
+
+
+  -- Comparator Unit (for conditional branches) ---------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  cmp_opx <= (rs1(rs1'left) and (not ctrl_i(ctrl_rf_unsigned_c))) & rs1;
+  cmp_opy <= (rs2(rs2'left) and (not ctrl_i(ctrl_rf_unsigned_c))) & rs2;
+
+  cmp_o(cmp_equal_c) <= '1' when (rs1 = rs2) else '0';
+  cmp_o(cmp_less_c)  <= '1' when (signed(cmp_opx) < signed(cmp_opy)) else '0';
 
 
 end neorv32_cpu_regfile_rtl;

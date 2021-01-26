@@ -642,13 +642,13 @@ begin
   begin
     case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
       when funct3_beq_c => -- branch if equal
-        execute_engine.branch_taken <= cmp_i(alu_cmp_equal_c);
+        execute_engine.branch_taken <= cmp_i(cmp_equal_c);
       when funct3_bne_c => -- branch if not equal
-        execute_engine.branch_taken <= not cmp_i(alu_cmp_equal_c);
+        execute_engine.branch_taken <= not cmp_i(cmp_equal_c);
       when funct3_blt_c | funct3_bltu_c => -- branch if less (signed/unsigned)
-        execute_engine.branch_taken <= cmp_i(alu_cmp_less_c);
+        execute_engine.branch_taken <= cmp_i(cmp_less_c);
       when funct3_bge_c | funct3_bgeu_c => -- branch if greater or equal (signed/unsigned)
-        execute_engine.branch_taken <= not cmp_i(alu_cmp_less_c);
+        execute_engine.branch_taken <= not cmp_i(cmp_less_c);
       when others => -- undefined
         execute_engine.branch_taken <= '0';
     end case;
@@ -733,6 +733,15 @@ begin
     -- bus error control --
     ctrl_o(ctrl_bus_ierr_ack_c) <= fetch_engine.bus_err_ack;
     ctrl_o(ctrl_bus_derr_ack_c) <= trap_ctrl.env_start_ack;
+    -- sign control --
+    ctrl_o(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- unsigned ALU operation? (SLTIU, SLTU)
+    ctrl_o(ctrl_rf_unsigned_c)  <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- unsigned branch comparison? (BLTU, BGEU)
+    ctrl_o(ctrl_bus_unsigned_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
+    -- memory access size --
+    ctrl_o(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c); -- mem transfer size
+    -- alu.shifter --
+    ctrl_o(ctrl_alu_shift_dir_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- shift direction (left/right)
+    ctrl_o(ctrl_alu_shift_ar_c)  <= execute_engine.i_reg(30); -- is arithmetic shift
     -- instruction's function blocks (for co-processors) --
     ctrl_o(ctrl_ir_opcode7_6_c  downto ctrl_ir_opcode7_0_c) <= execute_engine.i_reg(instr_opcode_msb_c  downto instr_opcode_lsb_c);
     ctrl_o(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_0_c) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c);
@@ -841,21 +850,10 @@ begin
 
     -- CONTROL DEFAULTS --
     ctrl_nxt <= (others => '0'); -- default: all off
-    if (execute_engine.i_reg(instr_opcode_lsb_c+4) = '1') then -- ALU ops
-      ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- unsigned ALU operation? (SLTIU, SLTU)
-    else -- branches
-      ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- unsigned branches? (BLTU, BGEU)
-    end if;
-    -- memory access --
-    ctrl_nxt(ctrl_bus_unsigned_c)                            <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
-    ctrl_nxt(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c); -- mem transfer size
-    -- alu.shifter --
-    ctrl_nxt(ctrl_alu_shift_dir_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- shift direction (left/right)
-    ctrl_nxt(ctrl_alu_shift_ar_c)  <= execute_engine.i_reg(30); -- is arithmetic shift
     -- ALU main control --
-    ctrl_nxt(ctrl_alu_addsub_c)                         <= '0'; -- ADD(I)
+    ctrl_nxt(ctrl_alu_addsub_c) <= '0'; -- ADD(I)
     ctrl_nxt(ctrl_alu_func1_c  downto ctrl_alu_func0_c) <= alu_func_cmd_arith_c; -- default ALU function select: arithmetic
-    ctrl_nxt(ctrl_alu_arith_c)                          <= alu_arith_cmd_addsub_c; -- default ALU arithmetic operation: ADDSUB
+    ctrl_nxt(ctrl_alu_arith_c) <= alu_arith_cmd_addsub_c; -- default ALU arithmetic operation: ADDSUB
 
 
     -- state machine --
@@ -1126,14 +1124,16 @@ begin
 
       when FENCE_OP => -- fence operations - execution
       -- ------------------------------------------------------------
-        execute_engine.state_nxt  <= SYS_WAIT;
-        execute_engine.pc_mux_sel <= "01"; -- linear next PC = "refetch" next instruction (only relevant for fence.i)
+        execute_engine.state_nxt <= SYS_WAIT;
         -- FENCE.I --
-        if (CPU_EXTENSION_RISCV_Zifencei = true) and (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) then
-          execute_engine.pc_we        <= '1';
-          execute_engine.if_rst_nxt   <= '1'; -- this is a non-linear PC modification
-          fetch_engine.reset          <= '1';
-          ctrl_nxt(ctrl_bus_fencei_c) <= '1';
+        if (CPU_EXTENSION_RISCV_Zifencei = true) then
+          execute_engine.pc_mux_sel <= "01"; -- linear next PC = start *new* instruction fetch with next instruction (only relevant for fence.i)
+          if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) then
+            execute_engine.pc_we        <= '1';
+            execute_engine.if_rst_nxt   <= '1'; -- this is a non-linear PC modification
+            fetch_engine.reset          <= '1';
+            ctrl_nxt(ctrl_bus_fencei_c) <= '1';
+          end if;
         end if;
         -- FENCE --
         if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fence_c(0)) then
