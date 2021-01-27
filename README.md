@@ -143,7 +143,7 @@ is highly customizable via the processor's top generics and already provides the
 * 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**), *standard* or *pipelined* handshake/transactions mode
 * wrapper for **AXI4-Lite Master Interface** (see [AXI Connectivity](#AXI4-Connectivity))
 * PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
-* GARO-based true random number generator (**TRNG**)
+* Ring-oscillator-based true random number generator (**TRNG**)
 * custom functions units (**CFU0** and **CFU1**) for tightly-coupled custom co-processors
 * system configuration information memory to check hardware configuration by software (**SYSINFO**, mandatory - not *optional*)
 
@@ -224,7 +224,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
     * Machine timer interrupt `mti` (via processor's MTIME unit / external signal)
     * Machine software interrupt `msi` (via external signal)
     * Machine external interrupt `mei` (via external signal)
-    * Four fast interrupt requests (custom extension)
+    * Eight fast interrupt requests (custom extension)
 
 **Privileged architecture / User mode** (`U` extension, requires `Zicsr` extension):
   * Privilege levels: `M-mode` (Machine mode) + `U-mode` (User mode)
@@ -254,7 +254,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
 The NEORV32-specific extensions are always enabled and are indicated via the `X` bit in the `misa` CSR.
 
-* Four *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
+* Eight *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
 * `mzext` CSR to check for implemented `Z*` CPU extensions (like `Zifencei`)
 * All undefined/umimplemented/malformed/illegal instructions do raise an illegal instruction exception
 
@@ -413,14 +413,14 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
 ### Using the CPU in Stand-Alone Mode
 
-If you do not want to use the NEORV32 processor setup, you can also use the CPU in stand-alone mode and build your own system around it.
+If you *do not* want to use the NEORV32 processor setup, you can also use the CPU in stand-alone mode and build your own system around it.
 The top entity of the stand-alone **NEORV32 CPU** is [`rtl/core/neorv32_cpu.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd).
 Note that the CPU uses a proprietary interface for accessing data and instruction memory. More information can be found in the
 [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
-:warning: It is recommended to use the processor setup even if you only want to use the CPU. Simply disable all the processor-internal modules via the generics
-and you will get a "CPU wrapper" that provides a minimal CPU environment and an external memory interface (like AXI4). This setup also allows to further use the default
-bootloader and application makefiles. From this base you can start building your own processor system.
+:information_source: It is recommended to use the processor setup even if you only want to use the CPU. Simply disable all the processor-internal modules via the generics
+and you will get a "CPU wrapper" that already provides a minimal CPU environment and an external memory interface (like AXI4). This setup also allows to further use the default
+bootloader and software framework. From this base you can start building your own processor system.
 
 
 ### Alternative Top Entities
