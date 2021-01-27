@@ -372,7 +372,11 @@ enum NEORV32_CSR_MIE_enum {
   CSR_MIE_FIRQ0E = 16, /**< CPU mie CSR (16): FIRQ0E - Fast interrupt channel 0 enable bit (r/w) */
   CSR_MIE_FIRQ1E = 17, /**< CPU mie CSR (17): FIRQ1E - Fast interrupt channel 1 enable bit (r/w) */
   CSR_MIE_FIRQ2E = 18, /**< CPU mie CSR (18): FIRQ2E - Fast interrupt channel 2 enable bit (r/w) */
-  CSR_MIE_FIRQ3E = 19  /**< CPU mie CSR (19): FIRQ3E - Fast interrupt channel 3 enable bit (r/w) */
+  CSR_MIE_FIRQ3E = 19, /**< CPU mie CSR (19): FIRQ3E - Fast interrupt channel 3 enable bit (r/w) */
+  CSR_MIE_FIRQ4E = 20, /**< CPU mie CSR (20): FIRQ4E - Fast interrupt channel 4 enable bit (r/w) */
+  CSR_MIE_FIRQ5E = 21, /**< CPU mie CSR (21): FIRQ5E - Fast interrupt channel 5 enable bit (r/w) */
+  CSR_MIE_FIRQ6E = 22, /**< CPU mie CSR (22): FIRQ6E - Fast interrupt channel 6 enable bit (r/w) */
+  CSR_MIE_FIRQ7E = 23  /**< CPU mie CSR (23): FIRQ7E - Fast interrupt channel 7 enable bit (r/w) */
 };
 
 
@@ -387,7 +391,11 @@ enum NEORV32_CSR_MIP_enum {
   CSR_MIP_FIRQ0P = 16, /**< CPU mip CSR (16): FIRQ0P - Fast interrupt channel 0 pending (r/-) */
   CSR_MIP_FIRQ1P = 17, /**< CPU mip CSR (17): FIRQ1P - Fast interrupt channel 1 pending (r/-) */
   CSR_MIP_FIRQ2P = 18, /**< CPU mip CSR (18): FIRQ2P - Fast interrupt channel 2 pending (r/-) */
-  CSR_MIP_FIRQ3P = 19  /**< CPU mip CSR (19): FIRQ3P - Fast interrupt channel 3 pending (r/-) */
+  CSR_MIP_FIRQ3P = 19, /**< CPU mip CSR (19): FIRQ3P - Fast interrupt channel 3 pending (r/-) */
+  CSR_MIP_FIRQ4P = 20, /**< CPU mip CSR (20): FIRQ4P - Fast interrupt channel 4 pending (r/-) */
+  CSR_MIP_FIRQ5P = 21, /**< CPU mip CSR (21): FIRQ5P - Fast interrupt channel 5 pending (r/-) */
+  CSR_MIP_FIRQ6P = 22, /**< CPU mip CSR (22): FIRQ6P - Fast interrupt channel 6 pending (r/-) */
+  CSR_MIP_FIRQ7P = 23  /**< CPU mip CSR (23): FIRQ7P - Fast interrupt channel 7 pending (r/-) */
 };
 
 
@@ -463,7 +471,11 @@ enum NEORV32_EXCEPTION_CODES_enum {
   TRAP_CODE_FIRQ_0       = 0x80000010, /**< 1.16: Fast interrupt channel 0 */
   TRAP_CODE_FIRQ_1       = 0x80000011, /**< 1.17: Fast interrupt channel 1 */
   TRAP_CODE_FIRQ_2       = 0x80000012, /**< 1.18: Fast interrupt channel 2 */
-  TRAP_CODE_FIRQ_3       = 0x80000013  /**< 1.19: Fast interrupt channel 3 */
+  TRAP_CODE_FIRQ_3       = 0x80000013, /**< 1.19: Fast interrupt channel 3 */
+  TRAP_CODE_FIRQ_4       = 0x80000014, /**< 1.20: Fast interrupt channel 4 */
+  TRAP_CODE_FIRQ_5       = 0x80000015, /**< 1.21: Fast interrupt channel 5 */
+  TRAP_CODE_FIRQ_6       = 0x80000016, /**< 1.22: Fast interrupt channel 6 */
+  TRAP_CODE_FIRQ_7       = 0x80000017  /**< 1.23: Fast interrupt channel 7 */
 };
 
 
