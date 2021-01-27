@@ -2,14 +2,14 @@
 -- # << NEORV32 - CPU Top Entity >>                                                                #
 -- # ********************************************************************************************* #
 -- # NEORV32 CPU:                                                                                  #
--- # * neorv32_cpu.vhd                  - CPU top entity                                           #
--- #   * neorv32_cpu_alu.vhd            - Arithmetic/logic unit                                    #
--- #   * neorv32_cpu_bus.vhd            - Instruction and data bus interface unit                  #
--- #   * neorv32_cpu_cp_muldiv.vhd      - MULDIV co-processor                                      #
--- #   * neorv32_cpu_ctrl.vhd           - CPU control and CSR system                               #
--- #     * neorv32_cpu_decompressor.vhd - Compressed instructions decoder                          #
--- #   * neorv32_cpu_regfile.vhd        - Data register file                                       #
--- #   * neorv32_package.vhd            - Main CPU/processor package file                          #
+-- # * neorv32_cpu.vhd                   - CPU top entity                                          #
+-- #   * neorv32_cpu_alu.vhd             - Arithmetic/logic unit                                   #
+-- #   * neorv32_cpu_bus.vhd             - Instruction and data bus interface unit                 #
+-- #   * neorv32_cpu_cp_muldiv.vhd       - MULDIV co-processor                                     #
+-- #   * neorv32_cpu_ctrl.vhd            - CPU control and CSR system                              #
+-- #     * neorv32_cpu_decompressor.vhd  - Compressed instructions decoder                         #
+-- #   * neorv32_cpu_regfile.vhd         - Data register file                                      #
+-- # * neorv32_package.vhd               - Main CPU/processor package file                         #
 -- #                                                                                               #
 -- # Check out the processor's data sheet for more information: docs/NEORV32.pdf                   #
 -- # ********************************************************************************************* #
@@ -120,7 +120,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- local signals --
   signal ctrl       : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
-  signal alu_cmp    : std_ulogic_vector(1 downto 0); -- alu comparator result
+  signal comparator : std_ulogic_vector(1 downto 0); -- comparator result
   signal imm        : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
   signal instr      : std_ulogic_vector(data_width_c-1 downto 0); -- new instruction
   signal rs1, rs2   : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
@@ -149,6 +149,9 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   -- pmp interface --
   signal pmp_addr  : pmp_addr_if_t;
   signal pmp_ctrl  : pmp_ctrl_if_t;
+
+  -- atomic memory access - success? --
+  signal atomic_sc_res: std_ulogic;
 
 begin
 
@@ -221,7 +224,7 @@ begin
     bus_d_wait_i  => bus_d_wait,  -- wait for bus
     -- data input --
     instr_i       => instr,       -- instruction
-    cmp_i         => alu_cmp,     -- comparator status
+    cmp_i         => comparator,  -- comparator status
     alu_add_i     => alu_add,     -- ALU address result
     rs1_i         => rs1,         -- rf source 1
     -- data output --
@@ -267,7 +270,8 @@ begin
     csr_i  => csr_rdata,          -- CSR read data
     -- data output --
     rs1_o  => rs1,                -- operand 1
-    rs2_o  => rs2                 -- operand 2
+    rs2_o  => rs2,                -- operand 2
+    cmp_o  => comparator          -- comparator status
   );
 
 
@@ -289,7 +293,6 @@ begin
     pc2_i       => curr_pc,       -- delayed PC
     imm_i       => imm,           -- immediate
     -- data output --
-    cmp_o       => alu_cmp,       -- comparator status
     res_o       => alu_res,       -- ALU result
     add_o       => alu_add,       -- address computation result
     -- co-processor interface --
@@ -310,7 +313,7 @@ begin
   );
 
 
-  -- Co-Processor 0: MULDIV Unit ------------------------------------------------------------
+  -- Co-Processor 0: Integer Multiplication/Division ('M' Extension) ------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_muldiv_inst_true:
   if (CPU_EXTENSION_RISCV_M = true) generate
@@ -340,29 +343,28 @@ begin
   end generate;
 
 
-  -- Co-Processor 1: Atomic Memory Access, SC - store-conditional ('M' extension) -----------
+  -- Co-Processor 1: Atomic Memory Access ('A' Extension) -----------------------------------
   -- -------------------------------------------------------------------------------------------
-  atomic_op_cp: process(cp1_start, ctrl)
+  -- "pseudo" co-processor for atomic operations
+  -- used to get the result of a store-conditional operation into the data path
+  atomic_op_cp: process(clk_i)
   begin
-    -- "fake" co-processor for atomic operations
-    -- used to get the result of a store-conditional operation into the data path
-    if (CPU_EXTENSION_RISCV_A = true) then
+    if rising_edge(clk_i) then
       if (cp1_start = '1') then
-        cp1_data    <= (others => '0');
-        cp1_data(0) <= not ctrl(ctrl_bus_lock_c);
-        cp1_valid   <= '1';
+        atomic_sc_res <= not ctrl(ctrl_bus_lock_c);
       else
-        cp1_data  <= (others => '0');
-        cp1_valid <= '0';
+        atomic_sc_res <= '0';
       end if;
-    else
-      cp1_data  <= (others => '0');
-      cp1_valid <= cp1_start; -- to make sure CPU does not get stalled if there is an accidental access
     end if;
   end process atomic_op_cp;
 
+  -- CP result --
+  cp1_data(data_width_c-1 downto 1) <= (others => '0');
+  cp1_data(0) <= atomic_sc_res when (CPU_EXTENSION_RISCV_A = true) else '0';
+  cp1_valid   <= cp1_start; -- always assigned even if A is disabled to make sure CPU does not get stalled if there is an accidental access
 
-  -- Co-Processor 2: Not implemented (yet) --------------------------------------------------
+
+  -- Co-Processor 2: Bit Manipulation ('B' Extension) ---------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_bitmanip_inst_true:
   if (CPU_EXTENSION_RISCV_B = true) generate
@@ -374,7 +376,7 @@ begin
       ctrl_i  => ctrl,            -- main control bus
       start_i => cp2_start,       -- trigger operation
       -- data input --
-      cmp_i   => alu_cmp,         -- comparator status
+      cmp_i   => comparator,      -- comparator status
       rs1_i   => rs1,             -- rf source 1
       rs2_i   => rs2,             -- rf source 2
       -- result and status --
@@ -390,10 +392,8 @@ begin
   end generate;
 
 
-  -- Co-Processor 3: Not implemented (yet) --------------------------------------------------
+  -- Co-Processor 3: Not implemented --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- control: ctrl cp3_start
-  -- inputs:  rs1 rs2 alu_cmp
   cp3_data  <= (others => '0');
   cp3_valid <= cp3_start; -- to make sure CPU does not get stalled if there is an accidental access
 

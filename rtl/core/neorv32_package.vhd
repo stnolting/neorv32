@@ -55,7 +55,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!)= -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050005"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050006"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -246,10 +246,10 @@ package neorv32_package is
   -- control bus size --
   constant ctrl_width_c         : natural := 69; -- control bus size
 
-  -- ALU Comparator Bus ---------------------------------------------------------------------
+  -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant alu_cmp_equal_c : natural := 0;
-  constant alu_cmp_less_c  : natural := 1; -- for signed and unsigned comparisons
+  constant cmp_equal_c : natural := 0;
+  constant cmp_less_c  : natural := 1; -- for signed and unsigned comparisons
 
   -- RISC-V Opcode Layout -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -973,7 +973,8 @@ package neorv32_package is
       csr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
       -- data output --
       rs1_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 1
-      rs2_o  : out std_ulogic_vector(data_width_c-1 downto 0)  -- operand 2
+      rs2_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 2
+      cmp_o  : out std_ulogic_vector(1 downto 0) -- comparator status
     );
   end component;
 
@@ -995,7 +996,6 @@ package neorv32_package is
       pc2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- delayed PC
       imm_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
       -- data output --
-      cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
       res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
       add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- address computation result
       -- co-processor interface --

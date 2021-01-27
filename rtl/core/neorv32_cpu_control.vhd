@@ -642,13 +642,13 @@ begin
   begin
     case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
       when funct3_beq_c => -- branch if equal
-        execute_engine.branch_taken <= cmp_i(alu_cmp_equal_c);
+        execute_engine.branch_taken <= cmp_i(cmp_equal_c);
       when funct3_bne_c => -- branch if not equal
-        execute_engine.branch_taken <= not cmp_i(alu_cmp_equal_c);
+        execute_engine.branch_taken <= not cmp_i(cmp_equal_c);
       when funct3_blt_c | funct3_bltu_c => -- branch if less (signed/unsigned)
-        execute_engine.branch_taken <= cmp_i(alu_cmp_less_c);
+        execute_engine.branch_taken <= cmp_i(cmp_less_c);
       when funct3_bge_c | funct3_bgeu_c => -- branch if greater or equal (signed/unsigned)
-        execute_engine.branch_taken <= not cmp_i(alu_cmp_less_c);
+        execute_engine.branch_taken <= not cmp_i(cmp_less_c);
       when others => -- undefined
         execute_engine.branch_taken <= '0';
     end case;
@@ -731,8 +731,14 @@ begin
     -- fast bus access requests --
     ctrl_o(ctrl_bus_if_c) <= bus_fast_ir;
     -- bus error control --
-    ctrl_o(ctrl_bus_ierr_ack_c) <= fetch_engine.bus_err_ack;
-    ctrl_o(ctrl_bus_derr_ack_c) <= trap_ctrl.env_start_ack;
+    ctrl_o(ctrl_bus_ierr_ack_c) <= fetch_engine.bus_err_ack; -- instruction fetch bus access error ACK
+    ctrl_o(ctrl_bus_derr_ack_c) <= trap_ctrl.env_start_ack; -- data access bus error access ACK
+    -- memory access size / sign --
+    ctrl_o(ctrl_bus_unsigned_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
+    ctrl_o(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c); -- mem transfer size
+    -- alu.shifter --
+    ctrl_o(ctrl_alu_shift_dir_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- shift direction (left/right)
+    ctrl_o(ctrl_alu_shift_ar_c)  <= execute_engine.i_reg(30); -- is arithmetic shift
     -- instruction's function blocks (for co-processors) --
     ctrl_o(ctrl_ir_opcode7_6_c  downto ctrl_ir_opcode7_0_c) <= execute_engine.i_reg(instr_opcode_msb_c  downto instr_opcode_lsb_c);
     ctrl_o(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_0_c) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c);
@@ -841,21 +847,16 @@ begin
 
     -- CONTROL DEFAULTS --
     ctrl_nxt <= (others => '0'); -- default: all off
+    -- ALU main control --
+    ctrl_nxt(ctrl_alu_addsub_c) <= '0'; -- ADD(I)
+    ctrl_nxt(ctrl_alu_func1_c  downto ctrl_alu_func0_c) <= alu_func_cmd_arith_c; -- default ALU function select: arithmetic
+    ctrl_nxt(ctrl_alu_arith_c) <= alu_arith_cmd_addsub_c; -- default ALU arithmetic operation: ADDSUB
+    -- ALU sign control --
     if (execute_engine.i_reg(instr_opcode_lsb_c+4) = '1') then -- ALU ops
       ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- unsigned ALU operation? (SLTIU, SLTU)
     else -- branches
       ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- unsigned branches? (BLTU, BGEU)
     end if;
-    -- memory access --
-    ctrl_nxt(ctrl_bus_unsigned_c)                            <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
-    ctrl_nxt(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c); -- mem transfer size
-    -- alu.shifter --
-    ctrl_nxt(ctrl_alu_shift_dir_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- shift direction (left/right)
-    ctrl_nxt(ctrl_alu_shift_ar_c)  <= execute_engine.i_reg(30); -- is arithmetic shift
-    -- ALU main control --
-    ctrl_nxt(ctrl_alu_addsub_c)                         <= '0'; -- ADD(I)
-    ctrl_nxt(ctrl_alu_func1_c  downto ctrl_alu_func0_c) <= alu_func_cmd_arith_c; -- default ALU function select: arithmetic
-    ctrl_nxt(ctrl_alu_arith_c)                          <= alu_arith_cmd_addsub_c; -- default ALU arithmetic operation: ADDSUB
 
 
     -- state machine --
@@ -1126,14 +1127,16 @@ begin
 
       when FENCE_OP => -- fence operations - execution
       -- ------------------------------------------------------------
-        execute_engine.state_nxt  <= SYS_WAIT;
-        execute_engine.pc_mux_sel <= "01"; -- linear next PC = "refetch" next instruction (only relevant for fence.i)
+        execute_engine.state_nxt <= SYS_WAIT;
         -- FENCE.I --
-        if (CPU_EXTENSION_RISCV_Zifencei = true) and (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) then
-          execute_engine.pc_we        <= '1';
-          execute_engine.if_rst_nxt   <= '1'; -- this is a non-linear PC modification
-          fetch_engine.reset          <= '1';
-          ctrl_nxt(ctrl_bus_fencei_c) <= '1';
+        if (CPU_EXTENSION_RISCV_Zifencei = true) then
+          execute_engine.pc_mux_sel <= "01"; -- linear next PC = start *new* instruction fetch with next instruction (only relevant for fence.i)
+          if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) then
+            execute_engine.pc_we        <= '1';
+            execute_engine.if_rst_nxt   <= '1'; -- this is a non-linear PC modification
+            fetch_engine.reset          <= '1';
+            ctrl_nxt(ctrl_bus_fencei_c) <= '1';
+          end if;
         end if;
         -- FENCE --
         if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fence_c(0)) then
@@ -2121,13 +2124,13 @@ begin
   hpmcnt_ctrl: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      cnt_event      <= cnt_event_nxt;
+      -- buffer event sources --
+      cnt_event <= cnt_event_nxt;
+      -- enable selected triggers by ANDing actual events and according CSR configuration bits --
+      -- OR everything to see if counter should increment --
       hpmcnt_trigger <= (others => '0'); -- default
       for i in 0 to HPM_NUM_CNTS-1 loop
-        -- enable selected triggers by ANDing events and configuration bits --
-        -- OR everything to see if counter should increment --
-        -- AND with inverted sleep flag to increment only when CPU is awake --
-        hpmcnt_trigger(i) <= (or_all_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0))) and (not execute_engine.sleep);
+        hpmcnt_trigger(i) <= or_all_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0));
       end loop; -- i
     end if;
   end process hpmcnt_ctrl;
@@ -2138,10 +2141,10 @@ begin
   cnt_event_nxt(hpmcnt_event_ir_c)    <= '1' when (execute_engine.state = EXECUTE) else '0'; -- retired instruction
 
   -- counter event trigger - custom / NEORV32-specific --
-  cnt_event_nxt(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)    and (execute_engine.is_ci = '1')             else '0'; -- retired compressed instruction
-  cnt_event_nxt(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state = IFETCH_ISSUE) and (fetch_engine.state_prev = IFETCH_ISSUE) else '0'; -- instruction fetch memory wait cycle
-  cnt_event_nxt(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)   and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle
-  cnt_event_nxt(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)   and (execute_engine.state_prev = ALU_WAIT)   else '0'; -- multi-cycle alu-operation wait cycle
+  cnt_event_nxt(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)      and (execute_engine.is_ci = '1')             else '0'; -- retired compressed instruction
+  cnt_event_nxt(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state   = IFETCH_ISSUE) and (fetch_engine.state_prev = IFETCH_ISSUE) else '0'; -- instruction fetch memory wait cycle
+  cnt_event_nxt(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)     and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle
+  cnt_event_nxt(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)     and (execute_engine.state_prev = ALU_WAIT)   else '0'; -- multi-cycle alu-operation wait cycle
 
   cnt_event_nxt(hpmcnt_event_load_c)    <= '1' when (execute_engine.state = LOADSTORE_1) and (ctrl(ctrl_bus_rd_c) = '1')               else '0'; -- load operation
   cnt_event_nxt(hpmcnt_event_store_c)   <= '1' when (execute_engine.state = LOADSTORE_1) and (ctrl(ctrl_bus_wr_c) = '1')               else '0'; -- store operation
