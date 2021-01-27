@@ -59,8 +59,7 @@
 
 
 // Prototypes
-void sim_trigger_msi(void);
-void sim_trigger_mei(void);
+void sim_irq_trigger(uint32_t sel);
 void global_trap_handler(void);
 void test_ok(void);
 void test_fail(void);
@@ -96,24 +95,6 @@ uint32_t num_hpm_cnts_global = 0;
 
 
 /**********************************************************************//**
- * Simulation-based function to trigger CPU MSI (machine software interrupt).
- **************************************************************************/
-void sim_trigger_msi(void) {
-
-  *(IO_REG32 (0xFF000000)) = 1;
-}
-
-
-/**********************************************************************//**
- * Simulation-based function to trigger CPU MEI (machine external interrupt).
- **************************************************************************/
-void sim_trigger_mei(void) {
-
-  *(IO_REG32 (0xFF000004)) = 1;
-}
-
-
-/**********************************************************************//**
  * This program uses mostly synthetic case to trigger all implemented exceptions.
  * Each exception is captured and evaluated for correct detection.
  *
@@ -140,7 +121,7 @@ int main() {
   return 0;
 #endif
 
-  neorv32_uart_printf("\n<< PROCESSOR/CPU TEST >>\n");
+  neorv32_uart_printf("\n<< CPU/PROCESSOR TEST >>\n");
   neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
 
   // check if we came from hardware reset
@@ -149,7 +130,7 @@ int main() {
     neorv32_uart_printf("yes\n");
   }
   else {
-    neorv32_uart_printf("unknown (mcause != TRAP_CODE_RESET)\n");
+    neorv32_uart_printf("unknown\n");
   }
 
   // check available hardware extensions and compare with compiler flags
@@ -208,20 +189,28 @@ int main() {
   install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_1,       global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_2,       global_trap_handler);
   install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_3,       global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_4,       global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_5,       global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_6,       global_trap_handler);
+  install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_7,       global_trap_handler);
 
   if (install_err) {
-    neorv32_uart_printf("RTE error (%i)!\n", install_err);
+    neorv32_uart_printf("RTE install error (%i)!\n", install_err);
     return 0;
   }
 
   // enable interrupt sources
-  install_err  = neorv32_cpu_irq_enable(CSR_MIE_MSIE);   // activate software interrupt
-  install_err += neorv32_cpu_irq_enable(CSR_MIE_MTIE);   // activate timer interrupt
-  install_err += neorv32_cpu_irq_enable(CSR_MIE_MEIE);   // activate external interrupt
-  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ0E); // activate fast interrupt channel 0
-  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ1E); // activate fast interrupt channel 1
-  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ2E); // activate fast interrupt channel 2
-  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ3E); // activate fast interrupt channel 3
+  install_err  = neorv32_cpu_irq_enable(CSR_MIE_MSIE);   // machine software interrupt
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_MTIE);   // machine timer interrupt
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_MEIE);   // machine external interrupt
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ0E); // fast interrupt channel 0
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ1E); // fast interrupt channel 1
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ2E); // fast interrupt channel 2
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ3E); // fast interrupt channel 3
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ4E); // fast interrupt channel 4
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ5E); // fast interrupt channel 5
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ6E); // fast interrupt channel 6
+  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ7E); // fast interrupt channel 7
 
   if (install_err) {
     neorv32_uart_printf("IRQ enable error (%i)!\n", install_err);
@@ -662,7 +651,7 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (not possible when C extension is enabled)\n");
+    neorv32_uart_printf("skipped (n.a. without C-ext)\n");
   }
 
 
@@ -738,7 +727,7 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (not possible when C-EXT disabled)\n");
+    neorv32_uart_printf("skipped (n.a. without C-ext)\n");
   }
 
 
@@ -874,7 +863,7 @@ int main() {
 
   }
   else {
-    neorv32_uart_printf("skipped (not possible when U-EXT disabled)\n");
+    neorv32_uart_printf("skipped (n.a. without U-ext)\n");
   }
 
 
@@ -919,7 +908,7 @@ int main() {
     cnt_test++;
 
     // trigger IRQ
-    sim_trigger_msi();
+    sim_irq_trigger(1 << CSR_MIE_MSIE);
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
@@ -947,7 +936,7 @@ int main() {
     cnt_test++;
 
     // trigger IRQ
-    sim_trigger_mei();
+    sim_irq_trigger(1 << CSR_MIE_MEIE);
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
@@ -1166,6 +1155,42 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Fast interrupt channel 4..7 (SoC fast IRQ)
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] FIRQ4..7 (SoC fast interrupt 0..3, via testbench) test: ", cnt_test);
+
+  cnt_test++;
+
+  // trigger all SoC Fast interrupts at once
+  neorv32_cpu_dint(); // do not fire yet!
+  sim_irq_trigger((1 << CSR_MIE_FIRQ4E) | (1 << CSR_MIE_FIRQ5E) | (1 << CSR_MIE_FIRQ6E) | (1 << CSR_MIE_FIRQ7E));
+
+  // wait some time for the IRQ to arrive the CPU
+  asm volatile("nop");
+  asm volatile("nop");
+
+  // make sure all SoC FIRQs have been triggered
+  tmp_a = (1 << CSR_MIP_FIRQ4P) | (1 << CSR_MIP_FIRQ5P) | (1 << CSR_MIP_FIRQ6P) | (1 << CSR_MIP_FIRQ7P);
+  if (neorv32_cpu_csr_read(CSR_MIP) == tmp_a) {
+    neorv32_cpu_eint(); // allow IRQs to fire again
+    asm volatile ("nop");
+    asm volatile ("nop"); // irq should kick in HERE
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_7) { // make sure FIRQ7 was last IRQ to be handled
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    test_fail();
+  }
+
+  neorv32_cpu_eint(); // re-enable IRQs globally
+
+
+  // ----------------------------------------------------------
   // Test WFI ("sleep") instructions, wakeup via MTIME
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
@@ -1227,7 +1252,7 @@ int main() {
 
   }
   else {
-    neorv32_uart_printf("skipped (not possible when U-EXT disabled)\n");
+    neorv32_uart_printf("skipped (n.a. without U-ext)\n");
   }
 
 
@@ -1516,20 +1541,21 @@ int main() {
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
   neorv32_uart_printf("\n\n-- HPM reports (%u HPMs available) --\n", num_hpm_cnts_global);
-  neorv32_uart_printf("#IR - Total number of instructions: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET)); // = HPM_0
-  neorv32_uart_printf("#CY - Total number of clock cycles: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));   // = HPM_2
-  neorv32_uart_printf("#03 - Retired compr. instructions:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));
-  neorv32_uart_printf("#04 - I-fetch wait cycles:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));
-  neorv32_uart_printf("#05 - I-issue wait cycles:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5));
-  neorv32_uart_printf("#06 - Multi-cycle ALU wait cycles:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6));
-  neorv32_uart_printf("#07 - Load operations:              %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7));
-  neorv32_uart_printf("#08 - Store operations:             %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8));
-  neorv32_uart_printf("#09 - Load/store wait cycles:       %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9));
-  neorv32_uart_printf("#10 - Unconditional jumps:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10));
-  neorv32_uart_printf("#11 - Conditional branches (all):   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11));
-  neorv32_uart_printf("#12 - Conditional branches (taken): %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER12));
-  neorv32_uart_printf("#13 - Entered traps:                %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER13));
-  neorv32_uart_printf("#14 - Illegal operations:           %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER14));
+  neorv32_uart_printf("#IR - Total number of instr.:    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET)); // = HPM_0
+//neorv32_uart_printf("#TM - Current system time:       %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_TIME)); // = HPM_1
+  neorv32_uart_printf("#CY - Total number of clk cyc.:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE)); // = HPM_2
+  neorv32_uart_printf("#03 - Retired compr. instr.:     %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));
+  neorv32_uart_printf("#04 - I-fetch wait cyc.:         %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));
+  neorv32_uart_printf("#05 - I-issue wait cyc.:         %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5));
+  neorv32_uart_printf("#06 - Multi-cyc. ALU wait cyc.:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6));
+  neorv32_uart_printf("#07 - Load operations:           %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7));
+  neorv32_uart_printf("#08 - Store operations:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8));
+  neorv32_uart_printf("#09 - Load/store wait cycles:    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9));
+  neorv32_uart_printf("#10 - Unconditional jumps:       %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10));
+  neorv32_uart_printf("#11 - Cond. branches (all):      %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11));
+  neorv32_uart_printf("#12 - Cond. branches (taken):    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER12));
+  neorv32_uart_printf("#13 - Entered traps:             %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER13));
+  neorv32_uart_printf("#14 - Illegal operations:        %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER14));
 
 
   // ----------------------------------------------------------
@@ -1546,6 +1572,17 @@ int main() {
   }
 
   return 0;
+}
+
+
+/**********************************************************************//**
+ * Simulation-based function to trigger CPU interrupts (MSI, MEI, FIRQ4..7).
+ *
+ * @param[in] sel IRQ select mask (bit positions according to #NEORV32_CSR_MIE_enum).
+ **************************************************************************/
+void sim_irq_trigger(uint32_t sel) {
+
+  *(IO_REG32 (0xFF000000)) = sel;
 }
 
 
