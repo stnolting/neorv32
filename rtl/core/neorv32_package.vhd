@@ -55,7 +55,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!)= -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050006"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050007"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -668,32 +668,40 @@ package neorv32_package is
   constant trap_firq1_c : std_ulogic_vector(5 downto 0) := "1" & "10001"; -- 1.17: fast interrupt 1
   constant trap_firq2_c : std_ulogic_vector(5 downto 0) := "1" & "10010"; -- 1.18: fast interrupt 2
   constant trap_firq3_c : std_ulogic_vector(5 downto 0) := "1" & "10011"; -- 1.19: fast interrupt 3
+  constant trap_firq4_c : std_ulogic_vector(5 downto 0) := "1" & "10100"; -- 1.20: fast interrupt 4
+  constant trap_firq5_c : std_ulogic_vector(5 downto 0) := "1" & "10101"; -- 1.21: fast interrupt 5
+  constant trap_firq6_c : std_ulogic_vector(5 downto 0) := "1" & "10110"; -- 1.22: fast interrupt 6
+  constant trap_firq7_c : std_ulogic_vector(5 downto 0) := "1" & "10111"; -- 1.23: fast interrupt 7
 
   -- CPU Control Exception System -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- exception source bits --
-  constant exception_iaccess_c   : natural := 0; -- instrution access fault
-  constant exception_iillegal_c  : natural := 1; -- illegal instrution
-  constant exception_ialign_c    : natural := 2; -- instrution address misaligned
-  constant exception_m_envcall_c : natural := 3; -- ENV call from m-mode
-  constant exception_u_envcall_c : natural := 4; -- ENV call from u-mode
-  constant exception_break_c     : natural := 5; -- breakpoint
-  constant exception_salign_c    : natural := 6; -- store address misaligned
-  constant exception_lalign_c    : natural := 7; -- load address misaligned
-  constant exception_saccess_c   : natural := 8; -- store access fault
-  constant exception_laccess_c   : natural := 9; -- load access fault
+  constant exception_iaccess_c   : natural :=  0; -- instrution access fault
+  constant exception_iillegal_c  : natural :=  1; -- illegal instrution
+  constant exception_ialign_c    : natural :=  2; -- instrution address misaligned
+  constant exception_m_envcall_c : natural :=  3; -- ENV call from m-mode
+  constant exception_u_envcall_c : natural :=  4; -- ENV call from u-mode
+  constant exception_break_c     : natural :=  5; -- breakpoint
+  constant exception_salign_c    : natural :=  6; -- store address misaligned
+  constant exception_lalign_c    : natural :=  7; -- load address misaligned
+  constant exception_saccess_c   : natural :=  8; -- store access fault
+  constant exception_laccess_c   : natural :=  9; -- load access fault
   --
   constant exception_width_c     : natural := 10; -- length of this list in bits
   -- interrupt source bits --
-  constant interrupt_msw_irq_c   : natural := 0; -- machine software interrupt
-  constant interrupt_mtime_irq_c : natural := 1; -- machine timer interrupt
-  constant interrupt_mext_irq_c  : natural := 2; -- machine external interrupt
-  constant interrupt_firq_0_c    : natural := 3; -- fast interrupt channel 0
-  constant interrupt_firq_1_c    : natural := 4; -- fast interrupt channel 1
-  constant interrupt_firq_2_c    : natural := 5; -- fast interrupt channel 2
-  constant interrupt_firq_3_c    : natural := 6; -- fast interrupt channel 3
+  constant interrupt_msw_irq_c   : natural :=  0; -- machine software interrupt
+  constant interrupt_mtime_irq_c : natural :=  1; -- machine timer interrupt
+  constant interrupt_mext_irq_c  : natural :=  2; -- machine external interrupt
+  constant interrupt_firq_0_c    : natural :=  3; -- fast interrupt channel 0
+  constant interrupt_firq_1_c    : natural :=  4; -- fast interrupt channel 1
+  constant interrupt_firq_2_c    : natural :=  5; -- fast interrupt channel 2
+  constant interrupt_firq_3_c    : natural :=  6; -- fast interrupt channel 3
+  constant interrupt_firq_4_c    : natural :=  7; -- fast interrupt channel 4
+  constant interrupt_firq_5_c    : natural :=  8; -- fast interrupt channel 5
+  constant interrupt_firq_6_c    : natural :=  9; -- fast interrupt channel 6
+  constant interrupt_firq_7_c    : natural := 10; -- fast interrupt channel 7
   --
-  constant interrupt_width_c     : natural := 7; -- length of this list in bits
+  constant interrupt_width_c     : natural := 11; -- length of this list in bits
 
   -- CPU Privilege Modes --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -821,6 +829,7 @@ package neorv32_package is
       -- system time input from external MTIME (available if IO_MTIME_EN = false) --
       mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
       -- Interrupts --
+      soc_firq_i  : in  std_ulogic_vector(3 downto 0) := (others => '0'); -- fast interrupt channels
       mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
       msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
       mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
@@ -890,7 +899,8 @@ package neorv32_package is
       mext_irq_i     : in  std_ulogic := '0'; -- machine external interrupt
       mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt
       -- fast interrupts (custom) --
-      firq_i         : in  std_ulogic_vector(3 downto 0) := (others => '0')
+      firq_i         : in  std_ulogic_vector(7 downto 0) := (others => '0');
+      firq_ack_o     : out std_ulogic_vector(7 downto 0)
     );
   end component;
 
@@ -940,7 +950,8 @@ package neorv32_package is
       mext_irq_i    : in  std_ulogic; -- machine external interrupt
       mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
       -- fast interrupts (custom) --
-      firq_i        : in  std_ulogic_vector(3 downto 0);
+      firq_i        : in  std_ulogic_vector(7 downto 0);
+      firq_ack_o    : out std_ulogic_vector(7 downto 0);
       -- system time input from MTIME --
       time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
       -- physical memory protection --

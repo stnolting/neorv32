@@ -112,7 +112,8 @@ entity neorv32_cpu is
     mext_irq_i     : in  std_ulogic := '0'; -- machine external interrupt
     mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt
     -- fast interrupts (custom) --
-    firq_i         : in  std_ulogic_vector(3 downto 0) := (others => '0')
+    firq_i         : in  std_ulogic_vector(7 downto 0) := (others => '0');
+    firq_ack_o     : out std_ulogic_vector(7 downto 0)
   );
 end neorv32_cpu;
 
@@ -237,7 +238,8 @@ begin
     mext_irq_i    => mext_irq_i,  -- machine external interrupt
     mtime_irq_i   => mtime_irq_i, -- machine timer interrupt
     -- fast interrupts (custom) --
-    firq_i        => firq_i,
+    firq_i        => firq_i,      -- fast interrupt trigger
+    firq_ack_o    => firq_ack_o,  -- fast interrupt acknowledge mask
     -- system time input from MTIME --
     time_i        => time_i,      -- current system time
     -- physical memory protection --

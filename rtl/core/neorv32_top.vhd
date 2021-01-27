@@ -133,6 +133,7 @@ entity neorv32_top is
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
     -- Interrupts --
+    soc_firq_i  : in  std_ulogic_vector(3 downto 0) := (others => '0'); -- fast interrupt channels
     mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
     mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
@@ -231,7 +232,7 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- IRQs --
   signal mtime_irq : std_ulogic;
-  signal fast_irq  : std_ulogic_vector(3 downto 0);
+  signal fast_irq  : std_ulogic_vector(7 downto 0);
   signal gpio_irq  : std_ulogic;
   signal wdt_irq   : std_ulogic;
   signal uart_irq  : std_ulogic;
@@ -391,7 +392,8 @@ begin
     mext_irq_i     => mext_irq_i,   -- machine external interrupt request
     mtime_irq_i    => mtime_irq,    -- machine timer interrupt
     -- fast interrupts (custom) --
-    firq_i         => fast_irq
+    firq_i         => fast_irq,     -- fast interrupt trigger
+    firq_ack_o     => open          -- fast interrupt acknowledge mask
   );
 
   -- misc --
@@ -402,11 +404,16 @@ begin
   fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
 
-  -- fast interrupts --
+  -- fast interrupts - processor-internal --
   fast_irq(0) <= wdt_irq;            -- highest priority, watchdog timeout interrupt
   fast_irq(1) <= gpio_irq;           -- GPIO input pin-change interrupt
   fast_irq(2) <= uart_irq;           -- UART TX done or RX complete interrupt
   fast_irq(3) <= spi_irq or twi_irq; -- lowest priority, can be triggered by SPI or TWI
+  -- fast interrupts - platform level (for cutsom use) --
+  fast_irq(4) <= soc_firq_i(0);
+  fast_irq(5) <= soc_firq_i(1);
+  fast_irq(6) <= soc_firq_i(2);
+  fast_irq(7) <= soc_firq_i(3);
 
 
   -- CPU Instruction Cache ------------------------------------------------------------------
