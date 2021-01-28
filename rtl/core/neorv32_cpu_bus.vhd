@@ -158,12 +158,22 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   end record;
   signal pmp : pmp_t;
 
-  -- pmp faults anybody? --
+  -- memory control signal buffer (when using PMP) --
+  signal d_bus_we, d_bus_we_buf : std_ulogic;
+  signal d_bus_re, d_bus_re_buf : std_ulogic;
+  signal i_bus_re, i_bus_re_buf : std_ulogic;
+
+  -- pmp faults anyone? --
   signal if_pmp_fault : std_ulogic; -- pmp instruction access fault
   signal ld_pmp_fault : std_ulogic; -- pmp load access fault
   signal st_pmp_fault : std_ulogic; -- pmp store access fault
 
 begin
+
+  -- Sanity Checks --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert not (PMP_NUM_REGIONS > pmp_num_regions_critical_c) report "NEORV32 CPU CONFIG WARNING! Number of PMP regions (" & integer'image(PMP_NUM_REGIONS) & ") beyond critical limit (" & integer'image(pmp_num_regions_critical_c) & "). Inserting another register stage (that will increase memory latency by +1 cycle)." severity warning;
+
 
   -- Data Interface: Access Address ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -324,11 +334,25 @@ begin
   d_bus_addr_o  <= mar;
   d_bus_wdata_o <= d_bus_wdata;
   d_bus_ben_o   <= d_bus_ben;
-  d_bus_we_o    <= ctrl_i(ctrl_bus_wr_c) and (not d_misaligned) and (not st_pmp_fault); -- no actual write when misaligned or PMP fault
-  d_bus_re_o    <= ctrl_i(ctrl_bus_rd_c) and (not d_misaligned) and (not ld_pmp_fault); -- no actual read when misaligned or PMP fault
+  d_bus_we      <= ctrl_i(ctrl_bus_wr_c) and (not d_misaligned) and (not st_pmp_fault); -- no actual write when misaligned or PMP fault
+  d_bus_re      <= ctrl_i(ctrl_bus_rd_c) and (not d_misaligned) and (not ld_pmp_fault); -- no actual read when misaligned or PMP fault
+  d_bus_we_o    <= d_bus_we_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else d_bus_we;
+  d_bus_re_o    <= d_bus_re_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else d_bus_re;
   d_bus_fence_o <= ctrl_i(ctrl_bus_fence_c);
   d_bus_rdata   <= d_bus_rdata_i;
   d_bus_lock_o  <= ctrl_i(ctrl_bus_lock_c);
+
+  -- additional register stage for control signals if using PMP_NUM_REGIONS > pmp_num_regions_critical_c --
+  pmp_dbus_buffer: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      d_bus_we_buf <= '0';
+      d_bus_re_buf <= '0';
+    elsif rising_edge(clk_i) then
+      d_bus_we_buf <= d_bus_we;
+      d_bus_re_buf <= d_bus_re;
+    end if;
+  end process pmp_dbus_buffer;
 
 
   -- Instruction Fetch Arbiter --------------------------------------------------------------
@@ -375,15 +399,25 @@ begin
   i_bus_wdata_o <= (others => '0'); -- instruction fetch is read-only
   i_bus_ben_o   <= (others => '0');
   i_bus_we_o    <= '0';
-  i_bus_re_o    <= ctrl_i(ctrl_bus_if_c) and (not i_misaligned) and (not if_pmp_fault); -- no actual read when misaligned or PMP fault
+  i_bus_re      <= ctrl_i(ctrl_bus_if_c) and (not i_misaligned) and (not if_pmp_fault); -- no actual read when misaligned or PMP fault
+  i_bus_re_o    <= i_bus_re_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else i_bus_re;
   i_bus_fence_o <= ctrl_i(ctrl_bus_fencei_c);
   instr_o       <= i_bus_rdata_i;
   i_bus_lock_o  <= '0'; -- instruction fetch cannot be atomic
 
-
   -- check instruction access --
   i_misaligned <= '0' when (CPU_EXTENSION_RISCV_C = true) else -- no alignment exceptions possible when using C-extension
                   '1' when (fetch_pc_i(1) = '1') else '0'; -- 32-bit accesses only
+
+  -- additional register stage for control signals if using PMP_NUM_REGIONS > pmp_num_regions_critical_c --
+  pmp_ibus_buffer: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      i_bus_re_buf <= '0';
+    elsif rising_edge(clk_i) then
+      i_bus_re_buf <= i_bus_re;
+    end if;
+  end process pmp_ibus_buffer;
 
 
   -- Physical Memory Protection (PMP) -------------------------------------------------------

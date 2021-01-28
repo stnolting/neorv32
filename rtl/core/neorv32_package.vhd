@@ -52,10 +52,15 @@ package neorv32_package is
   -- CPU core --
   constant ipb_entries_c : natural := 2; -- entries in CPU instruction prefetch buffer, has to be a power of 2, default=2
 
+  -- "critical" number of PMP regions --
+  -- if more PMP regions (> pmp_num_regions_critical_c) are defined, another register stage is automatically
+  -- inserted into the memory interfaces increasing instruction fetch & data access latency by +1 cycle!
+  constant pmp_num_regions_critical_c : natural := 4;
+
   -- Architecture Constants (do not modify!)= -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant data_width_c   : natural := 32; -- data width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050007"; -- no touchy!
+  constant data_width_c   : natural := 32; -- native data path width - do not change!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050008"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW

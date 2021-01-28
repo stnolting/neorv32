@@ -15,6 +15,7 @@ zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 28.01.2021 | 1.5.0.8 | added *critical limit* for number of implemented PMP regions: When implementing more PMP regions that a certain critical limit an additional register stage is automatically inserted into the CPU’s memory interfaces increasing the latency of instruction fetches and data access by +1 cycle. The critical limit can be adapted for custom use by a constant from the main VHDL package file (rtl/core/neorv32_package.vhd). The default value is 4. |
 | 27.01.2021 | 1.5.0.7 | added four additional *fast interrupt* channels `FIRQ4..7`, available via processor's top `soc_firq_i(3:0)` signal for custom platform use; fixed minor error in UART setup function (baud rate prescaler calculation for very high baud rates) |
 | 26.01.2021 | 1.5.0.6 | minor logic optimization of CPU's `B` extension co-processor (reducing area); minor logic optimization or `HPM` triggers (reducing area); reworked CPU's co-processor interface; minor logic optimiztation of branch condition check (to shorten critical path) |
 | 23.01.2021 | 1.5.0.5 | reworked true random number generator `TRNG`: architecture is now based on several simple ring oscillators with incrementing length; changed control register bits; updated according driver functions and demo program |
