@@ -25,11 +25,12 @@ The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC
 on the RISC-V-compliant NEORV32 CPU. The processor is intended as *ready-to-go* auxiliary processor within a larger SoC
 designs or as stand-alone custom microcontroller.
 
-The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
+:label: The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
 To see the changes between releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-The documentation of the software framework is available online on [GitHub-pages](https://stnolting.github.io/neorv32/files.html).
-For more detailed information take a look at the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
+:books: The documentation of the software framework is available online on [GitHub-pages](https://stnolting.github.io/neorv32/files.html).
+
+:page_facing_up: For more detailed information take a look at the [NEORV32 data sheet (pdf)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 
 ### Key Features
@@ -38,18 +39,18 @@ For more detailed information take a look at the [:page_facing_up: NEORV32 data 
   * Subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
   * Subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
 * Configurable RISC-V-compliant CPU extensions
-  * `A` - atomic memory access instructions (optional)
-  * `B` - Bit manipulation instructions (optional)
-  * `C` - compressed instructions (16-bit) (optional)
-  * `E` - embedded CPU (reduced register file size) (optional)
-  * `I` - base integer instruction set (always enabled)
-  * `M` - integer multiplication and division hardware (optional)
-  * `U` - less-privileged *user mode* (optional)
-  * `X` - NEORV32-specific extensions (always enabled)
-  * `Zicsr` - control and status register access instructions (+ exception/irq system) (optional)
-  * `Zifencei` - instruction stream synchronization (optional)
-  * `PMP` - physical memory protection (optional)
-  * `HPM` - hardware performance monitors (optional)
+  * [`A`](#Atomic-memory-access-a-extension) - atomic memory access instructions (optional)
+  * [`B`](#Bit-manipulation-instructions-B-extension-implying-Zbb-extension) - Bit manipulation instructions (optional)
+  * [`C`](#Compressed-instructions-C-extension) - compressed instructions (16-bit) (optional)
+  * [`E`](#Embedded-CPU-version-E-extension) - embedded CPU (reduced register file size) (optional)
+  * [`I`](#RV32I-base-instruction-set-I-extension) - base integer instruction set (always enabled)
+  * [`M`](#Integer-multiplication-and-division-hardware-M-extension) - integer multiplication and division hardware (optional)
+  * [`U`](#Privileged-architecture-User-mode-U-extension) - less-privileged *user mode* (optional)
+  * [`X`](#NEORV32-Specific-CPU-Extensions) - NEORV32-specific extensions (always enabled)
+  * [`Zicsr`](#Privileged-architecture-User-mode-U-extension) - control and status register access instructions (+ exception/irq system) (optional)
+  * [`Zifencei`](#Privileged-architecture-Instruction-stream-synchronization-Zifencei-extension) - instruction stream synchronization (optional)
+  * [`PMP`](#Privileged-architecture-Physical-memory-protection-PMP) - physical memory protection (optional)
+  * [`HPM`](#Privileged-architecture-Hardware-performance-monitors-HPM-extension) - hardware performance monitors (optional)
 * Full-scale RISC-V microcontroller system / **SoC** [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
   * optional embedded memories (instructions/data/bootloader, RAM/ROM) and caches
   * timers (watch dog, RISC-V-compliant machine timer)
@@ -89,7 +90,8 @@ The processor is [synthesizable](#FPGA-Implementation-Results) (tested on *real 
 all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the [CoreMark benchmark](#CoreMark-Benchmark).
 
 The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/privilege` and `rv32_m/Zifencei`
-[RISC-V compliance tests (new framework v2)](https://github.com/riscv/riscv-compliance). 
+[RISC-V compliance](https://github.com/riscv/riscv-compliance) tests. More information regarding the NEORV32 port of the compliance framework can be found in
+[`riscv-compliance/README.md`](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md).
 
 | Project component | CI status |
 |:----------------- |:----------|
@@ -160,7 +162,8 @@ More information regarding the CPU including a detailed list of the instruction 
 the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 
-**General**:
+#### General
+
   * Modified Harvard architecture (separate CPU interfaces for data and instructions; NEORV32 processor: Single processor-internal bus via I/D mux)
   * Two stages in-order pipeline (FETCH, EXECUTE); each stage uses a multi-cycle processing scheme
   * No hardware support of unaligned accesses - they will trigger an exception
@@ -170,40 +173,47 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Official [RISC-V open-source architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
 
 
-**RV32I base instruction set** (`I` extension):
+#### RV32I base instruction set (`I` extension)
+
   * ALU instructions: `LUI` `AUIPC` `ADDI` `SLTI` `SLTIU` `XORI` `ORI` `ANDI` `SLLI` `SRLI` `SRAI` `ADD` `SUB` `SLL` `SLT` `SLTU` `XOR` `SRL` `SRA` `OR` `AND`
   * Jump and branch instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
   * Memory instructions: `LB` `LH` `LW` `LBU` `LHU` `SB` `SH` `SW`
   * System instructions: `ECALL` `EBREAK` `FENCE`
   * Pseudo-instructions are not listed
 
-**Compressed instructions** (`C` extension):
+#### Compressed instructions (`C` extension)
+
   * ALU instructions: `C.ADDI4SPN` `C.ADDI` `C.ADD` `C.ADDI16SP` `C.LI` `C.LUI` `C.SLLI` `C.SRLI` `C.SRAI` `C.ANDI` `C.SUB` `C.XOR` `C.OR` `C.AND` `C.MV` `C.NOP`
   * Jump and branch instructions: `C.J` `C.JAL` `C.JR` `C.JALR` `C.BEQZ` `C.BNEZ`
   * Memory instructions: `C.LW` `C.SW` `C.LWSP` `C.SWSP`
   * System instructions: `C.EBREAK` (only with `Zicsr` extension)
   * Pseudo-instructions are not listed
 
-**Embedded CPU version** (`E` extension):
+#### Embedded CPU version (`E` extension)
+
   * Reduced register file (only the 16 lowest registers)
 
-**Integer multiplication and division hardware** (`M` extension):
+#### Integer multiplication and division hardware (`M` extension)
+
   * Multiplication instructions: `MUL` `MULH` `MULHSU` `MULHU`
   * Division instructions: `DIV` `DIVU` `REM` `REMU`
   * By default, the multiplier and divider cores use an iterative bit-serial processing scheme
   * Multiplications can be mapped to DSPs via the `FAST_MUL_EN` generic to increase performance
 
-**Atomic memory access** (`A` extension):
+#### Atomic memory access (`A` extension)
+
   * Supported instructions: `LR.W` (load-reservate) `SC.W` (store-conditional)
 
-**Bit manipulation instructions** (`B` extension implying `Zbb` extension):
+#### Bit manipulation instructions (`B` extension implying `Zbb` extension)
+
   * :warning: RISC-V `B` extension is not officially ratified yet!
   * Compatible to [v0.94-draft](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/bitmanip-draft.pdf) of the bit manipulation spec
   * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
   * Only the `Zbb` base instructions subset is supported yet
   * Supported instructions: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR` `RORI` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
 
-**Privileged architecture / CSR access** (`Zicsr` extension):
+#### Privileged architecture / CSR access (`Zicsr` extension)
+
   * Privilege levels: `M-mode` (Machine mode)
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
   * System instructions: `MRET` `WFI`
@@ -226,17 +236,24 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
     * Machine external interrupt `mei` (via external signal)
     * Eight fast interrupt requests (custom extension)
 
-**Privileged architecture / User mode** (`U` extension, requires `Zicsr` extension):
+#### Privileged architecture / User mode (`U` extension)
+
+  * Requires `Zicsr` extension
   * Privilege levels: `M-mode` (Machine mode) + `U-mode` (User mode)
 
-**Privileged architecture / Instruction stream synchronization** (`Zifencei` extension):
+#### Privileged architecture / Instruction stream synchronization (`Zifencei` extension)
+
   * System instructions: `FENCE.I` (among others, used to clear and reload instruction cache)
 
-**Privileged architecture / Physical memory protection** (`PMP`, requires `Zicsr` extension):
+#### Privileged architecture / Physical memory protection (`PMP`)
+
+  * Requires `Zicsr` extension
   * Configurable number of regions (0..63)
   * Additional machine CSRs: `pmpcfg*`(0..15) `pmpaddr*`(0..63)
 
-**Privileged architecture / Hardware performance monitors** (`HPM`, requires `Zicsr` extension):
+#### Privileged architecture / Hardware performance monitors (`HPM` extension)
+
+  * Requires `Zicsr` extension
   * Configurable number of counters (0..29)
   * Additional machine CSRs: `mhpmevent*`(3..31) `[m]hpmcounter*[h]`(3..31)
 
