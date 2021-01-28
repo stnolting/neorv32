@@ -461,7 +461,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test FENCE.I instruction (clear & reload i-cache)
+  // Test FENCE.I instruction (instruction buffer / i-cache clear & reload)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] Testing FENCE.I operation: ", cnt_test);
@@ -651,7 +651,7 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (n.a. without C-ext)\n");
+    neorv32_uart_printf("skipped (n.a. with C-ext)\n");
   }
 
 
@@ -727,7 +727,7 @@ int main() {
     }
   }
   else {
-    neorv32_uart_printf("skipped (n.a. without C-ext)\n");
+    neorv32_uart_printf("skipped (n.a. with C-ext)\n");
   }
 
 
@@ -1498,38 +1498,6 @@ int main() {
   }
   else {
     neorv32_uart_printf("skipped (on real HW)\n");
-  }
-#else
-  neorv32_uart_printf("skipped (not implemented)\n");
-#endif
-
-
-  // ----------------------------------------------------------
-  // Test AMO atomic operation - should raise illegal instruction exception
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Atomic AMOSWAP test (should raise illegal CMD exception): ", cnt_test);
-
-#ifdef __riscv_atomic
-  // skip if A-mode is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A_EXT)) != 0) {
-
-    cnt_test++;
-
-    // AMO operations are not implemented!
-    // this should cause an illegal instruction exception
-    asm volatile ("amoswap.w x0, x0, (x0)");
-
-    // atomic compare-and-swap
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    neorv32_uart_printf("skipped (not implemented)\n");
   }
 #else
   neorv32_uart_printf("skipped (not implemented)\n");
