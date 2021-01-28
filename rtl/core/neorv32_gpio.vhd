@@ -1,11 +1,12 @@
 -- #################################################################################################
 -- # << NEORV32 - General Purpose Parallel Input/Output Port (GPIO) >>                             #
 -- # ********************************************************************************************* #
--- # 32-bit parallel input & output unit. Any pin change (HI->LO or LO->HI) triggers an IRQ.       #
+-- # 32-bit parallel input & output unit. Any pin change (HI->LO or LO->HI) of an enabled input    #
+-- # pin (via irq_en register) triggers an IRQ.                                                    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
