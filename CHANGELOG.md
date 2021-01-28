@@ -15,7 +15,7 @@ zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 27.01.2021 | 1.5.0.7 | added four additional *fast interrupt* channels `FIRQ4..7`, available via processor's top `soc_firq_i(3:0)` signal for custom platform use |
+| 27.01.2021 | 1.5.0.7 | added four additional *fast interrupt* channels `FIRQ4..7`, available via processor's top `soc_firq_i(3:0)` signal for custom platform use; fixed minor error in UART setup function (baud rate prescaler calculation for very high baud rates) |
 | 26.01.2021 | 1.5.0.6 | minor logic optimization of CPU's `B` extension co-processor (reducing area); minor logic optimization or `HPM` triggers (reducing area); reworked CPU's co-processor interface; minor logic optimiztation of branch condition check (to shorten critical path) |
 | 23.01.2021 | 1.5.0.5 | reworked true random number generator `TRNG`: architecture is now based on several simple ring oscillators with incrementing length; changed control register bits; updated according driver functions and demo program |
 | 22.01.2021 | 1.5.0.4 | :bug: fixed BUG in bootloader (that caused it to immediately crash after reset if SPI/MTIME/GPIO peripherals were not implemented); reworked watchdog timer `WDT`: removed watchdog access password, added option to lock configuration until next system reset, changed control register bits - updated driver functions and demo/test programs |
