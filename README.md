@@ -45,12 +45,12 @@ To see the changes between releases visit the project's [release page](https://g
   * [`E`](#Embedded-CPU-version-E-extension) - embedded CPU (reduced register file size) (optional)
   * [`I`](#Integer-base-instruction-set-I-extension) - base integer instruction set (always enabled)
   * [`M`](#Integer-multiplication-and-division-hardware-M-extension) - integer multiplication and division hardware (optional)
-  * [`U`](#Privileged-architecture-User-mode-U-extension) - less-privileged *user mode* (optional)
+  * [`U`](#Privileged-architecture---User-mode-U-extension) - less-privileged *user mode* (optional)
   * [`X`](#NEORV32-Specific-CPU-Extensions) - NEORV32-specific extensions (always enabled)
-  * [`Zicsr`](#Privileged-architecture-CSR-access-Zicsr-extension) - control and status register access instructions (+ exception/irq system) (optional)
-  * [`Zifencei`](#Privileged-architecture-Instruction-stream-synchronization-Zifencei-extension) - instruction stream synchronization (optional)
-  * [`PMP`](#Privileged-architecture-Physical-memory-protection-PMP) - physical memory protection (optional)
-  * [`HPM`](#Privileged-architecture-Hardware-performance-monitors-HPM-extension) - hardware performance monitors (optional)
+  * [`Zicsr`](#Privileged-architecture---CSR-access-Zicsr-extension) - control and status register access instructions (+ exception/irq system) (optional)
+  * [`Zifencei`](#Privileged-architecture---Instruction-stream-synchronization-Zifencei-extension) - instruction stream synchronization (optional)
+  * [`PMP`](#Privileged-architecture---Physical-memory-protection-PMP) - physical memory protection (optional)
+  * [`HPM`](#Privileged-architecture---Hardware-performance-monitors-HPM-extension) - hardware performance monitors (optional)
 * Full-scale RISC-V microcontroller system / **SoC** [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
   * optional embedded memories (instructions/data/bootloader, RAM/ROM) and caches
   * timers (watch dog, RISC-V-compliant machine timer)
