@@ -35,9 +35,10 @@ To see the changes between releases visit the project's [release page](https://g
 
 ### Key Features
 
-* RISC-V-[compliant](#Status) 32-bit `rv32i` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
+* RISC-V 32-bit `rv32i` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
   * Subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
   * Subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
+  * Passes the [offcial RISC-V compliance tests](#Status)
 * Configurable RISC-V-compliant CPU extensions
   * [`A`](#Atomic-memory-access-a-extension) - atomic memory access instructions (optional)
   * [`B`](#Bit-manipulation-instructions-B-extension) - Bit manipulation instructions (optional)
@@ -46,7 +47,7 @@ To see the changes between releases visit the project's [release page](https://g
   * [`I`](#Integer-base-instruction-set-I-extension) - base integer instruction set (always enabled)
   * [`M`](#Integer-multiplication-and-division-hardware-M-extension) - integer multiplication and division hardware (optional)
   * [`U`](#Privileged-architecture---User-mode-U-extension) - less-privileged *user mode* (optional)
-  * [`X`](#NEORV32-Specific-CPU-Extensions) - NEORV32-specific extensions (always enabled)
+  * [`X`](#NEORV32-specific-CPU-extensions-X-extension) - NEORV32-specific extensions (always enabled)
   * [`Zicsr`](#Privileged-architecture---CSR-access-Zicsr-extension) - control and status register access instructions (+ exception/irq system) (optional)
   * [`Zifencei`](#Privileged-architecture---Instruction-stream-synchronization-Zifencei-extension) - instruction stream synchronization (optional)
   * [`PMP`](#Privileged-architecture---Physical-memory-protection-PMP) - physical memory protection (optional)
@@ -162,7 +163,7 @@ More information regarding the CPU including a detailed list of the instruction 
 the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 
-#### General
+#### General Features
 
   * Modified Harvard architecture (separate CPU interfaces for data and instructions; NEORV32 processor: Single processor-internal bus via I/D mux)
   * Two stages in-order pipeline (FETCH, EXECUTE); each stage uses a multi-cycle processing scheme
@@ -173,13 +174,20 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Official [RISC-V open-source architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
 
 
-#### Integer base instruction set (`I` extension)
+#### Atomic memory access (`A` extension)
 
-  * ALU instructions: `LUI` `AUIPC` `ADDI` `SLTI` `SLTIU` `XORI` `ORI` `ANDI` `SLLI` `SRLI` `SRAI` `ADD` `SUB` `SLL` `SLT` `SLTU` `XOR` `SRL` `SRA` `OR` `AND`
-  * Jump and branch instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
-  * Memory instructions: `LB` `LH` `LW` `LBU` `LHU` `SB` `SH` `SW`
-  * System instructions: `ECALL` `EBREAK` `FENCE`
-  * Pseudo-instructions are not listed
+  * Supported instructions: `LR.W` (load-reservate) `SC.W` (store-conditional)
+
+
+#### Bit manipulation instructions (`B` extension)
+
+  * :warning: RISC-V `B` extension is not officially ratified yet! 
+  * Implies `Zbb` extension
+  * Compatible to [v0.94-draft](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/bitmanip-draft.pdf) of the bit manipulation spec
+  * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
+  * Only the `Zbb` base instructions subset is supported yet
+  * Supported instructions: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR` `RORI` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
+
 
 #### Compressed instructions (`C` extension)
 
@@ -193,6 +201,16 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
   * Reduced register file (only the 16 lowest registers)
 
+
+#### Integer base instruction set (`I` extension)
+
+  * ALU instructions: `LUI` `AUIPC` `ADDI` `SLTI` `SLTIU` `XORI` `ORI` `ANDI` `SLLI` `SRLI` `SRAI` `ADD` `SUB` `SLL` `SLT` `SLTU` `XOR` `SRL` `SRA` `OR` `AND`
+  * Jump and branch instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
+  * Memory instructions: `LB` `LH` `LW` `LBU` `LHU` `SB` `SH` `SW`
+  * System instructions: `ECALL` `EBREAK` `FENCE`
+  * Pseudo-instructions are not listed
+
+
 #### Integer multiplication and division hardware (`M` extension)
 
   * Multiplication instructions: `MUL` `MULH` `MULHSU` `MULHU`
@@ -200,18 +218,20 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * By default, the multiplier and divider cores use an iterative bit-serial processing scheme
   * Multiplications can be mapped to DSPs via the `FAST_MUL_EN` generic to increase performance
 
-#### Atomic memory access (`A` extension)
 
-  * Supported instructions: `LR.W` (load-reservate) `SC.W` (store-conditional)
+#### Privileged architecture - User mode (`U` extension)
 
-#### Bit manipulation instructions (`B` extension)
+  * Requires `Zicsr` extension
+  * Privilege levels: `M` (machine mode) + less-privileged `U` (user mode)
 
-  * :warning: RISC-V `B` extension is not officially ratified yet! 
-  * Implies `Zbb` extension
-  * Compatible to [v0.94-draft](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/bitmanip-draft.pdf) of the bit manipulation spec
-  * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
-  * Only the `Zbb` base instructions subset is supported yet
-  * Supported instructions: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR` `RORI` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
+
+#### NEORV32-specific CPU extensions (`X` extension)
+
+* The NEORV32-specific extensions are always enabled and are indicated via the `X` bit set in the `misa` CSR.
+* Eight *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
+* `mzext` CSR to check for implemented `Z*` CPU extensions (like `Zifencei`)
+* All undefined/umimplemented/malformed/illegal instructions do raise an illegal instruction exception
+
 
 #### Privileged architecture - CSR access (`Zicsr` extension)
 
@@ -237,20 +257,18 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
     * Machine external interrupt `mei` (via external signal)
     * Eight fast interrupt requests (custom extension)
 
-#### Privileged architecture - User mode (`U` extension)
-
-  * Requires `Zicsr` extension
-  * Privilege levels: `M-mode` (Machine mode) + `U-mode` (User mode)
 
 #### Privileged architecture - Instruction stream synchronization (`Zifencei` extension)
 
   * System instructions: `FENCE.I` (among others, used to clear and reload instruction cache)
+
 
 #### Privileged architecture - Physical memory protection (`PMP`)
 
   * Requires `Zicsr` extension
   * Configurable number of regions (0..63)
   * Additional machine CSRs: `pmpcfg*`(0..15) `pmpaddr*`(0..63)
+
 
 #### Privileged architecture - Hardware performance monitors (`HPM` extension)
 
@@ -267,14 +285,6 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 * The `A` extension only implements `lr.w` and `sc.w` instructions yet. However, these instructions are sufficient to emulate all further AMO operations
 * The `mcause` trap code `0x80000000` (originally reserved in the RISC-V specs) is used to indicate a hardware reset (as "non-maskable interrupt")
 * The bit manipulation extension is not yet officially ratified, but is expected to stay unchanged. There is no software support in the upstream GCC RISC-V port yet. However, an intrinsic library is provided to utilize the provided bit manipulation extension from C-language code (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation)). NEORV32's `B`/`Zbb` extension is compliant to spec. version "0.94-draft".
-
-### NEORV32-Specific CPU Extensions
-
-The NEORV32-specific extensions are always enabled and are indicated via the `X` bit in the `misa` CSR.
-
-* Eight *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
-* `mzext` CSR to check for implemented `Z*` CPU extensions (like `Zifencei`)
-* All undefined/umimplemented/malformed/illegal instructions do raise an illegal instruction exception
 
 
 
