@@ -190,7 +190,7 @@ begin
     FAST_MUL_EN                  => false,         -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => false,         -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS              => 5,             -- number of regions (0..64)
+    PMP_NUM_REGIONS              => 8,             -- number of regions (0..64)
     PMP_MIN_GRANULARITY          => 64*1024,       -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 => 12,            -- number of inmplemnted HPM counters (0..29)
