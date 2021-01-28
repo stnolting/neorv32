@@ -40,14 +40,14 @@ To see the changes between releases visit the project's [release page](https://g
   * Subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
 * Configurable RISC-V-compliant CPU extensions
   * [`A`](#Atomic-memory-access-a-extension) - atomic memory access instructions (optional)
-  * [`B`](#Bit-manipulation-instructions-B-extension-implying-Zbb-extension) - Bit manipulation instructions (optional)
+  * [`B`](#Bit-manipulation-instructions-B-extension) - Bit manipulation instructions (optional)
   * [`C`](#Compressed-instructions-C-extension) - compressed instructions (16-bit) (optional)
   * [`E`](#Embedded-CPU-version-E-extension) - embedded CPU (reduced register file size) (optional)
-  * [`I`](#RV32I-base-instruction-set-I-extension) - base integer instruction set (always enabled)
+  * [`I`](#Integer-base-instruction-set-I-extension) - base integer instruction set (always enabled)
   * [`M`](#Integer-multiplication-and-division-hardware-M-extension) - integer multiplication and division hardware (optional)
   * [`U`](#Privileged-architecture-User-mode-U-extension) - less-privileged *user mode* (optional)
   * [`X`](#NEORV32-Specific-CPU-Extensions) - NEORV32-specific extensions (always enabled)
-  * [`Zicsr`](#Privileged-architecture-User-mode-U-extension) - control and status register access instructions (+ exception/irq system) (optional)
+  * [`Zicsr`](#Privileged-architecture-CSR-access-Zicsr-extension) - control and status register access instructions (+ exception/irq system) (optional)
   * [`Zifencei`](#Privileged-architecture-Instruction-stream-synchronization-Zifencei-extension) - instruction stream synchronization (optional)
   * [`PMP`](#Privileged-architecture-Physical-memory-protection-PMP) - physical memory protection (optional)
   * [`HPM`](#Privileged-architecture-Hardware-performance-monitors-HPM-extension) - hardware performance monitors (optional)
@@ -173,7 +173,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Official [RISC-V open-source architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
 
 
-#### RV32I base instruction set (`I` extension)
+#### Integer base instruction set (`I` extension)
 
   * ALU instructions: `LUI` `AUIPC` `ADDI` `SLTI` `SLTIU` `XORI` `ORI` `ANDI` `SLLI` `SRLI` `SRAI` `ADD` `SUB` `SLL` `SLT` `SLTU` `XOR` `SRL` `SRA` `OR` `AND`
   * Jump and branch instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
@@ -204,15 +204,16 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
   * Supported instructions: `LR.W` (load-reservate) `SC.W` (store-conditional)
 
-#### Bit manipulation instructions (`B` extension implying `Zbb` extension)
+#### Bit manipulation instructions (`B` extension)
 
-  * :warning: RISC-V `B` extension is not officially ratified yet!
+  * :warning: RISC-V `B` extension is not officially ratified yet! 
+  * Implies `Zbb` extension
   * Compatible to [v0.94-draft](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/bitmanip-draft.pdf) of the bit manipulation spec
   * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
   * Only the `Zbb` base instructions subset is supported yet
   * Supported instructions: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR` `RORI` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
 
-#### Privileged architecture / CSR access (`Zicsr` extension)
+#### Privileged architecture - CSR access (`Zicsr` extension)
 
   * Privilege levels: `M-mode` (Machine mode)
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
@@ -236,22 +237,22 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
     * Machine external interrupt `mei` (via external signal)
     * Eight fast interrupt requests (custom extension)
 
-#### Privileged architecture / User mode (`U` extension)
+#### Privileged architecture - User mode (`U` extension)
 
   * Requires `Zicsr` extension
   * Privilege levels: `M-mode` (Machine mode) + `U-mode` (User mode)
 
-#### Privileged architecture / Instruction stream synchronization (`Zifencei` extension)
+#### Privileged architecture - Instruction stream synchronization (`Zifencei` extension)
 
   * System instructions: `FENCE.I` (among others, used to clear and reload instruction cache)
 
-#### Privileged architecture / Physical memory protection (`PMP`)
+#### Privileged architecture - Physical memory protection (`PMP`)
 
   * Requires `Zicsr` extension
   * Configurable number of regions (0..63)
   * Additional machine CSRs: `pmpcfg*`(0..15) `pmpaddr*`(0..63)
 
-#### Privileged architecture / Hardware performance monitors (`HPM` extension)
+#### Privileged architecture - Hardware performance monitors (`HPM` extension)
 
   * Requires `Zicsr` extension
   * Configurable number of counters (0..29)
