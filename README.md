@@ -28,7 +28,7 @@ designs or as stand-alone custom microcontroller.
 :label: The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
 To see the changes between releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-:books: The documentation of the software framework is available online on [GitHub-pages](https://stnolting.github.io/neorv32/files.html).
+:books: The doxygen-based documentation of the software framework is available online at [GitHub-pages](https://stnolting.github.io/neorv32/files.html).
 
 :page_facing_up: For more detailed information take a look at the [NEORV32 data sheet (pdf)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
@@ -90,7 +90,7 @@ To see the changes between releases visit the project's [release page](https://g
 The processor is [synthesizable](#FPGA-Implementation-Results) (tested on *real hardware* using Intel Quartus Prime, Xilinx Vivado and Lattice Radiant/Synplify Pro) and can successfully execute
 all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the [CoreMark benchmark](#CoreMark-Benchmark).
 
-The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/privilege` and `rv32_m/Zifencei`
+**RISC-V Compliance**: The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/privilege` and `rv32_m/Zifencei`
 [RISC-V compliance](https://github.com/riscv/riscv-compliance) tests. More information regarding the NEORV32 port of the compliance framework can be found in
 [`riscv-compliance/README.md`](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md).
 
@@ -146,8 +146,8 @@ is highly customizable via the processor's top generics and already provides the
 * 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**), *standard* or *pipelined* handshake/transactions mode
 * wrapper for **AXI4-Lite Master Interface** (see [AXI Connectivity](#AXI4-Connectivity))
 * PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
-* Ring-oscillator-based true random number generator (**TRNG**)
-* custom functions units (**CFU0** and **CFU1**) for tightly-coupled custom co-processors
+* ring-oscillator-based true random number generator (**TRNG**)
+* custom functions subsystem (**CFS**) for tightly-coupled custom co-processor extensions
 * system configuration information memory to check hardware configuration by software (**SYSINFO**, mandatory - not *optional*)
 
 
@@ -181,8 +181,8 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
 #### Bit manipulation instructions (`B` extension)
 
-  * :warning: RISC-V `B` extension is not officially ratified yet! 
-  * Implies `Zbb` extension
+  * :warning: Extension is not officially ratified yet by the RISC-V foundation! 
+  * Implies `Zbb` extension (base bit manipulation instruction set)
   * Compatible to [v0.94-draft](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/bitmanip-draft.pdf) of the bit manipulation spec
   * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
   * Only the `Zbb` base instructions subset is supported yet
@@ -321,8 +321,7 @@ Results generated for hardware version [`1.5.0.3`](https://github.com/stnolting/
 | BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |    0 |
 | BUSSWITCH | Mux for CPU I & D interfaces                         |  65 |   8 |           0 |    0 |
 | i-CACHE   | Proc.-int. nstruction cache (default 1x4x64 bytes)   | 234 | 156 |       8 192 |    0 |
-| CFU0      | Custom functions unit 0                              |   - |   - |           - |    - |
-| CFU1      | Custom functions unit 1                              |   - |   - |           - |    - |
+| CFS       | Custom functions subsystem                           |   - |   - |           - |    - |
 | DMEM      | Processor-internal data memory (default 8kB)         |   6 |   2 |      65 536 |    0 |
 | GPIO      | General purpose input/output ports                   |  67 |  65 |           0 |    0 |
 | IMEM      | Processor-internal instruction memory (default 16kb) |   6 |   2 |     131 072 |    0 |
@@ -339,7 +338,7 @@ Results generated for hardware version [`1.5.0.3`](https://github.com/stnolting/
 
 ### NEORV32 Processor - Exemplary FPGA Setups
 
-Exemplary processor implementation results for different FPGA platforms. The processor setup uses *the default peripheral configuration* (like no _CFUs_ and no _TRNG_),
+Exemplary processor implementation results for different FPGA platforms. The processor setup uses *the default peripheral configuration* (like no _CFS_ and no _TRNG_),
 no external memory interface and only internal instruction and data memories. IMEM uses 16kB and DMEM uses 8kB memory space. The setup's top entity connects most of the
 processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
 to FPGA pins - except for the Wishbone bus and the interrupt signals. The "default" strategy of each toolchain is used.
