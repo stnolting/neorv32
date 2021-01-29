@@ -79,6 +79,7 @@ entity neorv32_cpu is
     -- global control --
     clk_i          : in  std_ulogic := '0'; -- global clock, rising edge
     rstn_i         : in  std_ulogic := '0'; -- global reset, low-active, async
+    sleep_o        : out std_ulogic; -- cpu is in sleep mode when set
     -- instruction bus interface --
     i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
@@ -254,6 +255,9 @@ begin
     be_load_i     => be_load,     -- bus error on load data access
     be_store_i    => be_store     -- bus error on store data access
   );
+
+  -- CPU is sleeping? --
+  sleep_o <= ctrl(ctrl_sleep_c); -- set when CPU is sleeping (after WFI)
 
 
   -- Register File --------------------------------------------------------------------------

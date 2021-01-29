@@ -745,8 +745,10 @@ begin
     ctrl_o(ctrl_ir_opcode7_6_c  downto ctrl_ir_opcode7_0_c) <= execute_engine.i_reg(instr_opcode_msb_c  downto instr_opcode_lsb_c);
     ctrl_o(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_0_c) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c);
     ctrl_o(ctrl_ir_funct3_2_c   downto ctrl_ir_funct3_0_c)  <= execute_engine.i_reg(instr_funct3_msb_c  downto instr_funct3_lsb_c);
-    -- locked bus operation (for atomica memory operations) --
+    -- locked bus operation (for atomic memory operations) --
     ctrl_o(ctrl_bus_lock_c) <= atomic_ctrl.lock; -- (bus) lock status
+    -- cpu status --
+    ctrl_o(ctrl_sleep_c) <= execute_engine.sleep; -- cpu is in sleep mode
   end process ctrl_output;
 
 
