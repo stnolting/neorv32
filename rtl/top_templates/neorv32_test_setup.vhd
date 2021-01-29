@@ -113,8 +113,8 @@ begin
     IO_PWM_EN                    => false,       -- implement pulse-width modulation unit (PWM)?
     IO_WDT_EN                    => true,        -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   => false,       -- implement true random number generator (TRNG)?
-    IO_CFU0_EN                   => false,       -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_EN                   => false        -- implement custom functions unit 1 (CFU1)?
+    IO_CFS_EN                    => false,       -- implement custom functions subsystem (CFS)?
+    IO_CFS_CONFIG                => (others => '0') -- custom CFS configuration generic
   )
   port map (
     -- Global control --
@@ -151,6 +151,9 @@ begin
     twi_scl_io  => open,            -- twi serial clock line
     -- PWM --
     pwm_o       => open,            -- pwm channels
+    -- Custom Functions Subsystem IO --
+    cfs_in_i    => (others => '0'), -- custom inputs
+    cfs_out_o   => open,            -- custom outputs
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     => (others => '0'), -- current system time
     -- Interrupts --
