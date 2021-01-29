@@ -58,6 +58,7 @@ To see the changes between releases visit the project's [release page](https://g
   * serial interfaces (SPI, TWI, UART)
   * general purpose IO and PWM channels
   * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
+  * subsystem for custom co-processors
   * [more ...](#NEORV32-Processor-Features)
 * Software framework
   * core libraries for high-level usage of the provided functions and peripherals
@@ -107,16 +108,16 @@ all the [provided example programs](https://github.com/stnolting/neorv32/tree/ma
 
 * Use LaTeX for data sheet
 * Further size and performance optimization
-* Further expand associativity configuration of instruction cache (4x/8x set-associativity)
-* Add data cache
-* Burst mode for the external memory/bus interface
+* Further expand associativity configuration of instruction cache (4x/8x set-associativity)?
+* Add data cache?
+* Burst mode for the external memory/bus interface?
 * RISC-V `F` (using [`Zfinx`](https://github.com/riscv/riscv-zfinx/blob/master/Zfinx_spec.adoc)?) CPU extension (single-precision floating point)
 * Add template (HW module + intrinsics skeleton) for custom instructions?
-* Implement further RISC-V (or custom?) CPU extensions
-* More support for FreeRTOS (like *all* traps)
-* Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))
-* Maybe port [CircuitPython](https://circuitpython.org/) (just for fun)
-* Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))
+* Implement further RISC-V (or custom) CPU extensions?
+* More support for FreeRTOS (like *all* traps)?
+* Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))?
+* Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))?
+* Add encryption/decryption/hash accelerator (maybe [XTEA](https://en.wikipedia.org/wiki/XTEA))?
 * ...
 * [Ideas?](#ContributeFeedbackQuestions)
 
