@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file cpu_test/main.c
  * @author Stephan Nolting
- * @brief Simple CPU test program.
+ * @brief CPU/Processor test program.
  **************************************************************************/
 
 #include <neorv32.h>
@@ -51,8 +51,8 @@
 #define BAUD_RATE 19200
 //** Reachable unaligned address */
 #define ADDR_UNALIGNED   0x00000002
-//** Unreachable aligned address */
-#define ADDR_UNREACHABLE 0xFFFFFF00
+//** Unreachable word-aligned address */
+#define ADDR_UNREACHABLE (IO_BASE_ADDRESS-4)
 //* external memory base address */
 #define EXT_MEM_BASE     0xF0000000
 /**@}*/
