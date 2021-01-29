@@ -428,11 +428,8 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("TRNG  - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_TRNG));
 
-  neorv32_uart_printf("CFU0  - ");
-  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_CFU0));
-
-  neorv32_uart_printf("CFU1  - ");
-  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_CFU1));
+  neorv32_uart_printf("CFS   - ");
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_CFS));
 }
 
 
