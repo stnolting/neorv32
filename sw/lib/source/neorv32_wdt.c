@@ -62,34 +62,48 @@ int neorv32_wdt_available(void) {
 
 
 /**********************************************************************//**
- * Enable and configure watchdog timer. The WDT control register bits are listed in #NEORV32_WDT_CT_enum.
+ * Configure and enable watchdog timer. The WDT control register bits are listed in #NEORV32_WDT_CT_enum.
  *
- * @param[in] clk_prsc Clock prescaler to selet timeout interval. See #NEORV32_CLOCK_PRSC_enum.
- * @param[in] timeout_mode Trigger system reset on timeout when 1, trigger interrupt on timeout when 0.
+ * @param[in] prsc Clock prescaler to selet timeout interval. See #NEORV32_CLOCK_PRSC_enum.
+ * @param[in] mode Trigger system reset on timeout when 1, trigger interrupt on timeout when 0.
+ * @param[in] lock Control register will be locked when 1 (unitl next reset).
  **************************************************************************/
-void neorv32_wdt_setup(uint8_t clk_prsc, uint8_t timeout_mode) {
+void neorv32_wdt_setup(uint8_t prsc, uint8_t mode, uint8_t lock) {
 
-  uint32_t prsc = (uint32_t)(clk_prsc & 0x07);
-  prsc = prsc << WDT_CT_CLK_SEL0;
+  WDT_CT = (1 << WDT_CT_RESET); // reset WDT counter
 
-  uint32_t mode = (uint32_t)(timeout_mode & 0x01);
-  mode = mode << WDT_CT_MODE;
+  uint32_t prsc_int = (uint32_t)(prsc & 0x07);
+  prsc_int = prsc_int << WDT_CT_CLK_SEL0;
 
-  uint32_t password = (uint32_t)(WDT_PASSWORD);
-  password = password << WDT_CT_PASSWORD_LSB;
+  uint32_t mode_int = (uint32_t)(mode & 0x01);
+  mode_int = mode_int << WDT_CT_MODE;
 
-  uint32_t enable = (uint32_t)(1 << WDT_CT_EN);
+  uint32_t lock_int = (uint32_t)(lock & 0x01);
+  lock_int = lock_int << WDT_CT_LOCK;
 
-  WDT_CT = password | enable | mode | prsc;
+  const uint32_t enable = (uint32_t)(1 << WDT_CT_EN);
+
+  // update WDT control register
+  WDT_CT = enable | mode_int | prsc_int | lock_int;
 }
 
 
 /**********************************************************************//**
  * Disable watchdog timer.
+ *
+ * @return Returns 0 if WDT is really deativated, -1 otherwise.
  **************************************************************************/
-void neorv32_wdt_disable(void) {
+int neorv32_wdt_disable(void) {
+  
+  WDT_CT = 0;
 
-  WDT_CT = ((uint32_t)(WDT_PASSWORD << WDT_CT_PASSWORD_LSB)) | ((uint32_t)(0 << WDT_CT_EN));
+  // check if wdt is really off
+  if (WDT_CT & (1 << WDT_CT_EN)) {
+    return -1; // WDT still active
+  }
+  else {
+    return 0;
+  }
 }
 
 
@@ -98,38 +112,30 @@ void neorv32_wdt_disable(void) {
  **************************************************************************/
 void neorv32_wdt_reset(void) {
 
-  WDT_CT = WDT_CT | ((uint32_t)(WDT_PASSWORD << WDT_CT_PASSWORD_LSB));
+  WDT_CT = (1 << WDT_CT_RESET);
 }
 
 
 /**********************************************************************//**
- * Get cause of last watchdog action.
+ * Get cause of last system reset.
  *
- * @return Cause of last reset/IRQ (0: undefined, 1: external reset, 2: watchdog timeout, 3: watchdog access error (wrong password)).
+ * @return Cause of last reset/IRQ (0: external reset, 1: watchdog timeout).
  **************************************************************************/
-uint8_t neorv32_wdt_get_cause(void) {
+int neorv32_wdt_get_cause(void) {
 
-  uint8_t cause = 0;
-  uint32_t ctrl = WDT_CT;
-  if (ctrl & (1 << WDT_CT_CAUSE)) { // reset/IRQ casued by watchdog
-    if (ctrl & (1 << WDT_CT_PWFAIL)) { // reset/IRQ due to wrong password
-      cause = 3;
-    }
-    else { // reset/IRQ due to timeout
-      cause = 2;
-    }
+  if (WDT_CT & (1 << WDT_CT_RCAUSE)) { // reset caused by watchdog
+    return 1;
   }
   else { // external reset
-    cause = 1;
+    return 0;
   }
-  return cause;
 }
 
 
 /**********************************************************************//**
- * Force watchdog action (reset/IRQ) via wrong-password access.
+ * Force immediate watchdog action (reset/IRQ).
  **************************************************************************/
 void neorv32_wdt_force(void) {
 
-  WDT_CT = 0; // invalid access
+  WDT_CT = WDT_CT | (1 << WDT_CT_FORCE);
 }

@@ -1,7 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - Arithmetical/Logical Unit >>                                                     #
 -- # ********************************************************************************************* #
--- # Main data and address ALU. Includes comparator unit and co-processor interface/arbiter.       #
+-- # Main data and address ALU and co-processor interface/arbiter.                                 #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -57,7 +57,6 @@ entity neorv32_cpu_alu is
     pc2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- delayed PC
     imm_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
     -- data output --
-    cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
     res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
     add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- address computation result
     -- co-processor interface --
@@ -89,11 +88,6 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal cp_res     : std_ulogic_vector(data_width_c-1 downto 0);
   signal arith_res  : std_ulogic_vector(data_width_c-1 downto 0);
   signal logic_res  : std_ulogic_vector(data_width_c-1 downto 0);
-
-  -- comparator --
-  signal cmp_opx : std_ulogic_vector(data_width_c downto 0);
-  signal cmp_opy : std_ulogic_vector(data_width_c downto 0);
-  signal cmp_sub : std_ulogic_vector(data_width_c downto 0);
 
   -- shifter --
   type shifter_t is record
@@ -128,16 +122,6 @@ begin
   opb <= imm_i when (ctrl_i(ctrl_alu_opb_mux_c) = '1') else rs2_i; -- operand b (second ALU input operand)
 
 
-  -- Comparator Unit ------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  cmp_opx  <= (rs1_i(rs1_i'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs1_i;
-  cmp_opy  <= (rs2_i(rs2_i'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs2_i;
-  cmp_sub  <= std_ulogic_vector(signed(cmp_opx) - signed(cmp_opy)); -- less than (x < y)
-
-  cmp_o(alu_cmp_equal_c) <= '1' when (rs1_i = rs2_i) else '0';
-  cmp_o(alu_cmp_less_c)  <= cmp_sub(cmp_sub'left); -- less = carry (borrow)
-
-
   -- Binary Adder/Subtractor ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   binary_arithmetic_core: process(ctrl_i, opa, opb)
@@ -150,7 +134,6 @@ begin
     -- operand sign-extension --
     op_a_v := (opa(opa'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opa;
     op_b_v := (opb(opb'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opb;
-
     -- add/sub(slt) select --
     if (ctrl_i(ctrl_alu_addsub_c) = '1') then -- subtraction
       op_y_v   := not op_b_v;
@@ -159,7 +142,6 @@ begin
       op_y_v   := op_b_v;
       cin_v(0) := '0';
     end if;
-
     -- adder core (result + carry/borrow) --
     addsub_res <= std_ulogic_vector(unsigned(op_a_v) + unsigned(op_y_v) + unsigned(cin_v(0 downto 0)));
   end process binary_arithmetic_core;
@@ -227,7 +209,6 @@ begin
       -- Barrel shifter (huge but fast)
       -- --------------------------------------------------------------------------------
       else
-
         -- operands and cycle control --
         if (shifter.start = '1') then -- trigger new shift
           shifter.bs_d_in <= rs1_i; -- shift operand (can only be rs1; opa would also contain pc)
@@ -295,8 +276,11 @@ begin
   shifter.halt <= '1' when (or_all_f(shifter.cnt(shifter.cnt'left downto 1)) = '1') or (shifter.start = '1') else '0';
 
 
-  -- Coprocessor Arbiter --------------------------------------------------------------------
+  -- Co-Processor Arbiter -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- Interface:
+  -- Co-processor "valid" signal has to be asserted (for one cycle) one cycle before asserting output data
+  -- Co-processor "output data" has to be always zero unless co-processor was explicitly triggered
   cp_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -326,12 +310,7 @@ begin
   cp_ctrl.halt <= (cp_ctrl.busy and (not (cp0_valid_i or cp1_valid_i or cp2_valid_i or cp3_valid_i))) or cp_ctrl.start;
 
   -- co-processor result --
-  cp_read_back: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      cp_res <= cp0_data_i or cp1_data_i or cp2_data_i or cp3_data_i; -- only the *actually selected* co-processor may output data != 0
-    end if;
-  end process cp_read_back;
+  cp_res <= cp0_data_i or cp1_data_i or cp2_data_i or cp3_data_i; -- only the *actually selected* co-processor may output data != 0
 
 
   -- ALU Logic Core -------------------------------------------------------------------------

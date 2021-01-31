@@ -86,8 +86,8 @@ entity neorv32_top_axi4lite is
     IO_PWM_EN                    : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
-    IO_CFU0_EN                   : boolean := false;  -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_EN                   : boolean := false   -- implement custom functions unit 1 (CFU1)?
+    IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
+    IO_CFS_CONFIG                : std_logic_vector(31 downto 0) := (others => '0') -- custom CFS configuration generic
   );
   port (
     -- AXI Lite-Compatible Master Interface --
@@ -135,7 +135,11 @@ entity neorv32_top_axi4lite is
     twi_scl_io  : inout std_logic; -- twi serial clock line
     -- PWM --
     pwm_o       : out std_logic_vector(03 downto 0);  -- pwm channels
+    -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
+    cfs_in_i    : in  std_logic_vector(31 downto 0); -- custom inputs
+    cfs_out_o   : out std_logic_vector(31 downto 0); -- custom outputs
     -- Interrupts --
+    soc_firq_i  : in  std_logic_vector(3 downto 0) := (others => '0'); -- fast interrupt channels
     mtime_irq_i : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   : in  std_logic := '0'; -- machine software interrupt
     mext_irq_i  : in  std_logic := '0'  -- machine external interrupt
@@ -145,8 +149,9 @@ end neorv32_top_axi4lite;
 architecture neorv32_top_axi4lite_rtl of neorv32_top_axi4lite is
 
   -- type conversion --
-  constant USER_CODE_INT    : std_ulogic_vector(31 downto 0) := std_ulogic_vector(USER_CODE);
-  constant HW_THREAD_ID_INT : std_ulogic_vector(31 downto 0) := std_ulogic_vector(HW_THREAD_ID);
+  constant USER_CODE_INT     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(USER_CODE);
+  constant HW_THREAD_ID_INT  : std_ulogic_vector(31 downto 0) := std_ulogic_vector(HW_THREAD_ID);
+  constant IO_CFS_CONFIG_INT : std_ulogic_vector(31 downto 0) := std_ulogic_vector(IO_CFS_CONFIG);
   --
   signal clk_i_int       : std_ulogic;
   signal rstn_i_int      : std_ulogic;
@@ -164,6 +169,10 @@ architecture neorv32_top_axi4lite_rtl of neorv32_top_axi4lite is
   --
   signal pwm_o_int       : std_ulogic_vector(03 downto 0);
   --
+  signal cfs_in_i_int    : std_ulogic_vector(31 downto 0);
+  signal cfs_out_o_int   : std_ulogic_vector(31 downto 0);
+  --
+  signal soc_firq_i_int  : std_ulogic_vector(3 downto 0);
   signal mtime_irq_i_int : std_ulogic;
   signal msw_irq_i_int   : std_ulogic;
   signal mext_irq_i_int  : std_ulogic;
@@ -251,8 +260,8 @@ begin
     IO_PWM_EN                    => IO_PWM_EN,          -- implement pulse-width modulation unit (PWM)?
     IO_WDT_EN                    => IO_WDT_EN,          -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   => IO_TRNG_EN,         -- implement true random number generator (TRNG)?
-    IO_CFU0_EN                   => IO_CFU0_EN,         -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_EN                   => IO_CFU1_EN          -- implement custom functions unit 1 (CFU1)?
+    IO_CFS_EN                    => IO_CFS_EN,          -- implement custom functions subsystem (CFS)?
+    IO_CFS_CONFIG                => IO_CFS_CONFIG_INT   -- custom CFS configuration generic
   )
   port map (
     -- Global control --
@@ -289,9 +298,13 @@ begin
     twi_scl_io  => twi_scl_io,      -- twi serial clock line
     -- PWM --
     pwm_o       => pwm_o_int,       -- pwm channels
+    -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
+    cfs_in_i    => cfs_in_i_int,    -- custom inputs
+    cfs_out_o   => cfs_out_o_int,   -- custom outputs
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     => (others => '0'), -- current system time
     -- Interrupts --
+    soc_firq_i  => soc_firq_i_int,  -- fast interrupt channels
     mtime_irq_i => mtime_irq_i_int, -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => msw_irq_i_int,   -- machine software interrupt
     mext_irq_i  => mext_irq_i_int   -- machine external interrupt
@@ -311,6 +324,10 @@ begin
 
   pwm_o          <= std_logic_vector(pwm_o_int);
 
+  cfs_in_i_int   <= std_ulogic_vector(cfs_in_i);
+  cfs_out_o      <= std_logic_vector(cfs_out_o_int);
+
+  soc_firq_i_int <= std_ulogic_vector(soc_firq_i);
   msw_irq_i_int  <= std_ulogic(msw_irq_i);
   mext_irq_i_int <= std_ulogic(mext_irq_i);
   

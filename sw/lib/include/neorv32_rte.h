@@ -62,7 +62,11 @@ enum NEORV32_RTE_TRAP_enum {
   RTE_TRAP_FIRQ_0       = 13, /**< Fast interrupt channel 0 */
   RTE_TRAP_FIRQ_1       = 14, /**< Fast interrupt channel 1 */
   RTE_TRAP_FIRQ_2       = 15, /**< Fast interrupt channel 2 */
-  RTE_TRAP_FIRQ_3       = 16  /**< Fast interrupt channel 3 */
+  RTE_TRAP_FIRQ_3       = 16, /**< Fast interrupt channel 3 */
+  RTE_TRAP_FIRQ_4       = 17, /**< Fast interrupt channel 4 */
+  RTE_TRAP_FIRQ_5       = 18, /**< Fast interrupt channel 5 */
+  RTE_TRAP_FIRQ_6       = 19, /**< Fast interrupt channel 6 */
+  RTE_TRAP_FIRQ_7       = 20  /**< Fast interrupt channel 7 */
 };
 
 // prototypes

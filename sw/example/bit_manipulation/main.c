@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32 - Bit manipulation 'B.Zbb' test program >>                                         #
+// # << NEORV32 - RISC-V Bit Manipulation 'B.Zbb' Extension Test Program >>                        #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -55,7 +55,7 @@
 
 // Prototypes
 uint32_t xorshift32(void);
-uint32_t check_result(uint32_t opa, uint32_t opb, uint32_t ref, uint32_t res);
+uint32_t check_result(uint32_t num, uint32_t opa, uint32_t opb, uint32_t ref, uint32_t res);
 void print_report(int num_err, int num_tests);
 
 
@@ -69,8 +69,8 @@ void print_report(int num_err, int num_tests);
 int main() {
 
   uint32_t opa = 0, opb = 0, res_hw = 0, res_sw = 0;
-  int i = 0, err_cnt = 0;
-  const int num_tests = (int)NUM_TEST_CASES;
+  uint32_t i = 0, err_cnt = 0;
+  const uint32_t num_tests = (int)NUM_TEST_CASES;
 
   // capture all exceptions and give debug info via UART
   neorv32_rte_setup();
@@ -94,7 +94,7 @@ int main() {
     opa = xorshift32();
     res_sw = riscv_emulate_clz(opa);
     res_hw = riscv_intrinsic_clz(opa);
-    err_cnt += check_result(opa, 0, res_sw, res_hw);
+    err_cnt += check_result(i, opa, 0, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -105,7 +105,7 @@ int main() {
     opa = xorshift32();
     res_sw = riscv_emulate_ctz(opa);
     res_hw = riscv_intrinsic_ctz(opa);
-    err_cnt += check_result(opa, 0, res_sw, res_hw);
+    err_cnt += check_result(i, opa, 0, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -116,7 +116,7 @@ int main() {
     opa = xorshift32();
     res_sw = riscv_emulate_cpop(opa);
     res_hw = riscv_intrinsic_cpop(opa);
-    err_cnt += check_result(opa, 0, res_sw, res_hw);
+    err_cnt += check_result(i, opa, 0, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -127,7 +127,7 @@ int main() {
     opa = xorshift32();
     res_sw = riscv_emulate_sextb(opa);
     res_hw = riscv_intrinsic_sextb(opa);
-    err_cnt += check_result(opa, 0, res_sw, res_hw);
+    err_cnt += check_result(i, opa, 0, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -138,7 +138,7 @@ int main() {
     opa = xorshift32();
     res_sw = riscv_emulate_sexth(opa);
     res_hw = riscv_intrinsic_sexth(opa);
-    err_cnt += check_result(opa, 0, res_sw, res_hw);
+    err_cnt += check_result(i, opa, 0, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -150,7 +150,7 @@ int main() {
     opb = xorshift32();
     res_sw = riscv_emulate_min(opa, opb);
     res_hw = riscv_intrinsic_min(opa, opb);
-    err_cnt += check_result(opa, opb, res_sw, res_hw);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -162,7 +162,7 @@ int main() {
     opb = xorshift32();
     res_sw = riscv_emulate_minu(opa, opb);
     res_hw = riscv_intrinsic_minu(opa, opb);
-    err_cnt += check_result(opa, opb, res_sw, res_hw);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -174,7 +174,7 @@ int main() {
     opb = xorshift32();
     res_sw = riscv_emulate_max(opa, opb);
     res_hw = riscv_intrinsic_max(opa, opb);
-    err_cnt += check_result(opa, opb, res_sw, res_hw);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -186,7 +186,7 @@ int main() {
     opb = xorshift32();
     res_sw = riscv_emulate_maxu(opa, opb);
     res_hw = riscv_intrinsic_maxu(opa, opb);
-    err_cnt += check_result(opa, opb, res_sw, res_hw);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -198,7 +198,7 @@ int main() {
     opb = xorshift32();
     res_sw = riscv_emulate_pack(opa, opb);
     res_hw = riscv_intrinsic_pack(opa, opb);
-    err_cnt += check_result(opa, opb, res_sw, res_hw);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -210,7 +210,7 @@ int main() {
     opb = xorshift32();
     res_sw = riscv_emulate_andn(opa, opb);
     res_hw = riscv_intrinsic_andn(opa, opb);
-    err_cnt += check_result(opa, opb, res_sw, res_hw);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -222,7 +222,7 @@ int main() {
     opb = xorshift32();
     res_sw = riscv_emulate_orn(opa, opb);
     res_hw = riscv_intrinsic_orn(opa, opb);
-    err_cnt += check_result(opa, opb, res_sw, res_hw);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -234,7 +234,7 @@ int main() {
     opb = xorshift32();
     res_sw = riscv_emulate_xnor(opa, opb);
     res_hw = riscv_intrinsic_xnor(opa, opb);
-    err_cnt += check_result(opa, opb, res_sw, res_hw);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -246,7 +246,7 @@ int main() {
     opb = xorshift32();
     res_sw = riscv_emulate_rol(opa, opb);
     res_hw = riscv_intrinsic_rol(opa, opb);
-    err_cnt += check_result(opa, opb, res_sw, res_hw);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -258,7 +258,7 @@ int main() {
     opb = xorshift32();
     res_sw = riscv_emulate_ror(opa, opb);
     res_hw = riscv_intrinsic_ror(opa, opb);
-    err_cnt += check_result(opa, opb, res_sw, res_hw);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -269,7 +269,7 @@ int main() {
     opa = xorshift32();
     res_sw = riscv_emulate_ror(opa, 20);
     res_hw = riscv_intrinsic_rori20(opa);
-    err_cnt += check_result(opa, opb, res_sw, res_hw);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -280,7 +280,7 @@ int main() {
     opa = xorshift32();
     res_sw = riscv_emulate_orcb(opa);
     res_hw = riscv_intrinsic_orcb(opa);
-    err_cnt += check_result(opa, 0, res_sw, res_hw);
+    err_cnt += check_result(i, opa, 0, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -291,7 +291,7 @@ int main() {
     opa = xorshift32();
     res_sw = riscv_emulate_rev8(opa);
     res_hw = riscv_intrinsic_rev8(opa);
-    err_cnt += check_result(opa, 0, res_sw, res_hw);
+    err_cnt += check_result(i, opa, 0, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
@@ -322,16 +322,17 @@ uint32_t xorshift32(void) {
 /**********************************************************************//**
  * Check results (reference (SW) vs actual hardware).
  *
+ * @param[in] num Test case number
  * @param[in] opa Operand 1
  * @param[in] opb Operand 2
  * @param[in] ref Software reference
  * @param[in] res Actual results
  * @return zero if results are equal.
  **************************************************************************/
-uint32_t check_result(uint32_t opa, uint32_t opb, uint32_t ref, uint32_t res) {
+uint32_t check_result(uint32_t num, uint32_t opa, uint32_t opb, uint32_t ref, uint32_t res) {
 
   if (ref != res) {
-    neorv32_uart_printf("opa = 0x%x, opb = 0x%x : ref = 0x%x vs res = 0x%x ", opa, opb, ref, res);
+    neorv32_uart_printf("%u: opa = 0x%x, opb = 0x%x : ref = 0x%x vs res = 0x%x ", num, opa, opb, ref, res);
     neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     return 1;
   }

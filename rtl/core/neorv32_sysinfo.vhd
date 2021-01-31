@@ -1,7 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - System/Processor Configuration Information Memory (SYSINFO) >>                   #
 -- # ********************************************************************************************* #
--- # This unit provides information regarding the 'processor system' configuration -               #
+-- # This unit provides information regarding the NEORV32 processor system configuration -         #
 -- # mostly derived from the top's configuration generics.                                         #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
@@ -71,8 +71,7 @@ entity neorv32_sysinfo is
     IO_PWM_EN            : boolean := true;   -- implement pulse-width modulation unit (PWM)?
     IO_WDT_EN            : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN           : boolean := true;   -- implement true random number generator (TRNG)?
-    IO_CFU0_EN           : boolean := true;   -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_EN           : boolean := true    -- implement custom functions unit 1 (CFU1)?
+    IO_CFS_EN            : boolean := true    -- implement custom functions subsystem (CFS)?
   );
   port (
     -- host access --
@@ -138,11 +137,10 @@ begin
   sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_EN);   -- two-wire interface (TWI) implemented?
   sysinfo_mem(2)(21) <= bool_to_ulogic_f(IO_PWM_EN);   -- pulse-width modulation unit (PWM) implemented?
   sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_EN);   -- watch dog timer (WDT) implemented?
-  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFU0_EN);  -- custom functions unit 0 (CFU0) implemented?
+  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFS_EN);   -- custom functions subsystem (CFS) implemented?
   sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_EN);  -- true random number generator (TRNG) implemented?
-  sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_CFU1_EN);  -- custom functions unit 1 (CFU1) implemented?
   --
-  sysinfo_mem(2)(31 downto 26) <= (others => '0'); -- reserved
+  sysinfo_mem(2)(31 downto 25) <= (others => '0'); -- reserved
 
   -- SYSINFO(3): Cache configuration --
   sysinfo_mem(3)(03 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE),    4)) when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(block_size_in_bytes)

@@ -89,7 +89,7 @@ begin
     PMP_NUM_REGIONS              => 2,           -- number of regions (0..64)
     PMP_MIN_GRANULARITY          => 64*1024,     -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 => 2,           -- number of inmplemnted HPM counters (0..29)
+    HPM_NUM_CNTS                 => 2,           -- number of implemented HPM counters (0..29)
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              => true,        -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => 16*1024,     -- size of processor-internal instruction memory in bytes
@@ -113,8 +113,8 @@ begin
     IO_PWM_EN                    => false,       -- implement pulse-width modulation unit (PWM)?
     IO_WDT_EN                    => true,        -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   => false,       -- implement true random number generator (TRNG)?
-    IO_CFU0_EN                   => false,       -- implement custom functions unit 0 (CFU0)?
-    IO_CFU1_EN                   => false        -- implement custom functions unit 1 (CFU1)?
+    IO_CFS_EN                    => false,       -- implement custom functions subsystem (CFS)?
+    IO_CFS_CONFIG                => (others => '0') -- custom CFS configuration generic
   )
   port map (
     -- Global control --
@@ -151,9 +151,13 @@ begin
     twi_scl_io  => open,            -- twi serial clock line
     -- PWM --
     pwm_o       => open,            -- pwm channels
+    -- Custom Functions Subsystem IO --
+    cfs_in_i    => (others => '0'), -- custom inputs
+    cfs_out_o   => open,            -- custom outputs
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     => (others => '0'), -- current system time
     -- Interrupts --
+    soc_firq_i  => (others => '0'), -- fast interrupt channels
     mtime_irq_i => '0',             -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => '0',             -- machine software interrupt
     mext_irq_i  => '0'              -- machine external interrupt
