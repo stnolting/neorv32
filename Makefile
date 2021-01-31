@@ -46,8 +46,7 @@ FILES = rtl/core/neorv32_package.vhd \
 				rtl/core/neorv32_bootloader_image.vhd \
 				rtl/core/neorv32_boot_rom.vhd \
 				rtl/core/neorv32_busswitch.vhd \
-				rtl/core/neorv32_cfu0.vhd \
-				rtl/core/neorv32_cfu1.vhd \
+				rtl/core/neorv32_cfs.vhd \
 				rtl/core/neorv32_cpu.vhd \
 				rtl/core/neorv32_cpu_alu.vhd \
 				rtl/core/neorv32_cpu_bus.vhd \

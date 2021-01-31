@@ -195,8 +195,7 @@ set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_application_image.v
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_bootloader_image.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_boot_rom.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_busswitch.vhd
-set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_cfu0.vhd
-set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_cfu1.vhd
+set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_cfs.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_cpu_alu.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_cpu_bus.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_cpu_control.vhd
