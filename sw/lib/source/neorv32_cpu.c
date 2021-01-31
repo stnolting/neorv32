@@ -47,8 +47,28 @@
 /**********************************************************************//**
  * >Private< helper functions.
  **************************************************************************/
+static int __neorv32_cpu_irq_id_check(uint8_t irq_sel);
 static uint32_t __neorv32_cpu_pmp_cfg_read(uint32_t index);
 static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data);
+
+
+/**********************************************************************//**
+ * Private function: Check IRQ id.
+ *
+ * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
+ * @return 0 if success, 1 if error (invalid irq_sel).
+ **************************************************************************/
+static int __neorv32_cpu_irq_id_check(uint8_t irq_sel) {
+
+  if ((irq_sel == CSR_MIE_MSIE)   || (irq_sel == CSR_MIE_MTIE)   || (irq_sel == CSR_MIE_MEIE)   ||
+      (irq_sel == CSR_MIE_FIRQ0E) || (irq_sel == CSR_MIE_FIRQ1E) || (irq_sel == CSR_MIE_FIRQ2E) || (irq_sel == CSR_MIE_FIRQ3E) ||
+      (irq_sel == CSR_MIE_FIRQ4E) || (irq_sel == CSR_MIE_FIRQ5E) || (irq_sel == CSR_MIE_FIRQ6E) || (irq_sel == CSR_MIE_FIRQ7E)) {
+    return 0;
+  }
+  else {
+    return 1;
+  }
+}
 
 
 /**********************************************************************//**
@@ -61,8 +81,8 @@ static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data);
  **************************************************************************/
 int neorv32_cpu_irq_enable(uint8_t irq_sel) {
 
-  if ((irq_sel != CSR_MIE_MSIE) && (irq_sel != CSR_MIE_MTIE) && (irq_sel != CSR_MIE_MEIE) &&
-      (irq_sel != CSR_MIE_FIRQ0E) && (irq_sel != CSR_MIE_FIRQ1E) && (irq_sel != CSR_MIE_FIRQ2E) && (irq_sel != CSR_MIE_FIRQ3E)) {
+  // check IRQ id
+  if (__neorv32_cpu_irq_id_check(irq_sel)) {
     return 1;
   }
 
@@ -80,8 +100,8 @@ int neorv32_cpu_irq_enable(uint8_t irq_sel) {
  **************************************************************************/
 int neorv32_cpu_irq_disable(uint8_t irq_sel) {
 
-  if ((irq_sel != CSR_MIE_MSIE) && (irq_sel != CSR_MIE_MTIE) && (irq_sel != CSR_MIE_MEIE) &&
-      (irq_sel != CSR_MIE_FIRQ0E) && (irq_sel != CSR_MIE_FIRQ1E) && (irq_sel != CSR_MIE_FIRQ2E) && (irq_sel != CSR_MIE_FIRQ3E)) {
+  // check IRQ id
+  if (__neorv32_cpu_irq_id_check(irq_sel)) {
     return 1;
   }
 

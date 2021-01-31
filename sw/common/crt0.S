@@ -39,7 +39,7 @@
 
 
 // IO region
-.equ IO_BEGIN, 0xFFFFFF80 // start of processor-internal IO region
+.equ IO_BEGIN, 0xFFFFFF00 // start of processor-internal IO region
 
 
 _start:

@@ -71,8 +71,10 @@ int neorv32_uart_available(void) {
 /**********************************************************************//**
  * Enable and configure UART.
  *
- * @warning The 'UART_SIM_MODE' compiler flag will configure UART for simulation mode: all UART TX data will be redirected to simulation output. Use this for simulations only!
- * @warning To enable simulation mode add <USER_FLAGS+=-DUART_SIM_MODE> when compiling.
+ * @note The 'UART_SIM_MODE' compiler flag will configure UART for simulation mode: all UART TX data will be redirected to simulation output. Use this for simulations only!
+ * @note To enable simulation mode add <USER_FLAGS+=-DUART_SIM_MODE> when compiling.
+ *
+ * @warning The baud rate is computed using INTEGER operations (truncation errors might occur).
  *
  * @param[in] baudrate Targeted BAUD rate (e.g. 9600).
  * @param[in] parity PArity configuration (00=off, 10=even, 11=odd).
@@ -99,7 +101,7 @@ void neorv32_uart_setup(uint32_t baudrate, uint8_t parity, uint8_t rx_irq, uint8
   }
 #endif
 
-  // find clock prsc
+  // find baud prescaler (12-bit wide))
   while (i >= 0x0fff) {
     if ((p == 2) || (p == 4))
       i >>= 3;
@@ -108,11 +110,12 @@ void neorv32_uart_setup(uint32_t baudrate, uint8_t parity, uint8_t rx_irq, uint8
     p++;
   }
 
-  uint32_t prsc = (uint32_t)p;
-  prsc = prsc << UART_CT_PRSC0;
+  uint32_t clk_prsc = (uint32_t)p;
+  clk_prsc = clk_prsc << UART_CT_PRSC0;
 
-  uint32_t baud = (uint32_t)i;
-  baud = baud << UART_CT_BAUD00;
+  uint32_t baud_prsc = (uint32_t)i;
+  baud_prsc = baud_prsc - 1;
+  baud_prsc = baud_prsc << UART_CT_BAUD00;
 
   uint32_t uart_en = 1;
   uart_en = uart_en << UART_CT_EN;
@@ -135,7 +138,7 @@ void neorv32_uart_setup(uint32_t baudrate, uint8_t parity, uint8_t rx_irq, uint8
   uint32_t sim_mode = 0;
 #endif
 
-  UART_CT = prsc | baud | uart_en | parity_config | rx_irq_en | tx_irq_en | sim_mode;
+  UART_CT = clk_prsc | baud_prsc | uart_en | parity_config | rx_irq_en | tx_irq_en | sim_mode;
 }
 
 

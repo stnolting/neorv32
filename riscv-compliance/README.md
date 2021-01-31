@@ -1,7 +1,5 @@
 # NEORV32 RISC-V-Compliance Test Framework
 
-**:sparkles: This setup uses the new [RISC-V Compliance Test Framework v2.1](https://github.com/riscv/riscv-compliance/releases/tag/v2.0) :sparkles:**
-
 ## Overview
 
 This sub-project folder tests the [NEORV32 Processor Core](https://github.com/stnolting/neorv32) for **RISC-V compliance** by

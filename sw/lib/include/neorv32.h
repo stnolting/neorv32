@@ -372,7 +372,11 @@ enum NEORV32_CSR_MIE_enum {
   CSR_MIE_FIRQ0E = 16, /**< CPU mie CSR (16): FIRQ0E - Fast interrupt channel 0 enable bit (r/w) */
   CSR_MIE_FIRQ1E = 17, /**< CPU mie CSR (17): FIRQ1E - Fast interrupt channel 1 enable bit (r/w) */
   CSR_MIE_FIRQ2E = 18, /**< CPU mie CSR (18): FIRQ2E - Fast interrupt channel 2 enable bit (r/w) */
-  CSR_MIE_FIRQ3E = 19  /**< CPU mie CSR (19): FIRQ3E - Fast interrupt channel 3 enable bit (r/w) */
+  CSR_MIE_FIRQ3E = 19, /**< CPU mie CSR (19): FIRQ3E - Fast interrupt channel 3 enable bit (r/w) */
+  CSR_MIE_FIRQ4E = 20, /**< CPU mie CSR (20): FIRQ4E - Fast interrupt channel 4 enable bit (r/w) */
+  CSR_MIE_FIRQ5E = 21, /**< CPU mie CSR (21): FIRQ5E - Fast interrupt channel 5 enable bit (r/w) */
+  CSR_MIE_FIRQ6E = 22, /**< CPU mie CSR (22): FIRQ6E - Fast interrupt channel 6 enable bit (r/w) */
+  CSR_MIE_FIRQ7E = 23  /**< CPU mie CSR (23): FIRQ7E - Fast interrupt channel 7 enable bit (r/w) */
 };
 
 
@@ -387,7 +391,11 @@ enum NEORV32_CSR_MIP_enum {
   CSR_MIP_FIRQ0P = 16, /**< CPU mip CSR (16): FIRQ0P - Fast interrupt channel 0 pending (r/-) */
   CSR_MIP_FIRQ1P = 17, /**< CPU mip CSR (17): FIRQ1P - Fast interrupt channel 1 pending (r/-) */
   CSR_MIP_FIRQ2P = 18, /**< CPU mip CSR (18): FIRQ2P - Fast interrupt channel 2 pending (r/-) */
-  CSR_MIP_FIRQ3P = 19  /**< CPU mip CSR (19): FIRQ3P - Fast interrupt channel 3 pending (r/-) */
+  CSR_MIP_FIRQ3P = 19, /**< CPU mip CSR (19): FIRQ3P - Fast interrupt channel 3 pending (r/-) */
+  CSR_MIP_FIRQ4P = 20, /**< CPU mip CSR (20): FIRQ4P - Fast interrupt channel 4 pending (r/-) */
+  CSR_MIP_FIRQ5P = 21, /**< CPU mip CSR (21): FIRQ5P - Fast interrupt channel 5 pending (r/-) */
+  CSR_MIP_FIRQ6P = 22, /**< CPU mip CSR (22): FIRQ6P - Fast interrupt channel 6 pending (r/-) */
+  CSR_MIP_FIRQ7P = 23  /**< CPU mip CSR (23): FIRQ7P - Fast interrupt channel 7 pending (r/-) */
 };
 
 
@@ -463,7 +471,11 @@ enum NEORV32_EXCEPTION_CODES_enum {
   TRAP_CODE_FIRQ_0       = 0x80000010, /**< 1.16: Fast interrupt channel 0 */
   TRAP_CODE_FIRQ_1       = 0x80000011, /**< 1.17: Fast interrupt channel 1 */
   TRAP_CODE_FIRQ_2       = 0x80000012, /**< 1.18: Fast interrupt channel 2 */
-  TRAP_CODE_FIRQ_3       = 0x80000013  /**< 1.19: Fast interrupt channel 3 */
+  TRAP_CODE_FIRQ_3       = 0x80000013, /**< 1.19: Fast interrupt channel 3 */
+  TRAP_CODE_FIRQ_4       = 0x80000014, /**< 1.20: Fast interrupt channel 4 */
+  TRAP_CODE_FIRQ_5       = 0x80000015, /**< 1.21: Fast interrupt channel 5 */
+  TRAP_CODE_FIRQ_6       = 0x80000016, /**< 1.22: Fast interrupt channel 6 */
+  TRAP_CODE_FIRQ_7       = 0x80000017  /**< 1.23: Fast interrupt channel 7 */
 };
 
 
@@ -523,7 +535,78 @@ enum NEORV32_CLOCK_PRSC_enum {
 /** bootloader memory base address (r/-/x) */
 #define BOOTLOADER_BASE_ADDRESS (0xFFFF0000UL)
 /** peripheral/IO devices memory base address (r/w/x) */
-#define IO_BASE_ADDRESS (0xFFFFFF80UL)
+#define IO_BASE_ADDRESS (0xFFFFFF00UL)
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: Custom Functions Subsystem (CFS)
+ **************************************************************************/
+/**@{*/
+/** custom CFS register 0 */
+#define CFS_REG_0  (*(IO_REG32 0xFFFFFF00UL)) // /**< (r)/(w): CFS register 0, user-defined */
+/** custom CFS register 1 */
+#define CFS_REG_1  (*(IO_REG32 0xFFFFFF04UL)) // /**< (r)/(w): CFS register 1, user-defined */
+/** custom CFS register 2 */
+#define CFS_REG_2  (*(IO_REG32 0xFFFFFF08UL)) // /**< (r)/(w): CFS register 2, user-defined */
+/** custom CFS register 3 */
+#define CFS_REG_3  (*(IO_REG32 0xFFFFFF0CUL)) // /**< (r)/(w): CFS register 3, user-defined */
+/** custom CFS register 4 */
+#define CFS_REG_4  (*(IO_REG32 0xFFFFFF10UL)) // /**< (r)/(w): CFS register 4, user-defined */
+/** custom CFS register 5 */
+#define CFS_REG_5  (*(IO_REG32 0xFFFFFF14UL)) // /**< (r)/(w): CFS register 5, user-defined */
+/** custom CFS register 6 */
+#define CFS_REG_6  (*(IO_REG32 0xFFFFFF18UL)) // /**< (r)/(w): CFS register 6, user-defined */
+/** custom CFS register 7 */
+#define CFS_REG_7  (*(IO_REG32 0xFFFFFF1CUL)) // /**< (r)/(w): CFS register 7, user-defined */
+/** custom CFS register 8 */
+#define CFS_REG_8  (*(IO_REG32 0xFFFFFF20UL)) // /**< (r)/(w): CFS register 8, user-defined */
+/** custom CFS register 9 */
+#define CFS_REG_9  (*(IO_REG32 0xFFFFFF24UL)) // /**< (r)/(w): CFS register 9, user-defined */
+/** custom CFS register 10 */
+#define CFS_REG_10 (*(IO_REG32 0xFFFFFF28UL)) // /**< (r)/(w): CFS register 10, user-defined */
+/** custom CFS register 11 */
+#define CFS_REG_11 (*(IO_REG32 0xFFFFFF2CUL)) // /**< (r)/(w): CFS register 11, user-defined */
+/** custom CFS register 12 */
+#define CFS_REG_12 (*(IO_REG32 0xFFFFFF30UL)) // /**< (r)/(w): CFS register 12, user-defined */
+/** custom CFS register 13 */
+#define CFS_REG_13 (*(IO_REG32 0xFFFFFF34UL)) // /**< (r)/(w): CFS register 13, user-defined */
+/** custom CFS register 14 */
+#define CFS_REG_14 (*(IO_REG32 0xFFFFFF38UL)) // /**< (r)/(w): CFS register 14, user-defined */
+/** custom CFS register 15 */
+#define CFS_REG_15 (*(IO_REG32 0xFFFFFF3CUL)) // /**< (r)/(w): CFS register 15, user-defined */
+/** custom CFS register 16 */
+#define CFS_REG_16 (*(IO_REG32 0xFFFFFF40UL)) // /**< (r)/(w): CFS register 16, user-defined */
+/** custom CFS register 17 */
+#define CFS_REG_17 (*(IO_REG32 0xFFFFFF44UL)) // /**< (r)/(w): CFS register 17, user-defined */
+/** custom CFS register 18 */
+#define CFS_REG_18 (*(IO_REG32 0xFFFFFF48UL)) // /**< (r)/(w): CFS register 18, user-defined */
+/** custom CFS register 19 */
+#define CFS_REG_19 (*(IO_REG32 0xFFFFFF4CUL)) // /**< (r)/(w): CFS register 19, user-defined */
+/** custom CFS register 20 */
+#define CFS_REG_20 (*(IO_REG32 0xFFFFFF50UL)) // /**< (r)/(w): CFS register 20, user-defined */
+/** custom CFS register 21 */
+#define CFS_REG_21 (*(IO_REG32 0xFFFFFF54UL)) // /**< (r)/(w): CFS register 21, user-defined */
+/** custom CFS register 22 */
+#define CFS_REG_22 (*(IO_REG32 0xFFFFFF58UL)) // /**< (r)/(w): CFS register 22, user-defined */
+/** custom CFS register 23 */
+#define CFS_REG_23 (*(IO_REG32 0xFFFFFF5CUL)) // /**< (r)/(w): CFS register 23, user-defined */
+/** custom CFS register 24 */
+#define CFS_REG_24 (*(IO_REG32 0xFFFFFF60UL)) // /**< (r)/(w): CFS register 24, user-defined */
+/** custom CFS register 25 */
+#define CFS_REG_25 (*(IO_REG32 0xFFFFFF64UL)) // /**< (r)/(w): CFS register 25, user-defined */
+/** custom CFS register 26 */
+#define CFS_REG_26 (*(IO_REG32 0xFFFFFF68UL)) // /**< (r)/(w): CFS register 26, user-defined */
+/** custom CFS register 27 */
+#define CFS_REG_27 (*(IO_REG32 0xFFFFFF6CUL)) // /**< (r)/(w): CFS register 27, user-defined */
+/** custom CFS register 28 */
+#define CFS_REG_28 (*(IO_REG32 0xFFFFFF70UL)) // /**< (r)/(w): CFS register 28, user-defined */
+/** custom CFS register 29 */
+#define CFS_REG_29 (*(IO_REG32 0xFFFFFF74UL)) // /**< (r)/(w): CFS register 29, user-defined */
+/** custom CFS register 30 */
+#define CFS_REG_30 (*(IO_REG32 0xFFFFFF78UL)) // /**< (r)/(w): CFS register 30, user-defined */
+/** custom CFS register 31 */
+#define CFS_REG_31 (*(IO_REG32 0xFFFFFF7CUL)) // /**< (r)/(w): CFS register 31, user-defined */
 /**@}*/
 
 
@@ -748,36 +831,6 @@ enum NEORV32_PWM_DUTY_enum {
 
 
 /**********************************************************************//**
- * @name IO Device: Custom Functions Unit 0 (CFU0)
- **************************************************************************/
-/**@{*/
-/** CFU0 register 0 ((r)/(w)) */
-#define CFU0_REG_0 (*(IO_REG32 0xFFFFFFC0UL)) // (r)/(w): CFU0 register 0, user-defined
-/** CFU0 register 1 ((r)/(w)) */
-#define CFU0_REG_1 (*(IO_REG32 0xFFFFFFC4UL)) // (r)/(w): CFU0 register 1, user-defined
-/** CFU0 register 2 ((r)/(w)) */
-#define CFU0_REG_2 (*(IO_REG32 0xFFFFFFC8UL)) // (r)/(w): CFU0 register 2, user-defined
-/** CFU0 register 3 ((r)/(w)) */
-#define CFU0_REG_3 (*(IO_REG32 0xFFFFFFCCUL)) // (r)/(w): CFU0 register 3, user-defined
-/**@}*/
-
-
-/**********************************************************************//**
- * @name IO Device: Custom Functions Unit 1 (CFU1)
- **************************************************************************/
-/**@{*/
-/** CFU1 register 0 ((r)/(w)) */
-#define CFU1_REG_0 (*(IO_REG32 0xFFFFFFD0UL)) // (r)/(w): CFU1 register 0, user-defined
-/** CFU1 register 1 ((r)/(w)) */
-#define CFU1_REG_1 (*(IO_REG32 0xFFFFFFD4UL)) // (r)/(w): CFU1 register 1, user-defined
-/** CFU1 register 2 ((r)/(w)) */
-#define CFU1_REG_2 (*(IO_REG32 0xFFFFFFD8UL)) // (r)/(w): CFU1 register 2, user-defined
-/** CFU1 register 3 ((r)/(w)) */
-#define CFU1_REG_3 (*(IO_REG32 0xFFFFFFDCUL)) // (r)/(w): CFU1 register 3, user-defined
-/**@}*/
-
-
-/**********************************************************************//**
  * @name IO Device: System Configuration Info Memory (SYSINFO)
  **************************************************************************/
 /**@{*/
@@ -818,9 +871,8 @@ enum NEORV32_PWM_DUTY_enum {
   SYSINFO_FEATURES_IO_TWI           = 20, /**< SYSINFO_FEATURES (20) (r/-): Two-wire interface implemented when 1 (via IO_TWI_EN generic) */
   SYSINFO_FEATURES_IO_PWM           = 21, /**< SYSINFO_FEATURES (21) (r/-): Pulse-width modulation unit implemented when 1 (via IO_PWM_EN generic) */
   SYSINFO_FEATURES_IO_WDT           = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_EN generic) */
-  SYSINFO_FEATURES_IO_CFU0          = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions unit 0 implemented when 1 (via IO_CFU0_EN generic) */
-  SYSINFO_FEATURES_IO_TRNG          = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_EN generic) */
-  SYSINFO_FEATURES_IO_CFU1          = 25  /**< SYSINFO_FEATURES (25) (r/-): Custom functions unit 1 implemented when 1 (via IO_CFU1_EN generic) */
+  SYSINFO_FEATURES_IO_CFS           = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions subsystem implemented when 1 (via IO_CFS_EN generic) */
+  SYSINFO_FEATURES_IO_TRNG          = 24  /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_EN generic) */
 };
 
 /**********************************************************************//**
@@ -859,7 +911,7 @@ enum NEORV32_PWM_DUTY_enum {
 #include "neorv32_rte.h"
 
 // io/peripheral devices
-#include "neorv32_cfu.h"
+#include "neorv32_cfs.h"
 #include "neorv32_gpio.h"
 #include "neorv32_mtime.h"
 #include "neorv32_pwm.h"
