@@ -1189,7 +1189,7 @@ begin
           if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') or (decode_aux.is_atomic_sc = '1') then -- load / load-reservate / store conditional
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
           end if;
-          atomic_ctrl.env_end      <= '1'; -- normal end of LOCKED (atomic) memory access environment
+          atomic_ctrl.env_end      <= not decode_aux.is_atomic_lr; -- normal end of LOCKED (atomic) memory access environment - if we are not starting it via LR instruction
           execute_engine.state_nxt <= DISPATCH;
         end if;
 
