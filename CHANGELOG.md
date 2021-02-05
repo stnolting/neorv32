@@ -6,15 +6,15 @@ The latest release is [![release](https://img.shields.io/github/v/release/stnolt
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases). The most recent version of the *NEORV32 data sheet*
 can be found [here](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
-:information_source: To see a list of all commits
-between release run `git log v1.4.7.0..v1.4.8.0` (example to to see commits between v1.4.7.0 and v1.4.8.0).
+:information_source: To see a list of all commits between release run `git log RELEASE_A..RELEASE_B` (example: `v1.4.7.0..v1.4.8.0`).
 
-:information_source: The processor can determine it's version from the `mimpid` CSR (at CSR address 0xf13). A 8x4-bit BCD representation is used. Leading
-zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`. The version number is globally defined by the
-`hw_version_c` constant in the main VHDL package file [`rtl/core/neorv32_package.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
+:information_source: The processor can determine it's version from the `mimpid` CSR (at CSR address 0xf13). A 8x4-bit BCD representation is used.
+Leading zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`. The version number is globally
+defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/neorv32_package.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 05.02.2021 | 1.5.0.10 | CPU now provides 16 fast interrupt request lines (`FIRQ0 .. FIRQ15`) with according `mie`/`mip` CSR bits and `mcause` trap codes; removed IRQ enable flags from SPI, UART & TWI; reworked processor-internal interrupt system - assignment/priority list; UART now features individual IRQs for "RX-done" and "TX-done" conditions; changed bit order in TWI control register |
 | 29.01.2021 | 1.5.0.9 | removed custom function units `CFU0` & `CFU1`; :sparkles: replaced them by new *Custom Functions Subsystem `CFS`*, which provides up to 32x32-bit memory-mapped registers; new configuration generics: `IO_CFS_EN`, `IO_CFS_CONFIG`; new top entity signals: `cfs_in_i`, `cfs_out_o`; increased processor's IO area from 128 bytes to 256 bytes, now starting at `0xFFFFFF00` |
 | 28.01.2021 | 1.5.0.8 | added *critical limit* for number of implemented PMP regions: When implementing more PMP regions that a certain critical limit an additional register stage is automatically inserted into the CPU’s memory interfaces increasing the latency of instruction fetches and data access by +1 cycle. The critical limit can be adapted for custom use by a constant from the main VHDL package file (rtl/core/neorv32_package.vhd). The default value is 8: `constant pmp_num_regions_critical_c : natural := 8;` |
 | 27.01.2021 | 1.5.0.7 | added four additional *fast interrupt* channels `FIRQ4..7`, available via processor's top `soc_firq_i(3:0)` signal for custom platform use; fixed minor error in UART setup function (baud rate prescaler calculation for very high baud rates) |

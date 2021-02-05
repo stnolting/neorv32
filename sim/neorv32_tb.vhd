@@ -500,13 +500,13 @@ begin
     if rising_edge(clk_gen) then
       -- bus interface --
       wb_irq.rdata  <= (others => '0');
-      wb_irq.ack    <= wb_irq.cyc and wb_irq.stb and wb_irq.we;
+      wb_irq.ack    <= wb_irq.cyc and wb_irq.stb and wb_irq.we and and_all_f(wb_irq.sel);
       wb_irq.err    <= '0';
       -- trigger IRQ using CSR.MIE bit layout --
       msi_ring      <= '0';
       mei_ring      <= '0';
       soc_firq_ring <= (others => '0');
-      if ((wb_irq.cyc and wb_irq.stb and wb_irq.we) = '1') then
+      if ((wb_irq.cyc and wb_irq.stb and wb_irq.we and and_all_f(wb_irq.sel)) = '1') then
         msi_ring         <= wb_irq.wdata(03); -- machine software interrupt
         mei_ring         <= wb_irq.wdata(11); -- machine software interrupt
         soc_firq_ring(0) <= wb_irq.wdata(24); -- fast interrupt SoC channel 0
