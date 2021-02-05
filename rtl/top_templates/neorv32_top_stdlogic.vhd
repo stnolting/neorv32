@@ -130,7 +130,7 @@ entity neorv32_top_stdlogic is
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     : in  std_logic_vector(63 downto 0) := (others => '0'); -- current system time
     -- Interrupts --
-    soc_firq_i  : in  std_logic_vector(3 downto 0) := (others => '0'); -- fast interrupt channels
+    soc_firq_i  : in  std_logic_vector(7 downto 0) := (others => '0'); -- fast interrupt channels
     mtime_irq_i : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   : in  std_logic := '0'; -- machine software interrupt
     mext_irq_i  : in  std_logic := '0'  -- machine external interrupt
@@ -180,7 +180,7 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   --
   signal mtime_i_int     : std_ulogic_vector(63 downto 0);
   --
-  signal soc_firq_i_int  : std_ulogic_vector(3 downto 0);
+  signal soc_firq_i_int  : std_ulogic_vector(7 downto 0);
   signal mtime_irq_i_int : std_ulogic;
   signal msw_irq_i_int   : std_ulogic;
   signal mext_irq_i_int  : std_ulogic;
