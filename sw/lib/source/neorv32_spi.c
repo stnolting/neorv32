@@ -67,9 +67,8 @@ int neorv32_spi_available(void) {
  * @param[in] prsc Clock prescaler select (0..7).  See #NEORV32_CLOCK_PRSC_enum.
  * @param[in] clk_polarity Idle clock polarity (0, 1).
  * @param[in] data_size Data transfer size (0: 8-bit, 1: 16-bit, 2: 24-bit, 3: 32-bit).
- * @param[in] irq_en Enable transfer-done interrupt when 1.
  **************************************************************************/
-void neorv32_spi_setup(uint8_t prsc, uint8_t clk_polarity, uint8_t data_size, uint8_t irq_en) {
+void neorv32_spi_setup(uint8_t prsc, uint8_t clk_polarity, uint8_t data_size) {
 
   SPI_CT = 0; // reset
 
@@ -85,10 +84,7 @@ void neorv32_spi_setup(uint8_t prsc, uint8_t clk_polarity, uint8_t data_size, ui
   uint32_t ct_size = (uint32_t)(data_size & 0x03);
   ct_size = ct_size << SPI_CT_SIZE0;
 
-  uint32_t ct_irq = (uint32_t)(irq_en & 0x01);
-  ct_irq = ct_irq << SPI_CT_IRQ_EN;
-
-  SPI_CT = ct_enable | ct_prsc | ct_polarity | ct_size | ct_irq;
+  SPI_CT = ct_enable | ct_prsc | ct_polarity | ct_size;
 }
 
 

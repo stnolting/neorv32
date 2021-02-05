@@ -78,10 +78,8 @@ int neorv32_uart_available(void) {
  *
  * @param[in] baudrate Targeted BAUD rate (e.g. 9600).
  * @param[in] parity PArity configuration (00=off, 10=even, 11=odd).
- * @param[in] rx_irq Enable RX interrupt (data received) when 1.
- * @param[in] tx_irq Enable TX interrupt (transmission done) when 1.
  **************************************************************************/
-void neorv32_uart_setup(uint32_t baudrate, uint8_t parity, uint8_t rx_irq, uint8_t tx_irq) {
+void neorv32_uart_setup(uint32_t baudrate, uint8_t parity) {
 
   UART_CT = 0; // reset
 
@@ -123,12 +121,6 @@ void neorv32_uart_setup(uint32_t baudrate, uint8_t parity, uint8_t rx_irq, uint8
   uint32_t parity_config = (uint32_t)(parity & 3);
   parity_config = parity_config << UART_CT_PMODE0;
 
-  uint32_t rx_irq_en = (uint32_t)(rx_irq & 1);
-  rx_irq_en = rx_irq_en << UART_CT_RX_IRQ;
-
-  uint32_t tx_irq_en = (uint32_t)(tx_irq & 1);
-  tx_irq_en = tx_irq_en << UART_CT_TX_IRQ;
-
   /* Enable the UART for SIM mode. */
   /* USE THIS ONLY FOR SIMULATION! */
 #ifdef UART_SIM_MODE
@@ -138,7 +130,7 @@ void neorv32_uart_setup(uint32_t baudrate, uint8_t parity, uint8_t rx_irq, uint8
   uint32_t sim_mode = 0;
 #endif
 
-  UART_CT = clk_prsc | baud_prsc | uart_en | parity_config | rx_irq_en | tx_irq_en | sim_mode;
+  UART_CT = clk_prsc | baud_prsc | uart_en | parity_config | sim_mode;
 }
 
 

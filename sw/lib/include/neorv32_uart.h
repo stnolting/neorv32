@@ -49,7 +49,7 @@
 
 // prototypes
 int neorv32_uart_available(void);
-void neorv32_uart_setup(uint32_t baudrate, uint8_t parity, uint8_t rx_irq, uint8_t tx_irq);
+void neorv32_uart_setup(uint32_t baudrate, uint8_t parity);
 void neorv32_uart_disable(void);
 void neorv32_uart_putc(char c);
 int neorv32_uart_tx_busy(void);
