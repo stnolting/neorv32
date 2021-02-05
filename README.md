@@ -229,7 +229,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 #### NEORV32-specific CPU extensions (`X` extension)
 
 * The NEORV32-specific extensions are always enabled and are indicated via the `X` bit set in the `misa` CSR.
-* Eight *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
+* 16 *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
 * `mzext` CSR to check for implemented `Z*` CPU extensions (like `Zifencei`)
 * All undefined/umimplemented/malformed/illegal instructions do raise an illegal instruction exception
 
