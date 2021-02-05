@@ -57,10 +57,10 @@ package neorv32_package is
   -- inserted into the memory interfaces increasing instruction fetch & data access latency by +1 cycle!
   constant pmp_num_regions_critical_c : natural := 8;
 
-  -- Architecture Constants (do not modify!)= -----------------------------------------------
+  -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050009"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050010"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -678,31 +678,39 @@ package neorv32_package is
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- RISC-V compliant exceptions --
-  constant trap_ima_c   : std_ulogic_vector(5 downto 0) := "0" & "00000"; -- 0.0:  instruction misaligned
-  constant trap_iba_c   : std_ulogic_vector(5 downto 0) := "0" & "00001"; -- 0.1:  instruction access fault
-  constant trap_iil_c   : std_ulogic_vector(5 downto 0) := "0" & "00010"; -- 0.2:  illegal instruction
-  constant trap_brk_c   : std_ulogic_vector(5 downto 0) := "0" & "00011"; -- 0.3:  breakpoint
-  constant trap_lma_c   : std_ulogic_vector(5 downto 0) := "0" & "00100"; -- 0.4:  load address misaligned
-  constant trap_lbe_c   : std_ulogic_vector(5 downto 0) := "0" & "00101"; -- 0.5:  load access fault
-  constant trap_sma_c   : std_ulogic_vector(5 downto 0) := "0" & "00110"; -- 0.6:  store address misaligned
-  constant trap_sbe_c   : std_ulogic_vector(5 downto 0) := "0" & "00111"; -- 0.7:  store access fault
-  constant trap_uenv_c  : std_ulogic_vector(5 downto 0) := "0" & "01000"; -- 0.8:  environment call from u-mode
-  constant trap_menv_c  : std_ulogic_vector(5 downto 0) := "0" & "01011"; -- 0.11: environment call from m-mode
-  -- RISC-V compliant interrupts --
-  constant trap_msi_c   : std_ulogic_vector(5 downto 0) := "1" & "00011"; -- 1.3:  machine software interrupt
-  constant trap_mti_c   : std_ulogic_vector(5 downto 0) := "1" & "00111"; -- 1.7:  machine timer interrupt
-  constant trap_mei_c   : std_ulogic_vector(5 downto 0) := "1" & "01011"; -- 1.11: machine external interrupt
-  -- NEORV32-specific (custom) interrupts --
-  constant trap_reset_c : std_ulogic_vector(5 downto 0) := "1" & "00000"; -- 1.0:  hardware reset
-  constant trap_firq0_c : std_ulogic_vector(5 downto 0) := "1" & "10000"; -- 1.16: fast interrupt 0
-  constant trap_firq1_c : std_ulogic_vector(5 downto 0) := "1" & "10001"; -- 1.17: fast interrupt 1
-  constant trap_firq2_c : std_ulogic_vector(5 downto 0) := "1" & "10010"; -- 1.18: fast interrupt 2
-  constant trap_firq3_c : std_ulogic_vector(5 downto 0) := "1" & "10011"; -- 1.19: fast interrupt 3
-  constant trap_firq4_c : std_ulogic_vector(5 downto 0) := "1" & "10100"; -- 1.20: fast interrupt 4
-  constant trap_firq5_c : std_ulogic_vector(5 downto 0) := "1" & "10101"; -- 1.21: fast interrupt 5
-  constant trap_firq6_c : std_ulogic_vector(5 downto 0) := "1" & "10110"; -- 1.22: fast interrupt 6
-  constant trap_firq7_c : std_ulogic_vector(5 downto 0) := "1" & "10111"; -- 1.23: fast interrupt 7
+  -- RISC-V compliant sync. exceptions --
+  constant trap_ima_c    : std_ulogic_vector(5 downto 0) := "0" & "00000"; -- 0.0:  instruction misaligned
+  constant trap_iba_c    : std_ulogic_vector(5 downto 0) := "0" & "00001"; -- 0.1:  instruction access fault
+  constant trap_iil_c    : std_ulogic_vector(5 downto 0) := "0" & "00010"; -- 0.2:  illegal instruction
+  constant trap_brk_c    : std_ulogic_vector(5 downto 0) := "0" & "00011"; -- 0.3:  breakpoint
+  constant trap_lma_c    : std_ulogic_vector(5 downto 0) := "0" & "00100"; -- 0.4:  load address misaligned
+  constant trap_lbe_c    : std_ulogic_vector(5 downto 0) := "0" & "00101"; -- 0.5:  load access fault
+  constant trap_sma_c    : std_ulogic_vector(5 downto 0) := "0" & "00110"; -- 0.6:  store address misaligned
+  constant trap_sbe_c    : std_ulogic_vector(5 downto 0) := "0" & "00111"; -- 0.7:  store access fault
+  constant trap_uenv_c   : std_ulogic_vector(5 downto 0) := "0" & "01000"; -- 0.8:  environment call from u-mode
+  constant trap_menv_c   : std_ulogic_vector(5 downto 0) := "0" & "01011"; -- 0.11: environment call from m-mode
+  -- RISC-V compliant interrupts (async. exceptions) --
+  constant trap_msi_c    : std_ulogic_vector(5 downto 0) := "1" & "00011"; -- 1.3:  machine software interrupt
+  constant trap_mti_c    : std_ulogic_vector(5 downto 0) := "1" & "00111"; -- 1.7:  machine timer interrupt
+  constant trap_mei_c    : std_ulogic_vector(5 downto 0) := "1" & "01011"; -- 1.11: machine external interrupt
+  -- NEORV32-specific (custom) interrupts (async. exceptions) --
+  constant trap_reset_c  : std_ulogic_vector(5 downto 0) := "1" & "00000"; -- 1.0:  hardware reset
+  constant trap_firq0_c  : std_ulogic_vector(5 downto 0) := "1" & "10000"; -- 1.16: fast interrupt 0
+  constant trap_firq1_c  : std_ulogic_vector(5 downto 0) := "1" & "10001"; -- 1.17: fast interrupt 1
+  constant trap_firq2_c  : std_ulogic_vector(5 downto 0) := "1" & "10010"; -- 1.18: fast interrupt 2
+  constant trap_firq3_c  : std_ulogic_vector(5 downto 0) := "1" & "10011"; -- 1.19: fast interrupt 3
+  constant trap_firq4_c  : std_ulogic_vector(5 downto 0) := "1" & "10100"; -- 1.20: fast interrupt 4
+  constant trap_firq5_c  : std_ulogic_vector(5 downto 0) := "1" & "10101"; -- 1.21: fast interrupt 5
+  constant trap_firq6_c  : std_ulogic_vector(5 downto 0) := "1" & "10110"; -- 1.22: fast interrupt 6
+  constant trap_firq7_c  : std_ulogic_vector(5 downto 0) := "1" & "10111"; -- 1.23: fast interrupt 7
+  constant trap_firq8_c  : std_ulogic_vector(5 downto 0) := "1" & "11000"; -- 1.24: fast interrupt 8
+  constant trap_firq9_c  : std_ulogic_vector(5 downto 0) := "1" & "11001"; -- 1.25: fast interrupt 9
+  constant trap_firq10_c : std_ulogic_vector(5 downto 0) := "1" & "11010"; -- 1.26: fast interrupt 10
+  constant trap_firq11_c : std_ulogic_vector(5 downto 0) := "1" & "11011"; -- 1.27: fast interrupt 11
+  constant trap_firq12_c : std_ulogic_vector(5 downto 0) := "1" & "11100"; -- 1.28: fast interrupt 12
+  constant trap_firq13_c : std_ulogic_vector(5 downto 0) := "1" & "11101"; -- 1.29: fast interrupt 13
+  constant trap_firq14_c : std_ulogic_vector(5 downto 0) := "1" & "11110"; -- 1.30: fast interrupt 14
+  constant trap_firq15_c : std_ulogic_vector(5 downto 0) := "1" & "11111"; -- 1.31: fast interrupt 15
 
   -- CPU Control Exception System -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -731,8 +739,16 @@ package neorv32_package is
   constant interrupt_firq_5_c    : natural :=  8; -- fast interrupt channel 5
   constant interrupt_firq_6_c    : natural :=  9; -- fast interrupt channel 6
   constant interrupt_firq_7_c    : natural := 10; -- fast interrupt channel 7
+  constant interrupt_firq_8_c    : natural := 11; -- fast interrupt channel 8
+  constant interrupt_firq_9_c    : natural := 12; -- fast interrupt channel 9
+  constant interrupt_firq_10_c   : natural := 13; -- fast interrupt channel 10
+  constant interrupt_firq_11_c   : natural := 14; -- fast interrupt channel 11
+  constant interrupt_firq_12_c   : natural := 15; -- fast interrupt channel 12
+  constant interrupt_firq_13_c   : natural := 16; -- fast interrupt channel 13
+  constant interrupt_firq_14_c   : natural := 17; -- fast interrupt channel 14
+  constant interrupt_firq_15_c   : natural := 18; -- fast interrupt channel 15
   --
-  constant interrupt_width_c     : natural := 11; -- length of this list in bits
+  constant interrupt_width_c     : natural := 19; -- length of this list in bits
 
   -- CPU Privilege Modes --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -863,7 +879,7 @@ package neorv32_package is
       -- system time input from external MTIME (available if IO_MTIME_EN = false) --
       mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
       -- Interrupts --
-      soc_firq_i  : in  std_ulogic_vector(3 downto 0) := (others => '0'); -- fast interrupt channels
+      soc_firq_i  : in  std_ulogic_vector(7 downto 0) := (others => '0'); -- fast interrupt channels
       mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
       msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
       mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
@@ -934,8 +950,8 @@ package neorv32_package is
       mext_irq_i     : in  std_ulogic := '0'; -- machine external interrupt
       mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt
       -- fast interrupts (custom) --
-      firq_i         : in  std_ulogic_vector(7 downto 0) := (others => '0');
-      firq_ack_o     : out std_ulogic_vector(7 downto 0)
+      firq_i         : in  std_ulogic_vector(15 downto 0) := (others => '0');
+      firq_ack_o     : out std_ulogic_vector(15 downto 0)
     );
   end component;
 
@@ -985,8 +1001,8 @@ package neorv32_package is
       mext_irq_i    : in  std_ulogic; -- machine external interrupt
       mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
       -- fast interrupts (custom) --
-      firq_i        : in  std_ulogic_vector(7 downto 0);
-      firq_ack_o    : out std_ulogic_vector(7 downto 0);
+      firq_i        : in  std_ulogic_vector(15 downto 0);
+      firq_ack_o    : out std_ulogic_vector(15 downto 0);
       -- system time input from MTIME --
       time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
       -- physical memory protection --
@@ -1401,7 +1417,8 @@ package neorv32_package is
       uart_txd_o  : out std_ulogic;
       uart_rxd_i  : in  std_ulogic;
       -- interrupts --
-      uart_irq_o  : out std_ulogic  -- uart rx/tx interrupt
+      irq_rxd_o   : out std_ulogic; -- uart data received interrupt
+      irq_txd_o   : out std_ulogic  -- uart transmission done interrupt
     );
   end component;
 
@@ -1426,7 +1443,7 @@ package neorv32_package is
       spi_sdi_i   : in  std_ulogic; -- controller data in, peripheral data out
       spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
       -- interrupt --
-      spi_irq_o   : out std_ulogic -- transmission done interrupt
+      irq_o       : out std_ulogic -- transmission done interrupt
     );
   end component;
 
@@ -1449,7 +1466,7 @@ package neorv32_package is
       twi_sda_io  : inout std_logic; -- serial data line
       twi_scl_io  : inout std_logic; -- serial clock line
       -- interrupt --
-      twi_irq_o   : out std_ulogic -- transfer done IRQ
+      irq_o       : out std_ulogic -- transfer done IRQ
     );
   end component;
 
