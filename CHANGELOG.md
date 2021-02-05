@@ -14,6 +14,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 05.02.2021 | 1.5.0.11 | :bug: fixed error in atomic instruction `LR.W` |
 | 05.02.2021 | 1.5.0.10 | CPU now provides 16 fast interrupt request lines (`FIRQ0 .. FIRQ15`) with according `mie`/`mip` CSR bits and `mcause` trap codes; removed IRQ enable flags from SPI, UART & TWI; reworked processor-internal interrupt system - assignment/priority list; UART now features individual IRQs for "RX-done" and "TX-done" conditions; changed bit order in TWI control register |
 | 29.01.2021 | 1.5.0.9 | removed custom function units `CFU0` & `CFU1`; :sparkles: replaced them by new *Custom Functions Subsystem `CFS`*, which provides up to 32x32-bit memory-mapped registers; new configuration generics: `IO_CFS_EN`, `IO_CFS_CONFIG`; new top entity signals: `cfs_in_i`, `cfs_out_o`; increased processor's IO area from 128 bytes to 256 bytes, now starting at `0xFFFFFF00` |
 | 28.01.2021 | 1.5.0.8 | added *critical limit* for number of implemented PMP regions: When implementing more PMP regions that a certain critical limit an additional register stage is automatically inserted into the CPU’s memory interfaces increasing the latency of instruction fetches and data access by +1 cycle. The critical limit can be adapted for custom use by a constant from the main VHDL package file (rtl/core/neorv32_package.vhd). The default value is 8: `constant pmp_num_regions_critical_c : natural := 8;` |
