@@ -45,14 +45,13 @@
 /**********************************************************************//**
  * The >private< trap vector look-up table of the NEORV32 RTE.
  **************************************************************************/
-static uint32_t __neorv32_rte_vector_lut[21] __attribute__((unused)); // trap handler vector table
+static uint32_t __neorv32_rte_vector_lut[29] __attribute__((unused)); // trap handler vector table
 
 // private functions
 static void __attribute__((__interrupt__)) __neorv32_rte_core(void) __attribute__((aligned(16))) __attribute__((unused));
 static void __neorv32_rte_debug_exc_handler(void)     __attribute__((unused));
 static void __neorv32_rte_print_true_false(int state) __attribute__((unused));
 static void __neorv32_rte_print_hex_word(uint32_t num);
-static int  __neorv32_rte_check_exc_id(uint32_t id);
 
 
 /**********************************************************************//**
@@ -94,7 +93,7 @@ void neorv32_rte_setup(void) {
 int neorv32_rte_exception_install(uint8_t id, void (*handler)(void)) {
 
   // id valid?
-  if (__neorv32_rte_check_exc_id(id) == 0) {
+  if ((id >= RTE_TRAP_I_MISALIGNED) && (id <= CSR_MIE_FIRQ15E)) {
     __neorv32_rte_vector_lut[id] = (uint32_t)handler; // install handler
     return 0;
   }
@@ -115,7 +114,7 @@ int neorv32_rte_exception_install(uint8_t id, void (*handler)(void)) {
 int neorv32_rte_exception_uninstall(uint8_t id) {
 
   // id valid?
-  if (__neorv32_rte_check_exc_id(id) == 0) {
+  if ((id >= RTE_TRAP_I_MISALIGNED) && (id <= CSR_MIE_FIRQ15E)) {
     __neorv32_rte_vector_lut[id] = (uint32_t)(&__neorv32_rte_debug_exc_handler); // use dummy handler in case the exception is accidently triggered
     return 0;
   }
@@ -179,6 +178,14 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(16)))  __neorv
     case TRAP_CODE_FIRQ_5:       rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_5]; break;
     case TRAP_CODE_FIRQ_6:       rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_6]; break;
     case TRAP_CODE_FIRQ_7:       rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_7]; break;
+    case TRAP_CODE_FIRQ_8:       rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_8]; break;
+    case TRAP_CODE_FIRQ_9:       rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_9]; break;
+    case TRAP_CODE_FIRQ_10:      rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_10]; break;
+    case TRAP_CODE_FIRQ_11:      rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_11]; break;
+    case TRAP_CODE_FIRQ_12:      rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_12]; break;
+    case TRAP_CODE_FIRQ_13:      rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_13]; break;
+    case TRAP_CODE_FIRQ_14:      rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_14]; break;
+    case TRAP_CODE_FIRQ_15:      rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_15]; break;
     default: break;
   }
 
@@ -195,11 +202,20 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(16)))  __neorv
  **************************************************************************/
 static void __neorv32_rte_debug_exc_handler(void) {
 
+  char tmp;
+
   // intro
   neorv32_uart_print("<RTE> ");
 
   // cause
   register uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
+  tmp = (char)(trap_cause & 0xf);
+  if (tmp >= 10) {
+    tmp = 'a' + (tmp - 10);
+  }
+  else {
+    tmp = '0' + tmp;
+  }
   switch (trap_cause) {
     case TRAP_CODE_I_MISALIGNED: neorv32_uart_print("Instruction address misaligned"); break;
     case TRAP_CODE_I_ACCESS:     neorv32_uart_print("Instruction access fault"); break;
@@ -221,7 +237,15 @@ static void __neorv32_rte_debug_exc_handler(void) {
     case TRAP_CODE_FIRQ_4:
     case TRAP_CODE_FIRQ_5:
     case TRAP_CODE_FIRQ_6:
-    case TRAP_CODE_FIRQ_7:       neorv32_uart_print("Fast interrupt "); neorv32_uart_putc((char)('0' + (trap_cause & 0x7))); break;
+    case TRAP_CODE_FIRQ_7:
+    case TRAP_CODE_FIRQ_8:
+    case TRAP_CODE_FIRQ_9:
+    case TRAP_CODE_FIRQ_10:
+    case TRAP_CODE_FIRQ_11:
+    case TRAP_CODE_FIRQ_12:
+    case TRAP_CODE_FIRQ_13:
+    case TRAP_CODE_FIRQ_14:
+    case TRAP_CODE_FIRQ_15:      neorv32_uart_print("Fast interrupt "); neorv32_uart_putc(tmp); break;
     default:                     neorv32_uart_print("Unknown trap cause: "); __neorv32_rte_print_hex_word(trap_cause); break;
   }
 
@@ -468,31 +492,6 @@ void __neorv32_rte_print_hex_word(uint32_t num) {
     neorv32_uart_putc(hex_symbols[index]);
   }
 }
-
-
-/**********************************************************************//**
- * NEORV32 runtime environment: Private function to check exception id
- * as 8-digit hexadecimal value (with "0x" suffix).
- *
- * @param[in] id Exception id (#NEORV32_RTE_TRAP_enum).
- * @return Return 0 if id is valid
- **************************************************************************/
-static int __neorv32_rte_check_exc_id(uint32_t id) {
-
-  // id valid?
-  if ((id == RTE_TRAP_I_MISALIGNED) || (id == RTE_TRAP_I_ACCESS)     || (id == RTE_TRAP_I_ILLEGAL) ||
-      (id == RTE_TRAP_BREAKPOINT)   || (id == RTE_TRAP_L_MISALIGNED) || (id == RTE_TRAP_L_ACCESS)  ||
-      (id == RTE_TRAP_S_MISALIGNED) || (id == RTE_TRAP_S_ACCESS)     || (id == RTE_TRAP_MENV_CALL) || (id == RTE_TRAP_UENV_CALL) ||
-      (id == RTE_TRAP_MSI)          || (id == RTE_TRAP_MTI)          || (id == RTE_TRAP_MEI)       ||
-      (id == RTE_TRAP_FIRQ_0)       || (id == RTE_TRAP_FIRQ_1)       || (id == RTE_TRAP_FIRQ_2)    || (id == RTE_TRAP_FIRQ_3) ||
-      (id == RTE_TRAP_FIRQ_4)       || (id == RTE_TRAP_FIRQ_5)       || (id == RTE_TRAP_FIRQ_6)    || (id == RTE_TRAP_FIRQ_7)) {
-    return 0;
-  }
-  else {
-    return 1; 
-  }
-}
-
 
 
 /**********************************************************************//**

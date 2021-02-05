@@ -66,8 +66,23 @@ enum NEORV32_RTE_TRAP_enum {
   RTE_TRAP_FIRQ_4       = 17, /**< Fast interrupt channel 4 */
   RTE_TRAP_FIRQ_5       = 18, /**< Fast interrupt channel 5 */
   RTE_TRAP_FIRQ_6       = 19, /**< Fast interrupt channel 6 */
-  RTE_TRAP_FIRQ_7       = 20  /**< Fast interrupt channel 7 */
+  RTE_TRAP_FIRQ_7       = 20, /**< Fast interrupt channel 7 */
+  RTE_TRAP_FIRQ_8       = 21, /**< Fast interrupt channel 8 */
+  RTE_TRAP_FIRQ_9       = 22, /**< Fast interrupt channel 9 */
+  RTE_TRAP_FIRQ_10      = 23, /**< Fast interrupt channel 10 */
+  RTE_TRAP_FIRQ_11      = 24, /**< Fast interrupt channel 11 */
+  RTE_TRAP_FIRQ_12      = 25, /**< Fast interrupt channel 12 */
+  RTE_TRAP_FIRQ_13      = 26, /**< Fast interrupt channel 13 */
+  RTE_TRAP_FIRQ_14      = 27, /**< Fast interrupt channel 14 */
+  RTE_TRAP_FIRQ_15      = 28  /**< Fast interrupt channel 15 */
 };
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Number of available traps.
+ **************************************************************************/
+#define NEORV32_RTE_NUM_TRAPS 29
+
 
 // prototypes
 void neorv32_rte_setup(void);
