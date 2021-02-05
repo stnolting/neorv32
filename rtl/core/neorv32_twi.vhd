@@ -7,7 +7,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -60,7 +60,7 @@ entity neorv32_twi is
     twi_sda_io  : inout std_logic; -- serial data line
     twi_scl_io  : inout std_logic; -- serial clock line
     -- interrupt --
-    twi_irq_o   : out std_ulogic -- transfer done IRQ
+    irq_o       : out std_ulogic -- transfer done IRQ
   );
 end neorv32_twi;
 
@@ -74,12 +74,11 @@ architecture neorv32_twi_rtl of neorv32_twi is
   constant ctrl_twi_en_c     : natural := 0; -- r/w: TWI enable
   constant ctrl_twi_start_c  : natural := 1; -- -/w: Generate START condition
   constant ctrl_twi_stop_c   : natural := 2; -- -/w: Generate STOP condition
-  constant ctrl_twi_irq_en_c : natural := 3; -- r/w: Enable transmission done interrupt
-  constant ctrl_twi_prsc0_c  : natural := 4; -- r/w: CLK prsc bit 0
-  constant ctrl_twi_prsc1_c  : natural := 5; -- r/w: CLK prsc bit 1
-  constant ctrl_twi_prsc2_c  : natural := 6; -- r/w: CLK prsc bit 2
-  constant ctrl_twi_mack_c   : natural := 7; -- r/w: generate ACK by controller for transmission
-  constant ctrl_twi_cksten_c : natural := 8; -- r/w: enable clock stretching by peripheral
+  constant ctrl_twi_prsc0_c  : natural := 3; -- r/w: CLK prsc bit 0
+  constant ctrl_twi_prsc1_c  : natural := 4; -- r/w: CLK prsc bit 1
+  constant ctrl_twi_prsc2_c  : natural := 5; -- r/w: CLK prsc bit 2
+  constant ctrl_twi_mack_c   : natural := 6; -- r/w: generate ACK by controller for transmission
+  constant ctrl_twi_cksten_c : natural := 7; -- r/w: enable clock stretching by peripheral
   --
   constant ctrl_twi_ack_c    : natural := 30; -- r/-: Set if ACK received
   constant ctrl_twi_busy_c   : natural := 31; -- r/-: Set if TWI unit is busy
@@ -99,7 +98,7 @@ architecture neorv32_twi_rtl of neorv32_twi is
   signal twi_clk_halt : std_ulogic;
 
   -- twi transceiver core --
-  signal ctrl         : std_ulogic_vector(8 downto 0); -- unit's control register
+  signal ctrl         : std_ulogic_vector(7 downto 0); -- unit's control register
   signal arbiter      : std_ulogic_vector(2 downto 0);
   signal twi_bitcnt   : std_ulogic_vector(3 downto 0);
   signal twi_rtx_sreg : std_ulogic_vector(8 downto 0); -- main rx/tx shift reg
@@ -137,7 +136,6 @@ begin
       if (rd_en = '1') then
         if (addr = twi_ctrl_addr_c) then
           data_o(ctrl_twi_en_c)     <= ctrl(ctrl_twi_en_c);
-          data_o(ctrl_twi_irq_en_c) <= ctrl(ctrl_twi_irq_en_c);
           data_o(ctrl_twi_prsc0_c)  <= ctrl(ctrl_twi_prsc0_c);
           data_o(ctrl_twi_prsc1_c)  <= ctrl(ctrl_twi_prsc1_c);
           data_o(ctrl_twi_prsc2_c)  <= ctrl(ctrl_twi_prsc2_c);
@@ -193,7 +191,7 @@ begin
       twi_scl_i_ff1 <= twi_scl_i_ff0;
 
       -- defaults --
-      twi_irq_o  <= '0';
+      irq_o      <= '0';
       arbiter(2) <= ctrl(ctrl_twi_en_c); -- still activated?
 
       -- serial engine --
@@ -259,7 +257,7 @@ begin
 
           if (twi_bitcnt = "1010") then -- 8 data bits + 1 bit for ACK + 1 tick delay
             arbiter(1 downto 0) <= "00"; -- go back to IDLE
-            twi_irq_o <= ctrl(ctrl_twi_irq_en_c); -- fire IRQ if enabled
+            irq_o <= '1'; -- fire IRQ
           end if;
 
         when others => -- "0--" OFFLINE: TWI deactivated

@@ -15,7 +15,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -69,7 +69,8 @@ entity neorv32_uart is
     uart_txd_o  : out std_ulogic;
     uart_rxd_i  : in  std_ulogic;
     -- interrupts --
-    uart_irq_o  : out std_ulogic  -- uart rx/tx interrupt
+    irq_rxd_o   : out std_ulogic; -- uart data received interrupt
+    irq_txd_o   : out std_ulogic  -- uart transmission done interrupt
   );
 end neorv32_uart;
 
@@ -111,8 +112,6 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant ctrl_uart_prsc2_c   : natural := 26; -- r/w: UART baud prsc bit 2
   --
   constant ctrl_uart_en_c      : natural := 28; -- r/w: UART enable
-  constant ctrl_uart_rx_irq_c  : natural := 29; -- r/w: UART rx done interrupt enable
-  constant ctrl_uart_tx_irq_c  : natural := 30; -- r/w: UART tx done interrupt enable
   constant ctrl_uart_tx_busy_c : natural := 31; -- r/-: UART transmitter is busy
 
   -- data register flags --
@@ -183,8 +182,6 @@ begin
           ctrl(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c) <= data_i(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c);
           ctrl(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c)  <= data_i(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c);
           ctrl(ctrl_uart_en_c)                               <= data_i(ctrl_uart_en_c);
-          ctrl(ctrl_uart_rx_irq_c)                           <= data_i(ctrl_uart_rx_irq_c);
-          ctrl(ctrl_uart_tx_irq_c)                           <= data_i(ctrl_uart_tx_irq_c);
         end if;
       end if;
       -- read access --
@@ -196,8 +193,6 @@ begin
           data_o(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c) <= ctrl(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c);
           data_o(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c)  <= ctrl(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c);
           data_o(ctrl_uart_en_c)                               <= ctrl(ctrl_uart_en_c);
-          data_o(ctrl_uart_rx_irq_c)                           <= ctrl(ctrl_uart_rx_irq_c);
-          data_o(ctrl_uart_tx_irq_c)                           <= ctrl(ctrl_uart_tx_irq_c);
           data_o(ctrl_uart_tx_busy_c)                          <= uart_tx.busy;
         else -- uart_rtx_addr_c
           data_o(data_rx_avail_c) <= uart_rx.avail(0);
@@ -317,8 +312,10 @@ begin
 
   -- Interrupt ------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- UART Rx data available [OR] UART Tx complete
-  uart_irq_o <= (uart_rx.busy_ff and (not uart_rx.busy) and ctrl(ctrl_uart_rx_irq_c)) or (uart_tx.done and ctrl(ctrl_uart_tx_irq_c));
+  -- UART Rx data available
+  irq_rxd_o <= uart_rx.busy_ff and (not uart_rx.busy);
+  -- UART Tx complete
+  irq_txd_o <= uart_tx.done;
 
 
   -- SIMULATION Output ----------------------------------------------------------------------
