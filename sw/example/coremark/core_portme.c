@@ -151,7 +151,7 @@ portable_init(core_portable *p, int *argc, char *argv[])
   /* NEORV32-specific */
   neorv32_cpu_dint(); // no interrupt, thanks
   neorv32_rte_setup(); // capture all exceptions and give debug information
-  neorv32_uart_setup(BAUD_RATE, 0b00, 0, 0); // init UART at default baud rate, no parity bits, no rx interrupt, no tx interrupt
+  neorv32_uart_setup(BAUD_RATE, 0b00); // init UART at default baud rate, no parity bits
 
 
 // Disable coremark compilation by default
