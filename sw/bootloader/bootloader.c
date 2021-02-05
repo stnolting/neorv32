@@ -204,12 +204,12 @@ int main(void) {
   // get clock speed (in Hz)
   uint32_t clock_speed = SYSINFO_CLK;
 
-  // init SPI for 8-bit, clock-mode 0, no interrupt
+  // init SPI for 8-bit, clock-mode 0
   if (clock_speed < 40000000) {
-    neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0);
+    neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0);
   }
   else {
-    neorv32_spi_setup(CLK_PRSC_128, 0, 0, 0);
+    neorv32_spi_setup(CLK_PRSC_128, 0, 0);
   }
 
   if (STATUS_LED_EN == 1) {
@@ -217,8 +217,8 @@ int main(void) {
     neorv32_gpio_port_set(1 << STATUS_LED);
   }
 
-  // init UART (no parity bit, no interrupts)
-  neorv32_uart_setup(BAUD_RATE, 0, 0, 0);
+  // init UART (no parity bit)
+  neorv32_uart_setup(BAUD_RATE, 0);
 
   // Configure machine system timer interrupt for ~2Hz
   neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (clock_speed/4));
