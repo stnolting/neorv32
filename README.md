@@ -67,7 +67,7 @@ To see the changes between releases visit the project's [release page](https://g
   * bootloader with UART interface console
   * runtime environment
   * several example programs
-  * [doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) documentation: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
+  * [doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/doxygen_makefile_sw) software documentation: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
   * [FreeRTOS port](https://github.com/stnolting/neorv32/blob/master/sw/example/demo_freeRTOS) available
 * [**Full-blown data sheet**](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf)
 * Completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
