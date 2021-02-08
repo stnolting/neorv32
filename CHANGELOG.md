@@ -14,6 +14,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 08.02.2021 | 1.5.1.2 | added new peripheral/IO module: **Numerically-Controlled Oscillator `NCO`**: three independent channels, 20-bit phase accu, 20-bit tuning word, fixed 50% duty cycle mode / pulsed mode; added according HW driver and example program |
 | 07.02.2021 | [**:rocket:1.5.1.0**](https://github.com/stnolting/neorv32/releases/tag/v1.5.1.0) | **New release** |
 | 05.02.2021 | 1.5.0.11 | :bug: fixed error in atomic instruction `LR.W` |
 | 05.02.2021 | 1.5.0.10 | CPU now provides 16 fast interrupt request lines (`FIRQ0 .. FIRQ15`) with according `mie`/`mip` CSR bits and `mcause` trap codes; removed IRQ enable flags from SPI, UART & TWI; reworked processor-internal interrupt system - assignment/priority list; UART now features individual IRQs for "RX-done" and "TX-done" conditions; changed bit order in TWI control register |
