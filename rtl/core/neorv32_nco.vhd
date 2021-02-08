@@ -272,12 +272,14 @@ begin
       for i in 0 to num_channels_c-1 loop
         -- phase accu trigger -> edge detector --
         nco.pulse_trig_ff(i) <= nco.trigger(i);
+
         -- pulse counter --
         if (nco.enable = '0') or (nco.mode(i) = '0') or (nco.pulse_trig(i) = '1') then -- disabled or reset
           nco.pulse_cnt(i) <= (others => '0');
         elsif (nco.clk_tick(i) = '1') then 
           nco.pulse_cnt(i) <= std_ulogic_vector(unsigned(nco.pulse_cnt(i)) + 1);
         end if;
+
         -- pulse generator --
         if (nco.enable = '0') or (nco.mode(i) = '0') then
           nco.pulse_out(i) <= '0';
@@ -315,6 +317,7 @@ begin
         else
           nco.output(i) <= nco.idle_pol(i); -- use *inactive* polarity configuration when disabled
         end if;
+
         -- output to physical pin --
         nco_o(i) <= nco.output(i) and nco.output_en(i);
       end loop; -- i
