@@ -149,6 +149,7 @@ is highly customizable via the processor's top generics and already provides the
 * PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
 * ring-oscillator-based true random number generator (**TRNG**)
 * custom functions subsystem (**CFS**) for tightly-coupled custom co-processor extensions
+* numerically-controlled oscillator (**NCO**) with three independent channels
 * system configuration information memory to check hardware configuration by software (**SYSINFO**, mandatory - not *optional*)
 
 
@@ -315,7 +316,7 @@ Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utiliz
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version [`1.5.0.3`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.5.1.2`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
@@ -327,6 +328,7 @@ Results generated for hardware version [`1.5.0.3`](https://github.com/stnolting/
 | GPIO      | General purpose input/output ports                   |  67 |  65 |           0 |    0 |
 | IMEM      | Processor-internal instruction memory (default 16kb) |   6 |   2 |     131 072 |    0 |
 | MTIME     | Machine system timer                                 | 274 | 166 |           0 |    0 |
+| NCO       | Numerically-controlled oscillator                    | 254 | 226 |           0 |    0 |
 | PWM       | Pulse-width modulation controller                    |  71 |  69 |           0 |    0 |
 | SPI       | Serial peripheral interface                          | 138 | 124 |           0 |    0 |
 | SYSINFO   | System configuration information memory              |  11 |  10 |           0 |    0 |
