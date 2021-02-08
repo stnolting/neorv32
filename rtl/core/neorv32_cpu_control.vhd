@@ -296,9 +296,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     priv_u_mode       : std_ulogic; -- CPU in u-mode
     --
     mepc              : std_ulogic_vector(data_width_c-1 downto 0); -- mepc: machine exception pc (R/W)
-    mcause            : std_ulogic_vector(data_width_c-1 downto 0); -- mcause: machine trap cause (R/W)
+    mcause            : std_ulogic_vector(5 downto 0); -- mcause: machine trap cause (R/W)
     mtvec             : std_ulogic_vector(data_width_c-1 downto 0); -- mtvec: machine trap-handler base address (R/W), bit 1:0 == 00
-    mtval             : std_ulogic_vector(data_width_c-1 downto 0); -- mtval: machine bad address or isntruction (R/W)
+    mtval             : std_ulogic_vector(data_width_c-1 downto 0); -- mtval: machine bad address or instruction (R/W)
     --
     mhpmevent         : mhpmevent_t; -- mhpmevent*: machine performance-monitoring event selector (R/W)
     mhpmevent_rd      : mhpmevent_rd_t; -- mhpmevent*: actual read data
@@ -791,7 +791,7 @@ begin
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- RORI
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and (execute_engine.i_reg(instr_imm12_lsb_c+6 downto instr_imm12_lsb_c) = "0000111")) or -- GORCI.b 7 (orc.b)
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and (execute_engine.i_reg(instr_imm12_lsb_c+6 downto instr_imm12_lsb_c) = "0011000")) then -- GREVI.-8 (rev8)
-      decode_aux.is_bitmanip_imm <= '1';
+      decode_aux.is_bitmanip_imm <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);
     end if;
     -- register operation --
     if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.i_reg(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- ROR / ROL
@@ -804,7 +804,7 @@ begin
          (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")    -- XORN
          )
         ) then
-      decode_aux.is_bitmanip_reg <= '1';
+      decode_aux.is_bitmanip_reg <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);
     end if;
   end process decode_helper;
 
@@ -1871,9 +1871,7 @@ begin
       csr.mscratch     <= x"19880704"; -- :)
       csr.mepc         <= (others => '0');
       -- mcause = TRAP_CODE_RESET (hardware reset, "non-maskable interrupt")
-      csr.mcause                               <= (others => '0');
-      csr.mcause(csr.mcause'left)              <= trap_reset_c(trap_reset_c'left);
-      csr.mcause(trap_reset_c'left-1 downto 0) <= trap_reset_c(trap_reset_c'left-1 downto 0);
+      csr.mcause    <= trap_reset_c;
       --
       csr.mtval     <= (others => '0');
       csr.mip_clear <= (others => '0');
@@ -1938,7 +1936,6 @@ begin
             when csr_mepc_c => -- R/W: mepc - machine exception program counter
               csr.mepc <= csr.wdata(data_width_c-1 downto 1) & '0';
             when csr_mcause_c => -- R/W: mcause - machine trap cause
-              csr.mcause <= (others => '0');
               csr.mcause(csr.mcause'left) <= csr.wdata(31); -- 1: interrupt, 0: exception
               csr.mcause(4 downto 0)      <= csr.wdata(4 downto 0); -- identifier
             when csr_mtval_c => -- R/W: mtval - machine bad address/instruction
@@ -1955,20 +1952,24 @@ begin
             -- --------------------------------------------------------------------
             when csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c  | csr_pmpcfg3_c  | csr_pmpcfg4_c  | csr_pmpcfg5_c  | csr_pmpcfg6_c  | csr_pmpcfg7_c |
                  csr_pmpcfg8_c | csr_pmpcfg9_c | csr_pmpcfg10_c | csr_pmpcfg11_c | csr_pmpcfg12_c | csr_pmpcfg13_c | csr_pmpcfg14_c | csr_pmpcfg15_c =>
-              for i in 0 to PMP_NUM_REGIONS-1 loop
-                if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
-                  if (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpcfg access
-                    csr.pmpcfg(i)(0) <= csr.wdata((i mod 4)*8+0); -- R (rights.read)
-                    csr.pmpcfg(i)(1) <= csr.wdata((i mod 4)*8+1); -- W (rights.write)
-                    csr.pmpcfg(i)(2) <= csr.wdata((i mod 4)*8+2); -- X (rights.execute)
-                    csr.pmpcfg(i)(3) <= csr.wdata((i mod 4)*8+3) and csr.wdata((i mod 4)*8+4); -- A_L
-                    csr.pmpcfg(i)(4) <= csr.wdata((i mod 4)*8+3) and csr.wdata((i mod 4)*8+4); -- A_H - NAPOT/OFF only
-                    csr.pmpcfg(i)(5) <= '0'; -- reserved
-                    csr.pmpcfg(i)(6) <= '0'; -- reserved
-                    csr.pmpcfg(i)(7) <= csr.wdata((i mod 4)*8+7); -- L (locked / rights also enforced in m-mode)
+              if (PMP_NUM_REGIONS > 0) then
+                for i in 0 to PMP_NUM_REGIONS-1 loop
+                  if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
+                    if (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpcfg access
+                      csr.pmpcfg(i)(0) <= csr.wdata((i mod 4)*8+0); -- R (rights.read)
+                      csr.pmpcfg(i)(1) <= csr.wdata((i mod 4)*8+1); -- W (rights.write)
+                      csr.pmpcfg(i)(2) <= csr.wdata((i mod 4)*8+2); -- X (rights.execute)
+                      csr.pmpcfg(i)(3) <= csr.wdata((i mod 4)*8+3) and csr.wdata((i mod 4)*8+4); -- A_L
+                      csr.pmpcfg(i)(4) <= csr.wdata((i mod 4)*8+3) and csr.wdata((i mod 4)*8+4); -- A_H - NAPOT/OFF only
+                      csr.pmpcfg(i)(5) <= '0'; -- reserved
+                      csr.pmpcfg(i)(6) <= '0'; -- reserved
+                      csr.pmpcfg(i)(7) <= csr.wdata((i mod 4)*8+7); -- L (locked / rights also enforced in m-mode)
+                    end if;
                   end if;
-                end if;
-              end loop; -- i (PMP regions)
+                end loop; -- i (PMP regions)
+              else
+                NULL;
+              end if;
 
             -- physical memory protection: R/W: pmpaddr* - PMP address registers --
             -- --------------------------------------------------------------------
@@ -1980,13 +1981,17 @@ begin
                  csr_pmpaddr40_c | csr_pmpaddr41_c | csr_pmpaddr42_c | csr_pmpaddr43_c | csr_pmpaddr44_c | csr_pmpaddr45_c | csr_pmpaddr46_c | csr_pmpaddr47_c |
                  csr_pmpaddr48_c | csr_pmpaddr49_c | csr_pmpaddr50_c | csr_pmpaddr51_c | csr_pmpaddr52_c | csr_pmpaddr53_c | csr_pmpaddr54_c | csr_pmpaddr55_c |
                  csr_pmpaddr56_c | csr_pmpaddr57_c | csr_pmpaddr58_c | csr_pmpaddr59_c | csr_pmpaddr60_c | csr_pmpaddr61_c | csr_pmpaddr62_c | csr_pmpaddr63_c =>
-              for i in 0 to PMP_NUM_REGIONS-1 loop
-                pmpaddr_v := std_ulogic_vector(unsigned(csr_pmpaddr0_c(6 downto 0)) + i); -- adapt to *non-aligned* base address (csr_pmpaddr0_c)
-                if (csr.addr(6 downto 0) = pmpaddr_v) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
-                  csr.pmpaddr(i) <= csr.wdata;
-                  csr.pmpaddr(i)(index_size_f(PMP_MIN_GRANULARITY)-4 downto 0) <= (others => '1');
-                end if;
-              end loop; -- i (PMP regions)
+              if (PMP_NUM_REGIONS > 0) then
+                for i in 0 to PMP_NUM_REGIONS-1 loop
+                  pmpaddr_v := std_ulogic_vector(unsigned(csr_pmpaddr0_c(6 downto 0)) + i); -- adapt to *non-aligned* base address (csr_pmpaddr0_c)
+                  if (csr.addr(6 downto 0) = pmpaddr_v) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
+                    csr.pmpaddr(i) <= csr.wdata;
+                    csr.pmpaddr(i)(index_size_f(PMP_MIN_GRANULARITY)-4 downto 0) <= (others => '1');
+                  end if;
+                end loop; -- i (PMP regions)
+              else
+                NULL;
+              end if;
 
             -- machine counter setup --
             -- --------------------------------------------------------------------
@@ -2002,12 +2007,16 @@ begin
                  csr_mhpmevent15_c | csr_mhpmevent16_c | csr_mhpmevent17_c | csr_mhpmevent18_c | csr_mhpmevent19_c | csr_mhpmevent20_c |
                  csr_mhpmevent21_c | csr_mhpmevent22_c | csr_mhpmevent23_c | csr_mhpmevent24_c | csr_mhpmevent25_c | csr_mhpmevent26_c |
                  csr_mhpmevent27_c | csr_mhpmevent28_c | csr_mhpmevent29_c | csr_mhpmevent30_c | csr_mhpmevent31_c => -- R/W: mhpmevent* - machine performance-monitoring event selector
-              for i in 0 to HPM_NUM_CNTS-1 loop
-                if (csr.addr(4 downto 0) = std_ulogic_vector(to_unsigned(i+3, 5))) then
-                  csr.mhpmevent(i) <= csr.wdata(csr.mhpmevent(i)'left downto 0);
-                  csr.mhpmevent(i)(1) <= '0'; -- would be used for "TIME"
-                end if;
-              end loop; -- i (CSRs)
+              if (HPM_NUM_CNTS > 0) then
+                for i in 0 to HPM_NUM_CNTS-1 loop
+                  if (csr.addr(4 downto 0) = std_ulogic_vector(to_unsigned(i+3, 5))) then
+                    csr.mhpmevent(i) <= csr.wdata(csr.mhpmevent(i)'left downto 0);
+                    csr.mhpmevent(i)(1) <= '0'; -- would be used for "TIME"
+                  end if;
+                end loop; -- i (CSRs)
+              else
+                NULL;
+              end if;
 
             -- undefined --
             -- --------------------------------------------------------------------
@@ -2025,7 +2034,6 @@ begin
           -- --------------------------------------------------------------------
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
             -- trap cause ID code --
-            csr.mcause <= (others => '0');
             csr.mcause(csr.mcause'left) <= trap_ctrl.cause(trap_ctrl.cause'left); -- 1: interrupt, 0: exception
             csr.mcause(4 downto 0)      <= trap_ctrl.cause(4 downto 0); -- identifier
             -- trap PC --
@@ -2274,7 +2282,8 @@ begin
           when csr_mepc_c => -- R/W: mepc - machine exception program counter
             csr.rdata <= csr.mepc(data_width_c-1 downto 1) & '0';
           when csr_mcause_c => -- R/W: mcause - machine trap cause
-            csr.rdata <= csr.mcause;
+            csr.rdata(31) <= csr.mcause(csr.mcause'left);
+            csr.rdata(csr.mcause'left-1 downto 0) <= csr.mcause(csr.mcause'left-1 downto 0);
           when csr_mtval_c => -- R/W: mtval - machine bad address or instruction
             csr.rdata <= csr.mtval;
           when csr_mip_c => -- R/W: mip - machine interrupt pending
