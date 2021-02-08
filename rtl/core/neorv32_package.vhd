@@ -60,7 +60,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050100"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050102"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -187,9 +187,17 @@ package neorv32_package is
   constant pwm_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFB8";
   constant pwm_duty_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFBC";
 
+  -- Numerically-Controlled Oscillator (NCO) --
+  constant nco_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0"; -- base address
+  constant nco_size_c           : natural := 4*4; -- module's address space in bytes
+  constant nco_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0";
+  constant nco_ch0_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC4";
+  constant nco_ch1_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC8";
+  constant nco_ch2_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFCC";
+
   -- reserved --
---constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC0"; -- base address
---constant reserved_size_c      : natural := 8*4; -- module's address space in bytes
+--constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD0"; -- base address
+--constant reserved_size_c      : natural := 4*4; -- module's address space in bytes
 
   -- System Information Memory (SYSINFO) --
   constant sysinfo_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFE0"; -- base address
@@ -836,13 +844,14 @@ package neorv32_package is
       IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
       IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
-      IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := (others => '0') -- custom CFS configuration generic
+      IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := (others => '0'); -- custom CFS configuration generic
+      IO_NCO_EN                    : boolean := true    -- implement numerically-controlled oscillator (NCO)?
     );
     port (
       -- Global control --
       clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
       rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
-      -- Wishbone bus interface --
+      -- Wishbone bus interface (available if MEM_EXT_EN = true) --
       wb_tag_o    : out std_ulogic_vector(02 downto 0); -- tag
       wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
       wb_dat_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
@@ -857,25 +866,27 @@ package neorv32_package is
       -- Advanced memory control signals (available if MEM_EXT_EN = true) --
       fence_o     : out std_ulogic; -- indicates an executed FENCE operation
       fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
-      -- GPIO --
+      -- GPIO (available if IO_GPIO_EN = true) --
       gpio_o      : out std_ulogic_vector(31 downto 0); -- parallel output
       gpio_i      : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
-      -- UART --
+      -- UART (available if IO_UART_EN = true) --
       uart_txd_o  : out std_ulogic; -- UART send data
       uart_rxd_i  : in  std_ulogic := '0'; -- UART receive data
-      -- SPI --
+      -- SPI (available if IO_SPI_EN = true) --
       spi_sck_o   : out std_ulogic; -- SPI serial clock
       spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
       spi_sdi_i   : in  std_ulogic := '0'; -- controller data in, peripheral data out
       spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
-      -- TWI --
+      -- TWI (available if IO_TWI_EN = true) --
       twi_sda_io  : inout std_logic; -- twi serial data line
       twi_scl_io  : inout std_logic; -- twi serial clock line
-      -- PWM --
+      -- PWM (available if IO_PWM_EN = true) --
       pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
       -- Custom Functions Subsystem IO --
       cfs_in_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- custom CSF inputs
       cfs_out_o   : out std_ulogic_vector(31 downto 0); -- custom CSF outputs
+      -- NCO output (available if IO_NCO_EN = true) --
+      nco_o       : out std_ulogic_vector(02 downto 0); -- numerically-controlled oscillator channels
       -- system time input from external MTIME (available if IO_MTIME_EN = false) --
       mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
       -- Interrupts --
@@ -1580,6 +1591,26 @@ package neorv32_package is
     );
   end component;
 
+  -- Component: Numerically-Controlled Oscillator (NCO) -------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_nco
+    port (
+      -- host access --
+      clk_i       : in  std_ulogic; -- global clock line
+      addr_i      : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i      : in  std_ulogic; -- read enable
+      wren_i      : in  std_ulogic; -- write enable
+      data_i      : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o      : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o       : out std_ulogic; -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o : out std_ulogic; -- enable clock generator
+      clkgen_i    : in  std_ulogic_vector(07 downto 0);
+      -- NCO output --
+      nco_o       : out std_ulogic_vector(02 downto 0)
+    );
+  end component;
+
   -- Component: System Configuration Information Memory (SYSINFO) ---------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_sysinfo
@@ -1611,7 +1642,8 @@ package neorv32_package is
       IO_PWM_EN            : boolean := true;   -- implement pulse-width modulation unit (PWM)?
       IO_WDT_EN            : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_EN           : boolean := true;   -- implement true random number generator (TRNG)?
-      IO_CFS_EN            : boolean := true    -- implement custom functions subsystem (CFS)?
+      IO_CFS_EN            : boolean := true;   -- implement custom functions subsystem (CFS)?
+      IO_NCO_EN            : boolean := true    -- implement numerically-controlled oscillator (NCO)?
     );
     port (
       -- host access --

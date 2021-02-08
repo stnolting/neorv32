@@ -93,7 +93,8 @@ entity neorv32_top is
     IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
     IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := (others => '0') -- custom CFS configuration generic
+    IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := (others => '0'); -- custom CFS configuration generic
+    IO_NCO_EN                    : boolean := true    -- implement numerically-controlled oscillator (NCO)?
   );
   port (
     -- Global control --
@@ -133,6 +134,8 @@ entity neorv32_top is
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- custom CFS inputs conduit
     cfs_out_o   : out std_ulogic_vector(31 downto 0); -- custom CFS outputs conduit
+    -- NCO output (available if IO_NCO_EN = true) --
+    nco_o       : out std_ulogic_vector(02 downto 0); -- numerically-controlled oscillator channels
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
     -- Interrupts --
@@ -176,6 +179,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal twi_cg_en  : std_ulogic;
   signal pwm_cg_en  : std_ulogic;
   signal cfs_cg_en  : std_ulogic;
+  signal nco_cg_en  : std_ulogic;
 
   -- bus interface --
   type bus_interface_t is record
@@ -229,6 +233,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cfs_rdata      : std_ulogic_vector(data_width_c-1 downto 0);
   signal cfs_err        : std_ulogic;
   signal cfs_ack        : std_ulogic;
+  signal nco_rdata      : std_ulogic_vector(data_width_c-1 downto 0);
+  signal nco_ack        : std_ulogic;
   signal sysinfo_rdata  : std_ulogic_vector(data_width_c-1 downto 0);
   signal sysinfo_ack    : std_ulogic;
 
@@ -315,7 +321,7 @@ begin
       clk_div_ff <= (others => '0');
     elsif rising_edge(clk_i) then
       -- fresh clocks anyone? --
-      if ((wdt_cg_en or uart_cg_en or spi_cg_en or twi_cg_en or pwm_cg_en or cfs_cg_en) = '1') then
+      if ((wdt_cg_en or uart_cg_en or spi_cg_en or twi_cg_en or pwm_cg_en or cfs_cg_en or nco_cg_en) = '1') then
         clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
       end if;
       clk_div_ff <= clk_div;
@@ -540,15 +546,15 @@ begin
     p_bus_err_i     => p_bus.err       -- bus transfer error
   );
 
-  -- processor bus: CPU data input --
+  -- processor bus: CPU transfer data input --
   p_bus.rdata <= (imem_rdata or dmem_rdata or bootrom_rdata) or wishbone_rdata or (gpio_rdata or mtime_rdata or uart_rdata or
-                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or cfs_rdata or sysinfo_rdata);
+                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or cfs_rdata or nco_rdata or sysinfo_rdata);
 
-  -- processor bus: CPU data ACK input --
+  -- processor bus: CPU transfer ACK input --
   p_bus.ack <= (imem_ack or dmem_ack or bootrom_ack) or wishbone_ack or (gpio_ack or mtime_ack or uart_ack or
-               spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or cfs_ack or sysinfo_ack);
+               spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or cfs_ack or nco_ack or sysinfo_ack);
 
-  -- processor bus: CPU data bus error input --
+  -- processor bus: CPU transfer data bus error input --
   p_bus.err <= wishbone_err or cfs_err;
 
   -- current CPU privilege level --
@@ -992,6 +998,37 @@ begin
   end generate;
 
 
+  -- Numerically-Controlled Oscillator (NCO) ------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_nco_inst_true:
+  if (IO_NCO_EN = true) generate
+    neorv32_nco_inst: neorv32_nco
+    port map (
+      -- host access --
+      clk_i       => clk_i,       -- global clock line
+      addr_i      => p_bus.addr,  -- address
+      rden_i      => io_rden,     -- read enable
+      wren_i      => io_wren,     -- write enable
+      data_i      => p_bus.wdata, -- data in
+      data_o      => nco_rdata,   -- data out
+      ack_o       => nco_ack,     -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o => nco_cg_en,   -- enable clock generator
+      clkgen_i    => clk_gen,
+      -- NCO output --
+      nco_o       => nco_o
+    );
+  end generate;
+
+  neorv32_nco_inst_false:
+  if (IO_NCO_EN = false) generate
+    nco_rdata <= (others => '0');
+    nco_ack   <= '0';
+    nco_cg_en <= '0';
+    nco_o     <= (others => '0');
+  end generate;
+
+
   -- True Random Number Generator (TRNG) ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_trng_inst_true:
@@ -1047,7 +1084,8 @@ begin
     IO_PWM_EN            => IO_PWM_EN,            -- implement pulse-width modulation unit (PWM)?
     IO_WDT_EN            => IO_WDT_EN,            -- implement watch dog timer (WDT)?
     IO_TRNG_EN           => IO_TRNG_EN,           -- implement true random number generator (TRNG)?
-    IO_CFS_EN            => IO_CFS_EN             -- implement custom functions subsystem (CFS)?
+    IO_CFS_EN            => IO_CFS_EN,            -- implement custom functions subsystem (CFS)?
+    IO_NCO_EN            => IO_NCO_EN             -- implement numerically-controlled oscillator (NCO)?
   )
   port map (
     -- host access --
