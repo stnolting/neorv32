@@ -114,13 +114,14 @@ begin
     IO_WDT_EN                    => true,        -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   => false,       -- implement true random number generator (TRNG)?
     IO_CFS_EN                    => false,       -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                => (others => '0') -- custom CFS configuration generic
+    IO_CFS_CONFIG                => (others => '0'), -- custom CFS configuration generic
+    IO_NCO_EN                    => false        -- implement numerically-controlled oscillator (NCO)?
   )
   port map (
     -- Global control --
     clk_i       => clk_i,           -- global clock, rising edge
     rstn_i      => rstn_i,          -- global reset, low-active, async
-    -- Wishbone bus interface --
+    -- Wishbone bus interface (available if MEM_EXT_EN = true) --
     wb_tag_o    => open,            -- tag
     wb_adr_o    => open,            -- address
     wb_dat_i    => (others => '0'), -- read data
@@ -132,28 +133,30 @@ begin
     wb_lock_o   => open,            -- locked/exclusive bus access
     wb_ack_i    => '0',             -- transfer acknowledge
     wb_err_i    => '0',             -- transfer error
-    -- Advanced memory control signals --
+    -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o     => open,            -- indicates an executed FENCE operation
     fencei_o    => open,            -- indicates an executed FENCEI operation
-    -- GPIO --
+    -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      => gpio_out,        -- parallel output
     gpio_i      => (others => '0'), -- parallel input
-    -- UART --
+    -- UART (available if IO_UART_EN = true) --
     uart_txd_o  => uart_txd_o,      -- UART send data
     uart_rxd_i  => uart_rxd_i,      -- UART receive data
-    -- SPI --
+    -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   => open,            -- SPI serial clock
     spi_sdo_o   => open,            -- controller data out, peripheral data in
     spi_sdi_i   => '0',             -- controller data in, peripheral data out
     spi_csn_o   => open,            -- SPI CS
-    -- TWI --
+    -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  => open,            -- twi serial data line
     twi_scl_io  => open,            -- twi serial clock line
-    -- PWM --
+    -- PWM (available if IO_PWM_EN = true) --
     pwm_o       => open,            -- pwm channels
     -- Custom Functions Subsystem IO --
     cfs_in_i    => (others => '0'), -- custom inputs
     cfs_out_o   => open,            -- custom outputs
+    -- NCO output (available if IO_NCO_EN = true) --
+    nco_o       => open,            -- numerically-controlled oscillator channels
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     => (others => '0'), -- current system time
     -- Interrupts --

@@ -87,7 +87,8 @@ entity neorv32_top_axi4lite is
     IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
     IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                : std_logic_vector(31 downto 0) := (others => '0') -- custom CFS configuration generic
+    IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := (others => '0'); -- custom CFS configuration generic
+    IO_NCO_EN                    : boolean := true    -- implement numerically-controlled oscillator (NCO)?
   );
   port (
     -- AXI Lite-Compatible Master Interface --
@@ -119,25 +120,27 @@ entity neorv32_top_axi4lite is
     m_axi_bvalid  : in  std_logic;
     m_axi_bready  : out std_logic;
     -- ------------------------------------------------------------
-    -- GPIO --
+    -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      : out std_logic_vector(31 downto 0); -- parallel output
     gpio_i      : in  std_logic_vector(31 downto 0) := (others => '0'); -- parallel input
-    -- UART --
+    -- UART (available if IO_UART_EN = true) --
     uart_txd_o  : out std_logic; -- UART send data
     uart_rxd_i  : in  std_logic := '0'; -- UART receive data
-    -- SPI --
+    -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   : out std_logic; -- SPI serial clock
     spi_sdo_o   : out std_logic; -- controller data out, peripheral data in
     spi_sdi_i   : in  std_logic := '0'; -- controller data in, peripheral data out
     spi_csn_o   : out std_logic_vector(07 downto 0); -- SPI CS
-    -- TWI --
+    -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  : inout std_logic; -- twi serial data line
     twi_scl_io  : inout std_logic; -- twi serial clock line
-    -- PWM --
+    -- PWM (available if IO_PWM_EN = true) --
     pwm_o       : out std_logic_vector(03 downto 0);  -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i    : in  std_logic_vector(31 downto 0); -- custom inputs
     cfs_out_o   : out std_logic_vector(31 downto 0); -- custom outputs
+    -- NCO output (available if IO_NCO_EN = true) --
+    nco_o       : out std_logic_vector(02 downto 0); -- numerically-controlled oscillator channels
     -- Interrupts --
     soc_firq_i  : in  std_logic_vector(7 downto 0) := (others => '0'); -- fast interrupt channels
     mtime_irq_i : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
@@ -171,6 +174,8 @@ architecture neorv32_top_axi4lite_rtl of neorv32_top_axi4lite is
   --
   signal cfs_in_i_int    : std_ulogic_vector(31 downto 0);
   signal cfs_out_o_int   : std_ulogic_vector(31 downto 0);
+  --
+  signal nco_o_int       : std_ulogic_vector(02 downto 0);
   --
   signal soc_firq_i_int  : std_ulogic_vector(7 downto 0);
   signal mtime_irq_i_int : std_ulogic;
@@ -261,13 +266,14 @@ begin
     IO_WDT_EN                    => IO_WDT_EN,          -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   => IO_TRNG_EN,         -- implement true random number generator (TRNG)?
     IO_CFS_EN                    => IO_CFS_EN,          -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                => IO_CFS_CONFIG_INT   -- custom CFS configuration generic
+    IO_CFS_CONFIG                => IO_CFS_CONFIG_INT,  -- custom CFS configuration generic
+    IO_NCO_EN                    => IO_NCO_EN           -- implement numerically-controlled oscillator (NCO)?
   )
   port map (
     -- Global control --
     clk_i       => clk_i_int,       -- global clock, rising edge
     rstn_i      => rstn_i_int,      -- global reset, low-active, async
-    -- Wishbone bus interface --
+    -- Wishbone bus interface (available if MEM_EXT_EN = true) --
     wb_tag_o    => wb_core.tag,     -- tag
     wb_adr_o    => wb_core.adr,     -- address
     wb_dat_i    => wb_core.di,      -- read data
@@ -279,28 +285,30 @@ begin
     wb_lock_o   => open,            -- locked/exclusive bus access
     wb_ack_i    => wb_core.ack,     -- transfer acknowledge
     wb_err_i    => wb_core.err,     -- transfer error
-    -- Advanced memory control signals --
+    -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o     => open,            -- indicates an executed FENCE operation
     fencei_o    => open,            -- indicates an executed FENCEI operation
-    -- GPIO --
+    -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      => gpio_o_int,      -- parallel output
     gpio_i      => gpio_i_int,      -- parallel input
-    -- UART --
+    -- UART (available if IO_UART_EN = true) --
     uart_txd_o  => uart_txd_o_int,  -- UART send data
     uart_rxd_i  => uart_rxd_i_int,  -- UART receive data
-    -- SPI --
+    -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   => spi_sck_o_int,   -- SPI serial clock
     spi_sdo_o   => spi_sdo_o_int,   -- controller data out, peripheral data in
     spi_sdi_i   => spi_sdi_i_int,   -- controller data in, peripheral data out
     spi_csn_o   => spi_csn_o_int,   -- SPI CS
-    -- TWI --
+    -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  => twi_sda_io,      -- twi serial data line
     twi_scl_io  => twi_scl_io,      -- twi serial clock line
-    -- PWM --
+    -- PWM available if IO_PWM_EN = true) --
     pwm_o       => pwm_o_int,       -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i    => cfs_in_i_int,    -- custom inputs
     cfs_out_o   => cfs_out_o_int,   -- custom outputs
+    -- NCO output (available if IO_NCO_EN = true) --
+    nco_o       => nco_o_int,       -- numerically-controlled oscillator channels
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     => (others => '0'), -- current system time
     -- Interrupts --
@@ -326,6 +334,8 @@ begin
 
   cfs_in_i_int   <= std_ulogic_vector(cfs_in_i);
   cfs_out_o      <= std_logic_vector(cfs_out_o_int);
+
+  nco_o          <= std_logic_vector(nco_o_int);
 
   soc_firq_i_int <= std_ulogic_vector(soc_firq_i);
   msw_irq_i_int  <= std_ulogic(msw_irq_i);
