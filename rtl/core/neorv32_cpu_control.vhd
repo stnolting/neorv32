@@ -599,10 +599,10 @@ begin
   begin
     opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
     if rising_edge(clk_i) then
-      if (execute_engine.state = BRANCH) then -- next_PC as immediate for jump-and-link operations (=return address)
+      if (execute_engine.state = BRANCH) then -- next_PC as immediate for jump-and-link operations (=return address) via ALU.MOV_B
         imm_o <= execute_engine.next_pc;
-      else -- "normal" immediate from instruction
-        case opcode_v is -- save some bits here, LSBs are always 11 for rv32
+      else -- "normal" immediate from instruction word
+        case opcode_v is -- save some bits here, the two LSBs are always "11" for rv32
           when opcode_store_c => -- S-immediate
             imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
             imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
@@ -870,8 +870,9 @@ begin
       -- ------------------------------------------------------------
         -- set reg_file's r0 to zero --
         if (rf_r0_is_reg_c = true) then -- is r0 implemented as physical register, which has to be set to zero?
-          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output (hacky! results zero since there is no valid CSR-read)
-          ctrl_nxt(ctrl_rf_r0_we_c) <= '1'; -- force RF write access and force rd=r0
+          ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c; -- hacky! CSR read-access CP selected without a valid CSR-read -> results zero
+          ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_csr_rd_c; -- use CSR-READ CP
+          ctrl_nxt(ctrl_rf_r0_we_c)                          <= '1'; -- force RF write access and force rd=r0
         end if;
         --
         execute_engine.state_nxt <= DISPATCH;
@@ -921,9 +922,9 @@ begin
 
           when opcode_alu_c | opcode_alui_c => -- (immediate) ALU operation
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_alu_opa_mux_c)   <= '0'; -- use RS1 as ALU.OPA
-            ctrl_nxt(ctrl_alu_opb_mux_c)   <= decode_aux.alu_immediate; -- use IMM as ALU.OPB for immediate operations
-            ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU result
+            ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= decode_aux.alu_immediate; -- use IMM as ALU.OPB for immediate operations
+            ctrl_nxt(ctrl_rf_in_mux_c)   <= '0'; -- RF input = ALU result
 
             -- ALU arithmetic operation type and ADD/SUB --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_slt_c) or
@@ -995,9 +996,9 @@ begin
             else -- AUIPC
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_arith_c; -- actual ALU operation = ADD
             end if;
-            ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU result
-            ctrl_nxt(ctrl_rf_wb_en_c)      <= '1'; -- valid RF write-back
-            execute_engine.state_nxt       <= DISPATCH;
+            ctrl_nxt(ctrl_rf_in_mux_c) <= '0'; -- RF input = ALU result
+            ctrl_nxt(ctrl_rf_wb_en_c)  <= '1'; -- valid RF write-back
+            execute_engine.state_nxt   <= DISPATCH;
 
           when opcode_load_c | opcode_store_c | opcode_atomic_c => -- load/store / atomic memory access
           -- ------------------------------------------------------------
@@ -1039,6 +1040,8 @@ begin
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zicsr = true) then
               csr.re_nxt <= csr_acc_valid; -- always read CSR if valid access, only relevant for CSR-instructions
+              ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c; -- only relevant for CSR-instructions
+              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_csr_rd_c; -- use CSR-READ CP, only relevant for CSR-instructions
               if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system/environment
                 execute_engine.state_nxt <= SYS_ENV;
               else -- CSR access
@@ -1088,15 +1091,16 @@ begin
             csr.we_nxt <= '0';
         end case;
         -- register file write back --
-        ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input <= CSR output
-        ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-        execute_engine.state_nxt  <= DISPATCH;
+        ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
+        ctrl_nxt(ctrl_rf_in_mux_c)                         <= '0'; -- RF input = ALU result
+        ctrl_nxt(ctrl_rf_wb_en_c)                          <= '1'; -- valid RF write-back
+        execute_engine.state_nxt                           <= DISPATCH;
 
 
       when ALU_WAIT => -- wait for multi-cycle ALU operation (shifter or CP) to finish
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU result
-        ctrl_nxt(ctrl_rf_wb_en_c)      <= '1'; -- valid RF write-back (permanent write-back)
+        ctrl_nxt(ctrl_rf_in_mux_c) <= '0'; -- RF input = ALU result
+        ctrl_nxt(ctrl_rf_wb_en_c)  <= '1'; -- valid RF write-back (permanent write-back)
         -- cp access or alu.shift? --
         if (execute_engine.is_cp_op = '1') then
           ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
@@ -1115,7 +1119,7 @@ begin
         ctrl_nxt(ctrl_alu_opb_mux_c)                         <= '1'; -- use IMM as ALU.OPB (next_pc from immediate generator = return address)
         ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_movb_c; -- MOVB
         ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c)   <= alu_func_cmd_logic_c; -- actual ALU operation = MOVB
-        ctrl_nxt(ctrl_rf_in_mux_msb_c)                       <= '0'; -- RF input = ALU result
+        ctrl_nxt(ctrl_rf_in_mux_c)                           <= '0'; -- RF input = ALU result
         ctrl_nxt(ctrl_rf_wb_en_c)                            <= execute_engine.i_reg(instr_opcode_lsb_c+2); -- valid RF write-back? (is jump-and-link?)
         -- destination address --
         execute_engine.pc_mux_sel <= "00"; -- alu.add = branch/jump destination
@@ -1172,11 +1176,10 @@ begin
           ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
         end if;
         -- register file write-back --
-        ctrl_nxt(ctrl_rf_in_mux_lsb_c) <= '0'; -- RF input = ALU.res or MEM
         if (decode_aux.is_atomic_sc = '1') then
-          ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU.res (only relevant for atomic.SC)
+          ctrl_nxt(ctrl_rf_in_mux_c) <= '0'; -- RF input = ALU.res (only relevant for atomic.SC)
         else
-          ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
+          ctrl_nxt(ctrl_rf_in_mux_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
         end if;
         --
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load operations)

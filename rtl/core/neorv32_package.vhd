@@ -60,7 +60,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050102"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050103"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -206,84 +206,83 @@ package neorv32_package is
   -- Main Control Bus -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- register file --
-  constant ctrl_rf_in_mux_lsb_c : natural :=  0; -- input source select lsb (10=MEM, 11=CSR)
-  constant ctrl_rf_in_mux_msb_c : natural :=  1; -- input source select msb (0-=ALU)
-  constant ctrl_rf_rs1_adr0_c   : natural :=  2; -- source register 1 address bit 0
-  constant ctrl_rf_rs1_adr1_c   : natural :=  3; -- source register 1 address bit 1
-  constant ctrl_rf_rs1_adr2_c   : natural :=  4; -- source register 1 address bit 2
-  constant ctrl_rf_rs1_adr3_c   : natural :=  5; -- source register 1 address bit 3
-  constant ctrl_rf_rs1_adr4_c   : natural :=  6; -- source register 1 address bit 4
-  constant ctrl_rf_rs2_adr0_c   : natural :=  7; -- source register 2 address bit 0
-  constant ctrl_rf_rs2_adr1_c   : natural :=  8; -- source register 2 address bit 1
-  constant ctrl_rf_rs2_adr2_c   : natural :=  9; -- source register 2 address bit 2
-  constant ctrl_rf_rs2_adr3_c   : natural := 10; -- source register 2 address bit 3
-  constant ctrl_rf_rs2_adr4_c   : natural := 11; -- source register 2 address bit 4
-  constant ctrl_rf_rd_adr0_c    : natural := 12; -- destiantion register address bit 0
-  constant ctrl_rf_rd_adr1_c    : natural := 13; -- destiantion register address bit 1
-  constant ctrl_rf_rd_adr2_c    : natural := 14; -- destiantion register address bit 2
-  constant ctrl_rf_rd_adr3_c    : natural := 15; -- destiantion register address bit 3
-  constant ctrl_rf_rd_adr4_c    : natural := 16; -- destiantion register address bit 4
-  constant ctrl_rf_wb_en_c      : natural := 17; -- write back enable
-  constant ctrl_rf_r0_we_c      : natural := 18; -- force write access and force rd=r0
+  constant ctrl_rf_in_mux_c     : natural :=  0; -- input source select lsb (0=MEM, 1=ALU)
+  constant ctrl_rf_rs1_adr0_c   : natural :=  1; -- source register 1 address bit 0
+  constant ctrl_rf_rs1_adr1_c   : natural :=  2; -- source register 1 address bit 1
+  constant ctrl_rf_rs1_adr2_c   : natural :=  3; -- source register 1 address bit 2
+  constant ctrl_rf_rs1_adr3_c   : natural :=  4; -- source register 1 address bit 3
+  constant ctrl_rf_rs1_adr4_c   : natural :=  5; -- source register 1 address bit 4
+  constant ctrl_rf_rs2_adr0_c   : natural :=  6; -- source register 2 address bit 0
+  constant ctrl_rf_rs2_adr1_c   : natural :=  7; -- source register 2 address bit 1
+  constant ctrl_rf_rs2_adr2_c   : natural :=  8; -- source register 2 address bit 2
+  constant ctrl_rf_rs2_adr3_c   : natural :=  9; -- source register 2 address bit 3
+  constant ctrl_rf_rs2_adr4_c   : natural := 10; -- source register 2 address bit 4
+  constant ctrl_rf_rd_adr0_c    : natural := 11; -- destiantion register address bit 0
+  constant ctrl_rf_rd_adr1_c    : natural := 12; -- destiantion register address bit 1
+  constant ctrl_rf_rd_adr2_c    : natural := 13; -- destiantion register address bit 2
+  constant ctrl_rf_rd_adr3_c    : natural := 14; -- destiantion register address bit 3
+  constant ctrl_rf_rd_adr4_c    : natural := 15; -- destiantion register address bit 4
+  constant ctrl_rf_wb_en_c      : natural := 16; -- write back enable
+  constant ctrl_rf_r0_we_c      : natural := 17; -- force write access and force rd=r0
   -- alu --
-  constant ctrl_alu_arith_c     : natural := 19; -- ALU arithmetic command
-  constant ctrl_alu_logic0_c    : natural := 20; -- ALU logic command bit 0
-  constant ctrl_alu_logic1_c    : natural := 21; -- ALU logic command bit 1
-  constant ctrl_alu_func0_c     : natural := 22; -- ALU function select command bit 0
-  constant ctrl_alu_func1_c     : natural := 23; -- ALU function select command bit 1
-  constant ctrl_alu_addsub_c    : natural := 24; -- 0=ADD, 1=SUB
-  constant ctrl_alu_opa_mux_c   : natural := 25; -- operand A select (0=rs1, 1=PC)
-  constant ctrl_alu_opb_mux_c   : natural := 26; -- operand B select (0=rs2, 1=IMM)
-  constant ctrl_alu_unsigned_c  : natural := 27; -- is unsigned ALU operation
-  constant ctrl_alu_shift_dir_c : natural := 28; -- shift direction (0=left, 1=right)
-  constant ctrl_alu_shift_ar_c  : natural := 29; -- is arithmetic shift
+  constant ctrl_alu_arith_c     : natural := 18; -- ALU arithmetic command
+  constant ctrl_alu_logic0_c    : natural := 19; -- ALU logic command bit 0
+  constant ctrl_alu_logic1_c    : natural := 20; -- ALU logic command bit 1
+  constant ctrl_alu_func0_c     : natural := 21; -- ALU function select command bit 0
+  constant ctrl_alu_func1_c     : natural := 22; -- ALU function select command bit 1
+  constant ctrl_alu_addsub_c    : natural := 23; -- 0=ADD, 1=SUB
+  constant ctrl_alu_opa_mux_c   : natural := 24; -- operand A select (0=rs1, 1=PC)
+  constant ctrl_alu_opb_mux_c   : natural := 25; -- operand B select (0=rs2, 1=IMM)
+  constant ctrl_alu_unsigned_c  : natural := 26; -- is unsigned ALU operation
+  constant ctrl_alu_shift_dir_c : natural := 27; -- shift direction (0=left, 1=right)
+  constant ctrl_alu_shift_ar_c  : natural := 28; -- is arithmetic shift
   -- bus interface --
-  constant ctrl_bus_size_lsb_c  : natural := 30; -- transfer size lsb (00=byte, 01=half-word)
-  constant ctrl_bus_size_msb_c  : natural := 31; -- transfer size msb (10=word, 11=?)
-  constant ctrl_bus_rd_c        : natural := 32; -- read data request
-  constant ctrl_bus_wr_c        : natural := 33; -- write data request
-  constant ctrl_bus_if_c        : natural := 34; -- instruction fetch request
-  constant ctrl_bus_mo_we_c     : natural := 35; -- memory address and data output register write enable
-  constant ctrl_bus_mi_we_c     : natural := 36; -- memory data input register write enable
-  constant ctrl_bus_unsigned_c  : natural := 37; -- is unsigned load
-  constant ctrl_bus_ierr_ack_c  : natural := 38; -- acknowledge instruction fetch bus exceptions
-  constant ctrl_bus_derr_ack_c  : natural := 39; -- acknowledge data access bus exceptions
-  constant ctrl_bus_fence_c     : natural := 40; -- executed fence operation
-  constant ctrl_bus_fencei_c    : natural := 41; -- executed fencei operation
-  constant ctrl_bus_lock_c      : natural := 42; -- locked/exclusive bus access
+  constant ctrl_bus_size_lsb_c  : natural := 29; -- transfer size lsb (00=byte, 01=half-word)
+  constant ctrl_bus_size_msb_c  : natural := 30; -- transfer size msb (10=word, 11=?)
+  constant ctrl_bus_rd_c        : natural := 31; -- read data request
+  constant ctrl_bus_wr_c        : natural := 32; -- write data request
+  constant ctrl_bus_if_c        : natural := 33; -- instruction fetch request
+  constant ctrl_bus_mo_we_c     : natural := 34; -- memory address and data output register write enable
+  constant ctrl_bus_mi_we_c     : natural := 35; -- memory data input register write enable
+  constant ctrl_bus_unsigned_c  : natural := 36; -- is unsigned load
+  constant ctrl_bus_ierr_ack_c  : natural := 37; -- acknowledge instruction fetch bus exceptions
+  constant ctrl_bus_derr_ack_c  : natural := 38; -- acknowledge data access bus exceptions
+  constant ctrl_bus_fence_c     : natural := 39; -- executed fence operation
+  constant ctrl_bus_fencei_c    : natural := 40; -- executed fencei operation
+  constant ctrl_bus_lock_c      : natural := 41; -- locked/exclusive bus access
   -- co-processors --
-  constant ctrl_cp_id_lsb_c     : natural := 43; -- cp select ID lsb
-  constant ctrl_cp_id_msb_c     : natural := 44; -- cp select ID msb
+  constant ctrl_cp_id_lsb_c     : natural := 42; -- cp select ID lsb
+  constant ctrl_cp_id_msb_c     : natural := 43; -- cp select ID msb
   -- current privilege level --
-  constant ctrl_priv_lvl_lsb_c  : natural := 45; -- privilege level lsb
-  constant ctrl_priv_lvl_msb_c  : natural := 46; -- privilege level msb
+  constant ctrl_priv_lvl_lsb_c  : natural := 44; -- privilege level lsb
+  constant ctrl_priv_lvl_msb_c  : natural := 45; -- privilege level msb
   -- instruction's control blocks (used by cpu co-processors) --
-  constant ctrl_ir_funct3_0_c   : natural := 47; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 48; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 49; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 50; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 51; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 52; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 53; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 54; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 55; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 56; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 57; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 58; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 59; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 60; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 61; -- funct12 bit 11
-  constant ctrl_ir_opcode7_0_c  : natural := 62; -- opcode7 bit 0
-  constant ctrl_ir_opcode7_1_c  : natural := 63; -- opcode7 bit 1
-  constant ctrl_ir_opcode7_2_c  : natural := 64; -- opcode7 bit 2
-  constant ctrl_ir_opcode7_3_c  : natural := 65; -- opcode7 bit 3
-  constant ctrl_ir_opcode7_4_c  : natural := 66; -- opcode7 bit 4
-  constant ctrl_ir_opcode7_5_c  : natural := 67; -- opcode7 bit 5
-  constant ctrl_ir_opcode7_6_c  : natural := 68; -- opcode7 bit 6
+  constant ctrl_ir_funct3_0_c   : natural := 46; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 47; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 48; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 49; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 50; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 51; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 52; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 53; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 54; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 55; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 56; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 57; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 58; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 59; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 60; -- funct12 bit 11
+  constant ctrl_ir_opcode7_0_c  : natural := 61; -- opcode7 bit 0
+  constant ctrl_ir_opcode7_1_c  : natural := 62; -- opcode7 bit 1
+  constant ctrl_ir_opcode7_2_c  : natural := 63; -- opcode7 bit 2
+  constant ctrl_ir_opcode7_3_c  : natural := 64; -- opcode7 bit 3
+  constant ctrl_ir_opcode7_4_c  : natural := 65; -- opcode7 bit 4
+  constant ctrl_ir_opcode7_5_c  : natural := 66; -- opcode7 bit 5
+  constant ctrl_ir_opcode7_6_c  : natural := 67; -- opcode7 bit 6
   -- CPU status --
-  constant ctrl_sleep_c         : natural := 69; -- set when CPU is in sleep mode
+  constant ctrl_sleep_c         : natural := 68; -- set when CPU is in sleep mode
   -- control bus size --
-  constant ctrl_width_c         : natural := 70; -- control bus size
+  constant ctrl_width_c         : natural := 69; -- control bus size
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -666,7 +665,7 @@ package neorv32_package is
   constant cp_sel_muldiv_c   : std_ulogic_vector(1 downto 0) := "00"; -- multiplication/division operations ('M' extension)
   constant cp_sel_atomic_c   : std_ulogic_vector(1 downto 0) := "01"; -- atomic operations; success/failure evaluation ('A' extension)
   constant cp_sel_bitmanip_c : std_ulogic_vector(1 downto 0) := "10"; -- bit manipulation ('B' extension)
---constant cp_sel_float32_c  : std_ulogic_vector(1 downto 0) := "11"; -- reserved -- single-precision floating point operations ('F' extension)
+  constant cp_sel_csr_rd_c   : std_ulogic_vector(1 downto 0) := "11"; -- CSR read access ('Zicsr' extension)
 
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1043,7 +1042,6 @@ package neorv32_package is
       -- data input --
       mem_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
       alu_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
-      csr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
       -- data output --
       rs1_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 1
       rs2_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 2

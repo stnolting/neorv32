@@ -60,7 +60,6 @@ entity neorv32_cpu_regfile is
     -- data input --
     mem_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
     alu_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
-    csr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
     -- data output --
     rs1_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 1
     rs2_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 2
@@ -73,16 +72,15 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   -- register file --
   type   reg_file_t is array (31 downto 0) of std_ulogic_vector(data_width_c-1 downto 0);
   type   reg_file_emb_t is array (15 downto 0) of std_ulogic_vector(data_width_c-1 downto 0);
-  signal reg_file      : reg_file_t;
-  signal reg_file_emb  : reg_file_emb_t;
-  signal rf_mux_data   : std_ulogic_vector(data_width_c-1 downto 0);
-  signal rf_write_data : std_ulogic_vector(data_width_c-1 downto 0); -- actual write-back data
-  signal rd_is_r0      : std_ulogic; -- writing to r0?
-  signal rf_we         : std_ulogic;
-  signal dst_addr      : std_ulogic_vector(4 downto 0); -- destination address
-  signal opa_addr      : std_ulogic_vector(4 downto 0); -- rs1/dst address
-  signal opb_addr      : std_ulogic_vector(4 downto 0); -- rs2 address
-  signal rs1, rs2      : std_ulogic_vector(data_width_c-1 downto 0);
+  signal reg_file     : reg_file_t;
+  signal reg_file_emb : reg_file_emb_t;
+  signal rf_wdata     : std_ulogic_vector(data_width_c-1 downto 0); -- actual write-back data
+  signal rd_is_r0     : std_ulogic; -- writing to r0?
+  signal rf_we        : std_ulogic;
+  signal dst_addr     : std_ulogic_vector(4 downto 0); -- destination address
+  signal opa_addr     : std_ulogic_vector(4 downto 0); -- rs1/dst address
+  signal opb_addr     : std_ulogic_vector(4 downto 0); -- rs2 address
+  signal rs1, rs2     : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- comparator --
   signal cmp_opx : std_ulogic_vector(data_width_c downto 0);
@@ -92,8 +90,7 @@ begin
 
   -- Data Input Mux -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rf_mux_data   <= mem_i when (ctrl_i(ctrl_rf_in_mux_lsb_c) = '0') else csr_i;
-  rf_write_data <= alu_i when (ctrl_i(ctrl_rf_in_mux_msb_c) = '0') else rf_mux_data;
+  rf_wdata <= alu_i when (ctrl_i(ctrl_rf_in_mux_c) = '0') else mem_i;
 
 
   -- Register File Access -------------------------------------------------------------------
@@ -103,13 +100,13 @@ begin
     if rising_edge(clk_i) then -- sync read and write
       if (CPU_EXTENSION_RISCV_E = false) then -- normal register file with 32 entries
         if (rf_we = '1') then
-          reg_file(to_integer(unsigned(opa_addr(4 downto 0)))) <= rf_write_data;
+          reg_file(to_integer(unsigned(opa_addr(4 downto 0)))) <= rf_wdata;
         end if;
         rs1 <= reg_file(to_integer(unsigned(opa_addr(4 downto 0))));
         rs2 <= reg_file(to_integer(unsigned(opb_addr(4 downto 0))));
       else -- embedded register file with 16 entries
         if (rf_we = '1') then
-          reg_file_emb(to_integer(unsigned(opa_addr(3 downto 0)))) <= rf_write_data;
+          reg_file_emb(to_integer(unsigned(opa_addr(3 downto 0)))) <= rf_wdata;
         end if;
         rs1 <= reg_file_emb(to_integer(unsigned(opa_addr(3 downto 0))));
         rs2 <= reg_file_emb(to_integer(unsigned(opb_addr(3 downto 0))));
