@@ -58,7 +58,7 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS              : natural := 0;       -- number of regions (0..64)
     PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
@@ -200,6 +200,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pc_mux_sel   : std_ulogic_vector(1 downto 0); -- source select for PC update
     pc_we        : std_ulogic; -- PC update enabled
     next_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- next PC, corresponding to next instruction to be executed
+    next_pc_inc  : std_ulogic_vector(data_width_c-1 downto 0); -- increment to get next PC
     last_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- PC of last executed instruction
     --
     sleep        : std_ulogic; -- CPU in sleep mode
@@ -387,7 +388,7 @@ begin
     -- state machine --
     case fetch_engine.state is
 
-      when IFETCH_RESET => -- reset engine and prefetch buffer, get appilcation PC
+      when IFETCH_RESET => -- reset engine and prefetch buffer, get application PC
       -- ------------------------------------------------------------
         fetch_engine.bus_err_ack <= '1'; -- acknowledge any instruction bus errors, the execute engine has to take care of them / terminate current transfer
         fetch_engine.pc_nxt      <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- initialize with "real" application PC
@@ -693,15 +694,7 @@ begin
       execute_engine.i_reg      <= execute_engine.i_reg_nxt;
       execute_engine.is_ci      <= execute_engine.is_ci_nxt;
       execute_engine.is_cp_op   <= execute_engine.is_cp_op_nxt;
-      -- next PC (next linear instruction) --
-      if (execute_engine.state = EXECUTE) then
-        if (execute_engine.is_ci = '1') then -- compressed instruction?
-          execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + 2);
-        else
-          execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + 4);
-        end if;
-      end if;
-      -- PC & IR of last "executed" instruction --
+      -- PC & IR of "last executed" instruction --
       if (execute_engine.state = EXECUTE) then
         execute_engine.last_pc    <= execute_engine.pc;
         execute_engine.i_reg_last <= execute_engine.i_reg;
@@ -711,11 +704,15 @@ begin
     end if;
   end process execute_engine_fsm_sync;
 
-  -- CSR access address --
-  csr.addr <= execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c);
-
   -- PC output --
   curr_pc_o <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- PC for ALU ops
+
+  -- next PC (next *linear* instruction)
+  execute_engine.next_pc_inc <= x"00000004" when ((execute_engine.is_ci = '0') or (CPU_EXTENSION_RISCV_C = false)) else x"00000002";
+  execute_engine.next_pc     <= std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc));
+
+  -- CSR access address --
+  csr.addr <= execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c);
 
 
   -- CPU Control Bus Output -----------------------------------------------------------------
@@ -1210,9 +1207,9 @@ begin
 -- ****************************************************************************************************************************
 
 
-  -- Illegal CSR Access Check ---------------------------------------------------------------
+  -- CSR Access Check -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  invalid_csr_access_check: process(execute_engine.i_reg, csr)
+  csr_access_check: process(execute_engine.i_reg, csr)
     variable csr_wacc_v           : std_ulogic; -- to check access to read-only CSRs
 --  variable csr_racc_v           : std_ulogic; -- to check access to write-only CSRs
     variable csr_mcounteren_hpm_v : std_ulogic_vector(28 downto 0); -- max 29 HPM counters
@@ -1367,7 +1364,7 @@ begin
       --
       when others              => csr_acc_valid <= '0'; -- invalid access
     end case;
-  end process invalid_csr_access_check;
+  end process csr_access_check;
 
 
   -- Illegal Instruction Check --------------------------------------------------------------
@@ -1873,25 +1870,25 @@ begin
       csr.mtvec        <= (others => '0');
       csr.mscratch     <= x"19880704"; -- :)
       csr.mepc         <= (others => '0');
-      -- mcause = TRAP_CODE_RESET (hardware reset, "non-maskable interrupt")
-      csr.mcause    <= trap_reset_c;
+      csr.mcause       <= trap_reset_c; -- mcause = TRAP_CODE_RESET (hardware reset, "non-maskable interrupt")
       --
-      csr.mtval     <= (others => '0');
-      csr.mip_clear <= (others => '0');
+      csr.mtval        <= (others => '0');
+      csr.mip_clear    <= (others => '0');
       --
-      csr.pmpcfg    <= (others => (others => '0'));
-      csr.pmpaddr   <= (others => (others => '1'));
+      csr.pmpcfg       <= (others => (others => '0'));
+      csr.pmpaddr      <= (others => (others => '1'));
       --
-      csr.mhpmevent <= (others => (others => '0'));
+      csr.mhpmevent    <= (others => (others => '0'));
       --
-      csr.mcounteren_cy  <= '0';
-      csr.mcounteren_tm  <= '0';
-      csr.mcounteren_ir  <= '0';
-      csr.mcounteren_hpm <= (others => '0');
+      csr.mcounteren_cy     <= '0';
+      csr.mcounteren_tm     <= '0';
+      csr.mcounteren_ir     <= '0';
+      csr.mcounteren_hpm    <= (others => '0');
       --
       csr.mcountinhibit_cy  <= '0';
       csr.mcountinhibit_ir  <= '0';
       csr.mcountinhibit_hpm <= (others => '0');
+
     elsif rising_edge(clk_i) then
       -- write access? --
       csr.we <= csr.we_nxt;
@@ -1930,7 +1927,7 @@ begin
               csr.mcounteren_cy  <= csr.wdata(0); -- enable user-level access to cycle[h]
               csr.mcounteren_tm  <= csr.wdata(1); -- enable user-level access to time[h]
               csr.mcounteren_ir  <= csr.wdata(2); -- enable user-level access to instret[h]
-              csr.mcounteren_hpm <= csr.wdata(csr.mcounteren_hpm'left+3 downto 3); -- enable user-level access to mhpmcounterx[h]
+              csr.mcounteren_hpm <= csr.wdata(csr.mcounteren_hpm'left+3 downto 3); -- enable user-level access to hpmcounterx[h]
 
             -- machine trap handling --
             -- --------------------------------------------------------------------
@@ -2041,7 +2038,7 @@ begin
             csr.mcause(4 downto 0)      <= trap_ctrl.cause(4 downto 0); -- identifier
             -- trap PC --
             if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS
-              csr.mepc  <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
+              csr.mepc <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
             else -- for EXCEPTIONS
               csr.mepc <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
             end if;
