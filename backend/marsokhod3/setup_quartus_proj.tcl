@@ -207,6 +207,7 @@ set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_gpio.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_icache.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_imem.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_mtime.vhd
+set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_nco.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_package.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_pwm.vhd
 set_global_assignment -name VHDL_FILE ../../rtl/core/neorv32_spi.vhd

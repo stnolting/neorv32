@@ -60,6 +60,7 @@ FILES = rtl/core/neorv32_package.vhd \
 				rtl/core/neorv32_icache.vhd \
 				rtl/core/neorv32_imem.vhd \
 				rtl/core/neorv32_mtime.vhd \
+				rtl/core/neorv32_nco.vhd \
 				rtl/core/neorv32_pwm.vhd \
 				rtl/core/neorv32_spi.vhd \
 				rtl/core/neorv32_sysinfo.vhd \
@@ -73,6 +74,8 @@ FILES = rtl/core/neorv32_package.vhd \
 				rtl/top_templates/neorv32_top_axi4lite.vhd \
 				rtl/top_templates/neorv32_top_stdlogic.vhd \
 				sim/neorv32_tb.vhd
+#				sim/rtl_modules/neorv32_dmem.vhd \
+#				sim/rtl_modules/neorv32_imem.vhd \
 
 # Simulator options
 SIM_CMD = ghdl

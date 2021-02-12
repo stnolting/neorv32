@@ -226,8 +226,8 @@ begin
       IO_PWM_EN                     => true,        -- implement pulse-width modulation unit (PWM)?
       IO_WDT_EN                     => true,        -- implement watch dog timer (WDT)?
       IO_TRNG_EN                    => true,        -- implement true random number generator (TRNG)?
-      IO_CFS_EN                     => true,        -- implement custom functions subsystem (CFS)?
-      IO_CFS_CONFIG                 => (others => '0') -- custom CFS configuration generic
+      IO_CFS_CONFIG                 => (others => '0'), -- custom CFS configuration generic
+      IO_NCO_EN                     => true         -- implement numerically-controlled oscillator (NCO)?
     )
     port map (
       -- Global control --
@@ -267,6 +267,8 @@ begin
       -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
       cfs_in_i    => (others => '0'), -- custom CFS inputs conduit
       cfs_out_o   => open,            -- custom CFS outputs conduit
+      -- NCO output (available if IO_NCO_EN = true) --
+      nco_o       => open,            -- numerically-controlled oscillator channels
       -- system time input from external MTIME (available if IO_MTIME_EN = false) --
       mtime_i     => (others => '0'), -- current system time
       -- Interrupts --
@@ -325,7 +327,8 @@ begin
       IO_WDT_EN                     => true,        -- implement watch dog timer (WDT)?
       IO_TRNG_EN                    => true,        -- implement true random number generator (TRNG)?
       IO_CFS_EN                     => true,        -- implement custom functions subsystem (CFS)?
-      IO_CFS_CONFIG                 => (others => '0') -- custom CFS configuration generic
+      IO_CFS_CONFIG                 => (others => '0'), -- custom CFS configuration generic
+      IO_NCO_EN                     => true         -- implement numerically-controlled oscillator (NCO)?
     )
     port map (
       -- Global control --
@@ -365,6 +368,8 @@ begin
       -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
       cfs_in_i    => (others => '0'), -- custom CFS inputs conduit
       cfs_out_o   => open,            -- custom CFS outputs conduit
+      -- NCO output (available if IO_NCO_EN = true) --
+      nco_o       => open,            -- numerically-controlled oscillator channels
       -- system time input from external MTIME (available if IO_MTIME_EN = false) --
       mtime_i     => (others => '0'), -- current system time
       -- Interrupts --
