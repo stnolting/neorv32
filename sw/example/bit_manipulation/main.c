@@ -75,8 +75,8 @@ int main() {
   // capture all exceptions and give debug info via UART
   neorv32_rte_setup();
 
-  // init UART at default baud rate, no parity bits, no rx interrupt, no tx interrupt
-  neorv32_uart_setup(BAUD_RATE, 0b00, 0, 0);
+  // init UART at default baud rate, no parity bits
+  neorv32_uart_setup(BAUD_RATE, 0b00);
 
   // intro
   neorv32_uart_printf("NEORV32 Bit Manipulation (B.Zbb) Extension Test\n\n");

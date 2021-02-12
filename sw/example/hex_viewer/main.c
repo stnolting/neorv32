@@ -81,9 +81,11 @@ int main() {
   // capture all exceptions and give debug info via UART
   neorv32_rte_setup();
 
+  // disable global interrupts
+  neorv32_cpu_dint();
 
-  // init UART at default baud rate, no parity bits, no rx interrupt, no tx interrupt
-  neorv32_uart_setup(BAUD_RATE, 0b00, 0, 0);
+  // init UART at default baud rate, no parity bits
+  neorv32_uart_setup(BAUD_RATE, 0b00);
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
@@ -229,11 +231,11 @@ void atomic_cas(void) {
     cas_desired = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
     // try to execute atomic compare-and-swap
-    if (neorv32_cpu_atomic_cas(mem_address, cas_expected, cas_desired)) {
-      neorv32_uart_printf("\nAtomic-CAS: Failed!\n");
+    if (neorv32_cpu_atomic_cas(mem_address, cas_expected, cas_desired) == 0) {
+      neorv32_uart_printf("\nAtomic-CAS: Successful!\n");
     }
     else {
-      neorv32_uart_printf("\nAtomic-CAS: Successful!\n");
+      neorv32_uart_printf("\nAtomic-CAS: Failed!\n");
     }
   }
   else {

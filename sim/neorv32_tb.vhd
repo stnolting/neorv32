@@ -108,7 +108,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
 
   -- irq --
   signal msi_ring, mei_ring : std_ulogic;
-  signal soc_firq_ring      : std_ulogic_vector(3 downto 0);
+  signal soc_firq_ring      : std_ulogic_vector(7 downto 0);
 
   -- Wishbone bus --
   type wishbone_t is record
@@ -168,7 +168,7 @@ begin
   rst_gen <= '0', '1' after 60*(t_clock_c/2);
 
 
-  -- CPU Core -------------------------------------------------------------------------------
+  -- The Core of the Problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_top_inst: neorv32_top
   generic map (
@@ -218,13 +218,14 @@ begin
     IO_WDT_EN                    => true,          -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   => false,         -- trng cannot be simulated
     IO_CFS_EN                    => true,          -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                => (others => '0') -- custom CFS configuration generic
+    IO_CFS_CONFIG                => (others => '0'), -- custom CFS configuration generic
+    IO_NCO_EN                    => true           -- implement numerically-controlled oscillator (NCO)?
   )
   port map (
     -- Global control --
     clk_i       => clk_gen,         -- global clock, rising edge
     rstn_i      => rst_gen,         -- global reset, low-active, async
-    -- Wishbone bus interface --
+    -- Wishbone bus interface (available if MEM_EXT_EN = true) --
     wb_tag_o    => wb_cpu.tag,      -- tag
     wb_adr_o    => wb_cpu.addr,     -- address
     wb_dat_i    => wb_cpu.rdata,    -- read data
@@ -236,28 +237,30 @@ begin
     wb_lock_o   => wb_cpu.lock,     -- locked/exclusive bus access
     wb_ack_i    => wb_cpu.ack,      -- transfer acknowledge
     wb_err_i    => wb_cpu.err,      -- transfer error
-    -- Advanced memory control signals --
+    -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o     => open,            -- indicates an executed FENCE operation
     fencei_o    => open,            -- indicates an executed FENCEI operation
-    -- GPIO --
+    -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      => gpio,            -- parallel output
     gpio_i      => gpio,            -- parallel input
-    -- UART --
+    -- UART (available if IO_UART_EN = true) --
     uart_txd_o  => uart_txd,        -- UART send data
     uart_rxd_i  => uart_txd,        -- UART receive data
-    -- SPI --
+    -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   => open,            -- SPI serial clock
     spi_sdo_o   => spi_data,        -- controller data out, peripheral data in
     spi_sdi_i   => spi_data,        -- controller data in, peripheral data out
     spi_csn_o   => open,            -- SPI CS
-    -- TWI --
+    -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  => twi_sda,         -- twi serial data line
     twi_scl_io  => twi_scl,         -- twi serial clock line
-    -- PWM --
+    -- PWM (available if IO_PWM_EN = true) --
     pwm_o       => open,            -- pwm channels
     -- Custom Functions Subsystem IO --
     cfs_in_i    => (others => '0'), -- custom CFS inputs
     cfs_out_o   => open,            -- custom CFS outputs
+    -- NCO output (available if IO_NCO_EN = true) --
+    nco_o      => open,             -- numerically-controlled oscillator channels
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     => (others => '0'), -- current system time
     -- Interrupts --
@@ -500,19 +503,23 @@ begin
     if rising_edge(clk_gen) then
       -- bus interface --
       wb_irq.rdata  <= (others => '0');
-      wb_irq.ack    <= wb_irq.cyc and wb_irq.stb and wb_irq.we;
+      wb_irq.ack    <= wb_irq.cyc and wb_irq.stb and wb_irq.we and and_all_f(wb_irq.sel);
       wb_irq.err    <= '0';
       -- trigger IRQ using CSR.MIE bit layout --
       msi_ring      <= '0';
       mei_ring      <= '0';
       soc_firq_ring <= (others => '0');
-      if ((wb_irq.cyc and wb_irq.stb and wb_irq.we) = '1') then
+      if ((wb_irq.cyc and wb_irq.stb and wb_irq.we and and_all_f(wb_irq.sel)) = '1') then
         msi_ring         <= wb_irq.wdata(03); -- machine software interrupt
         mei_ring         <= wb_irq.wdata(11); -- machine software interrupt
-        soc_firq_ring(0) <= wb_irq.wdata(20); -- fast interrupt channel 4
-        soc_firq_ring(1) <= wb_irq.wdata(21); -- fast interrupt channel 5
-        soc_firq_ring(2) <= wb_irq.wdata(22); -- fast interrupt channel 6
-        soc_firq_ring(3) <= wb_irq.wdata(22); -- fast interrupt channel 7
+        soc_firq_ring(0) <= wb_irq.wdata(24); -- fast interrupt SoC channel 0
+        soc_firq_ring(1) <= wb_irq.wdata(25); -- fast interrupt SoC channel 1
+        soc_firq_ring(2) <= wb_irq.wdata(26); -- fast interrupt SoC channel 2
+        soc_firq_ring(3) <= wb_irq.wdata(27); -- fast interrupt SoC channel 3
+        soc_firq_ring(4) <= wb_irq.wdata(28); -- fast interrupt SoC channel 4
+        soc_firq_ring(5) <= wb_irq.wdata(29); -- fast interrupt SoC channel 5
+        soc_firq_ring(6) <= wb_irq.wdata(30); -- fast interrupt SoC channel 6
+        soc_firq_ring(7) <= wb_irq.wdata(31); -- fast interrupt SoC channel 7
       end if;
     end if;
   end process irq_trigger;

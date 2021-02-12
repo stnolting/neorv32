@@ -89,8 +89,8 @@ entity neorv32_cpu_control is
     mext_irq_i    : in  std_ulogic; -- machine external interrupt
     mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
     -- fast interrupts (custom) --
-    firq_i        : in  std_ulogic_vector(7 downto 0);
-    firq_ack_o    : out std_ulogic_vector(7 downto 0);
+    firq_i        : in  std_ulogic_vector(15 downto 0);
+    firq_ack_o    : out std_ulogic_vector(15 downto 0);
     -- system time input from MTIME --
     time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
     -- physical memory protection --
@@ -214,7 +214,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     exc_buf       : std_ulogic_vector(exception_width_c-1 downto 0);
     exc_fire      : std_ulogic; -- set if there is a valid source in the exception buffer
     irq_buf       : std_ulogic_vector(interrupt_width_c-1 downto 0);
-    firq_sync     : std_ulogic_vector(7 downto 0);
+    firq_sync     : std_ulogic_vector(15 downto 0);
     irq_fire      : std_ulogic; -- set if there is a valid source in the interrupt buffer
     exc_ack       : std_ulogic; -- acknowledge all exceptions
     irq_ack       : std_ulogic_vector(interrupt_width_c-1 downto 0); -- acknowledge specific interrupt
@@ -277,7 +277,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mie_msie          : std_ulogic; -- mie.MSIE: machine software interrupt enable (R/W)
     mie_meie          : std_ulogic; -- mie.MEIE: machine external interrupt enable (R/W)
     mie_mtie          : std_ulogic; -- mie.MEIE: machine timer interrupt enable (R/W)
-    mie_firqe         : std_ulogic_vector(7 downto 0); -- mie.firq*e: fast interrupt enabled (R/W)
+    mie_firqe         : std_ulogic_vector(15 downto 0); -- mie.firq*e: fast interrupt enabled (R/W)
     --
     mcounteren_cy     : std_ulogic; -- mcounteren.cy: allow cycle[h] access from user-mode
     mcounteren_tm     : std_ulogic; -- mcounteren.tm: allow time[h] access from user-mode
@@ -296,9 +296,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     priv_u_mode       : std_ulogic; -- CPU in u-mode
     --
     mepc              : std_ulogic_vector(data_width_c-1 downto 0); -- mepc: machine exception pc (R/W)
-    mcause            : std_ulogic_vector(data_width_c-1 downto 0); -- mcause: machine trap cause (R/W)
+    mcause            : std_ulogic_vector(5 downto 0); -- mcause: machine trap cause (R/W)
     mtvec             : std_ulogic_vector(data_width_c-1 downto 0); -- mtvec: machine trap-handler base address (R/W), bit 1:0 == 00
-    mtval             : std_ulogic_vector(data_width_c-1 downto 0); -- mtval: machine bad address or isntruction (R/W)
+    mtval             : std_ulogic_vector(data_width_c-1 downto 0); -- mtval: machine bad address or instruction (R/W)
     --
     mhpmevent         : mhpmevent_t; -- mhpmevent*: machine performance-monitoring event selector (R/W)
     mhpmevent_rd      : mhpmevent_rd_t; -- mhpmevent*: actual read data
@@ -599,10 +599,10 @@ begin
   begin
     opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
     if rising_edge(clk_i) then
-      if (execute_engine.state = BRANCH) then -- next_PC as immediate for jump-and-link operations (=return address)
+      if (execute_engine.state = BRANCH) then -- next_PC as immediate for jump-and-link operations (=return address) via ALU.MOV_B
         imm_o <= execute_engine.next_pc;
-      else -- "normal" immediate from instruction
-        case opcode_v is -- save some bits here, LSBs are always 11 for rv32
+      else -- "normal" immediate from instruction word
+        case opcode_v is -- save some bits here, the two LSBs are always "11" for rv32
           when opcode_store_c => -- S-immediate
             imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
             imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
@@ -791,7 +791,7 @@ begin
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- RORI
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and (execute_engine.i_reg(instr_imm12_lsb_c+6 downto instr_imm12_lsb_c) = "0000111")) or -- GORCI.b 7 (orc.b)
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and (execute_engine.i_reg(instr_imm12_lsb_c+6 downto instr_imm12_lsb_c) = "0011000")) then -- GREVI.-8 (rev8)
-      decode_aux.is_bitmanip_imm <= '1';
+      decode_aux.is_bitmanip_imm <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);
     end if;
     -- register operation --
     if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.i_reg(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- ROR / ROL
@@ -804,7 +804,7 @@ begin
          (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")    -- XORN
          )
         ) then
-      decode_aux.is_bitmanip_reg <= '1';
+      decode_aux.is_bitmanip_reg <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);
     end if;
   end process decode_helper;
 
@@ -870,8 +870,9 @@ begin
       -- ------------------------------------------------------------
         -- set reg_file's r0 to zero --
         if (rf_r0_is_reg_c = true) then -- is r0 implemented as physical register, which has to be set to zero?
-          ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input = CSR output (hacky! results zero since there is no valid CSR-read)
-          ctrl_nxt(ctrl_rf_r0_we_c) <= '1'; -- force RF write access and force rd=r0
+          ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c; -- hacky! CSR read-access CP selected without a valid CSR-read -> results zero
+          ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_csr_rd_c; -- use CSR-READ CP
+          ctrl_nxt(ctrl_rf_r0_we_c)                          <= '1'; -- force RF write access and force rd=r0
         end if;
         --
         execute_engine.state_nxt <= DISPATCH;
@@ -921,9 +922,9 @@ begin
 
           when opcode_alu_c | opcode_alui_c => -- (immediate) ALU operation
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_alu_opa_mux_c)   <= '0'; -- use RS1 as ALU.OPA
-            ctrl_nxt(ctrl_alu_opb_mux_c)   <= decode_aux.alu_immediate; -- use IMM as ALU.OPB for immediate operations
-            ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU result
+            ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= decode_aux.alu_immediate; -- use IMM as ALU.OPB for immediate operations
+            ctrl_nxt(ctrl_rf_in_mux_c)   <= '0'; -- RF input = ALU result
 
             -- ALU arithmetic operation type and ADD/SUB --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_slt_c) or
@@ -995,9 +996,9 @@ begin
             else -- AUIPC
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_arith_c; -- actual ALU operation = ADD
             end if;
-            ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU result
-            ctrl_nxt(ctrl_rf_wb_en_c)      <= '1'; -- valid RF write-back
-            execute_engine.state_nxt       <= DISPATCH;
+            ctrl_nxt(ctrl_rf_in_mux_c) <= '0'; -- RF input = ALU result
+            ctrl_nxt(ctrl_rf_wb_en_c)  <= '1'; -- valid RF write-back
+            execute_engine.state_nxt   <= DISPATCH;
 
           when opcode_load_c | opcode_store_c | opcode_atomic_c => -- load/store / atomic memory access
           -- ------------------------------------------------------------
@@ -1039,6 +1040,8 @@ begin
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zicsr = true) then
               csr.re_nxt <= csr_acc_valid; -- always read CSR if valid access, only relevant for CSR-instructions
+              ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c; -- only relevant for CSR-instructions
+              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_csr_rd_c; -- use CSR-READ CP, only relevant for CSR-instructions
               if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system/environment
                 execute_engine.state_nxt <= SYS_ENV;
               else -- CSR access
@@ -1088,15 +1091,16 @@ begin
             csr.we_nxt <= '0';
         end case;
         -- register file write back --
-        ctrl_nxt(ctrl_rf_in_mux_msb_c downto ctrl_rf_in_mux_lsb_c) <= "11"; -- RF input <= CSR output
-        ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-        execute_engine.state_nxt  <= DISPATCH;
+        ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
+        ctrl_nxt(ctrl_rf_in_mux_c)                         <= '0'; -- RF input = ALU result
+        ctrl_nxt(ctrl_rf_wb_en_c)                          <= '1'; -- valid RF write-back
+        execute_engine.state_nxt                           <= DISPATCH;
 
 
       when ALU_WAIT => -- wait for multi-cycle ALU operation (shifter or CP) to finish
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU result
-        ctrl_nxt(ctrl_rf_wb_en_c)      <= '1'; -- valid RF write-back (permanent write-back)
+        ctrl_nxt(ctrl_rf_in_mux_c) <= '0'; -- RF input = ALU result
+        ctrl_nxt(ctrl_rf_wb_en_c)  <= '1'; -- valid RF write-back (permanent write-back)
         -- cp access or alu.shift? --
         if (execute_engine.is_cp_op = '1') then
           ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
@@ -1115,7 +1119,7 @@ begin
         ctrl_nxt(ctrl_alu_opb_mux_c)                         <= '1'; -- use IMM as ALU.OPB (next_pc from immediate generator = return address)
         ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_movb_c; -- MOVB
         ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c)   <= alu_func_cmd_logic_c; -- actual ALU operation = MOVB
-        ctrl_nxt(ctrl_rf_in_mux_msb_c)                       <= '0'; -- RF input = ALU result
+        ctrl_nxt(ctrl_rf_in_mux_c)                           <= '0'; -- RF input = ALU result
         ctrl_nxt(ctrl_rf_wb_en_c)                            <= execute_engine.i_reg(instr_opcode_lsb_c+2); -- valid RF write-back? (is jump-and-link?)
         -- destination address --
         execute_engine.pc_mux_sel <= "00"; -- alu.add = branch/jump destination
@@ -1172,11 +1176,10 @@ begin
           ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
         end if;
         -- register file write-back --
-        ctrl_nxt(ctrl_rf_in_mux_lsb_c) <= '0'; -- RF input = ALU.res or MEM
         if (decode_aux.is_atomic_sc = '1') then
-          ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '0'; -- RF input = ALU.res (only relevant for atomic.SC)
+          ctrl_nxt(ctrl_rf_in_mux_c) <= '0'; -- RF input = ALU.res (only relevant for atomic.SC)
         else
-          ctrl_nxt(ctrl_rf_in_mux_msb_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
+          ctrl_nxt(ctrl_rf_in_mux_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
         end if;
         --
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load operations)
@@ -1189,7 +1192,7 @@ begin
           if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') or (decode_aux.is_atomic_sc = '1') then -- load / load-reservate / store conditional
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
           end if;
-          atomic_ctrl.env_end      <= '1'; -- normal end of LOCKED (atomic) memory access environment
+          atomic_ctrl.env_end      <= not decode_aux.is_atomic_lr; -- normal end of LOCKED (atomic) memory access environment - if we are not starting it via LR instruction
           execute_engine.state_nxt <= DISPATCH;
         end if;
 
@@ -1603,17 +1606,11 @@ begin
         trap_ctrl.irq_buf(interrupt_msw_irq_c)   <= csr.mie_msie and (trap_ctrl.irq_buf(interrupt_msw_irq_c)   or msw_irq_i)   and (not (trap_ctrl.irq_ack(interrupt_msw_irq_c)   or csr.mip_clear(interrupt_msw_irq_c)));
         trap_ctrl.irq_buf(interrupt_mext_irq_c)  <= csr.mie_meie and (trap_ctrl.irq_buf(interrupt_mext_irq_c)  or mext_irq_i)  and (not (trap_ctrl.irq_ack(interrupt_mext_irq_c)  or csr.mip_clear(interrupt_mext_irq_c)));
         trap_ctrl.irq_buf(interrupt_mtime_irq_c) <= csr.mie_mtie and (trap_ctrl.irq_buf(interrupt_mtime_irq_c) or mtime_irq_i) and (not (trap_ctrl.irq_ack(interrupt_mtime_irq_c) or csr.mip_clear(interrupt_mtime_irq_c)));
-        -- interrupt buffer: custom fast interrupts
+        -- interrupt buffer: NEORV32-specific fast interrupts
         trap_ctrl.firq_sync <= firq_i;
-        --
-        trap_ctrl.irq_buf(interrupt_firq_0_c)    <= csr.mie_firqe(0) and (trap_ctrl.irq_buf(interrupt_firq_0_c) or trap_ctrl.firq_sync(0)) and (not (trap_ctrl.irq_ack(interrupt_firq_0_c) or csr.mip_clear(interrupt_firq_0_c)));
-        trap_ctrl.irq_buf(interrupt_firq_1_c)    <= csr.mie_firqe(1) and (trap_ctrl.irq_buf(interrupt_firq_1_c) or trap_ctrl.firq_sync(1)) and (not (trap_ctrl.irq_ack(interrupt_firq_1_c) or csr.mip_clear(interrupt_firq_1_c)));
-        trap_ctrl.irq_buf(interrupt_firq_2_c)    <= csr.mie_firqe(2) and (trap_ctrl.irq_buf(interrupt_firq_2_c) or trap_ctrl.firq_sync(2)) and (not (trap_ctrl.irq_ack(interrupt_firq_2_c) or csr.mip_clear(interrupt_firq_2_c)));
-        trap_ctrl.irq_buf(interrupt_firq_3_c)    <= csr.mie_firqe(3) and (trap_ctrl.irq_buf(interrupt_firq_3_c) or trap_ctrl.firq_sync(3)) and (not (trap_ctrl.irq_ack(interrupt_firq_3_c) or csr.mip_clear(interrupt_firq_3_c)));
-        trap_ctrl.irq_buf(interrupt_firq_4_c)    <= csr.mie_firqe(4) and (trap_ctrl.irq_buf(interrupt_firq_4_c) or trap_ctrl.firq_sync(4)) and (not (trap_ctrl.irq_ack(interrupt_firq_4_c) or csr.mip_clear(interrupt_firq_4_c)));
-        trap_ctrl.irq_buf(interrupt_firq_5_c)    <= csr.mie_firqe(5) and (trap_ctrl.irq_buf(interrupt_firq_5_c) or trap_ctrl.firq_sync(5)) and (not (trap_ctrl.irq_ack(interrupt_firq_5_c) or csr.mip_clear(interrupt_firq_5_c)));
-        trap_ctrl.irq_buf(interrupt_firq_6_c)    <= csr.mie_firqe(6) and (trap_ctrl.irq_buf(interrupt_firq_6_c) or trap_ctrl.firq_sync(6)) and (not (trap_ctrl.irq_ack(interrupt_firq_6_c) or csr.mip_clear(interrupt_firq_6_c)));
-        trap_ctrl.irq_buf(interrupt_firq_7_c)    <= csr.mie_firqe(7) and (trap_ctrl.irq_buf(interrupt_firq_7_c) or trap_ctrl.firq_sync(7)) and (not (trap_ctrl.irq_ack(interrupt_firq_7_c) or csr.mip_clear(interrupt_firq_7_c)));
+        for i in 0 to 15 loop
+          trap_ctrl.irq_buf(interrupt_firq_0_c+i) <= csr.mie_firqe(i) and (trap_ctrl.irq_buf(interrupt_firq_0_c+i) or trap_ctrl.firq_sync(i)) and (not (trap_ctrl.irq_ack(interrupt_firq_0_c+i) or csr.mip_clear(interrupt_firq_0_c+i)));
+        end loop;
         -- trap control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler
           if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and -- exception/IRQ detected!
@@ -1642,7 +1639,7 @@ begin
   csr.mip_status <= trap_ctrl.irq_buf;
 
   -- acknowledge mask output --
-  firq_ack_o <= trap_ctrl.irq_ack(interrupt_firq_7_c downto interrupt_firq_0_c);
+  firq_ack_o <= trap_ctrl.irq_ack(interrupt_firq_15_c downto interrupt_firq_0_c);
 
 
   -- Trap Priority Encoder ------------------------------------------------------------------
@@ -1711,6 +1708,46 @@ begin
     elsif (trap_ctrl.irq_buf(interrupt_firq_7_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq7_c;
       trap_ctrl.irq_ack_nxt(interrupt_firq_7_c) <= '1';
+
+    -- interrupt: 1.24 fast interrupt channel 8 --
+    elsif (trap_ctrl.irq_buf(interrupt_firq_8_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_firq8_c;
+      trap_ctrl.irq_ack_nxt(interrupt_firq_8_c) <= '1';
+
+    -- interrupt: 1.25 fast interrupt channel 9 --
+    elsif (trap_ctrl.irq_buf(interrupt_firq_9_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_firq9_c;
+      trap_ctrl.irq_ack_nxt(interrupt_firq_9_c) <= '1';
+
+    -- interrupt: 1.26 fast interrupt channel 10 --
+    elsif (trap_ctrl.irq_buf(interrupt_firq_10_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_firq10_c;
+      trap_ctrl.irq_ack_nxt(interrupt_firq_10_c) <= '1';
+
+    -- interrupt: 1.27 fast interrupt channel 11 --
+    elsif (trap_ctrl.irq_buf(interrupt_firq_11_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_firq11_c;
+      trap_ctrl.irq_ack_nxt(interrupt_firq_11_c) <= '1';
+
+    -- interrupt: 1.28 fast interrupt channel 12 --
+    elsif (trap_ctrl.irq_buf(interrupt_firq_12_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_firq12_c;
+      trap_ctrl.irq_ack_nxt(interrupt_firq_12_c) <= '1';
+
+    -- interrupt: 1.29 fast interrupt channel 13 --
+    elsif (trap_ctrl.irq_buf(interrupt_firq_13_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_firq13_c;
+      trap_ctrl.irq_ack_nxt(interrupt_firq_13_c) <= '1';
+
+    -- interrupt: 1.30 fast interrupt channel 14 --
+    elsif (trap_ctrl.irq_buf(interrupt_firq_14_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_firq14_c;
+      trap_ctrl.irq_ack_nxt(interrupt_firq_14_c) <= '1';
+
+    -- interrupt: 1.31 fast interrupt channel 15 --
+    elsif (trap_ctrl.irq_buf(interrupt_firq_15_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_firq15_c;
+      trap_ctrl.irq_ack_nxt(interrupt_firq_15_c) <= '1';
 
 
     -- the following traps are caused by *synchronous* exceptions (= 'classic' exceptions)
@@ -1837,9 +1874,7 @@ begin
       csr.mscratch     <= x"19880704"; -- :)
       csr.mepc         <= (others => '0');
       -- mcause = TRAP_CODE_RESET (hardware reset, "non-maskable interrupt")
-      csr.mcause                               <= (others => '0');
-      csr.mcause(csr.mcause'left)              <= trap_reset_c(trap_reset_c'left);
-      csr.mcause(trap_reset_c'left-1 downto 0) <= trap_reset_c(trap_reset_c'left-1 downto 0);
+      csr.mcause    <= trap_reset_c;
       --
       csr.mtval     <= (others => '0');
       csr.mip_clear <= (others => '0');
@@ -1886,15 +1921,9 @@ begin
               csr.mie_msie <= csr.wdata(03); -- machine SW IRQ enable
               csr.mie_mtie <= csr.wdata(07); -- machine TIMER IRQ enable
               csr.mie_meie <= csr.wdata(11); -- machine EXT IRQ enable
-              --
-              csr.mie_firqe(0) <= csr.wdata(16); -- fast interrupt channel 0
-              csr.mie_firqe(1) <= csr.wdata(17); -- fast interrupt channel 1
-              csr.mie_firqe(2) <= csr.wdata(18); -- fast interrupt channel 2
-              csr.mie_firqe(3) <= csr.wdata(19); -- fast interrupt channel 3
-              csr.mie_firqe(4) <= csr.wdata(20); -- fast interrupt channel 4
-              csr.mie_firqe(5) <= csr.wdata(21); -- fast interrupt channel 5
-              csr.mie_firqe(6) <= csr.wdata(22); -- fast interrupt channel 6
-              csr.mie_firqe(7) <= csr.wdata(22); -- fast interrupt channel 7
+              for i in 0 to 15 loop -- fast interrupt channels 0..15
+                csr.mie_firqe(i) <= csr.wdata(16+i);
+              end loop; -- i
             when csr_mtvec_c => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
               csr.mtvec <= csr.wdata(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
             when csr_mcounteren_c => -- R/W: machine counter enable register
@@ -1910,7 +1939,6 @@ begin
             when csr_mepc_c => -- R/W: mepc - machine exception program counter
               csr.mepc <= csr.wdata(data_width_c-1 downto 1) & '0';
             when csr_mcause_c => -- R/W: mcause - machine trap cause
-              csr.mcause <= (others => '0');
               csr.mcause(csr.mcause'left) <= csr.wdata(31); -- 1: interrupt, 0: exception
               csr.mcause(4 downto 0)      <= csr.wdata(4 downto 0); -- identifier
             when csr_mtval_c => -- R/W: mtval - machine bad address/instruction
@@ -1919,34 +1947,32 @@ begin
               csr.mip_clear(interrupt_msw_irq_c)   <= not csr.wdata(03);
               csr.mip_clear(interrupt_mtime_irq_c) <= not csr.wdata(07);
               csr.mip_clear(interrupt_mext_irq_c)  <= not csr.wdata(11);
-              --
-              csr.mip_clear(interrupt_firq_0_c) <= not csr.wdata(16);
-              csr.mip_clear(interrupt_firq_1_c) <= not csr.wdata(17);
-              csr.mip_clear(interrupt_firq_2_c) <= not csr.wdata(18);
-              csr.mip_clear(interrupt_firq_3_c) <= not csr.wdata(19);
-              csr.mip_clear(interrupt_firq_4_c) <= not csr.wdata(20);
-              csr.mip_clear(interrupt_firq_5_c) <= not csr.wdata(21);
-              csr.mip_clear(interrupt_firq_6_c) <= not csr.wdata(22);
-              csr.mip_clear(interrupt_firq_7_c) <= not csr.wdata(23);
+              for i in 0 to 15 loop -- fast interrupt channels 0..15
+                csr.mip_clear(interrupt_firq_0_c+i) <= not csr.wdata(16+i);
+              end loop; -- i
 
             -- physical memory protection: R/W: pmpcfg* - PMP configuration registers --
             -- --------------------------------------------------------------------
             when csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c  | csr_pmpcfg3_c  | csr_pmpcfg4_c  | csr_pmpcfg5_c  | csr_pmpcfg6_c  | csr_pmpcfg7_c |
                  csr_pmpcfg8_c | csr_pmpcfg9_c | csr_pmpcfg10_c | csr_pmpcfg11_c | csr_pmpcfg12_c | csr_pmpcfg13_c | csr_pmpcfg14_c | csr_pmpcfg15_c =>
-              for i in 0 to PMP_NUM_REGIONS-1 loop
-                if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
-                  if (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpcfg access
-                    csr.pmpcfg(i)(0) <= csr.wdata((i mod 4)*8+0); -- R (rights.read)
-                    csr.pmpcfg(i)(1) <= csr.wdata((i mod 4)*8+1); -- W (rights.write)
-                    csr.pmpcfg(i)(2) <= csr.wdata((i mod 4)*8+2); -- X (rights.execute)
-                    csr.pmpcfg(i)(3) <= csr.wdata((i mod 4)*8+3) and csr.wdata((i mod 4)*8+4); -- A_L
-                    csr.pmpcfg(i)(4) <= csr.wdata((i mod 4)*8+3) and csr.wdata((i mod 4)*8+4); -- A_H - NAPOT/OFF only
-                    csr.pmpcfg(i)(5) <= '0'; -- reserved
-                    csr.pmpcfg(i)(6) <= '0'; -- reserved
-                    csr.pmpcfg(i)(7) <= csr.wdata((i mod 4)*8+7); -- L (locked / rights also enforced in m-mode)
+              if (PMP_NUM_REGIONS > 0) then
+                for i in 0 to PMP_NUM_REGIONS-1 loop
+                  if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
+                    if (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpcfg access
+                      csr.pmpcfg(i)(0) <= csr.wdata((i mod 4)*8+0); -- R (rights.read)
+                      csr.pmpcfg(i)(1) <= csr.wdata((i mod 4)*8+1); -- W (rights.write)
+                      csr.pmpcfg(i)(2) <= csr.wdata((i mod 4)*8+2); -- X (rights.execute)
+                      csr.pmpcfg(i)(3) <= csr.wdata((i mod 4)*8+3) and csr.wdata((i mod 4)*8+4); -- A_L
+                      csr.pmpcfg(i)(4) <= csr.wdata((i mod 4)*8+3) and csr.wdata((i mod 4)*8+4); -- A_H - NAPOT/OFF only
+                      csr.pmpcfg(i)(5) <= '0'; -- reserved
+                      csr.pmpcfg(i)(6) <= '0'; -- reserved
+                      csr.pmpcfg(i)(7) <= csr.wdata((i mod 4)*8+7); -- L (locked / rights also enforced in m-mode)
+                    end if;
                   end if;
-                end if;
-              end loop; -- i (PMP regions)
+                end loop; -- i (PMP regions)
+              else
+                NULL;
+              end if;
 
             -- physical memory protection: R/W: pmpaddr* - PMP address registers --
             -- --------------------------------------------------------------------
@@ -1958,13 +1984,17 @@ begin
                  csr_pmpaddr40_c | csr_pmpaddr41_c | csr_pmpaddr42_c | csr_pmpaddr43_c | csr_pmpaddr44_c | csr_pmpaddr45_c | csr_pmpaddr46_c | csr_pmpaddr47_c |
                  csr_pmpaddr48_c | csr_pmpaddr49_c | csr_pmpaddr50_c | csr_pmpaddr51_c | csr_pmpaddr52_c | csr_pmpaddr53_c | csr_pmpaddr54_c | csr_pmpaddr55_c |
                  csr_pmpaddr56_c | csr_pmpaddr57_c | csr_pmpaddr58_c | csr_pmpaddr59_c | csr_pmpaddr60_c | csr_pmpaddr61_c | csr_pmpaddr62_c | csr_pmpaddr63_c =>
-              for i in 0 to PMP_NUM_REGIONS-1 loop
-                pmpaddr_v := std_ulogic_vector(unsigned(csr_pmpaddr0_c(6 downto 0)) + i); -- adapt to *non-aligned* base address (csr_pmpaddr0_c)
-                if (csr.addr(6 downto 0) = pmpaddr_v) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
-                  csr.pmpaddr(i) <= csr.wdata;
-                  csr.pmpaddr(i)(index_size_f(PMP_MIN_GRANULARITY)-4 downto 0) <= (others => '1');
-                end if;
-              end loop; -- i (PMP regions)
+              if (PMP_NUM_REGIONS > 0) then
+                for i in 0 to PMP_NUM_REGIONS-1 loop
+                  pmpaddr_v := std_ulogic_vector(unsigned(csr_pmpaddr0_c(6 downto 0)) + i); -- adapt to *non-aligned* base address (csr_pmpaddr0_c)
+                  if (csr.addr(6 downto 0) = pmpaddr_v) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
+                    csr.pmpaddr(i) <= csr.wdata;
+                    csr.pmpaddr(i)(index_size_f(PMP_MIN_GRANULARITY)-4 downto 0) <= (others => '1');
+                  end if;
+                end loop; -- i (PMP regions)
+              else
+                NULL;
+              end if;
 
             -- machine counter setup --
             -- --------------------------------------------------------------------
@@ -1980,12 +2010,16 @@ begin
                  csr_mhpmevent15_c | csr_mhpmevent16_c | csr_mhpmevent17_c | csr_mhpmevent18_c | csr_mhpmevent19_c | csr_mhpmevent20_c |
                  csr_mhpmevent21_c | csr_mhpmevent22_c | csr_mhpmevent23_c | csr_mhpmevent24_c | csr_mhpmevent25_c | csr_mhpmevent26_c |
                  csr_mhpmevent27_c | csr_mhpmevent28_c | csr_mhpmevent29_c | csr_mhpmevent30_c | csr_mhpmevent31_c => -- R/W: mhpmevent* - machine performance-monitoring event selector
-              for i in 0 to HPM_NUM_CNTS-1 loop
-                if (csr.addr(4 downto 0) = std_ulogic_vector(to_unsigned(i+3, 5))) then
-                  csr.mhpmevent(i) <= csr.wdata(csr.mhpmevent(i)'left downto 0);
-                  csr.mhpmevent(i)(1) <= '0'; -- would be used for "TIME"
-                end if;
-              end loop; -- i (CSRs)
+              if (HPM_NUM_CNTS > 0) then
+                for i in 0 to HPM_NUM_CNTS-1 loop
+                  if (csr.addr(4 downto 0) = std_ulogic_vector(to_unsigned(i+3, 5))) then
+                    csr.mhpmevent(i) <= csr.wdata(csr.mhpmevent(i)'left downto 0);
+                    csr.mhpmevent(i)(1) <= '0'; -- would be used for "TIME"
+                  end if;
+                end loop; -- i (CSRs)
+              else
+                NULL;
+              end if;
 
             -- undefined --
             -- --------------------------------------------------------------------
@@ -2003,7 +2037,6 @@ begin
           -- --------------------------------------------------------------------
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
             -- trap cause ID code --
-            csr.mcause <= (others => '0');
             csr.mcause(csr.mcause'left) <= trap_ctrl.cause(trap_ctrl.cause'left); -- 1: interrupt, 0: exception
             csr.mcause(4 downto 0)      <= trap_ctrl.cause(4 downto 0); -- identifier
             -- trap PC --
@@ -2235,15 +2268,9 @@ begin
             csr.rdata(03) <= csr.mie_msie; -- machine software IRQ enable
             csr.rdata(07) <= csr.mie_mtie; -- machine timer IRQ enable
             csr.rdata(11) <= csr.mie_meie; -- machine external IRQ enable
-            --
-            csr.rdata(16) <= csr.mie_firqe(0); -- fast interrupt channel 0
-            csr.rdata(17) <= csr.mie_firqe(1); -- fast interrupt channel 1
-            csr.rdata(18) <= csr.mie_firqe(2); -- fast interrupt channel 2
-            csr.rdata(19) <= csr.mie_firqe(3); -- fast interrupt channel 3
-            csr.rdata(20) <= csr.mie_firqe(4); -- fast interrupt channel 4
-            csr.rdata(21) <= csr.mie_firqe(5); -- fast interrupt channel 5
-            csr.rdata(22) <= csr.mie_firqe(6); -- fast interrupt channel 6
-            csr.rdata(23) <= csr.mie_firqe(7); -- fast interrupt channel 7
+            for i in 0 to 15 loop -- fast interrupt channels 0..15 enable
+              csr.rdata(16+i) <= csr.mie_firqe(i);
+            end loop; -- i
           when csr_mtvec_c => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
             csr.rdata <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
           when csr_mcounteren_c => -- R/W: machine counter enable register
@@ -2258,22 +2285,17 @@ begin
           when csr_mepc_c => -- R/W: mepc - machine exception program counter
             csr.rdata <= csr.mepc(data_width_c-1 downto 1) & '0';
           when csr_mcause_c => -- R/W: mcause - machine trap cause
-            csr.rdata <= csr.mcause;
+            csr.rdata(31) <= csr.mcause(csr.mcause'left);
+            csr.rdata(csr.mcause'left-1 downto 0) <= csr.mcause(csr.mcause'left-1 downto 0);
           when csr_mtval_c => -- R/W: mtval - machine bad address or instruction
             csr.rdata <= csr.mtval;
           when csr_mip_c => -- R/W: mip - machine interrupt pending
             csr.rdata(03) <= csr.mip_status(interrupt_msw_irq_c);
             csr.rdata(07) <= csr.mip_status(interrupt_mtime_irq_c);
             csr.rdata(11) <= csr.mip_status(interrupt_mext_irq_c);
-            --
-            csr.rdata(16) <= csr.mip_status(interrupt_firq_0_c);
-            csr.rdata(17) <= csr.mip_status(interrupt_firq_1_c);
-            csr.rdata(18) <= csr.mip_status(interrupt_firq_2_c);
-            csr.rdata(19) <= csr.mip_status(interrupt_firq_3_c);
-            csr.rdata(20) <= csr.mip_status(interrupt_firq_4_c);
-            csr.rdata(21) <= csr.mip_status(interrupt_firq_5_c);
-            csr.rdata(22) <= csr.mip_status(interrupt_firq_6_c);
-            csr.rdata(23) <= csr.mip_status(interrupt_firq_7_c);
+            for i in 0 to 15 loop -- fast interrupt channels 0..15 pending
+              csr.rdata(16+i) <= csr.mip_status(interrupt_firq_0_c+i);
+            end loop; -- i
 
           -- physical memory protection - configuration --
           when csr_pmpcfg0_c  => csr.rdata <= csr.pmpcfg_rd(03) & csr.pmpcfg_rd(02) & csr.pmpcfg_rd(01) & csr.pmpcfg_rd(00); -- R/W: pmpcfg0

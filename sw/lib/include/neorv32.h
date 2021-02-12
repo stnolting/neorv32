@@ -366,17 +366,26 @@ enum NEORV32_CSR_MCOUNTINHIBIT_enum {
  * CPU <b>mie</b> CSR (r/w): Machine interrupt enable (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CSR_MIE_enum {
-  CSR_MIE_MSIE   =  3, /**< CPU mie CSR  (3): MSIE - Machine software interrupt enable (r/w) */
-  CSR_MIE_MTIE   =  7, /**< CPU mie CSR  (7): MTIE - Machine timer interrupt enable bit (r/w) */
-  CSR_MIE_MEIE   = 11, /**< CPU mie CSR (11): MEIE - Machine external interrupt enable bit (r/w) */
-  CSR_MIE_FIRQ0E = 16, /**< CPU mie CSR (16): FIRQ0E - Fast interrupt channel 0 enable bit (r/w) */
-  CSR_MIE_FIRQ1E = 17, /**< CPU mie CSR (17): FIRQ1E - Fast interrupt channel 1 enable bit (r/w) */
-  CSR_MIE_FIRQ2E = 18, /**< CPU mie CSR (18): FIRQ2E - Fast interrupt channel 2 enable bit (r/w) */
-  CSR_MIE_FIRQ3E = 19, /**< CPU mie CSR (19): FIRQ3E - Fast interrupt channel 3 enable bit (r/w) */
-  CSR_MIE_FIRQ4E = 20, /**< CPU mie CSR (20): FIRQ4E - Fast interrupt channel 4 enable bit (r/w) */
-  CSR_MIE_FIRQ5E = 21, /**< CPU mie CSR (21): FIRQ5E - Fast interrupt channel 5 enable bit (r/w) */
-  CSR_MIE_FIRQ6E = 22, /**< CPU mie CSR (22): FIRQ6E - Fast interrupt channel 6 enable bit (r/w) */
-  CSR_MIE_FIRQ7E = 23  /**< CPU mie CSR (23): FIRQ7E - Fast interrupt channel 7 enable bit (r/w) */
+  CSR_MIE_MSIE    =  3, /**< CPU mie CSR  (3): MSIE - Machine software interrupt enable (r/w) */
+  CSR_MIE_MTIE    =  7, /**< CPU mie CSR  (7): MTIE - Machine timer interrupt enable bit (r/w) */
+  CSR_MIE_MEIE    = 11, /**< CPU mie CSR (11): MEIE - Machine external interrupt enable bit (r/w) */
+
+  CSR_MIE_FIRQ0E  = 16, /**< CPU mie CSR (16): FIRQ0E - Fast interrupt channel 0 enable bit (r/w) */
+  CSR_MIE_FIRQ1E  = 17, /**< CPU mie CSR (17): FIRQ1E - Fast interrupt channel 1 enable bit (r/w) */
+  CSR_MIE_FIRQ2E  = 18, /**< CPU mie CSR (18): FIRQ2E - Fast interrupt channel 2 enable bit (r/w) */
+  CSR_MIE_FIRQ3E  = 19, /**< CPU mie CSR (19): FIRQ3E - Fast interrupt channel 3 enable bit (r/w) */
+  CSR_MIE_FIRQ4E  = 20, /**< CPU mie CSR (20): FIRQ4E - Fast interrupt channel 4 enable bit (r/w) */
+  CSR_MIE_FIRQ5E  = 21, /**< CPU mie CSR (21): FIRQ5E - Fast interrupt channel 5 enable bit (r/w) */
+  CSR_MIE_FIRQ6E  = 22, /**< CPU mie CSR (22): FIRQ6E - Fast interrupt channel 6 enable bit (r/w) */
+  CSR_MIE_FIRQ7E  = 23, /**< CPU mie CSR (23): FIRQ7E - Fast interrupt channel 7 enable bit (r/w) */
+  CSR_MIE_FIRQ8E  = 24, /**< CPU mie CSR (24): FIRQ8E - Fast interrupt channel 8 enable bit (r/w) */
+  CSR_MIE_FIRQ9E  = 25, /**< CPU mie CSR (25): FIRQ9E - Fast interrupt channel 9 enable bit (r/w) */
+  CSR_MIE_FIRQ10E = 26, /**< CPU mie CSR (26): FIRQ10E - Fast interrupt channel 10 enable bit (r/w) */
+  CSR_MIE_FIRQ11E = 27, /**< CPU mie CSR (27): FIRQ11E - Fast interrupt channel 11 enable bit (r/w) */
+  CSR_MIE_FIRQ12E = 28, /**< CPU mie CSR (28): FIRQ12E - Fast interrupt channel 12 enable bit (r/w) */
+  CSR_MIE_FIRQ13E = 29, /**< CPU mie CSR (29): FIRQ13E - Fast interrupt channel 13 enable bit (r/w) */
+  CSR_MIE_FIRQ14E = 30, /**< CPU mie CSR (30): FIRQ14E - Fast interrupt channel 14 enable bit (r/w) */
+  CSR_MIE_FIRQ15E = 31  /**< CPU mie CSR (31): FIRQ15E - Fast interrupt channel 15 enable bit (r/w) */
 };
 
 
@@ -384,18 +393,27 @@ enum NEORV32_CSR_MIE_enum {
  * CPU <b>mip</b> CSR (r/-): Machine interrupt pending (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CSR_MIP_enum {
-  CSR_MIP_MSIP   =  3, /**< CPU mip CSR  (3): MSIP - Machine software interrupt pending (r/-) */
-  CSR_MIP_MTIP   =  7, /**< CPU mip CSR  (7): MTIP - Machine timer interrupt pending (r/-) */
-  CSR_MIP_MEIP   = 11, /**< CPU mip CSR (11): MEIP - Machine external interrupt pending (r/-) */
+  CSR_MIP_MSIP    =  3, /**< CPU mip CSR  (3): MSIP - Machine software interrupt pending (r/-) */
+  CSR_MIP_MTIP    =  7, /**< CPU mip CSR  (7): MTIP - Machine timer interrupt pending (r/-) */
+  CSR_MIP_MEIP    = 11, /**< CPU mip CSR (11): MEIP - Machine external interrupt pending (r/-) */
 
-  CSR_MIP_FIRQ0P = 16, /**< CPU mip CSR (16): FIRQ0P - Fast interrupt channel 0 pending (r/-) */
-  CSR_MIP_FIRQ1P = 17, /**< CPU mip CSR (17): FIRQ1P - Fast interrupt channel 1 pending (r/-) */
-  CSR_MIP_FIRQ2P = 18, /**< CPU mip CSR (18): FIRQ2P - Fast interrupt channel 2 pending (r/-) */
-  CSR_MIP_FIRQ3P = 19, /**< CPU mip CSR (19): FIRQ3P - Fast interrupt channel 3 pending (r/-) */
-  CSR_MIP_FIRQ4P = 20, /**< CPU mip CSR (20): FIRQ4P - Fast interrupt channel 4 pending (r/-) */
-  CSR_MIP_FIRQ5P = 21, /**< CPU mip CSR (21): FIRQ5P - Fast interrupt channel 5 pending (r/-) */
-  CSR_MIP_FIRQ6P = 22, /**< CPU mip CSR (22): FIRQ6P - Fast interrupt channel 6 pending (r/-) */
-  CSR_MIP_FIRQ7P = 23  /**< CPU mip CSR (23): FIRQ7P - Fast interrupt channel 7 pending (r/-) */
+  CSR_MIP_FIRQ0P  = 16, /**< CPU mip CSR (16): FIRQ0P - Fast interrupt channel 0 pending (r/-) */
+  CSR_MIP_FIRQ1P  = 17, /**< CPU mip CSR (17): FIRQ1P - Fast interrupt channel 1 pending (r/-) */
+  CSR_MIP_FIRQ2P  = 18, /**< CPU mip CSR (18): FIRQ2P - Fast interrupt channel 2 pending (r/-) */
+  CSR_MIP_FIRQ3P  = 19, /**< CPU mip CSR (19): FIRQ3P - Fast interrupt channel 3 pending (r/-) */
+  CSR_MIP_FIRQ4P  = 20, /**< CPU mip CSR (20): FIRQ4P - Fast interrupt channel 4 pending (r/-) */
+  CSR_MIP_FIRQ5P  = 21, /**< CPU mip CSR (21): FIRQ5P - Fast interrupt channel 5 pending (r/-) */
+  CSR_MIP_FIRQ6P  = 22, /**< CPU mip CSR (22): FIRQ6P - Fast interrupt channel 6 pending (r/-) */
+  CSR_MIP_FIRQ7P  = 23, /**< CPU mip CSR (23): FIRQ7P - Fast interrupt channel 7 pending (r/-) */
+
+  CSR_MIP_FIRQ8P  = 24, /**< CPU mip CSR (24): FIRQ8P - Fast interrupt channel 8 pending (r/-) */
+  CSR_MIP_FIRQ9P  = 25, /**< CPU mip CSR (25): FIRQ9P - Fast interrupt channel 9 pending (r/-) */
+  CSR_MIP_FIRQ10P = 26, /**< CPU mip CSR (26): FIRQ10P - Fast interrupt channel 10 pending (r/-) */
+  CSR_MIP_FIRQ11P = 27, /**< CPU mip CSR (27): FIRQ11P - Fast interrupt channel 11 pending (r/-) */
+  CSR_MIP_FIRQ12P = 28, /**< CPU mip CSR (28): FIRQ12P - Fast interrupt channel 12 pending (r/-) */
+  CSR_MIP_FIRQ13P = 29, /**< CPU mip CSR (29): FIRQ13P - Fast interrupt channel 13 pending (r/-) */
+  CSR_MIP_FIRQ14P = 30, /**< CPU mip CSR (30): FIRQ14P - Fast interrupt channel 14 pending (r/-) */
+  CSR_MIP_FIRQ15P = 31  /**< CPU mip CSR (31): FIRQ15P - Fast interrupt channel 15 pending (r/-) */
 };
 
 
@@ -475,7 +493,15 @@ enum NEORV32_EXCEPTION_CODES_enum {
   TRAP_CODE_FIRQ_4       = 0x80000014, /**< 1.20: Fast interrupt channel 4 */
   TRAP_CODE_FIRQ_5       = 0x80000015, /**< 1.21: Fast interrupt channel 5 */
   TRAP_CODE_FIRQ_6       = 0x80000016, /**< 1.22: Fast interrupt channel 6 */
-  TRAP_CODE_FIRQ_7       = 0x80000017  /**< 1.23: Fast interrupt channel 7 */
+  TRAP_CODE_FIRQ_7       = 0x80000017, /**< 1.23: Fast interrupt channel 7 */
+  TRAP_CODE_FIRQ_8       = 0x80000018, /**< 1.24: Fast interrupt channel 8 */
+  TRAP_CODE_FIRQ_9       = 0x80000019, /**< 1.25: Fast interrupt channel 9 */
+  TRAP_CODE_FIRQ_10      = 0x8000001a, /**< 1.26: Fast interrupt channel 10 */
+  TRAP_CODE_FIRQ_11      = 0x8000001b, /**< 1.27: Fast interrupt channel 11 */
+  TRAP_CODE_FIRQ_12      = 0x8000001c, /**< 1.28: Fast interrupt channel 12 */
+  TRAP_CODE_FIRQ_13      = 0x8000001d, /**< 1.29: Fast interrupt channel 13 */
+  TRAP_CODE_FIRQ_14      = 0x8000001e, /**< 1.30: Fast interrupt channel 14 */
+  TRAP_CODE_FIRQ_15      = 0x8000001f  /**< 1.31: Fast interrupt channel 15 */
 };
 
 
@@ -714,8 +740,6 @@ enum NEORV32_UART_CT_enum {
   UART_CT_PRSC2    = 26, /**< UART control register(26) (r/w): BAUD rate clock prescaler select bit 2 */
 
   UART_CT_EN       = 28, /**< UART control register(28) (r/w): UART global enable */
-  UART_CT_RX_IRQ   = 29, /**< UART control register(29) (r/w): Activate interrupt on RX done */
-  UART_CT_TX_IRQ   = 30, /**< UART control register(30) (r/w): Activate interrupt on TX done */
   UART_CT_TX_BUSY  = 31  /**< UART control register(31) (r/-): Transmitter is busy when set */
 };
 
@@ -759,7 +783,6 @@ enum NEORV32_SPI_CT_enum {
   SPI_CT_PRSC2  = 12, /**< UART control register(12) (r/w): Clock prescaler select bit 2 */
   SPI_CT_SIZE0  = 13, /**< UART control register(13) (r/w): Transfer data size lsb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
   SPI_CT_SIZE1  = 14, /**< UART control register(14) (r/w): Transfer data size msb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
-  SPI_CT_IRQ_EN = 15, /**< UART control register(15) (r/w): Transfer done interrupt enable */
 
   SPI_CT_BUSY   = 31  /**< UART control register(31) (r/-): SPI busy flag */
 };
@@ -780,12 +803,11 @@ enum NEORV32_TWI_CT_enum {
   TWI_CT_EN     =  0, /**< TWI control register(0) (r/w): TWI enable */
   TWI_CT_START  =  1, /**< TWI control register(1) (-/w): Generate START condition, auto-clears */
   TWI_CT_STOP   =  2, /**< TWI control register(2) (-/w): Generate STOP condition, auto-clears */
-  TWI_CT_IRQ_EN =  3, /**< TWI control register(3) (r/w): Enable transmission done interrupt */
-  TWI_CT_PRSC0  =  4, /**< TWI control register(4) (r/w): Clock prescaler select bit 0 */
-  TWI_CT_PRSC1  =  5, /**< TWI control register(5) (r/w): Clock prescaler select bit 1 */
-  TWI_CT_PRSC2  =  6, /**< TWI control register(6) (r/w): Clock prescaler select bit 2 */
-  TWI_CT_MACK   =  7, /**< TWI control register(7) (r/w): Generate controller ACK for each transmission */
-  TWI_CT_CKSTEN =  8, /**< TWI control register(8) (r/w): Enable clock stretching (by peripheral) */
+  TWI_CT_PRSC0  =  3, /**< TWI control register(3) (r/w): Clock prescaler select bit 0 */
+  TWI_CT_PRSC1  =  4, /**< TWI control register(4) (r/w): Clock prescaler select bit 1 */
+  TWI_CT_PRSC2  =  5, /**< TWI control register(5) (r/w): Clock prescaler select bit 2 */
+  TWI_CT_MACK   =  6, /**< TWI control register(6) (r/w): Generate controller ACK for each transmission */
+  TWI_CT_CKSTEN =  7, /**< TWI control register(7) (r/w): Enable clock stretching (by peripheral) */
 
   TWI_CT_ACK    = 30, /**< TWI control register(30) (r/-): ACK received when set */
   TWI_CT_BUSY   = 31  /**< TWI control register(31) (r/-): Transfer in progress, busy flag */
@@ -831,6 +853,62 @@ enum NEORV32_PWM_DUTY_enum {
 
 
 /**********************************************************************//**
+ * @name IO Device: Numerically-Controlled Oscillator (NCO)
+ **************************************************************************/
+/**@{*/
+/** NCO control register (r/w) */
+#define NCO_CT       (*(IO_REG32 0xFFFFFFC0UL)) // r/w: control register
+/** NCO channel 0 tuning word (r/w) */
+#define NCO_TUNE_CH0 (*(IO_REG32 0xFFFFFFC4UL)) // r/w: tuning word channel 0
+/** NCO channel 1 tuning word (r/w) */
+#define NCO_TUNE_CH1 (*(IO_REG32 0xFFFFFFC8UL)) // r/w: tuning word channel 1
+/** NCO channel 2 tuning word (r/w) */
+#define NCO_TUNE_CH2 (*(IO_REG32 0xFFFFFFCCUL)) // r/w: tuning word channel 2
+
+/** NCO control register bits */
+enum NEORV32_NCO_CT_enum {
+  NCO_CT_EN           =  0, /**< NCO control register(0) (r/w): NCO global enable */
+  // channel 0
+  NCO_CT_CH0_MODE     =  1, /**< NCO control register(1)  - channel 0 (r/w): Output mode (0=fixed 50% duty cycle; 1=pulse mode) */
+  NCO_CT_CH0_IDLE_POL =  2, /**< NCO control register(2)  - channel 0 (r/w): Output idle polarity (0=low, 1=high) */
+  NCO_CT_CH0_OE       =  3, /**< NCO control register(3)  - channel 0 (r/w): Enable processor output pin */
+  NCO_CT_CH0_OUTPUT   =  4, /**< NCO control register(4)  - channel 0 (r/-): Current channel output state */
+  NCO_CT_CH0_PRSC0    =  5, /**< NCO control register(5)  - channel 0 (r/w): Clock prescaler select bit 0 */
+  NCO_CT_CH0_PRSC1    =  6, /**< NCO control register(6)  - channel 0 (r/w): Clock prescaler select bit 1 */
+  NCO_CT_CH0_PRSC2    =  7, /**< NCO control register(7)  - channel 0 (r/w): Clock prescaler select bit 2 */
+  NCO_CT_CH0_PULSE0   =  8, /**< NCO control register(8)  - channel 0 (r/w): Pulse-mode: Pulse length select bit 0 */
+  NCO_CT_CH0_PULSE1   =  9, /**< NCO control register(9)  - channel 0 (r/w): Pulse-mode: Pulse length select bit 1 */
+  NCO_CT_CH0_PULSE2   = 10, /**< NCO control register(10) - channel 0 (r/w): Pulse-mode: Pulse length select bit 2 */
+  // channel 1
+  NCO_CT_CH1_MODE     = 11, /**< NCO control register(11) - channel 1 (r/w): Output mode (0=fixed 50% duty cycle; 1=pulse mode) */
+  NCO_CT_CH1_IDLE_POL = 12, /**< NCO control register(12) - channel 1 (r/w): Output idle polarity (0=low, 1=high) */
+  NCO_CT_CH1_OE       = 13, /**< NCO control register(13) - channel 1 (r/w): Enable processor output pin */
+  NCO_CT_CH1_OUTPUT   = 14, /**< NCO control register(14) - channel 1 (r/-): Current channel output state */
+  NCO_CT_CH1_PRSC0    = 15, /**< NCO control register(15) - channel 1 (r/w): Clock prescaler select bit 0 */
+  NCO_CT_CH1_PRSC1    = 16, /**< NCO control register(16) - channel 1 (r/w): Clock prescaler select bit 1 */
+  NCO_CT_CH1_PRSC2    = 17, /**< NCO control register(17) - channel 1 (r/w): Clock prescaler select bit 2 */
+  NCO_CT_CH1_PULSE0   = 18, /**< NCO control register(18) - channel 1 (r/w): Pulse-mode: Pulse length select bit 0 */
+  NCO_CT_CH1_PULSE1   = 19, /**< NCO control register(19) - channel 1 (r/w): Pulse-mode: Pulse length select bit 1 */
+  NCO_CT_CH1_PULSE2   = 20, /**< NCO control register(20) - channel 1 (r/w): Pulse-mode: Pulse length select bit 2 */
+  // channel 2
+  NCO_CT_CH2_MODE     = 21, /**< NCO control register(21) - channel 2 (r/w): Output mode (0=fixed 50% duty cycle; 1=pulse mode) */
+  NCO_CT_CH2_IDLE_POL = 22, /**< NCO control register(22) - channel 2 (r/w): Output idle polarity (0=low, 1=high) */
+  NCO_CT_CH2_OE       = 23, /**< NCO control register(23) - channel 2 (r/w): Enable processor output pin */
+  NCO_CT_CH2_OUTPUT   = 24, /**< NCO control register(24) - channel 2 (r/-): Current channel output state */
+  NCO_CT_CH2_PRSC0    = 25, /**< NCO control register(25) - channel 2 (r/w): Clock prescaler select bit 0 */
+  NCO_CT_CH2_PRSC1    = 26, /**< NCO control register(26) - channel 2 (r/w): Clock prescaler select bit 1 */
+  NCO_CT_CH2_PRSC2    = 27, /**< NCO control register(27) - channel 2 (r/w): Clock prescaler select bit 2 */
+  NCO_CT_CH2_PULSE0   = 28, /**< NCO control register(28) - channel 2 (r/w): Pulse-mode: Pulse length select bit 0 */
+  NCO_CT_CH2_PULSE1   = 29, /**< NCO control register(29) - channel 2 (r/w): Pulse-mode: Pulse length select bit 1 */
+  NCO_CT_CH2_PULSE2   = 20  /**< NCO control register(30) - channel 2 (r/w): Pulse-mode: Pulse length select bit 2 */
+};
+
+/** Size of one "channel entry" in control register in bits */
+#define NCO_CHX_WIDTH 10 // Size of one "channel entry" in control register in bits
+/**@}*/
+
+
+/**********************************************************************//**
  * @name IO Device: System Configuration Info Memory (SYSINFO)
  **************************************************************************/
 /**@{*/
@@ -872,7 +950,8 @@ enum NEORV32_PWM_DUTY_enum {
   SYSINFO_FEATURES_IO_PWM           = 21, /**< SYSINFO_FEATURES (21) (r/-): Pulse-width modulation unit implemented when 1 (via IO_PWM_EN generic) */
   SYSINFO_FEATURES_IO_WDT           = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_EN generic) */
   SYSINFO_FEATURES_IO_CFS           = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions subsystem implemented when 1 (via IO_CFS_EN generic) */
-  SYSINFO_FEATURES_IO_TRNG          = 24  /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_EN generic) */
+  SYSINFO_FEATURES_IO_TRNG          = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_EN generic) */
+  SYSINFO_FEATURES_IO_NCO           = 25  /**< SYSINFO_FEATURES (25) (r/-): Numerically-controlled oscillator implemented when 1 (via IO_NCO_EN generic) */
 };
 
 /**********************************************************************//**
@@ -914,6 +993,7 @@ enum NEORV32_PWM_DUTY_enum {
 #include "neorv32_cfs.h"
 #include "neorv32_gpio.h"
 #include "neorv32_mtime.h"
+#include "neorv32_nco.h"
 #include "neorv32_pwm.h"
 #include "neorv32_spi.h"
 #include "neorv32_trng.h"

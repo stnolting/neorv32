@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32 - TRNG Demo Program >>                                                             #
+// # << NEORV32: neorv32_nco.c - Numerically-Controlled Oscillator (NCO) HW Driver >>              #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -34,172 +34,138 @@
 
 
 /**********************************************************************//**
- * @file demo_trng/main.c
+ * @file neorv32_nco.c
  * @author Stephan Nolting
- * @brief True random number generator demo program.
+ * @brief Numerically-Controlled Oscillator (NCO) HW driver source file.
+ *
+ * @note These functions should only be used if the NCO unit was synthesized (IO_NCO_EN = true).
  **************************************************************************/
 
-#include <neorv32.h>
+#include "neorv32.h"
+#include "neorv32_nco.h"
 
 
 /**********************************************************************//**
- * @name User configuration
- **************************************************************************/
-/**@{*/
-/** UART BAUD rate */
-#define BAUD_RATE 19200
-/**@}*/
-
-
-// prototypes
-void print_random_data(void);
-void generate_histogram(void);
-
-
-/**********************************************************************//**
- * Simple true random number test/demo program.
+ * Check if NCO unit was synthesized.
  *
- * @note This program requires the UART and the TRNG to be synthesized.
- *
- * @return Irrelevant.
+ * @return 0 if NCO was not synthesized, 1 if NCO is available.
  **************************************************************************/
-int main(void) {
+int neorv32_nco_available(void) {
 
-  // check if UART unit is implemented at all
-  if (neorv32_uart_available() == 0) {
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_NCO)) {
+    return 1;
+  }
+  else {
     return 0;
   }
-
-  // capture all exceptions and give debug info via UART
-  // this is not required, but keeps us safe
-  neorv32_rte_setup();
-
-
-  // init UART at default baud rate, no parity bits
-  neorv32_uart_setup(BAUD_RATE, 0b00);
-
-  // check available hardware extensions and compare with compiler flags
-  neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
-
-  // intro
-  neorv32_uart_printf("\n--- TRNG Demo ---\n\n");
-
-  // check if TRNG unit is implemented at all
-  if (neorv32_trng_available() == 0) {
-    neorv32_uart_printf("No TRNG implemented.");
-    return 0;
-  }
-
-  // enable TRNG
-  neorv32_trng_enable();
-
-  while(1) {
-
-    // main menu
-    neorv32_uart_printf("\nCommands:\n"
-                        " n: Print 8-bit random numbers (abort by pressing any key)\n"
-                        " h: Generate and print histogram\n");
-
-    neorv32_uart_printf("CMD:> ");
-    char cmd = neorv32_uart_getc();
-    neorv32_uart_putc(cmd); // echo
-    neorv32_uart_printf("\n");
-
-    if (cmd == 'n') {
-      print_random_data();
-    }
-    else if (cmd == 'h') {
-      generate_histogram();
-    }
-    else {
-      neorv32_uart_printf("Invalid command.\n");
-    }
-  }
-
-  return 0;
 }
 
 
 /**********************************************************************//**
- * Print random numbers until a key is pressed.
+ * Enable NCO (global).
  **************************************************************************/
-void print_random_data(void) {
+void neorv32_nco_enable(void) {
 
-  uint32_t num_samples = 0;
-  int err = 0;
-  uint8_t trng_data;
-
-  while(1) {
-    err = neorv32_trng_get(&trng_data);
-    if (err) {
-      neorv32_uart_printf("\nTRNG error!\n");
-      break;
-    }
-    neorv32_uart_printf("%u ", (uint32_t)(trng_data));
-    num_samples++;
-    if (neorv32_uart_char_received()) { // abort when key pressed
-      break;
-    }
-  }
-  neorv32_uart_printf("\nPrinted samples: %u\n", num_samples);
+  NCO_CT |= (1<<NCO_CT_EN);
 }
 
 
 /**********************************************************************//**
- * Generate and print histogram. Samples random data until a key is pressed.
+ * Disable NCO (global).
  **************************************************************************/
-void generate_histogram(void) {
+void neorv32_nco_disable(void) {
 
-  uint32_t hist[256];
-  uint32_t i;
-  uint32_t cnt = 0;
-  int err = 0;
-  uint8_t trng_data;
+  NCO_CT &= ~(1<<NCO_CT_EN);
+}
 
-  neorv32_uart_printf("Press any key to start.\n");
 
-  while(neorv32_uart_char_received() == 0);
-  neorv32_uart_printf("Sampling... Press any key to stop.\n");
+/**********************************************************************//**
+ * Configure NCO channel. The NCO control register bits are listed in #NEORV32_NCO_CT_enum.
+ *
+ * @param[in] channel Channel number (0,1,2).
+ * @param[in] mode Operation mode: 0=normal (50% duty cycle), 1=pulse-mode.
+ * @param[in] idle_pol Idle polarity (0 or 1).
+ * @param[in] oe Enable output to processor top pin when set.
+ * @param[in] prsc Clock select / clock prescaler, see #NEORV32_CLOCK_PRSC_enum.
+ * @param[in] pulse Select pulse length (in clock-prescaler cycles) for pulse-mode. See data sheet.
+ **************************************************************************/
+void neorv32_nco_setup(uint8_t channel, uint8_t mode, uint8_t idle_pol, uint8_t oe, uint8_t prsc, uint8_t pulse) {
 
-  // clear histogram
-  for (i=0; i<256; i++) {
-    hist[i] = 0;
+  uint32_t ctrl = NCO_CT; // get current config
+
+  // operation mode
+  uint32_t mode_int = (uint32_t)(mode & 0x01);
+  mode_int = mode_int << NCO_CT_CH0_MODE;
+
+  // idle polarity
+  uint32_t idle_pol_int = (uint32_t)(idle_pol & 0x01);
+  idle_pol_int = idle_pol_int << NCO_CT_CH0_IDLE_POL;
+
+  // output enable
+  uint32_t oe_int = (uint32_t)(oe & 0x01);
+  oe_int = oe_int << NCO_CT_CH0_OE;
+
+  // clock select / prescaler
+  uint32_t prsc_int = (uint32_t)(prsc & 0x07);
+  prsc_int = prsc_int << NCO_CT_CH0_PRSC0;
+
+  // pulse mode: pulse length select
+  uint32_t pulse_int = (uint32_t)(pulse & 0x07);
+  pulse_int = pulse_int << NCO_CT_CH0_PULSE0;
+
+  // construct control word
+  uint32_t config = mode_int | idle_pol_int | oe_int | prsc_int | pulse_int;
+
+  // mask and align to selected channel
+  uint32_t mask_clr = (1<<NCO_CHX_WIDTH)-1;
+  mask_clr          = mask_clr << NCO_CT_CH0_MODE;
+  mask_clr          = mask_clr << ( NCO_CHX_WIDTH * (channel & 0x03) );
+  config            = config   << ( NCO_CHX_WIDTH * (channel & 0x03) );
+
+  ctrl &= ~mask_clr; // clear old configuration
+  ctrl |= config; // set new configuration
+
+  // update NCO control register
+  NCO_CT = ctrl;
+}
+
+
+/**********************************************************************//**
+ * Set tuning word of NCO channel.
+ *
+ * @param[in] channel Channel number (0,1,2).
+ * @param[in] tune Tuning word.
+ **************************************************************************/
+void neorv32_nco_set_tuning(uint8_t channel, uint32_t tune) {
+
+  uint8_t channel_int = channel & 0x03;
+  if (channel_int == 0) {
+    NCO_TUNE_CH0 = tune;
   }
-
-  // sample random data
-  while(1) {
-
-    err = neorv32_trng_get(&trng_data);
-    hist[trng_data & 0xff]++;
-    cnt++;
-
-    if (err) {
-      neorv32_uart_printf("\nTRNG error!\n");
-      break;
-    }
-
-    if (neorv32_uart_char_received()) { // abort when key pressed
-      break;
-    }
-
-    if (cnt & 0x80000000UL) { // to prevent overflow
-      break;
-    }
+  else if (channel_int == 1) {
+    NCO_TUNE_CH1 = tune;
   }
-
-  // print histogram
-  neorv32_uart_printf("Histogram [random data value] : [# occurences]\n");
-  for (i=0; i<256; i++) {
-    neorv32_uart_printf("%u: %u\n", (uint32_t)i, hist[i]);
+  else if (channel_int == 2) {
+    NCO_TUNE_CH2 = tune;
   }
+}
 
-  neorv32_uart_printf("\nSamples: %u\n", cnt);
 
-  // average
-  uint64_t average = 0;
-  for (i=0; i<256; i++) {
-    average += (uint64_t)hist[i] * i;
+/**********************************************************************//**
+ * Get current output state of NCO channel.
+ *
+ * @param[in] channel Channel number (0,1,2).
+ * @return Current output state (0 or 1).
+ **************************************************************************/
+uint32_t neorv32_nco_get_output(uint8_t channel) {
+
+  uint8_t shift = NCO_CT_CH0_OUTPUT + NCO_CHX_WIDTH*(channel & 0x03); // insulate OUTPUT bit of selected channel
+  uint32_t mask = 1 << shift;
+
+  if (NCO_CT & mask) {
+    return 1;
   }
-  average = average / ((uint64_t)cnt);
-  neorv32_uart_printf("Average value: %u\n", (uint32_t)average);
+  else {
+    return 0;
+  }
 }

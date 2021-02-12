@@ -113,8 +113,8 @@ entity neorv32_cpu is
     mext_irq_i     : in  std_ulogic := '0'; -- machine external interrupt
     mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt
     -- fast interrupts (custom) --
-    firq_i         : in  std_ulogic_vector(7 downto 0) := (others => '0');
-    firq_ack_o     : out std_ulogic_vector(7 downto 0)
+    firq_i         : in  std_ulogic_vector(15 downto 0) := (others => '0');
+    firq_ack_o     : out std_ulogic_vector(15 downto 0)
   );
 end neorv32_cpu;
 
@@ -273,7 +273,6 @@ begin
     -- data input --
     mem_i  => rdata,              -- memory read data
     alu_i  => alu_res,            -- ALU result
-    csr_i  => csr_rdata,          -- CSR read data
     -- data output --
     rs1_o  => rs1,                -- operand 1
     rs2_o  => rs2,                -- operand 2
@@ -367,7 +366,7 @@ begin
   -- CP result --
   cp1_data(data_width_c-1 downto 1) <= (others => '0');
   cp1_data(0) <= atomic_sc_res when (CPU_EXTENSION_RISCV_A = true) else '0';
-  cp1_valid   <= cp1_start; -- always assigned even if A is disabled to make sure CPU does not get stalled if there is an accidental access
+  cp1_valid   <= cp1_start; -- always assigned even if A extension is disabled to make sure CPU does not get stalled if there is an accidental access
 
 
   -- Co-Processor 2: Bit Manipulation ('B' Extension) ---------------------------------------
@@ -398,10 +397,12 @@ begin
   end generate;
 
 
-  -- Co-Processor 3: Not implemented --------------------------------------------------------
+  -- Co-Processor 3: CSR (Read) Access ('Zicsr' Extension) ----------------------------------
   -- -------------------------------------------------------------------------------------------
-  cp3_data  <= (others => '0');
-  cp3_valid <= cp3_start; -- to make sure CPU does not get stalled if there is an accidental access
+  -- "pseudo" co-processor for CSR *read* access operations
+  -- used to get the CSR read data into the data path
+  cp3_data  <= csr_rdata when (CPU_EXTENSION_RISCV_Zicsr = true) else (others => '0');
+  cp3_valid <= cp3_start; -- always assigned even if Zicsr extension is disabled to make sure CPU does not get stalled if there is an accidental access
 
 
   -- Bus Interface Unit ---------------------------------------------------------------------

@@ -83,8 +83,8 @@ int main() {
   neorv32_rte_setup();
 
 
-  // init UART at default baud rate, no parity bits, no rx interrupt, no tx interrupt
-  neorv32_uart_setup(BAUD_RATE, 0b00, 0, 0);
+  // init UART at default baud rate, no parity bits
+  neorv32_uart_setup(BAUD_RATE, 0b00);
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
@@ -104,8 +104,8 @@ int main() {
   neorv32_uart_printf("This program allows to create TWI transfers by hand.\n"
                       "Type 'help' to see the help menu.\n\n");
 
-  // configure TWI, second slowest clock, no IRQ, no clock-stretching
-  neorv32_twi_setup(CLK_PRSC_2048, 0, 0);
+  // configure TWI, second slowest clock, no clock-stretching
+  neorv32_twi_setup(CLK_PRSC_2048, 0);
 
   // no active bus session yet
   bus_claimed = 0;

@@ -7,7 +7,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -62,7 +62,7 @@ entity neorv32_spi is
     spi_sdi_i   : in  std_ulogic; -- controller data in, peripheral data out
     spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
     -- interrupt --
-    spi_irq_o   : out std_ulogic -- transmission done interrupt
+    irq_o       : out std_ulogic -- transmission done interrupt
   );
 end neorv32_spi;
 
@@ -89,7 +89,6 @@ architecture neorv32_spi_rtl of neorv32_spi is
   constant ctrl_spi_prsc2_c  : natural := 12; -- r/w: spi prescaler select bit 2
   constant ctrl_spi_size0_c  : natural := 13; -- r/w: data size (00:  8-bit, 01: 16-bit)
   constant ctrl_spi_size1_c  : natural := 14; -- r/w: data size (10: 24-bit, 11: 32-bit)
-  constant ctrl_spi_irq_en_c : natural := 15; -- r/w: spi transmission done interrupt enable
   --
   constant ctrl_spi_busy_c   : natural := 31; -- r/-: spi transceiver is busy
 
@@ -100,7 +99,7 @@ architecture neorv32_spi_rtl of neorv32_spi is
   signal rden   : std_ulogic; -- read enable
 
   -- accessible regs --
-  signal ctrl        : std_ulogic_vector(15 downto 0);
+  signal ctrl        : std_ulogic_vector(14 downto 0);
   signal tx_data_reg : std_ulogic_vector(31 downto 0);
   signal rx_data     : std_ulogic_vector(31 downto 0);
 
@@ -166,7 +165,6 @@ begin
           data_o(ctrl_spi_prsc2_c)  <= ctrl(ctrl_spi_prsc2_c);
           data_o(ctrl_spi_size0_c)  <= ctrl(ctrl_spi_size0_c);
           data_o(ctrl_spi_size1_c)  <= ctrl(ctrl_spi_size1_c);
-          data_o(ctrl_spi_irq_en_c) <= ctrl(ctrl_spi_irq_en_c);
           --
           data_o(ctrl_spi_busy_c)   <= spi_busy;
         else -- spi_rtx_addr_c
@@ -199,7 +197,7 @@ begin
       spi_sdi_ff1 <= spi_sdi_ff0;
 
       -- serial engine --
-      spi_irq_o <= '0';
+      irq_o <= '0';
       if (spi_state0 = '0') or (ctrl(ctrl_spi_en_c) = '0') then -- idle or disabled
       -- --------------------------------------------------------------
         spi_bitcnt <= (others => '0');
@@ -247,7 +245,7 @@ begin
             if (spi_bitcnt = spi_bitcnt_max) then
               spi_state0 <= '0';
               spi_busy   <= '0';
-              spi_irq_o  <= ctrl(ctrl_spi_irq_en_c);
+              irq_o      <= '1';
             end if;
           end if;
         end if;
