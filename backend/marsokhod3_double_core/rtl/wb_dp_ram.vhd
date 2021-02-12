@@ -27,14 +27,16 @@ library IEEE;
     use IEEE.STD_LOGIC_1164.all;
     use IEEE.NUMERIC_STD.all;
 
+library neorv32;
+    use neorv32.neorv32_package.all;
+
 --use WORK.wishbone_package.all;
 
 entity wb_dp_ram is
   generic (
-    DATA_WIDTH      : natural := 32;
-    ADDR_WIDTH_INT  : natural := 6;
-    MEM_BASE        : std_ulogic_vector(31 downto 0) := x"70000000"; -- memory base address
-    MEM_SIZE        : natural := 32
+    DATA_WIDTH  : natural := 32;
+    MEM_BASE    : std_ulogic_vector(31 downto 0) := x"90000000"; -- memory base address
+    MEM_SIZE    : natural := 32
   );
   port (
     clk         : in  std_ulogic;
@@ -72,43 +74,47 @@ architecture rtl of wb_dp_ram is
 
   -- Build a 2-D array type for the RAM
   subtype word_type is std_ulogic_vector((DATA_WIDTH-1) downto 0);
-  type memory_type is array(2**ADDR_WIDTH_INT-1 downto 0) of word_type;
+  type memory_type is array(MEM_SIZE-1 downto 0) of word_type;
 
   -- Declare the RAM
   shared variable ram : memory_type;
 
-  signal stb_a_int : std_ulogic;
-  signal stb_b_int : std_ulogic;
+  signal stb_a  : std_ulogic;
+  signal stb_b  : std_ulogic;
+  signal addr_a : std_ulogic_vector(index_size_f(MEM_SIZE)-1 downto 0);
+  signal addr_b : std_ulogic_vector(index_size_f(MEM_SIZE)-1 downto 0);
 
 begin
 
 -- Interface A                                                                --
-  stb_a_int <= wb_a_stb when (wb_a_adr >= MEM_BASE) and (wb_a_adr < std_ulogic_vector(unsigned(MEM_BASE) + MEM_SIZE)) else '0';
-
-  wb_a_ack <= stb_a_int; -- Asynchronous slave
+  stb_a     <= wb_a_stb when (wb_a_adr >= MEM_BASE) and (wb_a_adr < std_ulogic_vector(unsigned(MEM_BASE) + MEM_SIZE)) else '0';
+  addr_a    <= wb_a_adr(index_size_f(MEM_SIZE)+1 downto 2); -- word aligned
+  wb_a_err  <= '0';
 
   ram_a: process(clk)
   begin
     if rising_edge(clk) then
-      if (stb_a_int and wb_a_cyc and wb_a_we) = '1' then
-        ram(to_integer(unsigned(wb_a_adr))) := wb_a_dat_i;
+      if (stb_a and wb_a_cyc and wb_a_we) = '1' then
+        ram(to_integer(unsigned(addr_a))) := wb_a_dat_i;
       end if;
-      wb_a_dat_o <= ram(to_integer(unsigned(wb_a_adr)));
+      wb_a_dat_o <= ram(to_integer(unsigned(addr_a)));
+      wb_a_ack <= stb_a; -- Synchronous slave
     end if;
   end process;
 
 -- Interface B                                                                --
-  stb_b_int <= wb_b_stb when (wb_b_adr >= MEM_BASE) and (wb_b_adr < std_ulogic_vector(unsigned(MEM_BASE) + MEM_SIZE)) else '0';
-
-  wb_b_ack <= stb_b_int; -- Asynchronous slave
+  stb_b     <= wb_b_stb when (wb_b_adr >= MEM_BASE) and (wb_b_adr < std_ulogic_vector(unsigned(MEM_BASE) + MEM_SIZE)) else '0';
+  addr_b    <= wb_b_adr(index_size_f(MEM_SIZE)+1 downto 2); -- word aligned
+  wb_b_err  <= '0';
 
   ram_b: process(clk)
   begin
     if rising_edge(clk) then
-      if (stb_b_int and wb_b_cyc and wb_b_we) = '1' then
-        ram(to_integer(unsigned(wb_b_adr))) := wb_b_dat_i;
+      if (stb_b and wb_b_cyc and wb_b_we) = '1' then
+        ram(to_integer(unsigned(addr_b))) := wb_b_dat_i;
       end if;
-      wb_b_dat_o <= ram(to_integer(unsigned(wb_b_adr)));
+      wb_b_dat_o <= ram(to_integer(unsigned(addr_b)));
+      wb_b_ack <= stb_b; -- Synchronous slave
     end if;
   end process;
 

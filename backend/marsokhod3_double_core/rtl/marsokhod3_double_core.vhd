@@ -148,8 +148,7 @@ begin
   dpr: entity work.wb_dp_ram
     generic map (
       DATA_WIDTH      => 32,
-      ADDR_WIDTH_INT  => 6,
-      MEM_BASE        => x"70000000",
+      MEM_BASE        => x"90000000",
       MEM_SIZE        => 32
     )
     port map (
