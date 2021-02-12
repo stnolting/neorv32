@@ -85,6 +85,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   type pmp_ctrl_if_t is array (0 to 63) of std_ulogic_vector(07 downto 0);
   type pmp_addr_if_t is array (0 to 63) of std_ulogic_vector(33 downto 0);
+  type cp_data_if_t  is array (0 to 7)  of std_ulogic_vector(data_width_c-1 downto 0);
 
   -- Processor-Internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -252,37 +253,38 @@ package neorv32_package is
   constant ctrl_bus_lock_c      : natural := 41; -- locked/exclusive bus access
   -- co-processors --
   constant ctrl_cp_id_lsb_c     : natural := 42; -- cp select ID lsb
-  constant ctrl_cp_id_msb_c     : natural := 43; -- cp select ID msb
+  constant ctrl_cp_id_hsb_c     : natural := 43; -- cp select ID hsb
+  constant ctrl_cp_id_msb_c     : natural := 44; -- cp select ID msb
   -- current privilege level --
-  constant ctrl_priv_lvl_lsb_c  : natural := 44; -- privilege level lsb
-  constant ctrl_priv_lvl_msb_c  : natural := 45; -- privilege level msb
+  constant ctrl_priv_lvl_lsb_c  : natural := 45; -- privilege level lsb
+  constant ctrl_priv_lvl_msb_c  : natural := 46; -- privilege level msb
   -- instruction's control blocks (used by cpu co-processors) --
-  constant ctrl_ir_funct3_0_c   : natural := 46; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 47; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 48; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 49; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 50; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 51; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 52; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 53; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 54; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 55; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 56; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 57; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 58; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 59; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 60; -- funct12 bit 11
-  constant ctrl_ir_opcode7_0_c  : natural := 61; -- opcode7 bit 0
-  constant ctrl_ir_opcode7_1_c  : natural := 62; -- opcode7 bit 1
-  constant ctrl_ir_opcode7_2_c  : natural := 63; -- opcode7 bit 2
-  constant ctrl_ir_opcode7_3_c  : natural := 64; -- opcode7 bit 3
-  constant ctrl_ir_opcode7_4_c  : natural := 65; -- opcode7 bit 4
-  constant ctrl_ir_opcode7_5_c  : natural := 66; -- opcode7 bit 5
-  constant ctrl_ir_opcode7_6_c  : natural := 67; -- opcode7 bit 6
+  constant ctrl_ir_funct3_0_c   : natural := 47; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 48; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 49; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 50; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 51; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 52; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 53; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 54; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 55; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 56; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 57; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 58; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 59; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 60; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 61; -- funct12 bit 11
+  constant ctrl_ir_opcode7_0_c  : natural := 62; -- opcode7 bit 0
+  constant ctrl_ir_opcode7_1_c  : natural := 63; -- opcode7 bit 1
+  constant ctrl_ir_opcode7_2_c  : natural := 64; -- opcode7 bit 2
+  constant ctrl_ir_opcode7_3_c  : natural := 65; -- opcode7 bit 3
+  constant ctrl_ir_opcode7_4_c  : natural := 66; -- opcode7 bit 4
+  constant ctrl_ir_opcode7_5_c  : natural := 67; -- opcode7 bit 5
+  constant ctrl_ir_opcode7_6_c  : natural := 68; -- opcode7 bit 6
   -- CPU status --
-  constant ctrl_sleep_c         : natural := 68; -- set when CPU is in sleep mode
+  constant ctrl_sleep_c         : natural := 69; -- set when CPU is in sleep mode
   -- control bus size --
-  constant ctrl_width_c         : natural := 69; -- control bus size
+  constant ctrl_width_c         : natural := 70; -- control bus size
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -662,10 +664,14 @@ package neorv32_package is
 
   -- Co-Processor IDs -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant cp_sel_muldiv_c   : std_ulogic_vector(1 downto 0) := "00"; -- multiplication/division operations ('M' extension)
-  constant cp_sel_atomic_c   : std_ulogic_vector(1 downto 0) := "01"; -- atomic operations; success/failure evaluation ('A' extension)
-  constant cp_sel_bitmanip_c : std_ulogic_vector(1 downto 0) := "10"; -- bit manipulation ('B' extension)
-  constant cp_sel_csr_rd_c   : std_ulogic_vector(1 downto 0) := "11"; -- CSR read access ('Zicsr' extension)
+  constant cp_sel_muldiv_c   : std_ulogic_vector(2 downto 0) := "000"; -- multiplication/division operations ('M' extension)
+  constant cp_sel_atomic_c   : std_ulogic_vector(2 downto 0) := "001"; -- atomic operations; success/failure evaluation ('A' extension)
+  constant cp_sel_bitmanip_c : std_ulogic_vector(2 downto 0) := "010"; -- bit manipulation ('B' extension)
+  constant cp_sel_csr_rd_c   : std_ulogic_vector(2 downto 0) := "011"; -- CSR read access ('Zicsr' extension)
+--constant cp_reserved_c     : std_ulogic_vector(2 downto 0) := "100"; -- reserved
+--constant cp_reserved_c     : std_ulogic_vector(2 downto 0) := "101"; -- reserved
+--constant cp_reserved_c     : std_ulogic_vector(2 downto 0) := "110"; -- reserved
+--constant cp_reserved_c     : std_ulogic_vector(2 downto 0) := "111"; -- reserved
 
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -912,7 +918,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
       CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
-      CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
+      CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
       -- Extension Options --
       FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
@@ -980,7 +986,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
       CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
-      CPU_EXTENSION_RISCV_Zifencei : boolean := true;  -- implement instruction stream sync.?
+      CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
       -- Physical memory protection (PMP) --
       PMP_NUM_REGIONS              : natural := 0; -- number of regions (0..64)
       PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
@@ -1070,18 +1076,9 @@ package neorv32_package is
       res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
       add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- address computation result
       -- co-processor interface --
-      cp0_start_o : out std_ulogic; -- trigger co-processor 0
-      cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
-      cp0_valid_i : in  std_ulogic; -- co-processor 0 result valid
-      cp1_start_o : out std_ulogic; -- trigger co-processor 1
-      cp1_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 1 result
-      cp1_valid_i : in  std_ulogic; -- co-processor 1 result valid
-      cp2_start_o : out std_ulogic; -- trigger co-processor 2
-      cp2_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 2 result
-      cp2_valid_i : in  std_ulogic; -- co-processor 2 result valid
-      cp3_start_o : out std_ulogic; -- trigger co-processor 3
-      cp3_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 3 result
-      cp3_valid_i : in  std_ulogic; -- co-processor 3 result valid
+      cp_start_o  : out std_ulogic_vector(7 downto 0); -- trigger co-processor i
+      cp_valid_i  : in  std_ulogic_vector(7 downto 0); -- co-processor i done
+      cp_result_i : in  cp_data_if_t; -- co-processor result
       -- status --
       wait_o      : out std_ulogic -- busy due to iterative processing units
     );

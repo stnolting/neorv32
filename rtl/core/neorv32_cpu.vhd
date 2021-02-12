@@ -144,9 +144,9 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal curr_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
 
   -- co-processor interface --
-  signal cp0_data,  cp1_data,  cp2_data,  cp3_data  : std_ulogic_vector(data_width_c-1 downto 0);
-  signal cp0_valid, cp1_valid, cp2_valid, cp3_valid : std_ulogic;
-  signal cp0_start, cp1_start, cp2_start, cp3_start : std_ulogic;
+  signal cp_start  : std_ulogic_vector(7 downto 0); -- trigger co-processor i
+  signal cp_valid  : std_ulogic_vector(7 downto 0); -- co-processor i done
+  signal cp_result : cp_data_if_t; -- co-processor result
 
   -- pmp interface --
   signal pmp_addr  : pmp_addr_if_t;
@@ -301,18 +301,9 @@ begin
     res_o       => alu_res,       -- ALU result
     add_o       => alu_add,       -- address computation result
     -- co-processor interface --
-    cp0_start_o => cp0_start,     -- trigger co-processor 0
-    cp0_data_i  => cp0_data,      -- co-processor 0 result
-    cp0_valid_i => cp0_valid,     -- co-processor 0 result valid
-    cp1_start_o => cp1_start,     -- trigger co-processor 1
-    cp1_data_i  => cp1_data,      -- co-processor 1 result
-    cp1_valid_i => cp1_valid,     -- co-processor 1 result valid
-    cp2_start_o => cp2_start,     -- trigger co-processor 2
-    cp2_data_i  => cp2_data,      -- co-processor 2 result
-    cp2_valid_i => cp2_valid,     -- co-processor 2 result valid
-    cp3_start_o => cp3_start,     -- trigger co-processor 3
-    cp3_data_i  => cp3_data,      -- co-processor 3 result
-    cp3_valid_i => cp3_valid,     -- co-processor 3 result valid
+    cp_start_o  => cp_start,      -- trigger co-processor i
+    cp_valid_i  => cp_valid,      -- co-processor i done
+    cp_result_i => cp_result,     -- co-processor result
     -- status --
     wait_o      => alu_wait       -- busy due to iterative processing units
   );
@@ -331,31 +322,31 @@ begin
       clk_i   => clk_i,           -- global clock, rising edge
       rstn_i  => rstn_i,          -- global reset, low-active, async
       ctrl_i  => ctrl,            -- main control bus
-      start_i => cp0_start,       -- trigger operation
+      start_i => cp_start(0),     -- trigger operation
       -- data input --
       rs1_i   => rs1,             -- rf source 1
       rs2_i   => rs2,             -- rf source 2
       -- result and status --
-      res_o   => cp0_data,        -- operation result
-      valid_o => cp0_valid        -- data output valid
+      res_o   => cp_result(0),    -- operation result
+      valid_o => cp_valid(0)      -- data output valid
     );
   end generate;
 
   neorv32_cpu_cp_muldiv_inst_false:
   if (CPU_EXTENSION_RISCV_M = false) generate
-    cp0_data  <= (others => '0');
-    cp0_valid <= cp0_start; -- to make sure CPU does not get stalled if there is an accidental access
+    cp_result(0) <= (others => '0');
+    cp_valid(0)  <= cp_start(0); -- to make sure CPU does not get stalled if there is an accidental access
   end generate;
 
 
   -- Co-Processor 1: Atomic Memory Access ('A' Extension) -----------------------------------
   -- -------------------------------------------------------------------------------------------
   -- "pseudo" co-processor for atomic operations
-  -- used to get the result of a store-conditional operation into the data path
+  -- required to get the result of a store-conditional operation into the data path
   atomic_op_cp: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (cp1_start = '1') then
+      if (cp_start(1) = '1') then
         atomic_sc_res <= not ctrl(ctrl_bus_lock_c);
       else
         atomic_sc_res <= '0';
@@ -364,9 +355,9 @@ begin
   end process atomic_op_cp;
 
   -- CP result --
-  cp1_data(data_width_c-1 downto 1) <= (others => '0');
-  cp1_data(0) <= atomic_sc_res when (CPU_EXTENSION_RISCV_A = true) else '0';
-  cp1_valid   <= cp1_start; -- always assigned even if A extension is disabled to make sure CPU does not get stalled if there is an accidental access
+  cp_result(1)(data_width_c-1 downto 1) <= (others => '0');
+  cp_result(1)(0) <= atomic_sc_res when (CPU_EXTENSION_RISCV_A = true) else '0';
+  cp_valid(1)     <= cp_start(1); -- always assigned even if A extension is disabled to make sure CPU does not get stalled if there is an accidental access
 
 
   -- Co-Processor 2: Bit Manipulation ('B' Extension) ---------------------------------------
@@ -379,30 +370,45 @@ begin
       clk_i   => clk_i,           -- global clock, rising edge
       rstn_i  => rstn_i,          -- global reset, low-active, async
       ctrl_i  => ctrl,            -- main control bus
-      start_i => cp2_start,       -- trigger operation
+      start_i => cp_start(2),     -- trigger operation
       -- data input --
       cmp_i   => comparator,      -- comparator status
       rs1_i   => rs1,             -- rf source 1
       rs2_i   => rs2,             -- rf source 2
       -- result and status --
-      res_o   => cp2_data,        -- operation result
-      valid_o => cp2_valid        -- data output valid
+      res_o   => cp_result(2),    -- operation result
+      valid_o => cp_valid(2)      -- data output valid
     );
   end generate;
 
   neorv32_cpu_cp_bitmanip_inst_false:
   if (CPU_EXTENSION_RISCV_B = false) generate
-    cp2_data  <= (others => '0');
-    cp2_valid <= cp2_start; -- to make sure CPU does not get stalled if there is an accidental access
+    cp_result(2) <= (others => '0');
+    cp_valid(2)  <= cp_start(2); -- to make sure CPU does not get stalled if there is an accidental access
   end generate;
 
 
   -- Co-Processor 3: CSR (Read) Access ('Zicsr' Extension) ----------------------------------
   -- -------------------------------------------------------------------------------------------
   -- "pseudo" co-processor for CSR *read* access operations
-  -- used to get the CSR read data into the data path
-  cp3_data  <= csr_rdata when (CPU_EXTENSION_RISCV_Zicsr = true) else (others => '0');
-  cp3_valid <= cp3_start; -- always assigned even if Zicsr extension is disabled to make sure CPU does not get stalled if there is an accidental access
+  -- required to get the CSR read data into the data path
+  cp_result(3) <= csr_rdata when (CPU_EXTENSION_RISCV_Zicsr = true) else (others => '0');
+  cp_valid(3)  <= cp_start(3); -- always assigned even if Zicsr extension is disabled to make sure CPU does not get stalled if there is an accidental access
+
+
+  -- Co-Processor 4..7: Not Implemented Yet -------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  cp_result(4) <= (others => '0');
+  cp_valid(4)  <= '0';
+  --
+  cp_result(5) <= (others => '0');
+  cp_valid(5)  <= '0';
+  --
+  cp_result(6) <= (others => '0');
+  cp_valid(6)  <= '0';
+  --
+  cp_result(7) <= (others => '0');
+  cp_valid(7)  <= '0';
 
 
   -- Bus Interface Unit ---------------------------------------------------------------------

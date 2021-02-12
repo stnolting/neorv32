@@ -60,18 +60,9 @@ entity neorv32_cpu_alu is
     res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
     add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- address computation result
     -- co-processor interface --
-    cp0_start_o : out std_ulogic; -- trigger co-processor 0
-    cp0_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 0 result
-    cp0_valid_i : in  std_ulogic; -- co-processor 0 result valid
-    cp1_start_o : out std_ulogic; -- trigger co-processor 1
-    cp1_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 1 result
-    cp1_valid_i : in  std_ulogic; -- co-processor 1 result valid
-    cp2_start_o : out std_ulogic; -- trigger co-processor 2
-    cp2_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 2 result
-    cp2_valid_i : in  std_ulogic; -- co-processor 2 result valid
-    cp3_start_o : out std_ulogic; -- trigger co-processor 3
-    cp3_data_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- co-processor 3 result
-    cp3_valid_i : in  std_ulogic; -- co-processor 3 result valid
+    cp_start_o  : out std_ulogic_vector(7 downto 0); -- trigger co-processor i
+    cp_valid_i  : in  std_ulogic_vector(7 downto 0); -- co-processor i done
+    cp_result_i : in  cp_data_if_t; -- co-processor result
     -- status --
     wait_o      : out std_ulogic -- busy due to iterative processing units
   );
@@ -288,7 +279,7 @@ begin
       cp_ctrl.busy   <= '0';
     elsif rising_edge(clk_i) then
       cp_ctrl.cmd_ff <= cp_ctrl.cmd;
-      if ((cp0_valid_i or cp1_valid_i or cp2_valid_i or cp3_valid_i) = '1') then -- cp computation done?
+      if (or_all_f(cp_valid_i) = '1') then -- cp computation done?
         cp_ctrl.busy <= '0';
       elsif (cp_ctrl.start = '1') then
         cp_ctrl.busy <= '1';
@@ -301,16 +292,23 @@ begin
   cp_ctrl.start <= '1' when (cp_ctrl.cmd = '1') and (cp_ctrl.cmd_ff = '0') else '0';
 
   -- co-processor select --
-  cp0_start_o <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "00") else '0';
-  cp1_start_o <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "01") else '0';
-  cp2_start_o <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "10") else '0';
-  cp3_start_o <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "11") else '0';
+  cp_operation_trigger: process(cp_ctrl, ctrl_i)
+  begin
+    for i in 0 to 7 loop
+      if (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = std_ulogic_vector(to_unsigned(i, 3))) then
+        cp_start_o(i) <= '1';
+      else
+        cp_start_o(i) <= '0';
+      end if;
+    end loop; -- i
+  end process;
 
   -- co-processor operation (still) running? --
-  cp_ctrl.halt <= (cp_ctrl.busy and (not (cp0_valid_i or cp1_valid_i or cp2_valid_i or cp3_valid_i))) or cp_ctrl.start;
+  cp_ctrl.halt <= (cp_ctrl.busy and (not or_all_f(cp_valid_i))) or cp_ctrl.start;
 
-  -- co-processor result --
-  cp_res <= cp0_data_i or cp1_data_i or cp2_data_i or cp3_data_i; -- only the *actually selected* co-processor may output data != 0
+  -- co-processor result - only the *actually selected* co-processor may output data != 0 --
+  cp_res <= cp_result_i(0) or cp_result_i(1) or cp_result_i(2) or cp_result_i(3) or
+            cp_result_i(4) or cp_result_i(5) or cp_result_i(6) or cp_result_i(7);
 
 
   -- ALU Logic Core -------------------------------------------------------------------------
