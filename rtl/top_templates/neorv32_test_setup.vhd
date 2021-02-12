@@ -74,14 +74,14 @@ begin
     USER_CODE                    => x"00000000", -- custom user code
     HW_THREAD_ID                 => x"00000000", -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        => true,        -- implement atomic extension?
+    CPU_EXTENSION_RISCV_A        => false,       -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        => false,       -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        => true,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => false,       -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => true,        -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        => true,        -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    => true,        -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei => true,        -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zifencei => false,       -- implement instruction stream sync.?
     -- Extension Options --
     FAST_MUL_EN                  => false,       -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => false,       -- use barrel shifter for shift operations
