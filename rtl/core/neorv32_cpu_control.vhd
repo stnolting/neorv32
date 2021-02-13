@@ -48,7 +48,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
-    HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= x"00000000"; -- hardware thread id
+    HW_THREAD_ID                 : natural := 0;     -- hardware thread id (32-bit)
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
@@ -176,11 +176,13 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     is_atomic_sc    : std_ulogic;
     is_bitmanip_imm : std_ulogic;
     is_bitmanip_reg : std_ulogic;
+    sys_env_cmd     : std_ulogic_vector(11 downto 0);
   end record;
   signal decode_aux : decode_aux_t;
 
   -- instruction execution engine --
-  type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP, EXECUTE, ALU_WAIT, BRANCH, FENCE_OP, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, SYS_ENV, CSR_ACCESS);
+  type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, EXECUTE, ALU_WAIT,
+                                  BRANCH, FENCE_OP,LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, SYS_ENV, CSR_ACCESS);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
@@ -197,7 +199,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     --
     branch_taken : std_ulogic; -- branch condition fullfilled
     pc           : std_ulogic_vector(data_width_c-1 downto 0); -- actual PC, corresponding to current executed instruction
-    pc_mux_sel   : std_ulogic_vector(1 downto 0); -- source select for PC update
+    pc_mux_sel   : std_ulogic; -- source select for PC update
     pc_we        : std_ulogic; -- PC update enabled
     next_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- next PC, corresponding to next instruction to be executed
     next_pc_inc  : std_ulogic_vector(data_width_c-1 downto 0); -- increment to get next PC
@@ -205,8 +207,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     --
     sleep        : std_ulogic; -- CPU in sleep mode
     sleep_nxt    : std_ulogic;
-    if_rst       : std_ulogic; -- instruction fetch was reset
-    if_rst_nxt   : std_ulogic;
+    branched     : std_ulogic; -- instruction fetch was reset
+    branched_nxt : std_ulogic;
   end record;
   signal execute_engine : execute_engine_t;
 
@@ -664,24 +666,23 @@ begin
   execute_engine_fsm_sync_rst: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      execute_engine.pc     <= CPU_BOOT_ADDR(data_width_c-1 downto 1) & '0';
-      execute_engine.state  <= SYS_WAIT;
-      execute_engine.sleep  <= '0';
-      execute_engine.if_rst <= '1'; -- instruction fetch is reset after system reset
+      execute_engine.pc       <= CPU_BOOT_ADDR(data_width_c-1 downto 1) & '0';
+      execute_engine.state    <= SYS_WAIT;
+      execute_engine.sleep    <= '0';
+      execute_engine.branched <= '1'; -- reset is a branch from "somewhere"
     elsif rising_edge(clk_i) then
       -- PC update --
       if (execute_engine.pc_we = '1') then
-        case execute_engine.pc_mux_sel is
-          when "00"   => execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/taken_branch
-          when "01"   => execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment
-          when "10"   => execute_engine.pc <= csr.mtvec(data_width_c-1 downto 1) & '0'; -- trap enter
-          when others => execute_engine.pc <= csr.mepc(data_width_c-1 downto 1) & '0';  -- trap exit
-        end case;
+        if (execute_engine.pc_mux_sel = '0') then
+          execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment
+        else
+          execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/taken_branch
+        end if;
       end if;
       --
-      execute_engine.state  <= execute_engine.state_nxt;
-      execute_engine.sleep  <= execute_engine.sleep_nxt;
-      execute_engine.if_rst <= execute_engine.if_rst_nxt;
+      execute_engine.state    <= execute_engine.state_nxt;
+      execute_engine.sleep    <= execute_engine.sleep_nxt;
+      execute_engine.branched <= execute_engine.branched_nxt;
     end if;
   end process execute_engine_fsm_sync_rst;
 
@@ -699,17 +700,23 @@ begin
         execute_engine.last_pc    <= execute_engine.pc;
         execute_engine.i_reg_last <= execute_engine.i_reg;
       end if;
+      -- next PC --
+      case execute_engine.state is
+        when TRAP_ENTER => execute_engine.next_pc <= csr.mtvec(data_width_c-1 downto 1) & '0'; -- trap enter
+        when TRAP_EXIT  => execute_engine.next_pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap exit
+        when EXECUTE    => execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc)); -- next linear PC
+        when others     => NULL;
+      end case;
       -- main control bus --
       ctrl <= ctrl_nxt;
     end if;
   end process execute_engine_fsm_sync;
 
+  -- PC increment for next linear instruction (+2 for compressed instr., +4 otherwise) --
+  execute_engine.next_pc_inc <= x"00000004" when ((execute_engine.is_ci = '0') or (CPU_EXTENSION_RISCV_C = false)) else x"00000002";
+
   -- PC output --
   curr_pc_o <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- PC for ALU ops
-
-  -- next PC (next *linear* instruction)
-  execute_engine.next_pc_inc <= x"00000004" when ((execute_engine.is_ci = '0') or (CPU_EXTENSION_RISCV_C = false)) else x"00000002";
-  execute_engine.next_pc     <= std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc));
 
   -- CSR access address --
   csr.addr <= execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c);
@@ -752,6 +759,7 @@ begin
   -- Decoding Helper Logic ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   decode_helper: process(execute_engine)
+    variable sys_env_cmd_mask_v : std_ulogic_vector(11 downto 0);
   begin
     -- defaults --
     decode_aux.alu_immediate   <= '0';
@@ -803,6 +811,9 @@ begin
         ) then
       decode_aux.is_bitmanip_reg <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);
     end if;
+    -- system/environment instructions --
+    sys_env_cmd_mask_v := funct12_ecall_c or funct12_ebreak_c or funct12_mret_c or funct12_wfi_c; -- sum-up set bits
+    decode_aux.sys_env_cmd(11 downto 0) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) and sys_env_cmd_mask_v; -- set unsued bits to always-zero
   end process decode_helper;
 
 
@@ -818,9 +829,9 @@ begin
     execute_engine.is_cp_op_nxt <= execute_engine.is_cp_op;
     execute_engine.is_ci_nxt    <= execute_engine.is_ci;
     execute_engine.sleep_nxt    <= execute_engine.sleep;
-    execute_engine.if_rst_nxt   <= execute_engine.if_rst;
+    execute_engine.branched_nxt <= execute_engine.branched;
     --
-    execute_engine.pc_mux_sel   <= (others => '0'); -- select "slowest path" as default
+    execute_engine.pc_mux_sel   <= '0';
     execute_engine.pc_we        <= '0';
 
     -- instruction dispatch --
@@ -877,39 +888,48 @@ begin
 
       when DISPATCH => -- Get new command from instruction issue engine
       -- ------------------------------------------------------------
+        -- PC update --
+        execute_engine.pc_mux_sel <= '0'; -- linear next PC
         -- IR update --
-        execute_engine.pc_mux_sel <= "01"; -- linear next PC
-        execute_engine.is_ci_nxt  <= cmd_issue.data(32); -- flag to indicate a de-compressed instruction beeing executed
-        execute_engine.i_reg_nxt  <= cmd_issue.data(31 downto 0);
+        execute_engine.is_ci_nxt <= cmd_issue.data(32); -- flag to indicate a de-compressed instruction
+        execute_engine.i_reg_nxt <= cmd_issue.data(31 downto 0);
         --
         if (cmd_issue.valid = '1') then -- instruction available?
+          -- PC update --
+          execute_engine.branched_nxt <= '0';
+          execute_engine.pc_we        <= not execute_engine.branched; -- update PC with linear next_pc if there was no actual branch
           -- IR update - exceptions --
           trap_ctrl.instr_ma <= cmd_issue.data(33); -- misaligned instruction fetch address
           trap_ctrl.instr_be <= cmd_issue.data(34); -- bus access fault during instruction fetch
           illegal_compressed <= cmd_issue.data(35); -- invalid decompressed instruction
-          -- PC update --
-          execute_engine.if_rst_nxt <= '0';
-          execute_engine.pc_we      <= not execute_engine.if_rst; -- update PC with linear next_pc if there was NO non-linear PC modification
           -- any reason to go to trap state? --
           if (execute_engine.sleep = '1') or (trap_ctrl.env_start = '1') or (trap_ctrl.exc_fire = '1') or ((cmd_issue.data(33) or cmd_issue.data(34)) = '1') then
-            execute_engine.state_nxt <= TRAP;
+            execute_engine.state_nxt <= TRAP_ENTER;
           else
             execute_engine.state_nxt <= EXECUTE;
           end if;
         end if;
 
 
-      when TRAP => -- Start trap environment (also used as cpu sleep state)
+      when TRAP_ENTER => -- Start trap environment - get MTVEC, stay here for sleep mode
       -- ------------------------------------------------------------
-        execute_engine.pc_mux_sel <= "10"; -- csr.mtvec (trap)
-        execute_engine.if_rst_nxt <= '1'; -- this will be a non-linear PC modification
         if (trap_ctrl.env_start = '1') then -- trap triggered?
           trap_ctrl.env_start_ack   <= '1';
-          fetch_engine.reset        <= '1';
-          execute_engine.pc_we      <= '1';
-          execute_engine.sleep_nxt  <= '0'; -- waky waky
-          execute_engine.state_nxt  <= SYS_WAIT;
+          execute_engine.state_nxt  <= TRAP_EXECUTE;
         end if;
+
+      when TRAP_EXIT => -- Return from trap environment - get MEPC
+      -- ------------------------------------------------------------
+        trap_ctrl.env_end        <= '1';
+        execute_engine.state_nxt <= TRAP_EXECUTE;
+
+      when TRAP_EXECUTE => -- Start trap environment - jump to MTVEC / return from trap environment - jump to MEPC
+      -- ------------------------------------------------------------
+        execute_engine.pc_mux_sel <= '0'; -- next PC (csr.mtvec)
+        fetch_engine.reset        <= '1';
+        execute_engine.pc_we      <= '1';
+        execute_engine.sleep_nxt  <= '0'; -- disable sleep mode
+        execute_engine.state_nxt  <= SYS_WAIT;
 
 
       when EXECUTE => -- Decode and execute instruction (control has to be here for excatly 1 cyle in any case!)
@@ -1017,17 +1037,14 @@ begin
 
           when opcode_branch_c | opcode_jal_c | opcode_jalr_c => -- branch / jump and link (with register)
           -- ------------------------------------------------------------
-            -- compute target address --
-            ctrl_nxt(ctrl_alu_arith_c) <= alu_arith_cmd_addsub_c; -- actual ALU operation = ADD
-            ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_arith_c; -- actual ALU operation = ADD
+            -- target address (ALU.ADD) operands --
             if (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = opcode_jalr_c(3 downto 2)) then -- JALR
               ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA (branch target address base)
-            else -- JAL / branch
+            else -- JAL
               ctrl_nxt(ctrl_alu_opa_mux_c) <= '1'; -- use PC as ALU.OPA (branch target address base)
             end if;
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB (branch target address offset)
-            --
-            execute_engine.state_nxt <= BRANCH;
+            execute_engine.state_nxt     <= BRANCH;
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
@@ -1057,23 +1074,14 @@ begin
 
       when SYS_ENV => -- system environment operation - execution
       -- ------------------------------------------------------------
-        execute_engine.pc_mux_sel <= "11"; -- csr.mepc (only relevant for MRET)
-        case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
-          when funct12_ecall_c => -- ECALL
-            trap_ctrl.env_call        <= '1';
-          when funct12_ebreak_c => -- EBREAK
-            trap_ctrl.break_point     <= '1';
-          when funct12_mret_c => -- MRET
-            trap_ctrl.env_end         <= '1';
-            execute_engine.pc_we      <= '1'; -- update PC from MEPC
-            fetch_engine.reset        <= '1';
-            execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
-          when funct12_wfi_c => -- WFI
-            execute_engine.sleep_nxt  <= '1'; -- good night
-          when others => -- undefined
-            NULL;
-        end case;
         execute_engine.state_nxt <= SYS_WAIT;
+        case decode_aux.sys_env_cmd is -- use a simplified input here (with permanent zeros)
+          when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ECALL
+          when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- EBREAK
+          when funct12_mret_c   => execute_engine.state_nxt <= TRAP_EXIT; -- MRET
+          when funct12_wfi_c    => execute_engine.sleep_nxt <= '1'; -- WFI
+          when others           => NULL;-- undefined
+        end case;
 
 
       when CSR_ACCESS => -- read & write status and control register (CSR)
@@ -1119,12 +1127,12 @@ begin
         ctrl_nxt(ctrl_rf_in_mux_c)                           <= '0'; -- RF input = ALU result
         ctrl_nxt(ctrl_rf_wb_en_c)                            <= execute_engine.i_reg(instr_opcode_lsb_c+2); -- valid RF write-back? (is jump-and-link?)
         -- destination address --
-        execute_engine.pc_mux_sel <= "00"; -- alu.add = branch/jump destination
+        execute_engine.pc_mux_sel <= '1'; -- alu.add = branch/jump destination
         if (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') or (execute_engine.branch_taken = '1') then -- JAL/JALR or taken branch
-          execute_engine.pc_we      <= '1'; -- update PC
-          fetch_engine.reset        <= '1'; -- trigger new instruction fetch from modified PC
-          execute_engine.if_rst_nxt <= '1'; -- this is a non-linear PC modification
-          execute_engine.state_nxt  <= SYS_WAIT;
+          execute_engine.pc_we        <= '1'; -- update PC
+          execute_engine.branched_nxt <= '1'; -- this is an actual branch
+          fetch_engine.reset          <= '1'; -- trigger new instruction fetch from modified PC
+          execute_engine.state_nxt    <= SYS_WAIT;
         else
           execute_engine.state_nxt <= DISPATCH;
         end if;
@@ -1135,11 +1143,11 @@ begin
         execute_engine.state_nxt <= SYS_WAIT;
         -- FENCE.I --
         if (CPU_EXTENSION_RISCV_Zifencei = true) then
-          execute_engine.pc_mux_sel <= "01"; -- linear next PC = start *new* instruction fetch with next instruction (only relevant for fence.i)
+          execute_engine.pc_mux_sel <= '0'; -- linear next PC = start *new* instruction fetch with next instruction (only relevant for fence.i)
           if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) then
-            execute_engine.pc_we        <= '1';
-            execute_engine.if_rst_nxt   <= '1'; -- this is a non-linear PC modification
-            fetch_engine.reset          <= '1';
+            execute_engine.pc_we        <= '1'; -- update PC
+            execute_engine.branched_nxt <= '1'; -- this is an actual branch
+            fetch_engine.reset          <= '1'; -- trigger new instruction fetch from modified PC
             ctrl_nxt(ctrl_bus_fencei_c) <= '1';
           end if;
         end if;
@@ -1610,8 +1618,8 @@ begin
         end loop;
         -- trap control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler
-          if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and -- exception/IRQ detected!
-             ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP))) then -- sample IRQs in EXECUTE or TRAP state only to continue execution even if permanent IRQ
+          if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and -- trap triggered!
+             ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP_ENTER))) then -- fire IRQs in EXECUTE or TRAP state only to continue execution even on permanent IRQ
             trap_ctrl.cause     <= trap_ctrl.cause_nxt;   -- capture source ID for program (for mcause csr)
             trap_ctrl.exc_ack   <= '1';                   -- clear execption
             trap_ctrl.irq_ack   <= trap_ctrl.irq_ack_nxt; -- clear interrupt with interrupt ACK mask
@@ -2499,7 +2507,7 @@ begin
           when csr_mimpid_c => -- R/-: mimpid - implementation ID
             csr.rdata <= hw_version_c; -- NEORV32 hardware version
           when csr_mhartid_c => -- R/-: mhartid - hardware thread ID
-            csr.rdata <= HW_THREAD_ID;
+            csr.rdata <= std_ulogic_vector(to_unsigned(HW_THREAD_ID, 32));
 
           -- custom machine read-only CSRs --
           when csr_mzext_c => -- R/-: mzext - available RISC-V Z* extensions
