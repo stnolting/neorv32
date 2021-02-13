@@ -176,7 +176,7 @@ begin
     CLOCK_FREQUENCY              => f_clock_c,     -- clock frequency of clk_i in Hz
     BOOTLOADER_EN                => false,         -- implement processor-internal bootloader?
     USER_CODE                    => x"12345678",   -- custom user code
-    HW_THREAD_ID                 => x"00000000",   -- hardware thread id (hartid)
+    HW_THREAD_ID                 => 0,             -- hardware thread id (hartid) (32-bit)
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => true,          -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        => true,          -- implement bit manipulation extensions?
