@@ -47,7 +47,7 @@ entity neorv32_top_axi4lite is
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
     BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
     USER_CODE                    : std_logic_vector(31 downto 0) := x"00000000"; -- custom user code
-    HW_THREAD_ID                 : std_logic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
+    HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit manipulation extensions?
@@ -87,7 +87,7 @@ entity neorv32_top_axi4lite is
     IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
     IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := (others => '0'); -- custom CFS configuration generic
+    IO_CFS_CONFIG                : std_logic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
     IO_NCO_EN                    : boolean := true    -- implement numerically-controlled oscillator (NCO)?
   );
   port (
@@ -153,7 +153,6 @@ architecture neorv32_top_axi4lite_rtl of neorv32_top_axi4lite is
 
   -- type conversion --
   constant USER_CODE_INT     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(USER_CODE);
-  constant HW_THREAD_ID_INT  : std_ulogic_vector(31 downto 0) := std_ulogic_vector(HW_THREAD_ID);
   constant IO_CFS_CONFIG_INT : std_ulogic_vector(31 downto 0) := std_ulogic_vector(IO_CFS_CONFIG);
   --
   signal clk_i_int       : std_ulogic;
@@ -224,7 +223,7 @@ begin
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,    -- clock frequency of clk_i in Hz
     BOOTLOADER_EN                => BOOTLOADER_EN ,     -- implement processor-internal bootloader?
     USER_CODE                    => USER_CODE_INT,      -- custom user code
-    HW_THREAD_ID                 => HW_THREAD_ID_INT,   -- hardware thread id (hartid)
+    HW_THREAD_ID                 => HW_THREAD_ID,       -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit manipulation extensions?

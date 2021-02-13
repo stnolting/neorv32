@@ -72,7 +72,7 @@ begin
     CLOCK_FREQUENCY              => 100000000,   -- clock frequency of clk_i in Hz
     BOOTLOADER_EN                => true,        -- implement processor-internal bootloader?
     USER_CODE                    => x"00000000", -- custom user code
-    HW_THREAD_ID                 => x"00000000", -- hardware thread id (hartid)
+    HW_THREAD_ID                 => 0,           -- hardware thread id (hartid)
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => false,       -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        => false,       -- implement bit manipulation extensions?
@@ -114,7 +114,7 @@ begin
     IO_WDT_EN                    => true,        -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   => false,       -- implement true random number generator (TRNG)?
     IO_CFS_EN                    => false,       -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                => (others => '0'), -- custom CFS configuration generic
+    IO_CFS_CONFIG                => x"00000000", -- custom CFS configuration generic
     IO_NCO_EN                    => false        -- implement numerically-controlled oscillator (NCO)?
   )
   port map (
