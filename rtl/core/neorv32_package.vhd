@@ -60,7 +60,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050103"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050104"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -807,7 +807,7 @@ package neorv32_package is
       CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
       BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
       USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
-      HW_THREAD_ID                 : std_ulogic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
+      HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
       CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit manipulation extensions?
@@ -849,7 +849,7 @@ package neorv32_package is
       IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
       IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
-      IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := (others => '0'); -- custom CFS configuration generic
+      IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
       IO_NCO_EN                    : boolean := true    -- implement numerically-controlled oscillator (NCO)?
     );
     port (
@@ -907,8 +907,8 @@ package neorv32_package is
   component neorv32_cpu
     generic (
       -- General --
-      HW_THREAD_ID                 : std_ulogic_vector(31 downto 0) := (others => '0'); -- hardware thread id
-      CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0) := (others => '0'); -- cpu boot address
+      HW_THREAD_ID                 : natural := 0;     -- hardware thread id (32-bit)
+      CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu boot address
       BUS_TIMEOUT                  : natural := 63;    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
@@ -976,7 +976,7 @@ package neorv32_package is
   component neorv32_cpu_control
     generic (
       -- General --
-      HW_THREAD_ID                 : std_ulogic_vector(31 downto 0):= x"00000000"; -- hardware thread id
+      HW_THREAD_ID                 : natural := 0;     -- hardware thread id (32-bit)
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
@@ -1559,7 +1559,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cfs
     generic (
-      CFS_CONFIG : std_ulogic_vector(31 downto 0) := (others => '0') -- custom CFS configuration generic
+      CFS_CONFIG : std_ulogic_vector(31 downto 0) := x"00000000" -- custom CFS configuration generic
     );
     port (
       -- host access --

@@ -45,7 +45,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cfs is
   generic (
-    CFS_CONFIG : std_ulogic_vector(31 downto 0) := (others => '0') -- custom CFS configuration conduit generic
+    CFS_CONFIG : std_ulogic_vector(31 downto 0) := x"00000000" -- custom CFS configuration conduit generic
   );
   port (
     -- host access --
