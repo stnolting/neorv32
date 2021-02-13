@@ -298,30 +298,33 @@ This chapter shows exemplary implementation results of the NEORV32 CPU for an **
 a DE0-nano board. The design was synthesized using **Intel Quartus Prime Lite 20.1** ("balanced implementation"). The timing
 information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not otherwise specified, the default configuration
 of the CPU's generics is assumed (e.g. no physical memory protection, no hardware performance monitors).
-No constraints were used at all. The `u` and `Zifencei` extensions have a negligible impact on the hardware requirements.
+No constraints were used at all.
 
-Results generated for hardware version [`1.5.0.3`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.5.1.4`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | CPU Configuration                        | LEs        | FFs      | Memory bits | DSPs | f_max   |
 |:-----------------------------------------|:----------:|:--------:|:-----------:|:----:|:-------:|
-| `rv32i`                                  |       1190 |      512 |        1024 |    0 | 120 MHz |
-| `rv32i`     + `u` + `Zicsr` + `Zifencei` |       1927 |      903 |        1024 |    0 | 123 MHz |
-| `rv32im`    + `u` + `Zicsr` + `Zifencei` |       2471 |     1148 |        1024 |    0 | 120 MHz |
-| `rv32imc`   + `u` + `Zicsr` + `Zifencei` |       2716 |     1165 |        1024 |    0 | 120 MHz |
-| `rv32imac`  + `u` + `Zicsr` + `Zifencei` |       2736 |     1168 |        1024 |    0 | 120 MHz |
-| `rv32imacb` + `u` + `Zicsr` + `Zifencei` |       3045 |     1260 |        1024 |    0 | 116 MHz |
+| `rv32i`                                  |        979 |      409 |        1024 |    0 | 123 MHz |
+| `rv32i`     + `Zicsr`                    |       1789 |      847 |        1024 |    0 | 122 MHz |
+| `rv32im`    + `Zicsr`                    |       2381 |     1125 |        1024 |    0 | 122 MHz |
+| `rv32imc`   + `Zicsr`                    |       2608 |     1140 |        1024 |    0 | 122 MHz |
+| `rv32imac`  + `Zicsr`                    |       2621 |     1144 |        1024 |    0 | 122 MHz |
+| `rv32imacb` + `Zicsr`                    |       3013 |     1310 |        1024 |    0 | 122 MHz |
+| `rv32imacb` + `Zicsr` + `u`              |       3031 |     1313 |        1024 |    0 | 122 MHz |
+| `rv32imacb` + `Zicsr` + `u` + `Zifencei` |       3050 |     1313 |        1024 |    0 | 116 MHz |
 
-Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utilization and identical f_max. However, the size of the register file is cut in half. 
+Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utilization and identical f_max as the according `I` configuration.
+However, the size of the register file is cut in half. 
 
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version [`1.5.1.2`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.5.1.4`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
 | BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |    0 |
-| BUSSWITCH | Mux for CPU I & D interfaces                         |  65 |   8 |           0 |    0 |
+| BUSSWITCH | Bus mux for CPU instr. & data interfaces             |  65 |   8 |           0 |    0 |
 | i-CACHE   | Proc.-int. nstruction cache (default 1x4x64 bytes)   | 234 | 156 |       8 192 |    0 |
 | CFS       | Custom functions subsystem                           |   - |   - |           - |    - |
 | DMEM      | Processor-internal data memory (default 8kB)         |   6 |   2 |      65 536 |    0 |
