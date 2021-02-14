@@ -36,9 +36,9 @@ To see the changes between releases visit the project's [release page](https://g
 ### Key Features
 
 * RISC-V 32-bit `rv32i` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
-  * Subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
-  * Subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
-  * Passes the [offcial RISC-V compliance tests](#Status)
+  * subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
+  * subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
+  * the [offcial RISC-V compliance tests](#Status) (*passing*)
 * Configurable RISC-V-compliant CPU extensions
   * [`A`](#Atomic-memory-access-a-extension) - atomic memory access instructions (optional)
   * [`B`](#Bit-manipulation-instructions-B-extension) - Bit manipulation instructions (optional)
@@ -98,7 +98,7 @@ all the [provided example programs](https://github.com/stnolting/neorv32/tree/ma
 | Project component | CI status |
 |:----------------- |:----------|
 | [NEORV32 processor](https://github.com/stnolting/neorv32)                                             | [![Processor Check](https://github.com/stnolting/neorv32/workflows/Processor%20Check/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22Processor+Check%22) |
-| [SW Framework Documentation (online)](https://stnolting.github.io/neorv32/files.html)                 | [![Doc@GitHub-pages](https://github.com/stnolting/neorv32/workflows/Deploy%20SW%20Framework%20Documentation%20to%20GitHub-Pages/badge.svg)](https://stnolting.github.io/neorv32/files.html) |
+| [SW Framework Documentation (online @GH-pages)](https://stnolting.github.io/neorv32/files.html)       | [![Doc@GitHub-pages](https://github.com/stnolting/neorv32/workflows/Deploy%20SW%20Framework%20Documentation%20to%20GitHub-Pages/badge.svg)](https://stnolting.github.io/neorv32/files.html) |
 | [Pre-built toolchains](https://github.com/stnolting/riscv-gcc-prebuilt)                               | [![Test Toolchains](https://github.com/stnolting/riscv-gcc-prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv-gcc-prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) |
 | [RISC-V compliance test](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md) | [![RISC-V Compliance](https://github.com/stnolting/neorv32/workflows/RISC-V%20Compliance/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22RISC-V+Compliance%22) |
 
@@ -112,8 +112,8 @@ all the [provided example programs](https://github.com/stnolting/neorv32/tree/ma
 * Add data cache?
 * Burst mode for the external memory/bus interface?
 * RISC-V `F` (using [`Zfinx`](https://github.com/riscv/riscv-zfinx/blob/master/Zfinx_spec.adoc)?) CPU extension (single-precision floating point)
-* Add template (HW module + intrinsics skeleton) for custom instructions?
-* Implement further RISC-V (or custom) CPU extensions?
+* Add template (HW module + SW intrinsics skeleton) for custom instructions?
+* Implement further RISC-V CPU extensions?
 * More support for FreeRTOS (like *all* traps)?
 * Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))?
 * Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))?
