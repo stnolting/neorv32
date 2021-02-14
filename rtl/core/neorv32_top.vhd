@@ -51,7 +51,7 @@ entity neorv32_top is
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
     BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
     USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
-    HW_THREAD_ID                 : std_ulogic_vector(31 downto 0) := (others => '0'); -- hardware thread id (hartid)
+    HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit manipulation extensions?
@@ -93,7 +93,7 @@ entity neorv32_top is
     IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
     IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := (others => '0'); -- custom CFS configuration generic
+    IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
     IO_NCO_EN                    : boolean := true    -- implement numerically-controlled oscillator (NCO)?
   );
   port (

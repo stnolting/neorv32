@@ -269,10 +269,16 @@ void neorv32_rte_print_hw_config(void) {
   int i;
   char c;
 
-  neorv32_uart_printf("\n\n<< Hardware Configuration Overview >>\n");
+  neorv32_uart_printf("\n\n<<< Processor Configuration Overview >>>\n");
+
+  // Processor - general stuff
+  neorv32_uart_printf("\n=== << General >> ===\n");
+  neorv32_uart_printf("Clock:   %u Hz\n", SYSINFO_CLK);
+  neorv32_uart_printf("User ID: 0x%x\n", SYSINFO_USER_CODE);
+
 
   // CPU configuration
-  neorv32_uart_printf("\n---- Central Processing Unit ----\n");
+  neorv32_uart_printf("\n=== << CPU >> ===\n");
 
   // ID
   neorv32_uart_printf("Hart ID:           0x%x\n", neorv32_cpu_csr_read(CSR_MHARTID));
@@ -285,7 +291,7 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart_printf(" (NEORV32)");
   }
 
-  // HW version
+  // hardware version
   neorv32_uart_printf("\nImplementation ID: 0x%x (", neorv32_cpu_csr_read(CSR_MIMPID));
   neorv32_rte_print_hw_version();
   neorv32_uart_printf(")\n");
@@ -353,14 +359,8 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("HPM Counters:      %u\n", neorv32_cpu_hpm_get_counters());
 
 
-  // Misc - system
-  neorv32_uart_printf("\n\n---- Processor - General ----\n");
-  neorv32_uart_printf("Clock:   %u Hz\n", SYSINFO_CLK);
-  neorv32_uart_printf("User ID: 0x%x\n", SYSINFO_USER_CODE);
-
-
   // Memory configuration
-  neorv32_uart_printf("\n---- Processor - Memory Configuration ----\n");
+  neorv32_uart_printf("\n=== << Memory Configuration >> ===\n");
 
   neorv32_uart_printf("Instr. base address:  0x%x\n", SYSINFO_ISPACE_BASE);
   neorv32_uart_printf("Internal IMEM:        ");
@@ -424,7 +424,7 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   // peripherals
-  neorv32_uart_printf("\n\n---- Processor - Peripherals ----\n");
+  neorv32_uart_printf("\n=== << Peripherals >> ===\n");
 
   tmp = SYSINFO_FEATURES;
 
