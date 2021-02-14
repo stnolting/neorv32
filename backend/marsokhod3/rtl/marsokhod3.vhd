@@ -84,7 +84,7 @@ begin
       CLOCK_FREQUENCY               => 50000000,    -- clock frequency of clk_i in Hz
       BOOTLOADER_EN                 => true,        -- implement processor-internal bootloader?
       USER_CODE                     => x"600DBABE", -- custom user code
-      HW_THREAD_ID                  => x"00000000", -- hardware thread id (hartid)
+      HW_THREAD_ID                  => 0,           -- hardware thread id (hartid)
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A         => true,        -- implement atomic extension?
       CPU_EXTENSION_RISCV_B         => true,        -- implement bit manipulation extensions?
