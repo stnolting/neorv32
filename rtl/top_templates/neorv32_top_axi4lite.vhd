@@ -1,7 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - Processor Top Entity with AXI4-Lite Compatible Master Interface >>               #
 -- # ********************************************************************************************* #
--- # "AXI", "AXI4" and "AXI4-Lite" are trademarks of Arm Holdings plc.                             #
+-- # (c) "AXI", "AXI4" and "AXI4-Lite" are trademarks of Arm Holdings plc.                         #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -43,6 +43,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_top_axi4lite is
   generic (
+    -- ------------------------------------------------------------
+    -- Configuration Generics --
+    -- ------------------------------------------------------------
     -- General --
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
     BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
@@ -91,7 +94,9 @@ entity neorv32_top_axi4lite is
     IO_NCO_EN                    : boolean := true    -- implement numerically-controlled oscillator (NCO)?
   );
   port (
-    -- AXI Lite-Compatible Master Interface --
+    -- ------------------------------------------------------------
+    -- AXI4-Lite-Compatible Master Interface --
+    -- ------------------------------------------------------------
     -- Clock and Reset --
     m_axi_aclk    : in  std_logic;
     m_axi_aresetn : in  std_logic;
@@ -119,6 +124,8 @@ entity neorv32_top_axi4lite is
     m_axi_bresp   : in  std_logic_vector(1 downto 0);
     m_axi_bvalid  : in  std_logic;
     m_axi_bready  : out std_logic;
+    -- ------------------------------------------------------------
+    -- Processor IO --
     -- ------------------------------------------------------------
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      : out std_logic_vector(31 downto 0); -- parallel output
@@ -359,19 +366,19 @@ begin
       else -- busy
         -- "read address received" flag --
         if (wb_core.we = '0') then -- pending READ
-          if (m_axi_arready = '1') then -- read address received?
+          if (m_axi_arready = '1') then -- read address received by interconnect?
             ctrl.radr_received <= '1';
           end if;
         end if;
         -- "write address received" flag --
         if (wb_core.we = '1') then -- pending WRITE
-          if (m_axi_awready = '1') then -- write address received?
+          if (m_axi_awready = '1') then -- write address received by interconnect?
             ctrl.wadr_received <= '1';
           end if;
         end if;
         -- "write data received" flag --
         if (wb_core.we = '1') then -- pending WRITE
-          if (m_axi_wready = '1') then
+          if (m_axi_wready = '1') then -- write data received by interconnect?
             ctrl.wdat_received <= '1';
           end if;
         end if;
