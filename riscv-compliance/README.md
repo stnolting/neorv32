@@ -33,7 +33,7 @@ bash script does the following:
 
 * Copy the `rtl`, `sim` and `sw` folders of the NEORV32 into `work/neorv32/` to keep the project's core files clean
 * Clone (if not already there) the [riscv-compliance repository](https://github.com/riscv/riscv-compliance) into `work/`
-* Install (copy) the custom `neorv32` test target from the ``port-neorv32/framework_v2.0/riscv-target` folder to the compliance test suite's target folder
+* Install (copy) the custom `neorv32` test target from the `port-neorv32/framework_v2.0/riscv-target` folder to the compliance test suite's target folder
 * Replace the original DMEM VHDL source file of the processor (in `work/neorv32/rtl/core/neorv32_dmem.vhd`) by the simulation-optimized file (`neorv32/sim/rtl_modules/neorv32_dmem.vhd` to allow faster simulation)
 * Make a copy of the original IMEM VHDL source file of the processor (in `work/neorv32/rtl/core/neorv32_imem.vhd`) by the simulation-optimized file (`work/neorv32/rtl/core/neorv32_imem.ORIGINAL`); the original IMEM will be overriden by the device makefiles with a simulation-optimized one (`neorv32/sim/rtl_modules/neorv32_imem.vhd`); the original IMEM is required for certain tests that use self-modifying code
 * Run the actual compliance tests
@@ -47,4 +47,4 @@ For more information regarding the NEORV32 Processor see the :page_facing_up:
 [`port-neorv32/framework_v1.0`](https://github.com/stnolting/neorv32/tree/master/riscv-compliance/port-neorv32/framework_v1.0/riscv-target).
 
 :information_source: If the simulation of a test does not generate any signature output at all or if the signature is truncated
-try increasing the simulation time by modiying the `SIM_TIME` variable when calling the test makefiles in 'run_compliance_test.sh'.
+try increasing the simulation time by modiying the `SIM_TIME` variable when calling the test makefiles in `run_compliance_test.sh`.
