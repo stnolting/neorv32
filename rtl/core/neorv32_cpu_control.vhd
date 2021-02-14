@@ -1809,9 +1809,9 @@ begin
   end process trap_priority;
 
 
-  -- Atomic Operation Controller ------------------------------------------------------------
+  -- Atomic Memory Access - Status Controller -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  atomics_controller: process(rstn_i, clk_i)
+  atomic_memacc_controller: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       atomic_ctrl.lock       <= '0';
@@ -1831,7 +1831,7 @@ begin
         atomic_ctrl.env_end_ff <= '0';
       end if;
     end if;
-  end process atomics_controller;
+  end process atomic_memacc_controller;
   
 
 -- ****************************************************************************************************************************
@@ -2513,7 +2513,7 @@ begin
           when csr_mzext_c => -- R/-: mzext - available RISC-V Z* extensions
             csr.rdata(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr
             csr.rdata(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei
-            csr.rdata(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B); -- Zbb
+            csr.rdata(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);        -- Zbb
 
           -- undefined/unavailable --
           when others =>

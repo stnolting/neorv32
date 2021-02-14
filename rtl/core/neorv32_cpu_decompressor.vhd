@@ -1,9 +1,9 @@
 -- #################################################################################################
--- # << NEORV32 - CPU Compressed Instructions (RISC-V C-extension) Decoder >>                      #
+-- # << NEORV32 - CPU: Compressed Instructions Decoder (RISC-V "C" Extension) >>                   #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -118,24 +118,23 @@ begin
           -- ----------------------------------------------------------------------------------------------------------
             if (ci_instr16_i(12 downto 2) = "00000000000") then -- "official illegal instruction"
               ci_illegal_o <= '1';
-            else
-              -- C.ADDI4SPN
-              ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
-              ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
-              ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c)         <= "01" & ci_instr16_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c);
-              ci_instr32_o(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_subadd_c;
-              ci_instr32_o(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= (others => '0'); -- zero extend
-              ci_instr32_o(instr_imm12_lsb_c + 0)                        <= '0';
-              ci_instr32_o(instr_imm12_lsb_c + 1)                        <= '0';
-              ci_instr32_o(instr_imm12_lsb_c + 2)                        <= ci_instr16_i(6);
-              ci_instr32_o(instr_imm12_lsb_c + 3)                        <= ci_instr16_i(5);
-              ci_instr32_o(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(11);
-              ci_instr32_o(instr_imm12_lsb_c + 5)                        <= ci_instr16_i(12);
-              ci_instr32_o(instr_imm12_lsb_c + 6)                        <= ci_instr16_i(7);
-              ci_instr32_o(instr_imm12_lsb_c + 7)                        <= ci_instr16_i(8);
-              ci_instr32_o(instr_imm12_lsb_c + 8)                        <= ci_instr16_i(9);
-              ci_instr32_o(instr_imm12_lsb_c + 9)                        <= ci_instr16_i(10);
             end if;
+            -- C.ADDI4SPN
+            ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
+            ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
+            ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c)         <= "01" & ci_instr16_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c);
+            ci_instr32_o(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_subadd_c;
+            ci_instr32_o(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= (others => '0'); -- zero extend
+            ci_instr32_o(instr_imm12_lsb_c + 0)                        <= '0';
+            ci_instr32_o(instr_imm12_lsb_c + 1)                        <= '0';
+            ci_instr32_o(instr_imm12_lsb_c + 2)                        <= ci_instr16_i(6);
+            ci_instr32_o(instr_imm12_lsb_c + 3)                        <= ci_instr16_i(5);
+            ci_instr32_o(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(11);
+            ci_instr32_o(instr_imm12_lsb_c + 5)                        <= ci_instr16_i(12);
+            ci_instr32_o(instr_imm12_lsb_c + 6)                        <= ci_instr16_i(7);
+            ci_instr32_o(instr_imm12_lsb_c + 7)                        <= ci_instr16_i(8);
+            ci_instr32_o(instr_imm12_lsb_c + 8)                        <= ci_instr16_i(9);
+            ci_instr32_o(instr_imm12_lsb_c + 9)                        <= ci_instr16_i(10);
 
           when "010" => -- C.LW
           -- ----------------------------------------------------------------------------------------------------------
@@ -166,7 +165,9 @@ begin
             ci_instr32_o(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= "01" & ci_instr16_i(ci_rs2_3_msb_c downto ci_rs2_3_lsb_c); -- x8 - x15
 
           when others => -- undefined
+          -- ----------------------------------------------------------------------------------------------------------
             ci_illegal_o <= '1';
+
         end case;
 
       when "01" => -- C1: Control Transfer Instructions, Integer Constant-Generation Instructions
@@ -338,7 +339,9 @@ begin
             end if;
 
           when others => -- undefined
+          -- ----------------------------------------------------------------------------------------------------------
             ci_illegal_o <= '1';
+
         end case;
 
       when "10" => -- C2: Stack-Pointer-Based Loads and Stores, Control Transfer Instructions
@@ -422,10 +425,13 @@ begin
             end if;
 
           when others => -- undefined
+          -- ----------------------------------------------------------------------------------------------------------
             ci_illegal_o <= '1';
+
         end case;
 
       when others => -- not a compressed instruction
+      -- ----------------------------------------------------------------------------------------------------------
         NULL;
 
     end case;
