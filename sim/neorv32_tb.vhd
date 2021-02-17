@@ -60,7 +60,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   constant imem_size_c           : natural := 16*1024; -- size in bytes of processor-internal IMEM / external mem A
   constant dmem_size_c           : natural := 8*1024; -- size in bytes of processor-internal DMEM / external mem B
   constant f_clock_c             : natural := 100000000; -- main clock in Hz
-  constant baud_rate_c           : natural := 19200; -- simulation UART output baudrate
+  constant baud0_rate_c          : natural := 19200; -- simulation UART0 (primary UART) baud rate
+  constant baud1_rate_c          : natural := 19200; -- simulation UART1 (secondary UART) baud rate
   -- simulated external Wishbone memory A (can be used as external IMEM) --
   constant ext_mem_a_base_addr_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- wishbone memory base address (external IMEM base)
   constant ext_mem_a_size_c      : natural := imem_size_c; -- wishbone memory size in bytes
@@ -78,24 +79,34 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- -------------------------------------------------------------------------------------------
 
   -- internals - hands off! --
-  constant int_imem_c : boolean := not ext_imem_c;
-  constant int_dmem_c : boolean := not ext_dmem_c;
-  constant baud_val_c : real := real(f_clock_c) / real(baud_rate_c);
-  constant t_clock_c  : time := (1 sec) / f_clock_c;
-
-  -- text.io --
-  file file_uart_tx_out : text open write_mode is "neorv32.testbench_uart.out";
+  constant int_imem_c       : boolean := not ext_imem_c;
+  constant int_dmem_c       : boolean := not ext_dmem_c;
+  constant uart0_baud_val_c : real := real(f_clock_c) / real(baud0_rate_c);
+  constant uart1_baud_val_c : real := real(f_clock_c) / real(baud1_rate_c);
+  constant t_clock_c        : time := (1 sec) / f_clock_c;
 
   -- generators --
   signal clk_gen, rst_gen : std_ulogic := '0';
 
-  -- simulation uart receiver --
-  signal uart_txd         : std_ulogic;
-  signal uart_rx_sync     : std_ulogic_vector(04 downto 0) := (others => '1');
-  signal uart_rx_busy     : std_ulogic := '0';
-  signal uart_rx_sreg     : std_ulogic_vector(08 downto 0) := (others => '0');
-  signal uart_rx_baud_cnt : real;
-  signal uart_rx_bitcnt   : natural;
+  -- text.io --
+  file file_uart0_tx_out : text open write_mode is "neorv32.testbench_uart0.out";
+  file file_uart1_tx_out : text open write_mode is "neorv32.testbench_uart1.out";
+
+  -- simulation uart0 receiver --
+  signal uart0_txd         : std_ulogic;
+  signal uart0_rx_sync     : std_ulogic_vector(04 downto 0) := (others => '1');
+  signal uart0_rx_busy     : std_ulogic := '0';
+  signal uart0_rx_sreg     : std_ulogic_vector(08 downto 0) := (others => '0');
+  signal uart0_rx_baud_cnt : real;
+  signal uart0_rx_bitcnt   : natural;
+
+  -- simulation uart1 receiver --
+  signal uart1_txd         : std_ulogic;
+  signal uart1_rx_sync     : std_ulogic_vector(04 downto 0) := (others => '1');
+  signal uart1_rx_busy     : std_ulogic := '0';
+  signal uart1_rx_sreg     : std_ulogic_vector(08 downto 0) := (others => '0');
+  signal uart1_rx_baud_cnt : real;
+  signal uart1_rx_bitcnt   : natural;
 
   -- gpio --
   signal gpio : std_ulogic_vector(31 downto 0);
@@ -211,7 +222,8 @@ begin
     -- Processor peripherals --
     IO_GPIO_EN                   => true,          -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  => true,          -- implement machine system timer (MTIME)?
-    IO_UART_EN                   => true,          -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_UART0_EN                  => true,          -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART1_EN                  => true,          -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN                    => true,          -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    => true,          -- implement two-wire interface (TWI)?
     IO_PWM_EN                    => true,          -- implement pulse-width modulation unit (PWM)?
@@ -243,9 +255,12 @@ begin
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      => gpio,            -- parallel output
     gpio_i      => gpio,            -- parallel input
-    -- UART (available if IO_UART_EN = true) --
-    uart_txd_o  => uart_txd,        -- UART send data
-    uart_rxd_i  => uart_txd,        -- UART receive data
+    -- primary UART0 (available if IO_UART0_EN = true) --
+    uart0_txd_o => uart0_txd,       -- UART0 send data
+    uart0_rxd_i => uart0_txd,       -- UART0 receive data
+    -- secondary UART1 (available if IO_UART1_EN = true) --
+    uart1_txd_o => uart1_txd,       -- UART1 send data
+    uart1_rxd_i => uart1_txd,       -- UART1 receive data
     -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   => open,            -- SPI serial clock
     spi_sdo_o   => spi_data,        -- controller data out, peripheral data in
@@ -275,56 +290,108 @@ begin
   twi_sda <= 'H';
 
 
-  -- Console UART Receiver ------------------------------------------------------------------
+  -- Console UART0 Receiver -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  uart_rx_console: process(clk_gen)
+  uart0_rx_console: process(clk_gen)
     variable i : integer;
     variable l : line;
   begin
     -- "UART" --
     if rising_edge(clk_gen) then
       -- synchronizer --
-      uart_rx_sync <= uart_rx_sync(3 downto 0) & uart_txd;
+      uart0_rx_sync <= uart0_rx_sync(3 downto 0) & uart0_txd;
       -- arbiter --
-      if (uart_rx_busy = '0') then -- idle
-        uart_rx_busy     <= '0';
-        uart_rx_baud_cnt <= round(0.5 * baud_val_c);
-        uart_rx_bitcnt   <= 9;
-        if (uart_rx_sync(4 downto 1) = "1100") then -- start bit? (falling edge)
-          uart_rx_busy <= '1';
+      if (uart0_rx_busy = '0') then -- idle
+        uart0_rx_busy     <= '0';
+        uart0_rx_baud_cnt <= round(0.5 * uart0_baud_val_c);
+        uart0_rx_bitcnt   <= 9;
+        if (uart0_rx_sync(4 downto 1) = "1100") then -- start bit? (falling edge)
+          uart0_rx_busy <= '1';
         end if;
       else
-        if (uart_rx_baud_cnt <= 0.0) then
-          if (uart_rx_bitcnt = 1) then
-            uart_rx_baud_cnt <= round(0.5 * baud_val_c);
+        if (uart0_rx_baud_cnt <= 0.0) then
+          if (uart0_rx_bitcnt = 1) then
+            uart0_rx_baud_cnt <= round(0.5 * uart0_baud_val_c);
           else
-            uart_rx_baud_cnt <= round(baud_val_c);
+            uart0_rx_baud_cnt <= round(uart0_baud_val_c);
           end if;
-          if (uart_rx_bitcnt = 0) then
-            uart_rx_busy <= '0'; -- done
-            i := to_integer(unsigned(uart_rx_sreg(8 downto 1)));
+          if (uart0_rx_bitcnt = 0) then
+            uart0_rx_busy <= '0'; -- done
+            i := to_integer(unsigned(uart0_rx_sreg(8 downto 1)));
 
             if (i < 32) or (i > 32+95) then -- printable char?
-              report "NEORV32_TB_UART.TX: (" & integer'image(i) & ")"; -- print code
+              report "NEORV32_TB_UART0.TX: (" & integer'image(i) & ")"; -- print code
             else
-              report "NEORV32_TB_UART.TX: " & character'val(i); -- print ASCII
+              report "NEORV32_TB_UART0.TX: " & character'val(i); -- print ASCII
             end if;
 
             if (i = 10) then -- Linux line break
-              writeline(file_uart_tx_out, l);
+              writeline(file_uart0_tx_out, l);
             elsif (i /= 13) then -- Remove additional carriage return
               write(l, character'val(i));
             end if;
           else
-            uart_rx_sreg   <= uart_rx_sync(4) & uart_rx_sreg(8 downto 1);
-            uart_rx_bitcnt <= uart_rx_bitcnt - 1;
+            uart0_rx_sreg   <= uart0_rx_sync(4) & uart0_rx_sreg(8 downto 1);
+            uart0_rx_bitcnt <= uart0_rx_bitcnt - 1;
           end if;
         else
-          uart_rx_baud_cnt <= uart_rx_baud_cnt - 1.0;
+          uart0_rx_baud_cnt <= uart0_rx_baud_cnt - 1.0;
         end if;
       end if;
     end if;
-  end process uart_rx_console;
+  end process uart0_rx_console;
+
+
+  -- Console UART1 Receiver -----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  uart1_rx_console: process(clk_gen)
+    variable i : integer;
+    variable l : line;
+  begin
+    -- "UART" --
+    if rising_edge(clk_gen) then
+      -- synchronizer --
+      uart1_rx_sync <= uart1_rx_sync(3 downto 0) & uart1_txd;
+      -- arbiter --
+      if (uart1_rx_busy = '0') then -- idle
+        uart1_rx_busy     <= '0';
+        uart1_rx_baud_cnt <= round(0.5 * uart1_baud_val_c);
+        uart1_rx_bitcnt   <= 9;
+        if (uart1_rx_sync(4 downto 1) = "1100") then -- start bit? (falling edge)
+          uart1_rx_busy <= '1';
+        end if;
+      else
+        if (uart1_rx_baud_cnt <= 0.0) then
+          if (uart1_rx_bitcnt = 1) then
+            uart1_rx_baud_cnt <= round(0.5 * uart1_baud_val_c);
+          else
+            uart1_rx_baud_cnt <= round(uart1_baud_val_c);
+          end if;
+          if (uart1_rx_bitcnt = 0) then
+            uart1_rx_busy <= '0'; -- done
+            i := to_integer(unsigned(uart1_rx_sreg(8 downto 1)));
+
+            if (i < 32) or (i > 32+95) then -- printable char?
+              report "NEORV32_TB_UART1.TX: (" & integer'image(i) & ")"; -- print code
+            else
+              report "NEORV32_TB_UART1.TX: " & character'val(i); -- print ASCII
+            end if;
+
+            if (i = 10) then -- Linux line break
+              writeline(file_uart1_tx_out, l);
+            elsif (i /= 13) then -- Remove additional carriage return
+              write(l, character'val(i));
+            end if;
+          else
+            uart1_rx_sreg   <= uart1_rx_sync(4) & uart1_rx_sreg(8 downto 1);
+            uart1_rx_bitcnt <= uart1_rx_bitcnt - 1;
+          end if;
+        else
+          uart1_rx_baud_cnt <= uart1_rx_baud_cnt - 1.0;
+        end if;
+      end if;
+    end if;
+  end process uart1_rx_console;
 
 
   -- Wishbone Fabric ------------------------------------------------------------------------
