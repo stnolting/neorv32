@@ -38,7 +38,7 @@ To see the changes between releases visit the project's [release page](https://g
 * RISC-V 32-bit `rv32i` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
   * subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
   * subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
-  * the [offcial RISC-V compliance tests](#Status) (*passing*)
+  * the [official RISC-V compliance tests](#Status) (*passing*)
 * Configurable RISC-V-compliant CPU extensions
   * [`A`](#Atomic-memory-access-a-extension) - atomic memory access instructions (optional)
   * [`B`](#Bit-manipulation-instructions-B-extension) - Bit manipulation instructions (optional)
