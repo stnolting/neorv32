@@ -434,8 +434,11 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("MTIME - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_MTIME));
 
-  neorv32_uart_printf("UART  - ");
-  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_UART));
+  neorv32_uart_printf("UART0 - ");
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_UART0));
+
+  neorv32_uart_printf("UART1 - ");
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_UART1));
 
   neorv32_uart_printf("SPI   - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_SPI));
@@ -461,18 +464,18 @@ void neorv32_rte_print_hw_config(void) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment: Private function to print true or false.
+ * NEORV32 runtime environment: Private function to print yes or no.
  * @note This function is used by neorv32_rte_print_hw_config(void) only.
  *
- * @param[in] state Print TRUE when !=0, print FALSE when 0
+ * @param[in] state Print 'yes' when !=0, print '0' when 0
  **************************************************************************/
 static void __neorv32_rte_print_true_false(int state) {
 
   if (state) {
-    neorv32_uart_print("True\n");
+    neorv32_uart_print("yes\n");
   }
   else {
-    neorv32_uart_print("False\n");
+    neorv32_uart_print("no\n");
   }
 }
 
