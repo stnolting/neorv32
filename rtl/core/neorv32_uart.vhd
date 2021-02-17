@@ -1,17 +1,23 @@
 -- #################################################################################################
--- # << NEORV32 - Universal Asynchronous Receiver and Transmitter (UART) >>                        #
+-- # << NEORV32 - Universal Asynchronous Receiver and Transmitter (UART0/1) >>                     #
 -- # ********************************************************************************************* #
 -- # Frame configuration: 1 start bit, 8 bit data, optional parity bit (even/odd), 1 stop bit,     #
 -- # programmable BAUD rate via clock pre-scaler and BAUD value config register.                   #
 -- # Interrupt: UART_RX_available or UART_TX_done                                                  #
 -- #                                                                                               #
+-- # UART0 / UART1:                                                                                #
+-- # This module is used for implementing UART0 and UART1. The UART_PRIMARY generic configures the #
+-- # interface register addresses and simulation output setting for UART0 (UART_PRIMARY = true)    #
+-- # or UART1 (UART_PRIMARY = false).                                                              #
+-- #                                                                                               #
 -- # SIMULATION:                                                                                   #
 -- # When the simulation mode is enabled (setting the ctrl.ctrl_uart_sim_en_c bit) any write       #
 -- # access to the TX register will not trigger any UART activity. Instead, the written data is    #
 -- # output to the simulation environment. The lowest 8 bits of the written data are printed as    #
--- # ASCII char to the simulator console. This char is also stored to a text file                  #
--- # "neorv32.uart.sim_mode.text.out". The full 32-bit write data is also stored as 8-hex char     #
--- # encoded value to text file "neorv32.uart.sim_mode.data.out".                                  #
+-- # ASCII char to the simulator console.                                                          #
+-- # This char is also stored to the file "neorv32.uartX.sim_mode.text.out" (where X = 0 for UART0 #
+-- # and X = 1 for UART1). The full 32-bit write data is also stored as 8-digit hexadecimal value  #
+-- # to the file "neorv32.uartX.sim_mode.data.out" (where X = 0 for UART0 and X = 1 for UART1).    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -53,6 +59,9 @@ use neorv32.neorv32_package.all;
 use std.textio.all; -- obviously only for simulation
 
 entity neorv32_uart is
+  generic (
+    UART_PRIMARY : boolean := true -- true = primary UART (UART0), false = secondary UART (UART1)
+  );
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
@@ -76,14 +85,24 @@ end neorv32_uart;
 
 architecture neorv32_uart_rtl of neorv32_uart is
 
+  -- interface configuration for UART0 / UART1 --
+  constant uart_id_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := cond_sel_stdulogicvector_f(UART_PRIMARY, uart0_base_c,      uart1_base_c);
+  constant uart_id_size_c      : natural                                    := cond_sel_natural_f(        UART_PRIMARY, uart0_size_c,      uart1_size_c);
+  constant uart_id_ctrl_addr_c : std_ulogic_vector(data_width_c-1 downto 0) := cond_sel_stdulogicvector_f(UART_PRIMARY, uart0_ctrl_addr_c, uart1_ctrl_addr_c);
+  constant uart_id_rtx_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := cond_sel_stdulogicvector_f(UART_PRIMARY, uart0_rtx_addr_c,  uart1_rtx_addr_c);
+
+  -- IO space: module base address --
+  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
+  constant lo_abb_c : natural := index_size_f(uart_id_size_c); -- low address boundary bit
+
   -- simulation output configuration --
   constant sim_screen_output_en_c : boolean := true; -- output lowest byte as char to simulator console when enabled
   constant sim_text_output_en_c   : boolean := true; -- output lowest byte as char to text file when enabled
   constant sim_data_output_en_c   : boolean := true; -- dump 32-word to file when enabled
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(uart_size_c); -- low address boundary bit
+  -- simulation output file configuration --
+  constant sim_uart_text_file_c : string := cond_sel_string_f(UART_PRIMARY, "neorv32.uart0.sim_mode.text.out", "neorv32.uart1.sim_mode.text.out");
+  constant sim_uart_data_file_c : string := cond_sel_string_f(UART_PRIMARY, "neorv32.uart0.sim_mode.data.out", "neorv32.uart1.sim_mode.data.out");
 
   -- accessible regs --
   signal ctrl : std_ulogic_vector(31 downto 0);
@@ -161,8 +180,8 @@ begin
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = uart_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= uart_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = uart_id_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  addr   <= uart_id_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wr_en  <= acc_en and wren_i;
   rd_en  <= acc_en and rden_i;
 
@@ -175,7 +194,7 @@ begin
       ack_o <= acc_en and (rden_i or wren_i);
       -- write access --
       if (wr_en = '1') then
-        if (addr = uart_ctrl_addr_c) then
+        if (addr = uart_id_ctrl_addr_c) then
           ctrl <= (others => '0');
           ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud00_c) <= data_i(ctrl_uart_baud11_c downto ctrl_uart_baud00_c);
           ctrl(ctrl_uart_sim_en_c)                           <= data_i(ctrl_uart_sim_en_c);
@@ -187,14 +206,14 @@ begin
       -- read access --
       data_o <= (others => '0');
       if (rd_en = '1') then
-        if (addr = uart_ctrl_addr_c) then
+        if (addr = uart_id_ctrl_addr_c) then
           data_o(ctrl_uart_baud11_c downto ctrl_uart_baud00_c) <= ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud00_c);
           data_o(ctrl_uart_sim_en_c)                           <= ctrl(ctrl_uart_sim_en_c);
           data_o(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c) <= ctrl(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c);
           data_o(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c)  <= ctrl(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c);
           data_o(ctrl_uart_en_c)                               <= ctrl(ctrl_uart_en_c);
           data_o(ctrl_uart_tx_busy_c)                          <= uart_tx.busy;
-        else -- uart_rtx_addr_c
+        else -- uart_id_rtx_addr_c
           data_o(data_rx_avail_c) <= uart_rx.avail(0);
           data_o(data_rx_overr_c) <= uart_rx.avail(0) and uart_rx.avail(1);
           data_o(data_rx_ferr_c)  <= uart_rx.ferr;
@@ -232,7 +251,7 @@ begin
         uart_tx.baud_cnt <= ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud00_c);
         uart_tx.bitcnt   <= num_bits;
         uart_tx.sreg(0)  <= '1';
-        if (wr_en = '1') and (ctrl(ctrl_uart_en_c) = '1') and (addr = uart_rtx_addr_c) and (ctrl(ctrl_uart_sim_en_c) = '0') then -- write trigger and not in SIM mode
+        if (wr_en = '1') and (ctrl(ctrl_uart_en_c) = '1') and (addr = uart_id_rtx_addr_c) and (ctrl(ctrl_uart_sim_en_c) = '0') then -- write trigger and not in SIM mode
           if (ctrl(ctrl_uart_pmode1_c) = '1') then -- add parity flag
             uart_tx.sreg <= '1' & (xor_all_f(data_i(7 downto 0)) xor ctrl(ctrl_uart_pmode0_c)) & data_i(7 downto 0) & '0'; -- stopbit & parity bit & data & startbit
           else
@@ -301,7 +320,7 @@ begin
 
       -- RX available flag --
       uart_rx.busy_ff <= uart_rx.busy;
-      if (ctrl(ctrl_uart_en_c) = '0') or (((uart_rx.avail(0) = '1') or (uart_rx.avail(1) = '1')) and (rd_en = '1') and (addr = uart_rtx_addr_c)) then -- off/RX read access
+      if (ctrl(ctrl_uart_en_c) = '0') or (((uart_rx.avail(0) = '1') or (uart_rx.avail(1) = '1')) and (rd_en = '1') and (addr = uart_id_rtx_addr_c)) then -- off/RX read access
         uart_rx.avail <= "00";
       elsif (uart_rx.busy_ff = '1') and (uart_rx.busy = '0') then -- RX done
         uart_rx.avail <= uart_rx.avail(0) & '1';
@@ -321,16 +340,16 @@ begin
   -- SIMULATION Output ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   sim_output: process(clk_i) -- for SIMULATION ONLY!
-    file file_devnull_text_out : text open write_mode is "neorv32.uart.sim_mode.text.out";
-    file file_devnull_data_out : text open write_mode is "neorv32.uart.sim_mode.data.out";
-    variable char_v            : integer;
-    variable line_screen_v     : line; -- we need several line variables here since "writeline" seems to flush the source variable
-    variable line_text_v       : line;
-    variable line_data_v       : line;
+    file file_uart_text_out : text open write_mode is sim_uart_text_file_c;
+    file file_uart_data_out : text open write_mode is sim_uart_data_file_c;
+    variable char_v         : integer;
+    variable line_screen_v  : line; -- we need several line variables here since "writeline" seems to flush the source variable
+    variable line_text_v    : line;
+    variable line_data_v    : line;
   begin
     if rising_edge(clk_i) then
       if (ctrl(ctrl_uart_en_c) = '1') and (ctrl(ctrl_uart_sim_en_c) = '1') then -- UART enabled and simulation output selected?
-        if (wr_en = '1') and (addr = uart_rtx_addr_c) then -- write access to tx register
+        if (wr_en = '1') and (addr = uart_id_rtx_addr_c) then -- write access to tx register
         
           -- print lowest byte to ASCII char --
           char_v := to_integer(unsigned(data_i(7 downto 0)));
@@ -352,7 +371,7 @@ begin
               writeline(output, line_screen_v);
             end if;
             if (sim_text_output_en_c = true) then
-              writeline(file_devnull_text_out, line_text_v);
+              writeline(file_uart_text_out, line_text_v);
             end if;
           end if;
 
@@ -361,7 +380,7 @@ begin
             for x in 7 downto 0 loop
               write(line_data_v, to_hexchar_f(data_i(3+x*4 downto 0+x*4))); -- write in hex form
             end loop; -- x
-            writeline(file_devnull_data_out, line_data_v);
+            writeline(file_uart_data_out, line_data_v);
           end if;
 
         end if;
