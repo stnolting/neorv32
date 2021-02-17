@@ -47,13 +47,13 @@ use neorv32.neorv32_package.all;
 entity neorv32_test_setup is
   port (
     -- Global control --
-    clk_i      : in  std_ulogic := '0'; -- global clock, rising edge
-    rstn_i     : in  std_ulogic := '0'; -- global reset, low-active, async
+    clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
+    rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
     -- GPIO --
-    gpio_o     : out std_ulogic_vector(7 downto 0); -- parallel output
-    -- UART --
-    uart_txd_o : out std_ulogic; -- UART send data
-    uart_rxd_i : in  std_ulogic := '0' -- UART receive data
+    gpio_o      : out std_ulogic_vector(7 downto 0); -- parallel output
+    -- UART0 --
+    uart0_txd_o : out std_ulogic; -- UART0 send data
+    uart0_rxd_i : in  std_ulogic := '0' -- UART0 receive data
   );
 end neorv32_test_setup;
 
@@ -107,7 +107,8 @@ begin
     -- Processor peripherals --
     IO_GPIO_EN                   => true,        -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  => true,        -- implement machine system timer (MTIME)?
-    IO_UART_EN                   => true,        -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_UART0_EN                  => true,        -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART1_EN                  => false,       -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN                    => false,       -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    => false,       -- implement two-wire interface (TWI)?
     IO_PWM_EN                    => false,       -- implement pulse-width modulation unit (PWM)?
@@ -139,9 +140,12 @@ begin
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      => gpio_out,        -- parallel output
     gpio_i      => (others => '0'), -- parallel input
-    -- UART (available if IO_UART_EN = true) --
-    uart_txd_o  => uart_txd_o,      -- UART send data
-    uart_rxd_i  => uart_rxd_i,      -- UART receive data
+    -- primary UART0 (available if IO_UART0_EN = true) --
+    uart0_txd_o => uart0_txd_o,     -- UART0 send data
+    uart0_rxd_i => uart0_rxd_i,     -- UART0 receive data
+    -- secondary UART1 (available if IO_UART1_EN = true) --
+    uart1_txd_o => open,            -- UART1 send data
+    uart1_rxd_i => '0',             -- UART1 receive data
     -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   => open,            -- SPI serial clock
     spi_sdo_o   => open,            -- controller data out, peripheral data in
