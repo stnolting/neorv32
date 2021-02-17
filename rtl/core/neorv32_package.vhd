@@ -60,7 +60,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050104"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050105"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -70,6 +70,7 @@ package neorv32_package is
   function index_size_f(input : natural) return natural;
   function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural;
   function cond_sel_stdulogicvector_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector;
+  function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string;
   function bool_to_ulogic_f(cond : boolean) return std_ulogic;
   function or_all_f(a : std_ulogic_vector) return std_ulogic;
   function and_all_f(a : std_ulogic_vector) return std_ulogic;
@@ -164,11 +165,11 @@ package neorv32_package is
   constant mtime_cmp_lo_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF98";
   constant mtime_cmp_hi_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFF9C";
 
-  -- Universal Asynchronous Receiver/Transmitter (UART) --
-  constant uart_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFA0"; -- base address
-  constant uart_size_c          : natural := 2*4; -- module's address space in bytes
-  constant uart_ctrl_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFA0";
-  constant uart_rtx_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFA4";
+  -- Universal Asynchronous Receiver/Transmitter 0 (UART0), primary UART --
+  constant uart0_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFA0"; -- base address
+  constant uart0_size_c         : natural := 2*4; -- module's address space in bytes
+  constant uart0_ctrl_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFA0";
+  constant uart0_rtx_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFA4";
 
   -- Serial Peripheral Interface (SPI) --
   constant spi_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFA8"; -- base address
@@ -196,9 +197,15 @@ package neorv32_package is
   constant nco_ch1_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFC8";
   constant nco_ch2_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFCC";
 
+  -- Universal Asynchronous Receiver/Transmitter 1 (UART1), secondary UART --
+  constant uart1_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD0"; -- base address
+  constant uart1_size_c         : natural := 2*4; -- module's address space in bytes
+  constant uart1_ctrl_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD0";
+  constant uart1_rtx_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD4";
+
   -- reserved --
---constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD0"; -- base address
---constant reserved_size_c      : natural := 4*4; -- module's address space in bytes
+--constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFD8"; -- base address
+--constant reserved_size_c      : natural := 2*4; -- module's address space in bytes
 
   -- System Information Memory (SYSINFO) --
   constant sysinfo_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"FFFFFFE0"; -- base address
@@ -842,7 +849,8 @@ package neorv32_package is
       -- Processor peripherals --
       IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
       IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
-      IO_UART_EN                   : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+      IO_UART0_EN                  : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
+      IO_UART1_EN                  : boolean := true;   -- implement secondary universal asynchronous receiver/transmitter (UART1)?
       IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
       IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
       IO_PWM_EN                    : boolean := true;   -- implement pulse-width modulation unit (PWM)?
@@ -874,9 +882,12 @@ package neorv32_package is
       -- GPIO (available if IO_GPIO_EN = true) --
       gpio_o      : out std_ulogic_vector(31 downto 0); -- parallel output
       gpio_i      : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
-      -- UART (available if IO_UART_EN = true) --
-      uart_txd_o  : out std_ulogic; -- UART send data
-      uart_rxd_i  : in  std_ulogic := '0'; -- UART receive data
+      -- primary UART0 (available if IO_UART0_EN = true) --
+      uart0_txd_o : out std_ulogic; -- UART0 send data
+      uart0_rxd_i : in  std_ulogic := '0'; -- UART0 receive data
+      -- secondary UART1 (available if IO_UART1_EN = true) --
+      uart1_txd_o : out std_ulogic; -- UART1 send data
+      uart1_rxd_i : in  std_ulogic := '0'; -- UART1 receive data
       -- SPI (available if IO_SPI_EN = true) --
       spi_sck_o   : out std_ulogic; -- SPI serial clock
       spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
@@ -1407,6 +1418,9 @@ package neorv32_package is
   -- Component: Universal Asynchronous Receiver and Transmitter (UART) ----------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_uart
+    generic (
+      UART_PRIMARY : boolean := true -- true = primary UART (UART0), false = secondary UART (UART1)
+    );
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
@@ -1631,7 +1645,8 @@ package neorv32_package is
       -- Processor peripherals --
       IO_GPIO_EN           : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
       IO_MTIME_EN          : boolean := true;   -- implement machine system timer (MTIME)?
-      IO_UART_EN           : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+      IO_UART0_EN          : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
+      IO_UART1_EN          : boolean := true;   -- implement secondary universal asynchronous receiver/transmitter (UART1)?
       IO_SPI_EN            : boolean := true;   -- implement serial peripheral interface (SPI)?
       IO_TWI_EN            : boolean := true;   -- implement two-wire interface (TWI)?
       IO_PWM_EN            : boolean := true;   -- implement pulse-width modulation unit (PWM)?
@@ -1688,7 +1703,18 @@ package body neorv32_package is
     end if;
   end function cond_sel_stdulogicvector_f;
 
-  -- Function: Convert BOOL to STD_ULOGIC ---------------------------------------------------
+  -- Function: Conditional select string ----------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string is
+  begin
+    if (cond = true) then
+      return val_t;
+    else
+      return val_f;
+    end if;
+  end function cond_sel_string_f;
+
+  -- Function: Convert bool to std_ulogic ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function bool_to_ulogic_f(cond : boolean) return std_ulogic is
   begin

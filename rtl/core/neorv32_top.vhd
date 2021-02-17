@@ -52,6 +52,7 @@ entity neorv32_top is
     BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
     USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
+
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit manipulation extensions?
@@ -61,32 +62,41 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
+
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
+
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..64)
     PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 : natural := 0;      -- number of implemented HPM counters (0..29)
+
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
     MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
+
     -- Internal Data memory --
     MEM_INT_DMEM_EN              : boolean := true;   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
+
     -- Internal Cache memory --
     ICACHE_EN                    : boolean := false;  -- implement instruction cache
     ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
+
     -- External memory interface --
     MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
+
     -- Processor peripherals --
     IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
-    IO_UART_EN                   : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_UART0_EN                  : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART1_EN                  : boolean := true;   -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
     IO_PWM_EN                    : boolean := true;   -- implement pulse-width modulation unit (PWM)?
@@ -100,6 +110,7 @@ entity neorv32_top is
     -- Global control --
     clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
     rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
+
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
     wb_tag_o    : out std_ulogic_vector(02 downto 0); -- tag
     wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
@@ -112,32 +123,46 @@ entity neorv32_top is
     wb_lock_o   : out std_ulogic; -- locked/exclusive bus access
     wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
     wb_err_i    : in  std_ulogic := '0'; -- transfer error
+
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o     : out std_ulogic; -- indicates an executed FENCE operation
     fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
+
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      : out std_ulogic_vector(31 downto 0); -- parallel output
     gpio_i      : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
-    -- UART (available if IO_UART_EN = true) --
-    uart_txd_o  : out std_ulogic; -- UART send data
-    uart_rxd_i  : in  std_ulogic := '0'; -- UART receive data
+
+    -- primary UART0 (available if IO_UART0_EN = true) --
+    uart0_txd_o : out std_ulogic; -- UART0 send data
+    uart0_rxd_i : in  std_ulogic := '0'; -- UART0 receive data
+
+    -- secondary UART1 (available if IO_UART1_EN = true) --
+    uart1_txd_o : out std_ulogic; -- UART1 send data
+    uart1_rxd_i : in  std_ulogic := '0'; -- UART1 receive data
+
     -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   : out std_ulogic; -- SPI serial clock
     spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
     spi_sdi_i   : in  std_ulogic := '0'; -- controller data in, peripheral data out
-    spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
+    spi_csn_o   : out std_ulogic_vector(07 downto 0); -- chip-select
+
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  : inout std_logic; -- twi serial data line
     twi_scl_io  : inout std_logic; -- twi serial clock line
+
     -- PWM (available if IO_PWM_EN = true) --
     pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
+
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- custom CFS inputs conduit
     cfs_out_o   : out std_ulogic_vector(31 downto 0); -- custom CFS outputs conduit
+
     -- NCO output (available if IO_NCO_EN = true) --
     nco_o       : out std_ulogic_vector(02 downto 0); -- numerically-controlled oscillator channels
+
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
+
     -- Interrupts --
     soc_firq_i  : in  std_ulogic_vector(7 downto 0) := (others => '0'); -- fast interrupt channels
     mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
@@ -173,13 +198,14 @@ architecture neorv32_top_rtl of neorv32_top is
   signal clk_div_ff : std_ulogic_vector(11 downto 0);
   signal clk_gen    : std_ulogic_vector(07 downto 0);
   --
-  signal wdt_cg_en  : std_ulogic;
-  signal uart_cg_en : std_ulogic;
-  signal spi_cg_en  : std_ulogic;
-  signal twi_cg_en  : std_ulogic;
-  signal pwm_cg_en  : std_ulogic;
-  signal cfs_cg_en  : std_ulogic;
-  signal nco_cg_en  : std_ulogic;
+  signal wdt_cg_en   : std_ulogic;
+  signal uart0_cg_en : std_ulogic;
+  signal uart1_cg_en : std_ulogic;
+  signal spi_cg_en   : std_ulogic;
+  signal twi_cg_en   : std_ulogic;
+  signal pwm_cg_en   : std_ulogic;
+  signal cfs_cg_en   : std_ulogic;
+  signal nco_cg_en   : std_ulogic;
 
   -- bus interface --
   type bus_interface_t is record
@@ -218,8 +244,10 @@ architecture neorv32_top_rtl of neorv32_top is
   signal gpio_ack       : std_ulogic;
   signal mtime_rdata    : std_ulogic_vector(data_width_c-1 downto 0);
   signal mtime_ack      : std_ulogic;
-  signal uart_rdata     : std_ulogic_vector(data_width_c-1 downto 0);
-  signal uart_ack       : std_ulogic;
+  signal uart0_rdata    : std_ulogic_vector(data_width_c-1 downto 0);
+  signal uart0_ack      : std_ulogic;
+  signal uart1_rdata    : std_ulogic_vector(data_width_c-1 downto 0);
+  signal uart1_ack      : std_ulogic;
   signal spi_rdata      : std_ulogic_vector(data_width_c-1 downto 0);
   signal spi_ack        : std_ulogic;
   signal twi_rdata      : std_ulogic_vector(data_width_c-1 downto 0);
@@ -244,14 +272,16 @@ architecture neorv32_top_rtl of neorv32_top is
   signal fast_irq     : std_ulogic_vector(15 downto 0);
   signal fast_irq_ack : std_ulogic_vector(15 downto 0);
   --
-  signal gpio_irq     : std_ulogic;
-  signal wdt_irq      : std_ulogic;
-  signal uart_rxd_irq : std_ulogic;
-  signal uart_txd_irq : std_ulogic;
-  signal spi_irq      : std_ulogic;
-  signal twi_irq      : std_ulogic;
-  signal cfs_irq      : std_ulogic;
-  signal cfs_irq_ack  : std_ulogic;
+  signal gpio_irq      : std_ulogic;
+  signal wdt_irq       : std_ulogic;
+  signal uart0_rxd_irq : std_ulogic;
+  signal uart0_txd_irq : std_ulogic;
+  signal uart1_rxd_irq : std_ulogic;
+  signal uart1_txd_irq : std_ulogic;
+  signal spi_irq       : std_ulogic;
+  signal twi_irq       : std_ulogic;
+  signal cfs_irq       : std_ulogic;
+  signal cfs_irq_ack   : std_ulogic;
 
   -- misc --
   signal mtime_time : std_ulogic_vector(63 downto 0); -- current system time from MTIME
@@ -321,7 +351,7 @@ begin
       clk_div_ff <= (others => '0');
     elsif rising_edge(clk_i) then
       -- fresh clocks anyone? --
-      if ((wdt_cg_en or uart_cg_en or spi_cg_en or twi_cg_en or pwm_cg_en or cfs_cg_en or nco_cg_en) = '1') then
+      if ((wdt_cg_en or uart0_cg_en or uart1_cg_en or spi_cg_en or twi_cg_en or pwm_cg_en or cfs_cg_en or nco_cg_en) = '1') then
         clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
       end if;
       clk_div_ff <= clk_div;
@@ -421,14 +451,14 @@ begin
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
 
   -- fast interrupts - processor-internal --
-  fast_irq(00) <= wdt_irq;      -- HIGHEST PRIORITY - watchdog timeout
-  fast_irq(01) <= '0';          -- reserved
-  fast_irq(02) <= cfs_irq;      -- custom functions subsystem
-  fast_irq(03) <= uart_rxd_irq; -- UART data received
-  fast_irq(04) <= uart_txd_irq; -- UART transmission done
-  fast_irq(05) <= spi_irq;      -- SPI transmission done
-  fast_irq(06) <= twi_irq;      -- TWI transmission done
-  fast_irq(07) <= gpio_irq;     -- GPIO pin-change
+  fast_irq(00) <= wdt_irq;       -- HIGHEST PRIORITY - watchdog timeout
+  fast_irq(01) <= cfs_irq;       -- custom functions subsystem
+  fast_irq(02) <= uart0_rxd_irq; -- primary UART (UART0) data received
+  fast_irq(03) <= uart0_txd_irq; -- primary UART (UART0) sending done
+  fast_irq(04) <= uart1_rxd_irq or uart1_txd_irq; -- secondary UART (UART1) data received OR sending done
+  fast_irq(05) <= spi_irq;       -- SPI transmission done
+  fast_irq(06) <= twi_irq;       -- TWI transmission done
+  fast_irq(07) <= gpio_irq;      -- GPIO pin-change
 
   -- fast interrupts - platform level (for custom use) --
   fast_irq(08) <= soc_firq_i(0);
@@ -547,11 +577,11 @@ begin
   );
 
   -- processor bus: CPU transfer data input --
-  p_bus.rdata <= (imem_rdata or dmem_rdata or bootrom_rdata) or wishbone_rdata or (gpio_rdata or mtime_rdata or uart_rdata or
+  p_bus.rdata <= (imem_rdata or dmem_rdata or bootrom_rdata) or wishbone_rdata or (gpio_rdata or mtime_rdata or uart0_rdata or uart1_rdata or
                  spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or cfs_rdata or nco_rdata or sysinfo_rdata);
 
   -- processor bus: CPU transfer ACK input --
-  p_bus.ack <= (imem_ack or dmem_ack or bootrom_ack) or wishbone_ack or (gpio_ack or mtime_ack or uart_ack or
+  p_bus.ack <= (imem_ack or dmem_ack or bootrom_ack) or wishbone_ack or (gpio_ack or mtime_ack or uart0_ack or uart1_ack or
                spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or cfs_ack or nco_ack or sysinfo_ack);
 
   -- processor bus: CPU transfer data bus error input --
@@ -855,11 +885,14 @@ begin
   end generate;
 
 
-  -- Universal Asynchronous Receiver/Transmitter (UART) -------------------------------------
+  -- Universal Asynchronous Receiver/Transmitter 0, Primary UART (UART0) --------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_uart_inst_true:
-  if (IO_UART_EN = true) generate
-    neorv32_uart_inst: neorv32_uart
+  neorv32_uart0_inst_true:
+  if (IO_UART0_EN = true) generate
+    neorv32_uart0_inst: neorv32_uart
+    generic map (
+      UART_PRIMARY => true -- true = primary UART (UART0), false = secondary UART (UART1)
+    )
     port map (
       -- host access --
       clk_i       => clk_i,        -- global clock line
@@ -867,28 +900,68 @@ begin
       rden_i      => io_rden,      -- read enable
       wren_i      => io_wren,      -- write enable
       data_i      => p_bus.wdata,  -- data in
-      data_o      => uart_rdata,   -- data out
-      ack_o       => uart_ack,     -- transfer acknowledge
+      data_o      => uart0_rdata,  -- data out
+      ack_o       => uart0_ack,    -- transfer acknowledge
       -- clock generator --
-      clkgen_en_o => uart_cg_en,   -- enable clock generator
+      clkgen_en_o => uart0_cg_en,  -- enable clock generator
       clkgen_i    => clk_gen,
       -- com lines --
-      uart_txd_o  => uart_txd_o,
-      uart_rxd_i  => uart_rxd_i,
+      uart_txd_o  => uart0_txd_o,
+      uart_rxd_i  => uart0_rxd_i,
       -- interrupts --
-      irq_rxd_o   => uart_rxd_irq, -- uart data received interrupt
-      irq_txd_o   => uart_txd_irq  -- uart transmission done interrupt
+      irq_rxd_o   => uart0_rxd_irq, -- uart data received interrupt
+      irq_txd_o   => uart0_txd_irq  -- uart transmission done interrupt
     );
   end generate;
 
-  neorv32_uart_inst_false:
-  if (IO_UART_EN = false) generate
-    uart_rdata   <= (others => '0');
-    uart_ack     <= '0';
-    uart_txd_o   <= '0';
-    uart_cg_en   <= '0';
-    uart_rxd_irq <= '0';
-    uart_txd_irq <= '0';
+  neorv32_uart0_inst_false:
+  if (IO_UART0_EN = false) generate
+    uart0_rdata   <= (others => '0');
+    uart0_ack     <= '0';
+    uart0_txd_o   <= '0';
+    uart0_cg_en   <= '0';
+    uart0_rxd_irq <= '0';
+    uart0_txd_irq <= '0';
+  end generate;
+
+
+  -- Universal Asynchronous Receiver/Transmitter 1, Secondary UART (UART1) ------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_uart1_inst_true:
+  if (IO_UART1_EN = true) generate
+    neorv32_uart1_inst: neorv32_uart
+    generic map (
+      UART_PRIMARY => false -- true = primary UART (UART0), false = secondary UART (UART1)
+    )
+    port map (
+      -- host access --
+      clk_i       => clk_i,        -- global clock line
+      addr_i      => p_bus.addr,   -- address
+      rden_i      => io_rden,      -- read enable
+      wren_i      => io_wren,      -- write enable
+      data_i      => p_bus.wdata,  -- data in
+      data_o      => uart1_rdata,  -- data out
+      ack_o       => uart1_ack,    -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o => uart1_cg_en,  -- enable clock generator
+      clkgen_i    => clk_gen,
+      -- com lines --
+      uart_txd_o  => uart1_txd_o,
+      uart_rxd_i  => uart1_rxd_i,
+      -- interrupts --
+      irq_rxd_o   => uart1_rxd_irq, -- uart data received interrupt
+      irq_txd_o   => uart1_txd_irq  -- uart transmission done interrupt
+    );
+  end generate;
+
+  neorv32_uart1_inst_false:
+  if (IO_UART1_EN = false) generate
+    uart1_rdata   <= (others => '0');
+    uart1_ack     <= '0';
+    uart1_txd_o   <= '0';
+    uart1_cg_en   <= '0';
+    uart1_rxd_irq <= '0';
+    uart1_txd_irq <= '0';
   end generate;
 
 
@@ -1078,7 +1151,8 @@ begin
     -- Processor peripherals --
     IO_GPIO_EN           => IO_GPIO_EN,           -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN          => IO_MTIME_EN,          -- implement machine system timer (MTIME)?
-    IO_UART_EN           => IO_UART_EN,           -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_UART0_EN          => IO_UART0_EN,          -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART1_EN          => IO_UART1_EN,          -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN            => IO_SPI_EN,            -- implement serial peripheral interface (SPI)?
     IO_TWI_EN            => IO_TWI_EN,            -- implement two-wire interface (TWI)?
     IO_PWM_EN            => IO_PWM_EN,            -- implement pulse-width modulation unit (PWM)?
