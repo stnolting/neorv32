@@ -38,6 +38,8 @@
  * @author Stephan Nolting
  * @brief Universal asynchronous receiver/transmitter (UART0/UART1) HW driver source file.
  *
+ * @warning UART0 (primary UART) is used as default user console interface for all NEORV32 software framework/library functions.
+ *
  * @note These functions should only be used if the UART0/UART1 unit was synthesized (IO_UART0_EN = true / IO_UART1_EN = true).
  **************************************************************************/
 
