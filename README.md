@@ -55,7 +55,7 @@ To see the changes between releases visit the project's [release page](https://g
 * Full-scale RISC-V microcontroller system / **SoC** [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
   * optional embedded memories (instructions/data/bootloader, RAM/ROM) and caches
   * timers (watch dog, RISC-V-compliant machine timer)
-  * serial interfaces (SPI, TWI, UART)
+  * serial interfaces (SPI, TWI, UARTs)
   * general purpose IO and PWM channels
   * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
   * subsystem for custom co-processors
@@ -117,7 +117,6 @@ all the [provided example programs](https://github.com/stnolting/neorv32/tree/ma
 * More support for FreeRTOS (like *all* traps)?
 * Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))?
 * Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))?
-* Add encryption/decryption/hash accelerator (maybe [XTEA](https://en.wikipedia.org/wiki/XTEA))?
 * ...
 * [Ideas?](#ContributeFeedbackQuestions)
 
@@ -140,7 +139,7 @@ is highly customizable via the processor's top generics and already provides the
 * bootloader (**BOOTLDROM**) with UART console and automatic application boot from SPI flash option
 * machine system timer (**MTIME**), RISC-V-compliant
 * watchdog timer (**WDT**)
-* universal asynchronous receiver and transmitter (**UART**) with simulation output option via text.io
+* two independent universal asynchronous receiver and transmitter (**UART0** & **UART1**) with fast simulation output option
 * 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
 * two wire serial interface controller (**TWI**), with optional clock-stretching, compatible to the I²C standard
 * general purpose parallel IO port (**GPIO**), 32xOut & 32xIn, with pin-change interrupt
@@ -337,7 +336,7 @@ Results generated for hardware version [`1.5.1.4`](https://github.com/stnolting/
 | SYSINFO   | System configuration information memory              |  11 |  10 |           0 |    0 |
 | TRNG      | True random number generator                         | 132 | 105 |           0 |    0 |
 | TWI       | Two-wire interface                                   |  77 |  46 |           0 |    0 |
-| UART      | Universal asynchronous receiver/transmitter          | 176 | 132 |           0 |    0 |
+| UART0/1   | Universal asynchronous receiver/transmitter 0/1      | 176 | 132 |           0 |    0 |
 | WDT       | Watchdog timer                                       |  60 |  45 |           0 |    0 |
 | WISHBONE  | External memory interface                            | 129 | 104 |           0 |    0 |
 
@@ -531,20 +530,20 @@ you can use the simple [test setup](https://github.com/stnolting/neorv32/blob/ma
 ![neorv32 test setup](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_test_setup.png)
 
 
-This test setup instantiates the processor and implements most of the peripherals and some ISA extensions. Only the UART lines, clock, reset and some GPIO output signals are
+This test setup instantiates the processor and implements most of the peripherals and some ISA extensions. Only the UART0 lines, clock, reset and some GPIO output signals are
 propagated as actual entity signals. Basically, it is a FPGA "hello world" example:
 
 ```vhdl
   entity neorv32_test_setup is
     port (
       -- Global control --
-      clk_i      : in  std_ulogic := '0'; -- global clock, rising edge
-      rstn_i     : in  std_ulogic := '0'; -- global reset, low-active, async
+      clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
+      rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
       -- GPIO --
-      gpio_o     : out std_ulogic_vector(7 downto 0); -- parallel output
-      -- UART --
-      uart_txd_o : out std_ulogic; -- UART send data
-      uart_rxd_i : in  std_ulogic := '0' -- UART receive data
+      gpio_o      : out std_ulogic_vector(7 downto 0); -- parallel output
+      -- UART0 --
+      uart0_txd_o : out std_ulogic; -- UART0 send data
+      uart0_rxd_i : in  std_ulogic := '0' -- UART0 receive data
     );
   end neorv32_test_setup;
 ```
