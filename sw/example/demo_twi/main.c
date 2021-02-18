@@ -178,6 +178,7 @@ void set_speed(void) {
   neorv32_uart_printf("Select new clock prescaler (0..7): ");
   neorv32_uart_scan(terminal_buffer, 2, 1); // 1 hex char plus '\0'
   uint8_t prsc = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+
   if ((prsc >= 0) && (prsc < 8)) { // valid?
     TWI_CT = 0; // reset
     TWI_CT = (1 << TWI_CT_EN) | (prsc << TWI_CT_PRSC0);
@@ -189,18 +190,19 @@ void set_speed(void) {
   }
 
   // print new clock frequency
-  uint32_t clock = SYSINFO_CLK;
+  uint32_t div = 0;
   switch (prsc) {
-    case 0: clock = clock / 2; break;
-    case 1: clock = clock / 4; break;
-    case 2: clock = clock / 8; break;
-    case 3: clock = clock / 64; break;
-    case 4: clock = clock / 128; break;
-    case 5: clock = clock / 1024; break;
-    case 6: clock = clock / 2048; break;
-    case 7: clock = clock / 4096; break;
-    default: clock = 0; break;
+    case 0: div = 4 * 2; break;
+    case 1: div = 4 * 4; break;
+    case 2: div = 4 * 8; break;
+    case 3: div = 4 * 64; break;
+    case 4: div = 4 * 128; break;
+    case 5: div = 4 * 1024; break;
+    case 6: div = 4 * 2048; break;
+    case 7: div = 4 * 4096; break;
+    default: div = 0; break;
   }
+  uint32_t clock = SYSINFO_CLK / div;
   neorv32_uart_printf("New I2C clock: %u Hz\n", clock);
 }
 
