@@ -116,7 +116,6 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant ctrl_uart_baud05_c  : natural :=  5; -- r/w: UART baud config bit 5
   constant ctrl_uart_baud06_c  : natural :=  6; -- r/w: UART baud config bit 6
   constant ctrl_uart_baud07_c  : natural :=  7; -- r/w: UART baud config bit 7
-  --
   constant ctrl_uart_baud08_c  : natural :=  8; -- r/w: UART baud config bit 8
   constant ctrl_uart_baud09_c  : natural :=  9; -- r/w: UART baud config bit 9
   constant ctrl_uart_baud10_c  : natural := 10; -- r/w: UART baud config bit 10
