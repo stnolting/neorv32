@@ -197,6 +197,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal clk_div    : std_ulogic_vector(11 downto 0);
   signal clk_div_ff : std_ulogic_vector(11 downto 0);
   signal clk_gen    : std_ulogic_vector(07 downto 0);
+  signal clk_gen_en : std_ulogic_vector(07 downto 0);
   --
   signal wdt_cg_en   : std_ulogic;
   signal uart0_cg_en : std_ulogic;
@@ -349,9 +350,18 @@ begin
     if (sys_rstn = '0') then
       clk_div    <= (others => '0');
       clk_div_ff <= (others => '0');
+      clk_gen_en <= (others => '0');
     elsif rising_edge(clk_i) then
       -- fresh clocks anyone? --
-      if ((wdt_cg_en or uart0_cg_en or uart1_cg_en or spi_cg_en or twi_cg_en or pwm_cg_en or cfs_cg_en or nco_cg_en) = '1') then
+      clk_gen_en(0) <= wdt_cg_en;
+      clk_gen_en(1) <= uart0_cg_en;
+      clk_gen_en(2) <= uart1_cg_en;
+      clk_gen_en(3) <= spi_cg_en;
+      clk_gen_en(4) <= twi_cg_en;
+      clk_gen_en(5) <= pwm_cg_en;
+      clk_gen_en(6) <= cfs_cg_en;
+      clk_gen_en(7) <= nco_cg_en;
+      if (or_all_f(clk_gen_en) = '1') then
         clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
       end if;
       clk_div_ff <= clk_div;
