@@ -164,7 +164,7 @@ entity neorv32_top is
     mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
 
     -- Interrupts --
-    soc_firq_i  : in  std_ulogic_vector(7 downto 0) := (others => '0'); -- fast interrupt channels
+    soc_firq_i  : in  std_ulogic_vector(5 downto 0) := (others => '0'); -- fast interrupt channels
     mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
     mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
@@ -464,20 +464,20 @@ begin
   fast_irq(01) <= cfs_irq;       -- custom functions subsystem
   fast_irq(02) <= uart0_rxd_irq; -- primary UART (UART0) data received
   fast_irq(03) <= uart0_txd_irq; -- primary UART (UART0) sending done
-  fast_irq(04) <= uart1_rxd_irq or uart1_txd_irq; -- secondary UART (UART1) data received OR sending done
-  fast_irq(05) <= spi_irq;       -- SPI transmission done
-  fast_irq(06) <= twi_irq;       -- TWI transmission done
-  fast_irq(07) <= gpio_irq;      -- GPIO pin-change
+  fast_irq(04) <= uart1_rxd_irq; -- secondary UART (UART1) data received
+  fast_irq(05) <= uart1_txd_irq; -- secondary UART (UART1) sending done
+  fast_irq(06) <= spi_irq;       -- SPI transmission done
+  fast_irq(07) <= twi_irq;       -- TWI transmission done
+  fast_irq(08) <= gpio_irq;      -- GPIO pin-change
+  fast_irq(09) <= '0';           -- reserved
 
   -- fast interrupts - platform level (for custom use) --
-  fast_irq(08) <= soc_firq_i(0);
-  fast_irq(09) <= soc_firq_i(1);
-  fast_irq(10) <= soc_firq_i(2);
-  fast_irq(11) <= soc_firq_i(3);
-  fast_irq(12) <= soc_firq_i(4);
-  fast_irq(13) <= soc_firq_i(5);
-  fast_irq(14) <= soc_firq_i(6);
-  fast_irq(15) <= soc_firq_i(7);
+  fast_irq(10) <= soc_firq_i(0);
+  fast_irq(11) <= soc_firq_i(1);
+  fast_irq(12) <= soc_firq_i(2);
+  fast_irq(13) <= soc_firq_i(3);
+  fast_irq(14) <= soc_firq_i(4);
+  fast_irq(15) <= soc_firq_i(5);
 
   -- IRQ acknowledge --
   cfs_irq_ack <= fast_irq_ack(2);
