@@ -260,7 +260,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal trng_rdata     : std_ulogic_vector(data_width_c-1 downto 0);
   signal trng_ack       : std_ulogic;
   signal cfs_rdata      : std_ulogic_vector(data_width_c-1 downto 0);
-  signal cfs_err        : std_ulogic;
   signal cfs_ack        : std_ulogic;
   signal nco_rdata      : std_ulogic_vector(data_width_c-1 downto 0);
   signal nco_ack        : std_ulogic;
@@ -595,7 +594,7 @@ begin
                spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or cfs_ack or nco_ack or sysinfo_ack);
 
   -- processor bus: CPU transfer data bus error input --
-  p_bus.err <= wishbone_err or cfs_err;
+  p_bus.err <= wishbone_err;
 
   -- current CPU privilege level --
   p_bus.priv <= cpu_i.priv; -- cpu_i.priv == cpu_d.priv
@@ -773,7 +772,6 @@ begin
       data_i      => p_bus.wdata,     -- data in
       data_o      => cfs_rdata,       -- data out
       ack_o       => cfs_ack,         -- transfer acknowledge
-      err_o       => cfs_err,         -- transfer error
       -- clock generator --
       clkgen_en_o => cfs_cg_en,       -- enable clock generator
       clkgen_i    => clk_gen,         -- "clock" inputs
@@ -792,7 +790,6 @@ begin
   if (IO_CFS_EN = false) generate
     cfs_rdata <= (others => '0');
     cfs_ack   <= '0';
-    cfs_err   <= '0';
     cfs_cg_en <= '0';
     cfs_irq   <= '0';
     cfs_out_o <= (others => '0');
