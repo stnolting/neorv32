@@ -16,7 +16,7 @@
         .word 4;
 
 //RV_COMPLIANCE_HALT
-// neorv32: this will dump the results via the UART_SIM_MODE data file output
+// neorv32: this will dump the results via the UART0_SIM_MODE data file output
 // neorv32: due to the modifications on "end_signature" (not 4-aligned) we need to make sure we output a 4-aligned number of data here
 // neorv32: -> for zero-padding of the rest of the SIGNATURE section
 #define RVMODEL_HALT                                                          \
@@ -57,7 +57,7 @@ nop;                                                                          \
   RVMODEL_DATA_SECTION
 
 //RVMODEL_BOOT
-// neorv32: enable UART (ctrl(28)) and enable UART_SIM_MODE (ctrl(12))
+// neorv32: enable UART0 (ctrl(28)) and enable UART0_SIM_MODE (ctrl(12))
 // neorv32: initialize the complete RVTEST_DATA section in data RAM (DMEM) with 0xBABECAFE
 // neorv32: initialize the complete SIGNATURE section (that is a multiple of four 32-bit entries) in data RAM (DMEM) with 0xDEADBEEF
 // neorv32: this code also provides a dummy trap handler that just moves on to the next instruction
@@ -69,7 +69,7 @@ nop;                                                                          \
       core_init:                                                              \
         la x1, core_dummy_trap_handler;                                       \
         csrw   mtvec, x1;                                                     \
-        j      uart_sim_mode_init;                                            \
+        j      uart0_sim_mode_init;                                           \
 nop;                                                                          \
 nop;                                                                          \
       .balign 4;                                                              \
@@ -100,7 +100,7 @@ nop;                                                                          \
         mret;                                                                 \
 nop;                                                                          \
 nop;                                                                          \
-      uart_sim_mode_init:                                                     \
+      uart0_sim_mode_init:                                                    \
         li    a0,   0xFFFFFFA0;                                               \
         sw    zero, 0(a0);                                                    \
         li    a1,   1 << 28;                                                  \
@@ -139,7 +139,7 @@ nop;                                                                          \
         addi a0, a0, 4;                                                       \
         j    init_signature_loop;                                             \
       init_signature_loop_end:                                                \
-        j    uart_sim_mode_init;                                              \
+        j    uart0_sim_mode_init;                                             \
 nop;                                                                          \
 nop;                                                                          \
       .balign 4;                                                              \
@@ -170,7 +170,7 @@ nop;                                                                          \
         mret;                                                                 \
 nop;                                                                          \
 nop;                                                                          \
-      uart_sim_mode_init:                                                     \
+      uart0_sim_mode_init:                                                    \
         li    a0,   0xFFFFFFA0;                                               \
         sw    zero, 0(a0);                                                    \
         li    a1,   1 << 28;                                                  \

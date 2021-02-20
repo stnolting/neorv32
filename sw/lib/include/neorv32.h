@@ -708,28 +708,33 @@ enum NEORV32_WDT_CT_enum {
 
 
 /**********************************************************************//**
- * @name IO Device: Universal Asynchronous Receiver and Transmitter (UART)
+ * @name IO Device: Primary/Secondary Universal Asynchronous Receiver and Transmitter (UART0 / UART1)
  **************************************************************************/
 /**@{*/
-/** UART control register (r/w) */
-#define UART_CT  (*(IO_REG32 0xFFFFFFA0UL))
-/** UART receive/transmit data register (r/w) */
-#define UART_DATA (*(IO_REG32 0xFFFFFFA4UL))
+/** UART0 control register (r/w) */
+#define UART0_CT  (*(IO_REG32 0xFFFFFFA0UL))
+/** UART0 receive/transmit data register (r/w) */
+#define UART0_DATA (*(IO_REG32 0xFFFFFFA4UL))
 
-/** UART control register bits */
+/** UART1 control register (r/w) */
+#define UART1_CT  (*(IO_REG32 0xFFFFFFD0UL))
+/** UART1 receive/transmit data register (r/w) */
+#define UART1_DATA (*(IO_REG32 0xFFFFFFD4UL))
+
+/** UART0/UART1 control register bits */
 enum NEORV32_UART_CT_enum {
-  UART_CT_BAUD00   =  0, /**< UART control register(0)  (r/w): BAUD rate config value lsb (12-bi, bit 0) */
-  UART_CT_BAUD01   =  1, /**< UART control register(1)  (r/w): BAUD rate config value (12-bi, bit 1) */
-  UART_CT_BAUD02   =  2, /**< UART control register(2)  (r/w): BAUD rate config value (12-bi, bit 2) */
-  UART_CT_BAUD03   =  3, /**< UART control register(3)  (r/w): BAUD rate config value (12-bi, bit 3) */
-  UART_CT_BAUD04   =  4, /**< UART control register(4)  (r/w): BAUD rate config value (12-bi, bit 4) */
-  UART_CT_BAUD05   =  5, /**< UART control register(5)  (r/w): BAUD rate config value (12-bi, bit 4) */
-  UART_CT_BAUD06   =  6, /**< UART control register(6)  (r/w): BAUD rate config value (12-bi, bit 5) */
-  UART_CT_BAUD07   =  7, /**< UART control register(7)  (r/w): BAUD rate config value (12-bi, bit 6) */
-  UART_CT_BAUD08   =  8, /**< UART control register(8)  (r/w): BAUD rate config value (12-bi, bit 7) */
-  UART_CT_BAUD09   =  9, /**< UART control register(9)  (r/w): BAUD rate config value (12-bi, bit 8) */
-  UART_CT_BAUD10   = 10, /**< UART control register(10) (r/w): BAUD rate config value (12-bi, bit 9) */
-  UART_CT_BAUD11   = 11, /**< UART control register(11) (r/w): BAUD rate config value msb (12-bi, bit 0) */
+  UART_CT_BAUD00   =  0, /**< UART control register(0)  (r/w): BAUD rate config value lsb (12-bit, bit 0) */
+  UART_CT_BAUD01   =  1, /**< UART control register(1)  (r/w): BAUD rate config value (12-bit, bit 1) */
+  UART_CT_BAUD02   =  2, /**< UART control register(2)  (r/w): BAUD rate config value (12-bit, bit 2) */
+  UART_CT_BAUD03   =  3, /**< UART control register(3)  (r/w): BAUD rate config value (12-bit, bit 3) */
+  UART_CT_BAUD04   =  4, /**< UART control register(4)  (r/w): BAUD rate config value (12-bit, bit 4) */
+  UART_CT_BAUD05   =  5, /**< UART control register(5)  (r/w): BAUD rate config value (12-bit, bit 4) */
+  UART_CT_BAUD06   =  6, /**< UART control register(6)  (r/w): BAUD rate config value (12-bit, bit 5) */
+  UART_CT_BAUD07   =  7, /**< UART control register(7)  (r/w): BAUD rate config value (12-bit, bit 6) */
+  UART_CT_BAUD08   =  8, /**< UART control register(8)  (r/w): BAUD rate config value (12-bit, bit 7) */
+  UART_CT_BAUD09   =  9, /**< UART control register(9)  (r/w): BAUD rate config value (12-bit, bit 8) */
+  UART_CT_BAUD10   = 10, /**< UART control register(10) (r/w): BAUD rate config value (12-bit, bit 9) */
+  UART_CT_BAUD11   = 11, /**< UART control register(11) (r/w): BAUD rate config value msb (12-bit, bit 0) */
 
   UART_CT_SIM_MODE = 12, /**< UART control register(12) (r/w): Simulation output override enable, for use in simulation only */
 
@@ -743,7 +748,7 @@ enum NEORV32_UART_CT_enum {
   UART_CT_TX_BUSY  = 31  /**< UART control register(31) (r/-): Transmitter is busy when set */
 };
 
-/** UART receive/transmit data register bits */
+/** UART0/UART1 receive/transmit data register bits */
 enum NEORV32_UART_DATA_enum {
   UART_DATA_LSB   =  0, /**< UART receive/transmit data register(0)  (r/w): Receive/transmit data LSB (bit 0) */
   UART_DATA_MSB   =  7, /**< UART receive/transmit data register(7)  (r/w): Receive/transmit data MSB (bit 7) */
@@ -944,14 +949,15 @@ enum NEORV32_NCO_CT_enum {
 
   SYSINFO_FEATURES_IO_GPIO          = 16, /**< SYSINFO_FEATURES (16) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_EN generic) */
   SYSINFO_FEATURES_IO_MTIME         = 17, /**< SYSINFO_FEATURES (17) (r/-): Machine system timer implemented when 1 (via IO_MTIME_EN generic) */
-  SYSINFO_FEATURES_IO_UART          = 18, /**< SYSINFO_FEATURES (18) (r/-): Universal asynchronous receiver/transmitter implemented when 1 (via IO_UART_EN generic) */
+  SYSINFO_FEATURES_IO_UART0         = 18, /**< SYSINFO_FEATURES (18) (r/-): Primary universal asynchronous receiver/transmitter 0 implemented when 1 (via IO_UART0_EN generic) */
   SYSINFO_FEATURES_IO_SPI           = 19, /**< SYSINFO_FEATURES (19) (r/-): Serial peripheral interface implemented when 1 (via IO_SPI_EN generic) */
   SYSINFO_FEATURES_IO_TWI           = 20, /**< SYSINFO_FEATURES (20) (r/-): Two-wire interface implemented when 1 (via IO_TWI_EN generic) */
   SYSINFO_FEATURES_IO_PWM           = 21, /**< SYSINFO_FEATURES (21) (r/-): Pulse-width modulation unit implemented when 1 (via IO_PWM_EN generic) */
   SYSINFO_FEATURES_IO_WDT           = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_EN generic) */
   SYSINFO_FEATURES_IO_CFS           = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions subsystem implemented when 1 (via IO_CFS_EN generic) */
   SYSINFO_FEATURES_IO_TRNG          = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_EN generic) */
-  SYSINFO_FEATURES_IO_NCO           = 25  /**< SYSINFO_FEATURES (25) (r/-): Numerically-controlled oscillator implemented when 1 (via IO_NCO_EN generic) */
+  SYSINFO_FEATURES_IO_NCO           = 25, /**< SYSINFO_FEATURES (25) (r/-): Numerically-controlled oscillator implemented when 1 (via IO_NCO_EN generic) */
+  SYSINFO_FEATURES_IO_UART1         = 26  /**< SYSINFO_FEATURES (26) (r/-): Secondary universal asynchronous receiver/transmitter 1 implemented when 1 (via IO_UART1_EN generic) */
 };
 
 /**********************************************************************//**

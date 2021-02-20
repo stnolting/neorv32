@@ -6,6 +6,8 @@
 // # ********************************************************************************************* #
 // # Boot from (internal) instruction memory, UART or SPI Flash.                                   #
 // #                                                                                               #
+// # The bootloader uses the primary UART (UART0) for user console interface.                      #
+// #                                                                                               #
 // # UART configuration: 8 data bits, NO parity bit, 1 stop bit, 19200 baud (19200-8N1)            #
 // # Boot Flash: 8-bit SPI, 24-bit addresses (like Micron N25Q032A) @ neorv32.spi_csn_o(0)         #
 // # neorv32.gpio_o(0) is used as high-active status LED (can be disabled via #STATUS_LED_EN).     #
@@ -283,7 +285,7 @@ int main(void) {
 
   uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTOBOOT_TIMEOUT * clock_speed);
 
-  while ((UART_DATA & (1 << UART_DATA_AVAIL)) == 0) { // wait for any key to be pressed
+  while (neorv32_uart_char_received() == 0) { // wait for any key to be pressed
 
     if (neorv32_mtime_get_time() >= timeout_time) { // timeout? start auto boot sequence
       fast_upload(EXE_STREAM_FLASH); // try booting from flash
@@ -395,7 +397,7 @@ void start_app(void) {
   neorv32_uart_print("Booting...\n\n");
 
   // wait for UART to finish transmitting
-  while ((UART_CT & (1<<UART_CT_TX_BUSY)) != 0);
+  while (neorv32_uart_tx_busy());
 
   // start app at instruction space base address
   register uint32_t app_base = SYSINFO_ISPACE_BASE;

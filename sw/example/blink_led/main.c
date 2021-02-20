@@ -73,7 +73,7 @@ void blink_led_c(void);
  **************************************************************************/
 int main() {
 
-  // init UART at default baud rate, no parity bits
+  // init UART (primary UART = UART0; if no id number is specified the primary UART is used) at default baud rate, no parity bits
   neorv32_uart_setup(BAUD_RATE, 0b00);
 
   // check if GPIO unit is implemented at all

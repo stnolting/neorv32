@@ -80,7 +80,8 @@ entity neorv32_top_stdlogic is
     -- Processor peripherals --
     IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
-    IO_UART_EN                   : boolean := true;   -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_UART0_EN                  : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART1_EN                  : boolean := true;   -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
     IO_PWM_EN                    : boolean := true;   -- implement pulse-width modulation unit (PWM)?
@@ -112,9 +113,12 @@ entity neorv32_top_stdlogic is
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      : out std_logic_vector(31 downto 0); -- parallel output
     gpio_i      : in  std_logic_vector(31 downto 0) := (others => '0'); -- parallel input
-    -- UART (available if IO_UART_EN = true) --
-    uart_txd_o  : out std_logic; -- UART send data
-    uart_rxd_i  : in  std_logic := '0'; -- UART receive data
+    -- primary UART0 (available if IO_UART0_EN = true) --
+    uart0_txd_o : out std_logic; -- UART0 send data
+    uart0_rxd_i : in  std_logic := '0'; -- UART0 receive data
+    -- secondary UART1 (available if IO_UART1_EN = true) --
+    uart1_txd_o : out std_logic; -- UART1 send data
+    uart1_rxd_i : in  std_logic := '0'; -- UART1 receive data
     -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   : out std_logic; -- SPI serial clock
     spi_sdo_o   : out std_logic; -- controller data out, peripheral data in
@@ -167,8 +171,10 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   signal gpio_o_int      : std_ulogic_vector(31 downto 0);
   signal gpio_i_int      : std_ulogic_vector(31 downto 0);
   --
-  signal uart_txd_o_int  : std_ulogic;
-  signal uart_rxd_i_int  : std_ulogic;
+  signal uart0_txd_o_int : std_ulogic;
+  signal uart0_rxd_i_int : std_ulogic;
+  signal uart1_txd_o_int : std_ulogic;
+  signal uart1_rxd_i_int : std_ulogic;
   --
   signal spi_sck_o_int   : std_ulogic;
   signal spi_sdo_o_int   : std_ulogic;
@@ -234,7 +240,8 @@ begin
     -- Processor peripherals --
     IO_GPIO_EN                   => IO_GPIO_EN,         -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  => IO_MTIME_EN,        -- implement machine system timer (MTIME)?
-    IO_UART_EN                   => IO_UART_EN,         -- implement universal asynchronous receiver/transmitter (UART)?
+    IO_UART0_EN                  => IO_UART0_EN,        -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART1_EN                  => IO_UART1_EN,        -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN                    => IO_SPI_EN,          -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    => IO_TWI_EN,          -- implement two-wire interface (TWI)?
     IO_PWM_EN                    => IO_PWM_EN,          -- implement pulse-width modulation unit (PWM)?
@@ -266,9 +273,12 @@ begin
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      => gpio_o_int,      -- parallel output
     gpio_i      => gpio_i_int,      -- parallel input
-    -- UART (available if IO_UART_EN = true) --
-    uart_txd_o  => uart_txd_o_int,  -- UART send data
-    uart_rxd_i  => uart_rxd_i_int,  -- UART receive data
+    -- primary UART0 (available if IO_UART0_EN = true) --
+    uart0_txd_o => uart0_txd_o_int, -- UART0 send data
+    uart0_rxd_i => uart0_rxd_i_int, -- UART0 receive data
+    -- secondary UART1 (available if IO_UART1_EN = true) --
+    uart1_txd_o => uart1_txd_o_int, -- UART1 send data
+    uart1_rxd_i => uart1_rxd_i_int, -- UART1 receive data
     -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   => spi_sck_o_int,   -- SPI serial clock
     spi_sdo_o   => spi_sdo_o_int,   -- controller data out, peripheral data in
@@ -294,47 +304,49 @@ begin
   );
 
   -- type conversion --
-  clk_i_int      <= std_ulogic(clk_i);
-  rstn_i_int     <= std_ulogic(rstn_i);
+  clk_i_int       <= std_ulogic(clk_i);
+  rstn_i_int      <= std_ulogic(rstn_i);
 
-  wb_tag_o       <= std_logic_vector(wb_tag_o_int);
-  wb_adr_o       <= std_logic_vector(wb_adr_o_int);
-  wb_dat_i_int   <= std_ulogic_vector(wb_dat_i);
-  wb_dat_o       <= std_logic_vector(wb_dat_o_int);
-  wb_we_o        <= std_logic(wb_we_o_int);
-  wb_sel_o       <= std_logic_vector(wb_sel_o_int);
-  wb_stb_o       <= std_logic(wb_stb_o_int);
-  wb_cyc_o       <= std_logic(wb_cyc_o_int);
-  wb_lock_o      <= std_logic(wb_lock_o_int);
-  wb_ack_i_int   <= std_ulogic(wb_ack_i);
-  wb_err_i_int   <= std_ulogic(wb_err_i);
+  wb_tag_o        <= std_logic_vector(wb_tag_o_int);
+  wb_adr_o        <= std_logic_vector(wb_adr_o_int);
+  wb_dat_i_int    <= std_ulogic_vector(wb_dat_i);
+  wb_dat_o        <= std_logic_vector(wb_dat_o_int);
+  wb_we_o         <= std_logic(wb_we_o_int);
+  wb_sel_o        <= std_logic_vector(wb_sel_o_int);
+  wb_stb_o        <= std_logic(wb_stb_o_int);
+  wb_cyc_o        <= std_logic(wb_cyc_o_int);
+  wb_lock_o       <= std_logic(wb_lock_o_int);
+  wb_ack_i_int    <= std_ulogic(wb_ack_i);
+  wb_err_i_int    <= std_ulogic(wb_err_i);
 
-  fence_o        <= std_logic(fence_o_int);
-  fencei_o       <= std_logic(fencei_o_int);
+  fence_o         <= std_logic(fence_o_int);
+  fencei_o        <= std_logic(fencei_o_int);
 
-  gpio_o         <= std_logic_vector(gpio_o_int);
-  gpio_i_int     <= std_ulogic_vector(gpio_i);
+  gpio_o          <= std_logic_vector(gpio_o_int);
+  gpio_i_int      <= std_ulogic_vector(gpio_i);
 
-  uart_txd_o     <= std_logic(uart_txd_o_int);
-  uart_rxd_i_int <= std_ulogic(uart_rxd_i);
+  uart0_txd_o     <= std_logic(uart0_txd_o_int);
+  uart0_rxd_i_int <= std_ulogic(uart0_rxd_i);
+  uart1_txd_o     <= std_logic(uart1_txd_o_int);
+  uart1_rxd_i_int <= std_ulogic(uart1_rxd_i);
 
-  spi_sck_o      <= std_logic(spi_sck_o_int);
-  spi_sdo_o      <= std_logic(spi_sdo_o_int);
-  spi_sdi_i_int  <= std_ulogic(spi_sdi_i);
-  spi_csn_o      <= std_logic_vector(spi_csn_o_int);
+  spi_sck_o       <= std_logic(spi_sck_o_int);
+  spi_sdo_o       <= std_logic(spi_sdo_o_int);
+  spi_sdi_i_int   <= std_ulogic(spi_sdi_i);
+  spi_csn_o       <= std_logic_vector(spi_csn_o_int);
 
-  pwm_o          <= std_logic_vector(pwm_o_int);
+  pwm_o           <= std_logic_vector(pwm_o_int);
 
-  cfs_in_i_int   <= std_ulogic_vector(cfs_in_i);
-  cfs_out_o      <= std_logic_vector(cfs_out_o_int);
+  cfs_in_i_int    <= std_ulogic_vector(cfs_in_i);
+  cfs_out_o       <= std_logic_vector(cfs_out_o_int);
 
-  nco_o          <= std_logic_vector(nco_o_int);
+  nco_o           <= std_logic_vector(nco_o_int);
 
-  mtime_i_int    <= std_ulogic_vector(mtime_i);
+  mtime_i_int     <= std_ulogic_vector(mtime_i);
 
-  soc_firq_i_int <= std_ulogic_vector(soc_firq_i);
-  msw_irq_i_int  <= std_ulogic(msw_irq_i);
-  mext_irq_i_int <= std_ulogic(mext_irq_i);
+  soc_firq_i_int  <= std_ulogic_vector(soc_firq_i);
+  msw_irq_i_int   <= std_ulogic(msw_irq_i);
+  mext_irq_i_int  <= std_ulogic(mext_irq_i);
 
 
 end neorv32_top_stdlogic_rtl;

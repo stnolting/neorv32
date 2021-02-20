@@ -2,7 +2,7 @@
 -- # << NEORV32 - Serial Peripheral Interface Controller (SPI) >>                                  #
 -- # ********************************************************************************************* #
 -- # Frame format: 8/16/24/32-bit receive/transmit data, always MSB first, 2 clock modes,          #
--- # 8 clock speeds (derived from system clock), 8 dedicated chip-select lines (low-active).       #
+-- # 8 pre-scaled clocks (derived from system clock), 8 dedicated chip-select lines (low-active).  #
 -- # Interrupt: SPI_transfer_done                                                                  #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #

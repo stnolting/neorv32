@@ -32,7 +32,7 @@ RUN_TARGET=\
 	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led main.bin; \
 	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led install; \
 	sh $(NEORV32_LOCAL_COPY)/sim/ghdl/ghdl_sim.sh --stop-time=$(SIM_TIME) >> /dev/null; \
-	cp $(work_dir_isa)/neorv32.uart.sim_mode.data.out $(*).signature.output;
+	cp $(work_dir_isa)/neorv32.uart0.sim_mode.data.out $(*).signature.output;
 
 
 RISCV_PREFIX   ?= riscv32-unknown-elf-
