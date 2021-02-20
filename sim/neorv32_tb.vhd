@@ -119,7 +119,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
 
   -- irq --
   signal msi_ring, mei_ring : std_ulogic;
-  signal soc_firq_ring      : std_ulogic_vector(7 downto 0);
+  signal soc_firq_ring      : std_ulogic_vector(5 downto 0);
 
   -- Wishbone bus --
   type wishbone_t is record
@@ -579,14 +579,13 @@ begin
       if ((wb_irq.cyc and wb_irq.stb and wb_irq.we and and_all_f(wb_irq.sel)) = '1') then
         msi_ring         <= wb_irq.wdata(03); -- machine software interrupt
         mei_ring         <= wb_irq.wdata(11); -- machine software interrupt
-        soc_firq_ring(0) <= wb_irq.wdata(24); -- fast interrupt SoC channel 0
-        soc_firq_ring(1) <= wb_irq.wdata(25); -- fast interrupt SoC channel 1
-        soc_firq_ring(2) <= wb_irq.wdata(26); -- fast interrupt SoC channel 2
-        soc_firq_ring(3) <= wb_irq.wdata(27); -- fast interrupt SoC channel 3
-        soc_firq_ring(4) <= wb_irq.wdata(28); -- fast interrupt SoC channel 4
-        soc_firq_ring(5) <= wb_irq.wdata(29); -- fast interrupt SoC channel 5
-        soc_firq_ring(6) <= wb_irq.wdata(30); -- fast interrupt SoC channel 6
-        soc_firq_ring(7) <= wb_irq.wdata(31); -- fast interrupt SoC channel 7
+        --
+        soc_firq_ring(0) <= wb_irq.wdata(26); -- fast interrupt SoC channel 0 (-> FIRQ channel 10)
+        soc_firq_ring(1) <= wb_irq.wdata(27); -- fast interrupt SoC channel 1 (-> FIRQ channel 11)
+        soc_firq_ring(2) <= wb_irq.wdata(28); -- fast interrupt SoC channel 2 (-> FIRQ channel 12)
+        soc_firq_ring(3) <= wb_irq.wdata(29); -- fast interrupt SoC channel 3 (-> FIRQ channel 13)
+        soc_firq_ring(4) <= wb_irq.wdata(30); -- fast interrupt SoC channel 4 (-> FIRQ channel 14)
+        soc_firq_ring(5) <= wb_irq.wdata(31); -- fast interrupt SoC channel 5 (-> FIRQ channel 15)
       end if;
     end if;
   end process irq_trigger;
