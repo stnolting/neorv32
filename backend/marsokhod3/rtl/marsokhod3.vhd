@@ -119,7 +119,8 @@ begin
       -- Processor peripherals --
       IO_GPIO_EN                    => true,        -- implement general purpose input/output port unit (GPIO)?
       IO_MTIME_EN                   => true,        -- implement machine system timer (MTIME)?
-      IO_UART_EN                    => true,        -- implement universal asynchronous receiver/transmitter (UART)?
+      IO_UART0_EN                   => true,        -- implement primary universal asynchronous receiver/transmitter (UART0)?
+      IO_UART1_EN                   => false,       -- implement secondary universal asynchronous receiver/transmitter (UART1)?
       IO_SPI_EN                     => true,        -- implement serial peripheral interface (SPI)?
       IO_TWI_EN                     => true,        -- implement two-wire interface (TWI)?
       IO_PWM_EN                     => true,        -- implement pulse-width modulation unit (PWM)?
@@ -151,9 +152,12 @@ begin
       -- GPIO --
       gpio_o      => gpio_out,        -- parallel output
       gpio_i      => gpio_in,         -- parallel input
-      -- UART --
-      uart_txd_o  => FTDI_BD(1),      -- UART send data
-      uart_rxd_i  => FTDI_BD(0),      -- UART receive data
+      -- primary UART0 (available if IO_UART0_EN = true) --
+      uart0_txd_o => FTDI_BD(1),      -- UART0 send data
+      uart0_rxd_i => FTDI_BD(0),      -- UART0 receive data
+      -- secondary UART1 (available if IO_UART1_EN = true) --
+      uart1_txd_o => open,            -- UART1 send data
+      uart1_rxd_i => '0',             -- UART1 receive data
       -- SPI --
       spi_sck_o   => IO(16),          -- SPI serial clock
       spi_sdo_o   => IO(15),          -- controller data out, peripheral data in
