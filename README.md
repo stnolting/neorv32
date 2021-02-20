@@ -1,4 +1,4 @@
-[![NEORV32](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_logo.png)](https://github.com/stnolting/neorv32)
+[![NEORV32](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_logo_dark.png)](https://github.com/stnolting/neorv32)
 
 # The NEORV32 RISC-V Processor
 
@@ -35,7 +35,7 @@ To see the changes between releases visit the project's [release page](https://g
 
 ### Key Features
 
-* RISC-V 32-bit `rv32i` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
+* RISC-V 32-bit `rv32` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
   * subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
   * subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
   * the [official RISC-V compliance tests](#Status) (*passing*)
@@ -490,9 +490,9 @@ This overview is just a short excerpt from the *Let's Get It Started* section of
 [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
 
 
-### Toolchain
+### 1. Get Toolchain
 
-At first you need the **RISC-V GCC toolchain**. You can either [download the sources](https://github.com/riscv/riscv-gnu-toolchain)
+At first you need a **RISC-V GCC toolchain**. You can either [download the sources](https://github.com/riscv/riscv-gnu-toolchain)
 and build the toolchain by yourself, or you can download a prebuilt one and install it.
 
 To build the toolchain by yourself, follow the official [build instructions](https://github.com/riscv/riscv-gnu-toolchain).
@@ -503,13 +503,19 @@ were compiled on a 64-bit x86 Ubuntu 20.04 LTS (Ubuntu on Windows, actually). Do
 [:octocat: github.com/stnolting/riscv-gcc-prebuilt](https://github.com/stnolting/riscv-gcc-prebuilt)
 
 You can also use the toolchains provided by [SiFive](https://github.com/sifive/freedom-tools/releases). These are 64-bit toolchains that can also emit 32-bit
-RISC-V code. They were compiled for more sophisticated machines (`imac`) so the according hardware extensions are *mandatory*
+RISC-V code. They were compiled for more sophisticated machines (`rv32imac`) so make sure the according NEORV32 hardware extensions are enabled.
 
 :warning: Keep in mind that – for instance – a `rv32imc` toolchain only provides library code compiled with compressed and
 `mul`/`div` instructions! Hence, this code cannot be executed (without emulation) on an architecture without these extensions!
 
+To check everything works fine, make sure `GNU Make` and a native `GCC` compiler are installed.
+Test the installation of the RISC-V toolchain by navigating to an [example program project](https://github.com/stnolting/neorv32/tree/master/sw/example) like
+`sw/example/blink_led` and running:
 
-### Dowload the NEORV32 Project
+    neorv32/sw/example/blink_led$ make check
+
+
+### 2. Dowload the NEORV32 Project
 
 Get the sources of the NEORV32 Processor project. The simplest way is using `git clone` (suggested for easy project updates via `git pull`):
 
@@ -519,7 +525,7 @@ Alternatively, you can either download a specific [release](https://github.com/s
 of this project as [`*.zip` file](https://github.com/stnolting/neorv32/archive/master.zip).
 
 
-### Create a new Hardware Project
+### 3. Create a new Hardware Project
 
 Create a new project with your FPGA design tool of choice. Add all the `*.vhd` files from the [`rtl/core`](https://github.com/stnolting/neorv32/blob/master/rtl)
 folder to this project. Make sure to add these files to a **new design library** called `neorv32`.
@@ -550,32 +556,22 @@ propagated as actual entity signals. Basically, it is a FPGA "hello world" examp
 ```
 
 
-### Check the Toolchain
+### 4. Compile an Example Program
 
-Make sure `GNU Make` and a native `GCC` compiler are installed. To test the installation of the RISC-V toolchain navigate to an example project like
-`sw/example/blink_led` and run:
+The NEORV32 project includes several [example program project](https://github.com/stnolting/neorv32/tree/master/sw/example) from
+which you can start your own application. There are example programs to check out the processor's peripheral like I2C or the true-random number generator.
+And yes, there is also a port of [Conway's Game of Life](https://github.com/stnolting/neorv32/tree/master/sw/example/game_of_life) available! :wink:
 
-    neorv32/sw/example/blink_led$ make check
-
-
-### Compiling an Example Program
-
-The NEORV32 project includes some [example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) from
-which you can start your own application. Simply compile one of these projects. This will create a NEORV32
-*executable* `neorv32_exe.bin` in the same folder:
+Simply compile one of these projects using
 
     neorv32/sw/example/blink_led$ make clean_all exe
 
+This will create a NEORV32 *executable* `neorv32_exe.bin` in the same folder, which you can upload via the bootloader.
 
-### Upload the Executable via the Bootloader
 
-You can upload a generated executable directly from the command line using the makefile's `upload` target. Replace `/dev/ttyUSB0` with
-the according serial port.
+### 5. Upload the Executable via the Bootloader
 
-    sw/exeample/blink_example$ make COM_PORT=/dev/ttyUSB0` upload
-
-A more "secure" way is to use a dedicated terminal program. This allows to directly interact with the bootloader console.
-Connect your FPGA board via UART to your computer and open the according port to interface with the NEORV32 bootloader. The bootloader
+Connect your FPGA board via UART to your computer and open the according port to interface with the fancy NEORV32 bootloader. The bootloader
 uses the following default UART configuration:
 
 * 19200 Baud
@@ -585,7 +581,7 @@ uses the following default UART configuration:
 * No transmission / flow control protocol (raw bytes only)
 * Newline on `\r\n` (carriage return & newline) - also for sent data
 
-Use the bootloader console to upload the `neorv32_exe.bin` executable and run your application image.
+Use the bootloader console to upload the `neorv32_exe.bin` executable gerated during application compiling and run your application.
 
 ```
 << NEORV32 Bootloader >>
