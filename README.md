@@ -112,9 +112,10 @@ all the [provided example programs](https://github.com/stnolting/neorv32/tree/ma
 * Add data cache?
 * Burst mode for the external memory/bus interface?
 * RISC-V `F` (using [`Zfinx`](https://github.com/riscv/riscv-zfinx/blob/master/Zfinx_spec.adoc)?) CPU extension (single-precision floating point)
+* RISC-V `K` CPU extension: [Crypto](https://github.com/riscv/riscv-crypto)
 * Add template (HW module + SW intrinsics skeleton) for custom instructions?
 * Implement further RISC-V CPU extensions?
-* More support for FreeRTOS (like *all* traps)?
+* More support for FreeRTOS?
 * Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))?
 * Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))?
 * ...
