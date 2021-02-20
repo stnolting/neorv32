@@ -153,7 +153,7 @@ entity neorv32_top_axi4lite is
     -- NCO output (available if IO_NCO_EN = true) --
     nco_o       : out std_logic_vector(02 downto 0); -- numerically-controlled oscillator channels
     -- Interrupts --
-    soc_firq_i  : in  std_logic_vector(7 downto 0) := (others => '0'); -- fast interrupt channels
+    soc_firq_i  : in  std_logic_vector(5 downto 0) := (others => '0'); -- fast interrupt channels
     mtime_irq_i : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   : in  std_logic := '0'; -- machine software interrupt
     mext_irq_i  : in  std_logic := '0'  -- machine external interrupt
@@ -189,7 +189,7 @@ architecture neorv32_top_axi4lite_rtl of neorv32_top_axi4lite is
   --
   signal nco_o_int       : std_ulogic_vector(02 downto 0);
   --
-  signal soc_firq_i_int  : std_ulogic_vector(7 downto 0);
+  signal soc_firq_i_int  : std_ulogic_vector(05 downto 0);
   signal mtime_irq_i_int : std_ulogic;
   signal msw_irq_i_int   : std_ulogic;
   signal mext_irq_i_int  : std_ulogic;
