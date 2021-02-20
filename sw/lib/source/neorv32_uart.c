@@ -282,7 +282,7 @@ void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity) {
   /* Enable UART0 for SIM mode. */
   /* USE THIS ONLY FOR SIMULATION! */
 #ifdef UART_SIM_MODE
-  #warning <UART_SIM_MODE> is obsolete (but still supported for compatibility). The new flag for setting the primary UART into simulation mode is <UART0_SIM_MODE>.
+  #warning <UART_SIM_MODE> is obsolete (but still supported for compatibility). Please consider using the new flag <UART0_SIM_MODE>.
 #endif
 #if defined UART0_SIM_MODE || defined UART_SIM_MODE
   #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only!
