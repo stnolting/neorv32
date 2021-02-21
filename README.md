@@ -490,7 +490,7 @@ This overview is just a short excerpt from the *Let's Get It Started* section of
 [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
 
 
-### 1. Get Toolchain
+### 1. Get the Toolchain
 
 At first you need a **RISC-V GCC toolchain**. You can either [download the sources](https://github.com/riscv/riscv-gnu-toolchain)
 and build the toolchain by yourself, or you can download a prebuilt one and install it.
@@ -525,20 +525,20 @@ Alternatively, you can either download a specific [release](https://github.com/s
 of this project as [`*.zip` file](https://github.com/stnolting/neorv32/archive/master.zip).
 
 
-### 3. Create a new Hardware Project
+### 3. Create a new FPGA Project
 
 Create a new project with your FPGA design tool of choice. Add all the `*.vhd` files from the [`rtl/core`](https://github.com/stnolting/neorv32/blob/master/rtl)
 folder to this project. Make sure to add these files to a **new design library** called `neorv32`.
 
 You can either instantiate the [processor's top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) or one of its
-[wrappers](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) in your own project. If you just want to try out the processor,
-you can use the simple [test setup](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd) as top entity.
+[wrappers](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) in your own project. If you just want to try thing out,
+you can use the simple [**test setup** (`rtl/top_templates/neorv32_test_setup.vhd`)](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd) as top entity.
 
 ![neorv32 test setup](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_test_setup.png)
 
 
-This test setup instantiates the processor and implements most of the peripherals and some ISA extensions. Only the UART0 lines, clock, reset and some GPIO output signals are
-propagated as actual entity signals. Basically, it is a FPGA "hello world" example:
+This test setup instantiates the processor and implements most of the peripherals and some ISA extensions. Only the UART0 communications lines, clock, reset and some
+GPIO output signals are propagated as actual top entity interface signals. Basically, it is a FPGA version of a "hello world" example:
 
 ```vhdl
   entity neorv32_test_setup is
@@ -549,7 +549,7 @@ propagated as actual entity signals. Basically, it is a FPGA "hello world" examp
       -- GPIO --
       gpio_o      : out std_ulogic_vector(7 downto 0); -- parallel output
       -- UART0 --
-      uart0_txd_o : out std_ulogic; -- UART0 send data
+      uart0_txd_o : out std_ulogic;       -- UART0 send data
       uart0_rxd_i : in  std_ulogic := '0' -- UART0 receive data
     );
   end neorv32_test_setup;
@@ -581,7 +581,7 @@ uses the following default UART configuration:
 * No transmission / flow control protocol (raw bytes only)
 * Newline on `\r\n` (carriage return & newline) - also for sent data
 
-Use the bootloader console to upload the `neorv32_exe.bin` executable gerated during application compiling and run your application.
+Use the bootloader console to upload the `neorv32_exe.bin` executable gerated during application compiling and *run* your application.
 
 ```
 << NEORV32 Bootloader >>
