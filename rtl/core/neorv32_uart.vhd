@@ -1,16 +1,20 @@
 -- #################################################################################################
 -- # << NEORV32 - Universal Asynchronous Receiver and Transmitter (UART0/1) >>                     #
 -- # ********************************************************************************************* #
--- # Frame configuration: 1 start bit, 8 bit data, optional parity bit (even/odd), 1 stop bit,     #
--- # programmable BAUD rate via clock pre-scaler and BAUD value config register.                   #
--- # Interrupt: UART_RX_available or UART_TX_done                                                  #
+-- # Frame configuration: 1 start bit, 8 bit data, parity bit (none/even/odd), 1 stop bit,         #
+-- # programmable BAUD rate via clock pre-scaler and 12-bit BAUD value config register.            #
+-- # Interrupt: UART_RX_available and UART_TX_done                                                 #
+-- #                                                                                               #
+-- # Support for RTS("RTR")/CTS hardware flow control:                                             #
+-- # * uart_rts_o = 0: RX is ready to receive a new char, enabled via CTRL.ctrl_uart_rts_en_c      #
+-- # * uart_cts_i = 0: TX is allowed to send a new char, enabled via CTRL.ctrl_uart_cts_en_c       #
 -- #                                                                                               #
 -- # UART0 / UART1:                                                                                #
 -- # This module is used for implementing UART0 and UART1. The UART_PRIMARY generic configures the #
 -- # interface register addresses and simulation output setting for UART0 (UART_PRIMARY = true)    #
 -- # or UART1 (UART_PRIMARY = false).                                                              #
 -- #                                                                                               #
--- # SIMULATION:                                                                                   #
+-- # SIMULATION MODE:                                                                              #
 -- # When the simulation mode is enabled (setting the ctrl.ctrl_uart_sim_en_c bit) any write       #
 -- # access to the TX register will not trigger any UART activity. Instead, the written data is    #
 -- # output to the simulation environment. The lowest 8 bits of the written data are printed as    #
@@ -18,6 +22,7 @@
 -- # This char is also stored to the file "neorv32.uartX.sim_mode.text.out" (where X = 0 for UART0 #
 -- # and X = 1 for UART1). The full 32-bit write data is also stored as 8-digit hexadecimal value  #
 -- # to the file "neorv32.uartX.sim_mode.data.out" (where X = 0 for UART0 and X = 1 for UART1).    #
+-- # No interrupts are triggered when in SIMULATION MODE.                                          #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -77,6 +82,9 @@ entity neorv32_uart is
     -- com lines --
     uart_txd_o  : out std_ulogic;
     uart_rxd_i  : in  std_ulogic;
+    -- hardware flow control --
+    uart_rts_o  : out std_ulogic; -- UART.RX ready to receive ("RTR"), low-active, optional
+    uart_cts_i  : in  std_ulogic; -- UART.TX allowed to transmit, low-active, optional
     -- interrupts --
     irq_rxd_o   : out std_ulogic; -- uart data received interrupt
     irq_txd_o   : out std_ulogic  -- uart transmission done interrupt
@@ -104,10 +112,10 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant sim_uart_text_file_c : string := cond_sel_string_f(UART_PRIMARY, "neorv32.uart0.sim_mode.text.out", "neorv32.uart1.sim_mode.text.out");
   constant sim_uart_data_file_c : string := cond_sel_string_f(UART_PRIMARY, "neorv32.uart0.sim_mode.data.out", "neorv32.uart1.sim_mode.data.out");
 
-  -- accessible regs --
+  -- control register --
   signal ctrl : std_ulogic_vector(31 downto 0);
 
-  -- control reg bits --
+  -- control register bits --
   constant ctrl_uart_baud00_c  : natural :=  0; -- r/w: UART baud config bit 0
   constant ctrl_uart_baud01_c  : natural :=  1; -- r/w: UART baud config bit 1
   constant ctrl_uart_baud02_c  : natural :=  2; -- r/w: UART baud config bit 2
@@ -120,23 +128,25 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant ctrl_uart_baud09_c  : natural :=  9; -- r/w: UART baud config bit 9
   constant ctrl_uart_baud10_c  : natural := 10; -- r/w: UART baud config bit 10
   constant ctrl_uart_baud11_c  : natural := 11; -- r/w: UART baud config bit 11
-  --
-  constant ctrl_uart_sim_en_c  : natural := 12; -- r/w: UART SIMULATION OUTPUT enable
-  --
+  constant ctrl_uart_sim_en_c  : natural := 12; -- r/w: UART <<SIMULATION MODE>> enable
+  -- ...
+  constant ctrl_uart_rts_en_c  : natural := 20; -- r/w: enable hardware flow control: assert rts_o if ready to receive
+  constant ctrl_uart_cts_en_c  : natural := 21; -- r/w: enable hardware flow control: send only if cts_i is asserted
   constant ctrl_uart_pmode0_c  : natural := 22; -- r/w: Parity config (0=even; 1=odd)
   constant ctrl_uart_pmode1_c  : natural := 23; -- r/w: Enable parity bit
   constant ctrl_uart_prsc0_c   : natural := 24; -- r/w: UART baud prsc bit 0
   constant ctrl_uart_prsc1_c   : natural := 25; -- r/w: UART baud prsc bit 1
   constant ctrl_uart_prsc2_c   : natural := 26; -- r/w: UART baud prsc bit 2
-  --
+  constant ctrl_uart_cts_c     : natural := 27; -- r/-: current state of CTS input
   constant ctrl_uart_en_c      : natural := 28; -- r/w: UART enable
+  -- ...
   constant ctrl_uart_tx_busy_c : natural := 31; -- r/-: UART transmitter is busy
 
   -- data register flags --
-  constant data_rx_avail_c : natural := 31; -- r/-: Rx data available
-  constant data_rx_overr_c : natural := 30; -- r/-: Rx data overrun
-  constant data_rx_ferr_c  : natural := 29; -- r/-: Rx frame error
   constant data_rx_perr_c  : natural := 28; -- r/-: Rx parity error
+  constant data_rx_ferr_c  : natural := 29; -- r/-: Rx frame error
+  constant data_rx_overr_c : natural := 30; -- r/-: Rx data overrun
+  constant data_rx_avail_c : natural := 31; -- r/-: Rx data available
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
@@ -150,13 +160,19 @@ architecture neorv32_uart_rtl of neorv32_uart is
   -- numbers of bits in transmission frame --
   signal num_bits : std_ulogic_vector(03 downto 0);
 
+  -- hardware flow-control IO buffer --
+  signal uart_cts_ff : std_ulogic_vector(1 downto 0);
+  signal uart_rts    : std_ulogic;
+
   -- uart tx unit --
   type uart_tx_t is record
-    busy     : std_ulogic;
-    done     : std_ulogic;
-    bitcnt   : std_ulogic_vector(03 downto 0);
-    sreg     : std_ulogic_vector(10 downto 0);
-    baud_cnt : std_ulogic_vector(11 downto 0);
+    busy       : std_ulogic;
+    done       : std_ulogic;
+    bitcnt     : std_ulogic_vector(03 downto 0);
+    sreg       : std_ulogic_vector(10 downto 0);
+    baud_cnt   : std_ulogic_vector(11 downto 0);
+    tx_granted : std_ulogic; -- allowed to start sending when 1
+    cts        : std_ulogic; -- allow new transmission when 1
   end record;
   signal uart_tx : uart_tx_t;
 
@@ -172,6 +188,7 @@ architecture neorv32_uart_rtl of neorv32_uart is
     baud_cnt : std_ulogic_vector(11 downto 0);
     ferr     : std_ulogic; -- frame error (stop bit not set)
     perr     : std_ulogic; -- parity error
+    rtr      : std_ulogic; -- ready to receive when 1
   end record;
   signal uart_rx : uart_rx_t;
 
@@ -199,6 +216,8 @@ begin
           ctrl(ctrl_uart_sim_en_c)                           <= data_i(ctrl_uart_sim_en_c);
           ctrl(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c) <= data_i(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c);
           ctrl(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c)  <= data_i(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c);
+          ctrl(ctrl_uart_rts_en_c)                           <= data_i(ctrl_uart_rts_en_c);
+          ctrl(ctrl_uart_cts_en_c)                           <= data_i(ctrl_uart_cts_en_c);
           ctrl(ctrl_uart_en_c)                               <= data_i(ctrl_uart_en_c);
         end if;
       end if;
@@ -210,22 +229,25 @@ begin
           data_o(ctrl_uart_sim_en_c)                           <= ctrl(ctrl_uart_sim_en_c);
           data_o(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c) <= ctrl(ctrl_uart_pmode1_c downto ctrl_uart_pmode0_c);
           data_o(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c)  <= ctrl(ctrl_uart_prsc2_c  downto ctrl_uart_prsc0_c);
+          data_o(ctrl_uart_rts_en_c)                           <= ctrl(ctrl_uart_rts_en_c);
+          data_o(ctrl_uart_cts_en_c)                           <= ctrl(ctrl_uart_cts_en_c);
           data_o(ctrl_uart_en_c)                               <= ctrl(ctrl_uart_en_c);
           data_o(ctrl_uart_tx_busy_c)                          <= uart_tx.busy;
+          data_o(ctrl_uart_cts_c)                              <= uart_cts_ff(1);
         else -- uart_id_rtx_addr_c
           data_o(data_rx_avail_c) <= uart_rx.avail(0);
           data_o(data_rx_overr_c) <= uart_rx.avail(0) and uart_rx.avail(1);
           data_o(data_rx_ferr_c)  <= uart_rx.ferr;
           data_o(data_rx_perr_c)  <= uart_rx.perr;
-          data_o(07 downto 0)     <= uart_rx.data;
+          data_o(7 downto 0)      <= uart_rx.data;
         end if;
       end if;
     end if;
   end process rw_access;
 
   -- number of bits to be sampled --
-  -- if parity flag is ENABLED:  11 bit (1 start bit + 8 data bits + 1 parity bit + 1 stop bit)
-  -- if parity flag is DISABLED: 10 bit (1 start bit + 8 data bits + 1 stop bit)
+  -- if parity flag is ENABLED:  11 bit -> "1011" (1 start bit + 8 data bits + 1 parity bit + 1 stop bit)
+  -- if parity flag is DISABLED: 10 bit -> "1010" (1 start bit + 8 data bits + 1 stop bit)
   num_bits <= "1011" when (ctrl(ctrl_uart_pmode1_c) = '1') else "1010";
 
 
@@ -258,7 +280,7 @@ begin
           end if;
           uart_tx.busy <= '1';
         end if;
-      elsif (uart_clk = '1') then
+      elsif (uart_clk = '1') and (uart_tx.tx_granted = '1') then
         if (uart_tx.baud_cnt = x"000") then
           uart_tx.baud_cnt <= ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud00_c);
           uart_tx.bitcnt   <= std_ulogic_vector(unsigned(uart_tx.bitcnt) - 1);
@@ -271,8 +293,12 @@ begin
           uart_tx.done <= '1';
         end if;
       end if;
+      -- transmission granted --
+      if (uart_tx.busy = '0') then -- update when idle
+        uart_tx.tx_granted <= uart_tx.cts;
+      end if;
       -- transmitter output --
-      uart_txd_o <= uart_tx.sreg(0);
+      uart_txd_o <= uart_tx.sreg(0) or (not uart_tx.tx_granted); -- keep TX line idle (=high) if waiting for permission to start sending (->CTS)
     end if;
   end process uart_tx_unit;
 
@@ -286,7 +312,7 @@ begin
       uart_rx.sync <= uart_rxd_i & uart_rx.sync(4 downto 1);
 
       -- serial engine --
-      if (uart_rx.busy = '0') or (ctrl(ctrl_uart_en_c) = '0') then -- idle or disabled
+      if (uart_rx.busy = '0') or (ctrl(ctrl_uart_en_c) = '0') or (ctrl(ctrl_uart_sim_en_c) = '1') then -- idle or disabled or in SIM mode
         uart_rx.busy     <= '0';
         uart_rx.baud_cnt <= '0' & ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud01_c); -- half baud delay at the beginning to sample in the middle of each bit
         uart_rx.bitcnt   <= num_bits;
@@ -327,12 +353,30 @@ begin
     end if;
   end process uart_rx_unit;
 
+  -- RX engine ready for new char? --
+  uart_rx.rtr <= not uart_rx.avail(0);
 
-  -- Interrupt ------------------------------------------------------------------------------
+
+  -- Hardware Flow Control ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- UART Rx data available
+  uart_tx.cts <= (not uart_cts_ff(1)) when (ctrl(ctrl_uart_cts_en_c) = '1') else '1'; -- input is low-active, internal signal is high-active
+  uart_rts    <= (not uart_rx.rtr)    when (ctrl(ctrl_uart_rts_en_c) = '1') else '0'; -- output is low-active
+
+  -- flow-control input/output synchronizer --
+  flow_control_buffer: process(clk_i)
+  begin
+    if rising_edge(clk_i) then -- should be mapped to IOBs
+      uart_cts_ff <= uart_cts_ff(0) & uart_cts_i;
+      uart_rts_o  <= uart_rts or (not ctrl(ctrl_uart_en_c)); -- UART.Rx is NOT ready to receive new data if module is disabled
+    end if;
+  end process flow_control_buffer;
+
+
+  -- Interrupts -----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- UART RX data available
   irq_rxd_o <= uart_rx.busy_ff and (not uart_rx.busy);
-  -- UART Tx complete
+  -- UART TX complete
   irq_txd_o <= uart_tx.done;
 
 

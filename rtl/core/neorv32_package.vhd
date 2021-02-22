@@ -60,7 +60,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050107"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050108"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -885,9 +885,13 @@ package neorv32_package is
       -- primary UART0 (available if IO_UART0_EN = true) --
       uart0_txd_o : out std_ulogic; -- UART0 send data
       uart0_rxd_i : in  std_ulogic := '0'; -- UART0 receive data
+      uart0_rts_o : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+      uart0_cts_i : in  std_ulogic := '0'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
       -- secondary UART1 (available if IO_UART1_EN = true) --
       uart1_txd_o : out std_ulogic; -- UART1 send data
       uart1_rxd_i : in  std_ulogic := '0'; -- UART1 receive data
+      uart1_rts_o : out std_ulogic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+      uart1_cts_i : in  std_ulogic := '0'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
       -- SPI (available if IO_SPI_EN = true) --
       spi_sck_o   : out std_ulogic; -- SPI serial clock
       spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
@@ -1436,6 +1440,9 @@ package neorv32_package is
       -- com lines --
       uart_txd_o  : out std_ulogic;
       uart_rxd_i  : in  std_ulogic;
+      -- hardware flow control --
+      uart_rts_o  : out std_ulogic; -- UART.RX ready to receive ("RTR"), low-active, optional
+      uart_cts_i  : in  std_ulogic; -- UART.TX allowed to transmit, low-active, optional
       -- interrupts --
       irq_rxd_o   : out std_ulogic; -- uart data received interrupt
       irq_txd_o   : out std_ulogic  -- uart transmission done interrupt
