@@ -735,17 +735,34 @@ enum NEORV32_UART_CT_enum {
   UART_CT_BAUD09   =  9, /**< UART control register(9)  (r/w): BAUD rate config value (12-bit, bit 8) */
   UART_CT_BAUD10   = 10, /**< UART control register(10) (r/w): BAUD rate config value (12-bit, bit 9) */
   UART_CT_BAUD11   = 11, /**< UART control register(11) (r/w): BAUD rate config value msb (12-bit, bit 0) */
-
   UART_CT_SIM_MODE = 12, /**< UART control register(12) (r/w): Simulation output override enable, for use in simulation only */
 
+  UART_CT_RTS_EN   = 20, /**< UART control register(20) (r/w): Enable hardware flow control: Assert RTS output if UART.RX is ready to receive */
+  UART_CT_CTS_EN   = 21, /**< UART control register(21) (r/w): Enable hardware flow control: UART.TX starts sending only if CTS input is asserted */
   UART_CT_PMODE0   = 22, /**< UART control register(22) (r/w): Parity configuration (0=even; 1=odd) */
   UART_CT_PMODE1   = 23, /**< UART control register(23) (r/w): Parity bit enabled when set */
   UART_CT_PRSC0    = 24, /**< UART control register(24) (r/w): BAUD rate clock prescaler select bit 0 */
   UART_CT_PRSC1    = 25, /**< UART control register(25) (r/w): BAUD rate clock prescaler select bit 1 */
   UART_CT_PRSC2    = 26, /**< UART control register(26) (r/w): BAUD rate clock prescaler select bit 2 */
-
+  UART_CT_CTS      = 27, /**< UART control register(27) (r/-): current state of CTS input */
   UART_CT_EN       = 28, /**< UART control register(28) (r/w): UART global enable */
+
   UART_CT_TX_BUSY  = 31  /**< UART control register(31) (r/-): Transmitter is busy when set */
+};
+
+/** UART0/UART1 parity configuration */
+enum NEORV32_UART_PARITY_enum {
+  PARITY_NONE = 0b00, /**< 0b00: No parity bit at all */
+  PARITY_EVEN = 0b10, /**< 0b10: Even parity */
+  PARITY_ODD  = 0b11  /**< 0b11: Odd parity */
+};
+
+/** UART0/UART1 hardware flow control configuration */
+enum NEORV32_UART_FLOW_CONTROL_enum {
+  FLOW_CONTROL_NONE   = 0b00, /**< 0b00: No hardware flow control */
+  FLOW_CONTROL_RTS    = 0b01, /**< 0b01: Assert RTS output if UART.RX is ready to receive */
+  FLOW_CONTROL_CTS    = 0b10, /**< 0b10: UART.TX starts sending only if CTS input is asserted */
+  FLOW_CONTROL_RTSCTS = 0b11  /**< 0b11: Assert RTS output if UART.RX is ready to receive & UART.TX starts sending only if CTS input is asserted */
 };
 
 /** UART0/UART1 receive/transmit data register bits */
@@ -772,17 +789,16 @@ enum NEORV32_UART_DATA_enum {
 
 /** SPI control register bits */
 enum NEORV32_SPI_CT_enum {
-  SPI_CT_CS0    =  0, /**< UART control register(0) (r/w): Direct chip select line 0 (output is low when set) */
-  SPI_CT_CS1    =  1, /**< UART control register(1) (r/w): Direct chip select line 1 (output is low when set) */
-  SPI_CT_CS2    =  2, /**< UART control register(2) (r/w): Direct chip select line 2 (output is low when set) */
-  SPI_CT_CS3    =  3, /**< UART control register(3) (r/w): Direct chip select line 3 (output is low when set) */
-  SPI_CT_CS4    =  4, /**< UART control register(4) (r/w): Direct chip select line 4 (output is low when set) */
-  SPI_CT_CS5    =  5, /**< UART control register(5) (r/w): Direct chip select line 5 (output is low when set) */
-  SPI_CT_CS6    =  6, /**< UART control register(6) (r/w): Direct chip select line 6 (output is low when set) */
-  SPI_CT_CS7    =  7, /**< UART control register(7) (r/w): Direct chip select line 7 (output is low when set) */
-
-  SPI_CT_EN     =  8, /**< UART control register(8) (r/w): SPI unit enable */
-  SPI_CT_CPHA   =  9, /**< UART control register(9) (r/w): Clock polarity (idle polarity) */
+  SPI_CT_CS0    =  0, /**< UART control register(0)  (r/w): Direct chip select line 0 (output is low when set) */
+  SPI_CT_CS1    =  1, /**< UART control register(1)  (r/w): Direct chip select line 1 (output is low when set) */
+  SPI_CT_CS2    =  2, /**< UART control register(2)  (r/w): Direct chip select line 2 (output is low when set) */
+  SPI_CT_CS3    =  3, /**< UART control register(3)  (r/w): Direct chip select line 3 (output is low when set) */
+  SPI_CT_CS4    =  4, /**< UART control register(4)  (r/w): Direct chip select line 4 (output is low when set) */
+  SPI_CT_CS5    =  5, /**< UART control register(5)  (r/w): Direct chip select line 5 (output is low when set) */
+  SPI_CT_CS6    =  6, /**< UART control register(6)  (r/w): Direct chip select line 6 (output is low when set) */
+  SPI_CT_CS7    =  7, /**< UART control register(7)  (r/w): Direct chip select line 7 (output is low when set) */
+  SPI_CT_EN     =  8, /**< UART control register(8)  (r/w): SPI unit enable */
+  SPI_CT_CPHA   =  9, /**< UART control register(9)  (r/w): Clock polarity (idle polarity) */
   SPI_CT_PRSC0  = 10, /**< UART control register(10) (r/w): Clock prescaler select bit 0 */
   SPI_CT_PRSC1  = 11, /**< UART control register(11) (r/w): Clock prescaler select bit 1 */
   SPI_CT_PRSC2  = 12, /**< UART control register(12) (r/w): Clock prescaler select bit 2 */
