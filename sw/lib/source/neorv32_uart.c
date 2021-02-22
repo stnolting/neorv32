@@ -80,9 +80,10 @@ int neorv32_uart_available(void) { return neorv32_uart0_available(); }
  * @warning The baud rate is computed using INTEGER operations (truncation errors might occur).
  *
  * @param[in] baudrate Targeted BAUD rate (e.g. 9600).
- * @param[in] parity Parity configuration (00=off, 10=even, 11=odd).
+ * @param[in] parity Parity configuration (00=off, 10=even, 11=odd), see #NEORV32_UART_PARITY_enum.
+ * @param[in] flow_con Hardware flow control configuration (00=off, 01=RTS, 10=CTS, 11=RTS/CTS), see #NEORV32_UART_FLOW_CONTROL_enum.
  **************************************************************************/
-void neorv32_uart_setup(uint32_t baudrate, uint8_t parity) { neorv32_uart0_setup(baudrate, parity); }
+void neorv32_uart_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) { neorv32_uart0_setup(baudrate, parity, flow_con); }
 
 
 /**********************************************************************//**
@@ -146,7 +147,7 @@ int neorv32_uart_char_received(void) { return neorv32_uart0_char_received(); }
  * @param[in,out] data Received char.
  * @return Status code (0=nothing received, 1: char received without errors; -1: char received with frame error; -2: char received with parity error; -3 char received with frame & parity error).
  **************************************************************************/
-int neorv32_uart_getc_secure(char *data) { return neorv32_uart0_getc_secure(data); }
+int neorv32_uart_getc_safe(char *data) { return neorv32_uart0_getc_safe(data); }
 
 
 /**********************************************************************//**
@@ -235,9 +236,10 @@ int neorv32_uart0_available(void) {
  * @warning The baud rate is computed using INTEGER operations (truncation errors might occur).
  *
  * @param[in] baudrate Targeted BAUD rate (e.g. 9600).
- * @param[in] parity Parity configuration (00=off, 10=even, 11=odd).
+ * @param[in] parity Parity configuration (00=off, 10=even, 11=odd), see #NEORV32_UART_PARITY_enum.
+ * @param[in] flow_con Hardware flow control configuration (00=off, 01=RTS, 10=CTS, 11=RTS/CTS), see #NEORV32_UART_FLOW_CONTROL_enum.
  **************************************************************************/
-void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity) {
+void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
 
   UART0_CT = 0; // reset
 
@@ -279,6 +281,9 @@ void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity) {
   uint32_t parity_config = (uint32_t)(parity & 3);
   parity_config = parity_config << UART_CT_PMODE0;
 
+  uint32_t flow_control = (uint32_t)(flow_con & 3);
+  flow_control = flow_control << UART_CT_RTS_EN;
+
   /* Enable UART0 for SIM mode. */
   /* USE THIS ONLY FOR SIMULATION! */
 #ifdef UART_SIM_MODE
@@ -291,7 +296,7 @@ void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity) {
   uint32_t sim_mode = 0;
 #endif
 
-  UART0_CT = clk_prsc | baud_prsc | uart_en | parity_config | sim_mode;
+  UART0_CT = clk_prsc | baud_prsc | uart_en | parity_config | sim_mode | flow_control;
 }
 
 
@@ -366,7 +371,7 @@ char neorv32_uart0_getc(void) {
  * @param[in,out] data Received char.
  * @return Status code (0=nothing received, 1: char received without errors; -1: char received with frame error; -2: char received with parity error; -3 char received with frame & parity error).
  **************************************************************************/
-int neorv32_uart0_getc_secure(char *data) {
+int neorv32_uart0_getc_safe(char *data) {
 
   uint32_t uart_rx = UART0_DATA;
   if (uart_rx & (1<<UART_DATA_AVAIL)) { // char available at all?
@@ -587,9 +592,10 @@ int neorv32_uart1_available(void) {
  * @warning The baud rate is computed using INTEGER operations (truncation errors might occur).
  *
  * @param[in] baudrate Targeted BAUD rate (e.g. 9600).
- * @param[in] parity Parity configuration (00=off, 10=even, 11=odd).
+ * @param[in] parity Parity configuration (00=off, 10=even, 11=odd), see #NEORV32_UART_PARITY_enum.
+ * @param[in] flow_con Hardware flow control configuration (00=off, 01=RTS, 10=CTS, 11=RTS/CTS), see #NEORV32_UART_FLOW_CONTROL_enum.
  **************************************************************************/
-void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity) {
+void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
 
   UART1_CT = 0; // reset
 
@@ -631,6 +637,9 @@ void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity) {
   uint32_t parity_config = (uint32_t)(parity & 3);
   parity_config = parity_config << UART_CT_PMODE0;
 
+  uint32_t flow_control = (uint32_t)(flow_con & 3);
+  flow_control = flow_control << UART_CT_RTS_EN;
+
   /* Enable UART1 for SIM mode. */
   /* USE THIS ONLY FOR SIMULATION! */
 #ifdef UART1_SIM_MODE
@@ -640,7 +649,7 @@ void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity) {
   uint32_t sim_mode = 0;
 #endif
 
-  UART1_CT = clk_prsc | baud_prsc | uart_en | parity_config | sim_mode;
+  UART1_CT = clk_prsc | baud_prsc | uart_en | parity_config | sim_mode | flow_control;
 }
 
 
@@ -715,7 +724,7 @@ char neorv32_uart1_getc(void) {
  * @param[in,out] data Received char.
  * @return Status code (0=nothing received, 1: char received without errors; -1: char received with frame error; -2: char received with parity error; -3 char received with frame & parity error).
  **************************************************************************/
-int neorv32_uart1_getc_secure(char *data) {
+int neorv32_uart1_getc_safe(char *data) {
 
   uint32_t uart_rx = UART1_DATA;
   if (uart_rx & (1<<UART_DATA_AVAIL)) { // char available at all?
