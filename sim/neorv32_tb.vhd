@@ -93,7 +93,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   file file_uart1_tx_out : text open write_mode is "neorv32.testbench_uart1.out";
 
   -- simulation uart0 receiver --
-  signal uart0_txd         : std_ulogic;
+  signal uart0_txd         : std_ulogic; -- local loop-back
+  signal uart0_cts         : std_ulogic; -- local loop-back
   signal uart0_rx_sync     : std_ulogic_vector(04 downto 0) := (others => '1');
   signal uart0_rx_busy     : std_ulogic := '0';
   signal uart0_rx_sreg     : std_ulogic_vector(08 downto 0) := (others => '0');
@@ -101,7 +102,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal uart0_rx_bitcnt   : natural;
 
   -- simulation uart1 receiver --
-  signal uart1_txd         : std_ulogic;
+  signal uart1_txd         : std_ulogic; -- local loop-back
+  signal uart1_cts         : std_ulogic; -- local loop-back
   signal uart1_rx_sync     : std_ulogic_vector(04 downto 0) := (others => '1');
   signal uart1_rx_busy     : std_ulogic := '0';
   signal uart1_rx_sreg     : std_ulogic_vector(08 downto 0) := (others => '0');
@@ -258,9 +260,13 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart0_txd,       -- UART0 send data
     uart0_rxd_i => uart0_txd,       -- UART0 receive data
+    uart0_rts_o => uart0_cts,       -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i => uart0_cts,       -- hw flow control: UART0.TX allowed to transmit, low-active, optional
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o => uart1_txd,       -- UART1 send data
     uart1_rxd_i => uart1_txd,       -- UART1 receive data
+    uart1_rts_o => uart1_cts,       -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i => uart1_cts,       -- hw flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   => open,            -- SPI serial clock
     spi_sdo_o   => spi_data,        -- controller data out, peripheral data in
