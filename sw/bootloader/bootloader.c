@@ -219,8 +219,8 @@ int main(void) {
     neorv32_gpio_port_set(1 << STATUS_LED);
   }
 
-  // init UART (no parity bit)
-  neorv32_uart_setup(BAUD_RATE, 0);
+  // init UART (no parity bit, no hardware flow control)
+  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // Configure machine system timer interrupt for ~2Hz
   neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (clock_speed/4));
