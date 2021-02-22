@@ -140,7 +140,7 @@ is highly customizable via the processor's top generics and already provides the
 * bootloader (**BOOTLDROM**) with UART console and automatic application boot from SPI flash option
 * machine system timer (**MTIME**), RISC-V-compliant
 * watchdog timer (**WDT**)
-* two independent universal asynchronous receiver and transmitter (**UART0** & **UART1**) with fast simulation output option
+* two independent universal asynchronous receivers and transmitters (**UART0** & **UART1**) with optional hardware flow control (RTS/CTS)
 * 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
 * two wire serial interface controller (**TWI**), with optional clock-stretching, compatible to the I²C standard
 * general purpose parallel IO port (**GPIO**), 32xOut & 32xIn, with pin-change interrupt
@@ -176,12 +176,12 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Official [RISC-V open-source architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
 
 
-#### Atomic memory access (`A` extension)
+#### `A` - Atomic memory access extension
 
   * Supported instructions: `LR.W` (load-reservate) `SC.W` (store-conditional)
 
 
-#### Bit manipulation instructions (`B` extension)
+#### `B` - Bit manipulation instructions extension
 
   * :warning: Extension is not officially ratified yet by the RISC-V foundation! 
   * Implies `Zbb` extension (base bit manipulation instruction set)
@@ -191,7 +191,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Supported instructions: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR` `RORI` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
 
 
-#### Compressed instructions (`C` extension)
+#### `C` - Compressed instructions extension
 
   * ALU instructions: `C.ADDI4SPN` `C.ADDI` `C.ADD` `C.ADDI16SP` `C.LI` `C.LUI` `C.SLLI` `C.SRLI` `C.SRAI` `C.ANDI` `C.SUB` `C.XOR` `C.OR` `C.AND` `C.MV` `C.NOP`
   * Jump and branch instructions: `C.J` `C.JAL` `C.JR` `C.JALR` `C.BEQZ` `C.BNEZ`
@@ -199,12 +199,12 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * System instructions: `C.EBREAK` (only with `Zicsr` extension)
   * Pseudo-instructions are not listed
 
-#### Embedded CPU version (`E` extension)
+#### `E` - Embedded CPU version extension
 
   * Reduced register file (only the 16 lowest registers)
 
 
-#### Integer base instruction set (`I` extension)
+#### `I` - Integer base instruction set
 
   * ALU instructions: `LUI` `AUIPC` `ADDI` `SLTI` `SLTIU` `XORI` `ORI` `ANDI` `SLLI` `SRLI` `SRAI` `ADD` `SUB` `SLL` `SLT` `SLTU` `XOR` `SRL` `SRA` `OR` `AND`
   * Jump and branch instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
@@ -213,7 +213,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Pseudo-instructions are not listed
 
 
-#### Integer multiplication and division hardware (`M` extension)
+#### `M` - Integer multiplication and division hardware extension
 
   * Multiplication instructions: `MUL` `MULH` `MULHSU` `MULHU`
   * Division instructions: `DIV` `DIVU` `REM` `REMU`
@@ -221,13 +221,13 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Multiplications can be mapped to DSPs via the `FAST_MUL_EN` generic to increase performance
 
 
-#### Privileged architecture - User mode (`U` extension)
+#### `U` - Privileged architecture - User mode extension
 
   * Requires `Zicsr` extension
   * Privilege levels: `M` (machine mode) + less-privileged `U` (user mode)
 
 
-#### NEORV32-specific CPU extensions (`X` extension)
+#### `X` - NEORV32-specific CPU extensions
 
 * The NEORV32-specific extensions are always enabled and are indicated via the `X` bit set in the `misa` CSR.
 * 16 *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
@@ -235,7 +235,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 * All undefined/umimplemented/malformed/illegal instructions do raise an illegal instruction exception
 
 
-#### Privileged architecture - CSR access (`Zicsr` extension)
+#### `Zicsr` - Privileged architecture - CSR access extension
 
   * Privilege levels: `M-mode` (Machine mode)
   * CSR access instructions: `CSRRW` `CSRRS` `CSRRC` `CSRRWI` `CSRRSI` `CSRRCI`
@@ -260,19 +260,19 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
     * Eight fast interrupt requests (custom extension)
 
 
-#### Privileged architecture - Instruction stream synchronization (`Zifencei` extension)
+#### `Zifencei` - Privileged architecture - Instruction stream synchronization extension
 
   * System instructions: `FENCE.I` (among others, used to clear and reload instruction cache)
 
 
-#### Privileged architecture - Physical memory protection (`PMP`)
+#### `PMP` - Privileged architecture - Physical memory protection option
 
   * Requires `Zicsr` extension
   * Configurable number of regions (0..63)
   * Additional machine CSRs: `pmpcfg*`(0..15) `pmpaddr*`(0..63)
 
 
-#### Privileged architecture - Hardware performance monitors (`HPM` extension)
+#### `HPM` - Privileged architecture - Hardware performance monitors option
 
   * Requires `Zicsr` extension
   * Configurable number of counters (0..29)
@@ -515,7 +515,7 @@ Test the installation of the RISC-V toolchain by navigating to an [example progr
     neorv32/sw/example/blink_led$ make check
 
 
-### 2. Dowload the NEORV32 Project
+### 2. Download the NEORV32 Project
 
 Get the sources of the NEORV32 Processor project. The simplest way is using `git clone` (suggested for easy project updates via `git pull`):
 
@@ -642,9 +642,9 @@ Other implied or used projects might have different licensing - see their docume
 
 #### Citing
 
-If you are using the NEORV32 or some parts of the project in some kind of publication, please cite it as follows:
+If you are using the NEORV32 or parts of the project in some kind of publication, please cite it as follows:
 
-> S. Nolting, "The NEORV32 Processor", github.com/stnolting/neorv32
+> S. Nolting, "The NEORV32 RISC-V Processor", github.com/stnolting/neorv32
 
 #### BSD 3-Clause License
 
