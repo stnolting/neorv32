@@ -111,8 +111,8 @@ int main() {
   uint32_t is_simulation = 0;
 
 
-  // init UART at default baud rate, no parity bits
-  neorv32_uart_setup(BAUD_RATE, 0b00);
+  // init UART at default baud rate, no parity bits, ho hw flow control
+  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
 // Disable cpu_test compilation by default
 #ifndef RUN_CPUTEST

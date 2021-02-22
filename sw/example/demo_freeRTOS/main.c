@@ -127,8 +127,8 @@ static void prvSetupHardware( void )
   // clear GPIO.out port
   neorv32_gpio_port_set(0);
 
-  // init UART at default baud rate, no parity bits
-  neorv32_uart_setup(BAUD_RATE, 0b00);
+  // init UART at default baud rate, no parity bits, ho hw flow control
+  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
@@ -231,8 +231,8 @@ void SystemIrqHandler( uint32_t mcause )
 #include <neorv32.h>
 int main() {
 
-  // init UART at default baud rate, no parity bits
-  neorv32_uart_setup(BAUD_RATE, 0b00);
+  // init UART at default baud rate, no parity bits, ho hw flow control
+  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
   neorv32_uart_print("ERROR! FreeRTOS has not been compiled. Use >>make USER_FLAGS+=-DRUN_FREERTOS_DEMO clean_all exe<< to compile it.\n");
   return 0;
 }
