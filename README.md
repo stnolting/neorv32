@@ -31,31 +31,31 @@ The doxygen-based documentation of the *software framework* is available online 
 :label: The project’s change log is available as [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) in the root directory of this repository.
 To see the changes between *stable* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-:white_check_mark: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current ideas and features being planned or work-in-progress.
+:spiral_notepad: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current ideas and features being planned or work-in-progress.
 
 :bulb: Feel free to open a [new issue](https://github.com/stnolting/neorv32/issues) or start a [new discussion](https://github.com/stnolting/neorv32/discussions)
-if you have questions, comments, ideas or bug-fixes. Check out how to [contriute](#ContributeFeedbackQuestions).
+if you have questions, comments, ideas or bug-fixes. Check out how to [contribute](#ContributeFeedbackQuestions).
 
 
 ### Key Features
 
 * RISC-V 32-bit `rv32` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
-  * subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
-  * subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
+  * subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
+  * subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
   * the [official RISC-V compliance tests](#Status) (*passing*)
 * Configurable RISC-V-compliant CPU extensions
-  * [`A`](#A---Atomic-memory-access-extension) - atomic memory access instructions (optional)
-  * [`B`](#Bit-manipulation-instructions-B-extension) - Bit manipulation instructions (optional)
-  * [`C`](#Compressed-instructions-C-extension) - compressed instructions (16-bit) (optional)
-  * [`E`](#Embedded-CPU-version-E-extension) - embedded CPU (reduced register file size) (optional)
-  * [`I`](#Integer-base-instruction-set-I-extension) - base integer instruction set (always enabled)
-  * [`M`](#Integer-multiplication-and-division-hardware-M-extension) - integer multiplication and division hardware (optional)
-  * [`U`](#Privileged-architecture---User-mode-U-extension) - less-privileged *user mode* (optional)
-  * [`X`](#NEORV32-specific-CPU-extensions-X-extension) - NEORV32-specific extensions (always enabled)
-  * [`Zicsr`](#Privileged-architecture---CSR-access-Zicsr-extension) - control and status register access instructions (+ exception/irq system) (optional)
-  * [`Zifencei`](#Privileged-architecture---Instruction-stream-synchronization-Zifencei-extension) - instruction stream synchronization (optional)
-  * [`PMP`](#Privileged-architecture---Physical-memory-protection-PMP) - physical memory protection (optional)
-  * [`HPM`](#Privileged-architecture---Hardware-performance-monitors-HPM-extension) - hardware performance monitors (optional)
+  * [`A`](#A---Atomic-memory-access-a-extension) - atomic memory access instructions (optional)
+  * [`B`](#B---Bit-manipulation-instructions-extension) - Bit manipulation instructions (optional)
+  * [`C`](#C---Compressed-instructions-extension) - compressed instructions (16-bit) (optional)
+  * [`E`](#E---Embedded-CPU-version-extension) - embedded CPU (reduced register file size) (optional)
+  * [`I`](#I---Base-integer-base-instruction-set) - base integer instruction set (always enabled)
+  * [`M`](#M---Integer-multiplication-and-division-hardware-extension) - integer multiplication and division hardware (optional)
+  * [`U`](#U---Privileged-architecture---User-mode-extension) - less-privileged *user mode* (optional)
+  * [`X`](#X---NEORV32-specific-CPU-extensions) - NEORV32-specific extensions (always enabled)
+  * [`Zicsr`](#Zicsr---Privileged-architecture---CSR-access-extension) - control and status register access instructions (+ exception/irq system) (optional)
+  * [`Zifencei`](#Zifencei---Privileged-architecture---Instruction-stream-synchronization-extension) - instruction stream synchronization (optional)
+  * [`PMP`](#PMP---Privileged-architecture---Physical-memory-protection) - physical memory protection (optional)
+  * [`HPM`](#HPM---Privileged-architecture---Hardware-performance-monitors) - hardware performance monitors (optional)
 * Full-scale RISC-V microcontroller system / **SoC** [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
   * optional embedded memories (instructions/data/bootloader, RAM/ROM) and caches
   * timers (watch dog, RISC-V-compliant machine timer)
@@ -188,7 +188,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Reduced register file (only the 16 lowest registers)
 
 
-#### `I` - Integer base instruction set
+#### `I` - Base integer base instruction set
 
   * ALU instructions: `LUI` `AUIPC` `ADDI` `SLTI` `SLTIU` `XORI` `ORI` `ANDI` `SLLI` `SRLI` `SRAI` `ADD` `SUB` `SLL` `SLT` `SLTU` `XOR` `SRL` `SRA` `OR` `AND`
   * Jump and branch instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
@@ -249,14 +249,14 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * System instructions: `FENCE.I` (among others, used to clear and reload instruction cache)
 
 
-#### `PMP` - Privileged architecture - Physical memory protection option
+#### `PMP` - Privileged architecture - Physical memory protection
 
   * Requires `Zicsr` extension
   * Configurable number of regions (0..63)
   * Additional machine CSRs: `pmpcfg*`(0..15) `pmpaddr*`(0..63)
 
 
-#### `HPM` - Privileged architecture - Hardware performance monitors option
+#### `HPM` - Privileged architecture - Hardware performance monitors
 
   * Requires `Zicsr` extension
   * Configurable number of counters (0..29)
@@ -609,7 +609,7 @@ or directly [drop me a line](mailto:stnolting@gmail.com).
 
 Here is a simple guide line if you'd like to contribute to this repository:
 
-0. :star: this repository ;)
+0. :star: this repository :wink:
 1. Check out the project's [code of conduct](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md)
 2. [Fork](https://github.com/stnolting/neorv32/fork) this repository and clone the fork
 3. Create a feature branch in your fork: `git checkout -b awesome_new_feature_branch`
@@ -677,6 +677,8 @@ link in question.
 "iCE40", "UltraPlus" and "Radiant" are trademarks of Lattice Semiconductor Corporation.
 
 "AXI", "AXI4" and "AXI4-Lite" are trademarks of Arm Holdings plc.
+
+"NeoPixel" is a trademark of Adafruit Industries.
 
 
 
