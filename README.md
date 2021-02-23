@@ -25,12 +25,16 @@ The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC
 on the RISC-V-compliant NEORV32 CPU. The processor is intended as *ready-to-go* auxiliary processor within a larger SoC
 designs or as stand-alone custom microcontroller.
 
-:label: The project’s change log is available in the [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) file in the root directory of this repository.
-To see the changes between releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
+:books: For detailed information take a look at the [NEORV32 data sheet (pdf)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+The doxygen-based documentation of the *software framework* is available online at [GitHub-pages](https://stnolting.github.io/neorv32/files.html).
 
-:books: The doxygen-based documentation of the software framework is available online at [GitHub-pages](https://stnolting.github.io/neorv32/files.html).
+:label: The project’s change log is available as [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) in the root directory of this repository.
+To see the changes between *stable* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-:page_facing_up: For more detailed information take a look at the [NEORV32 data sheet (pdf)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
+:white_check_mark: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current ideas and features being planned or work-in-progress.
+
+:bulb: Feel free to open a [new issue](https://github.com/stnolting/neorv32/issues) or start a [new discussion](https://github.com/stnolting/neorv32/discussions)
+if you have questions, comments, ideas or bug-fixes. Check out how to [contriute](#ContributeFeedbackQuestions).
 
 
 ### Key Features
@@ -101,26 +105,6 @@ all the [provided example programs](https://github.com/stnolting/neorv32/tree/ma
 | [SW Framework Documentation (online @GH-pages)](https://stnolting.github.io/neorv32/files.html)       | [![Doc@GitHub-pages](https://github.com/stnolting/neorv32/workflows/Deploy%20SW%20Framework%20Documentation%20to%20GitHub-Pages/badge.svg)](https://stnolting.github.io/neorv32/files.html) |
 | [Pre-built toolchains](https://github.com/stnolting/riscv-gcc-prebuilt)                               | [![Test Toolchains](https://github.com/stnolting/riscv-gcc-prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv-gcc-prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) |
 | [RISC-V compliance test](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md) | [![RISC-V Compliance](https://github.com/stnolting/neorv32/workflows/RISC-V%20Compliance/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22RISC-V+Compliance%22) |
-
-
-
-### To-Do / Wish List / Help Wanted
-
-* Use LaTeX for data sheet
-* Further size and performance optimization
-* Further expand associativity configuration of instruction cache (4x/8x set-associativity)?
-* Add data cache?
-* Burst mode for the external memory/bus interface?
-* RISC-V `F` (+ `D`) (with [`Zfinx`](https://github.com/riscv/riscv-zfinx/blob/master/Zfinx_spec.adoc) option?) CPU extension (floating-point operations)
-* RISC-V `K` CPU extension: [Crypto](https://github.com/riscv/riscv-crypto)
-* Add template (HW module + SW intrinsics skeleton) for custom instructions?
-* Implement further RISC-V CPU extensions?
-* More support for FreeRTOS?
-* Port additional RTOSs (like [Zephyr](https://github.com/zephyrproject-rtos/zephyr) or [RIOT](https://www.riot-os.org))?
-* Add debugger ([RISC-V debug spec](https://github.com/riscv/riscv-debug-spec))?
-* ...
-* [Ideas?](#ContributeFeedbackQuestions)
-
 
 
 ## Features
@@ -619,11 +603,11 @@ Going further: Take a look at the _Let's Get It Started!_ chapter of the [:page_
 
 ## Contribute/Feedback/Questions
 
-I'm always thankful for help! So if you have any questions, bug reports, ideas or if you want to give some kind of feedback, feel free
-to [:bulb: open a new issue](https://github.com/stnolting/neorv32/issues), start a new [:sparkles: discussion on GitHub](https://github.com/stnolting/neorv32/discussions)
-or directly [:e-mail: drop me a line](mailto:stnolting@gmail.com).
+I'm always thankful for help! So if you have any questions, bug reports, ideas or if you want to give any kind of feedback, feel free
+to [open a new issue](https://github.com/stnolting/neorv32/issues), start a new [discussion on GitHub](https://github.com/stnolting/neorv32/discussions)
+or directly [drop me a line](mailto:stnolting@gmail.com).
 
-If you'd like to directly contribute to this repository:
+Here is a simple guide line if you'd like to contribute to this repository:
 
 0. :star: this repository ;)
 1. Check out the project's [code of conduct](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md)
