@@ -31,7 +31,7 @@ The doxygen-based documentation of the *software framework* is available online 
 :label: The project’s change log is available as [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) in the root directory of this repository.
 To see the changes between *stable* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-:spiral_notepad: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current ideas and features being planned or work-in-progress.
+:spiral_notepad: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current ideas, ToDos, features being planned and work being in-progress.
 
 :bulb: Feel free to open a [new issue](https://github.com/stnolting/neorv32/issues) or start a [new discussion](https://github.com/stnolting/neorv32/discussions)
 if you have questions, comments, ideas or bug-fixes. Check out how to [contribute](#ContributeFeedbackQuestions).
@@ -48,7 +48,7 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
   * [`B`](#B---Bit-manipulation-instructions-extension) - Bit manipulation instructions (optional)
   * [`C`](#C---Compressed-instructions-extension) - compressed instructions (16-bit) (optional)
   * [`E`](#E---Embedded-CPU-version-extension) - embedded CPU (reduced register file size) (optional)
-  * [`I`](#I---Base-integer-base-instruction-set) - base integer instruction set (always enabled)
+  * [`I`](#I---Base-integer-instruction-set) - base integer instruction set (always enabled)
   * [`M`](#M---Integer-multiplication-and-division-hardware-extension) - integer multiplication and division hardware (optional)
   * [`U`](#U---Privileged-architecture---User-mode-extension) - less-privileged *user mode* (optional)
   * [`X`](#X---NEORV32-specific-CPU-extensions) - NEORV32-specific extensions (always enabled)
@@ -85,9 +85,9 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
  * Plain VHDL without technology-specific parts like attributes, macros or primitives.
  * Easy to use – working out of the box.
  * Clean synchronous design, no wacky combinatorial interfaces.
- * Be as small as possible – but with a reasonable size-performance tradeoff.
+ * Be as small as possible – but with a reasonable size-performance trade-off.
  * Be as RISC-V-compliant as possible.
- * The processor has to fit in a Lattice iCE40 UltraPlus 5k low-power FPGA running at 20+ MHz.
+ * The processor has to fit in a Lattice iCE40 UltraPlus 5k low-power FPGA running at 22+ MHz.
 
 
 ### Status
@@ -188,7 +188,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Reduced register file (only the 16 lowest registers)
 
 
-#### `I` - Base integer base instruction set
+#### `I` - Base integer instruction set
 
   * ALU instructions: `LUI` `AUIPC` `ADDI` `SLTI` `SLTIU` `XORI` `ORI` `ANDI` `SLLI` `SRLI` `SRAI` `ADD` `SUB` `SLL` `SLT` `SLTU` `XOR` `SRL` `SRA` `OR` `AND`
   * Jump and branch instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
@@ -677,8 +677,6 @@ link in question.
 "iCE40", "UltraPlus" and "Radiant" are trademarks of Lattice Semiconductor Corporation.
 
 "AXI", "AXI4" and "AXI4-Lite" are trademarks of Arm Holdings plc.
-
-"NeoPixel" is a trademark of Adafruit Industries.
 
 
 
