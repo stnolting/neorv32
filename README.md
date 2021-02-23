@@ -44,7 +44,7 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
   * subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
   * the [official RISC-V compliance tests](#Status) (*passing*)
 * Configurable RISC-V-compliant CPU extensions
-  * [`A`](#A---Atomic-memory-access-a-extension) - atomic memory access instructions (optional)
+  * [`A`](#A---Atomic-memory-access-extension) - atomic memory access instructions (optional)
   * [`B`](#B---Bit-manipulation-instructions-extension) - Bit manipulation instructions (optional)
   * [`C`](#C---Compressed-instructions-extension) - compressed instructions (16-bit) (optional)
   * [`E`](#E---Embedded-CPU-version-extension) - embedded CPU (reduced register file size) (optional)
