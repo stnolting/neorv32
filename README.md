@@ -111,7 +111,7 @@ all the [provided example programs](https://github.com/stnolting/neorv32/tree/ma
 * Further expand associativity configuration of instruction cache (4x/8x set-associativity)?
 * Add data cache?
 * Burst mode for the external memory/bus interface?
-* RISC-V `F` (using [`Zfinx`](https://github.com/riscv/riscv-zfinx/blob/master/Zfinx_spec.adoc)?) CPU extension (single-precision floating point)
+* RISC-V `F` (+ `D`) (with [`Zfinx`](https://github.com/riscv/riscv-zfinx/blob/master/Zfinx_spec.adoc) option?) CPU extension (floating-point operations)
 * RISC-V `K` CPU extension: [Crypto](https://github.com/riscv/riscv-crypto)
 * Add template (HW module + SW intrinsics skeleton) for custom instructions?
 * Implement further RISC-V CPU extensions?
