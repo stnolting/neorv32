@@ -168,11 +168,11 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 #### `B` - Bit manipulation instructions extension
 
   * :warning: Extension is not officially ratified yet by the RISC-V foundation! 
-  * Implies `Zbb` extension (base bit manipulation instruction set)
+  * Implies `Zbb` & `Zbs` sub-extensions (the remaining `B` sub-extensions are not supported yet)
   * Compatible to [v0.94-draft](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/bitmanip-draft.pdf) of the bit manipulation spec
   * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
-  * Only the `Zbb` base instructions subset is supported yet
-  * Supported instructions: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR` `RORI` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
+  * `Zbb` Base instruction set: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR` `RORI` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
+  * `Zbs` Single-bit instructions: `SBSET[I]` `SBCLR[I]` `SBINV[I]` `SBEXT[I]`
 
 
 #### `C` - Compressed instructions extension
@@ -227,21 +227,22 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Pseudo-instructions are not listed
   * Counter CSRs: `[m]cycle[h]` `[m]instret[m]` `time[h]` `[m]hpmcounter*[h]`(3..31, configurable) `mcounteren` `mcountinhibit` `mhpmevent*`(3..31, configurable)
   * Machine CSRs: `mstatus[h]` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mvendorid` [`marchid`](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) `mimpid` `mhartid` `mzext`(custom)
-  * Supported exceptions and interrupts:
+  * Supported (sync.) exceptions (all RISC-V-compliant):
     * Misaligned instruction address
-    * Instruction access fault (via unacknowledged bus access after timeout)
+    * Instruction access fault (via timeout/error after unacknowledged bus access)
     * Illegal instruction
     * Breakpoint (via `ebreak` instruction)
     * Load address misaligned
-    * Load access fault (via unacknowledged bus access after timeout)
+    * Load access fault (via timeout/error after unacknowledged bus access)
     * Store address misaligned
     * Store access fault (via unacknowledged bus access after timeout)
     * Environment call from U-mode (via `ecall` instruction in user mode)
     * Environment call from M-mode (via `ecall` instruction in machine mode)
-    * Machine timer interrupt `mti` (via processor's MTIME unit / external signal)
-    * Machine software interrupt `msi` (via external signal)
-    * Machine external interrupt `mei` (via external signal)
-    * Eight fast interrupt requests (custom extension)
+  * Supported (async.) exceptions / interrupts:
+    * Machine timer interrupt `mti` (via processor's MTIME unit / external signal), RISC-V-compliant
+    * Machine software interrupt `msi` (via external signal), RISC-V-compliant
+    * Machine external interrupt `mei` (via external signal), RISC-V-compliant
+    * 16 fast interrupt requests (custom extension), 6+1 available for custom usage
 
 
 #### `Zifencei` - Privileged architecture - Instruction stream synchronization extension
@@ -270,7 +271,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 * The physical memory protection (**PMP**) only supports `NAPOT` mode yet and a minimal granularity of 8 bytes
 * The `A` extension only implements `lr.w` and `sc.w` instructions yet. However, these instructions are sufficient to emulate all further AMO operations
 * The `mcause` trap code `0x80000000` (originally reserved in the RISC-V specs) is used to indicate a hardware reset (as "non-maskable interrupt")
-* The bit manipulation extension is not yet officially ratified, but is expected to stay unchanged. There is no software support in the upstream GCC RISC-V port yet. However, an intrinsic library is provided to utilize the provided bit manipulation extension from C-language code (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation)). NEORV32's `B`/`Zbb` extension is compliant to spec. version "0.94-draft".
+* The bit manipulation extension is not yet officially ratified, but is expected to stay unchanged. There is no software support in the upstream GCC RISC-V port yet. However, an intrinsic library is provided to utilize the provided bit manipulation extension from C-language code (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation)). NEORV32's `B` extension is compliant to spec. version "0.94-draft".
 
 
 
@@ -417,32 +418,22 @@ When the `C` extension is enabled branches to an unaligned uncompressed instruct
 
 ## Top Entities
 
-The top entity of the **NEORV32 Processor** (SoC) is [`rtl/core/neorv32_top.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd).
+The top entity of the **NEORV32 Processor** (SoC) is [`rtl/core/neorv32_top.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd),
+which provides a Wishbone b4-compatoible bus interface.
 
-All signals of the top entity are of type *std_ulogic* or *std_ulogic_vector*, respectively
-(except for the processor's TWI signals, which are of type *std_logic*). Leave all unused output ports unconnected (`open`) and tie all unused
-input ports to zero (`'0'` or `(others => '0')`, respectively).
+:information_source: It is recommended to use the processor setup even if you want to **use the CPU in stand-alone mode**. Simply disable all the processor-internal
+modules via the generics and you will get a "CPU wrapper" that already provides a minimal CPU environment and an external memory interface (like AXI4).
+This setup also allows to further use the default bootloader and software framework. From this base you can start building your own processor system.
 
 Use the top's generics to configure the system according to your needs. Each generic is initilized with the default configuration.
 Detailed information regarding the interface signals and configuration generics can be found in
 the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
+All signals of the top entity are of type *std_ulogic* or *std_ulogic_vector*, respectively
+(except for the processor's TWI signals, which are of type *std_logic*). Leave all unused output ports unconnected and tie all unused
+input ports to zero.
 
-### Using the CPU in Stand-Alone Mode
-
-If you *do not* want to use the NEORV32 processor setup, you can also use the CPU in stand-alone mode and build your own system around it.
-The top entity of the stand-alone **NEORV32 CPU** is [`rtl/core/neorv32_cpu.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd).
-Note that the CPU uses a proprietary interface for accessing data and instruction memory. More information can be found in the
-[:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
-
-:information_source: It is recommended to use the processor setup even if you only want to use the CPU. Simply disable all the processor-internal modules via the generics
-and you will get a "CPU wrapper" that already provides a minimal CPU environment and an external memory interface (like AXI4). This setup also allows to further use the default
-bootloader and software framework. From this base you can start building your own processor system.
-
-
-### Alternative Top Entities
-
-*Alternative top entities*, like the simplified ["hello world" test setup](#Create-a-new-Hardware-Project) or CPU/Processor
+**Alternative top entities**, like the simplified ["hello world" test setup](#Create-a-new-Hardware-Project) or CPU/Processor
 wrappers with resolved port signal types (i.e. *std_logic*), can be found in [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates).
 
 
