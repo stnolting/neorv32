@@ -440,7 +440,8 @@ enum NEORV32_CSR_MISA_enum {
 enum NEORV32_CSR_MZEXT_enum {
   CSR_MZEXT_ZICSR    = 0, /**< CPU mzext CSR (0): Zicsr extension available when set (r/-) */
   CSR_MZEXT_ZIFENCEI = 1, /**< CPU mzext CSR (1): Zifencei extension available when set (r/-) */
-  CSR_MZEXT_ZBB      = 2  /**< CPU mzext CSR (2): Zbb extension available when set (r/-) */
+  CSR_MZEXT_ZBB      = 2, /**< CPU mzext CSR (2): Zbb extension available when set (r/-) */
+  CSR_MZEXT_ZBS      = 3  /**< CPU mzext CSR (3): Zbs extension available when set (r/-) */
 };
 
 
