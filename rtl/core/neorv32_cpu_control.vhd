@@ -781,7 +781,7 @@ begin
       decode_aux.is_atomic_sc <=     execute_engine.i_reg(instr_funct5_lsb_c);
     end if;
 
-    -- is BITMANIP.Zbb instruction? --
+    -- is BITMANIP instruction? --
     -- pretty complex as we have to extract this from the ALU/ALUI instruction space --
     -- immediate operation --
     if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001") and
@@ -793,6 +793,11 @@ begin
           (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00101")    -- SEXT.H
          )
        ) or
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01001") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- SBCLRI
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- SBSETI
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- SBINVI
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01001") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- SBEXTI
+       --
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- RORI
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and (execute_engine.i_reg(instr_imm12_lsb_c+6 downto instr_imm12_lsb_c) = "0000111")) or -- GORCI.b 7 (orc.b)
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and (execute_engine.i_reg(instr_imm12_lsb_c+6 downto instr_imm12_lsb_c) = "0011000")) then -- GREVI.-8 (rev8)
@@ -808,7 +813,15 @@ begin
          (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "110") or -- ORN
          (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")    -- XORN
          )
-        ) then
+        ) or
+       ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001") and
+         (
+           (execute_engine.i_reg(instr_funct12_msb_c-1 downto instr_funct12_msb_c-4) = "1001") or -- SBCLR
+           (execute_engine.i_reg(instr_funct12_msb_c-1 downto instr_funct12_msb_c-4) = "0101") or -- SBSET
+           (execute_engine.i_reg(instr_funct12_msb_c-1 downto instr_funct12_msb_c-4) = "1101")    -- SBINV
+         )
+       ) or
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01001") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) then -- SBSEXT
       decode_aux.is_bitmanip_reg <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);
     end if;
     -- system/environment instructions --
@@ -1234,7 +1247,9 @@ begin
 
     -- low privilege level access to hpm counters? --
     csr_mcounteren_hpm_v := (others => '0');
-    csr_mcounteren_hpm_v(HPM_NUM_CNTS-1 downto 0) := csr.mcounteren_hpm(HPM_NUM_CNTS-1 downto 0);
+    if (CPU_EXTENSION_RISCV_U = true) then -- 'mcounteren' CSR is hardwired to zero if user mode is not implemented
+      csr_mcounteren_hpm_v(HPM_NUM_CNTS-1 downto 0) := csr.mcounteren_hpm(HPM_NUM_CNTS-1 downto 0);
+    end if;
 
     -- check CSR access --
     case csr.addr is
@@ -1932,10 +1947,14 @@ begin
             when csr_mtvec_c => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
               csr.mtvec <= csr.wdata(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
             when csr_mcounteren_c => -- R/W: machine counter enable register
-              csr.mcounteren_cy  <= csr.wdata(0); -- enable user-level access to cycle[h]
-              csr.mcounteren_tm  <= csr.wdata(1); -- enable user-level access to time[h]
-              csr.mcounteren_ir  <= csr.wdata(2); -- enable user-level access to instret[h]
-              csr.mcounteren_hpm <= csr.wdata(csr.mcounteren_hpm'left+3 downto 3); -- enable user-level access to hpmcounterx[h]
+              if (CPU_EXTENSION_RISCV_U = true) then -- this CSR is hardwired to zero if user mode is not implemented
+                csr.mcounteren_cy  <= csr.wdata(0); -- enable user-level access to cycle[h]
+                csr.mcounteren_tm  <= csr.wdata(1); -- enable user-level access to time[h]
+                csr.mcounteren_ir  <= csr.wdata(2); -- enable user-level access to instret[h]
+                csr.mcounteren_hpm <= csr.wdata(csr.mcounteren_hpm'left+3 downto 3); -- enable user-level access to hpmcounterx[h]
+              else
+                NULL;
+              end if;
 
             -- machine trap handling --
             -- --------------------------------------------------------------------
@@ -2095,8 +2114,8 @@ begin
   end process csr_write_access;
 
   -- decode privilege mode --
-  csr.priv_m_mode <= '1' when (csr.privilege = priv_mode_m_c)  or (CPU_EXTENSION_RISCV_U = false) else '0';
-  csr.priv_u_mode <= '1' when (csr.privilege = priv_mode_u_c) and (CPU_EXTENSION_RISCV_U = true)  else '0';
+  csr.priv_m_mode <= '1' when (csr.privilege = priv_mode_m_c) else '0';
+  csr.priv_u_mode <= '1' when (csr.privilege = priv_mode_u_c) else '0';
 
   -- PMP configuration output to bus unit --
   pmp_output: process(csr)
@@ -2279,10 +2298,14 @@ begin
           when csr_mtvec_c => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
             csr.rdata <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
           when csr_mcounteren_c => -- R/W: machine counter enable register
-            csr.rdata(0) <= csr.mcounteren_cy; -- enable user-level access to cycle[h]
-            csr.rdata(1) <= csr.mcounteren_tm; -- enable user-level access to time[h]
-            csr.rdata(2) <= csr.mcounteren_ir; -- enable user-level access to instret[h]
-            csr.rdata(csr.mcounteren_hpm'left+3 downto 3) <= csr.mcounteren_hpm; -- enable user-level access to hpmcounterx[h]
+            if (CPU_EXTENSION_RISCV_U = true) then -- this CSR is hardwired to zero if user mode is not implemented
+              csr.rdata(0) <= csr.mcounteren_cy; -- enable user-level access to cycle[h]
+              csr.rdata(1) <= csr.mcounteren_tm; -- enable user-level access to time[h]
+              csr.rdata(2) <= csr.mcounteren_ir; -- enable user-level access to instret[h]
+              csr.rdata(csr.mcounteren_hpm'left+3 downto 3) <= csr.mcounteren_hpm; -- enable user-level access to hpmcounterx[h]
+            else
+              csr.rdata <= (others => '0');
+            end if;
 
           -- machine trap handling --
           when csr_mscratch_c => -- R/W: mscratch - machine scratch register
@@ -2514,6 +2537,7 @@ begin
             csr.rdata(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr
             csr.rdata(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei
             csr.rdata(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);        -- Zbb
+            csr.rdata(3) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);        -- Zbs
 
           -- undefined/unavailable --
           when others =>
