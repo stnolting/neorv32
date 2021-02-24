@@ -158,6 +158,10 @@
 // ################################################################################################
 
 
+// ---------------------------------------------
+// Zbb - Base instructions
+// ---------------------------------------------
+
 /**********************************************************************//**
  * Intrinsic: Bit manipulation CLZ (count leading zeros) [B.Zbb]
  *
@@ -511,9 +515,179 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_rev8(uint32_t rs1) {
 }
 
 
+// ---------------------------------------------
+// Zbs - Single-bit instructions
+// ---------------------------------------------
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SBCLR (clear single bit) [B.Zbs]
+ *
+ * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Bit [operand2] cleared in operand 1.
+ **************************************************************************/
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbclr(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+
+  // sbclr a0, a0, a1
+  CUSTOM_INSTR_R_TYPE(0b0100100, a1, a0, 0b001, a0, 0b0110011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SBSET (set single bit) [B.Zbs]
+ *
+ * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Bit [operand2] set in operand 1.
+ **************************************************************************/
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbset(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+
+  // sbset a0, a0, a1
+  CUSTOM_INSTR_R_TYPE(0b0010100, a1, a0, 0b001, a0, 0b0110011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SBINV (invert single bit) [B.Zbs]
+ *
+ * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Bit [operand2] inverted in operand 1.
+ **************************************************************************/
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbinv(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+
+  // sbinv a0, a0, a1
+  CUSTOM_INSTR_R_TYPE(0b0110100, a1, a0, 0b001, a0, 0b0110011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SBEXT (extract single bit) [B.Zbs]
+ *
+ * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Extracted bit (indexed by operand 2) from operand 1 in bit 0.
+ **************************************************************************/
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbext(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+
+  // sbext a0, a0, a1
+  CUSTOM_INSTR_R_TYPE(0b0100100, a1, a0, 0b101, a0, 0b0110011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SBCLR (clear single bit), bit 20 [B.Zbs]
+ *
+ * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
+ * @warning Fixed shift amount (20) for now.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @return Bit 20 cleared in operand 1.
+ **************************************************************************/
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbclri20(uint32_t rs1) {
+
+  register uint32_t result __asm__ ("a0");
+
+  // sbclri a0, a0, 20
+  CUSTOM_INSTR_R1_TYPE(0b0100100, 0b10100, a0, 0b001, a0, 0b0010011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SBSET (set single bit), bit 20 [B.Zbs]
+ *
+ * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
+ * @warning Fixed shift amount (20) for now.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @return Bit 20 set in operand 1.
+ **************************************************************************/
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbseti20(uint32_t rs1) {
+
+  register uint32_t result __asm__ ("a0");
+
+  // sbseti a0, a0, 20
+  CUSTOM_INSTR_R1_TYPE(0b0010100, 0b10100, a0, 0b001, a0, 0b0010011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SBINV (invert single bit) [B.Zbs]
+ *
+ * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
+ * @warning Fixed shift amount (20) for now.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @return Bit 20 inverted in operand 1.
+ **************************************************************************/
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbinvi20(uint32_t rs1) {
+
+  register uint32_t result __asm__ ("a0");
+
+  // sbinvi a0, a0, 20
+  CUSTOM_INSTR_R1_TYPE(0b0110100, 0b10100, a0, 0b001, a0, 0b0010011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SBEXT (extract single bit) [B.Zbs]
+ *
+ * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
+ * @warning Fixed shift amount (20) for now.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @return Extracted bit (20) from operand 1 in bit 0.
+ **************************************************************************/
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbexti20(uint32_t rs1) {
+
+  register uint32_t result __asm__ ("a0");
+
+  // sbexti a0, a0, 20
+  CUSTOM_INSTR_R1_TYPE(0b0100100, 0b10100, a0, 0b101, a0, 0b0010011);
+
+  return result;
+}
+
+
 // ################################################################################################
 // Emulation functions
 // ################################################################################################
+
+
+// ---------------------------------------------
+// Zbb - Base instructions
+// ---------------------------------------------
 
 
 /**********************************************************************//**
@@ -835,6 +1009,71 @@ uint32_t riscv_emulate_orcb(uint32_t rs1) {
   }
 
   return tmp;
+}
+
+
+// ---------------------------------------------
+// Zbs - Single-bit instructions
+// ---------------------------------------------
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SBCLR (clear single bit) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Bit [operand2] cleared in operand 1.
+ **************************************************************************/
+uint32_t riscv_emulate_sbclr(uint32_t rs1, uint32_t rs2) {
+
+  uint32_t shamt = rs2 & 0x1f;
+
+  return rs1 & (~(1 << shamt));
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SBSET (set single bit) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Bit [operand2] set in operand 1.
+ **************************************************************************/
+uint32_t riscv_emulate_sbset(uint32_t rs1, uint32_t rs2) {
+
+  uint32_t shamt = rs2 & 0x1f;
+
+  return rs1 | (1 << shamt);
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SBINV (invert single bit) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Bit [operand2] inverted in operand 1.
+ **************************************************************************/
+uint32_t riscv_emulate_sbinv(uint32_t rs1, uint32_t rs2) {
+
+  uint32_t shamt = rs2 & 0x1f;
+
+  return rs1 ^ (1 << shamt);
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SBEXT (extract single bit) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Extracted bit (indexed by operand 2) from operand 1 in bit 0.
+ **************************************************************************/
+uint32_t riscv_emulate_sbext(uint32_t rs1, uint32_t rs2) {
+
+  uint32_t shamt = rs2 & 0x1f;
+
+  return (rs1 >> shamt) & 1;
 }
 
 
