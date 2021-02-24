@@ -95,8 +95,7 @@ uint32_t num_hpm_cnts_global = 0;
 
 
 /**********************************************************************//**
- * This program uses mostly synthetic case to trigger all implemented exceptions.
- * Each exception is captured and evaluated for correct detection.
+ * High-level CPU/processor test program.
  *
  * @note Applications has to be compiler with <USER_FLAGS+=-DRUN_CPUTEST>
  *
@@ -1077,7 +1076,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] FIRQ4 test (via UART1.RX): ", cnt_test);
 
-  if (neorv32_uart1_available()) {
+  if ((neorv32_uart1_available()) && (is_simulation)) { // UART1 available and we are in a simulation
     cnt_test++;
 
     // UART1 RX interrupt enable
