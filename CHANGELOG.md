@@ -14,6 +14,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 24.02.2021 | 1.5.1.9 | `mcounteren` CSR is hardwired to zero if user mode is not implemented (`CPU_EXTENSION_RISCV_U` = false); added `Zbs` (single-bit operations) sub-extension to bitmanipulation unit |
 | 22.02.2021 | 1.5.1.8 | added programmable *RTS/CTS hardware flow control* to UARTs; new top signals: `uart0_rts_o`, `uart0_cts_i`, `uart1_rts_o`, `uart1_cts_i`; UART.TX engine will only start sending (if `CTS` flow control is activated) if `uart*_cts_i` is asserted (low-active); UART.RX engine signals (if `RTS` flow control is activated) via `uart*_rts_o` if it is ready to receive new data (low-active); added hw flow control parameter to uart setup functions `neorv32_uart*_setup()` |
 | 20.02.2021 | 1.5.1.7 | removed `err_o` signal from custom functions subsystem `CFS`; processor *SoC fast interrupt input* `soc_firq_i` reduced to 6 channels (was 8) - mapped to CPU's `FIRQ_10` - `FIRQ_15`; added individual fast IRQs for `UART1` "RX complete" and "TX complete" conditions (-> `FIRQ_4` & `FIRQ_5`); changed FIRQ channels of TWI/SPI/GPIO interrupts |
 | 18.02.2021 | 1.5.1.6 | added register buffer for enable signals to processor-internal clock generator; :bug: fixed bug in `sw/example/demo_twi` program: TWI clock speed messsage was wrong (factor 1/4 was missing) |
