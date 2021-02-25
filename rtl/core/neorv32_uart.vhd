@@ -2,8 +2,9 @@
 -- # << NEORV32 - Universal Asynchronous Receiver and Transmitter (UART0/1) >>                     #
 -- # ********************************************************************************************* #
 -- # Frame configuration: 1 start bit, 8 bit data, parity bit (none/even/odd), 1 stop bit,         #
--- # programmable BAUD rate via clock pre-scaler and 12-bit BAUD value config register.            #
--- # Interrupt: UART_RX_available and UART_TX_done                                                 #
+-- # programmable BAUD rate via clock pre-scaler and 12-bit BAUD value config register. RX engine  #
+-- # a simple 2-entry data buffer (for double-buffering).                                          #
+-- # Interrupts: UART_RX_available, UART_TX_done                                                   #
 -- #                                                                                               #
 -- # Support for RTS("RTR")/CTS hardware flow control:                                             #
 -- # * uart_rts_o = 0: RX is ready to receive a new char, enabled via CTRL.ctrl_uart_rts_en_c      #
@@ -177,18 +178,23 @@ architecture neorv32_uart_rtl of neorv32_uart is
   signal uart_tx : uart_tx_t;
 
   -- uart rx unit --
+  type ry_data_buf_t is array (0 to 1) of std_ulogic_vector(07 downto 0);
   type uart_rx_t is record
     sync     : std_ulogic_vector(04 downto 0);
-    avail    : std_ulogic_vector(01 downto 0);
     busy     : std_ulogic;
     busy_ff  : std_ulogic;
     bitcnt   : std_ulogic_vector(03 downto 0);
     sreg     : std_ulogic_vector(09 downto 0);
-    data     : std_ulogic_vector(07 downto 0);
     baud_cnt : std_ulogic_vector(11 downto 0);
-    ferr     : std_ulogic; -- frame error (stop bit not set)
-    perr     : std_ulogic; -- parity error
     rtr      : std_ulogic; -- ready to receive when 1
+    --
+    avail    : std_ulogic_vector(02 downto 0);
+    data     : ry_data_buf_t;
+    data_rd  : std_ulogic_vector(07 downto 0);
+    ferr     : std_ulogic_vector(01 downto 0); -- frame error (stop bit not set)
+    ferr_rd  : std_ulogic;
+    perr     : std_ulogic_vector(01 downto 0); -- parity error
+    perr_rd  : std_ulogic;
   end record;
   signal uart_rx : uart_rx_t;
 
@@ -235,11 +241,11 @@ begin
           data_o(ctrl_uart_tx_busy_c)                          <= uart_tx.busy;
           data_o(ctrl_uart_cts_c)                              <= uart_cts_ff(1);
         else -- uart_id_rtx_addr_c
-          data_o(data_rx_avail_c) <= uart_rx.avail(0);
-          data_o(data_rx_overr_c) <= uart_rx.avail(0) and uart_rx.avail(1);
-          data_o(data_rx_ferr_c)  <= uart_rx.ferr;
-          data_o(data_rx_perr_c)  <= uart_rx.perr;
-          data_o(7 downto 0)      <= uart_rx.data;
+          data_o(data_rx_avail_c) <= or_all_f(uart_rx.avail);
+          data_o(data_rx_overr_c) <= and_all_f(uart_rx.avail);
+          data_o(data_rx_ferr_c)  <= uart_rx.ferr_rd;
+          data_o(data_rx_perr_c)  <= uart_rx.perr_rd;
+          data_o(7 downto 0)      <= uart_rx.data_rd;
         end if;
       end if;
     end if;
@@ -294,8 +300,12 @@ begin
         end if;
       end if;
       -- transmission granted --
-      if (uart_tx.busy = '0') then -- update when idle
-        uart_tx.tx_granted <= uart_tx.cts;
+      if (ctrl(ctrl_uart_en_c) = '0') then -- disabled
+        uart_tx.tx_granted <= '0';
+      elsif (uart_tx.done = '1') then
+        uart_tx.tx_granted <= '0';
+      elsif (uart_tx.cts = '1') then
+        uart_tx.tx_granted <= '1';
       end if;
       -- transmitter output --
       uart_txd_o <= uart_tx.sreg(0) or (not uart_tx.tx_granted); -- keep TX line idle (=high) if waiting for permission to start sending (->CTS)
@@ -317,9 +327,9 @@ begin
         uart_rx.baud_cnt <= '0' & ctrl(ctrl_uart_baud11_c downto ctrl_uart_baud01_c); -- half baud delay at the beginning to sample in the middle of each bit
         uart_rx.bitcnt   <= num_bits;
         if (ctrl(ctrl_uart_en_c) = '0') then -- to ensure defined state when reading
-          uart_rx.perr <= '0';
-          uart_rx.ferr <= '0';
-          uart_rx.data <= (others => '0');
+          uart_rx.perr <= (others => '0');
+          uart_rx.ferr <= (others => '0');
+          uart_rx.data <= (others => (others => '0'));
         elsif (uart_rx.sync(2 downto 0) = "001") then -- start bit? (falling edge)
           uart_rx.busy <= '1';
         end if;
@@ -333,28 +343,39 @@ begin
         end if;
         if (uart_rx.bitcnt = "0000") then
           uart_rx.busy <= '0'; -- done
-          uart_rx.perr <= ctrl(ctrl_uart_pmode1_c) and (xor_all_f(uart_rx.sreg(8 downto 0)) xor ctrl(ctrl_uart_pmode0_c));
-          uart_rx.ferr <= not uart_rx.sreg(9); -- check stop bit (error if not set)
+          -- data buffer (double buffering) --
+          uart_rx.perr(0) <= ctrl(ctrl_uart_pmode1_c) and (xor_all_f(uart_rx.sreg(8 downto 0)) xor ctrl(ctrl_uart_pmode0_c));
+          uart_rx.ferr(0) <= not uart_rx.sreg(9); -- check stop bit (error if not set)
           if (ctrl(ctrl_uart_pmode1_c) = '1') then -- add parity flag
-            uart_rx.data <= uart_rx.sreg(7 downto 0);
+            uart_rx.data(0) <= uart_rx.sreg(7 downto 0);
           else
-            uart_rx.data <= uart_rx.sreg(8 downto 1);
+            uart_rx.data(0) <= uart_rx.sreg(8 downto 1);
           end if;
+          uart_rx.perr(1) <= uart_rx.perr(0);
+          uart_rx.ferr(1) <= uart_rx.ferr(0);
+          uart_rx.data(1) <= uart_rx.data(0);
         end if;
       end if;
 
       -- RX available flag --
       uart_rx.busy_ff <= uart_rx.busy;
-      if (ctrl(ctrl_uart_en_c) = '0') or (((uart_rx.avail(0) = '1') or (uart_rx.avail(1) = '1')) and (rd_en = '1') and (addr = uart_id_rtx_addr_c)) then -- off/RX read access
-        uart_rx.avail <= "00";
+      if (ctrl(ctrl_uart_en_c) = '0') then -- disabled
+        uart_rx.avail <= "000";
+      elsif ((uart_rx.avail(0) = '1') or (uart_rx.avail(1) = '1')) and (rd_en = '1') and (addr = uart_id_rtx_addr_c) then -- RX read access
+        uart_rx.avail <= '0' & '0' & uart_rx.avail(1);
       elsif (uart_rx.busy_ff = '1') and (uart_rx.busy = '0') then -- RX done
-        uart_rx.avail <= uart_rx.avail(0) & '1';
+        uart_rx.avail <= uart_rx.avail(1 downto 0) & '1';
       end if;
     end if;
   end process uart_rx_unit;
 
-  -- RX engine ready for new char? --
-  uart_rx.rtr <= not uart_rx.avail(0);
+  -- Receiver double-buffering - buffer read --
+  uart_rx.perr_rd <= uart_rx.perr(1) when (uart_rx.avail(1) = '1') else uart_rx.perr(0);
+  uart_rx.ferr_rd <= uart_rx.ferr(1) when (uart_rx.avail(1) = '1') else uart_rx.ferr(0);
+  uart_rx.data_rd <= uart_rx.data(1) when (uart_rx.avail(1) = '1') else uart_rx.data(0);
+
+  -- RX engine ready for a new char? --
+  uart_rx.rtr <= '1' when (uart_rx.avail(2 downto 0) = "000") and (uart_rx.busy = '0') and (uart_rx.busy_ff = '0') and (ctrl(ctrl_uart_en_c) = '1') else '0';
 
 
   -- Hardware Flow Control ------------------------------------------------------------------
@@ -367,7 +388,7 @@ begin
   begin
     if rising_edge(clk_i) then -- should be mapped to IOBs
       uart_cts_ff <= uart_cts_ff(0) & uart_cts_i;
-      uart_rts_o  <= uart_rts or (not ctrl(ctrl_uart_en_c)); -- UART.Rx is NOT ready to receive new data if module is disabled
+      uart_rts_o  <= uart_rts;
     end if;
   end process flow_control_buffer;
 
