@@ -128,13 +128,13 @@ is highly customizable via the processor's top generics and already provides the
 * 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
 * two wire serial interface controller (**TWI**), with optional clock-stretching, compatible to the I²C standard
 * general purpose parallel IO port (**GPIO**), 32xOut & 32xIn, with pin-change interrupt
-* 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**), *standard* or *pipelined* handshake/transactions mode
+* 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**)
 * wrapper for **AXI4-Lite Master Interface** (see [AXI Connectivity](#AXI4-Connectivity))
 * PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
 * ring-oscillator-based true random number generator (**TRNG**)
 * custom functions subsystem (**CFS**) for tightly-coupled custom co-processor extensions
 * numerically-controlled oscillator (**NCO**) with three independent channels
-* system configuration information memory to check hardware configuration by software (**SYSINFO**, mandatory - not *optional*)
+* system configuration information memory to check hardware configuration by software (**SYSINFO**)
 
 
 ### NEORV32 CPU Features
