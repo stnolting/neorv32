@@ -14,6 +14,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 27.02.2021 | 1.5.1.11 | :bug: fixed several small bugs in *bitmanipulation extension* instruction decoding (not all `B` instructions triggered and *illegal instruction exception* when B-extension = disabled) |
 | 25.02.2021 | 1.5.1.10 | :bug: fixed bugs in UART RTS/CTS hardware control flow - the new setup was verified on real hardware; added double-buffering to UART RX engine |
 | 24.02.2021 | 1.5.1.9 | `mcounteren` CSR is hardwired to zero if user mode is not implemented (`CPU_EXTENSION_RISCV_U` = false); added `Zbs` (single-bit operations) sub-extension to bitmanipulation unit |
 | 22.02.2021 | 1.5.1.8 | added programmable *RTS/CTS hardware flow control* to UARTs; new top signals: `uart0_rts_o`, `uart0_cts_i`, `uart1_rts_o`, `uart1_cts_i`; UART.TX engine will only start sending (if `CTS` flow control is activated) if `uart*_cts_i` is asserted (low-active); UART.RX engine signals (if `RTS` flow control is activated) via `uart*_rts_o` if it is ready to receive new data (low-active); added hw flow control parameter to uart setup functions `neorv32_uart*_setup()` |
