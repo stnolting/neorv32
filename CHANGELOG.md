@@ -14,7 +14,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 01.03.2021 | **:rocket:1.5.2.0** | **New release** |
+| 01.03.2021 | [**:rocket:1.5.2.0**](https://github.com/stnolting/neorv32/releases/tag/v1.5.2.0) | **New release** |
 | 27.02.2021 | 1.5.1.11 | :bug: fixed several small bugs in *bitmanipulation extension* instruction decoding (not all `B` instructions triggered and *illegal instruction exception* when B-extension = disabled) |
 | 25.02.2021 | 1.5.1.10 | :bug: fixed bugs in UART RTS/CTS hardware control flow - the new setup was verified on real hardware; added double-buffering to UART RX engine |
 | 24.02.2021 | 1.5.1.9 | `mcounteren` CSR is hardwired to zero if user mode is not implemented (`CPU_EXTENSION_RISCV_U` = false); added `Zbs` (single-bit operations) sub-extension to bitmanipulation unit |
