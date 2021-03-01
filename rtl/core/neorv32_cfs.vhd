@@ -57,7 +57,6 @@ entity neorv32_cfs is
     data_i      : in  std_ulogic_vector(31 downto 0); -- data in
     data_o      : out std_ulogic_vector(31 downto 0); -- data out
     ack_o       : out std_ulogic; -- transfer acknowledge
-    err_o       : out std_ulogic; -- transfer error
     -- clock generator --
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(07 downto 0); -- "clock" inputs
@@ -189,11 +188,9 @@ begin
   -- a <control register> for global control of the unit, a <data register> for reading/writing from/to a data FIFO, a <command register>
   -- for issueing commands and a <status register> for status information.
   --
-  -- Following the interface protocol, each read or write access has to be acknowledged in the following cycle using the ack_o signal.
-  -- If no ACK is generated, the bus access will time out and cause a store bus access fault exception. This exception can also be immediatly
-  -- triggered by setting err_o high for one cycle (only during a valid bus access).
-
-  err_o <= '0'; -- not used for this minimal example
+  -- Following the interface protocol, each read or write access has to be acknowledged in the following cycle using the ack_o signal (or even later
+  -- if the module needs additional time; the maximumx latency until an unacknwoledged access will trigger a bus exception is defined via the package's
+  -- gloabl "bus_timeout_c" constant). If no ACK is generated, the bus access will time out and cause a store bus access fault exception.
 
   -- Host access: Read and write access to the interface registers + bus transfer acknowledge.
   -- This example only implements four physical r/w register (the four lowest CF register). The remaining addresses of the CFS are not

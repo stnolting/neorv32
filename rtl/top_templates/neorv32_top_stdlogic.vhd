@@ -116,9 +116,13 @@ entity neorv32_top_stdlogic is
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o : out std_logic; -- UART0 send data
     uart0_rxd_i : in  std_logic := '0'; -- UART0 receive data
+    uart0_rts_o : out std_logic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i : in  std_logic := '0'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o : out std_logic; -- UART1 send data
     uart1_rxd_i : in  std_logic := '0'; -- UART1 receive data
+    uart1_rts_o : out std_logic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i : in  std_logic := '0'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   : out std_logic; -- SPI serial clock
     spi_sdo_o   : out std_logic; -- controller data out, peripheral data in
@@ -137,7 +141,7 @@ entity neorv32_top_stdlogic is
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     : in  std_logic_vector(63 downto 0) := (others => '0'); -- current system time
     -- Interrupts --
-    soc_firq_i  : in  std_logic_vector(7 downto 0) := (others => '0'); -- fast interrupt channels
+    soc_firq_i  : in  std_logic_vector(5 downto 0) := (others => '0'); -- fast interrupt channels
     mtime_irq_i : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   : in  std_logic := '0'; -- machine software interrupt
     mext_irq_i  : in  std_logic := '0'  -- machine external interrupt
@@ -173,8 +177,13 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   --
   signal uart0_txd_o_int : std_ulogic;
   signal uart0_rxd_i_int : std_ulogic;
+  signal uart0_rts_o_int : std_ulogic;
+  signal uart0_cts_i_int : std_ulogic;
+  --
   signal uart1_txd_o_int : std_ulogic;
   signal uart1_rxd_i_int : std_ulogic;
+  signal uart1_rts_o_int : std_ulogic;
+  signal uart1_cts_i_int : std_ulogic;
   --
   signal spi_sck_o_int   : std_ulogic;
   signal spi_sdo_o_int   : std_ulogic;
@@ -190,7 +199,7 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   --
   signal mtime_i_int     : std_ulogic_vector(63 downto 0);
   --
-  signal soc_firq_i_int  : std_ulogic_vector(7 downto 0);
+  signal soc_firq_i_int  : std_ulogic_vector(05 downto 0);
   signal mtime_irq_i_int : std_ulogic;
   signal msw_irq_i_int   : std_ulogic;
   signal mext_irq_i_int  : std_ulogic;
@@ -276,9 +285,13 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart0_txd_o_int, -- UART0 send data
     uart0_rxd_i => uart0_rxd_i_int, -- UART0 receive data
+    uart0_rts_o => uart0_rts_o_int, -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i => uart0_cts_i_int, -- hw flow control: UART0.TX allowed to transmit, low-active, optional
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o => uart1_txd_o_int, -- UART1 send data
     uart1_rxd_i => uart1_rxd_i_int, -- UART1 receive data
+    uart1_rts_o => uart1_rts_o_int, -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i => uart1_cts_i_int, -- hw flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   => spi_sck_o_int,   -- SPI serial clock
     spi_sdo_o   => spi_sdo_o_int,   -- controller data out, peripheral data in

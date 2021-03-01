@@ -344,6 +344,9 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<CSR_MZEXT_ZBB)) {
     neorv32_uart_printf("Zbb ");
   }
+  if (tmp & (1<<CSR_MZEXT_ZBS)) {
+    neorv32_uart_printf("Zbs ");
+  }
 
   // check physical memory protection
   neorv32_uart_printf("\nPMP:               ");

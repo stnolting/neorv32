@@ -135,10 +135,14 @@ entity neorv32_top is
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o : out std_ulogic; -- UART0 send data
     uart0_rxd_i : in  std_ulogic := '0'; -- UART0 receive data
+    uart0_rts_o : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i : in  std_ulogic := '0'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o : out std_ulogic; -- UART1 send data
     uart1_rxd_i : in  std_ulogic := '0'; -- UART1 receive data
+    uart1_rts_o : out std_ulogic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i : in  std_ulogic := '0'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   : out std_ulogic; -- SPI serial clock
@@ -164,7 +168,7 @@ entity neorv32_top is
     mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
 
     -- Interrupts --
-    soc_firq_i  : in  std_ulogic_vector(7 downto 0) := (others => '0'); -- fast interrupt channels
+    soc_firq_i  : in  std_ulogic_vector(5 downto 0) := (others => '0'); -- fast interrupt channels
     mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
     mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
@@ -260,7 +264,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal trng_rdata     : std_ulogic_vector(data_width_c-1 downto 0);
   signal trng_ack       : std_ulogic;
   signal cfs_rdata      : std_ulogic_vector(data_width_c-1 downto 0);
-  signal cfs_err        : std_ulogic;
   signal cfs_ack        : std_ulogic;
   signal nco_rdata      : std_ulogic_vector(data_width_c-1 downto 0);
   signal nco_ack        : std_ulogic;
@@ -465,23 +468,23 @@ begin
   fast_irq(01) <= cfs_irq;       -- custom functions subsystem
   fast_irq(02) <= uart0_rxd_irq; -- primary UART (UART0) data received
   fast_irq(03) <= uart0_txd_irq; -- primary UART (UART0) sending done
-  fast_irq(04) <= uart1_rxd_irq or uart1_txd_irq; -- secondary UART (UART1) data received OR sending done
-  fast_irq(05) <= spi_irq;       -- SPI transmission done
-  fast_irq(06) <= twi_irq;       -- TWI transmission done
-  fast_irq(07) <= gpio_irq;      -- GPIO pin-change
+  fast_irq(04) <= uart1_rxd_irq; -- secondary UART (UART1) data received
+  fast_irq(05) <= uart1_txd_irq; -- secondary UART (UART1) sending done
+  fast_irq(06) <= spi_irq;       -- SPI transmission done
+  fast_irq(07) <= twi_irq;       -- TWI transmission done
+  fast_irq(08) <= gpio_irq;      -- GPIO pin-change
+  fast_irq(09) <= '0';           -- reserved
 
   -- fast interrupts - platform level (for custom use) --
-  fast_irq(08) <= soc_firq_i(0);
-  fast_irq(09) <= soc_firq_i(1);
-  fast_irq(10) <= soc_firq_i(2);
-  fast_irq(11) <= soc_firq_i(3);
-  fast_irq(12) <= soc_firq_i(4);
-  fast_irq(13) <= soc_firq_i(5);
-  fast_irq(14) <= soc_firq_i(6);
-  fast_irq(15) <= soc_firq_i(7);
+  fast_irq(10) <= soc_firq_i(0);
+  fast_irq(11) <= soc_firq_i(1);
+  fast_irq(12) <= soc_firq_i(2);
+  fast_irq(13) <= soc_firq_i(3);
+  fast_irq(14) <= soc_firq_i(4);
+  fast_irq(15) <= soc_firq_i(5);
 
-  -- IRQ acknowledge --
-  cfs_irq_ack <= fast_irq_ack(2);
+  -- CFS IRQ acknowledge --
+  cfs_irq_ack <= fast_irq_ack(1);
 
 
   -- CPU Instruction Cache ------------------------------------------------------------------
@@ -595,7 +598,7 @@ begin
                spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or cfs_ack or nco_ack or sysinfo_ack);
 
   -- processor bus: CPU transfer data bus error input --
-  p_bus.err <= wishbone_err or cfs_err;
+  p_bus.err <= wishbone_err;
 
   -- current CPU privilege level --
   p_bus.priv <= cpu_i.priv; -- cpu_i.priv == cpu_d.priv
@@ -773,7 +776,6 @@ begin
       data_i      => p_bus.wdata,     -- data in
       data_o      => cfs_rdata,       -- data out
       ack_o       => cfs_ack,         -- transfer acknowledge
-      err_o       => cfs_err,         -- transfer error
       -- clock generator --
       clkgen_en_o => cfs_cg_en,       -- enable clock generator
       clkgen_i    => clk_gen,         -- "clock" inputs
@@ -792,7 +794,6 @@ begin
   if (IO_CFS_EN = false) generate
     cfs_rdata <= (others => '0');
     cfs_ack   <= '0';
-    cfs_err   <= '0';
     cfs_cg_en <= '0';
     cfs_irq   <= '0';
     cfs_out_o <= (others => '0');
@@ -895,7 +896,7 @@ begin
   end generate;
 
 
-  -- Universal Asynchronous Receiver/Transmitter 0, Primary UART (UART0) --------------------
+  -- Primary Universal Asynchronous Receiver/Transmitter (UART0) ----------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_uart0_inst_true:
   if (IO_UART0_EN = true) generate
@@ -905,19 +906,22 @@ begin
     )
     port map (
       -- host access --
-      clk_i       => clk_i,        -- global clock line
-      addr_i      => p_bus.addr,   -- address
-      rden_i      => io_rden,      -- read enable
-      wren_i      => io_wren,      -- write enable
-      data_i      => p_bus.wdata,  -- data in
-      data_o      => uart0_rdata,  -- data out
-      ack_o       => uart0_ack,    -- transfer acknowledge
+      clk_i       => clk_i,         -- global clock line
+      addr_i      => p_bus.addr,    -- address
+      rden_i      => io_rden,       -- read enable
+      wren_i      => io_wren,       -- write enable
+      data_i      => p_bus.wdata,   -- data in
+      data_o      => uart0_rdata,   -- data out
+      ack_o       => uart0_ack,     -- transfer acknowledge
       -- clock generator --
-      clkgen_en_o => uart0_cg_en,  -- enable clock generator
+      clkgen_en_o => uart0_cg_en,   -- enable clock generator
       clkgen_i    => clk_gen,
       -- com lines --
       uart_txd_o  => uart0_txd_o,
       uart_rxd_i  => uart0_rxd_i,
+      -- hardware flow control --
+      uart_rts_o  => uart0_rts_o,   -- UART.RX ready to receive ("RTR"), low-active, optional
+      uart_cts_i  => uart0_cts_i,   -- UART.TX allowed to transmit, low-active, optional
       -- interrupts --
       irq_rxd_o   => uart0_rxd_irq, -- uart data received interrupt
       irq_txd_o   => uart0_txd_irq  -- uart transmission done interrupt
@@ -929,13 +933,14 @@ begin
     uart0_rdata   <= (others => '0');
     uart0_ack     <= '0';
     uart0_txd_o   <= '0';
+    uart0_rts_o   <= '0';
     uart0_cg_en   <= '0';
     uart0_rxd_irq <= '0';
     uart0_txd_irq <= '0';
   end generate;
 
 
-  -- Universal Asynchronous Receiver/Transmitter 1, Secondary UART (UART1) ------------------
+  -- Secondary Universal Asynchronous Receiver/Transmitter (UART1) --------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_uart1_inst_true:
   if (IO_UART1_EN = true) generate
@@ -945,19 +950,22 @@ begin
     )
     port map (
       -- host access --
-      clk_i       => clk_i,        -- global clock line
-      addr_i      => p_bus.addr,   -- address
-      rden_i      => io_rden,      -- read enable
-      wren_i      => io_wren,      -- write enable
-      data_i      => p_bus.wdata,  -- data in
-      data_o      => uart1_rdata,  -- data out
-      ack_o       => uart1_ack,    -- transfer acknowledge
+      clk_i       => clk_i,         -- global clock line
+      addr_i      => p_bus.addr,    -- address
+      rden_i      => io_rden,       -- read enable
+      wren_i      => io_wren,       -- write enable
+      data_i      => p_bus.wdata,   -- data in
+      data_o      => uart1_rdata,   -- data out
+      ack_o       => uart1_ack,     -- transfer acknowledge
       -- clock generator --
-      clkgen_en_o => uart1_cg_en,  -- enable clock generator
+      clkgen_en_o => uart1_cg_en,   -- enable clock generator
       clkgen_i    => clk_gen,
       -- com lines --
       uart_txd_o  => uart1_txd_o,
       uart_rxd_i  => uart1_rxd_i,
+      -- hardware flow control --
+      uart_rts_o  => uart1_rts_o,   -- UART.RX ready to receive ("RTR"), low-active, optional
+      uart_cts_i  => uart1_cts_i,   -- UART.TX allowed to transmit, low-active, optional
       -- interrupts --
       irq_rxd_o   => uart1_rxd_irq, -- uart data received interrupt
       irq_txd_o   => uart1_txd_irq  -- uart transmission done interrupt
@@ -969,6 +977,7 @@ begin
     uart1_rdata   <= (others => '0');
     uart1_ack     <= '0';
     uart1_txd_o   <= '0';
+    uart1_rts_o   <= '0';
     uart1_cg_en   <= '0';
     uart1_rxd_irq <= '0';
     uart1_txd_irq <= '0';
@@ -1043,8 +1052,8 @@ begin
   if (IO_TWI_EN = false) generate
     twi_rdata  <= (others => '0');
     twi_ack    <= '0';
---  twi_sda_io <= 'Z';
---  twi_scl_io <= 'Z';
+--  twi_sda_io <= 'Z'; -- FIXME?
+--  twi_scl_io <= 'Z'; -- FIXME?
     twi_cg_en  <= '0';
     twi_irq    <= '0';
   end generate;

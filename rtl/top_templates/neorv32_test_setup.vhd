@@ -143,9 +143,13 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart0_txd_o,     -- UART0 send data
     uart0_rxd_i => uart0_rxd_i,     -- UART0 receive data
+    uart0_rts_o => open,            -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i => '0',             -- hw flow control: UART0.TX allowed to transmit, low-active, optional
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o => open,            -- UART1 send data
     uart1_rxd_i => '0',             -- UART1 receive data
+    uart1_rts_o => open,            -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i => '0',             -- hw flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   => open,            -- SPI serial clock
     spi_sdo_o   => open,            -- controller data out, peripheral data in

@@ -50,6 +50,10 @@
 #define BAUD_RATE      (19200)
 //** Number of test cases for each instruction */
 #define NUM_TEST_CASES (10000)
+//** Run Zbb tests when 1 */
+#define RUN_ZBB_TESTS  (1)
+//** Run Zbs tests when 1 */
+#define RUN_ZBS_TESTS  (1)
 /**@}*/
 
 
@@ -75,18 +79,22 @@ int main() {
   // capture all exceptions and give debug info via UART
   neorv32_rte_setup();
 
-  // init UART at default baud rate, no parity bits
-  neorv32_uart_setup(BAUD_RATE, 0b00);
+  // init UART at default baud rate, no parity bits, ho hw flow control
+  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // intro
-  neorv32_uart_printf("NEORV32 Bit Manipulation (B.Zbb) Extension Test\n\n");
+  neorv32_uart_printf("NEORV32 Bit Manipulation Extension Test\n\n");
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
 
-  neorv32_uart_printf("Starting bit manipulation extensions tests (%i test cases per instruction)...\n", num_tests);
+  neorv32_uart_printf("Starting bit manipulation extension tests (%i test cases per instruction)...\n", num_tests);
 
+  // -------------------------------------------------------------
+  // Zbb
+  // -------------------------------------------------------------
+#if (RUN_ZBB_TESTS != 0)
   // CLZ
   neorv32_uart_printf("\nCLZ:\n");
   err_cnt = 0;
@@ -294,6 +302,104 @@ int main() {
     err_cnt += check_result(i, opa, 0, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
+#endif
+
+  // -------------------------------------------------------------
+  // Zbs
+  // -------------------------------------------------------------
+#if (RUN_ZBS_TESTS != 0)
+  // SBSET
+  neorv32_uart_printf("\nSBSET:\n");
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    opb = xorshift32();
+    res_sw = riscv_emulate_sbset(opa, opb);
+    res_hw = riscv_intrinsic_sbset(opa, opb);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+
+  // SBCLR
+  neorv32_uart_printf("\nSBCLR:\n");
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    opb = xorshift32();
+    res_sw = riscv_emulate_sbclr(opa, opb);
+    res_hw = riscv_intrinsic_sbclr(opa, opb);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+
+  // SBINV
+  neorv32_uart_printf("\nSBINV:\n");
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    opb = xorshift32();
+    res_sw = riscv_emulate_sbinv(opa, opb);
+    res_hw = riscv_intrinsic_sbinv(opa, opb);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+
+  // SBEXT
+  neorv32_uart_printf("\nSBEXT:\n");
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    opb = xorshift32();
+    res_sw = riscv_emulate_sbext(opa, opb);
+    res_hw = riscv_intrinsic_sbext(opa, opb);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+
+  // SBSETI
+  neorv32_uart_printf("\nSBSETI (imm=20):\n"); // FIXME: static immediate
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    res_sw = riscv_emulate_sbset(opa, 20);
+    res_hw = riscv_intrinsic_sbseti20(opa);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+
+  // SBCLRI
+  neorv32_uart_printf("\nSBCLRI (imm=20):\n"); // FIXME: static immediate
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    res_sw = riscv_emulate_sbclr(opa, 20);
+    res_hw = riscv_intrinsic_sbclri20(opa);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+
+  // SBINVI
+  neorv32_uart_printf("\nSBINVI (imm=20):\n"); // FIXME: static immediate
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    res_sw = riscv_emulate_sbinv(opa, 20);
+    res_hw = riscv_intrinsic_sbinvi20(opa);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+
+  // SBEXTI
+  neorv32_uart_printf("\nSBEXTI (imm=20):\n"); // FIXME: static immediate
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    res_sw = riscv_emulate_sbext(opa, 20);
+    res_hw = riscv_intrinsic_sbexti20(opa);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+#endif
 
 
   neorv32_uart_printf("\nBit manipulation extension tests done.\n");

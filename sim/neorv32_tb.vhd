@@ -93,7 +93,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   file file_uart1_tx_out : text open write_mode is "neorv32.testbench_uart1.out";
 
   -- simulation uart0 receiver --
-  signal uart0_txd         : std_ulogic;
+  signal uart0_txd         : std_ulogic; -- local loop-back
+  signal uart0_cts         : std_ulogic; -- local loop-back
   signal uart0_rx_sync     : std_ulogic_vector(04 downto 0) := (others => '1');
   signal uart0_rx_busy     : std_ulogic := '0';
   signal uart0_rx_sreg     : std_ulogic_vector(08 downto 0) := (others => '0');
@@ -101,7 +102,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal uart0_rx_bitcnt   : natural;
 
   -- simulation uart1 receiver --
-  signal uart1_txd         : std_ulogic;
+  signal uart1_txd         : std_ulogic; -- local loop-back
+  signal uart1_cts         : std_ulogic; -- local loop-back
   signal uart1_rx_sync     : std_ulogic_vector(04 downto 0) := (others => '1');
   signal uart1_rx_busy     : std_ulogic := '0';
   signal uart1_rx_sreg     : std_ulogic_vector(08 downto 0) := (others => '0');
@@ -119,7 +121,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
 
   -- irq --
   signal msi_ring, mei_ring : std_ulogic;
-  signal soc_firq_ring      : std_ulogic_vector(7 downto 0);
+  signal soc_firq_ring      : std_ulogic_vector(5 downto 0);
 
   -- Wishbone bus --
   type wishbone_t is record
@@ -258,9 +260,13 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart0_txd,       -- UART0 send data
     uart0_rxd_i => uart0_txd,       -- UART0 receive data
+    uart0_rts_o => uart0_cts,       -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i => uart0_cts,       -- hw flow control: UART0.TX allowed to transmit, low-active, optional
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o => uart1_txd,       -- UART1 send data
     uart1_rxd_i => uart1_txd,       -- UART1 receive data
+    uart1_rts_o => uart1_cts,       -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i => uart1_cts,       -- hw flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   => open,            -- SPI serial clock
     spi_sdo_o   => spi_data,        -- controller data out, peripheral data in
@@ -579,14 +585,13 @@ begin
       if ((wb_irq.cyc and wb_irq.stb and wb_irq.we and and_all_f(wb_irq.sel)) = '1') then
         msi_ring         <= wb_irq.wdata(03); -- machine software interrupt
         mei_ring         <= wb_irq.wdata(11); -- machine software interrupt
-        soc_firq_ring(0) <= wb_irq.wdata(24); -- fast interrupt SoC channel 0
-        soc_firq_ring(1) <= wb_irq.wdata(25); -- fast interrupt SoC channel 1
-        soc_firq_ring(2) <= wb_irq.wdata(26); -- fast interrupt SoC channel 2
-        soc_firq_ring(3) <= wb_irq.wdata(27); -- fast interrupt SoC channel 3
-        soc_firq_ring(4) <= wb_irq.wdata(28); -- fast interrupt SoC channel 4
-        soc_firq_ring(5) <= wb_irq.wdata(29); -- fast interrupt SoC channel 5
-        soc_firq_ring(6) <= wb_irq.wdata(30); -- fast interrupt SoC channel 6
-        soc_firq_ring(7) <= wb_irq.wdata(31); -- fast interrupt SoC channel 7
+        --
+        soc_firq_ring(0) <= wb_irq.wdata(26); -- fast interrupt SoC channel 0 (-> FIRQ channel 10)
+        soc_firq_ring(1) <= wb_irq.wdata(27); -- fast interrupt SoC channel 1 (-> FIRQ channel 11)
+        soc_firq_ring(2) <= wb_irq.wdata(28); -- fast interrupt SoC channel 2 (-> FIRQ channel 12)
+        soc_firq_ring(3) <= wb_irq.wdata(29); -- fast interrupt SoC channel 3 (-> FIRQ channel 13)
+        soc_firq_ring(4) <= wb_irq.wdata(30); -- fast interrupt SoC channel 4 (-> FIRQ channel 14)
+        soc_firq_ring(5) <= wb_irq.wdata(31); -- fast interrupt SoC channel 5 (-> FIRQ channel 15)
       end if;
     end if;
   end process irq_trigger;

@@ -51,13 +51,13 @@
 
 // compatibility wrappers (mapping to primary UART -> UART0)
 int  neorv32_uart_available(void);
-void neorv32_uart_setup(uint32_t baudrate, uint8_t parity);
+void neorv32_uart_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
 void neorv32_uart_disable(void);
 void neorv32_uart_putc(char c);
 int  neorv32_uart_tx_busy(void);
 char neorv32_uart_getc(void);
 int  neorv32_uart_char_received(void);
-int  neorv32_uart_getc_secure(char *data);
+int  neorv32_uart_getc_safe(char *data);
 char neorv32_uart_char_received_get(void);
 void neorv32_uart_print(const char *s);
 void neorv32_uart_printf(const char *format, ...);
@@ -65,13 +65,13 @@ int  neorv32_uart_scan(char *buffer, int max_size, int echo);
 
 // prototypes for UART0 (primary UART)
 int  neorv32_uart0_available(void);
-void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity);
+void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
 void neorv32_uart0_disable(void);
 void neorv32_uart0_putc(char c);
 int  neorv32_uart0_tx_busy(void);
 char neorv32_uart0_getc(void);
 int  neorv32_uart0_char_received(void);
-int  neorv32_uart0_getc_secure(char *data);
+int  neorv32_uart0_getc_safe(char *data);
 char neorv32_uart0_char_received_get(void);
 void neorv32_uart0_print(const char *s);
 void neorv32_uart0_printf(const char *format, ...);
@@ -79,13 +79,13 @@ int  neorv32_uart0_scan(char *buffer, int max_size, int echo);
 
 // prototypes for UART1 (secondary UART)
 int  neorv32_uart1_available(void);
-void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity);
+void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
 void neorv32_uart1_disable(void);
 void neorv32_uart1_putc(char c);
 int  neorv32_uart1_tx_busy(void);
 char neorv32_uart1_getc(void);
 int  neorv32_uart1_char_received(void);
-int  neorv32_uart1_getc_secure(char *data);
+int  neorv32_uart1_getc_safe(char *data);
 char neorv32_uart1_char_received_get(void);
 void neorv32_uart1_print(const char *s);
 void neorv32_uart1_printf(const char *format, ...);
