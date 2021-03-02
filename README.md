@@ -31,7 +31,8 @@ The doxygen-based documentation of the *software framework* is available online 
 :label: The project’s change log is available as [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) in the root directory of this repository.
 To see the changes between *stable* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-:spiral_notepad: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current ideas, ToDos, features being planned and work being in-progress.
+:spiral_notepad: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current **ideas**,
+**TODOs**, features being **planned** and **work-in-progress**.
 
 :bulb: Feel free to open a [new issue](https://github.com/stnolting/neorv32/issues) or start a [new discussion](https://github.com/stnolting/neorv32/discussions)
 if you have questions, comments, ideas or bug-fixes. Check out how to [contribute](#ContributeFeedbackQuestions).
@@ -45,7 +46,7 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
   * the [official RISC-V compliance tests](#Status) (*passing*)
 * Configurable RISC-V-compliant CPU extensions
   * [`A`](#A---Atomic-memory-access-extension) - atomic memory access instructions (optional)
-  * [`B`](#B---Bit-manipulation-instructions-extension) - Bit manipulation instructions (optional)
+  * [`B`](#B---Bit-manipulation-instructions-extension) - Bit manipulation instructions (optional) :construction:
   * [`C`](#C---Compressed-instructions-extension) - compressed instructions (16-bit) (optional)
   * [`E`](#E---Embedded-CPU-version-extension) - embedded CPU (reduced register file size) (optional)
   * [`I`](#I---Base-integer-instruction-set) - base integer instruction set (always enabled)
@@ -167,8 +168,9 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
 #### `B` - Bit manipulation instructions extension
 
-  * :warning: Extension is not officially ratified yet by the RISC-V foundation! 
-  * Implies `Zbb` & `Zbs` sub-extensions (the remaining `B` sub-extensions are not supported yet)
+  * :construction: **work-in-progress** :construction:
+  * :warning: The bit-manipulation extension has not been officially ratified yet! 
+  * :warning: Implies `Zbb` & `Zbs` sub-extensions (the remaining `B` sub-extensions are not supported yet)
   * Compatible to [v0.94-draft](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/bitmanip-draft.pdf) of the bit manipulation spec
   * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
   * `Zbb` Base instruction set: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR[I]` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
@@ -185,7 +187,11 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
 #### `E` - Embedded CPU version extension
 
-  * Reduced register file (only the 16 lowest registers)
+  * Reduced register file (only the 16 lowest registers are implemented)
+
+#### `F` - Single-precision floating-point extension
+
+  * :construction: **work-in-progress** :construction:
 
 
 #### `I` - Base integer instruction set
