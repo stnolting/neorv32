@@ -182,16 +182,20 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * ALU instructions: `C.ADDI4SPN` `C.ADD[I]` `C.ADDI16SP` `C.LI` `C.LUI` `C.SLLI` `C.SRLI` `C.SRAI` `C.ANDI` `C.SUB` `C.XOR` `C.OR` `C.AND` `C.MV` `C.NOP`
   * Jump and branch instructions: `C.J` `C.JAL` `C.JR` `C.JALR` `C.BEQZ` `C.BNEZ`
   * Memory instructions: `C.LW` `C.SW` `C.LWSP` `C.SWSP`
-  * System instructions: `C.EBREAK` (only with `Zicsr` extension)
+  * System instructions: `C.EBREAK` (requires `Zicsr` extension)
+  * Floating-point instructions: `C.FLW` `C.FSW` `C.FLWSP` `C.FSWSP` (requires `F` extension)
   * Pseudo-instructions are not listed
 
 #### `E` - Embedded CPU version extension
 
   * Reduced register file (only the 16 lowest registers are implemented)
 
+
 #### `F` - Single-precision floating-point extension
 
   * :construction: **work-in-progress** :construction:
+  * :warning: the `F` extension is not operational yet!
+  * :information_source: check out the [F-extension project board](https://github.com/stnolting/neorv32/projects/4) for the current implementation state
 
 
 #### `I` - Base integer instruction set
