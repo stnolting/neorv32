@@ -55,6 +55,14 @@ static void __neorv32_rte_print_hex_word(uint32_t num);
 
 
 /**********************************************************************//**
+ * Floating-Point extension notifier.
+ **************************************************************************/
+#ifdef __riscv_flen
+  #warning Floating-point extension <F> is WORK-IN-PROGRESS and NOT FULLY OPERATIONAL yet!
+#endif
+
+
+/**********************************************************************//**
  * Setup NEORV32 runtime environment.
  *
  * @note This function installs a debug handler for ALL exception and interrupt sources, which
@@ -644,10 +652,18 @@ uint32_t neorv32_rte_get_compiler_isa(void) {
   misa_cc |= 1 << CSR_MISA_C_EXT;
 #endif
 
+#if (__riscv_flen == 64)
+  misa_cc |= 1 << CSR_MISA_D_EXT;
+#endif
+
 #ifdef __riscv_32e
   misa_cc |= 1 << CSR_MISA_E_EXT;
 #else
   misa_cc |= 1 << CSR_MISA_I_EXT;
+#endif
+
+#if (__riscv_flen == 32)
+  misa_cc |= 1 << CSR_MISA_F_EXT;
 #endif
 
 #ifdef __riscv_mul
