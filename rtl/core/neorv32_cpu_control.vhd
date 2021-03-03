@@ -55,6 +55,7 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_F        : boolean := false; -- implement 32-bit floating-point extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
@@ -84,6 +85,10 @@ entity neorv32_cpu_control is
     fetch_pc_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
     curr_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- current PC (corresponding to current instruction)
     csr_rdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
+    -- FPU interface --
+    fpu_rm_o      : out std_ulogic_vector(02 downto 0); -- rounding mode
+    fpu_flags_i   : in  std_ulogic_vector(04 downto 0); -- exception flags
+    fpu_fupdate_i : in  std_ulogic; -- update FPU flags
     -- interrupts (risc-v compliant) --
     msw_irq_i     : in  std_ulogic; -- machine software interrupt
     mext_irq_i    : in  std_ulogic; -- machine external interrupt
@@ -176,6 +181,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     is_atomic_sc    : std_ulogic;
     is_bitmanip_imm : std_ulogic;
     is_bitmanip_reg : std_ulogic;
+    is_float_f_reg  : std_ulogic;
+    is_float_i_reg  : std_ulogic;
     sys_env_cmd     : std_ulogic_vector(11 downto 0);
   end record;
   signal decode_aux : decode_aux_t;
@@ -196,6 +203,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     is_ci_nxt    : std_ulogic;
     is_cp_op     : std_ulogic; -- current instruction is a co-processor operation
     is_cp_op_nxt : std_ulogic;
+    is_fp        : std_ulogic; -- floating-point operation - do not access to integer register file
+    is_fp_nxt    : std_ulogic;
     --
     branch_taken : std_ulogic; -- branch condition fullfilled
     pc           : std_ulogic_vector(data_width_c-1 downto 0); -- actual PC, corresponding to current executed instruction
@@ -322,6 +331,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pmpcfg_rd         : pmp_ctrl_rd_t; -- physical memory protection - actual read data
     pmpaddr           : pmp_addr_t; -- physical memory protection - address registers
     pmpaddr_rd        : pmp_addr_rd_t; -- physical memory protection - actual read data
+    --
+    frm               : std_ulogic_vector(02 downto 0); -- frm (R/W): FPU rounding mode
+    fflags            : std_ulogic_vector(04 downto 0); -- fflags (R/W): FPU exception flags
   end record;
   signal csr : csr_t;
 
@@ -606,7 +618,7 @@ begin
         imm_o <= execute_engine.next_pc;
       else -- "normal" immediate from instruction word
         case opcode_v is -- save some bits here, the two LSBs are always "11" for rv32
-          when opcode_store_c => -- S-immediate
+          when opcode_store_c | opcode_fsw_c => -- S-immediate
             imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
             imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
             imm_o(04 downto 01) <= execute_engine.i_reg(11 downto 08);
@@ -695,6 +707,7 @@ begin
       execute_engine.i_reg      <= execute_engine.i_reg_nxt;
       execute_engine.is_ci      <= execute_engine.is_ci_nxt;
       execute_engine.is_cp_op   <= execute_engine.is_cp_op_nxt;
+      execute_engine.is_fp      <= execute_engine.is_fp_nxt;
       -- PC & IR of "last executed" instruction --
       if (execute_engine.state = EXECUTE) then
         execute_engine.last_pc    <= execute_engine.pc;
@@ -768,6 +781,8 @@ begin
     decode_aux.is_atomic_sc    <= '0';
     decode_aux.is_bitmanip_imm <= '0';
     decode_aux.is_bitmanip_reg <= '0';
+    decode_aux.is_float_f_reg  <= '0';
+    decode_aux.is_float_i_reg  <= '0';
 
     -- is immediate ALU operation? --
     decode_aux.alu_immediate <= not execute_engine.i_reg(instr_opcode_msb_c-1);
@@ -776,7 +791,7 @@ begin
     decode_aux.rs1_is_r0 <= not or_all_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c));
 
     -- is atomic load-reservate/store-conditional? --
-    if (CPU_EXTENSION_RISCV_A = true) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') then -- valid atomic sub-opcode
+    if (CPU_EXTENSION_RISCV_A = true) and (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "11") then -- valid atomic sub-opcode
       decode_aux.is_atomic_lr <= not execute_engine.i_reg(instr_funct5_lsb_c);
       decode_aux.is_atomic_sc <=     execute_engine.i_reg(instr_funct5_lsb_c);
     end if;
@@ -820,6 +835,26 @@ begin
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) then -- SBSEXT
       decode_aux.is_bitmanip_reg <= '1';
     end if;
+
+    -- floating-point FLOAT_register operations --
+    if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11110")) or -- FMV.W.X
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00000")) or -- FADD.S
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00001")) or -- FSUB.S
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00010")) or -- FMUL.S
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00011")) or -- FDIV.S
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01011") and (execute_engine.i_reg(instr_funct12_lsb_c+5 downto instr_funct12_lsb_c) = "00000")) or -- FSQRT.S
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00100") and (execute_engine.i_reg(instr_funct3_msb_c) = '0')) or -- FSGNJ[N/X].S
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_msb_c-1) = "00")) or -- FMIN.S / FMAX.S
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11010") and (execute_engine.i_reg(instr_funct12_lsb_c+5 downto instr_funct12_lsb_c+1) = "0000")) then -- FCVT.S.W*
+      decode_aux.is_float_f_reg <= '1';
+    end if;
+    -- floating-point INTEGER_register operations --
+    if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_msb_c-1) = "00")) or -- FMV.X.W / FCLASS.S
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "10100") and (execute_engine.i_reg(instr_funct3_msb_c) = '0')) or -- FEQ.S / FLT.S / FLE.S
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11000") and (execute_engine.i_reg(instr_funct12_lsb_c+5 downto instr_funct12_lsb_c+1) = "0000")) then -- FCVT.W*.S
+      decode_aux.is_float_i_reg <= '1';
+    end if;
+
     -- system/environment instructions --
     sys_env_cmd_mask_v := funct12_ecall_c or funct12_ebreak_c or funct12_mret_c or funct12_wfi_c; -- sum-up set bits
     decode_aux.sys_env_cmd(11 downto 0) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) and sys_env_cmd_mask_v; -- set unsued bits to always-zero
@@ -837,6 +872,7 @@ begin
     execute_engine.i_reg_nxt    <= execute_engine.i_reg;
     execute_engine.is_cp_op_nxt <= execute_engine.is_cp_op;
     execute_engine.is_ci_nxt    <= execute_engine.is_ci;
+    execute_engine.is_fp_nxt    <= execute_engine.is_fp;
     execute_engine.sleep_nxt    <= execute_engine.sleep;
     execute_engine.branched_nxt <= execute_engine.branched;
     --
@@ -897,6 +933,9 @@ begin
 
       when DISPATCH => -- Get new command from instruction issue engine
       -- ------------------------------------------------------------
+        -- housekeeping --
+        execute_engine.is_cp_op_nxt <= '0'; -- init
+        execute_engine.is_fp_nxt    <= '0'; -- init
         -- PC update --
         execute_engine.pc_mux_sel <= '0'; -- linear next PC
         -- IR update --
@@ -1026,13 +1065,19 @@ begin
             ctrl_nxt(ctrl_rf_wb_en_c)  <= '1'; -- valid RF write-back
             execute_engine.state_nxt   <= DISPATCH;
 
-          when opcode_load_c | opcode_store_c | opcode_atomic_c => -- load/store / atomic memory access
+          when opcode_load_c | opcode_store_c | opcode_atomic_c | opcode_flw_c | opcode_fsw_c => -- load/store / atomic memory access / floating-point load/store 
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
             ctrl_nxt(ctrl_bus_mo_we_c)   <= '1'; -- write to MAR and MDO (MDO only relevant for store)
+            if (CPU_EXTENSION_RISCV_F = true) and (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "01") then -- floating-point load/store
+              execute_engine.is_fp_nxt    <= decode_aux.is_float_f_reg; -- no integer register file write back for FPU internal operations
+              ctrl_nxt(ctrl_bus_wd_sel_c) <= '1'; -- use memory-write-data from FPU co-processor (only relevant for float STORE)
+            end if;
             --
-            if (CPU_EXTENSION_RISCV_A = false) or (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') then -- atomic (A) extension disabled or normal load/store
+            if (CPU_EXTENSION_RISCV_A = false) or -- atomic extension disabled
+               (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "00") or  -- normal integerload/store
+               ((CPU_EXTENSION_RISCV_F = true) and (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "01")) then -- floating-point load/store
               execute_engine.state_nxt <= LOADSTORE_0;
             else -- atomic operation
               atomic_ctrl.env_start <= not execute_engine.i_reg(instr_funct5_lsb_c); -- LR: start LOCKED memory access environment
@@ -1072,6 +1117,17 @@ begin
               end if;
             else
               execute_engine.state_nxt <= SYS_WAIT;
+            end if;
+
+          when opcode_fop_c => -- floating-point operations (1 or 2 operands)
+          -- ------------------------------------------------------------
+            execute_engine.state_nxt <= SYS_WAIT;
+            if (CPU_EXTENSION_RISCV_F = true) then
+              execute_engine.is_fp_nxt                           <= decode_aux.is_float_f_reg; -- no integer register file write back for FPU internal operations
+              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_fpu_c; -- use FPU CP
+              execute_engine.is_cp_op_nxt                        <= '1'; -- this is a CP operation
+              ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
+              execute_engine.state_nxt                           <= ALU_WAIT;
             end if;
 
           when others => -- undefined
@@ -1114,7 +1170,11 @@ begin
       when ALU_WAIT => -- wait for multi-cycle ALU operation (shifter or CP) to finish
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_rf_in_mux_c) <= '0'; -- RF input = ALU result
-        ctrl_nxt(ctrl_rf_wb_en_c)  <= '1'; -- valid RF write-back (permanent write-back)
+        if (CPU_EXTENSION_RISCV_F = false) then
+          ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back (permanent write-back)
+        else
+          ctrl_nxt(ctrl_rf_wb_en_c) <= not execute_engine.is_fp; -- allow write back if NOT <FPU-internal operation>
+        end if;
         -- cp access or alu.shift? --
         if (execute_engine.is_cp_op = '1') then
           ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
@@ -1204,7 +1264,10 @@ begin
           execute_engine.state_nxt  <= DISPATCH;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') or (decode_aux.is_atomic_sc = '1') then -- load / load-reservate / store conditional
-            ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
+            ctrl_nxt(ctrl_rf_wb_en_c) <= not execute_engine.is_fp; -- allow write back if NOT <FPU-internal operation>
+          end if;
+          if (CPU_EXTENSION_RISCV_F = true) and (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_flw_c(6 downto 2)) then -- floating-point LOAD.word
+            ctrl_nxt(ctrl_cp_fpu_mem_we_c) <= '1'; -- co-processor register file write-back
           end if;
           atomic_ctrl.env_end      <= not decode_aux.is_atomic_lr; -- normal end of LOCKED (atomic) memory access environment - if we are not starting it via LR instruction
           execute_engine.state_nxt <= DISPATCH;
@@ -1250,6 +1313,8 @@ begin
     -- check CSR access --
     case csr.addr is
       -- standard read/write CSRs --
+      when csr_fflags_c | csr_frm_c | csr_fcsr_c => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_F); -- full access for everyone if F extension is enabled
+      --
       when csr_mstatus_c       => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
       when csr_mstatush_c      => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
       when csr_misa_c          => csr_acc_valid <= csr.priv_m_mode;-- and (not csr_wacc_v); -- M-mode only, MISA is read-only in the NEORV32 but we do not cause an exception here for compatibility
@@ -1410,6 +1475,7 @@ begin
       case opcode_v is
 
         -- check sufficient LUI, UIPC, JAL (only check actual OPCODE) --
+        -- ------------------------------------------------------------
         when opcode_lui_c | opcode_auipc_c | opcode_jal_c =>
           illegal_instruction <= '0';
           -- illegal E-CPU register? --
@@ -1418,6 +1484,7 @@ begin
           end if;
 
         when opcode_alu_c => -- check ALU.funct3 & ALU.funct7
+        -- ------------------------------------------------------------
           if (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000001") then -- MULDIV
             if (CPU_EXTENSION_RISCV_M = false) then -- not implemented
               illegal_instruction <= '1';
@@ -1441,6 +1508,7 @@ begin
           end if;
 
         when opcode_alui_c => -- check ALUI.funct7
+        -- ------------------------------------------------------------
           if (decode_aux.is_bitmanip_imm = '1') then -- bit manipulation
             if (CPU_EXTENSION_RISCV_B = false) then -- not implemented
               illegal_instruction <= '1';
@@ -1460,6 +1528,7 @@ begin
           end if;
 
         when opcode_load_c => -- check LOAD.funct3
+        -- ------------------------------------------------------------
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_lb_c) or
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_lh_c) or
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_lw_c) or
@@ -1475,6 +1544,7 @@ begin
           end if;
 
         when opcode_store_c => -- check STORE.funct3
+        -- ------------------------------------------------------------
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sb_c) or
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sh_c) or
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sw_c) then
@@ -1488,6 +1558,7 @@ begin
           end if;
 
         when opcode_branch_c => -- check BRANCH.funct3
+        -- ------------------------------------------------------------
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_beq_c) or
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_bne_c) or
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_blt_c) or
@@ -1504,6 +1575,7 @@ begin
           end if;
 
         when opcode_jalr_c => -- check JALR.funct3
+        -- ------------------------------------------------------------
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "000") then
             illegal_instruction <= '0';
           else
@@ -1514,7 +1586,8 @@ begin
             illegal_register <= '1';
           end if;
 
-        when opcode_fence_c => -- fence instructions --
+        when opcode_fence_c => -- fence instructions
+        -- ------------------------------------------------------------
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then -- FENCE.I
             illegal_instruction <= '0';
           elsif (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then -- FENCE
@@ -1523,7 +1596,8 @@ begin
             illegal_instruction <= '1';
           end if;
 
-        when opcode_syscsr_c => -- check system instructions --
+        when opcode_syscsr_c => -- check system instructions
+        -- ------------------------------------------------------------
           -- CSR access --
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrs_c) or
@@ -1561,7 +1635,8 @@ begin
             illegal_instruction <= '1';
           end if;
 
-        when opcode_atomic_c => -- atomic instructions --
+        when opcode_atomic_c => -- atomic instructions
+        -- ------------------------------------------------------------
           if (CPU_EXTENSION_RISCV_A = true) and -- atomic memory operations (A extension) enabled
              ((execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c) = funct5_a_lr_c) or -- LR
               (execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c) = funct5_a_sc_c)) then -- SC
@@ -1570,7 +1645,27 @@ begin
             illegal_instruction <= '1';
           end if;
 
+        when opcode_fop_c => -- floating point operations (dual-operand)
+        -- ------------------------------------------------------------
+          if (CPU_EXTENSION_RISCV_F = true) and -- F extension enabled
+             (execute_engine.i_reg(instr_funct7_lsb_c+1 downto instr_funct7_lsb_c) = float_single_c) and -- single-precision operations
+             ((decode_aux.is_float_f_reg = '1') or (decode_aux.is_float_i_reg = '1')) then -- float_reg or int_reg operations
+            illegal_instruction <= '0';
+          else
+            illegal_instruction <= '1';
+          end if;
+
+        when opcode_flw_c | opcode_fsw_c => -- floating point load/store word
+        -- ------------------------------------------------------------
+          if (CPU_EXTENSION_RISCV_F = true) and -- F extension enabled
+             (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then -- 32-bit transfer size
+            illegal_instruction <= '0';
+          else
+            illegal_instruction <= '1';
+          end if;
+
         when others => -- undefined instruction -> illegal!
+        -- ------------------------------------------------------------
           illegal_instruction <= '1';
 
       end case;
@@ -1870,7 +1965,7 @@ begin
   end process csr_write_data;
 
 
-  -- Control and Status Registers Write Access ----------------------------------------------
+  -- Control and Status Registers - Write Access --------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_write_access: process(rstn_i, clk_i)
     variable pmpaddr_v : std_ulogic_vector(6 downto 0);
@@ -1907,6 +2002,9 @@ begin
       csr.mcountinhibit_cy  <= '0';
       csr.mcountinhibit_ir  <= '0';
       csr.mcountinhibit_hpm <= (others => '0');
+      --
+      csr.fflags <= (others => '0');
+      csr.frm    <= (others => '0');
 
     elsif rising_edge(clk_i) then
       -- write access? --
@@ -1921,7 +2019,29 @@ begin
         -- --------------------------------------------------------------------------------
         if (csr.we = '1') then -- manual update
           case csr.addr is
-          
+
+            -- user floating-point CSRs --
+            -- --------------------------------------------------------------------
+            when csr_fflags_c => -- R/W: fflags - floating-point (FPU) exception flags
+              if (CPU_EXTENSION_RISCV_F = true) then -- FPU implemented
+                csr.fflags <= csr.wdata(4 downto 0);
+              else
+                NULL;
+              end if;
+            when csr_frm_c => -- R/W: frm - floating-point (FPU) rounding mode
+              if (CPU_EXTENSION_RISCV_F = true) then -- FPU implemented
+                csr.frm <= csr.wdata(2 downto 0);
+              else
+                NULL;
+              end if;
+            when csr_fcsr_c => -- R/W: fflags - floating-point (FPU) control/status (frm + fflags)
+              if (CPU_EXTENSION_RISCV_F = true) then -- FPU implemented
+                csr.frm    <= csr.wdata(7 downto 5);
+                csr.fflags <= csr.wdata(4 downto 0);
+              else
+                NULL;
+              end if;
+
             -- machine trap setup --
             -- --------------------------------------------------------------------
             when csr_mstatus_c => -- R/W: mstatus - machine status register
@@ -2053,6 +2173,12 @@ begin
         -- --------------------------------------------------------------------------------
         else
 
+          -- floating-point (FPU) exception flags --
+          -- --------------------------------------------------------------------
+          if (CPU_EXTENSION_RISCV_F = true) and (fpu_fupdate_i = '1') then
+            csr.fflags <= fpu_flags_i;
+          end if;
+
           -- mcause, mepc, mtval: machine trap cause, PC and value register --
           -- --------------------------------------------------------------------
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
@@ -2138,6 +2264,9 @@ begin
       end if;
     end loop; -- i
   end process pmp_rd_dummy;
+
+  -- FPU rounding mode --
+  fpu_rm_o <= csr.frm;
 
 
   -- Control and Status Registers - Counters ------------------------------------------------
@@ -2254,7 +2383,7 @@ begin
   cnt_event_nxt(hpmcnt_event_illegal_c) <= '1' when (trap_ctrl.env_start_ack = '1') and (trap_ctrl.cause = trap_iil_c) else '0'; -- illegal operation
 
 
-  -- Control and Status Registers Read Access -----------------------------------------------
+  -- Control and Status Registers - Read Access ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_read_access: process(clk_i)
   begin
@@ -2263,6 +2392,25 @@ begin
       csr.rdata <= (others => '0'); -- default output
       if (CPU_EXTENSION_RISCV_Zicsr = true) and (csr.re = '1') then
         case csr.addr is
+
+          -- user floating-point CSRs --
+          -- --------------------------------------------------------------------
+          when csr_fflags_c => -- R/W: fflags - floating-point (FPU) exception flags
+            csr.rdata <= (others => '0');
+            if (CPU_EXTENSION_RISCV_F = true) then -- FPU implemented
+              csr.rdata(4 downto 0) <= csr.fflags;
+            end if;
+          when csr_frm_c => -- R/W: frm - floating-point (FPU) rounding mode
+            csr.rdata <= (others => '0');
+            if (CPU_EXTENSION_RISCV_F = true) then -- FPU implemented
+              csr.rdata(2 downto 0) <= csr.frm;
+            end if;
+          when csr_fcsr_c => -- R/W: fflags - floating-point (FPU) control/status (frm + fflags)
+            csr.rdata <= (others => '0');
+            if (CPU_EXTENSION_RISCV_F = true) then -- FPU implemented
+              csr.rdata(7 downto 5) <= csr.frm;
+              csr.rdata(4 downto 0) <= csr.fflags;
+            end if;
 
           -- machine trap setup --
           when csr_mstatus_c => -- R/W: mstatus - machine status register
@@ -2278,6 +2426,7 @@ begin
             csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);     -- B CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
             csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
+            csr.rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_F);     -- F CPU extension
             csr.rdata(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
             csr.rdata(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_M);     -- M CPU extension
             csr.rdata(20) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);     -- U CPU extension
