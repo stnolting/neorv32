@@ -1,4 +1,4 @@
-# NEORV32 RISC-V ARchitecture Test Framework
+# NEORV32 RISC-V Architecture Test Framework
 
 ## Overview
 
@@ -44,7 +44,7 @@ For more information regarding the NEORV32 Processor see the :page_facing_up:
 [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
 :information_source: The port files for the *old framework (v1.0)* (riscv-compliance) can be found in
-[`port-neorv32/framework_v1.0`](https://github.com/stnolting/neorv32/tree/master/riscv-compliance/port-neorv32/framework_v1.0/riscv-target).
+[`port-neorv32/framework_v1.0`](https://github.com/stnolting/neorv32/tree/master/riscv-arch-test/port-neorv32/framework_v1.0/riscv-target).
 
 :information_source: If the simulation of a test does not generate any signature output at all or if the signature is truncated
 try increasing the simulation time by modiying the `SIM_TIME` variable when calling the test makefiles in `run_riscv_arch_test.sh`.
