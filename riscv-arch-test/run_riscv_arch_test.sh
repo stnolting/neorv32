@@ -48,7 +48,7 @@ cp -r $homedir/sw/ $homedir/riscv-arch-test/work/neorv32/.
 
 # Copy neorv32 target folder into test suite
 echo "--------------------------------------------------------------------------"
-echo "> Copying neorv32 test-target into compliance framework..."
+echo "> Copying neorv32 test-target into riscv-arch-test framework..."
 echo "--------------------------------------------------------------------------"
 cp -rf $homedir/riscv-arch-test/port-neorv32/framework_v2.0/riscv-target/neorv32 $homedir/riscv-arch-test/work/riscv-arch-test/riscv-target/.
 
@@ -91,4 +91,4 @@ make --silent -C $homedir/riscv-arch-test/work/riscv-arch-test NEORV32_LOCAL_COP
 make --silent -C $homedir/riscv-arch-test/work/riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME SIM_TIME=200us XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=Zifencei RISCV_TARGET_FLAGS=-DNEORV32_NO_DATA_INIT build run verify
 
 echo ""
-echo "Compliance tests completed"
+echo "RISC-V architecture tests completed successfully"
