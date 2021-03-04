@@ -168,13 +168,12 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
 #### `B` - Bit manipulation instructions extension
 
-  * :construction: **work-in-progress** :construction:
+  * :construction: **WORK-IN-PROGRESS** :construction:
   * :warning: The bit-manipulation extension has not been officially ratified yet! 
-  * :warning: Implies `Zbb` & `Zbs` sub-extensions (the remaining `B` sub-extensions are not supported yet)
   * Compatible to [v0.94-draft](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/bitmanip-draft.pdf) of the bit manipulation spec
   * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
-  * `Zbb` Base instruction set: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR[I]` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
-  * `Zbs` Single-bit instructions: `SBSET[I]` `SBCLR[I]` `SBINV[I]` `SBEXT[I]`
+  * `Zbb` base instruction set: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR[I]` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
+  * `Zbs` single-bit instructions: `SBSET[I]` `SBCLR[I]` `SBINV[I]` `SBEXT[I]`
 
 
 #### `C` - Compressed instructions extension
@@ -193,7 +192,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
 #### `F` - Single-precision floating-point extension
 
-  * :construction: **work-in-progress** :construction:
+  * :construction: **WORK-IN-PROGRESS** :construction:
   * :warning: the `F` extension is not operational yet!
   * :information_source: check out the [F-extension project board](https://github.com/stnolting/neorv32/projects/4) for the current implementation state
 
