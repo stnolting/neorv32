@@ -3,7 +3,7 @@
 # The NEORV32 RISC-V Processor
 
 [![Processor Check](https://github.com/stnolting/neorv32/workflows/Processor%20Check/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22Processor+Check%22)
-[![RISC-V Compliance](https://github.com/stnolting/neorv32/workflows/RISC-V%20Compliance/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22RISC-V+Compliance%22)
+[![riscv-arch-test](https://github.com/stnolting/neorv32/actions/workflows/riscv-arch-test.yml/badge.svg)](https://github.com/stnolting/neorv32/actions/workflows/riscv-arch-test.yml)
 [![license](https://img.shields.io/github/license/stnolting/neorv32)](https://github.com/stnolting/neorv32/blob/master/LICENSE)
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases)
 
@@ -22,7 +22,7 @@
 ## Overview
 
 The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC) that is based
-on the RISC-V-compliant NEORV32 CPU. The processor is intended as *ready-to-go* auxiliary processor within a larger SoC
+on the RISC-V NEORV32 CPU. The processor is intended as *ready-to-go* auxiliary processor within a larger SoC
 designs or as stand-alone custom microcontroller.
 
 :books: For detailed information take a look at the [NEORV32 data sheet (pdf)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
@@ -40,11 +40,11 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
 
 ### Key Features
 
-* RISC-V 32-bit `rv32` [**NEORV32 CPU**](#NEORV32-CPU-Features), compliant to
+* RISC-V 32-bit `rv32` [**NEORV32 CPU**](#NEORV32-CPU-Features), compatible to
   * subset of the *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-spec.pdf)
   * subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/riscv-privileged.pdf)
-  * the [official RISC-V compliance tests](#Status) (*passing*)
-* Configurable RISC-V-compliant CPU extensions
+  * the [official RISC-V architecture tests](#Status) (*passing*)
+* Configurable RISC-V-compatible CPU extensions
   * [`A`](#A---Atomic-memory-access-extension) - atomic memory access instructions (optional)
   * [`B`](#B---Bit-manipulation-instructions-extension) - Bit manipulation instructions (optional) :construction:
   * [`C`](#C---Compressed-instructions-extension) - compressed instructions (16-bit) (optional)
@@ -59,7 +59,7 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
   * [`HPM`](#HPM---Privileged-architecture---Hardware-performance-monitors) - hardware performance monitors (optional)
 * Full-scale RISC-V microcontroller system / **SoC** [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
   * optional embedded memories (instructions/data/bootloader, RAM/ROM) and caches
-  * timers (watch dog, RISC-V-compliant machine timer)
+  * timers (watch dog, RISC-V-compatible machine timer)
   * serial interfaces (SPI, TWI, UARTs)
   * general purpose IO and PWM channels
   * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
@@ -96,16 +96,16 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
 The processor is [synthesizable](#FPGA-Implementation-Results) (tested on *real hardware* using Intel Quartus Prime, Xilinx Vivado and Lattice Radiant/Synplify Pro) and can successfully execute
 all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the [CoreMark benchmark](#CoreMark-Benchmark).
 
-**RISC-V Compliance**: The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/privilege` and `rv32_m/Zifencei`
-[RISC-V compliance](https://github.com/riscv/riscv-compliance) tests. More information regarding the NEORV32 port of the compliance framework can be found in
-[`riscv-compliance/README.md`](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md).
+**RISC-V Architecture Tests**: The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/privilege` and `rv32_m/Zifencei`
+[riscv-arch-test](https://github.com/riscv/riscv-arch-test) tests. More information regarding the NEORV32 port of the riscv-arch-test test framework can be found in
+[`riscv-arch-test/README.md`](https://github.com/stnolting/neorv32/blob/master/riscv-arch-test/README.md).
 
 | Project component | CI status |
 |:----------------- |:----------|
-| [NEORV32 processor](https://github.com/stnolting/neorv32)                                             | [![Processor Check](https://github.com/stnolting/neorv32/workflows/Processor%20Check/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22Processor+Check%22) |
-| [SW Framework Documentation (online @GH-pages)](https://stnolting.github.io/neorv32/files.html)       | [![Doc@GitHub-pages](https://github.com/stnolting/neorv32/workflows/Deploy%20SW%20Framework%20Documentation%20to%20GitHub-Pages/badge.svg)](https://stnolting.github.io/neorv32/files.html) |
-| [Pre-built toolchains](https://github.com/stnolting/riscv-gcc-prebuilt)                               | [![Test Toolchains](https://github.com/stnolting/riscv-gcc-prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv-gcc-prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) |
-| [RISC-V compliance test](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md) | [![RISC-V Compliance](https://github.com/stnolting/neorv32/workflows/RISC-V%20Compliance/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22RISC-V+Compliance%22) |
+| [NEORV32 processor](https://github.com/stnolting/neorv32)                                              | [![Processor Check](https://github.com/stnolting/neorv32/workflows/Processor%20Check/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22Processor+Check%22) |
+| [SW Framework Documentation (online @GH-pages)](https://stnolting.github.io/neorv32/files.html)        | [![Doc@GitHub-pages](https://github.com/stnolting/neorv32/workflows/Deploy%20SW%20Framework%20Documentation%20to%20GitHub-Pages/badge.svg)](https://stnolting.github.io/neorv32/files.html) |
+| [Pre-built toolchains](https://github.com/stnolting/riscv-gcc-prebuilt)                                | [![Test Toolchains](https://github.com/stnolting/riscv-gcc-prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv-gcc-prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) |
+| [RISC-V architecture test](https://github.com/stnolting/neorv32/blob/master/riscv-arch-test/README.md) | [![riscv-arch-test](https://github.com/stnolting/neorv32/actions/workflows/riscv-arch-test.yml/badge.svg)](https://github.com/stnolting/neorv32/actions/workflows/riscv-arch-test.yml) |
 
 
 ## Features
@@ -123,13 +123,13 @@ is highly customizable via the processor's top generics and already provides the
 
 * processor-internal data and instruction memories (**DMEM** / **IMEM**) & cache (**iCACHE**)
 * bootloader (**BOOTLDROM**) with UART console and automatic application boot from SPI flash option
-* machine system timer (**MTIME**), RISC-V-compliant
+* machine system timer (**MTIME**), RISC-V-compatible
 * watchdog timer (**WDT**)
 * two independent universal asynchronous receivers and transmitters (**UART0** & **UART1**) with optional hardware flow control (RTS/CTS)
 * 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
 * two wire serial interface controller (**TWI**), with optional clock-stretching, compatible to the I²C standard
 * general purpose parallel IO port (**GPIO**), 32xOut & 32xIn, with pin-change interrupt
-* 32-bit external bus interface, Wishbone b4 compliant (**WISHBONE**)
+* 32-bit external bus interface, Wishbone b4 compatible (**WISHBONE**)
 * wrapper for **AXI4-Lite Master Interface** (see [AXI Connectivity](#AXI4-Connectivity))
 * PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
 * ring-oscillator-based true random number generator (**TRNG**)
@@ -140,11 +140,11 @@ is highly customizable via the processor's top generics and already provides the
 
 ### NEORV32 CPU Features
 
-The NEORV32 CPU is **compliant** to the
+The NEORV32 CPU implements the
 [official RISC-V specifications (2.2)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf) including a subset of the 
 [RISC-V privileged architecture specifications (1.12-draft)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf)
-tested via the [official RISC-V Compliance Test Framework](https://github.com/riscv/riscv-compliance)
-(see [`riscv-compliance/README`](https://github.com/stnolting/neorv32/blob/master/riscv-compliance/README.md)).
+- tested via the [official riscv-arch-test Test Framework](https://github.com/riscv/riscv-arch-test)
+(see [`riscv-arch-test/README`](https://github.com/stnolting/neorv32/blob/master/riscv-arch-test/README.md)).
 
 More information regarding the CPU including a detailed list of the instruction set and the available CSRs can be found in
 the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
@@ -236,7 +236,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Pseudo-instructions are not listed
   * Counter CSRs: `[m]cycle[h]` `[m]instret[m]` `time[h]` `[m]hpmcounter*[h]`(3..31, configurable) `mcounteren` `mcountinhibit` `mhpmevent*`(3..31, configurable)
   * Machine CSRs: `mstatus[h]` `misa`(read-only!) `mie` `mtvec` `mscratch` `mepc` `mcause` `mtval` `mip` `mvendorid` [`marchid`](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) `mimpid` `mhartid` `mzext`(custom)
-  * Supported (sync.) exceptions (all RISC-V-compliant):
+  * Supported (sync.) exceptions (implementing the RISC-V specs):
     * Misaligned instruction address
     * Instruction access fault (via timeout/error after unacknowledged bus access)
     * Illegal instruction
@@ -248,9 +248,9 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
     * Environment call from U-mode (via `ecall` instruction in user mode)
     * Environment call from M-mode (via `ecall` instruction in machine mode)
   * Supported (async.) exceptions / interrupts:
-    * Machine timer interrupt `mti` (via processor's MTIME unit / external signal), RISC-V-compliant
-    * Machine software interrupt `msi` (via external signal), RISC-V-compliant
-    * Machine external interrupt `mei` (via external signal), RISC-V-compliant
+    * Machine timer interrupt `mti` (via processor's MTIME unit / external signal)
+    * Machine software interrupt `msi` (via external signal)
+    * Machine external interrupt `mei` (via external signal)
     * 16 fast interrupt requests (custom extension), 6+1 available for custom usage
 
 
@@ -273,14 +273,14 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Additional machine CSRs: `mhpmevent*`(3..31) `[m]hpmcounter*[h]`(3..31)
 
 
-### :warning: Non-RISC-V-Compliant Issues and Limitations
+### :warning: Non-RISC-V-Compatible Issues and Limitations
 
 * CPU and Processor are BIG-ENDIAN, but this should be no problem as the external memory bus interface provides big- and little-endian configurations
 * `misa` CSR is read-only - no dynamic enabling/disabling of synthesized CPU extensions during runtime; for compatibility: write accesses (in m-mode) are ignored and do not cause an exception
 * The physical memory protection (**PMP**) only supports `NAPOT` mode yet and a minimal granularity of 8 bytes
 * The `A` extension only implements `lr.w` and `sc.w` instructions yet. However, these instructions are sufficient to emulate all further AMO operations
 * The `mcause` trap code `0x80000000` (originally reserved in the RISC-V specs) is used to indicate a hardware reset (as "non-maskable interrupt")
-* The bit manipulation extension is not yet officially ratified, but is expected to stay unchanged. There is no software support in the upstream GCC RISC-V port yet. However, an intrinsic library is provided to utilize the provided bit manipulation extension from C-language code (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation)). NEORV32's `B` extension is compliant to spec. version "0.94-draft".
+* The bit manipulation extension is not yet officially ratified, but is expected to stay unchanged. There is no software support in the upstream GCC RISC-V port yet. However, an intrinsic library is provided to utilize the provided bit manipulation extension from C-language code (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation)). NEORV32's `B` extension is compatible to spec. version "0.94-draft".
 
 
 
