@@ -103,7 +103,9 @@ entity neorv32_top is
     IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
     IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
+    IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0); -- custom CFS configuration generic
+    IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
+    IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
     IO_NCO_EN                    : boolean := true    -- implement numerically-controlled oscillator (NCO)?
   );
   port (
@@ -158,8 +160,8 @@ entity neorv32_top is
     pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- custom CFS inputs conduit
-    cfs_out_o   : out std_ulogic_vector(31 downto 0); -- custom CFS outputs conduit
+    cfs_in_i    : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom CFS inputs conduit
+    cfs_out_o   : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
 
     -- NCO output (available if IO_NCO_EN = true) --
     nco_o       : out std_ulogic_vector(02 downto 0); -- numerically-controlled oscillator channels
@@ -765,7 +767,9 @@ begin
   if (IO_CFS_EN = true) generate
     neorv32_cfs_inst: neorv32_cfs
     generic map (
-      CFS_CONFIG => IO_CFS_CONFIG     -- custom CFS configuration generic
+      CFS_CONFIG   => IO_CFS_CONFIG,  -- custom CFS configuration generic 
+      CFS_IN_SIZE  => IO_CFS_IN_SIZE, -- size of CFS input conduit in bits
+      CFS_OUT_SIZE => IO_CFS_OUT_SIZE -- size of CFS output conduit in bits
     )
     port map (
       -- host access --

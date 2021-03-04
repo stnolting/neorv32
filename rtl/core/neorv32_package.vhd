@@ -60,7 +60,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050201"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050202"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -342,12 +342,13 @@ package neorv32_package is
   -- system/csr --
   constant opcode_fence_c  : std_ulogic_vector(6 downto 0) := "0001111"; -- fence / fence.i
   constant opcode_syscsr_c : std_ulogic_vector(6 downto 0) := "1110011"; -- system/csr access (type via funct3)
-  -- atomic operations (A) --
+  -- atomic memory access (A) --
   constant opcode_atomic_c : std_ulogic_vector(6 downto 0) := "0101111"; -- atomic operations (A extension)
-  -- single-precision floating point operations (F) --
+  -- floating point operations (F/D/H/Q) --
   constant opcode_flw_c    : std_ulogic_vector(6 downto 0) := "0000111"; -- load word
   constant opcode_fsw_c    : std_ulogic_vector(6 downto 0) := "0100111"; -- store word
-  constant opcode_fop_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single opearnd operation
+  constant opcode_fop_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single opearand operation
+  constant opcode_fmac_c   : std_ulogic_vector(6 downto 0) := "100--11"; -- fused multiply-add (three operands)
 
   -- RISC-V Funct3 --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -874,7 +875,9 @@ package neorv32_package is
       IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
       IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
-      IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
+      IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0); -- custom CFS configuration generic
+      IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
+      IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
       IO_NCO_EN                    : boolean := true    -- implement numerically-controlled oscillator (NCO)?
     );
     port (
@@ -920,8 +923,8 @@ package neorv32_package is
       -- PWM (available if IO_PWM_EN = true) --
       pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
       -- Custom Functions Subsystem IO --
-      cfs_in_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- custom CSF inputs
-      cfs_out_o   : out std_ulogic_vector(31 downto 0); -- custom CSF outputs
+      cfs_in_i    : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom CFS inputs conduit
+      cfs_out_o   : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
       -- NCO output (available if IO_NCO_EN = true) --
       nco_o       : out std_ulogic_vector(02 downto 0); -- numerically-controlled oscillator channels
       -- system time input from external MTIME (available if IO_MTIME_EN = false) --
@@ -1049,7 +1052,6 @@ package neorv32_package is
       -- FPU interface --
       fpu_rm_o      : out std_ulogic_vector(02 downto 0); -- rounding mode
       fpu_flags_i   : in  std_ulogic_vector(04 downto 0); -- exception flags
-      fpu_fupdate_i : in  std_ulogic; -- update FPU flags
       -- interrupts (risc-v compliant) --
       msw_irq_i     : in  std_ulogic; -- machine software interrupt
       mext_irq_i    : in  std_ulogic; -- machine external interrupt
@@ -1177,7 +1179,6 @@ package neorv32_package is
       mem_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory read-data
       -- result and status --
       fflags_o  : out std_ulogic_vector(4 downto 0); -- exception flags
-      fupdate_o : out std_ulogic; -- update FPU flags
       mem_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- memory write-data
       res_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
       valid_o   : out std_ulogic -- data output valid
@@ -1625,7 +1626,9 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cfs
     generic (
-      CFS_CONFIG : std_ulogic_vector(31 downto 0) := x"00000000" -- custom CFS configuration generic
+      CFS_CONFIG   : std_ulogic_vector(31 downto 0); -- custom CFS configuration generic
+      CFS_IN_SIZE  : positive := 32;  -- size of CFS input conduit in bits
+      CFS_OUT_SIZE : positive := 32   -- size of CFS output conduit in bits
     );
     port (
       -- host access --
@@ -1646,8 +1649,8 @@ package neorv32_package is
       irq_o       : out std_ulogic; -- interrupt request
       irq_ack_i   : in  std_ulogic; -- interrupt acknowledge
       -- custom io (conduit) --
-      cfs_in_i    : in  std_ulogic_vector(31 downto 0); -- custom inputs
-      cfs_out_o   : out std_ulogic_vector(31 downto 0)  -- custom outputs
+      cfs_in_i    : in  std_ulogic_vector(CFS_IN_SIZE-1 downto 0);  -- custom inputs
+      cfs_out_o   : out std_ulogic_vector(CFS_OUT_SIZE-1 downto 0)  -- custom outputs
     );
   end component;
 
