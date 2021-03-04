@@ -62,7 +62,6 @@ entity neorv32_cpu_cp_fpu is
     mem_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory read-data
     -- result and status --
     fflags_o  : out std_ulogic_vector(4 downto 0); -- exception flags
-    fupdate_o : out std_ulogic; -- update FPU flags
     mem_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- memory write-data
     res_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
     valid_o   : out std_ulogic -- data output valid
@@ -75,11 +74,10 @@ begin
 
   -- There is nothing to see here yet -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fflags_o  <= (others => '0');
-  fupdate_o <= '0';
-  mem_o     <= (others => '0');
-  res_o     <= (others => '0');
-  valid_o   <= start_i;
+  fflags_o <= (others => '0');
+  mem_o    <= (others => '0');
+  res_o    <= (others => '0');
+  valid_o  <= start_i;
 
 
 end neorv32_cpu_cp_fpu_rtl;

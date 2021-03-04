@@ -149,7 +149,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal fpu_mem_wdata : std_ulogic_vector(data_width_c-1 downto 0); -- memory write-data form FPU
   signal fpu_rm        : std_ulogic_vector(2 downto 0); -- FPU rounding mode
   signal fpu_flags     : std_ulogic_vector(4 downto 0); -- FPU exception flags
-  signal fpu_fupdate   : std_ulogic; -- FPU update exception flags
 
   -- co-processor interface --
   signal cp_start  : std_ulogic_vector(7 downto 0); -- trigger co-processor i
@@ -249,7 +248,6 @@ begin
     -- FPU interface --
     fpu_rm_o      => fpu_rm,      -- rounding mode
     fpu_flags_i   => fpu_flags,   -- exception flags
-    fpu_fupdate_i => fpu_fupdate, -- update FPU flags
     -- interrupts (risc-v compliant) --
     msw_irq_i     => msw_irq_i,   -- machine software interrupt
     mext_irq_i    => mext_irq_i,  -- machine external interrupt
@@ -429,7 +427,6 @@ begin
       mem_i     => mem_rdata,     -- memory read-data
       -- result and status --
       fflags_o  => fpu_flags,     -- exception flags
-      fupdate_o => fpu_fupdate,   -- update FPU flags
       mem_o     => fpu_mem_wdata, -- memory write-data
       res_o     => cp_result(4),  -- operation result
       valid_o   => cp_valid(4)    -- data output valid
@@ -439,7 +436,6 @@ begin
   neorv32_cpu_cp_fpu_inst_false:
   if (CPU_EXTENSION_RISCV_F = false) generate
     fpu_flags     <= (others => '0');
-    fpu_fupdate   <= '0';
     fpu_mem_wdata <= (others => '0');
     cp_result(4)  <= (others => '0');
     cp_valid(4)   <= cp_start(4); -- to make sure CPU does not get stalled if there is an accidental access

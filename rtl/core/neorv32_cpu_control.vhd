@@ -88,7 +88,6 @@ entity neorv32_cpu_control is
     -- FPU interface --
     fpu_rm_o      : out std_ulogic_vector(02 downto 0); -- rounding mode
     fpu_flags_i   : in  std_ulogic_vector(04 downto 0); -- exception flags
-    fpu_fupdate_i : in  std_ulogic; -- update FPU flags
     -- interrupts (risc-v compliant) --
     msw_irq_i     : in  std_ulogic; -- machine software interrupt
     mext_irq_i    : in  std_ulogic; -- machine external interrupt
@@ -2175,8 +2174,8 @@ begin
 
           -- floating-point (FPU) exception flags --
           -- --------------------------------------------------------------------
-          if (CPU_EXTENSION_RISCV_F = true) and (fpu_fupdate_i = '1') then
-            csr.fflags <= fpu_flags_i;
+          if (CPU_EXTENSION_RISCV_F = true) and (execute_engine.state = ALU_WAIT) then -- FIXME?
+            csr.fflags <= csr.fflags or fpu_flags_i; -- accumulate flags ("accrued exception flags")
           end if;
 
           -- mcause, mepc, mtval: machine trap cause, PC and value register --
