@@ -47,7 +47,7 @@ _start:
 .cfi_undefined ra
 
 // *********************************************************
-// Clear register file (lower half, assume E extension)
+// Clear integer register file (lower half, assume E extension)
 // *********************************************************
 __crt0_reg_file_clear:
 //addi  x0, x0, 0 // hardwired to zero
@@ -69,10 +69,18 @@ __crt0_reg_file_clear:
 
 
 // *********************************************************
-// Clear register file (upper half, if no E extension)
+// Initialize dummy trap handler base address
+// *********************************************************
+__crt0_neorv32_trap_init:
+  la    x11, __crt0_dummy_trap_handler
+  csrw  mtvec, x11 // set address of first-level exception handler
+
+
+// *********************************************************
+// Clear integer register file (upper half, if no E extension)
 // *********************************************************
 #ifndef __riscv_32e
-// save some program space if compiling bootloader
+// DO NOT DO THIS if compiling bootloader (to save some program space)
 #ifndef make_bootloader
   addi x16, x0, 0
   addi x17, x0, 0
@@ -90,6 +98,48 @@ __crt0_reg_file_clear:
   addi x29, x0, 0
   addi x30, x0, 0
   addi x31, x0, 0
+#endif
+#endif
+
+
+// *********************************************************
+// Clear floating-point register file (if F extension enabled)
+// *********************************************************
+#ifdef __riscv_flen
+// DO NOT DO THIS if compiling bootloader (to save some program space)
+#ifndef make_bootloader
+  fmv.s.x f0,  x0
+  fmv.s.x f1,  x0
+  fmv.s.x f2,  x0
+  fmv.s.x f3,  x0
+  fmv.s.x f4,  x0
+  fmv.s.x f5,  x0
+  fmv.s.x f6,  x0
+  fmv.s.x f7,  x0
+  fmv.s.x f8,  x0
+  fmv.s.x f9,  x0
+  fmv.s.x f10, x0
+  fmv.s.x f11, x0
+  fmv.s.x f12, x0
+  fmv.s.x f13, x0
+  fmv.s.x f14, x0
+  fmv.s.x f15, x0
+  fmv.s.x f16, x0
+  fmv.s.x f17, x0
+  fmv.s.x f18, x0
+  fmv.s.x f19, x0
+  fmv.s.x f20, x0
+  fmv.s.x f21, x0
+  fmv.s.x f22, x0
+  fmv.s.x f23, x0
+  fmv.s.x f24, x0
+  fmv.s.x f25, x0
+  fmv.s.x f26, x0
+  fmv.s.x f27, x0
+  fmv.s.x f28, x0
+  fmv.s.x f29, x0
+  fmv.s.x f30, x0
+  fmv.s.x f31, x0
 #endif
 #endif
 
@@ -114,14 +164,6 @@ __crt0_pointer_init:
   addi  fp, sp, 0          // frame pointer = stack pointer
   la gp, __global_pointer$ // global pointer
 .option pop
-
-
-// *********************************************************
-// Initialize dummy trap handler base address
-// *********************************************************
-__crt0_neorv32_trap_init:
-  la    x11, __crt0_dummy_trap_handler
-  csrw  mtvec, x11 // set address of first-level exception handler
 
 
 // *********************************************************

@@ -1,4 +1,4 @@
-# Running the RISC-V Compliance Framework in Simulation
+# Running the RISC-V riscv-arch-test Test Suite in Simulation
 
 
 The following tasks are executed by the device makefiles:

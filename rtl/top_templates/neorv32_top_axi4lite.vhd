@@ -91,7 +91,9 @@ entity neorv32_top_axi4lite is
     IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
     IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                : std_logic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
+    IO_CFS_CONFIG                : std_logic_vector(31 downto 0); -- custom CFS configuration generic
+    IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
+    IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
     IO_NCO_EN                    : boolean := true    -- implement numerically-controlled oscillator (NCO)?
   );
   port (
@@ -152,8 +154,8 @@ entity neorv32_top_axi4lite is
     -- PWM (available if IO_PWM_EN = true) --
     pwm_o       : out std_logic_vector(03 downto 0);  -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i    : in  std_logic_vector(31 downto 0); -- custom inputs
-    cfs_out_o   : out std_logic_vector(31 downto 0); -- custom outputs
+    cfs_in_i    : in  std_logic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom inputs
+    cfs_out_o   : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom outputs
     -- NCO output (available if IO_NCO_EN = true) --
     nco_o       : out std_logic_vector(02 downto 0); -- numerically-controlled oscillator channels
     -- Interrupts --
@@ -193,8 +195,8 @@ architecture neorv32_top_axi4lite_rtl of neorv32_top_axi4lite is
   --
   signal pwm_o_int       : std_ulogic_vector(03 downto 0);
   --
-  signal cfs_in_i_int    : std_ulogic_vector(31 downto 0);
-  signal cfs_out_o_int   : std_ulogic_vector(31 downto 0);
+  signal cfs_in_i_int    : std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0);
+  signal cfs_out_o_int   : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
   --
   signal nco_o_int       : std_ulogic_vector(02 downto 0);
   --
@@ -289,6 +291,8 @@ begin
     IO_TRNG_EN                   => IO_TRNG_EN,         -- implement true random number generator (TRNG)?
     IO_CFS_EN                    => IO_CFS_EN,          -- implement custom functions subsystem (CFS)?
     IO_CFS_CONFIG                => IO_CFS_CONFIG_INT,  -- custom CFS configuration generic
+    IO_CFS_IN_SIZE               => IO_CFS_IN_SIZE,     -- size of CFS input conduit in bits
+    IO_CFS_OUT_SIZE              => IO_CFS_OUT_SIZE,    -- size of CFS output conduit in bits
     IO_NCO_EN                    => IO_NCO_EN           -- implement numerically-controlled oscillator (NCO)?
   )
   port map (

@@ -14,6 +14,8 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 04.03.2021 | 1.5.2.2 | added two new generics to configure CFS IO conduit sizes (implementing [issue #13](https://github.com/stnolting/neorv32/issues/13)): `IO_CFS_IN_SIZE` - type: `positive`, configures the size of `cfs_in_i` signal; `IO_CFS_OUT_SIZE` - type: `positive`, configures the size of `cfs_out_o` signal; minor edits to floating-point CPU infrastructure |
+| 03.03.2021 | 1.5.2.1 | added CPU core infrastructure for *upcoming* single-precision floating-point extension `F`; :warning: **floating-point extension is NOT OPERATIONAL YET!** added new rtl file for the floating-point unit `rtl/core/neorv32_cpu_cp_fpu.vhd` (blank template!) |
 | 01.03.2021 | [**:rocket:1.5.2.0**](https://github.com/stnolting/neorv32/releases/tag/v1.5.2.0) | **New release** |
 | 27.02.2021 | 1.5.1.11 | :bug: fixed several small bugs in *bitmanipulation extension* instruction decoding (not all `B` instructions triggered and *illegal instruction exception* when B-extension = disabled) |
 | 25.02.2021 | 1.5.1.10 | :bug: fixed bugs in UART RTS/CTS hardware control flow - the new setup was verified on real hardware; added double-buffering to UART RX engine |

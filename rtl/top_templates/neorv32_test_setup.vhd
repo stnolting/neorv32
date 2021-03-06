@@ -116,6 +116,8 @@ begin
     IO_TRNG_EN                   => false,       -- implement true random number generator (TRNG)?
     IO_CFS_EN                    => false,       -- implement custom functions subsystem (CFS)?
     IO_CFS_CONFIG                => x"00000000", -- custom CFS configuration generic
+    IO_CFS_IN_SIZE               => 32,          -- size of CFS input conduit in bits
+    IO_CFS_OUT_SIZE              => 32,          -- size of CFS output conduit in bits
     IO_NCO_EN                    => false        -- implement numerically-controlled oscillator (NCO)?
   )
   port map (

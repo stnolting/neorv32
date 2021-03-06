@@ -1,6 +1,6 @@
-# Run the RISC-V compliance framework port to check current NEORV32 version
+# Run the RISC-V riscv-arch-test test framework port to check current NEORV32 version
 
-name: 'RISC-V Compliance'
+name: 'riscv-arch-test'
 
 on:
   workflow_dispatch:
@@ -31,5 +31,5 @@ jobs:
         with:
           backend: gcc
 
-      - name: '⚙️ Run RISC-V Compliance Tests'
-        run: /bin/bash -c "chmod u+x ./riscv-compliance/run_compliance_test.sh && ./riscv-compliance/run_compliance_test.sh"
+      - name: '⚙️ Run RISC-V Architecture Tests'
+        run: /bin/bash -c "chmod u+x ./riscv-arch-test/run_riscv_arch_test.sh && ./riscv-arch-test/run_riscv_arch_test.sh"

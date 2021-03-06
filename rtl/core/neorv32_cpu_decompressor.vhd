@@ -137,9 +137,13 @@ begin
               ci_instr32_o(instr_imm12_lsb_c + 9)                        <= ci_instr16_i(10);
             end if;
 
-          when "010" => -- C.LW
+          when "010" | "011" => -- C.LW / C.FLW
           -- ----------------------------------------------------------------------------------------------------------
-            ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_c;
+            if (ci_instr16_i(ci_funct3_lsb_c) = '0') then -- C.LW
+              ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_c;
+            else -- C.FLW
+              ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_flw_c;
+            end if;
             ci_instr32_o(21 downto 20)                                 <= "00";
             ci_instr32_o(22)                                           <= ci_instr16_i(6);
             ci_instr32_o(23)                                           <= ci_instr16_i(10);
@@ -151,9 +155,13 @@ begin
             ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "01" & ci_instr16_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c); -- x8 - x15
             ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c)         <= "01" & ci_instr16_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c);   -- x8 - x15
 
-          when "110" => -- C.SW
+          when "110" | "111" => -- C.SW / C.FSW
           -- ----------------------------------------------------------------------------------------------------------
-            ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_c;
+            if (ci_instr16_i(ci_funct3_lsb_c) = '0') then -- C.SW
+              ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_c;
+            else -- C.FSW
+              ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_fsw_c;
+            end if;
             ci_instr32_o(08 downto 07)                                 <= "00";
             ci_instr32_o(09)                                           <= ci_instr16_i(6);
             ci_instr32_o(10)                                           <= ci_instr16_i(10);
@@ -362,9 +370,13 @@ begin
             ci_instr32_o(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(6);
             ci_illegal_o <= ci_instr16_i(12);
 
-          when "010" => -- C.LWSP
+          when "010" | "011" => -- C.LWSP / C.FLWSP
           -- ----------------------------------------------------------------------------------------------------------
-            ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_c;
+            if (ci_instr16_i(ci_funct3_lsb_c) = '0') then -- C.LWSP
+              ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_c;
+            else -- C.FLWSP
+              ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_flw_c;
+            end if;
             ci_instr32_o(21 downto 20)                                 <= "00";
             ci_instr32_o(22)                                           <= ci_instr16_i(4);
             ci_instr32_o(23)                                           <= ci_instr16_i(5);
@@ -377,9 +389,13 @@ begin
             ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
             ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c)         <= ci_instr16_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
 
-          when "110" => -- C.SWSP
+          when "110" | "111" => -- C.SWSP / C.FSWSP
           -- ----------------------------------------------------------------------------------------------------------
-            ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_c;
+            if (ci_instr16_i(ci_funct3_lsb_c) = '0') then -- C.SWSP
+              ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_c;
+            else -- C.FSWSP
+              ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_fsw_c;
+            end if;
             ci_instr32_o(08 downto 07)                                 <= "00";
             ci_instr32_o(09)                                           <= ci_instr16_i(9);
             ci_instr32_o(10)                                           <= ci_instr16_i(10);

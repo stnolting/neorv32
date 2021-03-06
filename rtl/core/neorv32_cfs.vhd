@@ -45,7 +45,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cfs is
   generic (
-    CFS_CONFIG : std_ulogic_vector(31 downto 0) := x"00000000" -- custom CFS configuration conduit generic
+    CFS_CONFIG   : std_ulogic_vector(31 downto 0); -- custom CFS configuration generic
+    CFS_IN_SIZE  : positive := 32; -- size of CFS input conduit in bits
+    CFS_OUT_SIZE : positive := 32  -- size of CFS output conduit in bits
   );
   port (
     -- host access --
@@ -66,8 +68,8 @@ entity neorv32_cfs is
     irq_o       : out std_ulogic; -- interrupt request
     irq_ack_i   : in  std_ulogic; -- interrupt acknowledge
     -- custom io (conduits) --
-    cfs_in_i    : in  std_ulogic_vector(31 downto 0); -- custom inputs
-    cfs_out_o   : out std_ulogic_vector(31 downto 0)  -- custom outputs
+    cfs_in_i    : in  std_ulogic_vector(CFS_IN_SIZE-1 downto 0);  -- custom inputs
+    cfs_out_o   : out std_ulogic_vector(CFS_OUT_SIZE-1 downto 0)  -- custom outputs
   );
 end neorv32_cfs;
 
@@ -100,10 +102,12 @@ begin
   rden   <= acc_en and rden_i; -- the read access is always a full 32-bit word wide; if required, the byte/half-word select/masking is done in the CPU
 
 
-  -- CFS Generic ----------------------------------------------------------------------------
+  -- CFS Generics ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- In its default version, the CFS provides a single generic: CFS_CONFIG. This generic can be set using the processor top's IO_CFS_CONFIG generic.
-  -- It is intended as a "conduit" to propagate custom implementation option from the top down to this entiy.
+  -- In its default version, the CFS provides the configuration generics. single generic:
+  -- CFS_IN_SIZE configures the size (in bits) of the CFS input conduit cfs_in_i
+  -- CFS_OUT_SIZE configures the size (in bits) of the CFS output conduit cfs_out_o
+  -- CFS_CONFIG is a blank 32-bit generic. It is intended as a "generic conduit" to propagate custom configuration flags from the top entity down to this entiy.
 
 
   -- CFS IOs --------------------------------------------------------------------------------
@@ -206,7 +210,7 @@ begin
 --    ack_o <= ... -- or define the ACK by yourself (example: some registers are read-only, some others can only be written, ...)
 
       -- write access --
-      for i in 0 to 3 loop -- iterate over all 4 bytes in a word
+      for i in 0 to 3 loop
         if (wren = '1') then -- word-wide write-access only!
           case addr is -- make sure to use the internal 'addr' signal for the read/write interface
             when cfs_reg0_addr_c => cfs_reg_wr(0) <= data_i; -- for example: control register
