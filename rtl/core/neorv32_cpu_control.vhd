@@ -841,16 +841,16 @@ begin
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00001")) or -- FSUB.S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00010")) or -- FMUL.S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00011")) or -- FDIV.S
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01011") and (execute_engine.i_reg(instr_funct12_lsb_c+5 downto instr_funct12_lsb_c) = "00000")) or -- FSQRT.S
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01011") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00000")) or -- FSQRT.S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00100") and (execute_engine.i_reg(instr_funct3_msb_c) = '0')) or -- FSGNJ[N/X].S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_msb_c-1) = "00")) or -- FMIN.S / FMAX.S
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11010") and (execute_engine.i_reg(instr_funct12_lsb_c+5 downto instr_funct12_lsb_c+1) = "0000")) then -- FCVT.S.W*
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11010") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c+1) = "0000")) then -- FCVT.S.W*
       decode_aux.is_float_f_reg <= '1';
     end if;
     -- floating-point INTEGER_register operations --
     if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_msb_c-1) = "00")) or -- FMV.X.W / FCLASS.S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "10100") and (execute_engine.i_reg(instr_funct3_msb_c) = '0')) or -- FEQ.S / FLT.S / FLE.S
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11000") and (execute_engine.i_reg(instr_funct12_lsb_c+5 downto instr_funct12_lsb_c+1) = "0000")) then -- FCVT.W*.S
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11000") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c+1) = "0000")) then -- FCVT.W*.S
       decode_aux.is_float_i_reg <= '1';
     end if;
 
@@ -1305,8 +1305,10 @@ begin
 
     -- low privilege level access to hpm counters? --
     csr_mcounteren_hpm_v := (others => '0');
-    if (CPU_EXTENSION_RISCV_U = true) then -- 'mcounteren' CSR is hardwired to zero if user mode is not implemented
+    if (CPU_EXTENSION_RISCV_U = true) then
       csr_mcounteren_hpm_v(HPM_NUM_CNTS-1 downto 0) := csr.mcounteren_hpm(HPM_NUM_CNTS-1 downto 0);
+    else -- 'mcounteren' CSR is hardwired to zero if user mode is not implemented
+      csr_mcounteren_hpm_v := (others => '0');
     end if;
 
     -- check CSR access --
@@ -1967,7 +1969,6 @@ begin
   -- Control and Status Registers - Write Access --------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_write_access: process(rstn_i, clk_i)
-    variable pmpaddr_v : std_ulogic_vector(6 downto 0);
   begin
     if (rstn_i = '0') then
       csr.we           <= '0';
@@ -1984,19 +1985,18 @@ begin
       csr.mscratch     <= x"19880704"; -- :)
       csr.mepc         <= (others => '0');
       csr.mcause       <= trap_reset_c; -- mcause = TRAP_CODE_RESET (hardware reset, "non-maskable interrupt")
-      --
       csr.mtval        <= (others => '0');
       csr.mip_clear    <= (others => '0');
       --
-      csr.pmpcfg       <= (others => (others => '0'));
-      csr.pmpaddr      <= (others => (others => '1'));
+      csr.pmpcfg  <= (others => (others => '0'));
+      csr.pmpaddr <= (others => (others => '1'));
       --
-      csr.mhpmevent    <= (others => (others => '0'));
+      csr.mhpmevent <= (others => (others => '0'));
       --
-      csr.mcounteren_cy     <= '0';
-      csr.mcounteren_tm     <= '0';
-      csr.mcounteren_ir     <= '0';
-      csr.mcounteren_hpm    <= (others => '0');
+      csr.mcounteren_cy  <= '0';
+      csr.mcounteren_tm  <= '0';
+      csr.mcounteren_ir  <= '0';
+      csr.mcounteren_hpm <= (others => '0');
       --
       csr.mcountinhibit_cy  <= '0';
       csr.mcountinhibit_ir  <= '0';
@@ -2017,33 +2017,30 @@ begin
         -- CSR access by application software
         -- --------------------------------------------------------------------------------
         if (csr.we = '1') then -- manual update
-          case csr.addr is
 
-            -- user floating-point CSRs --
-            -- --------------------------------------------------------------------
-            when csr_fflags_c => -- R/W: fflags - floating-point (FPU) exception flags
-              if (CPU_EXTENSION_RISCV_F = true) then -- FPU implemented
-                csr.fflags <= csr.wdata(4 downto 0);
-              else
-                NULL;
-              end if;
-            when csr_frm_c => -- R/W: frm - floating-point (FPU) rounding mode
-              if (CPU_EXTENSION_RISCV_F = true) then -- FPU implemented
-                csr.frm <= csr.wdata(2 downto 0);
-              else
-                NULL;
-              end if;
-            when csr_fcsr_c => -- R/W: fflags - floating-point (FPU) control/status (frm + fflags)
-              if (CPU_EXTENSION_RISCV_F = true) then -- FPU implemented
-                csr.frm    <= csr.wdata(7 downto 5);
-                csr.fflags <= csr.wdata(4 downto 0);
-              else
-                NULL;
-              end if;
+          -- user floating-point CSRs --
+          -- --------------------------------------------------------------------
+          if (csr.addr(11 downto 4) = csr_class_float_c) then -- floating point CSR class
+            -- R/W: fflags - floating-point (FPU) exception flags --
+            if (csr.addr(3 downto 0) = csr_fflags_c(3 downto 0)) and (CPU_EXTENSION_RISCV_F = true) then
+              csr.fflags <= csr.wdata(4 downto 0);
+            end if;
+            -- R/W: frm - floating-point (FPU) rounding mode --
+            if (csr.addr(3 downto 0) = csr_frm_c(3 downto 0)) and (CPU_EXTENSION_RISCV_F = true) then
+              csr.frm <= csr.wdata(2 downto 0);
+            end if;
+            -- R/W: fflags - floating-point (FPU) control/status (frm + fflags) --
+            if (csr.addr(3 downto 0) = csr_fcsr_c(3 downto 0)) and (CPU_EXTENSION_RISCV_F = true) then
+              csr.frm    <= csr.wdata(7 downto 5);
+              csr.fflags <= csr.wdata(4 downto 0);
+            end if;
+          end if;
 
-            -- machine trap setup --
-            -- --------------------------------------------------------------------
-            when csr_mstatus_c => -- R/W: mstatus - machine status register
+          -- machine trap setup --
+          -- --------------------------------------------------------------------
+          if (csr.addr(11 downto 4) = csr_setup_c) then -- ftrap setup CSR class
+            -- R/W: mstatus - machine status register --
+            if (csr.addr(3 downto 0) = csr_mstatus_c(3 downto 0)) then
               csr.mstatus_mie  <= csr.wdata(03);
               csr.mstatus_mpie <= csr.wdata(07);
               if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
@@ -2052,120 +2049,119 @@ begin
               else -- only machine mode is available
                 csr.mstatus_mpp <= priv_mode_m_c;
               end if;
-            when csr_mie_c => -- R/W: mie - machine interrupt enable register
+            end if;
+            -- R/W: mie - machine interrupt enable register --
+            if (csr.addr(3 downto 0) = csr_mie_c(3 downto 0)) then
               csr.mie_msie <= csr.wdata(03); -- machine SW IRQ enable
               csr.mie_mtie <= csr.wdata(07); -- machine TIMER IRQ enable
               csr.mie_meie <= csr.wdata(11); -- machine EXT IRQ enable
               for i in 0 to 15 loop -- fast interrupt channels 0..15
                 csr.mie_firqe(i) <= csr.wdata(16+i);
               end loop; -- i
-            when csr_mtvec_c => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
+            end if;
+            -- R/W: mtvec - machine trap-handler base address (for ALL exceptions) --
+            if (csr.addr(3 downto 0) = csr_mtvec_c(3 downto 0)) then
               csr.mtvec <= csr.wdata(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
-            when csr_mcounteren_c => -- R/W: machine counter enable register
+            end if;
+            -- R/W: machine counter enable register --
+            if (csr.addr(3 downto 0) = csr_mcounteren_c(3 downto 0)) then
               if (CPU_EXTENSION_RISCV_U = true) then -- this CSR is hardwired to zero if user mode is not implemented
                 csr.mcounteren_cy  <= csr.wdata(0); -- enable user-level access to cycle[h]
                 csr.mcounteren_tm  <= csr.wdata(1); -- enable user-level access to time[h]
                 csr.mcounteren_ir  <= csr.wdata(2); -- enable user-level access to instret[h]
                 csr.mcounteren_hpm <= csr.wdata(csr.mcounteren_hpm'left+3 downto 3); -- enable user-level access to hpmcounterx[h]
-              else
-                NULL;
               end if;
+            end if;
+          end if;
 
-            -- machine trap handling --
-            -- --------------------------------------------------------------------
-            when csr_mscratch_c =>  -- R/W: mscratch - machine scratch register
+          -- machine trap handling --
+          -- --------------------------------------------------------------------
+          if (csr.addr(11 downto 4) = csr_class_trap_c) then -- machine trap handling CSR class
+            -- R/W: mscratch - machine scratch register --
+            if (csr.addr(3 downto 0) = csr_mscratch_c(3 downto 0)) then
               csr.mscratch <= csr.wdata;
-            when csr_mepc_c => -- R/W: mepc - machine exception program counter
+            end if;
+            -- R/W: mepc - machine exception program counter --
+            if (csr.addr(3 downto 0) = csr_mepc_c(3 downto 0)) then
               csr.mepc <= csr.wdata(data_width_c-1 downto 1) & '0';
-            when csr_mcause_c => -- R/W: mcause - machine trap cause
+            end if;
+            -- R/W: mcause - machine trap cause --
+            if (csr.addr(3 downto 0) = csr_mcause_c(3 downto 0)) then
               csr.mcause(csr.mcause'left) <= csr.wdata(31); -- 1: interrupt, 0: exception
               csr.mcause(4 downto 0)      <= csr.wdata(4 downto 0); -- identifier
-            when csr_mtval_c => -- R/W: mtval - machine bad address/instruction
+            end if;
+            -- R/W: mtval - machine bad address/instruction --
+            if (csr.addr(3 downto 0) = csr_mtval_c(3 downto 0)) then
               csr.mtval <= csr.wdata;
-            when csr_mip_c => -- R/W: mip - machine interrupt pending
+            end if;
+            -- R/W: mip - machine interrupt pending --
+            if (csr.addr(3 downto 0) = csr_mip_c(3 downto 0)) then
               csr.mip_clear(interrupt_msw_irq_c)   <= not csr.wdata(03);
               csr.mip_clear(interrupt_mtime_irq_c) <= not csr.wdata(07);
               csr.mip_clear(interrupt_mext_irq_c)  <= not csr.wdata(11);
               for i in 0 to 15 loop -- fast interrupt channels 0..15
                 csr.mip_clear(interrupt_firq_0_c+i) <= not csr.wdata(16+i);
               end loop; -- i
+            end if;
+          end if;
 
-            -- physical memory protection: R/W: pmpcfg* - PMP configuration registers --
-            -- --------------------------------------------------------------------
-            when csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c  | csr_pmpcfg3_c  | csr_pmpcfg4_c  | csr_pmpcfg5_c  | csr_pmpcfg6_c  | csr_pmpcfg7_c |
-                 csr_pmpcfg8_c | csr_pmpcfg9_c | csr_pmpcfg10_c | csr_pmpcfg11_c | csr_pmpcfg12_c | csr_pmpcfg13_c | csr_pmpcfg14_c | csr_pmpcfg15_c =>
-              if (PMP_NUM_REGIONS > 0) then
-                for i in 0 to PMP_NUM_REGIONS-1 loop
-                  if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
-                    if (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpcfg access
-                      csr.pmpcfg(i)(0) <= csr.wdata((i mod 4)*8+0); -- R (rights.read)
-                      csr.pmpcfg(i)(1) <= csr.wdata((i mod 4)*8+1); -- W (rights.write)
-                      csr.pmpcfg(i)(2) <= csr.wdata((i mod 4)*8+2); -- X (rights.execute)
-                      csr.pmpcfg(i)(3) <= csr.wdata((i mod 4)*8+3) and csr.wdata((i mod 4)*8+4); -- A_L
-                      csr.pmpcfg(i)(4) <= csr.wdata((i mod 4)*8+3) and csr.wdata((i mod 4)*8+4); -- A_H - NAPOT/OFF only
-                      csr.pmpcfg(i)(5) <= '0'; -- reserved
-                      csr.pmpcfg(i)(6) <= '0'; -- reserved
-                      csr.pmpcfg(i)(7) <= csr.wdata((i mod 4)*8+7); -- L (locked / rights also enforced in m-mode)
-                    end if;
+          -- physical memory protection: R/W: pmpcfg* - PMP configuration registers --
+          -- --------------------------------------------------------------------
+          if (csr.addr(11 downto 4) = csr_class_pmpcfg_c) then -- pmp configuration CSR class
+            if (PMP_NUM_REGIONS > 0) then
+              for i in 0 to PMP_NUM_REGIONS-1 loop
+                if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
+                  if (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpcfg access
+                    csr.pmpcfg(i)(0) <= csr.wdata((i mod 4)*8+0); -- R (rights.read)
+                    csr.pmpcfg(i)(1) <= csr.wdata((i mod 4)*8+1); -- W (rights.write)
+                    csr.pmpcfg(i)(2) <= csr.wdata((i mod 4)*8+2); -- X (rights.execute)
+                    csr.pmpcfg(i)(3) <= csr.wdata((i mod 4)*8+3) and csr.wdata((i mod 4)*8+4); -- A_L
+                    csr.pmpcfg(i)(4) <= csr.wdata((i mod 4)*8+3) and csr.wdata((i mod 4)*8+4); -- A_H - NAPOT/OFF only
+                    csr.pmpcfg(i)(5) <= '0'; -- reserved
+                    csr.pmpcfg(i)(6) <= '0'; -- reserved
+                    csr.pmpcfg(i)(7) <= csr.wdata((i mod 4)*8+7); -- L (locked / rights also enforced in m-mode)
                   end if;
-                end loop; -- i (PMP regions)
-              else
-                NULL;
-              end if;
+                end if;
+              end loop; -- i (PMP regions)
+            end if;
+          end if;
 
-            -- physical memory protection: R/W: pmpaddr* - PMP address registers --
-            -- --------------------------------------------------------------------
-            when csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  | csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  |
-                 csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c | csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c |
-                 csr_pmpaddr16_c | csr_pmpaddr17_c | csr_pmpaddr18_c | csr_pmpaddr19_c | csr_pmpaddr20_c | csr_pmpaddr21_c | csr_pmpaddr22_c | csr_pmpaddr23_c |
-                 csr_pmpaddr24_c | csr_pmpaddr25_c | csr_pmpaddr26_c | csr_pmpaddr27_c | csr_pmpaddr28_c | csr_pmpaddr29_c | csr_pmpaddr30_c | csr_pmpaddr31_c |
-                 csr_pmpaddr32_c | csr_pmpaddr33_c | csr_pmpaddr34_c | csr_pmpaddr35_c | csr_pmpaddr36_c | csr_pmpaddr37_c | csr_pmpaddr38_c | csr_pmpaddr39_c |
-                 csr_pmpaddr40_c | csr_pmpaddr41_c | csr_pmpaddr42_c | csr_pmpaddr43_c | csr_pmpaddr44_c | csr_pmpaddr45_c | csr_pmpaddr46_c | csr_pmpaddr47_c |
-                 csr_pmpaddr48_c | csr_pmpaddr49_c | csr_pmpaddr50_c | csr_pmpaddr51_c | csr_pmpaddr52_c | csr_pmpaddr53_c | csr_pmpaddr54_c | csr_pmpaddr55_c |
-                 csr_pmpaddr56_c | csr_pmpaddr57_c | csr_pmpaddr58_c | csr_pmpaddr59_c | csr_pmpaddr60_c | csr_pmpaddr61_c | csr_pmpaddr62_c | csr_pmpaddr63_c =>
-              if (PMP_NUM_REGIONS > 0) then
-                for i in 0 to PMP_NUM_REGIONS-1 loop
-                  pmpaddr_v := std_ulogic_vector(unsigned(csr_pmpaddr0_c(6 downto 0)) + i); -- adapt to *non-aligned* base address (csr_pmpaddr0_c)
-                  if (csr.addr(6 downto 0) = pmpaddr_v) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
-                    csr.pmpaddr(i) <= csr.wdata;
-                    csr.pmpaddr(i)(index_size_f(PMP_MIN_GRANULARITY)-4 downto 0) <= (others => '1');
-                  end if;
-                end loop; -- i (PMP regions)
-              else
-                NULL;
-              end if;
+          -- physical memory protection: R/W: pmpaddr* - PMP address registers --
+          -- --------------------------------------------------------------------
+          if (csr.addr(11 downto 4) =  csr_pmpaddr0_c(11 downto 4)) or (csr.addr(11 downto 4) = csr_pmpaddr16_c(11 downto 4)) or
+             (csr.addr(11 downto 4) = csr_pmpaddr32_c(11 downto 4)) or (csr.addr(11 downto 4) = csr_pmpaddr48_c(11 downto 4)) then 
+            if (PMP_NUM_REGIONS > 0) then
+              for i in 0 to PMP_NUM_REGIONS-1 loop
+                if (csr.addr(6 downto 0) = std_ulogic_vector(unsigned(csr_pmpaddr0_c(6 downto 0)) + i)) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
+                  csr.pmpaddr(i) <= csr.wdata;
+                  csr.pmpaddr(i)(index_size_f(PMP_MIN_GRANULARITY)-4 downto 0) <= (others => '1');
+                end if;
+              end loop; -- i (PMP regions)
+            end if;
+          end if;
 
-            -- machine counter setup --
-            -- --------------------------------------------------------------------
-            when csr_mcountinhibit_c => -- R/W: mcountinhibit - machine counter-inhibit register
-              csr.mcountinhibit_cy  <= csr.wdata(0); -- enable auto-increment of [m]cycle[h] counter
-              csr.mcountinhibit_ir  <= csr.wdata(2); -- enable auto-increment of [m]instret[h] counter
-              csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- enable auto-increment of [m]hpmcounter*[h] counter
+          -- machine counter setup --
+          -- --------------------------------------------------------------------
+          -- R/W: mcountinhibit - machine counter-inhibit register --
+          if (csr.addr = csr_mcountinhibit_c) then
+            csr.mcountinhibit_cy  <= csr.wdata(0); -- enable auto-increment of [m]cycle[h] counter
+            csr.mcountinhibit_ir  <= csr.wdata(2); -- enable auto-increment of [m]instret[h] counter
+            csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- enable auto-increment of [m]hpmcounter*[h] counter
+          end if;
 
-            -- machine performance-monitoring event selector --
-            -- --------------------------------------------------------------------
-            when csr_mhpmevent3_c  | csr_mhpmevent4_c  | csr_mhpmevent5_c  | csr_mhpmevent6_c  | csr_mhpmevent7_c  | csr_mhpmevent8_c  |
-                 csr_mhpmevent9_c  | csr_mhpmevent10_c | csr_mhpmevent11_c | csr_mhpmevent12_c | csr_mhpmevent13_c | csr_mhpmevent14_c |
-                 csr_mhpmevent15_c | csr_mhpmevent16_c | csr_mhpmevent17_c | csr_mhpmevent18_c | csr_mhpmevent19_c | csr_mhpmevent20_c |
-                 csr_mhpmevent21_c | csr_mhpmevent22_c | csr_mhpmevent23_c | csr_mhpmevent24_c | csr_mhpmevent25_c | csr_mhpmevent26_c |
-                 csr_mhpmevent27_c | csr_mhpmevent28_c | csr_mhpmevent29_c | csr_mhpmevent30_c | csr_mhpmevent31_c => -- R/W: mhpmevent* - machine performance-monitoring event selector
-              if (HPM_NUM_CNTS > 0) then
-                for i in 0 to HPM_NUM_CNTS-1 loop
-                  if (csr.addr(4 downto 0) = std_ulogic_vector(to_unsigned(i+3, 5))) then
-                    csr.mhpmevent(i) <= csr.wdata(csr.mhpmevent(i)'left downto 0);
-                    csr.mhpmevent(i)(1) <= '0'; -- would be used for "TIME"
-                  end if;
-                end loop; -- i (CSRs)
-              else
-                NULL;
-              end if;
+          -- machine performance-monitoring event selector --
+          -- --------------------------------------------------------------------
+          if (unsigned(csr.addr) >= unsigned(csr_mhpmevent3_c)) and (unsigned(csr.addr) <= unsigned(csr_mhpmevent31_c)) then
+            if (HPM_NUM_CNTS > 0) then
+              for i in 0 to HPM_NUM_CNTS-1 loop
+                if (csr.addr(4 downto 0) = std_ulogic_vector(to_unsigned(i+3, 5))) then
+                  csr.mhpmevent(i) <= csr.wdata(csr.mhpmevent(i)'left downto 0);
+                  csr.mhpmevent(i)(1) <= '0'; -- would be used for "TIME"
+                end if;
+              end loop; -- i (CSRs)
+            end if;
+          end if;
 
-            -- undefined --
-            -- --------------------------------------------------------------------
-            when others =>
-              NULL;
-
-          end case;
 
         -- --------------------------------------------------------------------------------
         -- CSR access by hardware
@@ -2228,9 +2224,42 @@ begin
             csr.mstatus_mpp <= priv_mode_m_c;
           end if;
 
-        end if; -- hardware csr access
-
+        end if; -- /hardware csr access
       end if;
+
+      -- --------------------------------------------------------------------------------
+      -- override write access for disabled functions
+      -- --------------------------------------------------------------------------------
+
+      -- user mode disabled --
+      if (CPU_EXTENSION_RISCV_U = false) then
+        csr.privilege      <= priv_mode_m_c;
+        csr.mstatus_mpp    <= priv_mode_m_c;
+        csr.mcounteren_cy  <= '0';
+        csr.mcounteren_tm  <= '0';
+        csr.mcounteren_ir  <= '0';
+        csr.mcounteren_hpm <= (others => '0');
+      end if;
+
+      -- pmp disabled --
+      if (PMP_NUM_REGIONS = 0) then
+        csr.pmpcfg  <= (others => (others => '0'));
+        csr.pmpaddr <= (others => (others => '1'));
+      end if;
+
+      -- hpms disabled --
+      if (HPM_NUM_CNTS = 0) then
+        csr.mhpmevent         <= (others => (others => '0'));
+        csr.mcounteren_hpm    <= (others => '0');
+        csr.mcountinhibit_hpm <= (others => '0');
+      end if;
+
+      -- floating-point extension disabled --
+      if (CPU_EXTENSION_RISCV_F = false) then
+        csr.fflags <= (others => '0');
+        csr.frm    <= (others => '0');
+      end if;
+
     end if;
   end process csr_write_access;
 
