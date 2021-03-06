@@ -14,6 +14,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 06.03.2021 | 1.5.2.3 | clean-up of CPU control code: fixed minor bug in F-exension's instruction decoding; changed coding style for CSR write access (old version might have caused "inferring latch..." warning in Intel Quartus); fixed default values for CSRs when according extensions are disabled |
 | 04.03.2021 | 1.5.2.2 | added two new generics to configure CFS IO conduit sizes (implementing [issue #13](https://github.com/stnolting/neorv32/issues/13)): `IO_CFS_IN_SIZE` - type: `positive`, configures the size of `cfs_in_i` signal; `IO_CFS_OUT_SIZE` - type: `positive`, configures the size of `cfs_out_o` signal; minor edits to floating-point CPU infrastructure |
 | 03.03.2021 | 1.5.2.1 | added CPU core infrastructure for *upcoming* single-precision floating-point extension `F`; :warning: **floating-point extension is NOT OPERATIONAL YET!** added new rtl file for the floating-point unit `rtl/core/neorv32_cpu_cp_fpu.vhd` (blank template!) |
 | 01.03.2021 | [**:rocket:1.5.2.0**](https://github.com/stnolting/neorv32/releases/tag/v1.5.2.0) | **New release** |
