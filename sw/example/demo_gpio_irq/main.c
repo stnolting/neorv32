@@ -106,19 +106,23 @@ int main() {
 
 
   // The pin-change interrupt of the GPIO module is connected to the
-  // CPU's fast interrupt input channel 1 (= FIRQ1).
+  // CPU's fast interrupt input channel 8 (= FIRQ8).
 
   // install interrupt handler for GPIO pin-change interrupt
-  int install_err = 0;
-  install_err += neorv32_rte_exception_install(RTE_TRAP_FIRQ_1, gpio_pin_change_irq_handler);
+  int install_err = neorv32_rte_exception_install(RTE_TRAP_FIRQ_8, gpio_pin_change_irq_handler);
 
   if (install_err) {
     neorv32_uart_printf("RTE install error!\n");
     return 0;
   }
 
-  // activate fast interrupt channel 1 (which is GPIO_PIN_CHANGE)
-  install_err += neorv32_cpu_irq_enable(CSR_MIE_FIRQ1E);
+  // activate fast interrupt channel 8 (which is GPIO_PIN_CHANGE)
+  install_err = neorv32_cpu_irq_enable(CSR_MIE_FIRQ8E);
+
+  if (install_err) {
+    neorv32_uart_printf("IRQ enable error!\n");
+    return 0;
+  }
 
   // activate GPIO pin-change irq only for input pins 0 to 7
   neorv32_gpio_pin_change_config(0x000000ff);
