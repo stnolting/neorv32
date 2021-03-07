@@ -439,38 +439,41 @@ void neorv32_rte_print_hw_config(void) {
 
   tmp = SYSINFO_FEATURES;
 
-  neorv32_uart_printf("GPIO  - ");
+  neorv32_uart_printf("GPIO   - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_GPIO));
 
-  neorv32_uart_printf("MTIME - ");
+  neorv32_uart_printf("MTIME  - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_MTIME));
 
-  neorv32_uart_printf("UART0 - ");
+  neorv32_uart_printf("UART0  - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_UART0));
 
-  neorv32_uart_printf("UART1 - ");
+  neorv32_uart_printf("UART1  - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_UART1));
 
-  neorv32_uart_printf("SPI   - ");
+  neorv32_uart_printf("SPI    - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_SPI));
 
-  neorv32_uart_printf("TWI   - ");
+  neorv32_uart_printf("TWI    - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_TWI));
 
-  neorv32_uart_printf("PWM   - ");
+  neorv32_uart_printf("PWM    - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_PWM));
 
-  neorv32_uart_printf("WDT   - ");
+  neorv32_uart_printf("WDT    - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_WDT));
 
-  neorv32_uart_printf("TRNG  - ");
+  neorv32_uart_printf("TRNG   - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_TRNG));
 
-  neorv32_uart_printf("CFS   - ");
+  neorv32_uart_printf("CFS    - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_CFS));
 
-  neorv32_uart_printf("NCO   - ");
+  neorv32_uart_printf("NCO    - ");
   __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_NCO));
+
+  neorv32_uart_printf("NEOLED - ");
+  __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_NEOLED));
 }
 
 
