@@ -89,7 +89,7 @@ void neorv32_spi_setup(uint8_t prsc, uint8_t clk_polarity, uint8_t data_size) {
 
 
 /**********************************************************************//**
- * Disable and SPI controller.
+ * Disable SPI controller.
  **************************************************************************/
 void neorv32_spi_disable(void) {
 
