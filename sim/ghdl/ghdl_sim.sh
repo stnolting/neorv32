@@ -57,6 +57,7 @@ ghdl -a --work=neorv32 $srcdir_core/neorv32_gpio.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_imem.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_mtime.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_nco.vhd
+ghdl -a --work=neorv32 $srcdir_core/neorv32_neoled.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_pwm.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_spi.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_sysinfo.vhd
