@@ -106,7 +106,8 @@ entity neorv32_top is
     IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0); -- custom CFS configuration generic
     IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
-    IO_NCO_EN                    : boolean := true    -- implement numerically-controlled oscillator (NCO)?
+    IO_NCO_EN                    : boolean := true;   -- implement numerically-controlled oscillator (NCO)?
+    IO_NEOLED_EN                 : boolean := true    -- implement NeoPixel-compatible smart LED interface (NEOLED)?
   );
   port (
     -- Global control --
@@ -166,6 +167,9 @@ entity neorv32_top is
     -- NCO output (available if IO_NCO_EN = true) --
     nco_o       : out std_ulogic_vector(02 downto 0); -- numerically-controlled oscillator channels
 
+    -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
+    neoled_o    : out std_ulogic; -- async serial data line
+
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
 
@@ -203,16 +207,17 @@ architecture neorv32_top_rtl of neorv32_top is
   signal clk_div    : std_ulogic_vector(11 downto 0);
   signal clk_div_ff : std_ulogic_vector(11 downto 0);
   signal clk_gen    : std_ulogic_vector(07 downto 0);
-  signal clk_gen_en : std_ulogic_vector(07 downto 0);
+  signal clk_gen_en : std_ulogic_vector(08 downto 0);
   --
-  signal wdt_cg_en   : std_ulogic;
-  signal uart0_cg_en : std_ulogic;
-  signal uart1_cg_en : std_ulogic;
-  signal spi_cg_en   : std_ulogic;
-  signal twi_cg_en   : std_ulogic;
-  signal pwm_cg_en   : std_ulogic;
-  signal cfs_cg_en   : std_ulogic;
-  signal nco_cg_en   : std_ulogic;
+  signal wdt_cg_en    : std_ulogic;
+  signal uart0_cg_en  : std_ulogic;
+  signal uart1_cg_en  : std_ulogic;
+  signal spi_cg_en    : std_ulogic;
+  signal twi_cg_en    : std_ulogic;
+  signal pwm_cg_en    : std_ulogic;
+  signal cfs_cg_en    : std_ulogic;
+  signal nco_cg_en    : std_ulogic;
+  signal neoled_cg_en : std_ulogic;
 
   -- bus interface --
   type bus_interface_t is record
@@ -269,6 +274,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cfs_ack        : std_ulogic;
   signal nco_rdata      : std_ulogic_vector(data_width_c-1 downto 0);
   signal nco_ack        : std_ulogic;
+  signal neoled_rdata   : std_ulogic_vector(data_width_c-1 downto 0);
+  signal neoled_ack     : std_ulogic;
   signal sysinfo_rdata  : std_ulogic_vector(data_width_c-1 downto 0);
   signal sysinfo_ack    : std_ulogic;
 
@@ -288,6 +295,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal twi_irq       : std_ulogic;
   signal cfs_irq       : std_ulogic;
   signal cfs_irq_ack   : std_ulogic;
+  signal neoled_irq    : std_ulogic;
 
   -- misc --
   signal mtime_time : std_ulogic_vector(63 downto 0); -- current system time from MTIME
@@ -366,6 +374,7 @@ begin
       clk_gen_en(5) <= pwm_cg_en;
       clk_gen_en(6) <= cfs_cg_en;
       clk_gen_en(7) <= nco_cg_en;
+      clk_gen_en(8) <= neoled_cg_en;
       if (or_all_f(clk_gen_en) = '1') then
         clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
       end if;
@@ -476,7 +485,7 @@ begin
   fast_irq(06) <= spi_irq;       -- SPI transmission done
   fast_irq(07) <= twi_irq;       -- TWI transmission done
   fast_irq(08) <= gpio_irq;      -- GPIO pin-change
-  fast_irq(09) <= '0';           -- reserved
+  fast_irq(09) <= neoled_irq;    -- NEOLED buffer free
 
   -- fast interrupts - platform level (for custom use) --
   fast_irq(10) <= soc_firq_i(0);
@@ -594,11 +603,11 @@ begin
 
   -- processor bus: CPU transfer data input --
   p_bus.rdata <= (imem_rdata or dmem_rdata or bootrom_rdata) or wishbone_rdata or (gpio_rdata or mtime_rdata or uart0_rdata or uart1_rdata or
-                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or cfs_rdata or nco_rdata or sysinfo_rdata);
+                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or cfs_rdata or nco_rdata or neoled_rdata or  sysinfo_rdata);
 
   -- processor bus: CPU transfer ACK input --
   p_bus.ack <= (imem_ack or dmem_ack or bootrom_ack) or wishbone_ack or (gpio_ack or mtime_ack or uart0_ack or uart1_ack or
-               spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or cfs_ack or nco_ack or sysinfo_ack);
+               spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or cfs_ack or nco_ack or neoled_ack or sysinfo_ack);
 
   -- processor bus: CPU transfer data bus error input --
   p_bus.err <= wishbone_err;
@@ -1150,6 +1159,40 @@ begin
   end generate;
 
 
+  -- Smart LED (WS2811/WS2812) Interface (NEOLED) -------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_neoled_inst_true:
+  if (IO_NEOLED_EN = true) generate
+    neorv32_neoled_inst: neorv32_neoled
+    port map (
+      -- host access --
+      clk_i       => clk_i,        -- global clock line
+      addr_i      => p_bus.addr,   -- address
+      rden_i      => io_rden,      -- read enable
+      wren_i      => io_wren,      -- write enable
+      data_i      => p_bus.wdata,  -- data in
+      data_o      => neoled_rdata, -- data out
+      ack_o       => neoled_ack,   -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o => neoled_cg_en, -- enable clock generator
+      clkgen_i    => clk_gen,
+      -- interrupt --
+      irq_o       => neoled_irq,   -- interrupt request
+      -- NEOLED output --
+      neoled_o    => neoled_o      -- serial async data line
+    );
+  end generate;
+
+  neorv32_neoled_inst_false:
+  if (IO_NEOLED_EN = false) generate
+    neoled_rdata <= (others => '0');
+    neoled_ack   <= '0';
+    neoled_cg_en <= '0';
+    neoled_irq   <= '0';
+    neoled_o     <= '0';
+  end generate;
+
+
   -- System Configuration Information Memory (SYSINFO) --------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_sysinfo_inst: neorv32_sysinfo
@@ -1183,7 +1226,8 @@ begin
     IO_WDT_EN            => IO_WDT_EN,            -- implement watch dog timer (WDT)?
     IO_TRNG_EN           => IO_TRNG_EN,           -- implement true random number generator (TRNG)?
     IO_CFS_EN            => IO_CFS_EN,            -- implement custom functions subsystem (CFS)?
-    IO_NCO_EN            => IO_NCO_EN             -- implement numerically-controlled oscillator (NCO)?
+    IO_NCO_EN            => IO_NCO_EN,            -- implement numerically-controlled oscillator (NCO)?
+    IO_NEOLED_EN         => IO_NEOLED_EN          -- implement NeoPixel-compatible smart LED interface (NEOLED)?
   )
   port map (
     -- host access --

@@ -73,7 +73,8 @@ entity neorv32_sysinfo is
     IO_WDT_EN            : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN           : boolean := true;   -- implement true random number generator (TRNG)?
     IO_CFS_EN            : boolean := true;   -- implement custom functions subsystem (CFS)?
-    IO_NCO_EN            : boolean := true    -- implement numerically-controlled oscillator (NCO)?
+    IO_NCO_EN            : boolean := true;   -- implement numerically-controlled oscillator (NCO)?
+    IO_NEOLED_EN         : boolean := true    -- implement NeoPixel-compatible smart LED interface (NEOLED)?
   );
   port (
     -- host access --
@@ -132,19 +133,20 @@ begin
   --
   sysinfo_mem(2)(15 downto 07) <= (others => '0'); -- reserved
   -- IO --
-  sysinfo_mem(2)(16) <= bool_to_ulogic_f(IO_GPIO_EN);  -- general purpose input/output port unit (GPIO) implemented?
-  sysinfo_mem(2)(17) <= bool_to_ulogic_f(IO_MTIME_EN); -- machine system timer (MTIME) implemented?
-  sysinfo_mem(2)(18) <= bool_to_ulogic_f(IO_UART0_EN); -- primary universal asynchronous receiver/transmitter (UART0) implemented?
-  sysinfo_mem(2)(19) <= bool_to_ulogic_f(IO_SPI_EN);   -- serial peripheral interface (SPI) implemented?
-  sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_EN);   -- two-wire interface (TWI) implemented?
-  sysinfo_mem(2)(21) <= bool_to_ulogic_f(IO_PWM_EN);   -- pulse-width modulation unit (PWM) implemented?
-  sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_EN);   -- watch dog timer (WDT) implemented?
-  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFS_EN);   -- custom functions subsystem (CFS) implemented?
-  sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_EN);  -- true random number generator (TRNG) implemented?
-  sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_NCO_EN);   -- numerically-controlled oscillator (NCO) implemented?
-  sysinfo_mem(2)(26) <= bool_to_ulogic_f(IO_UART1_EN); -- secondary universal asynchronous receiver/transmitter (UART1) implemented?
+  sysinfo_mem(2)(16) <= bool_to_ulogic_f(IO_GPIO_EN);   -- general purpose input/output port unit (GPIO) implemented?
+  sysinfo_mem(2)(17) <= bool_to_ulogic_f(IO_MTIME_EN);  -- machine system timer (MTIME) implemented?
+  sysinfo_mem(2)(18) <= bool_to_ulogic_f(IO_UART0_EN);  -- primary universal asynchronous receiver/transmitter (UART0) implemented?
+  sysinfo_mem(2)(19) <= bool_to_ulogic_f(IO_SPI_EN);    -- serial peripheral interface (SPI) implemented?
+  sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_EN);    -- two-wire interface (TWI) implemented?
+  sysinfo_mem(2)(21) <= bool_to_ulogic_f(IO_PWM_EN);    -- pulse-width modulation unit (PWM) implemented?
+  sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_EN);    -- watch dog timer (WDT) implemented?
+  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFS_EN);    -- custom functions subsystem (CFS) implemented?
+  sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_EN);   -- true random number generator (TRNG) implemented?
+  sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_NCO_EN);    -- numerically-controlled oscillator (NCO) implemented?
+  sysinfo_mem(2)(26) <= bool_to_ulogic_f(IO_UART1_EN);  -- secondary universal asynchronous receiver/transmitter (UART1) implemented?
+  sysinfo_mem(2)(27) <= bool_to_ulogic_f(IO_NEOLED_EN); -- NeoPixel-compatible smart LED interface (NEOLED) implemented?
   --
-  sysinfo_mem(2)(31 downto 27) <= (others => '0'); -- reserved
+  sysinfo_mem(2)(31 downto 28) <= (others => '0'); -- reserved
 
   -- SYSINFO(3): Cache configuration --
   sysinfo_mem(3)(03 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE),    4)) when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(block_size_in_bytes)
