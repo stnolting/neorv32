@@ -63,6 +63,7 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
   * serial interfaces (SPI, TWI, UARTs)
   * general purpose IO and PWM channels
   * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
+  * dedicated NeoPixel(c) LED interface
   * subsystem for custom co-processors
   * [more ...](#NEORV32-Processor-Features)
 * Software framework
@@ -103,7 +104,7 @@ all the [provided example programs](https://github.com/stnolting/neorv32/tree/ma
 | Project component | CI status |
 |:----------------- |:----------|
 | [NEORV32 processor](https://github.com/stnolting/neorv32)                                              | [![Processor Check](https://github.com/stnolting/neorv32/workflows/Processor%20Check/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22Processor+Check%22) |
-| [SW Framework Documentation (online @GH-pages)](https://stnolting.github.io/neorv32/files.html)        | [![Doc@GitHub-pages](https://github.com/stnolting/neorv32/workflows/Deploy%20SW%20Framework%20Documentation%20to%20GitHub-Pages/badge.svg)](https://stnolting.github.io/neorv32/files.html) |
+| [SW Framework Documentation (online at GH-pages)](https://stnolting.github.io/neorv32/files.html)        | [![Doc@GitHub-pages](https://github.com/stnolting/neorv32/workflows/Deploy%20SW%20Framework%20Documentation%20to%20GitHub-Pages/badge.svg)](https://stnolting.github.io/neorv32/files.html) |
 | [Pre-built toolchains](https://github.com/stnolting/riscv-gcc-prebuilt)                                | [![Test Toolchains](https://github.com/stnolting/riscv-gcc-prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv-gcc-prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) |
 | [RISC-V architecture test](https://github.com/stnolting/neorv32/blob/master/riscv-arch-test/README.md) | [![riscv-arch-test](https://github.com/stnolting/neorv32/actions/workflows/riscv-arch-test.yml/badge.svg)](https://github.com/stnolting/neorv32/actions/workflows/riscv-arch-test.yml) |
 
@@ -135,6 +136,7 @@ is highly customizable via the processor's top generics and already provides the
 * ring-oscillator-based true random number generator (**TRNG**)
 * custom functions subsystem (**CFS**) for tightly-coupled custom co-processor extensions
 * numerically-controlled oscillator (**NCO**) with three independent channels
+* smart LED interface (**NEOLED**) - WS2812 / NeoPixel(c) compatible
 * system configuration information memory to check hardware configuration by software (**SYSINFO**)
 
 
@@ -313,7 +315,7 @@ However, the size of the register file is cut in half.
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version [`1.5.1.4`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.5.2.4`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
 |:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
@@ -326,6 +328,7 @@ Results generated for hardware version [`1.5.1.4`](https://github.com/stnolting/
 | IMEM      | Processor-internal instruction memory (default 16kb) |   6 |   2 |     131 072 |    0 |
 | MTIME     | Machine system timer                                 | 274 | 166 |           0 |    0 |
 | NCO       | Numerically-controlled oscillator                    | 254 | 226 |           0 |    0 |
+| NEOLED    | Smart LED Interface (NeoPixel-compatibile) [4x FIFO] | 347 | 309 |           0 |    0 |
 | PWM       | Pulse-width modulation controller                    |  71 |  69 |           0 |    0 |
 | SPI       | Serial peripheral interface                          | 138 | 124 |           0 |    0 |
 | SYSINFO   | System configuration information memory              |  11 |  10 |           0 |    0 |
@@ -677,6 +680,8 @@ link in question.
 "iCE40", "UltraPlus" and "Radiant" are trademarks of Lattice Semiconductor Corporation.
 
 "AXI", "AXI4" and "AXI4-Lite" are trademarks of Arm Holdings plc.
+
+"NeoPixel" is a trademark of Adafruit Industries.
 
 
 
