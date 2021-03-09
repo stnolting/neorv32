@@ -63,7 +63,7 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
   * serial interfaces (SPI, TWI, UARTs)
   * general purpose IO and PWM channels
   * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
-  * dedicated NeoPixel(c) LED interface
+  * dedicated NeoPixel(TM) LED interface
   * subsystem for custom co-processors
   * [more ...](#NEORV32-Processor-Features)
 * Software framework
@@ -176,6 +176,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
   * `Zbb` base instruction set: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR[I]` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
   * `Zbs` single-bit instructions: `SBSET[I]` `SBCLR[I]` `SBINV[I]` `SBEXT[I]`
+  * `Zba` shifted-add instructions: `SH1ADD` `SH2ADD` `SH3ADD`
 
 
 #### `C` - Compressed instructions extension
