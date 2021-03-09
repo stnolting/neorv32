@@ -43,6 +43,25 @@
 #include "neorv32_cpu.h"
 
 
+/**********************************************************************//**
+ * Unavailable extensions warning.
+ **************************************************************************/
+#if defined __riscv_f || (__riscv_flen == 32)
+  #warning Single-precision floating-point extension <F> is WORK-IN-PROGRESS and NOT FULLY OPERATIONAL yet!
+#endif
+
+#if defined __riscv_d || (__riscv_flen == 64)
+  #error Double-precision floating-point extension <D> is NOT supported!
+#endif
+
+#if (__riscv_xlen > 32)
+  #error Only 32-bit <rv32> is supported!
+#endif
+
+#ifdef __riscv_b
+  #warning Bit-manipulation extension <B> is still experimental (non-ratified) and does not support all Zb* subsets yet.
+#endif
+
 
 /**********************************************************************//**
  * >Private< helper functions.
