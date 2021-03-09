@@ -49,11 +49,13 @@
 /** UART BAUD rate */
 #define BAUD_RATE      (19200)
 //** Number of test cases for each instruction */
-#define NUM_TEST_CASES (10000)
+#define NUM_TEST_CASES (1000000)
 //** Run Zbb tests when 1 */
 #define RUN_ZBB_TESTS  (1)
 //** Run Zbs tests when 1 */
 #define RUN_ZBS_TESTS  (1)
+//** Run Zba tests when 1 */
+#define RUN_ZBA_TESTS  (1)
 /**@}*/
 
 
@@ -401,6 +403,46 @@ int main() {
   print_report(err_cnt, num_tests);
 #endif
 
+  // -------------------------------------------------------------
+  // Zba
+  // -------------------------------------------------------------
+#if (RUN_ZBA_TESTS != 0)
+  // SH1ADD
+  neorv32_uart_printf("\nSH1ADD:\n");
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    opb = xorshift32();
+    res_sw = riscv_emulate_sh1add(opa, opb);
+    res_hw = riscv_intrinsic_sh1add(opa, opb);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+
+  // SH2ADD
+  neorv32_uart_printf("\nSH2ADD:\n");
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    opb = xorshift32();
+    res_sw = riscv_emulate_sh2add(opa, opb);
+    res_hw = riscv_intrinsic_sh2add(opa, opb);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+
+  // SH3ADD
+  neorv32_uart_printf("\nSH3ADD:\n");
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    opb = xorshift32();
+    res_sw = riscv_emulate_sh3add(opa, opb);
+    res_hw = riscv_intrinsic_sh3add(opa, opb);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+#endif
 
   neorv32_uart_printf("\nBit manipulation extension tests done.\n");
 

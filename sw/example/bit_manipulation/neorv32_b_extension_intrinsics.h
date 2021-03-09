@@ -680,6 +680,72 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbexti20(uint32_t rs1) {
 }
 
 
+// ---------------------------------------------
+// Zba - Single-bit instructions
+// ---------------------------------------------
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SH1ADD (shifted-add << 1) [B.Zba]
+ *
+ * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return (rs1 << 1) + rs2
+ **************************************************************************/
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_sh1add(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+
+  // sh1add a0, a0, a1
+  CUSTOM_INSTR_R_TYPE(0b0010000, a1, a0, 0b010, a0, 0b0110011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SH2ADD (shifted-add << 2) [B.Zba]
+ *
+ * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return (rs1 << 2) + rs2
+ **************************************************************************/
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_sh2add(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+
+  // sh2add a0, a0, a1
+  CUSTOM_INSTR_R_TYPE(0b0010000, a1, a0, 0b100, a0, 0b0110011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SH3ADD (shifted-add << 3) [B.Zba]
+ *
+ * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return (rs1 << 3) + rs2
+ **************************************************************************/
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_sh3add(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+
+  // sh3add a0, a0, a1
+  CUSTOM_INSTR_R_TYPE(0b0010000, a1, a0, 0b110, a0, 0b0110011);
+
+  return result;
+}
+
+
+
 // ################################################################################################
 // Emulation functions
 // ################################################################################################
@@ -1074,6 +1140,50 @@ uint32_t riscv_emulate_sbext(uint32_t rs1, uint32_t rs2) {
   uint32_t shamt = rs2 & 0x1f;
 
   return (rs1 >> shamt) & 1;
+}
+
+
+// ---------------------------------------------
+// Zba - Single-bit instructions
+// ---------------------------------------------
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SH1ADD (shifted-add << 1) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return (rs1 << 1) + rs2
+ **************************************************************************/
+uint32_t riscv_emulate_sh1add(uint32_t rs1, uint32_t rs2) {
+
+  return (rs1 << 1) + rs2;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SH2ADD (shifted-add << 2) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return (rs1 << 2) + rs2
+ **************************************************************************/
+uint32_t riscv_emulate_sh2add(uint32_t rs1, uint32_t rs2) {
+
+  return (rs1 << 2) + rs2;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation SH3ADD (shifted-add << 3) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return (rs1 << 3) + rs2
+ **************************************************************************/
+uint32_t riscv_emulate_sh3add(uint32_t rs1, uint32_t rs2) {
+
+  return (rs1 << 3) + rs2;
 }
 
 
