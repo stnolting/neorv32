@@ -6,8 +6,9 @@
 -- # operations.                                                                                   #
 -- #                                                                                               #
 -- # Supported sub-extensions (Zb*):                                                               #
--- # - Zbb: Base instructions (mandatory)                                                          #
--- # - Zbs: Single-bit instructions (optional)                                                     #
+-- # - Zbb: Base instructions                                                                      #
+-- # - Zbs: Single-bit instructions                                                                #
+-- # - Zba: Shifted-add instructions                                                               #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -68,6 +69,7 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
 
   -- extension configuration --
   constant zbs_enable_c : boolean := true; -- enable single-bit instructions
+  constant zba_enable_c : boolean := true; -- enable shifted-add instructions
 
   -- commands --
   constant op_clz_c   : natural := 0;
@@ -91,7 +93,9 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   constant op_binv_c  : natural := 17;
   constant op_bext_c  : natural := 18;
   --
-  constant op_width_c : natural := 19;
+  constant op_shadd_c : natural := 19;
+  --
+  constant op_width_c : natural := 20;
 
   -- controller --
   type ctrl_state_t is (S_IDLE, S_START_SHIFT, S_BUSY_SHIFT);
@@ -118,6 +122,14 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
     sreg    : std_ulogic_vector(data_width_c-1 downto 0);
   end record;
   signal shifter : shifter_t;
+
+  -- carry-less multiplier --
+  type clmul_t is record
+    start   : std_ulogic;
+    cnt     : std_ulogic_vector(05 downto 0);
+    product : std_ulogic_vector(63 downto 0);
+  end record;
+  signal clmul : clmul_t;
 
   -- operation results --
   type res_t is array (0 to op_width_c-1) of std_ulogic_vector(data_width_c-1 downto 0);
@@ -158,6 +170,9 @@ begin
   cmd(op_bclr_c)  <= '1' when (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_7_c) = "1001") and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "001") and (zbs_enable_c = true) else '0';
   cmd(op_binv_c)  <= '1' when (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_7_c) = "1101") and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "001") and (zbs_enable_c = true) else '0';
   cmd(op_bext_c)  <= '1' when (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_7_c) = "1001") and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "101") and (zbs_enable_c = true) else '0';
+
+  -- Zba - Shifted-Add --
+  cmd(op_shadd_c) <= '1' when (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_7_c) = "0100") and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) /= "000") and (zba_enable_c = true) else '0';
 
 
   -- Co-Processor Controller ----------------------------------------------------------------
@@ -330,6 +345,29 @@ begin
   res_int(op_bext_c)(0) <= or_all_f(rs1_reg and bit_mask);
 
 
+  -- Shifted-Add ('Zba') Function Core ------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  shifted_adder: process(ctrl_i, rs1_reg, rs2_reg)
+    variable rs1_shifted_x1_v : std_ulogic_vector(31 downto 0);
+    variable rs1_shifted_x2_v : std_ulogic_vector(31 downto 0);
+  begin
+    -- shifter lsl 1 -- 
+    if (ctrl_i(ctrl_ir_funct3_1_c) = '1') then
+      rs1_shifted_x1_v := rs1_reg(30 downto 0) & '0';
+    else
+      rs1_shifted_x1_v := rs1_reg;
+    end if;
+    -- shifter lsl 2 -- 
+    if (ctrl_i(ctrl_ir_funct3_2_c) = '1') then
+      rs1_shifted_x2_v := rs1_shifted_x1_v(29 downto 0) & "00";
+    else
+      rs1_shifted_x2_v := rs1_shifted_x1_v;
+    end if;
+    -- adder --
+    res_int(op_shadd_c) <= std_ulogic_vector(unsigned(rs1_shifted_x2_v) + unsigned(rs2_reg));
+  end process shifted_adder;
+
+
   -- Output Selector ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- Zbb --
@@ -353,6 +391,8 @@ begin
   res_out(op_bclr_c)  <= res_int(op_bclr_c)  when (cmd_buf(op_bclr_c)  = '1') else (others => '0');
   res_out(op_binv_c)  <= res_int(op_binv_c)  when (cmd_buf(op_binv_c)  = '1') else (others => '0');
   res_out(op_bext_c)  <= res_int(op_bext_c)  when (cmd_buf(op_bext_c)  = '1') else (others => '0');
+  -- Zba --
+  res_out(op_shadd_c) <= res_int(op_shadd_c) when (cmd_buf(op_shadd_c) = '1') else (others => '0');
 
 
   -- Output Gate ----------------------------------------------------------------------------
@@ -370,7 +410,8 @@ begin
                  res_out(op_ror_c)   or res_out(op_rol_c)   or
                  res_out(op_rev8_c)  or
                  res_out(op_orcb_c)  or
-                 res_out(op_bset_c)  or res_out(op_bclr_c)  or res_out(op_binv_c) or res_out(op_bext_c);
+                 res_out(op_bset_c)  or res_out(op_bclr_c)  or res_out(op_binv_c) or res_out(op_bext_c) or
+                 res_out(op_shadd_c);
       end if;
     end if;
   end process output_gate;
