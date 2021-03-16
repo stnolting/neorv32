@@ -115,7 +115,7 @@ entity neorv32_top is
     rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
 
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_tag_o    : out std_ulogic_vector(02 downto 0); -- tag
+    wb_tag_o    : out std_ulogic_vector(03 downto 0); -- request tag
     wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
     wb_dat_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
     wb_dat_o    : out std_ulogic_vector(31 downto 0); -- write data
@@ -123,7 +123,7 @@ entity neorv32_top is
     wb_sel_o    : out std_ulogic_vector(03 downto 0); -- byte enable
     wb_stb_o    : out std_ulogic; -- strobe
     wb_cyc_o    : out std_ulogic; -- valid cycle
-    wb_lock_o   : out std_ulogic; -- locked/exclusive bus access
+    wb_tag_i    : in  std_ulogic := '0'; -- response tag
     wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
     wb_err_i    : in  std_ulogic := '0'; -- transfer error
 
@@ -233,9 +233,10 @@ architecture neorv32_top_rtl of neorv32_top is
     fence  : std_ulogic; -- fence(i) instruction executed
     priv   : std_ulogic_vector(1 downto 0); -- current privilege level
     src    : std_ulogic; -- access source (1=instruction fetch, 0=data access)
-    lock   : std_ulogic; -- locked/exclusive (=atomic) access
+    excl   : std_ulogic; -- exclusive access
   end record;
   signal cpu_i, i_cache, cpu_d, p_bus : bus_interface_t;
+  signal cpu_d_exclr : std_ulogic; -- CPU D-bus, exclusive access response
 
   -- io space access --
   signal io_acc  : std_ulogic;
@@ -252,6 +253,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal wishbone_rdata : std_ulogic_vector(data_width_c-1 downto 0);
   signal wishbone_ack   : std_ulogic;
   signal wishbone_err   : std_ulogic;
+  signal wishbone_exclr : std_ulogic;
   signal gpio_rdata     : std_ulogic_vector(data_width_c-1 downto 0);
   signal gpio_ack       : std_ulogic;
   signal mtime_rdata    : std_ulogic_vector(data_width_c-1 downto 0);
@@ -442,7 +444,6 @@ begin
     i_bus_err_i    => cpu_i.err,    -- bus transfer error
     i_bus_fence_o  => cpu_i.fence,  -- executed FENCEI operation
     i_bus_priv_o   => cpu_i.priv,   -- privilege level
-    i_bus_lock_o   => cpu_i.lock,   -- locked/exclusive access
     -- data bus interface --
     d_bus_addr_o   => cpu_d.addr,   -- bus access address
     d_bus_rdata_i  => cpu_d.rdata,  -- bus read data
@@ -455,7 +456,8 @@ begin
     d_bus_err_i    => cpu_d.err,    -- bus transfer error
     d_bus_fence_o  => cpu_d.fence,  -- executed FENCE operation
     d_bus_priv_o   => cpu_d.priv,   -- privilege level
-    d_bus_lock_o   => cpu_d.lock,   -- locked/exclusive access
+    d_bus_excl_o   => cpu_d.excl,   -- exclusive access
+    d_bus_excl_i   => cpu_d_exclr,  -- state of exclusiv access (set if success)
     -- system time input from MTIME --
     time_i         => mtime_time,   -- current system time
     -- interrupts (risc-v compliant) --
@@ -468,8 +470,9 @@ begin
   );
 
   -- misc --
-  cpu_i.src <= '1'; -- initialized but unused
-  cpu_d.src <= '0'; -- initialized but unused
+  cpu_i.excl <= '0'; -- i-fetch cannot do exclusive accesses
+  cpu_i.src  <= '1'; -- initialized but unused
+  cpu_d.src  <= '0'; -- initialized but unused
 
   -- advanced memory control --
   fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
@@ -522,7 +525,6 @@ begin
       host_we_i     => cpu_i.we,       -- write enable
       host_re_i     => cpu_i.re,       -- read enable
       host_cancel_i => cpu_i.cancel,   -- cancel current bus transaction
-      host_lock_i   => cpu_i.lock,     -- locked/exclusive access
       host_ack_o    => cpu_i.ack,      -- bus transfer acknowledge
       host_err_o    => cpu_i.err,      -- bus transfer error
       -- peripheral bus interface --
@@ -533,7 +535,6 @@ begin
       bus_we_o      => i_cache.we,     -- write enable
       bus_re_o      => i_cache.re,     -- read enable
       bus_cancel_o  => i_cache.cancel, -- cancel current bus transaction
-      bus_lock_o    => i_cache.lock,   -- locked/exclusive access
       bus_ack_i     => i_cache.ack,    -- bus transfer acknowledge
       bus_err_i     => i_cache.err     -- bus transfer error
     );
@@ -548,10 +549,12 @@ begin
     i_cache.we     <= cpu_i.we;
     i_cache.re     <= cpu_i.re;
     i_cache.cancel <= cpu_i.cancel;
-    i_cache.lock   <= cpu_i.lock;
     cpu_i.ack      <= i_cache.ack;
     cpu_i.err      <= i_cache.err;
   end generate;
+
+  -- no exclusive accesses for i-fetch --
+  i_cache.excl <= '0';
 
 
   -- CPU Bus Switch -------------------------------------------------------------------------
@@ -573,7 +576,7 @@ begin
     ca_bus_we_i     => cpu_d.we,       -- write enable
     ca_bus_re_i     => cpu_d.re,       -- read enable
     ca_bus_cancel_i => cpu_d.cancel,   -- cancel current bus transaction
-    ca_bus_lock_i   => cpu_d.lock,     -- locked/exclusive access
+    ca_bus_excl_i   => cpu_d.excl,     -- exclusive access
     ca_bus_ack_o    => cpu_d.ack,      -- bus transfer acknowledge
     ca_bus_err_o    => cpu_d.err,      -- bus transfer error
     -- controller interface b --
@@ -584,7 +587,7 @@ begin
     cb_bus_we_i     => i_cache.we,     -- write enable
     cb_bus_re_i     => i_cache.re,     -- read enable
     cb_bus_cancel_i => i_cache.cancel, -- cancel current bus transaction
-    cb_bus_lock_i   => i_cache.lock,   -- locked/exclusive access
+    cb_bus_excl_i   => i_cache.excl,   -- exclusive access
     cb_bus_ack_o    => i_cache.ack,    -- bus transfer acknowledge
     cb_bus_err_o    => i_cache.err,    -- bus transfer error
     -- peripheral bus --
@@ -596,10 +599,13 @@ begin
     p_bus_we_o      => p_bus.we,       -- write enable
     p_bus_re_o      => p_bus.re,       -- read enable
     p_bus_cancel_o  => p_bus.cancel,   -- cancel current bus transaction
-    p_bus_lock_o    => p_bus.lock,     -- locked/exclusive access
+    p_bus_excl_o    => p_bus.excl,     -- exclusive access
     p_bus_ack_i     => p_bus.ack,      -- bus transfer acknowledge
     p_bus_err_i     => p_bus.err       -- bus transfer error
   );
+
+  -- static signals --
+  p_bus.priv <= cpu_i.priv; -- current CPU privilege level: cpu_i.priv == cpu_d.priv
 
   -- processor bus: CPU transfer data input --
   p_bus.rdata <= (imem_rdata or dmem_rdata or bootrom_rdata) or wishbone_rdata or (gpio_rdata or mtime_rdata or uart0_rdata or uart1_rdata or
@@ -612,8 +618,9 @@ begin
   -- processor bus: CPU transfer data bus error input --
   p_bus.err <= wishbone_err;
 
-  -- current CPU privilege level --
-  p_bus.priv <= cpu_i.priv; -- cpu_i.priv == cpu_d.priv
+  -- exclusive access status --
+  -- since all internal modules/memories are only accessible to this CPU internal atomic access cannot fail
+  cpu_d_exclr <= wishbone_exclr; -- only external atomic memory accesses can fail
 
 
   -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
@@ -726,12 +733,13 @@ begin
       data_i    => p_bus.wdata,    -- data in
       data_o    => wishbone_rdata, -- data out
       cancel_i  => p_bus.cancel,   -- cancel current transaction
-      lock_i    => p_bus.lock,     -- locked/exclusive bus access
+      excl_i    => p_bus.excl,     -- exclusive access request
+      excl_o    => wishbone_exclr, -- state of exclusiv access (set if success)
       ack_o     => wishbone_ack,   -- transfer acknowledge
       err_o     => wishbone_err,   -- transfer error
       priv_i    => p_bus.priv,     -- current CPU privilege level
       -- wishbone interface --
-      wb_tag_o  => wb_tag_o,       -- tag
+      wb_tag_o  => wb_tag_o,       -- request tag
       wb_adr_o  => wb_adr_o,       -- address
       wb_dat_i  => wb_dat_i,       -- read data
       wb_dat_o  => wb_dat_o,       -- write data
@@ -739,7 +747,7 @@ begin
       wb_sel_o  => wb_sel_o,       -- byte enable
       wb_stb_o  => wb_stb_o,       -- strobe
       wb_cyc_o  => wb_cyc_o,       -- valid cycle
-      wb_lock_o => wb_lock_o,      -- locked/exclusive bus access
+      wb_tag_i  => wb_tag_i,       -- response tag
       wb_ack_i  => wb_ack_i,       -- transfer acknowledge
       wb_err_i  => wb_err_i        -- transfer error
     );
@@ -750,15 +758,15 @@ begin
     wishbone_rdata <= (others => '0');
     wishbone_ack   <= '0';
     wishbone_err   <= '0';
+    wishbone_exclr <= '0';
     --
-    wb_adr_o  <= (others => '0');
-    wb_dat_o  <= (others => '0');
-    wb_we_o   <= '0';
-    wb_sel_o  <= (others => '0');
-    wb_stb_o  <= '0';
-    wb_cyc_o  <= '0';
-    wb_lock_o <= '0';
-    wb_tag_o  <= (others => '0');
+    wb_adr_o <= (others => '0');
+    wb_dat_o <= (others => '0');
+    wb_we_o  <= '0';
+    wb_sel_o <= (others => '0');
+    wb_stb_o <= '0';
+    wb_cyc_o <= '0';
+    wb_tag_o <= (others => '0');
   end generate;
 
 

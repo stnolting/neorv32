@@ -59,7 +59,7 @@ entity neorv32_busswitch is
     ca_bus_we_i     : in  std_ulogic; -- write enable
     ca_bus_re_i     : in  std_ulogic; -- read enable
     ca_bus_cancel_i : in  std_ulogic; -- cancel current bus transaction
-    ca_bus_lock_i   : in  std_ulogic; -- locked/exclusive access
+    ca_bus_excl_i   : in  std_ulogic; -- exclusive access
     ca_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
     ca_bus_err_o    : out std_ulogic; -- bus transfer error
     -- controller interface b --
@@ -70,7 +70,7 @@ entity neorv32_busswitch is
     cb_bus_we_i     : in  std_ulogic; -- write enable
     cb_bus_re_i     : in  std_ulogic; -- read enable
     cb_bus_cancel_i : in  std_ulogic; -- cancel current bus transaction
-    cb_bus_lock_i   : in  std_ulogic; -- locked/exclusive access
+    cb_bus_excl_i   : in  std_ulogic; -- exclusive access
     cb_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
     cb_bus_err_o    : out std_ulogic; -- bus transfer error
     -- peripheral bus --
@@ -82,7 +82,7 @@ entity neorv32_busswitch is
     p_bus_we_o      : out std_ulogic; -- write enable
     p_bus_re_o      : out std_ulogic; -- read enable
     p_bus_cancel_o  : out std_ulogic; -- cancel current bus transaction
-    p_bus_lock_o    : out std_ulogic; -- locked/exclusive access
+    p_bus_excl_o    : out std_ulogic; -- exclusive access
     p_bus_ack_i     : in  std_ulogic; -- bus transfer acknowledge
     p_bus_err_i     : in  std_ulogic  -- bus transfer error
   );
@@ -266,7 +266,7 @@ begin
   p_bus_cancel_o <= ca_bus_cancel_i when (arbiter.bus_sel = '0')    else cb_bus_cancel_i;
   p_bus_we_o     <= (p_bus_we or arbiter.we_trig);
   p_bus_re_o     <= (p_bus_re or arbiter.re_trig);
-  p_bus_lock_o   <= ca_bus_lock_i or cb_bus_lock_i;
+  p_bus_excl_o   <= ca_bus_excl_i or cb_bus_excl_i;
 
   ca_bus_rdata_o <= p_bus_rdata_i;
   cb_bus_rdata_o <= p_bus_rdata_i;
