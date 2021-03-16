@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -61,7 +61,6 @@ entity neorv32_icache is
     host_we_i     : in  std_ulogic; -- write enable
     host_re_i     : in  std_ulogic; -- read enable
     host_cancel_i : in  std_ulogic; -- cancel current bus transaction
-    host_lock_i   : in  std_ulogic; -- locked/exclusive access
     host_ack_o    : out std_ulogic; -- bus transfer acknowledge
     host_err_o    : out std_ulogic; -- bus transfer error
     -- peripheral bus interface --
@@ -72,7 +71,6 @@ entity neorv32_icache is
     bus_we_o      : out std_ulogic; -- write enable
     bus_re_o      : out std_ulogic; -- read enable
     bus_cancel_o  : out std_ulogic; -- cancel current bus transaction
-    bus_lock_o    : out std_ulogic; -- locked/exclusive access
     bus_ack_i     : in  std_ulogic; -- bus transfer acknowledge
     bus_err_i     : in  std_ulogic  -- bus transfer error
   );
@@ -188,7 +186,7 @@ begin
 
   -- Control Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_engine_fsm_comb: process(ctrl, cache, clear_i, host_addr_i, host_lock_i, host_re_i, host_cancel_i, bus_rdata_i, bus_ack_i, bus_err_i)
+  ctrl_engine_fsm_comb: process(ctrl, cache, clear_i, host_addr_i, host_re_i, host_cancel_i, bus_rdata_i, bus_ack_i, bus_err_i)
   begin
     -- control defaults --
     ctrl.state_nxt        <= ctrl.state;
@@ -219,7 +217,6 @@ begin
     bus_we_o              <= '0'; -- cache is read-only
     bus_re_o              <= '0';
     bus_cancel_o          <= '0';
-    bus_lock_o            <= host_lock_i;
 
     -- fsm --
     case ctrl.state is
