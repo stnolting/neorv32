@@ -187,8 +187,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal decode_aux : decode_aux_t;
 
   -- instruction execution engine --
-  type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, EXECUTE, ALU_WAIT,
-                                  BRANCH, FENCE_OP,LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, SYS_ENV, CSR_ACCESS);
+  type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, EXECUTE, ALU_WAIT, BRANCH,
+                                  FENCE_OP,LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, ATOMIC_SC_EVAL, SYS_ENV, CSR_ACCESS);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
@@ -244,16 +244,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     break_point   : std_ulogic;
   end record;
   signal trap_ctrl : trap_ctrl_t;
-
-  -- atomic operations controller --
-  type atomic_ctrl_t is record
-    env_start  : std_ulogic; -- begin atomic operations
-    env_end    : std_ulogic; -- end atomic operations
-    env_end_ff : std_ulogic; -- end atomic operations dealyed
-    env_abort  : std_ulogic; -- atomic operations abort (results in failure)
-    lock       : std_ulogic; -- lock status
-  end record;
-  signal atomic_ctrl : atomic_ctrl_t;
   
   -- CPU main control bus --
   signal ctrl_nxt, ctrl : std_ulogic_vector(ctrl_width_c-1 downto 0);
@@ -436,7 +426,6 @@ begin
 -- Instruction Prefetch Buffer
 -- ****************************************************************************************************************************
 
-
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   instr_prefetch_buffer: process(clk_i)
@@ -474,7 +463,6 @@ begin
 -- ****************************************************************************************************************************
 -- Instruction Issue (recoding of compressed instructions and 32-bit instruction word construction)
 -- ****************************************************************************************************************************
-
 
   -- Issue Engine FSM Sync ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -604,7 +592,6 @@ begin
 -- ****************************************************************************************************************************
 -- Instruction Execution
 -- ****************************************************************************************************************************
-
 
   -- Immediate Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -736,7 +723,7 @@ begin
 
   -- CPU Control Bus Output -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_output: process(ctrl, fetch_engine, trap_ctrl, atomic_ctrl, bus_fast_ir, execute_engine, csr)
+  ctrl_output: process(ctrl, fetch_engine, trap_ctrl, bus_fast_ir, execute_engine, csr)
   begin
     -- signals from execute engine --
     ctrl_o <= ctrl;
@@ -761,8 +748,6 @@ begin
     ctrl_o(ctrl_ir_opcode7_6_c  downto ctrl_ir_opcode7_0_c) <= execute_engine.i_reg(instr_opcode_msb_c  downto instr_opcode_lsb_c);
     ctrl_o(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_0_c) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c);
     ctrl_o(ctrl_ir_funct3_2_c   downto ctrl_ir_funct3_0_c)  <= execute_engine.i_reg(instr_funct3_msb_c  downto instr_funct3_lsb_c);
-    -- locked bus operation (for atomic memory operations) --
-    ctrl_o(ctrl_bus_lock_c) <= atomic_ctrl.lock; -- (bus) lock status
     -- cpu status --
     ctrl_o(ctrl_sleep_c) <= execute_engine.sleep; -- cpu is in sleep mode
   end process ctrl_output;
@@ -847,8 +832,8 @@ begin
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00000")) or -- FADD.S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00001")) or -- FSUB.S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00010")) or -- FMUL.S
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00011")) or -- FDIV.S
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01011") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00000")) or -- FSQRT.S
+-- !!! FIXME / TODO !!! --       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00011")) or -- FDIV.S
+-- !!! FIXME / TODO !!! --       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01011") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00000")) or -- FSQRT.S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00100") and (execute_engine.i_reg(instr_funct3_msb_c) = '0')) or -- FSGNJ[N/X].S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_msb_c-1) = "00")) or -- FMIN.S / FMAX.S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11010") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c+1) = "0000")) then -- FCVT.S.W*
@@ -903,11 +888,6 @@ begin
     csr.we_nxt                  <= '0';
     csr.re_nxt                  <= '0';
 
-    -- atomic operations control --
-    atomic_ctrl.env_start       <= '0';
-    atomic_ctrl.env_end         <= '0';
-    atomic_ctrl.env_abort       <= '0';
-
     -- CONTROL DEFAULTS --
     ctrl_nxt <= (others => '0'); -- default: all off
     -- ALU main control --
@@ -920,6 +900,8 @@ begin
     else -- branches
       ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- unsigned branches? (BLTU, BGEU)
     end if;
+    -- bus interface --
+    ctrl_nxt(ctrl_bus_excl_c) <= ctrl(ctrl_bus_excl_c); -- keep exclusive bus access request alive if set
 
 
     -- state machine --
@@ -942,6 +924,7 @@ begin
         -- housekeeping --
         execute_engine.is_cp_op_nxt <= '0'; -- init
         execute_engine.is_fp_nxt    <= '0'; -- init
+        ctrl_nxt(ctrl_bus_excl_c)   <= '0'; -- clear exclusive data bus access
         -- PC update --
         execute_engine.pc_mux_sel <= '0'; -- linear next PC
         -- IR update --
@@ -1086,7 +1069,6 @@ begin
                ((CPU_EXTENSION_RISCV_F = true) and (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "01")) then -- floating-point load/store
               execute_engine.state_nxt <= LOADSTORE_0;
             else -- atomic operation
-              atomic_ctrl.env_start <= not execute_engine.i_reg(instr_funct5_lsb_c); -- LR: start LOCKED memory access environment
               if (execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c) = funct5_a_sc_c) or -- store-conditional
                  (execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c) = funct5_a_lr_c) then -- load-reservate
                 execute_engine.state_nxt <= LOADSTORE_0;
@@ -1125,7 +1107,7 @@ begin
               execute_engine.state_nxt <= SYS_WAIT;
             end if;
 
-          when opcode_fop_c => -- floating-point operations (1 or 2 operands)
+          when opcode_fop_c | opcode_fmadd_c | opcode_fmsubb_c | opcode_fnmsub_c | opcode_fnmadd_c => -- floating-point operations
           -- ------------------------------------------------------------
             execute_engine.state_nxt <= SYS_WAIT;
             if (CPU_EXTENSION_RISCV_F = true) then
@@ -1234,6 +1216,7 @@ begin
 
       when LOADSTORE_0 => -- trigger memory request
       -- ------------------------------------------------------------
+        ctrl_nxt(ctrl_bus_excl_c) <= decode_aux.is_atomic_lr; -- atomic.LR: exclusive memory access request
         if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') then -- normal load or atomic load-reservate
           ctrl_nxt(ctrl_bus_rd_c) <= '1'; -- read request
         else -- store
@@ -1245,38 +1228,50 @@ begin
       when LOADSTORE_1 => -- memory latency
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- write input data to MDI (only relevant for LOAD)
-        execute_engine.state_nxt   <= LOADSTORE_2;
+        if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.is_atomic_sc = '1') then -- execute and evaluate atomic store-conditional
+          execute_engine.state_nxt <= ATOMIC_SC_EVAL;
+        else -- normal load/store
+          execute_engine.state_nxt <= LOADSTORE_2;
+        end if;
 
 
       when LOADSTORE_2 => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
-        -- ALU control (only relevant for atomic memory operations) --
-        if (CPU_EXTENSION_RISCV_A = true) then
-          ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_atomic_c; -- atomic.SC: result comes from "atomic co-processor"
-          ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
-        end if;
-        -- register file write-back --
-        if (decode_aux.is_atomic_sc = '1') then
-          ctrl_nxt(ctrl_rf_in_mux_c) <= '0'; -- RF input = ALU.res (only relevant for atomic.SC)
-        else
-          ctrl_nxt(ctrl_rf_in_mux_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
-        end if;
-        --
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load operations)
+        ctrl_nxt(ctrl_rf_in_mux_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
         -- wait for memory response --
         if ((ma_load_i or be_load_i or ma_store_i or be_store_i) = '1') then -- abort if exception
-          atomic_ctrl.env_abort     <= '1'; -- LOCKED (atomic) memory access environment failed (forces SC result to be non-zero => failure)
-          ctrl_nxt(ctrl_rf_wb_en_c) <= decode_aux.is_atomic_sc; -- store-conditional failes: allow rf write back of non-zero result
-          execute_engine.state_nxt  <= DISPATCH;
+          execute_engine.state_nxt <= DISPATCH;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
-          if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') or (decode_aux.is_atomic_sc = '1') then -- load / load-reservate / store conditional
+          -- data write-back
+          if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') then -- normal load OR atomic load
             ctrl_nxt(ctrl_rf_wb_en_c) <= not execute_engine.is_fp; -- allow write back if NOT <FPU-internal operation>
           end if;
           if (CPU_EXTENSION_RISCV_F = true) and (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_flw_c(6 downto 2)) then -- floating-point LOAD.word
             ctrl_nxt(ctrl_cp_fpu_mem_we_c) <= '1'; -- co-processor register file write-back
           end if;
-          atomic_ctrl.env_end      <= not decode_aux.is_atomic_lr; -- normal end of LOCKED (atomic) memory access environment - if we are not starting it via LR instruction
           execute_engine.state_nxt <= DISPATCH;
+        end if;
+
+
+      when ATOMIC_SC_EVAL => -- wait for bus transaction to finish and evaluate if SC was successful
+      -- ------------------------------------------------------------
+        if (CPU_EXTENSION_RISCV_A = true) then
+          -- atomic.SC: result comes from "atomic co-processor" --
+          ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_atomic_c;
+          execute_engine.is_cp_op_nxt                        <= '1'; -- this is a CP operation
+          ctrl_nxt(ctrl_rf_in_mux_c)                         <= '0'; -- RF input = ALU.res
+          ctrl_nxt(ctrl_rf_wb_en_c)                          <= '1'; -- allow reg file write back
+          -- wait for memory response --
+          if ((ma_load_i or be_load_i or ma_store_i or be_store_i) = '1') then -- abort if exception
+            ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c; -- trigger atomic-coprocessor operation for SC status evaluation
+            execute_engine.state_nxt <= ALU_WAIT;
+          elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
+            ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c; -- trigger atomic-coprocessor operation for SC status evaluation
+            execute_engine.state_nxt <= ALU_WAIT;
+          end if;
+        else
+          execute_engine.state_nxt <= SYS_WAIT;
         end if;
 
 
@@ -1291,7 +1286,6 @@ begin
 -- ****************************************************************************************************************************
 -- Invalid Instruction / CSR access check
 -- ****************************************************************************************************************************
-
 
   -- CSR Access Check -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1653,11 +1647,20 @@ begin
             illegal_instruction <= '1';
           end if;
 
-        when opcode_fop_c => -- floating point operations (dual-operand)
+        when opcode_fop_c => -- floating point operations - dual-operand
         -- ------------------------------------------------------------
           if (CPU_EXTENSION_RISCV_F = true) and -- F extension enabled
              (execute_engine.i_reg(instr_funct7_lsb_c+1 downto instr_funct7_lsb_c) = float_single_c) and -- single-precision operations
              ((decode_aux.is_float_f_reg = '1') or (decode_aux.is_float_i_reg = '1')) then -- float_reg or int_reg operations
+            illegal_instruction <= '0';
+          else
+            illegal_instruction <= '1';
+          end if;
+
+        when opcode_fmadd_c | opcode_fmsubb_c | opcode_fnmsub_c | opcode_fnmadd_c  => -- floating point operations - tripple-operand (fused multiply-add)
+        -- ------------------------------------------------------------
+          if (CPU_EXTENSION_RISCV_F = true) and -- F extension enabled
+             (execute_engine.i_reg(instr_funct7_lsb_c+1 downto instr_funct7_lsb_c) = float_single_c) then -- single-precision operations
             illegal_instruction <= '0';
           else
             illegal_instruction <= '1';
@@ -1691,7 +1694,6 @@ begin
 -- ****************************************************************************************************************************
 -- Exception and Interrupt (= Trap) Control
 -- ****************************************************************************************************************************
-
 
   -- Trap Controller ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1921,31 +1923,6 @@ begin
       trap_ctrl.irq_ack_nxt <= (others => '0');
     end if;
   end process trap_priority;
-
-
-  -- Atomic Memory Access - Status Controller -----------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  atomic_memacc_controller: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      atomic_ctrl.lock       <= '0';
-      atomic_ctrl.env_end_ff <= '0';
-    elsif rising_edge(clk_i) then
-      if (CPU_EXTENSION_RISCV_A = true) then
-        if (atomic_ctrl.env_end_ff = '1') or -- normal termination
-           (atomic_ctrl.env_abort = '1') or  -- fast termination (error)
-           (trap_ctrl.env_start = '1') then  -- triggered trap -> failure
-          atomic_ctrl.lock <= '0';
-        elsif (atomic_ctrl.env_start = '1') then
-          atomic_ctrl.lock <= '1';
-        end if;
-        atomic_ctrl.env_end_ff <= atomic_ctrl.env_end;
-      else
-        atomic_ctrl.lock       <= '0';
-        atomic_ctrl.env_end_ff <= '0';
-      end if;
-    end if;
-  end process atomic_memacc_controller;
   
 
 -- ****************************************************************************************************************************

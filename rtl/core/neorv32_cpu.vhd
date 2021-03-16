@@ -95,7 +95,6 @@ entity neorv32_cpu is
     i_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
     i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
     i_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
-    i_bus_lock_o   : out std_ulogic; -- locked/exclusive access
     -- data bus interface --
     d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
@@ -108,7 +107,8 @@ entity neorv32_cpu is
     d_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
     d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
     d_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
-    d_bus_lock_o   : out std_ulogic; -- locked/exclusive access
+    d_bus_excl_o   : out std_ulogic; -- exclusive access request
+    d_bus_excl_i   : in  std_ulogic; -- state of exclusiv access (set if success)
     -- system time input from MTIME --
     time_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
     -- interrupts (risc-v compliant) --
@@ -141,6 +141,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal ma_instr      : std_ulogic; -- misaligned instruction address
   signal ma_load       : std_ulogic; -- misaligned load data address
   signal ma_store      : std_ulogic; -- misaligned store data address
+  signal bus_excl_ok   : std_ulogic; -- atomic memory access successful
   signal be_instr      : std_ulogic; -- bus error on instruction access
   signal be_load       : std_ulogic; -- bus error on load data access
   signal be_store      : std_ulogic; -- bus error on store data access
@@ -160,7 +161,9 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal pmp_ctrl  : pmp_ctrl_if_t;
 
   -- atomic memory access - success? --
-  signal atomic_sc_res: std_ulogic;
+  signal atomic_sc_res    : std_ulogic;
+  signal atomic_sc_res_ff : std_ulogic;
+  signal atomic_sc_val    : std_ulogic;
 
 begin
 
@@ -360,18 +363,20 @@ begin
   atomic_op_cp: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (cp_start(1) = '1') then
-        atomic_sc_res <= not ctrl(ctrl_bus_lock_c);
+      atomic_sc_val <= cp_start(1);
+      atomic_sc_res <= bus_excl_ok;
+      if (atomic_sc_val = '1') then
+        atomic_sc_res_ff <= not atomic_sc_res;
       else
-        atomic_sc_res <= '0';
+        atomic_sc_res_ff <= '0';
       end if;
     end if;
   end process atomic_op_cp;
 
   -- CP result --
   cp_result(1)(data_width_c-1 downto 1) <= (others => '0');
-  cp_result(1)(0) <= atomic_sc_res when (CPU_EXTENSION_RISCV_A = true) else '0';
-  cp_valid(1)     <= cp_start(1); -- always assigned even if A extension is disabled to make sure CPU does not get stalled if there is an accidental access
+  cp_result(1)(0) <= atomic_sc_res_ff when (CPU_EXTENSION_RISCV_A = true) else '0';
+  cp_valid(1)     <= atomic_sc_val    when (CPU_EXTENSION_RISCV_A = true) else cp_start(1); -- assigned even if A extension is disabled so CPU does not get stalled on accidental access
 
 
   -- Co-Processor 2: Bit Manipulation ('B' Extension) ---------------------------------------
@@ -458,6 +463,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_bus_inst: neorv32_cpu_bus
   generic map (
+    CPU_EXTENSION_RISCV_A => CPU_EXTENSION_RISCV_A, -- implement atomic extension?
     CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS       => PMP_NUM_REGIONS,       -- number of regions (0..64)
@@ -484,6 +490,7 @@ begin
     mar_o          => mar,            -- current memory address register
     d_wait_o       => bus_d_wait,     -- wait for access to complete
     --
+    bus_excl_ok_o  => bus_excl_ok,    -- bus exclusive access successful
     ma_load_o      => ma_load,        -- misaligned load data address
     ma_store_o     => ma_store,       -- misaligned store data address
     be_load_o      => be_load,        -- bus error on load data access
@@ -502,7 +509,6 @@ begin
     i_bus_ack_i    => i_bus_ack_i,    -- bus transfer acknowledge
     i_bus_err_i    => i_bus_err_i,    -- bus transfer error
     i_bus_fence_o  => i_bus_fence_o,  -- fence operation
-    i_bus_lock_o   => i_bus_lock_o,   -- locked/exclusive access
     -- data bus --
     d_bus_addr_o   => d_bus_addr_o,   -- bus access address
     d_bus_rdata_i  => d_bus_rdata_i,  -- bus read data
@@ -514,7 +520,8 @@ begin
     d_bus_ack_i    => d_bus_ack_i,    -- bus transfer acknowledge
     d_bus_err_i    => d_bus_err_i,    -- bus transfer error
     d_bus_fence_o  => d_bus_fence_o,  -- fence operation
-    d_bus_lock_o   => d_bus_lock_o    -- locked/exclusive access
+    d_bus_excl_o   => d_bus_excl_o,   -- exclusive access request
+    d_bus_excl_i   => d_bus_excl_i    -- state of exclusiv access (set if success)
   );
 
   -- memory write data --

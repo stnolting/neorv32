@@ -60,7 +60,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050205"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050206"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -260,7 +260,7 @@ package neorv32_package is
   constant ctrl_bus_derr_ack_c  : natural := 39; -- acknowledge data access bus exceptions
   constant ctrl_bus_fence_c     : natural := 40; -- executed fence operation
   constant ctrl_bus_fencei_c    : natural := 41; -- executed fencei operation
-  constant ctrl_bus_lock_c      : natural := 42; -- locked/exclusive bus access
+  constant ctrl_bus_excl_c      : natural := 42; -- exclusive bus access
   -- co-processors --
   constant ctrl_cp_id_lsb_c     : natural := 43; -- cp select ID lsb
   constant ctrl_cp_id_hsb_c     : natural := 44; -- cp select ID hsb
@@ -350,7 +350,10 @@ package neorv32_package is
   constant opcode_flw_c    : std_ulogic_vector(6 downto 0) := "0000111"; -- load word
   constant opcode_fsw_c    : std_ulogic_vector(6 downto 0) := "0100111"; -- store word
   constant opcode_fop_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single opearand operation
-  constant opcode_fmac_c   : std_ulogic_vector(6 downto 0) := "100--11"; -- fused multiply-add (three operands)
+  constant opcode_fmadd_c  : std_ulogic_vector(6 downto 0) := "1000011"; -- fused multiply-add (three operands)
+  constant opcode_fmsubb_c : std_ulogic_vector(6 downto 0) := "1000111"; -- fused multiply-sub (three operands)
+  constant opcode_fnmsub_c : std_ulogic_vector(6 downto 0) := "1001011"; -- fused negative multiply-sub (three operands)
+  constant opcode_fnmadd_c : std_ulogic_vector(6 downto 0) := "1001111"; -- fused negative multiply-add (three operands)
 
   -- RISC-V Funct3 --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -701,7 +704,7 @@ package neorv32_package is
   constant cp_sel_bitmanip_c : std_ulogic_vector(2 downto 0) := "010"; -- bit manipulation ('B' extension)
   constant cp_sel_csr_rd_c   : std_ulogic_vector(2 downto 0) := "011"; -- CSR read access ('Zicsr' extension)
   constant cp_sel_fpu_c      : std_ulogic_vector(2 downto 0) := "100"; -- loating-point unit ('F' extension)
---constant cp_sel_reserved_c : std_ulogic_vector(2 downto 0) := "101"; -- reserved
+--constant cp_sel_crypto_c   : std_ulogic_vector(2 downto 0) := "101"; -- crypto operations ('K' extension)
 --constant cp_sel_reserved_c : std_ulogic_vector(2 downto 0) := "110"; -- reserved
 --constant cp_sel_reserved_c : std_ulogic_vector(2 downto 0) := "111"; -- reserved
 
@@ -893,7 +896,7 @@ package neorv32_package is
       clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
       rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
       -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-      wb_tag_o    : out std_ulogic_vector(02 downto 0); -- tag
+      wb_tag_o    : out std_ulogic_vector(03 downto 0); -- request tag
       wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
       wb_dat_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
       wb_dat_o    : out std_ulogic_vector(31 downto 0); -- write data
@@ -901,7 +904,7 @@ package neorv32_package is
       wb_sel_o    : out std_ulogic_vector(03 downto 0); -- byte enable
       wb_stb_o    : out std_ulogic; -- strobe
       wb_cyc_o    : out std_ulogic; -- valid cycle
-      wb_lock_o   : out std_ulogic; -- locked/exclusive bus access
+      wb_tag_i    : in  std_ulogic; -- response tag
       wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
       wb_err_i    : in  std_ulogic := '0'; -- transfer error
       -- Advanced memory control signals (available if MEM_EXT_EN = true) --
@@ -986,12 +989,11 @@ package neorv32_package is
       i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
       i_bus_we_o     : out std_ulogic; -- write enable
       i_bus_re_o     : out std_ulogic; -- read enable
-      i_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
+      i_bus_cancel_o : out std_ulogic := '0'; -- cancel current bus transaction
       i_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
       i_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
       i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
       i_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
-      i_bus_lock_o   : out std_ulogic; -- locked/exclusive access
       -- data bus interface --
       d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
       d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
@@ -1004,7 +1006,8 @@ package neorv32_package is
       d_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
       d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
       d_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
-      d_bus_lock_o   : out std_ulogic; -- locked/exclusive access
+      d_bus_excl_o   : out std_ulogic; -- exclusive access
+      d_bus_excl_i   : in  std_ulogic; -- state of exclusiv access (set if success)
       -- system time input from MTIME --
       time_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
       -- interrupts (risc-v compliant) --
@@ -1199,6 +1202,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_bus
     generic (
+      CPU_EXTENSION_RISCV_A : boolean := false; -- implement atomic extension?
       CPU_EXTENSION_RISCV_C : boolean := true;  -- implement compressed extension?
       -- Physical memory protection (PMP) --
       PMP_NUM_REGIONS       : natural := 0;       -- number of regions (0..64)
@@ -1225,6 +1229,7 @@ package neorv32_package is
       mar_o          : out std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
       d_wait_o       : out std_ulogic; -- wait for access to complete
       --
+      bus_excl_ok_o  : out std_ulogic; -- bus exclusive access successful
       ma_load_o      : out std_ulogic; -- misaligned load data address
       ma_store_o     : out std_ulogic; -- misaligned store data address
       be_load_o      : out std_ulogic; -- bus error on load data access
@@ -1243,7 +1248,6 @@ package neorv32_package is
       i_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
       i_bus_err_i    : in  std_ulogic; -- bus transfer error
       i_bus_fence_o  : out std_ulogic; -- fence operation
-      i_bus_lock_o   : out std_ulogic; -- locked/exclusive access
       -- data bus --
       d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
       d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -1255,7 +1259,8 @@ package neorv32_package is
       d_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
       d_bus_err_i    : in  std_ulogic; -- bus transfer error
       d_bus_fence_o  : out std_ulogic; -- fence operation
-      d_bus_lock_o   : out std_ulogic  -- locked/exclusive access
+      d_bus_excl_o   : out std_ulogic; -- exclusive access request
+      d_bus_excl_i   : in  std_ulogic  -- state of exclusiv access (set if success)
     );
   end component;
 
@@ -1280,7 +1285,6 @@ package neorv32_package is
       host_we_i     : in  std_ulogic; -- write enable
       host_re_i     : in  std_ulogic; -- read enable
       host_cancel_i : in  std_ulogic; -- cancel current bus transaction
-      host_lock_i   : in  std_ulogic; -- locked/exclusive access
       host_ack_o    : out std_ulogic; -- bus transfer acknowledge
       host_err_o    : out std_ulogic; -- bus transfer error
       -- peripheral bus interface --
@@ -1291,7 +1295,6 @@ package neorv32_package is
       bus_we_o      : out std_ulogic; -- write enable
       bus_re_o      : out std_ulogic; -- read enable
       bus_cancel_o  : out std_ulogic; -- cancel current bus transaction
-      bus_lock_o    : out std_ulogic; -- locked/exclusive access
       bus_ack_i     : in  std_ulogic; -- bus transfer acknowledge
       bus_err_i     : in  std_ulogic  -- bus transfer error
     );
@@ -1316,7 +1319,7 @@ package neorv32_package is
       ca_bus_we_i     : in  std_ulogic; -- write enable
       ca_bus_re_i     : in  std_ulogic; -- read enable
       ca_bus_cancel_i : in  std_ulogic; -- cancel current bus transaction
-      ca_bus_lock_i   : in  std_ulogic; -- locked/exclusive access
+      ca_bus_excl_i   : in  std_ulogic; -- exclusive access
       ca_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
       ca_bus_err_o    : out std_ulogic; -- bus transfer error
       -- controller interface b --
@@ -1327,7 +1330,7 @@ package neorv32_package is
       cb_bus_we_i     : in  std_ulogic; -- write enable
       cb_bus_re_i     : in  std_ulogic; -- read enable
       cb_bus_cancel_i : in  std_ulogic; -- cancel current bus transaction
-      cb_bus_lock_i   : in  std_ulogic; -- locked/exclusive access
+      cb_bus_excl_i   : in  std_ulogic; -- exclusive access
       cb_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
       cb_bus_err_o    : out std_ulogic; -- bus transfer error
       -- peripheral bus --
@@ -1339,7 +1342,7 @@ package neorv32_package is
       p_bus_we_o      : out std_ulogic; -- write enable
       p_bus_re_o      : out std_ulogic; -- read enable
       p_bus_cancel_o  : out std_ulogic; -- cancel current bus transaction
-      p_bus_lock_o    : out std_ulogic; -- locked/exclusive access
+      p_bus_excl_o    : out std_ulogic; -- exclusive access
       p_bus_ack_i     : in  std_ulogic; -- bus transfer acknowledge
       p_bus_err_i     : in  std_ulogic  -- bus transfer error
     );
@@ -1602,33 +1605,34 @@ package neorv32_package is
     );
     port (
       -- global control --
-      clk_i     : in  std_ulogic; -- global clock line
-      rstn_i    : in  std_ulogic; -- global reset line, low-active
+      clk_i    : in  std_ulogic; -- global clock line
+      rstn_i   : in  std_ulogic; -- global reset line, low-active
       -- host access --
-      src_i     : in  std_ulogic; -- access type (0: data, 1:instruction)
-      addr_i    : in  std_ulogic_vector(31 downto 0); -- address
-      rden_i    : in  std_ulogic; -- read enable
-      wren_i    : in  std_ulogic; -- write enable
-      ben_i     : in  std_ulogic_vector(03 downto 0); -- byte write enable
-      data_i    : in  std_ulogic_vector(31 downto 0); -- data in
-      data_o    : out std_ulogic_vector(31 downto 0); -- data out
-      cancel_i  : in  std_ulogic; -- cancel current bus transaction
-      lock_i    : in  std_ulogic; -- locked/exclusive bus access
-      ack_o     : out std_ulogic; -- transfer acknowledge
-      err_o     : out std_ulogic; -- transfer error
-      priv_i    : in  std_ulogic_vector(1 downto 0); -- current CPU privilege level
+      src_i    : in  std_ulogic; -- access type (0: data, 1:instruction)
+      addr_i   : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i   : in  std_ulogic; -- read enable
+      wren_i   : in  std_ulogic; -- write enable
+      ben_i    : in  std_ulogic_vector(03 downto 0); -- byte write enable
+      data_i   : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o   : out std_ulogic_vector(31 downto 0); -- data out
+      cancel_i : in  std_ulogic; -- cancel current bus transaction
+      excl_i   : in  std_ulogic; -- exclusive access request
+      excl_o   : out std_ulogic; -- state of exclusiv access (set if success)
+      ack_o    : out std_ulogic; -- transfer acknowledge
+      err_o    : out std_ulogic; -- transfer error
+      priv_i   : in  std_ulogic_vector(01 downto 0); -- current CPU privilege level
       -- wishbone interface --
-      wb_tag_o  : out std_ulogic_vector(2 downto 0); -- tag
-      wb_adr_o  : out std_ulogic_vector(31 downto 0); -- address
-      wb_dat_i  : in  std_ulogic_vector(31 downto 0); -- read data
-      wb_dat_o  : out std_ulogic_vector(31 downto 0); -- write data
-      wb_we_o   : out std_ulogic; -- read/write
-      wb_sel_o  : out std_ulogic_vector(03 downto 0); -- byte enable
-      wb_stb_o  : out std_ulogic; -- strobe
-      wb_cyc_o  : out std_ulogic; -- valid cycle
-      wb_lock_o : out std_ulogic; -- locked/exclusive bus access
-      wb_ack_i  : in  std_ulogic; -- transfer acknowledge
-      wb_err_i  : in  std_ulogic  -- transfer error
+      wb_tag_o : out std_ulogic_vector(03 downto 0); -- request tag
+      wb_adr_o : out std_ulogic_vector(31 downto 0); -- address
+      wb_dat_i : in  std_ulogic_vector(31 downto 0); -- read data
+      wb_dat_o : out std_ulogic_vector(31 downto 0); -- write data
+      wb_we_o  : out std_ulogic; -- read/write
+      wb_sel_o : out std_ulogic_vector(03 downto 0); -- byte enable
+      wb_stb_o : out std_ulogic; -- strobe
+      wb_cyc_o : out std_ulogic; -- valid cycle
+      wb_tag_i : in  std_ulogic; -- response tag
+      wb_ack_i : in  std_ulogic; -- transfer acknowledge
+      wb_err_i : in  std_ulogic  -- transfer error
     );
   end component;
 

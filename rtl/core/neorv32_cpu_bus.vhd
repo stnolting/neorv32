@@ -43,6 +43,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_bus is
   generic (
+    CPU_EXTENSION_RISCV_A : boolean := false; -- implement atomic extension?
     CPU_EXTENSION_RISCV_C : boolean := true;  -- implement compressed extension?
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS       : natural := 0;     -- number of regions (0..64)
@@ -69,6 +70,7 @@ entity neorv32_cpu_bus is
     mar_o          : out std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
     d_wait_o       : out std_ulogic; -- wait for access to complete
     --
+    bus_excl_ok_o  : out std_ulogic; -- bus exclusive access successful
     ma_load_o      : out std_ulogic; -- misaligned load data address
     ma_store_o     : out std_ulogic; -- misaligned store data address
     be_load_o      : out std_ulogic; -- bus error on load data access
@@ -87,7 +89,6 @@ entity neorv32_cpu_bus is
     i_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
     i_bus_err_i    : in  std_ulogic; -- bus transfer error
     i_bus_fence_o  : out std_ulogic; -- fence operation
-    i_bus_lock_o   : out std_ulogic; -- locked/exclusive access
     -- data bus --
     d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -99,7 +100,8 @@ entity neorv32_cpu_bus is
     d_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
     d_bus_err_i    : in  std_ulogic; -- bus transfer error
     d_bus_fence_o  : out std_ulogic; -- fence operation
-    d_bus_lock_o   : out std_ulogic  -- locked/exclusive access
+    d_bus_excl_o   : out std_ulogic; -- exclusive access request
+    d_bus_excl_i   : in  std_ulogic  -- state of exclusiv access (set if success)
   );
 end neorv32_cpu_bus;
 
@@ -340,7 +342,7 @@ begin
   d_bus_re_o    <= d_bus_re_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else d_bus_re;
   d_bus_fence_o <= ctrl_i(ctrl_bus_fence_c);
   d_bus_rdata   <= d_bus_rdata_i;
-  d_bus_lock_o  <= ctrl_i(ctrl_bus_lock_c);
+  d_bus_excl_o  <= ctrl_i(ctrl_bus_excl_c);
 
   -- additional register stage for control signals if using PMP_NUM_REGIONS > pmp_num_regions_critical_c --
   pmp_dbus_buffer: process(rstn_i, clk_i)
@@ -353,6 +355,24 @@ begin
       d_bus_re_buf <= d_bus_re;
     end if;
   end process pmp_dbus_buffer;
+
+  -- Atomic memory access - status buffer --
+  atomic_access_status: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      bus_excl_ok_o <= '0';
+    elsif rising_edge(clk_i) then
+      if (CPU_EXTENSION_RISCV_A = true) then
+        if (d_bus_ack_i = '1') then
+          bus_excl_ok_o <= d_bus_excl_i; -- set if access was exclusive
+        elsif (d_arbiter.rd_req = '0') and (d_arbiter.wr_req = '0') then -- bus access done
+          bus_excl_ok_o <= '0';
+        end if;
+      else
+        bus_excl_ok_o <= '0';
+      end if;
+    end if;
+  end process atomic_access_status;
 
 
   -- Instruction Fetch Arbiter --------------------------------------------------------------
@@ -403,7 +423,6 @@ begin
   i_bus_re_o    <= i_bus_re_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else i_bus_re;
   i_bus_fence_o <= ctrl_i(ctrl_bus_fencei_c);
   instr_o       <= i_bus_rdata_i;
-  i_bus_lock_o  <= '0'; -- instruction fetch cannot be atomic
 
   -- check instruction access --
   i_misaligned <= '0' when (CPU_EXTENSION_RISCV_C = true) else -- no alignment exceptions possible when using C-extension
