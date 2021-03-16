@@ -99,7 +99,7 @@ entity neorv32_top_stdlogic is
     clk_i       : in  std_logic := '0'; -- global clock, rising edge
     rstn_i      : in  std_logic := '0'; -- global reset, low-active, async
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_tag_o    : out std_logic_vector(2 downto 0); -- tag
+    wb_tag_o    : out std_logic_vector(03 downto 0); -- tag
     wb_adr_o    : out std_logic_vector(31 downto 0); -- address
     wb_dat_i    : in  std_logic_vector(31 downto 0) := (others => '0'); -- read data
     wb_dat_o    : out std_logic_vector(31 downto 0); -- write data
@@ -107,7 +107,7 @@ entity neorv32_top_stdlogic is
     wb_sel_o    : out std_logic_vector(03 downto 0); -- byte enable
     wb_stb_o    : out std_logic; -- strobe
     wb_cyc_o    : out std_logic; -- valid cycle
-    wb_lock_o   : out std_logic; -- locked/exclusive bus access
+    wb_tag_i    : in  std_logic; -- response tag
     wb_ack_i    : in  std_logic := '0'; -- transfer acknowledge
     wb_err_i    : in  std_logic := '0'; -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
@@ -162,7 +162,7 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   signal clk_i_int       : std_ulogic;
   signal rstn_i_int      : std_ulogic;
   --
-  signal wb_tag_o_int    : std_ulogic_vector(2 downto 0);
+  signal wb_tag_o_int    : std_ulogic_vector(03 downto 0);
   signal wb_adr_o_int    : std_ulogic_vector(31 downto 0);
   signal wb_dat_i_int    : std_ulogic_vector(31 downto 0);
   signal wb_dat_o_int    : std_ulogic_vector(31 downto 0);
@@ -170,7 +170,7 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   signal wb_sel_o_int    : std_ulogic_vector(03 downto 0);
   signal wb_stb_o_int    : std_ulogic;
   signal wb_cyc_o_int    : std_ulogic;
-  signal wb_lock_o_int   : std_ulogic;
+  signal wb_tag_i_int    : std_ulogic;
   signal wb_ack_i_int    : std_ulogic;
   signal wb_err_i_int    : std_ulogic;
   --
@@ -283,7 +283,7 @@ begin
     wb_sel_o    => wb_sel_o_int,    -- byte enable
     wb_stb_o    => wb_stb_o_int,    -- strobe
     wb_cyc_o    => wb_cyc_o_int,    -- valid cycle
-    wb_lock_o   => wb_lock_o_int,   -- locked/exclusive bus access
+    wb_tag_i    => wb_tag_i_int,    -- response tag
     wb_ack_i    => wb_ack_i_int,    -- transfer acknowledge
     wb_err_i    => wb_err_i_int,    -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
@@ -340,7 +340,6 @@ begin
   wb_sel_o        <= std_logic_vector(wb_sel_o_int);
   wb_stb_o        <= std_logic(wb_stb_o_int);
   wb_cyc_o        <= std_logic(wb_cyc_o_int);
-  wb_lock_o       <= std_logic(wb_lock_o_int);
   wb_ack_i_int    <= std_ulogic(wb_ack_i);
   wb_err_i_int    <= std_ulogic(wb_err_i);
 

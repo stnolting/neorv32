@@ -221,7 +221,7 @@ architecture neorv32_top_axi4lite_rtl of neorv32_top_axi4lite is
     cyc : std_ulogic; -- valid cycle
     ack : std_ulogic; -- transfer acknowledge
     err : std_ulogic; -- transfer error
-    tag : std_ulogic_vector(2 downto 0); -- tag
+    tag : std_ulogic_vector(03 downto 0); -- tag
   end record;
   signal wb_core : wb_bus_t;
 
@@ -314,7 +314,7 @@ begin
     wb_sel_o    => wb_core.sel,     -- byte enable
     wb_stb_o    => wb_core.stb,     -- strobe
     wb_cyc_o    => wb_core.cyc,     -- valid cycle
-    wb_lock_o   => open,            -- locked/exclusive bus access
+    wb_tag_i    => '0',             -- response tag
     wb_ack_i    => wb_core.ack,     -- transfer acknowledge
     wb_err_i    => wb_core.err,     -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
