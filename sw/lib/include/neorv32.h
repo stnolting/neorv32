@@ -444,7 +444,8 @@ enum NEORV32_CSR_MZEXT_enum {
   CSR_MZEXT_ZIFENCEI = 1, /**< CPU mzext CSR (1): Zifencei extension (I sub-extension) available when set (r/-) */
   CSR_MZEXT_ZBB      = 2, /**< CPU mzext CSR (2): Zbb extension (B sub-extension) available when set (r/-) */
   CSR_MZEXT_ZBS      = 3, /**< CPU mzext CSR (3): Zbs extension (B sub-extension) available when set (r/-) */
-  CSR_MZEXT_ZBA      = 4  /**< CPU mzext CSR (4): Zba extension (B sub-extension) available when set (r/-) */
+  CSR_MZEXT_ZBA      = 4, /**< CPU mzext CSR (4): Zba extension (B sub-extension) available when set (r/-) */
+  CSR_MZEXT_ZFINX    = 5  /**< CPU mzext CSR (5): Zfinx extension (F sub-/alternative-extension) available when set (r/-) */
 };
 
 
