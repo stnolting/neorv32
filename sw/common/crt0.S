@@ -3,7 +3,7 @@
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
-/* # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     # */
+/* # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     # */
 /* #                                                                                               # */
 /* # Redistribution and use in source and binary forms, with or without modification, are          # */
 /* # permitted provided that the following conditions are met:                                     # */
@@ -289,8 +289,8 @@ __crt0_dummy_trap_handler_exc_uncrompressed:
 
 __crt0_dummy_trap_handler_irq:
 
-  lw    x9, 0(sp)
-  lw    x8, 4(sp)
+  lw    x8, 0(sp)
+  lw    x9, 4(sp)
   addi  sp, sp, +8
 
   mret
