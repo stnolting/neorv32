@@ -47,11 +47,11 @@
  * Unavailable extensions warning.
  **************************************************************************/
 #if defined __riscv_f || (__riscv_flen == 32)
-  #warning Single-precision floating-point extension <F> is WORK-IN-PROGRESS and NOT FULLY OPERATIONAL yet!
+  #warning Single-precision floating-point extension <F/Zfinx> is WORK-IN-PROGRESS and NOT FULLY OPERATIONAL yet!
 #endif
 
 #if defined __riscv_d || (__riscv_flen == 64)
-  #error Double-precision floating-point extension <D> is NOT supported!
+  #error Double-precision floating-point extension <D/Zdinx> is NOT supported!
 #endif
 
 #if (__riscv_xlen > 32)
@@ -59,7 +59,15 @@
 #endif
 
 #ifdef __riscv_b
-  #warning Bit-manipulation extension <B> is still experimental (non-ratified) and does not support all Zb* subsets yet.
+  #warning Bit-manipulation extension <B> is still experimental (non-ratified) and does not support all <Zb*> subsets yet.
+#endif
+
+#ifdef __riscv_fdiv
+  #warning Floating-point division instruction <FDIV> is NOT supported yet!
+#endif
+
+#ifdef __riscv_fsqrt
+  #warning Floating-point square root instruction <FSQRT> is NOT supported yet!
 #endif
 
 
