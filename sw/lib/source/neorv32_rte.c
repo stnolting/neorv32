@@ -350,6 +350,9 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<CSR_MZEXT_ZBA)) {
     neorv32_uart_printf("Zba ");
   }
+  if (tmp & (1<<CSR_MZEXT_ZFINX)) {
+    neorv32_uart_printf("Zfinx ");
+  }
 
   // check physical memory protection
   neorv32_uart_printf("\nPMP:               ");
