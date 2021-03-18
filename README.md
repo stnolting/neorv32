@@ -170,8 +170,9 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
 #### `B` - Bit manipulation instructions extension
 
-  * :construction: **WORK-IN-PROGRESS** :construction:
-  * :warning: The bit-manipulation extension has not been officially ratified yet! 
+  * :construction: **work-in-progress** :construction:
+  * :warning: this extension has not been officially ratified yet!
+  * :books: more information can be found here: [RISC-V `B` spec.](https://github.com/riscv/riscv-bitmanip)
   * Compatible to [v0.94-draft](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/bitmanip-draft.pdf) of the bit manipulation spec
   * Support via intrisc library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
   * `Zbb` base instruction set: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR[I]` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
@@ -185,19 +186,11 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Jump and branch instructions: `C.J` `C.JAL` `C.JR` `C.JALR` `C.BEQZ` `C.BNEZ`
   * Memory instructions: `C.LW` `C.SW` `C.LWSP` `C.SWSP`
   * System instructions: `C.EBREAK` (requires `Zicsr` extension)
-  * Floating-point instructions: `C.FLW` `C.FSW` `C.FLWSP` `C.FSWSP` (requires `F` extension)
   * Pseudo-instructions are not listed
 
 #### `E` - Embedded CPU version extension
 
   * Reduced register file (only the 16 lowest registers are implemented)
-
-
-#### `F` - Single-precision floating-point extension
-
-  * :construction: **WORK-IN-PROGRESS** :construction:
-  * :warning: the `F` extension is not operational yet!
-  * :information_source: check out the [F-extension project board](https://github.com/stnolting/neorv32/projects/4) for the current implementation state
 
 
 #### `I` - Base integer instruction set
@@ -229,6 +222,14 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 * 16 *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
 * `mzext` CSR to check for implemented `Z*` CPU extensions (like `Zifencei`)
 * All undefined/umimplemented/malformed/illegal instructions do raise an illegal instruction exception
+
+
+#### `Zfinx` - Single-precision floating-point extension (using integer `x` registers)
+
+  * :construction: **work-in-progress** :construction:
+  * :warning: this extension has not been officially ratified yet! 
+  * :books: more information can be found here: [RISC-V `Zfinx` spec.](https://github.com/riscv/riscv-zfinx)
+  * :information_source: check out the [floating-point extension project board](https://github.com/stnolting/neorv32/projects/4) for the current implementation state
 
 
 #### `Zicsr` - Privileged architecture - CSR access extension
