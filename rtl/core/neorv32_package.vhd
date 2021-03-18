@@ -60,7 +60,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050206"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050207"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -254,48 +254,46 @@ package neorv32_package is
   constant ctrl_bus_if_c        : natural := 33; -- instruction fetch request
   constant ctrl_bus_mo_we_c     : natural := 34; -- memory address and data output register write enable
   constant ctrl_bus_mi_we_c     : natural := 35; -- memory data input register write enable
-  constant ctrl_bus_wd_sel_c    : natural := 36; -- memory write-data source select (0=reg_file, 1=co-proc.)
-  constant ctrl_bus_unsigned_c  : natural := 37; -- is unsigned load
-  constant ctrl_bus_ierr_ack_c  : natural := 38; -- acknowledge instruction fetch bus exceptions
-  constant ctrl_bus_derr_ack_c  : natural := 39; -- acknowledge data access bus exceptions
-  constant ctrl_bus_fence_c     : natural := 40; -- executed fence operation
-  constant ctrl_bus_fencei_c    : natural := 41; -- executed fencei operation
-  constant ctrl_bus_excl_c      : natural := 42; -- exclusive bus access
+  constant ctrl_bus_unsigned_c  : natural := 36; -- is unsigned load
+  constant ctrl_bus_ierr_ack_c  : natural := 37; -- acknowledge instruction fetch bus exceptions
+  constant ctrl_bus_derr_ack_c  : natural := 38; -- acknowledge data access bus exceptions
+  constant ctrl_bus_fence_c     : natural := 39; -- executed fence operation
+  constant ctrl_bus_fencei_c    : natural := 40; -- executed fencei operation
+  constant ctrl_bus_excl_c      : natural := 41; -- exclusive bus access
   -- co-processors --
-  constant ctrl_cp_id_lsb_c     : natural := 43; -- cp select ID lsb
-  constant ctrl_cp_id_hsb_c     : natural := 44; -- cp select ID hsb
-  constant ctrl_cp_id_msb_c     : natural := 45; -- cp select ID msb
-  constant ctrl_cp_fpu_mem_we_c : natural := 46; -- fpu-cp memory-data write enable
+  constant ctrl_cp_id_lsb_c     : natural := 42; -- cp select ID lsb
+  constant ctrl_cp_id_hsb_c     : natural := 43; -- cp select ID hsb
+  constant ctrl_cp_id_msb_c     : natural := 44; -- cp select ID msb
   -- current privilege level --
-  constant ctrl_priv_lvl_lsb_c  : natural := 47; -- privilege level lsb
-  constant ctrl_priv_lvl_msb_c  : natural := 48; -- privilege level msb
+  constant ctrl_priv_lvl_lsb_c  : natural := 45; -- privilege level lsb
+  constant ctrl_priv_lvl_msb_c  : natural := 46; -- privilege level msb
   -- instruction's control blocks (used by cpu co-processors) --
-  constant ctrl_ir_funct3_0_c   : natural := 49; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 50; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 51; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 52; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 53; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 54; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 55; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 56; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 57; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 58; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 59; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 60; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 61; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 62; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 63; -- funct12 bit 11
-  constant ctrl_ir_opcode7_0_c  : natural := 64; -- opcode7 bit 0
-  constant ctrl_ir_opcode7_1_c  : natural := 65; -- opcode7 bit 1
-  constant ctrl_ir_opcode7_2_c  : natural := 66; -- opcode7 bit 2
-  constant ctrl_ir_opcode7_3_c  : natural := 67; -- opcode7 bit 3
-  constant ctrl_ir_opcode7_4_c  : natural := 68; -- opcode7 bit 4
-  constant ctrl_ir_opcode7_5_c  : natural := 69; -- opcode7 bit 5
-  constant ctrl_ir_opcode7_6_c  : natural := 70; -- opcode7 bit 6
+  constant ctrl_ir_funct3_0_c   : natural := 47; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 48; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 49; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 50; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 51; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 52; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 53; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 54; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 55; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 56; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 57; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 58; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 59; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 60; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 61; -- funct12 bit 11
+  constant ctrl_ir_opcode7_0_c  : natural := 62; -- opcode7 bit 0
+  constant ctrl_ir_opcode7_1_c  : natural := 63; -- opcode7 bit 1
+  constant ctrl_ir_opcode7_2_c  : natural := 64; -- opcode7 bit 2
+  constant ctrl_ir_opcode7_3_c  : natural := 65; -- opcode7 bit 3
+  constant ctrl_ir_opcode7_4_c  : natural := 66; -- opcode7 bit 4
+  constant ctrl_ir_opcode7_5_c  : natural := 67; -- opcode7 bit 5
+  constant ctrl_ir_opcode7_6_c  : natural := 68; -- opcode7 bit 6
   -- CPU status --
-  constant ctrl_sleep_c         : natural := 71; -- set when CPU is in sleep mode
+  constant ctrl_sleep_c         : natural := 69; -- set when CPU is in sleep mode
   -- control bus size --
-  constant ctrl_width_c         : natural := 72; -- control bus size
+  constant ctrl_width_c         : natural := 70; -- control bus size
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -346,14 +344,8 @@ package neorv32_package is
   constant opcode_syscsr_c : std_ulogic_vector(6 downto 0) := "1110011"; -- system/csr access (type via funct3)
   -- atomic memory access (A) --
   constant opcode_atomic_c : std_ulogic_vector(6 downto 0) := "0101111"; -- atomic operations (A extension)
-  -- floating point operations (F/D/H/Q) --
-  constant opcode_flw_c    : std_ulogic_vector(6 downto 0) := "0000111"; -- load word
-  constant opcode_fsw_c    : std_ulogic_vector(6 downto 0) := "0100111"; -- store word
-  constant opcode_fop_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single opearand operation
-  constant opcode_fmadd_c  : std_ulogic_vector(6 downto 0) := "1000011"; -- fused multiply-add (three operands)
-  constant opcode_fmsubb_c : std_ulogic_vector(6 downto 0) := "1000111"; -- fused multiply-sub (three operands)
-  constant opcode_fnmsub_c : std_ulogic_vector(6 downto 0) := "1001011"; -- fused negative multiply-sub (three operands)
-  constant opcode_fnmadd_c : std_ulogic_vector(6 downto 0) := "1001111"; -- fused negative multiply-add (three operands)
+  -- floating point operations (Zfinx-only) (F/D/H/Q) --
+  constant opcode_fop_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single opearand instruction
 
   -- RISC-V Funct3 --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -703,7 +695,7 @@ package neorv32_package is
   constant cp_sel_atomic_c   : std_ulogic_vector(2 downto 0) := "001"; -- atomic operations; success/failure evaluation ('A' extension)
   constant cp_sel_bitmanip_c : std_ulogic_vector(2 downto 0) := "010"; -- bit manipulation ('B' extension)
   constant cp_sel_csr_rd_c   : std_ulogic_vector(2 downto 0) := "011"; -- CSR read access ('Zicsr' extension)
-  constant cp_sel_fpu_c      : std_ulogic_vector(2 downto 0) := "100"; -- loating-point unit ('F' extension)
+  constant cp_sel_fpu_c      : std_ulogic_vector(2 downto 0) := "100"; -- loating-point unit ('Zfinx' extension)
 --constant cp_sel_crypto_c   : std_ulogic_vector(2 downto 0) := "101"; -- crypto operations ('K' extension)
 --constant cp_sel_reserved_c : std_ulogic_vector(2 downto 0) := "110"; -- reserved
 --constant cp_sel_reserved_c : std_ulogic_vector(2 downto 0) := "111"; -- reserved
@@ -963,9 +955,9 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
-      CPU_EXTENSION_RISCV_F        : boolean := false; -- implement 32-bit floating-point extension?
       CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
       CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
+      CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
       -- Extension Options --
@@ -1032,9 +1024,9 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
-      CPU_EXTENSION_RISCV_F        : boolean := false; -- implement 32-bit floating-point extension?
       CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
       CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
+      CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
       -- Physical memory protection (PMP) --
@@ -1177,24 +1169,23 @@ package neorv32_package is
     );
   end component;
 
-  -- Component: CPU Co-Processor 32-bit FPU ('F' extension) ---------------------------------
+  -- Component: CPU Co-Processor 32-bit FPU ('Zfinx' extension) -----------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_fpu
     port (
       -- global control --
-      clk_i     : in  std_ulogic; -- global clock, rising edge
-      rstn_i    : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i    : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
-      start_i   : in  std_ulogic; -- trigger operation
+      clk_i    : in  std_ulogic; -- global clock, rising edge
+      rstn_i   : in  std_ulogic; -- global reset, low-active, async
+      ctrl_i   : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      start_i  : in  std_ulogic; -- trigger operation
       -- data input --
-      frm_i     : in  std_ulogic_vector(2 downto 0); -- rounding mode
-      reg_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source
-      mem_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory read-data
+      frm_i    : in  std_ulogic_vector(2 downto 0); -- rounding mode
+      rs1_i    : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
+      rs2_i    : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
       -- result and status --
-      fflags_o  : out std_ulogic_vector(4 downto 0); -- exception flags
-      mem_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- memory write-data
-      res_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
-      valid_o   : out std_ulogic -- data output valid
+      res_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
+      fflags_o : out std_ulogic_vector(4 downto 0); -- exception flags
+      valid_o  : out std_ulogic -- data output valid
     );
   end component;
 

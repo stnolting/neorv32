@@ -55,9 +55,9 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_F        : boolean := false; -- implement 32-bit floating-point extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
     -- Physical memory protection (PMP) --
@@ -180,8 +180,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     is_atomic_sc    : std_ulogic;
     is_bitmanip_imm : std_ulogic;
     is_bitmanip_reg : std_ulogic;
-    is_float_f_reg  : std_ulogic;
-    is_float_i_reg  : std_ulogic;
+    is_float_op     : std_ulogic;
     sys_env_cmd     : std_ulogic_vector(11 downto 0);
   end record;
   signal decode_aux : decode_aux_t;
@@ -202,8 +201,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     is_ci_nxt    : std_ulogic;
     is_cp_op     : std_ulogic; -- current instruction is a co-processor operation
     is_cp_op_nxt : std_ulogic;
-    is_fp        : std_ulogic; -- floating-point operation - do not access to integer register file
-    is_fp_nxt    : std_ulogic;
     --
     branch_taken : std_ulogic; -- branch condition fullfilled
     pc           : std_ulogic_vector(data_width_c-1 downto 0); -- actual PC, corresponding to current executed instruction
@@ -604,7 +601,7 @@ begin
         imm_o <= execute_engine.next_pc;
       else -- "normal" immediate from instruction word
         case opcode_v is -- save some bits here, the two LSBs are always "11" for rv32
-          when opcode_store_c | opcode_fsw_c => -- S-immediate
+          when opcode_store_c => -- S-immediate
             imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
             imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
             imm_o(04 downto 01) <= execute_engine.i_reg(11 downto 08);
@@ -693,7 +690,6 @@ begin
       execute_engine.i_reg      <= execute_engine.i_reg_nxt;
       execute_engine.is_ci      <= execute_engine.is_ci_nxt;
       execute_engine.is_cp_op   <= execute_engine.is_cp_op_nxt;
-      execute_engine.is_fp      <= execute_engine.is_fp_nxt;
       -- PC & IR of "last executed" instruction --
       if (execute_engine.state = EXECUTE) then
         execute_engine.last_pc    <= execute_engine.pc;
@@ -765,8 +761,7 @@ begin
     decode_aux.is_atomic_sc    <= '0';
     decode_aux.is_bitmanip_imm <= '0';
     decode_aux.is_bitmanip_reg <= '0';
-    decode_aux.is_float_f_reg  <= '0';
-    decode_aux.is_float_i_reg  <= '0';
+    decode_aux.is_float_op     <= '0';
 
     -- is immediate ALU operation? --
     decode_aux.alu_immediate <= not execute_engine.i_reg(instr_opcode_msb_c-1);
@@ -827,23 +822,16 @@ begin
       decode_aux.is_bitmanip_reg <= '1';
     end if;
 
-    -- floating-point FLOAT_register operations --
-    if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11110")) or -- FMV.W.X
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00000")) or -- FADD.S
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00001")) or -- FSUB.S
+    -- floating-point operations (Zfinx) --
+    if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+3) = "0000")) or -- FADD.S / FSUB.S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00010")) or -- FMUL.S
--- !!! FIXME / TODO !!! --       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00011")) or -- FDIV.S
--- !!! FIXME / TODO !!! --       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01011") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00000")) or -- FSQRT.S
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- FCLASS.S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00100") and (execute_engine.i_reg(instr_funct3_msb_c) = '0')) or -- FSGNJ[N/X].S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_msb_c-1) = "00")) or -- FMIN.S / FMAX.S
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11010") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c+1) = "0000")) then -- FCVT.S.W*
-      decode_aux.is_float_f_reg <= '1';
-    end if;
-    -- floating-point INTEGER_register operations --
-    if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_msb_c-1) = "00")) or -- FMV.X.W / FCLASS.S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "10100") and (execute_engine.i_reg(instr_funct3_msb_c) = '0')) or -- FEQ.S / FLT.S / FLE.S
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11010") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c+1) = "0000")) or -- FCVT.S.W*
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11000") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c+1) = "0000")) then -- FCVT.W*.S
-      decode_aux.is_float_i_reg <= '1';
+      decode_aux.is_float_op <= '1';
     end if;
 
     -- system/environment instructions --
@@ -863,7 +851,6 @@ begin
     execute_engine.i_reg_nxt    <= execute_engine.i_reg;
     execute_engine.is_cp_op_nxt <= execute_engine.is_cp_op;
     execute_engine.is_ci_nxt    <= execute_engine.is_ci;
-    execute_engine.is_fp_nxt    <= execute_engine.is_fp;
     execute_engine.sleep_nxt    <= execute_engine.sleep;
     execute_engine.branched_nxt <= execute_engine.branched;
     --
@@ -923,7 +910,6 @@ begin
       -- ------------------------------------------------------------
         -- housekeeping --
         execute_engine.is_cp_op_nxt <= '0'; -- init
-        execute_engine.is_fp_nxt    <= '0'; -- init
         ctrl_nxt(ctrl_bus_excl_c)   <= '0'; -- clear exclusive data bus access
         -- PC update --
         execute_engine.pc_mux_sel <= '0'; -- linear next PC
@@ -1054,19 +1040,14 @@ begin
             ctrl_nxt(ctrl_rf_wb_en_c)  <= '1'; -- valid RF write-back
             execute_engine.state_nxt   <= DISPATCH;
 
-          when opcode_load_c | opcode_store_c | opcode_atomic_c | opcode_flw_c | opcode_fsw_c => -- load/store / atomic memory access / floating-point load/store 
+          when opcode_load_c | opcode_store_c | opcode_atomic_c => -- load/store / atomic memory access
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
             ctrl_nxt(ctrl_bus_mo_we_c)   <= '1'; -- write to MAR and MDO (MDO only relevant for store)
-            if (CPU_EXTENSION_RISCV_F = true) and (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "01") then -- floating-point load/store
-              execute_engine.is_fp_nxt    <= decode_aux.is_float_f_reg; -- no integer register file write back for FPU internal operations
-              ctrl_nxt(ctrl_bus_wd_sel_c) <= '1'; -- use memory-write-data from FPU co-processor (only relevant for float STORE)
-            end if;
             --
             if (CPU_EXTENSION_RISCV_A = false) or -- atomic extension disabled
-               (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "00") or  -- normal integerload/store
-               ((CPU_EXTENSION_RISCV_F = true) and (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "01")) then -- floating-point load/store
+               (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "00") then  -- normal integerload/store
               execute_engine.state_nxt <= LOADSTORE_0;
             else -- atomic operation
               if (execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c) = funct5_a_sc_c) or -- store-conditional
@@ -1107,15 +1088,15 @@ begin
               execute_engine.state_nxt <= SYS_WAIT;
             end if;
 
-          when opcode_fop_c | opcode_fmadd_c | opcode_fmsubb_c | opcode_fnmsub_c | opcode_fnmadd_c => -- floating-point operations
+          when opcode_fop_c => -- floating-point operations
           -- ------------------------------------------------------------
-            execute_engine.state_nxt <= SYS_WAIT;
-            if (CPU_EXTENSION_RISCV_F = true) then
-              execute_engine.is_fp_nxt                           <= decode_aux.is_float_f_reg; -- no integer register file write back for FPU internal operations
+            if (CPU_EXTENSION_RISCV_Zfinx = true) then
               ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_fpu_c; -- use FPU CP
               execute_engine.is_cp_op_nxt                        <= '1'; -- this is a CP operation
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
               execute_engine.state_nxt                           <= ALU_WAIT;
+            else
+              execute_engine.state_nxt <= SYS_WAIT;
             end if;
 
           when others => -- undefined
@@ -1158,11 +1139,7 @@ begin
       when ALU_WAIT => -- wait for multi-cycle ALU operation (shifter or CP) to finish
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_rf_in_mux_c) <= '0'; -- RF input = ALU result
-        if (CPU_EXTENSION_RISCV_F = false) then
-          ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back (permanent write-back)
-        else
-          ctrl_nxt(ctrl_rf_wb_en_c) <= not execute_engine.is_fp; -- allow write back if NOT <FPU-internal operation>
-        end if;
+        ctrl_nxt(ctrl_rf_wb_en_c)  <= '1'; -- valid RF write-back (permanent write-back)
         -- cp access or alu.shift? --
         if (execute_engine.is_cp_op = '1') then
           ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
@@ -1245,10 +1222,7 @@ begin
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           -- data write-back
           if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') then -- normal load OR atomic load
-            ctrl_nxt(ctrl_rf_wb_en_c) <= not execute_engine.is_fp; -- allow write back if NOT <FPU-internal operation>
-          end if;
-          if (CPU_EXTENSION_RISCV_F = true) and (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_flw_c(6 downto 2)) then -- floating-point LOAD.word
-            ctrl_nxt(ctrl_cp_fpu_mem_we_c) <= '1'; -- co-processor register file write-back
+            ctrl_nxt(ctrl_rf_wb_en_c) <= '1';
           end if;
           execute_engine.state_nxt <= DISPATCH;
         end if;
@@ -1315,7 +1289,7 @@ begin
     -- check CSR access --
     case csr.addr is
       -- standard read/write CSRs --
-      when csr_fflags_c | csr_frm_c | csr_fcsr_c => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_F); -- full access for everyone if F extension is enabled
+      when csr_fflags_c | csr_frm_c | csr_fcsr_c => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- full access for everyone if Zfinx extension is enabled
       --
       when csr_mstatus_c       => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
       when csr_mstatush_c      => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
@@ -1647,29 +1621,11 @@ begin
             illegal_instruction <= '1';
           end if;
 
-        when opcode_fop_c => -- floating point operations - dual-operand
+        when opcode_fop_c => -- floating point operations - single/dual operands
         -- ------------------------------------------------------------
-          if (CPU_EXTENSION_RISCV_F = true) and -- F extension enabled
-             (execute_engine.i_reg(instr_funct7_lsb_c+1 downto instr_funct7_lsb_c) = float_single_c) and -- single-precision operations
-             ((decode_aux.is_float_f_reg = '1') or (decode_aux.is_float_i_reg = '1')) then -- float_reg or int_reg operations
-            illegal_instruction <= '0';
-          else
-            illegal_instruction <= '1';
-          end if;
-
-        when opcode_fmadd_c | opcode_fmsubb_c | opcode_fnmsub_c | opcode_fnmadd_c  => -- floating point operations - tripple-operand (fused multiply-add)
-        -- ------------------------------------------------------------
-          if (CPU_EXTENSION_RISCV_F = true) and -- F extension enabled
-             (execute_engine.i_reg(instr_funct7_lsb_c+1 downto instr_funct7_lsb_c) = float_single_c) then -- single-precision operations
-            illegal_instruction <= '0';
-          else
-            illegal_instruction <= '1';
-          end if;
-
-        when opcode_flw_c | opcode_fsw_c => -- floating point load/store word
-        -- ------------------------------------------------------------
-          if (CPU_EXTENSION_RISCV_F = true) and -- F extension enabled
-             (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then -- 32-bit transfer size
+          if (CPU_EXTENSION_RISCV_Zfinx = true) and -- F extension enabled
+             (execute_engine.i_reg(instr_funct7_lsb_c+1 downto instr_funct7_lsb_c) = float_single_c) and -- single-precision operations only
+             (decode_aux.is_float_op = '1') then -- is correct/supported floating-point instruction
             illegal_instruction <= '0';
           else
             illegal_instruction <= '1';
@@ -2006,15 +1962,15 @@ begin
           -- --------------------------------------------------------------------
           if (csr.addr(11 downto 4) = csr_class_float_c) then -- floating point CSR class
             -- R/W: fflags - floating-point (FPU) exception flags --
-            if (csr.addr(3 downto 0) = csr_fflags_c(3 downto 0)) and (CPU_EXTENSION_RISCV_F = true) then
+            if (csr.addr(3 downto 0) = csr_fflags_c(3 downto 0)) and (CPU_EXTENSION_RISCV_Zfinx = true) then
               csr.fflags <= csr.wdata(4 downto 0);
             end if;
             -- R/W: frm - floating-point (FPU) rounding mode --
-            if (csr.addr(3 downto 0) = csr_frm_c(3 downto 0)) and (CPU_EXTENSION_RISCV_F = true) then
+            if (csr.addr(3 downto 0) = csr_frm_c(3 downto 0)) and (CPU_EXTENSION_RISCV_Zfinx = true) then
               csr.frm <= csr.wdata(2 downto 0);
             end if;
             -- R/W: fflags - floating-point (FPU) control/status (frm + fflags) --
-            if (csr.addr(3 downto 0) = csr_fcsr_c(3 downto 0)) and (CPU_EXTENSION_RISCV_F = true) then
+            if (csr.addr(3 downto 0) = csr_fcsr_c(3 downto 0)) and (CPU_EXTENSION_RISCV_Zfinx = true) then
               csr.frm    <= csr.wdata(7 downto 5);
               csr.fflags <= csr.wdata(4 downto 0);
             end if;
@@ -2154,7 +2110,7 @@ begin
 
           -- floating-point (FPU) exception flags --
           -- --------------------------------------------------------------------
-          if (CPU_EXTENSION_RISCV_F = true) and (execute_engine.state = ALU_WAIT) then -- FIXME?
+          if (CPU_EXTENSION_RISCV_Zfinx = true) and (execute_engine.state = ALU_WAIT) then
             csr.fflags <= csr.fflags or fpu_flags_i; -- accumulate flags ("accrued exception flags")
           end if;
 
@@ -2239,7 +2195,7 @@ begin
       end if;
 
       -- floating-point extension disabled --
-      if (CPU_EXTENSION_RISCV_F = false) then
+      if (CPU_EXTENSION_RISCV_Zfinx = false) then
         csr.fflags <= (others => '0');
         csr.frm    <= (others => '0');
       end if;
@@ -2409,17 +2365,17 @@ begin
           -- --------------------------------------------------------------------
           when csr_fflags_c => -- R/W: fflags - floating-point (FPU) exception flags
             csr.rdata <= (others => '0');
-            if (CPU_EXTENSION_RISCV_F = true) then -- FPU implemented
+            if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented
               csr.rdata(4 downto 0) <= csr.fflags;
             end if;
           when csr_frm_c => -- R/W: frm - floating-point (FPU) rounding mode
             csr.rdata <= (others => '0');
-            if (CPU_EXTENSION_RISCV_F = true) then -- FPU implemented
+            if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented
               csr.rdata(2 downto 0) <= csr.frm;
             end if;
           when csr_fcsr_c => -- R/W: fflags - floating-point (FPU) control/status (frm + fflags)
             csr.rdata <= (others => '0');
-            if (CPU_EXTENSION_RISCV_F = true) then -- FPU implemented
+            if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented
               csr.rdata(7 downto 5) <= csr.frm;
               csr.rdata(4 downto 0) <= csr.fflags;
             end if;
@@ -2438,7 +2394,7 @@ begin
             csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);     -- B CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
             csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
-            csr.rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_F);     -- F CPU extension
+            csr.rdata(05) <= '0';                                         -- F CPU extension
             csr.rdata(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
             csr.rdata(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_M);     -- M CPU extension
             csr.rdata(20) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);     -- U CPU extension
@@ -2696,6 +2652,7 @@ begin
             csr.rdata(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);        -- Zbb (B)
             csr.rdata(3) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);        -- Zbs (B)
             csr.rdata(4) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);        -- Zba (B)
+            csr.rdata(5) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx ("F-alternative")
 
           -- undefined/unavailable --
           when others =>

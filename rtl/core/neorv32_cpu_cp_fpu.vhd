@@ -1,15 +1,18 @@
 -- #################################################################################################
--- # << NEORV32 - CPU Co-Processor: Single-Precision Floating Point Unit (RISC-V "F" Extension) >> #
+-- # << NEORV32 - CPU Co-Processor: Single-Prec. Floating Point Unit (RISC-V "Zfinx" Extension) >> #
 -- # ********************************************************************************************* #
 -- #                                                                                               #
 -- #                            !!!        WORK-IN-PROGRESS         !!!                            #
 -- #                            !!! THIS UNIT IS NOT FUNCTIONAL YET !!!                            #
 -- #                                                                                               #
 -- # ********************************************************************************************* #
--- # !!! Enabling the F extension does not has an effect on the CPU. If F is enabled, there    !!! #
--- # !!! will be no traps when trying to execute floating-point instructions, since the main   !!! #
--- # !!! CPU control unit allready provides all necessary F-extension infrastructure.          !!! #
--- # !!! However, all F instructions will always return zero.                                  !!! #
+-- # The Zfinx floating-point extension uses the integer register file (x) for all FP operations.  #
+-- # See the official RISC-V specs (https://github.com/riscv/riscv-zfinx) for more information.    #
+-- # ********************************************************************************************* #
+-- # !! Enabling the Zfinx extension does not has an effect on the CPU. If F is enabled, there  !! #
+-- # !! will be no traps when trying to execute floating-point instructions, since the main     !! #
+-- # !! CPU control unit allready provides all necessary Zfinx-extension infrastructure.        !! #
+-- # !! However, all Zfinx instructions will always return zero.                                !! #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -52,19 +55,18 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_cp_fpu is
   port (
     -- global control --
-    clk_i     : in  std_ulogic; -- global clock, rising edge
-    rstn_i    : in  std_ulogic; -- global reset, low-active, async
-    ctrl_i    : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
-    start_i   : in  std_ulogic; -- trigger operation
+    clk_i    : in  std_ulogic; -- global clock, rising edge
+    rstn_i   : in  std_ulogic; -- global reset, low-active, async
+    ctrl_i   : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+    start_i  : in  std_ulogic; -- trigger operation
     -- data input --
-    frm_i     : in  std_ulogic_vector(2 downto 0); -- rounding mode
-    reg_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source (rs1)
-    mem_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory read-data
+    frm_i    : in  std_ulogic_vector(2 downto 0); -- rounding mode
+    rs1_i    : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
+    rs2_i    : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
     -- result and status --
-    fflags_o  : out std_ulogic_vector(4 downto 0); -- exception flags
-    mem_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- memory write-data
-    res_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
-    valid_o   : out std_ulogic -- data output valid
+    res_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
+    fflags_o : out std_ulogic_vector(4 downto 0); -- exception flags
+    valid_o  : out std_ulogic -- data output valid
   );
 end neorv32_cpu_cp_fpu;
 
@@ -74,9 +76,8 @@ begin
 
   -- There is nothing to see here yet -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fflags_o <= (others => '0');
-  mem_o    <= (others => '0');
   res_o    <= (others => '0');
+  fflags_o <= (others => '0');
   valid_o  <= start_i;
 
 

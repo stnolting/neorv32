@@ -6,7 +6,7 @@
 -- #   * neorv32_cpu_alu.vhd             - Arithmetic/logic unit                                   #
 -- #   * neorv32_cpu_bus.vhd             - Instruction and data bus interface unit                 #
 -- #   * neorv32_cpu_cp_bitmanip.vhd     - Bit-manipulation co-processor ('B')                     #
--- #   * neorv32_cpu_cp_fpu.vhd          - Single-precision FPU co-processor ('F')                 #
+-- #   * neorv32_cpu_cp_fpu.vhd          - Single-precision FPU co-processor ('Zfinx')             #
 -- #   * neorv32_cpu_cp_muldiv.vhd       - Integer multiplier/divider co-processor ('M')           #
 -- #   * neorv32_cpu_ctrl.vhd            - CPU control and CSR system                              #
 -- #     * neorv32_cpu_decompressor.vhd  - Compressed instructions decoder                         #
@@ -64,9 +64,9 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_F        : boolean := false; -- implement 32-bit floating-point extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
     -- Extension Options --
@@ -124,32 +124,30 @@ end neorv32_cpu;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- local signals --
-  signal ctrl          : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
-  signal comparator    : std_ulogic_vector(1 downto 0); -- comparator result
-  signal imm           : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
-  signal instr         : std_ulogic_vector(data_width_c-1 downto 0); -- new instruction
-  signal rs1, rs2      : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
-  signal alu_res       : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
-  signal alu_add       : std_ulogic_vector(data_width_c-1 downto 0); -- alu address result
-  signal mem_rdata     : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
-  signal mem_wdata     : std_ulogic_vector(data_width_c-1 downto 0); -- memory write-data
-  signal alu_wait      : std_ulogic; -- alu is busy due to iterative unit
-  signal bus_i_wait    : std_ulogic; -- wait for current bus instruction fetch
-  signal bus_d_wait    : std_ulogic; -- wait for current bus data access
-  signal csr_rdata     : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
-  signal mar           : std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
-  signal ma_instr      : std_ulogic; -- misaligned instruction address
-  signal ma_load       : std_ulogic; -- misaligned load data address
-  signal ma_store      : std_ulogic; -- misaligned store data address
-  signal bus_excl_ok   : std_ulogic; -- atomic memory access successful
-  signal be_instr      : std_ulogic; -- bus error on instruction access
-  signal be_load       : std_ulogic; -- bus error on load data access
-  signal be_store      : std_ulogic; -- bus error on store data access
-  signal fetch_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
-  signal curr_pc       : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
-  signal fpu_mem_wdata : std_ulogic_vector(data_width_c-1 downto 0); -- memory write-data form FPU
-  signal fpu_rm        : std_ulogic_vector(2 downto 0); -- FPU rounding mode
-  signal fpu_flags     : std_ulogic_vector(4 downto 0); -- FPU exception flags
+  signal ctrl        : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+  signal comparator  : std_ulogic_vector(1 downto 0); -- comparator result
+  signal imm         : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
+  signal instr       : std_ulogic_vector(data_width_c-1 downto 0); -- new instruction
+  signal rs1, rs2    : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
+  signal alu_res     : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
+  signal alu_add     : std_ulogic_vector(data_width_c-1 downto 0); -- alu address result
+  signal mem_rdata   : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
+  signal alu_wait    : std_ulogic; -- alu is busy due to iterative unit
+  signal bus_i_wait  : std_ulogic; -- wait for current bus instruction fetch
+  signal bus_d_wait  : std_ulogic; -- wait for current bus data access
+  signal csr_rdata   : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
+  signal mar         : std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
+  signal ma_instr    : std_ulogic; -- misaligned instruction address
+  signal ma_load     : std_ulogic; -- misaligned load data address
+  signal ma_store    : std_ulogic; -- misaligned store data address
+  signal bus_excl_ok : std_ulogic; -- atomic memory access successful
+  signal be_instr    : std_ulogic; -- bus error on instruction access
+  signal be_load     : std_ulogic; -- bus error on load data access
+  signal be_store    : std_ulogic; -- bus error on store data access
+  signal fetch_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
+  signal curr_pc     : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
+  signal fpu_rm      : std_ulogic_vector(2 downto 0); -- FPU rounding mode
+  signal fpu_flags   : std_ulogic_vector(4 downto 0); -- FPU exception flags
 
   -- co-processor interface --
   signal cp_start  : std_ulogic_vector(7 downto 0); -- trigger co-processor i
@@ -187,11 +185,11 @@ begin
   -- FIXME: Bit manipulation warning --
   assert not (CPU_EXTENSION_RISCV_B = true) report "NEORV32 CPU CONFIG WARNING! Bit manipulation extension (B) is still HIGHLY EXPERIMENTAL (and spec. is not ratified yet)." severity warning;
 
-  -- FIXME: Floating-point extension warning --
-  assert not (CPU_EXTENSION_RISCV_F = true) report "NEORV32 CPU CONFIG WARNING! 32-bit floating-point extension (F) is WORK-IN-PROGRESS and NOT OPERATIONAL yet." severity warning;
+  -- FIXME: Floating-point extension (Zfinx) warning --
+  assert not (CPU_EXTENSION_RISCV_Zfinx = true) report "NEORV32 CPU CONFIG WARNING! 32-bit floating-point extension (F/Zfinx) is WORK-IN-PROGRESS and NOT OPERATIONAL yet." severity warning;
 
   -- PMP regions check --
-  assert not (PMP_NUM_REGIONS > 64) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out of valid range (0..64)." severity error;
+  assert not (PMP_NUM_REGIONS > 64) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out xf valid range (0..64)." severity error;
   -- PMP granulartiy --
   assert not ((is_power_of_two_f(PMP_MIN_GRANULARITY) = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! PMP granulartiy has to be a power of two." severity error;
   assert not ((PMP_MIN_GRANULARITY < 8) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! PMP granulartiy has to be >= 8 bytes." severity error;
@@ -217,10 +215,9 @@ begin
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_F        => CPU_EXTENSION_RISCV_F,        -- implement 32-bit floating-point extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     -- Physical memory protection (PMP) --
@@ -415,35 +412,33 @@ begin
   cp_valid(3)  <= cp_start(3); -- always assigned even if Zicsr extension is disabled to make sure CPU does not get stalled if there is an accidental access
 
 
-  -- Co-Processor 4: Single-Precision Floating-Point Unit ('F' Extension) -------------------
+  -- Co-Processor 4: Single-Precision Floating-Point Unit ('Zfinx' Extension) ---------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_fpu_inst_true:
-  if (CPU_EXTENSION_RISCV_F = true) generate
+  if (CPU_EXTENSION_RISCV_Zfinx = true) generate
     neorv32_cpu_cp_fpu_inst: neorv32_cpu_cp_fpu
     port map (
       -- global control --
-      clk_i     => clk_i,         -- global clock, rising edge
-      rstn_i    => rstn_i,        -- global reset, low-active, async
-      ctrl_i    => ctrl,          -- main control bus
-      start_i   => cp_start(4),   -- trigger operation
+      clk_i    => clk_i,        -- global clock, rising edge
+      rstn_i   => rstn_i,       -- global reset, low-active, async
+      ctrl_i   => ctrl,         -- main control bus
+      start_i  => cp_start(4),  -- trigger operation
       -- data input --
-      frm_i     => fpu_rm,        -- rounding mode
-      reg_i     => rs1,           -- rf source
-      mem_i     => mem_rdata,     -- memory read-data
+      frm_i    => fpu_rm,       -- rounding mode
+      rs1_i    => rs1,          -- rf source 1
+      rs2_i    => rs2,          -- rf source 2
       -- result and status --
-      fflags_o  => fpu_flags,     -- exception flags
-      mem_o     => fpu_mem_wdata, -- memory write-data
-      res_o     => cp_result(4),  -- operation result
-      valid_o   => cp_valid(4)    -- data output valid
+      res_o    => cp_result(4), -- operation result
+      fflags_o => fpu_flags,    -- exception flags
+      valid_o  => cp_valid(4)   -- data output valid
     );
   end generate;
 
   neorv32_cpu_cp_fpu_inst_false:
-  if (CPU_EXTENSION_RISCV_F = false) generate
-    fpu_flags     <= (others => '0');
-    fpu_mem_wdata <= (others => '0');
-    cp_result(4)  <= (others => '0');
-    cp_valid(4)   <= cp_start(4); -- to make sure CPU does not get stalled if there is an accidental access
+  if (CPU_EXTENSION_RISCV_Zfinx = false) generate
+    cp_result(4) <= (others => '0');
+    fpu_flags    <= (others => '0');
+    cp_valid(4)  <= cp_start(4); -- to make sure CPU does not get stalled if there is an accidental access
   end generate;
 
 
@@ -485,7 +480,7 @@ begin
     be_instr_o     => be_instr,       -- bus error on instruction access
     -- cpu data access interface --
     addr_i         => alu_add,        -- ALU.add result -> access address
-    wdata_i        => mem_wdata,      -- write data
+    wdata_i        => rs2,            -- write data
     rdata_o        => mem_rdata,      -- read data
     mar_o          => mar,            -- current memory address register
     d_wait_o       => bus_d_wait,     -- wait for access to complete
@@ -523,9 +518,6 @@ begin
     d_bus_excl_o   => d_bus_excl_o,   -- exclusive access request
     d_bus_excl_i   => d_bus_excl_i    -- state of exclusiv access (set if success)
   );
-
-  -- memory write data --
-  mem_wdata <= fpu_mem_wdata when ((CPU_EXTENSION_RISCV_F = true) and (ctrl(ctrl_bus_wd_sel_c) = '1')) else rs2;
 
   -- current privilege level --
   i_bus_priv_o <= ctrl(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c);
