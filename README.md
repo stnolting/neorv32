@@ -21,6 +21,8 @@
 
 ## Overview
 
+![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_processor.png)
+
 The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC) that is based
 on the RISC-V NEORV32 CPU. The processor is intended as *ready-to-go* auxiliary processor within a larger SoC
 designs or as stand-alone custom microcontroller.
@@ -116,8 +118,6 @@ The full-blown data sheet of the NEORV32 Processor and CPU is available as pdf f
 
 
 ### NEORV32 Processor Features
-
-![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_processor.png)
 
 The NEORV32 Processor provides a full-scale microcontroller-like SoC based on the NEORV32 CPU. The setup
 is highly customizable via the processor's top generics and already provides the following *optional* modules:
