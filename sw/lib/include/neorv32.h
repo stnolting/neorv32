@@ -53,6 +53,10 @@
  * Available CPU Control and Status Registers (CSRs)
  **************************************************************************/
 enum NEORV32_CSR_enum {
+  CSR_FFLAGS         = 0x001, /**< 0x001 - fflags     (r/w): Floating-point accrued exception flags */
+  CSR_FRM            = 0x002, /**< 0x002 - frm        (r/w): Floating-point dynamic rounding mode */
+  CSR_FCSR           = 0x003, /**< 0x003 - fcsr       (r/w): Floating-point control/staturs register (frm + fflags) */
+
   CSR_MSTATUS        = 0x300, /**< 0x300 - mstatus    (r/w): Machine status register */
   CSR_MISA           = 0x301, /**< 0x301 - misa       (r/-): CPU ISA and extensions (read-only in NEORV32) */
   CSR_MIE            = 0x304, /**< 0x304 - mie        (r/w): Machine interrupt-enable register */
@@ -1060,6 +1064,9 @@ enum NEORV32_NEOLED_CT_enum {
 // ----------------------------------------------------------------------------
 // cpu core
 #include "neorv32_cpu.h"
+
+// intrinsics
+#include "neorv32_intrinsics.h"
 
 // neorv32 runtime environment
 #include "neorv32_rte.h"
