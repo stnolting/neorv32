@@ -52,15 +52,15 @@ package neorv32_package is
   -- CPU core --
   constant ipb_entries_c : natural := 2; -- entries in CPU instruction prefetch buffer, has to be a power of 2, default=2
 
-  -- "critical" number of PMP regions --
-  -- if more PMP regions (> pmp_num_regions_critical_c) are defined, another register stage is automatically
-  -- inserted into the memory interfaces increasing instruction fetch & data access latency by +1 cycle!
-  constant pmp_num_regions_critical_c : natural := 8;
+  -- "critical" number of implemented PMP regions --
+  -- if more PMP regions (> pmp_num_regions_critical_c) are defined, another register stage is automatically inserted into the memory interfaces
+  -- increasing instruction fetch & data access latency by +1 cycle but also reducing critical path length
+  constant pmp_num_regions_critical_c : natural := 8; -- default=8
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050207"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050208"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -400,12 +400,40 @@ package neorv32_package is
   constant funct5_a_lr_c : std_ulogic_vector(4 downto 0) := "00010"; -- LR
   constant funct5_a_sc_c : std_ulogic_vector(4 downto 0) := "00011"; -- SC
 
-  -- RISC-V Floating-Point Formats ----------------------------------------------------------
+  -- RISC-V Floating-Point Stuff ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant float_single_c : std_ulogic_vector(1 downto 0) := "00"; -- single-precisions (32-bit)
-  constant float_double_c : std_ulogic_vector(1 downto 0) := "01"; -- double-precisions (64-bit)
-  constant float_half_c   : std_ulogic_vector(1 downto 0) := "10"; -- half-precisions (16-bit)
-  constant float_quad_c   : std_ulogic_vector(1 downto 0) := "11"; -- quad-precisions (64-bit)
+  -- formats --
+  constant float_single_c : std_ulogic_vector(1 downto 0) := "00"; -- single-precision (32-bit)
+  constant float_double_c : std_ulogic_vector(1 downto 0) := "01"; -- double-precision (64-bit)
+  constant float_half_c   : std_ulogic_vector(1 downto 0) := "10"; -- half-precision (16-bit)
+  constant float_quad_c   : std_ulogic_vector(1 downto 0) := "11"; -- quad-precision (128-bit)
+
+  -- number class flags --
+  constant fp_class_neg_inf_c    : natural := 0; -- negative infinity
+  constant fp_class_neg_norm_c   : natural := 1; -- negative normal number
+  constant fp_class_neg_denorm_c : natural := 2; -- negative subnormal number
+  constant fp_class_neg_zero_c   : natural := 3; -- negative zero
+  constant fp_class_pos_zero_c   : natural := 4; -- positive zero
+  constant fp_class_pos_denorm_c : natural := 5; -- positive subnormal number
+  constant fp_class_pos_norm_c   : natural := 6; -- positive normal number
+  constant fp_class_pos_inf_c    : natural := 7; -- positive infinity
+  constant fp_class_snan_c       : natural := 8; -- signaling NaN (sNaN)
+  constant fp_class_qnan_c       : natural := 9; -- quiet NaN (qNaN)
+
+  -- exception flags --
+  constant fp_exc_nv_c : natural := 0; -- invalid operation
+  constant fp_exc_dz_c : natural := 1; -- divide by zero
+  constant fp_exc_of_c : natural := 2; -- overflow
+  constant fp_exc_uf_c : natural := 3; -- underflow
+  constant fp_exc_nx_c : natural := 4; -- inexact
+
+  -- special values (single-precision) --
+  constant fp_single_qnan_c     : std_ulogic_vector(31 downto 0) := x"7fc00000"; -- quiet NaN
+  constant fp_single_snan_c     : std_ulogic_vector(31 downto 0) := x"7fa00000"; -- signaling NaN
+  constant fp_single_pos_inf_c  : std_ulogic_vector(31 downto 0) := x"7f800000"; -- positive infinity
+  constant fp_single_neg_inf_c  : std_ulogic_vector(31 downto 0) := x"ff800000"; -- negative infinity
+  constant fp_single_pos_zero_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- positive zero
+  constant fp_single_neg_zero_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- negative zero
 
   -- RISC-V CSR Addresses -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
