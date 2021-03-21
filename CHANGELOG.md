@@ -12,8 +12,19 @@ can be found [here](https://raw.githubusercontent.com/stnolting/neorv32/master/d
 Leading zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`. The version number is globally
 defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/neorv32_package.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
 
+
+### Version History
+
+* :bug: = bug-fix
+* :sparkles: = new feature
+* :warning: = major change
+* :lock: = security issue
+* :rocket: = release
+
+
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 21.03.2021 | 1.5.2.8 | :bug: fixed problem with linking `math.h` library in makefile; added floating-point-related global definitions to main VHDL package; added intrinsic core library file `sw/lib/include/neorv32_intrinsics.h` - intrinsic library support for CPU extensions, which are not yet supported by the upstream GCC, are based on this |
 | 18.03.2021 | 1.5.2.7 | :bug: fixed bug in `sw/common/crt0.S` dummy exception handler (wrong order of register push/pop); changed upcoming floating-point extension (orignally `F` extension) to `Zfinx` extension (-> [RISC-V `Zfinx` spec](https://github.com/riscv/riscv-zfinx)) - updated CPU infrastructure |
 | 16.03.2021 | 1.5.2.6 | reworked atomic/exclusive memory access interface: removed CPU's `i_bus_lock_o` and `i_bus_lock_o` signal (was always zero anyway); removed top's `wb_lock_o` signal; added *exclusive access request* to Wishbone tag signal `wb_tag_o` (is not one bit wider); added more details to NEORV32.pdf regarding excluisve/atomic memory accesses (interface/protocol) |
 | 09.03.2021 | 1.5.2.5 | added bit-manipulation `Zba` sub-extension (shifted-adds: `SH1ADD` `SH2ADD` `SH3ADD`) |
