@@ -181,7 +181,7 @@ $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.cpp
 
 # Link object files and show memory utilization
 main.elf: $(OBJ)
-	@$(CC) $(CC_OPTS) -T $(LD_SCRIPT) $(OBJ) -o $@
+	@$(CC) $(CC_OPTS) -T $(LD_SCRIPT) $(OBJ) -o $@ -lm
 	@echo "Memory utilization:"
 	@$(SIZE) main.elf
 
