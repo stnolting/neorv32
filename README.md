@@ -251,11 +251,11 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
     * Store access fault (via unacknowledged bus access after timeout)
     * Environment call from U-mode (via `ecall` instruction in user mode)
     * Environment call from M-mode (via `ecall` instruction in machine mode)
-  * Supported (async.) exceptions / interrupts:
-    * Machine timer interrupt `mti` (via processor's MTIME unit / external signal)
-    * Machine software interrupt `msi` (via external signal)
-    * Machine external interrupt `mei` (via external signal)
-    * 16 fast interrupt requests (custom extension), 6+1 available for custom usage
+  * Supported interrupts:
+    * RISC-V machine timer interrupt `mti` (via processor-internal MTIME unit *or* external signal)
+    * RISC-V machine software interrupt `msi` (via external signal)
+    * RISC-V machine external interrupt `mei` (via external signal)
+    * 16 fast interrupt requests, 6+1 available for custom usage
 
 
 #### `Zifencei` - Privileged architecture - Instruction stream synchronization extension
@@ -284,7 +284,6 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 * The physical memory protection (**PMP**) only supports `NAPOT` mode yet and a minimal granularity of 8 bytes
 * The `A` extension only implements `lr.w` and `sc.w` instructions yet. However, these instructions are sufficient to emulate all further AMO operations
 * The `mcause` trap code `0x80000000` (originally reserved in the RISC-V specs) is used to indicate a hardware reset (as "non-maskable interrupt")
-* The bit manipulation extension is not yet officially ratified, but is expected to stay unchanged. There is no software support in the upstream GCC RISC-V port yet. However, an intrinsic library is provided to utilize the provided bit manipulation extension from C-language code (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation)). NEORV32's `B` extension is compatible to spec. version "0.94-draft".
 
 
 
