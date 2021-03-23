@@ -2,6 +2,7 @@
 -- # << NEORV32 - Processor Top Entity with AXI4-Lite Compatible Master Interface >>               #
 -- # ********************************************************************************************* #
 -- # (c) "AXI", "AXI4" and "AXI4-Lite" are trademarks of Arm Holdings plc.                         #
+-- # Note: External MTIME is not supported.                                                        #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -58,6 +59,7 @@ entity neorv32_top_axi4lite is
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
     -- Extension Options --
@@ -163,7 +165,6 @@ entity neorv32_top_axi4lite is
     neoled_o    : out std_logic; -- async serial data line
     -- Interrupts --
     soc_firq_i  : in  std_logic_vector(5 downto 0) := (others => '0'); -- fast interrupt channels
-    mtime_irq_i : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   : in  std_logic := '0'; -- machine software interrupt
     mext_irq_i  : in  std_logic := '0'  -- machine external interrupt
   );
@@ -206,7 +207,6 @@ architecture neorv32_top_axi4lite_rtl of neorv32_top_axi4lite is
   signal neoled_o_int    : std_ulogic;
   --
   signal soc_firq_i_int  : std_ulogic_vector(05 downto 0);
-  signal mtime_irq_i_int : std_ulogic;
   signal msw_irq_i_int   : std_ulogic;
   signal mext_irq_i_int  : std_ulogic;
 
@@ -260,6 +260,7 @@ begin
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     -- Extension Options --
@@ -354,7 +355,7 @@ begin
     mtime_i     => (others => '0'), -- current system time
     -- Interrupts --
     soc_firq_i  => soc_firq_i_int,  -- fast interrupt channels
-    mtime_irq_i => mtime_irq_i_int, -- machine timer interrupt, available if IO_MTIME_EN = false
+    mtime_irq_i => '0',             -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => msw_irq_i_int,   -- machine software interrupt
     mext_irq_i  => mext_irq_i_int   -- machine external interrupt
   );

@@ -53,6 +53,7 @@ entity neorv32_top_stdlogic is
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
     -- Extension Options --
@@ -229,6 +230,7 @@ begin
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     -- Extension Options --
@@ -318,7 +320,7 @@ begin
     -- NCO output (available if IO_NCO_EN = true) --
     nco_o       => nco_o_int,       -- numerically-controlled oscillator channels
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-    neoled_o    =>neoled_o_int,     -- async serial data line
+    neoled_o    => neoled_o_int,    -- async serial data line
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     => mtime_i_int,     -- current system time
     -- Interrupts --
@@ -371,6 +373,7 @@ begin
   mtime_i_int     <= std_ulogic_vector(mtime_i);
 
   soc_firq_i_int  <= std_ulogic_vector(soc_firq_i);
+  mtime_irq_i_int <= std_ulogic(mtime_irq_i);
   msw_irq_i_int   <= std_ulogic(msw_irq_i);
   mext_irq_i_int  <= std_ulogic(mext_irq_i);
 
