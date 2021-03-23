@@ -17,16 +17,17 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 * :bug: = bug-fix
 * :sparkles: = new feature
-* :warning: = major change
+* :warning: = major change / important note
 * :lock: = security issue
 * :rocket: = release
 
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 23.03.2021 | 1.5.2.9 | :sparkles: added new top generic to enable single-precision floating-point extensions `Zfinx`: `CPU_EXTENSION_RISCV_Zfinx` - type `boolean`, default = `false`, :warning: **extension is not yet operational!**; bootloader now shows available `Z*` extensions (from `mzext` CSR) like `Zifencei` |
 | 21.03.2021 | 1.5.2.8 | :bug: fixed problem with linking `math.h` library in makefile; added floating-point-related global definitions to main VHDL package; added intrinsic core library file `sw/lib/include/neorv32_intrinsics.h` - intrinsic library support for CPU extensions, which are not yet supported by the upstream GCC, are based on this |
 | 18.03.2021 | 1.5.2.7 | :bug: fixed bug in `sw/common/crt0.S` dummy exception handler (wrong order of register push/pop); changed upcoming floating-point extension (orignally `F` extension) to `Zfinx` extension (-> [RISC-V `Zfinx` spec](https://github.com/riscv/riscv-zfinx)) - updated CPU infrastructure |
-| 16.03.2021 | 1.5.2.6 | reworked atomic/exclusive memory access interface: removed CPU's `i_bus_lock_o` and `i_bus_lock_o` signal (was always zero anyway); removed top's `wb_lock_o` signal; added *exclusive access request* to Wishbone tag signal `wb_tag_o` (is not one bit wider); added more details to NEORV32.pdf regarding excluisve/atomic memory accesses (interface/protocol) |
+| 16.03.2021 | 1.5.2.6 | reworked atomic/exclusive memory access interface: removed CPU's `d_bus_lock_o` and `i_bus_lock_o` signal (was always zero anyway); removed top's `wb_lock_o` signal; added *exclusive access request* to Wishbone tag signal `wb_tag_o` (is now one bit wider); added more details to NEORV32.pdf regarding excluisve/atomic memory accesses (interface/protocol) |
 | 09.03.2021 | 1.5.2.5 | added bit-manipulation `Zba` sub-extension (shifted-adds: `SH1ADD` `SH2ADD` `SH3ADD`) |
 | 07.03.2021 | 1.5.2.4 | :sparkles: added new IO/peripheral module: **Smart LED Interface (NEOLED)** to interface intelligent LEDs (WS2812/WS2811/NeoPixel(c) compatible; supports RGB and RGBW LEDs in *parallel*) with internal TX buffer; new top generics: `IO_NEOLED_EN`: implement NEOLED interface when *true*; new top signals: `neoled_o`: single-wire async. serial data interface; FIFO re-fill interrupt via *fast interrupt request channel 9* `FIRQ9`; added new "NEOLED" section to data sheet; added SW driver library and simple NEOLED example program (`sw/example/demo_neopixel`) |
 | 06.03.2021 | 1.5.2.3 | clean-up of CPU control code: fixed minor bug in F-exension's instruction decoding; changed coding style for CSR write access (old version might have caused "inferring latch..." warning in Intel Quartus); fixed default values for CSRs when according extensions are disabled |
