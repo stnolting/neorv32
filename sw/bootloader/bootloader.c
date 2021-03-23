@@ -1,7 +1,7 @@
 // #################################################################################################
 // # << NEORV32 - Bootloader >>                                                                    #
 // # ********************************************************************************************* #
-// # In order to run the bootloader on any CPU configuration, the bootloader should be compiled    #
+// # In order to run the bootloader on *any* CPU configuration, the bootloader should be compiled  #
 // # unsing the base ISA (rv32i/rv32e) only.                                                       #
 // # ********************************************************************************************* #
 // # Boot from (internal) instruction memory, UART or SPI Flash.                                   #
@@ -18,7 +18,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -261,10 +261,12 @@ int main(void) {
   print_hex_word(neorv32_cpu_csr_read(CSR_MIMPID));
   neorv32_uart_print("\nCLK:  ");
   print_hex_word(SYSINFO_CLK);
-  neorv32_uart_print(" Hz\nUSER: ");
+  neorv32_uart_print("\nUSER: ");
   print_hex_word(SYSINFO_USER_CODE);
   neorv32_uart_print("\nMISA: ");
   print_hex_word(neorv32_cpu_csr_read(CSR_MISA));
+  neorv32_uart_print("\nZEXT: ");
+  print_hex_word(neorv32_cpu_csr_read(CSR_MZEXT));
   neorv32_uart_print("\nPROC: ");
   print_hex_word(SYSINFO_FEATURES);
   neorv32_uart_print("\nIMEM: ");
