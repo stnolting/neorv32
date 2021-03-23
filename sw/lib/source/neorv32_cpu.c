@@ -683,3 +683,26 @@ uint32_t neorv32_cpu_hpm_get_counters(void) {
 
   return num_hpm_cnts;
 }
+
+
+/**********************************************************************//**
+ * Check if certain Z* extension is available
+ *
+ * @param[in] flag Index of the Z-extension to check from #NEORV32_CSR_MZEXT_enum
+ * @return 0 if extension is NOT available, != 0 if extension is available.
+ **************************************************************************/
+int neorv32_check_zextension(uint32_t flag) {
+
+  // check if out of range
+  if (flag > 31) {
+    return 0;
+  }
+
+  uint32_t tmp = neorv32_cpu_csr_read(CSR_MZEXT);
+  if ((tmp & (1 << flag)) == 0) {
+    return 0;
+  }
+  else {
+    return 1;
+  }
+}
