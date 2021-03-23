@@ -73,7 +73,7 @@ entity neorv32_cpu is
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS              : natural := 0; -- number of regions (0..64)
+    PMP_NUM_REGIONS              : natural := 0;     -- number of regions (0..64)
     PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 : natural := 0      -- number of implemented HPM counters (0..29)
@@ -186,7 +186,7 @@ begin
   assert not (CPU_EXTENSION_RISCV_B = true) report "NEORV32 CPU CONFIG WARNING! Bit manipulation extension (B) is still HIGHLY EXPERIMENTAL (and spec. is not ratified yet)." severity warning;
 
   -- FIXME: Floating-point extension (Zfinx) warning --
-  assert not (CPU_EXTENSION_RISCV_Zfinx = true) report "NEORV32 CPU CONFIG WARNING! 32-bit floating-point extension (F/Zfinx) is WORK-IN-PROGRESS and NOT OPERATIONAL yet." severity warning;
+  assert not (CPU_EXTENSION_RISCV_Zfinx = true) report "NEORV32 CPU CONFIG WARNING! 32-bit floating-point extension <Zfinx> is WORK-IN-PROGRESS and NOT OPERATIONAL yet." severity warning;
 
   -- PMP regions check --
   assert not (PMP_NUM_REGIONS > 64) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out xf valid range (0..64)." severity error;
