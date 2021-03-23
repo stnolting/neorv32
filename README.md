@@ -230,8 +230,9 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * :construction: **work-in-progress** :construction:
   * :warning: this extension has not been officially ratified yet! 
   * :books: more information can be found here: [RISC-V `Zfinx` spec.](https://github.com/riscv/riscv-zfinx)
+  * :no_entry: this extension is **NOT OPERATIONAL** yet.
   * :information_source: check out the [floating-point extension project board](https://github.com/stnolting/neorv32/projects/4) for the current implementation state
-  * Fused multiply-add instructions are not supported!
+  * Fused multiply-add instructions (`F[N]MADD.S` & `F[N)MSUB.S`) are **not** supported!
   * Computational instructions: `FADD.S` `FSUB.S` `FMUL.S` `FSGNJ[N/X].S` `FCLASS.S` ~~`FDIV.S`~~ ~~`FSQRT.S`~~
   * Comparison instructions: `FMIN.S` `FMAX.S` `FEQ.S` `FLT.S` `FLE.S` 
   * Conversion instructions: `FCVT.W.S` `FCVT.WU.S` `FCVT.S.W` `FCVT.S.WU`
