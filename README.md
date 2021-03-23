@@ -55,6 +55,7 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
   * [`M`](#M---Integer-multiplication-and-division-hardware-extension) - integer multiplication and division hardware (optional)
   * [`U`](#U---Privileged-architecture---User-mode-extension) - less-privileged *user mode* (optional)
   * [`X`](#X---NEORV32-specific-CPU-extensions) - NEORV32-specific extensions (always enabled)
+  * [`Zfinx`](#Zfinx---Single---precision-floating---point-extension) - Single-precision floating-point extensions (optional) :construction:
   * [`Zicsr`](#Zicsr---Privileged-architecture---CSR-access-extension) - control and status register access instructions (+ exception/irq system) (optional)
   * [`Zifencei`](#Zifencei---Privileged-architecture---Instruction-stream-synchronization-extension) - instruction stream synchronization (optional)
   * [`PMP`](#PMP---Privileged-architecture---Physical-memory-protection) - physical memory protection (optional)
@@ -224,13 +225,18 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 * All undefined/umimplemented/malformed/illegal instructions do raise an illegal instruction exception
 
 
-#### `Zfinx` - Single-precision floating-point extension (using integer `x` registers)
+#### `Zfinx` - Single-precision floating-point extension
 
   * :construction: **work-in-progress** :construction:
   * :warning: this extension has not been officially ratified yet! 
   * :books: more information can be found here: [RISC-V `Zfinx` spec.](https://github.com/riscv/riscv-zfinx)
   * :information_source: check out the [floating-point extension project board](https://github.com/stnolting/neorv32/projects/4) for the current implementation state
-
+  * Fused multiply-add instructions are not supported!
+  * Computational instructions: `FADD.S` `FSUB.S` `FMUL.S` `FSGNJ[N/X].S` `FCLASS.S` ~~`FDIV.S`~~ ~~`FSQRT.S`~~
+  * Comparison instructions: `FMIN.S` `FMAX.S` `FEQ.S` `FLT.S` `FLE.S` 
+  * Conversion instructions: `FCVT.W.S` `FCVT.WU.S` `FCVT.S.W` `FCVT.S.WU`
+  * Additional CSRs: `fcsr` `frm` `fflags`
+  
 
 #### `Zicsr` - Privileged architecture - CSR access extension
 
@@ -574,14 +580,15 @@ Use the bootloader console to upload the `neorv32_exe.bin` executable gerated du
 ```
 << NEORV32 Bootloader >>
 
-BLDV: Nov  7 2020
-HWV:  0x01040606
-CLK:  0x0134FD90 Hz
-USER: 0x0001CE40
-MISA: 0x42801104
-PROC: 0x03FF0035
-IMEM: 0x00010000 bytes @ 0x00000000
-DMEM: 0x00010000 bytes @ 0x80000000
+BLDV: Mar 23 2021
+HWV:  0x01050208
+CLK:  0x05F5E100
+USER: 0x10000DE0
+MISA: 0x40901105
+ZEXT: 0x00000023
+PROC: 0x0EFF0037
+IMEM: 0x00004000 bytes @ 0x00000000
+DMEM: 0x00002000 bytes @ 0x80000000
 
 Autoboot in 8s. Press key to abort.
 Aborted.
