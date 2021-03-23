@@ -5,7 +5,7 @@
 -- # and define all the configuration generics according to your needs. Alternatively, you can use #
 -- # one of the alternative top entities provided in the "rtl/top_templates" folder.               #
 -- #                                                                                               #
--- # Check the processor's data sheet for more information: docs/NEORV32.pdf                       #
+-- # Check out the processor's data sheet for more information: docs/NEORV32.pdf                   #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
