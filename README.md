@@ -55,7 +55,7 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
   * [`M`](#M---Integer-multiplication-and-division-hardware-extension) - integer multiplication and division hardware (optional)
   * [`U`](#U---Privileged-architecture---User-mode-extension) - less-privileged *user mode* (optional)
   * [`X`](#X---NEORV32-specific-CPU-extensions) - NEORV32-specific extensions (always enabled)
-  * [`Zfinx`](#Zfinx---Single---precision-floating---point-extension) - Single-precision floating-point extensions (optional) :construction:
+  * [`Zfinx`](#Zfinx---Single-precision-floating-point-extension) - Single-precision floating-point extensions (optional) :construction:
   * [`Zicsr`](#Zicsr---Privileged-architecture---CSR-access-extension) - control and status register access instructions (+ exception/irq system) (optional)
   * [`Zifencei`](#Zifencei---Privileged-architecture---Instruction-stream-synchronization-extension) - instruction stream synchronization (optional)
   * [`PMP`](#PMP---Privileged-architecture---Physical-memory-protection) - physical memory protection (optional)
