@@ -137,16 +137,19 @@
   ( (imm12  & 0xfff) << 20 ) + \
   ( (funct3 & 0x1f)  << 12 )
 
-//** Construct custom instruction for R-type instruction */
+//** Construct custom instruction for R-type instruction (<asm volatile ("nop")> to avoid GCC ".constprop" optimization)*/
 #define CUSTOM_INSTR_R_TYPE(funct7, rs2, rs1, funct3, rd, opcode) \
+  asm volatile ("nop"); \
   asm volatile (".word "STR(CMD_WORD_R_TYPE(funct7, GET_REG_ADDR(rs2), GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
 
-//** Construct custom instruction for R1-type instruction (register + 5-bit immediate/function_select) */
+//** Construct custom instruction for R1-type instruction (register + 5-bit immediate/function_select) (<asm volatile ("nop")> to avoid GCC ".constprop" optimization)*/
 #define CUSTOM_INSTR_R1_TYPE(funct7, funct5, rs1, funct3, rd, opcode) \
+  asm volatile ("nop"); \
   asm volatile (".word "STR(CMD_WORD_R_TYPE(funct7, funct5, GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
   
-//** Construct custom instruction for I-type instruction */
+//** Construct custom instruction for I-type instruction (<asm volatile ("nop")> to avoid GCC ".constprop" optimization)*/
 #define CUSTOM_INSTR_I_TYPE(imm12, rs1, funct3, rd, opcode) \
+  asm volatile ("nop"); \
   asm volatile (".word "STR(CMD_WORD_I_TYPE(imm12, GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
 /**@}*/
 
