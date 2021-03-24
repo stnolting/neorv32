@@ -2110,7 +2110,7 @@ begin
 
           -- floating-point (FPU) exception flags --
           -- --------------------------------------------------------------------
-          if (CPU_EXTENSION_RISCV_Zfinx = true) and (execute_engine.state = ALU_WAIT) then
+          if (CPU_EXTENSION_RISCV_Zfinx = true) then
             csr.fflags <= csr.fflags or fpu_flags_i; -- accumulate flags ("accrued exception flags")
           end if;
 
