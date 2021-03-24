@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 24.03.2021 | [**:rocket:1.5.3.0**](https://github.com/stnolting/neorv32/releases/tag/v1.5.3.0) | **New release** |
 | 23.03.2021 | 1.5.2.9 | :sparkles: added new top generic to enable single-precision floating-point extensions `Zfinx`: `CPU_EXTENSION_RISCV_Zfinx` - type `boolean`, default = `false`, :warning: **extension is not yet operational!**; bootloader now shows available `Z*` extensions (from `mzext` CSR) like `Zifencei` |
 | 21.03.2021 | 1.5.2.8 | :bug: fixed problem with linking `math.h` library in makefile; added floating-point-related global definitions to main VHDL package; added intrinsic core library file `sw/lib/include/neorv32_intrinsics.h` - intrinsic library support for CPU extensions, which are not yet supported by the upstream GCC, are based on this |
 | 18.03.2021 | 1.5.2.7 | :bug: fixed bug in `sw/common/crt0.S` dummy exception handler (wrong order of register push/pop); changed upcoming floating-point extension (orignally `F` extension) to `Zfinx` extension (-> [RISC-V `Zfinx` spec](https://github.com/riscv/riscv-zfinx)) - updated CPU infrastructure |
