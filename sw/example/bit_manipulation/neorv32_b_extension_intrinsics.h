@@ -1,5 +1,8 @@
 // #################################################################################################
-// # << NEORV32 - Intrinsics + Emulation Functions for the B.Zbb CPU extensions >>                 #
+// # << NEORV32 - Intrinsics + Emulation Functions for the B CPU extensions >>                     #
+// # ********************************************************************************************* #
+// # The intrinsics provided by this library allow to use the hardware bit manipulation unit of    #
+// # the RISC-V B CPU extension without the need for B support by the compiler.                    #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -36,9 +39,9 @@
 /**********************************************************************//**
  * @file bit_manipulation/neorv32_b_extension_intrinsics.h
  * @author Stephan Nolting
- * @brief "Intrinsic" library for the NEORV32 bit manipulation (B.Zbb) extension. Also provides emulation functions for all intrinsics (functionality re-built in pure software).
+ * @brief "Intrinsic" library for the NEORV32 bit manipulation B extension. Also provides emulation functions for all intrinsics (functionality re-built in pure software).
  *
- * @warning This library is just a temporary fall-back until the B/Zbb extensions are supported by the upstream RISC-V GCC port.
+ * @warning This library is just a temporary fall-back until the B extensions are supported by the upstream RISC-V GCC port.
  **************************************************************************/
  
 #ifndef neorv32_b_extension_intrinsics_h
@@ -65,6 +68,10 @@
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_clz(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
 
   // clz a0, a0
   CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00000, a0, 0b001, a0, 0b0010011);
@@ -84,6 +91,10 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_clz(uint32_t rs1) {
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_ctz(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
 
   // ctz a0, a0
   CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00001, a0, 0b001, a0, 0b0010011);
@@ -103,6 +114,10 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_ctz(uint32_t rs1) {
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_cpop(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
 
   // cpop a0, a0
   CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00010, a0, 0b001, a0, 0b0010011);
@@ -122,6 +137,10 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_cpop(uint32_t rs1) {
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_sextb(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
 
   // sext.b a0, a0
   CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00100, a0, 0b001, a0, 0b0010011);
@@ -141,6 +160,10 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sextb(uint32_t rs1) {
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_sexth(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
 
   // sext.h a0, a0
   CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00101, a0, 0b001, a0, 0b0010011);
@@ -161,9 +184,14 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sexth(uint32_t rs1) {
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_min(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // min a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0000101, a1, a0, 0b100, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0000101, a1, a0, 0b100, a0, 0b0110011);
 
   return result;
 }
@@ -181,9 +209,14 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_min(uint32_t rs1, uint32_t r
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_minu(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // minu a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0000101, a1, a0, 0b101, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0000101, a1, a0, 0b101, a0, 0b0110011);
 
   return result;
 }
@@ -201,9 +234,14 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_minu(uint32_t rs1, uint32_t 
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_max(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // max a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0000101, a1, a0, 0b110, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0000101, a1, a0, 0b110, a0, 0b0110011);
 
   return result;
 }
@@ -221,9 +259,14 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_max(uint32_t rs1, uint32_t r
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_maxu(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // maxu a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0000101, a1, a0, 0b111, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0000101, a1, a0, 0b111, a0, 0b0110011);
 
   return result;
 }
@@ -241,9 +284,14 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_maxu(uint32_t rs1, uint32_t 
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_pack(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // maxu a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0000100, a1, a0, 0b100, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0000100, a1, a0, 0b100, a0, 0b0110011);
 
   return result;
 }
@@ -261,9 +309,14 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_pack(uint32_t rs1, uint32_t 
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_andn(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // andn a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0100000, a1, a0, 0b111, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0100000, a1, a0, 0b111, a0, 0b0110011);
 
   return result;
 }
@@ -281,9 +334,14 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_andn(uint32_t rs1, uint32_t 
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_orn(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // orn a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0100000, a1, a0, 0b110, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0100000, a1, a0, 0b110, a0, 0b0110011);
 
   return result;
 }
@@ -301,9 +359,14 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_orn(uint32_t rs1, uint32_t r
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_xnor(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // xnor a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0100000, a1, a0, 0b100, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0100000, a1, a0, 0b100, a0, 0b0110011);
 
   return result;
 }
@@ -321,9 +384,14 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_xnor(uint32_t rs1, uint32_t 
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_rol(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // rol a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0110000, a1, a0, 0b001, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0110000, a1, a0, 0b001, a0, 0b0110011);
 
   return result;
 }
@@ -341,9 +409,14 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_rol(uint32_t rs1, uint32_t r
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_ror(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // ror a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0110000, a1, a0, 0b101, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0110000, a1, a0, 0b101, a0, 0b0110011);
 
   return result;
 }
@@ -361,6 +434,10 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_ror(uint32_t rs1, uint32_t r
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_rori20(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
 
   // rori a0, a0, 20
   CUSTOM_INSTR_R1_TYPE(0b0110000, 0b10100, a0, 0b101, a0, 0b0010011);
@@ -380,6 +457,10 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_rori20(uint32_t rs1) {
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_orcb(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
 
   // gorci a0, a0, 7 (pseudo-instruction: orc.b a0, a0)
   CUSTOM_INSTR_R1_TYPE(0b0010100, 0b00111, a0, 0b101, a0, 0b0010011);
@@ -399,6 +480,10 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_orcb(uint32_t rs1) {
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_rev8(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
 
   // grevi a0, a0, -8 (pseudo-instruction: rev8 a0, a0)
   CUSTOM_INSTR_R1_TYPE(0b0110100, 0b11000, a0, 0b101, a0, 0b0010011);
@@ -424,9 +509,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_rev8(uint32_t rs1) {
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbclr(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
 
   // sbclr a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0100100, a1, a0, 0b001, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0100100, a1, a0, 0b001, a0, 0b0110011);
 
   return result;
 }
@@ -444,9 +535,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbclr(uint32_t rs1, uint32_t
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbset(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
 
   // sbset a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0010100, a1, a0, 0b001, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0010100, a1, a0, 0b001, a0, 0b0110011);
 
   return result;
 }
@@ -464,9 +561,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbset(uint32_t rs1, uint32_t
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbinv(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
 
   // sbinv a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0110100, a1, a0, 0b001, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0110100, a1, a0, 0b001, a0, 0b0110011);
 
   return result;
 }
@@ -484,9 +587,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbinv(uint32_t rs1, uint32_t
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbext(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
 
   // sbext a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0100100, a1, a0, 0b101, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0100100, a1, a0, 0b101, a0, 0b0110011);
 
   return result;
 }
@@ -504,6 +613,10 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbext(uint32_t rs1, uint32_t
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbclri20(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
 
   // sbclri a0, a0, 20
   CUSTOM_INSTR_R1_TYPE(0b0100100, 0b10100, a0, 0b001, a0, 0b0010011);
@@ -524,6 +637,10 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbclri20(uint32_t rs1) {
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbseti20(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
 
   // sbseti a0, a0, 20
   CUSTOM_INSTR_R1_TYPE(0b0010100, 0b10100, a0, 0b001, a0, 0b0010011);
@@ -544,6 +661,10 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbseti20(uint32_t rs1) {
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbinvi20(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
 
   // sbinvi a0, a0, 20
   CUSTOM_INSTR_R1_TYPE(0b0110100, 0b10100, a0, 0b001, a0, 0b0010011);
@@ -564,6 +685,10 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbinvi20(uint32_t rs1) {
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbexti20(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
 
   // sbexti a0, a0, 20
   CUSTOM_INSTR_R1_TYPE(0b0100100, 0b10100, a0, 0b101, a0, 0b0010011);
@@ -573,7 +698,7 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbexti20(uint32_t rs1) {
 
 
 // ---------------------------------------------
-// Zba - Single-bit instructions
+// Zba - Shifted-add instructions
 // ---------------------------------------------
 
 
@@ -589,9 +714,14 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sbexti20(uint32_t rs1) {
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_sh1add(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // sh1add a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0010000, a1, a0, 0b010, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b010, a0, 0b0110011);
 
   return result;
 }
@@ -609,9 +739,14 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sh1add(uint32_t rs1, uint32_
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_sh2add(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // sh2add a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0010000, a1, a0, 0b100, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b100, a0, 0b0110011);
 
   return result;
 }
@@ -629,9 +764,14 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sh2add(uint32_t rs1, uint32_
 uint32_t __attribute__ ((noinline)) riscv_intrinsic_sh3add(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // sh3add a0, a0, a1
-  CUSTOM_INSTR_R_TYPE(0b0010000, a1, a0, 0b110, a0, 0b0110011);
+  CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b110, a0, 0b0110011);
 
   return result;
 }
@@ -1036,7 +1176,7 @@ uint32_t riscv_emulate_sbext(uint32_t rs1, uint32_t rs2) {
 
 
 // ---------------------------------------------
-// Zba - Single-bit instructions
+// Zba - Shifted-add instructions
 // ---------------------------------------------
 
 
