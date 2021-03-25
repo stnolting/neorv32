@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32: neorv32_intrinsics.h - Helper functions/macros for (custom) "intrinsics" >>         #
+// # << NEORV32: neorv32_intrinsics.h - Helper functions/macros for (custom) "intrinsics" >>       #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -120,32 +120,45 @@
 #define REG_ADDR_t5  30 /**< register 30 - according to calling convention */
 #define REG_ADDR_t6  31 /**< register 31 - according to calling convention */
 
-//** Construct instruction word (32-bit) for R-type instruction */
-#define CMD_WORD_R_TYPE(funct7, rs2, rs1, funct3, rd, opcode) \
+//** Construct instruction word (32-bit) for R2-type instruction */
+#define CMD_WORD_R2_TYPE(funct7, rs2, rs1, funct3, rd, opcode) \
   ( (opcode & 0x7f) <<  0 ) + \
   ( (rd     & 0x1f) <<  7 ) + \
+  ( (funct3 & 0x1f) << 12 ) + \
   ( (rs1    & 0x1f) << 15 ) + \
   ( (rs2    & 0x1f) << 20 ) + \
-  ( (funct7 & 0x7f) << 25 ) + \
-  ( (funct3 & 0x1f) << 12 )
+  ( (funct7 & 0x7f) << 25 )
+
+//** Construct instruction word (32-bit) for R3-type instruction */
+#define CMD_WORD_R3_TYPE(rs3, rs2, rs1, funct3, rd, opcode) \
+  ( (opcode & 0x7f) <<  0 ) + \
+  ( (rd     & 0x1f) <<  7 ) + \
+  ( (funct3 & 0x1f) << 12 ) + \
+  ( (rs1    & 0x1f) << 15 ) + \
+  ( (rs2    & 0x1f) << 20 ) + \
+  ( (rs3    & 0x1f) << 27 )
 
 //** Construct instruction word (32-bit) for I-type instruction */
 #define CMD_WORD_I_TYPE(imm12, rs1_f5, funct3, rd, opcode) \
   ( (opcode & 0x7f)  <<  0 ) + \
   ( (rd     & 0x1f)  <<  7 ) + \
+  ( (funct3 & 0x1f)  << 12 ) + \
   ( (rs1_f5 & 0x1f)  << 15 ) + \
-  ( (imm12  & 0xfff) << 20 ) + \
-  ( (funct3 & 0x1f)  << 12 )
+  ( (imm12  & 0xfff) << 20 )
 
-//** Construct custom instruction for R-type instruction */
-#define CUSTOM_INSTR_R_TYPE(funct7, rs2, rs1, funct3, rd, opcode) \
-  asm volatile (".word "STR(CMD_WORD_R_TYPE(funct7, GET_REG_ADDR(rs2), GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
+//** Construct custom R3-type instruction (4 registers, funct3, opcode) */
+#define CUSTOM_INSTR_R3_TYPE(rs3, rs2, rs1, funct3, rd, opcode) \
+  asm volatile (".word "STR(CMD_WORD_R3_TYPE(GET_REG_ADDR(rs3), GET_REG_ADDR(rs2), GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
 
-//** Construct custom instruction for R1-type instruction (register + 5-bit immediate/function_select) */
+//** Construct custom R2-type instruction (3 registers, funct3, funct7, opcode) */
+#define CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, funct3, rd, opcode) \
+  asm volatile (".word "STR(CMD_WORD_R2_TYPE(funct7, GET_REG_ADDR(rs2), GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
+
+//** Construct custom R1-type instruction (2 registers, funct3, funct7, funct5, opcode) */
 #define CUSTOM_INSTR_R1_TYPE(funct7, funct5, rs1, funct3, rd, opcode) \
-  asm volatile (".word "STR(CMD_WORD_R_TYPE(funct7, funct5, GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
+  asm volatile (".word "STR(CMD_WORD_R2_TYPE(funct7, funct5, GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
   
-//** Construct custom instruction for I-type instruction */
+//** Construct custom I-type instruction (2 registers, funct3, imm12, opcode) */
 #define CUSTOM_INSTR_I_TYPE(imm12, rs1, funct3, rd, opcode) \
   asm volatile (".word "STR(CMD_WORD_I_TYPE(imm12, GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
 /**@}*/
