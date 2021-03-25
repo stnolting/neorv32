@@ -1,11 +1,11 @@
 #################################################################################################
 # << NEORV32 - Application Makefile >>                                                          #
 # ********************************************************************************************* #
-# Make sure to add the riscv GCC compiler's bin folder to your PATH environment variable.       #
+# Make sure to add the RISC-V GCC compiler's bin folder to your PATH environment variable.      #
 # ********************************************************************************************* #
 # BSD 3-Clause License                                                                          #
 #                                                                                               #
-# Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+# Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 #                                                                                               #
 # Redistribution and use in source and binary forms, with or without modification, are          #
 # permitted provided that the following conditions are met:                                     #
@@ -57,7 +57,7 @@ MARCH ?= -march=rv32i
 MABI  ?= -mabi=ilp32
 
 # User flags for additional configuration (will be added to compiler flags)
-USER_FLAGS ?= 
+USER_FLAGS ?=
 
 # Serial port for executable upload via bootloer
 COM_PORT ?= /dev/ttyUSB0
@@ -65,79 +65,6 @@ COM_PORT ?= /dev/ttyUSB0
 # Relative or absolute path to the NEORV32 home folder
 NEORV32_HOME ?= ../../..
 # *****************************************************************************
-
-
-
-# -----------------------------------------------------------------------------
-# FreeRTOS
-# -----------------------------------------------------------------------------
-ifneq (,$(findstring RUN_FREERTOS_DEMO,$(USER_FLAGS)))
-# FreeRTOS home folder (adapt this!)
-FREERTOS_HOME ?= /mnt/n/Projects/FreeRTOSv10.4.1
-
-# FreeRTOS RISC-V specific
-APP_SRC += $(wildcard $(FREERTOS_HOME)/FreeRTOS/Source/portable/GCC/RISC-V/*.c)
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Source/portable/GCC/RISC-V/portASM.S
-
-APP_INC += -I $(FREERTOS_HOME)/FreeRTOS/Source/portable/GCC/RISC-V
-
-# FreeRTOS core
-APP_SRC += $(wildcard $(FREERTOS_HOME)/FreeRTOS/Source/*.c)
-APP_SRC += $(wildcard $(FREERTOS_HOME)/FreeRTOS/Source/portable/MemMang/heap_4.c)
-
-APP_INC += -I $(FREERTOS_HOME)/FreeRTOS/Source/include
-
-# FreeRTOS sources for the full_demo
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/blocktim.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/dynamic.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/EventGroupsDemo.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/GenQTest.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/recmutex.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/TaskNotify.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/TaskNotifyArray.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS/Demo/Common/Minimal/TimerDemo.c
-
-APP_INC += -I $(FREERTOS_HOME)/FreeRTOS/Demo/Common/include
-
-# NEORV32 specific
-ASM_INC += -DportasmHANDLE_INTERRUPT=SystemIrqHandler
-
-APP_INC += -I chip_specific_extensions/neorv32
-
-ASM_INC += -I chip_specific_extensions/neorv32
-
-# Demo application
-APP_SRC += blinky_demo/main_blinky.c
-APP_SRC += full_demo/main_full.c
-APP_SRC += full_demo/RegTest.s
-endif
-
-# -----------------
-# FreeRTOS-Plus-CLI
-# -----------------
-ifneq (,$(findstring FREERTOS_PLUS_CLI,$(USER_FLAGS)))
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-CLI/FreeRTOS_CLI.c
-
-APP_INC += -I $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-CLI
-endif
-
-# -----------------
-# FreeRTOS-Plus-TCP
-# -----------------
-ifneq (,$(findstring FREERTOS_PLUS_TCP,$(USER_FLAGS)))
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_ARP.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_DHCP.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_DNS.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_IP.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_Sockets.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_Stream_Buffer.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_TCP_IP.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_TCP_WIN.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_UDP_IP.c
-
-APP_INC += -I $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/include
-APP_INC += -I $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/portable/Compiler/GCC
-endif
 
 
 
@@ -199,7 +126,7 @@ CC_X86 = g++ -Wall -O -g
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
 
 # Compiler & linker flags
-CC_OPTS  = $(MARCH) $(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles
+CC_OPTS  = $(MARCH) $(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
 CC_OPTS += -Wl,--gc-sections -lm -lc -lgcc -lc
 # This accelerates instruction fetch after branches when C extension is enabled (irrelevant when C extension is disabled)
 CC_OPTS += -falign-functions=4 -falign-labels=4 -falign-loops=4 -falign-jumps=4

@@ -1,11 +1,11 @@
 #################################################################################################
 # << NEORV32 - Application Makefile >>                                                          #
 # ********************************************************************************************* #
-# Make sure to add the riscv GCC compiler's bin folder to your PATH environment variable.       #
+# Make sure to add the RISC-V GCC compiler's bin folder to your PATH environment variable.      #
 # ********************************************************************************************* #
 # BSD 3-Clause License                                                                          #
 #                                                                                               #
-# Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+# Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 #                                                                                               #
 # Redistribution and use in source and binary forms, with or without modification, are          #
 # permitted provided that the following conditions are met:                                     #
@@ -126,7 +126,7 @@ CC_X86 = g++ -Wall -O -g
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
 
 # Compiler & linker flags
-CC_OPTS  = $(MARCH) $(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles
+CC_OPTS  = $(MARCH) $(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
 CC_OPTS += -Wl,--gc-sections -lm -lc -lgcc -lc
 # This accelerates instruction fetch after branches when C extension is enabled (irrelevant when C extension is disabled)
 CC_OPTS += -falign-functions=4 -falign-labels=4 -falign-loops=4 -falign-jumps=4
