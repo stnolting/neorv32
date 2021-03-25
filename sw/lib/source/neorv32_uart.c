@@ -505,8 +505,10 @@ void neorv32_uart0_printf(const char *format, ...) {
           __neorv32_uart_tohex(va_arg(a, uint32_t), string_buf);
           neorv32_uart0_print(string_buf);
           break;
-        default:
-          return;
+        default: // unsupported format
+          neorv32_uart0_putc('%');
+          neorv32_uart0_putc(c);
+          break;
       }
     }
     else {
@@ -858,8 +860,10 @@ void neorv32_uart1_printf(const char *format, ...) {
           __neorv32_uart_tohex(va_arg(a, uint32_t), string_buf);
           neorv32_uart1_print(string_buf);
           break;
-        default:
-          return;
+        default: // unsupported format
+          neorv32_uart1_putc('%');
+          neorv32_uart1_putc(c);
+          break;
       }
     }
     else {
@@ -964,14 +968,14 @@ static void __neorv32_uart_itoa(uint32_t x, char *res) {
  * Private function for 'neorv32_printf' to convert into hexadecimal.
  *
  * @param[in] x Unsigned input number.
- * @param[in,out] res Pointer for storing the reuslting number string (9 chars).
+ * @param[in,out] res Pointer for storing the resulting number string (9 chars).
  **************************************************************************/
 static void __neorv32_uart_tohex(uint32_t x, char *res) {
 
   static const char symbols[] = "0123456789abcdef";
 
   int i;
-  for (i=0; i<8; i++) { // nibble by bibble
+  for (i=0; i<8; i++) { // nibble by nibble
     uint32_t num_tmp = x >> (4*i);
     res[7-i] = (char)symbols[num_tmp & 0x0f];
   }
