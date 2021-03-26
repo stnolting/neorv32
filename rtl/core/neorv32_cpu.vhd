@@ -185,8 +185,8 @@ begin
   -- FIXME: Bit manipulation warning --
   assert not (CPU_EXTENSION_RISCV_B = true) report "NEORV32 CPU CONFIG WARNING! Bit manipulation extension (B) is still HIGHLY EXPERIMENTAL (and spec. is not ratified yet)." severity warning;
 
-  -- FIXME: Floating-point extension (Zfinx) warning --
-  assert not (CPU_EXTENSION_RISCV_Zfinx = true) report "NEORV32 CPU CONFIG WARNING! 32-bit floating-point extension <Zfinx> is WORK-IN-PROGRESS and NOT OPERATIONAL yet." severity warning;
+  -- Co-processor timeout counter (for debugging only) --
+  assert not (cp_timeout_en_c = true) report "NEORV32 CPU CONFIG WARNING! Co-processor timeout counter enabled. This should be used for debugging/simulation only." severity warning;
 
   -- PMP regions check --
   assert not (PMP_NUM_REGIONS > 64) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out xf valid range (0..64)." severity error;
