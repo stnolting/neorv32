@@ -82,8 +82,6 @@
 #define RUN_CLASSIFY_TESTS (1)
 //** Run unsupported instructions tests when != 0 */
 #define RUN_UNAVAIL_TESTS  (1)
-//** Run instruction timing tests when != 0 */
-#define RUN_TIMING_TESTS   (1)
 /**@}*/
 
 
@@ -127,6 +125,17 @@ int main() {
     neorv32_uart_print("Error! <Zfinx> extension not synthesized!\n");
     return 0;
   }
+
+
+// Disable compilation by default
+#ifndef RUN_TEST
+  #warning Program HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_TEST clean_all exe<< to compile it.
+
+  // inform the user if you are actually executing this
+  neorv32_uart_printf("ERROR! Program has not been compiled. Use >>make USER_FLAGS+=-DRUN_TEST clean_all exe<< to compile it.\n");
+
+  return 0;
+#endif
 
 
   // intro
@@ -476,39 +485,6 @@ int main() {
   else {
     neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
-#endif
-
-
-// ----------------------------------------------------------------------------
-// Instruction execution timing test
-// ----------------------------------------------------------------------------
-
-#if (RUN_TIMING_TESTS != 0)
-  neorv32_uart_printf("\n# Instruction timing test...\n", test_cnt);
-  err_cnt = 0;
-
-  const uint32_t num_runs = 1024;
-  uint32_t time_start, time_hw, time_sw;
-
-  time_hw = 0;
-  time_sw = 0;
-  for (i=0;i<num_runs; i++) {
-    opa.binary_value = get_test_vector();
-    opb.binary_value = get_test_vector();
-
-    time_start = neorv32_cpu_csr_read(CSR_MCYCLE);
-      res_hw.float_value = riscv_intrinsic_fadds(opa.float_value, opb.float_value);
-    time_hw += neorv32_cpu_csr_read(CSR_MCYCLE) - time_start;
-
-    time_start = neorv32_cpu_csr_read(CSR_MCYCLE);
-      res_sw.float_value = riscv_emulate_fadds(opa.float_value, opb.float_value);
-    time_sw += neorv32_cpu_csr_read(CSR_MCYCLE) - time_start;
-
-    if (res_hw.binary_value != res_sw.binary_value) {
-      neorv32_uart_printf("\n%c[1m[error]%c[0m\n", 27, 27);
-    }
-  }
-  neorv32_uart_printf("Average FADD.S execution time INCLUDING calling overhead (%u runs): [SW] = %u cycles vs. [HW] = %u cycles\n", num_runs, time_sw/num_runs, time_hw/num_runs);
 #endif
 
 
