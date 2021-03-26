@@ -63,7 +63,7 @@
 /** UART BAUD rate */
 #define BAUD_RATE          (19200)
 //** Number of test cases for each instruction */
-#define NUM_TEST_CASES     (50000000)
+#define NUM_TEST_CASES     (1000000)
 //** Silent mode (only show actual errors when != 0) */
 #define SILENT_MODE        (1)
 //** Run conversion tests when != 0 */
@@ -82,6 +82,8 @@
 #define RUN_CLASSIFY_TESTS (1)
 //** Run unsupported instructions tests when != 0 */
 #define RUN_UNAVAIL_TESTS  (1)
+//** Run instruction timing tests when != 0 */
+#define RUN_TIMING_TESTS   (1)
 /**@}*/
 
 
@@ -90,17 +92,6 @@ uint32_t get_test_vector(void);
 uint32_t xorshift32(void);
 uint32_t verify_result(uint32_t num, uint32_t opa, uint32_t opb, uint32_t ref, uint32_t res);
 void print_report(uint32_t num_err);
-
-
-/**********************************************************************//**
- * Custom data type to access floating-point values as native floats and in binary representation
- **************************************************************************/
-typedef union
-{
-  uint32_t binary_value; /**< Access as native float */
-  float    float_value;  /**< Access in binary representation */
-} float_emu_t;
-
 
 
 /**********************************************************************//**
@@ -116,10 +107,10 @@ int main() {
   uint32_t err_cnt_total = 0;
   uint32_t test_cnt = 0;
   uint32_t i = 0;
-  volatile float_emu_t opa;
-  volatile float_emu_t opb;
-  volatile float_emu_t res_hw;
-  volatile float_emu_t res_sw;
+  float_conv_t opa;
+  float_conv_t opb;
+  float_conv_t res_hw;
+  float_conv_t res_sw;
 
 
   // init primary UART
@@ -160,8 +151,8 @@ int main() {
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fcvt_swu(opa.binary_value);
-    res_sw.float_value  = riscv_emulate_fcvt_swu(opa.binary_value);
+    res_hw.float_value = riscv_intrinsic_fcvt_swu(opa.binary_value);
+    res_sw.float_value = riscv_emulate_fcvt_swu(opa.binary_value);
     err_cnt += verify_result(i, opa.binary_value, 0, res_sw.binary_value, res_hw.binary_value);
   }
   print_report(err_cnt);
@@ -172,8 +163,8 @@ int main() {
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fcvt_sw(opa.binary_value);
-    res_sw.float_value  = riscv_emulate_fcvt_sw(opa.binary_value);
+    res_hw.float_value = riscv_intrinsic_fcvt_sw((int32_t)opa.binary_value);
+    res_sw.float_value = riscv_emulate_fcvt_sw((int32_t)opa.binary_value);
     err_cnt += verify_result(i, opa.binary_value, 0, res_sw.binary_value, res_hw.binary_value);
   }
   print_report(err_cnt);
@@ -184,7 +175,7 @@ int main() {
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fcvt_wus(opa.binary_value);
+    res_hw.binary_value = riscv_intrinsic_fcvt_wus(opa.float_value);
     res_sw.binary_value = riscv_emulate_fcvt_wus(opa.float_value);
     err_cnt += verify_result(i, opa.binary_value, 0, res_sw.binary_value, res_hw.binary_value);
   }
@@ -196,8 +187,8 @@ int main() {
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fcvt_ws(opa.binary_value);
-    res_sw.binary_value = riscv_emulate_fcvt_ws(opa.float_value);
+    res_hw.binary_value = (uint32_t)riscv_intrinsic_fcvt_ws(opa.float_value);
+    res_sw.binary_value = (uint32_t)riscv_emulate_fcvt_ws(opa.float_value);
     err_cnt += verify_result(i, opa.binary_value, 0, res_sw.binary_value, res_hw.binary_value);
   }
   print_report(err_cnt);
@@ -216,8 +207,8 @@ int main() {
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
     opb.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fadds(opa.binary_value, opb.binary_value);
-    res_sw.float_value  = riscv_emulate_fadds(opa.float_value, opb.float_value);
+    res_hw.float_value = riscv_intrinsic_fadds(opa.float_value, opb.float_value);
+    res_sw.float_value = riscv_emulate_fadds(opa.float_value, opb.float_value);
     err_cnt += verify_result(i, opa.binary_value, opb.binary_value, res_sw.binary_value, res_hw.binary_value);
   }
   print_report(err_cnt);
@@ -229,8 +220,8 @@ int main() {
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
     opb.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fsubs(opa.binary_value, opb.binary_value);
-    res_sw.float_value  = riscv_emulate_fsubs(opa.float_value, opb.float_value);
+    res_hw.float_value = riscv_intrinsic_fsubs(opa.float_value, opb.float_value);
+    res_sw.float_value = riscv_emulate_fsubs(opa.float_value, opb.float_value);
     err_cnt += verify_result(i, opa.binary_value, opb.binary_value, res_sw.binary_value, res_hw.binary_value);
   }
   print_report(err_cnt);
@@ -249,8 +240,8 @@ int main() {
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
     opb.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fmuls(opa.binary_value, opb.binary_value);
-    res_sw.float_value  = riscv_emulate_fmuls(opa.float_value, opb.float_value);
+    res_hw.float_value = riscv_intrinsic_fmuls(opa.float_value, opb.float_value);
+    res_sw.float_value = riscv_emulate_fmuls(opa.float_value, opb.float_value);
     err_cnt += verify_result(i, opa.binary_value, opb.binary_value, res_sw.binary_value, res_hw.binary_value);
   }
   print_report(err_cnt);
@@ -269,8 +260,8 @@ int main() {
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
     opb.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fmins(opa.binary_value, opb.binary_value);
-    res_sw.float_value  = riscv_emulate_fmins(opa.float_value, opb.float_value);
+    res_hw.float_value = riscv_intrinsic_fmins(opa.float_value, opb.float_value);
+    res_sw.float_value = riscv_emulate_fmins(opa.float_value, opb.float_value);
     err_cnt += verify_result(i, opa.binary_value, opb.binary_value, res_sw.binary_value, res_hw.binary_value);
   }
   print_report(err_cnt);
@@ -282,8 +273,8 @@ int main() {
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
     opb.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fmaxs(opa.binary_value, opb.binary_value);
-    res_sw.float_value  = riscv_emulate_fmaxs(opa.float_value, opb.float_value);
+    res_hw.float_value = riscv_intrinsic_fmaxs(opa.float_value, opb.float_value);
+    res_sw.float_value = riscv_emulate_fmaxs(opa.float_value, opb.float_value);
     err_cnt += verify_result(i, opa.binary_value, opb.binary_value, res_sw.binary_value, res_hw.binary_value);
   }
   print_report(err_cnt);
@@ -302,7 +293,7 @@ int main() {
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
     opb.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_feqs(opa.binary_value, opb.binary_value);
+    res_hw.binary_value = riscv_intrinsic_feqs(opa.float_value, opb.float_value);
     res_sw.binary_value = riscv_emulate_feqs(opa.float_value, opb.float_value);
     err_cnt += verify_result(i, opa.binary_value, opb.binary_value, res_sw.binary_value, res_hw.binary_value);
   }
@@ -315,7 +306,7 @@ int main() {
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
     opb.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_flts(opa.binary_value, opb.binary_value);
+    res_hw.binary_value = riscv_intrinsic_flts(opa.float_value, opb.float_value);
     res_sw.binary_value = riscv_emulate_flts(opa.float_value, opb.float_value);
     err_cnt += verify_result(i, opa.binary_value, opb.binary_value, res_sw.binary_value, res_hw.binary_value);
   }
@@ -328,7 +319,7 @@ int main() {
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
     opb.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fles(opa.binary_value, opb.binary_value);
+    res_hw.binary_value = riscv_intrinsic_fles(opa.float_value, opb.float_value);
     res_sw.binary_value = riscv_emulate_fles(opa.float_value, opb.float_value);
     err_cnt += verify_result(i, opa.binary_value, opb.binary_value, res_sw.binary_value, res_hw.binary_value);
   }
@@ -348,8 +339,8 @@ int main() {
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
     opb.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fsgnjs(opa.binary_value, opb.binary_value);
-    res_sw.float_value  = riscv_emulate_fsgnjs(opa.float_value, opb.float_value);
+    res_hw.float_value = riscv_intrinsic_fsgnjs(opa.float_value, opb.float_value);
+    res_sw.float_value = riscv_emulate_fsgnjs(opa.float_value, opb.float_value);
     err_cnt += verify_result(i, opa.binary_value, opb.binary_value, res_sw.binary_value, res_hw.binary_value);
   }
   print_report(err_cnt);
@@ -361,8 +352,8 @@ int main() {
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
     opb.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fsgnjns(opa.binary_value, opb.binary_value);
-    res_sw.float_value  = riscv_emulate_fsgnjns(opa.float_value, opb.float_value);
+    res_hw.float_value = riscv_intrinsic_fsgnjns(opa.float_value, opb.float_value);
+    res_sw.float_value = riscv_emulate_fsgnjns(opa.float_value, opb.float_value);
     err_cnt += verify_result(i, opa.binary_value, opb.binary_value, res_sw.binary_value, res_hw.binary_value);
   }
   print_report(err_cnt);
@@ -374,8 +365,8 @@ int main() {
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
     opb.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fsgnjxs(opa.binary_value, opb.binary_value);
-    res_sw.float_value  = riscv_emulate_fsgnjxs(opa.float_value, opb.float_value);
+    res_hw.float_value = riscv_intrinsic_fsgnjxs(opa.float_value, opb.float_value);
+    res_sw.float_value = riscv_emulate_fsgnjxs(opa.float_value, opb.float_value);
     err_cnt += verify_result(i, opa.binary_value, opb.binary_value, res_sw.binary_value, res_hw.binary_value);
   }
   print_report(err_cnt);
@@ -393,7 +384,7 @@ int main() {
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
-    res_hw.binary_value = riscv_intrinsic_fclasss(opa.binary_value);
+    res_hw.binary_value = riscv_intrinsic_fclasss(opa.float_value);
     res_sw.binary_value = riscv_emulate_fclasss(opa.float_value);
     err_cnt += verify_result(i, opa.binary_value, 0, res_sw.binary_value, res_hw.binary_value);
   }
@@ -402,15 +393,17 @@ int main() {
   test_cnt++;
 #endif
 
-
+  
 // ----------------------------------------------------------------------------
-// UNSUPPORTED Instructions Tests
+// UNSUPPORTED Instructions Tests - Execution should raise illegal instruction exception
 // ----------------------------------------------------------------------------
 
 #if (RUN_UNAVAIL_TESTS != 0)
-  neorv32_uart_printf("\n# FDIV.S (division) [NOT SUPPORTED!]...\n");
+  neorv32_uart_printf("\n# unsupported FDIV.S (division) [illegal instruction]...\n");
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  riscv_intrinsic_fdivs(0, 0);
+  opa.binary_value = get_test_vector();
+  opb.binary_value = get_test_vector();
+  riscv_intrinsic_fdivs(opa.float_value, opb.float_value);
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
     neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
@@ -419,9 +412,11 @@ int main() {
     neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
 
-  neorv32_uart_printf("\n# FSQRT.S (square root) [NOT SUPPORTED!]...\n");
+  neorv32_uart_printf("\n# unsupported FSQRT.S (square root) [illegal instruction]...\n");
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  riscv_intrinsic_fsqrts(0);
+  opa.binary_value = get_test_vector();
+  opb.binary_value = get_test_vector();
+  riscv_intrinsic_fsqrts(opa.float_value);
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
     neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
@@ -430,9 +425,11 @@ int main() {
     neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
 
-  neorv32_uart_printf("\n# FMADD.S (fused multiply-add) [NOT SUPPORTED!]...\n");
+  neorv32_uart_printf("\n# unsupported FMADD.S (fused multiply-add) [illegal instruction]...\n");
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  riscv_intrinsic_fmadds(0, 0, 0);
+  opa.binary_value = get_test_vector();
+  opb.binary_value = get_test_vector();
+  riscv_intrinsic_fmadds(opa.float_value, opb.float_value, -opa.float_value);
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
     neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
@@ -441,9 +438,11 @@ int main() {
     neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
 
-  neorv32_uart_printf("\n# FMSUB.S (fused multiply-sub) [NOT SUPPORTED!]...\n");
+  neorv32_uart_printf("\n# unsupported FMSUB.S (fused multiply-sub) [illegal instruction]...\n");
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  riscv_intrinsic_fmsubs(0, 0, 0);
+  opa.binary_value = get_test_vector();
+  opb.binary_value = get_test_vector();
+  riscv_intrinsic_fmsubs(opa.float_value, opb.float_value, -opa.float_value);
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
     neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
@@ -452,9 +451,11 @@ int main() {
     neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
 
-  neorv32_uart_printf("\n# FNMSUB.S (fused negated multiply-sub) [NOT SUPPORTED!]...\n");
+  neorv32_uart_printf("\n# unsupported FNMSUB.S (fused negated multiply-sub) [illegal instruction]...\n");
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  riscv_intrinsic_fnmadds(0, 0, 0);
+  opa.binary_value = get_test_vector();
+  opb.binary_value = get_test_vector();
+  riscv_intrinsic_fnmadds(opa.float_value, opb.float_value, -opa.float_value);
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
     neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
@@ -463,9 +464,11 @@ int main() {
     neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
 
-  neorv32_uart_printf("\n# FNMADD.S (fused negated multiply-add) [NOT SUPPORTED!]...\n");
+  neorv32_uart_printf("\n# unsupported FNMADD.S (fused negated multiply-add) [illegal instruction]...\n");
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  riscv_intrinsic_fnmadds(0, 0, 0);
+  opa.binary_value = get_test_vector();
+  opb.binary_value = get_test_vector();
+  riscv_intrinsic_fnmadds(opa.float_value, opb.float_value, -opa.float_value);
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
     neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
@@ -473,6 +476,39 @@ int main() {
   else {
     neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
+#endif
+
+
+// ----------------------------------------------------------------------------
+// Instruction execution timing test
+// ----------------------------------------------------------------------------
+
+#if (RUN_TIMING_TESTS != 0)
+  neorv32_uart_printf("\n# Instruction timing test...\n", test_cnt);
+  err_cnt = 0;
+
+  const uint32_t num_runs = 1024;
+  uint32_t time_start, time_hw, time_sw;
+
+  time_hw = 0;
+  time_sw = 0;
+  for (i=0;i<num_runs; i++) {
+    opa.binary_value = get_test_vector();
+    opb.binary_value = get_test_vector();
+
+    time_start = neorv32_cpu_csr_read(CSR_MCYCLE);
+      res_hw.float_value = riscv_intrinsic_fadds(opa.float_value, opb.float_value);
+    time_hw += neorv32_cpu_csr_read(CSR_MCYCLE) - time_start;
+
+    time_start = neorv32_cpu_csr_read(CSR_MCYCLE);
+      res_sw.float_value = riscv_emulate_fadds(opa.float_value, opb.float_value);
+    time_sw += neorv32_cpu_csr_read(CSR_MCYCLE) - time_start;
+
+    if (res_hw.binary_value != res_sw.binary_value) {
+      neorv32_uart_printf("\n%c[1m[error]%c[0m\n", 27, 27);
+    }
+  }
+  neorv32_uart_printf("Average FADD.S execution time INCLUDING calling overhead (%u runs): [SW] = %u cycles vs. [HW] = %u cycles\n", num_runs, time_sw/num_runs, time_hw/num_runs);
 #endif
 
 
@@ -496,7 +532,7 @@ int main() {
  **************************************************************************/
 uint32_t get_test_vector(void) {
 
-  float_emu_t tmp;
+  float_conv_t tmp;
 
   // generate special value "every" ~256th time this function is called
   if ((xorshift32() & 0xff) == 0xff) {
@@ -519,7 +555,7 @@ uint32_t get_test_vector(void) {
 
   // subnormal numbers are not supported yet!
   // flush them to zero
-  tmp.float_value = subnormal_flush(tmp.float_value);
+//tmp.float_value = subnormal_flush(tmp.float_value);
 
   return tmp.binary_value;
 }
