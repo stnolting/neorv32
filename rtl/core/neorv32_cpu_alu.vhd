@@ -97,11 +97,12 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
 
   -- co-processor arbiter and interface --
   type cp_ctrl_t is record
-    cmd    : std_ulogic;
-    cmd_ff : std_ulogic;
-    busy   : std_ulogic;
-    start  : std_ulogic;
-    halt   : std_ulogic;
+    cmd     : std_ulogic;
+    cmd_ff  : std_ulogic;
+    busy    : std_ulogic;
+    start   : std_ulogic;
+    halt    : std_ulogic;
+    timeout : std_ulogic_vector(9 downto 0);
   end record;
   signal cp_ctrl : cp_ctrl_t;
 
@@ -275,14 +276,24 @@ begin
   cp_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      cp_ctrl.cmd_ff <= '0';
-      cp_ctrl.busy   <= '0';
+      cp_ctrl.cmd_ff  <= '0';
+      cp_ctrl.busy    <= '0';
+      cp_ctrl.timeout <= (others => '0');
     elsif rising_edge(clk_i) then
       cp_ctrl.cmd_ff <= cp_ctrl.cmd;
       if (or_all_f(cp_valid_i) = '1') then -- cp computation done?
         cp_ctrl.busy <= '0';
+      elsif (cp_ctrl.timeout(cp_ctrl.timeout'left) = '1') and (cp_timeout_en_c = true) then -- timeout
+        assert false report "NEORV32 CPU CO-PROCESSOR TIMEOUT ERROR!" severity warning;
+        cp_ctrl.busy <= '0';
       elsif (cp_ctrl.start = '1') then
         cp_ctrl.busy <= '1';
+      end if;
+      -- timeout counter --
+      if (cp_ctrl.busy = '1') and (cp_timeout_en_c = true) then
+        cp_ctrl.timeout <= std_ulogic_vector(unsigned(cp_ctrl.timeout) + 1);
+      else
+        cp_ctrl.timeout <= (others => '0');
       end if;
     end if;
   end process cp_arbiter;
