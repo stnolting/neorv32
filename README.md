@@ -55,7 +55,7 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
   * [`M`](#M---Integer-multiplication-and-division-hardware-extension) - integer multiplication and division hardware (optional)
   * [`U`](#U---Privileged-architecture---User-mode-extension) - less-privileged *user mode* (optional)
   * [`X`](#X---NEORV32-specific-CPU-extensions) - NEORV32-specific extensions (always enabled)
-  * [`Zfinx`](#Zfinx---Single-precision-floating-point-extension) - Single-precision floating-point extensions (optional) :construction:
+  * [`Zfinx`](#Zfinx---Single-precision-floating-point-extension) - Single-precision floating-point extensions (optional)
   * [`Zicsr`](#Zicsr---Privileged-architecture---CSR-access-extension) - control and status register access instructions (+ exception/irq system) (optional)
   * [`Zifencei`](#Zifencei---Privileged-architecture---Instruction-stream-synchronization-extension) - instruction stream synchronization (optional)
   * [`PMP`](#PMP---Privileged-architecture---Physical-memory-protection) - physical memory protection (optional)
@@ -175,7 +175,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * :warning: this extension has not been officially ratified yet!
   * :books: more information can be found here: [RISC-V `B` spec.](https://github.com/riscv/riscv-bitmanip)
   * Compatible to [v0.94-draft](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/bitmanip-draft.pdf) of the bit manipulation spec
-  * Support via intrinsic library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
+  * Software support via intrinsic library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
   * `Zbb` base instruction set: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR[I]` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
   * `Zbs` single-bit instructions: `SBSET[I]` `SBCLR[I]` `SBINV[I]` `SBEXT[I]`
   * `Zba` shifted-add instructions: `SH1ADD` `SH2ADD` `SH3ADD`
@@ -227,11 +227,9 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
 #### `Zfinx` - Single-precision floating-point extension
 
-  * :construction: **work-in-progress** :construction:
   * :warning: this extension has not been officially ratified yet! 
   * :books: more information can be found here: [RISC-V `Zfinx` spec.](https://github.com/riscv/riscv-zfinx)
-  * :no_entry: this extension is **NOT OPERATIONAL** yet.
-  * :information_source: check out the [floating-point extension project board](https://github.com/stnolting/neorv32/projects/4) for the current implementation state
+  * Software support via intrinsic library (see [`sw/example/floating_point_test`](https://github.com/stnolting/neorv32/tree/master/sw/example/floating_point_test))
   * Fused multiply-add instructions (`F[N]MADD.S` & `F[N)MSUB.S`) are **not** supported!
   * Computational instructions: `FADD.S` `FSUB.S` `FMUL.S` `FSGNJ[N/X].S` `FCLASS.S` ~~`FDIV.S`~~ ~~`FSQRT.S`~~
   * Comparison instructions: `FMIN.S` `FMAX.S` `FEQ.S` `FLT.S` `FLE.S` 
@@ -304,47 +302,47 @@ information is derived from the Timing Analyzer / Slow 1200mV 0C Model. If not o
 of the CPU's generics is assumed (e.g. no physical memory protection, no hardware performance monitors).
 No constraints were used at all.
 
-Results generated for hardware version [`1.5.1.4`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.5.3.2`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
-| CPU Configuration                        | LEs        | FFs      | Memory bits | DSPs | f_max   |
-|:-----------------------------------------|:----------:|:--------:|:-----------:|:----:|:-------:|
-| `rv32i`                                  |        979 |      409 |        1024 |    0 | 123 MHz |
-| `rv32i`     + `Zicsr`                    |       1789 |      847 |        1024 |    0 | 122 MHz |
-| `rv32im`    + `Zicsr`                    |       2381 |     1125 |        1024 |    0 | 122 MHz |
-| `rv32imc`   + `Zicsr`                    |       2608 |     1140 |        1024 |    0 | 122 MHz |
-| `rv32imac`  + `Zicsr`                    |       2621 |     1144 |        1024 |    0 | 122 MHz |
-| `rv32imacb` + `Zicsr`                    |       3013 |     1310 |        1024 |    0 | 122 MHz |
-| `rv32imacb` + `Zicsr` + `u`              |       3031 |     1313 |        1024 |    0 | 122 MHz |
-| `rv32imacb` + `Zicsr` + `u` + `Zifencei` |       3050 |     1313 |        1024 |    0 | 116 MHz |
+| CPU Configuration                                 | LEs  | FFs  | Memory bits | DSPs (9-bit) | f_max   |
+|:--------------------------------------------------|:----:|:----:|:-----------:|:------------:|:-------:|
+| `rv32i`                                           |  980 |  409 |        1024 |            0 | 123 MHz |
+| `rv32i`    + `Zicsr`                              | 1835 |  856 |        1024 |            0 | 124 MHz |
+| `rv32im`   + `Zicsr`                              | 2443 | 1134 |        1024 |            0 | 124 MHz |
+| `rv32imc`  + `Zicsr`                              | 2669 | 1149 |        1024 |            0 | 125 MHz |
+| `rv32imac` + `Zicsr`                              | 2685 | 1156 |        1024 |            0 | 124 MHz |
+| `rv32imac` + `Zicsr` + `u`                        | 2698 | 1162 |        1024 |            0 | 124 MHz |
+| `rv32imac` + `Zicsr` + `u` + `Zifencei`           | 2715 | 1162 |        1024 |            0 | 122 MHz |
+| `rv32imac` + `Zicsr` + `u` + `Zifencei` + `Zfinx` | 4004 | 1812 |        1024 |            0 | 121 MHz |
 
 Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utilization and identical f_max as the according `I` configuration.
-However, the size of the register file is cut in half. 
+However, the size of the register file is cut in half.
 
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version [`1.5.2.4`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.5.3.2`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
-| Module    | Description                                          | LEs | FFs | Memory bits | DSPs |
-|:----------|:-----------------------------------------------------|----:|----:|------------:|-----:|
-| BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |    0 |
-| BUSSWITCH | Bus mux for CPU instr. & data interfaces             |  65 |   8 |           0 |    0 |
-| i-CACHE   | Proc.-int. nstruction cache (default 1x4x64 bytes)   | 234 | 156 |       8 192 |    0 |
-| CFS       | Custom functions subsystem                           |   - |   - |           - |    - |
-| DMEM      | Processor-internal data memory (default 8kB)         |   6 |   2 |      65 536 |    0 |
-| GPIO      | General purpose input/output ports                   |  67 |  65 |           0 |    0 |
-| IMEM      | Processor-internal instruction memory (default 16kb) |   6 |   2 |     131 072 |    0 |
-| MTIME     | Machine system timer                                 | 274 | 166 |           0 |    0 |
-| NCO       | Numerically-controlled oscillator                    | 254 | 226 |           0 |    0 |
-| NEOLED    | Smart LED Interface (NeoPixel-compatibile) [4x FIFO] | 347 | 309 |           0 |    0 |
-| PWM       | Pulse-width modulation controller                    |  71 |  69 |           0 |    0 |
-| SPI       | Serial peripheral interface                          | 138 | 124 |           0 |    0 |
-| SYSINFO   | System configuration information memory              |  11 |  10 |           0 |    0 |
-| TRNG      | True random number generator                         | 132 | 105 |           0 |    0 |
-| TWI       | Two-wire interface                                   |  77 |  46 |           0 |    0 |
-| UART0/1   | Universal asynchronous receiver/transmitter 0/1      | 176 | 132 |           0 |    0 |
-| WDT       | Watchdog timer                                       |  60 |  45 |           0 |    0 |
-| WISHBONE  | External memory interface                            | 129 | 104 |           0 |    0 |
+| Module    | Description                                          | LEs | FFs | Memory bits | DSPs (9-bit) |
+|:----------|:-----------------------------------------------------|----:|----:|------------:|-------------:|
+| BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |            0 |
+| BUSSWITCH | Bus mux for CPU instr. & data interfaces             |  65 |   8 |           0 |            0 |
+| i-CACHE   | Proc.-int. nstruction cache (default 1x4x64 bytes)   | 234 | 156 |       8 192 |            0 |
+| CFS       | Custom functions subsystem                           |   - |   - |           - |            - |
+| DMEM      | Processor-internal data memory (default 8kB)         |   6 |   2 |      65 536 |            0 |
+| GPIO      | General purpose input/output ports                   |  67 |  65 |           0 |            0 |
+| IMEM      | Processor-internal instruction memory (default 16kb) |   6 |   2 |     131 072 |            0 |
+| MTIME     | Machine system timer                                 | 274 | 166 |           0 |            0 |
+| NCO       | Numerically-controlled oscillator                    | 254 | 226 |           0 |            0 |
+| NEOLED    | Smart LED Interface (NeoPixel-compatibile) [4x FIFO] | 347 | 309 |           0 |            0 |
+| PWM       | Pulse-width modulation controller                    |  71 |  69 |           0 |            0 |
+| SPI       | Serial peripheral interface                          | 138 | 124 |           0 |            0 |
+| SYSINFO   | System configuration information memory              |  11 |  10 |           0 |            0 |
+| TRNG      | True random number generator                         | 132 | 105 |           0 |            0 |
+| TWI       | Two-wire interface                                   |  77 |  46 |           0 |            0 |
+| UART0/1   | Universal asynchronous receiver/transmitter 0/1      | 176 | 132 |           0 |            0 |
+| WDT       | Watchdog timer                                       |  60 |  45 |           0 |            0 |
+| WISHBONE  | External memory interface                            | 129 | 104 |           0 |            0 |
 
 
 ### NEORV32 Processor - Exemplary FPGA Setups
@@ -356,11 +354,11 @@ to FPGA pins - except for the Wishbone bus and the interrupt signals. The "defau
 
 Results generated for hardware version [`1.4.9.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
-| Vendor  | FPGA                              | Board            | Toolchain                  | CPU Configuration                              | LUT / LE   | FF / REG   | DSP    | Memory Bits  | BRAM / EBR | SPRAM    | Frequency     |
-|:--------|:----------------------------------|:-----------------|:---------------------------|:-----------------------------------------------|:-----------|:-----------|:-------|:-------------|:-----------|:---------|--------------:|
-| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 20.1    | `rv32imc` + `u` + `Zicsr` + `Zifencei`         | 3813 (17%) | 1904  (8%) | 0 (0%) | 231424 (38%) |          - |        - |       119 MHz |
-| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (Synplify Pro) | `rv32ic`  + `u` + `Zicsr` + `Zifencei`         | 4397 (83%) | 1679 (31%) | 0 (0%) |            - |   12 (40%) | 4 (100%) | *c* 22.15 MHz |
-| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2              | `rv32imc` + `u` + `Zicsr` + `Zifencei` + `PMP` | 2465 (12%) | 1912  (5%) | 0 (0%) |            - |    8 (16%) |        - |   *c* 100 MHz |
+| Vendor  | FPGA                              | Board            | Toolchain                  | CPU Configuration                              | LUT / LE   | FF / REG   | DSP (9-bit) | Memory Bits  | BRAM / EBR | SPRAM    | Frequency     |
+|:--------|:----------------------------------|:-----------------|:---------------------------|:-----------------------------------------------|:-----------|:-----------|:------------|:-------------|:-----------|:---------|--------------:|
+| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 20.1    | `rv32imc` + `u` + `Zicsr` + `Zifencei`         | 3813 (17%) | 1904  (8%) | 0 (0%)      | 231424 (38%) |          - |        - |       119 MHz |
+| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (Synplify Pro) | `rv32ic`  + `u` + `Zicsr` + `Zifencei`         | 4397 (83%) | 1679 (31%) | 0 (0%)      |            - |   12 (40%) | 4 (100%) | *c* 22.15 MHz |
+| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2              | `rv32imc` + `u` + `Zicsr` + `Zifencei` + `PMP` | 2465 (12%) | 1912  (5%) | 0 (0%)      |            - |    8 (16%) |        - |   *c* 100 MHz |
 
 **_Notes_**
 * The Lattice iCE40 UltraPlus setup uses the FPGA's SPRAM memory primitives for the internal IMEM and DMEM (each 64kb).
@@ -555,7 +553,7 @@ GPIO output signals are propagated as actual top entity interface signals. Basic
 
 The NEORV32 project includes several [example program project](https://github.com/stnolting/neorv32/tree/master/sw/example) from
 which you can start your own application. There are example programs to check out the processor's peripheral like I2C or the true-random number generator.
-And yes, there is also a port of [Conway's Game of Life](https://github.com/stnolting/neorv32/tree/master/sw/example/game_of_life) available! :wink:
+And of course there is also a port of [Conway's Game of Life](https://github.com/stnolting/neorv32/tree/master/sw/example/game_of_life) available.
 
 Simply compile one of these projects using
 
