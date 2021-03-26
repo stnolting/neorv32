@@ -1,8 +1,8 @@
 // #################################################################################################
-// # << NEORV32 - Intrinsics + Emulation Functions for the Zfinx CPU extension >>                  #
+// # << NEORV32 - Intrinsics + Emulation Functions for the RISC-V "Zfinx" CPU extension >>         #
 // # ********************************************************************************************* #
 // # The intrinsics provided by this library allow to use the hardware floating-point unit of the  #
-// # RISC-V Zfinx CPU extension without the need for Zfinx support by the compiler.                #
+// # RISC-V Zfinx CPU extension without the need for Zfinx support by the compiler / toolchain.    #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -69,6 +69,16 @@
 #if defined __riscv_f || (__riscv_flen == 32)
   #error Application programs using the Zfinx intrinsic library have to be compiled WITHOUT the <F> MARCH ISA attribute!
 #endif
+
+
+/**********************************************************************//**
+ * Custom data type to access floating-point values as native floats and in binary representation
+ **************************************************************************/
+typedef union
+{
+  uint32_t binary_value; /**< Access as native float */
+  float    float_value;  /**< Access in binary representation */
+} float_conv_t;
 
 
 // ################################################################################################
@@ -163,11 +173,15 @@ uint32_t get_sw_exceptions(void) {
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fadds(uint32_t rs1, uint32_t rs2) {
+float __attribute__ ((noinline)) riscv_intrinsic_fadds(float rs1, float rs2) {
+
+  float_conv_t opa, opb, res;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -175,7 +189,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fadds(uint32_t rs1, uint32_t
   // fadd.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0000000, a1, a0, 0b000, a0, 0b1010011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -188,11 +203,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fadds(uint32_t rs1, uint32_t
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsubs(uint32_t rs1, uint32_t rs2) {
+float __attribute__ ((noinline)) riscv_intrinsic_fsubs(float rs1, float rs2) {
+
+  float_conv_t opa, opb, res;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -200,7 +219,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsubs(uint32_t rs1, uint32_t
   // fsub.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0000100, a1, a0, 0b000, a0, 0b1010011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -213,11 +233,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsubs(uint32_t rs1, uint32_t
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmuls(uint32_t rs1, uint32_t rs2) {
+float __attribute__ ((noinline)) riscv_intrinsic_fmuls(float rs1, float rs2) {
+
+  float_conv_t opa, opb, res;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -225,7 +249,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmuls(uint32_t rs1, uint32_t
   // fmul.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0001000, a1, a0, 0b000, a0, 0b1010011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -238,11 +263,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmuls(uint32_t rs1, uint32_t
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmins(uint32_t rs1, uint32_t rs2) {
+float __attribute__ ((noinline)) riscv_intrinsic_fmins(float rs1, float rs2) {
+
+  float_conv_t opa, opb, res;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -250,7 +279,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmins(uint32_t rs1, uint32_t
   // fmin.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010100, a1, a0, 0b000, a0, 0b1010011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -263,11 +293,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmins(uint32_t rs1, uint32_t
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmaxs(uint32_t rs1, uint32_t rs2) {
+float __attribute__ ((noinline)) riscv_intrinsic_fmaxs(float rs1, float rs2) {
+
+  float_conv_t opa, opb, res;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -275,7 +309,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmaxs(uint32_t rs1, uint32_t
   // fmax.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010100, a1, a0, 0b001, a0, 0b1010011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -287,10 +322,13 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmaxs(uint32_t rs1, uint32_t
  * @param[in] rs1 Source operand 1 (a0).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_wus(uint32_t rs1) {
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_wus(float rs1) {
+
+  float_conv_t opa;
+  opa.float_value = rs1;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
@@ -310,10 +348,13 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_wus(uint32_t rs1) {
  * @param[in] rs1 Source operand 1 (a0).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_ws(uint32_t rs1) {
+int32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_ws(float rs1) {
+
+  float_conv_t opa;
+  opa.float_value = rs1;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
@@ -321,7 +362,7 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_ws(uint32_t rs1) {
   // fcvt.w.s a0, a0
   CUSTOM_INSTR_R2_TYPE(0b1100000, x0, a0, 0b000, a0, 0b1010011);
 
-  return result;
+  return (int32_t)result;
 }
 
 
@@ -333,7 +374,9 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_ws(uint32_t rs1) {
  * @param[in] rs1 Source operand 1 (a0).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_swu(uint32_t rs1) {
+float __attribute__ ((noinline)) riscv_intrinsic_fcvt_swu(uint32_t rs1) {
+
+  float_conv_t res;
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
@@ -344,7 +387,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_swu(uint32_t rs1) {
   // fcvt.s.wu a0, a0
   CUSTOM_INSTR_R2_TYPE(0b1101000, x1, a0, 0b000, a0, 0b1010011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -356,10 +400,12 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_swu(uint32_t rs1) {
  * @param[in] rs1 Source operand 1 (a0).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_sw(uint32_t rs1) {
+float __attribute__ ((noinline)) riscv_intrinsic_fcvt_sw(int32_t rs1) {
+
+  float_conv_t res;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_a  __asm__ ("a0") = (uint32_t)rs1;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
@@ -367,7 +413,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_sw(uint32_t rs1) {
   // fcvt.s.w a0, a0
   CUSTOM_INSTR_R2_TYPE(0b1101000, x0, a0, 0b000, a0, 0b1010011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -380,11 +427,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_sw(uint32_t rs1) {
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_feqs(uint32_t rs1, uint32_t rs2) {
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_feqs(float rs1, float rs2) {
+
+  float_conv_t opa, opb;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -405,11 +456,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_feqs(uint32_t rs1, uint32_t 
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_flts(uint32_t rs1, uint32_t rs2) {
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_flts(float rs1, float rs2) {
+
+  float_conv_t opa, opb;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -430,11 +485,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_flts(uint32_t rs1, uint32_t 
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fles(uint32_t rs1, uint32_t rs2) {
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_fles(float rs1, float rs2) {
+
+  float_conv_t opa, opb;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -455,11 +514,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fles(uint32_t rs1, uint32_t 
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsgnjs(uint32_t rs1, uint32_t rs2) {
+float __attribute__ ((noinline)) riscv_intrinsic_fsgnjs(float rs1, float rs2) {
+
+  float_conv_t opa, opb, res;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -467,7 +530,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsgnjs(uint32_t rs1, uint32_
   // fsgnj.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b000, a0, 0b1010011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -480,11 +544,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsgnjs(uint32_t rs1, uint32_
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsgnjns(uint32_t rs1, uint32_t rs2) {
+float __attribute__ ((noinline)) riscv_intrinsic_fsgnjns(float rs1, float rs2) {
+
+  float_conv_t opa, opb, res;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -492,7 +560,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsgnjns(uint32_t rs1, uint32
   // fsgnjn.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b001, a0, 0b1010011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -505,11 +574,15 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsgnjns(uint32_t rs1, uint32
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsgnjxs(uint32_t rs1, uint32_t rs2) {
+float __attribute__ ((noinline)) riscv_intrinsic_fsgnjxs(float rs1, float rs2) {
+
+  float_conv_t opa, opb, res;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -517,7 +590,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsgnjxs(uint32_t rs1, uint32
   // fsgnjx.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b010, a0, 0b1010011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -529,10 +603,13 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsgnjxs(uint32_t rs1, uint32
  * @param[in] rs1 Source operand 1 (a0).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fclasss(uint32_t rs1) {
+uint32_t __attribute__ ((noinline)) riscv_intrinsic_fclasss(float rs1) {
+
+  float_conv_t opa;
+  opa.float_value = rs1;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
@@ -559,18 +636,24 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fclasss(uint32_t rs1) {
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fdivs(uint32_t rs1, uint32_t rs2) {
+float __attribute__ ((noinline)) riscv_intrinsic_fdivs(float rs1, float rs2) {
+
+  float_conv_t opa, opb, res;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // fdiv.s a0, a0, x1
   CUSTOM_INSTR_R2_TYPE(0b0001100, a1, a0, 0b000, a0, 0b1010011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -584,10 +667,13 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fdivs(uint32_t rs1, uint32_t
  * @param[in] rs1 Source operand 1 (a0).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsqrts(uint32_t rs1) {
+float __attribute__ ((noinline)) riscv_intrinsic_fsqrts(float rs1) {
+
+  float_conv_t opa, res;
+  opa.float_value = rs1;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
@@ -595,7 +681,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsqrts(uint32_t rs1) {
   // fsqrt.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0101100, a1, a0, 0b000, a0, 0b1010011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -611,12 +698,17 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fsqrts(uint32_t rs1) {
  * @param[in] rs3 Source operand 3 (a2)
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmadds(uint32_t rs1, uint32_t rs2, uint32_t rs3) {
+float __attribute__ ((noinline)) riscv_intrinsic_fmadds(float rs1, float rs2, float rs3) {
+
+  float_conv_t opa, opb, opc, res;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
+  opc.float_value = rs3;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
-  register uint32_t tmp_c  __asm__ ("a2") = rs3;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
+  register uint32_t tmp_c  __asm__ ("a2") = opc.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -625,7 +717,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmadds(uint32_t rs1, uint32_
   // fmadd.s a0, a0, a1, a2
   CUSTOM_INSTR_R3_TYPE(a2, a1, a0, 0b000, a0, 0b1000011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -641,12 +734,17 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmadds(uint32_t rs1, uint32_
  * @param[in] rs3 Source operand 3 (a2)
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmsubs(uint32_t rs1, uint32_t rs2, uint32_t rs3) {
+float __attribute__ ((noinline)) riscv_intrinsic_fmsubs(float rs1, float rs2, float rs3) {
+
+  float_conv_t opa, opb, opc, res;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
+  opc.float_value = rs3;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
-  register uint32_t tmp_c  __asm__ ("a2") = rs3;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
+  register uint32_t tmp_c  __asm__ ("a2") = opc.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -655,7 +753,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmsubs(uint32_t rs1, uint32_
   // fmsub.s a0, a0, a1, a2
   CUSTOM_INSTR_R3_TYPE(a2, a1, a0, 0b000, a0, 0b1000111);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -671,12 +770,17 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fmsubs(uint32_t rs1, uint32_
  * @param[in] rs3 Source operand 3 (a2)
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fnmsubs(uint32_t rs1, uint32_t rs2, uint32_t rs3) {
+float __attribute__ ((noinline)) riscv_intrinsic_fnmsubs(float rs1, float rs2, float rs3) {
+
+  float_conv_t opa, opb, opc, res;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
+  opc.float_value = rs3;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
-  register uint32_t tmp_c  __asm__ ("a2") = rs3;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
+  register uint32_t tmp_c  __asm__ ("a2") = opc.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -685,7 +789,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fnmsubs(uint32_t rs1, uint32
   // fnmsub.s a0, a0, a1, a2
   CUSTOM_INSTR_R3_TYPE(a2, a1, a0, 0b000, a0, 0b1001011);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -701,12 +806,17 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fnmsubs(uint32_t rs1, uint32
  * @param[in] rs3 Source operand 3 (a2)
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fnmadds(uint32_t rs1, uint32_t rs2, uint32_t rs3) {
+float __attribute__ ((noinline)) riscv_intrinsic_fnmadds(float rs1, float rs2, float rs3) {
+
+  float_conv_t opa, opb, opc, res;
+  opa.float_value = rs1;
+  opb.float_value = rs2;
+  opc.float_value = rs3;
 
   register uint32_t result __asm__ ("a0");
-  register uint32_t tmp_a  __asm__ ("a0") = rs1;
-  register uint32_t tmp_b  __asm__ ("a1") = rs2;
-  register uint32_t tmp_c  __asm__ ("a2") = rs3;
+  register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
+  register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
+  register uint32_t tmp_c  __asm__ ("a2") = opc.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
   asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
@@ -715,7 +825,8 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fnmadds(uint32_t rs1, uint32
   // fnmadd.s a0, a0, a1, a2
   CUSTOM_INSTR_R3_TYPE(a2, a1, a0, 0b000, a0, 0b1001111);
 
-  return result;
+  res.binary_value = result;
+  return res.float_value;
 }
 
 
@@ -732,7 +843,10 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fnmadds(uint32_t rs1, uint32
  **************************************************************************/
 float riscv_emulate_fadds(float rs1, float rs2) {
 
-  float res = rs1 + rs2;
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+
+  float res = opa + opb;
   return subnormal_flush(res);
 }
 
@@ -746,7 +860,10 @@ float riscv_emulate_fadds(float rs1, float rs2) {
  **************************************************************************/
 float riscv_emulate_fsubs(float rs1, float rs2) {
 
-  float res = rs1 - rs2;
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+
+  float res = opa - opb;
   return subnormal_flush(res);
 }
 
@@ -760,7 +877,10 @@ float riscv_emulate_fsubs(float rs1, float rs2) {
  **************************************************************************/
 float riscv_emulate_fmuls(float rs1, float rs2) {
 
-  float res = rs1 * rs2;
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+
+  float res = opa * opb;
   return subnormal_flush(res);
 }
 
@@ -774,32 +894,35 @@ float riscv_emulate_fmuls(float rs1, float rs2) {
  **************************************************************************/
 float riscv_emulate_fmins(float rs1, float rs2) {
 
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+
   union {
   uint32_t binary_value; /**< Access as native float */
   float    float_value;  /**< Access in binary representation */
   } tmp_a, tmp_b;
 
-  if ((fpclassify(rs1) == FP_NAN) && (fpclassify(rs2) == FP_NAN)) {
+  if ((fpclassify(opa) == FP_NAN) && (fpclassify(opb) == FP_NAN)) {
     return nanf("");
   }
 
-  if (fpclassify(rs1) == FP_NAN) {
-    return rs2;
+  if (fpclassify(opa) == FP_NAN) {
+    return opb;
   }
 
-  if (fpclassify(rs2) == FP_NAN) {
-    return rs1;
+  if (fpclassify(opb) == FP_NAN) {
+    return opa;
   }
 
   // RISC-V spec: -0 < +0
-  tmp_a.float_value = rs1;
-  tmp_b.float_value = rs2;
+  tmp_a.float_value = opa;
+  tmp_b.float_value = opb;
   if (((tmp_a.binary_value == 0x80000000) && (tmp_b.binary_value == 0x00000000)) ||
       ((tmp_a.binary_value == 0x00000000) && (tmp_b.binary_value == 0x80000000))) {
     return -0.0f;
   }
 
-  return subnormal_flush(fmin(rs1, rs2));
+  return fmin(opa, opb);
 }
 
 
@@ -812,33 +935,36 @@ float riscv_emulate_fmins(float rs1, float rs2) {
  **************************************************************************/
 float riscv_emulate_fmaxs(float rs1, float rs2) {
 
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+
   union {
   uint32_t binary_value; /**< Access as native float */
   float    float_value;  /**< Access in binary representation */
   } tmp_a, tmp_b;
 
 
-  if ((fpclassify(rs1) == FP_NAN) && (fpclassify(rs2) == FP_NAN)) {
+  if ((fpclassify(opa) == FP_NAN) && (fpclassify(opb) == FP_NAN)) {
     return nanf("");
   }
 
-  if (fpclassify(rs1) == FP_NAN) {
-    return rs2;
+  if (fpclassify(opa) == FP_NAN) {
+    return opb;
   }
 
-  if (fpclassify(rs2) == FP_NAN) {
-    return rs1;
+  if (fpclassify(opb) == FP_NAN) {
+    return opa;
   }
 
   // RISC-V spec: -0 < +0
-  tmp_a.float_value = rs1;
-  tmp_b.float_value = rs2;
+  tmp_a.float_value = opa;
+  tmp_b.float_value = opb;
   if (((tmp_a.binary_value == 0x80000000) && (tmp_b.binary_value == 0x00000000)) ||
       ((tmp_a.binary_value == 0x00000000) && (tmp_b.binary_value == 0x80000000))) {
     return +0.0f;
   }
 
-  return subnormal_flush(fmax(rs1, rs2));
+  return fmax(opa, opb);
 }
 
 
@@ -850,7 +976,9 @@ float riscv_emulate_fmaxs(float rs1, float rs2) {
  **************************************************************************/
 uint32_t riscv_emulate_fcvt_wus(float rs1) {
 
-  return (uint32_t)roundf(rs1);
+  float opa = subnormal_flush(rs1);
+
+  return (uint32_t)roundf(opa);
 }
 
 
@@ -860,10 +988,11 @@ uint32_t riscv_emulate_fcvt_wus(float rs1) {
  * @param[in] rs1 Source operand 1.
  * @return Result.
  **************************************************************************/
-uint32_t riscv_emulate_fcvt_ws(float rs1) {
+int32_t riscv_emulate_fcvt_ws(float rs1) {
 
-  int32_t tmp = (int32_t)roundf(rs1);
-  return (uint32_t)tmp;
+  float opa = subnormal_flush(rs1);
+
+  return (int32_t)roundf(opa);
 }
 
 
@@ -875,7 +1004,7 @@ uint32_t riscv_emulate_fcvt_ws(float rs1) {
  **************************************************************************/
 float riscv_emulate_fcvt_swu(uint32_t rs1) {
 
-  return subnormal_flush((float)rs1);
+  return (float)rs1;
 }
 
 
@@ -885,10 +1014,9 @@ float riscv_emulate_fcvt_swu(uint32_t rs1) {
  * @param[in] rs1 Source operand 1.
  * @return Result.
  **************************************************************************/
-float riscv_emulate_fcvt_sw(uint32_t rs1) {
+float riscv_emulate_fcvt_sw(int32_t rs1) {
 
-  int32_t tmp = (int32_t)rs1;
-  return subnormal_flush((float)tmp);
+  return (float)rs1;
 }
 
 
@@ -901,14 +1029,17 @@ float riscv_emulate_fcvt_sw(uint32_t rs1) {
  **************************************************************************/
 uint32_t riscv_emulate_feqs(float rs1, float rs2) {
 
-  if ((fpclassify(rs1) == FP_NAN) || (fpclassify(rs2) == FP_NAN)) {
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+
+  if ((fpclassify(opa) == FP_NAN) || (fpclassify(opb) == FP_NAN)) {
     return 0;
   }
 
-  if isless(rs1, rs2) {
+  if isless(opa, opb) {
     return 0;
   }
-  else if isgreater(rs1, rs2) {
+  else if isgreater(opa, opb) {
     return 0;
   }
   else {
@@ -926,11 +1057,14 @@ uint32_t riscv_emulate_feqs(float rs1, float rs2) {
  **************************************************************************/
 uint32_t riscv_emulate_flts(float rs1, float rs2) {
 
-  if ((fpclassify(rs1) == FP_NAN) || (fpclassify(rs2) == FP_NAN)) {
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+
+  if ((fpclassify(opa) == FP_NAN) || (fpclassify(opb) == FP_NAN)) {
     return 0;
   }
 
-  if isless(rs1, rs2) {
+  if isless(opa, opb) {
     return 1;
   }
   else {
@@ -948,11 +1082,14 @@ uint32_t riscv_emulate_flts(float rs1, float rs2) {
  **************************************************************************/
 uint32_t riscv_emulate_fles(float rs1, float rs2) {
 
-  if ((fpclassify(rs1) == FP_NAN) || (fpclassify(rs2) == FP_NAN)) {
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+
+  if ((fpclassify(opa) == FP_NAN) || (fpclassify(opb) == FP_NAN)) {
     return 0;
   }
 
-  if islessequal(rs1, rs2) {
+  if islessequal(opa, opb) {
     return 1;
   }
   else {
@@ -970,28 +1107,31 @@ uint32_t riscv_emulate_fles(float rs1, float rs2) {
  **************************************************************************/
 float riscv_emulate_fsgnjs(float rs1, float rs2) {
 
-  int sign_1 = (int)signbit(rs1);
-  int sign_2 = (int)signbit(rs2);
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+
+  int sign_1 = (int)signbit(opa);
+  int sign_2 = (int)signbit(opb);
   float res = 0;
 
-  if (sign_2 != 0) { // rs2 is negative
+  if (sign_2 != 0) { // opb is negative
     if (sign_1 == 0) {
-      res = -rs1;
+      res = -opa;
     }
     else {
-      res = rs1;
+      res = opa;
     }
   }
-  else { // rs2 is positive
+  else { // opb is positive
     if (sign_1 == 0) {
-      res = rs1;
+      res = opa;
     }
     else {
-      res = -rs1;
+      res = -opa;
     }
   }
 
-  return subnormal_flush(res);
+  return res;
 }
 
 
@@ -1004,28 +1144,31 @@ float riscv_emulate_fsgnjs(float rs1, float rs2) {
  **************************************************************************/
 float riscv_emulate_fsgnjns(float rs1, float rs2) {
 
-  int sign_1 = (int)signbit(rs1);
-  int sign_2 = (int)signbit(rs2);
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+
+  int sign_1 = (int)signbit(opa);
+  int sign_2 = (int)signbit(opb);
   float res = 0;
 
-  if (sign_2 != 0) { // rs2 is negative
+  if (sign_2 != 0) { // opb is negative
     if (sign_1 == 0) {
-      res = rs1;
+      res = opa;
     }
     else {
-      res = -rs1;
+      res = -opa;
     }
   }
-  else { // rs2 is positive
+  else { // opb is positive
     if (sign_1 == 0) {
-      res = -rs1;
+      res = -opa;
     }
     else {
-      res = rs1;
+      res = opa;
     }
   }
 
-  return subnormal_flush(res);
+  return res;
 }
 
 
@@ -1038,28 +1181,31 @@ float riscv_emulate_fsgnjns(float rs1, float rs2) {
  **************************************************************************/
 float riscv_emulate_fsgnjxs(float rs1, float rs2) {
 
-  int sign_1 = (int)signbit(rs1);
-  int sign_2 = (int)signbit(rs2);
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+
+  int sign_1 = (int)signbit(opa);
+  int sign_2 = (int)signbit(opb);
   float res = 0;
 
   if (((sign_1 == 0) && (sign_2 != 0)) || ((sign_1 != 0) && (sign_2 == 0))) {
     if (sign_1 == 0) {
-      res = -rs1;
+      res = -opa;
     }
     else {
-      res = rs1;
+      res = opa;
     }
   }
   else {
     if (sign_1 == 0) {
-      res = rs1;
+      res = opa;
     }
     else {
-      res = -rs1;
+      res = -opa;
     }
   }
 
-  return subnormal_flush(res);
+  return res;
 }
 
 
@@ -1070,6 +1216,8 @@ float riscv_emulate_fsgnjxs(float rs1, float rs2) {
  * @return Result.
  **************************************************************************/
 uint32_t riscv_emulate_fclasss(float rs1) {
+
+  float opa = subnormal_flush(rs1);
 
   union {
     uint32_t binary_value; /**< Access as native float */
@@ -1088,8 +1236,8 @@ uint32_t riscv_emulate_fclasss(float rs1) {
   const uint32_t CLASS_SNAN       = 1 << 8; // signaling NaN (sNaN)
   const uint32_t CLASS_QNAN       = 1 << 9; // quiet NaN (qNaN)
 
-  int tmp = fpclassify(rs1);
-  int sgn = (int)signbit(rs1);
+  int tmp = fpclassify(opa);
+  int sgn = (int)signbit(opa);
 
   uint32_t res = 0;
 
@@ -1119,7 +1267,7 @@ uint32_t riscv_emulate_fclasss(float rs1) {
 
   // NaN
   if (tmp == FP_NAN) {
-    aux.float_value = rs1;
+    aux.float_value = opa;
     if ((aux.binary_value >> 22) & 0b1) { // bit 22 (mantissa's MSB) is set -> canonical (quiet) NAN
       res |= CLASS_QNAN;
     }
@@ -1141,7 +1289,10 @@ uint32_t riscv_emulate_fclasss(float rs1) {
  **************************************************************************/
 float riscv_emulate_fdivs(float rs1, float rs2) {
 
-  float res = rs1 / rs2;
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+
+  float res = opa / opb;
   return subnormal_flush(res);
 }
 
@@ -1154,7 +1305,9 @@ float riscv_emulate_fdivs(float rs1, float rs2) {
  **************************************************************************/
 float riscv_emulate_fsqrts(float rs1) {
 
-  float res = sqrtf(rs1);
+  float opa = subnormal_flush(rs1);
+
+  float res = sqrtf(opa);
   return subnormal_flush(res);
 }
 
@@ -1173,7 +1326,11 @@ float riscv_emulate_fsqrts(float rs1) {
  **************************************************************************/
 float riscv_emulate_fmadds(float rs1, float rs2, float rs3) {
 
-  float res = (rs1 * rs2) + rs3;
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+  float opc = subnormal_flush(rs3);
+
+  float res = (opa * opb) + opc;
   return subnormal_flush(res);
 }
 
@@ -1188,7 +1345,11 @@ float riscv_emulate_fmadds(float rs1, float rs2, float rs3) {
  **************************************************************************/
 float riscv_emulate_fmsubs(float rs1, float rs2, float rs3) {
 
-  float res = (rs1 * rs2) - rs3;
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+  float opc = subnormal_flush(rs3);
+
+  float res = (opa * opb) - opc;
   return subnormal_flush(res);
 }
 
@@ -1203,7 +1364,11 @@ float riscv_emulate_fmsubs(float rs1, float rs2, float rs3) {
  **************************************************************************/
 float riscv_emulate_fnmsubs(float rs1, float rs2, float rs3) {
 
-  float res = -(rs1 * rs2) + rs3;
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+  float opc = subnormal_flush(rs3);
+
+  float res = -(opa * opb) + opc;
   return subnormal_flush(res);
 }
 
@@ -1218,7 +1383,11 @@ float riscv_emulate_fnmsubs(float rs1, float rs2, float rs3) {
  **************************************************************************/
 float riscv_emulate_fnmadds(float rs1, float rs2, float rs3) {
 
-  float res = -(rs1 * rs2) - rs3;
+  float opa = subnormal_flush(rs1);
+  float opb = subnormal_flush(rs2);
+  float opc = subnormal_flush(rs3);
+
+  float res = -(opa * opb) - opc;
   return subnormal_flush(res);
 }
 
