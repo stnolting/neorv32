@@ -344,7 +344,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 begin
 
 -- ****************************************************************************************************************************
--- Instruction Fetch (always fetches aligned 32-bit chunks of data)
+-- Instruction Fetch (always fetch 32-bit-aligned 32-bit chunks of data)
 -- ****************************************************************************************************************************
 
   -- Fetch Engine FSM Sync ------------------------------------------------------------------
@@ -1280,7 +1280,7 @@ begin
 
     -- low privilege level access to hpm counters? --
     csr_mcounteren_hpm_v := (others => '0');
-    if (CPU_EXTENSION_RISCV_U = true) then
+    if (CPU_EXTENSION_RISCV_U = true) and (HPM_NUM_CNTS /= 0) then
       csr_mcounteren_hpm_v(HPM_NUM_CNTS-1 downto 0) := csr.mcounteren_hpm(HPM_NUM_CNTS-1 downto 0);
     else -- 'mcounteren' CSR is hardwired to zero if user mode is not implemented
       csr_mcounteren_hpm_v := (others => '0');
@@ -1960,25 +1960,23 @@ begin
 
           -- user floating-point CSRs --
           -- --------------------------------------------------------------------
-          if (csr.addr(11 downto 4) = csr_class_float_c) then -- floating point CSR class
-            -- R/W: fflags - floating-point (FPU) exception flags --
-            if (csr.addr(3 downto 0) = csr_fflags_c(3 downto 0)) and (CPU_EXTENSION_RISCV_Zfinx = true) then
-              csr.fflags <= csr.wdata(4 downto 0);
-            end if;
-            -- R/W: frm - floating-point (FPU) rounding mode --
-            if (csr.addr(3 downto 0) = csr_frm_c(3 downto 0)) and (CPU_EXTENSION_RISCV_Zfinx = true) then
-              csr.frm <= csr.wdata(2 downto 0);
-            end if;
-            -- R/W: fflags - floating-point (FPU) control/status (frm + fflags) --
-            if (csr.addr(3 downto 0) = csr_fcsr_c(3 downto 0)) and (CPU_EXTENSION_RISCV_Zfinx = true) then
-              csr.frm    <= csr.wdata(7 downto 5);
-              csr.fflags <= csr.wdata(4 downto 0);
-            end if;
+          if (csr.addr(11 downto 4) = csr_class_float_c) and (csr.addr(3 downto 2) = csr_fcsr_c(3 downto 2)) and
+             (CPU_EXTENSION_RISCV_Zfinx = true) then -- floating point CSR class
+            case csr.addr(1 downto 0) is
+              when "01" => -- R/W: fflags - floating-point (FPU) exception flags
+                csr.fflags <= csr.wdata(4 downto 0);
+              when "10" => -- R/W: frm - floating-point (FPU) rounding mode
+                csr.frm    <= csr.wdata(2 downto 0);
+              when "11" => -- R/W: fcsr - floating-point (FPU) control/status (frm + fflags)
+                csr.frm    <= csr.wdata(7 downto 5);
+                csr.fflags <= csr.wdata(4 downto 0);
+              when others => NULL;
+            end case;
           end if;
 
           -- machine trap setup --
           -- --------------------------------------------------------------------
-          if (csr.addr(11 downto 4) = csr_setup_c) then -- ftrap setup CSR class
+          if (csr.addr(11 downto 4) = csr_class_setup_c) then -- ftrap setup CSR class
             -- R/W: mstatus - machine status register --
             if (csr.addr(3 downto 0) = csr_mstatus_c(3 downto 0)) then
               csr.mstatus_mie  <= csr.wdata(03);
@@ -2082,16 +2080,14 @@ begin
 
           -- machine counter setup --
           -- --------------------------------------------------------------------
-          -- R/W: mcountinhibit - machine counter-inhibit register --
-          if (csr.addr = csr_mcountinhibit_c) then
-            csr.mcountinhibit_cy  <= csr.wdata(0); -- enable auto-increment of [m]cycle[h] counter
-            csr.mcountinhibit_ir  <= csr.wdata(2); -- enable auto-increment of [m]instret[h] counter
-            csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- enable auto-increment of [m]hpmcounter*[h] counter
-          end if;
-
-          -- machine performance-monitoring event selector --
-          -- --------------------------------------------------------------------
-          if (unsigned(csr.addr) >= unsigned(csr_mhpmevent3_c)) and (unsigned(csr.addr) <= unsigned(csr_mhpmevent31_c)) then
+          if (csr.addr(11 downto 6) = csr_cnt_setup_c) then -- counter configuration CSR class
+            -- R/W: mcountinhibit - machine counter-inhibit register --
+            if (csr.addr(5 downto 0) = csr_mcountinhibit_c(5 downto 0)) then
+              csr.mcountinhibit_cy  <= csr.wdata(0); -- enable auto-increment of [m]cycle[h] counter
+              csr.mcountinhibit_ir  <= csr.wdata(2); -- enable auto-increment of [m]instret[h] counter
+              csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- enable auto-increment of [m]hpmcounter*[h] counter
+            end if;
+            -- machine performance-monitoring event selector --
             if (HPM_NUM_CNTS > 0) then
               for i in 0 to HPM_NUM_CNTS-1 loop
                 if (csr.addr(4 downto 0) = std_ulogic_vector(to_unsigned(i+3, 5))) then
@@ -2203,7 +2199,7 @@ begin
     end if;
   end process csr_write_access;
 
-  -- decode privilege mode --
+  -- decode current privilege mode --
   csr.priv_m_mode <= '1' when (csr.privilege = priv_mode_m_c) else '0';
   csr.priv_u_mode <= '1' when (csr.privilege = priv_mode_u_c) else '0';
 
@@ -2212,11 +2208,13 @@ begin
   begin
     pmp_addr_o <= (others => (others => '0'));
     pmp_ctrl_o <= (others => (others => '0'));
-    for i in 0 to PMP_NUM_REGIONS-1 loop
-      pmp_addr_o(i) <= csr.pmpaddr(i) & "11";
-      pmp_addr_o(i)(index_size_f(PMP_MIN_GRANULARITY)-4 downto 0) <= (others => '1');
-      pmp_ctrl_o(i) <= csr.pmpcfg(i);
-    end loop; -- i
+    if (PMP_NUM_REGIONS /= 0) then
+      for i in 0 to PMP_NUM_REGIONS-1 loop
+        pmp_addr_o(i) <= csr.pmpaddr(i) & "11";
+        pmp_addr_o(i)(index_size_f(PMP_MIN_GRANULARITY)-4 downto 0) <= (others => '1');
+        pmp_ctrl_o(i) <= csr.pmpcfg(i);
+      end loop; -- i
+    end if;
   end process pmp_output;
 
   -- PMP read dummy --
@@ -2224,13 +2222,15 @@ begin
   begin
     csr.pmpcfg_rd  <= (others => (others => '0'));
     csr.pmpaddr_rd <= (others => (others => '0'));
-    for i in 0 to PMP_NUM_REGIONS-1 loop
-      csr.pmpcfg_rd(i)  <= csr.pmpcfg(i);
-      csr.pmpaddr_rd(i) <= csr.pmpaddr(i);
-      if (csr.pmpcfg(i)(4 downto 3) = "00") then -- mode = off
-        csr.pmpaddr_rd(i)(index_size_f(PMP_MIN_GRANULARITY)-3 downto 0) <= (others => '0'); -- required for granularity check by SW
-      end if;
-    end loop; -- i
+    if (PMP_NUM_REGIONS /= 0) then
+      for i in 0 to PMP_NUM_REGIONS-1 loop
+        csr.pmpcfg_rd(i)  <= csr.pmpcfg(i);
+        csr.pmpaddr_rd(i) <= csr.pmpaddr(i);
+        if (csr.pmpcfg(i)(4 downto 3) = "00") then -- mode = off
+          csr.pmpaddr_rd(i)(index_size_f(PMP_MIN_GRANULARITY)-3 downto 0) <= (others => '0'); -- required for granularity check by SW
+        end if;
+      end loop; -- i
+    end if;
   end process pmp_rd_dummy;
 
   -- FPU rounding mode --
@@ -2304,11 +2304,13 @@ begin
     csr.mhpmevent_rd    <= (others => (others => '0'));
     csr.mhpmcounter_rd  <= (others => (others => '0'));
     csr.mhpmcounterh_rd <= (others => (others => '0'));
-    for i in 0 to HPM_NUM_CNTS-1 loop
-      csr.mhpmevent_rd(i)    <= csr.mhpmevent(i);
-      csr.mhpmcounter_rd(i)  <= csr.mhpmcounter(i);
-      csr.mhpmcounterh_rd(i) <= csr.mhpmcounterh(i);
-    end loop; -- i
+    if (HPM_NUM_CNTS /= 0) then
+      for i in 0 to HPM_NUM_CNTS-1 loop
+        csr.mhpmevent_rd(i)    <= csr.mhpmevent(i);
+        csr.mhpmcounter_rd(i)  <= csr.mhpmcounter(i);
+        csr.mhpmcounterh_rd(i) <= csr.mhpmcounterh(i);
+      end loop; -- i
+    end if;
   end process hpm_rd_dummy;
 
 
@@ -2322,9 +2324,11 @@ begin
       -- enable selected triggers by ANDing actual events and according CSR configuration bits --
       -- OR everything to see if counter should increment --
       hpmcnt_trigger <= (others => '0'); -- default
-      for i in 0 to HPM_NUM_CNTS-1 loop
-        hpmcnt_trigger(i) <= or_all_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0));
-      end loop; -- i
+      if (HPM_NUM_CNTS /= 0) then
+        for i in 0 to HPM_NUM_CNTS-1 loop
+          hpmcnt_trigger(i) <= or_all_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0));
+        end loop; -- i
+      end if;
     end if;
   end process hpmcnt_ctrl;
 
@@ -2373,7 +2377,7 @@ begin
             if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented
               csr.rdata(2 downto 0) <= csr.frm;
             end if;
-          when csr_fcsr_c => -- R/W: fflags - floating-point (FPU) control/status (frm + fflags)
+          when csr_fcsr_c => -- R/W: fcsr - floating-point (FPU) control/status (frm + fflags)
             csr.rdata <= (others => '0');
             if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented
               csr.rdata(7 downto 5) <= csr.frm;
@@ -2394,7 +2398,6 @@ begin
             csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);     -- B CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
             csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
-            csr.rdata(05) <= '0';                                         -- F CPU extension
             csr.rdata(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
             csr.rdata(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_M);     -- M CPU extension
             csr.rdata(20) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);     -- U CPU extension
@@ -2411,13 +2414,12 @@ begin
           when csr_mtvec_c => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
             csr.rdata <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
           when csr_mcounteren_c => -- R/W: machine counter enable register
+            csr.rdata <= (others => '0');
             if (CPU_EXTENSION_RISCV_U = true) then -- this CSR is hardwired to zero if user mode is not implemented
               csr.rdata(0) <= csr.mcounteren_cy; -- enable user-level access to cycle[h]
               csr.rdata(1) <= csr.mcounteren_tm; -- enable user-level access to time[h]
               csr.rdata(2) <= csr.mcounteren_ir; -- enable user-level access to instret[h]
               csr.rdata(csr.mcounteren_hpm'left+3 downto 3) <= csr.mcounteren_hpm; -- enable user-level access to hpmcounterx[h]
-            else
-              csr.rdata <= (others => '0');
             end if;
 
           -- machine trap handling --
