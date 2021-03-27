@@ -64,6 +64,7 @@ entity neorv32_cpu_cp_fpu is
     start_i  : in  std_ulogic; -- trigger operation
     -- data input --
     frm_i    : in  std_ulogic_vector(2 downto 0); -- rounding mode
+    cmp_i    : in  std_ulogic_vector(1 downto 0); -- comparator status
     rs1_i    : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
     rs2_i    : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
     -- result and status --
@@ -168,9 +169,9 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
   signal fpu_operands : fpu_operands_t;
 
   -- floating-point comparator --
+  signal cmp_ff        : std_ulogic_vector(01 downto 0);
   signal comp_equal_ff : std_ulogic;
   signal comp_less_ff  : std_ulogic;
-  signal comp_less     : std_ulogic;
 
   -- functional units interface --
   type fu_interface_t is record
@@ -319,7 +320,7 @@ begin
       -- check special cases --
       op_is_zero_v   := op_e_all_zero_v and      op_m_all_zero_v;  -- zero
       op_is_inf_v    := op_e_all_one_v  and      op_m_all_zero_v;  -- infinity
-      op_is_denorm_v := '0'; -- FIXME / TODO op_e_all_zero_v and (not op_m_all_zero_v); -- subnormal
+      op_is_denorm_v := '0'; -- FIXME / TODO -- op_e_all_zero_v and (not op_m_all_zero_v); -- subnormal
       op_is_nan_v    := op_e_all_one_v  and (not op_m_all_zero_v); -- NaN
 
       -- actual attributes --
@@ -350,6 +351,7 @@ begin
       fpu_operands.rs2       <= (others => '0');
       fpu_operands.rs2_class <= (others => '0');
       funct_ff               <= (others => '0');
+      cmp_ff                 <= (others => '0');
     elsif rising_edge(clk_i) then
       -- arbiter defaults --
       ctrl_engine.valid <= '0';
@@ -361,6 +363,7 @@ begin
         when S_IDLE => -- waiting for operation trigger
         -- ------------------------------------------------------------
           funct_ff <= cmd.funct; -- actual operation to execute
+          cmp_ff   <= cmp_i; -- main ALU comparator
           -- rounding mode --
           -- TODO / FIXME "round to nearest, ties to max magnitude" (0b100) is not supported yet
           if (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "111") then
@@ -434,7 +437,7 @@ begin
          ((fpu_operands.rs1_class(fp_class_neg_inf_c)   = '1') and (fpu_operands.rs2_class(fp_class_neg_inf_c) = '1')) or -- -inf == -inf
          (((fpu_operands.rs1_class(fp_class_pos_zero_c) = '1') or (fpu_operands.rs1_class(fp_class_neg_zero_c) = '1')) and
           ((fpu_operands.rs2_class(fp_class_pos_zero_c) = '1') or (fpu_operands.rs2_class(fp_class_neg_zero_c) = '1'))) or  -- +/-zero == +/-zero
-         (fpu_operands.rs1 = fpu_operands.rs2) then -- identical in every way
+         (cmp_ff(cmp_equal_c) = '1') then -- identical in every way (comparator result from main ALU)
         comp_equal_ff <= '1';
       else
         comp_equal_ff <= '0';
@@ -451,8 +454,8 @@ begin
         case cond_v is
           when "10"   => comp_less_ff <= '1'; -- rs1 negative, rs2 positive
           when "01"   => comp_less_ff <= '0'; -- rs1 positive, rs2 negative
-          when "00"   => comp_less_ff <= comp_less; -- both positive
-          when "11"   => comp_less_ff <= not comp_less; -- both negative
+          when "00"   => comp_less_ff <= cmp_ff(cmp_less_c); -- both positive (comparator result from main ALU)
+          when "11"   => comp_less_ff <= not cmp_ff(cmp_less_c); -- both negative (comparator result from main ALU)
           when others => comp_less_ff <= '0'; -- undefined
         end case;
       end if;
@@ -462,9 +465,6 @@ begin
       fu_min_max.done <= fu_min_max.start; -- for min/max operations
     end if;
   end process float_comparator;
-
-  -- less than - only compare the "magnitude" part - sign bit has to be handled separately --
-  comp_less <= '1' when (unsigned(fpu_operands.rs1(30 downto 0)) < unsigned(fpu_operands.rs2(30 downto 0))) else '0';
 
 
   -- Comparison (FEQ/FLT/FLE) ---------------------------------------------------------------
@@ -600,7 +600,7 @@ begin
       -- multiplier core --
       if (multiplier.start = '1') then -- FIXME / TODO remove buffer?
         multiplier.opa <= unsigned('1' & fpu_operands.rs1(22 downto 0)); -- append hidden one
-        multiplier.opb <= unsigned('1' & fpu_operands.rs2(22 downto 0));
+        multiplier.opb <= unsigned('1' & fpu_operands.rs2(22 downto 0)); -- append hidden one
       end if;
       multiplier.buf_ff  <= multiplier.opa * multiplier.opb;
       multiplier.product <= std_ulogic_vector(multiplier.buf_ff(47 downto 0)); -- let the register balancing do the magic here

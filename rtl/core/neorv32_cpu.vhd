@@ -11,7 +11,7 @@
 -- #   * neorv32_cpu_ctrl.vhd            - CPU control and CSR system                              #
 -- #     * neorv32_cpu_decompressor.vhd  - Compressed instructions decoder                         #
 -- #   * neorv32_cpu_regfile.vhd         - Data register file                                      #
--- # * neorv32_package.vhd               - Main CPU/processor package file                         #
+-- # * neorv32_package.vhd               - Main CPU & Processor package file                       #
 -- #                                                                                               #
 -- # Check out the processor's data sheet for more information: docs/NEORV32.pdf                   #
 -- # ********************************************************************************************* #
@@ -407,7 +407,7 @@ begin
   -- Co-Processor 3: CSR (Read) Access ('Zicsr' Extension) ----------------------------------
   -- -------------------------------------------------------------------------------------------
   -- "pseudo" co-processor for CSR *read* access operations
-  -- required to get the CSR read data into the data path
+  -- required to get CSR read data into the data path
   cp_result(3) <= csr_rdata when (CPU_EXTENSION_RISCV_Zicsr = true) else (others => '0');
   cp_valid(3)  <= cp_start(3); -- always assigned even if Zicsr extension is disabled to make sure CPU does not get stalled if there is an accidental access
 
@@ -425,6 +425,7 @@ begin
       start_i  => cp_start(4),  -- trigger operation
       -- data input --
       frm_i    => fpu_rm,       -- rounding mode
+      cmp_i    => comparator,   -- comparator status
       rs1_i    => rs1,          -- rf source 1
       rs2_i    => rs2,          -- rf source 2
       -- result and status --
@@ -442,7 +443,7 @@ begin
   end generate;
 
 
-  -- Co-Processor 5..7: Not Implemented Yet -------------------------------------------------
+  -- Co-Processor 5,6,7: Not Implemented Yet ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   cp_result(5) <= (others => '0');
   cp_valid(5)  <= '0';
