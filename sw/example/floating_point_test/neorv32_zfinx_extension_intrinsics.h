@@ -167,13 +167,11 @@ uint32_t get_sw_exceptions(void) {
 /**********************************************************************//**
  * Single-precision floating-point addition
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fadds(float rs1, float rs2) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fadds(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -189,6 +187,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fadds(float rs1, float rs2) {
   // fadd.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0000000, a1, a0, 0b000, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -197,13 +198,11 @@ float __attribute__ ((noinline)) riscv_intrinsic_fadds(float rs1, float rs2) {
 /**********************************************************************//**
  * Single-precision floating-point subtraction
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fsubs(float rs1, float rs2) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fsubs(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -219,6 +218,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fsubs(float rs1, float rs2) {
   // fsub.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0000100, a1, a0, 0b000, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -227,13 +229,11 @@ float __attribute__ ((noinline)) riscv_intrinsic_fsubs(float rs1, float rs2) {
 /**********************************************************************//**
  * Single-precision floating-point multiplication
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fmuls(float rs1, float rs2) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fmuls(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -249,6 +249,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fmuls(float rs1, float rs2) {
   // fmul.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0001000, a1, a0, 0b000, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -257,13 +260,11 @@ float __attribute__ ((noinline)) riscv_intrinsic_fmuls(float rs1, float rs2) {
 /**********************************************************************//**
  * Single-precision floating-point minimum
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fmins(float rs1, float rs2) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fmins(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -279,6 +280,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fmins(float rs1, float rs2) {
   // fmin.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010100, a1, a0, 0b000, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -287,13 +291,11 @@ float __attribute__ ((noinline)) riscv_intrinsic_fmins(float rs1, float rs2) {
 /**********************************************************************//**
  * Single-precision floating-point maximum
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fmaxs(float rs1, float rs2) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fmaxs(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -309,6 +311,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fmaxs(float rs1, float rs2) {
   // fmax.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010100, a1, a0, 0b001, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -317,12 +322,10 @@ float __attribute__ ((noinline)) riscv_intrinsic_fmaxs(float rs1, float rs2) {
 /**********************************************************************//**
  * Single-precision floating-point convert float to unsigned integer
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_wus(float rs1) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fcvt_wus(float rs1) {
 
   float_conv_t opa;
   opa.float_value = rs1;
@@ -336,6 +339,9 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_wus(float rs1) {
   // fcvt.wu.s a0, a0
   CUSTOM_INSTR_R2_TYPE(0b1100000, x1, a0, 0b000, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   return result;
 }
 
@@ -343,12 +349,10 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_wus(float rs1) {
 /**********************************************************************//**
  * Single-precision floating-point convert float to signed integer
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Result.
  **************************************************************************/
-int32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_ws(float rs1) {
+inline int32_t __attribute__ ((always_inline)) riscv_intrinsic_fcvt_ws(float rs1) {
 
   float_conv_t opa;
   opa.float_value = rs1;
@@ -362,6 +366,9 @@ int32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_ws(float rs1) {
   // fcvt.w.s a0, a0
   CUSTOM_INSTR_R2_TYPE(0b1100000, x0, a0, 0b000, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   return (int32_t)result;
 }
 
@@ -369,12 +376,10 @@ int32_t __attribute__ ((noinline)) riscv_intrinsic_fcvt_ws(float rs1) {
 /**********************************************************************//**
  * Single-precision floating-point convert unsigned integer to float
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fcvt_swu(uint32_t rs1) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fcvt_swu(uint32_t rs1) {
 
   float_conv_t res;
 
@@ -387,6 +392,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fcvt_swu(uint32_t rs1) {
   // fcvt.s.wu a0, a0
   CUSTOM_INSTR_R2_TYPE(0b1101000, x1, a0, 0b000, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -395,12 +403,10 @@ float __attribute__ ((noinline)) riscv_intrinsic_fcvt_swu(uint32_t rs1) {
 /**********************************************************************//**
  * Single-precision floating-point convert signed integer to float
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fcvt_sw(int32_t rs1) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fcvt_sw(int32_t rs1) {
 
   float_conv_t res;
 
@@ -413,6 +419,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fcvt_sw(int32_t rs1) {
   // fcvt.s.w a0, a0
   CUSTOM_INSTR_R2_TYPE(0b1101000, x0, a0, 0b000, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -421,13 +430,11 @@ float __attribute__ ((noinline)) riscv_intrinsic_fcvt_sw(int32_t rs1) {
 /**********************************************************************//**
  * Single-precision floating-point equal comparison
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_feqs(float rs1, float rs2) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_feqs(float rs1, float rs2) {
 
   float_conv_t opa, opb;
   opa.float_value = rs1;
@@ -443,6 +450,9 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_feqs(float rs1, float rs2) {
   // feq.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b1010000, a1, a0, 0b010, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   return result;
 }
 
@@ -450,13 +460,11 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_feqs(float rs1, float rs2) {
 /**********************************************************************//**
  * Single-precision floating-point less-than comparison
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_flts(float rs1, float rs2) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_flts(float rs1, float rs2) {
 
   float_conv_t opa, opb;
   opa.float_value = rs1;
@@ -472,6 +480,9 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_flts(float rs1, float rs2) {
   // flt.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b1010000, a1, a0, 0b001, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   return result;
 }
 
@@ -479,13 +490,11 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_flts(float rs1, float rs2) {
 /**********************************************************************//**
  * Single-precision floating-point less-than-or-equal comparison
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fles(float rs1, float rs2) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fles(float rs1, float rs2) {
 
   float_conv_t opa, opb;
   opa.float_value = rs1;
@@ -501,6 +510,9 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fles(float rs1, float rs2) {
   // fle.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b1010000, a1, a0, 0b000, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   return result;
 }
 
@@ -508,13 +520,11 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fles(float rs1, float rs2) {
 /**********************************************************************//**
  * Single-precision floating-point sign-injection
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fsgnjs(float rs1, float rs2) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjs(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -530,6 +540,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fsgnjs(float rs1, float rs2) {
   // fsgnj.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b000, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -538,13 +551,11 @@ float __attribute__ ((noinline)) riscv_intrinsic_fsgnjs(float rs1, float rs2) {
 /**********************************************************************//**
  * Single-precision floating-point sign-injection NOT
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fsgnjns(float rs1, float rs2) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjns(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -560,6 +571,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fsgnjns(float rs1, float rs2) {
   // fsgnjn.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b001, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -568,13 +582,11 @@ float __attribute__ ((noinline)) riscv_intrinsic_fsgnjns(float rs1, float rs2) {
 /**********************************************************************//**
  * Single-precision floating-point sign-injection XOR
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fsgnjxs(float rs1, float rs2) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjxs(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -590,6 +602,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fsgnjxs(float rs1, float rs2) {
   // fsgnjx.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b010, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -598,12 +613,10 @@ float __attribute__ ((noinline)) riscv_intrinsic_fsgnjxs(float rs1, float rs2) {
 /**********************************************************************//**
  * Single-precision floating-point number classification
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Result.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_fclasss(float rs1) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fclasss(float rs1) {
 
   float_conv_t opa;
   opa.float_value = rs1;
@@ -617,6 +630,9 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fclasss(float rs1) {
   // fclass.s a0, a0
   CUSTOM_INSTR_R2_TYPE(0b1110000, x0, a0, 0b001, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   return result;
 }
 
@@ -628,15 +644,13 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_fclasss(float rs1) {
 /**********************************************************************//**
  * Single-precision floating-point division
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @warning This instruction is not supported and should raise an illegal instruction exception when executed.
  *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a1).
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fdivs(float rs1, float rs2) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fdivs(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -652,6 +666,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fdivs(float rs1, float rs2) {
   // fdiv.s a0, a0, x1
   CUSTOM_INSTR_R2_TYPE(0b0001100, a1, a0, 0b000, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -660,14 +677,12 @@ float __attribute__ ((noinline)) riscv_intrinsic_fdivs(float rs1, float rs2) {
 /**********************************************************************//**
  * Single-precision floating-point square root
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @warning This instruction is not supported and should raise an illegal instruction exception when executed.
  *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fsqrts(float rs1) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fsqrts(float rs1) {
 
   float_conv_t opa, res;
   opa.float_value = rs1;
@@ -681,6 +696,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fsqrts(float rs1) {
   // fsqrt.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0101100, a1, a0, 0b000, a0, 0b1010011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -689,8 +707,6 @@ float __attribute__ ((noinline)) riscv_intrinsic_fsqrts(float rs1) {
 /**********************************************************************//**
  * Single-precision floating-point fused multiply-add
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0, a1 and a2.
- *
  * @warning This instruction is not supported and should raise an illegal instruction exception when executed.
  *
  * @param[in] rs1 Source operand 1 (a0)
@@ -698,7 +714,7 @@ float __attribute__ ((noinline)) riscv_intrinsic_fsqrts(float rs1) {
  * @param[in] rs3 Source operand 3 (a2)
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fmadds(float rs1, float rs2, float rs3) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fmadds(float rs1, float rs2, float rs3) {
 
   float_conv_t opa, opb, opc, res;
   opa.float_value = rs1;
@@ -717,6 +733,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fmadds(float rs1, float rs2, fl
   // fmadd.s a0, a0, a1, a2
   CUSTOM_INSTR_R3_TYPE(a2, a1, a0, 0b000, a0, 0b1000011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -725,8 +744,6 @@ float __attribute__ ((noinline)) riscv_intrinsic_fmadds(float rs1, float rs2, fl
 /**********************************************************************//**
  * Single-precision floating-point fused multiply-sub
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0, a1 and a2.
- *
  * @warning This instruction is not supported and should raise an illegal instruction exception when executed.
  *
  * @param[in] rs1 Source operand 1 (a0)
@@ -734,7 +751,7 @@ float __attribute__ ((noinline)) riscv_intrinsic_fmadds(float rs1, float rs2, fl
  * @param[in] rs3 Source operand 3 (a2)
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fmsubs(float rs1, float rs2, float rs3) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fmsubs(float rs1, float rs2, float rs3) {
 
   float_conv_t opa, opb, opc, res;
   opa.float_value = rs1;
@@ -753,6 +770,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fmsubs(float rs1, float rs2, fl
   // fmsub.s a0, a0, a1, a2
   CUSTOM_INSTR_R3_TYPE(a2, a1, a0, 0b000, a0, 0b1000111);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -761,8 +781,6 @@ float __attribute__ ((noinline)) riscv_intrinsic_fmsubs(float rs1, float rs2, fl
 /**********************************************************************//**
  * Single-precision floating-point fused negated multiply-sub
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0, a1 and a2.
- *
  * @warning This instruction is not supported and should raise an illegal instruction exception when executed.
  *
  * @param[in] rs1 Source operand 1 (a0)
@@ -770,7 +788,7 @@ float __attribute__ ((noinline)) riscv_intrinsic_fmsubs(float rs1, float rs2, fl
  * @param[in] rs3 Source operand 3 (a2)
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fnmsubs(float rs1, float rs2, float rs3) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fnmsubs(float rs1, float rs2, float rs3) {
 
   float_conv_t opa, opb, opc, res;
   opa.float_value = rs1;
@@ -789,6 +807,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fnmsubs(float rs1, float rs2, f
   // fnmsub.s a0, a0, a1, a2
   CUSTOM_INSTR_R3_TYPE(a2, a1, a0, 0b000, a0, 0b1001011);
 
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
+
   res.binary_value = result;
   return res.float_value;
 }
@@ -797,8 +818,6 @@ float __attribute__ ((noinline)) riscv_intrinsic_fnmsubs(float rs1, float rs2, f
 /**********************************************************************//**
  * Single-precision floating-point fused negated multiply-add
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0, a1 and a2.
- *
  * @warning This instruction is not supported and should raise an illegal instruction exception when executed.
  *
  * @param[in] rs1 Source operand 1 (a0)
@@ -806,7 +825,7 @@ float __attribute__ ((noinline)) riscv_intrinsic_fnmsubs(float rs1, float rs2, f
  * @param[in] rs3 Source operand 3 (a2)
  * @return Result.
  **************************************************************************/
-float __attribute__ ((noinline)) riscv_intrinsic_fnmadds(float rs1, float rs2, float rs3) {
+inline float __attribute__ ((always_inline)) riscv_intrinsic_fnmadds(float rs1, float rs2, float rs3) {
 
   float_conv_t opa, opb, opc, res;
   opa.float_value = rs1;
@@ -824,6 +843,9 @@ float __attribute__ ((noinline)) riscv_intrinsic_fnmadds(float rs1, float rs2, f
 
   // fnmadd.s a0, a0, a1, a2
   CUSTOM_INSTR_R3_TYPE(a2, a1, a0, 0b000, a0, 0b1001111);
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   res.binary_value = result;
   return res.float_value;
