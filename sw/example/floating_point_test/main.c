@@ -144,7 +144,7 @@ int main() {
   neorv32_uart_printf("SILENT_MODE enabled (only showing actual errors)\n");
 #endif
   neorv32_uart_printf("Test cases per instruction: %u\n", (uint32_t)NUM_TEST_CASES);
-  neorv32_uart_printf("NOTE: The NEORV32 FPU does not support subnormal numbers yet. Subnormal number are flushed to zero by the hardware.\n\n");
+  neorv32_uart_printf("NOTE: The NEORV32 FPU does not support subnormal numbers yet. Subnormal numbers are flushed to zero by the hardware.\n\n");
 
 
   // clear exception status word
