@@ -1,17 +1,24 @@
 # NEORV32 `Zfinx` Floating-Point Extension
 
+The NEORV32 floating-point unit (FPU) implements the `Zfinx` RISC-V extension. The extensions can be enabled via the `CPU_EXTENSION_RISCV_Zfinx` top configuration generic.
+
 The RISC-V `Zfinx` single-precision floating-point extensions uses the integer register file `x` instead of the dedicated floating-point `f` register file (which is
 defined by the RISC-V `F` single-precision floating-point extension). Hence, the standard data transfer instructions from the `F` extension are **not** available in `Zfinx`:
 
 * floating-point load/store operations (`FLW`, `FSW`) and their compressed versions
 * integer register file `x` <-> floating point register file `f` move operations (`FMV.W.X`, `FMV.X.W`)
 
-
 :information_source: More information regarding the RISC-V `Zfinx` single-precision floating-point extension can be found in the officail GitHub repo:
 [`github.com/riscv/riscv-zfinx`](https://github.com/riscv/riscv-zfinx).
 
 :warning: The RISC-V `Zfinx` extension is not officially ratified yet, but it is assumed to remain unchanged. Hence, it is not supported by the upstream RISC-V GCC port.
 Make sure you **do not** use the `f` ISA attribute when compiling applications that use floating-point arithmetic (`-march=rv32i*f*` is **NOT ALLOWED!**).
+
+
+### :warning: FPU Limitations
+
+* The FPU **does not support subnormal numbers** yet. Subnormal FPU inputs and subnormal FPU results are always *flushed to zero*. The *classify* instruction `FCLASS` will never set the "subnormal" mask bits.
+* Rounding mode `ob100` "round to nearest, ties to max magnitude" is not supported yet (this and all invalid rounding mode configurations behave as "round towards zero" (truncation)).
 
 
 ## Intrinsic Library
@@ -36,3 +43,4 @@ The emulation functions as well as the available intrinsics for the `Zfinx` exte
 
 The provided test program `main.c` verifies all currently implemented `Zfinx` instructions by checking the functionality against the pure software-based emulation model
 (GCC soft-float library).
+
