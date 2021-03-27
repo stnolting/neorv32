@@ -143,7 +143,8 @@ int main() {
 #if (SILENT_MODE != 0)
   neorv32_uart_printf("SILENT_MODE enabled (only showing actual errors)\n");
 #endif
-  neorv32_uart_printf("Test cases per instruction: %u\n\n", (uint32_t)NUM_TEST_CASES);
+  neorv32_uart_printf("Test cases per instruction: %u\n", (uint32_t)NUM_TEST_CASES);
+  neorv32_uart_printf("NOTE: The NEORV32 FPU does not support subnormal numbers yet. Subnormal number are flushed to zero by the hardware.\n\n");
 
 
   // clear exception status word
@@ -413,7 +414,7 @@ int main() {
   opa.binary_value = get_test_vector();
   opb.binary_value = get_test_vector();
   riscv_intrinsic_fdivs(opa.float_value, opb.float_value);
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_I_ILLEGAL) {
     neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
@@ -426,7 +427,7 @@ int main() {
   opa.binary_value = get_test_vector();
   opb.binary_value = get_test_vector();
   riscv_intrinsic_fsqrts(opa.float_value);
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_I_ILLEGAL) {
     neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
@@ -439,7 +440,7 @@ int main() {
   opa.binary_value = get_test_vector();
   opb.binary_value = get_test_vector();
   riscv_intrinsic_fmadds(opa.float_value, opb.float_value, -opa.float_value);
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_I_ILLEGAL) {
     neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
@@ -452,7 +453,7 @@ int main() {
   opa.binary_value = get_test_vector();
   opb.binary_value = get_test_vector();
   riscv_intrinsic_fmsubs(opa.float_value, opb.float_value, -opa.float_value);
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_I_ILLEGAL) {
     neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
@@ -465,7 +466,7 @@ int main() {
   opa.binary_value = get_test_vector();
   opb.binary_value = get_test_vector();
   riscv_intrinsic_fnmadds(opa.float_value, opb.float_value, -opa.float_value);
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_I_ILLEGAL) {
     neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
@@ -478,7 +479,7 @@ int main() {
   opa.binary_value = get_test_vector();
   opb.binary_value = get_test_vector();
   riscv_intrinsic_fnmadds(opa.float_value, opb.float_value, -opa.float_value);
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_I_ILLEGAL) {
     neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
   }

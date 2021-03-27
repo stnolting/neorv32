@@ -90,7 +90,7 @@ typedef union
  *
  * @warning Subnormal numbers are not supported yet! Flush them to zero.
  *
- * @param[in] tmp Source operand 1.
+ * @param[in] tmp Source operand.
  * @return Result.
  **************************************************************************/
 float subnormal_flush(float tmp) {
