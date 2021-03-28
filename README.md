@@ -33,6 +33,8 @@ The doxygen-based documentation of the *software framework* is available online 
 :label: The project’s change log is available as [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) in the root directory of this repository.
 To see the changes between *stable* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
+:information_source: See the [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder for exemplary setups targeting various FPGA boards.
+
 :spiral_notepad: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current **ideas**,
 **TODOs**, features being **planned** and **work-in-progress**.
 
@@ -347,10 +349,10 @@ Results generated for hardware version [`1.5.3.2`](https://github.com/stnolting/
 
 ### NEORV32 Processor - Exemplary FPGA Setups
 
-Exemplary processor implementation results for different FPGA platforms. The processor setup uses *the default peripheral configuration* (like no _CFS_ and no _TRNG_),
-no external memory interface and only internal instruction and data memories. IMEM uses 16kB and DMEM uses 8kB memory space. The setup's top entity connects most of the
-processor's [top entity](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd) signals
-to FPGA pins - except for the Wishbone bus and the interrupt signals. The "default" strategy of each toolchain is used.
+:information_source: Check out the [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder for exemplary setups targeting various FPGA boards.
+
+The following tables show exemplary processor implementation results for different FPGA platforms. The processor setups use *the default peripheral configuration* (like no *CFS* and no *TRNG*),
+no external memory interface and only internal instruction and data memories. IMEM uses 16kB and DMEM uses 8kB memory space.
 
 Results generated for hardware version [`1.4.9.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
@@ -361,6 +363,7 @@ Results generated for hardware version [`1.4.9.0`](https://github.com/stnolting/
 | Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2              | `rv32imc` + `u` + `Zicsr` + `Zifencei` + `PMP` | 2465 (12%) | 1912  (5%) | 0 (0%)      |            - |    8 (16%) |        - |   *c* 100 MHz |
 
 **_Notes_**
+* The "default" implementation strategy of the according toolchain is used.
 * The Lattice iCE40 UltraPlus setup uses the FPGA's SPRAM memory primitives for the internal IMEM and DMEM (each 64kb).
 The FPGA-specific memory components can be found in [`rtl/fpga_specific`](https://github.com/stnolting/neorv32/blob/master/rtl/fpga_specific/lattice_ice40up).
 * The clock frequencies marked with a "c" are constrained clocks. The remaining ones are _f_max_ results from the place and route timing reports.
