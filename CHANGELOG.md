@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 28.03.2021 | 1.5.3.4 | default "test setup" `rtl/top_templetes/neorv32_test_setup.vhd`: disabled PMP, implementing 4 HPM counters; :sparkles: added [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder for exemplary FPGA setups |
 | 27.03.2021 | 1.5.3.3 | minor optimization is CPU control engine; FPU comparator now uses comparatos results from main ALU (reduces FPU hardware footprint) |
 | 26.03.2021 | 1.5.3.2 | :sparkles: **added single-precision floating-point unit (FPU)** `rtl/core/neorv32_cpu_cp_fpu.vhd` implementing the `Zfinx` CPU extension; added/updated `Zfinx` **intrinsic library** and verification framework: [`sw/example/floating_point_test`](https://github.com/stnolting/neorv32/tree/master/sw/example/floating_point_test); added co-processor timeout counter to CPU to auto-terminate co-processor operations (for debugging only; defaullt=deactivated) |
 | 25.03.2021 | 1.5.3.1 | :bug: fixed bug in invalid floating-point instruction detection (caused CPU to stall if executing an invalid floating-point operation); intrinsic core library (mainly used for not-yet-supported CPU extensions like `B` and `Zfinx`): clean-up, added R3 instruction type |
