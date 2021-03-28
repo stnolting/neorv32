@@ -10,7 +10,7 @@ Project maintainers may make pull requests against this repository to add or lin
 
 | Setup | Board | FPGA  | Author |
 |:-----:|:------|:------|:------:|
-| :file_folder: [`arty-a7-35-test-setup`]https://github.com/stnolting/neorv32/tree/master/boards/arty-a7-35-test-setup) | [Digilent Arty A7-35](https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start) | Xilinx Artix-7 `XC7A35TICSG324-1L` | stnolting |
+| :file_folder: [`arty-a7-35-test-setup`](https://github.com/stnolting/neorv32/tree/master/boards/arty-a7-35-test-setup) | [Digilent Arty A7-35](https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start) | Xilinx Artix-7 `XC7A35TICSG324-1L` | stnolting |
 
 
 ### Adding Your Project Setup

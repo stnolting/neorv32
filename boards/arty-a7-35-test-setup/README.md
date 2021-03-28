@@ -9,7 +9,7 @@ top entity that provides a minimalistic interface (clock, reset, UART and 4 LEDs
 * Toolchain: Xilinx Vivado (tested with Vivado 2019.2)
 
 
-#### NEORV32 Configuration
+### NEORV32 Configuration
 
 :information_source: See the top entity [`rtl/top_templates/neorv32_test_setup.vhd` ](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd) for 
 configuration details and entity details and [`arty_a7_35_test_setup.xdc`](https://github.com/stnolting/neorv32/blob/master/boards/arty-a7-35-test-setup/arty_a7_35_test_setup.xdc)
