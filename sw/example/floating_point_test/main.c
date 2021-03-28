@@ -82,6 +82,8 @@
 #define RUN_CLASSIFY_TESTS (1)
 //** Run unsupported instructions tests when != 0 */
 #define RUN_UNAVAIL_TESTS  (1)
+//** Run average instruction execution time test when != 0 */
+#define RUN_TIMING_TESTS   (0)
 /**@}*/
 
 
@@ -489,6 +491,169 @@ int main() {
 #endif
 
 
+// ----------------------------------------------------------------------------
+// Instruction execution timing test
+// ----------------------------------------------------------------------------
+
+#if (RUN_TIMING_TESTS != 0)
+
+  uint32_t time_start, time_sw, time_hw;
+  const uint32_t num_runs = 4096;
+
+  neorv32_uart_printf("\nAverage execution time tests (%u runs)\n", num_runs);
+
+
+  // signed integer to float
+  neorv32_uart_printf("FCVT.S.W: ");
+  time_sw = 0;
+  time_hw = 0;
+  err_cnt = 0;
+  for (i=0; i<num_runs; i++) {
+    opa.binary_value = get_test_vector();
+
+    // hardware execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_hw.float_value = riscv_intrinsic_fcvt_sw((int32_t)opa.binary_value);
+    }
+    time_hw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+    time_hw -= 4; // remove the 2 dummy instructions
+
+    // software (emulation) execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_sw.float_value = riscv_emulate_fcvt_sw((int32_t)opa.binary_value);
+    }
+    time_sw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+
+    if (res_sw.binary_value != res_hw.binary_value) {
+      err_cnt++;
+    }
+  }
+
+  if (err_cnt == 0) {
+    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+  }
+  else {
+    neorv32_uart_printf("%c[1m[TIMING TEST FAILED!]%c[0m\n", 27, 27);
+    err_cnt_total++;
+  }
+
+
+  // float to signed integer
+  neorv32_uart_printf("FCVT.W.S: ");
+  time_sw = 0;
+  time_hw = 0;
+  err_cnt = 0;
+  for (i=0; i<num_runs; i++) {
+    opa.binary_value = get_test_vector();
+
+    // hardware execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_hw.binary_value = (uint32_t)riscv_intrinsic_fcvt_ws(opa.float_value);
+    }
+    time_hw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+    time_hw -= 4; // remove the 2 dummy instructions
+
+    // software (emulation) execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_sw.binary_value = (uint32_t)riscv_emulate_fcvt_ws(opa.float_value);
+    }
+    time_sw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+
+    if (res_sw.binary_value != res_hw.binary_value) {
+      err_cnt++;
+    }
+  }
+
+  if (err_cnt == 0) {
+    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+  }
+  else {
+    neorv32_uart_printf("%c[1m[TIMING TEST FAILED!]%c[0m\n", 27, 27);
+    err_cnt_total++;
+  }
+
+
+  // addition
+  neorv32_uart_printf("FADD.S:   ");
+  time_sw = 0;
+  time_hw = 0;
+  err_cnt = 0;
+  for (i=0; i<num_runs; i++) {
+    opa.binary_value = get_test_vector();
+    opb.binary_value = get_test_vector();
+
+    // hardware execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_hw.float_value = riscv_intrinsic_fadds(opa.float_value, opb.float_value);
+    }
+    time_hw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+    time_hw -= 4; // remove the 2 dummy instructions
+
+    // software (emulation) execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_sw.float_value = riscv_emulate_fadds(opa.float_value, opb.float_value);
+    }
+    time_sw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+
+    if (res_sw.binary_value != res_hw.binary_value) {
+      err_cnt++;
+    }
+  }
+
+  if (err_cnt == 0) {
+    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+  }
+  else {
+    neorv32_uart_printf("%c[1m[TIMING TEST FAILED!]%c[0m\n", 27, 27);
+    err_cnt_total++;
+  }
+
+
+  // multiplication
+  neorv32_uart_printf("FMUL.S:   ");
+  time_sw = 0;
+  time_hw = 0;
+  err_cnt = 0;
+  for (i=0; i<num_runs; i++) {
+    opa.binary_value = get_test_vector();
+    opb.binary_value = get_test_vector();
+
+    // hardware execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_hw.float_value = riscv_intrinsic_fmuls(opa.float_value, opb.float_value);
+    }
+    time_hw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+    time_hw -= 4; // remove the 2 dummy instructions
+
+    // software (emulation) execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_sw.float_value = riscv_emulate_fmuls(opa.float_value, opb.float_value);
+    }
+    time_sw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+
+    if (res_sw.binary_value != res_hw.binary_value) {
+      err_cnt++;
+    }
+  }
+
+  if (err_cnt == 0) {
+    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+  }
+  else {
+    neorv32_uart_printf("%c[1m[TIMING TEST FAILED!]%c[0m\n", 27, 27);
+    err_cnt_total++;
+  }
+#endif
+
+
   // final report
   if (err_cnt_total != 0) {
     neorv32_uart_printf("\n%c[1m[ZFINX EXTENSION VERIFICATION FAILED!]%c[0m\n", 27, 27);
@@ -529,10 +694,6 @@ uint32_t get_test_vector(void) {
   else {
     tmp.binary_value = xorshift32();
   }
-
-  // subnormal numbers are not supported yet!
-  // flush them to zero
-//tmp.float_value = subnormal_flush(tmp.float_value);
 
   return tmp.binary_value;
 }
