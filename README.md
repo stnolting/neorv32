@@ -33,7 +33,7 @@ The doxygen-based documentation of the *software framework* is available online 
 :label: The project’s change log is available as [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) in the root directory of this repository.
 To see the changes between *stable* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-:information_source: The [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder provides exemplary setups targeting various FPGA boards.
+:rocket: The [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder provides exemplary setups targeting various FPGA boards to get you started.
 
 :spiral_notepad: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current **ideas**,
 **TODOs**, features being **planned** and **work-in-progress**.
