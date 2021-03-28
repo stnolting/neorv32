@@ -33,7 +33,7 @@ The doxygen-based documentation of the *software framework* is available online 
 :label: The project’s change log is available as [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) in the root directory of this repository.
 To see the changes between *stable* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-:information_source: See the [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder for exemplary setups targeting various FPGA boards.
+:information_source: The [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder provides exemplary setups targeting various FPGA boards.
 
 :spiral_notepad: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current **ideas**,
 **TODOs**, features being **planned** and **work-in-progress**.
@@ -522,6 +522,9 @@ of this project as [`*.zip` file](https://github.com/stnolting/neorv32/archive/m
 
 
 ### 3. Create a new FPGA Project
+
+:information_source: If want to use a script-based exemplary project setup check out the [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder,
+which provides exemplary setups targeting various FPGA boards.
 
 Create a new project with your FPGA design tool of choice. Add all the `*.vhd` files from the [`rtl/core`](https://github.com/stnolting/neorv32/blob/master/rtl)
 folder to this project. Make sure to add these files to a **new design library** called `neorv32`.
