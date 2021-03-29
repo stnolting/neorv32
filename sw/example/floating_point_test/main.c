@@ -146,7 +146,7 @@ int main() {
   neorv32_uart_printf("SILENT_MODE enabled (only showing actual errors)\n");
 #endif
   neorv32_uart_printf("Test cases per instruction: %u\n", (uint32_t)NUM_TEST_CASES);
-  neorv32_uart_printf("NOTE: The NEORV32 FPU does not support subnormal numbers yet. Subnormal numbers are flushed to zero by the hardware.\n\n");
+  neorv32_uart_printf("NOTE: The NEORV32 FPU does not support subnormal numbers yet. Subnormal numbers are flushed to zero.\n\n");
 
 
   // clear exception status word
@@ -535,7 +535,7 @@ int main() {
     neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
   }
   else {
-    neorv32_uart_printf("%c[1m[TIMING TEST FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
 
@@ -572,7 +572,7 @@ int main() {
     neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
   }
   else {
-    neorv32_uart_printf("%c[1m[TIMING TEST FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
 
@@ -610,7 +610,45 @@ int main() {
     neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
   }
   else {
-    neorv32_uart_printf("%c[1m[TIMING TEST FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
+    err_cnt_total++;
+  }
+
+
+  // subtraction
+  neorv32_uart_printf("FSUB.S:   ");
+  time_sw = 0;
+  time_hw = 0;
+  err_cnt = 0;
+  for (i=0; i<num_runs; i++) {
+    opa.binary_value = get_test_vector();
+    opb.binary_value = get_test_vector();
+
+    // hardware execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_hw.float_value = riscv_intrinsic_fsubs(opa.float_value, opb.float_value);
+    }
+    time_hw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+    time_hw -= 4; // remove the 2 dummy instructions
+
+    // software (emulation) execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_sw.float_value = riscv_emulate_fsubs(opa.float_value, opb.float_value);
+    }
+    time_sw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+
+    if (res_sw.binary_value != res_hw.binary_value) {
+      err_cnt++;
+    }
+  }
+
+  if (err_cnt == 0) {
+    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+  }
+  else {
+    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
 
@@ -648,13 +686,130 @@ int main() {
     neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
   }
   else {
-    neorv32_uart_printf("%c[1m[TIMING TEST FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
+    err_cnt_total++;
+  }
+
+
+  // Max
+  neorv32_uart_printf("FMAX.S:   ");
+  time_sw = 0;
+  time_hw = 0;
+  err_cnt = 0;
+  for (i=0; i<num_runs; i++) {
+    opa.binary_value = get_test_vector();
+    opb.binary_value = get_test_vector();
+
+    // hardware execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_hw.float_value = riscv_intrinsic_fmaxs(opa.float_value, opb.float_value);
+    }
+    time_hw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+    time_hw -= 4; // remove the 2 dummy instructions
+
+    // software (emulation) execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_sw.float_value = riscv_emulate_fmaxs(opa.float_value, opb.float_value);
+    }
+    time_sw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+
+    if (res_sw.binary_value != res_hw.binary_value) {
+      err_cnt++;
+    }
+  }
+
+  if (err_cnt == 0) {
+    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+  }
+  else {
+    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
+    err_cnt_total++;
+  }
+
+
+  // Comparison
+  neorv32_uart_printf("FLE.S:    ");
+  time_sw = 0;
+  time_hw = 0;
+  err_cnt = 0;
+  for (i=0; i<num_runs; i++) {
+    opa.binary_value = get_test_vector();
+    opb.binary_value = get_test_vector();
+
+    // hardware execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_hw.float_value = riscv_intrinsic_fles(opa.float_value, opb.float_value);
+    }
+    time_hw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+    time_hw -= 4; // remove the 2 dummy instructions
+
+    // software (emulation) execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_sw.float_value = riscv_emulate_fles(opa.float_value, opb.float_value);
+    }
+    time_sw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+
+    if (res_sw.binary_value != res_hw.binary_value) {
+      err_cnt++;
+    }
+  }
+
+  if (err_cnt == 0) {
+    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+  }
+  else {
+    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
+    err_cnt_total++;
+  }
+
+
+  // Sign-injection
+  neorv32_uart_printf("FSGNJX.S: ");
+  time_sw = 0;
+  time_hw = 0;
+  err_cnt = 0;
+  for (i=0; i<num_runs; i++) {
+    opa.binary_value = get_test_vector();
+    opb.binary_value = get_test_vector();
+
+    // hardware execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_hw.float_value = riscv_intrinsic_fsgnjxs(opa.float_value, opb.float_value);
+    }
+    time_hw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+    time_hw -= 4; // remove the 2 dummy instructions
+
+    // software (emulation) execution time
+    time_start = neorv32_cpu_csr_read(CSR_CYCLE);
+    {
+      res_sw.float_value = riscv_emulate_fsgnjxs(opa.float_value, opb.float_value);
+    }
+    time_sw += neorv32_cpu_csr_read(CSR_CYCLE) - time_start;
+
+    if (res_sw.binary_value != res_hw.binary_value) {
+      err_cnt++;
+    }
+  }
+
+  if (err_cnt == 0) {
+    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+  }
+  else {
+    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
 #endif
 
 
-  // final report
+// ----------------------------------------------------------------------------
+// Final report
+// ----------------------------------------------------------------------------
+
   if (err_cnt_total != 0) {
     neorv32_uart_printf("\n%c[1m[ZFINX EXTENSION VERIFICATION FAILED!]%c[0m\n", 27, 27);
     neorv32_uart_printf("%u errors in %u test cases\n", err_cnt_total, test_cnt*(uint32_t)NUM_TEST_CASES);
