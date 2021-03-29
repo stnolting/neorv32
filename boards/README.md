@@ -21,4 +21,4 @@ Please respect the following guidelines if you'd like to add (or link) your setu
 * add a link if the board you are using provides online documentation (and/or can be purchased somewhere)
 * use the :file_folder: emoji (`:file_folder:`) if the setup is located *in this* folder; use the :earth_africa: emoji (`:earth_africa:`) if it is a link to your local project
 * please add a `README` to give some brief information about the setup and a `.gitignore` to keep things clean; take a look at [`arty-a7-35-test-setup`](https://github.com/stnolting/neorv32/boards/arty-a7-35-test-setup) to get some ideas what a project setup might look like
-* if you like start a new ":raised_hands: show & tell" [discussion](https://github.com/stnolting/neorv32/discussions) to show off what you have made
+* if you like start a new ":raised_hands: show & tell" [discussion](https://github.com/stnolting/neorv32/discussions) to show off what you have made! :+1:
