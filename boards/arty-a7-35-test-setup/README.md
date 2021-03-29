@@ -34,7 +34,7 @@ If not already available, this script will create a `work` folder in this direct
 
 1. start Vivado (in GUI mode)
 2. click on "TCL Console" at the bottom
-3. use the console to naviagte to **this** folder: `cd .../neorv32/boards/arty-a7-35-test-setup/arty_a7_35_test_setup`
+3. use the console to naviagte to **this** folder: `cd .../neorv32/boards/arty-a7-35-test-setup`
 4. execute `source create_project.tcl` - this will create the actual Vivado project in `work`
 5. when the Vivado project has openend, click on "Run Implementation"
 6. when the implementation is done create a bitstrem by clicking "Generate Bitstream" (maybe a prompt will ask for that)
