@@ -44,3 +44,9 @@ The emulation functions as well as the available intrinsics for the `Zfinx` exte
 The provided test program `main.c` verifies all currently implemented `Zfinx` instructions by checking the functionality against the pure software-based emulation model
 (GCC soft-float library).
 
+
+## Resources
+
+* Great page with online calculators for floating-point artihmetic: [http://www.ecs.umass.edu/ece/koren/arith/simulator/](http://www.ecs.umass.edu/ece/koren/arith/simulator/)
+* A handy tool for visualizing floating-point numbers in their binary representation: [https://www.h-schmidt.net/FloatConverter/IEEE754.html](https://www.h-schmidt.net/FloatConverter/IEEE754.html)
+* This helped me to understand what results the different FPU operation generate when having "special" inputs like NaN: [https://techdocs.altium.com/display/FPGA/IEEE+754+Standard+-+Overview](https://techdocs.altium.com/display/FPGA/IEEE+754+Standard+-+Overview)
