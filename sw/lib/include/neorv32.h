@@ -351,9 +351,39 @@ enum NEORV32_CSR_MSTATUSH_enum {
  * CPU <b>mcounteren</b> CSR (r/w): Machine counter enable (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CSR_MCOUNTEREN_enum {
-  CSR_MCOUNTEREN_CY = 0, /**< CPU mcounteren CSR (0): CY - Allow access to cycle[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_TM = 1, /**< CPU mcounteren CSR (1): TM - Allow access to time[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_IR = 2  /**< CPU mcounteren CSR (2): IR - Allow access to instret[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_CY    = 0,  /**< CPU mcounteren CSR (0): CY - Allow access to cycle[h]   CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_TM    = 1,  /**< CPU mcounteren CSR (1): TM - Allow access to time[h]    CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_IR    = 2,  /**< CPU mcounteren CSR (2): IR - Allow access to instret[h] CSRs from U-mode when set (r/w) */
+
+  CSR_MCOUNTEREN_HPM3  = 3,  /**< CPU mcounteren CSR (3):  HPM3  - Allow access to hpmcnt3[h]  CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM4  = 4,  /**< CPU mcounteren CSR (4):  HPM4  - Allow access to hpmcnt4[h]  CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM5  = 5,  /**< CPU mcounteren CSR (5):  HPM5  - Allow access to hpmcnt5[h]  CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM6  = 6,  /**< CPU mcounteren CSR (6):  HPM6  - Allow access to hpmcnt6[h]  CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM7  = 7,  /**< CPU mcounteren CSR (7):  HPM7  - Allow access to hpmcnt7[h]  CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM8  = 8,  /**< CPU mcounteren CSR (8):  HPM8  - Allow access to hpmcnt8[h]  CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM9  = 9,  /**< CPU mcounteren CSR (9):  HPM9  - Allow access to hpmcnt9[h]  CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM10 = 10, /**< CPU mcounteren CSR (10): HPM10 - Allow access to hpmcnt10[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM11 = 11, /**< CPU mcounteren CSR (11): HPM11 - Allow access to hpmcnt11[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM12 = 12, /**< CPU mcounteren CSR (12): HPM12 - Allow access to hpmcnt12[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM13 = 13, /**< CPU mcounteren CSR (13): HPM13 - Allow access to hpmcnt13[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM14 = 14, /**< CPU mcounteren CSR (14): HPM14 - Allow access to hpmcnt14[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM15 = 15, /**< CPU mcounteren CSR (15): HPM15 - Allow access to hpmcnt15[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM16 = 16, /**< CPU mcounteren CSR (16): HPM16 - Allow access to hpmcnt16[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM17 = 17, /**< CPU mcounteren CSR (17): HPM17 - Allow access to hpmcnt17[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM18 = 18, /**< CPU mcounteren CSR (18): HPM18 - Allow access to hpmcnt18[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM19 = 19, /**< CPU mcounteren CSR (19): HPM19 - Allow access to hpmcnt19[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM20 = 20, /**< CPU mcounteren CSR (20): HPM20 - Allow access to hpmcnt20[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM21 = 21, /**< CPU mcounteren CSR (21): HPM21 - Allow access to hpmcnt21[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM22 = 22, /**< CPU mcounteren CSR (22): HPM22 - Allow access to hpmcnt22[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM23 = 23, /**< CPU mcounteren CSR (23): HPM23 - Allow access to hpmcnt23[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM24 = 24, /**< CPU mcounteren CSR (24): HPM24 - Allow access to hpmcnt24[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM25 = 25, /**< CPU mcounteren CSR (25): HPM25 - Allow access to hpmcnt25[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM26 = 26, /**< CPU mcounteren CSR (26): HPM26 - Allow access to hpmcnt26[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM27 = 27, /**< CPU mcounteren CSR (27): HPM27 - Allow access to hpmcnt27[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM28 = 28, /**< CPU mcounteren CSR (28): HPM28 - Allow access to hpmcnt28[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM29 = 29, /**< CPU mcounteren CSR (29): HPM29 - Allow access to hpmcnt29[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM30 = 30, /**< CPU mcounteren CSR (30): HPM30 - Allow access to hpmcnt30[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_HPM31 = 31  /**< CPU mcounteren CSR (31): HPM31 - Allow access to hpmcnt31[h] CSRs from U-mode when set (r/w) */
 };
 
 
@@ -361,8 +391,38 @@ enum NEORV32_CSR_MCOUNTEREN_enum {
  * CPU <b>mcountinhibit</b> CSR (r/w): Machine counter-inhibit (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CSR_MCOUNTINHIBIT_enum {
-  CSR_MCOUNTINHIBIT_CY = 0, /**< CPU mcountinhibit CSR (0): CY - Enable auto-increment of [m]cycle[h] CSR when set (r/w) */
-  CSR_MCOUNTINHIBIT_IR = 2  /**< CPU mcountinhibit CSR (2): IR - Enable auto-increment of [m]instret[h] CSR when set (r/w) */
+  CSR_MCOUNTINHIBIT_CY    = 0,  /**< CPU mcountinhibit CSR (0): CY - Enable auto-increment of [m]cycle[h]   CSR when set (r/w) */
+  CSR_MCOUNTINHIBIT_IR    = 2,  /**< CPU mcountinhibit CSR (2): IR - Enable auto-increment of [m]instret[h] CSR when set (r/w) */
+
+  CSR_MCOUNTINHIBIT_HPM3  = 3,  /**< CPU mcountinhibit CSR (3):  HPM3  - Enable auto-increment of hpmcnt3[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM4  = 4,  /**< CPU mcountinhibit CSR (4):  HPM4  - Enable auto-increment of hpmcnt4[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM5  = 5,  /**< CPU mcountinhibit CSR (5):  HPM5  - Enable auto-increment of hpmcnt5[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM6  = 6,  /**< CPU mcountinhibit CSR (6):  HPM6  - Enable auto-increment of hpmcnt6[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM7  = 7,  /**< CPU mcountinhibit CSR (7):  HPM7  - Enable auto-increment of hpmcnt7[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM8  = 8,  /**< CPU mcountinhibit CSR (8):  HPM8  - Enable auto-increment of hpmcnt8[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM9  = 9,  /**< CPU mcountinhibit CSR (9):  HPM9  - Enable auto-increment of hpmcnt9[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM10 = 10, /**< CPU mcountinhibit CSR (10): HPM10 - Enable auto-increment of hpmcnt10[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM11 = 11, /**< CPU mcountinhibit CSR (11): HPM11 - Enable auto-increment of hpmcnt11[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM12 = 12, /**< CPU mcountinhibit CSR (12): HPM12 - Enable auto-increment of hpmcnt12[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM13 = 13, /**< CPU mcountinhibit CSR (13): HPM13 - Enable auto-increment of hpmcnt13[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM14 = 14, /**< CPU mcountinhibit CSR (14): HPM14 - Enable auto-increment of hpmcnt14[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM15 = 15, /**< CPU mcountinhibit CSR (15): HPM15 - Enable auto-increment of hpmcnt15[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM16 = 16, /**< CPU mcountinhibit CSR (16): HPM16 - Enable auto-increment of hpmcnt16[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM17 = 17, /**< CPU mcountinhibit CSR (17): HPM17 - Enable auto-increment of hpmcnt17[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM18 = 18, /**< CPU mcountinhibit CSR (18): HPM18 - Enable auto-increment of hpmcnt18[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM19 = 19, /**< CPU mcountinhibit CSR (19): HPM19 - Enable auto-increment of hpmcnt19[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM20 = 20, /**< CPU mcountinhibit CSR (20): HPM20 - Enable auto-increment of hpmcnt20[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM21 = 21, /**< CPU mcountinhibit CSR (21): HPM21 - Enable auto-increment of hpmcnt21[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM22 = 22, /**< CPU mcountinhibit CSR (22): HPM22 - Enable auto-increment of hpmcnt22[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM23 = 23, /**< CPU mcountinhibit CSR (23): HPM23 - Enable auto-increment of hpmcnt23[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM24 = 24, /**< CPU mcountinhibit CSR (24): HPM24 - Enable auto-increment of hpmcnt24[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM25 = 25, /**< CPU mcountinhibit CSR (25): HPM25 - Enable auto-increment of hpmcnt25[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM26 = 26, /**< CPU mcountinhibit CSR (26): HPM26 - Enable auto-increment of hpmcnt26[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM27 = 27, /**< CPU mcountinhibit CSR (27): HPM27 - Enable auto-increment of hpmcnt27[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM28 = 28, /**< CPU mcountinhibit CSR (28): HPM28 - Enable auto-increment of hpmcnt28[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM29 = 29, /**< CPU mcountinhibit CSR (29): HPM29 - Enable auto-increment of hpmcnt29[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM30 = 30, /**< CPU mcountinhibit CSR (30): HPM30 - Enable auto-increment of hpmcnt30[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM31 = 31  /**< CPU mcountinhibit CSR (31): HPM31 - Enable auto-increment of hpmcnt31[h] when set (r/w) */
 };
 
 
