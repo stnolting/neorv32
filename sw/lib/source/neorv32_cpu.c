@@ -621,6 +621,11 @@ static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data) {
  **************************************************************************/
 uint32_t neorv32_cpu_hpm_get_counters(void) {
 
+  // inhibit all HPM counters
+  uint32_t tmp = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT);
+  tmp |= 0xfffffff8;
+  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, tmp);
+
   // try setting all mhpmcounter* CSRs to 1
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  1);
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  1);
@@ -650,7 +655,7 @@ uint32_t neorv32_cpu_hpm_get_counters(void) {
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER28, 1);
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER29, 1);
 
-  // sum up all written ones (only available PMPCFG* CSRs/entries will return =! 0)
+  // sum up all written ones (only available HPM counter CSRs will return =! 0)
   uint32_t num_hpm_cnts = 0;
 
   num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER3);
@@ -682,6 +687,42 @@ uint32_t neorv32_cpu_hpm_get_counters(void) {
   num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER29);
 
   return num_hpm_cnts;
+}
+
+
+/**********************************************************************//**
+ * Hardware performance monitors (HPM): Get total counter width
+ *
+ * @warning This function overrides mhpmcounter3[h] CSRs.
+ *
+ * @return Size of HPM counter bits (1-64).
+ **************************************************************************/
+uint32_t neorv32_cpu_hpm_get_size(void) {
+
+  // inhibt auto-update
+  asm volatile ("csrwi %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTEREN_HPM3));
+
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0xffffffff);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER3H, 0xffffffff);
+
+  uint32_t tmp, size, i;
+
+  if (neorv32_cpu_csr_read(CSR_MHPMCOUNTER3H) == 0) {
+    size = 0;
+    tmp = neorv32_cpu_csr_read(CSR_MHPMCOUNTER3);
+  }
+  else {
+    size = 32;
+    tmp = neorv32_cpu_csr_read(CSR_MHPMCOUNTER3H);
+  }
+
+  for (i=0; i<32; i++) {
+    if (tmp & (1<<i)) {
+      size++;
+    }
+  }
+
+  return size;
 }
 
 
