@@ -210,6 +210,9 @@ int main() {
 
   cnt_test++;
 
+  // make sure counter is enabled
+  asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTEREN_CY));
+
   // get current cycle counter
   temp64 = neorv32_cpu_get_cycle();
 
@@ -233,6 +236,9 @@ int main() {
   neorv32_uart_printf("[%i] [m]cycle[h] counter: ", cnt_test);
 
   cnt_test++;
+
+  // make sure counter is enabled
+  asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTEREN_IR));
 
   // get current instruction counter
   temp64 = neorv32_cpu_get_instret();
