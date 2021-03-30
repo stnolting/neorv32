@@ -11,6 +11,8 @@ Project maintainers may make pull requests against this repository to add or lin
 | Setup | Board | FPGA  | Author |
 |:-----:|:------|:------|:------:|
 | :file_folder: [`arty-a7-35-test-setup`](https://github.com/stnolting/neorv32/tree/master/boards/arty-a7-35-test-setup) | [Digilent Arty A7-35](https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start) | Xilinx Artix-7 `XC7A35TICSG324-1L` | stnolting |
+| :file_folder: [`nexys-a7-test-setup`](https://github.com/AWenzel83/neorv32/tree/nexys_a7_example/boards/nexys-a7-test-setup) | [Digilent Nexys A7](https://reference.digilentinc.com/reference/programmable-logic/nexys-a7/start) | Xilinx Artix-7 `XC7A50TCSG324-1` | |
+|  | [Digilent Nexys 4 DDR](https://reference.digilentinc.com/reference/programmable-logic/nexys-4-ddr/start) | Xilinx Artix-7 `XC7A100TCSG324-1` | AWenzel83 |
 
 
 ### Adding Your Project Setup
