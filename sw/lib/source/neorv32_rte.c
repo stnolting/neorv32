@@ -365,7 +365,7 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   // check hardware performance monitors
-  neorv32_uart_printf("HPM Counters:      %u\n", neorv32_cpu_hpm_get_counters());
+  neorv32_uart_printf("HPM Counters:      %ux, %u-bit wide\n", neorv32_cpu_hpm_get_counters(), neorv32_cpu_hpm_get_size());
 
 
   // Memory configuration
