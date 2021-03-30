@@ -61,7 +61,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050304"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050305"; -- no touchy!
   constant pmp_max_r_c    : natural := 8; -- max PMP regions - FIXED!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- reg_file.r0 is a *physical register* that has to be initialized to zero by the CPU HW
@@ -882,6 +882,7 @@ package neorv32_package is
       PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS                 : natural := 0;      -- number of implemented HPM counters (0..29)
+      HPM_CNT_WIDTH                : natural := 40;     -- total size of HPM counters (1..64)
       -- Internal Instruction memory --
       MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
@@ -997,7 +998,8 @@ package neorv32_package is
       PMP_NUM_REGIONS              : natural := 0;     -- number of regions (0..64)
       PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
       -- Hardware Performance Monitors (HPM) --
-      HPM_NUM_CNTS                 : natural := 0      -- number of implemented HPM counters (0..29)
+      HPM_NUM_CNTS                 : natural := 0;     -- number of implemented HPM counters (0..29)
+      HPM_CNT_WIDTH                : natural := 40     -- total size of HPM counters (1..64)
     );
     port (
       -- global control --
@@ -1063,7 +1065,8 @@ package neorv32_package is
       PMP_NUM_REGIONS              : natural := 0;     -- number of regions (0..64)
       PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
       -- Hardware Performance Monitors (HPM) --
-      HPM_NUM_CNTS                 : natural := 0      -- number of implemented HPM counters (0..29)
+      HPM_NUM_CNTS                 : natural := 0;     -- number of implemented HPM counters (0..29)
+      HPM_CNT_WIDTH                : natural := 40     -- total size of HPM counters (1..64)
     );
     port (
       -- global control --

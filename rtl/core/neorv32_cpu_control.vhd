@@ -64,7 +64,8 @@ entity neorv32_cpu_control is
     PMP_NUM_REGIONS              : natural := 0;       -- number of regions (0..64)
     PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 : natural := 0      -- number of implemented HPM counters (0..29)
+    HPM_NUM_CNTS                 : natural := 0;     -- number of implemented HPM counters (0..29)
+    HPM_CNT_WIDTH                : natural := 40     -- total size of HPM counters (1..64)
   );
   port (
     -- global control --
@@ -112,6 +113,10 @@ entity neorv32_cpu_control is
 end neorv32_cpu_control;
 
 architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
+
+  -- HPM counter width - high/low parts --
+  constant hpm_cnt_lo_width_c : natural := cond_sel_natural_f(boolean(HPM_CNT_WIDTH < 32), HPM_CNT_WIDTH, 32);
+  constant hpm_cnt_hi_width_c : natural := cond_sel_natural_f(boolean(HPM_CNT_WIDTH > 32), HPM_CNT_WIDTH-32, 0);
 
   -- instruction fetch enginge --
   type fetch_engine_state_t is (IFETCH_RESET, IFETCH_REQUEST, IFETCH_ISSUE);
@@ -254,8 +259,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type pmp_ctrl_rd_t  is array (0 to 63) of std_ulogic_vector(7 downto 0);
   type pmp_addr_rd_t  is array (0 to 63) of std_ulogic_vector(data_width_c-1 downto 0);
   type mhpmevent_t    is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
-  type mhpmcnt_t      is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(32 downto 0);
-  type mhpmcnth_t     is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(31 downto 0);
+  type mhpmcnt_t      is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpm_cnt_lo_width_c downto 0); -- max 32-bit, plus 1-bit overflow
+  type mhpmcnth_t     is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpm_cnt_hi_width_c-1 downto 0); -- max 32-bit
   type mhpmevent_rd_t is array (0 to 29) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
   type mhpmcnt_rd_t   is array (0 to 29) of std_ulogic_vector(32 downto 0);
   type mhpmcnth_rd_t  is array (0 to 29) of std_ulogic_vector(31 downto 0);
@@ -1289,11 +1294,11 @@ begin
     -- check CSR access --
     case csr.addr is
       -- standard read/write CSRs --
-      when csr_fflags_c | csr_frm_c | csr_fcsr_c => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- full access for everyone if Zfinx extension is enabled
+      when csr_fflags_c | csr_frm_c | csr_fcsr_c => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- full access for everyone if Zfinx extension is implemented
       --
       when csr_mstatus_c       => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
       when csr_mstatush_c      => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_misa_c          => csr_acc_valid <= csr.priv_m_mode;-- and (not csr_wacc_v); -- M-mode only, MISA is read-only in the NEORV32 but we do not cause an exception here for compatibility
+      when csr_misa_c          => csr_acc_valid <= csr.priv_m_mode; -- M-mode only, MISA is read-only in the NEORV32 but we do not cause an exception here for compatibility
       when csr_mie_c           => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
       when csr_mtvec_c         => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
       when csr_mscratch_c      => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
@@ -2278,20 +2283,29 @@ begin
 
       -- [machine] hardware performance monitors (counters) --
       for i in 0 to HPM_NUM_CNTS-1 loop
-        -- [m]hpmcounter* --
-        if (csr.we = '1') and (csr.addr = std_ulogic_vector(unsigned(csr_mhpmcounter3_c) + i)) then -- write access
-          csr.mhpmcounter(i) <= '0' & csr.wdata;
+        if (hpm_cnt_lo_width_c <= 0) then
+          csr.mhpmcounter(i) <= (others => '0');
           mhpmcounter_msb(i) <= '0';
-        elsif (csr.mcountinhibit_hpm(i) = '0') and (hpmcnt_trigger(i) = '1') then -- non-inhibited automatic update
-          csr.mhpmcounter(i) <= std_ulogic_vector(unsigned(csr.mhpmcounter(i)) + 1);
-          mhpmcounter_msb(i) <= csr.mhpmcounter(i)(csr.mhpmcounter(i)'left);
+        else
+          -- [m]hpmcounter* --
+          if (csr.we = '1') and (csr.addr = std_ulogic_vector(unsigned(csr_mhpmcounter3_c) + i)) then -- write access
+            csr.mhpmcounter(i) <= '0' & csr.wdata(hpm_cnt_lo_width_c-1 downto 0);
+            mhpmcounter_msb(i) <= '0';
+          elsif (csr.mcountinhibit_hpm(i) = '0') and (hpmcnt_trigger(i) = '1') then -- non-inhibited automatic update
+            csr.mhpmcounter(i) <= std_ulogic_vector(unsigned(csr.mhpmcounter(i)) + 1);
+            mhpmcounter_msb(i) <= csr.mhpmcounter(i)(csr.mhpmcounter(i)'left);
+          end if;
         end if;
 
         -- [m]hpmcounter*h --
-        if (csr.we = '1') and (csr.addr = std_ulogic_vector(unsigned(csr_mhpmcounter3h_c) + i)) then -- write access
-          csr.mhpmcounterh(i) <= csr.wdata;
-        elsif ((mhpmcounter_msb(i) xor csr.mhpmcounter(i)(csr.mhpmcounter(i)'left)) = '1') then -- automatic update (continued)
-          csr.mhpmcounterh(i) <= std_ulogic_vector(unsigned(csr.mhpmcounterh(i)) + 1);
+        if (hpm_cnt_hi_width_c <= 0) then
+          csr.mhpmcounterh(i) <= (others => '0');
+        else
+          if (csr.we = '1') and (csr.addr = std_ulogic_vector(unsigned(csr_mhpmcounter3h_c) + i)) then -- write access
+            csr.mhpmcounterh(i) <= csr.wdata(hpm_cnt_hi_width_c-1 downto 0);
+          elsif ((mhpmcounter_msb(i) xor csr.mhpmcounter(i)(csr.mhpmcounter(i)'left)) = '1') then -- automatic update (continued)
+            csr.mhpmcounterh(i) <= std_ulogic_vector(unsigned(csr.mhpmcounterh(i)) + 1);
+          end if;
         end if;
       end loop; -- i
 
@@ -2306,9 +2320,13 @@ begin
     csr.mhpmcounterh_rd <= (others => (others => '0'));
     if (HPM_NUM_CNTS /= 0) then
       for i in 0 to HPM_NUM_CNTS-1 loop
-        csr.mhpmevent_rd(i)    <= csr.mhpmevent(i);
-        csr.mhpmcounter_rd(i)  <= csr.mhpmcounter(i);
-        csr.mhpmcounterh_rd(i) <= csr.mhpmcounterh(i);
+        csr.mhpmevent_rd(i) <= csr.mhpmevent(i);
+        if (hpm_cnt_lo_width_c > 0) then
+          csr.mhpmcounter_rd(i)(hpm_cnt_lo_width_c-1 downto 0)  <= csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0);
+        end if;
+        if (hpm_cnt_hi_width_c > 0) then
+          csr.mhpmcounterh_rd(i)(hpm_cnt_hi_width_c-1 downto 0) <= csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0);
+        end if;
       end loop; -- i
     end if;
   end process hpm_rd_dummy;

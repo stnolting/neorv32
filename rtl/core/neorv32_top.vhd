@@ -74,6 +74,7 @@ entity neorv32_top is
 
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 : natural := 0;      -- number of implemented HPM counters (0..29)
+    HPM_CNT_WIDTH                : natural := 40;     -- total size of HPM counters (1..64)
 
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
@@ -426,7 +427,8 @@ begin
     PMP_NUM_REGIONS              => PMP_NUM_REGIONS,     -- number of regions (0..64)
     PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY, -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 => HPM_NUM_CNTS         -- number of implemented HPM counters (0..29)
+    HPM_NUM_CNTS                 => HPM_NUM_CNTS,        -- number of implemented HPM counters (0..29)
+    HPM_CNT_WIDTH                => HPM_CNT_WIDTH        -- total size of HPM counters (1..64)
   )
   port map (
     -- global control --
