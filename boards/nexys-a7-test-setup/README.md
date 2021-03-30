@@ -1,4 +1,4 @@
-# NEORV32 Test Setup for the Digilent Arty A7-35 FPGA Board
+# NEORV32 Test Setup for the Digilent Nexys A7 and Nexys 4 DDR FPGA Boards
 
 This setup provides a very simple script-based "demo setup" that allows to check out the NEORV32 processor on the Digilent Nexys A7 and Nexys 4 DDR boards.
 It uses the simplified [`neorv32_test_setup.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd) top entity, which is a wrapper for the actual processor
@@ -16,7 +16,7 @@ top entity that provides a minimalistic interface (clock, reset, UART and 4 LEDs
 ### NEORV32 Configuration
 
 :information_source: See the top entity [`rtl/top_templates/neorv32_test_setup.vhd` ](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd) for 
-configuration and entity details and [`nexys_a7_test_setup.xdc`](https://github.com/stnolting/neorv32/blob/master/boards/arty-a7-35-test-setup/arty_a7_35_test_setup.xdc)
+configuration and entity details and [`nexys_a7_test_setup.xdc`](https://github.com/AWenzel83/neorv32/blob/nexys_a7_example/boards/nexys-a7-test-setup/nexys_a7_test_setup.xdc)
 for the according FPGA pin mapping.
 
 * CPU: `rv32imcu_Zicsr` + 4 `HPM` (hardware performance monitors)
@@ -25,21 +25,21 @@ for the according FPGA pin mapping.
 * Tested with version [`1.5.3.3`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)
 * Clock: 100MHz from on-board oscillator
 * Reset: Via dedicated on-board "RESET" button
-* GPIO output port `gpio_o`
-  * bits 0..3 are connected to the green on-board LEDs (LD4 - LD7); LD4 is the bootloader status LED
-  * bits 4..7 are (not actually used) connected to PMOD `JA` connector pins 1-4
+* GPIO output port `gpio_o` bits 0..7 are connected to the green on-board LEDs (LD0 - LD7); LD0 is the bootloader status LED
 * UART0 signals `uart0_txd_o` and `uart0_rxd_i` are connected to the on-board USB-UART chip
 
 
 ## How To Run
 
-The `create_project.tcl` TCL script in this directory can be used to create a complete Vivado project.
+The `create_project_nexys_a7_*.tcl` TCL scripts in this directory can be used to create a complete Vivado project.
 If not already available, this script will create a `work` folder in this directory.
 
 1. start Vivado (in GUI mode)
 2. click on "TCL Console" at the bottom
-3. use the console to naviagte to **this** folder: `cd .../neorv32/boards/arty-a7-35-test-setup`
-4. execute `source create_project.tcl` - this will create the actual Vivado project in `work`
+3. use the console to naviagte to **this** folder: `cd .../neorv32/boards/nexys-a7-test-setup`
+4. execute the tcl-script according to your board, this will create the actual Vivado project in `work`: 
+ * `source create_project_nexys_a7_100.tcl`for a Nexys A7 100 or a Nexys 4 DDR board 
+ * `source create_project_nexys_a7_50.tcl`for a Nexys A7 50 board
 5. when the Vivado project has openend, click on "Run Implementation"
 6. when the implementation is done create a bitstrem by clicking "Generate Bitstream" (maybe a prompt will ask for that)
 7. open the "Hardware Manager" (maybe a prompt will ask for that)
