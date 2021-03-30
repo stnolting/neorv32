@@ -91,6 +91,7 @@ begin
     PMP_MIN_GRANULARITY          => 64*1024,     -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 => 4,           -- number of implemented HPM counters (0..29)
+    HPM_CNT_WIDTH                => 40,          -- total size of HPM counters (1..64)
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              => true,        -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => 16*1024,     -- size of processor-internal instruction memory in bytes
