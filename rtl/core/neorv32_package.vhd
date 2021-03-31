@@ -438,21 +438,21 @@ package neorv32_package is
 
   -- RISC-V CSR Addresses -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- read/write CSRs --
+  -- <<< standard read/write CSRs >>> --
+  -- user floating-point CSRs --
   constant csr_class_float_c    : std_ulogic_vector(07 downto 0) := x"00"; -- floating point
   constant csr_fflags_c         : std_ulogic_vector(11 downto 0) := x"001";
   constant csr_frm_c            : std_ulogic_vector(11 downto 0) := x"002";
   constant csr_fcsr_c           : std_ulogic_vector(11 downto 0) := x"003";
-  --
+  -- machine trap setup --
   constant csr_class_setup_c    : std_ulogic_vector(07 downto 0) := x"30"; -- trap setup
   constant csr_mstatus_c        : std_ulogic_vector(11 downto 0) := x"300";
   constant csr_misa_c           : std_ulogic_vector(11 downto 0) := x"301";
   constant csr_mie_c            : std_ulogic_vector(11 downto 0) := x"304";
   constant csr_mtvec_c          : std_ulogic_vector(11 downto 0) := x"305";
   constant csr_mcounteren_c     : std_ulogic_vector(11 downto 0) := x"306";
-  --
   constant csr_mstatush_c       : std_ulogic_vector(11 downto 0) := x"310";
-  --
+  -- machine counter setup --
   constant csr_cnt_setup_c      : std_ulogic_vector(05 downto 0) := x"3" & "00"; -- counter setup
   constant csr_mcountinhibit_c  : std_ulogic_vector(11 downto 0) := x"320";
   constant csr_mhpmevent3_c     : std_ulogic_vector(11 downto 0) := x"323";
@@ -484,14 +484,14 @@ package neorv32_package is
   constant csr_mhpmevent29_c    : std_ulogic_vector(11 downto 0) := x"33d";
   constant csr_mhpmevent30_c    : std_ulogic_vector(11 downto 0) := x"33e";
   constant csr_mhpmevent31_c    : std_ulogic_vector(11 downto 0) := x"33f";
-  --
+  -- machine trap handling --
   constant csr_class_trap_c     : std_ulogic_vector(07 downto 0) := x"34"; -- machine trap handling
   constant csr_mscratch_c       : std_ulogic_vector(11 downto 0) := x"340";
   constant csr_mepc_c           : std_ulogic_vector(11 downto 0) := x"341";
   constant csr_mcause_c         : std_ulogic_vector(11 downto 0) := x"342";
   constant csr_mtval_c          : std_ulogic_vector(11 downto 0) := x"343";
   constant csr_mip_c            : std_ulogic_vector(11 downto 0) := x"344";
-  --
+  -- physical memory protection - configuration --
   constant csr_class_pmpcfg_c   : std_ulogic_vector(07 downto 0) := x"3a"; -- pmp configuration
   constant csr_pmpcfg0_c        : std_ulogic_vector(11 downto 0) := x"3a0";
   constant csr_pmpcfg1_c        : std_ulogic_vector(11 downto 0) := x"3a1";
@@ -509,7 +509,7 @@ package neorv32_package is
   constant csr_pmpcfg13_c       : std_ulogic_vector(11 downto 0) := x"3ad";
   constant csr_pmpcfg14_c       : std_ulogic_vector(11 downto 0) := x"3ae";
   constant csr_pmpcfg15_c       : std_ulogic_vector(11 downto 0) := x"3af";
-  --
+  -- physical memory protection - address --
   constant csr_pmpaddr0_c       : std_ulogic_vector(11 downto 0) := x"3b0";
   constant csr_pmpaddr1_c       : std_ulogic_vector(11 downto 0) := x"3b1";
   constant csr_pmpaddr2_c       : std_ulogic_vector(11 downto 0) := x"3b2";
@@ -574,7 +574,7 @@ package neorv32_package is
   constant csr_pmpaddr61_c      : std_ulogic_vector(11 downto 0) := x"3ed";
   constant csr_pmpaddr62_c      : std_ulogic_vector(11 downto 0) := x"3ee";
   constant csr_pmpaddr63_c      : std_ulogic_vector(11 downto 0) := x"3ef";
-  --
+  -- machine counters/timers --
   constant csr_mcycle_c         : std_ulogic_vector(11 downto 0) := x"b00";
   constant csr_minstret_c       : std_ulogic_vector(11 downto 0) := x"b02";
   --
@@ -641,7 +641,8 @@ package neorv32_package is
   constant csr_mhpmcounter30h_c : std_ulogic_vector(11 downto 0) := x"b9e";
   constant csr_mhpmcounter31h_c : std_ulogic_vector(11 downto 0) := x"b9f";
 
-  -- read-only CSRs --
+  -- <<< standard read-only CSRs >>> --
+  -- user counters/timers --
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
   constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
   constant csr_instret_c        : std_ulogic_vector(11 downto 0) := x"c02";
@@ -709,13 +710,12 @@ package neorv32_package is
   constant csr_hpmcounter29h_c  : std_ulogic_vector(11 downto 0) := x"c9d";
   constant csr_hpmcounter30h_c  : std_ulogic_vector(11 downto 0) := x"c9e";
   constant csr_hpmcounter31h_c  : std_ulogic_vector(11 downto 0) := x"c9f";
-  --
+  -- machine information registers --
   constant csr_mvendorid_c      : std_ulogic_vector(11 downto 0) := x"f11";
   constant csr_marchid_c        : std_ulogic_vector(11 downto 0) := x"f12";
   constant csr_mimpid_c         : std_ulogic_vector(11 downto 0) := x"f13";
   constant csr_mhartid_c        : std_ulogic_vector(11 downto 0) := x"f14";
-
-  -- custom read-only CSRs --
+  -- <<< custom (NEORV32-specific) read-only CSRs >>> --
   constant csr_mzext_c          : std_ulogic_vector(11 downto 0) := x"fc0";
 
   -- Co-Processor IDs -----------------------------------------------------------------------
