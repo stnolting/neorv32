@@ -1271,7 +1271,7 @@ begin
   csr_access_check: process(execute_engine.i_reg, csr)
     variable csr_wacc_v           : std_ulogic; -- to check access to read-only CSRs
 --  variable csr_racc_v           : std_ulogic; -- to check access to write-only CSRs
-    variable csr_mcounteren_hpm_v : std_ulogic_vector(28 downto 0); -- max 29 HPM counters
+    variable csr_mcounteren_hpm_v : std_ulogic_vector(31 downto 0); -- max 29 HPM counters, plus 3 LSB-aligned dummy bits
   begin
     -- is this CSR instruction really going to write/read to/from a CSR? --
     if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
@@ -1286,32 +1286,32 @@ begin
     -- low privilege level access to hpm counters? --
     csr_mcounteren_hpm_v := (others => '0');
     if (CPU_EXTENSION_RISCV_U = true) and (HPM_NUM_CNTS /= 0) then
-      csr_mcounteren_hpm_v(HPM_NUM_CNTS-1 downto 0) := csr.mcounteren_hpm(HPM_NUM_CNTS-1 downto 0);
+      csr_mcounteren_hpm_v(3+(HPM_NUM_CNTS-1) downto 3+0) := csr.mcounteren_hpm(HPM_NUM_CNTS-1 downto 0);
     else -- 'mcounteren' CSR is hardwired to zero if user mode is not implemented
       csr_mcounteren_hpm_v := (others => '0');
     end if;
 
     -- check CSR access --
     case csr.addr is
-      -- standard read/write CSRs --
-      when csr_fflags_c | csr_frm_c | csr_fcsr_c => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- full access for everyone if Zfinx extension is implemented
-      --
-      when csr_mstatus_c       => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_mstatush_c      => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_misa_c          => csr_acc_valid <= csr.priv_m_mode; -- M-mode only, MISA is read-only in the NEORV32 but we do not cause an exception here for compatibility
-      when csr_mie_c           => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_mtvec_c         => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_mscratch_c      => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_mepc_c          => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_mcause_c        => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_mcounteren_c    => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_mtval_c         => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_mip_c           => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      --
+
+      -- user floating-point CSRs --
+      when csr_fflags_c | csr_frm_c | csr_fcsr_c =>
+        csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- full access for everyone if Zfinx extension is implemented
+
+      -- machine trap setup --
+      when csr_mstatus_c | csr_misa_c | csr_mie_c | csr_mtvec_c | csr_mcounteren_c | csr_mstatush_c =>
+        csr_acc_valid <= csr.priv_m_mode; -- M-mode only, NOTE: MISA is read-only in the NEORV32 but we do not cause an exception here for compatibility
+
+      -- machine trap handling --
+      when csr_mscratch_c | csr_mepc_c | csr_mcause_c | csr_mtval_c | csr_mip_c =>
+        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+
+      -- physical memory protection - configuration --
       when csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c  | csr_pmpcfg3_c  | csr_pmpcfg4_c  | csr_pmpcfg5_c  | csr_pmpcfg6_c  | csr_pmpcfg7_c |
            csr_pmpcfg8_c | csr_pmpcfg9_c | csr_pmpcfg10_c | csr_pmpcfg11_c | csr_pmpcfg12_c | csr_pmpcfg13_c | csr_pmpcfg14_c | csr_pmpcfg15_c =>
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      --
+
+      -- physical memory protection - address --
       when csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  | csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  |
            csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c | csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c |
            csr_pmpaddr16_c | csr_pmpaddr17_c | csr_pmpaddr18_c | csr_pmpaddr19_c | csr_pmpaddr20_c | csr_pmpaddr21_c | csr_pmpaddr22_c | csr_pmpaddr23_c |
@@ -1321,113 +1321,62 @@ begin
            csr_pmpaddr48_c | csr_pmpaddr49_c | csr_pmpaddr50_c | csr_pmpaddr51_c | csr_pmpaddr52_c | csr_pmpaddr53_c | csr_pmpaddr54_c | csr_pmpaddr55_c |
            csr_pmpaddr56_c | csr_pmpaddr57_c | csr_pmpaddr58_c | csr_pmpaddr59_c | csr_pmpaddr60_c | csr_pmpaddr61_c | csr_pmpaddr62_c | csr_pmpaddr63_c =>
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      --
-      when csr_mcountinhibit_c => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      --
-      when csr_mhpmevent3_c  | csr_mhpmevent4_c  | csr_mhpmevent5_c  | csr_mhpmevent6_c  | csr_mhpmevent7_c  | csr_mhpmevent8_c  |
-           csr_mhpmevent9_c  | csr_mhpmevent10_c | csr_mhpmevent11_c | csr_mhpmevent12_c | csr_mhpmevent13_c | csr_mhpmevent14_c |
-           csr_mhpmevent15_c | csr_mhpmevent16_c | csr_mhpmevent17_c | csr_mhpmevent18_c | csr_mhpmevent19_c | csr_mhpmevent20_c |
-           csr_mhpmevent21_c | csr_mhpmevent22_c | csr_mhpmevent23_c | csr_mhpmevent24_c | csr_mhpmevent25_c | csr_mhpmevent26_c |
-           csr_mhpmevent27_c | csr_mhpmevent28_c | csr_mhpmevent29_c | csr_mhpmevent30_c | csr_mhpmevent31_c =>
+
+      -- machine counters/timers --
+      when csr_mcycle_c | csr_mcycleh_c =>
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      --
-      when csr_mcycle_c        => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_minstret_c      => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      --
-      when csr_mhpmcounter3_c  | csr_mhpmcounter4_c  | csr_mhpmcounter5_c  | csr_mhpmcounter6_c  | csr_mhpmcounter7_c  | csr_mhpmcounter8_c  |
-           csr_mhpmcounter9_c  | csr_mhpmcounter10_c | csr_mhpmcounter11_c | csr_mhpmcounter12_c | csr_mhpmcounter13_c | csr_mhpmcounter14_c |
-           csr_mhpmcounter15_c | csr_mhpmcounter16_c | csr_mhpmcounter17_c | csr_mhpmcounter18_c | csr_mhpmcounter19_c | csr_mhpmcounter20_c |
-           csr_mhpmcounter21_c | csr_mhpmcounter22_c | csr_mhpmcounter23_c | csr_mhpmcounter24_c | csr_mhpmcounter25_c | csr_mhpmcounter26_c |
-           csr_mhpmcounter27_c | csr_mhpmcounter28_c | csr_mhpmcounter29_c | csr_mhpmcounter30_c | csr_mhpmcounter31_c =>
+      when csr_minstret_c | csr_minstreth_c =>
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      --
-      when csr_mcycleh_c       => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_minstreth_c     => csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      --
-      when csr_mhpmcounter3h_c  | csr_mhpmcounter4h_c  | csr_mhpmcounter5h_c  | csr_mhpmcounter6h_c  | csr_mhpmcounter7h_c  | csr_mhpmcounter8h_c  |
+      when csr_mhpmcounter3_c   | csr_mhpmcounter4_c   | csr_mhpmcounter5_c   | csr_mhpmcounter6_c   | csr_mhpmcounter7_c   | csr_mhpmcounter8_c   | -- LOW
+           csr_mhpmcounter9_c   | csr_mhpmcounter10_c  | csr_mhpmcounter11_c  | csr_mhpmcounter12_c  | csr_mhpmcounter13_c  | csr_mhpmcounter14_c  |
+           csr_mhpmcounter15_c  | csr_mhpmcounter16_c  | csr_mhpmcounter17_c  | csr_mhpmcounter18_c  | csr_mhpmcounter19_c  | csr_mhpmcounter20_c  |
+           csr_mhpmcounter21_c  | csr_mhpmcounter22_c  | csr_mhpmcounter23_c  | csr_mhpmcounter24_c  | csr_mhpmcounter25_c  | csr_mhpmcounter26_c  |
+           csr_mhpmcounter27_c  | csr_mhpmcounter28_c  | csr_mhpmcounter29_c  | csr_mhpmcounter30_c  | csr_mhpmcounter31_c  |
+           csr_mhpmcounter3h_c  | csr_mhpmcounter4h_c  | csr_mhpmcounter5h_c  | csr_mhpmcounter6h_c  | csr_mhpmcounter7h_c  | csr_mhpmcounter8h_c  | -- HIGH
            csr_mhpmcounter9h_c  | csr_mhpmcounter10h_c | csr_mhpmcounter11h_c | csr_mhpmcounter12h_c | csr_mhpmcounter13h_c | csr_mhpmcounter14h_c |
            csr_mhpmcounter15h_c | csr_mhpmcounter16h_c | csr_mhpmcounter17h_c | csr_mhpmcounter18h_c | csr_mhpmcounter19h_c | csr_mhpmcounter20h_c |
            csr_mhpmcounter21h_c | csr_mhpmcounter22h_c | csr_mhpmcounter23h_c | csr_mhpmcounter24h_c | csr_mhpmcounter25h_c | csr_mhpmcounter26h_c |
            csr_mhpmcounter27h_c | csr_mhpmcounter28h_c | csr_mhpmcounter29h_c | csr_mhpmcounter30h_c | csr_mhpmcounter31h_c =>
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only
 
-      -- standard read-only CSRs --
-      when csr_cycle_c         => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_cy); -- M-mode, U-mode if authorized, read-only
-      when csr_time_c          => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_tm); -- M-mode, U-mode if authorized, read-only
-      when csr_instret_c       => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_ir); -- M-mode, U-mode if authorized, read-only
-      --
-      when csr_hpmcounter3_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(00)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter4_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(01)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter5_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(02)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter6_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(03)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter7_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(04)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter8_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(05)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter9_c   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(06)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter10_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(07)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter11_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(08)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter12_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(09)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter13_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(10)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter14_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(11)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter15_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(12)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter16_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(13)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter17_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(14)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter18_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(15)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter19_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(16)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter20_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(17)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter21_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(18)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter22_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(19)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter23_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(20)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter24_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(21)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter25_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(22)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter26_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(23)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter27_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(24)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter28_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(25)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter29_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(26)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter30_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(27)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter31_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(28)); -- M-mode, U-mode if authorized, read-only
-      --
-      when csr_cycleh_c        => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_cy); -- M-mode, U-mode if authorized, read-only
-      when csr_timeh_c         => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_tm); -- M-mode, U-mode if authorized, read-only
-      when csr_instreth_c      => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_ir); -- M-mode, U-mode if authorized, read-only
-      --
-      when csr_hpmcounter3h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(00)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter4h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(01)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter5h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(02)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter6h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(03)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter7h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(04)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter8h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(05)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter9h_c  => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(06)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter10h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(07)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter11h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(08)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter12h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(09)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter13h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(10)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter14h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(11)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter15h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(12)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter16h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(13)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter17h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(14)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter18h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(15)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter19h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(16)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter20h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(17)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter21h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(18)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter22h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(19)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter23h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(20)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter24h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(21)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter25h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(22)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter26h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(23)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter27h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(24)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter28h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(25)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter29h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(26)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter30h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(27)); -- M-mode, U-mode if authorized, read-only
-      when csr_hpmcounter31h_c => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(28)); -- M-mode, U-mode if authorized, read-only
-      --
-      when csr_mvendorid_c     => csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
-      when csr_marchid_c       => csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
-      when csr_mimpid_c        => csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
-      when csr_mhartid_c       => csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
-      -- custom read-only CSRs --
-      when csr_mzext_c         => csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
-      --
-      when others              => csr_acc_valid <= '0'; -- invalid access
+      -- user counters/timers --
+      when csr_cycle_c | csr_cycleh_c =>
+        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_cy); -- M-mode, U-mode if authorized, read-only
+      when csr_time_c | csr_timeh_c =>
+        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_tm); -- M-mode, U-mode if authorized, read-only
+      when csr_instret_c | csr_instreth_c =>
+        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_ir); -- M-mode, U-mode if authorized, read-only
+      when csr_hpmcounter3_c   | csr_hpmcounter4_c   | csr_hpmcounter5_c   | csr_hpmcounter6_c   | csr_hpmcounter7_c   | csr_hpmcounter8_c   | -- LOW
+           csr_hpmcounter9_c   | csr_hpmcounter10_c  | csr_hpmcounter11_c  | csr_hpmcounter12_c  | csr_hpmcounter13_c  | csr_hpmcounter14_c  |
+           csr_hpmcounter15_c  | csr_hpmcounter16_c  | csr_hpmcounter17_c  | csr_hpmcounter18_c  | csr_hpmcounter19_c  | csr_hpmcounter20_c  |
+           csr_hpmcounter21_c  | csr_hpmcounter22_c  | csr_hpmcounter23_c  | csr_hpmcounter24_c  | csr_hpmcounter25_c  | csr_hpmcounter26_c  |
+           csr_hpmcounter27_c  | csr_hpmcounter28_c  | csr_hpmcounter29_c  | csr_hpmcounter30_c  | csr_hpmcounter31_c  |
+           csr_hpmcounter3h_c  | csr_hpmcounter4h_c  | csr_hpmcounter5h_c  | csr_hpmcounter6h_c  | csr_hpmcounter7h_c  | csr_hpmcounter8h_c  | -- HIGH
+           csr_hpmcounter9h_c  | csr_hpmcounter10h_c | csr_hpmcounter11h_c | csr_hpmcounter12h_c | csr_hpmcounter13h_c | csr_hpmcounter14h_c |
+           csr_hpmcounter15h_c | csr_hpmcounter16h_c | csr_hpmcounter17h_c | csr_hpmcounter18h_c | csr_hpmcounter19h_c | csr_hpmcounter20h_c |
+           csr_hpmcounter21h_c | csr_hpmcounter22h_c | csr_hpmcounter23h_c | csr_hpmcounter24h_c | csr_hpmcounter25h_c | csr_hpmcounter26h_c |
+           csr_hpmcounter27h_c | csr_hpmcounter28h_c | csr_hpmcounter29h_c | csr_hpmcounter30h_c | csr_hpmcounter31h_c =>
+        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(to_integer(unsigned(csr.addr(4 downto 0))))); -- M-mode, U-mode if authorized, read-only
+
+      -- machine counter setup --
+      when csr_mcountinhibit_c =>
+        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+      when csr_mhpmevent3_c  | csr_mhpmevent4_c  | csr_mhpmevent5_c  | csr_mhpmevent6_c  | csr_mhpmevent7_c  | csr_mhpmevent8_c  |
+           csr_mhpmevent9_c  | csr_mhpmevent10_c | csr_mhpmevent11_c | csr_mhpmevent12_c | csr_mhpmevent13_c | csr_mhpmevent14_c |
+           csr_mhpmevent15_c | csr_mhpmevent16_c | csr_mhpmevent17_c | csr_mhpmevent18_c | csr_mhpmevent19_c | csr_mhpmevent20_c |
+           csr_mhpmevent21_c | csr_mhpmevent22_c | csr_mhpmevent23_c | csr_mhpmevent24_c | csr_mhpmevent25_c | csr_mhpmevent26_c |
+           csr_mhpmevent27_c | csr_mhpmevent28_c | csr_mhpmevent29_c | csr_mhpmevent30_c | csr_mhpmevent31_c =>
+        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+
+      -- machine information registers --
+      when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c =>
+        csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
+      -- custom (NEORV32-specific) read-only CSRs --
+      when csr_mzext_c =>
+        csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
+      -- undefined / not implemented --
+      when others =>
+        csr_acc_valid <= '0'; -- invalid access
     end case;
   end process csr_access_check;
 
