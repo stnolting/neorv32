@@ -273,11 +273,14 @@ uint64_t neorv32_cpu_get_systime(void) {
 /**********************************************************************//**
  * Simple delay function using busy wait.
  *
- * @warning This function requires the cycle CSR(s). Hence, the Zicsr extension is mandatory.
+ * @warning This function requires the cycle[h] CSR(s). Hence, the Zicsr extension is mandatory.
  *
  * @param[in] time_ms Time in ms to wait.
  **************************************************************************/
 void neorv32_cpu_delay_ms(uint32_t time_ms) {
+
+  // make sure cycle counter is enabled
+  asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTEREN_CY));
 
   uint64_t time_resume = neorv32_cpu_get_cycle();
 
