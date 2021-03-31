@@ -142,6 +142,8 @@ is highly customizable via the processor's top generics and already provides the
 * smart LED interface (**NEOLED**) - WS2812 / NeoPixel(c) compatible
 * system configuration information memory to check hardware configuration by software (**SYSINFO**)
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
 
 ### NEORV32 CPU Features
 
@@ -292,6 +294,8 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 * The `A` extension only implements `lr.w` and `sc.w` instructions yet. However, these instructions are sufficient to emulate all further AMO operations
 * The `mcause` trap code `0x80000000` (originally reserved in the RISC-V specs) is used to indicate a hardware reset (as "non-maskable interrupt")
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
 
 
 ## FPGA Implementation Results
@@ -320,6 +324,8 @@ Results generated for hardware version [`1.5.3.2`](https://github.com/stnolting/
 Setups with enabled "embedded CPU extension" `E` show the same LUT and FF utilization and identical f_max as the according `I` configuration.
 However, the size of the register file is cut in half.
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
@@ -346,6 +352,8 @@ Results generated for hardware version [`1.5.3.2`](https://github.com/stnolting/
 | WDT       | Watchdog timer                                       |  60 |  45 |           0 |            0 |
 | WISHBONE  | External memory interface                            | 129 | 104 |           0 |            0 |
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
 
 ### NEORV32 Processor - Exemplary FPGA Setups
 
@@ -371,6 +379,8 @@ The FPGA-specific memory components can be found in [`rtl/fpga_specific`](https:
 bootloader to store and automatically boot an application program after reset (both tested successfully).
 * The setups with `PMP` implement 2 regions with a minimal granularity of 64kB.
 * No HPM counters are implemented.
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 
@@ -406,6 +416,8 @@ uses a barrel shifter for CPU shift operations (enabled via the `FAST_SHIFT_EN` 
 
 When the `C` extension is enabled, branches to an unaligned uncompressed instruction require additional instruction fetch cycles.
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
 
 ### Instruction Cycles
 
@@ -435,6 +447,8 @@ uses a barrel shifter for CPU shift operations (enabled via the `FAST_SHIFT_EN` 
 
 When the `C` extension is enabled branches to an unaligned uncompressed instruction require additional instruction fetch cycles.
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
 
 
 ## Top Entities
@@ -457,6 +471,8 @@ input ports to zero.
 **Alternative top entities**, like the simplified ["hello world" test setup](#Create-a-new-Hardware-Project) or CPU/Processor
 wrappers with resolved port signal types (i.e. *std_logic*), can be found in [`rtl/top_templates`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates).
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
 
 ### AXI4 Connectivity
 
@@ -476,6 +492,8 @@ In the figure above the resulting IP block is named "neorv32_top_axi4lite_v1_0".
 The setup uses an AXI interconnect to attach two block RAMs to the processor. Since the processor in this example is configured *without* IMEM and DMEM,
 the attached block RAMs are used for storing instructions and data: the first RAM is used as instruction memory
 and is mapped to address `0x00000000 - 0x00003fff` (16kB), the second RAM is used as data memory and is mapped to address `0x80000000 - 0x80001fff` (8kB).
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 
@@ -615,6 +633,7 @@ Blinking LED demo program
 
 Going further: Take a look at the _Let's Get It Started!_ chapter of the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 ## Contribute/Feedback/Questions
@@ -633,6 +652,8 @@ Here is a simple guide line if you'd like to contribute to this repository:
 5. Commit your modifications: `git commit -m "Awesome new feature!"`
 6. Push to the branch: `git push origin awesome_new_feature_branch`
 7. Create a new [pull request](https://github.com/stnolting/neorv32/pulls)
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 ## Legal
