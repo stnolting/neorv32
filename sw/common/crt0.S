@@ -188,9 +188,9 @@ __crt0_main_entry:
   csrw minstret,  zero
   csrw minstreth, zero
   // no access from less-privileged modes to counter CSRs
-  csrwi mcounteren, 0
-  // disable all counters
-  li   x12, -1
+  csrw mcounteren, zero
+  // disable all counters (except for [m]cycle[h] and [m]instret[h])
+  li   x12, ~5
   csrw mcountinhibit, x12
 
   // restore mcause reset value (so that 'main' knows we are coming from reset)
