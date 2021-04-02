@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 02.04.2021 | 1.5.3.6 | :bug: fixed bug in external memory interface (`neorv32_wishbone.vhd`) that caused bus exceptions when using external memories with very high access latencies (race condition in bus timeouts); VHDL code clean-up |
 | 30.03.2021 | 1.5.3.5 | added new top's generic `HPM_CNT_WIDTH` (type `natural`, default=40) to configure the total bit width of the hardware performance monitors (HPM) counter (min 1, max 64); mofified `crt0.S`: stops all counters (incl. HPMs), no user-level access to ANY counter; `neorv32.h`: added missing `mcounteren` and `mcountinhibit` CSR bit definitions |
 | 28.03.2021 | 1.5.3.4 | default "test setup" `rtl/top_templetes/neorv32_test_setup.vhd`: disabled PMP, implementing 4 HPM counters; :sparkles: added [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder for exemplary FPGA setups |
 | 27.03.2021 | 1.5.3.3 | minor optimization in CPU control engine; FPU comparator now uses comparatos results from main ALU (reduces FPU hardware footprint) |
