@@ -110,7 +110,7 @@ int main() {
   uint32_t is_simulation = 0;
 
 
-  // init UART at default baud rate, no parity bits, ho hw flow control
+  // init UART at default baud rate, no parity bits, no hw flow control
   neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
 // Disable cpu_test compilation by default
@@ -130,6 +130,12 @@ int main() {
   else {
     is_simulation = 0;
   }
+
+  // ----------------------------------------------
+  // setup RTE
+  neorv32_rte_setup(); // this will install a full-detailed debug handler for ALL traps
+  // ----------------------------------------------
+
 
   neorv32_uart_printf("\n<< CPU/PROCESSOR TEST >>\n");
   neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
@@ -174,9 +180,7 @@ int main() {
 
   // configure RTE
   // -----------------------------------------------
-  neorv32_uart_printf("\n\nInitializing NEORV32 RTE... ");
-
-  neorv32_rte_setup(); // this will install a full-detailed debug handler for all traps
+  neorv32_uart_printf("\n\nConfiguring NEORV32 RTE... ");
 
   int install_err = 0;
   // initialize ALL provided trap handler (overriding the default debug handlers)
