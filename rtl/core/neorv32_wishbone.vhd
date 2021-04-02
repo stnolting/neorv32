@@ -193,8 +193,8 @@ begin
           ctrl.rd_req <= '0';
           ctrl.wr_req <= '0';
           -- buffer all outgoing signals --
-          ctrl.we   <= wren_i;
-          ctrl.adr  <= addr_i;
+          ctrl.we  <= wren_i or ctrl.wr_req;
+          ctrl.adr <= addr_i;
           if (xbus_big_endian_c = true) then -- endianness conversion
             ctrl.wdat <= data_i;
             ctrl.sel  <= ben_i;
@@ -206,7 +206,7 @@ begin
           ctrl.excl <= excl_i;
           ctrl.priv <= priv_i;
           -- valid new or buffered read/write request --
-          if ((xbus_access and (wren_i or ctrl.wr_req or rden_i or ctrl.rd_req)) = '1') then
+          if ((xbus_access and (wren_i or ctrl.wr_req or rden_i or ctrl.rd_req) and (not cancel_i)) = '1') then
             ctrl.state <= BUSY;
           end if;
 
@@ -237,6 +237,8 @@ begin
 
         when RESYNC => -- make sure transfer is done!
         -- ------------------------------------------------------------
+          ctrl.wr_req <= ctrl.wr_req or wren_i; -- buffer new request
+          ctrl.rd_req <= ctrl.rd_req or rden_i; -- buffer new request
           if (wb_ack_i = '0') then
             ctrl.state <= IDLE;
           end if;
