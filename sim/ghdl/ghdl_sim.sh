@@ -24,14 +24,14 @@ if [ -z ${1} ]; then echo "Using default simulation config: $SIM_CONFIG"; else S
 echo ""
 
 # List files
-echo "Simulation source files:"
-ls -l $srcdir_core
-ls -l $srcdir_sim
-ls -l $srcdir_top_templates
+#echo "Simulation source files:"
+#ls -l $srcdir_core
+#ls -l $srcdir_sim
+#ls -l $srcdir_top_templates
+#echo ""
 
 # Just a hint
-echo ""
-echo "Tip: Compile application with USER_FLAGS+=-DUART_SIM_MODE to auto-enable UART's SIM MODE."
+echo "Tip: Compile application with USER_FLAGS+=-DUART[0/1]_SIM_MODE to auto-enable UART[0/1]'s simulation mode (redirect UART output to simulator console)."
 echo ""
 
 # Analyse sources; libs and images at first!
