@@ -372,17 +372,27 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("\n=== << Memory Configuration >> ===\n");
 
   neorv32_uart_printf("Instr. base address:  0x%x\n", SYSINFO_ISPACE_BASE);
-  neorv32_uart_printf("Internal IMEM:        ");
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM)) { neorv32_uart_printf("yes, %u bytes\n", SYSINFO_IMEM_SIZE); }
-  else {  neorv32_uart_printf("no\n"); }
-  neorv32_uart_printf("Internal IMEM as ROM: ");
-  __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM_ROM));
 
+  // IMEM
+  neorv32_uart_printf("Internal IMEM:        ");
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM)) {
+    neorv32_uart_printf("yes, %u bytes", SYSINFO_IMEM_SIZE);
+    if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM_ROM)) {
+      neorv32_uart_printf(", read-only (ROM)");
+    }
+  }
+  else {
+    neorv32_uart_printf("no");
+  }
+  neorv32_uart_printf("\n");
+
+  // DMEM
   neorv32_uart_printf("Data base address:    0x%x\n", SYSINFO_DSPACE_BASE);
   neorv32_uart_printf("Internal DMEM:        ");
   if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_DMEM)) { neorv32_uart_printf("yes, %u bytes\n", SYSINFO_DMEM_SIZE); }
   else {  neorv32_uart_printf("no\n"); }
 
+  // i-cache
   neorv32_uart_printf("Internal i-cache:     ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_ICACHE));
   if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_ICACHE)) {
