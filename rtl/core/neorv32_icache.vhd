@@ -584,7 +584,7 @@ begin
   begin
     if rising_edge(clk_i) then
       if (cache_we = '1') then -- write access from control (full-word)
-        if (set_select = '0') then
+        if (set_select = '0') or (ICACHE_NUM_SETS = 1) then
           cache_data_memory_s0(to_integer(unsigned(cache_addr))) <= ctrl_wdata_i;
         else
           cache_data_memory_s1(to_integer(unsigned(cache_addr))) <= ctrl_wdata_i;
