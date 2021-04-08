@@ -69,11 +69,42 @@ __crt0_reg_file_clear:
 
 
 // *********************************************************
-// Initialize dummy trap handler base address
+// Setup CPU core CSRs (some of them DO NOT have a dedicated reset and need to be explicitly initialized)
 // *********************************************************
-__crt0_neorv32_trap_init:
-  la    x11, __crt0_dummy_trap_handler
-  csrw  mtvec, x11 // set address of first-level exception handler
+__crt0_cpu_csr_init:
+
+  // set address of first-level exception handler
+  la   x10, __crt0_dummy_trap_handler
+  csrw mtvec,  x10
+  csrw mepc,   x10
+  csrw mtval,  zero
+  csrw mcause, zero
+
+  // no global IRQ enable (is also done by hardware)
+  csrw mstatus, zero
+
+  // absolutely no interrupts, thanks
+  csrw mie, zero
+
+  // no access from less-privileged modes to counter CSRs
+  csrw mcounteren, zero
+
+  // stop all counters except for [m]cycle[h] and [m]instret[h]
+  li   x11, ~5
+  csrw mcountinhibit, x11
+
+  // clear cycle counters
+  csrw mcycle,    zero
+  csrw mcycleh,   zero
+
+  // clear instruction counters
+  csrw minstret,  zero
+  csrw minstreth, zero
+
+#if defined(__riscv_flen) && (__riscv_flen != 0)
+  // clear floating-point CSR (rounding mode & exception flags)
+  csrw fcsr, zero
+#endif
 
 
 // *********************************************************
@@ -100,15 +131,6 @@ __crt0_neorv32_trap_init:
   addi x31, x0, 0
 #endif
 #endif
-
-
-// *********************************************************
-// No interrupts, thanks
-// *********************************************************
-__crt0_status_init:
-  li x10, 0x00001800    // clear mstatus and set mpp(1:0)
-  csrrw zero, mstatus, x10
-  csrrw zero, mie, zero // clear mie
 
 
 // *********************************************************
@@ -181,21 +203,6 @@ __crt0_main_entry:
   // setup arguments for calling main
   addi x10, zero, 0 // argc = 0
   addi x11, zero, 0 // argv = 0
-
-  // clear cycle and instruction counters
-  csrw mcycle,    zero
-  csrw mcycleh,   zero
-  csrw minstret,  zero
-  csrw minstreth, zero
-  // no access from less-privileged modes to counter CSRs
-  csrw mcounteren, zero
-  // disable all counters (except for [m]cycle[h] and [m]instret[h])
-  li   x12, ~5
-  csrw mcountinhibit, x12
-
-  // restore mcause reset value (so that 'main' knows we are coming from reset)
-  li x12, 0x80000000
-  csrw mcause, x12
 
   // call actual app's main function
   jal ra, main
