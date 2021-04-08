@@ -88,6 +88,7 @@ uint32_t num_hpm_cnts_global = 0;
  **************************************************************************/
 # define ATOMIC_SUCCESS (*(IO_REG32 (EXT_MEM_BASE + 0)))
 
+
 /**********************************************************************//**
  * "Simulated external IO" - exclusive access will always fail
  **************************************************************************/
@@ -136,21 +137,13 @@ int main() {
   neorv32_rte_setup(); // this will install a full-detailed debug handler for ALL traps
   // ----------------------------------------------
 
-
-  neorv32_uart_printf("\n<< CPU/PROCESSOR TEST >>\n");
-  neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
-
-  // check if we came from hardware reset
-  neorv32_uart_printf("\nComing from HW reset? ");
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_RESET) {
-    neorv32_uart_printf("yes\n");
-  }
-  else {
-    neorv32_uart_printf("unknown\n");
-  }
-
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
+
+
+  // intro
+  neorv32_uart_printf("\n<< CPU/PROCESSOR TEST >>\n");
+  neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
 
 
   // reset performance counter
@@ -244,17 +237,19 @@ int main() {
   // make sure counter is enabled
   asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTEREN_IR));
 
-  // get current instruction counter
-  temp64 = neorv32_cpu_get_instret();
-
-  // wait some time to have a nice increment
-  asm volatile ("nop");
-  asm volatile ("nop");
+  // get instruction counter LOW
+  tmp_a = neorv32_cpu_csr_read(CSR_INSTRET);
+  tmp_a = neorv32_cpu_csr_read(CSR_INSTRET) - tmp_a;
 
   // make sure instruction counter has incremented and there was no exception during access
-  if ((neorv32_cpu_get_instret() > temp64) &&
-      (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
-    test_ok();
+  if ((tmp_a > 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+    if (tmp_a > 1) {
+      neorv32_uart_printf("INSTRET_diff > 1 (%u)!", tmp_a);
+      test_fail();
+    }
+    else {
+      test_ok();
+    }
   }
   else {
     test_fail();
@@ -1685,7 +1680,7 @@ int main() {
   // ----------------------------------------------------------
   // Final test reports
   // ----------------------------------------------------------
-  neorv32_uart_printf("\n\nTest results:\nOK: %i/%i\nFAILED: %i/%i\n\n", cnt_ok, cnt_test, cnt_fail, cnt_test);
+  neorv32_uart_printf("\n\nTest results:\nOK:     %i/%i\nFAILED: %i/%i\n\n", cnt_ok, cnt_test, cnt_fail, cnt_test);
 
   // final result
   if (cnt_fail == 0) {
