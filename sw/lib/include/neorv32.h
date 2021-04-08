@@ -551,7 +551,6 @@ enum NEORV32_EXCEPTION_CODES_enum {
   TRAP_CODE_S_ACCESS     = 0x00000007, /**< 0.7:  Store (bus) access fault */
   TRAP_CODE_UENV_CALL    = 0x00000008, /**< 0.8:  Environment call from user mode (ECALL instruction) */
   TRAP_CODE_MENV_CALL    = 0x0000000b, /**< 0.11: Environment call from machine mode (ECALL instruction) */
-  TRAP_CODE_RESET        = 0x80000000, /**< 1.0:  Hardware reset */
   TRAP_CODE_MSI          = 0x80000003, /**< 1.3:  Machine software interrupt */
   TRAP_CODE_MTI          = 0x80000007, /**< 1.7:  Machine timer interrupt */
   TRAP_CODE_MEI          = 0x8000000b, /**< 1.11: Machine external interrupt */
