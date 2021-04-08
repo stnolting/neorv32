@@ -556,10 +556,9 @@ begin
         else
           tag_mem_s1(to_integer(unsigned(cache_index))) <= ctrl_acc_addr.tag;
         end if;
-      else -- read access
-        tag(0) <= tag_mem_s0(to_integer(unsigned(cache_index)));
-        tag(1) <= tag_mem_s1(to_integer(unsigned(cache_index)));
       end if;
+      tag(0) <= tag_mem_s0(to_integer(unsigned(cache_index)));
+      tag(1) <= tag_mem_s1(to_integer(unsigned(cache_index)));
     end if;
   end process tag_memory;
 
@@ -589,10 +588,10 @@ begin
         else
           cache_data_memory_s1(to_integer(unsigned(cache_addr))) <= ctrl_wdata_i;
         end if;
-      else -- read access from host (full-word)
-        cache_rdata(0) <= cache_data_memory_s0(to_integer(unsigned(cache_addr)));
-        cache_rdata(1) <= cache_data_memory_s1(to_integer(unsigned(cache_addr)));
       end if;
+      -- read access from host (full-word) --
+      cache_rdata(0) <= cache_data_memory_s0(to_integer(unsigned(cache_addr)));
+      cache_rdata(1) <= cache_data_memory_s1(to_integer(unsigned(cache_addr)));
     end if;
   end process cache_mem_access;
 
