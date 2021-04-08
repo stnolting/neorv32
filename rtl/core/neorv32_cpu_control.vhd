@@ -1612,12 +1612,12 @@ begin
   begin
     if (rstn_i = '0') then
       trap_ctrl.exc_buf   <= (others => '0');
-      trap_ctrl.irq_buf   <= (others => '0');
+      trap_ctrl.irq_buf   <= (others => '-');
       trap_ctrl.exc_ack   <= '0';
       trap_ctrl.irq_ack   <= (others => '0');
       trap_ctrl.env_start <= '0';
-      trap_ctrl.cause     <= trap_reset_c;
-      trap_ctrl.firq_sync <= (others => '0');
+      trap_ctrl.cause     <= (others => '0');
+      trap_ctrl.firq_sync <= (others => '-');
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
         -- exception buffer: misaligned load/store/instruction address
@@ -1864,40 +1864,43 @@ begin
   -- -------------------------------------------------------------------------------------------
   csr_write_access: process(rstn_i, clk_i)
   begin
+    -- NOTE: Register that reset to '-' do NOT actually have a real reset and have to be
+    -- explicitly initialized by software!
+    -- see: https://forums.xilinx.com/t5/General-Technical-Discussion/quot-Don-t-care-quot-reset-value/td-p/412845
     if (rstn_i = '0') then
       csr.we           <= '0';
       --
       csr.mstatus_mie  <= '0';
       csr.mstatus_mpie <= '0';
-      csr.mstatus_mpp  <= priv_mode_m_c; -- start in MACHINE mode
+      csr.mstatus_mpp  <= (others => '0');
       csr.privilege    <= priv_mode_m_c; -- start in MACHINE mode
-      csr.mie_msie     <= '0';
-      csr.mie_meie     <= '0';
-      csr.mie_mtie     <= '0';
-      csr.mie_firqe    <= (others => '0');
-      csr.mtvec        <= (others => '0');
-      csr.mscratch     <= x"19880704"; -- :)
-      csr.mepc         <= (others => '0');
-      csr.mcause       <= trap_reset_c; -- mcause = TRAP_CODE_RESET (hardware reset, "non-maskable interrupt")
-      csr.mtval        <= (others => '0');
-      csr.mip_clear    <= (others => '0');
+      csr.mie_msie     <= '-';
+      csr.mie_meie     <= '-';
+      csr.mie_mtie     <= '-';
+      csr.mie_firqe    <= (others => '-');
+      csr.mtvec        <= (others => '-');
+      csr.mscratch     <= x"19880704";
+      csr.mepc         <= (others => '-');
+      csr.mcause       <= (others => '-');
+      csr.mtval        <= (others => '-');
+      csr.mip_clear    <= (others => '-');
       --
       csr.pmpcfg  <= (others => (others => '0'));
-      csr.pmpaddr <= (others => (others => '1'));
+      csr.pmpaddr <= (others => (others => '-'));
       --
-      csr.mhpmevent <= (others => (others => '0'));
+      csr.mhpmevent <= (others => (others => '-'));
       --
-      csr.mcounteren_cy  <= '0';
-      csr.mcounteren_tm  <= '0';
-      csr.mcounteren_ir  <= '0';
-      csr.mcounteren_hpm <= (others => '0');
+      csr.mcounteren_cy  <= '-';
+      csr.mcounteren_tm  <= '-';
+      csr.mcounteren_ir  <= '-';
+      csr.mcounteren_hpm <= (others => '-');
       --
-      csr.mcountinhibit_cy  <= '0';
-      csr.mcountinhibit_ir  <= '0';
-      csr.mcountinhibit_hpm <= (others => '0');
+      csr.mcountinhibit_cy  <= '1';
+      csr.mcountinhibit_ir  <= '1';
+      csr.mcountinhibit_hpm <= (others => '1');
       --
-      csr.fflags <= (others => '0');
-      csr.frm    <= (others => '0');
+      csr.fflags <= (others => '-');
+      csr.frm    <= (others => '-');
 
     elsif rising_edge(clk_i) then
       -- write access? --
@@ -2034,9 +2037,9 @@ begin
 
           -- machine counter setup --
           -- --------------------------------------------------------------------
-          if (csr.addr(11 downto 6) = csr_cnt_setup_c) then -- counter configuration CSR class
+          if (csr.addr(11 downto 5) = csr_cnt_setup_c) then -- counter configuration CSR class
             -- R/W: mcountinhibit - machine counter-inhibit register --
-            if (csr.addr(5 downto 0) = csr_mcountinhibit_c(5 downto 0)) then
+            if (csr.addr(4 downto 0) = csr_mcountinhibit_c(4 downto 0)) then
               csr.mcountinhibit_cy  <= csr.wdata(0); -- enable auto-increment of [m]cycle[h] counter
               csr.mcountinhibit_ir  <= csr.wdata(2); -- enable auto-increment of [m]instret[h] counter
               csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- enable auto-increment of [m]hpmcounter*[h] counter
@@ -2218,7 +2221,7 @@ begin
       if (csr.we = '1') and (csr.addr = csr_minstret_c) then -- write access
         csr.minstret <= '0' & csr.wdata;
         minstret_msb <= '0';
-      elsif (csr.mcountinhibit_ir = '0') and (cnt_event(hpmcnt_event_ir_c) = '1') and (cnt_event(hpmcnt_event_cy_c) = '1') then -- non-inhibited automatic update
+      elsif (csr.mcountinhibit_ir = '0') and (cnt_event(hpmcnt_event_ir_c) = '1') then -- non-inhibited automatic update
         csr.minstret <= std_ulogic_vector(unsigned(csr.minstret) + 1);
         minstret_msb <= csr.minstret(csr.minstret'left);
       end if;
@@ -2281,7 +2284,7 @@ begin
   end process hpm_rd_dummy;
 
 
-  -- (HPM) Counter Event Control ------------------------------------------------------------
+  -- Hardware Performance Monitor - Counter Event Control -----------------------------------
   -- -------------------------------------------------------------------------------------------
   hpmcnt_ctrl: process(clk_i)
   begin
@@ -2299,10 +2302,10 @@ begin
     end if;
   end process hpmcnt_ctrl;
 
-  -- counter event trigger - RISC-V specific --
-  cnt_event_nxt(hpmcnt_event_cy_c)    <= not execute_engine.sleep; -- active cycle
-  cnt_event_nxt(hpmcnt_event_never_c) <= '0'; -- undefined (never)
-  cnt_event_nxt(hpmcnt_event_ir_c)    <= '1' when (execute_engine.state = EXECUTE) else '0'; -- retired instruction
+  -- counter event trigger - RISC-V-specific --
+  cnt_event_nxt(hpmcnt_event_cy_c)      <= not execute_engine.sleep; -- active cycle
+  cnt_event_nxt(hpmcnt_event_never_c)   <= '0'; -- undefined (never)
+  cnt_event_nxt(hpmcnt_event_ir_c)      <= '1' when (execute_engine.state = EXECUTE) else '0'; -- retired instruction
 
   -- counter event trigger - custom / NEORV32-specific --
   cnt_event_nxt(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)      and (execute_engine.is_ci = '1')             else '0'; -- retired compressed instruction
