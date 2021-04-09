@@ -1144,7 +1144,6 @@ begin
       when ALU_WAIT => -- wait for multi-cycle ALU operation (shifter or CP) to finish
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_rf_in_mux_c) <= '0'; -- RF input = ALU result
-        ctrl_nxt(ctrl_rf_wb_en_c)  <= '1'; -- valid RF write-back (permanent write-back)
         -- cp access or alu.shift? --
         if (execute_engine.is_cp_op = '1') then
           ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
@@ -1153,7 +1152,8 @@ begin
         end if;
         -- wait for result --
         if (alu_wait_i = '0') then
-          execute_engine.state_nxt <= DISPATCH;
+          ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
+          execute_engine.state_nxt  <= DISPATCH;
         end if;
 
 
