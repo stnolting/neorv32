@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 09.04.2021 | 1.5.3.8 | optimized CPU control: register write back during multi-cycle ALU operation only when result is really available (reducing switching activity; avoids possible source operand corruption); optimized `M` extension's co-processor: multiplications and divisions are 2 cycles faster |
 | 08.04.2021 | 1.5.3.7 | :bug: fixed bug in HPM event configuration via `mhpmevent*` CSRs - there was a CSR address decoding overlap between the HPM event CSRs and the machine trap setup CSRs (introduced in version 1.5.3.6); :warning: reworked CPU core CSRs: most CSRs are not reset by hardware and need explicit initialization (done by crt0.S start-up code) |
 | 02.04.2021 | 1.5.3.6 | :bug: fixed bug in external memory interface (`neorv32_wishbone.vhd`) that caused bus exceptions when using external memories with very high access latencies (race condition in bus timeouts); VHDL code clean-up |
 | 30.03.2021 | 1.5.3.5 | added new top's generic `HPM_CNT_WIDTH` (type `natural`, default=40) to configure the total bit width of the hardware performance monitors (HPM) counter (min 1, max 64); mofified `crt0.S`: stops all counters (incl. HPMs), no user-level access to ANY counter; `neorv32.h`: added missing `mcounteren` and `mcountinhibit` CSR bit definitions |
