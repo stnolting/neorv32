@@ -1,10 +1,13 @@
 -- #################################################################################################
 -- # << NEORV32 - CPU Co-Processor: Integer Multiplier/Divider Unit (RISC-V "M" Extension)>>       #
 -- # ********************************************************************************************* #
--- # Multiplier and Divider unit. Implements the RISC-V RV32-M CPU extension.                      #
--- # Multiplier core (signed/unsigned) uses serial algorithm. -> 32+4 cycles latency               #
--- # Divider core (unsigned) uses serial algorithm. -> 32+6 cycles latency                         #
--- # Multiplications can be mapped to DSP block when FAST_MUL_EN = true.                           #
+-- # Multiplier and Divider unit. Implements the RISC-V M CPU extension.                           #
+-- #                                                                                               #
+-- # Multiplier core (signed/unsigned) uses classical serial algorithm. Unit atency: 31+3 cycles   #
+-- # Divider core (unsigned) uses classical serial algorithm. Unit latency: 32+4 cycles            #
+-- #                                                                                               #
+-- # Multiplications can be mapped to DSP blocks (faster!) when FAST_MUL_EN = true.                #
+-- # Unit latency: 3 cycles                                                                        #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -65,9 +68,6 @@ end neorv32_cpu_cp_muldiv;
 
 architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
 
-  -- advanced configuration --
-  constant dsp_add_reg_stage_c : boolean := false; -- add another register stage to DSP-based multiplication for timing-closure
-
   -- operations --
   constant cp_op_mul_c    : std_ulogic_vector(2 downto 0) := "000"; -- mul
   constant cp_op_mulh_c   : std_ulogic_vector(2 downto 0) := "001"; -- mulh
@@ -79,16 +79,18 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   constant cp_op_remu_c   : std_ulogic_vector(2 downto 0) := "111"; -- remu
 
   -- controller --
-  type state_t is (IDLE, DECODE, INIT_OPX, INIT_OPY, PROCESSING, FINALIZE, COMPLETED, FAST_MUL);
+  type state_t is (IDLE, DIV_PREPROCESS, PROCESSING, FINALIZE, COMPLETED);
   signal state         : state_t;
   signal cnt           : std_ulogic_vector(4 downto 0);
   signal cp_op         : std_ulogic_vector(2 downto 0); -- operation to execute
   signal cp_op_ff      : std_ulogic_vector(2 downto 0); -- operation that was executed
-  signal start         : std_ulogic;
+  signal start_div     : std_ulogic;
+  signal start_mul     : std_ulogic;
   signal operation     : std_ulogic;
-  signal rs1, opx, opy : std_ulogic_vector(data_width_c-1 downto 0); -- input operands
-  signal opx_is_signed : std_ulogic;
-  signal opy_is_signed : std_ulogic;
+  signal div_opx       : std_ulogic_vector(data_width_c-1 downto 0);
+  signal div_opy       : std_ulogic_vector(data_width_c-1 downto 0);
+  signal rs1_is_signed : std_ulogic;
+  signal rs2_is_signed : std_ulogic;
   signal opy_is_zero   : std_ulogic;
   signal div_res_corr  : std_ulogic;
   signal valid         : std_ulogic;
@@ -109,7 +111,6 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   signal mul_op_x       : signed(32 downto 0); -- for using DSPs
   signal mul_op_y       : signed(32 downto 0); -- for using DSPs
   signal mul_buf_ff     : signed(65 downto 0); -- for using DSPs
-  signal mul_buf2_ff    : signed(65 downto 0); -- for using DSPs
 
 begin
 
@@ -119,80 +120,69 @@ begin
   begin
     if (rstn_i = '0') then
       state        <= IDLE;
-      opx          <= (others => '0');
-      opy          <= (others => '0');
-      rs1          <= (others => '0');
-      cnt          <= (others => '0');
-      start        <= '0';
+      div_opx      <= (others => '-');
+      div_opy      <= (others => '-');
+      cnt          <= (others => '-');
+      cp_op_ff     <= (others => '-');
+      start_div    <= '0';
       valid        <= '0';
       div_res_corr <= '0';
       opy_is_zero  <= '0';
-      cp_op_ff     <= (others => '0');
     elsif rising_edge(clk_i) then
       -- defaults --
-      start    <= '0';
-      valid    <= '0';
-      cp_op_ff <= cp_op;
+      start_div <= '0';
+      valid     <= '0';
 
       -- FSM --
       case state is
         when IDLE =>
+          cp_op_ff <= cp_op;
           if (start_i = '1') then
-            opx   <= rs1_i;
-            rs1   <= rs1_i;
-            opy   <= rs2_i;
-            state <= DECODE;
-          end if;
-
-        when DECODE =>
-          --
-          if (cp_op = cp_op_div_c) then -- result sign compensation for div?
-            div_res_corr <= opx(opx'left) xor opy(opy'left);
-          elsif (cp_op = cp_op_rem_c) then -- result sign compensation for rem?
-            div_res_corr <= opx(opx'left);
-          else
-            div_res_corr <= '0';
-          end if;
-          --
-          if (or_all_f(opy) = '0') then -- *divide* by 0?
-            opy_is_zero <= '1';
-          else
-            opy_is_zero <= '0';
-          end if;
-          --
-          cnt   <= "11111";
-          if (operation = '1') then -- division
-            state <= INIT_OPX;
-          else -- multiplication
-            start <= '1';
-            if (FAST_MUL_EN = true) then
-              state <= FAST_MUL;
+            if (operation = '1') then -- division
+              cnt <= "11111";
+              state <= DIV_PREPROCESS;
             else
-              state <= PROCESSING;
+              cnt <= "11110";
+              if (FAST_MUL_EN = true) then
+                state <= FINALIZE;
+              else
+                state <= PROCESSING;
+              end if;
             end if;
           end if;
 
-        when INIT_OPX =>
-          if ((opx(opx'left) and opx_is_signed) = '1') then -- signed division?
-            opx <= div_sign_comp; -- make positive
+        when DIV_PREPROCESS =>
+          -- check rlevatn input signs --
+          if (cp_op = cp_op_div_c) then -- result sign compensation for div?
+            div_res_corr <= rs1_i(rs1_i'left) xor rs2_i(rs2_i'left);
+          elsif (cp_op = cp_op_rem_c) then -- result sign compensation for rem?
+            div_res_corr <= rs1_i(rs1_i'left);
+          else
+            div_res_corr <= '0';
           end if;
-          state <= INIT_OPY;
-
-        when INIT_OPY =>
-          start <= '1';
-          if ((opy(opy'left) and opy_is_signed) = '1') then -- signed division?
-            opy <= div_sign_comp; -- make positive
+          -- divide by zero? --
+          opy_is_zero <= not or_all_f(rs2_i); -- set if rs2 = 0
+          -- abs(rs1) --
+          if ((rs1_i(rs1_i'left) and rs1_is_signed) = '1') then -- signed division?
+            div_opx <= std_ulogic_vector(0 - unsigned(rs1_i)); -- make positive
+          else
+            div_opx <= rs1_i;
           end if;
-          state <= PROCESSING;
+          -- abs(rs2) --
+          if ((rs2_i(rs2_i'left) and rs2_is_signed) = '1') then -- signed division?
+            div_opy <= std_ulogic_vector(0 - unsigned(rs2_i)); -- make positive
+          else
+            div_opy <= rs2_i;
+          end if;
+          --
+          start_div <= '1';
+          state     <= PROCESSING;
 
         when PROCESSING =>
           cnt <= std_ulogic_vector(unsigned(cnt) - 1);
           if (cnt = "00000") then
             state <= FINALIZE;
           end if;
-
-        when FAST_MUL =>
-          state <= FINALIZE;
 
         when FINALIZE =>
           state <= COMPLETED;
@@ -207,14 +197,17 @@ begin
   -- co-processor command --
   cp_op <= ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c);
 
-  -- operation --
-  operation <= '1' when (cp_op = cp_op_div_c) or (cp_op = cp_op_divu_c) or (cp_op = cp_op_rem_c) or (cp_op = cp_op_remu_c) else '0';
+  -- operation: 0=mul, 1=div --
+  operation <= '1' when (cp_op(2) = '1') else '0';
 
   -- opx (rs1) signed? --
-  opx_is_signed <= '1' when (cp_op = cp_op_mulh_c) or (cp_op = cp_op_mulhsu_c) or (cp_op = cp_op_div_c) or (cp_op = cp_op_rem_c) else '0';
+  rs1_is_signed <= '1' when (cp_op = cp_op_mulh_c) or (cp_op = cp_op_mulhsu_c) or (cp_op = cp_op_div_c) or (cp_op = cp_op_rem_c) else '0';
 
   -- opy (rs2) signed? --
-  opy_is_signed <= '1' when (cp_op = cp_op_mulh_c) or (cp_op = cp_op_div_c) or (cp_op = cp_op_rem_c) else '0';
+  rs2_is_signed <= '1' when (cp_op = cp_op_mulh_c) or (cp_op = cp_op_div_c) or (cp_op = cp_op_rem_c) else '0';
+
+  -- start MUL operation (do it fast!) --
+  start_mul <= '1' when (state = IDLE) and (start_i = '1') and (operation = '0') else '0';
 
 
   -- Multiplier Core (signed/unsigned) ------------------------------------------------------
@@ -224,39 +217,34 @@ begin
     if rising_edge(clk_i) then
       -- ---------------------------------------------------------
       if (FAST_MUL_EN = false) then -- use small iterative computation
-        if (start = '1') then -- start new multiplication
+        if (start_mul = '1') then -- start new multiplication
           mul_product(63 downto 32) <= (others => '0');
-          mul_product(31 downto 00) <= opy;
-        elsif ((state = PROCESSING) or (state = FINALIZE)) and (operation = '0') then
+          mul_product(31 downto 00) <= rs2_i;
+        elsif (state = PROCESSING) or (state = FINALIZE) then -- processing step or sign-finalization step
           mul_product(63 downto 31) <= mul_do_add(32 downto 0);
           mul_product(30 downto 00) <= mul_product(31 downto 1);
         end if;
       -- ---------------------------------------------------------
-      else -- use direct approach using (several!) DSP blocks
-        if (start = '1') then
-          mul_op_x <= signed((opx(opx'left) and opx_is_signed) & opx);
-          mul_op_y <= signed((opy(opy'left) and opy_is_signed) & opy);
+      else -- use direct approach using DSP blocks
+        if (start_mul = '1') then
+          mul_op_x <= signed((rs1_i(rs1_i'left) and rs1_is_signed) & rs1_i);
+          mul_op_y <= signed((rs2_i(rs2_i'left) and rs2_is_signed) & rs2_i);
         end if;
-        mul_buf_ff <= mul_op_x * mul_op_y;
-        if (dsp_add_reg_stage_c = true) then -- add another reg stage?
-          mul_buf2_ff <= mul_buf_ff;
-          mul_product <= std_ulogic_vector(mul_buf2_ff(63 downto 0)); -- let the register balancing do the magic here
-        else
-          mul_product <= std_ulogic_vector(mul_buf_ff(63 downto 0)); -- let the register balancing do the magic here
-        end if;
+        mul_buf_ff  <= mul_op_x * mul_op_y;
+        mul_product <= std_ulogic_vector(mul_buf_ff(63 downto 0)); -- let the register balancing do the magic here
       end if;
     end if;
   end process multiplier_core;
 
-  -- MUL: do another addition --
-  mul_update: process(mul_product, mul_sign_cycle, mul_p_sext, opx_is_signed, opx)
+  -- do another addition --
+  mul_update: process(mul_product, mul_sign_cycle, mul_p_sext, rs1_is_signed, rs1_i)
   begin
-    -- current bit of opy to take care of --
+    -- current bit of rs2_i to take care of --
     if (mul_product(0) = '1') then -- multiply with 1
       if (mul_sign_cycle = '1') then -- for signed operations only: take care of negative weighted MSB -> multiply with -1
-        mul_do_add <= std_ulogic_vector(unsigned(mul_p_sext & mul_product(63 downto 32)) - unsigned((opx(opx'left) and opx_is_signed) & opx));
+        mul_do_add <= std_ulogic_vector(unsigned(mul_p_sext & mul_product(63 downto 32)) - unsigned((rs1_i(rs1_i'left) and rs1_is_signed) & rs1_i));
       else -- multiply with +1
-        mul_do_add <= std_ulogic_vector(unsigned(mul_p_sext & mul_product(63 downto 32)) + unsigned((opx(opx'left) and opx_is_signed) & opx));
+        mul_do_add <= std_ulogic_vector(unsigned(mul_p_sext & mul_product(63 downto 32)) + unsigned((rs1_i(rs1_i'left) and rs1_is_signed) & rs1_i));
       end if;
     else -- multiply with 0
       mul_do_add <= mul_p_sext & mul_product(63 downto 32);
@@ -264,8 +252,8 @@ begin
   end process mul_update;
 
   -- sign control --
-  mul_sign_cycle <= opy_is_signed when (state = FINALIZE) else '0';
-  mul_p_sext     <= mul_product(mul_product'left) and opx_is_signed;
+  mul_sign_cycle <= rs2_is_signed when (state = FINALIZE) else '0';
+  mul_p_sext     <= mul_product(mul_product'left) and rs1_is_signed;
 
 
   -- Divider Core (unsigned) ----------------------------------------------------------------
@@ -273,10 +261,10 @@ begin
   divider_core: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (start = '1') then -- start new division
-        quotient  <= opx;
+      if (start_div = '1') then -- start new division
+        quotient  <= div_opx;
         remainder <= (others => '0');
-      elsif ((state = PROCESSING) or (state = FINALIZE)) and (operation = '1') then -- running?
+      elsif (state = PROCESSING) or (state = FINALIZE) then -- running?
         quotient <= quotient(30 downto 0) & (not div_sub(32));
         if (div_sub(32) = '0') then -- still overflowing
           remainder <= div_sub(31 downto 0);
@@ -287,17 +275,13 @@ begin
     end if;
   end process divider_core;
 
-  -- DIV: try another subtraction --
-  div_sub <= std_ulogic_vector(unsigned('0' & remainder(30 downto 0) & quotient(31)) - unsigned('0' & opy));
+  -- try another subtraction --
+  div_sub <= std_ulogic_vector(unsigned('0' & remainder(30 downto 0) & quotient(31)) - unsigned('0' & div_opy));
 
-  -- Div sign compensation --
-  div_sign_comp_in <= opx when (state = INIT_OPX) else
-                      opy when (state = INIT_OPY) else
-                      quotient when ((cp_op = cp_op_div_c) or (cp_op = cp_op_divu_c)) else remainder;
-  div_sign_comp <= std_ulogic_vector(0 - unsigned(div_sign_comp_in));
-
-  -- result sign correction --
-  div_res <= div_sign_comp when (div_res_corr = '1') and (opy_is_zero = '0') else div_sign_comp_in;
+  -- result sign compensation --
+  div_sign_comp_in <= quotient when (cp_op = cp_op_div_c) else remainder;
+  div_sign_comp    <= std_ulogic_vector(0 - unsigned(div_sign_comp_in));
+  div_res          <= div_sign_comp when (div_res_corr = '1') and (opy_is_zero = '0') else div_sign_comp_in;
 
 
   -- Data Output ----------------------------------------------------------------------------
@@ -320,7 +304,7 @@ begin
             if (opy_is_zero = '0') then
               res_o <= div_res;
             else
-              res_o <= rs1;
+              res_o <= rs1_i;
             end if;
           when others => -- cp_op_remu_c
             res_o <= remainder;
