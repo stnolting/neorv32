@@ -13,6 +13,7 @@ Project maintainers may make pull requests against this repository to add or lin
 | :file_folder: [`arty-a7-35-test-setup`](https://github.com/stnolting/neorv32/tree/master/boards/arty-a7-35-test-setup) | [Digilent Arty A7-35](https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start) | Xilinx Artix-7 `XC7A35TICSG324-1L` | [stnolting](https://github.com/stnolting) |
 | :file_folder: [`nexys-a7-test-setup`](https://github.com/stnolting/neorv32/tree/master/boards/nexys-a7-test-setup) | [Digilent Nexys A7](https://reference.digilentinc.com/reference/programmable-logic/nexys-a7/start) | Xilinx Artix-7 `XC7A50TCSG324-1` | [AWenzel83](https://github.com/AWenzel83) |
 | :file_folder: [`nexys-a7-test-setup`](https://github.com/stnolting/neorv32/tree/master/boards/nexys-a7-test-setup) | [Digilent Nexys 4 DDR](https://reference.digilentinc.com/reference/programmable-logic/nexys-4-ddr/start) | Xilinx Artix-7 `XC7A100TCSG324-1` | [AWenzel83](https://github.com/AWenzel83) |
+| :file_folder: [`de0-nano-test-setup`](https://github.com/stnolting/neorv32/tree/master/boards/de0-nano-test-setup) | [Terasic DE0-Nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=139&No=593) | Intel Cyclone IV `EP4CE22F17C6N` | [stnolting](https://github.com/stnolting) |
 
 
 ### Adding Your Project Setup
