@@ -59,7 +59,7 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
   * [`X`](#X---NEORV32-specific-CPU-extensions) - NEORV32-specific extensions (always enabled)
   * [`Zfinx`](#Zfinx---Single-precision-floating-point-extension) - Single-precision floating-point extensions (optional)
   * [`Zicsr`](#Zicsr---Privileged-architecture---CSR-access-extension) - control and status register access instructions (+ exception/irq system) (optional)
-  * [`Zifencei`](#Zifencei---Privileged-architecture---Instruction-stream-synchronization-extension) - instruction stream synchronization (optional)
+  * [`Zifencei`](#Zifencei---Instruction-stream-synchronization-extension) - instruction stream synchronization (optional)
   * [`PMP`](#PMP---Privileged-architecture---Physical-memory-protection) - physical memory protection (optional)
   * [`HPM`](#HPM---Privileged-architecture---Hardware-performance-monitors) - hardware performance monitors (optional)
 * Full-scale RISC-V microcontroller system / **SoC** [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
@@ -167,10 +167,14 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Privilege levels: `machine` mode, `user` mode (if enabled via `U` extension)
   * Official [RISC-V open-source architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
 
 #### `A` - Atomic memory access extension
 
   * Supported instructions: `LR.W` (load-reservate) `SC.W` (store-conditional)
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 #### `B` - Bit manipulation instructions extension
@@ -184,6 +188,8 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * `Zbs` single-bit instructions: `SBSET[I]` `SBCLR[I]` `SBINV[I]` `SBEXT[I]`
   * `Zba` shifted-add instructions: `SH1ADD` `SH2ADD` `SH3ADD`
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
 
 #### `C` - Compressed instructions extension
 
@@ -193,9 +199,14 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * System instructions: `C.EBREAK` (requires `Zicsr` extension)
   * Pseudo-instructions are not listed
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
+
 #### `E` - Embedded CPU version extension
 
   * Reduced register file (only the 16 lowest registers are implemented)
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 #### `I` - Base integer instruction set
@@ -206,6 +217,8 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * System instructions: `ECALL` `EBREAK` `FENCE`
   * Pseudo-instructions are not listed
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
 
 #### `M` - Integer multiplication and division hardware extension
 
@@ -214,11 +227,15 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * By default, the multiplier and divider cores use an iterative bit-serial processing scheme
   * Multiplications can be mapped to DSPs via the `FAST_MUL_EN` generic to increase performance
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
 
 #### `U` - Privileged architecture - User mode extension
 
   * Requires `Zicsr` extension
   * Privilege levels: `M` (machine mode) + less-privileged `U` (user mode)
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 #### `X` - NEORV32-specific CPU extensions
@@ -227,6 +244,8 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 * 16 *fast interrupt* request channels with according control/status bits in `mie` and `mip` and custom exception codes in `mcause`
 * `mzext` CSR to check for implemented `Z*` CPU extensions (like `Zifencei`)
 * All undefined/umimplemented/malformed/illegal instructions do raise an illegal instruction exception
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 #### `Zfinx` - Single-precision floating-point extension
@@ -239,6 +258,8 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Comparison instructions: `FMIN.S` `FMAX.S` `FEQ.S` `FLT.S` `FLE.S` 
   * Conversion instructions: `FCVT.W.S` `FCVT.WU.S` `FCVT.S.W` `FCVT.S.WU`
   * Additional CSRs: `fcsr` `frm` `fflags`
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
   
 
 #### `Zicsr` - Privileged architecture - CSR access extension
@@ -266,10 +287,14 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
     * RISC-V machine external interrupt `mei` (via external signal)
     * 16 fast interrupt requests, 6+1 available for custom usage
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
-#### `Zifencei` - Privileged architecture - Instruction stream synchronization extension
+
+#### `Zifencei` - Instruction stream synchronization extension
 
   * System instructions: `FENCE.I` (among others, used to clear and reload instruction cache)
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 #### `PMP` - Privileged architecture - Physical memory protection
@@ -278,12 +303,16 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Configurable number of regions (0..63)
   * Additional machine CSRs: `pmpcfg*`(0..15) `pmpaddr*`(0..63)
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
 
 #### `HPM` - Privileged architecture - Hardware performance monitors
 
   * Requires `Zicsr` extension
   * Configurable number of counters (0..29)
   * Additional machine CSRs: `mhpmevent*`(3..31) `[m]hpmcounter*[h]`(3..31)
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 ### :warning: Non-RISC-V-Compatible Issues and Limitations
@@ -393,21 +422,20 @@ tests the capabilities of a CPU itself rather than the functions provided by the
 
 ~~~
 **Configuration**
-Hardware:       32kB IMEM, 16kB DMEM, no caches, 100MHz clock
+Hardware:       32kB IMEM, 8kB DMEM, no caches, 100MHz clock
 CoreMark:       2000 iterations, MEM_METHOD is MEM_STACK
 Compiler:       RISCV32-GCC 10.1.0 (rv32i toolchain)
 Compiler flags: default, see makefile
+Optimization:   -O3
 Peripherals:    UART for printing the results
 ~~~
 
 Results generated for hardware version [`1.4.9.8`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
-| CPU (including `Zicsr`)                     | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
+| CPU (including `Zicsr` extension)           | Executable Size | Optimization | CoreMark Score | CoreMarks/MHz |
 |:--------------------------------------------|:---------------:|:------------:|:--------------:|:-------------:|
 | `rv32i`                                     |    28 756 bytes |        `-O3` |          36.36 |    **0.3636** |
-| `rv32im`                                    |    27 516 bytes |        `-O3` |          68.97 |    **0.6897** |
 | `rv32imc`                                   |    22 008 bytes |        `-O3` |          68.97 |    **0.6897** |
-| `rv32imc` + `FAST_MUL_EN`                   |    22 008 bytes |        `-O3` |          86.96 |    **0.8696** |
 | `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |    22 008 bytes |        `-O3` |          90.91 |    **0.9091** |
 
 The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic). The `FAST_SHIFT_EN` configuration
@@ -433,12 +461,10 @@ by the number of executed instructions (`instret[h]` CSRs). The executables were
 
 Results generated for hardware version [`1.4.9.8`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
-| CPU  (including `Zicsr`)                    | Required Clock Cycles | Executed Instructions | Average CPI |
+| CPU  (including `Zicsr` extension)          | Required Clock Cycles | Executed Instructions | Average CPI |
 |:--------------------------------------------|----------------------:|----------------------:|:-----------:|
 | `rv32i`                                     |         5 595 750 503 |         1 466 028 607 |    **3.82** |
-| `rv32im`                                    |         2 966 086 503 |           598 651 143 |    **4.95** |
 | `rv32imc`                                   |         2 981 786 734 |           611 814 918 |    **4.87** |
-| `rv32imc` + `FAST_MUL_EN`                   |         2 399 234 734 |           611 814 918 |    **3.92** |
 | `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |         2 265 135 174 |           611 814 948 |    **3.70** |
 
 The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension (enabled via the `FAST_MUL_EN` generic). The `FAST_SHIFT_EN` configuration
@@ -716,6 +742,8 @@ link in question.
 
 "NeoPixel" is a trademark of Adafruit Industries.
 
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
 
 
 ## Acknowledgements
@@ -729,6 +757,8 @@ Continous integration provided by [:octocat: GitHub Actions](https://github.com/
 ![Open Source Hardware Logo https://www.oshwa.org](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/oshw_logo.png)
 
 This project is not affiliated with or endorsed by the Open Source Initiative (https://www.oshwa.org / https://opensource.org).
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 --------
 
