@@ -271,30 +271,36 @@ uint64_t neorv32_cpu_get_systime(void) {
 
 
 /**********************************************************************//**
- * Simple delay function using busy wait.
+ * Simple delay function using busy wait (simple loop).
  *
- * @warning This function requires the cycle[h] CSR(s). Hence, the Zicsr extension is mandatory.
+ * @warning This function is not really precise (especially if there is no M extension available)! Use a timer-based approach (using cycle or time CSRs) for precise timings.
  *
- * @param[in] time_ms Time in ms to wait.
+ * @param[in] time_ms Time in ms to wait (max 32767ms).
  **************************************************************************/
-void neorv32_cpu_delay_ms(uint32_t time_ms) {
+void neorv32_cpu_delay_ms(int16_t time_ms) {
 
-  // make sure cycle counter is enabled
-  asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTEREN_CY));
+  const uint32_t loop_cycles_c = 16; // clock cycles per iteration of the ASM loop
 
-  uint64_t time_resume = neorv32_cpu_get_cycle();
+  // check input
+  if (time_ms < 0) {
+    time_ms = -time_ms;
+  }
 
   uint32_t clock = SYSINFO_CLK; // clock ticks per second
   clock = clock / 1000; // clock ticks per ms
 
   uint64_t wait_cycles = ((uint64_t)clock) * ((uint64_t)time_ms);
-  time_resume += wait_cycles;
+  uint32_t ticks = (uint32_t)(wait_cycles / loop_cycles_c);
 
-  while(1) {
-    if (neorv32_cpu_get_cycle() >= time_resume) {
-      break;
-    }
-  }
+  asm volatile (" .balign 4                                        \n" // make sure this is 32-bit aligned
+                " __neorv32_cpu_delay_ms_start:                    \n"
+                " beq  %[cnt_r], zero, __neorv32_cpu_delay_ms_end  \n" // 3 cycles (not taken)
+                " beq  %[cnt_r], zero, __neorv32_cpu_delay_ms_end  \n" // 3 cycles (never taken)
+                " addi %[cnt_w], %[cnt_r], -1                      \n" // 2 cycles
+                " nop                                              \n" // 2 cycles
+                " j    __neorv32_cpu_delay_ms_start                \n" // 6 cycles
+                " __neorv32_cpu_delay_ms_end: "
+                : [cnt_w] "=r" (ticks) : [cnt_r] "r" (ticks));
 }
 
 
@@ -307,10 +313,10 @@ void __attribute__((naked)) neorv32_cpu_goto_user_mode(void) {
 
   // make sure to use NO registers in here! -> naked
 
-  asm volatile ("csrw mepc, ra           \n\t" // move return address to mepc so we can return using "mret". also, we can now use ra as general purpose register in here
-                "li ra, %[input_imm]     \n\t" // bit mask to clear the two MPP bits
-                "csrrc zero, mstatus, ra \n\t" // clear MPP bits -> MPP=u-mode
-                "mret                    \n\t" // return and switch to user mode
+  asm volatile ("csrw mepc, ra           \n" // move return address to mepc so we can return using "mret". also, we can now use ra as general purpose register in here
+                "li ra, %[input_imm]     \n" // bit mask to clear the two MPP bits
+                "csrrc zero, mstatus, ra \n" // clear MPP bits -> MPP=u-mode
+                "mret                    \n" // return and switch to user mode
                 :  : [input_imm] "i" ((1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L)));
 }
 
