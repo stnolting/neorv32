@@ -23,7 +23,7 @@ configuration and entity details and `create_project.tcl` for the according FPGA
 * GPIO output port `gpio_o` (8-bit) connected to the 8 green user LEDs ("LED7" - "LED0")
 * UART0 signals `uart0_txd_o` and `uart0_rxd_i` are connected to the 40-pin **GPIO_0** header
   * `uart0_txd_o:` output, connected to FPGA pin `C3` - header pin `GPIO_01` (pin number "4")
-  * `uart0_rxd_i:` input, connected to FPGA pin `A3` - header pin `GPIO_00` (pin number "6")
+  * `uart0_rxd_i:` input, connected to FPGA pin `A3` - header pin `GPIO_03` (pin number "6")
 
 :warning: The default [`neorv32_test_setup.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd) top entity
 is configured for a 100MHz input clock. Since the on-board oscillator of the DE0-nano board generates a 50MHz clock, the test setup has to be modified.
