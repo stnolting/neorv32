@@ -181,10 +181,10 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl_state    <= S_IDLE;
-      cmd_buf       <= (others => '0');
-      rs1_reg       <= (others => '0');
-      rs2_reg       <= (others => '0');
-      less_ff       <= '0';
+      cmd_buf       <= (others => def_rst_val_c);
+      rs1_reg       <= (others => def_rst_val_c);
+      rs2_reg       <= (others => def_rst_val_c);
+      less_ff       <= def_rst_val_c;
       shifter.start <= '0';
       valid         <= '0';
     elsif rising_edge(clk_i) then

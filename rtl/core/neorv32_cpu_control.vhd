@@ -262,7 +262,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type mhpmcnt_t      is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpm_cnt_lo_width_c downto 0); -- max 32-bit, plus 1-bit overflow
   type mhpmcnth_t     is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpm_cnt_hi_width_c-1 downto 0); -- max 32-bit
   type mhpmevent_rd_t is array (0 to 29) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
-  type mhpmcnt_rd_t   is array (0 to 29) of std_ulogic_vector(32 downto 0);
+  type mhpmcnt_rd_t   is array (0 to 29) of std_ulogic_vector(31 downto 0);
   type mhpmcnth_rd_t  is array (0 to 29) of std_ulogic_vector(31 downto 0);
   type csr_t is record
     addr              : std_ulogic_vector(11 downto 0); -- csr address
@@ -359,7 +359,7 @@ begin
     if (rstn_i = '0') then
       fetch_engine.state      <= IFETCH_RESET;
       fetch_engine.state_prev <= IFETCH_RESET;
-      fetch_engine.pc         <= (others => '0');
+      fetch_engine.pc         <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       if (fetch_engine.reset = '1') then
         fetch_engine.state <= IFETCH_RESET;
@@ -473,7 +473,7 @@ begin
     if (rstn_i = '0') then
       issue_engine.state <= ISSUE_ACTIVE;
       issue_engine.align <= CPU_BOOT_ADDR(1); -- 32- or 16-bit boundary
-      issue_engine.buf   <= (others => '0');
+      issue_engine.buf   <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       if (ipb.clear = '1') then
         if (CPU_EXTENSION_RISCV_C = true) then
@@ -662,14 +662,26 @@ begin
 
   -- Execute Engine FSM Sync ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- for registers that DO require a specific reset state --
-  execute_engine_fsm_sync_rst: process(rstn_i, clk_i)
+  execute_engine_fsm_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      -- registers that DO require a specific reset state --
       execute_engine.pc       <= CPU_BOOT_ADDR(data_width_c-1 downto 1) & '0';
       execute_engine.state    <= SYS_WAIT;
       execute_engine.sleep    <= '0';
       execute_engine.branched <= '1'; -- reset is a branch from "somewhere"
+      -- no dedicated RESEt required --
+      execute_engine.state_prev <= SYS_WAIT;
+      execute_engine.i_reg      <= (others => def_rst_val_c);
+      execute_engine.is_ci      <= def_rst_val_c;
+      execute_engine.is_cp_op   <= def_rst_val_c;
+      execute_engine.last_pc    <= (others => def_rst_val_c);
+      execute_engine.i_reg_last <= (others => def_rst_val_c);
+      execute_engine.next_pc    <= (others => def_rst_val_c);
+      ctrl                      <= (others => def_rst_val_c);
+      --
+      ctrl(ctrl_bus_rd_c)       <= '0';
+      ctrl(ctrl_bus_wr_c)       <= '0';
     elsif rising_edge(clk_i) then
       -- PC update --
       if (execute_engine.pc_we = '1') then
@@ -683,14 +695,7 @@ begin
       execute_engine.state    <= execute_engine.state_nxt;
       execute_engine.sleep    <= execute_engine.sleep_nxt;
       execute_engine.branched <= execute_engine.branched_nxt;
-    end if;
-  end process execute_engine_fsm_sync_rst;
-
-
-  -- for registers that do NOT require a specific reset state --
-  execute_engine_fsm_sync: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
+      --
       execute_engine.state_prev <= execute_engine.state;
       execute_engine.i_reg      <= execute_engine.i_reg_nxt;
       execute_engine.is_ci      <= execute_engine.is_ci_nxt;
@@ -711,6 +716,7 @@ begin
       ctrl <= ctrl_nxt;
     end if;
   end process execute_engine_fsm_sync;
+
 
   -- PC increment for next linear instruction (+2 for compressed instr., +4 otherwise) --
   execute_engine.next_pc_inc <= x"00000004" when ((execute_engine.is_ci = '0') or (CPU_EXTENSION_RISCV_C = false)) else x"00000002";
@@ -1612,12 +1618,12 @@ begin
   begin
     if (rstn_i = '0') then
       trap_ctrl.exc_buf   <= (others => '0');
-      trap_ctrl.irq_buf   <= (others => '-');
+      trap_ctrl.irq_buf   <= (others => '0');
       trap_ctrl.exc_ack   <= '0';
       trap_ctrl.irq_ack   <= (others => '0');
       trap_ctrl.env_start <= '0';
-      trap_ctrl.cause     <= (others => '0');
-      trap_ctrl.firq_sync <= (others => '-');
+      trap_ctrl.cause     <= (others => def_rst_val_c);
+      trap_ctrl.firq_sync <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
         -- exception buffer: misaligned load/store/instruction address
@@ -1864,7 +1870,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   csr_write_access: process(rstn_i, clk_i)
   begin
-    -- NOTE: Register that reset to '-' do NOT actually have a real reset and have to be
+    -- NOTE: Register that reset to "def_rst_val_c" do NOT actually have a real reset by default (def_rst_val_c = '-') and have to be
     -- explicitly initialized by software!
     -- see: https://forums.xilinx.com/t5/General-Technical-Discussion/quot-Don-t-care-quot-reset-value/td-p/412845
     if (rstn_i = '0') then
@@ -1874,33 +1880,33 @@ begin
       csr.mstatus_mpie <= '0';
       csr.mstatus_mpp  <= (others => '0');
       csr.privilege    <= priv_mode_m_c; -- start in MACHINE mode
-      csr.mie_msie     <= '-';
-      csr.mie_meie     <= '-';
-      csr.mie_mtie     <= '-';
-      csr.mie_firqe    <= (others => '-');
-      csr.mtvec        <= (others => '-');
+      csr.mie_msie     <= def_rst_val_c;
+      csr.mie_meie     <= def_rst_val_c;
+      csr.mie_mtie     <= def_rst_val_c;
+      csr.mie_firqe    <= (others => def_rst_val_c);
+      csr.mtvec        <= (others => def_rst_val_c);
       csr.mscratch     <= x"19880704";
-      csr.mepc         <= (others => '-');
-      csr.mcause       <= (others => '-');
-      csr.mtval        <= (others => '-');
-      csr.mip_clear    <= (others => '-');
+      csr.mepc         <= (others => def_rst_val_c);
+      csr.mcause       <= (others => def_rst_val_c);
+      csr.mtval        <= (others => def_rst_val_c);
+      csr.mip_clear    <= (others => def_rst_val_c);
       --
       csr.pmpcfg  <= (others => (others => '0'));
-      csr.pmpaddr <= (others => (others => '-'));
+      csr.pmpaddr <= (others => (others => def_rst_val_c));
       --
-      csr.mhpmevent <= (others => (others => '-'));
+      csr.mhpmevent <= (others => (others => def_rst_val_c));
       --
-      csr.mcounteren_cy  <= '-';
-      csr.mcounteren_tm  <= '-';
-      csr.mcounteren_ir  <= '-';
-      csr.mcounteren_hpm <= (others => '-');
+      csr.mcounteren_cy  <= def_rst_val_c;
+      csr.mcounteren_tm  <= def_rst_val_c;
+      csr.mcounteren_ir  <= def_rst_val_c;
+      csr.mcounteren_hpm <= (others => def_rst_val_c);
       --
       csr.mcountinhibit_cy  <= '1';
       csr.mcountinhibit_ir  <= '1';
       csr.mcountinhibit_hpm <= (others => '1');
       --
-      csr.fflags <= (others => '-');
-      csr.frm    <= (others => '-');
+      csr.fflags <= (others => def_rst_val_c);
+      csr.frm    <= (others => def_rst_val_c);
 
     elsif rising_edge(clk_i) then
       -- write access? --
@@ -2049,8 +2055,8 @@ begin
               for i in 0 to HPM_NUM_CNTS-1 loop
                 if (csr.addr(4 downto 0) = std_ulogic_vector(to_unsigned(i+3, 5))) then
                   csr.mhpmevent(i) <= csr.wdata(csr.mhpmevent(i)'left downto 0);
-                  csr.mhpmevent(i)(1) <= '0'; -- would be used for "TIME"
                 end if;
+                csr.mhpmevent(i)(hpmcnt_event_never_c) <= '0'; -- would be used for "TIME"
               end loop; -- i (CSRs)
             end if;
           end if;

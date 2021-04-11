@@ -179,9 +179,11 @@ begin
 
   -- Data Interface: Access Address ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_adr_reg: process(clk_i)
+  mem_adr_reg: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      mar <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
         mar <= addr_i;
       end if;
@@ -213,9 +215,11 @@ begin
 
   -- Data Interface: Write Data -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_do_reg: process(clk_i)
+  mem_do_reg: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      mdo <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
         mdo <= wdata_i; -- memory data output register (MDO)
       end if;
@@ -254,9 +258,11 @@ begin
 
   -- Data Interface: Read Data --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_out_buf: process(clk_i)
+  mem_out_buf: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      mdi <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mi_we_c) = '1') then
         mdi <= d_bus_rdata; -- memory data input register (MDI)
       end if;

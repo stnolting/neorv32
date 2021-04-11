@@ -345,13 +345,13 @@ begin
     if (rstn_i = '0') then
       ctrl_engine.state      <= S_IDLE;
       ctrl_engine.start      <= '0';
-      fpu_operands.frm       <= (others => '0');
-      fpu_operands.rs1       <= (others => '0');
-      fpu_operands.rs1_class <= (others => '0');
-      fpu_operands.rs2       <= (others => '0');
-      fpu_operands.rs2_class <= (others => '0');
-      funct_ff               <= (others => '0');
-      cmp_ff                 <= (others => '0');
+      fpu_operands.frm       <= (others => def_rst_val_c);
+      fpu_operands.rs1       <= (others => def_rst_val_c);
+      fpu_operands.rs1_class <= (others => def_rst_val_c);
+      fpu_operands.rs2       <= (others => def_rst_val_c);
+      fpu_operands.rs2_class <= (others => def_rst_val_c);
+      funct_ff               <= (others => def_rst_val_c);
+      cmp_ff                 <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       -- arbiter defaults --
       ctrl_engine.valid <= '0';
@@ -1233,24 +1233,24 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl.state   <= S_IDLE;
-      ctrl.norm_r  <= '0';
-      ctrl.cnt     <= (others => '0');
-      ctrl.cnt_pre <= (others => '0');
-      ctrl.cnt_of  <= '0';
-      ctrl.cnt_uf  <= '0';
-      ctrl.rounded <= '0';
-      ctrl.res_exp <= (others => '0');
-      ctrl.res_man <= (others => '0');
-      ctrl.res_sgn <= '0';
-      ctrl.class   <= (others => '0');
-      ctrl.flags   <= (others => '0');
+      ctrl.norm_r  <= def_rst_val_c;
+      ctrl.cnt     <= (others => def_rst_val_c);
+      ctrl.cnt_pre <= (others => def_rst_val_c);
+      ctrl.cnt_of  <= def_rst_val_c;
+      ctrl.cnt_uf  <= def_rst_val_c;
+      ctrl.rounded <= def_rst_val_c;
+      ctrl.res_exp <= (others => def_rst_val_c);
+      ctrl.res_man <= (others => def_rst_val_c);
+      ctrl.res_sgn <= def_rst_val_c;
+      ctrl.class   <= (others => def_rst_val_c);
+      ctrl.flags   <= (others => def_rst_val_c);
       --
-      sreg.upper   <= (others => '0');
-      sreg.lower   <= (others => '0');
-      sreg.dir     <= '0';
-      sreg.ext_g   <= '0';
-      sreg.ext_r   <= '0';
-      sreg.ext_s   <= '0';
+      sreg.upper   <= (others => def_rst_val_c);
+      sreg.lower   <= (others => def_rst_val_c);
+      sreg.dir     <= def_rst_val_c;
+      sreg.ext_g   <= def_rst_val_c;
+      sreg.ext_r   <= def_rst_val_c;
+      sreg.ext_s   <= def_rst_val_c;
       --
       done_o       <= '0';
     elsif rising_edge(clk_i) then
@@ -1609,18 +1609,18 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl.state      <= S_IDLE;
-      ctrl.cnt        <= (others => '0');
-      ctrl.sign       <= '0';
-      ctrl.class      <= (others => '0');
-      ctrl.rounded    <= '0';
-      ctrl.over       <= '0';
-      ctrl.under      <= '0';
-      ctrl.unsign     <= '0';
-      ctrl.result     <= (others => '0');
-      ctrl.result_tmp <= (others => '0');
-      sreg.int        <= (others => '0');
-      sreg.mant       <= (others => '0');
-      sreg.ext_s      <= '0';
+      ctrl.cnt        <= (others => def_rst_val_c);
+      ctrl.sign       <= def_rst_val_c;
+      ctrl.class      <= (others => def_rst_val_c);
+      ctrl.rounded    <= def_rst_val_c;
+      ctrl.over       <= def_rst_val_c;
+      ctrl.under      <= def_rst_val_c;
+      ctrl.unsign     <= def_rst_val_c;
+      ctrl.result     <= (others => def_rst_val_c);
+      ctrl.result_tmp <= (others => def_rst_val_c);
+      sreg.int        <= (others => def_rst_val_c);
+      sreg.mant       <= (others => def_rst_val_c);
+      sreg.ext_s      <= def_rst_val_c;
       done_o          <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --

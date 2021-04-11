@@ -52,6 +52,7 @@ package neorv32_package is
   -- CPU core --
   constant ipb_entries_c   : natural := 2; -- entries in CPU instruction prefetch buffer, has to be a power of 2, default=2
   constant cp_timeout_en_c : boolean := false; -- auto-terminate pending co-processor operations after 256 cycles (for debugging only), default = false
+  constant def_rst_val_c   : std_ulogic := '-'; -- default hardware reset value for UNCRITICAL registers ('-' = reset value is irrelevant (saves hardware), '0' = defined LOW reset value)
 
   -- "critical" number of implemented PMP regions --
   -- if more PMP regions (> pmp_num_regions_critical_c) are defined, another register stage is automatically inserted into the memory interfaces
@@ -61,7 +62,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050308"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050309"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
 
@@ -825,7 +826,7 @@ package neorv32_package is
   -- HPM Event System -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant hpmcnt_event_cy_c      : natural := 0;  -- Active cycle
-  constant hpmcnt_event_never_c   : natural := 1;
+  constant hpmcnt_event_never_c   : natural := 1;  -- Unused / never (actually, this would be used for TIME)
   constant hpmcnt_event_ir_c      : natural := 2;  -- Retired instruction
   constant hpmcnt_event_cir_c     : natural := 3;  -- Retired compressed instruction
   constant hpmcnt_event_wait_if_c : natural := 4;  -- Instruction fetch memory wait cycle

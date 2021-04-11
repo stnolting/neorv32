@@ -120,14 +120,14 @@ begin
   begin
     if (rstn_i = '0') then
       state        <= IDLE;
-      div_opx      <= (others => '-');
-      div_opy      <= (others => '-');
-      cnt          <= (others => '-');
-      cp_op_ff     <= (others => '-');
+      div_opx      <= (others => def_rst_val_c);
+      div_opy      <= (others => def_rst_val_c);
+      cnt          <= (others => def_rst_val_c);
+      cp_op_ff     <= (others => def_rst_val_c);
       start_div    <= '0';
       valid        <= '0';
-      div_res_corr <= '0';
-      opy_is_zero  <= '0';
+      div_res_corr <= def_rst_val_c;
+      opy_is_zero  <= def_rst_val_c;
     elsif rising_edge(clk_i) then
       -- defaults --
       start_div <= '0';
