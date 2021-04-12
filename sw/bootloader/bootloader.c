@@ -68,11 +68,11 @@
 /** Enable auto-boot sequence if != 0 */
 #define AUTOBOOT_EN            (1)
 /** Time until the auto-boot sequence starts (in seconds) */
-#define AUTOBOOT_TIMEOUT       8
+#define AUTOBOOT_TIMEOUT       (8)
 /** Set to 0 to disable bootloader status LED */
 #define STATUS_LED_EN          (1)
-/** SPI_DIRECT_BOOT_EN: Define/uncomment to enable SPI direct boot (disables the entire user console!) */
-//#define SPI_DIRECT_BOOT_EN
+/** Set to 1 to enable SPI direct boot (disables the entire user console!) */
+#define SPI_DIRECT_BOOT_EN     (0)
 /** Bootloader status LED at GPIO output port */
 #define STATUS_LED             (0)
 /** SPI flash boot image base address (warning! address might wrap-around!) */
@@ -84,7 +84,7 @@
 /** SPI flash sector size in bytes (default = 64kb) */
 #define SPI_FLASH_SECTOR_SIZE  (64*1024)
 /** ASCII char to start fast executable upload process (for use with automatic upload scripts) */
-#define FAST_UPLOAD_CMD        '#'
+#define FAST_UPLOAD_CMD        ('#')
 /**@}*/
 
 
@@ -191,8 +191,9 @@ void spi_flash_write_addr(uint32_t addr);
  **************************************************************************/
 int main(void) {
 
-#ifdef __riscv_compressed
-  #warning In order to allow the bootloader to run on any CPU configuration it should be compiled using the base ISA (rv32i/e) only.
+// check ISA
+#if defined __riscv_atomic || defined __riscv_a || __riscv_b || __riscv_compressed || defined __riscv_c || defined __riscv_mul || defined __riscv_m
+  #warning In order to allow the bootloader to run on *ANY* CPU configuration it should be compiled using the base ISA (rv32i/e) only.
 #endif
 
   exe_available = 0; // global variable for executable size; 0 means there is no exe available
@@ -214,10 +215,10 @@ int main(void) {
     neorv32_spi_setup(CLK_PRSC_128, 0, 0);
   }
 
-  if (STATUS_LED_EN == 1) {
+#if (STATUS_LED_EN != 0)
     // activate status LED, clear all others
     neorv32_gpio_port_set(1 << STATUS_LED);
-  }
+#endif
 
   // init UART (no parity bit, no hardware flow control)
   neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
@@ -238,7 +239,7 @@ int main(void) {
   // Bootloader will directly boot and execute image from SPI memory.
   // No user UART console is available in this mode!
   // ------------------------------------------------
-#ifdef SPI_DIRECT_BOOT_EN
+#if (SPI_DIRECT_BOOT_EN != 0)
   #warning Compiling bootloader in 'SPI direct boot mode'. Bootloader will directly boot from SPI memory. No user UART console will be available.
 
   neorv32_uart_print("\nNEORV32 bootloader\nAccessing SPI flash at ");
@@ -418,10 +419,10 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
 
   // make sure this was caused by MTIME IRQ
   if (cause == TRAP_CODE_MTI) { // raw exception code for MTI
-    if (STATUS_LED_EN == 1) {
+#if (STATUS_LED_EN != 0)
       // toggle status LED
       neorv32_gpio_pin_toggle(STATUS_LED);
-    }
+#endif
     // set time for next IRQ
     neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (SYSINFO_CLK/4));
   }
@@ -433,9 +434,9 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
     }
     // unknown error
     else {
-      neorv32_uart_print("\n\nEXC (");
+      neorv32_uart_print("\n\nEXCEPTION mcause=");
       print_hex_word(cause);
-      neorv32_uart_print(") @ 0x");
+      neorv32_uart_print(" @ pc=");
       print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
       system_error(ERROR_SYSTEM);
     }
@@ -633,7 +634,7 @@ void system_error(uint8_t err_code) {
  **************************************************************************/
 void print_hex_word(uint32_t num) {
 
-  static const char hex_symbols[16] = "0123456789ABCDEF";
+  static const char hex_symbols[16] = "0123456789abcdef";
 
   neorv32_uart_print("0x");
 
