@@ -206,6 +206,7 @@ begin
     -- Extension Options --
     FAST_MUL_EN                  => false,         -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => false,         -- use barrel shifter for shift operations
+    CPU_CNT_WIDTH                => 64,            -- total width of CPU cycle and instret counters (0..64)
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              => 4,             -- number of regions (0..64)
     PMP_MIN_GRANULARITY          => 64*1024,       -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
