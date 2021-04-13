@@ -69,6 +69,19 @@ __crt0_reg_file_clear:
 
 
 // *********************************************************
+// Setup pointers using linker script symbols
+// *********************************************************
+__crt0_pointer_init:
+.option push
+.option norelax
+  la    sp, __crt0_stack_begin
+  andi  sp, sp, 0xfffffffc // make sure this is aligned
+  addi  fp, sp, 0          // frame pointer = stack pointer
+  la gp, __global_pointer$ // global pointer
+.option pop
+
+
+// *********************************************************
 // Setup CPU core CSRs (some of them DO NOT have a dedicated reset and need to be explicitly initialized)
 // *********************************************************
 __crt0_cpu_csr_init:
@@ -131,19 +144,6 @@ __crt0_cpu_csr_init:
   addi x31, x0, 0
 #endif
 #endif
-
-
-// *********************************************************
-// Setup pointers using linker script symbols
-// *********************************************************
-__crt0_pointer_init:
-.option push
-.option norelax
-  la    sp, __crt0_stack_begin
-  andi  sp, sp, 0xfffffffc // make sure this is aligned
-  addi  fp, sp, 0          // frame pointer = stack pointer
-  la gp, __global_pointer$ // global pointer
-.option pop
 
 
 // *********************************************************
