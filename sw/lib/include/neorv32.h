@@ -509,7 +509,9 @@ enum NEORV32_CSR_MZEXT_enum {
   CSR_MZEXT_ZBB      = 2, /**< CPU mzext CSR (2): Zbb extension (B sub-extension) available when set (r/-) */
   CSR_MZEXT_ZBS      = 3, /**< CPU mzext CSR (3): Zbs extension (B sub-extension) available when set (r/-) */
   CSR_MZEXT_ZBA      = 4, /**< CPU mzext CSR (4): Zba extension (B sub-extension) available when set (r/-) */
-  CSR_MZEXT_ZFINX    = 5  /**< CPU mzext CSR (5): Zfinx extension (F sub-/alternative-extension) available when set (r/-) */
+  CSR_MZEXT_ZFINX    = 5, /**< CPU mzext CSR (5): Zfinx extension (F sub-/alternative-extension) available when set (r/-) */
+  CSR_MZEXT_ZXSCNT   = 6, /**< CPU mzext CSR (6): Custom extension - Small CPU counters: "cycle" & "instret" CSRs have less than 64-bit when set (r/-) */
+  CSR_MZEXT_ZXNOCNT  = 7  /**< CPU mzext CSR (7): Custom extension - NO CPU counters: "cycle" & "instret" CSRs are NOT available at all when set (r/-) */
 };
 
 
