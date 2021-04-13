@@ -1,17 +1,12 @@
 -- #################################################################################################
 -- # << NEORV32 - Machine System Timer (MTIME) >>                                                  #
 -- # ********************************************************************************************* #
--- # Compatible to RISC-V spec's mtime & mtimecmp.                                                 #
--- # Write mtime.LO first when updating the system time. System time should be written only at     #
--- # system start. RISC-V spec. exception: The MTIME interrupt is ACKed by the processor itself.   #
--- # However, the  achine time cannot issue a new interrupt until the mtimecmp.HI register is      #
--- # written again.                                                                                #
--- # Note: The 64-bit time and compare system is broken and de-coupled into two 32-bit systems.    #
--- # Note: The register of this unit can only be written in WORD MODE.                             #
+-- # Compatible to RISC-V spec's 64-bit MACHINE system timer including "mtime[h]" & "mtimecmp[h]". #
+-- # Note: The 64-bit counter and compare system is broken and de-coupled into two 32-bit systems. #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -125,7 +120,7 @@ begin
       -- mtime high --
       if (wren = '1') and (addr = mtime_time_hi_addr_c) then
         mtime_hi <= data_i;
-      elsif ((mtime_lo_msb_ff xor mtime_lo(mtime_lo'left)) = '1') then -- mtime_lo carry?
+      elsif ((mtime_lo_msb_ff xor mtime_lo(mtime_lo'left)) = '1') then -- auto increment: mtime_lo carry?
         mtime_hi <= std_ulogic_vector(unsigned(mtime_hi) + 1);
       end if;
     end if;
@@ -147,7 +142,7 @@ begin
             data_o <= mtime_hi;
           when mtime_cmp_lo_addr_c => -- mtimecmp LOW
             data_o <= mtimecmp_lo;
-          when others => -- mtime_cmp_hi_addr_c -  mtimecmp HIGH
+          when others => -- mtime_cmp_hi_addr_c -- mtimecmp HIGH
             data_o <= mtimecmp_hi;
         end case;
       end if;
