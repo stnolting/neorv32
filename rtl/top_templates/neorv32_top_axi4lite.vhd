@@ -65,6 +65,7 @@ entity neorv32_top_axi4lite is
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
+    CPU_CNT_WIDTH                : natural := 64;     -- total width of CPU cycle and instret counters (0..64)
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..64)
     PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
@@ -267,12 +268,13 @@ begin
     -- Extension Options --
     FAST_MUL_EN                  => FAST_MUL_EN,        -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,      -- use barrel shifter for shift operations
+    CPU_CNT_WIDTH                => CPU_CNT_WIDTH,      -- total width of CPU cycle and instret counters (0..64)
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              => PMP_NUM_REGIONS,    -- number of regions (0..64)
     PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY, -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 => HPM_NUM_CNTS,       -- number of implemented HPM counters (0..29)
-    HPM_CNT_WIDTH                =>HPM_CNT_WIDTH,       -- total size of HPM counters (1..64)
+    HPM_CNT_WIDTH                => HPM_CNT_WIDTH,      -- total size of HPM counters (1..64)
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              => MEM_INT_IMEM_EN,    -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE,  -- size of processor-internal instruction memory in bytes
