@@ -144,10 +144,10 @@ int main() {
 
 
   // reset performance counter
-  neorv32_cpu_csr_write(CSR_CYCLEH, 0);
-  neorv32_cpu_csr_write(CSR_CYCLE, 0);
-  neorv32_cpu_csr_write(CSR_INSTRETH, 0);
-  neorv32_cpu_csr_write(CSR_INSTRET, 0);
+  neorv32_cpu_csr_write(CSR_MCYCLEH, 0);
+  neorv32_cpu_csr_write(CSR_MCYCLE, 0);
+  neorv32_cpu_csr_write(CSR_MINSTRETH, 0);
+  neorv32_cpu_csr_write(CSR_MINSTRET, 0);
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable performance counter auto increment (ALL counters)
   neorv32_cpu_csr_write(CSR_MCOUNTEREN, 7); // allow access from user-mode code to standard counters only
 
