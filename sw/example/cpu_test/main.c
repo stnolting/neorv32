@@ -160,13 +160,13 @@ int main() {
   // fancy intro
   // -----------------------------------------------
   // logo
-//neorv32_rte_print_logo();
-//
-//// show project credits
-//neorv32_rte_print_credits();
-//
-//// show full HW config report
-//neorv32_rte_print_hw_config();
+  neorv32_rte_print_logo();
+
+  // show project credits
+  neorv32_rte_print_credits();
+
+  // show full HW config report
+  neorv32_rte_print_hw_config();
 
 
   // configure RTE
