@@ -6,7 +6,7 @@ The latest release is [![release](https://img.shields.io/github/v/release/stnolt
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases). The most recent version of the *NEORV32 data sheet*
 can be found [here](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
 
-:information_source: To see a list of all commits between release run `git log RELEASE_A..RELEASE_B` (example: `v1.4.7.0..v1.4.8.0`).
+:information_source: To see a list of all commits between releases run `git log RELEASE_A..RELEASE_B` (example: `v1.4.7.0..v1.4.8.0`).
 
 :information_source: The processor can determine it's version from the `mimpid` CSR (at CSR address 0xf13). A 8x4-bit BCD representation is used.
 Leading zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`. The version number is globally
@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 13.04.2021 | 1.5.3.10 | :bug: fixed bug when configuring `HPM_CNT_WIDTH` less than 32; :warning: added new generic `CPU_CNT_WIDTH` to configure total size of CPU's `cycle` and `instret` CSRs (default = 64-bit); added `Zxnocnt` (no counters) and `Zxscnt` (small counters) flags to `mzexr` CSR to check if `CPU_CNT_WIDTH` is zero or less than 64, respectively; :bug: fixed bug in `crt0.S` start-up code: stack pointer has to be initialized before an exception can occur; updated `cpu_test` example program |
 | 11.04.2021 | 1.5.3.9 | :warning: reworked CPU reset system (in addition to modifications in v1.5.3.7): default reset: most register are "initialized" with '-' (don't care) since no real reset is required; however, a "real" reset can be configured using the packages 'def_rst_val_c' constant that defines the reset value for all "uncritical regsiter" (see new NEORV32.pdf section 2.11 "CPU Hardware Reset") |
 | 09.04.2021 | 1.5.3.8 | optimized CPU control: register write back during multi-cycle ALU operation only when result is really available (reducing switching activity; avoids possible source operand corruption); optimized `M` extension's co-processor: multiplications and divisions are 2 cycles faster |
 | 08.04.2021 | 1.5.3.7 | :bug: fixed bug in HPM event configuration via `mhpmevent*` CSRs - there was a CSR address decoding overlap between the HPM event CSRs and the machine trap setup CSRs (introduced in version 1.5.3.6); :warning: reworked CPU core CSRs: most CSRs are not reset by hardware and need explicit initialization (done by crt0.S start-up code) |
