@@ -72,6 +72,7 @@ entity neorv32_cpu is
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
+    CPU_CNT_WIDTH                : natural := 64;    -- total width of CPU cycle and instret counters (0..64)
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              : natural := 0;     -- number of regions (0..64)
     PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
@@ -169,12 +170,16 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- hardware reset notifier --
-  assert not (def_rst_val_c  = '-') report "NEORV32 CPU CONFIG NOTE: Using NO hardware reset for uncritical registers (default, might reduce area footprint)." severity note;
-  assert not (def_rst_val_c  = '0') report "NEORV32 CPU CONFIG NOTE: Using defined hardware reset for uncritical registers (non-default, might increase area footprint)." severity note;
+  assert not (def_rst_val_c  = '-') report "NEORV32 CPU CONFIG NOTE: Using NO dedicated hardware reset for uncritical registers (default, might reduce area footprint). Set the package constant <def_rst_val_c> to '0' if you need a defined reset value." severity note;
+  assert not (def_rst_val_c  = '0') report "NEORV32 CPU CONFIG NOTE: Using defined hardware reset for uncritical registers (non-default, set-to-zero, might increase area footprint)." severity note;
   assert not ((def_rst_val_c /= '-') and (def_rst_val_c /= '0')) report "NEORV32 CPU CONFIG ERROR! Invalid configuration of package <def_rst_val_c> constant (has to be '-' or '0')." severity error;
 
   -- CSR system --
   assert not (CPU_EXTENSION_RISCV_Zicsr = false) report "NEORV32 CPU CONFIG WARNING! No exception/interrupt/trap/privileged features available when <CPU_EXTENSION_RISCV_Zicsr> = false." severity warning;
+
+  -- CPU counters (cycle and instret) --
+  assert not ((CPU_CNT_WIDTH < 0) or (CPU_CNT_WIDTH > 64)) report "NEORV32 CPU CONFIG ERROR! Invalid <CPU_CNT_WIDTH> configuration. Has to be 0..64." severity error;
+  assert not (CPU_CNT_WIDTH < 64) report "NEORV32 CPU CONFIG WARNING! Implementing CPU <cycle> and <instret> CSRs with reduced size (" & integer'image(CPU_CNT_WIDTH) & "-bit instead of 64-bit). This is not RISC-V compliant and might have unintended SW side effects." severity warning;
 
   -- U-extension requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report "NEORV32 CPU CONFIG ERROR! User mode requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
@@ -228,6 +233,8 @@ begin
     CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
+    -- Extension Options --
+    CPU_CNT_WIDTH                => CPU_CNT_WIDTH,                -- total width of CPU cycle and instret counters (0..64)
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS              => PMP_NUM_REGIONS,              -- number of regions (0..64)
     PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY,          -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes

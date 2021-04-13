@@ -62,7 +62,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050309"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050310"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
 
@@ -70,6 +70,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   function index_size_f(input : natural) return natural;
   function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural;
+  function cond_sel_int_f(cond : boolean; val_t : integer; val_f : integer) return integer;
   function cond_sel_stdulogicvector_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector;
   function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string;
   function bool_to_ulogic_f(cond : boolean) return std_ulogic;
@@ -263,7 +264,7 @@ package neorv32_package is
   constant ctrl_bus_excl_c      : natural := 41; -- exclusive bus access
   -- co-processors --
   constant ctrl_cp_id_lsb_c     : natural := 42; -- cp select ID lsb
-  constant ctrl_cp_id_hsb_c     : natural := 43; -- cp select ID hsb
+  constant ctrl_cp_id_hsb_c     : natural := 43; -- cp select ID
   constant ctrl_cp_id_msb_c     : natural := 44; -- cp select ID msb
   -- current privilege level --
   constant ctrl_priv_lvl_lsb_c  : natural := 45; -- privilege level lsb
@@ -876,6 +877,7 @@ package neorv32_package is
       -- Extension Options --
       FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
+      CPU_CNT_WIDTH                : natural := 64;    -- total width of CPU cycle and instret counters (0..64)
       -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..64)
       PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
@@ -993,6 +995,7 @@ package neorv32_package is
       -- Extension Options --
       FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
+      CPU_CNT_WIDTH                : natural := 64;    -- total width of CPU cycle and instret counters (0..64)
       -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS              : natural := 0;     -- number of regions (0..64)
       PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
@@ -1060,6 +1063,8 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
+      -- Extension Options --
+      CPU_CNT_WIDTH                : natural := 64; -- total width of CPU cycle and instret counters (0..64)
       -- Physical memory protection (PMP) --
       PMP_NUM_REGIONS              : natural := 0;     -- number of regions (0..64)
       PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
@@ -1806,6 +1811,17 @@ package body neorv32_package is
       return val_f;
     end if;
   end function cond_sel_natural_f;
+
+  -- Function: Conditional select integer ---------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function cond_sel_int_f(cond : boolean; val_t : integer; val_f : integer) return integer is
+  begin
+    if (cond = true) then
+      return val_t;
+    else
+      return val_f;
+    end if;
+  end function cond_sel_int_f;
 
   -- Function: Conditional select std_ulogic_vector -----------------------------------------
   -- -------------------------------------------------------------------------------------------
