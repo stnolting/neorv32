@@ -282,7 +282,6 @@ void neorv32_rte_print_hw_config(void) {
 
   // ID
   neorv32_uart_printf("Hart ID:           0x%x\n", neorv32_cpu_csr_read(CSR_MHARTID));
-
   neorv32_uart_printf("Vendor ID:         0x%x\n", neorv32_cpu_csr_read(CSR_MVENDORID));
 
   tmp = neorv32_cpu_csr_read(CSR_MARCHID);
@@ -352,6 +351,12 @@ void neorv32_rte_print_hw_config(void) {
   }
   if (tmp & (1<<CSR_MZEXT_ZFINX)) {
     neorv32_uart_printf("Zfinx ");
+  }
+  if (tmp & (1<<CSR_MZEXT_ZXNOCNT)) {
+    neorv32_uart_printf("Zxnocnt(!) ");
+  }
+  if (tmp & (1<<CSR_MZEXT_ZXSCNT)) {
+    neorv32_uart_printf("Zxscnt(!) ");
   }
 
   // check physical memory protection
