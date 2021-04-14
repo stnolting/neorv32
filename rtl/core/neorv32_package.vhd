@@ -62,7 +62,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050310"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050311"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
 
@@ -909,7 +909,7 @@ package neorv32_package is
       IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
       IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
-      IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0); -- custom CFS configuration generic
+      IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
       IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
       IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
       IO_NCO_EN                    : boolean := true;   -- implement numerically-controlled oscillator (NCO)?
@@ -1861,9 +1861,9 @@ package body neorv32_package is
   function or_all_f(a : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
   begin
-    tmp_v := a(a'low);
+    tmp_v := '0';
     if (a'low < a'high) then -- not null range?
-      for i in a'low+1 to a'high loop
+      for i in a'low to a'high loop
         tmp_v := tmp_v or a(i);
       end loop; -- i
     end if;
@@ -1875,9 +1875,9 @@ package body neorv32_package is
   function and_all_f(a : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
   begin
-    tmp_v := a(a'low);
+    tmp_v := '1';
     if (a'low < a'high) then -- not null range?
-      for i in a'low+1 to a'high loop
+      for i in a'low to a'high loop
         tmp_v := tmp_v and a(i);
       end loop; -- i
     end if;
@@ -1889,9 +1889,9 @@ package body neorv32_package is
   function xor_all_f(a : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
   begin
-    tmp_v := a(a'low);
+    tmp_v := '0';
     if (a'low < a'high) then -- not null range?
-      for i in a'low+1 to a'high loop
+      for i in a'low to a'high loop
         tmp_v := tmp_v xor a(i);
       end loop; -- i
     end if;
@@ -1903,9 +1903,9 @@ package body neorv32_package is
   function xnor_all_f(a : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
   begin
-    tmp_v := a(a'low);
+    tmp_v := '1';
     if (a'low < a'high) then -- not null range?
-      for i in a'low+1 to a'high loop
+      for i in a'low to a'high loop
         tmp_v := tmp_v xnor a(i);
       end loop; -- i
     end if;
