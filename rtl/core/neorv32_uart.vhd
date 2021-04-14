@@ -403,6 +403,9 @@ begin
 
   -- SIMULATION Output ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+-- pragma translate_off
+-- synthesis translate_off
+-- RTL_SYNTHESIS OFF
   sim_output: process(clk_i) -- for SIMULATION ONLY!
     file file_uart_text_out : text open write_mode is sim_uart_text_file_c;
     file file_uart_data_out : text open write_mode is sim_uart_data_file_c;
@@ -451,6 +454,8 @@ begin
       end if;
     end if;
   end process sim_output;
-
+-- RTL_SYNTHESIS ON
+-- synthesis translate_on
+-- pragma translate_on
 
 end neorv32_uart_rtl;
