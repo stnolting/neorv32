@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 14.04.2021 | 1.5.3.11 | minor rtl edits to allow synthesis using [`ghdl-yosys-plugin`](https://github.com/ghdl/ghdl-yosys-plugin) (:construction: work in progress :construction:)
 | 13.04.2021 | 1.5.3.10 | :bug: fixed bug when configuring `HPM_CNT_WIDTH` less than 32; :warning: added new generic `CPU_CNT_WIDTH` to configure total size of CPU's `cycle` and `instret` CSRs (default = 64-bit); added `Zxnocnt` (no counters) and `Zxscnt` (small counters) flags to `mzexr` CSR to check if `CPU_CNT_WIDTH` is zero or less than 64, respectively; :bug: fixed bug in `crt0.S` start-up code: stack pointer has to be initialized before an exception can occur; updated `cpu_test` example program |
 | 11.04.2021 | 1.5.3.9 | :warning: reworked CPU reset system (in addition to modifications in v1.5.3.7): default reset: most register are "initialized" with '-' (don't care) since no real reset is required; however, a "real" reset can be configured using the packages 'def_rst_val_c' constant that defines the reset value for all "uncritical regsiter" (see new NEORV32.pdf section 2.11 "CPU Hardware Reset") |
 | 09.04.2021 | 1.5.3.8 | optimized CPU control: register write back during multi-cycle ALU operation only when result is really available (reducing switching activity; avoids possible source operand corruption); optimized `M` extension's co-processor: multiplications and divisions are 2 cycles faster |
