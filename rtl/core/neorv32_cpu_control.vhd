@@ -436,17 +436,17 @@ begin
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  instr_prefetch_buffer: process(clk_i)
+  instr_prefetch_buffer_ctrl: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      ipb.w_pnt <= (others => def_rst_val_c);
+      ipb.r_pnt <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       -- write port --
       if (ipb.clear = '1') then
         ipb.w_pnt <= (others => '0');
       elsif (ipb.we = '1') then
         ipb.w_pnt <= std_ulogic_vector(unsigned(ipb.w_pnt) + 1);
-      end if;
-      if (ipb.we = '1') then -- write data
-        ipb.data(to_integer(unsigned(ipb.w_pnt(ipb.w_pnt'left-1 downto 0)))) <= ipb.wdata;
       end if;
       -- read port --
       if (ipb.clear = '1') then
@@ -455,7 +455,16 @@ begin
         ipb.r_pnt <= std_ulogic_vector(unsigned(ipb.r_pnt) + 1);
       end if;
     end if;
-  end process instr_prefetch_buffer;
+  end process instr_prefetch_buffer_ctrl;
+
+  instr_prefetch_buffer_data: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if (ipb.we = '1') then -- write access
+        ipb.data(to_integer(unsigned(ipb.w_pnt(ipb.w_pnt'left-1 downto 0)))) <= ipb.wdata;
+      end if;
+    end if;
+  end process instr_prefetch_buffer_data;
 
   -- async read --
   ipb.rdata <= ipb.data(to_integer(unsigned(ipb.r_pnt(ipb.r_pnt'left-1 downto 0))));
@@ -603,11 +612,13 @@ begin
 
   -- Immediate Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  imm_gen: process(execute_engine.i_reg, clk_i)
+  imm_gen: process(execute_engine.i_reg, rstn_i, clk_i)
     variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      imm_o <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       if (execute_engine.state = BRANCH) then -- next_PC as immediate for jump-and-link operations (=return address) via ALU.MOV_B
         imm_o <= execute_engine.next_pc;
       else -- "normal" immediate from instruction word
@@ -2228,10 +2239,20 @@ begin
 
   -- Control and Status Registers - Counters ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_counters: process(clk_i)
+  csr_counters: process(rstn_i, clk_i)
   begin
-    -- Counter CSRs (each counter is split into two 32-bit counters)
-    if rising_edge(clk_i) then
+    -- Counter CSRs (each counter is split into two 32-bit counters - coupled via an MSB overflow detector)
+    if (rstn_i = '0') then
+      csr.mcycle       <= (others => def_rst_val_c);
+      mcycle_msb       <= def_rst_val_c;
+      csr.mcycleh      <= (others => def_rst_val_c);
+      csr.minstret     <= (others => def_rst_val_c);
+      minstret_msb     <= def_rst_val_c;
+      csr.minstreth    <= (others => def_rst_val_c);
+      csr.mhpmcounter  <= (others => (others => def_rst_val_c));
+      mhpmcounter_msb  <= (others => def_rst_val_c);
+      csr.mhpmcounterh <= (others => (others => def_rst_val_c));
+    elsif rising_edge(clk_i) then
 
       -- [m]cycle --
       csr.mcycle(csr.mcycle'left downto cpu_cnt_lo_width_c+1) <= (others => '0'); -- set unsued bits to zero
@@ -2334,9 +2355,12 @@ begin
 
   -- Hardware Performance Monitor - Counter Event Control -----------------------------------
   -- -------------------------------------------------------------------------------------------
-  hpmcnt_ctrl: process(clk_i)
+  hpmcnt_ctrl: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      cnt_event      <= (others => def_rst_val_c);
+      hpmcnt_trigger <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       -- buffer event sources --
       cnt_event <= cnt_event_nxt;
       -- enable selected triggers by ANDing actual events and according CSR configuration bits --
@@ -2375,9 +2399,12 @@ begin
 
   -- Control and Status Registers - Read Access ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_read_access: process(clk_i)
+  csr_read_access: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      csr.re    <= def_rst_val_c;
+      csr.rdata <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       csr.re    <= csr.re_nxt; -- read access?
       csr.rdata <= (others => '0'); -- default output
       if (CPU_EXTENSION_RISCV_Zicsr = true) and (csr.re = '1') then

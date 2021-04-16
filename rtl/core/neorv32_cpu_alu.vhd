@@ -155,7 +155,7 @@ begin
 
   -- Shifter Unit ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  shifter_unit: process(clk_i)
+  shifter_unit: process(rstn_i, clk_i)
     variable bs_input_v   : std_ulogic_vector(data_width_c-1 downto 0);
     variable bs_level_4_v : std_ulogic_vector(data_width_c-1 downto 0);
     variable bs_level_3_v : std_ulogic_vector(data_width_c-1 downto 0);
@@ -163,7 +163,12 @@ begin
     variable bs_level_1_v : std_ulogic_vector(data_width_c-1 downto 0);
     variable bs_level_0_v : std_ulogic_vector(data_width_c-1 downto 0);
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      shifter.sreg    <= (others => def_rst_val_c);
+      shifter.cnt     <= (others => def_rst_val_c);
+      shifter.bs_d_in <= (others => def_rst_val_c);
+      shifter.bs_a_in <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       shifter.cmd_ff <= shifter.cmd;
 
       -- --------------------------------------------------------------------------------

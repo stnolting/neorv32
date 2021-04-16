@@ -247,10 +247,15 @@ begin
 
   -- Shifter Function Core ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  shifter_unit: process(clk_i)
+  shifter_unit: process(rstn_i, clk_i)
     variable new_bit_v : std_ulogic;
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      shifter.cnt     <= (others => def_rst_val_c);
+      shifter.sreg    <= (others => def_rst_val_c);
+      shifter.cnt_max <= (others => def_rst_val_c);
+      shifter.bcnt    <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       if (shifter.start = '1') then -- trigger new shift
         shifter.cnt <= (others => '0');
         -- shift operand --
@@ -397,9 +402,11 @@ begin
 
   -- Output Gate ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  output_gate: process(clk_i)
+  output_gate: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      res_o <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       res_o <= (others => '0');
       if (valid = '1') then
         res_o <= res_out(op_clz_c)   or res_out(op_cpop_c)  or -- res_out(op_ctz_c) is unused here

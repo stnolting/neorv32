@@ -448,9 +448,11 @@ begin
   -- Physical Memory Protection (PMP) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- compute address masks (ITERATIVE!!!) --
-  pmp_masks: process(clk_i)
+  pmp_masks: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then -- address mask computation (not the actual address check!) has a latency of max +32 cycles
+    if (rstn_i = '0') then
+      pmp.addr_mask <= (others => (others => def_rst_val_c));
+    elsif rising_edge(clk_i) then -- address mask computation (not the actual address check!) has a latency of max +32 cycles
       for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
         pmp.addr_mask(r) <= (others => '0');
         for i in pmp_g_c to data_width_c-1 loop

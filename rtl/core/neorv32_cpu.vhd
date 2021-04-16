@@ -170,8 +170,8 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- hardware reset notifier --
-  assert not (def_rst_val_c  = '-') report "NEORV32 CPU CONFIG NOTE: Using NO dedicated hardware reset for uncritical registers (default, might reduce area footprint). Set the package constant <def_rst_val_c> to '0' if you need a defined reset value." severity note;
-  assert not (def_rst_val_c  = '0') report "NEORV32 CPU CONFIG NOTE: Using defined hardware reset for uncritical registers (non-default, set-to-zero, might increase area footprint)." severity note;
+  assert not ((dedicated_reset_c = false) and (def_rst_val_c = '-')) report "NEORV32 CPU CONFIG NOTE: Using NO dedicated hardware reset for uncritical registers (default, might reduce area footprint). Set the package constant <dedicated_reset_c> to TRUE if you need a defined reset value." severity note;
+  assert not ((dedicated_reset_c = true)  and (def_rst_val_c = '0')) report "NEORV32 CPU CONFIG NOTE: Using defined hardware reset for uncritical registers (non-default, reset-to-zero, might increase area footprint)." severity note;
   assert not ((def_rst_val_c /= '-') and (def_rst_val_c /= '0')) report "NEORV32 CPU CONFIG ERROR! Invalid configuration of package <def_rst_val_c> constant (has to be '-' or '0')." severity error;
 
   -- CSR system --
@@ -373,9 +373,13 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- "pseudo" co-processor for atomic operations
   -- required to get the result of a store-conditional operation into the data path
-  atomic_op_cp: process(clk_i)
+  atomic_op_cp: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      atomic_sc_val    <= def_rst_val_c;
+      atomic_sc_res    <= def_rst_val_c;
+      atomic_sc_res_ff <= def_rst_val_c;
+    elsif rising_edge(clk_i) then
       atomic_sc_val <= cp_start(1);
       atomic_sc_res <= bus_excl_ok;
       if (atomic_sc_val = '1') then

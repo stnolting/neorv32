@@ -50,21 +50,14 @@ package neorv32_package is
   constant xbus_big_endian_c : boolean := true; -- external memory access byte order: true=big endian (default); false=little endian
 
   -- CPU core --
-  constant ipb_entries_c   : natural := 2; -- entries in CPU instruction prefetch buffer, has to be a power of 2, default=2
-  constant cp_timeout_en_c : boolean := false; -- auto-terminate pending co-processor operations after 256 cycles (for debugging only), default = false
-  constant def_rst_val_c   : std_ulogic := '-'; -- default hardware reset value for UNCRITICAL registers ('-' = reset value is irrelevant (saves hardware), '0' = defined LOW reset value)
+  constant ipb_entries_c     : natural := 2; -- entries in CPU instruction prefetch buffer, has to be a power of 2, default=2
+  constant cp_timeout_en_c   : boolean := false; -- auto-terminate pending co-processor operations after 256 cycles (for debugging only), default = false
+  constant dedicated_reset_c : boolean := false; -- use dedicated hardware reset value for UNCRITICAL registers (FALSE=reset value is irrelevant (might simplify HW), default; TRUE=defined LOW reset value)
 
   -- "critical" number of implemented PMP regions --
   -- if more PMP regions (> pmp_num_regions_critical_c) are defined, another register stage is automatically inserted into the memory interfaces
   -- increasing instruction fetch & data access latency by +1 cycle but also reducing critical path length
   constant pmp_num_regions_critical_c : natural := 8; -- default=8
-
-  -- Architecture Constants (do not modify!) ------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050311"; -- no touchy!
-  constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
-  constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
 
   -- Helper Functions -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -72,6 +65,7 @@ package neorv32_package is
   function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural;
   function cond_sel_int_f(cond : boolean; val_t : integer; val_f : integer) return integer;
   function cond_sel_stdulogicvector_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector;
+  function cond_sel_stdulogic_f(cond : boolean; val_t : std_ulogic; val_f : std_ulogic) return std_ulogic;
   function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string;
   function bool_to_ulogic_f(cond : boolean) return std_ulogic;
   function or_all_f(a : std_ulogic_vector) return std_ulogic;
@@ -83,6 +77,14 @@ package neorv32_package is
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
   function bswap32_f(input : std_ulogic_vector) return std_ulogic_vector;
+
+  -- Architecture Constants (do not modify!) ------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  constant data_width_c   : natural := 32; -- native data path width - do not change!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050312"; -- no touchy!
+  constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
+  constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
+  constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
 
   -- Internal Types -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1833,6 +1835,17 @@ package body neorv32_package is
       return val_f;
     end if;
   end function cond_sel_stdulogicvector_f;
+
+  -- Function: Conditional select std_ulogic ------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function cond_sel_stdulogic_f(cond : boolean; val_t : std_ulogic; val_f : std_ulogic) return std_ulogic is
+  begin
+    if (cond = true) then
+      return val_t;
+    else
+      return val_f;
+    end if;
+  end function cond_sel_stdulogic_f;
 
   -- Function: Conditional select string ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------

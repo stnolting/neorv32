@@ -104,6 +104,8 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   signal div_res          : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- multiplier core --
+  signal mul_product_p  : std_ulogic_vector(63 downto 0);
+  signal mul_product_s  : std_ulogic_vector(63 downto 0);
   signal mul_product    : std_ulogic_vector(63 downto 0);
   signal mul_do_add     : std_ulogic_vector(data_width_c downto 0);
   signal mul_sign_cycle : std_ulogic;
@@ -212,29 +214,38 @@ begin
 
   -- Multiplier Core (signed/unsigned) ------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  multiplier_core: process(clk_i)
+  multiplier_core_serial: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
-      -- ---------------------------------------------------------
+    if (rstn_i = '0') then
+      mul_product_s <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       if (FAST_MUL_EN = false) then -- use small iterative computation
         if (start_mul = '1') then -- start new multiplication
-          mul_product(63 downto 32) <= (others => '0');
-          mul_product(31 downto 00) <= rs2_i;
+          mul_product_s(63 downto 32) <= (others => '0');
+          mul_product_s(31 downto 00) <= rs2_i;
         elsif (state = PROCESSING) or (state = FINALIZE) then -- processing step or sign-finalization step
-          mul_product(63 downto 31) <= mul_do_add(32 downto 0);
-          mul_product(30 downto 00) <= mul_product(31 downto 1);
+          mul_product_s(63 downto 31) <= mul_do_add(32 downto 0);
+          mul_product_s(30 downto 00) <= mul_product_s(31 downto 1);
         end if;
-      -- ---------------------------------------------------------
-      else -- use direct approach using DSP blocks
+      end if;
+    end if;
+  end process multiplier_core_serial;
+
+  multiplier_core_dsp: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if (FAST_MUL_EN = true) then -- use direct approach using DSP blocks
         if (start_mul = '1') then
           mul_op_x <= signed((rs1_i(rs1_i'left) and rs1_is_signed) & rs1_i);
           mul_op_y <= signed((rs2_i(rs2_i'left) and rs2_is_signed) & rs2_i);
         end if;
-        mul_buf_ff  <= mul_op_x * mul_op_y;
-        mul_product <= std_ulogic_vector(mul_buf_ff(63 downto 0)); -- let the register balancing do the magic here
+        mul_buf_ff    <= mul_op_x * mul_op_y;
+        mul_product_p <= std_ulogic_vector(mul_buf_ff(63 downto 0)); -- let the register balancing do the magic here
       end if;
     end if;
-  end process multiplier_core;
+  end process multiplier_core_dsp;
+
+  mul_product <= mul_product_p when (FAST_MUL_EN = true) else mul_product_s;
 
   -- do another addition --
   mul_update: process(mul_product, mul_sign_cycle, mul_p_sext, rs1_is_signed, rs1_i)
@@ -258,9 +269,12 @@ begin
 
   -- Divider Core (unsigned) ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  divider_core: process(clk_i)
+  divider_core: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      quotient  <= (others => def_rst_val_c);
+      remainder <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       if (start_div = '1') then -- start new division
         quotient  <= div_opx;
         remainder <= (others => '0');
@@ -286,9 +300,11 @@ begin
 
   -- Data Output ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  operation_result: process(clk_i)
+  operation_result: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      res_o <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       res_o <= (others => '0');
       if (valid = '1') then
         case cp_op_ff is

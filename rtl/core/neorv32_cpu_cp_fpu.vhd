@@ -428,10 +428,15 @@ begin
 
   -- Floating-Point Comparator --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  float_comparator: process(clk_i)
+  float_comparator: process(rstn_i, clk_i)
     variable cond_v : std_ulogic_vector(1 downto 0);
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      comp_equal_ff   <= def_rst_val_c;
+      comp_less_ff    <= def_rst_val_c;
+      fu_compare.done <= def_rst_val_c;
+      fu_min_max.done <= def_rst_val_c;
+    elsif rising_edge(clk_i) then
       -- equal --
       if ((fpu_operands.rs1_class(fp_class_pos_inf_c)   = '1') and (fpu_operands.rs2_class(fp_class_pos_inf_c) = '1')) or -- +inf == +inf
          ((fpu_operands.rs1_class(fp_class_neg_inf_c)   = '1') and (fpu_operands.rs2_class(fp_class_neg_inf_c) = '1')) or -- -inf == -inf
@@ -575,11 +580,14 @@ begin
 
   -- Convert: [unsigned] Integer to Float (FCVT.W.S) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
-  convert_i2f: process(clk_i)
+  convert_i2f: process(rstn_i, clk_i)
   begin
     -- this process only computes the absolute input value
     -- the actual conversion is done by the normalizer
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      fu_conv_i2f.result <= (others => def_rst_val_c);
+      fu_conv_i2f.sign   <= def_rst_val_c;
+    elsif rising_edge(clk_i) then
       if (ctrl_i(ctrl_ir_funct12_0_c) = '0') and (rs1_i(31) = '1') then -- convert signed integer
         fu_conv_i2f.result <= std_ulogic_vector(0 - unsigned(rs1_i));
         fu_conv_i2f.sign   <= rs1_i(31); -- original sign
@@ -594,9 +602,20 @@ begin
 
   -- Multiplier Core (FMUL) -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  multiplier_core: process(clk_i)
-  begin 
-    if rising_edge(clk_i) then
+  multiplier_core: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      multiplier.opa                <= (others => '-'); -- these might be DSP regs!
+      multiplier.opb                <= (others => '-'); -- these might be DSP regs!
+      multiplier.buf_ff             <= (others => '-'); -- these might be DSP regs!
+      multiplier.product            <= (others => '-'); -- these might be DSP regs!
+      multiplier.sign               <= def_rst_val_c;
+      multiplier.exp_res            <= (others => def_rst_val_c);
+      multiplier.flags(fp_exc_of_c) <= def_rst_val_c;
+      multiplier.flags(fp_exc_uf_c) <= def_rst_val_c;
+      multiplier.flags(fp_exc_nv_c) <= def_rst_val_c;
+      multiplier.latency            <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       -- multiplier core --
       if (multiplier.start = '1') then -- FIXME / TODO remove buffer?
         multiplier.opa <= unsigned('1' & fpu_operands.rs1(22 downto 0)); -- append hidden one
@@ -645,14 +664,21 @@ begin
 
 
   -- result class -- 
-  multiplier_class_core: process(clk_i)
+  multiplier_class_core: process(rstn_i, clk_i)
     variable a_pos_norm_v, a_neg_norm_v, b_pos_norm_v, b_neg_norm_v : std_ulogic;
     variable a_pos_subn_v, a_neg_subn_v, b_pos_subn_v, b_neg_subn_v : std_ulogic;
     variable a_pos_zero_v, a_neg_zero_v, b_pos_zero_v, b_neg_zero_v : std_ulogic;
     variable a_pos_inf_v,  a_neg_inf_v,  b_pos_inf_v,  b_neg_inf_v  : std_ulogic;
     variable a_snan_v,     a_qnan_v,     b_snan_v,     b_qnan_v     : std_ulogic;
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      multiplier.res_class(fp_class_pos_norm_c) <= def_rst_val_c;
+      multiplier.res_class(fp_class_neg_norm_c) <= def_rst_val_c;
+      multiplier.res_class(fp_class_pos_inf_c)  <= def_rst_val_c;
+      multiplier.res_class(fp_class_neg_inf_c)  <= def_rst_val_c;
+      multiplier.res_class(fp_class_pos_zero_c) <= def_rst_val_c;
+      multiplier.res_class(fp_class_neg_zero_c) <= def_rst_val_c;
+    elsif rising_edge(clk_i) then
       -- minions --
       a_pos_norm_v := fpu_operands.rs1_class(fp_class_pos_norm_c);    b_pos_norm_v := fpu_operands.rs2_class(fp_class_pos_norm_c);
       a_neg_norm_v := fpu_operands.rs1_class(fp_class_neg_norm_c);    b_neg_norm_v := fpu_operands.rs2_class(fp_class_neg_norm_c);
@@ -745,9 +771,21 @@ begin
 
   -- Adder/Subtractor Core (FADD, FSUB) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  adder_subtractor_core: process(clk_i)
-  begin 
-    if rising_edge(clk_i) then
+  adder_subtractor_core: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      addsub.latency   <= (others => def_rst_val_c);
+      addsub.exp_comp  <= (others => def_rst_val_c);
+      addsub.man_sreg  <= (others => def_rst_val_c);
+      addsub.exp_cnt   <= (others => def_rst_val_c);
+      addsub.man_g_ext <= def_rst_val_c;
+      addsub.man_r_ext <= def_rst_val_c;
+      addsub.man_s_ext <= def_rst_val_c;
+      addsub.man_comp  <= def_rst_val_c;
+      addsub.add_stage <= (others => def_rst_val_c);
+      addsub.res_sign  <= def_rst_val_c;
+      addsub.flags(fp_exc_nv_c) <= def_rst_val_c;
+    elsif rising_edge(clk_i) then
       -- arbitration / latency --
       if (ctrl_engine.state = S_IDLE) then -- hacky "reset"
         addsub.latency <= (others => '0');
@@ -865,14 +903,20 @@ begin
 
 
   -- result class -- 
-  adder_subtractor_class_core: process(clk_i)
+  adder_subtractor_class_core: process(rstn_i, clk_i)
     variable a_pos_norm_v, a_neg_norm_v, b_pos_norm_v, b_neg_norm_v : std_ulogic;
     variable a_pos_subn_v, a_neg_subn_v, b_pos_subn_v, b_neg_subn_v : std_ulogic;
     variable a_pos_zero_v, a_neg_zero_v, b_pos_zero_v, b_neg_zero_v : std_ulogic;
     variable a_pos_inf_v,  a_neg_inf_v,  b_pos_inf_v,  b_neg_inf_v  : std_ulogic;
     variable a_snan_v,     a_qnan_v,     b_snan_v,     b_qnan_v     : std_ulogic;
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      addsub.res_class(fp_class_pos_inf_c)  <= def_rst_val_c;
+      addsub.res_class(fp_class_neg_inf_c)  <= def_rst_val_c;
+      addsub.res_class(fp_class_pos_zero_c) <= def_rst_val_c;
+      addsub.res_class(fp_class_neg_zero_c) <= def_rst_val_c;
+      addsub.res_class(fp_class_qnan_c)     <= def_rst_val_c;
+    elsif rising_edge(clk_i) then
       -- minions --
       a_pos_norm_v := fpu_operands.rs1_class(fp_class_pos_norm_c);    b_pos_norm_v := fpu_operands.rs2_class(fp_class_pos_norm_c);
       a_neg_norm_v := fpu_operands.rs1_class(fp_class_neg_norm_c);    b_neg_norm_v := fpu_operands.rs2_class(fp_class_neg_norm_c);
@@ -1079,9 +1123,12 @@ begin
 
   -- Result Output to CPU Pipeline ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  output_gate: process(clk_i)
+  output_gate: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      res_o    <= (others => def_rst_val_c);
+      fflags_o <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
       if (ctrl_engine.valid = '1') then
         case funct_ff is
           when op_class_c =>
