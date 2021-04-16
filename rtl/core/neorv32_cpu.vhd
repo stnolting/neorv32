@@ -72,6 +72,7 @@ entity neorv32_cpu is
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
+    TINY_SHIFT_EN                : boolean := false; -- use tiny (single-bit) shifter for shift operations
     CPU_CNT_WIDTH                : natural := 64;    -- total width of CPU cycle and instret counters (0..64)
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              : natural := 0;     -- number of regions (0..64)
@@ -315,7 +316,8 @@ begin
   neorv32_cpu_alu_inst: neorv32_cpu_alu
   generic map (
     CPU_EXTENSION_RISCV_M => CPU_EXTENSION_RISCV_M, -- implement muld/div extension?
-    FAST_SHIFT_EN         => FAST_SHIFT_EN          -- use barrel shifter for shift operations
+    FAST_SHIFT_EN         => FAST_SHIFT_EN,         -- use barrel shifter for shift operations
+    TINY_SHIFT_EN         => TINY_SHIFT_EN          -- use tiny (single-bit) shifter for shift operations
   )
   port map (
     -- global control --
