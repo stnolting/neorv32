@@ -158,9 +158,7 @@ void read_memory(void) {
 
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
-  register uint32_t mem_data = 0;
-
-  asm volatile ("lw %[rdata], 0(%[raddr])" : [rdata] "=r" (mem_data) : [raddr] "r" (mem_address));
+  uint32_t mem_data = neorv32_cpu_load_unsigned_word(mem_address);
 
   // show memory content if there was no exception
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
@@ -181,20 +179,19 @@ void write_memory(void) {
   // enter address
   neorv32_uart_printf("Enter address (8 hex chars): 0x");
   neorv32_uart_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
-  register uint32_t mem_address = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+  uint32_t mem_address = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
   // enter data
   neorv32_uart_printf("\nEnter data (8 hex chars): 0x");
   neorv32_uart_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
-  register uint32_t mem_data = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+  uint32_t mem_data = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
   // perform write access
   neorv32_uart_printf("\n[0x%x] = ", mem_address);
 
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
-  asm volatile ("sw %[wdata], 0(%[waddr])" :  : [wdata] "r" (mem_data), [waddr] "r" (mem_address));
-  asm volatile ("nop");
+  neorv32_cpu_store_unsigned_word(mem_address, mem_data);
 
   // show memory content if there was no exception
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
@@ -254,22 +251,21 @@ void dump_memory(void) {
   // enter base address
   neorv32_uart_printf("Enter base address (8 hex chars): 0x");
   neorv32_uart_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
-  register uint32_t mem_address = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+  uint32_t mem_address = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
   neorv32_uart_printf("\nPress key to start dumping. Press any key to abort.\n");
 
   neorv32_uart_getc(); // wait for key
 
   // perform read accesses
-  register uint32_t mem_data = 0;
+  uint32_t mem_data = 0;
   while(neorv32_uart_char_received() == 0) {
 
     neorv32_uart_printf("[0x%x] = ", mem_address);
 
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
-    asm volatile ("lw %[rdata], 0(%[raddr])" : [rdata] "=r" (mem_data) : [raddr] "r" (mem_address));
-    asm volatile ("nop");
+    mem_data = neorv32_cpu_load_unsigned_word(mem_address);
 
     // show memory content if there was no exception
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {

@@ -48,13 +48,17 @@
  **************************************************************************/
 /**@{*/
 /** UART BAUD rate */
-#define BAUD_RATE 19200
+#define BAUD_RATE           (19200)
 //** Reachable unaligned address */
-#define ADDR_UNALIGNED   0x00000002
+#define ADDR_UNALIGNED      (0x00000002)
 //** Unreachable word-aligned address */
-#define ADDR_UNREACHABLE (IO_BASE_ADDRESS-4)
-//* external memory base address */
-#define EXT_MEM_BASE     0xF0000000
+#define ADDR_UNREACHABLE    (IO_BASE_ADDRESS-4)
+//** external memory base address */
+#define EXT_MEM_BASE        (0xF0000000)
+//** exclusive access to this address will always succeed */
+#define ATOMIC_SUCCESS_ADDR (EXT_MEM_BASE + 0)
+//** exclusive access to this address will always fail */
+#define ATOMIC_FAILURE_ADDR (EXT_MEM_BASE + 4)
 /**@}*/
 
 
@@ -73,24 +77,6 @@ int cnt_ok   = 0;
 int cnt_test = 0;
 /// Global numbe rof available HPMs
 uint32_t num_hpm_cnts_global = 0;
-
-
-/**********************************************************************//**
- * Unreachable memory-mapped register that should be always available
- **************************************************************************/
-#define MMR_UNREACHABLE (*(IO_REG32 (ADDR_UNREACHABLE)))
-
-
-/**********************************************************************//**
- * "Simulated external IO" - exclusive access will always succeed
- **************************************************************************/
-# define ATOMIC_SUCCESS (*(IO_REG32 (EXT_MEM_BASE + 0)))
-
-
-/**********************************************************************//**
- * "Simulated external IO" - exclusive access will always fail
- **************************************************************************/
-# define ATOMIC_FAILURE (*(IO_REG32 (EXT_MEM_BASE + 4)))
 
 
 /**********************************************************************//**
@@ -366,10 +352,10 @@ int main() {
   }
 
 
-  // ----------------------------------------------------------
-  // Bus timeout latency estimation
-  // out of order :P
-  // ----------------------------------------------------------
+//// ----------------------------------------------------------
+//// Bus timeout latency estimation
+//// out of order :P
+//// ----------------------------------------------------------
 //neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 //neorv32_uart_printf("[%i] Estimating bus time-out latency: ", cnt_test);
 //cnt_test++;
@@ -749,7 +735,7 @@ int main() {
   cnt_test++;
 
   // load from unreachable aligned address
-  dummy_dst = MMR_UNREACHABLE;
+  dummy_dst = neorv32_cpu_load_unsigned_word(ADDR_UNREACHABLE);
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) {
     test_ok();
@@ -785,7 +771,7 @@ int main() {
   cnt_test++;
 
   // store to unreachable aligned address
-  MMR_UNREACHABLE = 0;
+  neorv32_cpu_store_unsigned_word(ADDR_UNREACHABLE, 0);
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) {
     test_ok();
@@ -1587,11 +1573,11 @@ int main() {
 
       cnt_test++;
 
-      ATOMIC_SUCCESS = 0x11223344;
+      neorv32_cpu_store_unsigned_word(ATOMIC_SUCCESS_ADDR, 0x11223344);
 
       // atomic compare-and-swap
-      if ((neorv32_cpu_atomic_cas((uint32_t)(&ATOMIC_SUCCESS), 0x11223344, 0xAABBCCDD) == 0) && // status: success
-          (ATOMIC_SUCCESS == 0xAABBCCDD) && // data written correctly
+      if ((neorv32_cpu_atomic_cas((uint32_t)ATOMIC_SUCCESS_ADDR, 0x11223344, 0xAABBCCDD) == 0) && // status: success
+          (neorv32_cpu_load_unsigned_word(ATOMIC_SUCCESS_ADDR) == 0xAABBCCDD) && // data written correctly
           (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) { // no exception triggered
         test_ok();
       }
@@ -1625,10 +1611,10 @@ int main() {
 
       cnt_test++;
 
-      ATOMIC_FAILURE = 0x55667788;
+      neorv32_cpu_store_unsigned_word(ATOMIC_FAILURE_ADDR, 0x55667788);
 
       // atomic compare-and-swap
-      if ((neorv32_cpu_atomic_cas((uint32_t)(&ATOMIC_FAILURE), 0x55667788, 0xEEFFDDBB) != 0) && // staus: failed
+      if ((neorv32_cpu_atomic_cas((uint32_t)ATOMIC_FAILURE_ADDR, 0x55667788, 0xEEFFDDBB) != 0) && // staus: failed
           (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) { // no exception triggered
         test_ok();
       }
