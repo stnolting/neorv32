@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 17.04.2021 | [**:rocket:1.5.4.0**](https://github.com/stnolting/neorv32/releases/tag/v1.5.4.0) | **New release** |
 | 16.04.2021 | 1.5.3.13 | :warning: added new top configuration generic `TINY_SHIFT_EN` (type = `boolean`, default = `false`) to configure a tiny single-bit (iterative) shifter for CPU ALU shift operations (for highly area-constrained setups) |
 | 16.04.2021 | 1.5.3.12 | :sparkles: reworked reset system of the complete CPU: by default most registers (= "uncritical registers") **do not** provide an initialization via hardware reset; a **defined reset value** can be enabled by setting a constant from the main VHDL package (`rtl/core/neorv32_package.vhd`): `constant dedicated_reset_c : boolean := false;` (set `true` to enable CPU-wide dedicated register reset); see new section "2.11. CPU Hardware Reset" of NEORV32.pdf for more information |
 | 14.04.2021 | 1.5.3.11 | minor rtl edits to allow synthesis using [`ghdl-yosys-plugin`](https://github.com/ghdl/ghdl-yosys-plugin) (:construction: work in progress :construction:)
