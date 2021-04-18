@@ -931,7 +931,7 @@ package neorv32_package is
       wb_sel_o    : out std_ulogic_vector(03 downto 0); -- byte enable
       wb_stb_o    : out std_ulogic; -- strobe
       wb_cyc_o    : out std_ulogic; -- valid cycle
-      wb_tag_i    : in  std_ulogic; -- response tag
+      wb_tag_i    : in  std_ulogic := '0'; -- response tag
       wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
       wb_err_i    : in  std_ulogic := '0'; -- transfer error
       -- Advanced memory control signals (available if MEM_EXT_EN = true) --
