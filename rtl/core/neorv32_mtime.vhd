@@ -2,7 +2,7 @@
 -- # << NEORV32 - Machine System Timer (MTIME) >>                                                  #
 -- # ********************************************************************************************* #
 -- # Compatible to RISC-V spec's 64-bit MACHINE system timer including "mtime[h]" & "mtimecmp[h]". #
--- # Note: The 64-bit counter and compare system is broken and de-coupled into two 32-bit systems. #
+-- # Note: The 64-bit counter and compare systems are de-coupled into two 32-bit systems.          #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -71,12 +71,18 @@ architecture neorv32_mtime_rtl of neorv32_mtime is
   signal addr   : std_ulogic_vector(31 downto 0); -- access address
   signal wren   : std_ulogic; -- module access enable
 
+  -- time write access buffer --
+  signal wdata_buf   : std_ulogic_vector(31 downto 0);
+  signal mtime_lo_we : std_ulogic;
+  signal mtime_hi_we : std_ulogic;
+
   -- accessible regs --
   signal mtimecmp_lo     : std_ulogic_vector(31 downto 0);
   signal mtimecmp_hi     : std_ulogic_vector(31 downto 0);
   signal mtime_lo        : std_ulogic_vector(32 downto 0);
   signal mtime_lo_msb_ff : std_ulogic;
   signal mtime_hi        : std_ulogic_vector(31 downto 0);
+  signal inc_hi          : std_ulogic_vector(31 downto 0);
 
   -- irq control --
   signal cmp_lo       : std_ulogic;
@@ -98,33 +104,42 @@ begin
   wr_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- mtimecmp low --
-      if (wren = '1') and (addr = mtime_cmp_lo_addr_c) then
-        mtimecmp_lo <= data_i;
+      -- mtimecmp --
+      if (wren = '1') then
+        if (addr = mtime_cmp_lo_addr_c) then
+          mtimecmp_lo <= data_i;
+        end if;
+        if (addr = mtime_cmp_hi_addr_c) then
+          mtimecmp_hi <= data_i;
+        end if;
       end if;
 
-      -- mtimecmp high --
-      if (wren = '1') and (addr = mtime_cmp_hi_addr_c) then
-        mtimecmp_hi <= data_i;
-      end if;
+      -- mtime access buffer --
+      wdata_buf   <= data_i;
+      mtime_lo_we <= wren and bool_to_ulogic_f(boolean(addr = mtime_time_lo_addr_c));
+      mtime_hi_we <= wren and bool_to_ulogic_f(boolean(addr = mtime_time_hi_addr_c));
 
       -- mtime low --
-      if (wren = '1') and (addr = mtime_time_lo_addr_c) then
+      if (mtime_lo_we = '1') then -- write access
         mtime_lo_msb_ff <= '0';
-        mtime_lo <= '0' & data_i;
+        mtime_lo <= '0' & wdata_buf;
       else -- auto increment
         mtime_lo_msb_ff <= mtime_lo(mtime_lo'left);
         mtime_lo <= std_ulogic_vector(unsigned(mtime_lo) + 1);
       end if;
 
       -- mtime high --
-      if (wren = '1') and (addr = mtime_time_hi_addr_c) then
-        mtime_hi <= data_i;
-      elsif ((mtime_lo_msb_ff xor mtime_lo(mtime_lo'left)) = '1') then -- auto increment: mtime_lo carry?
-        mtime_hi <= std_ulogic_vector(unsigned(mtime_hi) + 1);
+      if (mtime_hi_we = '1') then -- write access
+        mtime_hi <= wdata_buf;
+      else -- auto increment (if mtime.low overflows)
+        mtime_hi <= std_ulogic_vector(unsigned(mtime_hi) + unsigned(inc_hi));
       end if;
     end if;
   end process wr_access;
+
+  -- mtime.time_HI increment (0 or 1) --
+  inc_hi(0) <= mtime_lo_msb_ff xor mtime_lo(mtime_lo'left);
+  inc_hi(31 downto 1) <= (others => '0');
 
 
   -- Read Access ----------------------------------------------------------------------------
