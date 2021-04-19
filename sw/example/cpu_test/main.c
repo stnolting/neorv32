@@ -840,8 +840,11 @@ int main() {
     // configure MTIME IRQ (and check overflow form low owrd to high word)
     neorv32_mtime_set_timecmp(-1);
     neorv32_mtime_set_time(0);
+
+    neorv32_cpu_csr_write(CSR_MIP, 0); // clear all pending IRQs
+
     neorv32_mtime_set_timecmp(0x0000000100000000ULL);
-    neorv32_mtime_set_time(   0x00000000FFFFFFFFULL);
+    neorv32_mtime_set_time(   0x00000000FFFFFFFEULL);
 
     // wait some time for the IRQ to trigger and arrive the CPU
     asm volatile("nop");

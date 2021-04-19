@@ -100,7 +100,9 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
 ### Status
 
 The processor is [synthesizable](#FPGA-Implementation-Results) (tested on *real hardware* using Intel Quartus Prime, Xilinx Vivado and Lattice Radiant/Synplify Pro) and can successfully execute
-all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the [CoreMark benchmark](#CoreMark-Benchmark).
+all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the [CoreMark benchmark](#CoreMark-Benchmark) and the custom
+NEORV32 processor check ([`sw/example/cpu_test`](https://github.com/stnolting/neorv32/tree/master/sw/example/cpu_test), see the status report in the according
+[GitHub workflow](https://github.com/stnolting/neorv32/actions/workflows/processor-check.yml)).
 
 **RISC-V Architecture Tests**: The processor passes the official `rv32_m/C`, `rv32_m/I`, `rv32_m/M`, `rv32_m/privilege` and `rv32_m/Zifencei`
 [riscv-arch-test](https://github.com/riscv/riscv-arch-test) tests. More information regarding the NEORV32 port of the riscv-arch-test test framework can be found in
@@ -401,7 +403,6 @@ Results generated for hardware version [`1.4.9.0`](https://github.com/stnolting/
 **_Notes_**
 * The "default" implementation strategy of the according toolchain is used.
 * The Lattice iCE40 UltraPlus setup uses the FPGA's SPRAM memory primitives for the internal IMEM and DMEM (each 64kb).
-The FPGA-specific memory components can be found in [`rtl/fpga_specific`](https://github.com/stnolting/neorv32/blob/master/rtl/fpga_specific/lattice_ice40up).
 * The clock frequencies marked with a "c" are constrained clocks. The remaining ones are _f_max_ results from the place and route timing reports.
 * The Upduino and the Arty board have on-board SPI flash memories for storing the FPGA configuration. These device can also be used by the default NEORV32
 bootloader to store and automatically boot an application program after reset (both tested successfully).
