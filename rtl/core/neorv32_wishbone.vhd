@@ -68,34 +68,33 @@ entity neorv32_wishbone is
   );
   port (
     -- global control --
-    clk_i    : in  std_ulogic; -- global clock line
-    rstn_i   : in  std_ulogic; -- global reset line, low-active
+    clk_i     : in  std_ulogic; -- global clock line
+    rstn_i    : in  std_ulogic; -- global reset line, low-active
     -- host access --
-    src_i    : in  std_ulogic; -- access type (0: data, 1:instruction)
-    addr_i   : in  std_ulogic_vector(31 downto 0); -- address
-    rden_i   : in  std_ulogic; -- read enable
-    wren_i   : in  std_ulogic; -- write enable
-    ben_i    : in  std_ulogic_vector(03 downto 0); -- byte write enable
-    data_i   : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o   : out std_ulogic_vector(31 downto 0); -- data out
-    cancel_i : in  std_ulogic; -- cancel current bus transaction
-    excl_i   : in  std_ulogic; -- exclusive access request
-    excl_o   : out std_ulogic; -- state of exclusiv access (set if failed)
-    ack_o    : out std_ulogic; -- transfer acknowledge
-    err_o    : out std_ulogic; -- transfer error
-    priv_i   : in  std_ulogic_vector(01 downto 0); -- current CPU privilege level
+    src_i     : in  std_ulogic; -- access type (0: data, 1:instruction)
+    addr_i    : in  std_ulogic_vector(31 downto 0); -- address
+    rden_i    : in  std_ulogic; -- read enable
+    wren_i    : in  std_ulogic; -- write enable
+    ben_i     : in  std_ulogic_vector(03 downto 0); -- byte write enable
+    data_i    : in  std_ulogic_vector(31 downto 0); -- data in
+    data_o    : out std_ulogic_vector(31 downto 0); -- data out
+    cancel_i  : in  std_ulogic; -- cancel current bus transaction
+    lock_i    : in  std_ulogic; -- exclusive access request
+    ack_o     : out std_ulogic; -- transfer acknowledge
+    err_o     : out std_ulogic; -- transfer error
+    priv_i    : in  std_ulogic_vector(01 downto 0); -- current CPU privilege level
     -- wishbone interface --
-    wb_tag_o : out std_ulogic_vector(03 downto 0); -- request tag
-    wb_adr_o : out std_ulogic_vector(31 downto 0); -- address
-    wb_dat_i : in  std_ulogic_vector(31 downto 0); -- read data
-    wb_dat_o : out std_ulogic_vector(31 downto 0); -- write data
-    wb_we_o  : out std_ulogic; -- read/write
-    wb_sel_o : out std_ulogic_vector(03 downto 0); -- byte enable
-    wb_stb_o : out std_ulogic; -- strobe
-    wb_cyc_o : out std_ulogic; -- valid cycle
-    wb_tag_i : in  std_ulogic; -- response tag
-    wb_ack_i : in  std_ulogic; -- transfer acknowledge
-    wb_err_i : in  std_ulogic  -- transfer error
+    wb_tag_o  : out std_ulogic_vector(02 downto 0); -- request tag
+    wb_adr_o  : out std_ulogic_vector(31 downto 0); -- address
+    wb_dat_i  : in  std_ulogic_vector(31 downto 0); -- read data
+    wb_dat_o  : out std_ulogic_vector(31 downto 0); -- write data
+    wb_we_o   : out std_ulogic; -- read/write
+    wb_sel_o  : out std_ulogic_vector(03 downto 0); -- byte enable
+    wb_stb_o  : out std_ulogic; -- strobe
+    wb_cyc_o  : out std_ulogic; -- valid cycle
+    wb_lock_o : out std_ulogic; -- exclusive access request
+    wb_ack_i  : in  std_ulogic; -- transfer acknowledge
+    wb_err_i  : in  std_ulogic  -- transfer error
   );
 end neorv32_wishbone;
 
@@ -125,8 +124,7 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
     err     : std_ulogic;
     timeout : std_ulogic_vector(index_size_f(xbus_timeout_c)-1 downto 0);
     src     : std_ulogic;
-    excl    : std_ulogic;
-    exclr   : std_ulogic; -- response
+    lock    : std_ulogic;
     priv    : std_ulogic_vector(1 downto 0);
   end record;
   signal ctrl    : ctrl_t;
@@ -163,26 +161,24 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl.state   <= IDLE;
-      ctrl.we      <= '0';
+      ctrl.we      <= def_rst_val_c;
       ctrl.rd_req  <= '0';
       ctrl.wr_req  <= '0';
-      ctrl.adr     <= (others => '0');
-      ctrl.wdat    <= (others => '0');
-      ctrl.rdat    <= (others => '0');
-      ctrl.sel     <= (others => '0');
-      ctrl.timeout <= (others => '0');
-      ctrl.ack     <= '0';
-      ctrl.err     <= '0';
-      ctrl.src     <= '0';
-      ctrl.excl    <= '0';
-      ctrl.exclr   <= '0';
-      ctrl.priv    <= "00";
+      ctrl.adr     <= (others => def_rst_val_c);
+      ctrl.wdat    <= (others => def_rst_val_c);
+      ctrl.rdat    <= (others => def_rst_val_c);
+      ctrl.sel     <= (others => def_rst_val_c);
+      ctrl.timeout <= (others => def_rst_val_c);
+      ctrl.ack     <= def_rst_val_c;
+      ctrl.err     <= def_rst_val_c;
+      ctrl.src     <= def_rst_val_c;
+      ctrl.lock    <= def_rst_val_c;
+      ctrl.priv    <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       -- defaults --
       ctrl.rdat    <= (others => '0');
       ctrl.ack     <= '0';
       ctrl.err     <= '0';
-      ctrl.exclr   <= '0';
       ctrl.timeout <= std_ulogic_vector(to_unsigned(xbus_timeout_c, index_size_f(xbus_timeout_c)));
 
       -- state machine --
@@ -203,7 +199,7 @@ begin
             ctrl.sel  <= bit_rev_f(ben_i);
           end if;
           ctrl.src  <= src_i;
-          ctrl.excl <= excl_i;
+          ctrl.lock <= lock_i;
           ctrl.priv <= priv_i;
           -- valid new or buffered read/write request --
           if ((xbus_access and (wren_i or ctrl.wr_req or rden_i or ctrl.rd_req) and (not cancel_i)) = '1') then
@@ -212,8 +208,7 @@ begin
 
         when BUSY => -- transfer in progress
         -- ------------------------------------------------------------
-          ctrl.rdat  <= wb_dat_i;
-          ctrl.exclr <= wb_tag_i; -- set if exclusive access success
+          ctrl.rdat <= wb_dat_i;
           if (cancel_i = '1') then -- transfer canceled by host
             ctrl.state <= CANCELED;
           elsif (wb_err_i = '1') then -- abnormal bus termination
@@ -255,13 +250,13 @@ begin
   data_o <= ctrl.rdat when (xbus_big_endian_c = true) else bswap32_f(ctrl.rdat); -- endianness conversion
   ack_o  <= ctrl.ack;
   err_o  <= ctrl.err;
-  excl_o <= ctrl.exclr;
 
   -- wishbone interface --
   wb_tag_o(0) <= '1' when (ctrl.priv = priv_mode_m_c) else '0'; -- privileged access when in machine mode
   wb_tag_o(1) <= '0'; -- 0 = secure, 1 = non-secure
   wb_tag_o(2) <= ctrl.src; -- 0 = data access, 1 = instruction access
-  wb_tag_o(3) <= ctrl.excl; -- 1 = exclusive access request
+
+  wb_lock_o <= ctrl.lock; -- 1 = exclusive access request
 
   wb_adr_o  <= ctrl.adr;
   wb_dat_o  <= ctrl.wdat;
