@@ -78,6 +78,7 @@ entity neorv32_cpu_control is
     alu_wait_i    : in  std_ulogic; -- wait for ALU
     bus_i_wait_i  : in  std_ulogic; -- wait for bus
     bus_d_wait_i  : in  std_ulogic; -- wait for bus
+    excl_state_i  : in  std_ulogic; -- atomic/exclusive access lock status
     -- data input --
     instr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- instruction
     cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
@@ -198,7 +199,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction execution engine --
   type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, EXECUTE, ALU_WAIT, BRANCH,
-                                  FENCE_OP,LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, ATOMIC_SC_EVAL, SYS_ENV, CSR_ACCESS);
+                                  FENCE_OP,LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, SYS_ENV, CSR_ACCESS);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
@@ -774,6 +775,7 @@ begin
     ctrl_o(ctrl_ir_funct3_2_c   downto ctrl_ir_funct3_0_c)  <= execute_engine.i_reg(instr_funct3_msb_c  downto instr_funct3_lsb_c);
     -- cpu status --
     ctrl_o(ctrl_sleep_c) <= execute_engine.sleep; -- cpu is in sleep mode
+    ctrl_o(ctrl_trap_c)  <= trap_ctrl.env_start_ack; -- cpu is starting a trap handler
   end process ctrl_output;
 
 
@@ -871,7 +873,7 @@ begin
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   execute_engine_fsm_comb: process(execute_engine, decode_aux, fetch_engine, cmd_issue, trap_ctrl, csr, ctrl, csr_acc_valid,
-                                   alu_wait_i, bus_d_wait_i, ma_load_i, be_load_i, ma_store_i, be_store_i)
+                                   alu_wait_i, bus_d_wait_i, ma_load_i, be_load_i, ma_store_i, be_store_i, excl_state_i)
     variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     -- arbiter defaults --
@@ -915,8 +917,12 @@ begin
     else -- branches
       ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- unsigned branches? (BLTU, BGEU)
     end if;
-    -- bus interface --
-    ctrl_nxt(ctrl_bus_excl_c) <= ctrl(ctrl_bus_excl_c); -- keep exclusive bus access request alive if set
+    -- Atomic store-conditional instruction (evaluate lock status) --
+    if (CPU_EXTENSION_RISCV_A = true) then
+      ctrl_nxt(ctrl_bus_ch_lock_c) <= decode_aux.is_atomic_sc;
+    else
+      ctrl_nxt(ctrl_bus_ch_lock_c) <= '0';
+    end if;
 
 
     -- state machine --
@@ -938,7 +944,6 @@ begin
       -- ------------------------------------------------------------
         -- housekeeping --
         execute_engine.is_cp_op_nxt <= '0'; -- init
-        ctrl_nxt(ctrl_bus_excl_c)   <= '0'; -- clear exclusive data bus access
         -- PC update --
         execute_engine.pc_mux_sel <= '0'; -- linear next PC
         -- IR update --
@@ -1070,9 +1075,9 @@ begin
 
           when opcode_load_c | opcode_store_c | opcode_atomic_c => -- load/store / atomic memory access
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA
-            ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
-            ctrl_nxt(ctrl_bus_mo_we_c)   <= '1'; -- write to MAR and MDO (MDO only relevant for store)
+            ctrl_nxt(ctrl_alu_opa_mux_c)<= '0'; -- use RS1 as ALU.OPA
+            ctrl_nxt(ctrl_alu_opb_mux_c)<= '1'; -- use IMM as ALU.OPB
+            ctrl_nxt(ctrl_bus_mo_we_c)  <= '1'; -- write to MAR and MDO (MDO only relevant for store)
             --
             if (CPU_EXTENSION_RISCV_A = false) or -- atomic extension disabled
                (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "00") then  -- normal integerload/store
@@ -1221,11 +1226,17 @@ begin
 
       when LOADSTORE_0 => -- trigger memory request
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_excl_c) <= decode_aux.is_atomic_lr; -- atomic.LR: exclusive memory access request
+        ctrl_nxt(ctrl_bus_lock_c) <= decode_aux.is_atomic_lr; -- atomic.LR: set lock
         if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') then -- normal load or atomic load-reservate
-          ctrl_nxt(ctrl_bus_rd_c) <= '1'; -- read request
+          ctrl_nxt(ctrl_bus_rd_c)  <= '1'; -- read request
         else -- store
-          ctrl_nxt(ctrl_bus_wr_c) <= '1'; -- write request
+          if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.is_atomic_sc = '1') then -- evaluate lock state
+            if (excl_state_i = '1') then -- lock is still ok - perform write access
+              ctrl_nxt(ctrl_bus_wr_c) <= '1'; -- write request
+            end if;
+          else
+            ctrl_nxt(ctrl_bus_wr_c) <= '1'; -- (normal) write request
+          end if;
         end if;
         execute_engine.state_nxt <= LOADSTORE_1;
 
@@ -1233,47 +1244,28 @@ begin
       when LOADSTORE_1 => -- memory latency
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- write input data to MDI (only relevant for LOAD)
-        if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.is_atomic_sc = '1') then -- execute and evaluate atomic store-conditional
-          execute_engine.state_nxt <= ATOMIC_SC_EVAL;
-        else -- normal load/store
-          execute_engine.state_nxt <= LOADSTORE_2;
-        end if;
+        execute_engine.state_nxt   <= LOADSTORE_2;
 
 
       when LOADSTORE_2 => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load operations)
+        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load (and SC.W) operations)
         ctrl_nxt(ctrl_rf_in_mux_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
         -- wait for memory response --
         if ((ma_load_i or be_load_i or ma_store_i or be_store_i) = '1') then -- abort if exception
           execute_engine.state_nxt <= DISPATCH;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
-          -- data write-back
-          if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') then -- normal load OR atomic load
+          -- remove atomic lock if this is NOT the LR.W instruction used to SET the lock --
+          if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.is_atomic_lr = '0') then -- execute and evaluate atomic store-conditional
+            ctrl_nxt(ctrl_bus_de_lock_c) <= '1';
+          end if;
+          -- data write-back --
+          if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or -- normal load
+             (decode_aux.is_atomic_lr = '1') or -- atomic load-reservate
+             (decode_aux.is_atomic_sc = '1') then -- atomic store-conditional
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1';
           end if;
           execute_engine.state_nxt <= DISPATCH;
-        end if;
-
-
-      when ATOMIC_SC_EVAL => -- wait for bus transaction to finish and evaluate if SC was successful
-      -- ------------------------------------------------------------
-        if (CPU_EXTENSION_RISCV_A = true) then
-          -- atomic.SC: result comes from "atomic co-processor" --
-          ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_atomic_c;
-          execute_engine.is_cp_op_nxt                        <= '1'; -- this is a CP operation
-          ctrl_nxt(ctrl_rf_in_mux_c)                         <= '0'; -- RF input = ALU.res
-          ctrl_nxt(ctrl_rf_wb_en_c)                          <= '1'; -- allow reg file write back
-          -- wait for memory response --
-          if ((ma_load_i or be_load_i or ma_store_i or be_store_i) = '1') then -- abort if exception
-            ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c; -- trigger atomic-coprocessor operation for SC status evaluation
-            execute_engine.state_nxt <= ALU_WAIT;
-          elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
-            ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c; -- trigger atomic-coprocessor operation for SC status evaluation
-            execute_engine.state_nxt <= ALU_WAIT;
-          end if;
-        else
-          execute_engine.state_nxt <= SYS_WAIT;
         end if;
 
 

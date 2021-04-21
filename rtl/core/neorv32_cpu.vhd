@@ -94,6 +94,7 @@ entity neorv32_cpu is
     i_bus_we_o     : out std_ulogic; -- write enable
     i_bus_re_o     : out std_ulogic; -- read enable
     i_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
+    i_bus_lock_o   : out std_ulogic; -- exclusive access request
     i_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
     i_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
     i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
@@ -106,12 +107,11 @@ entity neorv32_cpu is
     d_bus_we_o     : out std_ulogic; -- write enable
     d_bus_re_o     : out std_ulogic; -- read enable
     d_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
+    d_bus_lock_o   : out std_ulogic; -- exclusive access request
     d_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
     d_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
     d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
     d_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
-    d_bus_excl_o   : out std_ulogic; -- exclusive access request
-    d_bus_excl_i   : in  std_ulogic; -- state of exclusiv access (set if success)
     -- system time input from MTIME --
     time_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
     -- interrupts (risc-v compliant) --
@@ -143,7 +143,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal ma_instr    : std_ulogic; -- misaligned instruction address
   signal ma_load     : std_ulogic; -- misaligned load data address
   signal ma_store    : std_ulogic; -- misaligned store data address
-  signal bus_excl_ok : std_ulogic; -- atomic memory access successful
+  signal excl_state  : std_ulogic; -- atomic/exclusive access lock status
   signal be_instr    : std_ulogic; -- bus error on instruction access
   signal be_load     : std_ulogic; -- bus error on load data access
   signal be_store    : std_ulogic; -- bus error on store data access
@@ -160,11 +160,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   -- pmp interface --
   signal pmp_addr  : pmp_addr_if_t;
   signal pmp_ctrl  : pmp_ctrl_if_t;
-
-  -- atomic memory access - success? --
-  signal atomic_sc_res    : std_ulogic;
-  signal atomic_sc_res_ff : std_ulogic;
-  signal atomic_sc_val    : std_ulogic;
 
 begin
 
@@ -252,6 +247,7 @@ begin
     alu_wait_i    => alu_wait,    -- wait for ALU
     bus_i_wait_i  => bus_i_wait,  -- wait for bus
     bus_d_wait_i  => bus_d_wait,  -- wait for bus
+    excl_state_i  => excl_state,  -- atomic/exclusive access lock status
     -- data input --
     instr_i       => instr,       -- instruction
     cmp_i         => comparator,  -- comparator status
@@ -341,7 +337,15 @@ begin
   );
 
 
-  -- Co-Processor 0: Integer Multiplication/Division ('M' Extension) ------------------------
+  -- Co-Processor 0: CSR (Read) Access ('Zicsr' Extension) ----------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- "pseudo" co-processor for CSR *read* access operations
+  -- required to get CSR read data into the data path
+  cp_result(0) <= csr_rdata when (CPU_EXTENSION_RISCV_Zicsr = true) else (others => '0');
+  cp_valid(0)  <= cp_start(0); -- always assigned even if Zicsr extension is disabled to make sure CPU does not get stalled if there is an accidental access
+
+
+  -- Co-Processor 1: Integer Multiplication/Division ('M' Extension) ------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_muldiv_inst_true:
   if (CPU_EXTENSION_RISCV_M = true) generate
@@ -354,48 +358,21 @@ begin
       clk_i   => clk_i,           -- global clock, rising edge
       rstn_i  => rstn_i,          -- global reset, low-active, async
       ctrl_i  => ctrl,            -- main control bus
-      start_i => cp_start(0),     -- trigger operation
+      start_i => cp_start(1),     -- trigger operation
       -- data input --
       rs1_i   => rs1,             -- rf source 1
       rs2_i   => rs2,             -- rf source 2
       -- result and status --
-      res_o   => cp_result(0),    -- operation result
-      valid_o => cp_valid(0)      -- data output valid
+      res_o   => cp_result(1),    -- operation result
+      valid_o => cp_valid(1)      -- data output valid
     );
   end generate;
 
   neorv32_cpu_cp_muldiv_inst_false:
   if (CPU_EXTENSION_RISCV_M = false) generate
-    cp_result(0) <= (others => '0');
-    cp_valid(0)  <= cp_start(0); -- to make sure CPU does not get stalled if there is an accidental access
+    cp_result(1) <= (others => '0');
+    cp_valid(1)  <= cp_start(1); -- to make sure CPU does not get stalled if there is an accidental access
   end generate;
-
-
-  -- Co-Processor 1: Atomic Memory Access ('A' Extension) -----------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- "pseudo" co-processor for atomic operations
-  -- required to get the result of a store-conditional operation into the data path
-  atomic_op_cp: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      atomic_sc_val    <= def_rst_val_c;
-      atomic_sc_res    <= def_rst_val_c;
-      atomic_sc_res_ff <= def_rst_val_c;
-    elsif rising_edge(clk_i) then
-      atomic_sc_val <= cp_start(1);
-      atomic_sc_res <= bus_excl_ok;
-      if (atomic_sc_val = '1') then
-        atomic_sc_res_ff <= not atomic_sc_res;
-      else
-        atomic_sc_res_ff <= '0';
-      end if;
-    end if;
-  end process atomic_op_cp;
-
-  -- CP result --
-  cp_result(1)(data_width_c-1 downto 1) <= (others => '0');
-  cp_result(1)(0) <= atomic_sc_res_ff when (CPU_EXTENSION_RISCV_A = true) else '0';
-  cp_valid(1)     <= atomic_sc_val    when (CPU_EXTENSION_RISCV_A = true) else cp_start(1); -- assigned even if A extension is disabled so CPU does not get stalled on accidental access
 
 
   -- Co-Processor 2: Bit Manipulation ('B' Extension) ---------------------------------------
@@ -426,15 +403,7 @@ begin
   end generate;
 
 
-  -- Co-Processor 3: CSR (Read) Access ('Zicsr' Extension) ----------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- "pseudo" co-processor for CSR *read* access operations
-  -- required to get CSR read data into the data path
-  cp_result(3) <= csr_rdata when (CPU_EXTENSION_RISCV_Zicsr = true) else (others => '0');
-  cp_valid(3)  <= cp_start(3); -- always assigned even if Zicsr extension is disabled to make sure CPU does not get stalled if there is an accidental access
-
-
-  -- Co-Processor 4: Single-Precision Floating-Point Unit ('Zfinx' Extension) ---------------
+  -- Co-Processor 3: Single-Precision Floating-Point Unit ('Zfinx' Extension) ---------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_fpu_inst_true:
   if (CPU_EXTENSION_RISCV_Zfinx = true) generate
@@ -444,29 +413,32 @@ begin
       clk_i    => clk_i,        -- global clock, rising edge
       rstn_i   => rstn_i,       -- global reset, low-active, async
       ctrl_i   => ctrl,         -- main control bus
-      start_i  => cp_start(4),  -- trigger operation
+      start_i  => cp_start(3),  -- trigger operation
       -- data input --
       frm_i    => fpu_rm,       -- rounding mode
       cmp_i    => comparator,   -- comparator status
       rs1_i    => rs1,          -- rf source 1
       rs2_i    => rs2,          -- rf source 2
       -- result and status --
-      res_o    => cp_result(4), -- operation result
+      res_o    => cp_result(3), -- operation result
       fflags_o => fpu_flags,    -- exception flags
-      valid_o  => cp_valid(4)   -- data output valid
+      valid_o  => cp_valid(3)   -- data output valid
     );
   end generate;
 
   neorv32_cpu_cp_fpu_inst_false:
   if (CPU_EXTENSION_RISCV_Zfinx = false) generate
-    cp_result(4) <= (others => '0');
+    cp_result(3) <= (others => '0');
     fpu_flags    <= (others => '0');
-    cp_valid(4)  <= cp_start(4); -- to make sure CPU does not get stalled if there is an accidental access
+    cp_valid(3)  <= cp_start(3); -- to make sure CPU does not get stalled if there is an accidental access
   end generate;
 
 
-  -- Co-Processor 5,6,7: Not Implemented Yet ------------------------------------------------
+  -- Co-Processor 4,5,6,7: Not Implemented --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  cp_result(4) <= (others => '0');
+  cp_valid(4)  <= '0';
+  --
   cp_result(5) <= (others => '0');
   cp_valid(5)  <= '0';
   --
@@ -508,7 +480,7 @@ begin
     mar_o          => mar,            -- current memory address register
     d_wait_o       => bus_d_wait,     -- wait for access to complete
     --
-    bus_excl_ok_o  => bus_excl_ok,    -- bus exclusive access successful
+    excl_state_o   => excl_state,     -- atomic/exclusive access status
     ma_load_o      => ma_load,        -- misaligned load data address
     ma_store_o     => ma_store,       -- misaligned store data address
     be_load_o      => be_load,        -- bus error on load data access
@@ -524,6 +496,7 @@ begin
     i_bus_we_o     => i_bus_we_o,     -- write enable
     i_bus_re_o     => i_bus_re_o,     -- read enable
     i_bus_cancel_o => i_bus_cancel_o, -- cancel current bus transaction
+    i_bus_lock_o   => i_bus_lock_o,   -- exclusive access request
     i_bus_ack_i    => i_bus_ack_i,    -- bus transfer acknowledge
     i_bus_err_i    => i_bus_err_i,    -- bus transfer error
     i_bus_fence_o  => i_bus_fence_o,  -- fence operation
@@ -535,11 +508,10 @@ begin
     d_bus_we_o     => d_bus_we_o,     -- write enable
     d_bus_re_o     => d_bus_re_o,     -- read enable
     d_bus_cancel_o => d_bus_cancel_o, -- cancel current bus transaction
+    d_bus_lock_o   => d_bus_lock_o,   -- exclusive access request
     d_bus_ack_i    => d_bus_ack_i,    -- bus transfer acknowledge
     d_bus_err_i    => d_bus_err_i,    -- bus transfer error
-    d_bus_fence_o  => d_bus_fence_o,  -- fence operation
-    d_bus_excl_o   => d_bus_excl_o,   -- exclusive access request
-    d_bus_excl_i   => d_bus_excl_i    -- state of exclusiv access (set if success)
+    d_bus_fence_o  => d_bus_fence_o   -- fence operation
   );
 
   -- current privilege level --
