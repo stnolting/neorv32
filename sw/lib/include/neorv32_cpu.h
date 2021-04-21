@@ -71,6 +71,7 @@ int neorv32_check_zextension(uint32_t);
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_store_conditional(uint32_t addr, uint32_t wdata) {
 
+#if defined __riscv_atomic || defined __riscv_a
   register uint32_t reg_addr = addr;
   register uint32_t reg_data = wdata;
   register uint32_t reg_status;
@@ -78,6 +79,9 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_store_conditional(ui
   asm volatile ("sc.w %[status], %[da], (%[ad])" : [status] "=r" (reg_status) : [da] "r" (reg_data), [ad] "r" (reg_addr));
 
   return reg_status;
+#else
+  return 1; // always failing
+#endif
 }
 
 
@@ -143,7 +147,11 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_reservate_word(
   register uint32_t reg_addr = addr;
   register uint32_t reg_data;
 
+#if defined __riscv_atomic || defined __riscv_a
   asm volatile ("lr.w %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
+#else
+  asm volatile ("lw %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
+#endif
 
   return (uint32_t)reg_data;
 }
