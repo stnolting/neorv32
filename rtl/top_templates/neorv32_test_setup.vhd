@@ -138,7 +138,7 @@ begin
     wb_sel_o    => open,            -- byte enable
     wb_stb_o    => open,            -- strobe
     wb_cyc_o    => open,            -- valid cycle
-    wb_tag_i    => '0',             -- response tag
+    wb_lock_o   => open,            -- exclusive access request
     wb_ack_i    => '0',             -- transfer acknowledge
     wb_err_i    => '0',             -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --

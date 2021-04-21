@@ -215,16 +215,17 @@ architecture neorv32_top_axi4lite_rtl of neorv32_top_axi4lite is
 
   -- internal wishbone bus --
   type wb_bus_t is record
-    adr : std_ulogic_vector(31 downto 0); -- address
-    di  : std_ulogic_vector(31 downto 0); -- processor input data
-    do  : std_ulogic_vector(31 downto 0); -- processor output data
-    we  : std_ulogic; -- write enable
-    sel : std_ulogic_vector(03 downto 0); -- byte enable
-    stb : std_ulogic; -- strobe
-    cyc : std_ulogic; -- valid cycle
-    ack : std_ulogic; -- transfer acknowledge
-    err : std_ulogic; -- transfer error
-    tag : std_ulogic_vector(03 downto 0); -- tag
+    adr  : std_ulogic_vector(31 downto 0); -- address
+    di   : std_ulogic_vector(31 downto 0); -- processor input data
+    do   : std_ulogic_vector(31 downto 0); -- processor output data
+    we   : std_ulogic; -- write enable
+    sel  : std_ulogic_vector(03 downto 0); -- byte enable
+    stb  : std_ulogic; -- strobe
+    cyc  : std_ulogic; -- valid cycle
+    ack  : std_ulogic; -- transfer acknowledge
+    err  : std_ulogic; -- transfer error
+    tag  : std_ulogic_vector(02 downto 0); -- tag
+    lock : std_ulogic; -- exclusive access request
   end record;
   signal wb_core : wb_bus_t;
 
@@ -244,7 +245,7 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG ERROR: AXI4-Lite bridge requires STANDARD/CLASSIC Wishbone mode (package.wb_pipe_mode_c = false)." severity error;
-  assert not (CPU_EXTENSION_RISCV_A = true) report "NEORV32 PROCESSOR CONFIG WARNING: AXI4-Lite provides NO support for atomic memory operations." severity warning;
+  assert not (CPU_EXTENSION_RISCV_A = true) report "NEORV32 PROCESSOR CONFIG WARNING: AXI4-Lite provides NO support for atomic memory operations. LR/SC access via AXI will raise a bus exception." severity warning;
 
 
   -- The Core Of The Problem ----------------------------------------------------------------
@@ -321,7 +322,7 @@ begin
     wb_sel_o    => wb_core.sel,     -- byte enable
     wb_stb_o    => wb_core.stb,     -- strobe
     wb_cyc_o    => wb_core.cyc,     -- valid cycle
-    wb_tag_i    => '0',             -- response tag
+    wb_lock_o   => wb_core.lock,    -- exclusive access request
     wb_ack_i    => wb_core.ack,     -- transfer acknowledge
     wb_err_i    => wb_core.err,     -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
@@ -474,7 +475,7 @@ begin
 
   -- Wishbone transfer termination --
   wb_core.ack   <= ack_read or ack_write;
-  wb_core.err   <= (ack_read and err_read) or (ack_write and err_write);
+  wb_core.err   <= (ack_read and err_read) or (ack_write and err_write) or wb_core.lock;
 
 
 end neorv32_top_axi4lite_rtl;
