@@ -469,6 +469,11 @@ void get_exe(int src) {
   else {
     neorv32_uart_print("Loading... ");
 
+    // check if SPI is available at all
+    if (neorv32_spi_available() == 0) {
+      system_error(ERROR_FLASH);
+    }
+
     // check if flash ready (or available at all)
     if (spi_flash_read_1st_id() == 0x00) { // manufacturer ID
       system_error(ERROR_FLASH);
