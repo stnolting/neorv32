@@ -99,7 +99,7 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
 
 ### Status
 
-The processor is [synthesizable](#FPGA-Implementation-Results) (tested on *real hardware* using Intel Quartus Prime, Xilinx Vivado and Lattice Radiant/Synplify Pro) and can successfully execute
+The processor is [synthesizable](#FPGA-Implementation-Results) (tested on *real hardware* using Intel Quartus Prime, Xilinx Vivado and Lattice Radiant) and can successfully execute
 all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the [CoreMark benchmark](#CoreMark-Benchmark) and the custom
 NEORV32 processor check ([`sw/example/cpu_test`](https://github.com/stnolting/neorv32/tree/master/sw/example/cpu_test), see the status report in the according
 [GitHub workflow](https://github.com/stnolting/neorv32/actions/workflows/processor-check.yml)).
