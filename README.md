@@ -538,12 +538,12 @@ and the [software documentation](https://stnolting.github.io/neorv32/files.html)
 
 **NEORV32 Data Sheet**
 
-To build the data sheet open a console and navigate to the project's `docs` folder. Run `sh make_datasheet.pdf` (make sure `asciidoctor-pdf` is installed).
+To build the data sheet open a console and navigate to the project's `docs` folder. Run `$ sh make_datasheet.sh` (make sure `asciidoctor-pdf` is installed).
 This will take all the `asciidoc` sources from [`docs/src_adoc`](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc) to generate `docs/NEORV32.pdf`.
 
 **Software Framework Documentation**
 
-Make sure `doxygen` is installed. Open a console and navigate to the project's `docs` folder and run `doxygen Doxyfile`. This will create (if not already there)
+Make sure `doxygen` is installed. Open a console and navigate to the project's `docs` folder and run `$ doxygen Doxyfile`. This will create (if not already there)
 a new folder `docs/doxygen_build/html` where doxygen will generate the HTML-based documentation pages. Open `docs/doxygen_build/html/files.html` to get started.
 
 
