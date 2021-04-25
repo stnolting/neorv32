@@ -58,7 +58,6 @@ entity neorv32_busswitch is
     ca_bus_ben_i    : in  std_ulogic_vector(03 downto 0); -- byte enable
     ca_bus_we_i     : in  std_ulogic; -- write enable
     ca_bus_re_i     : in  std_ulogic; -- read enable
-    ca_bus_cancel_i : in  std_ulogic; -- cancel current bus transaction
     ca_bus_lock_i   : in  std_ulogic; -- exclusive access request
     ca_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
     ca_bus_err_o    : out std_ulogic; -- bus transfer error
@@ -69,7 +68,6 @@ entity neorv32_busswitch is
     cb_bus_ben_i    : in  std_ulogic_vector(03 downto 0); -- byte enable
     cb_bus_we_i     : in  std_ulogic; -- write enable
     cb_bus_re_i     : in  std_ulogic; -- read enable
-    cb_bus_cancel_i : in  std_ulogic; -- cancel current bus transaction
     cb_bus_lock_i   : in  std_ulogic; -- exclusive access request
     cb_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
     cb_bus_err_o    : out std_ulogic; -- bus transfer error
@@ -81,7 +79,6 @@ entity neorv32_busswitch is
     p_bus_ben_o     : out std_ulogic_vector(03 downto 0); -- byte enable
     p_bus_we_o      : out std_ulogic; -- write enable
     p_bus_re_o      : out std_ulogic; -- read enable
-    p_bus_cancel_o  : out std_ulogic; -- cancel current bus transaction
     p_bus_lock_o    : out std_ulogic; -- exclusive access request
     p_bus_ack_i     : in  std_ulogic; -- bus transfer acknowledge
     p_bus_err_i     : in  std_ulogic  -- bus transfer error
@@ -129,8 +126,7 @@ begin
       if (ca_rd_req_buf = '0') and (ca_wr_req_buf = '0') then -- idle
         ca_rd_req_buf <= ca_bus_re_i;
         ca_wr_req_buf <= ca_bus_we_i;
-      elsif (ca_bus_cancel_i = '1') or -- controller cancels access
-            (ca_bus_err = '1') or -- peripheral cancels access
+      elsif (ca_bus_err = '1') or -- error termination
             (ca_bus_ack = '1') then -- normal termination
         ca_rd_req_buf <= '0';
         ca_wr_req_buf <= '0';
@@ -140,8 +136,7 @@ begin
       if (cb_rd_req_buf = '0') and (cb_wr_req_buf = '0') then
         cb_rd_req_buf <= cb_bus_re_i;
         cb_wr_req_buf <= cb_bus_we_i;
-      elsif (cb_bus_cancel_i = '1') or -- controller cancels access
-            (cb_bus_err = '1') or -- peripheral cancels access
+      elsif (cb_bus_err = '1') or -- error termination
             (cb_bus_ack = '1') then -- normal termination
         cb_rd_req_buf <= '0';
         cb_wr_req_buf <= '0';
@@ -175,8 +170,7 @@ begin
   -- Peripheral Bus Arbiter -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   arbiter_comb: process(arbiter, ca_req_current, cb_req_current, ca_req_buffered, cb_req_buffered,
-                        ca_rd_req_buf, ca_wr_req_buf, cb_rd_req_buf, cb_wr_req_buf,
-                        ca_bus_cancel_i, cb_bus_cancel_i, p_bus_ack_i, p_bus_err_i)
+                        ca_rd_req_buf, ca_wr_req_buf, cb_rd_req_buf, cb_wr_req_buf, p_bus_ack_i, p_bus_err_i)
   begin
     -- arbiter defaults --
     arbiter.state_nxt <= arbiter.state;
@@ -210,8 +204,7 @@ begin
       -- ------------------------------------------------------------
         p_bus_src_o     <= '0'; -- access from port A
         arbiter.bus_sel <= '0';
-        if (ca_bus_cancel_i = '1') or -- controller cancels access
-           (p_bus_err_i = '1') or -- peripheral cancels access
+        if (p_bus_err_i = '1') or -- error termination
            (p_bus_ack_i = '1') then -- normal termination
           arbiter.state_nxt <= IDLE;
         end if;
@@ -230,8 +223,7 @@ begin
       -- ------------------------------------------------------------
         p_bus_src_o     <= '1'; -- access from port B
         arbiter.bus_sel <= '1';
-        if (cb_bus_cancel_i = '1') or -- controller cancels access
-           (p_bus_err_i = '1') or -- peripheral cancels access
+        if (p_bus_err_i = '1') or -- error termination
            (p_bus_ack_i = '1') then -- normal termination
           if (ca_req_buffered = '1') or (ca_req_current = '1') then -- any request from A?
             arbiter.state_nxt <= RETIRE;
@@ -263,7 +255,6 @@ begin
                     ca_bus_ben_i    when (arbiter.bus_sel = '0')    else cb_bus_ben_i;
   p_bus_we       <= ca_bus_we_i     when (arbiter.bus_sel = '0')    else cb_bus_we_i;
   p_bus_re       <= ca_bus_re_i     when (arbiter.bus_sel = '0')    else cb_bus_re_i;
-  p_bus_cancel_o <= ca_bus_cancel_i when (arbiter.bus_sel = '0')    else cb_bus_cancel_i;
   p_bus_we_o     <= (p_bus_we or arbiter.we_trig);
   p_bus_re_o     <= (p_bus_re or arbiter.re_trig);
   p_bus_lock_o   <= ca_bus_lock_i or cb_bus_lock_i;
