@@ -45,7 +45,6 @@ package neorv32_package is
   constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
 
   -- (external) bus interface --
-  constant bus_timeout_c     : natural := 127; -- cycles after which an *unacknowledged* bus access will timeout and trigger a bus fault exception (min 2)
   constant wb_pipe_mode_c    : boolean := false; -- *external* bus protocol: false=classic/standard wishbone mode (default), true=pipelined wishbone mode
   constant xbus_big_endian_c : boolean := true; -- external memory access byte order: true=big endian (default); false=little endian
 
@@ -58,6 +57,9 @@ package neorv32_package is
   -- if more PMP regions (> pmp_num_regions_critical_c) are defined, another register stage is automatically inserted into the memory interfaces
   -- increasing instruction fetch & data access latency by +1 cycle but also reducing critical path length
   constant pmp_num_regions_critical_c : natural := 8; -- default=8
+
+  -- "response time window" for processor-internal memories and IO devices
+  constant max_proc_int_response_time_c : natural := 63; -- cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception (min 2)
 
   -- Helper Functions -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -81,7 +83,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050403"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050405"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
   constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
@@ -903,6 +905,7 @@ package neorv32_package is
       ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
       -- External memory interface --
       MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
+      MEM_EXT_TIMEOUT              : natural := 255;    -- cycles after a pending bus access auto-terminates (0 = disabled)
       -- Processor peripherals --
       IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
       IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
@@ -986,7 +989,6 @@ package neorv32_package is
       -- General --
       HW_THREAD_ID                 : natural := 0;     -- hardware thread id (32-bit)
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu boot address
-      BUS_TIMEOUT                  : natural := 63;    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
       CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
@@ -1021,7 +1023,6 @@ package neorv32_package is
       i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
       i_bus_we_o     : out std_ulogic; -- write enable
       i_bus_re_o     : out std_ulogic; -- read enable
-      i_bus_cancel_o : out std_ulogic := '0'; -- cancel current bus transaction
       i_bus_lock_o   : out std_ulogic; -- exclusive access request
       i_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
       i_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
@@ -1034,7 +1035,6 @@ package neorv32_package is
       d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
       d_bus_we_o     : out std_ulogic; -- write enable
       d_bus_re_o     : out std_ulogic; -- read enable
-      d_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
       d_bus_lock_o   : out std_ulogic; -- exclusive access request
       d_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
       d_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
@@ -1239,13 +1239,11 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_bus
     generic (
-      CPU_EXTENSION_RISCV_A : boolean := false; -- implement atomic extension?
-      CPU_EXTENSION_RISCV_C : boolean := true;  -- implement compressed extension?
+      CPU_EXTENSION_RISCV_A : boolean := false;  -- implement atomic extension?
+      CPU_EXTENSION_RISCV_C : boolean := true;   -- implement compressed extension?
       -- Physical memory protection (PMP) --
-      PMP_NUM_REGIONS       : natural := 0;       -- number of regions (0..64)
-      PMP_MIN_GRANULARITY   : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
-      -- Bus Timeout --
-      BUS_TIMEOUT           : natural := 63     -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
+      PMP_NUM_REGIONS       : natural := 0;      -- number of regions (0..64)
+      PMP_MIN_GRANULARITY   : natural := 64*1024 -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     );
     port (
       -- global control --
@@ -1281,7 +1279,6 @@ package neorv32_package is
       i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
       i_bus_we_o     : out std_ulogic; -- write enable
       i_bus_re_o     : out std_ulogic; -- read enable
-      i_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
       i_bus_lock_o   : out std_ulogic; -- exclusive access request
       i_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
       i_bus_err_i    : in  std_ulogic; -- bus transfer error
@@ -1293,11 +1290,34 @@ package neorv32_package is
       d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
       d_bus_we_o     : out std_ulogic; -- write enable
       d_bus_re_o     : out std_ulogic; -- read enable
-      d_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
       d_bus_lock_o   : out std_ulogic; -- exclusive access request
       d_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
       d_bus_err_i    : in  std_ulogic; -- bus transfer error
       d_bus_fence_o  : out std_ulogic  -- fence operation
+    );
+  end component;
+
+  -- Component: Bus Keeper ------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_bus_keeper is
+    generic (
+      -- Internal instruction memory --
+      MEM_INT_IMEM_EN   : boolean := true;   -- implement processor-internal instruction memory
+      MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
+      -- Internal data memory --
+      MEM_INT_DMEM_EN   : boolean := true;   -- implement processor-internal data memory
+      MEM_INT_DMEM_SIZE : natural := 8*1024  -- size of processor-internal data memory in bytes
+    );
+    port (
+      -- host access --
+      clk_i  : in  std_ulogic; -- global clock line
+      rstn_i : in  std_ulogic; -- global reset line, low-active
+      addr_i : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i : in  std_ulogic; -- read enable
+      wren_i : in  std_ulogic; -- write enable
+      ack_i  : in  std_ulogic; -- transfer acknowledge from bus system
+      err_i  : in  std_ulogic; -- transfer error from bus system
+      err_o  : out std_ulogic  -- bus error
     );
   end component;
 
@@ -1321,7 +1341,6 @@ package neorv32_package is
       host_ben_i    : in  std_ulogic_vector(03 downto 0); -- byte enable
       host_we_i     : in  std_ulogic; -- write enable
       host_re_i     : in  std_ulogic; -- read enable
-      host_cancel_i : in  std_ulogic; -- cancel current bus transaction
       host_ack_o    : out std_ulogic; -- bus transfer acknowledge
       host_err_o    : out std_ulogic; -- bus transfer error
       -- peripheral bus interface --
@@ -1331,7 +1350,6 @@ package neorv32_package is
       bus_ben_o     : out std_ulogic_vector(03 downto 0); -- byte enable
       bus_we_o      : out std_ulogic; -- write enable
       bus_re_o      : out std_ulogic; -- read enable
-      bus_cancel_o  : out std_ulogic; -- cancel current bus transaction
       bus_ack_i     : in  std_ulogic; -- bus transfer acknowledge
       bus_err_i     : in  std_ulogic  -- bus transfer error
     );
@@ -1355,7 +1373,6 @@ package neorv32_package is
       ca_bus_ben_i    : in  std_ulogic_vector(03 downto 0); -- byte enable
       ca_bus_we_i     : in  std_ulogic; -- write enable
       ca_bus_re_i     : in  std_ulogic; -- read enable
-      ca_bus_cancel_i : in  std_ulogic; -- cancel current bus transaction
       ca_bus_lock_i   : in  std_ulogic; -- exclusive access request
       ca_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
       ca_bus_err_o    : out std_ulogic; -- bus transfer error
@@ -1366,7 +1383,6 @@ package neorv32_package is
       cb_bus_ben_i    : in  std_ulogic_vector(03 downto 0); -- byte enable
       cb_bus_we_i     : in  std_ulogic; -- write enable
       cb_bus_re_i     : in  std_ulogic; -- read enable
-      cb_bus_cancel_i : in  std_ulogic; -- cancel current bus transaction
       cb_bus_lock_i   : in  std_ulogic; -- exclusive access request
       cb_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
       cb_bus_err_o    : out std_ulogic; -- bus transfer error
@@ -1378,7 +1394,6 @@ package neorv32_package is
       p_bus_ben_o     : out std_ulogic_vector(03 downto 0); -- byte enable
       p_bus_we_o      : out std_ulogic; -- write enable
       p_bus_re_o      : out std_ulogic; -- read enable
-      p_bus_cancel_o  : out std_ulogic; -- cancel current bus transaction
       p_bus_lock_o    : out std_ulogic; -- exclusive access request
       p_bus_ack_i     : in  std_ulogic; -- bus transfer acknowledge
       p_bus_err_i     : in  std_ulogic  -- bus transfer error
@@ -1638,7 +1653,9 @@ package neorv32_package is
       MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
       -- Internal data memory --
       MEM_INT_DMEM_EN   : boolean := true;   -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE : natural := 4*1024  -- size of processor-internal data memory in bytes
+      MEM_INT_DMEM_SIZE : natural := 4*1024; -- size of processor-internal data memory in bytes
+      -- Bus Timeout --
+      BUS_TIMEOUT       : natural := 63      -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     );
     port (
       -- global control --
@@ -1652,7 +1669,6 @@ package neorv32_package is
       ben_i     : in  std_ulogic_vector(03 downto 0); -- byte write enable
       data_i    : in  std_ulogic_vector(31 downto 0); -- data in
       data_o    : out std_ulogic_vector(31 downto 0); -- data out
-      cancel_i  : in  std_ulogic; -- cancel current bus transaction
       lock_i    : in  std_ulogic; -- exclusive access request
       ack_o     : out std_ulogic; -- transfer acknowledge
       err_o     : out std_ulogic; -- transfer error
