@@ -43,13 +43,11 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_bus is
   generic (
-    CPU_EXTENSION_RISCV_A : boolean := false; -- implement atomic extension?
-    CPU_EXTENSION_RISCV_C : boolean := true;  -- implement compressed extension?
+    CPU_EXTENSION_RISCV_A : boolean := false;  -- implement atomic extension?
+    CPU_EXTENSION_RISCV_C : boolean := true;   -- implement compressed extension?
     -- Physical memory protection (PMP) --
-    PMP_NUM_REGIONS       : natural := 0;     -- number of regions (0..64)
-    PMP_MIN_GRANULARITY   : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
-    -- Bus Timeout --
-    BUS_TIMEOUT           : natural := 63     -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
+    PMP_NUM_REGIONS       : natural := 0;      -- number of regions (0..64)
+    PMP_MIN_GRANULARITY   : natural := 64*1024 -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
   );
   port (
     -- global control --
@@ -85,7 +83,6 @@ entity neorv32_cpu_bus is
     i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
     i_bus_we_o     : out std_ulogic; -- write enable
     i_bus_re_o     : out std_ulogic; -- read enable
-    i_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
     i_bus_lock_o   : out std_ulogic; -- exclusive access request
     i_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
     i_bus_err_i    : in  std_ulogic; -- bus transfer error
@@ -97,7 +94,6 @@ entity neorv32_cpu_bus is
     d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
     d_bus_we_o     : out std_ulogic; -- write enable
     d_bus_re_o     : out std_ulogic; -- read enable
-    d_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
     d_bus_lock_o   : out std_ulogic; -- exclusive access request
     d_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
     d_bus_err_i    : in  std_ulogic; -- bus transfer error
@@ -142,7 +138,6 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
     wr_req    : std_ulogic; -- write access in progress
     err_align : std_ulogic; -- alignment error
     err_bus   : std_ulogic; -- bus access error
-    timeout   : std_ulogic_vector(index_size_f(BUS_TIMEOUT)-1 downto 0);
   end record;
   signal i_arbiter, d_arbiter : bus_arbiter_t;
 
@@ -312,7 +307,6 @@ begin
       d_arbiter.rd_req    <= '0';
       d_arbiter.err_align <= '0';
       d_arbiter.err_bus   <= '0';
-      d_arbiter.timeout   <= (others => '0');
     elsif rising_edge(clk_i) then
       -- data access request --
       if (d_arbiter.wr_req = '0') and (d_arbiter.rd_req = '0') then -- idle
@@ -320,12 +314,10 @@ begin
         d_arbiter.rd_req    <= ctrl_i(ctrl_bus_rd_c);
         d_arbiter.err_align <= d_misaligned;
         d_arbiter.err_bus   <= '0';
-        d_arbiter.timeout   <= std_ulogic_vector(to_unsigned(BUS_TIMEOUT, index_size_f(BUS_TIMEOUT)));
       else -- in progress
-        d_arbiter.timeout   <= std_ulogic_vector(unsigned(d_arbiter.timeout) - 1);
         d_arbiter.err_align <= (d_arbiter.err_align or d_misaligned) and (not ctrl_i(ctrl_bus_derr_ack_c));
-        d_arbiter.err_bus   <= (d_arbiter.err_bus   or (not or_all_f(d_arbiter.timeout)) or d_bus_err_i or 
-                                (st_pmp_fault and d_arbiter.wr_req) or (ld_pmp_fault and d_arbiter.rd_req)) and (not ctrl_i(ctrl_bus_derr_ack_c));
+        d_arbiter.err_bus   <= (d_arbiter.err_bus or d_bus_err_i or (st_pmp_fault and d_arbiter.wr_req) or (ld_pmp_fault and d_arbiter.rd_req)) and
+                               (not ctrl_i(ctrl_bus_derr_ack_c));
         if (d_bus_ack_i = '1') or (ctrl_i(ctrl_bus_derr_ack_c) = '1') then -- wait for normal termination / CPU abort
           d_arbiter.wr_req <= '0';
           d_arbiter.rd_req <= '0';
@@ -333,9 +325,6 @@ begin
       end if;
     end if;
   end process data_access_arbiter;
-
-  -- cancel bus access --
-  d_bus_cancel_o <= (d_arbiter.wr_req or d_arbiter.rd_req) and ctrl_i(ctrl_bus_derr_ack_c);
 
   -- wait for bus transaction to finish --
   d_wait_o <= (d_arbiter.wr_req or d_arbiter.rd_req) and (not d_bus_ack_i);
@@ -409,18 +398,15 @@ begin
       i_arbiter.rd_req    <= '0';
       i_arbiter.err_align <= '0';
       i_arbiter.err_bus   <= '0';
-      i_arbiter.timeout   <= (others => '0');
     elsif rising_edge(clk_i) then
       -- instruction fetch request --
       if (i_arbiter.rd_req = '0') then -- idle
         i_arbiter.rd_req    <= ctrl_i(ctrl_bus_if_c);
         i_arbiter.err_align <= i_misaligned;
         i_arbiter.err_bus   <= '0';
-        i_arbiter.timeout   <= std_ulogic_vector(to_unsigned(BUS_TIMEOUT, index_size_f(BUS_TIMEOUT)));
-      else -- in progress
-        i_arbiter.timeout   <= std_ulogic_vector(unsigned(i_arbiter.timeout) - 1);
-        i_arbiter.err_align <= (i_arbiter.err_align or i_misaligned)                                                     and (not ctrl_i(ctrl_bus_ierr_ack_c));
-        i_arbiter.err_bus   <= (i_arbiter.err_bus   or (not or_all_f(i_arbiter.timeout)) or i_bus_err_i or if_pmp_fault) and (not ctrl_i(ctrl_bus_ierr_ack_c));
+      else -- in progres
+        i_arbiter.err_align <= (i_arbiter.err_align or i_misaligned) and (not ctrl_i(ctrl_bus_ierr_ack_c));
+        i_arbiter.err_bus   <= (i_arbiter.err_bus or i_bus_err_i or if_pmp_fault) and (not ctrl_i(ctrl_bus_ierr_ack_c));
         if (i_bus_ack_i = '1') or (ctrl_i(ctrl_bus_ierr_ack_c) = '1') then -- wait for normal termination / CPU abort
           i_arbiter.rd_req <= '0';
         end if;
@@ -429,9 +415,6 @@ begin
   end process ifetch_arbiter;
 
   i_arbiter.wr_req <= '0'; -- instruction fetch is read-only
-
-  -- cancel bus access --
-  i_bus_cancel_o <= i_arbiter.rd_req and ctrl_i(ctrl_bus_ierr_ack_c);
 
   -- wait for bus transaction to finish --
   i_wait_o <= i_arbiter.rd_req and (not i_bus_ack_i);

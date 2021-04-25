@@ -58,7 +58,6 @@ entity neorv32_cpu is
     -- General --
     HW_THREAD_ID                 : natural := 0;     -- hardware thread id (32-bit)
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
-    BUS_TIMEOUT                  : natural := 63;    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
@@ -93,7 +92,6 @@ entity neorv32_cpu is
     i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
     i_bus_we_o     : out std_ulogic; -- write enable
     i_bus_re_o     : out std_ulogic; -- read enable
-    i_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
     i_bus_lock_o   : out std_ulogic; -- exclusive access request
     i_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
     i_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
@@ -106,7 +104,6 @@ entity neorv32_cpu is
     d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
     d_bus_we_o     : out std_ulogic; -- write enable
     d_bus_re_o     : out std_ulogic; -- read enable
-    d_bus_cancel_o : out std_ulogic; -- cancel current bus transaction
     d_bus_lock_o   : out std_ulogic; -- exclusive access request
     d_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
     d_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
@@ -179,9 +176,6 @@ begin
 
   -- U-extension requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report "NEORV32 CPU CONFIG ERROR! User mode requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
-
-  -- Bus timeout --
-  assert not (BUS_TIMEOUT < 2) report "NEORV32 CPU CONFIG ERROR! Invalid bus access timeout value <BUS_TIMEOUT>. Has to be >= 2." severity error;
 
   -- Instruction prefetch buffer size --
   assert not (is_power_of_two_f(ipb_entries_c) = false) report "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <ipb_entries_c> has to be a power of two." severity error;
@@ -457,9 +451,7 @@ begin
     CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS       => PMP_NUM_REGIONS,       -- number of regions (0..64)
-    PMP_MIN_GRANULARITY   => PMP_MIN_GRANULARITY,   -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
-    -- Bus Timeout --
-    BUS_TIMEOUT           => BUS_TIMEOUT            -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
+    PMP_MIN_GRANULARITY   => PMP_MIN_GRANULARITY    -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
   )
   port map (
     -- global control --
@@ -495,7 +487,6 @@ begin
     i_bus_ben_o    => i_bus_ben_o,    -- byte enable
     i_bus_we_o     => i_bus_we_o,     -- write enable
     i_bus_re_o     => i_bus_re_o,     -- read enable
-    i_bus_cancel_o => i_bus_cancel_o, -- cancel current bus transaction
     i_bus_lock_o   => i_bus_lock_o,   -- exclusive access request
     i_bus_ack_i    => i_bus_ack_i,    -- bus transfer acknowledge
     i_bus_err_i    => i_bus_err_i,    -- bus transfer error
@@ -507,7 +498,6 @@ begin
     d_bus_ben_o    => d_bus_ben_o,    -- byte enable
     d_bus_we_o     => d_bus_we_o,     -- write enable
     d_bus_re_o     => d_bus_re_o,     -- read enable
-    d_bus_cancel_o => d_bus_cancel_o, -- cancel current bus transaction
     d_bus_lock_o   => d_bus_lock_o,   -- exclusive access request
     d_bus_ack_i    => d_bus_ack_i,    -- bus transfer acknowledge
     d_bus_err_i    => d_bus_err_i,    -- bus transfer error
