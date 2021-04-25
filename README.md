@@ -28,7 +28,9 @@ on the RISC-V NEORV32 CPU. The processor is intended as auxiliary processor in l
 designs or as *ready-to-go* stand-alone custom microcontroller.
 
 :books: For detailed information take a look at the [NEORV32 data sheet (pdf)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
-The doxygen-based documentation of the *software framework* is available online at [GitHub-pages](https://stnolting.github.io/neorv32/files.html).
+The `asciidoc` sources can be found in [`dosc/src_adoc`](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc).
+
+:books: The doxygen-based documentation of the *software framework* is available online at [GitHub-pages](https://stnolting.github.io/neorv32/files.html).
 
 :label: The project’s change log is available as [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) in the root directory of this repository.
 To see the changes between *stable* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
