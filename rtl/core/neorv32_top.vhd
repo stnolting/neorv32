@@ -95,6 +95,7 @@ entity neorv32_top is
 
     -- External memory interface --
     MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
+    MEM_EXT_TIMEOUT              : natural := 255;    -- cycles after a pending bus access auto-terminates (0 = disabled)
 
     -- Processor peripherals --
     IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
@@ -190,10 +191,6 @@ architecture neorv32_top_rtl of neorv32_top is
   -- CPU boot address --
   constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(BOOTLOADER_EN, boot_rom_base_c, ispace_base_c);
 
-  -- Bus timeout --
-  constant bus_timeout_temp_c : natural := 2**index_size_f(bus_timeout_c); -- round to next power-of-two
-  constant bus_timeout_proc_c : natural := cond_sel_natural_f(ICACHE_EN, ((ICACHE_BLOCK_SIZE/4)*bus_timeout_temp_c)-1, bus_timeout_c);
-
   -- alignment check for internal memories --
   constant imem_align_check_c : std_ulogic_vector(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) := (others => '0');
   constant dmem_align_check_c : std_ulogic_vector(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) := (others => '0');
@@ -231,7 +228,6 @@ architecture neorv32_top_rtl of neorv32_top is
     ben    : std_ulogic_vector(03 downto 0); -- byte enable
     we     : std_ulogic; -- write enable
     re     : std_ulogic; -- read enable
-    cancel : std_ulogic; -- cancel current transfer
     ack    : std_ulogic; -- bus transfer acknowledge
     err    : std_ulogic; -- bus transfer error
     fence  : std_ulogic; -- fence(i) instruction executed
@@ -282,6 +278,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal neoled_ack     : std_ulogic;
   signal sysinfo_rdata  : std_ulogic_vector(data_width_c-1 downto 0);
   signal sysinfo_ack    : std_ulogic;
+  signal bus_keeper_err : std_ulogic;
 
   -- IRQs --
   signal mtime_irq    : std_ulogic;
@@ -330,9 +327,6 @@ begin
   assert not (dspace_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framework." severity warning;
   -- memory system - the i-cache is intended to accelerate instruction fetch via the external memory interface only --
   assert not ((ICACHE_EN = true) and (MEM_EXT_EN = false)) report "NEORV32 PROCESSOR CONFIG NOTE. Implementing i-cache without having the external memory interface implemented. The i-cache is intended to accelerate instruction fetch via the external memory interface." severity note;
-  -- memory system - cached instruction fetch latency check --
-  assert not (ICACHE_EN = true) report "NEORV32 PROCESSOR CONFIG WARNING! Implementing i-cache. Increasing bus access timeout from " & integer'image(bus_timeout_c) & " cycles to " & integer'image(bus_timeout_proc_c) & " cycles." severity warning;
-
 
   -- Reset Generator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -409,7 +403,6 @@ begin
     -- General --
     HW_THREAD_ID                 => HW_THREAD_ID,        -- hardware thread id
     CPU_BOOT_ADDR                => cpu_boot_addr_c,     -- cpu boot address
-    BUS_TIMEOUT                  => bus_timeout_proc_c,  -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit manipulation extensions?
@@ -443,7 +436,6 @@ begin
     i_bus_ben_o    => cpu_i.ben,    -- byte enable
     i_bus_we_o     => cpu_i.we,     -- write enable
     i_bus_re_o     => cpu_i.re,     -- read enable
-    i_bus_cancel_o => cpu_i.cancel, -- cancel current bus transaction
     i_bus_lock_o   => cpu_i.lock,   -- exclusive access request
     i_bus_ack_i    => cpu_i.ack,    -- bus transfer acknowledge
     i_bus_err_i    => cpu_i.err,    -- bus transfer error
@@ -456,7 +448,6 @@ begin
     d_bus_ben_o    => cpu_d.ben,    -- byte enable
     d_bus_we_o     => cpu_d.we,     -- write enable
     d_bus_re_o     => cpu_d.re,     -- read enable
-    d_bus_cancel_o => cpu_d.cancel, -- cancel current bus transaction
     d_bus_lock_o   => cpu_d.lock,   -- exclusive access request
     d_bus_ack_i    => cpu_d.ack,    -- bus transfer acknowledge
     d_bus_err_i    => cpu_d.err,    -- bus transfer error
@@ -527,7 +518,6 @@ begin
       host_ben_i    => cpu_i.ben,      -- byte enable
       host_we_i     => cpu_i.we,       -- write enable
       host_re_i     => cpu_i.re,       -- read enable
-      host_cancel_i => cpu_i.cancel,   -- cancel current bus transaction
       host_ack_o    => cpu_i.ack,      -- bus transfer acknowledge
       host_err_o    => cpu_i.err,      -- bus transfer error
       -- peripheral bus interface --
@@ -537,7 +527,6 @@ begin
       bus_ben_o     => i_cache.ben,    -- byte enable
       bus_we_o      => i_cache.we,     -- write enable
       bus_re_o      => i_cache.re,     -- read enable
-      bus_cancel_o  => i_cache.cancel, -- cancel current bus transaction
       bus_ack_i     => i_cache.ack,    -- bus transfer acknowledge
       bus_err_i     => i_cache.err     -- bus transfer error
     );
@@ -548,15 +537,14 @@ begin
 
   neorv32_icache_inst_false:
   if (ICACHE_EN = false) generate
-    i_cache.addr   <= cpu_i.addr;
-    cpu_i.rdata    <= i_cache.rdata;
-    i_cache.wdata  <= cpu_i.wdata;
-    i_cache.ben    <= cpu_i.ben;
-    i_cache.we     <= cpu_i.we;
-    i_cache.re     <= cpu_i.re;
-    i_cache.cancel <= cpu_i.cancel;
-    cpu_i.ack      <= i_cache.ack;
-    cpu_i.err      <= i_cache.err;
+    i_cache.addr  <= cpu_i.addr;
+    cpu_i.rdata   <= i_cache.rdata;
+    i_cache.wdata <= cpu_i.wdata;
+    i_cache.ben   <= cpu_i.ben;
+    i_cache.we    <= cpu_i.we;
+    i_cache.re    <= cpu_i.re;
+    cpu_i.ack     <= i_cache.ack;
+    cpu_i.err     <= i_cache.err;
   end generate;
 
 
@@ -578,7 +566,6 @@ begin
     ca_bus_ben_i    => cpu_d.ben,      -- byte enable
     ca_bus_we_i     => cpu_d.we,       -- write enable
     ca_bus_re_i     => cpu_d.re,       -- read enable
-    ca_bus_cancel_i => cpu_d.cancel,   -- cancel current bus transaction
     ca_bus_lock_i   => cpu_d.lock,     -- exclusive access request
     ca_bus_ack_o    => cpu_d.ack,      -- bus transfer acknowledge
     ca_bus_err_o    => cpu_d.err,      -- bus transfer error
@@ -589,7 +576,6 @@ begin
     cb_bus_ben_i    => i_cache.ben,    -- byte enable
     cb_bus_we_i     => i_cache.we,     -- write enable
     cb_bus_re_i     => i_cache.re,     -- read enable
-    cb_bus_cancel_i => i_cache.cancel, -- cancel current bus transaction
     cb_bus_lock_i   => i_cache.lock,   -- exclusive access request
     cb_bus_ack_o    => i_cache.ack,    -- bus transfer acknowledge
     cb_bus_err_o    => i_cache.err,    -- bus transfer error
@@ -601,7 +587,6 @@ begin
     p_bus_ben_o     => p_bus.ben,      -- byte enable
     p_bus_we_o      => p_bus.we,       -- write enable
     p_bus_re_o      => p_bus.re,       -- read enable
-    p_bus_cancel_o  => p_bus.cancel,   -- cancel current bus transaction
     p_bus_lock_o    => p_bus.lock,     -- exclusive access request
     p_bus_ack_i     => p_bus.ack,      -- bus transfer acknowledge
     p_bus_err_i     => p_bus.err       -- bus transfer error
@@ -619,7 +604,31 @@ begin
                spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or cfs_ack or nco_ack or neoled_ack or sysinfo_ack);
 
   -- processor bus: CPU transfer data bus error input --
-  p_bus.err <= wishbone_err;
+  p_bus.err <= bus_keeper_err or wishbone_err;
+
+
+  -- Processor-Internal Bus Keeper (BUSKEEPER) ----------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_bus_keeper_inst: neorv32_bus_keeper
+  generic map (
+    -- Internal instruction memory --
+    MEM_INT_IMEM_EN   => MEM_INT_IMEM_EN,   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
+    -- Internal data memory --
+    MEM_INT_DMEM_EN   => MEM_INT_DMEM_EN,   -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE  -- size of processor-internal data memory in bytes
+  )
+  port map (
+    -- host access --
+    clk_i  => clk_i,         -- global clock line
+    rstn_i => sys_rstn,      -- global reset line, low-active
+    addr_i => p_bus.addr,    -- address
+    rden_i => p_bus.re,      -- read enable
+    wren_i => p_bus.we,      -- write enable
+    ack_i  => p_bus.ack,     -- transfer acknowledge from bus system
+    err_i  => p_bus.err,     -- transfer error from bus system
+    err_o  => bus_keeper_err -- bus error
+  );
 
 
   -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
@@ -717,7 +726,9 @@ begin
       MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
       -- Internal data memory --
       MEM_INT_DMEM_EN   => MEM_INT_DMEM_EN,   -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE  -- size of processor-internal data memory in bytes
+      MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
+      -- Bus Timeout --
+      BUS_TIMEOUT       => MEM_EXT_TIMEOUT    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     )
     port map (
       -- global control --
@@ -731,7 +742,6 @@ begin
       ben_i     => p_bus.ben,      -- byte write enable
       data_i    => p_bus.wdata,    -- data in
       data_o    => wishbone_rdata, -- data out
-      cancel_i  => p_bus.cancel,   -- cancel current transaction
       lock_i    => p_bus.lock,     -- exclusive access request
       ack_o     => wishbone_ack,   -- transfer acknowledge
       err_o     => wishbone_err,   -- transfer error
