@@ -125,12 +125,14 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   constant hpm_cnt_lo_width_c : natural := natural(cond_sel_int_f(boolean(HPM_CNT_WIDTH < 32), HPM_CNT_WIDTH, 32));
   constant hpm_cnt_hi_width_c : natural := natural(cond_sel_int_f(boolean(HPM_CNT_WIDTH > 32), HPM_CNT_WIDTH-32, 0));
 
-  -- instruction fetch enginge --
+  -- instruction fetch engine --
   type fetch_engine_state_t is (IFETCH_RESET, IFETCH_REQUEST, IFETCH_ISSUE);
   type fetch_engine_t is record
     state       : fetch_engine_state_t;
     state_nxt   : fetch_engine_state_t;
     state_prev  : fetch_engine_state_t;
+    restart     : std_ulogic;
+    restart_nxt : std_ulogic;
     pc          : std_ulogic_vector(data_width_c-1 downto 0);
     pc_nxt      : std_ulogic_vector(data_width_c-1 downto 0);
     reset       : std_ulogic;
@@ -165,7 +167,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal ci_instr32 : std_ulogic_vector(31 downto 0);
   signal ci_illegal : std_ulogic;
 
-  -- instruction issue enginge --
+  -- instruction issue engine --
   type issue_engine_state_t is (ISSUE_ACTIVE, ISSUE_REALIGN);
   type issue_engine_t is record
     state     : issue_engine_state_t;
@@ -366,14 +368,12 @@ begin
     if (rstn_i = '0') then
       fetch_engine.state      <= IFETCH_RESET;
       fetch_engine.state_prev <= IFETCH_RESET;
+      fetch_engine.restart    <= '0';
       fetch_engine.pc         <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
-      if (fetch_engine.reset = '1') then
-        fetch_engine.state <= IFETCH_RESET;
-      else
-        fetch_engine.state <= fetch_engine.state_nxt;
-      end if;
+      fetch_engine.state      <= fetch_engine.state_nxt;
       fetch_engine.state_prev <= fetch_engine.state;
+      fetch_engine.restart    <= fetch_engine.restart_nxt;
       fetch_engine.pc         <= fetch_engine.pc_nxt;
     end if;
   end process fetch_engine_fsm_sync;
@@ -391,17 +391,19 @@ begin
     fetch_engine.state_nxt   <= fetch_engine.state;
     fetch_engine.pc_nxt      <= fetch_engine.pc;
     fetch_engine.bus_err_ack <= '0';
+    fetch_engine.restart_nxt <= fetch_engine.restart or fetch_engine.reset;
 
     -- instruction prefetch buffer interface --
     ipb.we    <= '0';
     ipb.wdata <= be_instr_i & ma_instr_i & instr_i(31 downto 0); -- store exception info and instruction word
-    ipb.clear <= '0';
+    ipb.clear <= fetch_engine.restart;
 
     -- state machine --
     case fetch_engine.state is
 
       when IFETCH_RESET => -- reset engine and prefetch buffer, get application PC
       -- ------------------------------------------------------------
+        fetch_engine.restart_nxt <= '0';
         fetch_engine.bus_err_ack <= '1'; -- acknowledge any instruction bus errors, the execute engine has to take care of them / terminate current transfer
         fetch_engine.pc_nxt      <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- initialize with "real" application PC
         ipb.clear                <= '1'; -- clear prefetch buffer
@@ -420,7 +422,11 @@ begin
         if (bus_i_wait_i = '0') or (be_instr_i = '1') or (ma_instr_i = '1') then -- wait for bus response
           fetch_engine.pc_nxt    <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
           ipb.we                 <= '1';
-          fetch_engine.state_nxt <= IFETCH_REQUEST;
+          if (fetch_engine.restart = '1') then
+            fetch_engine.state_nxt <= IFETCH_RESET;
+          else
+            fetch_engine.state_nxt <= IFETCH_REQUEST;
+          end if;
         end if;
 
       when others => -- undefined
