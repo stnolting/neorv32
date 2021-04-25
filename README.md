@@ -28,7 +28,7 @@ on the RISC-V NEORV32 CPU. The processor is intended as auxiliary processor in l
 designs or as *ready-to-go* stand-alone custom microcontroller.
 
 :books: For detailed information take a look at the [NEORV32 data sheet (pdf)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
-The `asciidoc` sources can be found in [`dosc/src_adoc`](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc).
+The `asciidoc` sources can be found in [`docs/src_adoc`](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc).
 The doxygen-based documentation of the *software framework* is available online at [GitHub-pages](https://stnolting.github.io/neorv32/files.html).
 
 :label: The project’s change log is available as [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) in the root directory of this repository.
@@ -529,6 +529,22 @@ and is mapped to address `0x00000000 - 0x00003fff` (16kB), the second RAM is use
 This overview is just a short excerpt from the *Let's Get It Started* section of the NEORV32 documentary:
 
 [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
+
+
+### 0. Build the Documentation
+
+This step is optional since there are pre-built versions of the [processor data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
+and the [software documentation](https://stnolting.github.io/neorv32/files.html). If you want to build the documentation by yourself:
+
+**NEORV32 Data Sheet**
+
+To build the data sheet open a console and navigate to the project's `docs` folder. Run `sh make_datasheet.pdf` (make sure `asciidoctor-pdf` is installed).
+This will take all the `asciidoc` sources from [`docs/src_adoc`](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc) to generate `docs/NEORV32.pdf`.
+
+**Software Framework Documentation**
+
+Make sure `doxygen` is installed. Open a console and navigate to the project's `docs` folder and run `doxygen Doxyfile`. This will create (if not already there)
+a new folder `docs/doxygen_build/html` where doxygen will generate the HTML-based documentation pages. Open `docs/doxygen_build/html/files.html` to get started.
 
 
 ### 1. Get the Toolchain
