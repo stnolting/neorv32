@@ -4,7 +4,7 @@
 set -e
 
 # Default simulation configuration
-SIM_CONFIG=--stop-time=7500us
+SIM_CONFIG=--stop-time=8ms
 
 # Project home folder
 homedir="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
