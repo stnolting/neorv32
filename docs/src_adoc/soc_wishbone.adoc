@@ -21,8 +21,8 @@
 |                          | `fence_o`   | indicates an executed fence instruction
 |                          | `fencei_o`  | indicates an executed fence.i instruction
 | Configuration generics:  | _MEM_EXT_EN_ | enable external memory interface when _true_
+|                          | _MEM_EXT_TIMEOUT_ | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
 | Configuration constants in VHDL package file `neorv32_package.vhd`: | `wb_pipe_mode_c` | when _false_ (default): classic/standard Wishbone protocol; when _true_: pipelined Wishbone protocol
-|                                                                     | `bus_timeout_c` | cycles after which an unacknowledged bus access will time out, get canceled and triggers a bus exception interrupt, default = 127
 |                                                                     | `xbus_big_endian_c` | byte-order (Endianness) of external memory interface (true=BIG (default), false=little)
 | CPU interrupts:          | none             | 
 |=======================
@@ -70,39 +70,27 @@ can be found in the data sheet "Wishbone B4 – WISHBONE System-on-Chip (SoC) In
 Architecture for Portable IP Cores". A copy of this document can be found in the docs folder of this
 project.
 
-**Latency**
+**Interface Latency**
 
 The Wishbone gateway introduces two additional latency cycles: Processor-outgoing and -incoming signals
-are fully registered. Thus, any access from the CPU to a processor-external devices takes at least four cycles
-if the accessed device can respond within the same cycle the external bus access is initiated.
-If the CPU cancels an active Wishbone transaction, the bus interface goes into suspend mode, that still keeps
-the transaction active for some time to allow the bus system to acknowledge the transfer. If the bus system
-still does not terminate the transfer, the bus interface forces a termination.
+are fully registered. Thus, any access from the CPU to a processor-external devices requires +2 clock cycles.
 
 **Bus Access Timeout**
 
-Whenever the CPU starts a memory access, an internal timer is started. If the accessed address (the memory
-or peripheral device) does not acknowledge the transfer within a certain time, the bus access is canceled and
-a load/store/instruction fetch bus access fault exception is raised – depending on the bus access type.
+The Wishbone bus interface provides an option to configure a bus access timeout counter. The _MEM_EXT_TIMEOUT_
+top generic is used to specify the _maximum_ time (in clock cycles) a bus access can be pending before it is automatically
+terminated. If _MEM_EXT_TIMEOUT_ is set to zero, the timeout disabled an a bus access can take an arbitrary number of cycles to complete.
 
-The processor-internal memories and peripherals will always acknowledge the transfers within two cycles.
-Of course, a bus timeout will occur if accessing unused address locations. For example, a bus timeout and
-thus, a load/store bus access fault will occur when trying to access an IO device that has not been
-implemented.
+When _MEM_EXT_TIMEOUT_ is greater than zero, the WIshbone adapter starts an internal countdown whenever the CPU
+accesses a memory address via the external memory interface. If the accessed memory / device does not acknowledge (via `wb_ack_i`)
+or terminate (via `wb_err_i`) the transfer within _MEM_EXT_TIMEOUT_ clock cycles, the bus access is automatically canceled
+(setting `wb_cyc_o` low again) and a load/store/instruction fetch bus access fault exception is raised.
 
-The maximum bus cycle time (default = 127 cycles), after which a **bus access exception will be triggered**,
-is defined via the global bus_timeout_c constant in the project's main VHDL package file
-(`rtl/neorv32_package.vhd`):
-
-[source,vhdl]
-----
--- (external) bus interface --
-constant bus_timeout_c : natural := 127;
-----
-
-Bus accesses via the external memory interface are acknowledged via the Wishbone-compatible `wb_ack_i`
-signal. The external bus accesses can be terminated/aborted at any time by an accessed device/memory via
-the Wishbone-compatible `wb_err_i` signal.
+[TIP]
+This feature can be used as **safety guard** if the external memory system does not check for "address space holes". That means that addresses, which
+do not belong to a certain memory or device, do not permanently stall the processor due to an unacknowledged/unterminated bus access. If the external
+memory system can guarantee to access **any** bus access (even it targets an unimplemented address) the timeout feature should be disabled
+(_MEM_EXT_TIMEOUT_ = 0).
 
 **Wishbone Tag**
 
@@ -157,3 +145,9 @@ interface port signals are automatically detected when packaging the core.
 
 .Example AXI SoC using Xilinx Vivado
 image:../figures/neorv32_axi_soc.png[]
+
+[WARNING]
+Using the auto-termination timeout feature (_MEM_EXT_TIMEOUT_ greater than zero) is **not AXI4 compliant** as the AXI protocol does not support canceling of
+bus transactions. Therefore, the NEORV32 top wrapper with AXI4-Lite interface (`rtl/top_templates/neorv32_top_axi4lite`) configures _MEM_EXT_TIMEOUT_ = 0 by default.
+
+

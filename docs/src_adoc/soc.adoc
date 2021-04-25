@@ -446,6 +446,14 @@ See sections <<_address_space>> and <<_processor_external_memory_interface_wishb
 |======
 
 
+[cols="4,4,2"]
+[frame="topbot",grid="none"]
+|======
+| **MEM_EXT_TIMEOUT** | _natural_ | 255
+3+| Clock cycles after which a pending external bus access will auto-terminates and raise a bus fault exception. Set to 0 to disable auto-timeout. 
+|======
+
+
 // ####################################################################################################################
 :sectnums:
 ==== Processor Peripheral/IO Modules
@@ -673,12 +681,13 @@ applications – even if the bootloader or all IO devices are not implemented.
 
 [WARNING]
 When using the processor-internal data and/or instruction memories (DMEM/IMEM) and using a non-default
-configuration for the dspace_base_c and/or ispace_base_c base addresses, the
+configuration for the `dspace_base_c` and/or `ispace_base_c` base addresses, the
 following requirements have to be fulfilled:
-1.: Both base addresses have to be aligned to a 4-byte boundary.
-2.: Both base addresses have to be aligned to the according internal memory sizes.
+**1.** Both base addresses have to be aligned to a 4-byte boundary.
+**2.** Both base addresses have to be aligned to the according internal memory sizes.
 
-**CPU Data and Instruction Access**
+:sectnums:
+==== CPU Data and Instruction Access
 
 The CPU can access all of the 4GB address space from the instruction fetch interface (**I**) and also from the
 data access interface (**D**). These two CPU interfaces are multiplexed by a simple bus switch
@@ -704,7 +713,8 @@ a periodic interrupt from the _MTIME_ timer unit, user-level programs could alte
 configuration corrupting this interrupt. This kind of security issues can be compensated using the
 PMP system (see <<_machine_physical_memory_protection>>).
 
-**Physical Memory Attributes**
+:sectnums:
+==== Physical Memory Attributes
 
 The processor setup defines four simple attributes for the four processor-internal address space regions:
 
@@ -716,10 +726,8 @@ The processor setup defines four simple attributes for the four processor-intern
 * `16` – half-word (16-bit)-accessible (when writing)
 * `32` – word (32-bit)-accessible (when writing)
 
-
 The following table shows the provided physical memory attributes of each region. Additional attributes (like
 denying execute right for certain region of the IMEM) can be provided using the RISC-V <<_machine_physical_memory_protection>> extension.
-
 
 [cols="^1,^2,^2,^3,^2"]
 [options="header",grid="rows"]
@@ -738,7 +746,8 @@ load/store/instruction fetch access exception or will return a failed atomic acc
 The physical memory attributes of memories and/or devices connected via the external bus interface have to
 defined by those components or the interconnection fabric.
 
-**Internal Memories**
+:sectnums:
+==== Internal Memories
 
 The processor can implement internal memories for instructions (IMEM) and data (DMEM), which will be
 mapped to FPGA block RAMs. The implementation of these memories is controlled via the boolean
@@ -754,10 +763,11 @@ address space (default `ispace_base_c` = _0x00000000_). Vice versa, the processo
 located right at the beginning of the data address space (default `dspace_base_c` = _0x80000000_) when
 implemented.
 
-**External Memory/Bus Interface**
+:sectnums:
+==== External Memory/Bus Interface
 
 Any CPU access (data or instructions), which does not fulfill one of the following conditions, is forwarded
-to the external memory interface:
+to the <<_processor_external_memory_interface_wishbone_axi4_lite>>:
 
 * access to the processor-internal IMEM and processor-internal IMEM is implemented
 * access to the processor-internal DMEM and processor-internal DMEM is implemented
@@ -765,19 +775,9 @@ to the external memory interface:
 
 The external bus interface is available when the _MEM_EXT_EN_ generic is _true_. If this interface is
 deactivated, any access exceeding the internal memories or peripheral devices will trigger a bus access fault
-exception.
+exception. If _MEM_EXT_TIMEOUT_ is greater than zero any external bus access that is not acknowledged or terminated
+within _MEM_EXT_TIMEOUT_ clock cycles will auto-timeout and raise the according bus fault exception.
 
-**External Memory/Bus Interface – Instruction Memory Example**
-
-* _MEM_INT_IMEM_EN_ = _true_
-* _MEM_INT_IMEM_SIZE_ = _1024_
-* _MEM_EXT_EN_ = _true_
-
-All accesses beyond address _0x000003ff_ (base + size = _0x00000000_ + 1024 bytes - 1) are forwarded to
-the external memory interface. To connect an external memory with 1024 bytes starting at the end of the
-processor-internal IMEM, the base address of this external memory has to be _0x00000400_. If the external
-memory interface is not implemented, any access beyond _0x000003ff_ will trigger an instruction bus access
-fault exception
 
 
 <<<
