@@ -262,7 +262,6 @@ direction seen from the CPU.
 | `i_bus_ben_o`    |     4 | out | byte enable
 | `i_bus_we_o`     |     1 | out | write transaction (always zero)
 | `i_bus_re_o`     |     1 | out | read transaction
-| `i_bus_cancel_o` |     1 | out | cancel current transfer
 | `i_bus_lock_o`   |     1 | out | exclusive access request (always zero)
 | `i_bus_ack_i`    |     1 | in  | bus transfer acknowledge from accessed peripheral
 | `i_bus_err_i`    |     1 | in  | bus transfer terminate from accessed peripheral
@@ -275,7 +274,6 @@ direction seen from the CPU.
 | `d_bus_ben_o`    |     4 | out | byte enable
 | `d_bus_we_o`     |     1 | out | write transaction
 | `d_bus_re_o`     |     1 | out | read transaction
-| `d_bus_cancel_o` |     1 | out | cancel current transfer
 | `d_bus_lock_o`   |     1 | out | exclusive access request
 | `d_bus_ack_i`    |     1 | in  | bus transfer acknowledge from accessed peripheral
 | `d_bus_err_i`    |     1 | in  | bus transfer terminate from accessed peripheral
@@ -816,7 +814,6 @@ The following table shows the signals of the data and instruction interfaces see
 | `bus_ben_o`    | 4  | byte enable signal for write operations
 | `bus_we_o`     | 1  | bus write access
 | `bus_re_o`     | 1  | bus read access
-| `bus_cancel_o` | 1  | indicates that the current bus access is terminated by the CPU
 | `bus_lock_o`   | 1  | exclusive access request
 | `bus_ack_i`    | 1  | accessed peripheral indicates a successful completion of the bus transaction
 | `bus_err_i`    | 1  | accessed peripheral indicates an error during the bus transaction
@@ -828,36 +825,30 @@ The following table shows the signals of the data and instruction interfaces see
 Currently, there a no pipelined or overlapping operations implemented within the same bus interface.
 So only a single transfer request can be "on the fly".
 
-[NOTE]
-If there is no active transfer in progress (data or instructions) the state of the bus_cancel_o signal
-is irrelevant.
-
 :sectnums:
 ===== Protocol
 
 A bus request is triggered either by the `bus_re_o` signal (for reading data) or by the `bus_we_o` signal (for
-writing data). These signals are active for one cycle and initiate a new bus transaction. The transaction is
+writing data). These signals are active for exactly one cycle and initiate either a read or a write transaction. The transaction is
 completed when the accessed peripheral either sets the `bus_ack_i` signal (-> successful completion) or the
 `bus_err_i` signal is set (-> failed completion). All these control signals are only active (= high) for one
-single cycle.
+single cycle. An error indicated via the `bus_err_i` signal during a transfer will trigger the according instruction bus
+access fault or load/store bus access fault exception.
 
-An error indicated via the `bus_err_i` signal during a transfer will trigger the according instruction bus
-access fault or load/store bus access fault exception. The CPU will terminate a transfer (when an error
-during transfer is encountered) via the `bus_cancel_o` signal.
-
-The transfer can be completed directly in the same cycle as it was initiated (via the `bus_re_o` or `bus_we_o`
-signal) if the peripheral sets `bus_ack_i` or `bus_err_i` high for one cycle.
-
-.Memories / memory-mapped devices with variable latency
 [NOTE]
-All bus transactions require a minimal latency of 1 cycle. In this case the bus transactions takes a
-total of 2 cycles (setting all signals in the first cycle starting a new request; results are provided in
-the second cycle. There is no problem if the accessed peripheral takes more than 1 cycle to process the request (=
-latency > 1 cycle). However, the bus transaction has to be completed (= acknowledged) within the
-number of cycles specified via the global **_bus_timeout_c_** constant (default: 127 cycles) from the
-VHDL package file (`rtl/neorv32_package.vhd`). If not, the according instruction bus access
-fault or load/store bus access fault exception is triggered and the CPU cancels the transaction via the
-`bus_cancel_o` signal.
+The transfer can be completed directly in the same cycle as it was initiated (via the `bus_re_o` or `bus_we_o`
+signal) if the peripheral sets `bus_ack_i` or `bus_err_i` high for one cycle. However, in order to shorten the critical path such "asynchronous"
+completion should be avoided. The default processor-internal module provide a one cycle delay between initiation and completion of transfers.
+
+.Bus Keeper: Memories / memory-mapped devices with **variable / high latency**
+[IMPORTANT]
+Peripheral or memories accessed via the processor-internal bus do not have to respond in the very cycle next to the transfer initiation.
+There is no problem if the accessed peripheral takes more than 1 cycle to process the request (= latency > 1 cycle). 
+However, the bus transaction has to be completed (= acknowledged) within a certain **response time window**. This time window is defined
+by the global `max_proc_int_response_time_c` constant from the processor's VHDL package file (`rtl/neorv32_package.vhd`).
+It defines the maximum number of cycles after which an _unacknowledged_ processor-internal bus transfer will timeout. The _BUSKEEPER_
+hardware module (`rtl/core/neorv32_bus_keeper.vhd`) keeps track of all internal bus transactions. If any bus operations times out (for example when accessing
+"address space holes") this unit will issue a bus error to the CPU that will raise the according instruction fetch or data access **bus fault exception**.
 
 **Exemplary Bus Accesses**
 
