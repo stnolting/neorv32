@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 25.04.2021 | 1.5.4.3 | :sparkles: converted NEORV32.pdf data sheet to [`asciidoc` using asciidoctor](https://asciidoctor.org/); added data sheet sources to [`dosc/src_adoc`](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc) |
 | 21.04.2021 | 1.5.4.3 | :warning: :bug: reworked *atomic memory access* system due to conceptual design errors: new system will make atomic LR/SC combinations fail when there is a trap (like a context switch) between the two instructions; new system prohibits SC from writing to memory if exclusive access fails; removed top's `wb_tag_i` signal, pruned one bit of top's `wb_tag_o` signal (atomic access), added top's `wb_lock_o` signal; updated sections in NEORV32.pdf regarding atomic memory accesses |
 | 19.04.2021 | 1.5.4.1 | added register stage to `MTIME.time` write access to improve timing closure |
 | 17.04.2021 | [**:rocket:1.5.4.0**](https://github.com/stnolting/neorv32/releases/tag/v1.5.4.0) | **New release** |
