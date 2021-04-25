@@ -1,0 +1,60 @@
+<<<
+:sectnums:
+==== Processor-Internal Instruction Cache (iCACHE)
+
+[cols="<3,<3,<4"]
+[grid="topbot"]
+|=======================
+| Hardware source file(s): | neorv32_icache.vhd | 
+| Software driver file(s): | none             | _implicitly used_
+| Top entity port:         | none             | 
+| Configuration generics:  | _ICACHE_EN_ | implement processor-internal instruction cache when _true_
+|                          | _ICACHE_NUM_BLOCKS_ | number of cache blocks (pages/lines)
+|                          | _ICACHE_BLOCK_SIZE_ | size of a cache block in bytes
+|                          | _ICACHE_ASSOCIATIVITY_ | associativity / number of sets
+| CPU interrupts:          | none             | 
+|=======================
+
+The processor features an optional cache for instructions to compensate memories with high latency. The
+cache is directly connected to the CPU's instruction fetch interface and provides a full-transparent buffering
+of instruction fetch accesses to the entire 4GB address space.
+
+[IMPORTANT]
+The instruction cache is intended to accelerate instruction fetch via the external memory interface.
+Since all processor-internal memories provide an access latency of one cycle (by default), caching
+internal memories does not bring any performance gain. However, it _might_ reduce traffic on the
+processor-internal bus.
+
+The cache is implemented if the _ICACHE_EN_ generic is true. The size of the cache memory is defined via
+_ICACHE_BLOCK_SIZE_ (the size of a single cache block/page/line in bytes; has to be a power of two and >=
+4 bytes), _ICACHE_NUM_BLOCKS_ (the total amount of cache blocks; has to be a power of two and >= 1) and
+the actual cache associativity _ICACHE_ASSOCIATIVITY_ (number of sets; 1 = direct-mapped, 2 = 2-way set-associative,
+has to be a power of two and >= 1).
+
+If the cache associativity (_ICACHE_ASSOCIATIVITY_) is > 1 the LRU replacement policy (least recently
+used) is used.
+
+[TIP]
+Keep the features of the targeted FPGA's memory resources (block RAM) in mind when configuring
+the cache size/layout to maximize and optimize resource utilization.
+
+By executing the `ifence.i` instruction (`Zifencei` CPU extension) the cache is cleared and a reload from
+main memory is forced. Among other things, this allows to implement self-modifying code.
+
+**Bus Access Fault Handling**
+
+The cache always loads a complete cache block (_ICACHE_BLOCK_SIZE_ bytes) aligned to the size of a cache
+block if a miss is detected. If any of the accessed addresses within a single block do not successfully
+acknowledge (i.e. issuing an error signal or timing out) the whole cache block is invalidate and any access to
+an address within this cache block will also raise an instruction fetch bus error fault exception.
+
+[IMPORTANT]
+If the instruction cache is implemented, the default bus timeout (configured in the processor's
+VHDL package file, see section <<_bus_interface>>) is automatically modified: The default bus
+timeout is rounded to the next power-of-two and multiplied by the number of word in one cache
+block minus one.
+
+Example:
+* default `bus_timeout_c` = 63 cycles
+* _ICACHE_BLOCK_SIZE_ = 256 (bytes
+* actual bus timeout = 64 * (256/4) -1 = 4095 cycles

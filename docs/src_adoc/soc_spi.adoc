@@ -1,0 +1,75 @@
+<<<
+:sectnums:
+==== Serial Peripheral Interface Controller (SPI)
+
+[cols="<3,<3,<4"]
+[grid="topbot"]
+|=======================
+| Hardware source file(s): | neorv32_spi.vhd | 
+| Software driver file(s): | neorv32_spi.c |
+|                          | neorv32_spi.h |
+| Top entity port:         | `spi_sck_o` | 1-bit serial clock output
+|                          | `spi_sdo_i` | 1-bit serial data output
+|                          | `spi_sdi_o` | 1-bit serial data input
+|                          | `spi_csn_i` | 8-bit dedicated chip select (low-active)
+| Configuration generics:  | _IO_SPI_EN_ | implement SPI controller when _true_
+| CPU interrupts:          | fast IRQ channel 6 | transmission done interrupt (see <<_processor_interrupts>>)
+|=======================
+
+**Theory of Operation**
+
+SPI is a synchronous serial transmission interface. The NEORV32 SPI transceiver allows 8-, 16-, 24- and 32-
+bit long transmissions. The unit provides 8 dedicated chip select signals via the top entity's `spi_csn_o`
+signal.
+
+The SPI unit is enabled via the _SPI_CT_EN_ bit in the _SPI_CT_ control register. The idle clock polarity is configured via the _SPI_CT_CPHA_
+bit and can be low (`0`) or high (`1`) during idle. The data quantity to be transferred within a
+single transmission is defined via the _SPI_CT_SIZEx bits_. The unit supports 8-bit (`00`), 16-bit (`01`), 24-
+bit (`10`) and 32-bit (`11`) transfers. Whenever a transfer is completed, the "transmission done interrupt" is triggered.
+A transmission is still in progress as long as the _SPI_CT_BUSY_ flag is set.
+
+The SPI controller features 8 dedicated chip-select lines. These lines are controlled via the control register's _SPI_CT_CSx_ bits. When
+a specifc _SPI_CT_CSx_ bit is **set**, the according chip select line `spi_csn_o(x)` goes **low** (low-active chip select lines).
+
+The SPI clock frequency is defined via the 3-bit _SPI_CT_PRSCx_ clock prescaler. The following prescalers
+are available:
+
+.SPI prescaler configuration
+[cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
+[options="header",grid="rows"]
+|=======================
+| **`SPI_CT_PRSCx`**          | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
+| Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
+|=======================
+
+Based on the _SPI_CT_PRSCx_ configuration, the actual SPI clock frequency f~SPI~ is derived from the processor's main clock f~main~ and is determined by:
+
+_**f~SPI~**_ = _f~main~[Hz]_ / (2 * `clock_prescaler`)
+
+A transmission is started when writing data to the _SPI_DATA_ register. The data must be LSB-aligned. So if
+the SPI transceiver is configured for less than 32-bit transfers data quantity, the transmit data must be placed
+into the lowest 8/16/24 bit of _SPI_DATA_. Vice versa, the received data is also always LSB-aligned.
+
+.SPI register map
+[cols="<2,<2,<4,^1,<7"]
+[options="header",grid="all"]
+|=======================
+| Address | Name [C] | Bit(s), Name [C] | R/W | Function
+.16+| `0xffffffa8` .16+| _SPI_CT_ |`0` _SPI_CT_CS0_  | r/w .8+| Direct chip-select 0..7; setting ´spi_csn_o(x)` low when set
+                                  |`1` _SPI_CT_CS1_  | r/w 
+                                  |`2` _SPI_CT_CS2_  | r/w 
+                                  |`3` _SPI_CT_CS3_  | r/w 
+                                  |`4` _SPI_CT_CS4_  | r/w 
+                                  |`5` _SPI_CT_CS5_  | r/w 
+                                  |`6` _SPI_CT_CS6_  | r/w 
+                                  |`7` _SPI_CT_CS7_  | r/w 
+                                  |`8` _SPI_CT_EN_   | r/w | SPI enable
+                                  |`9` _SPI_CT_CPHA_  | r/w | polarity of `spi_sck_o` when idle
+                                  |`10` _SPI_CT_PRSC0_  | r/w .3+| 3-bit clock prescaler select
+                                  |`11` _SPI_CT_PRSC1_  | r/w
+                                  |`12` _SPI_CT_PRSC2_  | r/w
+                                  |`14` _SPI_CT_SIZE0_  | r/w .2+| transfer size (`00`=8-bit, `01`=16-bit, `10`=24-bit, `11`=32-bit)
+                                  |`15` _SPI_CT_SIZE1_  | r/w
+                                  |`31` _SPI_CT_BUSY_  | r/- | transmission in progress when set
+| `0xffffffac` | _SPI_DATA_ |`31:0` | r/w | receive/transmit data, LSB-aligned
+|=======================

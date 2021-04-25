@@ -1,0 +1,36 @@
+<<<
+:sectnums:
+==== Bootloader ROM (BOOTROM)
+
+[cols="<3,<3,<4"]
+[grid="topbot"]
+|=======================
+| Hardware source file(s): | neorv32_boot_rom.vhd | 
+| Software driver file(s): | none             | _implicitly used_
+| Top entity port:         | none             | 
+| Configuration generics:  | _BOOTLOADER_EN_ | implement processor-internal bootloader when _true_
+| CPU interrupts:          | none             | 
+|=======================
+
+As the name already suggests, the boot ROM contains the read-only bootloader image. When the bootloader
+is enabled via the _BOOTLOADER_EN_ generic it is directly executed after system reset.
+
+The bootloader ROM is located at address 0xFFFF0000. This location is fixed and the bootloader ROM size
+must not exceed 32kB. The bootloader read-only memory is automatically initialized during synthesis via the
+`rtl/core/neorv32_bootloader_image.vhd` file, which is generated when compiling and installing the
+bootloader sources.
+
+The bootloader ROM address space cannot be used for other applications even when the bootloader is not
+implemented.
+
+**Boot Configuration**
+
+If the bootloader is implemented, the CPU starts execution after reset right at the beginning of the boot
+ROM. If the bootloader is not implemented, the CPU starts execution at the beginning of the instruction
+memory space (defined via `ispace_base_c` constant in the `neorv32_package.vhd` VHDL package file,
+default `ispace_base_c` = 0x00000000). In this case, the instruction memory has to contain a valid
+executable – either by using the internal IMEM with an initialization during synthesis or by a user-defined
+initialization process.
+
+[TIP]
+See section <<_bootloader>> for more information regarding the bootloader's boot process and configuration options.

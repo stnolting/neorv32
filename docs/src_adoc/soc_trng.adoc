@@ -1,0 +1,84 @@
+<<<
+:sectnums:
+==== True Random-Number Generator (TRNG)
+
+[cols="<3,<3,<4"]
+[grid="topbot"]
+|=======================
+| Hardware source file(s): | neorv32_trng.vhd | 
+| Software driver file(s): | neorv32_trng.c |
+|                          | neorv32_trng.h |
+| Top entity port:         | none | 
+| Configuration generics:  | _IO_TRNG_EN_ | implement TRNG when _true_
+| CPU interrupts:          | none | 
+|=======================
+
+**Theory of Operation**
+
+The NEORV32 true random number generator provides _physical true random numbers_ for your application.
+Instead of using a pseudo RNG like a LFSR, the TRNG of the processor uses a simple, straight-forward ring
+oscillator as physical entropy source. Hence, voltage and thermal fluctuations are used to provide true
+physical random data.
+
+[NOTE]
+The TRNG features a platform independent architecture without FPGA-specific primitives, macros or
+attributes.
+
+**Architecture**
+
+The NEORV32 TRNG is based on simple ring oscillators, which are implemented as an inverter chain with
+an odd number of inverters. A **latch** is used to decouple each individual inverter. Basically, this architecture
+is some king of asynchronous LFSR.
+
+The output of several ring oscillators are synchronized using two registers and are XORed together. The
+resulting output is de-biased using a von-Neumann randomness extractor. This de-biased output is further
+processed by a simple 8-bit Fibonacci LFSR to improve whitening. After at least 8 clock cycles the state of
+the LFSR is sampled and provided as final data output.
+
+To prevent the synthesis tool from doing logic optimization and thus, removing all but one inverter, the
+TRNG uses simple latches to decouple an inverter and its actual output. The latches are reset when the
+TRNG is disabled and are enabled one by one by a "real" shift register when the TRNG is activated. This
+construct can be synthesized for any FPGA platform. Thus, the NEORV32 TRNG provides a platform
+independent architecture.
+
+**TRNG Configuration**
+
+The TRNG uses several ring-oscillators, where the next oscillator provides a slightly longer chain (more
+inverters) than the one before. This increment is constant for all implemented oscillators. This setup can be
+customized by modifying the "Advanced Configuration" constants in the TRNG's VHDL file:
+
+* The `num_roscs_c` constant defines the total number of ring oscillators in the system. num_inv_start_c
+defines the number of inverters used by the first ring oscillators (has to be an odd number). Each additional
+ring oscillator provides `num_inv_inc_c` more inverters that the one before (has to be an even number).
+* The LFSR-based post-processing can be deactivated using the `lfsr_en_c` constant. The polynomial tap
+mask of the LFSR can be customized using `lfsr_taps_c`.
+
+**Using the TRNG**
+
+The TRNG features a single register for status and data access. When the _TRNG_CT_EN_ control register bit is
+set, the TRNG is enabled and starts operation. As soon as the _TRNG_CT_VALID_ bit is set, the currently
+sampled 8-bit random data byte can be obtained from the lowest 8 bits of the TRNG_CT register
+(_TRNG_CT_DATA_MSB_ : _TRNG_CT_DATA_LSB_). The _TRNG_CT_VALID_ bit is automatically cleared
+when reading the control register.
+
+[IMPORTANT]
+The TRNG needs at least 8 clock cycles to generate a new random byte. During this sampling time
+the current output random data is kept stable in the output register until a valid sampling of the new byte has
+completed.
+
+Randomness “Quality”
+I have not verified the quality of the generated random numbers (for example using NIST test suites). The
+quality is highly effected by the actual configuration of the TRNG and the resulting FPGA mapping/routing.
+However, generating larger histograms of the generated random number shows an equal distribution (binary
+average of the random numbers = 127). A simple evaluation test/demo program can be found in
+`sw/example/demo_trng`.
+
+.TRNG register map
+[cols="<2,<2,<4,^1,<7"]
+[options="header",grid="all"]
+|=======================
+| Address | Name [C] | Bit(s), Name [C] | R/W | Function
+.3+| `0xffffff88` .3+| _TRNG_CT_ |`7:0` _TRNG_CT_DATA_MSB_ : _TRNG_CT_DATA_MSB_ | r/- | 8-bit random data output
+                                 |`30` _TRNG_CT_EN_ | r/w | TRNG enable
+                                 |`31` _TRNG_CT_VALID_ | r/- | random data output is valid when set
+|=======================

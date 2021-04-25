@@ -1,0 +1,42 @@
+<<<
+:sectnums:
+==== General Purpose Input and Output Port (GPIO)
+
+[cols="<3,<3,<4"]
+[grid="topbot"]
+|=======================
+| Hardware source file(s): | neorv32_gpio.vhd | 
+| Software driver file(s): | neorv32_gpio.c |
+|                          | neorv32_gpio.h |
+| Top entity port:         | `gpio_o` | 32-bit parallel output port
+|                          | `gpio_i` | 32-bit parallel input port
+| Configuration generics:  | _IO_GPIO_EN_ | implement GPIO port when _true_
+| CPU interrupts:          | FIRQ channel 8 | pin-change interrupt (see <<_processor_interrupts>>)
+|=======================
+
+**Theory of Operation**
+
+The general purpose parallel IO port unit provides a simple 32-bit parallel input port and a 32-bit parallel
+output port. These ports can be used chip-externally (for example to drive status LEDs, connect buttons, etc.)
+or system-internally to provide control signals for other IP modules. When the modules is disabled for
+implementation the GPIO output port is tied to zero.
+
+**Pin-Change Interrupt**
+
+The parallel input port `gpio_i` features a single pin-change interrupt. Whenever an input pin has a low-to-high
+or high-to-low transition, the interrupt is triggered. By default, the pin-change interrupt is disabled and
+can be enabled using a bit mask that has to be written to the _GPIO_INPUT_ register. Each set bit in this mask
+enables the pin-change interrupt for the corresponding input pin. If more than one input pin is enabled for
+triggering the pin-change interrupt, any transition on one of the enabled input pins will trigger the CPU's pinchange
+interrupt. If the modules is disabled for implementation, the pin-change interrupt is also permanently
+disabled.
+
+.GPIO unit register map
+[cols="^2,<2,^1,^1,<6"]
+[options="header",grid="rows"]
+|=======================
+| Address      | Name [C]      | Bit(s) | R/W | Function
+| `0xffffff80` | _GPIO_INPUT_  | 31:0   | r/- | parallel input port
+| `0xffffff80` | _GPIO_INPUT_  | 31:0   | -/w | parallel input pin-change IRQ enable mask
+| `0xffffff84` | _GPIO_OUTPUT_ | 31:0   | r/w | parallel output port
+|=======================

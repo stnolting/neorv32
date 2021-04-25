@@ -1,0 +1,19 @@
+<<<
+:sectnums:
+==== Data Memory (DMEM)
+
+[cols="<3,<3,<4"]
+[grid="topbot"]
+|=======================
+| Hardware source file(s): | neorv32_dmem.vhd | 
+| Software driver file(s): | none             | _implicitly used_
+| Top entity port:         | none             | 
+| Configuration generics:  | _MEM_INT_DMEM_EN_ | implement processor-internal DMEM when _true_
+|                          | _MEM_INT_DMEM_SIZE_ | DMEM size in bytes
+| CPU interrupts:          | none             | 
+|=======================
+
+A processor-internal data memory can be enabled for synthesis via the processor's _MEM_INT_DMEM_EN_
+generic. The size in bytes is defined via the _MEM_INT_DMEM_SIZE_ generic. If the DMEM is implemented,
+the memory is mapped into the data memory space and located right at the beginning of the data memory
+space (default `dspace_base_c` = 0x80000000). The DMEM is always implemented as RAM.

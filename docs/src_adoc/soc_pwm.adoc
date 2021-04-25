@@ -1,0 +1,65 @@
+<<<
+:sectnums:
+==== Pulse-Width Modulation Controller (PWM)
+
+[cols="<3,<3,<4"]
+[grid="topbot"]
+|=======================
+| Hardware source file(s): | neorv32_pwm.vhd | 
+| Software driver file(s): | neorv32_pwm.c |
+|                          | neorv32_pwm.h |
+| Top entity port:         | `pwm_o` | 4-channel PWM output (1-bit per channel)
+| Configuration generics:  | _IO_PWM_EN_ | implement PWM controller when _true_
+| CPU interrupts:          | none | 
+|=======================
+
+**Theory of Operation**
+
+The PWM controller implements a pulse-width modulation controller with four independent channels and 8-
+bit resolution per channel. It is based on an 8-bit counter with four programmable threshold comparators that
+control the actual duty cycle of each channel. The controller can be used to drive a fancy RGB-LED with 24-
+bit true color, to dim LCD back-lights or even for "analog" control. An external integrator (RC low-pass filter)
+can be used to smooth the generated "analog" signals.
+
+The PWM controller is activated by setting the _PWM_CT_EN_ bit in the module's control register _PWM_CT_. When this
+bit is cleared, the unit is reset and all PWM output channels are set to zero.
+The 8-bit duty cycle for each channel, which represents the channel's "intensity", is defined via the according 8-bit_ PWM_DUTY_CHx_ byte in the _PWM_DUTY_ register.
+Based on the duty cycle _PWM_DUTY_CHx_ the according intensity of each channel can be computed by the following formula:
+
+_**Intensity~x~**_ = _PWM_DUTY_CHx_ / (2^8^)
+
+The frequency of the generated PWM signals is defined by the PWM operating clock. This clock is derived
+from the main processor clock and divided by a prescaler via the 3-bit PWM_CT_PRSCx in the unit's control
+register. The following prescalers are available:
+
+.PWM prescaler configuration
+[cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
+[options="header",grid="rows"]
+|=======================
+| **`PWM_CT_PRSCx`**          | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
+| Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
+|=======================
+
+The resulting PWM frequency is defined by:
+
+_**f~PWM~**_ = _f~main~[Hz]_ / (2^8^ * `clock_prescaler`)
+
+[TIP]
+A more sophisticated frequency generation option is provided by by the numerically-controlled oscillator
+module (see section <<_numerically_controller-oscillator-nco>>).
+
+<<<
+.PWM register map
+[cols="<4,<5,<10,^2,<11"]
+[options="header",grid="all"]
+|=======================
+| Address | Name [C] | Bit(s), Name [C] | R/W | Function
+.4+| `0xffffffb8` .4+| _PWM_CT_ |`0` _PWM_CT_EN_    | r/w | TWI enable
+                                |`1` _PWM_CT_PRSC0_ | r/w .3+| 3-bit clock prescaler select
+                                |`2` _PWM_CT_PRSC1_ | r/w 
+                                |`3` _PWM_CT_PRSC2_ | r/w
+.4+| `0xffffffbc` .4+| _PWM_DUTY_ |`7:0` _PWM_DUTY_CH0_MSB_ : _PWM_DUTY_CH0_LSB_ |  r/w | 8-bit duty cycle for channel 0
+                                  |`15:8` _PWM_DUTY_CH1_MSB_ : _PWM_DUTY_CH1_LSB_ | r/w | 8-bit duty cycle for channel 1
+                                  |`23:16` _PWM_DUTY_CH2_MSB_ : _PWM_DUTY_CH2_LSB_ | r/w | 8-bit duty cycle for channel 2
+                                  |`31:24` _PWM_DUTY_CH3_MSB_ : _PWM_DUTY_CH3_LSB_ | r/w | 8-bit duty cycle for channel 3
+|=======================

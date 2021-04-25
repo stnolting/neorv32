@@ -1,0 +1,597 @@
+:sectnums:
+== Software Framework
+
+To make actual use of the NEORV32 processor, the project comes with a complete software eco-system. This
+ecosystem is based on the RISC-V port of the GCC GNU Compiler Collection and consists of the following elementary parts:
+
+[cols="<6,<4"]
+[grid="none"]
+|=======================
+| Application/bootloader start-up code | `sw/common/crt0.S`
+| Application/bootloader linker script | `sw/common/neorv32.ld`
+| Core hardware driver libraries | `sw/lib/include/` & `sw/lib/source/`
+| Makefiles | e.g. `sw/example/blink_led/makefile`
+| Auxiliary tool for generating NEORV32 executables | `sw/image_gen/`
+| Default bootloader | `sw/bootloader/bootloader.c`
+|=======================
+
+Last but not least, the NEORV32 ecosystem provides some example programs for testing the hardware, for
+illustrating the usage of peripherals and for general getting in touch with the project (`sw/example`).
+
+// ####################################################################################################################
+:sectnums:
+=== Compiler Toolchain
+
+The toolchain for this project is based on the free RISC-V GCC-port. You can find the compiler sources and
+build instructions on the official RISC-V GNU toolchain GitHub page: link:https://github.com/riscv/riscv-gnutoolchain.
+
+The NEORV32 implements a 32-bit base integer architecture (`rv32i`) and a 32-bit integer and soft-float ABI
+(ilp32), so make sure you build an according toolchain.
+
+Alternatively, you can download my prebuilt `rv32i/e` toolchains for 64-bit x86 Linux from: link:github.com/stnolting/riscv-gcc-prebuilt
+
+The default toolchain prefix used by the project's makefiles is (can be changed in the makefiles): **`riscv32-unknown-elf`**
+
+[TIP]
+More information regarding the toolchain (building from scratch or downloading the prebuilt ones)
+can be found in section <<_toolchain_setup>>.
+
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Core Libraries
+
+The NEORV32 project provides a set of C libraries that allows an easy usage of the processor/CPU features.
+Just include the main NEORV32 library file in your application's source file(s):
+
+[source,c]
+----
+#include <neorv32.h>
+----
+
+Together with the makefile, this will automatically include all the processor's header files located in
+`sw/lib/include` into your application. The actual source files of the core libraries are located in
+`sw/lib/source` and are automatically included into the source list of your software project. The following
+files are currently part of the NEORV32 core library:
+
+[cols="<3,<4,<8"]
+[options="header",grid="rows"]
+|=======================
+| C source file | C header file | Description
+| -                  | `neorv32.h`            | main NEORV32 definitions and library file
+| `neorv32_cfs.c`    | `neorv32_cfs.h`        | HW driver (stub)footnote_[This driver file only represents a stub, since the real CFS drivers are defined by the actual CFS implementation.] functions for the custom functions subsystem
+| `neorv32_cpu.c`    | `neorv32_cpu.h`        | HW driver functions for the NEORV32 **CPU**
+| `neorv32_gpio.c`   | `neorv32_gpio.h`       | HW driver functions for the **GPIO**
+| -                  | `neorv32_intrinsics.h` | macros for custom intrinsics/instructions
+| `neorv32_mtime.c`  | `neorv32_mtime.h`      | HW driver functions for the **MTIME**
+| `neorv32_nco.c`    | `neorv32_nco.h`        | HW driver functions for the **NCO**
+| `neorv32_neoled.c` | `neorv32_neoled.h`     | HW driver functions for the **NEOLED**
+| `neorv32_pwm.c`    | `neorv32_pwm.h`        | HW driver functions for the **PWM**
+| `neorv32_rte.c`    | `neorv32_rte.h`        | NEORV32 **runtime environment** and helpers
+| `neorv32_spi.c`    | `neorv32_spi.h`        | HW driver functions for the **SPI**
+| `neorv32_trng.c`   | `neorv32_trng.h`       | HW driver functions for the **TRNG**
+| `neorv32_twi.c`    | `neorv32_twi.h`        | HW driver functions for the **TWI**
+| `neorv32_uart.c`   | `neorv32_uart.h`       | HW driver functions for the **UART0** and **UART1**
+| `neorv32_wdt.c`    | `neorv32_wdt.h`        | HW driver functions for the **WDT**
+|=======================
+
+.Documentation
+[TIP]
+All core library software sources are highly documented using _doxygen_. See section <<Building the Software Framework Documentation>>.
+The documentation is automatically built and deployed to GitHub pages by the CI workflow (:https://stnolting.github.io/neorv32/files.html).
+
+
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Application Makefile
+
+Application compilation is based on **GNU makefiles**. Each project in the `sw/example` folder features
+a makefile. All these makefiles are identical. When creating a new project, copy an existing project folder or
+at least the makefile to your new project folder. I suggest to create new projects also in `sw/example` to keep
+the file dependencies. Of course, these dependencies can be manually configured via makefiles variables
+when your project is located somewhere else.
+
+Before you can use the makefiles, you need to install the RISC-V GCC toolchain. Also, you have to add the
+installation folder of the compiler to your system's `PATH` variable. More information can be found in chapter
+<<_lets_get_it_started>>.
+
+The makefile is invoked by simply executing make in your console:
+
+[source,bash]
+----
+neorv32/sw/example/blink_led$ make
+----
+
+:sectnums:
+==== Targets
+
+Just executing `make` will show the help menu showing all available targets. The following targets are
+available:
+
+[cols="<3,<15"]
+[grid="none"]
+|=======================
+| `help` | Show a short help text explaining all available targets.
+| `check` | Check the compiler toolchain. You should run this target at least once after installing the toolchain.
+| `info` | Show the makefile configuration (see next chapter).
+| `exe` | Compile all sources and generate application executable for upload via bootloader.
+| `install` | Compile all sources, generate executable (via exe target) for upload via bootloader and generate and install IMEM VHDL initialization image file `rtl/core/neorv32_application_image.vhd`.
+| `all` | Execute `exe` and `install`.
+| `clean` | Remove all generated files in the current folder.
+| `clean_all` | Remove all generated files in the current folder and also removes the compiled core libraries and the compiled image generator tool.
+| `bootloader` | Compile all sources, generate executable and generate and install BOOTROM VHDL initialization image file `rtl/core/neorv32_bootloader_image.vhd`. This target modifies the ROM origin and length in the linker script by setting the `make_bootloader` define.
+| `upload` | Upload NEORV32 executable to the bootloader via serial port
+|=======================
+
+[TIP]
+An assembly listing file (`main.asm`) is created by the compilation flow for further analysis or debugging purpose.
+
+:sectnums:
+==== Configuration
+
+The compilation flow is configured via variables right at the beginning of the makefile:
+
+[source,makefile]
+----
+# *****************************************************************************
+# USER CONFIGURATION
+# *****************************************************************************
+# User's application sources (*.c, *.cpp, *.s, *.S); add additional files here
+APP_SRC ?= $(wildcard ./*.c) $(wildcard ./*.s) $(wildcard ./*.cpp) $(wildcard ./*.S)
+# User's application include folders (don't forget the '-I' before each entry)
+APP_INC ?= -I .
+# User's application include folders - for assembly files only (don't forget the '-I' before each
+entry)
+ASM_INC ?= -I .
+# Optimization
+EFFORT ?= -Os
+# Compiler toolchain
+RISCV_TOOLCHAIN ?= riscv32-unknown-elf
+# CPU architecture and ABI
+MARCH ?= -march=rv32i
+MABI  ?= -mabi=ilp32
+# User flags for additional configuration (will be added to compiler flags)
+USER_FLAGS ?=
+# Serial port for executable upload via bootloer
+COM_PORT ?= /dev/ttyUSB0
+# Relative or absolute path to the NEORV32 home folder
+NEORV32_HOME ?= ../../..
+# *****************************************************************************
+----
+
+[cols="<3,<10"]
+[grid="none"]
+|=======================
+| _APP_SRC_         | The source files of the application (`*.c`, `*.cpp`, `*.S` and `*.s` files are allowed; file of these types in the project folder are automatically added via wildcards). Additional files can be added; separated by white spaces
+| _APP_INC_         | Include file folders; separated by white spaces; must be defined with `-I` prefix
+| _ASM_INC_         | Include file folders that are used only for the assembly source files (`*.S`/`*.s`).
+| _EFFORT_          | Optimization level, optimize for size (`-Os`) is default; legal values: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`
+| _RISCV_TOOLCHAIN_ | The toolchain prefix to be used; follows the naming convention "architecture-vendor-output"
+| _MARCH_           | The targetd RISC-V architecture/ISA. Only `rv32` is supported by the NEORV32. Enable compiler support of optional CPU extension by adding the according extension letter (e.g. `rv32im` for _M_ CPU extension). See section <<_enabling_risc_v_cpu_extensions>>.
+| _MABI_            | The default 32-bit integer ABI.
+| _USER_FLAGS_      | Additional flags that will be forwarded to the compiler tools
+| _NEORV32_HOME_    | Relative or absolute path to the NEORV32 project home folder. Adapt this if the makefile/project is not in the project's `sw/example folder`.
+| _COM_PORT_        | Default serial port for executable upload to bootloader.
+|=======================
+
+:sectnums:
+==== Default Compiler Flags
+
+The following default compiler flags are used for compiling an application. These flags are defined via the
+`CC_OPTS` variable. Custom flags can be appended via the `USER_FLAGS` variable to the `CC_OPTS` variable.
+
+[cols="<3,<9"]
+[grid="none"]
+|=======================
+| `-Wall` | Enable all compiler warnings.
+| `-ffunction-sections` | Put functions and data segment in independent sections. This allows a code optimization as dead code and unused data can be easily removed.
+| `-nostartfiles` | Do not use the default start code. The makefiles use the NEORV32-specific start-up code instead (`sw/common/crt0.S`).
+| `-Wl,--gc-sections` | Make the linker perform dead code elimination.
+| `-lm` | Include/link with `math.h`.
+| `-lc` | Search for the standard C library when linking.
+| `-lgcc` | Make sure we have no unresolved references to internal GCC library subroutines.
+| `-mno-fdiv` | Use builtin software functions for floating-point divisions and square roots (since the according instructions are not supported yet).
+| `-falign-functions=4` .4+| Force a 32-bit alignment of functions and labels (branch/jump/call targets). This increases performance as it simplifies instruction fetch when using the C extension. As a drawback this will also slightly increase the program code.
+| `-falign-labels=4`
+| `-falign-loops=4`
+| `-falign-jumps=4`
+|=======================
+
+[TIP]
+The makefile configuration variables can be (re-)defined directly when invoking the makefile. For
+example: `$ make MARCH=-march=rv32ic clean_all exe`
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Executable Image Format
+
+When all the application sources have been compiled and linked, a final executable file has to be generated.
+For this purpose, the makefile uses the NEORV32-specific linker script `sw/common/neorv32.ld` to link
+all the sections into only four final sections: `.text`, `.rodata`, `.data` and `.bss`. These four section contain
+everything required for the application to run:
+
+[cols="<1,<9"]
+[grid="none"]
+|=======================
+| `.text`   | Executable instructions generated from the start-up code and all application sources.
+| `.rodata` | Constants (like strings) from the application; also the initial data for initialized variables.
+| `.data`   | This section is required for the address generation of fixed (= global) variables only.
+| `.bss`    | This section is required for the address generation of dynamic memory constructs only.
+|=======================
+
+The `.text` and `.rodata` sections are mapped to processor's instruction memory space and the `.data` and
+`.bss` sections are mapped to the processor's data memory space. Finally, the `.text`, `.rodata` and `.data` sections are extracted and concatenated into a single file
+**`main.bin`**.
+
+**Executable Image Generator**
+
+The **`main.bin`** file is processed by the NEORV32 image generator (`sw/image_gen`) to generate the final
+executable. It is automatically compiled when invoking the makefile. The image generator can generate three
+types of executables, selected by a flag when calling the generator:
+
+[cols="<1,<9"]
+[grid="none"]
+|=======================
+| `-app_bin` | Generates an executable binary file `neorv32_exe.bin` (for UART uploading via the bootloader).
+| `-app_img` | Generates an executable VHDL memory initialization image for the processor-internal IMEM. This option generates the `rtl/core/neorv32_application_image.vhd` file.
+| `-bld_img` | Generates an executable VHDL memory initialization image for the processor-internal BOOT ROM. This option generates the `rtl/core/neorv32_bootloader_image.vhd` file.
+|=======================
+
+All these options are managed by the makefile – so you don't actually have to think about them. The normal
+application compilation flow will generate the `neorv32_exe.bin` file in the current software project folder
+ready for upload via UART to the NEORV32 bootloader.
+
+The actual executable provides a very small header consisting of three 32-bit words located right at the
+beginning of the file. This header is generated by the image generator. The first word of the executable is the signature
+word and is always `0x4788cafe`. Based on this word, the bootloader can identify a valid image file. The next word represents the size in bytes of the actual program
+image in bytes. A simple "complement" checksum of the actual program image is given by the third word. This
+provides a simple protection against data transmission or storage errors.
+
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Bootloader
+
+The default bootloader (sw/bootloader/bootloader.c) of the NEORV32 processor allows to upload
+new program executables at every time. If there is an external SPI flash connected to the processor (like the
+FPGA's configuration memory), the bootloader can store the program executable to it. After reset, the
+bootloader can directly boot from the flash without any user interaction.
+
+[WARNING]
+The bootloader is only implemented when the BOOTLOADER_EN generic is true and requires the
+CSR access CPU extension (CPU_EXTENSION_RISCV_Zicsr generic is true).
+
+[IMPORTANT]
+The bootloader requires the primary UART (UART0) for user interaction (_IO_UART0_EN_ generic is _true_).
+
+[IMPORTANT]
+For the automatic boot from an SPI flash, the SPI controller has to be implemented (_IO_SPI_EN_
+generic is _true_) and the machine system timer MTIME has to be implemented (_IO_MTIME_EN_
+generic is _true_), too, to allow an auto-boot timeout counter.
+
+[WARNING]
+The bootloader is intended to work independent of the actual hardware (-configuration). Hence, it
+should be compiled with the minimal base ISA only. The current version of the bootloader uses the
+`rv32i` ISA – so it will not work on `rv32e` architectures. To make the bootloader work on an embedded
+CPU configuration or on any other more sophisticated configuration, recompile it using the according ISA
+(see section <<_customizing_the_internal_bootloader>>).
+
+To interact with the bootloader, connect the primary UART (UART0) signals (`uart0_txd_o` and
+`uart0_rxd_o`) of the processor's top entity via a serial port (-adapter) to your computer (hardware flow control is
+not used so the according interface signals can be ignored.), configure your
+terminal program using the following settings and perform a reset of the processor. 
+
+Terminal console settings (`19200-8-N-1`):
+
+* 19200 Baud
+* 8 data bits
+* no parity bit
+* 1 stop bit
+* newline on `\r\n` (carriage return, newline)
+* no transfer protocol / control flow protocol - just the raw byte stuff
+
+The bootloader uses the LSB of the top entity's `gpio_o` output port as high-active status LED (all other
+output pin are set to low level by the bootloader). After reset, this LED will start blinking at ~2Hz and the
+following intro screen should show up in your terminal:
+
+[source]
+----
+<< NEORV32 Bootloader >>
+
+BLDV: Mar 23 2021
+HWV:  0x01050208
+CLK:  0x05F5E100
+USER: 0x10000DE0
+MISA: 0x40901105
+ZEXT: 0x00000023
+PROC: 0x0EFF0037
+IMEM: 0x00004000 bytes @ 0x00000000
+DMEM: 0x00002000 bytes @ 0x80000000
+
+Autoboot in 8s. Press key to abort.
+----
+
+This start-up screen also gives some brief information about the bootloader and several system configuration parameters:
+
+[cols="<2,<14"]
+[grid="none"]
+|=======================
+| `BLDV` | Bootloader version (built date).
+| `HWV`  | Processor hardware version (from the `mimpid` CSR) in BCD format (example: `0x01040606` = v1.4.6.6).
+| `USER` | Custom user code (from the _USER_CODE_ generic).
+| `CLK`  | Processor clock speed in Hz (via the SYSINFO module, from the _CLOCK_FREQUENCY_ generic).
+| `MISA` | CPU extensions (from the `misa` CSR).
+| `ZEXT` | CPU sub-extensions (from the `mzext` CSR)
+| `PROC` | Processor configuration (via the SYSINFO module, from the IO_* and MEM_* configuration generics).
+| `IMEM` | IMEM memory base address and size in byte (from the _MEM_INT_IMEM_SIZE_ generic).
+| `DMEM` | DMEM memory base address and size in byte (from the _MEM_INT_DMEM_SIZE_ generic).
+|=======================
+
+Now you have 8 seconds to press any key. Otherwise, the bootloader starts the auto boot sequence. When
+you press any key within the 8 seconds, the actual bootloader user console starts:
+
+[source]
+----
+<< NEORV32 Bootloader >>
+
+BLDV: Mar 23 2021
+HWV:  0x01050208
+CLK:  0x05F5E100
+USER: 0x10000DE0
+MISA: 0x40901105
+ZEXT: 0x00000023
+PROC: 0x0EFF0037
+IMEM: 0x00004000 bytes @ 0x00000000
+DMEM: 0x00002000 bytes @ 0x80000000
+
+Autoboot in 8s. Press key to abort.
+Aborted.
+
+Available commands:
+h: Help
+r: Restart
+u: Upload
+s: Store to flash
+l: Load from flash
+e: Execute
+CMD:>
+----
+
+The auto-boot countdown is stopped and now you can enter a command from the list to perform the
+corresponding operation:
+
+* `h`: Show the help text (again)
+* `r`: Restart the bootloader and the auto-boot sequence
+* `u`: Upload new program executable (`neorv32_exe.bin`) via UART into the instruction memory
+* `s`: Store executable to SPI flash at `spi_csn_o(0)`
+* `l`: Load executable from SPI flash at `spi_csn_o(0)`
+* `e`: Start the application, which is currently stored in the instruction memory (IMEM)
+* `#`: Shortcut for executing u and e afterwards (not shown in help menu)
+
+A new executable can be uploaded via UART by executing the `u` command. After that, the executable can be directly
+executed via the `e` command. To store the recently uploaded executable to an attached SPI flash press `s`. To
+directly load an executable from the SPI flash press `l`. The bootloader and the auto-boot sequence can be
+manually restarted via the `r` command.
+
+[TIP]
+The CPU is in machine level privilege mode after reset. When the bootloader boots an application,
+this application is also started in machine level privilege mode.
+
+:sectnums:
+==== External SPI Flash for Booting
+
+If you want the NEORV32 bootloader to automatically fetch and execute an application at system start, you
+can store it to an external SPI flash. The advantage of the external memory is to have a non-volatile program
+storage, which can be re-programmed at any time just by executing some bootloader commands. Thus, no
+FPGA bitstream recompilation is required at all.
+
+**SPI Flash Requirements**
+
+The bootloader can access an SPI compatible flash via the processor top entity's SPI port and connected to
+chip select `spi_csn_o(0)`. The flash must be capable of operating at least at 1/8 of the processor's main
+clock. Only single read and write byte operations are used. The address has to be 24 bit long. Furthermore,
+the SPI flash has to support at least the following commands:
+
+* READ (`0x03`)
+* READ STATUS (`0x05`)
+* WRITE ENABLE (`0x06`)
+* PAGE PROGRAM (`0x02`)
+* SECTOR ERASE (`0xD8`)
+* READ ID (`0x9E`)
+
+Compatible (FGPA configuration) SPI flash memories are for example the "Winbond W25Q64FV2 or the "Micron N25Q032A".
+
+**SPI Flash Configuration**
+
+The base address `SPI_FLASH_BOOT_ADR` for the executable image inside the SPI flash is defined in the
+"user configuration" section of the bootloader source code (`sw/bootloader/bootloader.c`). Most
+FPGAs that use an external configuration flash, store the golden configuration bitstream at base address 0.
+Make sure there is no address collision between the FPGA bitstream and the application image. You need to
+change the default sector size if your flash has a sector size greater or less than 64kB:
+
+[source,c]
+----
+/** SPI flash boot image base address */
+#define SPI_FLASH_BOOT_ADR 0x00800000
+/** SPI flash sector size in bytes */
+#define SPI_FLASH_SECTOR_SIZE (64*1024)
+----
+
+[IMPORTANT]
+For any change you made inside the bootloader, you have to recompile the bootloader (see section
+<<_customizing_the_internal_bootloader>>) and do a new synthesis of the processor.
+
+
+:sectnums:
+==== Auto Boot Sequence
+When you reset the NEORV32 processor, the bootloader waits 8 seconds for a user console input before it
+starts the automatic boot sequence. This sequence tries to fetch a valid boot image from the external SPI
+flash, connected to SPI chip select `spi_csn_o(0)`. If a valid boot image is found and can be successfully
+transferred into the instruction memory, it is automatically started. If no SPI flash was detected or if there
+was no valid boot image found, the bootloader stalls and the status LED is permanently activated.
+
+
+:sectnums:
+==== Bootloader Error Codes
+
+If something goes wrong during bootloader operation, an error code is shown. In this case the processor
+stalls, a bell command and one of the following error codes are send to the terminal, the bootloader status
+LED is permanently activated and the system must be reset manually.
+
+[cols="<2,<11"]
+[grid="none"]
+|=======================
+| **`ERROR_0`** | If you try to transfer an invalid executable (via UART or from the external SPI flash), this error message shows up. There might be a transfer protocol configuration error in the terminal program. See section <<_uploading_and_starting_of_a_binary_executable_image_via_uart>> for more information. Also, if no SPI flash was found during an auto-boot attempt, this message will be displayed.
+| **`ERROR_1`** | Your program is way too big for the internal processor’s instructions memory. Increase the memory size or reduce (optimize!) your application code.
+| **`ERROR_2`** | This indicates a checksum error. Something went wrong during the transfer of the program image (upload via UART or loading from the external SPI flash). If the error was caused by a UART upload, just try it again. When the error was generated during a flash access, the stored image might be corrupted.
+| **`ERROR_3`** | This error occurs if the attached SPI flash cannot be accessed. Make sure you have the right type of flash and that it is properly connected to the NEORV32 SPI port using chip select #0.
+| **`ERROR_4`** | The instruction memory is marked as read-only. Set the _MEM_INT_IMEM_ROM_ generic to _false_ to allow write accesses.
+| **`ERROR_5`** | This error pops up when an unexpected exception or interrupt was triggered. The cause of the trap (`mcause` CSR) is displayed for further investigation.
+| **`ERROR_?`** | Something really bad happened when there is no specific error code available...
+|=======================
+
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== NEORV32 Runtime Environment
+
+The NEORV32 provides a minimal runtime environment (RTE) that mainly takes care of two things:
+
+* clean application start
+* stable and _safe_ execution environment (e.g. handling of exceptions/interrupts)
+
+[NOTE]
+Performance or latency-optimized applications or embedded operating systems should use a custom
+trap management.
+
+
+:sectnums:
+==== CRT0 Start-Up Code
+
+The initial part of the runtime environment is the `sw/common/crt0.S` application start-up code. This piece
+of code is automatically linked with every application program and represents the starting point for every
+application - regardless if you are using the actual RTE in your application or not. The start-up code is directly executed after a reset.
+Ir performs the following operations to bring the CPU (and the SoC) into a stable and initialized state:
+
+* Initialize integer registers `x1` – `x15`/`x31`.
+* Initialize all CPU core CSRs.
+* Initialize the global pointer `gp` and the stack pointer `sp` according to the `.data` segment layout provided by the linker script.
+* Clear IO area: Write zero to all memory-mapped registers within the IO region. If certain devices have not been implemented, a bus access fault exception will occur. This exception is captured by a simple dummy handler in the start-up code.
+* Clear the `.bss` section defined by the linker script.
+* Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
+* Call the application's `main` function (with no arguments).
+* If the `main` function returns, the processor goes to an endless sleep mode (using a simple loop or via the `wfi` instruction if available).
+
+
+:sectnums:
+==== Using the NEORV32 Runtime Environment (RTE) in Your Application
+
+When execution enters the application's `main` function, the actual runtime environment is responsible for catching all implemented exceptions
+and interrupts. To activate the NEORV32 RTE execute the following function:
+
+[source,c]
+----
+void neorv32_rte_setup(void);
+----
+
+This setup initializes the `mtvec` CSR, which provides the base entry point for all trap
+handlers. The address stored to this register reflects the first-level exception handler provided by the
+NEORV32 RTE. Whenever an exception or interrupt is triggered, this first-level handler is called.
+
+The first-level handler performs a complete context save, analyzes the source of the exception/interrupt and
+calls the according second-level exception handler, which actually takes care of the exception/interrupt
+handling. For this, the RTE manages a private look-up table to store the addresses of the according trap
+handlers.
+
+After the initial setup of the RTE, each entry in the trap handler's look-up table is initialized with a debug
+handler, that outputs detailed hardware information via the **primary UART (UART0)** when triggered. This
+is intended as a fall-back for debugging or for accidentally-triggered exceptions/interrupts.
+For instance, an illegal instruction exception catched by the RTE debug handler might look like this in the UART0 output:
+
+[source]
+----
+<RTE> Illegal instruction @0x000002d6, MTVAL=0x00001537 </RTE>
+----
+
+To install the **actual application's trap handlers** the NEORV32 RTE provides functions for installing and
+un-installing trap handler for each implemented exception/interrupt source.
+
+[source,c]
+----
+int neorv32_rte_exception_install(uint8_t id, void (*handler)(void));
+----
+
+[cols="<5,<12"]
+[options="header",grid="rows"]
+|=======================
+| ID name [C] | Description / trap causing entry
+| `RTE_TRAP_I_MISALIGNED` | instruction address misaligned
+| `RTE_TRAP_I_ACCESS`     | instruction (bus) access fault
+| `RTE_TRAP_I_ILLEGAL`    | illegal instruction
+| `RTE_TRAP_BREAKPOINT`   | breakpoint (`ebreak` instruction)
+| `RTE_TRAP_L_MISALIGNED` | load address misaligned
+| `RTE_TRAP_L_ACCESS`     | load (bus) access fault
+| `RTE_TRAP_S_MISALIGNED` | store address misaligned
+| `RTE_TRAP_S_ACCESS`     | store (bus) access fault
+| `RTE_TRAP_MENV_CALL`    | environment call from machine mode (`ecall` instruction)
+| `RTE_TRAP_UENV_CALL`    | environment call from user mode (`ecall` instruction)
+| `RTE_TRAP_MTI`          | machine timer interrupt
+| `RTE_TRAP_MEI`          | machine external interrupt
+| `RTE_TRAP_MSI`          | machine software interrupt
+| `RTE_TRAP_FIRQ_0` : `RTE_TRAP_FIRQ_15` | fast interrupt channel 0..15
+|=======================
+
+When installing a custom handler function for any of these exception/interrupts, make sure the function uses
+**no attributes** (especially no interrupt attribute!), has no arguments and no return value like in the following
+example:
+
+[source,c]
+----
+void handler_xyz(void) {
+
+  // handle exception/interrupt...
+}
+----
+
+[WARNING]
+Do NOT use the `((interrupt))` attribute for the application exception handler functions! This
+will place an `mret` instruction to the end of it making it impossible to return to the first-level
+exception handler of the RTE, which will cause stack corruption.
+
+Example: Installation of the MTIME interrupt handler:
+
+[source,c]
+----
+neorv32_rte_exception_install(EXC_MTI, handler_xyz);
+----
+
+To remove a previously installed exception handler call the according un-install function from the NEORV32
+runtime environment. This will replace the previously installed handler by the initial debug handler, so even
+un-installed exceptions and interrupts are further captured.
+
+[source,c]
+----
+int neorv32_rte_exception_uninstall(uint8_t id);
+----
+
+Example: Removing the MTIME interrupt handler:
+
+[source,c]
+----
+neorv32_rte_exception_uninstall(EXC_MTI);
+----
+
+[TIP]
+More information regarding the NEORV32 runtime environment can be found in the doxygen
+software documentation (also available online at GitHub pages:https://stnolting.github.io/neorv32/files.html).

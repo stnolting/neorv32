@@ -1,0 +1,48 @@
+extends: default
+page:
+  margin: [0.8in, 0.67in, 0.75in, 0.67in]
+link:
+  font-color: #edac00
+image:
+  align: center
+caption:
+  align: center
+running-content:
+  start-at: toc
+header:
+  height: 0.65in
+  vertical-align: bottom
+  image-vertical-align: bottom
+  font-size: 11
+  border-color: #000000
+  border-width: 1
+  recto:
+    left:
+      content: '*The NEORV32 Processor*'
+    right:
+      content: '*Visit on https://github.com/stnolting/neorv32[GitHub]*'
+  verso:
+    left:
+      content: '*The NEORV32 Processor*'
+    right:
+      content: '*Visit on https://github.com/stnolting/neorv32[GitHub]*'
+footer:
+  start-at: toc
+  height: 0.75in
+  font-size: 10
+  border-color: #000000
+  border-width: 1
+  recto:
+    left:
+      content: '{page-number} / {page-count}'
+    center:
+      content: 'Copyright (c) 2021, Stephan Nolting. All rights reserved.'
+    right:
+      content: '{docdate}'
+  verso:
+    left:
+      content: '{page-number} / {page-count}'
+    center:
+      content: 'NEORV32 Version: {revnumber}'
+    right:
+      content: '{docdate}'
