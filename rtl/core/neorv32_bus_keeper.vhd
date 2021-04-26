@@ -1,10 +1,11 @@
 -- #################################################################################################
 -- # << NEORV32 - Bus Keeper (BUSKEEPER) >>                                                        #
 -- # ********************************************************************************************* #
--- # This unit monitors the processor-internal bus. If the accesses INTERNAL module does not       #
--- # respond within the defined number of cycles (VHDL package: max_proc_int_response_time_c) it   #
--- # asserts the error signal to inform the CPU / bus driver. This timeout does not track accesses #
--- # via the processor-external bus interface!                                                     #
+-- # This unit monitors the processor-internal bus. If the accesses INTERNAL (IMEM if enabled,     #
+-- # DMEM if enabled, BOOTROM + IO region) module does not respond within the defined number of    #
+-- # cycles (VHDL package: max_proc_int_response_time_c) it asserts the error signal to inform the #
+-- # CPU / bus driver. This timeout does not track accesses via the processor-external bus         #
+-- # interface!                                                                                    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
