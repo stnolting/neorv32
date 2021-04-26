@@ -126,7 +126,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   constant hpm_cnt_hi_width_c : natural := natural(cond_sel_int_f(boolean(HPM_CNT_WIDTH > 32), HPM_CNT_WIDTH-32, 0));
 
   -- instruction fetch engine --
-  type fetch_engine_state_t is (IFETCH_RESET, IFETCH_REQUEST, IFETCH_ISSUE);
+  type fetch_engine_state_t is (IFETCH_REQUEST, IFETCH_ISSUE);
   type fetch_engine_t is record
     state       : fetch_engine_state_t;
     state_nxt   : fetch_engine_state_t;
@@ -140,7 +140,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal fetch_engine : fetch_engine_t;
 
-  -- instrucion prefetch buffer (IPB, real FIFO) --
+  -- instruction prefetch buffer (IPB, real FIFO) --
   type ipb_data_fifo_t is array (0 to ipb_entries_c-1) of std_ulogic_vector(2+31 downto 0);
   type ipb_t is record
     wdata : std_ulogic_vector(2+31 downto 0); -- write status (bus_error, align_error) + 32-bit instruction data
@@ -216,7 +216,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     is_cp_op     : std_ulogic; -- current instruction is a co-processor operation
     is_cp_op_nxt : std_ulogic;
     --
-    branch_taken : std_ulogic; -- branch condition fullfilled
+    branch_taken : std_ulogic; -- branch condition fulfilled
     pc           : std_ulogic_vector(data_width_c-1 downto 0); -- actual PC, corresponding to current executed instruction
     pc_mux_sel   : std_ulogic; -- source select for PC update
     pc_we        : std_ulogic; -- PC update enabled
@@ -366,15 +366,19 @@ begin
   fetch_engine_fsm_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      fetch_engine.state      <= IFETCH_RESET;
-      fetch_engine.state_prev <= IFETCH_RESET;
-      fetch_engine.restart    <= '0';
+      fetch_engine.state      <= IFETCH_REQUEST;
+      fetch_engine.state_prev <= IFETCH_REQUEST;
+      fetch_engine.restart    <= '1';
       fetch_engine.pc         <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       fetch_engine.state      <= fetch_engine.state_nxt;
       fetch_engine.state_prev <= fetch_engine.state;
       fetch_engine.restart    <= fetch_engine.restart_nxt;
-      fetch_engine.pc         <= fetch_engine.pc_nxt;
+      if (fetch_engine.restart = '1') then
+        fetch_engine.pc <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- initialize with "real" application PC
+      else
+        fetch_engine.pc <= fetch_engine.pc_nxt;
+      end if;
     end if;
   end process fetch_engine_fsm_sync;
 
@@ -401,17 +405,11 @@ begin
     -- state machine --
     case fetch_engine.state is
 
-      when IFETCH_RESET => -- reset engine and prefetch buffer, get application PC
+      when IFETCH_REQUEST => -- request new 32-bit-aligned instruction word
       -- ------------------------------------------------------------
-        fetch_engine.restart_nxt <= '0';
-        fetch_engine.bus_err_ack <= '1'; -- acknowledge any instruction bus errors, the execute engine has to take care of them / terminate current transfer
-        fetch_engine.pc_nxt      <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- initialize with "real" application PC
-        ipb.clear                <= '1'; -- clear prefetch buffer
-        fetch_engine.state_nxt   <= IFETCH_REQUEST;
-
-      when IFETCH_REQUEST => -- output current PC to bus system and request 32-bit (aligned!) instruction data
-      -- ------------------------------------------------------------
-        if (ipb.free = '1') then -- free entry in buffer?
+        if (fetch_engine.restart = '1') then -- reset request?
+          fetch_engine.restart_nxt <= '0';
+        elsif (ipb.free = '1') then -- free entry in buffer?
           bus_fast_ir            <= '1'; -- fast instruction fetch request
           fetch_engine.state_nxt <= IFETCH_ISSUE;
         end if;
@@ -421,17 +419,13 @@ begin
         fetch_engine.bus_err_ack <= be_instr_i or ma_instr_i; -- ACK bus/alignment errors
         if (bus_i_wait_i = '0') or (be_instr_i = '1') or (ma_instr_i = '1') then -- wait for bus response
           fetch_engine.pc_nxt    <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
-          ipb.we                 <= '1';
-          if (fetch_engine.restart = '1') then
-            fetch_engine.state_nxt <= IFETCH_RESET;
-          else
-            fetch_engine.state_nxt <= IFETCH_REQUEST;
-          end if;
+          ipb.we                 <= not fetch_engine.restart; -- write to IPB if not being reset
+          fetch_engine.state_nxt <= IFETCH_REQUEST;
         end if;
 
       when others => -- undefined
       -- ------------------------------------------------------------
-        fetch_engine.state_nxt <= IFETCH_RESET;
+        fetch_engine.state_nxt <= IFETCH_REQUEST;
 
     end case;
   end process fetch_engine_fsm_comb;
@@ -694,7 +688,7 @@ begin
       execute_engine.state    <= SYS_WAIT;
       execute_engine.sleep    <= '0';
       execute_engine.branched <= '1'; -- reset is a branch from "somewhere"
-      -- no dedicated RESEt required --
+      -- no dedicated RESET required --
       execute_engine.state_prev <= SYS_WAIT;
       execute_engine.i_reg      <= (others => def_rst_val_c);
       execute_engine.is_ci      <= def_rst_val_c;
@@ -949,7 +943,7 @@ begin
       when DISPATCH => -- Get new command from instruction issue engine
       -- ------------------------------------------------------------
         -- housekeeping --
-        execute_engine.is_cp_op_nxt <= '0'; -- init
+        execute_engine.is_cp_op_nxt <= '0'; -- no compressed instruction yet
         -- PC update --
         execute_engine.pc_mux_sel <= '0'; -- linear next PC
         -- IR update --
