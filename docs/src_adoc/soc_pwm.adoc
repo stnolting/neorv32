@@ -3,7 +3,7 @@
 ==== Pulse-Width Modulation Controller (PWM)
 
 [cols="<3,<3,<4"]
-[grid="topbot"]
+[frame="topbot",grid="none"]
 |=======================
 | Hardware source file(s): | neorv32_pwm.vhd | 
 | Software driver file(s): | neorv32_pwm.c |
@@ -46,7 +46,7 @@ _**f~PWM~**_ = _f~main~[Hz]_ / (2^8^ * `clock_prescaler`)
 
 [TIP]
 A more sophisticated frequency generation option is provided by by the numerically-controlled oscillator
-module (see section <<_numerically_controller-oscillator-nco>>).
+module (see section <<_numerically_controller-oscillator_nco>>).
 
 <<<
 .PWM register map

@@ -3,7 +3,7 @@
 ==== Processor-External Memory Interface (WISHBONE) (AXI4-Lite)
 
 [cols="<3,<3,<4"]
-[grid="topbot"]
+[frame="topbot",grid="none"]
 |=======================
 | Hardware source file(s): | neorv32_wishbone.vhd | 
 | Software driver file(s): | none             | _implicitly used_

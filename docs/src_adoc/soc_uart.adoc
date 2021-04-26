@@ -3,7 +3,7 @@
 ==== Primary Universal Asynchronous Receiver and Transmitter (UART0)
 
 [cols="<3,<3,<4"]
-[grid="topbot"]
+[frame="topbot",grid="none"]
 |=======================
 | Hardware source file(s): | neorv32_uart.vhd | 
 | Software driver file(s): | neorv32_uart.c |
@@ -161,7 +161,7 @@ More information regarding the simulation-mode of the UART0 can be found in sect
 ==== Secondary Universal Asynchronous Receiver and Transmitter (UART1)
 
 [cols="<3,<3,<4"]
-[grid="topbot"]
+[frame="topbot",grid="none"]
 |=======================
 | Hardware source file(s): | neorv32_uart.vhd | 
 | Software driver file(s): | neorv32_uart.c |

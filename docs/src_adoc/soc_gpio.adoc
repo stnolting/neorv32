@@ -3,7 +3,7 @@
 ==== General Purpose Input and Output Port (GPIO)
 
 [cols="<3,<3,<4"]
-[grid="topbot"]
+[frame="topbot",grid="none"]
 |=======================
 | Hardware source file(s): | neorv32_gpio.vhd | 
 | Software driver file(s): | neorv32_gpio.c |

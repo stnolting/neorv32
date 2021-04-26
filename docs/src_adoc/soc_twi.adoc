@@ -3,7 +3,7 @@
 ==== Two-Wire Serial Interface Controller (TWI)
 
 [cols="<3,<3,<4"]
-[grid="topbot"]
+[frame="topbot",grid="none"]
 |=======================
 | Hardware source file(s): | neorv32_twi.vhd | 
 | Software driver file(s): | neorv32_twi.c |

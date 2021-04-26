@@ -39,34 +39,34 @@ CSRs with the following notes ...
 [options="header"]
 |=======================
 | Address | Name [ASM]   | Name [C]         | R/W | Function | Note
-6+| **User Floating-Point CSRs**
+6+^| **User Floating-Point CSRs**
 | 0x001   | `fflags`     | _CSR_FFLAGS_     | r/w | Floating-point accrued exceptions | 
 | 0x002   | `frm`        | _CSR_FRM_        | r/w | Floating-point dynamic rounding mode | 
 | 0x003   | `fcsr`       | _CSR_FCSR_       | r/w | Floating-point control and status (`frm` + `fflags`) | 
-6+| **Machine Trap Setup**
+6+^| **Machine Trap Setup**
 | 0x300   | `mstatus`    | _CSR_MSTATUS_    | r/w | Machine status register | `S`
 | 0x301   | `misa`       | _CSR_MISA_       | r/- | Machine CPU ISA and extensions | `R`
 | 0x304   | `mie`        | _CSR_MIE_        | r/w | Machine interrupt enable register | `C`
 | 0x305   | `mtvec`      | _CSR_MTVEC_      | r/w | Machine trap-handler base address (for ALL traps) | 
 | 0x306   | `mcounteren` | _CSR_MCOUNTEREN_ | r/w | Machine counter-enable register | `S`
 | 0x310   | `mstatush`   | _CSR_MSTATUSH_   | r/- | Machine status register – high word | `SR`
-6+| **Machine Trap Handling**
+6+^| **Machine Trap Handling**
 | 0x340   | `mscratch`   | _CSR_MSCRATCH_   | r/w | Machine scratch register | 
 | 0x341   | `mepc`       | _CSR_MEPC_       | r/w | Machine exception program counter | 
 | 0x342   | `mcause`     | _CSR_MCAUSE_     | r/w | Machine trap cause | `C`
 | 0x343   | `mtval`      | _CSR_MTVAL_      | r/w | Machine bad address or instruction | 
 | 0x344   | `mip`        | _CSR_MIP_        | r/w | Machine interrupt pending register | `C`
-6+| **Machine Physical Memory Protection**
+6+^| **Machine Physical Memory Protection**
 | 0x3a0 .. 0x3af | `pmpcfg0` .. `pmpcfg15`  | _CSR_PMPCFG0_ .. _CSR_PMPCFG15_ | r/w | Physical memory protection config. for region 0..63 | `S`
 | 0x3b0 .. 0x3ef | `pmpaddr0` .. `pmpaddr63`| _CSR_PMPADDR0_ .. _CSR_PMPADDR63_ | r/w | Physical memory protection addr. register region 0..63 | 
-6+| **Machine Counters and Timers**
+6+^| **Machine Counters and Timers**
 | 0xb00   | `mcycle`     | _CSR_MCYCLE_     | r/w | Machine cycle counter low word | 
 | 0xb02   | `minstret`   | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter low word | 
 | 0xb03 .. 0xb1f | `mhpmcounter3` .. `mhpmcounter31` | _CSR_MHPMCOUNTER3_ .. _CSR_MHPMCOUNTER31_ | r/w | Machine performance-monitoring counter 3..31 low word | 
 | 0xb80   | `mcycleh`    | _CSR_MCYCLE_     | r/w | Machine cycle counter high word | 
 | 0xb82   | `minstreth`  | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter high word | 
 | 0xb83 .. 0xb19f | `mhpmcounter3h` .. `mhpmcounter31h` | _CSR_MHPMCOUNTER3H_ .. _CSR_MHPMCOUNTER31H_ | r/w | Machine performance-monitoring counter 3..31 high word | 
-6+| **Counters and Timers**
+6+^| **Counters and Timers**
 | 0xc00   | `cycle`      | _CSR_CYCLE_      | r/- | Cycle counter low word | 
 | 0xc01   | `time`       | _CSR_TIME_       | r/- | System time (from MTIME) low word | 
 | 0xc02   | `instret`    | _CSR_INSTRET_    | r/- | Instruction-retired counter low word | 
@@ -75,15 +75,15 @@ CSRs with the following notes ...
 | 0xc81   | `timeh`       | _CSR_TIMEH_       | r/- | System time (from MTIME) high word | 
 | 0xc82   | `instreth`    | _CSR_INSTRETH_    | r/- | Instruction-retired counter high word | 
 | 0xc83 .. 0xc9f | `hpmcounter3h` .. `hpmcounter31h` | _CSR_HPMCOUNTER3H_ .. _CSR_HPMCOUNTER31H_ | r/- | Performance-monitoring counter 3..31 high word |   
-6+| **Machine Counter SEtup**
+6+^| **Machine Counter SEtup**
 | 0x320   | `mcountinhibit` | _CSR_MCOUNTINHIBIT_ | r/w | Machine counter-enable register |
 | 0x323 .. 0x33f | `mhpmevent3` .. `mhpmevent31` | _CSR_MHPMEVENT3_ .. _CSR_MHPMEVENT31_ | r/w | Machine performance-monitoring event selector 3..31 | `C`
-6+| **Machine Information Registers**
+6+^| **Machine Information Registers**
 | 0xf11   | `mvendorid` | _CSR_MVENDORID_ | r/- | Vendor ID |
 | 0xf12   | `marchid`   | _CSR_MARCHID_   | r/- | Architecture ID |
 | 0xf13   | `mimpid`    | _CSR_MIMPID_    | r/- | Machine implementation ID / version |
 | 0xf14   | `mhartid`   | _CSR_MHARTID_   | r/- | Machine thread ID |
-6+| **NEORV32-Specific Custom Machine CSRs**
+6+^| **NEORV32-Specific Custom Machine CSRs**
 | 0xfc0   | `mzext` | _CSR_MZEXT_ | r/- | Available `Z*` CPU extensions |
 |=======================
 

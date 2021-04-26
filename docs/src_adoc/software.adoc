@@ -23,12 +23,12 @@ illustrating the usage of peripherals and for general getting in touch with the 
 === Compiler Toolchain
 
 The toolchain for this project is based on the free RISC-V GCC-port. You can find the compiler sources and
-build instructions on the official RISC-V GNU toolchain GitHub page: link:https://github.com/riscv/riscv-gnutoolchain.
+build instructions on the official RISC-V GNU toolchain GitHub page: https://github.com/riscv/riscv-gnutoolchain.
 
 The NEORV32 implements a 32-bit base integer architecture (`rv32i`) and a 32-bit integer and soft-float ABI
 (ilp32), so make sure you build an according toolchain.
 
-Alternatively, you can download my prebuilt `rv32i/e` toolchains for 64-bit x86 Linux from: link:github.com/stnolting/riscv-gcc-prebuilt
+Alternatively, you can download my prebuilt `rv32i/e` toolchains for 64-bit x86 Linux from: https://github.com/stnolting/riscv-gcc-prebuilt
 
 The default toolchain prefix used by the project's makefiles is (can be changed in the makefiles): **`riscv32-unknown-elf`**
 
@@ -61,7 +61,7 @@ files are currently part of the NEORV32 core library:
 |=======================
 | C source file | C header file | Description
 | -                  | `neorv32.h`            | main NEORV32 definitions and library file
-| `neorv32_cfs.c`    | `neorv32_cfs.h`        | HW driver (stub)footnote_[This driver file only represents a stub, since the real CFS drivers are defined by the actual CFS implementation.] functions for the custom functions subsystem
+| `neorv32_cfs.c`    | `neorv32_cfs.h`        | HW driver (stub)footnote:[This driver file only represents a stub, since the real CFS drivers are defined by the actual CFS implementation.] functions for the custom functions subsystem
 | `neorv32_cpu.c`    | `neorv32_cpu.h`        | HW driver functions for the NEORV32 **CPU**
 | `neorv32_gpio.c`   | `neorv32_gpio.h`       | HW driver functions for the **GPIO**
 | -                  | `neorv32_intrinsics.h` | macros for custom intrinsics/instructions

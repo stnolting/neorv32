@@ -10,21 +10,21 @@ image::../figures/neorv32_processor.png[align=center]
 
 **Key Features**
 
-* _optional_ processor-internal data and instruction memories (**DMEM**/**IMEM**) + cache (**iCACHE**)
-* _optional_ internal bootloader (**BOOTLDROM**) with UART console & SPI flash boot option
-* _optional_ machine system timer (**MTIME**), RISC-V-copmatible
-* _optional_ two independent universal asynchronous receivers and transmitters (**UART0**, **UART1**) with optional hardware flow control (RTS/CTS)
-* _optional_ 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated CS lines
-* _optional_ two wire serial interface controller (**TWI**), compatible to the I²C standard
-* _optional_ general purpose parallel IO port (**GPIO**), 32xOut, 32xIn
-* _optional_ 32-bit external bus interface, Wishbone b4 / AXI4-Lite compatible (**WISHBONE**)
-* _optional_ watchdog timer (**WDT**)
-* _optional_ PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
-* _optional_ ring-oscillator-based true random number generator (**TRNG**)
-* _optional_ custom functions subsystem for custom co-processor extensions (**CFS**)
-* _optional_ numerically-controlled oscillator (**NCO**) with 3 independent channels
-* _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (**NEOLED**)
-* system configuration information memory to check HW configuration via software (**SYSINFO**)
+* _optional_ processor-internal data and instruction memories (<<_data_memory_dmem,**DMEM**>>/<<_instruction_memory_imem,**IMEM**>>) + cache (**iCACHE**)
+* _optional_ internal bootloader (<<_bootloader_rom_bootrom,**BOOTROM**>>) with UART console & SPI flash boot option
+* _optional_ machine system timer (<<_machine_system_timer_mtime,**MTIME**>>), RISC-V-compatible
+* _optional_ two independent universal asynchronous receivers and transmitters (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,**UART0**>>, <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,**UART1**>>) with optional hardware flow control (RTS/CTS)
+* _optional_ 8/16/24/32-bit serial peripheral interface controller (<<_serial_peripheral_interface_controller_spi,**SPI**>>) with 8 dedicated CS lines
+* _optional_ two wire serial interface controller (<<_two_wire_serial_interface_controller_twi,**TWI**>>), compatible to the I²C standard
+* _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 32xOut, 32xIn
+* _optional_ 32-bit external bus interface, Wishbone b4 / AXI4-Lite compatible (<<_processor_external_memory_interface_wishbone_axi4_lite,**WISHBONE**>>)
+* _optional_ watchdog timer (<<_watchdog_timer_wdt,**WDT**>>)
+* _optional_ PWM controller with 4 channels and 8-bit duty cycle resolution (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
+* _optional_ ring-oscillator-based true random number generator (<<_true_random_number_generator_trng,**TRNG**)
+* _optional_ custom functions subsystem for custom co-processor extensions (<<_custom_functions_subsystem_cfs,**CFS**>>)
+* _optional_ numerically-controlled oscillator (<<_numerically_controlled_oscillator_nco,**NCO**>>) with 3 independent channels
+* _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (<<_smart_led_interface_neoled,**NEOLED**>>)
+* system configuration information memory to check HW configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
 
 <<<
@@ -39,14 +39,14 @@ The type of all signals is _std_ulogic_ or _std_ulogic_vector_, respectively.
 A wrapper for the NEORV32 Processor setup providing resolved port signals can be found in
 `rtl/top_templates/neorv32_top_stdlogic.vhd`.
 
-[cols="<3,^1,^2,<11"]
+[cols="<3,^2,^2,<11"]
 [options="header",grid="rows"]
 |=======================
 | Signal | Width | Dir. | Function
-4+| **Global Control**
+4+^| **Global Control**
 | `clk_i` | 1 | in | global clock line, all registers triggering on rising edge
 | `rstn_i` | 1 | in | global reset, asynchronous, **low-active**
-4+| **External bus interface (WISHBONE)**
+4+^| **External bus interface (<<_processor_external_memory_interface_wishbone_axi4_lite,WISHBONE>>)**
 | `wb_tag_o` | 3  | out | tag (access type identifier)
 | `wb_adr_o` | 32 | out | destination address
 | `wb_dat_i` | 32 | in | write data
@@ -58,42 +58,42 @@ A wrapper for the NEORV32 Processor setup providing resolved port signals can be
 | `wb_lock_o`| 1  | out | exclusive access request
 | `wb_ack_i` | 1  | in | transfer acknowledge
 | `wb_err_i` | 1  | in | transfer error
-4+| **Advanced memory control signals**
+4+^| **Advanced memory control signals**
 | `fence_o`  | 1 | out | indicates an executed _fence_ instruction
 | `fencei_o` | 1 | out | indicates an executed _fencei_ instruction
-4+| **General Purpose Inputs & Outputs (GPIO)**
+4+^| **General Purpose Inputs & Outputs (<<_general_purpose_input_and_output_port_gpio,GPIO>>)**
 | `gpio_o` | 32 | out | general purpose parallel output
 | `gpio_i` | 32 | in | general purpose parallel input
-4+| **Primary Universal Asynchronous Receiver/Transmitter (UART0)**
+4+^| **Primary Universal Asynchronous Receiver/Transmitter (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>>)**
 | `uart0_txd_o` | 1 | out | UART0 serial transmitter
 | `uart0_rxd_i` | 1 | in | UART0 serial receiver
 | `uart0_rts_o` | 1 | out | UART0 RX ready to receive new char
 | `uart0_cts_i` | 1 | in | UART0 TX allowed to start sending
-4+| **Primary Universal Asynchronous Receiver/Transmitter (UART1)**
+4+^| **Primary Universal Asynchronous Receiver/Transmitter (<<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>>)**
 | `uart1_txd_o` | 1 | out | UART1 serial transmitter
 | `uart1_rxd_i` | 1 | in | UART1 serial receiver
 | `uart1_rts_o` | 1 | out | UART1 RX ready to receive new char
 | `uart1_cts_i` | 1 | in | UART1 TX allowed to start sending
-4+| **Serial Peripheral Interface Controller (SPI)**
+4+^| **Serial Peripheral Interface Controller (<<_serial_peripheral_interface_controller_spi,SPI>>)**
 | `spi_sck_o` | 1 | out | SPI controller clock line
 | `spi_sdo_o` | 1 | out | SPI serial data output
 | `spi_sdi_i` | 1 | in | SPI serial data input
 | `spi_csn_o` | 8 | out | SPI dedicated chip select (low-active)
-4+| **Two-Wire Interface Controller (TWI)**
+4+^| **Two-Wire Interface Controller (<<_two_wire_serial_interface_controller_twi,TWI>>)**
 | `twi_sda_io` | 1 | inout | TWI serial data line
 | `twi_scl_io` | 1 | inout | TWI serial clock line
-4+| **Custom Functions Subsystem (CFS)**
+4+^| **Custom Functions Subsystem (<<_custom_functions_subsystem_cfs,CFS>>)**
 | `cfs_in_i`  | 32 | in | custom CFS input signal conduit
 | `cfs_out_o` | 32 | out | custom CFS output signal conduit
-4+| **Pulse-Width Modulation Channels (PWM)**
+4+^| **Pulse-Width Modulation Channels (<<_pulse_width_modulation_controller_pwm,PWM>>)**
 | `pwm_o` | 4 | out | pulse-width modulated channels
-4+| **Numerically-Controller Oscillator (NCO)**
+4+^| **Numerically-Controller Oscillator (<<_numerically_controlled_oscillator_nco,NCO>>)**
 | `nco_o` | 3 | out | NCO output channels
-4+| **Smart LED Interface (NeoPixel(TM) compatible) (NEOLED)**
+4+^| **Smart LED Interface - NeoPixel(TM) compatible (<<_smart_led_interface_neoled,NEOLED>>)**
 | `neoled_o` | 1 | out | asynchronous serial data output
-4+| **System time input from external MTIME unit**
-| `mtime_i` | 32 | in | machine timer time (to `time[h]` CSRs) from external _MTIME_ unit if the processor-internal _MTIME_ unit is NOT used
-4+| **Interrupts**
+4+^| **System time input from external MTIME unit**
+| `mtime_i` | 32 | in | machine timer time (to `time[h]` CSRs) from external _MTIME_ unit if the processor-internal <<_machine_system_timer_mtime,**MTIME**>> unit is NOT used
+4+^| **Interrupts**
 | `soc_firq_i`  | 6 | in | platform fast interrupt channels (custom)
 | `mtime_irq_i` | 1 | in | machine timer interrupt13 (RISC-V)
 | `msw_irq_i`   | 1 | in | machine software interrupt (RISC-V)
@@ -127,7 +127,7 @@ respectively.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **CLOCK_FREQUENCY** | _natural_ | 0
 3+| The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
@@ -135,7 +135,7 @@ respectively.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **BOOTLOADER_EN** | _boolean_ | true
 3+| Implement the boot ROM, pre-initialized with the bootloader image when true. This will also change the
@@ -145,7 +145,7 @@ processor's boot address from the beginning of the instruction memory address sp
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **USER_CODE** | _std_ulogic_vector(31 downto 0)_ | x"00000000"
 3+| Custom user code that can be read by software via the _SYSINFO_ module.
@@ -153,7 +153,7 @@ processor's boot address from the beginning of the instruction memory address sp
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **HW_THREAD_ID** | _natural_ | 0
 3+| The hart ID of the CPU. Can be read via the `mhartid` CSR. Hart IDs must be unique within a system.
@@ -168,7 +168,7 @@ See section <<_instruction_sets_and_extensions>> for more information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_A** | _boolean_ | false
 3+| Implement atomic memory access operations when _true_.
@@ -176,7 +176,7 @@ See section <<_instruction_sets_and_extensions>> for more information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_B** | _boolean_ | false
 3+| Implement bit manipulation instructions when _true_.
@@ -184,7 +184,7 @@ See section <<_instruction_sets_and_extensions>> for more information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_C** | _boolean_ | false
 3+| Implement compressed instructions (16-bit) when _true_.
@@ -192,7 +192,7 @@ See section <<_instruction_sets_and_extensions>> for more information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_E** | _boolean_ | false
 3+| Implement the embedded CPU extension (only implement the first 16 data registers) when _true_.
@@ -200,7 +200,7 @@ See section <<_instruction_sets_and_extensions>> for more information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_M** | _boolean_ | false
 3+| Implement integer multiplication and division instructions when _true_.
@@ -208,7 +208,7 @@ See section <<_instruction_sets_and_extensions>> for more information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_U** | _boolean_ | false
 3+| Implement less-privileged user mode when _true_.
@@ -216,7 +216,7 @@ See section <<_instruction_sets_and_extensions>> for more information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_Zfinx** | _boolean_ | false
 3+| Implement the 32-bit single-precision floating-point extension (using integer registers) when _true_. For
@@ -225,7 +225,7 @@ more information see section <<_zfinx_single_precision_floating_point_operations
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_Zicsr** | _boolean_ | true
 3+| Implement the control and status register (CSR) access instructions when true. Note: When this option is
@@ -235,7 +235,7 @@ no machine information will be available.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_Zifencei** | _boolean_ | false
 3+| Implement the instruction fetch synchronization instruction _fence.i_. For example, this option is required
@@ -250,7 +250,7 @@ for self-modifying code (and/or for i-cache flushes).
 See section <<_instruction_sets_and_extensions>> for more information.
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **FAST_MUL_EN** | _boolean_ | false
 3+| When this generic is enabled, the multiplier of the `M` extension is realized using DSPs blocks instead of an
@@ -260,7 +260,7 @@ enabled (_CPU_EXTENSION_RISCV_M_ is _true_).
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **FAST_SHIFT_EN** | _boolean_ | false
 3+| When this generic is enabled the shifter unit of the CPU's ALU is implement as fast barrel shifter (requiring
@@ -269,7 +269,7 @@ more hardware resources).
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **TINY_SHIFT_EN** | _boolean_ | false
 3+| If this generic is enabled the shifter unit of the CPU's ALU is implemented as (slow but tiny) single-bit iterative shifter
@@ -279,7 +279,7 @@ this generic is ignored if _FAST_SHIFT_EN_ is _true_.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **CPU_CNT_WIDTH** | _natural_ | 0
 3+| This generic configures the total size of the CPU's `cycle` and `instret` CSRs (low word + high word). See
@@ -296,7 +296,7 @@ See section <<_pmp_physical_memory_protection>> for more information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **PMP_NUM_REGIONS** | _natural_ | 0
 3+| Total number of implemented protections regions (0..64). If this generics is zero no physical memory
@@ -305,7 +305,7 @@ protection logic will be implemented at all.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **PMP_MIN_GRANULARITY** | _natural_ | 64*1024
 3+| Minimal region granularity in bytes. Has to be a power of two. Has to be at least 8 bytes.
@@ -319,7 +319,7 @@ protection logic will be implemented at all.
 See section <<_hpm_hardware_performance_monitors>> for more information.
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **HPM_NUM_CNTS** | _natural_ | 0
 3+| Total number of implemented hardware performance monitor counters (0..29). If this generics is zero no
@@ -328,7 +328,7 @@ hardware performance monitor logic will be implemented at all.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **HPM_CNT_WIDTH** | _natural_ | 40
 3+| This generic defines the total LSB-aligned size of each HPM counter (size(`[m]hpmcounter*h`) +
@@ -345,7 +345,7 @@ See sections <<_address_space>> and <<_instruction_memory_imem>> for more inform
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **MEM_INT_IMEM_EN** | _boolean_ | true
 3+| Implement processor internal instruction memory (IMEM) when _true_.
@@ -353,7 +353,7 @@ See sections <<_address_space>> and <<_instruction_memory_imem>> for more inform
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **MEM_INT_IMEM_SIZE** | _natural_ | 16*1024
 3+| Size in bytes of the processor internal instruction memory (IMEM). Has no effect when _MEM_INT_IMEM_EN_ is _false_.
@@ -361,7 +361,7 @@ See sections <<_address_space>> and <<_instruction_memory_imem>> for more inform
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **MEM_INT_IMEM_ROM** | _boolean_ | false
 3+| Implement processor-internal instruction memory as read-only memory, which will be initialized with the
@@ -376,7 +376,7 @@ application image at synthesis time. Has no effect when _MEM_INT_IMEM_EN_ is _fa
 See sections <<_address_space>> and <<_data_memory_dmem>> for more information.
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **MEM_INT_DMEM_EN** | _boolean_ | true
 3+| Implement processor internal data memory (DMEM) when _true_.
@@ -384,7 +384,7 @@ See sections <<_address_space>> and <<_data_memory_dmem>> for more information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **MEM_INT_DMEM_SIZE** | _natural_ | 8*1024
 3+| Size in bytes of the processor-internal data memory (DMEM). Has no effect when _MEM_INT_DMEM_EN_ is _false_.
@@ -398,7 +398,7 @@ See sections <<_address_space>> and <<_data_memory_dmem>> for more information.
 See section <<_processor_internal_instruction_cache_icache>> for more information.
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **ICACHE_EN** | _boolean_ | false
 3+| Implement processor internal instruction cache when _true_.
@@ -406,7 +406,7 @@ See section <<_processor_internal_instruction_cache_icache>> for more informatio
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **ICACHE_NUM_BLOCK** | _natural_ | 4
 3+| Number of blocks (cache "pages" or "lines") in the instruction cache. Has to be a power of two. Has no
@@ -415,7 +415,7 @@ effect when _ICACHE_DMEM_EN_ is false.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **ICACHE_BLOCK_SIZE** | _natural_ | 64
 3+| Size in bytes of each block in the instruction cache. Has to be a power of two. Has no effect when
@@ -424,7 +424,7 @@ _ICACHE_EN_ is _false_.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **ICACHE_ASSOCIATIVITY** | _natural_ | 1
 3+| Associativity (= number of sets) of the instruction cache. Has to be a power of two. Allowed configurations:
@@ -439,7 +439,7 @@ _ICACHE_EN_ is _false_.
 See sections <<_address_space>> and <<_processor_external_memory_interface_wishbone_axi4_lite>> for more information.
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **MEM_EXT_EN** | _boolean_ | false
 3+| Implement external bus interface (WISHBONE) when _true_.
@@ -447,7 +447,7 @@ See sections <<_address_space>> and <<_processor_external_memory_interface_wishb
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **MEM_EXT_TIMEOUT** | _natural_ | 255
 3+| Clock cycles after which a pending external bus access will auto-terminates and raise a bus fault exception. Set to 0 to disable auto-timeout. 
@@ -461,7 +461,7 @@ See sections <<_address_space>> and <<_processor_external_memory_interface_wishb
 See section <<_processor_internal_modules>> for more information.
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_GPIO_EN** | _boolean_ | true
 3+| Implement general purpose input/output port unit (GPIO) when _true_.
@@ -470,7 +470,7 @@ See section <<_general_purpose_input_and_output_port_gpio>> for more information
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_MTIME_EN** | _boolean_ | true
 3+| Implement machine system timer (MTIME) when _true_.
@@ -479,7 +479,7 @@ See section <<_machine_system_timer_mtime>> for more information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_UART0_EN** | _boolean_ | true
 3+| Implement primary universal asynchronous receiver/transmitter (UART0) when _true_.
@@ -489,7 +489,7 @@ more information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_UART1_EN** | _boolean_ | true
 3+| Implement secondary universal asynchronous receiver/transmitter (UART1) when _true_. 
@@ -498,7 +498,7 @@ See section <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_SPI_EN** | _boolean_ | true
 3+| Implement serial peripheral interface controller (SPI) when _true_.
@@ -507,17 +507,17 @@ See section <<_serial_peripheral_interface_controller_spi>> for more information
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_TWI_EN** | _boolean_ | true
 3+| Implement two-wire interface controller (TWI) when _true_.
-See section <<_two wire_serial_interface_controller_twi>> for
+See section <<_two_wire_serial_interface_controller_twi>> for
 more information.
 |======
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_PWM_EN** | _boolean_ | true
 3+| Implement pulse-width modulation controller (PWM) when _true_.
@@ -526,7 +526,7 @@ See section <<_pulse_width_modulation_controller_pwm>> for more information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_WDT_EN** | _boolean_ | true
 3+| Implement watchdog timer (WDT) when _true_. See section <<_watchdog_timer_wdt>> for more
@@ -535,7 +535,7 @@ information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_TRNG_EN** | _boolean_ | false
 3+| Implement true-random number generator (TRNG) when _true_. See section <<_true_random_number_generator_trng>> for more information.
@@ -543,7 +543,7 @@ information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_CFS_EN** | _boolean_ | false
 3+| Implement custom functions subsystem (CFS) when _true_. See section <<_custom_functions_subsystem_cfs>> for more information.
@@ -551,7 +551,7 @@ information.
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_CFS_CONFIG** | _std_ulogic_vector(31 downto 0)_ | 0x"00000000"
 3+| This is a "conduit" generic that can be used to pass user-defined CFS implementation flags to the custom
@@ -560,7 +560,7 @@ functions subsystem entity. See section <<_custom_functions_subsystem_cfs>> for 
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_CFS_IN_SIZE** | _positive_ | 32
 3+| Defines the size of the CFS input signal conduit (`cfs_in_i`). See section <<_custom_functions_subsystem_cfs>> for more information.
@@ -568,7 +568,7 @@ functions subsystem entity. See section <<_custom_functions_subsystem_cfs>> for 
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_CFS_OUT_SIZE** | _positive_ | 32
 3+| Defines the size of the CFS output signal conduit (`cfs_out_o`). See section <<_custom_functions_subsystem_cfs>> for more information.
@@ -576,20 +576,20 @@ functions subsystem entity. See section <<_custom_functions_subsystem_cfs>> for 
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_NCO_EN** | _boolean_ | true
-3+| Implement numerically-controller oscillator (NCO) when _true_.
-See section <<_numerically_controller_oscillator_nco>> for more information.
+3+| Implement numerically-controlled oscillator (NCO) when _true_.
+See section <<_numerically_controlled_oscillator_nco>> for more information.
 |======
 
 
 [cols="4,4,2"]
-[frame="topbot",grid="none"]
+[frame="all",grid="none"]
 |======
 | **IO_NEOLED_EN** | _boolean_ | true
 3+| Implement smart LED interface (WS2812 / NeoPixel(TM)-compatible) (NEOLED) when _true_.
-See section <<_smart_led_interface_neoled_neopixel>> Compatible for more information.
+See section <<_smart_led_interface_neoled>> Compatible for more information.
 |======
 
 
@@ -614,7 +614,7 @@ As part of the custom/NEORV32-specific CPU extensions, the CPU features 16 fast 
 [TIP]
 The fast interrupt request signals have custom `mip` CSR bits (see <<_machine_trap_setup>>), custom
 `mie` CSR bits (see <<_machine_trap_handling>>) and custom `mcause` CSR trap codes and trap
-priories (see <<traps_exceptions_and_interrupts>>).
+priories (see <<_traps_exceptions_and_interrupts>>).
 
 The fast interrupt request signals are divided into two groups. The FIRQs with higher priority (FIRQ0 –
 FIRQ9) are dedicated for processor-internal usage. The FIRQs with lower priority (FIRQ10 – FIRQ15) are

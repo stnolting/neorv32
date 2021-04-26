@@ -3,7 +3,7 @@
 ==== Instruction Memory (IMEM)
 
 [cols="<3,<3,<4"]
-[grid="topbot"]
+[frame="topbot",grid="none"]
 |=======================
 | Hardware source file(s): | neorv32_imem.vhd | 
 | Software driver file(s): | none             | _implicitly used_
