@@ -120,6 +120,18 @@ Privileged software can determine the actual CPU and processor configuration via
 `mzext` (see <<_machine_trap_setup>> and <<_neorv32_specific_custom_csrs>>) CSRs and via the memory-mapped _SYSINFO_ module (see <<_system_configuration_information_memory_sysinfo>>),
 respectively.
 
+**CSR Description**
+
+The description of each CSR provides the following summary:
+
+.Generic description
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| _Generic_ | _type_ | _default value_
+3+| _Description_
+|======
+
 
 // ####################################################################################################################
 :sectnums:
