@@ -48,13 +48,3 @@ block if a miss is detected. If any of the accessed addresses within a single bl
 acknowledge (i.e. issuing an error signal or timing out) the whole cache block is invalidate and any access to
 an address within this cache block will also raise an instruction fetch bus error fault exception.
 
-[IMPORTANT]
-If the instruction cache is implemented, the default bus timeout (configured in the processor's
-VHDL package file, see section <<_bus_interface>>) is automatically modified: The default bus
-timeout is rounded to the next power-of-two and multiplied by the number of word in one cache
-block minus one.
-
-Example:
-* default `bus_timeout_c` = 63 cycles
-* _ICACHE_BLOCK_SIZE_ = 256 (bytes
-* actual bus timeout = 64 * (256/4) -1 = 4095 cycles
