@@ -53,7 +53,7 @@ ignored (see table below, "accessible if locked"). Read accesses to the control 
 lock can only be removed by a system reset (via external reset signal or via a watchdog reset action).
 
 .WDT register map
-[cols="<3,<2,<4,^1,^2,<4"]
+[cols="<2,<2,<4,^1,^2,<4"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Writable if locked | Function

@@ -12,7 +12,7 @@
 :listing-caption: Listing
 :toc:
 :toclevels: 4
-:title-logo-image: image:../figures/neorv32_logo.png[pdfwidth=6.25in,align=center]
+:title-logo-image: image:../figures/neorv32_logo_dark.png[pdfwidth=6.25in,align=center]
 // Uncomment next line to add a title page (or set doctype to book)
 //:title-page:
 // Uncomment next line to set page size (default is A4)

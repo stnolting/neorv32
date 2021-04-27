@@ -32,7 +32,7 @@ so the CPU is triggered once if the system time is greater than or equal to the 
 another MTIME IRQ is only possible when updating `MTIMECMP`.
 
 The 64-bit counter and the 64-bit comparator are implemented as 2×32-bit counters and comparators with a
-registered carry to prevent a 64-bit carry chain ad thus, to simplify timing closure.
+registered carry to prevent a 64-bit carry chain and thus, to simplify timing closure.
 
 .MTIME register map
 [cols="^3,<3,^1,^1,<6"]

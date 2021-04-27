@@ -322,7 +322,7 @@ Autoboot in 8s. Press key to abort.
 
 This start-up screen also gives some brief information about the bootloader and several system configuration parameters:
 
-[cols="<2,<14"]
+[cols="<2,<15"]
 [grid="none"]
 |=======================
 | `BLDV` | Bootloader version (built date).
@@ -447,8 +447,8 @@ If something goes wrong during bootloader operation, an error code is shown. In 
 stalls, a bell command and one of the following error codes are send to the terminal, the bootloader status
 LED is permanently activated and the system must be reset manually.
 
-[cols="<2,<11"]
-[grid="none"]
+[cols="<2,<13"]
+[grid="rows"]
 |=======================
 | **`ERROR_0`** | If you try to transfer an invalid executable (via UART or from the external SPI flash), this error message shows up. There might be a transfer protocol configuration error in the terminal program. See section <<_uploading_and_starting_of_a_binary_executable_image_via_uart>> for more information. Also, if no SPI flash was found during an auto-boot attempt, this message will be displayed.
 | **`ERROR_1`** | Your program is way too big for the internal processor’s instructions memory. Increase the memory size or reduce (optimize!) your application code.

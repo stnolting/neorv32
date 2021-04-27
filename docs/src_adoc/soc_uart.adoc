@@ -129,7 +129,7 @@ If the UART is configured for simulation mode there will be **NO physical UART0 
 More information regarding the simulation-mode of the UART0 can be found in section <<_simulating_the_processor>>.
 
 .UART0 register map
-[cols="<3,<4,<5,^1,<9"]
+[cols="<6,<7,<10,^2,<18"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
@@ -191,7 +191,7 @@ plain ASCII text and `neorv32.uart1.sim_mode.data.out` is used to store full 32-
 encoded data words.
 
 .UART1 register map
-[cols="<3,<4,<5,^1,<9"]
+[cols="<6,<7,<10,^2,<18"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function

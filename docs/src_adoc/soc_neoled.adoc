@@ -148,8 +148,8 @@ register's _NEOLED_CT_BSCON_ bit is used to configure the "meaning" of the _NEOL
 condition for sending an interrupt request (IRQ) to the CPU is also configured via the _NEOLED_CT_BSCON_
 bit.
 
-[cols="^2,^4,^4"]
-[options="header",grid="rows"]
+[cols="^5,^8,^8"]
+[options="header",grid="all"]
 |=======================
 | _NEOLED_CT_BSCON_ | _NEOLED_CT_BUSY_ | Sending an IRQ when ...
 | 0 | the busy flag will clear if there **IS at least one free entry** in the TX buffer | the IRQ will fire if **at least one entry GETS free** in the TX buffer

@@ -309,8 +309,8 @@ final executable. The makefile will show the resulting memory utilization and th
 ----
 neorv32/sw/example/blink_led$ make exe
 Memory utilization:
-text data bss dec hex filename
-852 0 0 852 354 main.elf
+   text    data     bss    dec    hex filename
+    852       0       0    852    354 main.elf
 Executable (neorv32_exe.bin) size in bytes:
 864
 ----
@@ -520,8 +520,8 @@ the _MABI_ variable according to your CPU hardware configuration.
 MARCH = -march=rv32i # <1>
 MABI = -mabi=ilp32 # <2>
 ----
-<1> Machine architecture - ISA string
-<2> Machine binary interface
+<1> MARCH = Machine architecture ("ISA string")
+<2> MABI = Machine binary interface
 
 For example when you enable the RISC-V `C` extension (16-bit compressed instructions) via the _CPU_EXTENSION_RISCV_C_ generic (set _true_) you need
 to add the 'c' extension also to the _MARCH_ ISA string.
@@ -567,8 +567,8 @@ Using the IMEM as ROM:
 ----
 neorv32/sw/example/blink_led$ make compile
 Memory utilization:
-text data bss dec hex filename
-852 0 0 852 354 main.elf
+   text    data    bss    dec    hex filename
+    852       0      0    852    354 main.elf
 Executable (neorv32_exe.bin) size in bytes:
 864
 Installing application image to ../../../rtl/core/neorv32_application_image.vhd
@@ -585,7 +585,7 @@ the bootloader via the according top entity's generic:
 ----
 BOOTLOADER_EN => false, -- implement processor-internal bootloader? # <1>
 ----
-<1> Set to _false_ to make the CPU directly boot from the IMEM. Also, the BOOTOM is discarded from the design.
+<1> Set to _false_ to make the CPU directly boot from the IMEM. In this case the BOOTROM is discarded from the design.
 
 [start=4]
 . When the bootloader is deactivated, the according module (BOOTROM) is removed from the design and the CPU will start booting
@@ -673,7 +673,7 @@ MEMORY
   ram (rwx) : ORIGIN = 0x80000000, LENGTH = 8*1024
 }
 ----
-<1> Bootloader ROM default size = 4*1024 bytes
+<1> Bootloader ROM default size = 4*1024 bytes (**left** value)
 
 [IMPORTANT]
 The `rom` region provides conditional assignments (via symbol `make_bootloader`) for the origin
@@ -788,14 +788,14 @@ properties (attributes: `r` = read, `w` = write, `e` = execute, `a` = atomic acc
 half-word-accessible, `32` = word-accessible).
 
 .Testbench: processor-external memories
-[cols="^2,>3,^1,<7"]
+[cols="^4,>3,^5,<11"]
 [options="header",grid="rows"]
 |=======================
 | Base address | Size          | Attributes           | Description
 | `0x00000000` | `imem_size_c` | `r/w/e,  a, 8/16/32` | external IMEM (initialized with application image)
 | `0x80000000` | `dmem_size_c` | `r/w/e,  a, 8/16/32` | external DMEM
 | `0xf0000000` |      64 bytes | `r/w/e, !a, 8/16/32` | external "IO" memory, atomic accesses will fail
-| `0xff000000` |       4 bytes | `-/w/-,  a, -/--/32` | memory-mapped register to trigger "machine external", "machine software" and "SoC Fast Interrupt" interrupts
+| `0xff000000` |       4 bytes | `-/w/-,  a,  -/-/32` | memory-mapped register to trigger "machine external", "machine software" and "SoC Fast Interrupt" interrupts
 |=======================
 
 The simulated NEORV32 does not use the bootloader and directly boots the current application image (from
@@ -885,7 +885,7 @@ This will generate the `docs/doxygen_build` folder. To view the documentation, o
 see a list of all documented files.
 
 [TIP]
-The documentation is automatically built and deployed to GitHub pages by the CI workflow (:https://stnolting.github.io/neorv32/files.html).
+The documentation is automatically built and deployed to GitHub pages by the CI workflow (https://stnolting.github.io/neorv32/files.html).
 
 
 
