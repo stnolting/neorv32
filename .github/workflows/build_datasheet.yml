@@ -28,7 +28,7 @@ jobs:
         uses: avattathil/asciidoctor-action@master
         with:
           programm: |
-            "asciidoctor-pdf -"
+            "asciidoctor-pdf -v"
             "asciidoctor-pdf -a docs/src_adoc/neorv32-theme.yml docs/src_adoc/neorv32.adoc --out-file docs/NEORV32.pdf"
 
       - name: '🚀 Upload to Repository'
