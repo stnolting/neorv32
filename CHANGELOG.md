@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 28.04.2021 | 1.5.4.7 | :bug: fixed bug in instruction cache (iCACHE) when using two sets - `ICACHE_ASSOCIATIVITY` = 2: cache was corrupting the non-active set |
 | 26.04.2021 | 1.5.4.6 | optimized CPU's instruction fetch unit: less overhead for branches, reduced unit's hardware complexity |
 | 25.04.2021 | 1.5.4.5 | :sparkles: :warning: removed `cancel` signals from processor-internal bus system; removed CPU's internal bus access timeout counter; added new top generic: `MEM_EXT_TIMEOUT` - type `natural`, default = 255; used to configure optional auto-timeout of Wishbone interface (if an **external** device is not responding within `MEM_EXT_TIMEOUT` clock cycles); set to zero to disable auto-timeout (required to comply with AXI4-Lite specs. when using the top's AXI wrapper) |
 | 25.04.2021 | 1.5.4.3 | :sparkles: converted NEORV32.pdf data sheet to [`asciidoc` using asciidoctor](https://asciidoctor.org/); added data sheet sources to [`docs/src_adoc`](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc) |
