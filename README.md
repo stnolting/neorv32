@@ -29,7 +29,7 @@ on the RISC-V NEORV32 CPU. The processor is intended as auxiliary processor in l
 designs or as *ready-to-go* stand-alone custom microcontroller.
 
 :books: For detailed information take a look at the [NEORV32 data sheet (pdf)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
-The `asciidoc` sources can be found in [`docs/src_adoc`](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc). Atomatic build results
+The `asciidoc` sources can be found in [`docs/src_adoc`](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc). Automatic builds
 can be downloaded as artifacts from the [_Build Data Sheet_ GitHub workflow](https://github.com/stnolting/neorv32/actions/workflows/build_datasheet.yml).
 The doxygen-based documentation of the *software framework* is available online at [GitHub-pages](https://stnolting.github.io/neorv32/files.html).
 
