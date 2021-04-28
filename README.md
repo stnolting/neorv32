@@ -6,7 +6,7 @@
 [![riscv-arch-test](https://github.com/stnolting/neorv32/actions/workflows/riscv-arch-test.yml/badge.svg)](https://github.com/stnolting/neorv32/actions/workflows/riscv-arch-test.yml)
 [![license](https://img.shields.io/github/license/stnolting/neorv32)](https://github.com/stnolting/neorv32/blob/master/LICENSE)
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases)
-[![datasheet](https://img.shields.io/badge/data%20sheet-NEORV32.pdf-ffaa00)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
+[![datasheet](https://img.shields.io/badge/data%20sheet-NEORV32.pdf-ffbd00)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
 
 * [Overview](#Overview)
 * [Status](#Status)
