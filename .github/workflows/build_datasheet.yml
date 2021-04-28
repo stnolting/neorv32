@@ -1,0 +1,36 @@
+# Build data sheet from asciidoc sources
+
+name: 'Build Data Sheet'
+
+on:
+  push:
+    branches:
+    - master
+    paths:
+    - 'dosc/src_adoc/**'
+  pull_request:
+    branches:
+    - master
+    paths:
+    - 'dosc/src_adoc/**'
+  workflow_dispatch:
+
+jobs:
+
+  asciidoc_build:
+    runs-on: ubuntu-latest
+    name: Build Asciidoc
+    steps:
+      - name: '🧰 Repository Checkout'
+        uses: actions/checkout@v2
+
+      - name: '📚 Build PDF'
+        uses: avattathil/asciidoctor-action@master
+        with:
+          run: /bin/bash -c "chmod u+x ./docs/make_datasheet.sh && ./docs/make_datasheet.sh"
+
+      - name: '🚀 Upload to Repository'
+        uses: actions/upload-artifact@v2
+        with:
+          name: NEORV32.pdf
+          path: docs/NEORV32.pdf
