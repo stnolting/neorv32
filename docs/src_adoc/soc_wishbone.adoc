@@ -18,8 +18,8 @@
 |                          | `wb_lock_o` | exclusive access request (1-bit)
 |                          | `wb_ack_i`  | acknowledge (1-bit)
 |                          | `wb_err_i`  | bus error (1-bit)
-|                          | `fence_o`   | indicates an executed fence instruction
-|                          | `fencei_o`  | indicates an executed fence.i instruction
+|                          | `fence_o`   | an executed `fence` instruction
+|                          | `fencei_o`  | an executed `fence.i` instruction
 | Configuration generics:  | _MEM_EXT_EN_ | enable external memory interface when _true_
 |                          | _MEM_EXT_TIMEOUT_ | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
 | Configuration constants in VHDL package file `neorv32_package.vhd`: | `wb_pipe_mode_c` | when _false_ (default): classic/standard Wishbone protocol; when _true_: pipelined Wishbone protocol
@@ -58,11 +58,16 @@ transfer is acknowledged/terminated. If `wb_pipe_mode_c` is enabled, all bus con
 (and stable) until the transfer is acknowledged/terminated. In this case, _STB_ is active only during the very
 first bus clock cycle.
 
-."Classic" Wishbone read access
-image:../figures/wishbone_classic_read.png[]
+.Exemplary Wishbone bus accesses using "classic" and "pipelined" protocol
+[cols="^2,^2"]
+[grid="none"]
+|=======================
+| image:../figures/wishbone_classic_read.png[700,300] +
+**Classic** Wishbone read access
+| image:../figures/wishbone_pipelined_write.png[700,300] +
+**Pipelined** Wishbone write access
+|=======================
 
-."Pipelined" Wishbone write access
-image:../figures/wishbone_pipelined_write.png[]
 
 [TOP]
 A detailed description of the implemented Wishbone bus protocol and the according interface signals
@@ -97,7 +102,7 @@ memory system can guarantee to access **any** bus access (even it targets an uni
 The 3-bit wishbone `wb_tag_o` signal provides additional information regarding the access type. This signal
 is compatible to the AXI4 _AxPROT_ signal.
 
-* `wb_tag_o(0)` 1: privileged access (CPU is in machine mode); 0: nnprivileged access
+* `wb_tag_o(0)` 1: privileged access (CPU is in machine mode); 0: unprivileged access
 * `wb_tag_o(1)` always zero (indicating "secure access")
 * `wb_tag_o(2)` 1: instruction fetch access, 0: data access
 

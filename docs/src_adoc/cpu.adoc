@@ -711,21 +711,25 @@ Exceptions caused by a store address misalignment or a store physical memory pro
 a bus write-operation at all.
 
 
-** Instruction Atomicity**
+**Instruction Atomicity**
 
-All instructions execute as atomic operations – interrupts can only trigger between two consecutive
-instructions.
+All instructions execute as atomic operations – interrupts can only trigger between two instructions.
 
 
 **Custom Fast Interrupt Request Lines**
 
-As a custom extension, the NEORV32 CPU features 16 fast interrupt request lines via the firq_i CPU top
-entity signals. These interrupts have custom configuration and status flags in the mie and mip CSRs and also
-provide custom trap codes (see table below).
+As a custom extension, the NEORV32 CPU features 16 fast interrupt request lines via the `firq_`i CPU top
+entity signals. These interrupts have custom configuration and status flags in the `mie` and `mip` CSRs and also
+provide custom trap codes.
 
+
+<<<
+// ####################################################################################################################
+:sectnums!:
+===== NEORV32 Trap Listing
 
 .NEORV32 trap listing
-[cols="1,2,1,3,3,1,1"]
+[cols="3,6,5,14,11,4,4"]
 [options="header",grid="rows"]
 |=======================
 | Prio. | `mcause`     | [RISC-V] | ID [C] | Cause | `mepc` | `mtval`
@@ -761,15 +765,12 @@ provide custom trap codes (see table below).
 | 29    | `0x00000005` | 0.5      | _TRAP_CODE_L_ACCESS_ | lad access fault | _B-ADR_ | _B-ADR_
 |=======================
 
-[NOTE]
-The "[C]" names are defined by the NEORV32 core library (`sw/lib/include/neorv32.h`) and can
-be used in plain C code.
-
 **Notes**
 
-The priority ("Prio.") column shows the priority of each trap. The highest priority is 1. The `mcause` column shows the
-cause ID of the according trap that is written to `mcause` CSR. The RISC-V columns show the interrupt/exception code value from the
-official RISC-V privileged architecture manual. The `mepc` and `mtval` columns show the value written to
+The "Prio." column shows the priority of each trap. The highest priority is 1. The "`mcause`" column shows the
+cause ID of the according trap that is written to `mcause` CSR. The "[RISC-V]" columns show the interrupt/exception code value from the
+official RISC-V privileged architecture manual. The "[C]" names are defined by the NEORV32 core library (`sw/lib/include/neorv32.h`) and can
+be used in plain C code. The "`mepc`" and "`mtval`" columns show the value written to
 `mepc` and `mtval` CSRs when a trap is triggered:
 
 * _I-PC_ - address of interrupted instruction (instruction has not been execute/completed yet)
@@ -852,11 +853,16 @@ hardware module (`rtl/core/neorv32_bus_keeper.vhd`) keeps track of all internal 
 
 **Exemplary Bus Accesses**
 
-.Read access
-image::../figures/cpu_interface_read_long.png[align=center]
+.Example bus accesses: see read/write access description below
+[cols="^2,^2"]
+[grid="none"]
+|=======================
+| image:../figures/cpu_interface_read_long.png[read,300,150] +
+Read access
+| image:../figures/cpu_interface_write_long.png[write,300,150] +
+Write access
+|=======================
 
-.Write access
-image::../figures/cpu_interface_write_long.png[align=center]
 
 **Write Access**
 
