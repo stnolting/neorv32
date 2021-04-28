@@ -7,12 +7,12 @@ on:
     branches:
     - master
     paths:
-    - 'dosc/src_adoc/**'
+    - 'docs/src_adoc/**'
   pull_request:
     branches:
     - master
     paths:
-    - 'dosc/src_adoc/**'
+    - 'docs/src_adoc/**'
   workflow_dispatch:
 
 jobs:
