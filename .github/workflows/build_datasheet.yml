@@ -27,9 +27,7 @@ jobs:
       - name: '📚 Build PDF'
         uses: avattathil/asciidoctor-action@master
         with:
-          programm: |
-            "asciidoctor-pdf -v"
-            "asciidoctor-pdf -a docs/src_adoc/neorv32-theme.yml docs/src_adoc/neorv32.adoc --out-file docs/NEORV32.pdf"
+          programm: "asciidoctor-pdf -v"
 
       - name: '🚀 Upload to Repository'
         uses: actions/upload-artifact@v2
