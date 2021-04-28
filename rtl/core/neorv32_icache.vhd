@@ -247,6 +247,7 @@ begin
 
       when S_BUS_DOWNLOAD_REQ => -- download new cache block: request new word
       -- ------------------------------------------------------------
+        cache.ctrl_en  <= '1'; -- we are in cache control mode
         bus_re_o       <= '1'; -- request new read transfer
         ctrl.state_nxt <= S_BUS_DOWNLOAD_GET;
 
@@ -474,7 +475,7 @@ begin
       history.re_ff <= host_re_i;
       if (invalidate_i = '1') then -- invalidate whole cache
         history.last_used_set <= (others => '1');
-      elsif (history.re_ff = '1') and (or_all_f(hit) = '1') then -- store last accessed set that caused a hit
+      elsif (history.re_ff = '1') and (or_all_f(hit) = '1') and (ctrl_en_i = '0') then -- store last accessed set that caused a hit
         history.last_used_set(to_integer(unsigned(cache_index))) <= not hit(0);
       end if;
       history.to_be_replaced <= history.last_used_set(to_integer(unsigned(cache_index)));

@@ -49,7 +49,7 @@ package neorv32_package is
   constant xbus_big_endian_c : boolean := true; -- external memory access byte order: true=big endian (default); false=little endian
 
   -- CPU core --
-  constant ipb_entries_c     : natural := 2; -- entries in CPU instruction prefetch buffer, has to be a power of 2, default=2
+  constant ipb_entries_c     : natural := 4; -- entries in CPU instruction prefetch buffer, has to be a power of 2, default=2
   constant cp_timeout_en_c   : boolean := false; -- auto-terminate pending co-processor operations after 256 cycles (for debugging only), default = false
   constant dedicated_reset_c : boolean := false; -- use dedicated hardware reset value for UNCRITICAL registers (FALSE=reset value is irrelevant (might simplify HW), default; TRUE=defined LOW reset value)
 
@@ -83,7 +83,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050406"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050407"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
   constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
