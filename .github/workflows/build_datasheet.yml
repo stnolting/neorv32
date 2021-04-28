@@ -25,9 +25,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: '📚 Build PDF'
-        uses: avattathil/asciidoctor-action@master
+        uses: Analog-inc/asciidoctor-action@master
         with:
-          program: "asciidoctor-pdf -a docs/src_adoc/neorv32-theme.yml docs/src_adoc/neorv32.adoc --out-file docs/NEORV32.pdf"
+          shellcommand: "asciidoctor-pdf -a docs/src_adoc/neorv32-theme.yml docs/src_adoc/neorv32.adoc --out-file docs/NEORV32.pdf"
 
       - name: '🚀 Upload to Repository'
         uses: actions/upload-artifact@v2
