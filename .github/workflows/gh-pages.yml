@@ -19,7 +19,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    name: '🐧 Ubuntu-Latest'
+    name: 'Generate and Deploy SW Framework Documentation'
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:

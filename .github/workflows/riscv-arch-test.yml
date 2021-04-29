@@ -9,7 +9,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    name: '🐧 Ubuntu-Latest'
+    name: 'RISC-V Compatibility Check'
 
     steps:
 

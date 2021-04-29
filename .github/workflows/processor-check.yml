@@ -23,7 +23,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    name: '🐧 Ubuntu-Latest'
+    name: 'Processor Check'
 
     steps:
 

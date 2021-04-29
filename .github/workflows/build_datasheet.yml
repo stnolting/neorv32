@@ -8,18 +8,20 @@ on:
     - master
     paths:
     - 'docs/src_adoc/**'
+    - 'docs/figures/**'
   pull_request:
     branches:
     - master
     paths:
     - 'docs/src_adoc/**'
+    - 'docs/figures/**'
   workflow_dispatch:
 
 jobs:
 
   asciidoc_build:
     runs-on: ubuntu-latest
-    name: Build Asciidoc
+    name: 'Build Asciidoc'
     steps:
       - name: '🧰 Repository Checkout'
         uses: actions/checkout@v2
