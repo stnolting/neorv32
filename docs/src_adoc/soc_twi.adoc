@@ -18,7 +18,7 @@
 
 The two wire interface – also called "I²C" – is a quite famous interface for connecting several on-board
 components. Since this interface only needs two signals (the serial data line `twi_sda_io` and the serial
-clock line `twi_scl_i`o) – despite of the number of connected devices – it allows easy interconnections of
+clock line `twi_scl_io`) – despite of the number of connected devices – it allows easy interconnections of
 several peripheral nodes.
 
 The NEORV32 TWI implements a **TWI controller**. It features "clock stretching" (if enabled via the control
@@ -70,15 +70,15 @@ _**f~SCL~**_ = _f~main~[Hz]_ / (4 * `clock_prescaler`)
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.10+| `0xffffffb0` .10+| _TWI_CT_ |`0` _TWI_CT_EN_    | r/w | TWI enable
-                                  |`1` _TWI_CT_START_ | r/w | generate START condition
-                                  |`2` _TWI_CT_STOP_  | r/w | generate STOP condition
-                                  |`3` _TWI_CT_PRSC0_ | r/w .3+| 3-bit clock prescaler select
-                                  |`4` _TWI_CT_PRSC1_ | r/w
-                                  |`5` _TWI_CT_PRSC2_ | r/w
-                                  |`6` _TWI_CT_MACK_  | r/w | generate controller ACK for each transmission ("MACK")
-                                  |`7` _TWI_CT_CKSTEN_ | r/w | allow clock-stretching by peripherals when set
-                                  |`30` _TWI_CT_ACK_   | r/- | ACK received when set
-                                  |`31` _TWI_CT_BUSY_  | r/- | transfer/START/STOP in progress when set
+.10+<| `0xffffffb0` .10+<| _TWI_CT_ <|`0` _TWI_CT_EN_     ^| r/w <| TWI enable
+                                    <|`1` _TWI_CT_START_  ^| r/w <| generate START condition
+                                    <|`2` _TWI_CT_STOP_   ^| r/w <| generate STOP condition
+                                    <|`3` _TWI_CT_PRSC0_  ^| r/w .3+<| 3-bit clock prescaler select
+                                    <|`4` _TWI_CT_PRSC1_  ^| r/w
+                                    <|`5` _TWI_CT_PRSC2_  ^| r/w
+                                    <|`6` _TWI_CT_MACK_   ^| r/w <| generate controller ACK for each transmission ("MACK")
+                                    <|`7` _TWI_CT_CKSTEN_ ^| r/w <| allow clock-stretching by peripherals when set
+                                    <|`30` _TWI_CT_ACK_   ^| r/- <| ACK received when set
+                                    <|`31` _TWI_CT_BUSY_  ^| r/- <| transfer/START/STOP in progress when set
 | `0xffffffb4` | _TWI_DATA_ |`7:0` _TWI_DATA_MSB_ : TWI_DATA_LSB_ | r/w | receive/transmit data
 |=======================

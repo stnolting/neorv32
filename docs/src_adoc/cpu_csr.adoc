@@ -423,7 +423,7 @@ The RISC-V-compatible NEORV32 physical memory protection only implements the _NA
 | 0x3a0 - 0x3af| **Physical memory protection configuration registers** | `pmpcfg0` - `pmpcfg15`
 3+| Reset value: _0x00000000_
 3+| The `pmpcfg*` CSRs are compatible to the RISC-V specifications. They are used to configure the protected
-regions, where each `pmpcfg*`* CSR provides configuration bits for four regions. The following bits (for the
+regions, where each `pmpcfg*` CSR provides configuration bits for four regions. The following bits (for the
 first PMP configuration entry) are implemented (all remaining bits are always zero and are read-only):
 |======
 
@@ -773,5 +773,5 @@ are implemented (all remaining bits are always zero).
 | 4   | _CPU_MZEXT_ZBA_ | r/- | `Zba` extensions available (enabled via _CPU_EXTENSION_RISCV_B_ generic)
 | 5   | _CPU_MZEXT_ZFINX_ | r/- | `Zfinx` extensions available (enabled via _CPU_EXTENSION_RISCV_Zfinx_ generic)
 | 6   | _CPU_MZEXT_ZXSCNT_ | r/- | custom extension: "Small CPU counters": `cycle[h]` & `instret[h]` CSRs have less than 64-bit when set (when _CPU_CNT_WIDTH_ generic is less than 64).
-| 7   | _CPU_MZEXT_ZXNOCNT_ | r/- | custom extension: "NO CPU counters": cycle[h]` & `instret[h]` CSRs are not available at all when set (when _CPU_CNT_WIDTH_ generic is 0).
+| 7   | _CPU_MZEXT_ZXNOCNT_ | r/- | custom extension: "NO CPU counters": `cycle[h]` & `instret[h]` CSRs are not available at all when set (when _CPU_CNT_WIDTH_ generic is 0).
 |=======================

@@ -54,12 +54,12 @@ module (see section <<_numerically_controller-oscillator_nco>>).
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.4+| `0xffffffb8` .4+| _PWM_CT_ |`0` _PWM_CT_EN_    | r/w | TWI enable
-                                |`1` _PWM_CT_PRSC0_ | r/w .3+| 3-bit clock prescaler select
-                                |`2` _PWM_CT_PRSC1_ | r/w 
-                                |`3` _PWM_CT_PRSC2_ | r/w
-.4+| `0xffffffbc` .4+| _PWM_DUTY_ |`7:0` _PWM_DUTY_CH0_MSB_ : _PWM_DUTY_CH0_LSB_ |  r/w | 8-bit duty cycle for channel 0
-                                  |`15:8` _PWM_DUTY_CH1_MSB_ : _PWM_DUTY_CH1_LSB_ | r/w | 8-bit duty cycle for channel 1
-                                  |`23:16` _PWM_DUTY_CH2_MSB_ : _PWM_DUTY_CH2_LSB_ | r/w | 8-bit duty cycle for channel 2
-                                  |`31:24` _PWM_DUTY_CH3_MSB_ : _PWM_DUTY_CH3_LSB_ | r/w | 8-bit duty cycle for channel 3
+.4+<| `0xffffffb8` .4+<| _PWM_CT_ <|`0` _PWM_CT_EN_    ^| r/w <| TWI enable
+                                  <|`1` _PWM_CT_PRSC0_ ^| r/w .3+<| 3-bit clock prescaler select
+                                  <|`2` _PWM_CT_PRSC1_ ^| r/w 
+                                  <|`3` _PWM_CT_PRSC2_ ^| r/w
+.4+<| `0xffffffbc` .4+<| _PWM_DUTY_ <|`7:0` _PWM_DUTY_CH0_MSB_ : _PWM_DUTY_CH0_LSB_   ^| r/w <| 8-bit duty cycle for channel 0
+                                    <|`15:8` _PWM_DUTY_CH1_MSB_ : _PWM_DUTY_CH1_LSB_  ^| r/w <| 8-bit duty cycle for channel 1
+                                    <|`23:16` _PWM_DUTY_CH2_MSB_ : _PWM_DUTY_CH2_LSB_ ^| r/w <| 8-bit duty cycle for channel 2
+                                    <|`31:24` _PWM_DUTY_CH3_MSB_ : _PWM_DUTY_CH3_LSB_ ^| r/w <| 8-bit duty cycle for channel 3
 |=======================

@@ -56,7 +56,7 @@ image::../figures/neopixel.png[align=center]
 The NEOLED modules provides two accessible interface register: the control register _NEOLED_CT_ and the
 TX data register _NEOLED_DATA_. The NEOLED module is globally enabled via the control register's
 _NEOLED_CT_EN_ bit. Clearing this bit will terminate any current operation, reset the module and
-set the `neoled_o` output to zero. The precise timing (implementing the WS281* protocol) and transmission
+set the `neoled_o` output to zero. The precise timing (implementing the **WS2812** protocol) and transmission
 mode are fully programmable via the _NEOLED_CT_ register to provide maximum flexibility.
 
 **Timing Configuration**
@@ -86,7 +86,7 @@ Generate the base clock f~TX~ for the NEOLED TX engine:
 
 _**f~TX~**_ = _f~main~[Hz]_ / `clock_prescaler` = 100MHz / 4 = 25MHz
 
-_**T~TX~**_ = 1 / _**T~TX~**_ = 40ns
+_**T~TX~**_ = 1 / _**f~TX~**_ = 40ns
 
 Generate carrier period (T~carrier~) and *high-times* (duty cycle) for sending `0` (T~0H~) and `1` (T~1H~) bits:
 
@@ -167,27 +167,27 @@ command).
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.22+<| `0xffffffd8` .22+<| _NEOLED_CT_ |`0` _NEOLED_CT_EN_         | r/w | NCO enable
-                                       |`1` _NEOLED_CT_MODE_       | r/w | data transfer size; `0`=24-bit; `1`=32-bit
-                                       |`2` _NEOLED_CT_BSCON_      | r/w | busy flag / IRQ trigger configuration (see table above)
-                                       |`3` _NEOLED_CT_PRSC0_      | r/w | 3-bit clock prescaler, bit 0
-                                       |`4` _NEOLED_CT_PRSC1_      | r/w | 3-bit clock prescaler, bit 1
-                                       |`5` _NEOLED_CT_PRSC2_      | r/w | 3-bit clock prescaler, bit 2
-                                       |`6` _NEOLED_CT_BUFS0_      | r/- .4+<| 4-bit log2(`tx_buffer_entries_c`)
-                                       |`7` _NEOLED_CT_BUFS1_      | r/- 
-                                       |`8` _NEOLED_CT_BUFS2_      | r/- 
-                                       |`9` _NEOLED_CT_BUFS3_      | r/- 
-                                       |`10` _NEOLED_CT_T_TOT_0_   | r/w .5+| 5-bit pulse clock ticks per total single-bit period (T~total~)
-                                       |`11` _NEOLED_CT_T_TOT_1_   | r/w 
-                                       |`12` _NEOLED_CT_T_TOT_2_   | r/w 
-                                       |`13` _NEOLED_CT_T_TOT_3_   | r/w 
-                                       |`14` _NEOLED_CT_T_TOT_4_   | r/w 
-                                       |`20` _NEOLED_CT_ONE_H_0_   | r/w .5+<| 5-bit pulse clock ticks per high-time for sending a one-bit (T~H1~)
-                                       |`21` _NEOLED_CT_ONE_H_1_   | r/w 
-                                       |`22` _NEOLED_CT_ONE_H_2_   | r/w 
-                                       |`23` _NEOLED_CT_ONE_H_3_   | r/w 
-                                       |`24` _NEOLED_CT_ONE_H_4_   | r/w 
-                                       |`30` _NEOLED_CT_TX_STATUS_ | r/- | transmit engine busy when `1`
-                                       |`31` _NEOLED_CT_BUSY_      | r/- | busy / buffer status flag; configured via _NEOLED_CT_BSCON_ (see table above)
-| `0xffffffdc` | _NEOLED_DATA_         |`31:0` / `23:0`            | -/w | TX data (32-/24-bit)
+.22+<| `0xffffffd8` .22+<| _NEOLED_CT_ <|`0` _NEOLED_CT_EN_         ^| r/w <| NCO enable
+                                       <|`1` _NEOLED_CT_MODE_       ^| r/w <| data transfer size; `0`=24-bit; `1`=32-bit
+                                       <|`2` _NEOLED_CT_BSCON_      ^| r/w <| busy flag / IRQ trigger configuration (see table above)
+                                       <|`3` _NEOLED_CT_PRSC0_      ^| r/w <| 3-bit clock prescaler, bit 0
+                                       <|`4` _NEOLED_CT_PRSC1_      ^| r/w <| 3-bit clock prescaler, bit 1
+                                       <|`5` _NEOLED_CT_PRSC2_      ^| r/w <| 3-bit clock prescaler, bit 2
+                                       <|`6` _NEOLED_CT_BUFS0_      ^| r/- .4+<| 4-bit log2(`tx_buffer_entries_c`)
+                                       <|`7` _NEOLED_CT_BUFS1_      ^| r/- 
+                                       <|`8` _NEOLED_CT_BUFS2_      ^| r/- 
+                                       <|`9` _NEOLED_CT_BUFS3_      ^| r/- 
+                                       <|`10` _NEOLED_CT_T_TOT_0_   ^| r/w .5+| 5-bit pulse clock ticks per total single-bit period (T~total~)
+                                       <|`11` _NEOLED_CT_T_TOT_1_   ^| r/w 
+                                       <|`12` _NEOLED_CT_T_TOT_2_   ^| r/w 
+                                       <|`13` _NEOLED_CT_T_TOT_3_   ^| r/w 
+                                       <|`14` _NEOLED_CT_T_TOT_4_   ^| r/w 
+                                       <|`20` _NEOLED_CT_ONE_H_0_   ^| r/w .5+<| 5-bit pulse clock ticks per high-time for sending a one-bit (T~H1~)
+                                       <|`21` _NEOLED_CT_ONE_H_1_   ^| r/w 
+                                       <|`22` _NEOLED_CT_ONE_H_2_   ^| r/w 
+                                       <|`23` _NEOLED_CT_ONE_H_3_   ^| r/w 
+                                       <|`24` _NEOLED_CT_ONE_H_4_   ^| r/w 
+                                       <|`30` _NEOLED_CT_TX_STATUS_ ^| r/- <| transmit engine busy when `1`
+                                       <|`31` _NEOLED_CT_BUSY_      ^| r/- <| busy / buffer status flag; configured via _NEOLED_CT_BSCON_ (see table above)
+| `0xffffffdc` | _NEOLED_DATA_         <|`31:0` / `23:0`            ^| -/w <| TX data (32-/24-bit)
 |=======================

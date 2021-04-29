@@ -10,8 +10,8 @@
 |                          | neorv32_uart.h |
 | Top entity port:         | `uart0_txd_o` | serial transmitter output UART0
 |                          | `uart0_rxd_i` | serial receiver input UART0
-|                          | `uart0_rts_o` | hw flow control: UART0.RX ready to receive
-|                          | `uart0_cts_i` | hw flow control: UART0.TX allowed to send
+|                          | `uart0_rts_o` | flow control: RX ready to receive
+|                          | `uart0_cts_i` | flow control: TX allowed to send
 | Configuration generics:  | _IO_UART0_EN_ | implement UART0 when _true_
 | CPU interrupts:          | fast IRQ channel 2 | RX done interrupt
 |                          | fast IRQ channel 3 | TX done interrupt (see <<_processor_interrupts>>)
@@ -32,7 +32,7 @@ standard configuration frame configuration: 8 data bits, an optional parity bit 
 The parity and the actual Baudrate are configurable by software.
 
 The UART0 is enabled by setting the _UART_CT_EN_ bit in the UART control register _UART0_CT_. The actual
-transmission Baudrate (like 19200) is configured via the 12-bit _UART_CT_BAUDxx_ baud prescaler`(`baud_rate`) and the
+transmission Baudrate (like 19200) is configured via the 12-bit _UART_CT_BAUDxx_ baud prescaler (`baud_rate`) and the
 3-bit _UART_CT_PRSCx_ clock prescaler.
 
 .UART prescaler configuration
@@ -71,13 +71,13 @@ _UART_DATA_FERR_ flag in the _UART0_DATA_. This flag is also updated with each n
 The UART supports hardware flow control using the standard CTS (clear to send) and/or RTS (ready to send
 / ready to receive "RTR") signals. Both hardware control flow mechanisms can be individually enabled.
 
-If **RTS hardware flow control* is enabled by setting the _UART_CT_RTS_EN_ control register flag, the UART
+If **RTS hardware flow control** is enabled by setting the _UART_CT_RTS_EN_ control register flag, the UART
 will pull the `uart0_rts_o` signal low if the UART's receiver is idle and no received data is waiting to get read by
 application software. As long as this signal is low the connected device can send new data. `uart0_rts_o` is always LOW if the UART is disabled.
 
 The RTS line is de-asserted (going high) as soon as the start bit of a new incoming char has been
 detected. The transmitting device continues sending the current char and can also send another char
-(due to the RX double-buffering), whic is done by most terminal programs. Any additional data send
+(due to the RX double-buffering), which is done by most terminal programs. Any additional data send
 when RTS is still asserted will override the RX input buffer causing data loss. This will set the _UART_DATA_OVERR_ flag in the
 _UART0_DATA_ register. Any read access to this register clears the flag again.
 
@@ -133,24 +133,24 @@ More information regarding the simulation-mode of the UART0 can be found in sect
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.12+| `0xffffffa0` .12+| _UART0_CT_ |`11:0` _UART_CT_BAUDxx_ | r/w | 12-bit BAUD value configuration value
-                                    |`12` _UART_CT_SIM_MODE_ | r/w | enable **simulation mode**
-                                    |`20` _UART_CT_RTS_EN_   | r/w | enable RTS hardware flow control
-                                    |`21` _UART_CT_CTS_EN_   | r/w | enable CTS hardware flow control
-                                    |`22` _UART_CT_PMODE0_   | r/w .2+| parity bit enable and configuration (`00`/`01`= no parity; `10`=even parity; `11`=odd parity)
-                                    |`23` _UART_CT_PMODE1_   | r/w 
-                                    |`24` _UART_CT_PRSC0_    | r/w .3+| 3-bit baudrate clock prescaler select
-                                    |`25` _UART_CT_PRSC1_    | r/w 
-                                    |`26` _UART_CT_PRSC2_    | r/w 
-                                    |`27` _UART_CT_CTS_      | r/- | current state of UART's CTS input signal
-                                    |`28` _UART_CT_EN_       | r/w | UART enable
-                                    |`31` _UART_CT_TX_BUSY_  | r/- | trasmitter busy flag
-.6+| `0xffffffa4` .6+| _UART0_DATA_ |`7:0` _UART_DATA_MSB_ : _UART_DATA_LSB_ | r/w | receive/transmit data (8-bit)
-                                    |`31:0` -                | -/w | **simulation data output**
-                                    |`28` _UART_DATA_PERR_   | r/- | RX parity error
-                                    |`29` _UART_DATA_FERR_   | r/- | RX data frame error (stop bit nt set)
-                                    |`30` _UART_DATA_OVERR_  | r/- | RX data overrun
-                                    |`31` _UART_DATA_AVAIL_  | r/- | RX data available when set
+.12+<| `0xffffffa0` .12+<| _UART0_CT_ <|`11:0` _UART_CT_BAUDxx_ ^| r/w <| 12-bit BAUD value configuration value
+                                      <|`12` _UART_CT_SIM_MODE_ ^| r/w <| enable **simulation mode**
+                                      <|`20` _UART_CT_RTS_EN_   ^| r/w <| enable RTS hardware flow control
+                                      <|`21` _UART_CT_CTS_EN_   ^| r/w <| enable CTS hardware flow control
+                                      <|`22` _UART_CT_PMODE0_   ^| r/w .2+<| parity bit enable and configuration (`00`/`01`= no parity; `10`=even parity; `11`=odd parity)
+                                      <|`23` _UART_CT_PMODE1_   ^| r/w 
+                                      <|`24` _UART_CT_PRSC0_    ^| r/w .3+<| 3-bit baudrate clock prescaler select
+                                      <|`25` _UART_CT_PRSC1_    ^| r/w 
+                                      <|`26` _UART_CT_PRSC2_    ^| r/w 
+                                      <|`27` _UART_CT_CTS_      ^| r/- <| current state of UART's CTS input signal
+                                      <|`28` _UART_CT_EN_       ^| r/w <| UART enable
+                                      <|`31` _UART_CT_TX_BUSY_  ^| r/- <| trasmitter busy flag
+.6+<| `0xffffffa4` .6+<| _UART0_DATA_ <|`7:0` _UART_DATA_MSB_ : _UART_DATA_LSB_ ^| r/w <| receive/transmit data (8-bit)
+                                      <|`31:0` -                ^| -/w <| **simulation data output**
+                                      <|`28` _UART_DATA_PERR_   ^| r/- <| RX parity error
+                                      <|`29` _UART_DATA_FERR_   ^| r/- <| RX data frame error (stop bit nt set)
+                                      <|`30` _UART_DATA_OVERR_  ^| r/- <| RX data overrun
+                                      <|`31` _UART_DATA_AVAIL_  ^| r/- <| RX data available when set
 |=======================
 
 
@@ -168,8 +168,8 @@ More information regarding the simulation-mode of the UART0 can be found in sect
 |                          | neorv32_uart.h |
 | Top entity port:         | `uart1_txd_o` | serial transmitter output UART1
 |                          | `uart1_rxd_i` | serial receiver input UART1
-|                          | `uart1_rts_o` | hw flow control: UART1.RX ready to receive
-|                          | `uart1_cts_i` | hw flow control: UART1.TX allowed to send
+|                          | `uart1_rts_o` | flow control: RX ready to receive
+|                          | `uart1_cts_i` | flow control: TX allowed to send
 | Configuration generics:  | _IO_UART1_EN_ | implement UART1 when _true_
 | CPU interrupts:          | fast IRQ channel 4 | RX done interrupt
 |                          | fast IRQ channel 5 | TX done interrupt (see <<_processor_interrupts>>)
@@ -183,7 +183,7 @@ thw control register (_UART1_CT_) and the data register (_UART1_DATA_) – see t
 register bits/flags use the same bit positions and naming. Furthermore, the "RX done" and "TX done" interrupts are
 mapped to different CPU fast interrupt channels.
 
-**Simulation Mode*
+**Simulation Mode**
 
 The secondary UART (UART1) provides the same simulation options as the primary UART. However,
 output data is written to UART1-specific files: `neorv32.uart1.sim_mode.text.out` is used to store
@@ -195,22 +195,22 @@ encoded data words.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.12+| `0xffffffd0` .12+| _UART1_CT_ |`11:0` _UART_CT_BAUDxx_ | r/w | 12-bit BAUD value configuration value
-                                    |`12` _UART_CT_SIM_MODE_ | r/w | enable **simulation mode**
-                                    |`20` _UART_CT_RTS_EN_   | r/w | enable RTS hardware flow control
-                                    |`21` _UART_CT_CTS_EN_   | r/w | enable CTS hardware flow control
-                                    |`22` _UART_CT_PMODE0_   | r/w .2+| parity bit enable and configuration (`00`/`01`= no parity; `10`=even parity; `11`=odd parity)
-                                    |`23` _UART_CT_PMODE1_   | r/w 
-                                    |`24` _UART_CT_PRSC0_    | r/w .3+| 3-bit baudrate clock prescaler select
-                                    |`25` _UART_CT_PRSC1_    | r/w 
-                                    |`26` _UART_CT_PRSC2_    | r/w 
-                                    |`27` _UART_CT_CTS_      | r/- | current state of UART's CTS input signal
-                                    |`28` _UART_CT_EN_       | r/w | UART enable
-                                    |`31` _UART_CT_TX_BUSY_  | r/- | trasmitter busy flag
-.6+| `0xffffffd4` .6+| _UART1_DATA_ |`7:0` _UART_DATA_MSB_ : _UART_DATA_LSB_ | r/w | receive/transmit data (8-bit)
-                                    |`31:0` -                | -/w | **simulation data output**
-                                    |`28` _UART_DATA_PERR_   | r/- | RX parity error
-                                    |`29` _UART_DATA_FERR_   | r/- | RX data frame error (stop bit nt set)
-                                    |`30` _UART_DATA_OVERR_  | r/- | RX data overrun
-                                    |`31` _UART_DATA_AVAIL_  | r/- | RX data available when set
+.12+<| `0xffffffd0` .12+<| _UART1_CT_ <|`11:0` _UART_CT_BAUDxx_ ^| r/w <| 12-bit BAUD value configuration value
+                                      <|`12` _UART_CT_SIM_MODE_ ^| r/w <| enable **simulation mode**
+                                      <|`20` _UART_CT_RTS_EN_   ^| r/w <| enable RTS hardware flow control
+                                      <|`21` _UART_CT_CTS_EN_   ^| r/w <| enable CTS hardware flow control
+                                      <|`22` _UART_CT_PMODE0_   ^| r/w .2+<| parity bit enable and configuration (`00`/`01`= no parity; `10`=even parity; `11`=odd parity)
+                                      <|`23` _UART_CT_PMODE1_   ^| r/w 
+                                      <|`24` _UART_CT_PRSC0_    ^| r/w .3+<| 3-bit baudrate clock prescaler select
+                                      <|`25` _UART_CT_PRSC1_    ^| r/w 
+                                      <|`26` _UART_CT_PRSC2_    ^| r/w 
+                                      <|`27` _UART_CT_CTS_      ^| r/- <| current state of UART's CTS input signal
+                                      <|`28` _UART_CT_EN_       ^| r/w <| UART enable
+                                      <|`31` _UART_CT_TX_BUSY_  ^| r/- <| trasmitter busy flag
+.6+<| `0xffffffd4` .6+<| _UART1_DATA_ <|`7:0` _UART_DATA_MSB_ : _UART_DATA_LSB_ ^| r/w <| receive/transmit data (8-bit)
+                                      <|`31:0` -                ^| -/w <| **simulation data output**
+                                      <|`28` _UART_DATA_PERR_   ^| r/- <| RX parity error
+                                      <|`29` _UART_DATA_FERR_   ^| r/- <| RX data frame error (stop bit nt set)
+                                      <|`30` _UART_DATA_OVERR_  ^| r/- <| RX data overrun
+                                      <|`31` _UART_DATA_AVAIL_  ^| r/- <| RX data available when set
 |=======================

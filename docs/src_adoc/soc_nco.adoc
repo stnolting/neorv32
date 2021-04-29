@@ -16,7 +16,7 @@
 **Theory of Operation**
 
 The numerically-controller oscillator (NCO) provides a precise arbitrary linear frequency generator with
-three independent channels. Based on a **direct digital synthesis* core, the NCO features a 20-bit wide
+three independent channels. Based on a **direct digital synthesis** core, the NCO features a 20-bit wide
 accumulator that is incremented with a programmable "tuning word". Whenever the accumulator overflows, a
 flip flop is toggled that provides the actual frequency output. The accumulator increment is driven by one of
 eight configurable clock sources, which are derived from the processor's main clock.
@@ -104,26 +104,26 @@ configuration, see section <<_pulse_width_modulation_controller_pwm>>.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.22+<| `0xffffffc0` .22+<| _NCO_CT_ |`0` _NCO_CT_EN_            | r/w | NCO enable
-                                 3+^| Channel 0 (`nco_o(0)`)
-                                    |`1` _NCO_CT_CH0_MODE_      | r/w | output mode (`0`=fixed 50% duty cycle; `1`=pulse mode)
-                                    |`2` _NCO_CT_CH0_IDLE_POL_  | r/w | output idle polarity
-                                    |`3` _NCO_CT_CH0_OE_        | r/w | enable output to `nco_o(0)`
-                                    |`4` _NCO_CT_CH0_OUTPUT_    | r/- | current state of `nco_o(0)`
-                                    |`7:5` _NCO_CT_CH0_PRSC02_ : _NCO_CT_CH0_PRSC0_ | r/w | 3-bit clock prescaler select
-                                    |`10_:8` _NCO_CT_CH0_PULSE2_ : _NCO_CT_CH0_PULSE0_ | r/w | 3-bit pulse length select
-                                 3+^| Channel 1 (`nco_o(1)`)
-                                    |`11` _NCO_CT_CH1_MODE_     | r/w | output mode (`0`=fixed 50% duty cycle; `1`=pulse mode)
-                                    |`12` _NCO_CT_CH1_IDLE_POL_ | r/w | output idle polarity
-                                    |`13` _NCO_CT_CH1_OE_       | r/w | enable output to `nco_o(1)`
-                                    |`14` _NCO_CT_CH1_OUTPUT_   | r/- | current state of `nco_o(1)`
-                                    |`17:15` _NCO_CT_CH1_PRSC2_ : _NCO_CT_CH1_PRSC0_ | r/w | 3-bit clock prescaler select
-                                    |`20:18` _NCO_CT_CH1_PULSE2_ : _NCO_CT_CH1_PULSE0_ | r/w | 3-bit pulse length select
-                                 3+^| Channel 2 (`nco_o(2)`)
-                                    |`21` _NCO_CT_CH2_MODE_     | r/w | output mode (`0`=fixed 50% duty cycle; `1`=pulse mode)
-                                    |`22` _NCO_CT_CH2_IDLE_POL_ | r/w | output idle polarity
-                                    |`23` _NCO_CT_CH2_OE_       | r/w | enable output to `nco_o(2)`
-                                    |`24` _NCO_CT_CH2_OUTPUT_   | r/- | current state of `nco_o(2)`
-                                    |`27:25` _NCO_CT_CH2_PRSC2_ : _NCO_CT_CH2_PRSC0_ | r/w | 3-bit clock prescaler select
-                                    |`30:28` _NCO_CT_CH2_PULSE2_ : _NCO_CT_CH2_PULSE0_ | r/w | 3-bit pulse length select
+.22+<| `0xffffffc0` .22+<| _NCO_CT_ ^|`0` _NCO_CT_EN_            ^| r/w <| NCO enable
+                                  3+^| Channel 0 `nco_o(0)`
+                                    ^|`1` _NCO_CT_CH0_MODE_      ^| r/w <| output mode (`0`=fixed 50% duty cycle; `1`=pulse mode)
+                                    ^|`2` _NCO_CT_CH0_IDLE_POL_  ^| r/w <| output idle polarity
+                                    ^|`3` _NCO_CT_CH0_OE_        ^| r/w <| enable output to `nco_o(0)`
+                                    ^|`4` _NCO_CT_CH0_OUTPUT_    ^| r/- <| current state of `nco_o(0)`
+                                    ^|`7:5` _NCO_CT_CH0_PRSC02_ : _NCO_CT_CH0_PRSC0_ ^| r/w <| 3-bit clock prescaler select
+                                    ^|`10_:8` _NCO_CT_CH0_PULSE2_ : _NCO_CT_CH0_PULSE0_ ^| r/w <| 3-bit pulse length select
+                                  3+^| Channel 1 `nco_o(1)`
+                                    ^|`11` _NCO_CT_CH1_MODE_     ^| r/w <| output mode (`0`=fixed 50% duty cycle; `1`=pulse mode)
+                                    ^|`12` _NCO_CT_CH1_IDLE_POL_ ^| r/w <| output idle polarity
+                                    ^|`13` _NCO_CT_CH1_OE_       ^| r/w <| enable output to `nco_o(1)`
+                                    ^|`14` _NCO_CT_CH1_OUTPUT_   ^| r/- <| current state of `nco_o(1)`
+                                    ^|`17:15` _NCO_CT_CH1_PRSC2_ : _NCO_CT_CH1_PRSC0_ ^| r/w <| 3-bit clock prescaler select
+                                    ^|`20:18` _NCO_CT_CH1_PULSE2_ : _NCO_CT_CH1_PULSE0_ ^| r/w <| 3-bit pulse length select
+                                  3+^| Channel 2 `nco_o(2)`
+                                    ^|`21` _NCO_CT_CH2_MODE_     ^| r/w <| output mode (`0`=fixed 50% duty cycle; `1`=pulse mode)
+                                    ^|`22` _NCO_CT_CH2_IDLE_POL_ ^| r/w <| output idle polarity
+                                    ^|`23` _NCO_CT_CH2_OE_       ^| r/w <| enable output to `nco_o(2)`
+                                    ^|`24` _NCO_CT_CH2_OUTPUT_   ^| r/- <| current state of `nco_o(2)`
+                                    ^|`27:25` _NCO_CT_CH2_PRSC2_ : _NCO_CT_CH2_PRSC0_ ^| r/w <| 3-bit clock prescaler select
+                                    ^|`30:28` _NCO_CT_CH2_PULSE2_ : _NCO_CT_CH2_PULSE0_ ^| r/w <| 3-bit pulse length select
 |=======================

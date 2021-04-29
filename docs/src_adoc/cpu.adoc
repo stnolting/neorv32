@@ -476,7 +476,7 @@ available:
 * environment: `mret`, `wfi`
 
 [WARNING]
-If the Zicsr` extension is disabled the CPU does not provide any kind of interrupt or exception
+If the `Zicsr` extension is disabled the CPU does not provide any kind of interrupt or exception
 support at all. In order to provide the full spectrum of functions and to allow a secure executions
 environment, the `Zicsr` extension should always be enabled.
 
@@ -573,6 +573,7 @@ available HPM is configured via the top's `HPM_NUM_CNTS` generic at synthesis ti
 all HPM logic from the design.
 
 Depending on the configuration, the following additional CSR are available:
+
 * counters: `[m]hpmcounter*[h]` (3..31, depending on configuration)
 * event configuration: `mhpmevent*` (3..31, depending on configuration)
 
@@ -718,7 +719,7 @@ All instructions execute as atomic operations – interrupts can only trigger be
 
 **Custom Fast Interrupt Request Lines**
 
-As a custom extension, the NEORV32 CPU features 16 fast interrupt request lines via the `firq_`i CPU top
+As a custom extension, the NEORV32 CPU features 16 fast interrupt request lines via the `firq_i` CPU top
 entity signals. These interrupts have custom configuration and status flags in the `mie` and `mip` CSRs and also
 provide custom trap codes.
 
@@ -839,17 +840,18 @@ access fault or load/store bus access fault exception.
 [NOTE]
 The transfer can be completed directly in the same cycle as it was initiated (via the `bus_re_o` or `bus_we_o`
 signal) if the peripheral sets `bus_ack_i` or `bus_err_i` high for one cycle. However, in order to shorten the critical path such "asynchronous"
-completion should be avoided. The default processor-internal module provide a one cycle delay between initiation and completion of transfers.
+completion should be avoided. The default processor-internal module provide exactly **one cycle delay** between initiation and completion of transfers.
 
-.Bus Keeper: Memories / memory-mapped devices with **variable / high latency**
+.Bus Keeper: Processor-internal memories and memory-mapped devices with variable / high latency
 [IMPORTANT]
-Peripheral or memories accessed via the processor-internal bus do not have to respond in the very cycle next to the transfer initiation.
-There is no problem if the accessed peripheral takes more than 1 cycle to process the request (= latency > 1 cycle). 
+Processor-internal peripherals or memories do not have to respond within one cycle after the transfer initiation (= latency > 1 cycle). 
 However, the bus transaction has to be completed (= acknowledged) within a certain **response time window**. This time window is defined
-by the global `max_proc_int_response_time_c` constant from the processor's VHDL package file (`rtl/neorv32_package.vhd`).
-It defines the maximum number of cycles after which an _unacknowledged_ processor-internal bus transfer will timeout. The _BUSKEEPER_
-hardware module (`rtl/core/neorv32_bus_keeper.vhd`) keeps track of all internal bus transactions. If any bus operations times out (for example when accessing
-"address space holes") this unit will issue a bus error to the CPU that will raise the according instruction fetch or data access **bus fault exception**.
+by the global `max_proc_int_response_time_c` constant (default = 15 cycles) from the processor's VHDL package file (`rtl/neorv32_package.vhd`).
+It defines the maximum number of cycles after which an _unacknowledged_ processor-internal bus transfer will timeout and raise a **bus fault exception**.
+The _BUSKEEPER_ hardware module (`rtl/core/neorv32_bus_keeper.vhd`) keeps track of all _internal_ bus transactions. If any bus operations times out
+(for example when accessing "address space holes") this unit will issue a bus error to the CPU that will raise the according instruction fetch or data access bus exception.
+Note that **the bus keeper does not track external accesses via the external memory bus interface**. However, the external memory bus interface also provides
+an _optional_ bus timeout (see section <<_processor_external_memory_interface_wishbone_axi4_lite>>).
 
 **Exemplary Bus Accesses**
 

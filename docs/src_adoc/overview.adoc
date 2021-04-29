@@ -41,6 +41,9 @@ Chapter <<_lets_get_it_started>>
 
 * toolchain installation and setup, hardware setup, software setup, application compilation, simulating the processor
 
+[TIP]
+Links in this document are <<_structure,highlighted>>.
+
 
 
 <<<

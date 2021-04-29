@@ -32,11 +32,11 @@ interrupt. If the modules is disabled for implementation, the pin-change interru
 disabled.
 
 .GPIO unit register map
-[cols="^2,<2,^1,^1,<6"]
+[cols="<2,<2,^1,^1,<6"]
 [options="header",grid="rows"]
 |=======================
 | Address      | Name [C]      | Bit(s) | R/W | Function
-| `0xffffff80` | _GPIO_INPUT_  | 31:0   | r/- | parallel input port
-| `0xffffff80` | _GPIO_INPUT_  | 31:0   | -/w | parallel input pin-change IRQ enable mask
+.2+<| `0xffffff80` .2+<| _GPIO_INPUT_  ^| 31:0   ^| r/- <| parallel input port
+                                       ^| 31:0   ^| -/w <| parallel input pin-change IRQ enable mask
 | `0xffffff84` | _GPIO_OUTPUT_ | 31:0   | r/w | parallel output port
 |=======================

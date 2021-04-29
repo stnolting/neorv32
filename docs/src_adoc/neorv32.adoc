@@ -2,7 +2,7 @@
 :author: Dipl.-Ing. Stephan Nolting
 :email: stnolting@gmail.com
 :description: A size-optimized, customizable and open-source full-scale 32-bit RISC-V soft-core CPU and SoC written in platform-independent VHDL.
-:revnumber: v1.5.4.7
+:revnumber: v1.5.4.8
 :doctype: book
 :sectnums:
 :icons: image
@@ -82,13 +82,11 @@ ARISING IN ANY WAY OUT OF
 
 
 ==========================
-The *NEORV32 Processor* Project
-
-(c) 2021, by Dipl.-Ing. Stephan Nolting, Hannover, Germany
-
-https://github.com/stnolting/neorv32
-
-*contact:* stnolting@gmail.com
+**The NEORV32 Processor Project** +
+Copyright (c) 2021, by Dipl.-Ing. Stephan Nolting. All rights reserved. +
+HQ: https://github.com/stnolting/neorv32 +
+Contact: stnolting@gmail.com +
+_made in Hanover, Germany_
 ==========================
 
 

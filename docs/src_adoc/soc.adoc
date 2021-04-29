@@ -137,6 +137,8 @@ The description of each CSR provides the following summary:
 :sectnums:
 ==== General
 
+See section <<_system_configuration_information_memory_sysinfo>> for more information.
+
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -658,17 +660,17 @@ The mapping of the 16 FIRQ channels is shown in the following table (the channel
 :sectnums:
 === Address Space
 
-The total 32-bit (4GB) address space of the NEORV32 Processor is divided into four main regions:
+By default, the total 32-bit (4GB) address space of the NEORV32 Processor is divided into four main regions:
 
 1. Instruction memory (IMEM) space – for instructions and constants.
 2. Data memory (DMEM) space – for application runtime data (heap, stack, etc.).
 3. Bootloader ROM address space – for the processor-internal bootloader.
 4. IO/peripheral address space – for the processor-internal IO/peripheral devices (e.g., UART).
 
-.Address space layout
-image::../figures/address_space.png[align=center]
+.NEORV32 processor - address space (default configuration)
+image::../figures/address_space.png[900]
 
-**General Address Space Layout**
+**Address Space Layout**
 
 The general address space layout consists of two main configuration constants: `ispace_base_c` defining
 the base address of the instruction memory address space and `dspace_base_c` defining the base address of
@@ -709,7 +711,7 @@ interfaces (instruction fetch & data access) have access to the same (**identica
 setup a modified von-Neumann architecture.
 
 .Processor-internal bus architecture
-image::../figures/neorv32_bus.png[align=center]
+image::../figures/neorv32_bus.png[1300]
 
 [NOTE]
 The internal processor bus might appear as bottleneck. In order to reduce traffic jam on this bus
@@ -842,7 +844,7 @@ accessed using a memory-mapped scheme. A special linker script as well as the NE
 library abstract the specific memory layout for the user.
 
 [IMPORTANT]
-When accessing an IO device, that hast not been implemented (e.g., via the _IO_*_EN_ generics), a
+When accessing an IO device that hast not been implemented (via the according _IO_x_EN_ generic), a
 load/store access fault exception is triggered.
 
 [IMPORTANT]

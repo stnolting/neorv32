@@ -140,7 +140,7 @@ steps might be a little different for your specific EDA tool.
 files only – do not copy them.
 . Make sure to add all the rtl files to a new library called **`neorv32`**. If your FPGA tools does not
 provide a field to enter the library name, check out the "properties" menu of the rtl files.
-. The `rtl/core/neorv32_top.v`hd VHDL file is the top entity of the NEORV32 processor. If you
+. The `rtl/core/neorv32_top.vhd` VHDL file is the top entity of the NEORV32 processor. If you
 already have a design, instantiate this unit into your design and proceed.
 . If you do not have a design yet and just want to check out the NEORV32 – no problem! In this guide
 we will use a simplified top entity, that encapsulated the actual processor top entity: add the
@@ -302,7 +302,7 @@ neorv32/sw/example/blink_led$ make exe
 
 [start=3]
 . This will compile and link the application sources together with all the included libraries. At the end,
-your application is transformed into an ELF file (main.elf). The *NEORV32 image generator* (in `sw/`image_gen) takes this file and creates a
+your application is transformed into an ELF file (`main.elf`). The *NEORV32 image generator* (in `sw/image_gen`) takes this file and creates a
 final executable. The makefile will show the resulting memory utilization and the executable size:
 
 [source,bash]
@@ -507,7 +507,7 @@ All the assignments made to the makefile variable can also be done "inline" when
 :sectnums:
 === Enabling RISC-V CPU Extensions
 
-Whenever you enable/disable a RISC-V CPU extensions via the according _CPU_EXTENSION_RISCV_*_ generic, you need to
+Whenever you enable/disable a RISC-V CPU extensions via the according _CPU_EXTENSION_RISCV_x_ generic, you need to
 adapt the toolchain configuration so the compiler can actually generate according code for it.
 
 To do so, open the makefile of your project (for example `sw/example/blink_led/makefile`) and scroll to the

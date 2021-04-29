@@ -27,7 +27,7 @@ _WDT_CT_CLK_SELx_ prescaler:
 [options="header",grid="rows"]
 |=======================
 | **`WDT_CT_CLK_SELx`** | Main clock prescaler | Timeout period in clock cycles
-| `0b000` | 2 | 2 0971 52
+| `0b000` | 2 | 2 097 152
 | `0b001` | 4 | 4 194 304
 | `0b010` | 8 | 8 388 608
 | `0b011` | 64 | 67 108 864
@@ -57,13 +57,13 @@ lock can only be removed by a system reset (via external reset signal or via a w
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Writable if locked | Function
-.9+| `0xffffff8c` .9+| _WDT_CT_ |`0` _WDT_CT_EN_       | r/w | no  | watchdog enable
-                                |`1` _WDT_CT_CLK_SEL0_ | r/w | no  | clock prescaler select bit 0
-                                |`2` _WDT_CT_CLK_SEL1_ | r/w | no  | clock prescaler select bit 0
-                                |`3` _WDT_CT_CLK_SEL2_ | r/w | no  | clock prescaler select bit 0
-                                |`4` _WDT_CT_MODE_     | r/w | no  | overflow action: `1`=reset, `0`=IRQ
-                                |`5` _WDT_CT_RCAUSE_   | r/- | -   | cause of last system reset: `0`=caused by external reset signal, `1`=caused by watchdog
-                                |`6` _WDT_CT_RESET_    | -/w | yes | watchdog reset when set, auto-clears
-                                |`7` _WDT_CT_FORCE_    | -/w | yes | force configured watchdog action when set, auto-clears
-                                |`8` _WDT_CT_LOCK_     | r/w | no  | lock access to configuration when set, clears only on system reset (via external reset signal OR watchdog reset action = reset)
+.9+<| `0xffffff8c` .9+<| _WDT_CT_ <|`0` _WDT_CT_EN_       ^| r/w ^| no  <| watchdog enable
+                                  <|`1` _WDT_CT_CLK_SEL0_ ^| r/w ^| no  .3+<| 3-bit clock prescaler select
+                                  <|`2` _WDT_CT_CLK_SEL1_ ^| r/w ^| no 
+                                  <|`3` _WDT_CT_CLK_SEL2_ ^| r/w ^| no 
+                                  <|`4` _WDT_CT_MODE_     ^| r/w ^| no  <| overflow action: `1`=reset, `0`=IRQ
+                                  <|`5` _WDT_CT_RCAUSE_   ^| r/- ^| -   <| cause of last system reset: `0`=caused by external reset signal, `1`=caused by watchdog
+                                  <|`6` _WDT_CT_RESET_    ^| -/w ^| yes <| watchdog reset when set, auto-clears
+                                  <|`7` _WDT_CT_FORCE_    ^| -/w ^| yes <| force configured watchdog action when set, auto-clears
+                                  <|`8` _WDT_CT_LOCK_     ^| r/w ^| no  <| lock access to configuration when set, clears only on system reset (via external reset signal OR watchdog reset action = reset)
 |=======================

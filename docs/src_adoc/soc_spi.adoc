@@ -55,21 +55,21 @@ into the lowest 8/16/24 bit of _SPI_DATA_. Vice versa, the received data is also
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.16+| `0xffffffa8` .16+| _SPI_CT_ |`0` _SPI_CT_CS0_  | r/w .8+| Direct chip-select 0..7; setting ´spi_csn_o(x)` low when set
-                                  |`1` _SPI_CT_CS1_  | r/w 
-                                  |`2` _SPI_CT_CS2_  | r/w 
-                                  |`3` _SPI_CT_CS3_  | r/w 
-                                  |`4` _SPI_CT_CS4_  | r/w 
-                                  |`5` _SPI_CT_CS5_  | r/w 
-                                  |`6` _SPI_CT_CS6_  | r/w 
-                                  |`7` _SPI_CT_CS7_  | r/w 
-                                  |`8` _SPI_CT_EN_   | r/w | SPI enable
-                                  |`9` _SPI_CT_CPHA_  | r/w | polarity of `spi_sck_o` when idle
-                                  |`10` _SPI_CT_PRSC0_  | r/w .3+| 3-bit clock prescaler select
-                                  |`11` _SPI_CT_PRSC1_  | r/w
-                                  |`12` _SPI_CT_PRSC2_  | r/w
-                                  |`14` _SPI_CT_SIZE0_  | r/w .2+| transfer size (`00`=8-bit, `01`=16-bit, `10`=24-bit, `11`=32-bit)
-                                  |`15` _SPI_CT_SIZE1_  | r/w
-                                  |`31` _SPI_CT_BUSY_  | r/- | transmission in progress when set
+.16+<| `0xffffffa8` .16+<| _SPI_CT_ <|`0` _SPI_CT_CS0_     ^| r/w .8+<| Direct chip-select 0..7; setting `spi_csn_o(x)` low when set
+                                    <|`1` _SPI_CT_CS1_     ^| r/w 
+                                    <|`2` _SPI_CT_CS2_     ^| r/w 
+                                    <|`3` _SPI_CT_CS3_     ^| r/w 
+                                    <|`4` _SPI_CT_CS4_     ^| r/w 
+                                    <|`5` _SPI_CT_CS5_     ^| r/w 
+                                    <|`6` _SPI_CT_CS6_     ^| r/w 
+                                    <|`7` _SPI_CT_CS7_     ^| r/w 
+                                    <|`8` _SPI_CT_EN_      ^| r/w <| SPI enable
+                                    <|`9` _SPI_CT_CPHA_    ^| r/w <| polarity of `spi_sck_o` when idle
+                                    <|`10` _SPI_CT_PRSC0_  ^| r/w .3+| 3-bit clock prescaler select
+                                    <|`11` _SPI_CT_PRSC1_  ^| r/w
+                                    <|`12` _SPI_CT_PRSC2_  ^| r/w
+                                    <|`14` _SPI_CT_SIZE0_  ^| r/w .2+<| transfer size (`00`=8-bit, `01`=16-bit, `10`=24-bit, `11`=32-bit)
+                                    <|`15` _SPI_CT_SIZE1_  ^| r/w
+                                    <|`31` _SPI_CT_BUSY_   ^| r/- <| transmission in progress when set
 | `0xffffffac` | _SPI_DATA_ |`31:0` | r/w | receive/transmit data, LSB-aligned
 |=======================

@@ -8,7 +8,7 @@
 | Hardware source file(s): | neorv32_mtime.vhd | 
 | Software driver file(s): | neorv32_mtime.c |
 |                          | neorv32_mtime.h |
-| Top entity port:         | `mtime_i` | system time input if processor-internal MTIME unit is not used
+| Top entity port:         | none | 
 | Configuration generics:  | _IO_MTIME_EN_ | implement MTIME when _true_
 | CPU interrupts:          | `MTI` | machine timer interrupt (see <<_processor_interrupts>>)
 |=======================
@@ -23,8 +23,9 @@ the CPU's `time[h]` CSRs (read-only). A 64-bit time compare register – accessi
 registers – are used to configure an interrupt to the CPU. The interrupt is triggered
 whenever `MTIME` (high & low part) >= `MTIMECMP` (high & low part) and is directly forwarded to the CPU's `MTI` interrupt.
 
+[NOTE]
 If the processor-internal **MTIME unit is NOT implemented**, the top's `mtime_i` input signal is used to update the `time[h]` CSRs
-and the `MTI` CPU interrupt is directly connected to the top's `mtime_irq_i` input.
+and the `MTI` machine timer interrupt) CPU interrupt is directly connected to the top's `mtime_irq_i` input.
 
 [TIP]
 The interrupt request is a single-shot signal,
@@ -35,7 +36,7 @@ The 64-bit counter and the 64-bit comparator are implemented as 2×32-bit counte
 registered carry to prevent a 64-bit carry chain and thus, to simplify timing closure.
 
 .MTIME register map
-[cols="^3,<3,^1,^1,<6"]
+[cols="<3,<3,^1,^1,<6"]
 [options="header",grid="all"]
 |=======================
 | Address      | Name [C]      | Bits | R/W | Function
