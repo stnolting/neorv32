@@ -1080,6 +1080,8 @@ enum NEORV32_NEOLED_CT_enum {
   SYSINFO_FEATURES_MEM_EXT_ENDIAN   =  5, /**< SYSINFO_FEATURES  (5) (r/-): External bus interface uses BIG-endian byte-order when 1 (via package.xbus_big_endian_c constant) */
   SYSINFO_FEATURES_ICACHE           =  6, /**< SYSINFO_FEATURES  (6) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
 
+  SYSINFO_FEATURES_HW_RESET         = 15, /**< SYSINFO_FEATURES (15) (r/-): Dedicated hardware reset of core registers implemented when 1 (via package's dedicated_reset_c constant) */
+
   SYSINFO_FEATURES_IO_GPIO          = 16, /**< SYSINFO_FEATURES (16) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_EN generic) */
   SYSINFO_FEATURES_IO_MTIME         = 17, /**< SYSINFO_FEATURES (17) (r/-): Machine system timer implemented when 1 (via IO_MTIME_EN generic) */
   SYSINFO_FEATURES_IO_UART0         = 18, /**< SYSINFO_FEATURES (18) (r/-): Primary universal asynchronous receiver/transmitter 0 implemented when 1 (via IO_UART0_EN generic) */
