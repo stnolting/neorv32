@@ -407,19 +407,23 @@ begin
 
       when IFETCH_REQUEST => -- request new 32-bit-aligned instruction word
       -- ------------------------------------------------------------
-        if (fetch_engine.restart = '1') then -- reset request?
-          fetch_engine.restart_nxt <= '0';
-        elsif (ipb.free = '1') then -- free entry in buffer?
+        if (ipb.free = '1') and (fetch_engine.restart = '0') then -- free entry in buffer AND no reset request?
           bus_fast_ir            <= '1'; -- fast instruction fetch request
           fetch_engine.state_nxt <= IFETCH_ISSUE;
+        end if;
+        if (fetch_engine.restart = '1') then -- reset request?
+          fetch_engine.restart_nxt <= '0';
         end if;
 
       when IFETCH_ISSUE => -- store instruction data to prefetch buffer
       -- ------------------------------------------------------------
         fetch_engine.bus_err_ack <= be_instr_i or ma_instr_i; -- ACK bus/alignment errors
         if (bus_i_wait_i = '0') or (be_instr_i = '1') or (ma_instr_i = '1') then -- wait for bus response
-          fetch_engine.pc_nxt    <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
-          ipb.we                 <= not fetch_engine.restart; -- write to IPB if not being reset
+          fetch_engine.pc_nxt <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
+          ipb.we              <= not fetch_engine.restart; -- write to IPB if not being reset
+          if (fetch_engine.restart = '1') then -- reset request?
+            fetch_engine.restart_nxt <= '0';
+          end if;
           fetch_engine.state_nxt <= IFETCH_REQUEST;
         end if;
 
