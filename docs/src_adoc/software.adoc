@@ -207,19 +207,41 @@ The makefile configuration variables can be (re-)defined directly when invoking 
 example: `$ make MARCH=-march=rv32ic clean_all exe`
 
 
+
 <<<
 // ####################################################################################################################
 :sectnums:
 === Executable Image Format
 
 When all the application sources have been compiled and linked, a final executable file has to be generated.
-For this purpose, the makefile uses the NEORV32-specific linker script `sw/common/neorv32.ld` to link
-all the sections into only four final sections: `.text`, `.rodata`, `.data` and `.bss`. These four section contain
-everything required for the application to run:
+For this purpose, the makefile uses the NEORV32-specific linker script `sw/common/neorv32.ld`. This linker script defines three memory sections:
+`rom`, `ram` and `iodev`. These sections have specific access attributes: Read access (`r`), write access (`w`) and executable (`x`).
 
-[cols="<1,<9"]
-[grid="none"]
+.Linker memory sections
+[cols="<2,^1,<7"]
+[options="header",grid="rows"]
 |=======================
+| Memory section  | Attributes | Description
+| `rom`           | `rx`       | Instruction memory (IMEM) **OR** bootloader ROM
+| `ram`           | `rwx`      | Data memory (DMEM)
+| `iodev`         | `rw`       | Memory-mapped IO/peripheral devices
+|=======================
+
+The `iodev` section is reserved for processor-internal memory-mapped IO and peripheral devices. The linker does not use this section at all
+and just passes the start and end adresses of this section to the start-up code `crt0.S` (see next section).
+
+[NOTE]
+The `rom` region is used to place the instructions of "normal" applications. If the bootloader is being compiled, the makefile defines the `make_bootloader`
+symbol, which changes the _ORIGIN_ (base address) and _LENGTH_ (size) attributes of the `rom` region according to the BOOTROM definitions.
+
+The linker maps all the regions from the compiled object files into only four final sections: `.text`, `.rodata`, `.data` and `.bss`
+using the specified memory section. These four regions contain everything required for the application to run:
+
+.Executable regions
+[cols="<1,<9"]
+[options="header",grid="rows"]
+|=======================
+| Region    | Description 
 | `.text`   | Executable instructions generated from the start-up code and all application sources.
 | `.rodata` | Constants (like strings) from the application; also the initial data for initialized variables.
 | `.data`   | This section is required for the address generation of fixed (= global) variables only.
@@ -254,6 +276,21 @@ word and is always `0x4788cafe`. Based on this word, the bootloader can identify
 image in bytes. A simple "complement" checksum of the actual program image is given by the third word. This
 provides a simple protection against data transmission or storage errors.
 
+
+=== Start-Up Code (crt0)
+
+The CPU (and also the processor) requires a minimal start-up and initialization code o bring the CPU (and the SoC) into a stable and initialized state before the
+acutal application can be executed. This start-up code is located in `sw/common/crt0.S` and is automatically linked with _every_ application program.
+The `crt0.S` is directly executed right after a reset and performs the following operations:
+
+* Initialize integer registers `x1 - x31` (or `x1 - x15` when using the `E` CPU extension) to a defined value.
+* Initialize all CPU core CSRs and also install a default "dummy" trap handler for _all_ traps.
+* Initialize the global pointer `gp` and the stack pointer `sp` according to the `.data` segment layout provided by the linker script.
+* Clear IO area: Write zero to all memory-mapped registers within the IO region (`iodev` section). If certain devices have not been implemented, a bus access fault exception will occur. This exception is captured by the dummy trap handler.
+* Clear the `.bss` section defined by the linker script.
+* Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
+* Call the application's `main` function (with no arguments: `argc` = `argv` = 0).
+* If the `main` function returns, the processor goes to an endless sleep mode (using a simple loop or via the `wfi` instruction if available).
 
 
 <<<
@@ -466,36 +503,12 @@ LED is permanently activated and the system must be reset manually.
 :sectnums:
 === NEORV32 Runtime Environment
 
-The NEORV32 provides a minimal runtime environment (RTE) that mainly takes care of two things:
-
-* clean application start
-* stable and _safe_ execution environment (e.g. handling of exceptions/interrupts)
+The NEORV32 provides a minimal runtime environment (RTE) that takes care of a stable
+and _safe_ execution environment by handling _all_ traps (including interrupts).
 
 [NOTE]
-Performance or latency-optimized applications or embedded operating systems should use a custom
-trap management.
-
-
-:sectnums:
-==== CRT0 Start-Up Code
-
-The initial part of the runtime environment is the `sw/common/crt0.S` application start-up code. This piece
-of code is automatically linked with every application program and represents the starting point for every
-application - regardless if you are using the actual RTE in your application or not. The start-up code is directly executed after a reset.
-Ir performs the following operations to bring the CPU (and the SoC) into a stable and initialized state:
-
-* Initialize integer registers `x1` – `x15`/`x31`.
-* Initialize all CPU core CSRs.
-* Initialize the global pointer `gp` and the stack pointer `sp` according to the `.data` segment layout provided by the linker script.
-* Clear IO area: Write zero to all memory-mapped registers within the IO region. If certain devices have not been implemented, a bus access fault exception will occur. This exception is captured by a simple dummy handler in the start-up code.
-* Clear the `.bss` section defined by the linker script.
-* Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
-* Call the application's `main` function (with no arguments).
-* If the `main` function returns, the processor goes to an endless sleep mode (using a simple loop or via the `wfi` instruction if available).
-
-
-:sectnums:
-==== Using the NEORV32 Runtime Environment (RTE) in Your Application
+Using the RTE is **optional**. The RTE provides a simple and comfortable way of delegating traps while making sure that all traps (even though they are not
+explicitly used by the application) are handled correctly. Performance-optimized applications or embedded operating systems should not use the RTE for delegating traps.
 
 When execution enters the application's `main` function, the actual runtime environment is responsible for catching all implemented exceptions
 and interrupts. To activate the NEORV32 RTE execute the following function:
