@@ -48,11 +48,11 @@ SEARCH_DIR("/opt/riscv/riscv32-unknown-elf/lib"); SEARCH_DIR("=/opt/riscv/riscv6
 
 /* ************************************************************************* */
 /* NEORV32 memory configuration.                                             */
-/* Make sure this is sync with your processor/memory hardware configuration. */
+/* Make sure this is sync with your processor/memory hardware configuration! */
 /* ************************************************************************* */
-/* "rom"    : instruction memory (IMEM) / bootloader ROM                     */
-/* "ram"    : data memory (DMEM)                                             */
-/* "io_dev" : peripheral/IO devices                                          */
+/* "rom"   : instruction memory (IMEM) / bootloader ROM                      */
+/* "ram"   : data memory (DMEM)                                              */
+/* "iodev" : peripheral/IO devices (not used here; passed to crt0)           */
 /* ************************************************************************* */
 MEMORY
 {
