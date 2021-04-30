@@ -3,7 +3,7 @@
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
-/* # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     # */
+/* # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     # */
 /* #                                                                                               # */
 /* # Redistribution and use in source and binary forms, with or without modification, are          # */
 /* # permitted provided that the following conditions are met:                                     # */
@@ -50,12 +50,18 @@ SEARCH_DIR("/opt/riscv/riscv32-unknown-elf/lib"); SEARCH_DIR("=/opt/riscv/riscv6
 /* NEORV32 memory configuration.                                             */
 /* Make sure this is sync with your processor/memory hardware configuration. */
 /* ************************************************************************* */
+/* "rom"    : instruction memory (IMEM) / bootloader ROM                     */
+/* "ram"    : data memory (DMEM)                                             */
+/* "io_dev" : peripheral/IO devices                                          */
+/* ************************************************************************* */
 MEMORY
 {
-/* "rom" section: first value of ORIGIN/LENGHT => bootloader ROM; second value of ORIGIN/LENGHT => instruction memory */
+/* "rom" section: first value of ORIGIN/LENGTH => bootloader ROM; second value of ORIGIN/LENGTH => instruction memory */
 
-  rom  (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 4*1024 : 16*1024
-  ram (rwx) : ORIGIN = 0x80000000, LENGTH = 8*1024
+  rom  (rx)  : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 4*1024 : 16*1024
+  ram (rwx)  : ORIGIN = 0x80000000, LENGTH = 8*1024
+  iodev (rw) : ORIGIN = 0xFFFFFF00, LENGTH = 256
+
 }
 /* ************************************************************************* */
 
@@ -285,10 +291,12 @@ SECTIONS
   /DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }
 
 
-  /* Provide further symbols for neorv32 crt0.elf */
+  /* Provide further symbols for neorv32 crt0 */
   PROVIDE(__crt0_bss_start   = __bss_start);
   PROVIDE(__crt0_bss_end     = __BSS_END__);
   PROVIDE(__crt0_copy_data_src_begin = __etext + SIZEOF(.rodata));
   PROVIDE(__crt0_copy_data_dst_begin = __DATA_BEGIN__);
   PROVIDE(__crt0_copy_data_dst_end   = __DATA_BEGIN__ + SIZEOF(.data));
+  PROVIDE(__ctr0_io_space_begin = ORIGIN(iodev));
+  PROVIDE(__ctr0_io_space_end   = ORIGIN(iodev) + LENGTH(iodev));
 }
