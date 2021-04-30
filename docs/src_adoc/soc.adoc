@@ -670,6 +670,10 @@ By default, the total 32-bit (4GB) address space of the NEORV32 Processor is div
 .NEORV32 processor - address space (default configuration)
 image::../figures/address_space.png[900]
 
+[TIP]
+These four memory regions are handled by the linker when compiling a NEORV32 executable.
+See section <<_executable_image_format>> for more information.
+
 **Address Space Layout**
 
 The general address space layout consists of two main configuration constants: `ispace_base_c` defining

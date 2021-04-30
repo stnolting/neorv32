@@ -9,8 +9,8 @@ image:../figures/riscv_logo.png[width=350,align=center]
 * Optional RISC-V extensions: `rv32[i/e][m][a][c][b][Zfinx]` + `[u][Zicsr][Zifencei]`
 * Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications – passes the official RISC-V Architecture Tests (v2+)
 * Official RISC-V open-source architecture ID
-* Safe execution hardware (see section 2.7. Execution Safety); among other things, the CPU supports all traps from the RISC-V specifications
-(including bus access exceptions) and traps on all unimplemented/illegal/malformed instructions
+* Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 fast interrupt requests
+* Supports most of the traps from the RISC-V specifications (including bus access exceptions) and traps on all unimplemented/illegal/malformed instructions
 * Optional physical memory configuration (PMP), compatible to the RISC-V specifications
 * Optional hardware performance monitors (HPM) for application benchmarking
 * Separated interfaces for instruction fetch and data access (merged into single bus via a bus switch for
