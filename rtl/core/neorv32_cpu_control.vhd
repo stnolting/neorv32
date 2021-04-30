@@ -266,11 +266,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type pmp_ctrl_t     is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
   type pmp_addr_t     is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-1 downto 0);
   type pmp_ctrl_rd_t  is array (0 to 63) of std_ulogic_vector(7 downto 0);
-  type pmp_addr_rd_t  is array (0 to 63) of std_ulogic_vector(data_width_c-1 downto 0);
   type mhpmevent_t    is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
   type mhpmcnt_t      is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(32 downto 0); -- 32-bit, plus 1-bit overflow
   type mhpmcnth_t     is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(31 downto 0); -- 32-bit
-  type mhpmevent_rd_t is array (0 to 29) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
   type mhpmcnt_rd_t   is array (0 to 29) of std_ulogic_vector(31 downto 0);
   type mhpmcnth_rd_t  is array (0 to 29) of std_ulogic_vector(31 downto 0);
   type csr_t is record
@@ -313,7 +311,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mtval             : std_ulogic_vector(data_width_c-1 downto 0); -- mtval: machine bad address or instruction (R/W)
     --
     mhpmevent         : mhpmevent_t; -- mhpmevent*: machine performance-monitoring event selector (R/W)
-    mhpmevent_rd      : mhpmevent_rd_t; -- mhpmevent*: actual read data
     --
     mscratch          : std_ulogic_vector(data_width_c-1 downto 0); -- mscratch: scratch register (R/W)
     --
@@ -330,7 +327,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pmpcfg            : pmp_ctrl_t; -- physical memory protection - configuration registers
     pmpcfg_rd         : pmp_ctrl_rd_t; -- physical memory protection - actual read data
     pmpaddr           : pmp_addr_t; -- physical memory protection - address registers
-    pmpaddr_rd        : pmp_addr_rd_t; -- physical memory protection - actual read data
     --
     frm               : std_ulogic_vector(02 downto 0); -- frm (R/W): FPU rounding mode
     fflags            : std_ulogic_vector(04 downto 0); -- fflags (R/W): FPU exception flags
@@ -947,7 +943,7 @@ begin
       when DISPATCH => -- Get new command from instruction issue engine
       -- ------------------------------------------------------------
         -- housekeeping --
-        execute_engine.is_cp_op_nxt <= '0'; -- no compressed instruction yet
+        execute_engine.is_cp_op_nxt <= '0'; -- no co-processor operation yet
         -- PC update --
         execute_engine.pc_mux_sel <= '0'; -- linear next PC
         -- IR update --
@@ -1289,17 +1285,14 @@ begin
   -- -------------------------------------------------------------------------------------------
   csr_access_check: process(execute_engine.i_reg, csr)
     variable csr_wacc_v           : std_ulogic; -- to check access to read-only CSRs
---  variable csr_racc_v           : std_ulogic; -- to check access to write-only CSRs
     variable csr_mcounteren_hpm_v : std_ulogic_vector(31 downto 0); -- max 29 HPM counters, plus 3 LSB-aligned dummy bits
   begin
     -- is this CSR instruction really going to write/read to/from a CSR? --
     if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
        (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) then
       csr_wacc_v := '1'; -- always write CSR
---    csr_racc_v := or_all_f(execute_engine.i_reg(instr_rd_msb_c downto instr_rd_lsb_c)); -- read allowed if rd != 0
     else
       csr_wacc_v := or_all_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c)); -- write allowed if rs1/uimm5 != 0
---    csr_racc_v := '1'; -- always read CSR
     end if;
 
     -- low privilege level access to hpm counters? --
@@ -1311,11 +1304,16 @@ begin
     end if;
 
     -- check CSR access --
+    csr_acc_valid <= '0'; -- default = invalid access
     case csr.addr is
 
-      -- user floating-point CSRs --
+      -- floating-point CSRs --
       when csr_fflags_c | csr_frm_c | csr_fcsr_c =>
-        csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- full access for everyone if Zfinx extension is implemented
+        if (CPU_EXTENSION_RISCV_Zfinx = true) then
+          csr_acc_valid <= '1'; -- full access for everyone if Zfinx extension is implemented
+        else
+          NULL;
+        end if;
 
       -- machine trap setup --
       when csr_mstatus_c | csr_misa_c | csr_mie_c | csr_mtvec_c | csr_mcounteren_c | csr_mstatush_c =>
@@ -1339,16 +1337,16 @@ begin
            csr_pmpaddr40_c | csr_pmpaddr41_c | csr_pmpaddr42_c | csr_pmpaddr43_c | csr_pmpaddr44_c | csr_pmpaddr45_c | csr_pmpaddr46_c | csr_pmpaddr47_c |
            csr_pmpaddr48_c | csr_pmpaddr49_c | csr_pmpaddr50_c | csr_pmpaddr51_c | csr_pmpaddr52_c | csr_pmpaddr53_c | csr_pmpaddr54_c | csr_pmpaddr55_c |
            csr_pmpaddr56_c | csr_pmpaddr57_c | csr_pmpaddr58_c | csr_pmpaddr59_c | csr_pmpaddr60_c | csr_pmpaddr61_c | csr_pmpaddr62_c | csr_pmpaddr63_c =>
-        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+        if (PMP_NUM_REGIONS > 0) then
+          csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+        else
+          NULL;
+        end if;
 
       -- machine counters/timers --
-      when csr_mcycle_c =>
+      when csr_mcycle_c | csr_minstret_c =>
         csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_lo_width_c > 0)); -- M-mode only, access if implemented
-      when csr_mcycleh_c =>
-        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_hi_width_c > 0)); -- M-mode only, access if implemented
-      when csr_minstret_c =>
-        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_lo_width_c > 0)); -- M-mode only, access if implemented
-      when csr_minstreth_c =>
+      when csr_mcycleh_c | csr_minstreth_c =>
         csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_hi_width_c > 0)); -- M-mode only, access if implemented
 
       when csr_mhpmcounter3_c   | csr_mhpmcounter4_c   | csr_mhpmcounter5_c   | csr_mhpmcounter6_c   | csr_mhpmcounter7_c   | csr_mhpmcounter8_c   | -- LOW
@@ -1361,7 +1359,11 @@ begin
            csr_mhpmcounter15h_c | csr_mhpmcounter16h_c | csr_mhpmcounter17h_c | csr_mhpmcounter18h_c | csr_mhpmcounter19h_c | csr_mhpmcounter20h_c |
            csr_mhpmcounter21h_c | csr_mhpmcounter22h_c | csr_mhpmcounter23h_c | csr_mhpmcounter24h_c | csr_mhpmcounter25h_c | csr_mhpmcounter26h_c |
            csr_mhpmcounter27h_c | csr_mhpmcounter28h_c | csr_mhpmcounter29h_c | csr_mhpmcounter30h_c | csr_mhpmcounter31h_c =>
-        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+        if (HPM_NUM_CNTS > 0) then
+          csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+        else
+          NULL;
+        end if;
 
       -- user counters/timers --
       when csr_cycle_c =>
@@ -1386,7 +1388,11 @@ begin
            csr_hpmcounter15h_c | csr_hpmcounter16h_c | csr_hpmcounter17h_c | csr_hpmcounter18h_c | csr_hpmcounter19h_c | csr_hpmcounter20h_c |
            csr_hpmcounter21h_c | csr_hpmcounter22h_c | csr_hpmcounter23h_c | csr_hpmcounter24h_c | csr_hpmcounter25h_c | csr_hpmcounter26h_c |
            csr_hpmcounter27h_c | csr_hpmcounter28h_c | csr_hpmcounter29h_c | csr_hpmcounter30h_c | csr_hpmcounter31h_c =>
-        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(to_integer(unsigned(csr.addr(4 downto 0))))); -- M-mode, U-mode if authorized, read-only
+        if (HPM_NUM_CNTS > 0) then
+          csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(to_integer(unsigned(csr.addr(4 downto 0))))); -- M-mode, U-mode if authorized, read-only
+        else
+          NULL;
+        end if;
 
       -- machine counter setup --
       when csr_mcountinhibit_c =>
@@ -1397,7 +1403,11 @@ begin
            csr_mhpmevent15_c | csr_mhpmevent16_c | csr_mhpmevent17_c | csr_mhpmevent18_c | csr_mhpmevent19_c | csr_mhpmevent20_c |
            csr_mhpmevent21_c | csr_mhpmevent22_c | csr_mhpmevent23_c | csr_mhpmevent24_c | csr_mhpmevent25_c | csr_mhpmevent26_c |
            csr_mhpmevent27_c | csr_mhpmevent28_c | csr_mhpmevent29_c | csr_mhpmevent30_c | csr_mhpmevent31_c =>
-        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+        if (HPM_NUM_CNTS > 0) then
+          csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+        else
+          NULL;
+        end if;
 
       -- machine information registers --
       when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c =>
@@ -2213,18 +2223,13 @@ begin
     end if;
   end process pmp_output;
 
-  -- PMP read dummy --
+  -- PMP config read dummy --
   pmp_rd_dummy: process(csr)
   begin
     csr.pmpcfg_rd  <= (others => (others => '0'));
-    csr.pmpaddr_rd <= (others => (others => '0'));
     if (PMP_NUM_REGIONS /= 0) then
       for i in 0 to PMP_NUM_REGIONS-1 loop
         csr.pmpcfg_rd(i)  <= csr.pmpcfg(i);
-        csr.pmpaddr_rd(i) <= csr.pmpaddr(i);
-        if (csr.pmpcfg(i)(4 downto 3) = "00") then -- mode = off
-          csr.pmpaddr_rd(i)(index_size_f(PMP_MIN_GRANULARITY)-3 downto 0) <= (others => '0'); -- required for granularity check by SW
-        end if;
       end loop; -- i
     end if;
   end process pmp_rd_dummy;
@@ -2329,15 +2334,13 @@ begin
     end if;
   end process csr_counters;
 
-  -- hpm read dummy --
+  -- hpm counters read dummy --
   hpm_rd_dummy: process(csr)
   begin
-    csr.mhpmevent_rd    <= (others => (others => '0'));
     csr.mhpmcounter_rd  <= (others => (others => '0'));
     csr.mhpmcounterh_rd <= (others => (others => '0'));
     if (HPM_NUM_CNTS /= 0) then
       for i in 0 to HPM_NUM_CNTS-1 loop
-        csr.mhpmevent_rd(i) <= csr.mhpmevent(i);
         if (hpm_cnt_lo_width_c > 0) then
           csr.mhpmcounter_rd(i)(hpm_cnt_lo_width_c-1 downto 0)  <= csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0);
         end if;
@@ -2406,23 +2409,26 @@ begin
       if (CPU_EXTENSION_RISCV_Zicsr = true) and (csr.re = '1') then
         case csr.addr is
 
-          -- user floating-point CSRs --
+          -- floating-point CSRs --
           -- --------------------------------------------------------------------
           when csr_fflags_c => -- R/W: fflags - floating-point (FPU) exception flags
-            csr.rdata <= (others => '0');
             if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented
               csr.rdata(4 downto 0) <= csr.fflags;
+            else
+              NULL;
             end if;
           when csr_frm_c => -- R/W: frm - floating-point (FPU) rounding mode
-            csr.rdata <= (others => '0');
             if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented
               csr.rdata(2 downto 0) <= csr.frm;
+            else
+              NULL;
             end if;
           when csr_fcsr_c => -- R/W: fcsr - floating-point (FPU) control/status (frm + fflags)
-            csr.rdata <= (others => '0');
             if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented
               csr.rdata(7 downto 5) <= csr.frm;
               csr.rdata(4 downto 0) <= csr.fflags;
+            else
+              NULL;
             end if;
 
           -- machine trap setup --
@@ -2455,8 +2461,9 @@ begin
           when csr_mtvec_c => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
             csr.rdata <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
           when csr_mcounteren_c => -- R/W: machine counter enable register
-            csr.rdata <= (others => '0');
-            if (CPU_EXTENSION_RISCV_U = true) then -- this CSR is hardwired to zero if user mode is not implemented
+            if (CPU_EXTENSION_RISCV_U = false) then -- this CSR is hardwired to zero if user mode is not implemented
+              NULL;
+            else
               csr.rdata(0) <= csr.mcounteren_cy; -- enable user-level access to cycle[h]
               csr.rdata(1) <= csr.mcounteren_tm; -- enable user-level access to time[h]
               csr.rdata(2) <= csr.mcounteren_ir; -- enable user-level access to instret[h]
@@ -2482,88 +2489,88 @@ begin
             end loop; -- i
 
           -- physical memory protection - configuration --
-          when csr_pmpcfg0_c  => csr.rdata <= csr.pmpcfg_rd(03) & csr.pmpcfg_rd(02) & csr.pmpcfg_rd(01) & csr.pmpcfg_rd(00); -- R/W: pmpcfg0
-          when csr_pmpcfg1_c  => csr.rdata <= csr.pmpcfg_rd(07) & csr.pmpcfg_rd(06) & csr.pmpcfg_rd(05) & csr.pmpcfg_rd(04); -- R/W: pmpcfg1
-          when csr_pmpcfg2_c  => csr.rdata <= csr.pmpcfg_rd(11) & csr.pmpcfg_rd(10) & csr.pmpcfg_rd(09) & csr.pmpcfg_rd(08); -- R/W: pmpcfg2
-          when csr_pmpcfg3_c  => csr.rdata <= csr.pmpcfg_rd(15) & csr.pmpcfg_rd(14) & csr.pmpcfg_rd(13) & csr.pmpcfg_rd(12); -- R/W: pmpcfg3
-          when csr_pmpcfg4_c  => csr.rdata <= csr.pmpcfg_rd(19) & csr.pmpcfg_rd(18) & csr.pmpcfg_rd(17) & csr.pmpcfg_rd(16); -- R/W: pmpcfg4
-          when csr_pmpcfg5_c  => csr.rdata <= csr.pmpcfg_rd(23) & csr.pmpcfg_rd(22) & csr.pmpcfg_rd(21) & csr.pmpcfg_rd(20); -- R/W: pmpcfg5
-          when csr_pmpcfg6_c  => csr.rdata <= csr.pmpcfg_rd(27) & csr.pmpcfg_rd(26) & csr.pmpcfg_rd(25) & csr.pmpcfg_rd(24); -- R/W: pmpcfg6
-          when csr_pmpcfg7_c  => csr.rdata <= csr.pmpcfg_rd(31) & csr.pmpcfg_rd(30) & csr.pmpcfg_rd(29) & csr.pmpcfg_rd(28); -- R/W: pmpcfg7
-          when csr_pmpcfg8_c  => csr.rdata <= csr.pmpcfg_rd(35) & csr.pmpcfg_rd(34) & csr.pmpcfg_rd(33) & csr.pmpcfg_rd(32); -- R/W: pmpcfg8
-          when csr_pmpcfg9_c  => csr.rdata <= csr.pmpcfg_rd(39) & csr.pmpcfg_rd(38) & csr.pmpcfg_rd(37) & csr.pmpcfg_rd(36); -- R/W: pmpcfg9
-          when csr_pmpcfg10_c => csr.rdata <= csr.pmpcfg_rd(43) & csr.pmpcfg_rd(42) & csr.pmpcfg_rd(41) & csr.pmpcfg_rd(40); -- R/W: pmpcfg10
-          when csr_pmpcfg11_c => csr.rdata <= csr.pmpcfg_rd(47) & csr.pmpcfg_rd(46) & csr.pmpcfg_rd(45) & csr.pmpcfg_rd(44); -- R/W: pmpcfg11
-          when csr_pmpcfg12_c => csr.rdata <= csr.pmpcfg_rd(51) & csr.pmpcfg_rd(50) & csr.pmpcfg_rd(49) & csr.pmpcfg_rd(48); -- R/W: pmpcfg12
-          when csr_pmpcfg13_c => csr.rdata <= csr.pmpcfg_rd(55) & csr.pmpcfg_rd(54) & csr.pmpcfg_rd(53) & csr.pmpcfg_rd(52); -- R/W: pmpcfg13
-          when csr_pmpcfg14_c => csr.rdata <= csr.pmpcfg_rd(59) & csr.pmpcfg_rd(58) & csr.pmpcfg_rd(57) & csr.pmpcfg_rd(56); -- R/W: pmpcfg14
-          when csr_pmpcfg15_c => csr.rdata <= csr.pmpcfg_rd(63) & csr.pmpcfg_rd(62) & csr.pmpcfg_rd(61) & csr.pmpcfg_rd(60); -- R/W: pmpcfg15
+          when csr_pmpcfg0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata <= csr.pmpcfg_rd(03) & csr.pmpcfg_rd(02) & csr.pmpcfg_rd(01) & csr.pmpcfg_rd(00); else NULL; end if; -- R/W: pmpcfg0
+          when csr_pmpcfg1_c  => if (PMP_NUM_REGIONS > 03) then csr.rdata <= csr.pmpcfg_rd(07) & csr.pmpcfg_rd(06) & csr.pmpcfg_rd(05) & csr.pmpcfg_rd(04); else NULL; end if; -- R/W: pmpcfg1
+          when csr_pmpcfg2_c  => if (PMP_NUM_REGIONS > 07) then csr.rdata <= csr.pmpcfg_rd(11) & csr.pmpcfg_rd(10) & csr.pmpcfg_rd(09) & csr.pmpcfg_rd(08); else NULL; end if; -- R/W: pmpcfg2
+          when csr_pmpcfg3_c  => if (PMP_NUM_REGIONS > 11) then csr.rdata <= csr.pmpcfg_rd(15) & csr.pmpcfg_rd(14) & csr.pmpcfg_rd(13) & csr.pmpcfg_rd(12); else NULL; end if; -- R/W: pmpcfg3
+          when csr_pmpcfg4_c  => if (PMP_NUM_REGIONS > 15) then csr.rdata <= csr.pmpcfg_rd(19) & csr.pmpcfg_rd(18) & csr.pmpcfg_rd(17) & csr.pmpcfg_rd(16); else NULL; end if; -- R/W: pmpcfg4
+          when csr_pmpcfg5_c  => if (PMP_NUM_REGIONS > 19) then csr.rdata <= csr.pmpcfg_rd(23) & csr.pmpcfg_rd(22) & csr.pmpcfg_rd(21) & csr.pmpcfg_rd(20); else NULL; end if; -- R/W: pmpcfg5
+          when csr_pmpcfg6_c  => if (PMP_NUM_REGIONS > 23) then csr.rdata <= csr.pmpcfg_rd(27) & csr.pmpcfg_rd(26) & csr.pmpcfg_rd(25) & csr.pmpcfg_rd(24); else NULL; end if; -- R/W: pmpcfg6
+          when csr_pmpcfg7_c  => if (PMP_NUM_REGIONS > 27) then csr.rdata <= csr.pmpcfg_rd(31) & csr.pmpcfg_rd(30) & csr.pmpcfg_rd(29) & csr.pmpcfg_rd(28); else NULL; end if; -- R/W: pmpcfg7
+          when csr_pmpcfg8_c  => if (PMP_NUM_REGIONS > 31) then csr.rdata <= csr.pmpcfg_rd(35) & csr.pmpcfg_rd(34) & csr.pmpcfg_rd(33) & csr.pmpcfg_rd(32); else NULL; end if; -- R/W: pmpcfg8
+          when csr_pmpcfg9_c  => if (PMP_NUM_REGIONS > 35) then csr.rdata <= csr.pmpcfg_rd(39) & csr.pmpcfg_rd(38) & csr.pmpcfg_rd(37) & csr.pmpcfg_rd(36); else NULL; end if; -- R/W: pmpcfg9
+          when csr_pmpcfg10_c => if (PMP_NUM_REGIONS > 39) then csr.rdata <= csr.pmpcfg_rd(43) & csr.pmpcfg_rd(42) & csr.pmpcfg_rd(41) & csr.pmpcfg_rd(40); else NULL; end if; -- R/W: pmpcfg10
+          when csr_pmpcfg11_c => if (PMP_NUM_REGIONS > 43) then csr.rdata <= csr.pmpcfg_rd(47) & csr.pmpcfg_rd(46) & csr.pmpcfg_rd(45) & csr.pmpcfg_rd(44); else NULL; end if; -- R/W: pmpcfg11
+          when csr_pmpcfg12_c => if (PMP_NUM_REGIONS > 47) then csr.rdata <= csr.pmpcfg_rd(51) & csr.pmpcfg_rd(50) & csr.pmpcfg_rd(49) & csr.pmpcfg_rd(48); else NULL; end if; -- R/W: pmpcfg12
+          when csr_pmpcfg13_c => if (PMP_NUM_REGIONS > 51) then csr.rdata <= csr.pmpcfg_rd(55) & csr.pmpcfg_rd(54) & csr.pmpcfg_rd(53) & csr.pmpcfg_rd(52); else NULL; end if; -- R/W: pmpcfg13
+          when csr_pmpcfg14_c => if (PMP_NUM_REGIONS > 55) then csr.rdata <= csr.pmpcfg_rd(59) & csr.pmpcfg_rd(58) & csr.pmpcfg_rd(57) & csr.pmpcfg_rd(56); else NULL; end if; -- R/W: pmpcfg14
+          when csr_pmpcfg15_c => if (PMP_NUM_REGIONS > 59) then csr.rdata <= csr.pmpcfg_rd(63) & csr.pmpcfg_rd(62) & csr.pmpcfg_rd(61) & csr.pmpcfg_rd(60); else NULL; end if; -- R/W: pmpcfg15
 
           -- physical memory protection - addresses --
-          when csr_pmpaddr0_c  => csr.rdata <= csr.pmpaddr_rd(00); -- R/W: pmpaddr0
-          when csr_pmpaddr1_c  => csr.rdata <= csr.pmpaddr_rd(01); -- R/W: pmpaddr1
-          when csr_pmpaddr2_c  => csr.rdata <= csr.pmpaddr_rd(02); -- R/W: pmpaddr2
-          when csr_pmpaddr3_c  => csr.rdata <= csr.pmpaddr_rd(03); -- R/W: pmpaddr3
-          when csr_pmpaddr4_c  => csr.rdata <= csr.pmpaddr_rd(04); -- R/W: pmpaddr4
-          when csr_pmpaddr5_c  => csr.rdata <= csr.pmpaddr_rd(05); -- R/W: pmpaddr5
-          when csr_pmpaddr6_c  => csr.rdata <= csr.pmpaddr_rd(06); -- R/W: pmpaddr6
-          when csr_pmpaddr7_c  => csr.rdata <= csr.pmpaddr_rd(07); -- R/W: pmpaddr7
-          when csr_pmpaddr8_c  => csr.rdata <= csr.pmpaddr_rd(08); -- R/W: pmpaddr8
-          when csr_pmpaddr9_c  => csr.rdata <= csr.pmpaddr_rd(09); -- R/W: pmpaddr9
-          when csr_pmpaddr10_c => csr.rdata <= csr.pmpaddr_rd(10); -- R/W: pmpaddr10
-          when csr_pmpaddr11_c => csr.rdata <= csr.pmpaddr_rd(11); -- R/W: pmpaddr11
-          when csr_pmpaddr12_c => csr.rdata <= csr.pmpaddr_rd(12); -- R/W: pmpaddr12
-          when csr_pmpaddr13_c => csr.rdata <= csr.pmpaddr_rd(13); -- R/W: pmpaddr13
-          when csr_pmpaddr14_c => csr.rdata <= csr.pmpaddr_rd(14); -- R/W: pmpaddr14
-          when csr_pmpaddr15_c => csr.rdata <= csr.pmpaddr_rd(15); -- R/W: pmpaddr15
-          when csr_pmpaddr16_c => csr.rdata <= csr.pmpaddr_rd(16); -- R/W: pmpaddr16
-          when csr_pmpaddr17_c => csr.rdata <= csr.pmpaddr_rd(17); -- R/W: pmpaddr17
-          when csr_pmpaddr18_c => csr.rdata <= csr.pmpaddr_rd(18); -- R/W: pmpaddr18
-          when csr_pmpaddr19_c => csr.rdata <= csr.pmpaddr_rd(19); -- R/W: pmpaddr19
-          when csr_pmpaddr20_c => csr.rdata <= csr.pmpaddr_rd(20); -- R/W: pmpaddr20
-          when csr_pmpaddr21_c => csr.rdata <= csr.pmpaddr_rd(21); -- R/W: pmpaddr21
-          when csr_pmpaddr22_c => csr.rdata <= csr.pmpaddr_rd(22); -- R/W: pmpaddr22
-          when csr_pmpaddr23_c => csr.rdata <= csr.pmpaddr_rd(23); -- R/W: pmpaddr23
-          when csr_pmpaddr24_c => csr.rdata <= csr.pmpaddr_rd(24); -- R/W: pmpaddr24
-          when csr_pmpaddr25_c => csr.rdata <= csr.pmpaddr_rd(25); -- R/W: pmpaddr25
-          when csr_pmpaddr26_c => csr.rdata <= csr.pmpaddr_rd(26); -- R/W: pmpaddr26
-          when csr_pmpaddr27_c => csr.rdata <= csr.pmpaddr_rd(27); -- R/W: pmpaddr27
-          when csr_pmpaddr28_c => csr.rdata <= csr.pmpaddr_rd(28); -- R/W: pmpaddr28
-          when csr_pmpaddr29_c => csr.rdata <= csr.pmpaddr_rd(29); -- R/W: pmpaddr29
-          when csr_pmpaddr30_c => csr.rdata <= csr.pmpaddr_rd(30); -- R/W: pmpaddr30
-          when csr_pmpaddr31_c => csr.rdata <= csr.pmpaddr_rd(31); -- R/W: pmpaddr31
-          when csr_pmpaddr32_c => csr.rdata <= csr.pmpaddr_rd(32); -- R/W: pmpaddr32
-          when csr_pmpaddr33_c => csr.rdata <= csr.pmpaddr_rd(33); -- R/W: pmpaddr33
-          when csr_pmpaddr34_c => csr.rdata <= csr.pmpaddr_rd(34); -- R/W: pmpaddr34
-          when csr_pmpaddr35_c => csr.rdata <= csr.pmpaddr_rd(35); -- R/W: pmpaddr35
-          when csr_pmpaddr36_c => csr.rdata <= csr.pmpaddr_rd(36); -- R/W: pmpaddr36
-          when csr_pmpaddr37_c => csr.rdata <= csr.pmpaddr_rd(37); -- R/W: pmpaddr37
-          when csr_pmpaddr38_c => csr.rdata <= csr.pmpaddr_rd(38); -- R/W: pmpaddr38
-          when csr_pmpaddr39_c => csr.rdata <= csr.pmpaddr_rd(39); -- R/W: pmpaddr39
-          when csr_pmpaddr40_c => csr.rdata <= csr.pmpaddr_rd(40); -- R/W: pmpaddr40
-          when csr_pmpaddr41_c => csr.rdata <= csr.pmpaddr_rd(41); -- R/W: pmpaddr41
-          when csr_pmpaddr42_c => csr.rdata <= csr.pmpaddr_rd(42); -- R/W: pmpaddr42
-          when csr_pmpaddr43_c => csr.rdata <= csr.pmpaddr_rd(43); -- R/W: pmpaddr43
-          when csr_pmpaddr44_c => csr.rdata <= csr.pmpaddr_rd(44); -- R/W: pmpaddr44
-          when csr_pmpaddr45_c => csr.rdata <= csr.pmpaddr_rd(45); -- R/W: pmpaddr45
-          when csr_pmpaddr46_c => csr.rdata <= csr.pmpaddr_rd(46); -- R/W: pmpaddr46
-          when csr_pmpaddr47_c => csr.rdata <= csr.pmpaddr_rd(47); -- R/W: pmpaddr47
-          when csr_pmpaddr48_c => csr.rdata <= csr.pmpaddr_rd(48); -- R/W: pmpaddr48
-          when csr_pmpaddr49_c => csr.rdata <= csr.pmpaddr_rd(49); -- R/W: pmpaddr49
-          when csr_pmpaddr50_c => csr.rdata <= csr.pmpaddr_rd(50); -- R/W: pmpaddr50
-          when csr_pmpaddr51_c => csr.rdata <= csr.pmpaddr_rd(51); -- R/W: pmpaddr51
-          when csr_pmpaddr52_c => csr.rdata <= csr.pmpaddr_rd(52); -- R/W: pmpaddr52
-          when csr_pmpaddr53_c => csr.rdata <= csr.pmpaddr_rd(53); -- R/W: pmpaddr53
-          when csr_pmpaddr54_c => csr.rdata <= csr.pmpaddr_rd(54); -- R/W: pmpaddr54
-          when csr_pmpaddr55_c => csr.rdata <= csr.pmpaddr_rd(55); -- R/W: pmpaddr55
-          when csr_pmpaddr56_c => csr.rdata <= csr.pmpaddr_rd(56); -- R/W: pmpaddr56
-          when csr_pmpaddr57_c => csr.rdata <= csr.pmpaddr_rd(57); -- R/W: pmpaddr57
-          when csr_pmpaddr58_c => csr.rdata <= csr.pmpaddr_rd(58); -- R/W: pmpaddr58
-          when csr_pmpaddr59_c => csr.rdata <= csr.pmpaddr_rd(59); -- R/W: pmpaddr59
-          when csr_pmpaddr60_c => csr.rdata <= csr.pmpaddr_rd(60); -- R/W: pmpaddr60
-          when csr_pmpaddr61_c => csr.rdata <= csr.pmpaddr_rd(61); -- R/W: pmpaddr61
-          when csr_pmpaddr62_c => csr.rdata <= csr.pmpaddr_rd(62); -- R/W: pmpaddr62
-          when csr_pmpaddr63_c => csr.rdata <= csr.pmpaddr_rd(63); -- R/W: pmpaddr63
+          when csr_pmpaddr0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata <= csr.pmpaddr(00); else NULL; end if; -- R/W: pmpaddr0
+          when csr_pmpaddr1_c  => if (PMP_NUM_REGIONS > 01) then csr.rdata <= csr.pmpaddr(01); else NULL; end if; -- R/W: pmpaddr1
+          when csr_pmpaddr2_c  => if (PMP_NUM_REGIONS > 02) then csr.rdata <= csr.pmpaddr(02); else NULL; end if; -- R/W: pmpaddr2
+          when csr_pmpaddr3_c  => if (PMP_NUM_REGIONS > 03) then csr.rdata <= csr.pmpaddr(03); else NULL; end if; -- R/W: pmpaddr3
+          when csr_pmpaddr4_c  => if (PMP_NUM_REGIONS > 04) then csr.rdata <= csr.pmpaddr(04); else NULL; end if; -- R/W: pmpaddr4
+          when csr_pmpaddr5_c  => if (PMP_NUM_REGIONS > 05) then csr.rdata <= csr.pmpaddr(05); else NULL; end if; -- R/W: pmpaddr5
+          when csr_pmpaddr6_c  => if (PMP_NUM_REGIONS > 06) then csr.rdata <= csr.pmpaddr(06); else NULL; end if; -- R/W: pmpaddr6
+          when csr_pmpaddr7_c  => if (PMP_NUM_REGIONS > 07) then csr.rdata <= csr.pmpaddr(07); else NULL; end if; -- R/W: pmpaddr7
+          when csr_pmpaddr8_c  => if (PMP_NUM_REGIONS > 08) then csr.rdata <= csr.pmpaddr(08); else NULL; end if; -- R/W: pmpaddr8
+          when csr_pmpaddr9_c  => if (PMP_NUM_REGIONS > 09) then csr.rdata <= csr.pmpaddr(09); else NULL; end if; -- R/W: pmpaddr9
+          when csr_pmpaddr10_c => if (PMP_NUM_REGIONS > 10) then csr.rdata <= csr.pmpaddr(10); else NULL; end if; -- R/W: pmpaddr10
+          when csr_pmpaddr11_c => if (PMP_NUM_REGIONS > 11) then csr.rdata <= csr.pmpaddr(11); else NULL; end if; -- R/W: pmpaddr11
+          when csr_pmpaddr12_c => if (PMP_NUM_REGIONS > 12) then csr.rdata <= csr.pmpaddr(12); else NULL; end if; -- R/W: pmpaddr12
+          when csr_pmpaddr13_c => if (PMP_NUM_REGIONS > 13) then csr.rdata <= csr.pmpaddr(13); else NULL; end if; -- R/W: pmpaddr13
+          when csr_pmpaddr14_c => if (PMP_NUM_REGIONS > 14) then csr.rdata <= csr.pmpaddr(14); else NULL; end if; -- R/W: pmpaddr14
+          when csr_pmpaddr15_c => if (PMP_NUM_REGIONS > 15) then csr.rdata <= csr.pmpaddr(15); else NULL; end if; -- R/W: pmpaddr15
+          when csr_pmpaddr16_c => if (PMP_NUM_REGIONS > 16) then csr.rdata <= csr.pmpaddr(16); else NULL; end if; -- R/W: pmpaddr16
+          when csr_pmpaddr17_c => if (PMP_NUM_REGIONS > 17) then csr.rdata <= csr.pmpaddr(17); else NULL; end if; -- R/W: pmpaddr17
+          when csr_pmpaddr18_c => if (PMP_NUM_REGIONS > 18) then csr.rdata <= csr.pmpaddr(18); else NULL; end if; -- R/W: pmpaddr18
+          when csr_pmpaddr19_c => if (PMP_NUM_REGIONS > 19) then csr.rdata <= csr.pmpaddr(19); else NULL; end if; -- R/W: pmpaddr19
+          when csr_pmpaddr20_c => if (PMP_NUM_REGIONS > 20) then csr.rdata <= csr.pmpaddr(20); else NULL; end if; -- R/W: pmpaddr20
+          when csr_pmpaddr21_c => if (PMP_NUM_REGIONS > 21) then csr.rdata <= csr.pmpaddr(21); else NULL; end if; -- R/W: pmpaddr21
+          when csr_pmpaddr22_c => if (PMP_NUM_REGIONS > 22) then csr.rdata <= csr.pmpaddr(22); else NULL; end if; -- R/W: pmpaddr22
+          when csr_pmpaddr23_c => if (PMP_NUM_REGIONS > 23) then csr.rdata <= csr.pmpaddr(23); else NULL; end if; -- R/W: pmpaddr23
+          when csr_pmpaddr24_c => if (PMP_NUM_REGIONS > 24) then csr.rdata <= csr.pmpaddr(24); else NULL; end if; -- R/W: pmpaddr24
+          when csr_pmpaddr25_c => if (PMP_NUM_REGIONS > 25) then csr.rdata <= csr.pmpaddr(25); else NULL; end if; -- R/W: pmpaddr25
+          when csr_pmpaddr26_c => if (PMP_NUM_REGIONS > 26) then csr.rdata <= csr.pmpaddr(26); else NULL; end if; -- R/W: pmpaddr26
+          when csr_pmpaddr27_c => if (PMP_NUM_REGIONS > 27) then csr.rdata <= csr.pmpaddr(27); else NULL; end if; -- R/W: pmpaddr27
+          when csr_pmpaddr28_c => if (PMP_NUM_REGIONS > 28) then csr.rdata <= csr.pmpaddr(28); else NULL; end if; -- R/W: pmpaddr28
+          when csr_pmpaddr29_c => if (PMP_NUM_REGIONS > 29) then csr.rdata <= csr.pmpaddr(29); else NULL; end if; -- R/W: pmpaddr29
+          when csr_pmpaddr30_c => if (PMP_NUM_REGIONS > 30) then csr.rdata <= csr.pmpaddr(30); else NULL; end if; -- R/W: pmpaddr30
+          when csr_pmpaddr31_c => if (PMP_NUM_REGIONS > 31) then csr.rdata <= csr.pmpaddr(31); else NULL; end if; -- R/W: pmpaddr31
+          when csr_pmpaddr32_c => if (PMP_NUM_REGIONS > 32) then csr.rdata <= csr.pmpaddr(32); else NULL; end if; -- R/W: pmpaddr32
+          when csr_pmpaddr33_c => if (PMP_NUM_REGIONS > 33) then csr.rdata <= csr.pmpaddr(33); else NULL; end if; -- R/W: pmpaddr33
+          when csr_pmpaddr34_c => if (PMP_NUM_REGIONS > 34) then csr.rdata <= csr.pmpaddr(34); else NULL; end if; -- R/W: pmpaddr34
+          when csr_pmpaddr35_c => if (PMP_NUM_REGIONS > 35) then csr.rdata <= csr.pmpaddr(35); else NULL; end if; -- R/W: pmpaddr35
+          when csr_pmpaddr36_c => if (PMP_NUM_REGIONS > 36) then csr.rdata <= csr.pmpaddr(36); else NULL; end if; -- R/W: pmpaddr36
+          when csr_pmpaddr37_c => if (PMP_NUM_REGIONS > 37) then csr.rdata <= csr.pmpaddr(37); else NULL; end if; -- R/W: pmpaddr37
+          when csr_pmpaddr38_c => if (PMP_NUM_REGIONS > 38) then csr.rdata <= csr.pmpaddr(38); else NULL; end if; -- R/W: pmpaddr38
+          when csr_pmpaddr39_c => if (PMP_NUM_REGIONS > 39) then csr.rdata <= csr.pmpaddr(39); else NULL; end if; -- R/W: pmpaddr39
+          when csr_pmpaddr40_c => if (PMP_NUM_REGIONS > 40) then csr.rdata <= csr.pmpaddr(40); else NULL; end if; -- R/W: pmpaddr40
+          when csr_pmpaddr41_c => if (PMP_NUM_REGIONS > 41) then csr.rdata <= csr.pmpaddr(41); else NULL; end if; -- R/W: pmpaddr41
+          when csr_pmpaddr42_c => if (PMP_NUM_REGIONS > 42) then csr.rdata <= csr.pmpaddr(42); else NULL; end if; -- R/W: pmpaddr42
+          when csr_pmpaddr43_c => if (PMP_NUM_REGIONS > 43) then csr.rdata <= csr.pmpaddr(43); else NULL; end if; -- R/W: pmpaddr43
+          when csr_pmpaddr44_c => if (PMP_NUM_REGIONS > 44) then csr.rdata <= csr.pmpaddr(44); else NULL; end if; -- R/W: pmpaddr44
+          when csr_pmpaddr45_c => if (PMP_NUM_REGIONS > 45) then csr.rdata <= csr.pmpaddr(45); else NULL; end if; -- R/W: pmpaddr45
+          when csr_pmpaddr46_c => if (PMP_NUM_REGIONS > 46) then csr.rdata <= csr.pmpaddr(46); else NULL; end if; -- R/W: pmpaddr46
+          when csr_pmpaddr47_c => if (PMP_NUM_REGIONS > 47) then csr.rdata <= csr.pmpaddr(47); else NULL; end if; -- R/W: pmpaddr47
+          when csr_pmpaddr48_c => if (PMP_NUM_REGIONS > 48) then csr.rdata <= csr.pmpaddr(48); else NULL; end if; -- R/W: pmpaddr48
+          when csr_pmpaddr49_c => if (PMP_NUM_REGIONS > 49) then csr.rdata <= csr.pmpaddr(49); else NULL; end if; -- R/W: pmpaddr49
+          when csr_pmpaddr50_c => if (PMP_NUM_REGIONS > 50) then csr.rdata <= csr.pmpaddr(50); else NULL; end if; -- R/W: pmpaddr50
+          when csr_pmpaddr51_c => if (PMP_NUM_REGIONS > 51) then csr.rdata <= csr.pmpaddr(51); else NULL; end if; -- R/W: pmpaddr51
+          when csr_pmpaddr52_c => if (PMP_NUM_REGIONS > 52) then csr.rdata <= csr.pmpaddr(52); else NULL; end if; -- R/W: pmpaddr52
+          when csr_pmpaddr53_c => if (PMP_NUM_REGIONS > 53) then csr.rdata <= csr.pmpaddr(53); else NULL; end if; -- R/W: pmpaddr53
+          when csr_pmpaddr54_c => if (PMP_NUM_REGIONS > 54) then csr.rdata <= csr.pmpaddr(54); else NULL; end if; -- R/W: pmpaddr54
+          when csr_pmpaddr55_c => if (PMP_NUM_REGIONS > 55) then csr.rdata <= csr.pmpaddr(55); else NULL; end if; -- R/W: pmpaddr55
+          when csr_pmpaddr56_c => if (PMP_NUM_REGIONS > 56) then csr.rdata <= csr.pmpaddr(56); else NULL; end if; -- R/W: pmpaddr56
+          when csr_pmpaddr57_c => if (PMP_NUM_REGIONS > 57) then csr.rdata <= csr.pmpaddr(57); else NULL; end if; -- R/W: pmpaddr57
+          when csr_pmpaddr58_c => if (PMP_NUM_REGIONS > 58) then csr.rdata <= csr.pmpaddr(58); else NULL; end if; -- R/W: pmpaddr58
+          when csr_pmpaddr59_c => if (PMP_NUM_REGIONS > 59) then csr.rdata <= csr.pmpaddr(59); else NULL; end if; -- R/W: pmpaddr59
+          when csr_pmpaddr60_c => if (PMP_NUM_REGIONS > 60) then csr.rdata <= csr.pmpaddr(60); else NULL; end if; -- R/W: pmpaddr60
+          when csr_pmpaddr61_c => if (PMP_NUM_REGIONS > 61) then csr.rdata <= csr.pmpaddr(61); else NULL; end if; -- R/W: pmpaddr61
+          when csr_pmpaddr62_c => if (PMP_NUM_REGIONS > 62) then csr.rdata <= csr.pmpaddr(62); else NULL; end if; -- R/W: pmpaddr62
+          when csr_pmpaddr63_c => if (PMP_NUM_REGIONS > 63) then csr.rdata <= csr.pmpaddr(63); else NULL; end if; -- R/W: pmpaddr63
 
           -- machine counter setup --
           -- --------------------------------------------------------------------
@@ -2573,110 +2580,112 @@ begin
             csr.rdata(csr.mcountinhibit_hpm'left+3 downto 3) <= csr.mcountinhibit_hpm; -- enable auto-increment of [m]hpmcounterx[h] counter
 
           -- machine performance-monitoring event selector --
-          when csr_mhpmevent3_c  => csr.rdata(csr.mhpmevent_rd(00)'left downto 0) <= csr.mhpmevent_rd(00); -- R/W: mhpmevent3
-          when csr_mhpmevent4_c  => csr.rdata(csr.mhpmevent_rd(01)'left downto 0) <= csr.mhpmevent_rd(01); -- R/W: mhpmevent4
-          when csr_mhpmevent5_c  => csr.rdata(csr.mhpmevent_rd(02)'left downto 0) <= csr.mhpmevent_rd(02); -- R/W: mhpmevent5
-          when csr_mhpmevent6_c  => csr.rdata(csr.mhpmevent_rd(03)'left downto 0) <= csr.mhpmevent_rd(03); -- R/W: mhpmevent6
-          when csr_mhpmevent7_c  => csr.rdata(csr.mhpmevent_rd(04)'left downto 0) <= csr.mhpmevent_rd(04); -- R/W: mhpmevent7
-          when csr_mhpmevent8_c  => csr.rdata(csr.mhpmevent_rd(05)'left downto 0) <= csr.mhpmevent_rd(05); -- R/W: mhpmevent8
-          when csr_mhpmevent9_c  => csr.rdata(csr.mhpmevent_rd(06)'left downto 0) <= csr.mhpmevent_rd(06); -- R/W: mhpmevent9
-          when csr_mhpmevent10_c => csr.rdata(csr.mhpmevent_rd(07)'left downto 0) <= csr.mhpmevent_rd(07); -- R/W: mhpmevent10
-          when csr_mhpmevent11_c => csr.rdata(csr.mhpmevent_rd(08)'left downto 0) <= csr.mhpmevent_rd(08); -- R/W: mhpmevent11
-          when csr_mhpmevent12_c => csr.rdata(csr.mhpmevent_rd(09)'left downto 0) <= csr.mhpmevent_rd(09); -- R/W: mhpmevent12
-          when csr_mhpmevent13_c => csr.rdata(csr.mhpmevent_rd(10)'left downto 0) <= csr.mhpmevent_rd(10); -- R/W: mhpmevent13
-          when csr_mhpmevent14_c => csr.rdata(csr.mhpmevent_rd(11)'left downto 0) <= csr.mhpmevent_rd(11); -- R/W: mhpmevent14
-          when csr_mhpmevent15_c => csr.rdata(csr.mhpmevent_rd(12)'left downto 0) <= csr.mhpmevent_rd(12); -- R/W: mhpmevent15
-          when csr_mhpmevent16_c => csr.rdata(csr.mhpmevent_rd(13)'left downto 0) <= csr.mhpmevent_rd(13); -- R/W: mhpmevent16
-          when csr_mhpmevent17_c => csr.rdata(csr.mhpmevent_rd(14)'left downto 0) <= csr.mhpmevent_rd(14); -- R/W: mhpmevent17
-          when csr_mhpmevent18_c => csr.rdata(csr.mhpmevent_rd(15)'left downto 0) <= csr.mhpmevent_rd(15); -- R/W: mhpmevent18
-          when csr_mhpmevent19_c => csr.rdata(csr.mhpmevent_rd(16)'left downto 0) <= csr.mhpmevent_rd(16); -- R/W: mhpmevent19
-          when csr_mhpmevent20_c => csr.rdata(csr.mhpmevent_rd(17)'left downto 0) <= csr.mhpmevent_rd(17); -- R/W: mhpmevent20
-          when csr_mhpmevent21_c => csr.rdata(csr.mhpmevent_rd(18)'left downto 0) <= csr.mhpmevent_rd(18); -- R/W: mhpmevent21
-          when csr_mhpmevent22_c => csr.rdata(csr.mhpmevent_rd(19)'left downto 0) <= csr.mhpmevent_rd(19); -- R/W: mhpmevent22
-          when csr_mhpmevent23_c => csr.rdata(csr.mhpmevent_rd(20)'left downto 0) <= csr.mhpmevent_rd(20); -- R/W: mhpmevent23
-          when csr_mhpmevent24_c => csr.rdata(csr.mhpmevent_rd(21)'left downto 0) <= csr.mhpmevent_rd(21); -- R/W: mhpmevent24
-          when csr_mhpmevent25_c => csr.rdata(csr.mhpmevent_rd(22)'left downto 0) <= csr.mhpmevent_rd(22); -- R/W: mhpmevent25
-          when csr_mhpmevent26_c => csr.rdata(csr.mhpmevent_rd(23)'left downto 0) <= csr.mhpmevent_rd(23); -- R/W: mhpmevent26
-          when csr_mhpmevent27_c => csr.rdata(csr.mhpmevent_rd(24)'left downto 0) <= csr.mhpmevent_rd(24); -- R/W: mhpmevent27
-          when csr_mhpmevent28_c => csr.rdata(csr.mhpmevent_rd(25)'left downto 0) <= csr.mhpmevent_rd(25); -- R/W: mhpmevent28
-          when csr_mhpmevent29_c => csr.rdata(csr.mhpmevent_rd(26)'left downto 0) <= csr.mhpmevent_rd(26); -- R/W: mhpmevent29
-          when csr_mhpmevent30_c => csr.rdata(csr.mhpmevent_rd(27)'left downto 0) <= csr.mhpmevent_rd(27); -- R/W: mhpmevent30
-          when csr_mhpmevent31_c => csr.rdata(csr.mhpmevent_rd(28)'left downto 0) <= csr.mhpmevent_rd(28); -- R/W: mhpmevent31
+          when csr_mhpmevent3_c  => if (HPM_NUM_CNTS > 00) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(00); else NULL; end if; -- R/W: mhpmevent3
+          when csr_mhpmevent4_c  => if (HPM_NUM_CNTS > 01) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(01); else NULL; end if; -- R/W: mhpmevent4
+          when csr_mhpmevent5_c  => if (HPM_NUM_CNTS > 02) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(02); else NULL; end if; -- R/W: mhpmevent5
+          when csr_mhpmevent6_c  => if (HPM_NUM_CNTS > 03) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(03); else NULL; end if; -- R/W: mhpmevent6
+          when csr_mhpmevent7_c  => if (HPM_NUM_CNTS > 04) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(04); else NULL; end if; -- R/W: mhpmevent7
+          when csr_mhpmevent8_c  => if (HPM_NUM_CNTS > 05) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(05); else NULL; end if; -- R/W: mhpmevent8
+          when csr_mhpmevent9_c  => if (HPM_NUM_CNTS > 06) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(06); else NULL; end if; -- R/W: mhpmevent9
+          when csr_mhpmevent10_c => if (HPM_NUM_CNTS > 07) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(07); else NULL; end if; -- R/W: mhpmevent10
+          when csr_mhpmevent11_c => if (HPM_NUM_CNTS > 08) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(08); else NULL; end if; -- R/W: mhpmevent11
+          when csr_mhpmevent12_c => if (HPM_NUM_CNTS > 09) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(09); else NULL; end if; -- R/W: mhpmevent12
+          when csr_mhpmevent13_c => if (HPM_NUM_CNTS > 10) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(10); else NULL; end if; -- R/W: mhpmevent13
+          when csr_mhpmevent14_c => if (HPM_NUM_CNTS > 11) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(11); else NULL; end if; -- R/W: mhpmevent14
+          when csr_mhpmevent15_c => if (HPM_NUM_CNTS > 12) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(12); else NULL; end if; -- R/W: mhpmevent15
+          when csr_mhpmevent16_c => if (HPM_NUM_CNTS > 13) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(13); else NULL; end if; -- R/W: mhpmevent16
+          when csr_mhpmevent17_c => if (HPM_NUM_CNTS > 14) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(14); else NULL; end if; -- R/W: mhpmevent17
+          when csr_mhpmevent18_c => if (HPM_NUM_CNTS > 15) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(15); else NULL; end if; -- R/W: mhpmevent18
+          when csr_mhpmevent19_c => if (HPM_NUM_CNTS > 16) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(16); else NULL; end if; -- R/W: mhpmevent19
+          when csr_mhpmevent20_c => if (HPM_NUM_CNTS > 17) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(17); else NULL; end if; -- R/W: mhpmevent20
+          when csr_mhpmevent21_c => if (HPM_NUM_CNTS > 18) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(18); else NULL; end if; -- R/W: mhpmevent21
+          when csr_mhpmevent22_c => if (HPM_NUM_CNTS > 19) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(19); else NULL; end if; -- R/W: mhpmevent22
+          when csr_mhpmevent23_c => if (HPM_NUM_CNTS > 20) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(20); else NULL; end if; -- R/W: mhpmevent23
+          when csr_mhpmevent24_c => if (HPM_NUM_CNTS > 21) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(21); else NULL; end if; -- R/W: mhpmevent24
+          when csr_mhpmevent25_c => if (HPM_NUM_CNTS > 22) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(22); else NULL; end if; -- R/W: mhpmevent25
+          when csr_mhpmevent26_c => if (HPM_NUM_CNTS > 23) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(23); else NULL; end if; -- R/W: mhpmevent26
+          when csr_mhpmevent27_c => if (HPM_NUM_CNTS > 24) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(24); else NULL; end if; -- R/W: mhpmevent27
+          when csr_mhpmevent28_c => if (HPM_NUM_CNTS > 25) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(25); else NULL; end if; -- R/W: mhpmevent28
+          when csr_mhpmevent29_c => if (HPM_NUM_CNTS > 26) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(26); else NULL; end if; -- R/W: mhpmevent29
+          when csr_mhpmevent30_c => if (HPM_NUM_CNTS > 27) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(27); else NULL; end if; -- R/W: mhpmevent30
+          when csr_mhpmevent31_c => if (HPM_NUM_CNTS > 28) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(28); else NULL; end if; -- R/W: mhpmevent31
 
           -- counters and timers --
           when csr_cycle_c | csr_mcycle_c => -- (R)/(W): [m]cycle: Cycle counter LOW
-            csr.rdata(cpu_cnt_lo_width_c-1 downto 0) <= csr.mcycle(cpu_cnt_lo_width_c-1 downto 0);
+            if (cpu_cnt_lo_width_c > 0) then csr.rdata(cpu_cnt_lo_width_c-1 downto 0) <= csr.mcycle(cpu_cnt_lo_width_c-1 downto 0); else NULL; end if;
+          when csr_cycleh_c | csr_mcycleh_c => -- (R)/(W): [m]cycleh: Cycle counter HIGH
+            if (cpu_cnt_hi_width_c > 0) then csr.rdata(cpu_cnt_hi_width_c-1 downto 0) <= csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0); else NULL; end if;
+
+          when csr_instret_c | csr_minstret_c => -- (R)/(W): [m]instret: Instructions-retired counter LOW
+            if (cpu_cnt_lo_width_c > 0) then csr.rdata(cpu_cnt_lo_width_c-1 downto 0) <= csr.minstret(cpu_cnt_lo_width_c-1 downto 0); else NULL; end if;
+          when csr_instreth_c | csr_minstreth_c => -- (R)/(W): [m]instreth: Instructions-retired counter HIGH
+            if (cpu_cnt_hi_width_c > 0) then csr.rdata(cpu_cnt_hi_width_c-1 downto 0) <= csr.minstreth(cpu_cnt_hi_width_c-1 downto 0); else NULL; end if;
+
           when csr_time_c => -- (R)/-: time: System time LOW (from MTIME unit)
             csr.rdata <= time_i(31 downto 0);
-          when csr_instret_c | csr_minstret_c => -- (R)/(W): [m]instret: Instructions-retired counter LOW
-            csr.rdata(cpu_cnt_lo_width_c-1 downto 0) <= csr.minstret(cpu_cnt_lo_width_c-1 downto 0);
-          when csr_cycleh_c | csr_mcycleh_c => -- (R)/(W): [m]cycleh: Cycle counter HIGH
-            csr.rdata(cpu_cnt_hi_width_c-1 downto 0) <= csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0);
           when csr_timeh_c => -- (R)/-: timeh: System time HIGH (from MTIME unit)
             csr.rdata <= time_i(63 downto 32);
-          when csr_instreth_c | csr_minstreth_c => -- (R)/(W): [m]instreth: Instructions-retired counter HIGH
-            csr.rdata(cpu_cnt_hi_width_c-1 downto 0) <= csr.minstreth(cpu_cnt_hi_width_c-1 downto 0);
 
           -- hardware performance counters --
-          when csr_hpmcounter3_c   | csr_mhpmcounter3_c   => csr.rdata <= csr.mhpmcounter_rd(00)(31 downto 0); -- (R)/(W): [m]hpmcounter3 - low
-          when csr_hpmcounter4_c   | csr_mhpmcounter4_c   => csr.rdata <= csr.mhpmcounter_rd(01)(31 downto 0); -- (R)/(W): [m]hpmcounter4 - low
-          when csr_hpmcounter5_c   | csr_mhpmcounter5_c   => csr.rdata <= csr.mhpmcounter_rd(02)(31 downto 0); -- (R)/(W): [m]hpmcounter5 - low
-          when csr_hpmcounter6_c   | csr_mhpmcounter6_c   => csr.rdata <= csr.mhpmcounter_rd(03)(31 downto 0); -- (R)/(W): [m]hpmcounter6 - low
-          when csr_hpmcounter7_c   | csr_mhpmcounter7_c   => csr.rdata <= csr.mhpmcounter_rd(04)(31 downto 0); -- (R)/(W): [m]hpmcounter7 - low
-          when csr_hpmcounter8_c   | csr_mhpmcounter8_c   => csr.rdata <= csr.mhpmcounter_rd(05)(31 downto 0); -- (R)/(W): [m]hpmcounter8 - low
-          when csr_hpmcounter9_c   | csr_mhpmcounter9_c   => csr.rdata <= csr.mhpmcounter_rd(06)(31 downto 0); -- (R)/(W): [m]hpmcounter9 - low
-          when csr_hpmcounter10_c  | csr_mhpmcounter10_c  => csr.rdata <= csr.mhpmcounter_rd(07)(31 downto 0); -- (R)/(W): [m]hpmcounter10 - low
-          when csr_hpmcounter11_c  | csr_mhpmcounter11_c  => csr.rdata <= csr.mhpmcounter_rd(08)(31 downto 0); -- (R)/(W): [m]hpmcounter11 - low
-          when csr_hpmcounter12_c  | csr_mhpmcounter12_c  => csr.rdata <= csr.mhpmcounter_rd(09)(31 downto 0); -- (R)/(W): [m]hpmcounter12 - low
-          when csr_hpmcounter13_c  | csr_mhpmcounter13_c  => csr.rdata <= csr.mhpmcounter_rd(10)(31 downto 0); -- (R)/(W): [m]hpmcounter13 - low
-          when csr_hpmcounter14_c  | csr_mhpmcounter14_c  => csr.rdata <= csr.mhpmcounter_rd(11)(31 downto 0); -- (R)/(W): [m]hpmcounter14 - low
-          when csr_hpmcounter15_c  | csr_mhpmcounter15_c  => csr.rdata <= csr.mhpmcounter_rd(12)(31 downto 0); -- (R)/(W): [m]hpmcounter15 - low
-          when csr_hpmcounter16_c  | csr_mhpmcounter16_c  => csr.rdata <= csr.mhpmcounter_rd(13)(31 downto 0); -- (R)/(W): [m]hpmcounter16 - low
-          when csr_hpmcounter17_c  | csr_mhpmcounter17_c  => csr.rdata <= csr.mhpmcounter_rd(14)(31 downto 0); -- (R)/(W): [m]hpmcounter17 - low
-          when csr_hpmcounter18_c  | csr_mhpmcounter18_c  => csr.rdata <= csr.mhpmcounter_rd(15)(31 downto 0); -- (R)/(W): [m]hpmcounter18 - low
-          when csr_hpmcounter19_c  | csr_mhpmcounter19_c  => csr.rdata <= csr.mhpmcounter_rd(16)(31 downto 0); -- (R)/(W): [m]hpmcounter19 - low
-          when csr_hpmcounter20_c  | csr_mhpmcounter20_c  => csr.rdata <= csr.mhpmcounter_rd(17)(31 downto 0); -- (R)/(W): [m]hpmcounter20 - low
-          when csr_hpmcounter21_c  | csr_mhpmcounter21_c  => csr.rdata <= csr.mhpmcounter_rd(18)(31 downto 0); -- (R)/(W): [m]hpmcounter21 - low
-          when csr_hpmcounter22_c  | csr_mhpmcounter22_c  => csr.rdata <= csr.mhpmcounter_rd(19)(31 downto 0); -- (R)/(W): [m]hpmcounter22 - low
-          when csr_hpmcounter23_c  | csr_mhpmcounter23_c  => csr.rdata <= csr.mhpmcounter_rd(20)(31 downto 0); -- (R)/(W): [m]hpmcounter23 - low
-          when csr_hpmcounter24_c  | csr_mhpmcounter24_c  => csr.rdata <= csr.mhpmcounter_rd(21)(31 downto 0); -- (R)/(W): [m]hpmcounter24 - low
-          when csr_hpmcounter25_c  | csr_mhpmcounter25_c  => csr.rdata <= csr.mhpmcounter_rd(22)(31 downto 0); -- (R)/(W): [m]hpmcounter25 - low
-          when csr_hpmcounter26_c  | csr_mhpmcounter26_c  => csr.rdata <= csr.mhpmcounter_rd(23)(31 downto 0); -- (R)/(W): [m]hpmcounter26 - low
-          when csr_hpmcounter27_c  | csr_mhpmcounter27_c  => csr.rdata <= csr.mhpmcounter_rd(24)(31 downto 0); -- (R)/(W): [m]hpmcounter27 - low
-          when csr_hpmcounter28_c  | csr_mhpmcounter28_c  => csr.rdata <= csr.mhpmcounter_rd(25)(31 downto 0); -- (R)/(W): [m]hpmcounter28 - low
-          when csr_hpmcounter29_c  | csr_mhpmcounter29_c  => csr.rdata <= csr.mhpmcounter_rd(26)(31 downto 0); -- (R)/(W): [m]hpmcounter29 - low
-          when csr_hpmcounter30_c  | csr_mhpmcounter30_c  => csr.rdata <= csr.mhpmcounter_rd(27)(31 downto 0); -- (R)/(W): [m]hpmcounter30 - low
-          when csr_hpmcounter31_c  | csr_mhpmcounter31_c  => csr.rdata <= csr.mhpmcounter_rd(28)(31 downto 0); -- (R)/(W): [m]hpmcounter31 - low
+          when csr_hpmcounter3_c   | csr_mhpmcounter3_c   => if (HPM_NUM_CNTS > 00) then csr.rdata <= csr.mhpmcounter_rd(00); else NULL; end if; -- (R)/(W): [m]hpmcounter3 - low
+          when csr_hpmcounter4_c   | csr_mhpmcounter4_c   => if (HPM_NUM_CNTS > 01) then csr.rdata <= csr.mhpmcounter_rd(01); else NULL; end if; -- (R)/(W): [m]hpmcounter4 - low
+          when csr_hpmcounter5_c   | csr_mhpmcounter5_c   => if (HPM_NUM_CNTS > 02) then csr.rdata <= csr.mhpmcounter_rd(02); else NULL; end if; -- (R)/(W): [m]hpmcounter5 - low
+          when csr_hpmcounter6_c   | csr_mhpmcounter6_c   => if (HPM_NUM_CNTS > 03) then csr.rdata <= csr.mhpmcounter_rd(03); else NULL; end if; -- (R)/(W): [m]hpmcounter6 - low
+          when csr_hpmcounter7_c   | csr_mhpmcounter7_c   => if (HPM_NUM_CNTS > 04) then csr.rdata <= csr.mhpmcounter_rd(04); else NULL; end if; -- (R)/(W): [m]hpmcounter7 - low
+          when csr_hpmcounter8_c   | csr_mhpmcounter8_c   => if (HPM_NUM_CNTS > 05) then csr.rdata <= csr.mhpmcounter_rd(05); else NULL; end if; -- (R)/(W): [m]hpmcounter8 - low
+          when csr_hpmcounter9_c   | csr_mhpmcounter9_c   => if (HPM_NUM_CNTS > 06) then csr.rdata <= csr.mhpmcounter_rd(06); else NULL; end if; -- (R)/(W): [m]hpmcounter9 - low
+          when csr_hpmcounter10_c  | csr_mhpmcounter10_c  => if (HPM_NUM_CNTS > 07) then csr.rdata <= csr.mhpmcounter_rd(07); else NULL; end if; -- (R)/(W): [m]hpmcounter10 - low
+          when csr_hpmcounter11_c  | csr_mhpmcounter11_c  => if (HPM_NUM_CNTS > 08) then csr.rdata <= csr.mhpmcounter_rd(08); else NULL; end if; -- (R)/(W): [m]hpmcounter11 - low
+          when csr_hpmcounter12_c  | csr_mhpmcounter12_c  => if (HPM_NUM_CNTS > 09) then csr.rdata <= csr.mhpmcounter_rd(09); else NULL; end if; -- (R)/(W): [m]hpmcounter12 - low
+          when csr_hpmcounter13_c  | csr_mhpmcounter13_c  => if (HPM_NUM_CNTS > 10) then csr.rdata <= csr.mhpmcounter_rd(10); else NULL; end if; -- (R)/(W): [m]hpmcounter13 - low
+          when csr_hpmcounter14_c  | csr_mhpmcounter14_c  => if (HPM_NUM_CNTS > 11) then csr.rdata <= csr.mhpmcounter_rd(11); else NULL; end if; -- (R)/(W): [m]hpmcounter14 - low
+          when csr_hpmcounter15_c  | csr_mhpmcounter15_c  => if (HPM_NUM_CNTS > 12) then csr.rdata <= csr.mhpmcounter_rd(12); else NULL; end if; -- (R)/(W): [m]hpmcounter15 - low
+          when csr_hpmcounter16_c  | csr_mhpmcounter16_c  => if (HPM_NUM_CNTS > 13) then csr.rdata <= csr.mhpmcounter_rd(13); else NULL; end if; -- (R)/(W): [m]hpmcounter16 - low
+          when csr_hpmcounter17_c  | csr_mhpmcounter17_c  => if (HPM_NUM_CNTS > 14) then csr.rdata <= csr.mhpmcounter_rd(14); else NULL; end if; -- (R)/(W): [m]hpmcounter17 - low
+          when csr_hpmcounter18_c  | csr_mhpmcounter18_c  => if (HPM_NUM_CNTS > 15) then csr.rdata <= csr.mhpmcounter_rd(15); else NULL; end if; -- (R)/(W): [m]hpmcounter18 - low
+          when csr_hpmcounter19_c  | csr_mhpmcounter19_c  => if (HPM_NUM_CNTS > 16) then csr.rdata <= csr.mhpmcounter_rd(16); else NULL; end if; -- (R)/(W): [m]hpmcounter19 - low
+          when csr_hpmcounter20_c  | csr_mhpmcounter20_c  => if (HPM_NUM_CNTS > 17) then csr.rdata <= csr.mhpmcounter_rd(17); else NULL; end if; -- (R)/(W): [m]hpmcounter20 - low
+          when csr_hpmcounter21_c  | csr_mhpmcounter21_c  => if (HPM_NUM_CNTS > 18) then csr.rdata <= csr.mhpmcounter_rd(18); else NULL; end if; -- (R)/(W): [m]hpmcounter21 - low
+          when csr_hpmcounter22_c  | csr_mhpmcounter22_c  => if (HPM_NUM_CNTS > 19) then csr.rdata <= csr.mhpmcounter_rd(19); else NULL; end if; -- (R)/(W): [m]hpmcounter22 - low
+          when csr_hpmcounter23_c  | csr_mhpmcounter23_c  => if (HPM_NUM_CNTS > 20) then csr.rdata <= csr.mhpmcounter_rd(20); else NULL; end if; -- (R)/(W): [m]hpmcounter23 - low
+          when csr_hpmcounter24_c  | csr_mhpmcounter24_c  => if (HPM_NUM_CNTS > 21) then csr.rdata <= csr.mhpmcounter_rd(21); else NULL; end if; -- (R)/(W): [m]hpmcounter24 - low
+          when csr_hpmcounter25_c  | csr_mhpmcounter25_c  => if (HPM_NUM_CNTS > 22) then csr.rdata <= csr.mhpmcounter_rd(22); else NULL; end if; -- (R)/(W): [m]hpmcounter25 - low
+          when csr_hpmcounter26_c  | csr_mhpmcounter26_c  => if (HPM_NUM_CNTS > 23) then csr.rdata <= csr.mhpmcounter_rd(23); else NULL; end if; -- (R)/(W): [m]hpmcounter26 - low
+          when csr_hpmcounter27_c  | csr_mhpmcounter27_c  => if (HPM_NUM_CNTS > 24) then csr.rdata <= csr.mhpmcounter_rd(24); else NULL; end if; -- (R)/(W): [m]hpmcounter27 - low
+          when csr_hpmcounter28_c  | csr_mhpmcounter28_c  => if (HPM_NUM_CNTS > 25) then csr.rdata <= csr.mhpmcounter_rd(25); else NULL; end if; -- (R)/(W): [m]hpmcounter28 - low
+          when csr_hpmcounter29_c  | csr_mhpmcounter29_c  => if (HPM_NUM_CNTS > 26) then csr.rdata <= csr.mhpmcounter_rd(26); else NULL; end if; -- (R)/(W): [m]hpmcounter29 - low
+          when csr_hpmcounter30_c  | csr_mhpmcounter30_c  => if (HPM_NUM_CNTS > 27) then csr.rdata <= csr.mhpmcounter_rd(27); else NULL; end if; -- (R)/(W): [m]hpmcounter30 - low
+          when csr_hpmcounter31_c  | csr_mhpmcounter31_c  => if (HPM_NUM_CNTS > 28) then csr.rdata <= csr.mhpmcounter_rd(28); else NULL; end if; -- (R)/(W): [m]hpmcounter31 - low
 
-          when csr_hpmcounter3h_c  | csr_mhpmcounter3h_c  => csr.rdata <= csr.mhpmcounterh_rd(00)(31 downto 0); -- (R)/(W): [m]hpmcounter3h - high
-          when csr_hpmcounter4h_c  | csr_mhpmcounter4h_c  => csr.rdata <= csr.mhpmcounterh_rd(01)(31 downto 0); -- (R)/(W): [m]hpmcounter4h - high
-          when csr_hpmcounter5h_c  | csr_mhpmcounter5h_c  => csr.rdata <= csr.mhpmcounterh_rd(02)(31 downto 0); -- (R)/(W): [m]hpmcounter5h - high
-          when csr_hpmcounter6h_c  | csr_mhpmcounter6h_c  => csr.rdata <= csr.mhpmcounterh_rd(03)(31 downto 0); -- (R)/(W): [m]hpmcounter6h - high
-          when csr_hpmcounter7h_c  | csr_mhpmcounter7h_c  => csr.rdata <= csr.mhpmcounterh_rd(04)(31 downto 0); -- (R)/(W): [m]hpmcounter7h - high
-          when csr_hpmcounter8h_c  | csr_mhpmcounter8h_c  => csr.rdata <= csr.mhpmcounterh_rd(05)(31 downto 0); -- (R)/(W): [m]hpmcounter8h - high
-          when csr_hpmcounter9h_c  | csr_mhpmcounter9h_c  => csr.rdata <= csr.mhpmcounterh_rd(06)(31 downto 0); -- (R)/(W): [m]hpmcounter9h - high
-          when csr_hpmcounter10h_c | csr_mhpmcounter10h_c => csr.rdata <= csr.mhpmcounterh_rd(07)(31 downto 0); -- (R)/(W): [m]hpmcounter10h - high
-          when csr_hpmcounter11h_c | csr_mhpmcounter11h_c => csr.rdata <= csr.mhpmcounterh_rd(08)(31 downto 0); -- (R)/(W): [m]hpmcounter11h - high
-          when csr_hpmcounter12h_c | csr_mhpmcounter12h_c => csr.rdata <= csr.mhpmcounterh_rd(09)(31 downto 0); -- (R)/(W): [m]hpmcounter12h - high
-          when csr_hpmcounter13h_c | csr_mhpmcounter13h_c => csr.rdata <= csr.mhpmcounterh_rd(10)(31 downto 0); -- (R)/(W): [m]hpmcounter13h - high
-          when csr_hpmcounter14h_c | csr_mhpmcounter14h_c => csr.rdata <= csr.mhpmcounterh_rd(11)(31 downto 0); -- (R)/(W): [m]hpmcounter14h - high
-          when csr_hpmcounter15h_c | csr_mhpmcounter15h_c => csr.rdata <= csr.mhpmcounterh_rd(12)(31 downto 0); -- (R)/(W): [m]hpmcounter15h - high
-          when csr_hpmcounter16h_c | csr_mhpmcounter16h_c => csr.rdata <= csr.mhpmcounterh_rd(13)(31 downto 0); -- (R)/(W): [m]hpmcounter16h - high
-          when csr_hpmcounter17h_c | csr_mhpmcounter17h_c => csr.rdata <= csr.mhpmcounterh_rd(14)(31 downto 0); -- (R)/(W): [m]hpmcounter17h - high
-          when csr_hpmcounter18h_c | csr_mhpmcounter18h_c => csr.rdata <= csr.mhpmcounterh_rd(15)(31 downto 0); -- (R)/(W): [m]hpmcounter18h - high
-          when csr_hpmcounter19h_c | csr_mhpmcounter19h_c => csr.rdata <= csr.mhpmcounterh_rd(16)(31 downto 0); -- (R)/(W): [m]hpmcounter19h - high
-          when csr_hpmcounter20h_c | csr_mhpmcounter20h_c => csr.rdata <= csr.mhpmcounterh_rd(17)(31 downto 0); -- (R)/(W): [m]hpmcounter20h - high
-          when csr_hpmcounter21h_c | csr_mhpmcounter21h_c => csr.rdata <= csr.mhpmcounterh_rd(18)(31 downto 0); -- (R)/(W): [m]hpmcounter21h - high
-          when csr_hpmcounter22h_c | csr_mhpmcounter22h_c => csr.rdata <= csr.mhpmcounterh_rd(19)(31 downto 0); -- (R)/(W): [m]hpmcounter22h - high
-          when csr_hpmcounter23h_c | csr_mhpmcounter23h_c => csr.rdata <= csr.mhpmcounterh_rd(20)(31 downto 0); -- (R)/(W): [m]hpmcounter23h - high
-          when csr_hpmcounter24h_c | csr_mhpmcounter24h_c => csr.rdata <= csr.mhpmcounterh_rd(21)(31 downto 0); -- (R)/(W): [m]hpmcounter24h - high
-          when csr_hpmcounter25h_c | csr_mhpmcounter25h_c => csr.rdata <= csr.mhpmcounterh_rd(22)(31 downto 0); -- (R)/(W): [m]hpmcounter25h - high
-          when csr_hpmcounter26h_c | csr_mhpmcounter26h_c => csr.rdata <= csr.mhpmcounterh_rd(23)(31 downto 0); -- (R)/(W): [m]hpmcounter26h - high
-          when csr_hpmcounter27h_c | csr_mhpmcounter27h_c => csr.rdata <= csr.mhpmcounterh_rd(24)(31 downto 0); -- (R)/(W): [m]hpmcounter27h - high
-          when csr_hpmcounter28h_c | csr_mhpmcounter28h_c => csr.rdata <= csr.mhpmcounterh_rd(25)(31 downto 0); -- (R)/(W): [m]hpmcounter28h - high
-          when csr_hpmcounter29h_c | csr_mhpmcounter29h_c => csr.rdata <= csr.mhpmcounterh_rd(26)(31 downto 0); -- (R)/(W): [m]hpmcounter29h - high
-          when csr_hpmcounter30h_c | csr_mhpmcounter30h_c => csr.rdata <= csr.mhpmcounterh_rd(27)(31 downto 0); -- (R)/(W): [m]hpmcounter30h - high
-          when csr_hpmcounter31h_c | csr_mhpmcounter31h_c => csr.rdata <= csr.mhpmcounterh_rd(28)(31 downto 0); -- (R)/(W): [m]hpmcounter31h - high
+          when csr_hpmcounter3h_c  | csr_mhpmcounter3h_c  => if (HPM_NUM_CNTS > 00) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(00); else NULL; end if; -- (R)/(W): [m]hpmcounter3h - high
+          when csr_hpmcounter4h_c  | csr_mhpmcounter4h_c  => if (HPM_NUM_CNTS > 01) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(01); else NULL; end if; -- (R)/(W): [m]hpmcounter4h - high
+          when csr_hpmcounter5h_c  | csr_mhpmcounter5h_c  => if (HPM_NUM_CNTS > 02) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(02); else NULL; end if; -- (R)/(W): [m]hpmcounter5h - high
+          when csr_hpmcounter6h_c  | csr_mhpmcounter6h_c  => if (HPM_NUM_CNTS > 03) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(03); else NULL; end if; -- (R)/(W): [m]hpmcounter6h - high
+          when csr_hpmcounter7h_c  | csr_mhpmcounter7h_c  => if (HPM_NUM_CNTS > 04) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(04); else NULL; end if; -- (R)/(W): [m]hpmcounter7h - high
+          when csr_hpmcounter8h_c  | csr_mhpmcounter8h_c  => if (HPM_NUM_CNTS > 05) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(05); else NULL; end if; -- (R)/(W): [m]hpmcounter8h - high
+          when csr_hpmcounter9h_c  | csr_mhpmcounter9h_c  => if (HPM_NUM_CNTS > 06) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(06); else NULL; end if; -- (R)/(W): [m]hpmcounter9h - high
+          when csr_hpmcounter10h_c | csr_mhpmcounter10h_c => if (HPM_NUM_CNTS > 07) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(07); else NULL; end if; -- (R)/(W): [m]hpmcounter10h - high
+          when csr_hpmcounter11h_c | csr_mhpmcounter11h_c => if (HPM_NUM_CNTS > 08) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(08); else NULL; end if; -- (R)/(W): [m]hpmcounter11h - high
+          when csr_hpmcounter12h_c | csr_mhpmcounter12h_c => if (HPM_NUM_CNTS > 09) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(09); else NULL; end if; -- (R)/(W): [m]hpmcounter12h - high
+          when csr_hpmcounter13h_c | csr_mhpmcounter13h_c => if (HPM_NUM_CNTS > 10) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(10); else NULL; end if; -- (R)/(W): [m]hpmcounter13h - high
+          when csr_hpmcounter14h_c | csr_mhpmcounter14h_c => if (HPM_NUM_CNTS > 11) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(11); else NULL; end if; -- (R)/(W): [m]hpmcounter14h - high
+          when csr_hpmcounter15h_c | csr_mhpmcounter15h_c => if (HPM_NUM_CNTS > 12) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(12); else NULL; end if; -- (R)/(W): [m]hpmcounter15h - high
+          when csr_hpmcounter16h_c | csr_mhpmcounter16h_c => if (HPM_NUM_CNTS > 13) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(13); else NULL; end if; -- (R)/(W): [m]hpmcounter16h - high
+          when csr_hpmcounter17h_c | csr_mhpmcounter17h_c => if (HPM_NUM_CNTS > 14) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(14); else NULL; end if; -- (R)/(W): [m]hpmcounter17h - high
+          when csr_hpmcounter18h_c | csr_mhpmcounter18h_c => if (HPM_NUM_CNTS > 15) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(15); else NULL; end if; -- (R)/(W): [m]hpmcounter18h - high
+          when csr_hpmcounter19h_c | csr_mhpmcounter19h_c => if (HPM_NUM_CNTS > 16) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(16); else NULL; end if; -- (R)/(W): [m]hpmcounter19h - high
+          when csr_hpmcounter20h_c | csr_mhpmcounter20h_c => if (HPM_NUM_CNTS > 17) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(17); else NULL; end if; -- (R)/(W): [m]hpmcounter20h - high
+          when csr_hpmcounter21h_c | csr_mhpmcounter21h_c => if (HPM_NUM_CNTS > 18) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(18); else NULL; end if; -- (R)/(W): [m]hpmcounter21h - high
+          when csr_hpmcounter22h_c | csr_mhpmcounter22h_c => if (HPM_NUM_CNTS > 19) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(19); else NULL; end if; -- (R)/(W): [m]hpmcounter22h - high
+          when csr_hpmcounter23h_c | csr_mhpmcounter23h_c => if (HPM_NUM_CNTS > 20) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(20); else NULL; end if; -- (R)/(W): [m]hpmcounter23h - high
+          when csr_hpmcounter24h_c | csr_mhpmcounter24h_c => if (HPM_NUM_CNTS > 21) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(21); else NULL; end if; -- (R)/(W): [m]hpmcounter24h - high
+          when csr_hpmcounter25h_c | csr_mhpmcounter25h_c => if (HPM_NUM_CNTS > 22) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(22); else NULL; end if; -- (R)/(W): [m]hpmcounter25h - high
+          when csr_hpmcounter26h_c | csr_mhpmcounter26h_c => if (HPM_NUM_CNTS > 23) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(23); else NULL; end if; -- (R)/(W): [m]hpmcounter26h - high
+          when csr_hpmcounter27h_c | csr_mhpmcounter27h_c => if (HPM_NUM_CNTS > 24) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(24); else NULL; end if; -- (R)/(W): [m]hpmcounter27h - high
+          when csr_hpmcounter28h_c | csr_mhpmcounter28h_c => if (HPM_NUM_CNTS > 25) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(25); else NULL; end if; -- (R)/(W): [m]hpmcounter28h - high
+          when csr_hpmcounter29h_c | csr_mhpmcounter29h_c => if (HPM_NUM_CNTS > 26) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(26); else NULL; end if; -- (R)/(W): [m]hpmcounter29h - high
+          when csr_hpmcounter30h_c | csr_mhpmcounter30h_c => if (HPM_NUM_CNTS > 27) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(27); else NULL; end if; -- (R)/(W): [m]hpmcounter30h - high
+          when csr_hpmcounter31h_c | csr_mhpmcounter31h_c => if (HPM_NUM_CNTS > 28) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(28); else NULL; end if; -- (R)/(W): [m]hpmcounter31h - high
 
           -- machine information registers --
           when csr_mvendorid_c => -- R/-: mvendorid - vendor ID
@@ -2709,7 +2718,7 @@ begin
 
           -- undefined/unavailable --
           when others =>
-            csr.rdata <= (others => '0'); -- not implemented
+            NULL; -- not implemented
 
         end case;
       end if;

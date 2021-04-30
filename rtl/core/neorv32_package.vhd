@@ -83,7 +83,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050408"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050409"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
   constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
@@ -171,7 +171,7 @@ package neorv32_package is
   constant mtime_cmp_lo_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff98";
   constant mtime_cmp_hi_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff9c";
 
-  -- Universal Asynchronous Receiver/Transmitter 0 (UART0), primary UART --
+  -- Primary Universal Asynchronous Receiver/Transmitter (UART0) --
   constant uart0_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffa0"; -- base address
   constant uart0_size_c         : natural := 2*4; -- module's address space in bytes
   constant uart0_ctrl_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffa0";
@@ -203,7 +203,7 @@ package neorv32_package is
   constant nco_ch1_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc8";
   constant nco_ch2_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffcc";
 
-  -- Universal Asynchronous Receiver/Transmitter 1 (UART1), secondary UART --
+  -- Secondary Universal Asynchronous Receiver/Transmitter (UART1) --
   constant uart1_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffd0"; -- base address
   constant uart1_size_c         : natural := 2*4; -- module's address space in bytes
   constant uart1_ctrl_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffd0";
