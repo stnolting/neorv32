@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 30.04.2021 | 1.5.4.9 | moved definitions of IO area from `crt0.S` to linker script; reworked CPU's CSR access system - highly reducing area overhead (removing decoding logic of not implemented CSRs by heavily using VHDL's `NULL` statement in `case` constructs) |
 | 29.04.2021 | 1.5.4.8 | minor edits in CPU instruction fetch engine; reduced **processor-internal bus timeout** (`max_proc_int_response_time_c`) to 15 cycles; added flag to SYSINGO module (`SYSINFO_FEATURES_HW_RESET`) to check if a dedicated hardware reset of all core register is implemented (via package's `dedicated_reset_c` constant) |
 | 28.04.2021 | 1.5.4.7 | :bug: fixed bug in instruction cache (iCACHE) when using two sets - `ICACHE_ASSOCIATIVITY` = 2: cache was corrupting the non-active set |
 | 26.04.2021 | 1.5.4.6 | optimized CPU's instruction fetch unit: less overhead for branches, reduced unit's hardware complexity |
