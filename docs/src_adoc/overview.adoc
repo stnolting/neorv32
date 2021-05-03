@@ -209,33 +209,34 @@ between entity boundaries, so the actual utilization results might vary a bit.
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| Hardware version: | `1.5.2.4`
+| Hardware version: | `1.5.4.9`
 | Top entity:       | `rtl/core/neorv32_top.vhd`
 |=======================
 
-.Hardware utilization by the processor modules
+.Hardware utilization by the processor modules (mandatory core modules in **bold**)
 [cols="<2,<8,>1,>1,>2,>1"]
 [options="header",grid="rows"]
 |=======================
-| Module    | Description                                       | LEs | FFs | MEM bits | DSPs
-| Boot ROM  | Bootloader ROM (4kB)                              |   3 |   1 |    32768 |    0
-| BUSSWITCH | Bus mux for CPU instr. and data interfaces        |  65 |   8 |        0 |    0
-| iCACHE    | Instruction cache (4 blocks, 256 bytes per block) | 234 | 156 |     8192 |    0
-| CFS       | Custom functions subsystem                        |   - |   - |        - |    -
-| DMEM      | Processor-internal data memory (8kB)              |   6 |   2 |    65536 |    0
-| GPIO      | General purpose input/output ports                |  67 |  65 |        0 |    0
-| IMEM      | Processor-internal instruction memory (16kB)      |   6 |   2 |   131072 |    0
-| MTIME     | Machine system timer                              | 274 | 166 |        0 |    0
-| NCO       | Numerically-controlled oscillator                 | 254 | 226 |        0 |    0
-| NEOLED    | Smart LED Interface (NeoPixel/WS28128) [4xFIFO]   | 347 | 309 |        0 |    0
-| PWM       | Pulse_width modulation controller                 |  71 |  69 |        0 |    0
-| SPI       | Serial peripheral interface                       | 138 | 124 |        0 |    0
-| SYSINFO   | System configuration information memory           |  10 |  10 |        0 |    0
-| TRNG      | True random number generator                      | 132 | 105 |        0 |    0
-| TWI       | Two-wire interface                                |  77 |  44 |        0 |    0
-| UART0/1   | Universal asynchronous receiver/transmitter       | 176 | 132 |        0 |    0
-| WDT       | Watchdog timer                                    |  60 |  45 |        0 |    0
-| WISHBONE  | External memory interface                         | 129 | 104 |        0 |    0
+| Module        | Description                                         | LEs | FFs | MEM bits | DSPs
+| Boot ROM      | Bootloader ROM (4kB)                                |   3 |   1 |    32768 |    0
+| **BUSKEEPER** | Processor-internal bus monitor                      |  11 |   6 |        0 |    0
+| **BUSSWITCH** | Bus mux for CPU instr. and data interface           |  49 |   8 |        0 |    0
+| CFS           | Custom functions subsystem                          |   - |   - |        - |    -
+| DMEM          | Processor-internal data memory (8kB)                |  18 |   2 |    65536 |    0
+| GPIO          | General purpose input/output ports                  |  67 |  65 |        0 |    0
+| iCACHE        | Instruction cache (1x4 blocks, 256 bytes per block) | 220 | 154 |     8192 |    0
+| IMEM          | Processor-internal instruction memory (16kB)        |   6 |   2 |   131072 |    0
+| MTIME         | Machine system timer                                | 289 | 200 |        0 |    0
+| NCO           | Numerically-controlled oscillator                   | 254 | 226 |        0 |    0
+| NEOLED        | Smart LED Interface (NeoPixel/WS28128) [4xFIFO]     | 347 | 309 |        0 |    0
+| PWM           | Pulse_width modulation controller                   |  71 |  69 |        0 |    0
+| SPI           | Serial peripheral interface                         | 138 | 124 |        0 |    0
+| **SYSINFO**   | System configuration information memory             |  10 |  10 |        0 |    0
+| TRNG          | True random number generator                        | 132 | 105 |        0 |    0
+| TWI           | Two-wire interface                                  |  77 |  44 |        0 |    0
+| UART0/1       | Universal asynchronous receiver/transmitter o/1     | 176 | 132 |        0 |    0
+| WDT           | Watchdog timer                                      |  60 |  45 |        0 |    0
+| WISHBONE      | External memory interface                           | 129 | 104 |        0 |    0
 |=======================
 
 
