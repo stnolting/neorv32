@@ -81,7 +81,7 @@ begin
     ci_illegal_o <= '0';
     ci_instr32_o <= (others => '0');
 
-    -- 22-bit sign-extended immediate for J/JAL --
+    -- helper: 22-bit sign-extended immediate for J/JAL --
     imm20_v := (others => ci_instr16_i(12)); -- sign extension
     imm20_v(00):= '0';
     imm20_v(01):= ci_instr16_i(3);
@@ -96,7 +96,7 @@ begin
     imm20_v(10):= ci_instr16_i(8);
     imm20_v(11):= ci_instr16_i(12);
 
-    -- 12-bit sign-extended immediate for branches --
+    -- helper: 12-bit sign-extended immediate for branches --
     imm12_v := (others => ci_instr16_i(12)); -- sign extension
     imm12_v(00):= '0';
     imm12_v(01):= ci_instr16_i(3);
