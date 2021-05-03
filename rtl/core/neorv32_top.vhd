@@ -485,12 +485,17 @@ begin
   fast_irq(09) <= neoled_irq;    -- NEOLED buffer free
 
   -- fast interrupts - platform level (for custom use) --
-  fast_irq(10) <= soc_firq_i(0);
-  fast_irq(11) <= soc_firq_i(1);
-  fast_irq(12) <= soc_firq_i(2);
-  fast_irq(13) <= soc_firq_i(3);
-  fast_irq(14) <= soc_firq_i(4);
-  fast_irq(15) <= soc_firq_i(5);
+  soc_firq_sync: process(clk_i)
+  begin
+    if rising_edge(clk_i) then -- make sure they are sync
+      fast_irq(10) <= soc_firq_i(0);
+      fast_irq(11) <= soc_firq_i(1);
+      fast_irq(12) <= soc_firq_i(2);
+      fast_irq(13) <= soc_firq_i(3);
+      fast_irq(14) <= soc_firq_i(4);
+      fast_irq(15) <= soc_firq_i(5);
+    end if;
+  end process soc_firq_sync;
 
   -- CFS IRQ acknowledge --
   cfs_irq_ack <= fast_irq_ack(1);

@@ -236,7 +236,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     exc_buf       : std_ulogic_vector(exception_width_c-1 downto 0);
     exc_fire      : std_ulogic; -- set if there is a valid source in the exception buffer
     irq_buf       : std_ulogic_vector(interrupt_width_c-1 downto 0);
-    firq_sync     : std_ulogic_vector(15 downto 0);
     irq_fire      : std_ulogic; -- set if there is a valid source in the interrupt buffer
     exc_ack       : std_ulogic; -- acknowledge all exceptions
     irq_ack       : std_ulogic_vector(interrupt_width_c-1 downto 0); -- acknowledge specific interrupt
@@ -1660,7 +1659,6 @@ begin
       trap_ctrl.irq_ack   <= (others => '0');
       trap_ctrl.env_start <= '0';
       trap_ctrl.cause     <= (others => def_rst_val_c);
-      trap_ctrl.firq_sync <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
         -- exception buffer: misaligned load/store/instruction address
@@ -1681,9 +1679,8 @@ begin
         trap_ctrl.irq_buf(interrupt_mext_irq_c)  <= csr.mie_meie and (trap_ctrl.irq_buf(interrupt_mext_irq_c)  or mext_irq_i)  and (not (trap_ctrl.irq_ack(interrupt_mext_irq_c)  or csr.mip_clear(interrupt_mext_irq_c)));
         trap_ctrl.irq_buf(interrupt_mtime_irq_c) <= csr.mie_mtie and (trap_ctrl.irq_buf(interrupt_mtime_irq_c) or mtime_irq_i) and (not (trap_ctrl.irq_ack(interrupt_mtime_irq_c) or csr.mip_clear(interrupt_mtime_irq_c)));
         -- interrupt buffer: NEORV32-specific fast interrupts
-        trap_ctrl.firq_sync <= firq_i;
         for i in 0 to 15 loop
-          trap_ctrl.irq_buf(interrupt_firq_0_c+i) <= csr.mie_firqe(i) and (trap_ctrl.irq_buf(interrupt_firq_0_c+i) or trap_ctrl.firq_sync(i)) and (not (trap_ctrl.irq_ack(interrupt_firq_0_c+i) or csr.mip_clear(interrupt_firq_0_c+i)));
+          trap_ctrl.irq_buf(interrupt_firq_0_c+i) <= csr.mie_firqe(i) and (trap_ctrl.irq_buf(interrupt_firq_0_c+i) or firq_i(i)) and (not (trap_ctrl.irq_ack(interrupt_firq_0_c+i) or csr.mip_clear(interrupt_firq_0_c+i)));
         end loop;
         -- trap control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler
@@ -1721,11 +1718,13 @@ begin
   trap_priority: process(trap_ctrl)
   begin
     -- defaults --
-    trap_ctrl.cause_nxt   <= (others => '0');
+    trap_ctrl.cause_nxt   <= (others => '-');
     trap_ctrl.irq_ack_nxt <= (others => '0');
 
+    -- ----------------------------------------------------------------------------------------
     -- the following traps are caused by *asynchronous* exceptions (= interrupts)
     -- here we do need a specific acknowledge mask since several sources can trigger at once
+    -- ----------------------------------------------------------------------------------------
 
     -- interrupt: 1.11 machine external interrupt --
     if (trap_ctrl.irq_buf(interrupt_mext_irq_c) = '1') then
@@ -1824,9 +1823,11 @@ begin
       trap_ctrl.irq_ack_nxt(interrupt_firq_15_c) <= '1';
 
 
+    -- ----------------------------------------------------------------------------------------
     -- the following traps are caused by *synchronous* exceptions (= 'classic' exceptions)
     -- here we do not need a specific acknowledge mask since only one exception (the one
     -- with highest priority) is evaluated at once
+    -- ----------------------------------------------------------------------------------------
 
     -- exception: 0.1 instruction access fault --
     elsif (trap_ctrl.exc_buf(exception_iaccess_c) = '1') then
@@ -1869,10 +1870,6 @@ begin
     -- exception: 0.5 load access fault --
     elsif (trap_ctrl.exc_buf(exception_laccess_c) = '1') then
       trap_ctrl.cause_nxt <= trap_lbe_c;
-
-    else
-      trap_ctrl.cause_nxt   <= (others => '0');
-      trap_ctrl.irq_ack_nxt <= (others => '0');
     end if;
   end process trap_priority;
   
