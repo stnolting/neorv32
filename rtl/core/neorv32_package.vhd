@@ -233,11 +233,11 @@ package neorv32_package is
   constant ctrl_rf_rs2_adr2_c   : natural :=  8; -- source register 2 address bit 2
   constant ctrl_rf_rs2_adr3_c   : natural :=  9; -- source register 2 address bit 3
   constant ctrl_rf_rs2_adr4_c   : natural := 10; -- source register 2 address bit 4
-  constant ctrl_rf_rd_adr0_c    : natural := 11; -- destiantion register address bit 0
-  constant ctrl_rf_rd_adr1_c    : natural := 12; -- destiantion register address bit 1
-  constant ctrl_rf_rd_adr2_c    : natural := 13; -- destiantion register address bit 2
-  constant ctrl_rf_rd_adr3_c    : natural := 14; -- destiantion register address bit 3
-  constant ctrl_rf_rd_adr4_c    : natural := 15; -- destiantion register address bit 4
+  constant ctrl_rf_rd_adr0_c    : natural := 11; -- destination register address bit 0
+  constant ctrl_rf_rd_adr1_c    : natural := 12; -- destination register address bit 1
+  constant ctrl_rf_rd_adr2_c    : natural := 13; -- destination register address bit 2
+  constant ctrl_rf_rd_adr3_c    : natural := 14; -- destination register address bit 3
+  constant ctrl_rf_rd_adr4_c    : natural := 15; -- destination register address bit 4
   constant ctrl_rf_wb_en_c      : natural := 16; -- write back enable
   constant ctrl_rf_r0_we_c      : natural := 17; -- force write access and force rd=r0
   -- alu --

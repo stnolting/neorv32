@@ -704,7 +704,7 @@ begin
       -- PC update --
       if (execute_engine.pc_we = '1') then
         if (execute_engine.pc_mux_sel = '0') then
-          execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment
+          execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment OR trap enter/exit
         else
           execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/taken_branch
         end if;
@@ -1326,7 +1326,11 @@ begin
       -- physical memory protection - configuration --
       when csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c  | csr_pmpcfg3_c  | csr_pmpcfg4_c  | csr_pmpcfg5_c  | csr_pmpcfg6_c  | csr_pmpcfg7_c |
            csr_pmpcfg8_c | csr_pmpcfg9_c | csr_pmpcfg10_c | csr_pmpcfg11_c | csr_pmpcfg12_c | csr_pmpcfg13_c | csr_pmpcfg14_c | csr_pmpcfg15_c =>
-        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+        if (PMP_NUM_REGIONS > 0) then
+          csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+        else
+          NULL;
+        end if;
 
       -- physical memory protection - address --
       when csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  | csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  |
@@ -1409,15 +1413,13 @@ begin
           NULL;
         end if;
 
-      -- machine information registers --
-      when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c =>
+      -- machine information registers & custom (NEORV32-specific) read-only CSRs --
+      when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mzext_c =>
         csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
-      -- custom (NEORV32-specific) read-only CSRs --
-      when csr_mzext_c =>
-        csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
+
       -- undefined / not implemented --
       when others =>
-        csr_acc_valid <= '0'; -- invalid access
+        NULL; -- invalid access
     end case;
   end process csr_access_check;
 
@@ -1688,7 +1690,7 @@ begin
           if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and -- trap triggered!
              ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP_ENTER))) then -- fire IRQs in EXECUTE or TRAP state only to continue execution even on permanent IRQ
             trap_ctrl.cause     <= trap_ctrl.cause_nxt;   -- capture source ID for program (for mcause csr)
-            trap_ctrl.exc_ack   <= '1';                   -- clear execption
+            trap_ctrl.exc_ack   <= '1';                   -- clear exception
             trap_ctrl.irq_ack   <= trap_ctrl.irq_ack_nxt; -- clear interrupt with interrupt ACK mask
             trap_ctrl.env_start <= '1';                   -- now execute engine can start trap handler
           end if;
@@ -1868,7 +1870,6 @@ begin
     elsif (trap_ctrl.exc_buf(exception_laccess_c) = '1') then
       trap_ctrl.cause_nxt <= trap_lbe_c;
 
-    -- not implemented --
     else
       trap_ctrl.cause_nxt   <= (others => '0');
       trap_ctrl.irq_ack_nxt <= (others => '0');
@@ -2256,7 +2257,7 @@ begin
     elsif rising_edge(clk_i) then
 
       -- [m]cycle --
-      csr.mcycle(csr.mcycle'left downto cpu_cnt_lo_width_c+1) <= (others => '0'); -- set unsued bits to zero
+      csr.mcycle(csr.mcycle'left downto cpu_cnt_lo_width_c+1) <= (others => '0'); -- set unused bits to zero
       if (cpu_cnt_lo_width_c = 0) then
         csr.mcycle <= (others => '0');
         mcycle_msb <= '0';
@@ -2269,7 +2270,7 @@ begin
       end if;
 
       -- [m]cycleh --
-      csr.mcycleh(csr.mcycleh'left downto cpu_cnt_hi_width_c+1) <= (others => '0'); -- set unsued bits to zero
+      csr.mcycleh(csr.mcycleh'left downto cpu_cnt_hi_width_c+1) <= (others => '0'); -- set unused bits to zero
       if (cpu_cnt_hi_width_c = 0) then
         csr.mcycleh <= (others => '0');
       elsif (csr.we = '1') and (csr.addr = csr_mcycleh_c) then -- write access
@@ -2279,7 +2280,7 @@ begin
       end if;
 
       -- [m]instret --
-      csr.minstret(csr.minstret'left downto cpu_cnt_lo_width_c+1) <= (others => '0'); -- set unsued bits to zero
+      csr.minstret(csr.minstret'left downto cpu_cnt_lo_width_c+1) <= (others => '0'); -- set unused bits to zero
       if (cpu_cnt_lo_width_c = 0) then
         csr.minstret <= (others => '0');
         minstret_msb <= '0';
@@ -2303,7 +2304,7 @@ begin
 
       -- [machine] hardware performance monitors (counters) --
       for i in 0 to HPM_NUM_CNTS-1 loop
-        csr.mhpmcounter(i)(csr.mhpmcounter(i)'left downto hpm_cnt_lo_width_c+1) <= (others => '0'); -- set unsued bits to zero
+        csr.mhpmcounter(i)(csr.mhpmcounter(i)'left downto hpm_cnt_lo_width_c+1) <= (others => '0'); -- set unused bits to zero
         if (hpm_cnt_lo_width_c = 0) then
           csr.mhpmcounter(i) <= (others => '0');
           mhpmcounter_msb(i) <= '0';
@@ -2319,7 +2320,7 @@ begin
         end if;
 
         -- [m]hpmcounter*h --
-        csr.mhpmcounterh(i)(csr.mhpmcounterh(i)'left downto hpm_cnt_hi_width_c+1) <= (others => '0'); -- set unsued bits to zero
+        csr.mhpmcounterh(i)(csr.mhpmcounterh(i)'left downto hpm_cnt_hi_width_c+1) <= (others => '0'); -- set unused bits to zero
         if (hpm_cnt_hi_width_c = 0) then
           csr.mhpmcounterh(i) <= (others => '0');
         else
