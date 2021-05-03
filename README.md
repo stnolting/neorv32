@@ -363,28 +363,30 @@ However, the size of the register file is cut in half.
 
 ### NEORV32 Processor-Internal Peripherals and Memories
 
-Results generated for hardware version [`1.5.3.2`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.5.4.9`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)
+(mandatory core modules in **bold**).
 
-| Module    | Description                                          | LEs | FFs | Memory bits | DSPs (9-bit) |
-|:----------|:-----------------------------------------------------|----:|----:|------------:|-------------:|
-| BOOT ROM  | Bootloader ROM (default 4kB)                         |   3 |   1 |      32 768 |            0 |
-| BUSSWITCH | Bus mux for CPU instr. & data interfaces             |  65 |   8 |           0 |            0 |
-| i-CACHE   | Proc.-int. nstruction cache (default 1x4x64 bytes)   | 234 | 156 |       8 192 |            0 |
-| CFS       | Custom functions subsystem                           |   - |   - |           - |            - |
-| DMEM      | Processor-internal data memory (default 8kB)         |   6 |   2 |      65 536 |            0 |
-| GPIO      | General purpose input/output ports                   |  67 |  65 |           0 |            0 |
-| IMEM      | Processor-internal instruction memory (default 16kb) |   6 |   2 |     131 072 |            0 |
-| MTIME     | Machine system timer                                 | 274 | 166 |           0 |            0 |
-| NCO       | Numerically-controlled oscillator                    | 254 | 226 |           0 |            0 |
-| NEOLED    | Smart LED Interface (NeoPixel-compatibile) [4x FIFO] | 347 | 309 |           0 |            0 |
-| PWM       | Pulse-width modulation controller                    |  71 |  69 |           0 |            0 |
-| SPI       | Serial peripheral interface                          | 138 | 124 |           0 |            0 |
-| SYSINFO   | System configuration information memory              |  11 |  10 |           0 |            0 |
-| TRNG      | True random number generator                         | 132 | 105 |           0 |            0 |
-| TWI       | Two-wire interface                                   |  77 |  46 |           0 |            0 |
-| UART0/1   | Universal asynchronous receiver/transmitter 0/1      | 176 | 132 |           0 |            0 |
-| WDT       | Watchdog timer                                       |  60 |  45 |           0 |            0 |
-| WISHBONE  | External memory interface                            | 129 | 104 |           0 |            0 |
+| Module        | Description                                         | LEs | FFs | Memory bits | DSPs (9-bit) |
+|:--------------|:----------------------------------------------------|----:|----:|------------:|-------------:|
+| Boot ROM      | Bootloader ROM (4kB)                                |   3 |   1 |       32768 |    0         |
+| **BUSKEEPER** | Processor-internal bus monitor                      |  11 |   6 |           0 |    0         |
+| **BUSSWITCH** | Bus mux for CPU instr. and data interface           |  49 |   8 |           0 |    0         |
+| CFS           | Custom functions subsystem                          |   - |   - |           - |    -         |
+| DMEM          | Processor-internal data memory (8kB)                |  18 |   2 |       65536 |    0         |
+| GPIO          | General purpose input/output ports                  |  67 |  65 |           0 |    0         |
+| iCACHE        | Instruction cache (1x4 blocks, 256 bytes per block) | 220 | 154 |        8192 |    0         |
+| IMEM          | Processor-internal instruction memory (16kB)        |   6 |   2 |      131072 |    0         |
+| MTIME         | Machine system timer                                | 289 | 200 |           0 |    0         |
+| NCO           | Numerically-controlled oscillator                   | 254 | 226 |           0 |    0         |
+| NEOLED        | Smart LED Interface (NeoPixel/WS28128) [4xFIFO]     | 347 | 309 |           0 |    0         |
+| PWM           | Pulse_width modulation controller                   |  71 |  69 |           0 |    0         |
+| SPI           | Serial peripheral interface                         | 138 | 124 |           0 |    0         |
+| **SYSINFO**   | System configuration information memory             |  10 |  10 |           0 |    0         |
+| TRNG          | True random number generator                        | 132 | 105 |           0 |    0         |
+| TWI           | Two-wire interface                                  |  77 |  44 |           0 |    0         |
+| UART0/1       | Universal asynchronous receiver/transmitter 0/1     | 176 | 132 |           0 |    0         |
+| WDT           | Watchdog timer                                      |  60 |  45 |           0 |    0         |
+| WISHBONE      | External memory interface                           | 129 | 104 |           0 |    0         |
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
