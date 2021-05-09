@@ -278,31 +278,37 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart_printf("[%i] mcounteren.cy CSR: ", cnt_test);
 
-  cnt_test++;
+  // skip if U-mode is not implemented
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_U_EXT)) {
+    cnt_test++;
 
-  // do not allow user-level code to access cycle[h] CSRs
-  tmp_a = neorv32_cpu_csr_read(CSR_MCOUNTEREN);
-  tmp_a &= ~(1<<CSR_MCOUNTEREN_CY); // clear access right
-  neorv32_cpu_csr_write(CSR_MCOUNTEREN, tmp_a);
+    // do not allow user-level code to access cycle[h] CSRs
+    tmp_a = neorv32_cpu_csr_read(CSR_MCOUNTEREN);
+    tmp_a &= ~(1<<CSR_MCOUNTEREN_CY); // clear access right
+    neorv32_cpu_csr_write(CSR_MCOUNTEREN, tmp_a);
 
-  // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-  neorv32_cpu_goto_user_mode();
-  {
-    // access to cycle CSR is no longer allowed
-    tmp_a = neorv32_cpu_csr_read(CSR_CYCLE);
-  }
+    // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+    neorv32_cpu_goto_user_mode();
+    {
+      // access to cycle CSR is no longer allowed
+      tmp_a = neorv32_cpu_csr_read(CSR_CYCLE);
+    }
 
-  // make sure there was an illegal instruction trap
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
-    if (tmp_a == 0) { // make sure user-level code CANNOT read locked CSR content!
-      test_ok();
+    // make sure there was an illegal instruction trap
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+      if (tmp_a == 0) { // make sure user-level code CANNOT read locked CSR content!
+        test_ok();
+      }
+      else {
+        test_fail();
+      }
     }
     else {
       test_fail();
     }
   }
-  else {
-    test_fail();
+    else {
+    neorv32_uart_printf("skipped (not implemented)\n");
   }
 
 
