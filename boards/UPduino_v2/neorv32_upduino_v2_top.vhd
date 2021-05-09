@@ -192,7 +192,7 @@ begin
     IO_TWI_EN                    => true,        -- implement two-wire interface (TWI)?
     IO_PWM_EN                    => true,        -- implement pulse-width modulation unit (PWM)?
     IO_WDT_EN                    => true,        -- implement watch dog timer (WDT)?
-    IO_TRNG_EN                   => false,       -- implement true random number generator (TRNG)?
+    IO_TRNG_EN                   => true,       -- implement true random number generator (TRNG)?
     IO_CFS_EN                    => false,       -- implement custom functions subsystem (CFS)?
     IO_CFS_CONFIG                => x"00000000", -- custom CFS configuration generic
     IO_CFS_IN_SIZE               => 32,          -- size of CFS input conduit in bits

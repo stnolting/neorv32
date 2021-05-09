@@ -21,7 +21,7 @@ There is also a **pre-compiled bitstream available** (`neorv32_upduino_v2_impl_1
 
 * CPU: `rv32imac_Zicsr` (reduced counter width: _CPU_CNT_WIDTH_ = 36)
 * Memory: 64kB instruction memory (internal IMEM), 64kB data memory (internal DMEM), 4kB bootloader ROM
-* Peripherals: `GPIO`, `MTIME`, `UART0`, `SPI`, `TWI`, `PWM`, `WDT`
+* Peripherals: `GPIO`, `MTIME`, `UART0`, `SPI`, `TWI`, `PWM`, `WDT`, `TRNG`
 * Tested with version [`1.5.4.11`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)
 
 
@@ -73,9 +73,9 @@ for the FPGA pin mapping.
 ### FPGA Utilization
 
 ```
-Number of slice registers: 1896 out of  5280 (36%)
+Number of slice registers: 1972 out of  5280 (37%)
 Number of I/O registers:      7 out of   117  (6%)
-Number of LUT4s:           5005 out of  5280 (95%)
+Number of LUT4s:           5123 out of  5280 (97%)
 Number of IO sites used:     24 out of    39 (62%)
 Number of DSPs:               0 out of    8   (0%)
 Number of I2Cs:               0 out of    2   (0%)
