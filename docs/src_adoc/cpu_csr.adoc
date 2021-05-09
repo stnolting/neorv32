@@ -407,7 +407,7 @@ protection regions and thus, the availability of the according `pmpcfg*` and `pm
 
 [TIP]
 If trying to access an PMP-related CSR beyond _PMP_NUM_REGIONS_ **no illegal instruction
-exception** is triggered. The according CSRs are read-only and always return zero.
+exception** is triggered. The according CSRs are read-only (writes are ignored) and always return zero.
 
 [IMPORTANT]
 The RISC-V-compatible NEORV32 physical memory protection only implements the _NAPOT_
@@ -568,11 +568,11 @@ The available hardware performance logic is configured via the _HPM_NUM_CNTS_ to
 _HPM_NUM_CNTS_ defines the number of implemented performance monitors and thus, the availability of the
 according `[m]hpmcounter*[h]` and `mhpmevent*` CSRs.
 
-The total size of the HPMs can be configured before syntheis via the _HPM_CNT_WIDTH_ generic (1..64-bit).
+The total size of the HPMs can be configured before synthesis via the _HPM_CNT_WIDTH_ generic (1..64-bit).
 
 [TIP]
 If trying to access an HPM-related CSR beyond _HPM_NUM_CNTS_ **no illegal instruction exception is
-triggered**. The according CSRs are read-only and always return zero.
+triggered**. The according CSRs are read-only (writes are ignored) and always return zero.
 
 [NOTE]
 The total LSB-aligned HPM counter size (low word CSR + high word CSR) is defined via the
