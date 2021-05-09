@@ -1,19 +1,18 @@
 # Exemplary FPGA Board Setups
 
-**:construction: This page is still under construction :construction:**
-
-This folder provides exemplary NEORV32 SoC setups for different FPGA platforms/boards. You can use one of the setups to directly get started
-or as a starting point to build your own setup.
+This folder provides exemplary NEORV32 SoC setups for different FPGA platforms/boards. You can directly use one of the provided setups
+or use them as starting point to build your own setup.
 
 Project maintainers may make pull requests against this repository to add or link their setups.
 
 
 | Setup | Board | FPGA  | Author |
-|:-----:|:------|:------|:------:|
+|:------|:------|:------|:-------|
+| :file_folder: [`de0-nano-test-setup`](https://github.com/stnolting/neorv32/tree/master/boards/de0-nano-test-setup) | [Terasic DE0-Nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=139&No=593) | Intel Cyclone IV `EP4CE22F17C6N` | [stnolting](https://github.com/stnolting) |
+| :file_folder: [`UPduino_v2`](https://github.com/stnolting/neorv32/tree/master/boards/UPduino_v2) | [tinyVision.ai Inc. UPduino `v2.0`](https://www.tindie.com/products/tinyvision_ai/upduino-v21-low-cost-fpga-board/) (/`v2.1`/`v3`) | Lattice iCE40 UltraPlus `iCE40UP5K-SG48I`| [stnolting](https://github.com/stnolting) |
 | :file_folder: [`arty-a7-35-test-setup`](https://github.com/stnolting/neorv32/tree/master/boards/arty-a7-35-test-setup) | [Digilent Arty A7-35](https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start) | Xilinx Artix-7 `XC7A35TICSG324-1L` | [stnolting](https://github.com/stnolting) |
 | :file_folder: [`nexys-a7-test-setup`](https://github.com/stnolting/neorv32/tree/master/boards/nexys-a7-test-setup) | [Digilent Nexys A7](https://reference.digilentinc.com/reference/programmable-logic/nexys-a7/start) | Xilinx Artix-7 `XC7A50TCSG324-1` | [AWenzel83](https://github.com/AWenzel83) |
 | :file_folder: [`nexys-a7-test-setup`](https://github.com/stnolting/neorv32/tree/master/boards/nexys-a7-test-setup) | [Digilent Nexys 4 DDR](https://reference.digilentinc.com/reference/programmable-logic/nexys-4-ddr/start) | Xilinx Artix-7 `XC7A100TCSG324-1` | [AWenzel83](https://github.com/AWenzel83) |
-| :file_folder: [`de0-nano-test-setup`](https://github.com/stnolting/neorv32/tree/master/boards/de0-nano-test-setup) | [Terasic DE0-Nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=139&No=593) | Intel Cyclone IV `EP4CE22F17C6N` | [stnolting](https://github.com/stnolting) |
 
 
 ### Adding Your Project Setup
