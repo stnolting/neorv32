@@ -1286,11 +1286,11 @@ begin
     variable csr_wacc_v           : std_ulogic; -- to check access to read-only CSRs
     variable csr_mcounteren_hpm_v : std_ulogic_vector(31 downto 0); -- max 29 HPM counters, plus 3 LSB-aligned dummy bits
   begin
-    -- is this CSR instruction really going to write/read to/from a CSR? --
+    -- is this CSR instruction really going to write to a CSR? --
     if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
        (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) then
       csr_wacc_v := '1'; -- always write CSR
-    else
+    else -- clear/set
       csr_wacc_v := or_all_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c)); -- write allowed if rs1/uimm5 != 0
     end if;
 
@@ -1348,9 +1348,9 @@ begin
 
       -- machine counters/timers --
       when csr_mcycle_c | csr_minstret_c =>
-        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_lo_width_c > 0)); -- M-mode only, access if implemented
+        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_lo_width_c > 0)); -- M-mode only, access valid if really implemented
       when csr_mcycleh_c | csr_minstreth_c =>
-        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_hi_width_c > 0)); -- M-mode only, access if implemented
+        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_hi_width_c > 0)); -- M-mode only, access valid if really implemented
 
       when csr_mhpmcounter3_c   | csr_mhpmcounter4_c   | csr_mhpmcounter5_c   | csr_mhpmcounter6_c   | csr_mhpmcounter7_c   | csr_mhpmcounter8_c   | -- LOW
            csr_mhpmcounter9_c   | csr_mhpmcounter10_c  | csr_mhpmcounter11_c  | csr_mhpmcounter12_c  | csr_mhpmcounter13_c  | csr_mhpmcounter14_c  |
@@ -2713,6 +2713,8 @@ begin
               csr.rdata(6) <= '1'; -- Zxscnt (custom)
               csr.rdata(7) <= '0'; -- Zxnocnt (custom)
             end if;
+            csr.rdata(8) <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- PMP (physical memory protection)
+            csr.rdata(9) <= bool_to_ulogic_f(boolean(HPM_NUM_CNTS > 0)); -- HPM (hardware performance monitors)
 
           -- undefined/unavailable --
           when others =>
