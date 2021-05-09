@@ -55,7 +55,7 @@ CSRs with the following notes ...
 * `S` - have a constrained compatibility; for example not all specified bits are available
 
 .NEORV32 Control and Status Registers (CSRs)
-[cols="<1,<2,<2,^1,<3,^1"]
+[cols="<4,<6,<11,^3,<11,^3"]
 [options="header"]
 |=======================
 | Address | Name [ASM]   | Name [C]         | R/W | Function | Note
@@ -774,4 +774,6 @@ are implemented (all remaining bits are always zero).
 | 5   | _CPU_MZEXT_ZFINX_ | r/- | `Zfinx` extensions available (enabled via _CPU_EXTENSION_RISCV_Zfinx_ generic)
 | 6   | _CPU_MZEXT_ZXSCNT_ | r/- | custom extension: "Small CPU counters": `cycle[h]` & `instret[h]` CSRs have less than 64-bit when set (when _CPU_CNT_WIDTH_ generic is less than 64).
 | 7   | _CPU_MZEXT_ZXNOCNT_ | r/- | custom extension: "NO CPU counters": `cycle[h]` & `instret[h]` CSRs are not available at all when set (when _CPU_CNT_WIDTH_ generic is 0).
+| 8   | _CSR_MZEXT_PMP_ | r/- | PMP (physical memory protection) extension available (_PMP_NUM_REGIONS_ generic > 0) when set (r/-)
+| 9   | _CSR_MZEXT_HPM_ | r/- | HPM (hardware performance monitors) extension available (_HPM_NUM_CNTS_ generic > 0) when set (r/-)
 |=======================
