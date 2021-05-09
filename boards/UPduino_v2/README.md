@@ -3,6 +3,7 @@
 
 This example setup turns the UPduino v2.0 / v2.1 board, which features a Lattice iCE40 UltraPlus FPGA, into a small-scale NEORV32 *microcontroller*.
 The processor setup provides 64kB of data and isntruction memory, an RTOS-capable CPU (privileged architecture) and a set of standard peripherals like UART, TWI and SPI.
+There is also a **pre-compiled bitstream available** (`neorv32_upduino_v2_impl_1.bin`).
 
 :information_source: The UPduino v2/v2.1 board is obsolete. However, it is backwards compatible to the
 [**new UPduino v3 FPGA board** (see on Tindie)](https://www.tindie.com/stores/tinyvision_ai/?ref=offsite_badges&utm_source=sellers_vr2045&utm_medium=badges&utm_campaign=badge_medium).

@@ -6,3 +6,4 @@ source
 *.ini
 *.html
 *.sty
+!*.bin
