@@ -314,7 +314,8 @@ See section <<_pmp_physical_memory_protection>> for more information.
 |======
 | **PMP_NUM_REGIONS** | _natural_ | 0
 3+| Total number of implemented protections regions (0..64). If this generics is zero no physical memory
-protection logic will be implemented at all.
+protection logic will be implemented at all. Setting _PMP_NUM_REGIONS_ > 0 will set the _CSR_MZEXT_PMP_ flag
+in the `mzext` CSR.
 |======
 
 
@@ -337,7 +338,8 @@ See section <<_hpm_hardware_performance_monitors>> for more information.
 |======
 | **HPM_NUM_CNTS** | _natural_ | 0
 3+| Total number of implemented hardware performance monitor counters (0..29). If this generics is zero no
-hardware performance monitor logic will be implemented at all.
+hardware performance monitor logic will be implemented at all. Setting _HPM_NUM_CNTS_ > 0 will set the _CSR_MZEXT_HPM_ flag
+in the `mzext` CSR.
 |======
 
 
