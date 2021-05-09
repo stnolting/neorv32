@@ -1,0 +1,8 @@
+impl_1
+*.dir
+source
+
+*.xml
+*.ini
+*.html
+*.sty
