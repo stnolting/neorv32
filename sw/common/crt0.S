@@ -100,11 +100,11 @@ __crt0_cpu_csr_init:
 
   // stop all counters except for [m]cycle[h] and [m]instret[h]
   li   x11, ~5
-  csrw mcountinhibit, x11
+  csrw 0x320, x11 // mcountinhibit (literal address for lagacy toolchain compatibility)
 
   // clear cycle counters
-  csrw mcycle,    zero
-  csrw mcycleh,   zero
+  csrw mcycle,  zero
+  csrw mcycleh, zero
 
   // clear instruction counters
   csrw minstret,  zero
