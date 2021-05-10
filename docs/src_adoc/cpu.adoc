@@ -206,9 +206,12 @@ CPU and Processor are BIG-ENDIAN, but this should be no problem as the external 
 interface provides big- and little-endian configurations. See section <<_processor_external_memory_interface_wishbone_axi4_lite>> for more information.
 
 [IMPORTANT]
-The `misa` CSR is read-only. It reflects the synthesized CPU extensions. Hence, all implemented
+The `misa` CSR is read-only. It shows the synthesized CPU extensions. Hence, all implemented
 CPU extensions are always active and cannot be enabled/disabled dynamically during runtime. Any
 write access to it (in machine mode) is ignored and will not cause any exception or side-effects.
+
+[IMPORTANT]
+The `mip` CSR is read-only. Pending IRQs can be cleared using the `mie` CSR.
 
 [IMPORTANT]
 The physical memory protection (see section <<_machine_physical_memory_protection>>)
