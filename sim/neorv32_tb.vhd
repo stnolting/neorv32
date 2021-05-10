@@ -120,8 +120,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal spi_data : std_ulogic;
 
   -- irq --
-  signal msi_ring, mei_ring : std_ulogic;
-  signal soc_firq_ring      : std_ulogic_vector(5 downto 0);
+  signal msi_ring, mei_ring, nmi_ring : std_ulogic;
+  signal soc_firq_ring : std_ulogic_vector(5 downto 0);
 
   -- Wishbone bus --
   type wishbone_t is record
@@ -298,6 +298,7 @@ begin
     -- system time input from external MTIME (available if IO_MTIME_EN = false) --
     mtime_i     => (others => '0'), -- current system time
     -- Interrupts --
+    nm_irq_i    => nmi_ring,        -- non-maskable interrupt
     soc_firq_i  => soc_firq_ring,   -- fast interrupt channels
     mtime_irq_i => '0',             -- machine software interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => msi_ring,        -- machine software interrupt
@@ -596,10 +597,12 @@ begin
       wb_irq.ack   <= wb_irq.cyc and wb_irq.stb and wb_irq.we and and_all_f(wb_irq.sel);
       wb_irq.err   <= '0';
       -- trigger IRQ using CSR.MIE bit layout --
+      nmi_ring      <= '0';
       msi_ring      <= '0';
       mei_ring      <= '0';
       soc_firq_ring <= (others => '0');
       if ((wb_irq.cyc and wb_irq.stb and wb_irq.we and and_all_f(wb_irq.sel)) = '1') then
+        nmi_ring         <= wb_irq.wdata(00); -- non-maskable interrupt
         msi_ring         <= wb_irq.wdata(03); -- machine software interrupt
         mei_ring         <= wb_irq.wdata(11); -- machine software interrupt
         --
