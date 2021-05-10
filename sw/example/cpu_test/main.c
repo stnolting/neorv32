@@ -884,7 +884,7 @@ int main() {
   // Non-maskable interrupt (NMI) via testbench
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] non-maskable IRQ (via testbench): ", cnt_test);
+  neorv32_uart_printf("[%i] NMI (via testbench) IRQ: ", cnt_test);
 
   if (is_simulation) { // check if this is a simulation
     cnt_test++;
