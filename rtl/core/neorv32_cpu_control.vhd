@@ -297,9 +297,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mcountinhibit_ir  : std_ulogic; -- mcounterinhibit.ir: enable auto-increment for [m]instret[h]
     mcountinhibit_hpm : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0); -- mcounterinhibit.hpm3: enable auto-increment for mhpmcounterx[h]
     --
-    mip_status        : std_ulogic_vector(interrupt_width_c-1  downto 0); -- current buffered IRQs
-    mip_clear         : std_ulogic_vector(interrupt_width_c-1  downto 0); -- set bits clear the according buffered IRQ
-    --
     privilege         : std_ulogic_vector(1 downto 0); -- hart's current privilege mode
     priv_m_mode       : std_ulogic; -- CPU in M-mode
     priv_u_mode       : std_ulogic; -- CPU in u-mode
@@ -1320,7 +1317,7 @@ begin
 
       -- machine trap handling --
       when csr_mscratch_c | csr_mepc_c | csr_mcause_c | csr_mtval_c | csr_mip_c =>
-        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+        csr_acc_valid <= csr.priv_m_mode; -- M-mode only, NOTE: MIP is read-only in the NEORV32 but we do not cause an exception here for compatibility
 
       -- physical memory protection - configuration --
       when csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c  | csr_pmpcfg3_c  | csr_pmpcfg4_c  | csr_pmpcfg5_c  | csr_pmpcfg6_c  | csr_pmpcfg7_c |
@@ -1675,12 +1672,12 @@ begin
         trap_ctrl.exc_buf(exception_break_c)     <= (trap_ctrl.exc_buf(exception_break_c)     or trap_ctrl.break_point)                    and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_iillegal_c)  <= (trap_ctrl.exc_buf(exception_iillegal_c)  or trap_ctrl.instr_il)                       and (not trap_ctrl.exc_ack);
         -- interrupt buffer: machine software/external/timer interrupt
-        trap_ctrl.irq_buf(interrupt_msw_irq_c)   <= csr.mie_msie and (trap_ctrl.irq_buf(interrupt_msw_irq_c)   or msw_irq_i)   and (not (trap_ctrl.irq_ack(interrupt_msw_irq_c)   or csr.mip_clear(interrupt_msw_irq_c)));
-        trap_ctrl.irq_buf(interrupt_mext_irq_c)  <= csr.mie_meie and (trap_ctrl.irq_buf(interrupt_mext_irq_c)  or mext_irq_i)  and (not (trap_ctrl.irq_ack(interrupt_mext_irq_c)  or csr.mip_clear(interrupt_mext_irq_c)));
-        trap_ctrl.irq_buf(interrupt_mtime_irq_c) <= csr.mie_mtie and (trap_ctrl.irq_buf(interrupt_mtime_irq_c) or mtime_irq_i) and (not (trap_ctrl.irq_ack(interrupt_mtime_irq_c) or csr.mip_clear(interrupt_mtime_irq_c)));
+        trap_ctrl.irq_buf(interrupt_msw_irq_c)   <= csr.mie_msie and (trap_ctrl.irq_buf(interrupt_msw_irq_c)   or msw_irq_i)   and (not trap_ctrl.irq_ack(interrupt_msw_irq_c));
+        trap_ctrl.irq_buf(interrupt_mext_irq_c)  <= csr.mie_meie and (trap_ctrl.irq_buf(interrupt_mext_irq_c)  or mext_irq_i)  and (not trap_ctrl.irq_ack(interrupt_mext_irq_c));
+        trap_ctrl.irq_buf(interrupt_mtime_irq_c) <= csr.mie_mtie and (trap_ctrl.irq_buf(interrupt_mtime_irq_c) or mtime_irq_i) and (not trap_ctrl.irq_ack(interrupt_mtime_irq_c));
         -- interrupt buffer: NEORV32-specific fast interrupts
         for i in 0 to 15 loop
-          trap_ctrl.irq_buf(interrupt_firq_0_c+i) <= csr.mie_firqe(i) and (trap_ctrl.irq_buf(interrupt_firq_0_c+i) or firq_i(i)) and (not (trap_ctrl.irq_ack(interrupt_firq_0_c+i) or csr.mip_clear(interrupt_firq_0_c+i)));
+          trap_ctrl.irq_buf(interrupt_firq_0_c+i) <= csr.mie_firqe(i) and (trap_ctrl.irq_buf(interrupt_firq_0_c+i) or firq_i(i)) and (not trap_ctrl.irq_ack(interrupt_firq_0_c+i));
         end loop;
         -- trap control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler
@@ -1705,9 +1702,6 @@ begin
   -- any exception/interrupt? --
   trap_ctrl.exc_fire <= or_all_f(trap_ctrl.exc_buf); -- exceptions/faults CANNOT be masked
   trap_ctrl.irq_fire <= or_all_f(trap_ctrl.irq_buf) and csr.mstatus_mie; -- interrupts CAN be masked
-
-  -- current pending interrupts (for CSR.MIP register) --
-  csr.mip_status <= trap_ctrl.irq_buf;
 
   -- acknowledge mask output --
   firq_ack_o <= trap_ctrl.irq_ack(interrupt_firq_15_c downto interrupt_firq_0_c);
@@ -1922,7 +1916,6 @@ begin
       csr.mepc         <= (others => def_rst_val_c);
       csr.mcause       <= (others => def_rst_val_c);
       csr.mtval        <= (others => def_rst_val_c);
-      csr.mip_clear    <= (others => def_rst_val_c);
       --
       csr.pmpcfg  <= (others => (others => '0'));
       csr.pmpaddr <= (others => (others => def_rst_val_c));
@@ -1944,8 +1937,6 @@ begin
     elsif rising_edge(clk_i) then
       -- write access? --
       csr.we <= csr.we_nxt;
-      -- defaults --
-      csr.mip_clear <= (others => '0');
 
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
         -- --------------------------------------------------------------------------------
@@ -2027,15 +2018,6 @@ begin
             -- R/W: mtval - machine bad address/instruction --
             if (csr.addr(3 downto 0) = csr_mtval_c(3 downto 0)) then
               csr.mtval <= csr.wdata;
-            end if;
-            -- R/W: mip - machine interrupt pending --
-            if (csr.addr(3 downto 0) = csr_mip_c(3 downto 0)) then
-              csr.mip_clear(interrupt_msw_irq_c)   <= not csr.wdata(03);
-              csr.mip_clear(interrupt_mtime_irq_c) <= not csr.wdata(07);
-              csr.mip_clear(interrupt_mext_irq_c)  <= not csr.wdata(11);
-              for i in 0 to 15 loop -- fast interrupt channels 0..15
-                csr.mip_clear(interrupt_firq_0_c+i) <= not csr.wdata(16+i);
-              end loop; -- i
             end if;
           end if;
 
@@ -2478,12 +2460,12 @@ begin
             csr.rdata(csr.mcause'left-1 downto 0) <= csr.mcause(csr.mcause'left-1 downto 0);
           when csr_mtval_c => -- R/W: mtval - machine bad address or instruction
             csr.rdata <= csr.mtval;
-          when csr_mip_c => -- R/W: mip - machine interrupt pending
-            csr.rdata(03) <= csr.mip_status(interrupt_msw_irq_c);
-            csr.rdata(07) <= csr.mip_status(interrupt_mtime_irq_c);
-            csr.rdata(11) <= csr.mip_status(interrupt_mext_irq_c);
+          when csr_mip_c => -- R/-: mip - machine interrupt pending
+            csr.rdata(03) <= trap_ctrl.irq_buf(interrupt_msw_irq_c);
+            csr.rdata(07) <= trap_ctrl.irq_buf(interrupt_mtime_irq_c);
+            csr.rdata(11) <= trap_ctrl.irq_buf(interrupt_mext_irq_c);
             for i in 0 to 15 loop -- fast interrupt channels 0..15 pending
-              csr.rdata(16+i) <= csr.mip_status(interrupt_firq_0_c+i);
+              csr.rdata(16+i) <= trap_ctrl.irq_buf(interrupt_firq_0_c+i);
             end loop; -- i
 
           -- physical memory protection - configuration --
