@@ -69,13 +69,13 @@ CSRs with the following notes ...
 | 0x304   | `mie`        | _CSR_MIE_        | r/w | Machine interrupt enable register | `C`
 | 0x305   | `mtvec`      | _CSR_MTVEC_      | r/w | Machine trap-handler base address (for ALL traps) | 
 | 0x306   | `mcounteren` | _CSR_MCOUNTEREN_ | r/w | Machine counter-enable register | `S`
-| 0x310   | `mstatush`   | _CSR_MSTATUSH_   | r/- | Machine status register – high word | `SR`
+| 0x310   | `mstatush`   | _CSR_MSTATUSH_   | r/- | Machine status register – high word | `RS`
 6+^| **<<_machine_trap_handling>>**
 | 0x340   | `mscratch`   | _CSR_MSCRATCH_   | r/w | Machine scratch register | 
 | 0x341   | `mepc`       | _CSR_MEPC_       | r/w | Machine exception program counter | 
 | 0x342   | `mcause`     | _CSR_MCAUSE_     | r/w | Machine trap cause | `C`
 | 0x343   | `mtval`      | _CSR_MTVAL_      | r/w | Machine bad address or instruction | 
-| 0x344   | `mip`        | _CSR_MIP_        | r/w | Machine interrupt pending register | `C`
+| 0x344   | `mip`        | _CSR_MIP_        | r/- | Machine interrupt pending register | `CR`
 6+^| **<<_machine_physical_memory_protection>>**
 | 0x3a0 .. 0x3af | `pmpcfg0` .. `pmpcfg15`  | _CSR_PMPCFG0_ .. _CSR_PMPCFG15_ | r/w | Physical memory protection config. for region 0..63 | `S`
 | 0x3b0 .. 0x3ef | `pmpaddr0` .. `pmpaddr63`| _CSR_PMPADDR0_ .. _CSR_PMPADDR63_ | r/w | Physical memory protection addr. register region 0..63 | 
@@ -379,9 +379,10 @@ instructions). For interrupts the CSR is set to zero.
 [frame="topbot",grid="none"]
 |======
 | 0x344 | **Machine interrupt Pending** | `mip`
-3+| Reset value: _UNDEFINED_
-3+| The `mip` CSR is compatible to the RISC-V specifications and provides custom extensions. It shows pending interrupts. Any pending interrupt can
-be cleared by writing zero to the according bit(s). The following CSR bits are implemented (all remaining bits are always zero and are read-only).
+3+| Reset value: _0x00000000_
+3+| The `mip` CSR is _partly_ compatible to the RISC-V specifications and also provides custom extensions. It shows currently pending interrupts. Since this register is
+read-only, pending interrupt can only be cleared by disabling and re-enabling the according `mie` CSr bit. Writing to this CSR will
+raise an illegal instruction exception. The following CSR bits are implemented (all remaining bits are always zero and are read-only).
 |======
 
 .Machine interrupt pending register
@@ -389,10 +390,10 @@ be cleared by writing zero to the according bit(s). The following CSR bits are i
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 31:16 | _CSR_MIP_FIRQ15P_ : _CSR_MIP_FIRQ0P_ | r/w | fast interrupt channel 15..0 pending
-| 11    | _CSR_MIP_MEIP_ | r/w | machine _external_ interrupt pending
-| 7     | _CSR_MIP_MTIP_ | r/w | machine _timer_ interrupt pending
-| 3     | _CSR_MIP_MSIP_ | r/w | machine _software_ interrupt pending
+| 31:16 | _CSR_MIP_FIRQ15P_ : _CSR_MIP_FIRQ0P_ | r/- | fast interrupt channel 15..0 pending
+| 11    | _CSR_MIP_MEIP_ | r/- | machine _external_ interrupt pending
+| 7     | _CSR_MIP_MTIP_ | r/- | machine _timer_ interrupt pending
+| 3     | _CSR_MIP_MSIP_ | r/- | machine _software_ interrupt pending
 |=======================
 
 
