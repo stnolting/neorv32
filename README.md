@@ -288,6 +288,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
     * Environment call from U-mode (via `ecall` instruction in user mode)
     * Environment call from M-mode (via `ecall` instruction in machine mode)
   * Supported interrupts:
+    * RISC-V non-maskable interrupt `nmi` (via external signal)
     * RISC-V machine timer interrupt `mti` (via processor-internal MTIME unit *or* external signal)
     * RISC-V machine software interrupt `msi` (via external signal)
     * RISC-V machine external interrupt `mei` (via external signal)
