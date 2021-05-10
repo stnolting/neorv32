@@ -179,6 +179,7 @@ entity neorv32_top is
     mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
 
     -- Interrupts --
+    nm_irq_i    : in  std_ulogic := '0'; -- non-maskable interrupt
     soc_firq_i  : in  std_ulogic_vector(5 downto 0) := (others => '0'); -- fast interrupt channels
     mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
@@ -455,6 +456,8 @@ begin
     d_bus_priv_o   => cpu_d.priv,   -- privilege level
     -- system time input from MTIME --
     time_i         => mtime_time,   -- current system time
+    -- non-maskable interrupt --
+    nm_irq_i       => nm_irq_i,     -- NMI
     -- interrupts (risc-v compliant) --
     msw_irq_i      => msw_irq_i,    -- machine software interrupt
     mext_irq_i     => mext_irq_i,   -- machine external interrupt request

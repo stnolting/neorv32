@@ -92,6 +92,8 @@ entity neorv32_cpu_control is
     -- FPU interface --
     fpu_rm_o      : out std_ulogic_vector(02 downto 0); -- rounding mode
     fpu_flags_i   : in  std_ulogic_vector(04 downto 0); -- exception flags
+    -- non-maskable interrupt --
+    nm_irq_i      : in  std_ulogic;
     -- interrupts (risc-v compliant) --
     msw_irq_i     : in  std_ulogic; -- machine software interrupt
     mext_irq_i    : in  std_ulogic; -- machine external interrupt
@@ -1316,8 +1318,10 @@ begin
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only, NOTE: MISA is read-only in the NEORV32 but we do not cause an exception here for compatibility
 
       -- machine trap handling --
-      when csr_mscratch_c | csr_mepc_c | csr_mcause_c | csr_mtval_c | csr_mip_c =>
-        csr_acc_valid <= csr.priv_m_mode; -- M-mode only, NOTE: MIP is read-only in the NEORV32 but we do not cause an exception here for compatibility
+      when csr_mscratch_c | csr_mepc_c | csr_mcause_c | csr_mtval_c  =>
+        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+      when csr_mip_c => -- NOTE: MIP is read-only in the NEORV32
+        csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
 
       -- physical memory protection - configuration --
       when csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c  | csr_pmpcfg3_c  | csr_pmpcfg4_c  | csr_pmpcfg5_c  | csr_pmpcfg6_c  | csr_pmpcfg7_c |
@@ -1652,6 +1656,7 @@ begin
     if (rstn_i = '0') then
       trap_ctrl.exc_buf   <= (others => '0');
       trap_ctrl.irq_buf   <= (others => def_rst_val_c);
+      trap_ctrl.irq_buf(interrupt_nm_irq_c) <= '0'; -- NMI
       trap_ctrl.exc_ack   <= '0';
       trap_ctrl.irq_ack   <= (others => '0');
       trap_ctrl.env_start <= '0';
@@ -1671,6 +1676,8 @@ begin
         trap_ctrl.exc_buf(exception_u_envcall_c) <= (trap_ctrl.exc_buf(exception_u_envcall_c) or (trap_ctrl.env_call and csr.priv_u_mode)) and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_break_c)     <= (trap_ctrl.exc_buf(exception_break_c)     or trap_ctrl.break_point)                    and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_iillegal_c)  <= (trap_ctrl.exc_buf(exception_iillegal_c)  or trap_ctrl.instr_il)                       and (not trap_ctrl.exc_ack);
+        -- interrupt buffer: non-maskable interrupt
+        trap_ctrl.irq_buf(interrupt_nm_irq_c)    <= (trap_ctrl.irq_buf(interrupt_nm_irq_c) or nm_irq_i) and (not trap_ctrl.irq_ack(interrupt_nm_irq_c));
         -- interrupt buffer: machine software/external/timer interrupt
         trap_ctrl.irq_buf(interrupt_msw_irq_c)   <= csr.mie_msie and (trap_ctrl.irq_buf(interrupt_msw_irq_c)   or msw_irq_i)   and (not trap_ctrl.irq_ack(interrupt_msw_irq_c));
         trap_ctrl.irq_buf(interrupt_mext_irq_c)  <= csr.mie_meie and (trap_ctrl.irq_buf(interrupt_mext_irq_c)  or mext_irq_i)  and (not trap_ctrl.irq_ack(interrupt_mext_irq_c));
@@ -1720,8 +1727,14 @@ begin
     -- here we do need a specific acknowledge mask since several sources can trigger at once
     -- ----------------------------------------------------------------------------------------
 
+    -- interrupt: 1.0 non-maskable interrupt --
+    if (trap_ctrl.irq_buf(interrupt_nm_irq_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_nmi_c;
+      trap_ctrl.irq_ack_nxt(interrupt_nm_irq_c) <= '1';
+
+
     -- interrupt: 1.11 machine external interrupt --
-    if (trap_ctrl.irq_buf(interrupt_mext_irq_c) = '1') then
+    elsif (trap_ctrl.irq_buf(interrupt_mext_irq_c) = '1') then
       trap_ctrl.cause_nxt <= trap_mei_c;
       trap_ctrl.irq_ack_nxt(interrupt_mext_irq_c) <= '1';
 
