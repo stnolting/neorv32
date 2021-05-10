@@ -546,54 +546,6 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test clearing pending interrupt (via mip CSR)
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] Clear pending IRQ (via mip CSR) test (from MTIME): ", cnt_test);
-
-  if (neorv32_mtime_available()) {
-    cnt_test++;
-
-    // disable global interrupts
-    neorv32_cpu_dint();
-
-    // force MTIME IRQ
-    neorv32_mtime_set_timecmp(0);
-
-    // wait some time for the IRQ to arrive the CPU
-    asm volatile("nop");
-    asm volatile("nop");
-
-    // no more mtime interrupts
-    neorv32_mtime_set_timecmp(-1);
-
-
-    if (neorv32_cpu_csr_read(CSR_MIP) & (1 << CSR_MIP_MTIP)) { // make sure MTIP is pending
-
-      neorv32_cpu_csr_write(CSR_MIP, 0); // just clear all pending IRQs
-      neorv32_cpu_eint(); // re-enable global interrupts
-      if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
-        test_ok();
-      }
-      else {
-        neorv32_uart_printf("IRQ triggered! ");
-        test_fail();
-      }
-    }
-    else {
-      neorv32_uart_printf("MTIP not pending! ");
-      test_fail();
-    }
-
-    // re-enable global interrupts
-    neorv32_cpu_eint();
-  }
-  else {
-    neorv32_uart_printf("skipped (not implemented)\n");
-  }
-
-
-  // ----------------------------------------------------------
   // Unaligned instruction address
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
@@ -917,6 +869,34 @@ int main() {
     asm volatile("nop");
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MEI) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    neorv32_uart_printf("skipped (on real HW)\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Non-maskable interrupt (NMI) via testbench
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] non-maskable IRQ (via testbench): ", cnt_test);
+
+  if (is_simulation) { // check if this is a simulation
+    cnt_test++;
+
+    // trigger IRQ
+    sim_irq_trigger(1 << 0);
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    asm volatile("nop");
+
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_NMI) {
       test_ok();
     }
     else {
