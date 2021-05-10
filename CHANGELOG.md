@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 10.05.2021 | [**:rocket:1.5.5.0**](https://github.com/stnolting/neorv32/releases/tag/v1.5.5.0) | **New release** |
 | 10.05.2021 | 1.5.4.12 | :warning: `mip` CSR is now read-only (pending IRQs can be cleared by disabling (and re-enabling) the according `mie` bit), writing to `mip` will raise an illegal instruction exception; :sparkles: added non-maskable interrupt (NMI), top entity port `nm_irq_i`; added new NMI to NEORV32 runtime environment |
 | 09.05.2021 | 1.5.4.11 | added new flags to `mzext` CSR: *CSR_MZEXT_PMP* (set if at least 1 PMP region is implemented at all), *CSR_MZEXT_HPM* (set if at least 1 HPM counter is implemented) |
 | 03.05.2021 | 1.5.4.10 | minor code clean-ups; moved FIRQ synchronization registers to top, removed sync FFs for processor-internal sources; |
