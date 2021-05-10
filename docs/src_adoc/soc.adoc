@@ -94,6 +94,7 @@ A wrapper for the NEORV32 Processor setup providing resolved port signals can be
 4+^| **System time input from external MTIME unit**
 | `mtime_i` | 32 | in | machine timer time (to `time[h]` CSRs) from external _MTIME_ unit if the processor-internal <<_machine_system_timer_mtime,**MTIME**>> unit is NOT used
 4+^| **Interrupts**
+| `nm_irq_i`    | 1 | in | non-maskable interrupt
 | `soc_firq_i`  | 6 | in | platform fast interrupt channels (custom)
 | `mtime_irq_i` | 1 | in | machine timer interrupt13 (RISC-V)
 | `msw_irq_i`   | 1 | in | machine software interrupt (RISC-V)
@@ -614,6 +615,11 @@ See section <<_smart_led_interface_neoled>> Compatible for more information.
 :sectnums:
 === Processor Interrupts
 
+[TIP]
+The interrupt request signals have specific `mip` CSR bits (see <<_machine_trap_setup>>), specifc
+`mie` CSR bits (see <<_machine_trap_handling>>) and specifc `mcause` CSR trap codes and trap
+priorities (see <<_traps_exceptions_and_interrupts>>).
+
 **RISC-V Standard Interrupts**
 
 The processor setup features the standard RISC-V interrupt lines for "machine timer interrupt", "machine
@@ -626,11 +632,6 @@ synthesis, the machine timer interrupt is also available via the processor's top
 
 As part of the custom/NEORV32-specific CPU extensions, the CPU features 16 fast interrupt request signals
 (`FIRQ0` – `FIRQ15`).
-
-[TIP]
-The fast interrupt request signals have custom `mip` CSR bits (see <<_machine_trap_setup>>), custom
-`mie` CSR bits (see <<_machine_trap_handling>>) and custom `mcause` CSR trap codes and trap
-priories (see <<_traps_exceptions_and_interrupts>>).
 
 The fast interrupt request signals are divided into two groups. The FIRQs with higher priority (FIRQ0 –
 FIRQ9) are dedicated for processor-internal usage. The FIRQs with lower priority (FIRQ10 – FIRQ15) are
@@ -656,6 +657,11 @@ The mapping of the 16 FIRQ channels is shown in the following table (the channel
 | 10:15   | `soc_firq_i(5:0)` | Custom platform use; available via processor's top signal
 |=======================
 
+**Non-Maskable Interrupt**
+
+The NEORV32 features a single non-maskable interrupt source via the `nm_irq_i` top
+entity signal that can be used to signal critical system conditions. This interrupt source _cannot_ be disabled. Hence, it does _not_ provide
+configuration/status flags in the `mie` and `mip` CSRs. The RISC-V-compatible `mcause` value `0x80000000` is used to indicate the non-maskable interrupt.
 
 <<<
 // ####################################################################################################################
