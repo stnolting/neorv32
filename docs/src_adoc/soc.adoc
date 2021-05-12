@@ -618,7 +618,7 @@ See section <<_smart_led_interface_neoled>> Compatible for more information.
 [TIP]
 The interrupt request signals have specific `mip` CSR bits (see <<_machine_trap_setup>>), specifc
 `mie` CSR bits (see <<_machine_trap_handling>>) and specifc `mcause` CSR trap codes and trap
-priorities (see <<_traps_exceptions_and_interrupts>>).
+priorities. For more information (also regarding the signaling protocol) see section <<_traps_exceptions_and_interrupts>>.
 
 **RISC-V Standard Interrupts**
 

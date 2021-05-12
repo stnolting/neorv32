@@ -661,28 +661,27 @@ include::cpu_csr.adoc[]
 :sectnums:
 ==== Execution Safety
 
-The hardware of the NEORV32 CPU was designed for a maximum of execution safety. If the Zicsr CPU
-extension is enabled, the core supports all traps specified by the official RISC-V specifications (obviously,
+The hardware of the NEORV32 CPU was designed for maximum *execution safety*. If the `Zicsr` CPU
+extension is enabled, the core supports **all** traps specified by the official RISC-V specifications (obviously,
 not the ones that are related to yet unimplemented extensions/features). Thus, the CPU provides well-defined
 hardware fall-backs for (nearly) everything that can go wrong. Even if any kind of trap is triggered, the core
-is always in a precise and fully synchronized state throughout the whole architecture (i.e. no need to make
+is always in a defined and fully synchronized state throughout the whole architecture (i.e. no need to make
 out-of-order operations undone) that allows predictable execution behavior at any time.
 
-Additional and highlighted safety features:
+**Core Safety Features**
 
+* Due to the acknowledged memory accesses the CPU is _always_ sync with the memory system (no speculative execution / out-of-order states).
 * The CPU supports all bus exceptions including bus access exceptions that are triggered if an
 accessed address does not respond or encounters an internal error during access (which is a rare
 feature in many open-source RISC-V cores).
-* The CPU raises an illegal instruction trap for all unimplemented/malformed/illegal instruction words
-(which is a rare feature in many open-source RISC-V cores, too).
-* If user-level code tries to read from machine-level-only CSR (like mstatus) an illegal instruction
-exception is raised (→ illegal access). The results of this operations is always zero (though, machinelevel
+* The CPU raises an illegal instruction trap for **all** unimplemented/malformed/illegal instructions (to support _full_ virtualization).
+* If user-level code tries to read from machine-level-only CSRs (like `mstatus`) an illegal instruction
+exception is raised. The results of this operations is always zero (though, machine-level
 code handling this exception can modify the target register of the illegal access-causing
-instruction to allow full virtualization). Illegal write accesses to machine CSRs will not be conducted
-at all and will only result in raising an illegal instruction exception.
+instruction to allow full virtualization). Illegal write accesses to machine CSRs will not be write any data at all.
 * Illegal user-level memory accesses to protected addresses or address regions (via physical memory
 protection) will not be conducted at all (no actual write and no actual read; prevents triggering of
-memory-mapped devices). Illegal load operations will not result any data (the instruction’s
+memory-mapped devices). Illegal load operations will not return any data (the instruction's
 destination register will not be written at all).
 
 
@@ -736,6 +735,10 @@ entity signal that can be used to signal critical system conditions. This interr
 Hence, it does _not_ provide configuration/status flags in the `mie` and `mip` CSRs. The RISC-V-compatible
 `mcause` value `0x80000000` is used to indicate the non-maskable interrupt.
 
+[IMPORTANT]
+All CPU/Processor interrupt request signals are triggered when the signal is _high_ for exactly one cycle (being high for several cycles might
+cause multiple triggering of the interrupt).
+
 
 <<<
 // ####################################################################################################################
@@ -750,7 +753,7 @@ Hence, it does _not_ provide configuration/status flags in the `mie` and `mip` C
 | 1     | `0x80000000` | 1.0      | _TRAP_CODE_NMI_ | non-maskable interrupt | _I-PC_ | _0_
 | 2     | `0x8000000B` | 1.11     | _TRAP_CODE_MEI_ | machine external interrupt | _I-PC_ | _0_
 | 3     | `0x80000003` | 1.3      | _TRAP_CODE_MSI_ | machine software interrupt | _I-PC_ | _0_
-| 4     | `0x80000007` | 1.7      | _TRAP_CODE_MTI_ | machine timer interrupt (from mtime) | _I-PC_ | _0_
+| 4     | `0x80000007` | 1.7      | _TRAP_CODE_MTI_ | machine timer interrupt | _I-PC_ | _0_
 | 5     | `0x80000010` | 1.16     | _TRAP_CODE_FIRQ_0_ | fast interrupt request channel | _I-PC_ | _0_
 | 6     | `0x80000011` | 1.17     | _TRAP_CODE_FIRQ_1_ | fast interrupt request channel | _I-PC_ | _0_
 | 7     | `0x80000012` | 1.18     | _TRAP_CODE_FIRQ_2_ | fast interrupt request channel | _I-PC_ | _0_
