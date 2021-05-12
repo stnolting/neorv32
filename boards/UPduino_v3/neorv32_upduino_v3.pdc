@@ -1,0 +1,41 @@
+# Radiant pin mapping for the "tinyvision.ai Inc. UPduino v3" FPGA board
+
+## Clock (on-chip hf oscillator)
+#create_clock -period 41.666666 -name hf_osc_clk [get_nets hf_osc_clk]
+
+## UART (uart0)
+ldc_set_location -site {38} [get_ports uart_txd_o]
+ldc_set_location -site {28} [get_ports uart_rxd_i]
+
+## SPI - on-board flash
+ldc_set_location -site {14} [get_ports flash_sdo_o]
+ldc_set_location -site {15} [get_ports flash_sck_o]
+ldc_set_location -site {16} [get_ports flash_csn_o]
+ldc_set_location -site {17} [get_ports flash_sdi_i]
+
+## SPI - user port
+ldc_set_location -site {34} [get_ports spi_sdo_o]
+ldc_set_location -site {43} [get_ports spi_sck_o]
+ldc_set_location -site {36} [get_ports spi_csn_o]
+ldc_set_location -site {42} [get_ports spi_sdi_i]
+
+## TWI
+ldc_set_location -site {31} [get_ports twi_sda_io]
+ldc_set_location -site {37} [get_ports twi_scl_io]
+
+## GPIO - input
+ldc_set_location -site {44} [get_ports {gpio_i[0]}]
+ldc_set_location -site {4}  [get_ports {gpio_i[1]}]
+ldc_set_location -site {3}  [get_ports {gpio_i[2]}]
+ldc_set_location -site {48} [get_ports {gpio_i[3]}]
+
+## GPIO - output
+ldc_set_location -site {45} [get_ports {gpio_o[0]}]
+ldc_set_location -site {47} [get_ports {gpio_o[1]}]
+ldc_set_location -site {46} [get_ports {gpio_o[2]}]
+ldc_set_location -site {2}  [get_ports {gpio_o[3]}]
+
+## RGB power LED
+ldc_set_location -site {39} [get_ports {pwm_o[0]}]
+ldc_set_location -site {40} [get_ports {pwm_o[1]}]
+ldc_set_location -site {41} [get_ports {pwm_o[2]}]
