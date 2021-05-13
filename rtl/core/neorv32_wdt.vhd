@@ -11,7 +11,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -96,7 +96,7 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
     mode    : std_ulogic; -- 0=trigger IRQ on overflow; 1=trigger hard reset on overflow
     rcause  : std_ulogic; -- cause of last system reset: '0' = external, '1' = watchdog
     reset   : std_ulogic; -- reset WDT
-    force   : std_ulogic; -- force action
+    enforce : std_ulogic; -- force action
     lock    : std_ulogic; -- lock control register
   end record;
   signal ctrl_reg : ctrl_reg_t;
@@ -127,7 +127,7 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl_reg.reset   <= '0';
-      ctrl_reg.force   <= '0';
+      ctrl_reg.enforce <= '0';
       ctrl_reg.enable  <= '0'; -- disable WDT
       ctrl_reg.mode    <= '0'; -- trigger interrupt on WDT overflow
       ctrl_reg.clk_sel <= (others => '1'); -- slowest clock source
@@ -135,19 +135,19 @@ begin
     elsif rising_edge(clk_i) then
       if (rstn_sync = '0') then -- internal reset
         ctrl_reg.reset   <= '0';
-        ctrl_reg.force   <= '0';
+        ctrl_reg.enforce <= '0';
         ctrl_reg.enable  <= '0'; -- disable WDT
         ctrl_reg.mode    <= '0'; -- trigger interrupt on WDT overflow
         ctrl_reg.clk_sel <= (others => '1'); -- slowest clock source
         ctrl_reg.lock    <= '0';
       else
         -- auto-clear WDT reset and WDT force flags --
-        ctrl_reg.reset <= '0';
-        ctrl_reg.force <= '0';
+        ctrl_reg.reset   <= '0';
+        ctrl_reg.enforce <= '0';
         -- actual write access --
         if (wren = '1') then
-          ctrl_reg.reset <= data_i(ctrl_reset_c);
-          ctrl_reg.force <= data_i(ctrl_force_c);
+          ctrl_reg.reset   <= data_i(ctrl_reset_c);
+          ctrl_reg.enforce <= data_i(ctrl_force_c);
           if (ctrl_reg.lock = '0') then -- update configuration only if unlocked
             ctrl_reg.enable  <= data_i(ctrl_enable_c);
             ctrl_reg.mode    <= data_i(ctrl_mode_c);
@@ -178,8 +178,8 @@ begin
   end process wdt_counter;
 
   -- action trigger --
-  irq_o  <= ctrl_reg.enable and (wdt_cnt(wdt_cnt'left) or ctrl_reg.force) and (not ctrl_reg.mode); -- mode 0: IRQ
-  hw_rst <= ctrl_reg.enable and (wdt_cnt(wdt_cnt'left) or ctrl_reg.force) and (    ctrl_reg.mode); -- mode 1: RESET
+  irq_o  <= ctrl_reg.enable and (wdt_cnt(wdt_cnt'left) or ctrl_reg.enforce) and (not ctrl_reg.mode); -- mode 0: IRQ
+  hw_rst <= ctrl_reg.enable and (wdt_cnt(wdt_cnt'left) or ctrl_reg.enforce) and (    ctrl_reg.mode); -- mode 1: RESET
 
 
   -- Reset Generator & Action Cause Indicator -----------------------------------------------
