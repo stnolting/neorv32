@@ -121,6 +121,10 @@ Privileged software can determine the actual CPU and processor configuration via
 `mzext` (see <<_machine_trap_setup>> and <<_neorv32_specific_custom_csrs>>) CSRs and via the memory-mapped _SYSINFO_ module (see <<_system_configuration_information_memory_sysinfo>>),
 respectively.
 
+[TIP]
+If optional modules (like CPU extensions or peripheral devices) are *not enabled* the according circuitry **will not be synthesized at all**.
+Hence, the disabled modules do not increase area and power requirements and do not impact the timing.
+
 **CSR Description**
 
 The description of each CSR provides the following summary:
@@ -133,7 +137,7 @@ The description of each CSR provides the following summary:
 3+| _Description_
 |======
 
-
+<<<
 // ####################################################################################################################
 :sectnums:
 ==== General
