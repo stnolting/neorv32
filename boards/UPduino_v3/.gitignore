@@ -18,3 +18,5 @@ source/*
 !*.rdf
 !*.pdc
 !*.bin
+!*.pcf
+!Makefile

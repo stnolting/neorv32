@@ -310,7 +310,7 @@ begin
 
   RGB_inst: RGB
   generic map (
-    CURRENT_MODE => "1",
+    CURRENT_MODE => "0b1",
     RGB0_CURRENT => "0b000001",
     RGB1_CURRENT => "0b000001",
     RGB2_CURRENT => "0b000001"
