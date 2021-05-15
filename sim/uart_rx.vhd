@@ -10,7 +10,7 @@ context vunit_lib.vunit_context;
 
 entity uart_rx is
   generic (
-    name : string;
+    logger : logger_t;
     expected : string;
     uart_baud_val_c : real);
 
@@ -27,7 +27,8 @@ architecture a of uart_rx is
   signal uart_rx_baud_cnt : real;
   signal uart_rx_bitcnt : natural;
 
-  file file_uart_tx_out : text open write_mode is "neorv32.testbench_" & name & ".out";
+  file file_uart_tx_out : text open write_mode is "neorv32.testbench_" & get_name(logger) & ".out";
+  constant checker : checker_t := new_checker(logger);
 
 begin
   uart_rx_console : process(clk)
@@ -58,15 +59,12 @@ begin
             uart_rx_busy <= '0';  -- done
             i := to_integer(unsigned(uart_rx_sreg(8 downto 1)));
 
-            check(expected_idx <= expected'length, "Extra characters received");
-            check_equal(character'val(i), expected(expected_idx), result("for " & name & ".tx"));
-            expected_idx := expected_idx + 1;
-
-            if (i < 32) or (i > 32+95) then  -- printable char?
-              info(name & ".tx: (" & integer'image(i) & ")");  -- print code
-            else
-              info(name & ".tx: " & character'val(i));  -- print ASCII
+            if expected_idx > expected'length then
+              check_failed(checker, "Extra characters received");
             end if;
+            check_equal(checker, character'val(i), expected(expected_idx));
+
+            expected_idx := expected_idx + 1;
 
             if (i = 10) then  -- Linux line break
               writeline(file_uart_tx_out, l);
