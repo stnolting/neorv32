@@ -47,6 +47,7 @@ IMPL_NAME := ${DESIGN_NAME}_impl_2
 .PHONY: syn impl bin clean
 
 # Some phony targets for convenience
+all: bin
 syn: ${IMPL_NAME}.json
 impl: ${IMPL_NAME}.asc
 bin: ${IMPL_NAME}.bin
@@ -61,10 +62,12 @@ work-obj08.cf: neorv32-obj08.cf ${UPDUINO_SRC}
 	ghdl -a --std=08 --work=work ${UPDUINO_SRC}
 
 ${IMPL_NAME}.json: work-obj08.cf
-	yosys -m ghdl -p 'ghdl --std=08 --no-formal neorv32_upduino_v3_top; synth_ice40 -abc2 -dsp -json $@'
+	yosys -m ghdl -p 'ghdl --std=08 -gyosys=true --no-formal neorv32_upduino_v3_top; synth_ice40 -abc2 -dsp -json $@' 2>&1 | tee yosys-report.txt
 
 ${IMPL_NAME}.asc: ${IMPL_NAME}.json ${DESIGN_NAME}.pcf
-	nextpnr-ice40 --ignore-loops --up5k --package sg48 --json $< --pcf ${DESIGN_NAME}.pcf --asc $@
+	nextpnr-ice40 --ignore-loops --timing-allow-fail \
+	  --up5k --package sg48 --json $< --pcf ${DESIGN_NAME}.pcf \
+	  --asc $@ 2>&1 | tee nextpnr-report.txt
 
 ${IMPL_NAME}.bin: ${IMPL_NAME}.asc
 	icepack $< $@
