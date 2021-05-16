@@ -7,7 +7,7 @@ The processor setup provides 64kB of data and instruction memory, an RTOS-capabl
 
 * FPGA Board: :books: [tinyVision.ai Inc. UPduino v3 FPGA Board (GitHub)](https://github.com/tinyvision-ai-inc/UPduino-v3.0/), :credit_card: buy on [Tindie](https://www.tindie.com/products/tinyvision_ai/upduino-v30-low-cost-lattice-ice40-fpga-board/)
 * FPGA: Lattice iCE40 UltraPlus 5k `iCE40UP5K-SG48I`
-* Toolchain: Lattice Radiant (tested with Radiant version 2.1.0), using **Sinplify Pro Synthesis**
+* Toolchain: Lattice Radiant (tested with Radiant version 2.1.0), using *Lattice Synthesis Engine (LSE)*
 * Top entity: [`neorv32_upduino_v3_top.vhd`](https://github.com/stnolting/neorv32/blob/master/boards/UPduino_v3/neorv32_upduino_v3_top.vhd) (instantiates NEORV32 top entity)
 * Pre-compiled bitstream available: `neorv32_upduino_v3_impl_1.bin`
 
@@ -82,7 +82,7 @@ Number of SRAMs:              4 out of    4 (100%)
 Number of WARMBOOTs:          0 out of    1   (0%)
 Number of SPIs:               0 out of    2   (0%)
 Number of EBRs:              12 out of    30 (40%)
-Number of PLLs:               0 out of    1   (0%)
+Number of PLLs:               1 out of    1 (100%)
 ```
 
 ## How To Run
