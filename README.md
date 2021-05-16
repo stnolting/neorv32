@@ -405,7 +405,7 @@ Results generated for hardware version [`1.4.9.0`](https://github.com/stnolting/
 | Vendor  | FPGA                              | Board            | Toolchain                  | CPU Configuration                              | LUT / LE   | FF / REG   | DSP (9-bit) | Memory Bits  | BRAM / EBR | SPRAM    | Frequency     |
 |:--------|:----------------------------------|:-----------------|:---------------------------|:-----------------------------------------------|:-----------|:-----------|:------------|:-------------|:-----------|:---------|--------------:|
 | Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 20.1    | `rv32imc` + `u` + `Zicsr` + `Zifencei`         | 3813 (17%) | 1904  (8%) | 0 (0%)      | 231424 (38%) |          - |        - |       119 MHz |
-| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | Upduino v2.0     | Radiant 2.1 (Synplify Pro) | `rv32ic`  + `u` + `Zicsr` + `Zifencei`         | 4397 (83%) | 1679 (31%) | 0 (0%)      |            - |   12 (40%) | 4 (100%) | *c* 22.15 MHz |
+| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | [`boards/UPduino_v3`](https://github.com/stnolting/neorv32/tree/master/boards/UPduino_v3) | Radiant 2.1 (LSE) | `rv32ic`  + `u` + `Zicsr` + `Zifencei`         | 5123 (97%) | 1972 (37%) | 0 (0%) | - |   12 (40%) | 4 (100%) | *c* 24 MHz |
 | Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2              | `rv32imc` + `u` + `Zicsr` + `Zifencei` + `PMP` | 2465 (12%) | 1912  (5%) | 0 (0%)      |            - |    8 (16%) |        - |   *c* 100 MHz |
 
 **_Notes_**
