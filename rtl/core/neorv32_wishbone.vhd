@@ -135,11 +135,13 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- bus timeout --
-  assert not (BUS_TIMEOUT /= 0) report "NEORV32 PROCESSOR CONFIG WARNING: Using auto-timeout for external bus interface (" & integer'image(BUS_TIMEOUT) & " cycles)." severity warning;
-  assert not (BUS_TIMEOUT /= 0) report "NEORV32 PROCESSOR CONFIG WARNING: Using no auto-timeout for external bus interface (might cause permanent CPU stall)." severity warning;
+  assert not (BUS_TIMEOUT /= 0) report "NEORV32 PROCESSOR CONFIG NOTE: Using auto-timeout for external bus interface (" & integer'image(BUS_TIMEOUT) & " cycles)." severity note;
+  assert not (BUS_TIMEOUT  = 0) report "NEORV32 PROCESSOR CONFIG NOTE: Using no auto-timeout for external bus interface (might cause permanent CPU stall)." severity note;
+
   -- external memory interface protocol + max timeout latency notifier (warning) --
   assert not (wb_pipe_mode_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using STANDARD Wishbone protocol." severity note;
-  assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG NOTE! Implementing external memory interface using PIEPLINED Wishbone protocol." severity note;
+  assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using PIEPLINED Wishbone protocol." severity note;
+
   -- endianness --
   assert not (xbus_big_endian_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: Using LITTLE-ENDIAN byte order for external memory interface." severity note;
   assert not (xbus_big_endian_c = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Using BIG-ENDIAN byte order for external memory interface." severity note;
