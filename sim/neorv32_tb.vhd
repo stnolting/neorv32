@@ -170,10 +170,14 @@ architecture neorv32_tb_rtl of neorv32_tb is
   end record;
   signal ext_mem_a, ext_mem_b, ext_mem_c : ext_mem_t;
 
+  constant uart0_rx_logger : logger_t := get_logger("UART0.RX");
+
 begin
   test_runner : process
   begin
     test_runner_setup(runner, runner_cfg);
+    -- Show passing checks for UART0 on the display (stdout)
+    show(uart0_rx_logger, display_handler, pass);
     wait for 50 ms; -- Just wait for all UART output to be produced
     test_runner_cleanup(runner);
   end process;
@@ -320,7 +324,7 @@ begin
 
   uart0_checker: entity work.uart_rx
     generic map (
-      name => "uart0",
+      logger => uart0_rx_logger,
       expected => nul & "<RTE> Illegal instruction @ PC=0x00000A42, MTVAL=0xFFF027F3 </RTE>" & esc & "[1m[TEST PASSED!]" & esc & "[0m" & cr & lf,
       uart_baud_val_c => uart0_baud_val_c)
     port map (
@@ -330,7 +334,7 @@ begin
 
   uart1_checker: entity work.uart_rx
     generic map (
-      name => "uart1",
+      logger => get_logger("uart1.rx"),
       expected => nul & "",
       uart_baud_val_c => uart1_baud_val_c)
     port map (
