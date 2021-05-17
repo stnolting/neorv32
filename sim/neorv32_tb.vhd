@@ -39,6 +39,7 @@
 library vunit_lib;
 context vunit_lib.vunit_context;
 context vunit_lib.com_context;
+context vunit_lib.vc_context;
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -191,9 +192,20 @@ begin
 
     check_uart(net, uart1_actor, nul & "");
 
-    wait for 50 ms; -- Just wait for all UART output to be produced
+    -- Wait until all expected data has been received
+    wait_until_idle(net, uart0_actor);
+    wait_until_idle(net, uart1_actor);
+
+    -- Wait a bit more if some extra unexpected data is produced. If so,
+    -- uart_rx will fail
+    wait for (20 * 1e9 / baud0_rate_c) * ns;
+
     test_runner_cleanup(runner);
   end process;
+
+  -- In case we get stuck waiting there is a watchdog timeout to terminate and fail the
+  -- testbench
+  test_runner_watchdog(runner, 50 ms);
 
   -- Clock/Reset Generator ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
