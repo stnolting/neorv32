@@ -40,13 +40,16 @@ jobs:
           /bin/bash -c "chmod u+x ./.ci/install.sh && ./.ci/install.sh"
           echo $GITHUB_WORKSPACE
 
-      - name: '🔧 Setup GHDL Simulator'
-        uses: ghdl/setup-ghdl-ci@nightly
-        with:
-          backend: gcc
-
       - name: '⚙️ Run Software Framework Tests'
         run: /bin/bash -c "chmod u+x ./.ci/sw_check.sh && ./.ci/sw_check.sh"
 
+      - name: Archive application
+        uses: actions/upload-artifact@v2
+        with:
+          name: application
+          path: rtl/core/neorv32_application_image.vhd
+
       - name: '⚙️ Run Processor Hardware Tests'
-        run: /bin/bash -c "chmod u+x ./.ci/hw_check.sh && ./.ci/hw_check.sh"
+        uses: VUnit/vunit_action@master
+        with:
+          cmd: python3 ./sim/run.py -v
