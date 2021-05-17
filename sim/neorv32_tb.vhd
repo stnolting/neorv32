@@ -174,7 +174,7 @@ begin
   test_runner : process
   begin
     test_runner_setup(runner, runner_cfg);
-    wait for 15 ms; -- Just wait for all UART output to be produced
+    wait for 50 ms; -- Just wait for all UART output to be produced
     test_runner_cleanup(runner);
   end process;
 
@@ -321,7 +321,7 @@ begin
   uart0_checker: entity work.uart_rx
     generic map (
       name => "uart0",
-      expected => "Blinking LED demo program" & cr & lf,
+      expected => nul & "<RTE> Illegal instruction @ PC=0x00000A42, MTVAL=0xFFF027F3 </RTE>" & esc & "[1m[TEST PASSED!]" & esc & "[0m" & cr & lf,
       uart_baud_val_c => uart0_baud_val_c)
     port map (
       clk => clk_gen,
@@ -331,7 +331,7 @@ begin
   uart1_checker: entity work.uart_rx
     generic map (
       name => "uart1",
-      expected => "",
+      expected => nul & "",
       uart_baud_val_c => uart1_baud_val_c)
     port map (
       clk => clk_gen,
