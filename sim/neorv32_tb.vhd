@@ -38,6 +38,7 @@
 
 library vunit_lib;
 context vunit_lib.vunit_context;
+context vunit_lib.com_context;
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -171,13 +172,27 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal ext_mem_a, ext_mem_b, ext_mem_c : ext_mem_t;
 
   constant uart0_rx_logger : logger_t := get_logger("UART0.RX");
+  constant uart0_actor : actor_t := new_actor;
+  constant uart1_actor : actor_t := new_actor;
 
 begin
   test_runner : process
+    variable msg : msg_t;
   begin
     test_runner_setup(runner, runner_cfg);
     -- Show passing checks for UART0 on the display (stdout)
     show(uart0_rx_logger, display_handler, pass);
+
+    -- Sending messages with the expected data to recieve takes no simulation
+    -- time, only data cycles.
+    msg := new_msg;
+    push(msg, nul & "<RTE> Illegal instruction @ PC=0x00000A42, MTVAL=0xFFF027F3 </RTE>" & esc & "[1m[TEST PASSED!]" & esc & "[0m" & cr & lf);
+    send(net, uart0_actor, msg);
+
+    msg := new_msg;
+    push(msg, nul & "");
+    send(net, uart1_actor, msg);
+
     wait for 50 ms; -- Just wait for all UART output to be produced
     test_runner_cleanup(runner);
   end process;
@@ -324,8 +339,8 @@ begin
 
   uart0_checker: entity work.uart_rx
     generic map (
+      actor => uart0_actor,
       logger => uart0_rx_logger,
-      expected => nul & "<RTE> Illegal instruction @ PC=0x00000A42, MTVAL=0xFFF027F3 </RTE>" & esc & "[1m[TEST PASSED!]" & esc & "[0m" & cr & lf,
       uart_baud_val_c => uart0_baud_val_c)
     port map (
       clk => clk_gen,
@@ -334,8 +349,8 @@ begin
 
   uart1_checker: entity work.uart_rx
     generic map (
+      actor => uart1_actor,
       logger => get_logger("uart1.rx"),
-      expected => nul & "",
       uart_baud_val_c => uart1_baud_val_c)
     port map (
       clk => clk_gen,

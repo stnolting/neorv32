@@ -3,6 +3,7 @@ from vunit import VUnit
 
 root = Path(__file__).parent
 prj = VUnit.from_argv()
+prj.add_com()
 
 neorv32 = prj.add_library("neorv32")
 neorv32.add_source_files(root / "*.vhd")
