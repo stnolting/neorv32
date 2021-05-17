@@ -9,6 +9,8 @@ library vunit_lib;
 context vunit_lib.vunit_context;
 context vunit_lib.com_context;
 
+use work.uart_rx_pkg.all;
+
 entity uart_rx is
   generic (
     actor : actor_t;
@@ -35,6 +37,8 @@ architecture a of uart_rx is
 begin
   control : process
     variable msg : msg_t;
+    variable msg_type : msg_type_t;
+
     procedure put_characters_in_queue(s : string) is
     begin
       for idx in s'range loop
@@ -43,7 +47,13 @@ begin
     end procedure put_characters_in_queue;
   begin
     receive(net, actor, msg);
-    put_characters_in_queue(pop(msg));
+    msg_type := message_type(msg);
+
+    if msg_type = check_uart_msg then
+      put_characters_in_queue(pop(msg));
+    else
+      unexpected_msg_type(msg_type);
+    end if;
   end process;
 
   uart_rx_console : process(clk)
