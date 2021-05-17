@@ -5,6 +5,9 @@ use ieee.math_real.all;
 
 use std.textio.all;
 
+library vunit_lib;
+context vunit_lib.vunit_context;
+
 entity uart_rx is
   generic (
     name : string;
@@ -55,20 +58,14 @@ begin
             uart_rx_busy <= '0';  -- done
             i := to_integer(unsigned(uart_rx_sreg(8 downto 1)));
 
-            if (expected_idx < expected'length) or
-              ((expected_idx = expected'length) and (expected(expected'length) /= etx)) then
-              assert character'val(i) = expected(expected_idx)
-                report "Got " & character'val(i) & ", expected " & expected(expected_idx);
-            else
-              assert expected(expected'length) /= etx report "Extra characters received";
-            end if;
-
+            check(expected_idx <= expected'length, "Extra characters received");
+            check_equal(character'val(i), expected(expected_idx), result("for " & name & ".tx"));
             expected_idx := expected_idx + 1;
 
             if (i < 32) or (i > 32+95) then  -- printable char?
-              report name & ".tx: (" & integer'image(i) & ")";  -- print code
+              info(name & ".tx: (" & integer'image(i) & ")");  -- print code
             else
-              report name & ".tx: " & character'val(i);  -- print ASCII
+              info(name & ".tx: " & character'val(i));  -- print ASCII
             end if;
 
             if (i = 10) then  -- Linux line break
