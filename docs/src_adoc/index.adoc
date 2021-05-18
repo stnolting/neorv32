@@ -5,12 +5,11 @@
 :revnumber: v1.5.5.1
 :doctype: book
 :sectnums:
-:icons: image
-:iconsdir: icons
+:icons: font
 :stem:
 :reproducible:
 :listing-caption: Listing
-:toc: macro
+:toc: left
 :toclevels: 4
 :title-logo-image: image:../figures/neorv32_logo_dark.png[pdfwidth=6.25in,align=center]
 // Uncomment next line to add a title page (or set doctype to book)
@@ -29,11 +28,5 @@ before updates are pushed to the repository and even more tests are made before 
 New features that are _work-in-progress_ - like new CPU extension - are disabled by default (and should not be enabled for normal usage). Like any other
 disabled features, these work-in-progress components will not be synthesized at all when disabled and **do not** increase area and power requirements
 and **do not** impact overall timing and performance.
-
-
-<<<
-// ####################################################################################################################
-toc::[]
-
 
 include::content.adoc[]
