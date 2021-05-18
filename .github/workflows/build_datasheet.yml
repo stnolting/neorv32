@@ -29,9 +29,9 @@ jobs:
       uses: actions/checkout@v2
 
     - name: '📚 Build PDF'
-      uses: tonynv/asciidoctor-action@master
+      uses: docker://asciidoctor/docker-asciidoctor
       with:
-        program: "asciidoctor-pdf -a pdf-theme=docs/src_adoc/neorv32-theme.yml docs/src_adoc/neorv32.adoc --out-file docs/NEORV32.pdf"
+        args: asciidoctor-pdf -a pdf-theme=docs/src_adoc/neorv32-theme.yml docs/src_adoc/neorv32.adoc --out-file docs/NEORV32.pdf
 
     - name: '🚀 Upload Artifact'
       uses: actions/upload-artifact@v2
