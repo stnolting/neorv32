@@ -1,23 +1,14 @@
-# Generate doxygen-based documentation and deploy it to neorv32 github-pages
-
-name: 'Deploy SW Framework Documentation to GitHub-Pages'
+name: 'Documentation'
 
 on:
   push:
-    branches:
-    - master
-    paths:
-    - 'sw/**'
   pull_request:
-    branches:
-    - master
-    paths:
-    - 'sw/**'
   workflow_dispatch:
 
 jobs:
 
-  build:
+
+  doxygen:
     runs-on: ubuntu-latest
     name: 'Generate and Deploy SW Framework Documentation'
 
@@ -42,3 +33,30 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./doxygen_build/html
+
+    - name: '📤 Upload Artifact'
+      uses: actions/upload-artifact@v2
+      with:
+        name: doxygen-docs
+        path: doxygen_build/html
+
+
+  asciidoc_build:
+    runs-on: ubuntu-latest
+    name: 'Build Asciidoc'
+
+    steps:
+
+    - name: '🧰 Repository Checkout'
+      uses: actions/checkout@v2
+
+    - name: '📚 Build PDF'
+      uses: docker://asciidoctor/docker-asciidoctor
+      with:
+        args: asciidoctor-pdf -a pdf-theme=docs/src_adoc/neorv32-theme.yml docs/src_adoc/neorv32.adoc --out-file docs/NEORV32.pdf
+
+    - name: '📤 Upload Artifact'
+      uses: actions/upload-artifact@v2
+      with:
+        name: NEORV32-PDF
+        path: docs/NEORV32.pdf
