@@ -1,12 +1,17 @@
+[![GitHub Pages](https://img.shields.io/website.svg?label=stnolting.github.io%2Fneorv32&longCache=true&style=flat-square&url=http%3A%2F%2Fstnolting.github.io%2Fneorv32%2Findex.html&logo=GitHub)](https://stnolting.github.io/neorv32)
+[![Processor Check](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor%20Check/master?longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor%20Check)
+[![riscv-arch-test](https://img.shields.io/github/workflow/status/stnolting/neorv32/riscv-arch-test/master?longCache=true&style=flat-square&label=riscv-arch-test&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3Ariscv-arch-test)
+[![Documentation](https://img.shields.io/github/workflow/status/stnolting/neorv32/Documentation/master?longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3ADocumentation)
+
 [![NEORV32](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_logo_dark.png)](https://github.com/stnolting/neorv32)
 
 # The NEORV32 RISC-V Processor
 
-[![Processor Check](https://github.com/stnolting/neorv32/workflows/Processor%20Check/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22Processor+Check%22)
-[![riscv-arch-test](https://github.com/stnolting/neorv32/actions/workflows/riscv-arch-test.yml/badge.svg)](https://github.com/stnolting/neorv32/actions/workflows/riscv-arch-test.yml)
-[![license](https://img.shields.io/github/license/stnolting/neorv32)](https://github.com/stnolting/neorv32/blob/master/LICENSE)
-[![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases)
-[![datasheet](https://img.shields.io/badge/data%20sheet-NEORV32.pdf-ffbd00)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
+[![license](https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat-square)](https://github.com/stnolting/neorv32/blob/master/LICENSE)
+[![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
+[![datasheet (pdf)](https://img.shields.io/badge/data%20sheet-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
+[![datasheet (html)](https://img.shields.io/badge/data%20sheet-HTML-ffbd00?longCache=true&style=flat-square&logo=asciidoctor)](https://stnolting.github.io/neorv32)
+[![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen)](https://stnolting.github.io/neorv32/sw)
 
 * [Overview](#Overview)
 * [Status](#Status)
@@ -154,7 +159,7 @@ is highly customizable via the processor's top generics and already provides the
 ### NEORV32 CPU Features
 
 The NEORV32 CPU implements the
-[official RISC-V specifications (2.2)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf) including a subset of the 
+[official RISC-V specifications (2.2)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf) including a subset of the
 [RISC-V privileged architecture specifications (1.12-draft)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/riscv-spec.pdf)
 - tested via the [official riscv-arch-test Test Framework](https://github.com/riscv/riscv-arch-test)
 (see [`riscv-arch-test/README`](https://github.com/stnolting/neorv32/blob/master/riscv-arch-test/README.md)).
@@ -218,7 +223,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 #### `I` - Base integer instruction set
 
   * ALU instructions: `LUI` `AUIPC` `ADD[I]` `SLT[I][U]` `XOR[I]` `OR[I]` `AND[I]` `SLL[I]` `SRL[I]` `SRA[I]` `SUB`
-  * Jump and branch instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU` 
+  * Jump and branch instructions: `JAL` `JALR` `BEQ` `BNE` `BLT` `BGE` `BLTU` `BGEU`
   * Memory instructions: `LB` `LH` `LW` `LBU` `LHU` `SB` `SH` `SW`
   * System instructions: `ECALL` `EBREAK` `FENCE`
   * Pseudo-instructions are not listed
@@ -256,17 +261,17 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
 #### `Zfinx` - Single-precision floating-point extension
 
-  * :warning: this extension has not been officially ratified yet! 
+  * :warning: this extension has not been officially ratified yet!
   * :books: more information can be found here: [RISC-V `Zfinx` spec.](https://github.com/riscv/riscv-zfinx)
   * Software support via intrinsic library (see [`sw/example/floating_point_test`](https://github.com/stnolting/neorv32/tree/master/sw/example/floating_point_test))
   * Fused multiply-add instructions (`F[N]MADD.S` & `F[N)MSUB.S`) are **not** supported!
   * Computational instructions: `FADD.S` `FSUB.S` `FMUL.S` `FSGNJ[N/X].S` `FCLASS.S` ~~`FDIV.S`~~ ~~`FSQRT.S`~~
-  * Comparison instructions: `FMIN.S` `FMAX.S` `FEQ.S` `FLT.S` `FLE.S` 
+  * Comparison instructions: `FMIN.S` `FMAX.S` `FEQ.S` `FLT.S` `FLE.S`
   * Conversion instructions: `FCVT.W.S` `FCVT.WU.S` `FCVT.S.W` `FCVT.S.WU`
   * Additional CSRs: `fcsr` `frm` `fflags`
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
-  
+
 
 #### `Zicsr` - Privileged architecture - CSR access extension
 
@@ -563,7 +568,7 @@ To build the toolchain by yourself, follow the official [build instructions](htt
 Make sure to use the `ilp32` or `ilp32e` ABI.
 
 **Alternatively**, you can download a prebuilt toolchain. I have uploaded the toolchains I am using to GitHub. These toolchains
-were compiled on a 64-bit x86 Ubuntu 20.04 LTS (Ubuntu on Windows, actually). Download the toolchain of choice: 
+were compiled on a 64-bit x86 Ubuntu 20.04 LTS (Ubuntu on Windows, actually). Download the toolchain of choice:
 [:octocat: github.com/stnolting/riscv-gcc-prebuilt](https://github.com/stnolting/riscv-gcc-prebuilt)
 
 You can also use the toolchains provided by [SiFive](https://github.com/sifive/freedom-tools/releases). These are 64-bit toolchains that can also emit 32-bit
