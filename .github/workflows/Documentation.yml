@@ -10,7 +10,7 @@ jobs:
 
   doxygen:
     runs-on: ubuntu-latest
-    name: 'Generate and Deploy SW Framework Documentation'
+    name: 'SW Framework'
 
     steps:
 
@@ -28,22 +28,16 @@ jobs:
         working-directory: '.'
         doxyfile-path: 'docs/Doxyfile'
 
-    - name: '🚀 Deploy to GitHub-Pages'
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./doxygen_build/html
-
     - name: '📤 Upload Artifact'
       uses: actions/upload-artifact@v2
       with:
-        name: doxygen-docs
+        name: NEORV32-Doxygen
         path: doxygen_build/html
 
 
-  asciidoc_build:
+  asciidoctor:
     runs-on: ubuntu-latest
-    name: 'Build Asciidoc'
+    name: 'Datasheet'
 
     steps:
 
@@ -64,3 +58,35 @@ jobs:
       with:
         name: NEORV32-HTML
         path: docs/index.html
+
+
+  deploy:
+    needs:
+      - doxygen
+      - asciidoctor
+    runs-on: ubuntu-latest
+    name: 'Deploy to GitHub Pages'
+
+    steps:
+
+    - name: '🧰 Repository Checkout'
+      uses: actions/checkout@v2
+
+    - name: '📥 Download Artifacts'
+      uses: actions/download-artifact@v2
+
+    - name: '🚀 Deploy to GitHub-Pages'
+      run: |
+        mv NEORV32-HTML public
+        mv NEORV32-Doxygen public/sw
+        mv NEORV32-PDF/NEORV32.pdf public
+
+        cd public
+        git init
+        cp ../.git/config ./.git/config
+        touch .nojekyll
+        git add .
+        git config --local user.email "push@gha"
+        git config --local user.name "GHA"
+        git commit -am "update ${{ github.sha }}"
+        git push -u origin +HEAD:gh-pages
