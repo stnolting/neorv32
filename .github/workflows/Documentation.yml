@@ -50,15 +50,8 @@ jobs:
     - name: '🧰 Repository Checkout'
       uses: actions/checkout@v2
 
-    - name: '📚 Build HTML'
-      uses: docker://asciidoctor/docker-asciidoctor
-      with:
-        args: asciidoctor docs/src_adoc/neorv32.adoc --out-file docs/index.html
-
-    - name: '📚 Build PDF'
-      uses: docker://asciidoctor/docker-asciidoctor
-      with:
-        args: asciidoctor-pdf -a pdf-theme=docs/src_adoc/neorv32-theme.yml docs/src_adoc/neorv32.adoc --out-file docs/NEORV32.pdf
+    - name: '📚 Build Datasheet (PDF and HTML)'
+      run: make container
 
     - name: '📤 Upload Artifact: PDF'
       uses: actions/upload-artifact@v2
