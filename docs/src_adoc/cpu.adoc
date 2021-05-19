@@ -258,7 +258,7 @@ direction seen from the CPU.
 | `clk_i`          |     1 | in  | global clock line, all registers triggering on rising edge
 | `rstn_i`         |     1 | in  | global reset, low-active
 | `sleep_o`        |     1 | out | CPU is in sleep mode when set
-4+^| **Instruction Bus Interface**
+4+^| **Instruction Bus Interface (<<_bus_interface>>)**
 | `i_bus_addr_o`   |    32 | out | destination address
 | `i_bus_rdata_i`  |    32 | in  | read data
 | `i_bus_wdata_o`  |    32 | out | write data (always zero)
@@ -270,7 +270,7 @@ direction seen from the CPU.
 | `i_bus_err_i`    |     1 | in  | bus transfer terminate from accessed peripheral
 | `i_bus_fence_o`  |     1 | out | indicates an executed _fence.i_ instruction
 | `i_bus_priv_o`   |     2 | out | current CPU privilege level
-4+^| **Data Bus Interface**
+4+^| **Data Bus Interface (<<_bus_interface>>)**
 | `d_bus_addr_o`   |    32 | out | destination address
 | `d_bus_rdata_i`  |    32 | in  | read data
 | `d_bus_wdata_o`  |    32 | out | write data
@@ -282,17 +282,19 @@ direction seen from the CPU.
 | `d_bus_err_i`    |     1 | in  | bus transfer terminate from accessed peripheral
 | `d_bus_fence_o`  |     1 | out | indicates an executed _fence_ instruction
 | `d_bus_priv_o`   |     2 | out | current CPU privilege level
-4+^| **System Time**
+4+^| **System Time (see <<_timeh>> CSR)**
 | `time_i`         |    64 | in  | system time input (from MTIME)
-4+^| **Non-Maskable Interrupt**
+4+^| **Non-Maskable Interrupt (<<_traps_exceptions_and_interrupts>>)**
 | `nm_irq_i`       |     1 | in  | non-maskable interrupt
-4+^| **Interrupts (RISC-V-compatible)**
+4+^| **Interrupts, RISC-V-compatible (<<_traps_exceptions_and_interrupts>>)**
 | `msw_irq_i`      |     1 | in  | RISC-V machine software interrupt
 | `mext_irq_i`     |     1 | in  | RISC-V machine external interrupt
 | `mtime_irq_i`    |     1 | in  | RISC-V machine timer interrupt
-4+^| **Fast Interrupts (NEORV32-specific)**
+4+^| **Fast Interrupts, NEORV32-specific (<<_traps_exceptions_and_interrupts>>)**
 | `firq_i`         |    16 | in  | fast interrupt request signals
 | `firq_ack_o`     |    16 | out | fast interrupt acknowledge signals
+4+^| **Enter Debug Mode Request (<<_on_chip_debugger_ocd>>)**
+| `db_halt_req_i`  |     1 | in  | request CPU to halt and enter debug mode
 |=======================
 
 <<<
@@ -300,8 +302,34 @@ direction seen from the CPU.
 :sectnums:
 === CPU Top Entity - Generics
 
-The CPU generics are not listed here because they are a subset of the processor's generics.
-See section <<_processor_top_entity_generics>> for more information.
+Most of the CPU configuration generics are a subset of the actual Processor configuration generics (see section <<_processor_top_entity_generics>>).
+and are not listed here. However, the CPU provides some _specific_ generics that are used to configure the CPU for the
+NEORV32 processor setup. These generics are assigned by the processor setup only and are not available for user defined configuration.
+The _specific_ generics are listed below.
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CPU_BOOT_ADDR** | _std_ulogic_vector(31 downto 0)_ | 0x00000000
+3+| This address defines the reset address at which the CPU starts fetching instructions after reset. In terms of the NEORV32 processor, this
+generic is configured with the base address of the bootloader ROM (default) or with the base address of the processor-internal instruction
+memory (IMEM) if the bootloader is disabled (_BOOTLOADER_EN_ = _false_). See section <<_address_space>> for more information.
+|======
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CPU_DEBUG_ADDR** | _std_ulogic_vector(31 downto 0)_ | 0x00000000
+3+| This address defines the entry address for the "execution based" on-chip debugger. By default, this generic is configured with the base address
+of the debugger memory. See section <<_on_chip_debugger_ocd>> for more information.
+|======
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CPU_EXTENSION_RISCV_DEBUG** | _boolean_ | false
+3+| Implement RISC-V-compatible "debug" CPU operation mode. See section <<_cpu_debug_mode>> for more information.
+|======
 
 
 <<<
@@ -500,8 +528,9 @@ generic is _true_. It allows manual synchronization of the instruction stream vi
 
 [NOTE]
 The `fence.i` instruction resets the CPU's internal instruction fetch engine and flushes the prefetch buffer.
-This allows a clean re-fetch of modified data from memory. Also, he top's `i_bus_fencei_o` signal is set
+This allows a clean re-fetch of modified data from memory. Also, the top's `i_bus_fencei_o` signal is set
 high for one cycle to inform the memory system. Any additional flags within the `fence.i` instruction word are ignore by the hardware.
+If _CPU_EXTENSION_RISCV_Zifencei_ is false, executing `fence.i` will **not trap** and none of the described functions will be executed.
 
 
 ==== **`PMP`** Physical Memory Protection

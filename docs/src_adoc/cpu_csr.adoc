@@ -773,8 +773,9 @@ are implemented (all remaining bits are always zero).
 | 3   | _CPU_MZEXT_ZBS_ | r/- | `Zbs` extensions available (enabled via _CPU_EXTENSION_RISCV_B_ generic)
 | 4   | _CPU_MZEXT_ZBA_ | r/- | `Zba` extensions available (enabled via _CPU_EXTENSION_RISCV_B_ generic)
 | 5   | _CPU_MZEXT_ZFINX_ | r/- | `Zfinx` extensions available (enabled via _CPU_EXTENSION_RISCV_Zfinx_ generic)
-| 6   | _CPU_MZEXT_ZXSCNT_ | r/- | custom extension: "Small CPU counters": `cycle[h]` & `instret[h]` CSRs have less than 64-bit when set (when _CPU_CNT_WIDTH_ generic is less than 64).
-| 7   | _CPU_MZEXT_ZXNOCNT_ | r/- | custom extension: "NO CPU counters": `cycle[h]` & `instret[h]` CSRs are not available at all when set (when _CPU_CNT_WIDTH_ generic is 0).
-| 8   | _CSR_MZEXT_PMP_ | r/- | PMP (physical memory protection) extension available (_PMP_NUM_REGIONS_ generic > 0) when set (r/-)
-| 9   | _CSR_MZEXT_HPM_ | r/- | HPM (hardware performance monitors) extension available (_HPM_NUM_CNTS_ generic > 0) when set (r/-)
+| 6   | _CPU_MZEXT_ZXSCNT_ | r/- | custom extension: "Small CPU counters": `cycle[h]` & `instret[h]` CSRs have less than 64-bit when set (when _CPU_CNT_WIDTH_ generic is less than 64)
+| 7   | _CPU_MZEXT_ZXNOCNT_ | r/- | custom extension: "NO CPU counters": `cycle[h]` & `instret[h]` CSRs are not available at all when set (when _CPU_CNT_WIDTH_ generic is 0)
+| 8   | _CSR_MZEXT_PMP_ | r/- | PMP (physical memory protection) extension available (_PMP_NUM_REGIONS_ generic > 0)
+| 9   | _CSR_MZEXT_HPM_ | r/- | HPM (hardware performance monitors) extension available (_HPM_NUM_CNTS_ generic > 0)
+| 10  | _CSR_MZEXT_DEBUGMODE_ | r/- | RISC-V "CPU debug mode" extension available (enabled via _CPU_EXTENSION_RISCV_DEBUG_ generic)
 |=======================

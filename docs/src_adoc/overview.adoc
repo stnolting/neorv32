@@ -33,6 +33,10 @@ Chapter <<_neorv32_processor_soc>>
 * top entity signals and configuration generics, address space layout, internal peripheral devices and interrupts, internal
 memories and caches, internal bus architecture, external bus interface
 
+Chapter <<_on_chip_debugger_ocd>>
+
+* on-chip debugging compatible to the RISC-V debug spec.
+
 Chapter <<_software_framework>>
 
 * core libraries, bootloader, makefiles, runtime environment

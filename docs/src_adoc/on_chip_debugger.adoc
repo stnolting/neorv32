@@ -1,0 +1,156 @@
+<<<
+:sectnums:
+== On-Chip Debugger (OCD)
+
+.Work In Progress!
+[WARNING]
+The on-chip debugger is still **work in progress** and _not operational yet_!
+
+[IMPORTANT]
+The OSD requires additional resources and might also increase the critical path resulting in less performance. If the OCD is
+not really required for the _final_ implementation, it should be disabled and thus, discarded from implementation. In this
+case all circuitry of the debugger is completely removed (no impact on area, energy or timing).
+
+
+**Configuration**
+
+
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Debug Transport Module (DTM)
+
+.Work In Progress!
+[WARNING]
+TODO
+
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Debug Module (DM)
+
+.Work In Progress!
+[WARNING]
+TODO
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Debug Memory
+
+.Work In Progress!
+[WARNING]
+TODO
+
+
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== CPU Debug Mode
+
+The NEORV32 CPU Debug Mode is compatible to the "RISC-V Debug Spec Version 0.13.2". It is enabled/implemented by setting the CPU generic
+_CPU_EXTENSION_RISCV_DEBUG_ to "true". It provides a new operation mode called "debug mode". When enabled, three additional CSRs are available
+(section <<_cpu_debug_mode_csrs>>) and also the "return from debug mode" instruction `dret` is available when the CPU is "in" debug mode.
+
+The CPU debug mode is entered when one of the following events appear:
+
+[start=1]
+. executing `ebreak` instruction (when `dcsr.ebreakm` is set and in machine mode OR when `dcsr.ebreaku` is set and in user mode)
+. debug halt request from external DM (via CPU signal `db_halt_req_i`, high-active, triggering on rising-edge)
+. finished executing of a single instruction while in single-step debugging mode (enabled via `dcsr.step`)
+
+Whenever the CPU **enters debug mode** it performs the following operations:
+
+* move `pc` to `dpcs`
+* store the current privilege level to `dcsr.prv`
+* set `dcrs.cause` according to the cause why debug mode is entered
+* **no update** of `mtval`, `mcause`, `mtval` and `mstatus` CSRs
+* load the address configured via the CPU _CPU_EXTENSION_RISCV_DEBUG_ generic t the `pc` to jump to "debugger park loop" code in the debug memory
+
+When the CPU **is in debug mode** the following things are important:
+
+* while in debug mode, the CPU executes the parking loop and the program buffer provided by the DM if requested
+* effective CPU privilege level is `machine` mode, PMP is not active
+* if an exception occurs
+  * if the exception was caused by any debug-mode entry action the CPU jumps to the _normal entry point_ ( = _CPU_EXTENSION_RISCV_DEBUG_) of the park loop again (for example when executing `ebreak` in debug mode)
+  * for all other exception sources the CPU jumps to the _exception entry point_ ( = _CPU_EXTENSION_RISCV_DEBUG_ + 4) of the park loop again to signal an exception to the DM
+* interrupts are masked - including NMIs; interrupts can be enabled _during the execution of single-stepped instructions_ when `dcsr.stepie` is set
+* if the DM makes a resume request, the park loop exits and the CPU leaves debug mode
+
+Whenever the CPU **leaves debug mode** the following things happen:
+
+* set the current privilege level according to `dcsr.prv`
+* restore `pc` from `dpcs`
+* resume normal operation at `pc`
+
+
+:sectnums:
+==== CPU Debug Mode CSRs
+
+[NOTE]
+The debug-mode control and status registers (CSRs) are only accessible when the CPU is _in_ debug mode. If these CSRs are accessed
+outside of debug mode (for example when the CPU is in `machine` mode) an illegal instruction exception is raised.
+
+
+:sectnums!:
+===== **`dcsr`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x7b0 | **Debug control and status register** | `dcsr`
+3+| Reset value: 0x00000000
+3+| The `dcsr` CSR is compatible to the RISC-V debug spec. It is used to configure debug mode and provides additional status information.
+The following bits are implemented. The reaming bits are read-only and always read as zero.
+|======
+
+.Debug control and status register bits
+[cols="^1,<2,^1,<8"]
+[options="header",grid="rows"]
+|=======================
+| Bit   | Name [RISC-V] | R/W | Event
+| 31:28 | `xdebugver` | r/- | always `0100` - indicates external debug support exists
+| 15    | `ebereakm`  | r/w | `ebreak` instructions in `machine` mode enter debug mode when set
+| 12    | `ebereaku`  | r/w | `ebreak` instructions in `user` mode enter debug mode when set
+| 11    | `stepie`    | r/w | enable interrupts when in single-stepping mode
+| 10    | `stopcount` | r/- | `0` - counters increment as usual
+| 9     | `stoptime`  | r/- | `0` - timers increment as usual
+| 8:6   | `cause`     | r/- | cause identifier - why was debug mode entered
+| 4     | `mprven`    | r/- | `0` - `mstatus.mprv` is ignored when in debug mode
+| 3     | `nmip`      | r/- | set when the non-maskable CPU/processor interrupt is pending
+| 2     | `step`      | r/w | enable single-stepping when set
+| 1:0   | `prv`       | r/w | CPU privilege level before/after debug mode
+|=======================
+
+
+:sectnums!:
+===== **`dpc`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x7b1 | **Debug program counter** | `dpc`
+3+| Reset value: _UNDEFINED_
+3+| The `dcsr` CSR is compatible to the RISC-V debug spec. It is used to store the current program counter when entering debug mode. The `dret`
+instruction will return to `dpc`.
+|======
+
+
+:sectnums!:
+===== **`dscratch0`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x7b2 | **Debug scratch register 0** | `dscratch0`
+3+| Reset value: _UNDEFINED_
+3+| The `dscratch0` CSR is compatible to the RISC-V debug spec. It provides a general purpose scratch register.
+|======
+

@@ -79,4 +79,6 @@ include::soc.adoc[]
 
 include::software.adoc[]
 
+include::on_chip_debugger.adoc[]
+
 include::getting_started.adoc[]
