@@ -504,16 +504,17 @@ enum NEORV32_CSR_MISA_enum {
  * CPU <b>mzext</b> custom CSR (r/-): Implemented Z* CPU extensions
  **************************************************************************/
 enum NEORV32_CSR_MZEXT_enum {
-  CSR_MZEXT_ZICSR    = 0, /**< CPU mzext CSR (0): Zicsr extension (I sub-extension) available when set (r/-) */
-  CSR_MZEXT_ZIFENCEI = 1, /**< CPU mzext CSR (1): Zifencei extension (I sub-extension) available when set (r/-) */
-  CSR_MZEXT_ZBB      = 2, /**< CPU mzext CSR (2): Zbb extension (B sub-extension) available when set (r/-) */
-  CSR_MZEXT_ZBS      = 3, /**< CPU mzext CSR (3): Zbs extension (B sub-extension) available when set (r/-) */
-  CSR_MZEXT_ZBA      = 4, /**< CPU mzext CSR (4): Zba extension (B sub-extension) available when set (r/-) */
-  CSR_MZEXT_ZFINX    = 5, /**< CPU mzext CSR (5): Zfinx extension (F sub-/alternative-extension) available when set (r/-) */
-  CSR_MZEXT_ZXSCNT   = 6, /**< CPU mzext CSR (6): Custom extension - Small CPU counters: "cycle" & "instret" CSRs have less than 64-bit when set (r/-) */
-  CSR_MZEXT_ZXNOCNT  = 7, /**< CPU mzext CSR (7): Custom extension - NO CPU counters: "cycle" & "instret" CSRs are NOT available at all when set (r/-) */
-  CSR_MZEXT_PMP      = 8, /**< CPU mzext CSR (8): PMP (physical memory protection) extension available when set (r/-) */
-  CSR_MZEXT_HPM      = 9  /**< CPU mzext CSR (9): HPM (hardware performance monitors) extension available when set (r/-) */
+  CSR_MZEXT_ZICSR     =  0, /**< CPU mzext CSR (0): Zicsr extension (I sub-extension) available when set (r/-) */
+  CSR_MZEXT_ZIFENCEI  =  1, /**< CPU mzext CSR (1): Zifencei extension (I sub-extension) available when set (r/-) */
+  CSR_MZEXT_ZBB       =  2, /**< CPU mzext CSR (2): Zbb extension (B sub-extension) available when set (r/-) */
+  CSR_MZEXT_ZBS       =  3, /**< CPU mzext CSR (3): Zbs extension (B sub-extension) available when set (r/-) */
+  CSR_MZEXT_ZBA       =  4, /**< CPU mzext CSR (4): Zba extension (B sub-extension) available when set (r/-) */
+  CSR_MZEXT_ZFINX     =  5, /**< CPU mzext CSR (5): Zfinx extension (F sub-/alternative-extension) available when set (r/-) */
+  CSR_MZEXT_ZXSCNT    =  6, /**< CPU mzext CSR (6): Custom extension - Small CPU counters: "cycle" & "instret" CSRs have less than 64-bit when set (r/-) */
+  CSR_MZEXT_ZXNOCNT   =  7, /**< CPU mzext CSR (7): Custom extension - NO CPU counters: "cycle" & "instret" CSRs are NOT available at all when set (r/-) */
+  CSR_MZEXT_PMP       =  8, /**< CPU mzext CSR (8): PMP (physical memory protection) extension available when set (r/-) */
+  CSR_MZEXT_HPM       =  9, /**< CPU mzext CSR (9): HPM (hardware performance monitors) extension available when set (r/-) */
+  CSR_MZEXT_DEBUGMODE = 10  /**< CPU mzext CSR (10): RISC-V CPU debug mode available when set (r/-) */
 };
 
 
@@ -634,7 +635,7 @@ enum NEORV32_CLOCK_PRSC_enum {
 /** bootloader memory base address (r/-/x) */
 #define BOOTLOADER_BASE_ADDRESS (0xFFFF0000UL)
 /** peripheral/IO devices memory base address (r/w/x) */
-#define IO_BASE_ADDRESS (0xFFFFFF00UL)
+#define IO_BASE_ADDRESS         (0xFFFFFF00UL)
 /**@}*/
 
 

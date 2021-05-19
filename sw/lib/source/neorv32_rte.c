@@ -360,6 +360,9 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<CSR_MZEXT_ZXSCNT)) {
     neorv32_uart_printf("Zxscnt(!) ");
   }
+  if (tmp & (1<<CSR_MZEXT_DEBUGMODE)) {
+    neorv32_uart_printf("Debug-Mode ");
+  }
 
   // check physical memory protection
   neorv32_uart_printf("\nPMP:               ");
