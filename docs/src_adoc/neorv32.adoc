@@ -30,6 +30,12 @@ New features that are _work-in-progress_ - like new CPU extension - are disabled
 disabled features, these work-in-progress components will not be synthesized at all when disabled and **do not** increase area and power requirements
 and **do not** impact overall timing and performance.
 
+.**Documentation**
+[TIP]
+The online documentation of the project (a.k.a. the **data sheet**) is available on GitHub-pages: https://stnolting.github.io/neorv32/ +
+ +
+The online documentation of the **software framework** is also available on GitHub-pages: https://stnolting.github.io/neorv32/sw/files.html
+
 
 <<<
 // ####################################################################################################################
