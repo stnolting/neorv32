@@ -58,6 +58,7 @@ entity neorv32_cpu is
     -- General --
     HW_THREAD_ID                 : natural := 0;     -- hardware thread id (32-bit)
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
+    CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
@@ -68,6 +69,7 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_DEBUG    : boolean := false; -- implement CPU debug mode?
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
@@ -119,7 +121,9 @@ entity neorv32_cpu is
     mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt
     -- fast interrupts (custom) --
     firq_i         : in  std_ulogic_vector(15 downto 0) := (others => '0');
-    firq_ack_o     : out std_ulogic_vector(15 downto 0)
+    firq_ack_o     : out std_ulogic_vector(15 downto 0);
+    -- debug mode (halt) request --
+    db_halt_req_i  : in  std_ulogic := '0'
   );
 end neorv32_cpu;
 
@@ -208,14 +212,21 @@ begin
   -- HPM CNT requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (HPM_NUM_CNTS > 0)) report "NEORV32 CPU CONFIG ERROR! Hardware performance monitors (HPM) require <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
+  -- Debug mode --
+  assert not (CPU_EXTENSION_RISCV_DEBUG = true) report "NEORV32 CPU CONFIG NOTE: Implementing RISC-V DEBUG MODE extension." severity note;
+  assert not ((CPU_EXTENSION_RISCV_DEBUG = true) and (CPU_EXTENSION_RISCV_Zicsr = false)) report "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
+  -- FIXME: debug mode extension warning --
+  assert not (CPU_EXTENSION_RISCV_DEBUG = true) report "NEORV32 CPU CONFIG WARNING! RISC-V DEBUG MODE extension <CPU_EXTENSION_RISCV_DEBUG> is still EXPERIMENTAL." severity warning;
+
 
   -- Control Unit ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_control_inst: neorv32_cpu_control
   generic map (
     -- General --
-    HW_THREAD_ID                 => HW_THREAD_ID,  -- hardware thread id
-    CPU_BOOT_ADDR                => CPU_BOOT_ADDR, -- cpu boot address
+    HW_THREAD_ID                 => HW_THREAD_ID,                 -- hardware thread id
+    CPU_BOOT_ADDR                => CPU_BOOT_ADDR,                -- cpu boot address
+    CPU_DEBUG_ADDR               => CPU_DEBUG_ADDR,               -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit manipulation extensions?
@@ -225,6 +236,7 @@ begin
     CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_DEBUG    => CPU_EXTENSION_RISCV_DEBUG,    -- implement CPU debug mode?
     -- Extension Options --
     CPU_CNT_WIDTH                => CPU_CNT_WIDTH,                -- total width of CPU cycle and instret counters (0..64)
     -- Physical memory protection (PMP) --
@@ -257,6 +269,8 @@ begin
     -- FPU interface --
     fpu_rm_o      => fpu_rm,      -- rounding mode
     fpu_flags_i   => fpu_flags,   -- exception flags
+    -- debug mode (halt) request --
+    db_halt_req_i => db_halt_req_i,
     -- interrupts (risc-v compliant) --
     msw_irq_i     => msw_irq_i,   -- machine software interrupt
     mext_irq_i    => mext_irq_i,  -- machine external interrupt

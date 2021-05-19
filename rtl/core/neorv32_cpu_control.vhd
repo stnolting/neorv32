@@ -49,7 +49,8 @@ entity neorv32_cpu_control is
   generic (
     -- General --
     HW_THREAD_ID                 : natural := 0;     -- hardware thread id (32-bit)
-    CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
+    CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu boot address
+    CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
@@ -60,6 +61,7 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_DEBUG    : boolean := false; -- implement CPU debug mode?
     -- Extension Options --
     CPU_CNT_WIDTH                : natural := 64; -- total width of CPU cycle and instret counters (0..64)
     -- Physical memory protection (PMP) --
@@ -92,6 +94,8 @@ entity neorv32_cpu_control is
     -- FPU interface --
     fpu_rm_o      : out std_ulogic_vector(02 downto 0); -- rounding mode
     fpu_flags_i   : in  std_ulogic_vector(04 downto 0); -- exception flags
+    -- debug mode (halt) request --
+    db_halt_req_i : in  std_ulogic;
     -- non-maskable interrupt --
     nm_irq_i      : in  std_ulogic;
     -- interrupts (risc-v compliant) --
@@ -242,8 +246,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     exc_ack       : std_ulogic; -- acknowledge all exceptions
     irq_ack       : std_ulogic_vector(interrupt_width_c-1 downto 0); -- acknowledge specific interrupt
     irq_ack_nxt   : std_ulogic_vector(interrupt_width_c-1 downto 0);
-    cause         : std_ulogic_vector(5 downto 0); -- trap ID for mcause CSR
-    cause_nxt     : std_ulogic_vector(5 downto 0);
+    cause         : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR
+    cause_nxt     : std_ulogic_vector(6 downto 0);
+    db_irq_fire   : std_ulogic; -- set if there is a valid IRQ source in the "enter debug mode" trap buffer
+    db_irq_en     : std_ulogic; -- set if IRQs are allowed in debu mode
     --
     env_start     : std_ulogic; -- start trap handler env
     env_start_ack : std_ulogic; -- start of trap handler acknowledged
@@ -300,6 +306,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mcountinhibit_hpm : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0); -- mcounterinhibit.hpm3: enable auto-increment for mhpmcounterx[h]
     --
     privilege         : std_ulogic_vector(1 downto 0); -- hart's current privilege mode
+    privilege_rd      : std_ulogic_vector(1 downto 0); -- hart's current privilege mode (effective)
     priv_m_mode       : std_ulogic; -- CPU in M-mode
     priv_u_mode       : std_ulogic; -- CPU in u-mode
     --
@@ -328,8 +335,36 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     --
     frm               : std_ulogic_vector(02 downto 0); -- frm (R/W): FPU rounding mode
     fflags            : std_ulogic_vector(04 downto 0); -- fflags (R/W): FPU exception flags
+    --
+    dcsr_ebreakm      : std_ulogic; -- dcsr.ebreakm (R/W): behavior of ebreak instruction on m-mode
+    dcsr_ebreaku      : std_ulogic; -- dcsr.ebreaku (R/W): behavior of ebreak instruction on u-mode
+    dcsr_step         : std_ulogic; -- dcsr.step (R/W): single-step mode
+    dcsr_stepie       : std_ulogic; -- dcsr.stepie (R/W): enable IRQs in single-step mode
+    dcsr_prv          : std_ulogic_vector(01 downto 0); -- dcsr.prv (R/W): current privilege level when entering debug mode
+    dcsr_cause        : std_ulogic_vector(02 downto 0); -- dcsr.cause (R/-): why was debug mode entered
+    dcsr_rd           : std_ulogic_vector(data_width_c-1 downto 0); -- dcsr (R/(W)): debug mode control and status register
+    dpc               : std_ulogic_vector(data_width_c-1 downto 0); -- dpc (R/W): debug mode program counter
+    dscratch0         : std_ulogic_vector(data_width_c-1 downto 0); -- dscratch0 (R/W): debug mode scratch register 0
   end record;
   signal csr : csr_t;
+
+  -- debug mode controller --
+  type debug_ctrl_state_t is (DEBUG_OFFLINE, DEBUG_PENDING, DEBUG_ONLINE, DEBUG_EXIT);
+  type debug_ctrl_t is record
+    state        : debug_ctrl_state_t;
+    -- decoded state --
+    running      : std_ulogic; -- debug mode active
+    pending      : std_ulogic; -- waiting to start debug mode
+    -- entering triggers --
+    trig_break   : std_ulogic; -- ebreak instruction
+    trig_halt    : std_ulogic; -- external request
+    trig_step    : std_ulogic; -- single-stepping mode
+    -- leave debug mode --
+    dret         : std_ulogic; -- executed DRET instruction
+    -- misc --
+    ext_halt_req : std_ulogic_vector(1 downto 0); -- rising edge detector for external halt request
+  end record;
+  signal debug_ctrl : debug_ctrl_t;
 
   -- counter low-to-high-word carry --
   signal mcycle_msb      : std_ulogic;
@@ -716,18 +751,39 @@ begin
       execute_engine.i_reg      <= execute_engine.i_reg_nxt;
       execute_engine.is_ci      <= execute_engine.is_ci_nxt;
       execute_engine.is_cp_op   <= execute_engine.is_cp_op_nxt;
+
       -- PC & IR of "last executed" instruction --
       if (execute_engine.state = EXECUTE) then
         execute_engine.last_pc    <= execute_engine.pc;
         execute_engine.i_reg_last <= execute_engine.i_reg;
       end if;
+
       -- next PC --
       case execute_engine.state is
-        when TRAP_ENTER => execute_engine.next_pc <= csr.mtvec(data_width_c-1 downto 1) & '0'; -- trap enter
-        when TRAP_EXIT  => execute_engine.next_pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap exit
-        when EXECUTE    => execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc)); -- next linear PC
-        when others     => NULL;
+        when TRAP_ENTER =>
+          if (CPU_EXTENSION_RISCV_DEBUG = false) then -- normal trapping
+            execute_engine.next_pc <= csr.mtvec(data_width_c-1 downto 1) & '0'; -- trap enter
+          else -- DEBUG MODE enabled
+            if (trap_ctrl.cause(5) = '1') then -- trap cause: debug mode (re-)entry
+              execute_engine.next_pc <= CPU_DEBUG_ADDR; -- debug mode enter; start at "parking loop" <normal_entry>
+            elsif (debug_ctrl.running = '1') then -- any other exception INSIDE debug mode
+              execute_engine.next_pc <= std_ulogic_vector(unsigned(CPU_DEBUG_ADDR) + 4); -- execute at "parking loop" <exception_entry>
+            else -- normal trapping
+              execute_engine.next_pc <= csr.mtvec(data_width_c-1 downto 1) & '0'; -- trap enter
+            end if;
+          end if;
+        when TRAP_EXIT =>
+          if (CPU_EXTENSION_RISCV_DEBUG = false) or (debug_ctrl.running = '0') then -- normal end of trap
+            execute_engine.next_pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap exit
+          else -- DEBUG MODE exiting
+            execute_engine.next_pc <= csr.dpc(data_width_c-1 downto 1) & '0'; -- debug mode exit
+          end if;
+        when EXECUTE =>
+          execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc)); -- next linear PC
+        when others =>
+          NULL;
       end case;
+
       -- main control bus --
       ctrl <= ctrl_nxt;
     end if;
@@ -751,7 +807,7 @@ begin
     -- signals from execute engine --
     ctrl_o <= ctrl;
     -- current privilege level --
-    ctrl_o(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c) <= csr.privilege;
+    ctrl_o(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c) <= csr.privilege_rd;
     -- register addresses --
     ctrl_o(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c);
     ctrl_o(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= execute_engine.i_reg(instr_rs2_msb_c downto instr_rs2_lsb_c);
@@ -772,8 +828,13 @@ begin
     ctrl_o(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_0_c) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c);
     ctrl_o(ctrl_ir_funct3_2_c   downto ctrl_ir_funct3_0_c)  <= execute_engine.i_reg(instr_funct3_msb_c  downto instr_funct3_lsb_c);
     -- cpu status --
-    ctrl_o(ctrl_sleep_c) <= execute_engine.sleep; -- cpu is in sleep mode
-    ctrl_o(ctrl_trap_c)  <= trap_ctrl.env_start_ack; -- cpu is starting a trap handler
+    ctrl_o(ctrl_sleep_c)         <= execute_engine.sleep; -- cpu is in sleep mode
+    ctrl_o(ctrl_trap_c)          <= trap_ctrl.env_start_ack; -- cpu is starting a trap handler
+    if (CPU_EXTENSION_RISCV_DEBUG = true) then
+      ctrl_o(ctrl_debug_running_c) <= debug_ctrl.running; -- cpu is currently in debug mode
+    else
+      ctrl_o(ctrl_debug_running_c) <= '0';
+    end if;
   end process ctrl_output;
 
 
@@ -863,14 +924,14 @@ begin
     end if;
 
     -- system/environment instructions --
-    sys_env_cmd_mask_v := funct12_ecall_c or funct12_ebreak_c or funct12_mret_c or funct12_wfi_c; -- sum-up set bits
+    sys_env_cmd_mask_v := funct12_ecall_c or funct12_ebreak_c or funct12_mret_c or funct12_wfi_c or funct12_dret_c; -- sum-up set bits
     decode_aux.sys_env_cmd(11 downto 0) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) and sys_env_cmd_mask_v; -- set unsued bits to always-zero
   end process decode_helper;
 
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(execute_engine, decode_aux, fetch_engine, cmd_issue, trap_ctrl, csr, ctrl, csr_acc_valid,
+  execute_engine_fsm_comb: process(execute_engine, debug_ctrl, decode_aux, fetch_engine, cmd_issue, trap_ctrl, csr, ctrl, csr_acc_valid,
                                    alu_wait_i, bus_d_wait_i, ma_load_i, be_load_i, ma_store_i, be_store_i, excl_state_i)
     variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
@@ -891,6 +952,9 @@ begin
     -- trap environment control --
     trap_ctrl.env_start_ack     <= '0';
     trap_ctrl.env_end           <= '0';
+
+    -- leave debug mode --
+    debug_ctrl.dret             <= '0';
 
     -- exception trigger --
     trap_ctrl.instr_be          <= '0';
@@ -965,19 +1029,19 @@ begin
         end if;
 
 
-      when TRAP_ENTER => -- Start trap environment - get MTVEC, stay here for sleep mode
+      when TRAP_ENTER => -- Start trap environment - get TVEC, stay here for sleep mode
       -- ------------------------------------------------------------
         if (trap_ctrl.env_start = '1') then -- trap triggered?
           trap_ctrl.env_start_ack   <= '1';
           execute_engine.state_nxt  <= TRAP_EXECUTE;
         end if;
 
-      when TRAP_EXIT => -- Return from trap environment - get MEPC
+      when TRAP_EXIT => -- Return from trap environment - get EPC
       -- ------------------------------------------------------------
         trap_ctrl.env_end        <= '1';
         execute_engine.state_nxt <= TRAP_EXECUTE;
 
-      when TRAP_EXECUTE => -- Start trap environment - jump to MTVEC / return from trap environment - jump to MEPC
+      when TRAP_EXECUTE => -- Start trap environment - jump to TVEC / return from trap environment - jump to EPC
       -- ------------------------------------------------------------
         execute_engine.pc_mux_sel <= '0'; -- next PC (csr.mtvec)
         fetch_engine.reset        <= '1';
@@ -1144,8 +1208,20 @@ begin
           when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ECALL
           when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- EBREAK
           when funct12_mret_c   => execute_engine.state_nxt <= TRAP_EXIT; -- MRET
-          when funct12_wfi_c    => execute_engine.sleep_nxt <= '1'; -- WFI
-          when others           => NULL;-- undefined
+          when funct12_wfi_c =>
+            if (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') then
+              NULL; -- just a NOP when in debug mode
+            else
+              execute_engine.sleep_nxt <= '1'; -- WFI (normal)
+            end if;
+          when funct12_dret_c => -- DRET
+            if (CPU_EXTENSION_RISCV_DEBUG = true) then
+              execute_engine.state_nxt <= TRAP_EXIT;
+              debug_ctrl.dret <= '1';
+            else
+              NULL;
+            end if;
+          when others => NULL;-- undefined
         end case;
 
 
@@ -1281,7 +1357,7 @@ begin
 
   -- CSR Access Check -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_access_check: process(execute_engine.i_reg, csr)
+  csr_access_check: process(execute_engine.i_reg, csr, debug_ctrl)
     variable csr_wacc_v           : std_ulogic; -- to check access to read-only CSRs
     variable csr_mcounteren_hpm_v : std_ulogic_vector(31 downto 0); -- max 29 HPM counters, plus 3 LSB-aligned dummy bits
   begin
@@ -1417,6 +1493,14 @@ begin
       when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mzext_c =>
         csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
 
+      -- debug mode CSRs --
+      when csr_dcsr_c | csr_dpc_c | csr_dscratch0_c =>
+        if (CPU_EXTENSION_RISCV_DEBUG = true) then
+          csr_acc_valid <= debug_ctrl.running; -- DEBUG-mode only
+        else
+          NULL;
+        end if;
+
       -- undefined / not implemented --
       when others =>
         NULL; -- invalid access
@@ -1426,7 +1510,7 @@ begin
 
   -- Illegal Instruction Check --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  illegal_instruction_check: process(execute_engine, decode_aux, csr_acc_valid)
+  illegal_instruction_check: process(execute_engine, decode_aux, csr_acc_valid, debug_ctrl)
     variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     -- illegal instructions are checked in the EXECUTE stage
@@ -1447,9 +1531,9 @@ begin
       opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
       case opcode_v is
 
-        -- check sufficient LUI, UIPC, JAL (only check actual OPCODE) --
+        
+        when opcode_lui_c | opcode_auipc_c | opcode_jal_c => -- check sufficient LUI, UIPC, JAL (only check actual OPCODE)
         -- ------------------------------------------------------------
-        when opcode_lui_c | opcode_auipc_c | opcode_jal_c =>
           illegal_instruction <= '0';
           -- illegal E-CPU register? --
           if (CPU_EXTENSION_RISCV_E = true) and (execute_engine.i_reg(instr_rd_msb_c) = '1') then
@@ -1561,7 +1645,7 @@ begin
 
         when opcode_fence_c => -- fence instructions
         -- ------------------------------------------------------------
-          if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then -- FENCE.I
+          if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) then -- FENCE.I -- NO trap if not implemented
             illegal_instruction <= '0';
           elsif (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then -- FENCE
             illegal_instruction <= '0';
@@ -1599,6 +1683,7 @@ begin
             if (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ecall_c)  or -- ECALL
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ebreak_c) or -- EBREAK 
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_mret_c)   or -- MRET
+               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = (funct12_dret_c)) and (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) or
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_wfi_c) then  -- WFI
               illegal_instruction <= '0';
             else
@@ -1641,7 +1726,8 @@ begin
   end process illegal_instruction_check;
 
   -- any illegal condition? --
-  trap_ctrl.instr_il <= illegal_instruction or illegal_opcode_lsbs or illegal_register or illegal_compressed;
+  -- ignore illegal register condition in debug mode
+  trap_ctrl.instr_il <= illegal_instruction or illegal_opcode_lsbs or (illegal_register and (not debug_ctrl.running)) or illegal_compressed;
 
 
 -- ****************************************************************************************************************************
@@ -1655,27 +1741,54 @@ begin
   begin
     if (rstn_i = '0') then
       trap_ctrl.exc_buf   <= (others => '0');
+      trap_ctrl.exc_buf(exception_db_break_c) <= '0'; -- enter debug mode
       trap_ctrl.irq_buf   <= (others => def_rst_val_c);
-      trap_ctrl.irq_buf(interrupt_nm_irq_c) <= '0'; -- NMI
+      trap_ctrl.irq_buf(interrupt_nm_irq_c)   <= '0'; -- NMI
+      trap_ctrl.irq_buf(interrupt_db_halt_c)  <= '0'; -- enter debug mode
+      trap_ctrl.irq_buf(interrupt_db_step_c)  <= '0'; -- enter debug mode
       trap_ctrl.exc_ack   <= '0';
       trap_ctrl.irq_ack   <= (others => '0');
       trap_ctrl.env_start <= '0';
       trap_ctrl.cause     <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
+
         -- exception buffer: misaligned load/store/instruction address
-        trap_ctrl.exc_buf(exception_lalign_c)    <= (trap_ctrl.exc_buf(exception_lalign_c)    or ma_load_i)          and (not trap_ctrl.exc_ack);
-        trap_ctrl.exc_buf(exception_salign_c)    <= (trap_ctrl.exc_buf(exception_salign_c)    or ma_store_i)         and (not trap_ctrl.exc_ack);
-        trap_ctrl.exc_buf(exception_ialign_c)    <= (trap_ctrl.exc_buf(exception_ialign_c)    or trap_ctrl.instr_ma) and (not trap_ctrl.exc_ack);
+        trap_ctrl.exc_buf(exception_lalign_c) <= (trap_ctrl.exc_buf(exception_lalign_c) or ma_load_i)          and (not trap_ctrl.exc_ack);
+        trap_ctrl.exc_buf(exception_salign_c) <= (trap_ctrl.exc_buf(exception_salign_c) or ma_store_i)         and (not trap_ctrl.exc_ack);
+        trap_ctrl.exc_buf(exception_ialign_c) <= (trap_ctrl.exc_buf(exception_ialign_c) or trap_ctrl.instr_ma) and (not trap_ctrl.exc_ack);
+
         -- exception buffer: load/store/instruction bus access error
-        trap_ctrl.exc_buf(exception_laccess_c)   <= (trap_ctrl.exc_buf(exception_laccess_c)   or be_load_i)          and (not trap_ctrl.exc_ack);
-        trap_ctrl.exc_buf(exception_saccess_c)   <= (trap_ctrl.exc_buf(exception_saccess_c)   or be_store_i)         and (not trap_ctrl.exc_ack);
-        trap_ctrl.exc_buf(exception_iaccess_c)   <= (trap_ctrl.exc_buf(exception_iaccess_c)   or trap_ctrl.instr_be) and (not trap_ctrl.exc_ack);
+        trap_ctrl.exc_buf(exception_laccess_c) <= (trap_ctrl.exc_buf(exception_laccess_c) or be_load_i)          and (not trap_ctrl.exc_ack);
+        trap_ctrl.exc_buf(exception_saccess_c) <= (trap_ctrl.exc_buf(exception_saccess_c) or be_store_i)         and (not trap_ctrl.exc_ack);
+        trap_ctrl.exc_buf(exception_iaccess_c) <= (trap_ctrl.exc_buf(exception_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.exc_ack);
+
         -- exception buffer: illegal instruction / env call / break point
         trap_ctrl.exc_buf(exception_m_envcall_c) <= (trap_ctrl.exc_buf(exception_m_envcall_c) or (trap_ctrl.env_call and csr.priv_m_mode)) and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_u_envcall_c) <= (trap_ctrl.exc_buf(exception_u_envcall_c) or (trap_ctrl.env_call and csr.priv_u_mode)) and (not trap_ctrl.exc_ack);
-        trap_ctrl.exc_buf(exception_break_c)     <= (trap_ctrl.exc_buf(exception_break_c)     or trap_ctrl.break_point)                    and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_iillegal_c)  <= (trap_ctrl.exc_buf(exception_iillegal_c)  or trap_ctrl.instr_il)                       and (not trap_ctrl.exc_ack);
+        if (CPU_EXTENSION_RISCV_DEBUG = true) then
+          trap_ctrl.exc_buf(exception_break_c) <= (trap_ctrl.exc_buf(exception_break_c) or 
+            (
+              (trap_ctrl.break_point and csr.priv_m_mode and (not csr.dcsr_ebreakm) and (not debug_ctrl.running)) or -- enable break to machine-trap-handler when in machine mode on "ebreak"
+              (trap_ctrl.break_point and csr.priv_u_mode and (not csr.dcsr_ebreaku) and (not debug_ctrl.running))    -- enable break to machine-trap-handler when in user mode on "ebreak"
+            )
+          ) and (not trap_ctrl.exc_ack);
+        else
+          trap_ctrl.exc_buf(exception_break_c) <= (trap_ctrl.exc_buf(exception_break_c) or trap_ctrl.break_point) and (not trap_ctrl.exc_ack);
+        end if;
+
+        -- enter debug mode --
+        if (CPU_EXTENSION_RISCV_DEBUG = true) then
+          trap_ctrl.exc_buf(exception_db_break_c) <= (trap_ctrl.exc_buf(exception_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.exc_ack);
+          trap_ctrl.irq_buf(interrupt_db_halt_c)  <= (trap_ctrl.irq_buf(interrupt_db_halt_c)  or debug_ctrl.trig_halt)  and (not trap_ctrl.irq_ack(interrupt_db_halt_c));
+          trap_ctrl.irq_buf(interrupt_db_step_c)  <= (trap_ctrl.irq_buf(interrupt_db_step_c)  or debug_ctrl.trig_step)  and (not trap_ctrl.irq_ack(interrupt_db_step_c));
+        else
+          trap_ctrl.exc_buf(exception_db_break_c) <= '0';
+          trap_ctrl.irq_buf(interrupt_db_halt_c)  <= '0';
+          trap_ctrl.irq_buf(interrupt_db_step_c)  <= '0';
+        end if;
+
         -- interrupt buffer: non-maskable interrupt
         trap_ctrl.irq_buf(interrupt_nm_irq_c)    <= (trap_ctrl.irq_buf(interrupt_nm_irq_c) or nm_irq_i) and (not trap_ctrl.irq_ack(interrupt_nm_irq_c));
         -- interrupt buffer: machine software/external/timer interrupt
@@ -1686,6 +1799,7 @@ begin
         for i in 0 to 15 loop
           trap_ctrl.irq_buf(interrupt_firq_0_c+i) <= csr.mie_firqe(i) and (trap_ctrl.irq_buf(interrupt_firq_0_c+i) or firq_i(i)) and (not trap_ctrl.irq_ack(interrupt_firq_0_c+i));
         end loop;
+
         -- trap control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler
           if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and -- trap triggered!
@@ -1708,7 +1822,13 @@ begin
 
   -- any exception/interrupt? --
   trap_ctrl.exc_fire <= or_all_f(trap_ctrl.exc_buf); -- exceptions/faults CANNOT be masked
-  trap_ctrl.irq_fire <= or_all_f(trap_ctrl.irq_buf) and csr.mstatus_mie; -- interrupts CAN be masked
+  trap_ctrl.irq_fire <= (or_all_f(trap_ctrl.irq_buf) and csr.mstatus_mie and trap_ctrl.db_irq_en) or trap_ctrl.db_irq_fire; -- interrupts CAN be masked
+
+  -- debug mode entry interrupts --
+  trap_ctrl.db_irq_en   <= '1' when (CPU_EXTENSION_RISCV_DEBUG = false) else
+                           '0' when (debug_ctrl.running = '1') else -- no interrupts when IN debug mode
+                           csr.dcsr_stepie when (csr.dcsr_step = '1') else '1'; -- allow IRQ in single-step mode when dcsr.stepie is set
+  trap_ctrl.db_irq_fire <= (trap_ctrl.irq_buf(interrupt_db_step_c) or trap_ctrl.irq_buf(interrupt_db_halt_c)) when (CPU_EXTENSION_RISCV_DEBUG = true) else '0'; -- "NMI" for debug mode entry
 
   -- acknowledge mask output --
   firq_ack_o <= trap_ctrl.irq_ack(interrupt_firq_15_c downto interrupt_firq_0_c);
@@ -1719,8 +1839,25 @@ begin
   trap_priority: process(trap_ctrl)
   begin
     -- defaults --
-    trap_ctrl.cause_nxt   <= (others => '-');
+    trap_ctrl.cause_nxt   <= (others => '0');
     trap_ctrl.irq_ack_nxt <= (others => '0');
+
+    -- ----------------------------------------------------------------------------------------
+    -- enter debug mode requests; basically, these are standard interrupt that have some
+    -- special handling - they have the highest priority in order to go to debug when requested
+    -- even if other traps are pending right now; the <trap_ctrl.cause_nxt> value will be
+    -- written to csr.dcsr_cause instead of mcause
+    -- ----------------------------------------------------------------------------------------
+
+    -- break instruction --
+    if (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.exc_buf(exception_db_break_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_db_break_c;
+
+    -- external halt request --
+    elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.irq_buf(interrupt_db_halt_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_db_halt_c;
+      trap_ctrl.irq_ack_nxt(interrupt_db_halt_c) <= '1';
+
 
     -- ----------------------------------------------------------------------------------------
     -- the following traps are caused by *asynchronous* exceptions (= interrupts)
@@ -1728,7 +1865,7 @@ begin
     -- ----------------------------------------------------------------------------------------
 
     -- interrupt: 1.0 non-maskable interrupt --
-    if (trap_ctrl.irq_buf(interrupt_nm_irq_c) = '1') then
+    elsif (trap_ctrl.irq_buf(interrupt_nm_irq_c) = '1') then
       trap_ctrl.cause_nxt <= trap_nmi_c;
       trap_ctrl.irq_ack_nxt(interrupt_nm_irq_c) <= '1';
 
@@ -1877,6 +2014,17 @@ begin
     -- exception: 0.5 load access fault --
     elsif (trap_ctrl.exc_buf(exception_laccess_c) = '1') then
       trap_ctrl.cause_nxt <= trap_lbe_c;
+
+
+    -- ----------------------------------------------------------------------------------------
+    -- re-enter debug mode during single-stepping; this debug mode entry trap has the lowest
+    -- priority in order to let traps kick in during single stepping
+    -- ----------------------------------------------------------------------------------------
+
+    -- single stepping --
+    elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.irq_buf(interrupt_db_step_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_db_step_c;
+      trap_ctrl.irq_ack_nxt(interrupt_db_step_c) <= '1';
     end if;
   end process trap_priority;
   
@@ -1910,8 +2058,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   csr_write_access: process(rstn_i, clk_i)
   begin
-    -- NOTE: Register that reset to "def_rst_val_c" do NOT actually have a real reset by default (def_rst_val_c = '-') and have to be
-    -- explicitly initialized by software!
+    -- NOTE: If <dedicated_reset_c> = true then <def_rst_val_c> evaluates to '-'. Register that reset to <def_rst_val_c> do
+    -- NOT actually have a real reset by default (def_rst_val_c = '-') and have to be explicitly initialized by software!
     -- see: https://forums.xilinx.com/t5/General-Technical-Discussion/quot-Don-t-care-quot-reset-value/td-p/412845
     if (rstn_i = '0') then
       csr.we           <= '0';
@@ -1946,6 +2094,15 @@ begin
       --
       csr.fflags <= (others => def_rst_val_c);
       csr.frm    <= (others => def_rst_val_c);
+      --
+      csr.dcsr_ebreakm <= '0';
+      csr.dcsr_ebreaku <= '0';
+      csr.dcsr_step    <= '0';
+      csr.dcsr_stepie  <= '0';
+      csr.dcsr_prv     <= (others => def_rst_val_c);
+      csr.dcsr_cause   <= (others => def_rst_val_c);
+      csr.dpc          <= (others => def_rst_val_c);
+      csr.dscratch0    <= (others => def_rst_val_c);
 
     elsif rising_edge(clk_i) then
       -- write access? --
@@ -1976,7 +2133,7 @@ begin
 
           -- machine trap setup --
           -- --------------------------------------------------------------------
-          if (csr.addr(11 downto 4) = csr_class_setup_c) then -- ftrap setup CSR class
+          if (csr.addr(11 downto 4) = csr_class_setup_c) then -- trap setup CSR class
             -- R/W: mstatus - machine status register --
             if (csr.addr(3 downto 0) = csr_mstatus_c(3 downto 0)) then
               csr.mstatus_mie  <= csr.wdata(03);
@@ -2089,6 +2246,34 @@ begin
             end if;
           end if;
 
+          -- debug mode CSRs --
+          -- --------------------------------------------------------------------
+          if (CPU_EXTENSION_RISCV_DEBUG = true) then
+            if (csr.addr(11 downto 2) = csr_class_debug_c) then -- debug CSR class
+              -- R/W: dcsr - debug mode control and status register --
+              if (csr.addr(1 downto 0) = csr_dcsr_c(1 downto 0)) then
+                csr.dcsr_ebreakm <= csr.wdata(15);
+                csr.dcsr_stepie  <= csr.wdata(2);
+                csr.dcsr_step    <= csr.wdata(2);
+                if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
+                  csr.dcsr_ebreaku <= csr.wdata(12);
+                  csr.dcsr_prv(0)  <= csr.wdata(1) or csr.wdata(0);
+                  csr.dcsr_prv(1)  <= csr.wdata(1) or csr.wdata(0);
+                else -- only machine mode is available
+                  csr.dcsr_prv <= priv_mode_m_c;
+                end if;
+              end if;
+              -- R/W: dpc - debug mode program counter --
+              if (csr.addr(1 downto 0) = csr_dpc_c(1 downto 0)) then
+                csr.dpc <= csr.wdata;
+              end if;
+              -- R/W: dscratch0 - debug mode scratch register 0 --
+              if (csr.addr(1 downto 0) = csr_dscratch0_c(1 downto 0)) then
+                csr.dscratch0 <= csr.wdata;
+              end if;
+            end if;
+          end if;
+
 
         -- --------------------------------------------------------------------------------
         -- CSR access by hardware
@@ -2101,50 +2286,89 @@ begin
             csr.fflags <= csr.fflags or fpu_flags_i; -- accumulate flags ("accrued exception flags")
           end if;
 
-          -- mcause, mepc, mtval: machine trap cause, PC and value register --
+          -- mcause, mepc, mtval: write machine trap cause, PC and trap value register --
           -- --------------------------------------------------------------------
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
-            -- trap cause ID code --
-            csr.mcause(csr.mcause'left) <= trap_ctrl.cause(trap_ctrl.cause'left); -- 1: interrupt, 0: exception
-            csr.mcause(4 downto 0)      <= trap_ctrl.cause(4 downto 0); -- identifier
-            -- trap PC --
-            if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS
-              csr.mepc <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
-            else -- for sync. EXCEPTIONS
-              csr.mepc <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
+            if (CPU_EXTENSION_RISCV_DEBUG = false) or ((trap_ctrl.cause(5) = '0') and -- update mtval/mepc/mcause only when NOT ENTRY debug mode exception
+                                                       (debug_ctrl.running = '0')) then -- and NOT IN debug mode
+
+              -- trap cause ID code --
+              csr.mcause(csr.mcause'left) <= trap_ctrl.cause(trap_ctrl.cause'left); -- 1: interrupt, 0: exception
+              csr.mcause(4 downto 0)      <= trap_ctrl.cause(4 downto 0); -- identifier
+
+              -- trap PC --
+              if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS (async source)
+                csr.mepc <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
+              else -- for sync. EXCEPTIONS (sync source)
+                csr.mepc <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
+              end if;
+
+              -- trap value --
+              case trap_ctrl.cause is
+                when trap_ima_c | trap_iba_c => -- misaligned instruction address OR instruction access error
+                  csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction
+                when trap_brk_c => -- breakpoint
+                  csr.mtval <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- address of breakpoint instruction
+                when trap_lma_c | trap_lbe_c | trap_sma_c | trap_sbe_c => -- misaligned load/store address OR load/store access error
+                  csr.mtval <= mar_i; -- faulting data access address
+                when trap_iil_c => -- illegal instruction
+                  csr.mtval <= execute_engine.i_reg_last; -- faulting instruction itself
+                when others => -- everything else including all interrupts
+                  csr.mtval <= (others => '0');
+              end case;
+
             end if;
-            -- trap value --
-            case trap_ctrl.cause is
-              when trap_ima_c | trap_iba_c => -- misaligned instruction address OR instruction access error
-                csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction
-              when trap_brk_c => -- breakpoint
-                csr.mtval <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- address of breakpoint instruction
-              when trap_lma_c | trap_lbe_c | trap_sma_c | trap_sbe_c => -- misaligned load/store address OR load/store access error
-                csr.mtval <= mar_i; -- faulting data access address
-              when trap_iil_c => -- illegal instruction
-                csr.mtval <= execute_engine.i_reg_last; -- faulting instruction itself
-              when others => -- everything else including all interrupts
-                csr.mtval <= (others => '0');
-            end case;
+
+            -- trap enter: write dpc and dcsr --
+            -- --------------------------------------------------------------------
+            if (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.cause(5) = '1') and (debug_ctrl.running = '0') then -- debug mode entry exception
+
+              -- trap cause ID code --
+              csr.dcsr_cause <= trap_ctrl.cause(2 downto 0); -- why did we enter debug mode?
+              -- current privilege mode when debug mode was entered --
+              csr.dcsr_prv <= csr.privilege;
+
+              -- trap PC --
+              if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS (async source)
+                csr.dpc <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
+              else -- for sync. EXCEPTIONS (sync source)
+                csr.dpc <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
+              end if;
+
+            end if;
+
           end if;
 
           -- mstatus: context switch --
           -- --------------------------------------------------------------------
-          if (trap_ctrl.env_start_ack = '1') then -- ENTER: trap handler starting?
-            csr.mstatus_mie  <= '0'; -- disable interrupts
-            csr.mstatus_mpie <= csr.mstatus_mie; -- buffer previous mie state
-            if (CPU_EXTENSION_RISCV_U = true) then -- implement user mode
-              csr.privilege   <= priv_mode_m_c; -- execute trap in machine mode
-              csr.mstatus_mpp <= csr.privilege; -- buffer previous privilege mode
+          -- ENTER: trap handling starting?
+          if (trap_ctrl.env_start_ack = '1') then
+            if (CPU_EXTENSION_RISCV_DEBUG = false) or -- normal trapping (debug mode NOT implemented)
+               ((debug_ctrl.running = '0') and (trap_ctrl.cause(5) = '0')) then -- not IN debug mode and not ENTERING debug mode
+              csr.mstatus_mie  <= '0'; -- disable interrupts
+              csr.mstatus_mpie <= csr.mstatus_mie; -- buffer previous mie state
+              if (CPU_EXTENSION_RISCV_U = true) then -- implement user mode
+                csr.privilege   <= priv_mode_m_c; -- execute trap in machine mode
+                csr.mstatus_mpp <= csr.privilege; -- buffer previous privilege mode
+              end if;
             end if;
-          elsif (trap_ctrl.env_end = '1') then -- EXIT: return from exception
-            csr.mstatus_mie  <= csr.mstatus_mpie; -- restore global IRQ enable flag
-            csr.mstatus_mpie <= '1';
-            if (CPU_EXTENSION_RISCV_U = true) then -- implement user mode
-              csr.privilege   <= csr.mstatus_mpp; -- go back to previous privilege mode
-              csr.mstatus_mpp <= priv_mode_m_c;
+
+          -- EXIT: return from exception
+          elsif (trap_ctrl.env_end = '1') then
+            if (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') then -- return from debug mode
+              if (CPU_EXTENSION_RISCV_U = true) then -- implement user mode
+                csr.privilege <= csr.dcsr_prv;
+              end if;
+            else -- return from "normal trap"
+              csr.mstatus_mie  <= csr.mstatus_mpie; -- restore global IRQ enable flag
+              csr.mstatus_mpie <= '1';
+              if (CPU_EXTENSION_RISCV_U = true) then -- implement user mode
+                csr.privilege   <= csr.mstatus_mpp; -- go back to previous privilege mode
+                csr.mstatus_mpp <= priv_mode_m_c;
+              end if;
             end if;
           end if;
+
           -- user mode NOT implemented --
           if (CPU_EXTENSION_RISCV_U = false) then
             csr.privilege   <= priv_mode_m_c;
@@ -2166,6 +2390,7 @@ begin
         csr.mcounteren_tm  <= '0';
         csr.mcounteren_ir  <= '0';
         csr.mcounteren_hpm <= (others => '0');
+        csr.dcsr_ebreaku   <= '0';
       end if;
 
       -- pmp disabled --
@@ -2195,12 +2420,25 @@ begin
         csr.frm    <= (others => '0');
       end if;
 
+      -- debug mode disabled --
+      if (CPU_EXTENSION_RISCV_DEBUG = false) then
+        csr.dcsr_ebreakm <= '0';
+        csr.dcsr_ebreaku <= '0';
+        csr.dcsr_step    <= '0';
+        csr.dcsr_stepie  <= '0';
+        csr.dcsr_prv     <= (others => '0');
+        csr.dcsr_cause   <= (others => '0');
+        csr.dpc          <= (others => '0');
+        csr.dscratch0    <= (others => '0');
+      end if;
+
     end if;
   end process csr_write_access;
 
   -- decode current privilege mode --
-  csr.priv_m_mode <= '1' when (csr.privilege = priv_mode_m_c) else '0';
-  csr.priv_u_mode <= '1' when (csr.privilege = priv_mode_u_c) else '0';
+  csr.privilege_rd <= priv_mode_m_c when (CPU_EXTENSION_RISCV_E) and (debug_ctrl.running = '1') else csr.privilege; -- effective privilege mode ("machine" when in debug mode)
+  csr.priv_m_mode  <= '1' when (csr.privilege_rd = priv_mode_m_c) else '0';
+  csr.priv_u_mode  <= '1' when (csr.privilege_rd = priv_mode_u_c) and (CPU_EXTENSION_RISCV_U = true) else '0';
 
   -- PMP configuration output to bus unit --
   pmp_output: process(csr)
@@ -2404,36 +2642,24 @@ begin
 
           -- floating-point CSRs --
           -- --------------------------------------------------------------------
-          when csr_fflags_c => -- R/W: fflags - floating-point (FPU) exception flags
-            if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented
-              csr.rdata(4 downto 0) <= csr.fflags;
-            else
-              NULL;
-            end if;
-          when csr_frm_c => -- R/W: frm - floating-point (FPU) rounding mode
-            if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented
-              csr.rdata(2 downto 0) <= csr.frm;
-            else
-              NULL;
-            end if;
-          when csr_fcsr_c => -- R/W: fcsr - floating-point (FPU) control/status (frm + fflags)
-            if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented
-              csr.rdata(7 downto 5) <= csr.frm;
-              csr.rdata(4 downto 0) <= csr.fflags;
-            else
-              NULL;
-            end if;
+          when csr_fflags_c => -- fflags (r/w): floating-point (FPU) exception flags
+            if (CPU_EXTENSION_RISCV_Zfinx = true) then csr.rdata(4 downto 0) <= csr.fflags; else NULL; end if;
+          when csr_frm_c => -- frm (r/w): floating-point (FPU) rounding mode
+            if (CPU_EXTENSION_RISCV_Zfinx = true) then csr.rdata(2 downto 0) <= csr.frm; else NULL; end if;
+          when csr_fcsr_c => -- fcsr (r/w): floating-point (FPU) control/status (frm + fflags)
+            if (CPU_EXTENSION_RISCV_Zfinx = true) then csr.rdata(7 downto 5) <= csr.frm; csr.rdata(4 downto 0) <= csr.fflags; else NULL; end if;
 
           -- machine trap setup --
-          when csr_mstatus_c => -- R/W: mstatus - machine status register
+          -- --------------------------------------------------------------------
+          when csr_mstatus_c => -- mstatus (r/w): machine status register
             csr.rdata(03) <= csr.mstatus_mie; -- MIE
             csr.rdata(06) <= '1' and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- UBE: CPU/Processor is BIG-ENDIAN (in user-mode)
             csr.rdata(07) <= csr.mstatus_mpie; -- MPIE
             csr.rdata(11) <= csr.mstatus_mpp(0); -- MPP: machine previous privilege mode low
             csr.rdata(12) <= csr.mstatus_mpp(1); -- MPP: machine previous privilege mode high
-          when csr_mstatush_c => -- R/-: mstatush - machine status register - high part
+          when csr_mstatush_c => -- mstatush (r/-): machine status register - high part
             csr.rdata(05) <= '1'; -- MBE: CPU/Processor is BIG-ENDIAN (in machine-mode)
-          when csr_misa_c => -- R/-: misa - ISA and extensions
+          when csr_misa_c => -- misa (r/-): ISA and extensions
             csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
             csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);     -- B CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
@@ -2444,16 +2670,16 @@ begin
             csr.rdata(23) <= '1';                                         -- X CPU extension (non-std extensions)
             csr.rdata(30) <= '1'; -- 32-bit architecture (MXL lo)
             csr.rdata(31) <= '0'; -- 32-bit architecture (MXL hi)
-          when csr_mie_c => -- R/W: mie - machine interrupt-enable register
+          when csr_mie_c => -- mie (r/w): machine interrupt-enable register
             csr.rdata(03) <= csr.mie_msie; -- machine software IRQ enable
             csr.rdata(07) <= csr.mie_mtie; -- machine timer IRQ enable
             csr.rdata(11) <= csr.mie_meie; -- machine external IRQ enable
             for i in 0 to 15 loop -- fast interrupt channels 0..15 enable
               csr.rdata(16+i) <= csr.mie_firqe(i);
             end loop; -- i
-          when csr_mtvec_c => -- R/W: mtvec - machine trap-handler base address (for ALL exceptions)
+          when csr_mtvec_c => -- mtvec (r/w): machine trap-handler base address (for ALL exceptions)
             csr.rdata <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
-          when csr_mcounteren_c => -- R/W: machine counter enable register
+          when csr_mcounteren_c => -- mcounteren (r/w): machine counter enable register
             if (CPU_EXTENSION_RISCV_U = false) then -- this CSR is hardwired to zero if user mode is not implemented
               NULL;
             else
@@ -2464,16 +2690,17 @@ begin
             end if;
 
           -- machine trap handling --
-          when csr_mscratch_c => -- R/W: mscratch - machine scratch register
+          -- --------------------------------------------------------------------
+          when csr_mscratch_c => -- mscratch (r/w): machine scratch register
             csr.rdata <= csr.mscratch;
-          when csr_mepc_c => -- R/W: mepc - machine exception program counter
+          when csr_mepc_c => -- mepc (r/w): machine exception program counter
             csr.rdata <= csr.mepc(data_width_c-1 downto 1) & '0';
-          when csr_mcause_c => -- R/W: mcause - machine trap cause
+          when csr_mcause_c => -- mcause (r/w): machine trap cause
             csr.rdata(31) <= csr.mcause(csr.mcause'left);
             csr.rdata(csr.mcause'left-1 downto 0) <= csr.mcause(csr.mcause'left-1 downto 0);
-          when csr_mtval_c => -- R/W: mtval - machine bad address or instruction
+          when csr_mtval_c => -- mtval (r/w): machine bad address or instruction
             csr.rdata <= csr.mtval;
-          when csr_mip_c => -- R/-: mip - machine interrupt pending
+          when csr_mip_c => -- mip (r/-): machine interrupt pending
             csr.rdata(03) <= trap_ctrl.irq_buf(interrupt_msw_irq_c);
             csr.rdata(07) <= trap_ctrl.irq_buf(interrupt_mtime_irq_c);
             csr.rdata(11) <= trap_ctrl.irq_buf(interrupt_mext_irq_c);
@@ -2482,6 +2709,7 @@ begin
             end loop; -- i
 
           -- physical memory protection - configuration --
+          -- --------------------------------------------------------------------
           when csr_pmpcfg0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata <= csr.pmpcfg_rd(03) & csr.pmpcfg_rd(02) & csr.pmpcfg_rd(01) & csr.pmpcfg_rd(00); else NULL; end if; -- R/W: pmpcfg0
           when csr_pmpcfg1_c  => if (PMP_NUM_REGIONS > 03) then csr.rdata <= csr.pmpcfg_rd(07) & csr.pmpcfg_rd(06) & csr.pmpcfg_rd(05) & csr.pmpcfg_rd(04); else NULL; end if; -- R/W: pmpcfg1
           when csr_pmpcfg2_c  => if (PMP_NUM_REGIONS > 07) then csr.rdata <= csr.pmpcfg_rd(11) & csr.pmpcfg_rd(10) & csr.pmpcfg_rd(09) & csr.pmpcfg_rd(08); else NULL; end if; -- R/W: pmpcfg2
@@ -2500,6 +2728,7 @@ begin
           when csr_pmpcfg15_c => if (PMP_NUM_REGIONS > 59) then csr.rdata <= csr.pmpcfg_rd(63) & csr.pmpcfg_rd(62) & csr.pmpcfg_rd(61) & csr.pmpcfg_rd(60); else NULL; end if; -- R/W: pmpcfg15
 
           -- physical memory protection - addresses --
+          -- --------------------------------------------------------------------
           when csr_pmpaddr0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata <= csr.pmpaddr(00); else NULL; end if; -- R/W: pmpaddr0
           when csr_pmpaddr1_c  => if (PMP_NUM_REGIONS > 01) then csr.rdata <= csr.pmpaddr(01); else NULL; end if; -- R/W: pmpaddr1
           when csr_pmpaddr2_c  => if (PMP_NUM_REGIONS > 02) then csr.rdata <= csr.pmpaddr(02); else NULL; end if; -- R/W: pmpaddr2
@@ -2567,12 +2796,13 @@ begin
 
           -- machine counter setup --
           -- --------------------------------------------------------------------
-          when csr_mcountinhibit_c => -- R/W: mcountinhibit - machine counter-inhibit register
+          when csr_mcountinhibit_c => -- mcountinhibit (r/w): machine counter-inhibit register
             csr.rdata(0) <= csr.mcountinhibit_cy; -- enable auto-increment of [m]cycle[h] counter
             csr.rdata(2) <= csr.mcountinhibit_ir; -- enable auto-increment of [m]instret[h] counter
             csr.rdata(csr.mcountinhibit_hpm'left+3 downto 3) <= csr.mcountinhibit_hpm; -- enable auto-increment of [m]hpmcounterx[h] counter
 
           -- machine performance-monitoring event selector --
+          -- --------------------------------------------------------------------
           when csr_mhpmevent3_c  => if (HPM_NUM_CNTS > 00) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(00); else NULL; end if; -- R/W: mhpmevent3
           when csr_mhpmevent4_c  => if (HPM_NUM_CNTS > 01) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(01); else NULL; end if; -- R/W: mhpmevent4
           when csr_mhpmevent5_c  => if (HPM_NUM_CNTS > 02) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(02); else NULL; end if; -- R/W: mhpmevent5
@@ -2604,22 +2834,22 @@ begin
           when csr_mhpmevent31_c => if (HPM_NUM_CNTS > 28) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(28); else NULL; end if; -- R/W: mhpmevent31
 
           -- counters and timers --
-          when csr_cycle_c | csr_mcycle_c => -- (R)/(W): [m]cycle: Cycle counter LOW
+          -- --------------------------------------------------------------------
+          when csr_cycle_c | csr_mcycle_c => -- [m]cycle (r/w): Cycle counter LOW
             if (cpu_cnt_lo_width_c > 0) then csr.rdata(cpu_cnt_lo_width_c-1 downto 0) <= csr.mcycle(cpu_cnt_lo_width_c-1 downto 0); else NULL; end if;
-          when csr_cycleh_c | csr_mcycleh_c => -- (R)/(W): [m]cycleh: Cycle counter HIGH
+          when csr_cycleh_c | csr_mcycleh_c => -- [m]cycleh (r/w): Cycle counter HIGH
             if (cpu_cnt_hi_width_c > 0) then csr.rdata(cpu_cnt_hi_width_c-1 downto 0) <= csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0); else NULL; end if;
 
-          when csr_instret_c | csr_minstret_c => -- (R)/(W): [m]instret: Instructions-retired counter LOW
+          when csr_instret_c | csr_minstret_c => -- [m]instret (r/w): Instructions-retired counter LOW
             if (cpu_cnt_lo_width_c > 0) then csr.rdata(cpu_cnt_lo_width_c-1 downto 0) <= csr.minstret(cpu_cnt_lo_width_c-1 downto 0); else NULL; end if;
-          when csr_instreth_c | csr_minstreth_c => -- (R)/(W): [m]instreth: Instructions-retired counter HIGH
+          when csr_instreth_c | csr_minstreth_c => -- [m]instreth (r/w): Instructions-retired counter HIGH
             if (cpu_cnt_hi_width_c > 0) then csr.rdata(cpu_cnt_hi_width_c-1 downto 0) <= csr.minstreth(cpu_cnt_hi_width_c-1 downto 0); else NULL; end if;
 
-          when csr_time_c => -- (R)/-: time: System time LOW (from MTIME unit)
-            csr.rdata <= time_i(31 downto 0);
-          when csr_timeh_c => -- (R)/-: timeh: System time HIGH (from MTIME unit)
-            csr.rdata <= time_i(63 downto 32);
+          when csr_time_c  => csr.rdata <= time_i(31 downto 0); -- time (r/-): System time LOW (from MTIME unit)
+          when csr_timeh_c => csr.rdata <= time_i(63 downto 32); -- timeh (r/-): System time HIGH (from MTIME unit)
 
           -- hardware performance counters --
+          -- --------------------------------------------------------------------
           when csr_hpmcounter3_c   | csr_mhpmcounter3_c   => if (HPM_NUM_CNTS > 00) then csr.rdata <= csr.mhpmcounter_rd(00); else NULL; end if; -- (R)/(W): [m]hpmcounter3 - low
           when csr_hpmcounter4_c   | csr_mhpmcounter4_c   => if (HPM_NUM_CNTS > 01) then csr.rdata <= csr.mhpmcounter_rd(01); else NULL; end if; -- (R)/(W): [m]hpmcounter4 - low
           when csr_hpmcounter5_c   | csr_mhpmcounter5_c   => if (HPM_NUM_CNTS > 02) then csr.rdata <= csr.mhpmcounter_rd(02); else NULL; end if; -- (R)/(W): [m]hpmcounter5 - low
@@ -2681,17 +2911,15 @@ begin
           when csr_hpmcounter31h_c | csr_mhpmcounter31h_c => if (HPM_NUM_CNTS > 28) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(28); else NULL; end if; -- (R)/(W): [m]hpmcounter31h - high
 
           -- machine information registers --
-          when csr_mvendorid_c => -- R/-: mvendorid - vendor ID
-            csr.rdata <= (others => '0');
-          when csr_marchid_c => -- R/-: marchid - arch ID
-            csr.rdata(4 downto 0) <= "10011"; -- official RISC-V open-source arch ID
-          when csr_mimpid_c => -- R/-: mimpid - implementation ID
-            csr.rdata <= hw_version_c; -- NEORV32 hardware version
-          when csr_mhartid_c => -- R/-: mhartid - hardware thread ID
-            csr.rdata <= std_ulogic_vector(to_unsigned(HW_THREAD_ID, 32));
+          -- --------------------------------------------------------------------
+          when csr_mvendorid_c => csr.rdata <= (others => '0'); -- mvendorid (r/-): vendor ID
+          when csr_marchid_c   => csr.rdata(4 downto 0) <= "10011"; -- marchid (r/-): arch ID - official RISC-V open-source arch ID
+          when csr_mimpid_c    => csr.rdata <= hw_version_c; -- mimpid (r/-): implementation ID -- NEORV32 hardware version
+          when csr_mhartid_c   => csr.rdata <= std_ulogic_vector(to_unsigned(HW_THREAD_ID, 32)); -- mhartid (r/-): hardware thread ID
 
           -- custom machine read-only CSRs --
-          when csr_mzext_c => -- R/-: mzext - available RISC-V Z* sub-extensions
+          -- --------------------------------------------------------------------
+          when csr_mzext_c => -- mzext (r/-): available RISC-V Z* sub-extensions
             csr.rdata(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr
             csr.rdata(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei
             csr.rdata(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);        -- Zbb (B)
@@ -2710,8 +2938,16 @@ begin
             end if;
             csr.rdata(8) <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- PMP (physical memory protection)
             csr.rdata(9) <= bool_to_ulogic_f(boolean(HPM_NUM_CNTS > 0)); -- HPM (hardware performance monitors)
+            csr.rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG); -- RISC-V debug mode
+
+          -- debug mode CSRs --
+          -- --------------------------------------------------------------------
+          when csr_dcsr_c      => if (CPU_EXTENSION_RISCV_DEBUG = true) then csr.rdata <= csr.dcsr_rd;   else NULL; end if; -- dcsr (r/w): debug mode control and status
+          when csr_dpc_c       => if (CPU_EXTENSION_RISCV_DEBUG = true) then csr.rdata <= csr.dpc;       else NULL; end if; -- dpc (r/w): debug mode program counter
+          when csr_dscratch0_c => if (CPU_EXTENSION_RISCV_DEBUG = true) then csr.rdata <= csr.dscratch0; else NULL; end if; -- dscratch0 (r/w): debug mode scratch register 0
 
           -- undefined/unavailable --
+          -- --------------------------------------------------------------------
           when others =>
             NULL; -- not implemented
 
@@ -2722,6 +2958,96 @@ begin
 
   -- CSR read data output --
   csr_rdata_o <= csr.rdata;
+
+
+  -- Debug Control --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  debug_control: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      debug_ctrl.state        <= DEBUG_OFFLINE;
+      debug_ctrl.ext_halt_req <= "00";
+    elsif rising_edge(clk_i) then
+      if (CPU_EXTENSION_RISCV_DEBUG = true) then
+
+        -- rising edge detector --
+        debug_ctrl.ext_halt_req <= debug_ctrl.ext_halt_req(0) & db_halt_req_i;
+
+        -- state machine --
+        case debug_ctrl.state is
+
+          when DEBUG_OFFLINE => -- not in debug mode, waiting for entering request
+            if (debug_ctrl.trig_halt = '1') or -- external request (from DM)
+               (debug_ctrl.trig_break = '1') or -- ebreak instruction
+               (debug_ctrl.trig_step = '1') then -- single-stepping mode
+              debug_ctrl.state <= DEBUG_PENDING;
+            end if;
+
+          when DEBUG_PENDING => -- waiting to start debug mode
+            if (trap_ctrl.env_start_ack = '1') and (trap_ctrl.cause(5) = '1') then -- processing trap entry into debug mode
+              debug_ctrl.state <= DEBUG_ONLINE;
+            end if;
+
+          when DEBUG_ONLINE => -- we are in debug mode
+            if (debug_ctrl.dret = '1') then -- DRET instruction
+              debug_ctrl.state <= DEBUG_EXIT;
+            end if;
+
+          when DEBUG_EXIT => -- leaving debug mode
+            if (execute_engine.state = TRAP_EXECUTE) then -- processing trap exit
+              debug_ctrl.state <= DEBUG_OFFLINE;
+            end if;
+
+          when others => -- undefined
+            debug_ctrl.state <= DEBUG_OFFLINE;
+
+        end case;
+      else -- debug mode NOT implemented
+        debug_ctrl.state        <= DEBUG_OFFLINE;
+        debug_ctrl.ext_halt_req <= "00";
+      end if;
+    end if;
+  end process debug_control;
+
+  -- state decoding --
+  debug_ctrl.pending <= '1' when (debug_ctrl.state = DEBUG_PENDING) and (CPU_EXTENSION_RISCV_DEBUG = true) else '0';
+  debug_ctrl.running <= '1' when ((debug_ctrl.state = DEBUG_ONLINE) or (debug_ctrl.state = DEBUG_EXIT)) and (CPU_EXTENSION_RISCV_DEBUG = true) else '0';
+
+  -- entry debug mode triggers --
+  debug_ctrl.trig_break <= trap_ctrl.break_point and (debug_ctrl.running or -- we are in debug mode: re-enter debug mode
+                             (csr.priv_m_mode and csr.dcsr_ebreakm and (not debug_ctrl.running)) or -- enable goto-debug-mode in machine mode on "ebreak"
+                             (csr.priv_u_mode and csr.dcsr_ebreaku and (not debug_ctrl.running))); -- enable goto-debug-mode in user mode on "ebreak"
+  debug_ctrl.trig_halt  <= (not debug_ctrl.ext_halt_req(1)) and debug_ctrl.ext_halt_req(0) and (not debug_ctrl.running); -- rising edge detector from external halt request (if not halted already)
+  debug_ctrl.trig_step  <= csr.dcsr_step and (not debug_ctrl.running); -- single-step mode (trigger when NOT CURRENTLY in debug mode)
+
+
+  -- Debug Control and Status Register (dcsr) Read-Back --
+  dcsr_readback: process(csr, trap_ctrl)
+  begin
+    if (CPU_EXTENSION_RISCV_DEBUG = false) then
+      csr.dcsr_rd <= (others => '0');
+    else
+      csr.dcsr_rd(31 downto 28) <= "0100"; -- xdebugver: external debug support compatible to spec
+      csr.dcsr_rd(27 downto 16) <= (others => '0'); -- reserved
+      csr.dcsr_rd(15) <= csr.dcsr_ebreakm; -- ebreakm: what happens on ebreak in m-mode? (normal trap OR debug-enter)
+      csr.dcsr_rd(14) <= '0'; -- ebreakh: not available
+      csr.dcsr_rd(13) <= '0'; -- ebreaks: not available
+      if (CPU_EXTENSION_RISCV_U = true) then
+        csr.dcsr_rd(12) <= csr.dcsr_ebreaku; -- ebreaku: what happens on ebreak in u-mode? (normal trap OR debug-enter)
+      else
+        csr.dcsr_rd(12) <= '0';
+      end if;
+      csr.dcsr_rd(11) <= csr.dcsr_stepie; -- stepie: interrupts enabled during single-stepping?
+      csr.dcsr_rd(10) <= '0'; -- stopcount: counters increment as usual FIXME ???
+      csr.dcsr_rd(09) <= '0'; -- stoptime: timers increment as usual FIXME ???
+      csr.dcsr_rd(08 downto 06) <= csr.dcsr_cause; -- cause
+      csr.dcsr_rd(05) <= '0'; -- reserved
+      csr.dcsr_rd(04) <= '0'; -- mprven: mstatus.mprv is ignored in debug mode
+      csr.dcsr_rd(03) <= trap_ctrl.irq_buf(interrupt_nm_irq_c); -- nmip: pending non-maskable interrupt
+      csr.dcsr_rd(02) <= csr.dcsr_step; -- step: single-step mode
+      csr.dcsr_rd(01 downto 00) <= csr.dcsr_prv; -- prv: privilege mode when debug mode was entered
+    end if;
+  end process dcsr_readback;
 
 
 end neorv32_cpu_control_rtl;

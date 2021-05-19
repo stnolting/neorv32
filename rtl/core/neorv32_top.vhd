@@ -189,6 +189,10 @@ end neorv32_top;
 
 architecture neorv32_top_rtl of neorv32_top is
 
+  -- WORK IN PROGRESS ------------------------------------------------
+  constant CPU_EXTENSION_RISCV_DEBUG : boolean := false; -- FIXME TODO
+  -- -----------------------------------------------------------------
+
   -- CPU boot address --
   constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(BOOTLOADER_EN, boot_rom_base_c, ispace_base_c);
 
@@ -352,7 +356,14 @@ begin
   end process reset_generator;
 
   ext_rstn <= rstn_gen(rstn_gen'left); -- the beautified external reset signal
-  sys_rstn <= ext_rstn and wdt_rstn;   -- system reset - can also be triggered by watchdog
+
+  -- internal reset buffer --
+  soc_reset_generator: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      sys_rstn <= ext_rstn and wdt_rstn; -- system reset: can also be triggered by watchdog
+    end if;
+  end process soc_reset_generator;
 
 
   -- Clock Generator ------------------------------------------------------------------------
@@ -404,6 +415,7 @@ begin
     -- General --
     HW_THREAD_ID                 => HW_THREAD_ID,        -- hardware thread id
     CPU_BOOT_ADDR                => cpu_boot_addr_c,     -- cpu boot address
+    CPU_DEBUG_ADDR               => debug_mem_base_c,    -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit manipulation extensions?
@@ -414,6 +426,7 @@ begin
     CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_DEBUG    => CPU_EXTENSION_RISCV_DEBUG,    -- implement CPU debug mode?
     -- Extension Options --
     FAST_MUL_EN                  => FAST_MUL_EN,         -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,       -- use barrel shifter for shift operations
@@ -464,7 +477,9 @@ begin
     mtime_irq_i    => mtime_irq,    -- machine timer interrupt
     -- fast interrupts (custom) --
     firq_i         => fast_irq,     -- fast interrupt trigger
-    firq_ack_o     => fast_irq_ack  -- fast interrupt acknowledge mask
+    firq_ack_o     => fast_irq_ack, -- fast interrupt acknowledge mask
+    -- debug mode (halt) request --
+    db_halt_req_i  => '0'
   );
 
   -- misc --

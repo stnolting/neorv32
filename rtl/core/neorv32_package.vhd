@@ -83,16 +83,17 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050501"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050502"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
   constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
 
   -- Internal Types -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  type pmp_ctrl_if_t is array (0 to 63) of std_ulogic_vector(07 downto 0);
-  type pmp_addr_if_t is array (0 to 63) of std_ulogic_vector(33 downto 0);
-  type cp_data_if_t  is array (0 to 7)  of std_ulogic_vector(data_width_c-1 downto 0);
+  type pmp_ctrl_if_t    is array (0 to 63) of std_ulogic_vector(07 downto 0);
+  type pmp_addr_if_t    is array (0 to 63) of std_ulogic_vector(33 downto 0);
+  type cp_data_if_t     is array (0 to 7)  of std_ulogic_vector(data_width_c-1 downto 0);
+  type dci_progbuf_if_t is array (0 to 3)  of std_ulogic_vector(data_width_c-1 downto 0);
 
   -- Processor-Internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -105,6 +106,15 @@ package neorv32_package is
   constant boot_rom_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffff0000"; -- bootloader base address, fixed!
   constant boot_rom_size_c      : natural := 4*1024; -- module's address space in bytes
   constant boot_rom_max_size_c  : natural := 32*1024; -- max module's address space in bytes, fixed!
+
+  -- On-Chip Debugger Memory Subsystem --
+  constant debug_mem_base_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff800"; -- base address, fixed!
+  constant debug_mem_size_c     : natural := 64*4; -- debug ROM address space in bytes
+  --
+  constant db_mem_code_base_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff800";
+  constant db_mem_pbuf_base_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff880";
+  constant db_mem_data_base_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff8c0";
+  constant db_mem_sreg_base_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff8e0";
 
   -- IO: Peripheral Devices ("IO") Area --
   -- Control register(s) (including the device-enable) should be located at the base address of each device
@@ -300,8 +310,9 @@ package neorv32_package is
   constant ctrl_priv_lvl_msb_c  : natural := 70; -- privilege level msb
   constant ctrl_sleep_c         : natural := 71; -- set when CPU is in sleep mode
   constant ctrl_trap_c          : natural := 72; -- set when CPU is entering trap execution
+  constant ctrl_debug_running_c : natural := 73; -- CPU is in debug mode when set
   -- control bus size --
-  constant ctrl_width_c         : natural := 73; -- control bus size
+  constant ctrl_width_c         : natural := 74; -- control bus size
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -383,7 +394,7 @@ package neorv32_package is
   constant funct3_or_c     : std_ulogic_vector(2 downto 0) := "110"; -- or
   constant funct3_and_c    : std_ulogic_vector(2 downto 0) := "111"; -- and
   -- system/csr --
-  constant funct3_env_c    : std_ulogic_vector(2 downto 0) := "000"; -- ecall, ebreak, mret, wfi
+  constant funct3_env_c    : std_ulogic_vector(2 downto 0) := "000"; -- ecall, ebreak, mret, wfi, ...
   constant funct3_csrrw_c  : std_ulogic_vector(2 downto 0) := "001"; -- atomic r/w
   constant funct3_csrrs_c  : std_ulogic_vector(2 downto 0) := "010"; -- atomic read & set bit
   constant funct3_csrrc_c  : std_ulogic_vector(2 downto 0) := "011"; -- atomic read & clear bit
@@ -401,6 +412,7 @@ package neorv32_package is
   constant funct12_ebreak_c : std_ulogic_vector(11 downto 0) := x"001"; -- EBREAK
   constant funct12_mret_c   : std_ulogic_vector(11 downto 0) := x"302"; -- MRET
   constant funct12_wfi_c    : std_ulogic_vector(11 downto 0) := x"105"; -- WFI
+  constant funct12_dret_c   : std_ulogic_vector(11 downto 0) := x"7b2"; -- DRET
 
   -- RISC-V Funct5 --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -581,12 +593,11 @@ package neorv32_package is
   constant csr_pmpaddr61_c      : std_ulogic_vector(11 downto 0) := x"3ed";
   constant csr_pmpaddr62_c      : std_ulogic_vector(11 downto 0) := x"3ee";
   constant csr_pmpaddr63_c      : std_ulogic_vector(11 downto 0) := x"3ef";
----- debug mode registers --
---constant csr_class_debug_c    : std_ulogic_vector(09 downto 0) := x"7b" & "00"; -- debug registers
---constant csr_dcsr_c           : std_ulogic_vector(11 downto 0) := x"7b0";
---constant csr_dpc_c            : std_ulogic_vector(11 downto 0) := x"7b1";
---constant csr_dsratch0_c       : std_ulogic_vector(11 downto 0) := x"7b2";
---constant csr_dsratch1_c       : std_ulogic_vector(11 downto 0) := x"7b3";
+  -- debug mode registers --
+  constant csr_class_debug_c    : std_ulogic_vector(09 downto 0) := x"7b" & "00"; -- debug registers
+  constant csr_dcsr_c           : std_ulogic_vector(11 downto 0) := x"7b0";
+  constant csr_dpc_c            : std_ulogic_vector(11 downto 0) := x"7b1";
+  constant csr_dscratch0_c      : std_ulogic_vector(11 downto 0) := x"7b2";
   -- machine counters/timers --
   constant csr_mcycle_c         : std_ulogic_vector(11 downto 0) := x"b00";
   constant csr_minstret_c       : std_ulogic_vector(11 downto 0) := x"b02";
@@ -760,46 +771,52 @@ package neorv32_package is
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- MSB   : 1 = async exception (IRQ); 0 = sync exception (eg. ebreak)
+  -- MSB-1 : 1 = entry to debug mode; 0 = normal trapping
   -- RISC-V compliant sync. exceptions --
-  constant trap_ima_c    : std_ulogic_vector(5 downto 0) := "0" & "00000"; -- 0.0:  instruction misaligned
-  constant trap_iba_c    : std_ulogic_vector(5 downto 0) := "0" & "00001"; -- 0.1:  instruction access fault
-  constant trap_iil_c    : std_ulogic_vector(5 downto 0) := "0" & "00010"; -- 0.2:  illegal instruction
-  constant trap_brk_c    : std_ulogic_vector(5 downto 0) := "0" & "00011"; -- 0.3:  breakpoint
-  constant trap_lma_c    : std_ulogic_vector(5 downto 0) := "0" & "00100"; -- 0.4:  load address misaligned
-  constant trap_lbe_c    : std_ulogic_vector(5 downto 0) := "0" & "00101"; -- 0.5:  load access fault
-  constant trap_sma_c    : std_ulogic_vector(5 downto 0) := "0" & "00110"; -- 0.6:  store address misaligned
-  constant trap_sbe_c    : std_ulogic_vector(5 downto 0) := "0" & "00111"; -- 0.7:  store access fault
-  constant trap_uenv_c   : std_ulogic_vector(5 downto 0) := "0" & "01000"; -- 0.8:  environment call from u-mode
-  constant trap_menv_c   : std_ulogic_vector(5 downto 0) := "0" & "01011"; -- 0.11: environment call from m-mode
+  constant trap_ima_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00000"; -- 0.0:  instruction misaligned
+  constant trap_iba_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00001"; -- 0.1:  instruction access fault
+  constant trap_iil_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00010"; -- 0.2:  illegal instruction
+  constant trap_brk_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00011"; -- 0.3:  breakpoint
+  constant trap_lma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00100"; -- 0.4:  load address misaligned
+  constant trap_lbe_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00101"; -- 0.5:  load access fault
+  constant trap_sma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00110"; -- 0.6:  store address misaligned
+  constant trap_sbe_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00111"; -- 0.7:  store access fault
+  constant trap_uenv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01000"; -- 0.8:  environment call from u-mode
+  constant trap_menv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01011"; -- 0.11: environment call from m-mode
   -- RISC-V compliant interrupts (async. exceptions) --
-  constant trap_nmi_c    : std_ulogic_vector(5 downto 0) := "1" & "00000"; -- 1.0:  non-maskable interrupt
-  constant trap_msi_c    : std_ulogic_vector(5 downto 0) := "1" & "00011"; -- 1.3:  machine software interrupt
-  constant trap_mti_c    : std_ulogic_vector(5 downto 0) := "1" & "00111"; -- 1.7:  machine timer interrupt
-  constant trap_mei_c    : std_ulogic_vector(5 downto 0) := "1" & "01011"; -- 1.11: machine external interrupt
+  constant trap_nmi_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00000"; -- 1.0:  non-maskable interrupt
+  constant trap_msi_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00011"; -- 1.3:  machine software interrupt
+  constant trap_mti_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00111"; -- 1.7:  machine timer interrupt
+  constant trap_mei_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "01011"; -- 1.11: machine external interrupt
   -- NEORV32-specific (custom) interrupts (async. exceptions) --
-  constant trap_firq0_c  : std_ulogic_vector(5 downto 0) := "1" & "10000"; -- 1.16: fast interrupt 0
-  constant trap_firq1_c  : std_ulogic_vector(5 downto 0) := "1" & "10001"; -- 1.17: fast interrupt 1
-  constant trap_firq2_c  : std_ulogic_vector(5 downto 0) := "1" & "10010"; -- 1.18: fast interrupt 2
-  constant trap_firq3_c  : std_ulogic_vector(5 downto 0) := "1" & "10011"; -- 1.19: fast interrupt 3
-  constant trap_firq4_c  : std_ulogic_vector(5 downto 0) := "1" & "10100"; -- 1.20: fast interrupt 4
-  constant trap_firq5_c  : std_ulogic_vector(5 downto 0) := "1" & "10101"; -- 1.21: fast interrupt 5
-  constant trap_firq6_c  : std_ulogic_vector(5 downto 0) := "1" & "10110"; -- 1.22: fast interrupt 6
-  constant trap_firq7_c  : std_ulogic_vector(5 downto 0) := "1" & "10111"; -- 1.23: fast interrupt 7
-  constant trap_firq8_c  : std_ulogic_vector(5 downto 0) := "1" & "11000"; -- 1.24: fast interrupt 8
-  constant trap_firq9_c  : std_ulogic_vector(5 downto 0) := "1" & "11001"; -- 1.25: fast interrupt 9
-  constant trap_firq10_c : std_ulogic_vector(5 downto 0) := "1" & "11010"; -- 1.26: fast interrupt 10
-  constant trap_firq11_c : std_ulogic_vector(5 downto 0) := "1" & "11011"; -- 1.27: fast interrupt 11
-  constant trap_firq12_c : std_ulogic_vector(5 downto 0) := "1" & "11100"; -- 1.28: fast interrupt 12
-  constant trap_firq13_c : std_ulogic_vector(5 downto 0) := "1" & "11101"; -- 1.29: fast interrupt 13
-  constant trap_firq14_c : std_ulogic_vector(5 downto 0) := "1" & "11110"; -- 1.30: fast interrupt 14
-  constant trap_firq15_c : std_ulogic_vector(5 downto 0) := "1" & "11111"; -- 1.31: fast interrupt 15
+  constant trap_firq0_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10000"; -- 1.16: fast interrupt 0
+  constant trap_firq1_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10001"; -- 1.17: fast interrupt 1
+  constant trap_firq2_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10010"; -- 1.18: fast interrupt 2
+  constant trap_firq3_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10011"; -- 1.19: fast interrupt 3
+  constant trap_firq4_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10100"; -- 1.20: fast interrupt 4
+  constant trap_firq5_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10101"; -- 1.21: fast interrupt 5
+  constant trap_firq6_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10110"; -- 1.22: fast interrupt 6
+  constant trap_firq7_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10111"; -- 1.23: fast interrupt 7
+  constant trap_firq8_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "11000"; -- 1.24: fast interrupt 8
+  constant trap_firq9_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "11001"; -- 1.25: fast interrupt 9
+  constant trap_firq10_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11010"; -- 1.26: fast interrupt 10
+  constant trap_firq11_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11011"; -- 1.27: fast interrupt 11
+  constant trap_firq12_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11100"; -- 1.28: fast interrupt 12
+  constant trap_firq13_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11101"; -- 1.29: fast interrupt 13
+  constant trap_firq14_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11110"; -- 1.30: fast interrupt 14
+  constant trap_firq15_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11111"; -- 1.31: fast interrupt 15
+  -- entering debug mode - cause --
+  constant trap_db_break_c : std_ulogic_vector(6 downto 0) := "0" & "1" & "00010"; -- break instruction (sync / EXCEPTION)
+  constant trap_db_halt_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00011"; -- external halt request (async / IRQ)
+  constant trap_db_step_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00100"; -- single-stepping (async / IRQ)
 
   -- CPU Control Exception System -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- exception source bits --
-  constant exception_iaccess_c   : natural :=  0; -- instrution access fault
-  constant exception_iillegal_c  : natural :=  1; -- illegal instrution
-  constant exception_ialign_c    : natural :=  2; -- instrution address misaligned
+  constant exception_iaccess_c   : natural :=  0; -- instruction access fault
+  constant exception_iillegal_c  : natural :=  1; -- illegal instruction
+  constant exception_ialign_c    : natural :=  2; -- instruction address misaligned
   constant exception_m_envcall_c : natural :=  3; -- ENV call from m-mode
   constant exception_u_envcall_c : natural :=  4; -- ENV call from u-mode
   constant exception_break_c     : natural :=  5; -- breakpoint
@@ -807,8 +824,10 @@ package neorv32_package is
   constant exception_lalign_c    : natural :=  7; -- load address misaligned
   constant exception_saccess_c   : natural :=  8; -- store access fault
   constant exception_laccess_c   : natural :=  9; -- load access fault
+  -- for debug mode only --
+  constant exception_db_break_c  : natural := 10; -- enter debug mode via ebreak instruction ("sync EXCEPTION")
   --
-  constant exception_width_c     : natural := 10; -- length of this list in bits
+  constant exception_width_c     : natural := 11; -- length of this list in bits
   -- interrupt source bits --
   constant interrupt_nm_irq_c    : natural :=  0; -- non-maskable interrupt
   constant interrupt_msw_irq_c   : natural :=  1; -- machine software interrupt
@@ -830,8 +849,11 @@ package neorv32_package is
   constant interrupt_firq_13_c   : natural := 17; -- fast interrupt channel 13
   constant interrupt_firq_14_c   : natural := 18; -- fast interrupt channel 14
   constant interrupt_firq_15_c   : natural := 19; -- fast interrupt channel 15
+  -- for debug mode only --
+  constant interrupt_db_halt_c   : natural := 20; -- enter debug mode via external halt request ("async IRQ")
+  constant interrupt_db_step_c   : natural := 21; -- enter debug mode via single-stepping ("async IRQ")
   --
-  constant interrupt_width_c     : natural := 20; -- length of this list in bits
+  constant interrupt_width_c     : natural := 22; -- length of this list in bits
 
   -- CPU Privilege Modes --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -998,6 +1020,7 @@ package neorv32_package is
       -- General --
       HW_THREAD_ID                 : natural := 0;     -- hardware thread id (32-bit)
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu boot address
+      CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu debug mode start address
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
       CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
@@ -1008,6 +1031,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
+      CPU_EXTENSION_RISCV_DEBUG    : boolean := false; -- implement CPU debug mode?
       -- Extension Options --
       FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
@@ -1059,7 +1083,9 @@ package neorv32_package is
       mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt
       -- fast interrupts (custom) --
       firq_i         : in  std_ulogic_vector(15 downto 0) := (others => '0');
-      firq_ack_o     : out std_ulogic_vector(15 downto 0)
+      firq_ack_o     : out std_ulogic_vector(15 downto 0);
+      -- debug mode (halt) request --
+      db_halt_req_i  : in  std_ulogic := '0'
     );
   end component;
 
@@ -1069,7 +1095,8 @@ package neorv32_package is
     generic (
       -- General --
       HW_THREAD_ID                 : natural := 0;     -- hardware thread id (32-bit)
-      CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0):= x"00000000"; -- cpu boot address
+      CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu boot address
+      CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu debug mode start address
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
       CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
@@ -1080,6 +1107,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
+      CPU_EXTENSION_RISCV_DEBUG    : boolean := false; -- implement CPU debug mode?
       -- Extension Options --
       CPU_CNT_WIDTH                : natural := 64; -- total width of CPU cycle and instret counters (0..64)
       -- Physical memory protection (PMP) --
@@ -1112,6 +1140,8 @@ package neorv32_package is
       -- FPU interface --
       fpu_rm_o      : out std_ulogic_vector(02 downto 0); -- rounding mode
       fpu_flags_i   : in  std_ulogic_vector(04 downto 0); -- exception flags
+      -- debug mode (halt) request --
+      db_halt_req_i : in  std_ulogic;
       -- non-maskable interrupt --
       nm_irq_i      : in  std_ulogic;
       -- interrupts (risc-v compliant) --
