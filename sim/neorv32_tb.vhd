@@ -174,9 +174,10 @@ architecture neorv32_tb_rtl of neorv32_tb is
   end record;
   signal ext_mem_a, ext_mem_b, ext_mem_c : ext_mem_t;
 
-  constant uart0_rx_logger : logger_t := get_logger("UART0.RX");
-  constant uart0_actor : actor_t := new_actor;
-  constant uart1_actor : actor_t := new_actor;
+  constant uart0_rx_logger : logger_t := get_logger("uart0.rx");
+
+  constant uart0_rx_handle : uart_rx_t := new_uart_rx(uart0_baud_val_c, uart0_rx_logger);
+  constant uart1_rx_handle : uart_rx_t := new_uart_rx(uart1_baud_val_c, get_logger("uart1.rx"));
 
 begin
   test_runner : process
@@ -187,14 +188,14 @@ begin
     show(uart0_rx_logger, display_handler, pass);
 
     -- No need to send the full expectation in one big chunk
-    check_uart(net, uart0_actor, nul & "<RTE> Illegal instruction @ PC=0x00000A42, MTVAL=0xFFF027F3 </RTE>");
-    check_uart(net, uart0_actor, esc & "[1m[TEST PASSED!]" & esc & "[0m" & cr & lf);
+    check_uart(net, uart0_rx_handle, nul & "<RTE> Illegal instruction @ PC=0x00000A42, MTVAL=0xFFF027F3 </RTE>");
+    check_uart(net, uart0_rx_handle, esc & "[1m[TEST PASSED!]" & esc & "[0m" & cr & lf);
 
-    check_uart(net, uart1_actor, nul & "");
+    check_uart(net, uart1_rx_handle, nul & "");
 
     -- Wait until all expected data has been received
-    wait_until_idle(net, uart0_actor);
-    wait_until_idle(net, uart1_actor);
+    wait_until_idle(net, get_actor(uart0_rx_handle));
+    wait_until_idle(net, get_actor(uart1_rx_handle));
 
     -- Wait a bit more if some extra unexpected data is produced. If so,
     -- uart_rx will fail
@@ -348,20 +349,14 @@ begin
   twi_sda <= 'H';
 
   uart0_checker: entity work.uart_rx
-    generic map (
-      actor => uart0_actor,
-      logger => uart0_rx_logger,
-      uart_baud_val_c => uart0_baud_val_c)
+    generic map (uart0_rx_handle)
     port map (
       clk => clk_gen,
       uart_txd => uart0_txd);
 
 
   uart1_checker: entity work.uart_rx
-    generic map (
-      actor => uart1_actor,
-      logger => get_logger("uart1.rx"),
-      uart_baud_val_c => uart1_baud_val_c)
+    generic map (uart1_rx_handle)
     port map (
       clk => clk_gen,
       uart_txd => uart1_txd);

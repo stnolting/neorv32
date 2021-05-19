@@ -13,11 +13,7 @@ context vunit_lib.vc_context;
 use work.uart_rx_pkg.all;
 
 entity uart_rx is
-  generic (
-    actor : actor_t;
-    logger : logger_t;
-    uart_baud_val_c : real);
-
+  generic (handle : uart_rx_t);
   port (
     clk : in std_ulogic;
     uart_txd : in std_ulogic
@@ -31,8 +27,8 @@ architecture a of uart_rx is
   signal uart_rx_baud_cnt : real;
   signal uart_rx_bitcnt : natural;
 
-  file file_uart_tx_out : text open write_mode is "neorv32.testbench_" & get_name(logger) & ".out";
-  constant checker : checker_t := new_checker(logger);
+  file file_uart_tx_out : text open write_mode is "neorv32.testbench_" & get_name(handle.p_logger) & ".out";
+  constant checker : checker_t := new_checker(handle.p_logger);
   constant character_queue : queue_t := new_queue;
 
 begin
@@ -47,7 +43,7 @@ begin
       end loop;
     end procedure put_characters_in_queue;
   begin
-    receive(net, actor, request_msg);
+    receive(net, handle.p_actor, request_msg);
     msg_type := message_type(request_msg);
 
     -- Standard handling of standard wait_for_time messages = wait for the given time
@@ -81,7 +77,7 @@ begin
       -- arbiter --
       if (uart_rx_busy = '0') then  -- idle
         uart_rx_busy <= '0';
-        uart_rx_baud_cnt <= round(0.5 * uart_baud_val_c);
+        uart_rx_baud_cnt <= round(0.5 * handle.p_baud_val);
         uart_rx_bitcnt <= 9;
         if (uart_rx_sync(4 downto 1) = "1100") then  -- start bit? (falling edge)
           uart_rx_busy <= '1';
@@ -89,9 +85,9 @@ begin
       else
         if (uart_rx_baud_cnt <= 0.0) then
           if (uart_rx_bitcnt = 1) then
-            uart_rx_baud_cnt <= round(0.5 * uart_baud_val_c);
+            uart_rx_baud_cnt <= round(0.5 * handle.p_baud_val);
           else
-            uart_rx_baud_cnt <= round(uart_baud_val_c);
+            uart_rx_baud_cnt <= round(handle.p_baud_val);
           end if;
           if (uart_rx_bitcnt = 0) then
             uart_rx_busy <= '0';  -- done
