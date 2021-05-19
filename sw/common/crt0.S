@@ -42,6 +42,9 @@ _start:
 .cfi_startproc
 .cfi_undefined ra
 
+  nop
+  nop
+
 // *********************************************************
 // Clear integer register file (lower half, assume E extension)
 // *********************************************************
