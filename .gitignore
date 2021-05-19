@@ -22,3 +22,6 @@ docs/doxygen_build
 
 # no compiled ghdl stuff
 *.cf
+
+# HTML datasheet
+/docs/index.html

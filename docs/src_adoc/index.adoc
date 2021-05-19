@@ -5,18 +5,23 @@
 :revnumber: v1.5.5.1
 :doctype: book
 :sectnums:
-:icons: image
-:iconsdir: icons
+:icons: font
 :stem:
 :reproducible:
 :listing-caption: Listing
-:toc: macro
+:toc: left
 :toclevels: 4
 :title-logo-image: image:../figures/neorv32_logo_dark.png[pdfwidth=6.25in,align=center]
 // Uncomment next line to add a title page (or set doctype to book)
 //:title-page:
 // Uncomment next line to set page size (default is A4)
 //:pdf-page-size: Letter
+
+
+[.text-center]
+https://github.com/stnolting/neorv32/blob/master/LICENSE[image:https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat-square[title='license']]
+https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf[image:https://img.shields.io/badge/data%20sheet-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor[title='datasheet (pdf)']]
+link:sw[image:https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen[title='doxygen']]
 
 
 <<<
@@ -29,11 +34,5 @@ before updates are pushed to the repository and even more tests are made before 
 New features that are _work-in-progress_ - like new CPU extension - are disabled by default (and should not be enabled for normal usage). Like any other
 disabled features, these work-in-progress components will not be synthesized at all when disabled and **do not** increase area and power requirements
 and **do not** impact overall timing and performance.
-
-
-<<<
-// ####################################################################################################################
-toc::[]
-
 
 include::content.adoc[]
