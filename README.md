@@ -69,6 +69,7 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
   * [`Zifencei`](#Zifencei---Instruction-stream-synchronization-extension) - instruction stream synchronization (optional)
   * [`PMP`](#PMP---Privileged-architecture---Physical-memory-protection) - physical memory protection (optional)
   * [`HPM`](#HPM---Privileged-architecture---Hardware-performance-monitors) - hardware performance monitors (optional)
+  * [`DEBUG`](#DEBUG---CPU-Debug-Mode) - RISC-V CPU debug mode (optional) :construction:
 * Full-scale RISC-V microcontroller system / **SoC** [**NEORV32 Processor**](#NEORV32-Processor-Features) with optional submodules
   * optional embedded memories (instructions/data/bootloader, RAM/ROM) and caches
   * timers (watch dog, RISC-V-compatible machine timer)
@@ -190,7 +191,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 
   * :construction: **work-in-progress** :construction:
   * :warning: this extension has not been officially ratified yet!
-  * :books: more information can be found here: [RISC-V `B` spec.](https://github.com/riscv/riscv-bitmanip)
+  * :books: [RISC-V `B` spec.](https://github.com/riscv/riscv-bitmanip)
   * Compatible to [v0.94-draft](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/bitmanip-draft.pdf) of the bit manipulation spec
   * Software support via intrinsic library (see [`sw/example/bit_manipulation`](https://github.com/stnolting/neorv32/tree/master/sw/example/bit_manipulation))
   * `Zbb` base instruction set: `CLZ` `CTZ` `CPOP` `SEXT.B` `SEXT.H` `MIN[U]` `MAX[U]` `ANDN` `ORN` `XNOR` `ROL` `ROR[I]` `zext`(*pseudo-instruction* for `PACK rd, rs, zero`) `rev8`(*pseudo-instruction* for `GREVI rd, rs, -8`) `orc.b`(*pseudo-instruction* for `GORCI rd, rs, 7`)
@@ -260,7 +261,7 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
 #### `Zfinx` - Single-precision floating-point extension
 
   * :warning: this extension has not been officially ratified yet!
-  * :books: more information can be found here: [RISC-V `Zfinx` spec.](https://github.com/riscv/riscv-zfinx)
+  * :books: [RISC-V `Zfinx` spec.](https://github.com/riscv/riscv-zfinx)
   * Software support via intrinsic library (see [`sw/example/floating_point_test`](https://github.com/stnolting/neorv32/tree/master/sw/example/floating_point_test))
   * Fused multiply-add instructions (`F[N]MADD.S` & `F[N)MSUB.S`) are **not** supported!
   * Computational instructions: `FADD.S` `FSUB.S` `FMUL.S` `FSGNJ[N/X].S` `FCLASS.S` ~~`FDIV.S`~~ ~~`FSQRT.S`~~
@@ -321,6 +322,17 @@ the [:page_facing_up: NEORV32 data sheet](https://raw.githubusercontent.com/stno
   * Requires `Zicsr` extension
   * Configurable number of counters (0..29)
   * Additional machine CSRs: `mhpmevent*`(3..31) `[m]hpmcounter*[h]`(3..31)
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
+
+#### `DEBUG` - CPU Debug Mode
+
+  * :construction: **work-in-progress** :construction:
+  * :books: Compatible to the [RISC-V Debug Spec](https://github.com/riscv/riscv-debug-spec) version 0.13.2
+  * Requires `Zicsr` extension
+  * Additional instructions: `DRET`
+  * Additional CSRs: `dcsr` `dpc` `dscratch0`
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
