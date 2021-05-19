@@ -885,7 +885,7 @@ This will generate the `docs/doxygen_build` folder. To view the documentation, o
 see a list of all documented files.
 
 [TIP]
-The documentation is automatically built and deployed to GitHub pages by the CI workflow (https://stnolting.github.io/neorv32/files.html).
+The documentation is automatically built and deployed to GitHub pages by the CI workflow (https://stnolting.github.io/neorv32/sw/files.html).
 
 
 

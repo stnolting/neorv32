@@ -80,7 +80,7 @@ files are currently part of the NEORV32 core library:
 .Documentation
 [TIP]
 All core library software sources are highly documented using _doxygen_. See section <<Building the Software Framework Documentation>>.
-The documentation is automatically built and deployed to GitHub pages by the CI workflow (:https://stnolting.github.io/neorv32/files.html).
+The documentation is automatically built and deployed to GitHub pages by the CI workflow (:https://stnolting.github.io/neorv32/sw/files.html).
 
 
 
@@ -607,4 +607,4 @@ neorv32_rte_exception_uninstall(EXC_MTI);
 
 [TIP]
 More information regarding the NEORV32 runtime environment can be found in the doxygen
-software documentation (also available online at GitHub pages:https://stnolting.github.io/neorv32/files.html).
+software documentation (also available online at GitHub pages:https://stnolting.github.io/neorv32/sw/files.html).

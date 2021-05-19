@@ -70,7 +70,7 @@ Links in this document are <<_structure,highlighted>>.
 ** internal bootloader with serial user interface
 ** core libraries for high-level usage of the provided functions and peripherals
 ** runtime environment and several example programs
-** doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/files.html
+** doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
 ** FreeRTOS port + demos available
 * **NEORV32 Processor**: highly-configurable full-scale microcontroller-like processor system / SoC based on the NEORV32 CPU with optional standard peripherals:
 ** serial interfaces (UARTs, TWI, SPI)
