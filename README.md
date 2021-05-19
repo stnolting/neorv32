@@ -33,10 +33,9 @@ The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC
 on the RISC-V NEORV32 CPU. The processor is intended as auxiliary processor in larger SoC
 designs or as *ready-to-go* stand-alone custom microcontroller.
 
-:books: For detailed information take a look at the [NEORV32 data sheet (pdf)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
-The `asciidoc` sources can be found in [`docs/src_adoc`](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc). The latest automatic build
-can be downloaded as artifacts from the [_Build Data Sheet_ GitHub workflow](https://github.com/stnolting/neorv32/actions/workflows/build_datasheet.yml).
-The doxygen-based documentation of the *software framework* is available online at [GitHub-pages](https://stnolting.github.io/neorv32/files.html).
+:books: For detailed information take a look at the [NEORV32 data sheet (pdf)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (also available on
+[GitHub-pages](https://stnolting.github.io/neorv32/)). The `asciidoc` sources can be found in [`docs/src_adoc`](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc).
+The doxygen-based documentation of the *software framework* is also available online at [GitHub-pages](https://stnolting.github.io/neorv32/sw/files.html).
 
 :label: The project’s change log is available as [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md) in the root directory of this repository.
 To see the changes between *stable* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
@@ -86,9 +85,9 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
   * bootloader with UART interface console
   * runtime environment
   * several example programs
-  * [doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/Doxyfile) software documentation: available on [GitHub pages](https://stnolting.github.io/neorv32/files.html)
+  * [doxygen-based](https://github.com/stnolting/neorv32/blob/master/docs/Doxyfile) software documentation: available on [GitHub pages](https://stnolting.github.io/neorv32/sw/files.html)
   * [FreeRTOS port](https://github.com/stnolting/neorv32/blob/master/sw/example/demo_freeRTOS) available
-* [**Full-blown data sheet**](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf)
+* [**Full-blown data sheet**](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf), also available online at [GitHub-pages](https://stnolting.github.io/neorv32/)
 * Completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
 * Fully synchronous design, no latches, no gated clocks
 * Small hardware footprint and high operating frequency
@@ -119,7 +118,7 @@ NEORV32 processor check ([`sw/example/cpu_test`](https://github.com/stnolting/ne
 | Project component | CI status |
 |:----------------- |:----------|
 | [NEORV32 processor](https://github.com/stnolting/neorv32)                                                  | [![Processor Check](https://github.com/stnolting/neorv32/workflows/Processor%20Check/badge.svg)](https://github.com/stnolting/neorv32/actions?query=workflow%3A%22Processor+Check%22) |
-| [SW Framework Documentation (online at GH-pages)](https://stnolting.github.io/neorv32/files.html)          | [![Doc@GitHub-pages](https://github.com/stnolting/neorv32/workflows/Deploy%20SW%20Framework%20Documentation%20to%20GitHub-Pages/badge.svg)](https://stnolting.github.io/neorv32/files.html) |
+| Documentation: [Data Sheet (GH-pages)](https://stnolting.github.io/neorv32), [SW Framework (GH-pages)](https://stnolting.github.io/neorv32/sw/files.html) | [![Documentation](https://github.com/stnolting/neorv32/actions/workflows/Documentation.yml/badge.svg)](https://github.com/stnolting/neorv32/actions/workflows/Documentation.yml) |
 | Build data sheet from [`asciidoc` sources](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc) | [![Build Data Sheet](https://github.com/stnolting/neorv32/actions/workflows/build_datasheet.yml/badge.svg)](https://github.com/stnolting/neorv32/actions/workflows/build_datasheet.yml) |
 | [Pre-built toolchains](https://github.com/stnolting/riscv-gcc-prebuilt)                                    | [![Test Toolchains](https://github.com/stnolting/riscv-gcc-prebuilt/workflows/Test%20Toolchains/badge.svg)](https://github.com/stnolting/riscv-gcc-prebuilt/actions?query=workflow%3A%22Test+Toolchains%22) |
 | [RISC-V architecture test](https://github.com/stnolting/neorv32/blob/master/riscv-arch-test/README.md)     | [![riscv-arch-test](https://github.com/stnolting/neorv32/actions/workflows/riscv-arch-test.yml/badge.svg)](https://github.com/stnolting/neorv32/actions/workflows/riscv-arch-test.yml) |
@@ -545,19 +544,10 @@ This overview is just a short excerpt from the *Let's Get It Started* section of
 
 ### 0. Build the Documentation
 
-This step is optional since there are pre-built versions of the [processor data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
-and the [software documentation](https://stnolting.github.io/neorv32/files.html). If you want to build the documentation by yourself:
+This step is optional since there are pre-built versions of the [processor data sheet](https://stnolting.github.io/neorv32)
+and the [software documentation](https://stnolting.github.io/neorv32/sw/files.html) deployed online at GiHub pages. If you want to build the documentation by yourself:
 
-**NEORV32 Data Sheet**
-
-To build the data sheet open a console and navigate to the project's `docs` folder. Run `$ sh make_datasheet.sh` (make sure `asciidoctor-pdf` is installed).
-This will take all the `asciidoc` sources from [`docs/src_adoc`](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc) to generate `docs/NEORV32.pdf`.
-
-**Software Framework Documentation**
-
-Make sure `doxygen` is installed. Open a console and navigate to the project's `docs` folder and run `$ doxygen Doxyfile`. This will create (if not already there)
-a new folder `docs/doxygen_build/html` where doxygen will generate the HTML-based documentation pages. Open `docs/doxygen_build/html/files.html` to get started.
-
+:construction: **work in progress** :construction:
 
 ### 1. Get the Toolchain
 
