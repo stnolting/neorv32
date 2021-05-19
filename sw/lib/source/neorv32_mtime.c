@@ -119,9 +119,7 @@ uint64_t neorv32_mtime_get_time(void) {
  * Set compare time register (MTIMECMP) for generating interrupts.
  *
  * @note The interrupt is triggered when MTIME >= MTIMECMP.
- * @note The interrupt is acknwoledged by writing to the MTIMECMP.HI register.
- * @note The timer interrupt is enabled via neorv32_cpu_mti_enable(void) and disabled via neorv32_cpu_mti_disable(void).
- * @note Global interrupts have to be enabled via neorv32_cpu_eint(void).
+ * @note Global interrupts and the timer interrupt source have to be enabled .
  *
  * @param[in] timecmp System time for interrupt (uint64_t)
  **************************************************************************/
