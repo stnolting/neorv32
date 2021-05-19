@@ -4,7 +4,7 @@ The most recent version of the **NEORV32** project can be found at the top of th
 "Stable releases" are linked and highlighted :rocket:.
 The latest release is [![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases).
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases). The most recent version of the *NEORV32 data sheet*
-can be found [here](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) (pdf).
+can be found [online at GitHub-pages](https://stnolting.github.io/neorv32).
 
 :information_source: To see a list of all commits between releases run `git log RELEASE_A..RELEASE_B` (example: `v1.4.7.0..v1.4.8.0`).
 
