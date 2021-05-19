@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 19.05.2021 | 1.5.5.2 | :sparkles: added **RISC-V CPU Debug Mode**, compatible to [RISC-V debug spec](https://github.com/riscv/riscv-debug-spec); new CSRs: `dcsr`, `dpc`, `dscratch`; new instructions: `dret`; :warning: debug mode is still **work-in-progress* and not operational yet! updated documentation CI [#26](https://github.com/stnolting/neorv32/pull/26), contributed by [umarcor](https://github.com/umarcor) :+1:; `fence.i` will not longer trap if executed but not implemented (`CPU_EXTENSION_RISCV_Zifencei` = false) |
 | 13.05.2021 | 1.5.5.1 | added [`UPduino_v3`](https://github.com/stnolting/neorv32/tree/master/boards/UPduino_v3) example setup; renamed signal in watchdog module (`rtl/core/neorv32_wdt.vhd`) - collision with reserved keyword in vhdl-2008 (fixing issue [#24](https://github.com/stnolting/neorv32/issues/24)) |
 | 10.05.2021 | [**:rocket:1.5.5.0**](https://github.com/stnolting/neorv32/releases/tag/v1.5.5.0) | **New release** |
 | 10.05.2021 | 1.5.4.12 | :warning: `mip` CSR is now read-only (pending IRQs can be cleared by disabling (and re-enabling) the according `mie` bit), writing to `mip` will raise an illegal instruction exception; :sparkles: added non-maskable interrupt (NMI), top entity port `nm_irq_i`; added new NMI to NEORV32 runtime environment |
