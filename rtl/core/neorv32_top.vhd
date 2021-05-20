@@ -242,6 +242,23 @@ architecture neorv32_top_rtl of neorv32_top is
   end record;
   signal cpu_i, i_cache, cpu_d, p_bus : bus_interface_t;
 
+  -- debug core interface (DCI) --
+  type dci_t is record
+    ndmrstn       : std_ulogic;
+    halt_req      : std_ulogic;
+    halt_ack      : std_ulogic;
+    resume_req    : std_ulogic;
+    resume_ack    : std_ulogic;
+    execute_req   : std_ulogic;
+    execute_ack   : std_ulogic;
+    exception_ack : std_ulogic;
+    progbuf       : std_ulogic_vector(255 downto 0); -- program buffer, 4 entries in total
+    data_we       : std_ulogic;
+    rdata         : std_ulogic_vector(31 downto 0);
+    wdata         : std_ulogic_vector(31 downto 0);
+  end record;
+  signal dci : dci_t;
+
   -- io space access --
   signal io_acc  : std_ulogic;
   signal io_rden : std_ulogic;
@@ -284,6 +301,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal sysinfo_rdata  : std_ulogic_vector(data_width_c-1 downto 0);
   signal sysinfo_ack    : std_ulogic;
   signal bus_keeper_err : std_ulogic;
+  signal dbmem_rdata    : std_ulogic_vector(data_width_c-1 downto 0);
+  signal dbmem_ack      : std_ulogic;
 
   -- IRQs --
   signal mtime_irq    : std_ulogic;
@@ -332,6 +351,9 @@ begin
   assert not (dspace_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framework." severity warning;
   -- memory system - the i-cache is intended to accelerate instruction fetch via the external memory interface only --
   assert not ((ICACHE_EN = true) and (MEM_EXT_EN = false)) report "NEORV32 PROCESSOR CONFIG NOTE. Implementing i-cache without having the external memory interface implemented. The i-cache is intended to accelerate instruction fetch via the external memory interface." severity note;
+  -- on-chip debugger --
+  assert not (ON_CHIP_DEBUGGER_EN = true) report "NEORV32 PROCESSOR CONFIG NOTE. Implementing on-chip debugger." severity note;
+
 
   -- Reset Generator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -415,7 +437,7 @@ begin
     -- General --
     HW_THREAD_ID                 => HW_THREAD_ID,        -- hardware thread id
     CPU_BOOT_ADDR                => cpu_boot_addr_c,     -- cpu boot address
-    CPU_DEBUG_ADDR               => debug_mem_base_c,    -- cpu debug mode start address
+    CPU_DEBUG_ADDR               => dbmem_code_base_c,   -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit manipulation extensions?
@@ -620,11 +642,11 @@ begin
 
   -- processor bus: CPU transfer data input --
   p_bus.rdata <= (imem_rdata or dmem_rdata or bootrom_rdata) or wishbone_rdata or (gpio_rdata or mtime_rdata or uart0_rdata or uart1_rdata or
-                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or cfs_rdata or nco_rdata or neoled_rdata or  sysinfo_rdata);
+                 spi_rdata or twi_rdata or pwm_rdata or wdt_rdata or trng_rdata or cfs_rdata or nco_rdata or neoled_rdata or  sysinfo_rdata) or dbmem_rdata;
 
   -- processor bus: CPU transfer ACK input --
   p_bus.ack <= (imem_ack or dmem_ack or bootrom_ack) or wishbone_ack or (gpio_ack or mtime_ack or uart0_ack or uart1_ack or
-               spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or cfs_ack or nco_ack or neoled_ack or sysinfo_ack);
+               spi_ack or twi_ack or pwm_ack or wdt_ack or trng_ack or cfs_ack or nco_ack or neoled_ack or sysinfo_ack) or dbmem_ack;
 
   -- processor bus: CPU transfer data bus error input --
   p_bus.err <= bus_keeper_err or wishbone_err;
@@ -1277,6 +1299,67 @@ begin
     data_o => sysinfo_rdata, -- data out
     ack_o  => sysinfo_ack    -- transfer acknowledge
   );
+
+
+  -- **************************************************************************************************************************
+  -- On-Chip Debugger Complex
+  -- **************************************************************************************************************************
+
+  -- On-Chip Debugger - Debug Memory (DBMEM) ------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_neorv32_debug_dbmem_true:
+  if (ON_CHIP_DEBUGGER_EN = true) generate
+    neorv32_debug_dbmem_inst: neorv32_debug_dbmem
+    port map (
+      -- global control --
+      clk_i               => clk_i,             -- global clock line
+      -- CPU bus access --
+      bus_addr_i          => p_bus.addr,        -- address
+      bus_rden_i          => p_bus.re,          -- read enable
+      bus_wren_i          => p_bus.we,          -- write enable
+      bus_data_i          => p_bus.wdata,       -- data in
+      bus_data_o          => dbmem_rdata,       -- data out
+      bus_ack_o           => dbmem_ack,         -- transfer acknowledge
+      -- Debug core interface --
+      dci_halt_ack_o      => dci.halt_ack,      -- CPU (re-)entered HALT state (single-shot)
+      dci_resume_req_i    => dci.resume_req,    -- DM wants the CPU to resume when set
+      dci_resume_ack_o    => dci.resume_ack,    -- CPU starts resuming when set (single-shot)
+      dci_execute_req_i   => dci.execute_req,   -- DM wants CPU to execute program buffer when set
+      dci_execute_ack_o   => dci.execute_ack,   -- CPU starts executing program buffer when set (single-shot)
+      dci_exception_ack_o => dci.exception_ack, -- CPU has detected an exception (single-shot)
+      dci_progbuf_i       => dci.progbuf,       -- program buffer
+      dci_data_we_i       => dci.data_we,       -- write abstract data
+      dci_data_i          => dci.wdata,         -- abstract write data
+      dci_data_o          => dci.rdata          -- abstract read data
+    );
+  end generate;
+
+  neorv32_debug_dbmem_false:
+  if (ON_CHIP_DEBUGGER_EN = false) generate
+    dbmem_rdata       <= (others => '0');
+    dbmem_ack         <= '0';
+    --
+    dci.halt_ack      <= '0';
+    dci.resume_ack    <= '0';
+    dci.execute_ack   <= '0';
+    dci.exception_ack <= '0';
+    dci.rdata         <= (others => '0');
+  end generate;
+
+
+  -- On-Chip Debugger - Debug Module (DM) ---------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- TODO --
+  dci.resume_req <= '0';
+  dci.execute_req <= '0';
+  dci.progbuf <= (others => '0');
+  dci.data_we <= '0';
+  dci.wdata <= (others => '0');
+
+
+  -- On-Chip Debugger - Debug Transfer Module (DTM) -----------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- TODO --
 
 
 end neorv32_top_rtl;

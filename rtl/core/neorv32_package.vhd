@@ -83,7 +83,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050503"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050504"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
   constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
@@ -106,14 +106,13 @@ package neorv32_package is
   constant boot_rom_size_c      : natural := 4*1024; -- module's address space in bytes
   constant boot_rom_max_size_c  : natural := 32*1024; -- max module's address space in bytes, fixed!
 
-  -- On-Chip Debugger Memory Subsystem --
-  constant debug_mem_base_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff800"; -- base address, fixed!
-  constant debug_mem_size_c     : natural := 64*4; -- debug ROM address space in bytes
-  --
-  constant db_mem_code_base_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff800";
-  constant db_mem_pbuf_base_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff880";
-  constant db_mem_data_base_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff8c0";
-  constant db_mem_sreg_base_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff8e0";
+  -- On-Chip Debugger: Debug Memory --
+  constant dbmem_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff800"; -- base address, fixed!
+  constant dbmem_size_c         : natural := 4*32*4; -- debug ROM address space in bytes
+  constant dbmem_code_base_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff800";
+  constant dbmem_pbuf_base_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff880";
+  constant dbmem_data_base_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff900";
+  constant dbmem_sreg_base_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff980";
 
   -- IO: Peripheral Devices ("IO") Area --
   -- Control register(s) (including the device-enable) should be located at the base address of each device
@@ -1849,6 +1848,33 @@ package neorv32_package is
       rden_i : in  std_ulogic; -- read enable
       data_o : out std_ulogic_vector(31 downto 0); -- data out
       ack_o  : out std_ulogic  -- transfer acknowledge
+    );
+  end component;
+
+  -- Component: On-Chip Debugger - Debug Memory ---------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_debug_dbmem
+    port (
+      -- global control --
+      clk_i               : in  std_ulogic; -- global clock line
+      -- CPU bus access --
+      bus_addr_i          : in  std_ulogic_vector(31 downto 0); -- address
+      bus_rden_i          : in  std_ulogic; -- read enable
+      bus_wren_i          : in  std_ulogic; -- write enable
+      bus_data_i          : in  std_ulogic_vector(31 downto 0); -- data in
+      bus_data_o          : out std_ulogic_vector(31 downto 0); -- data out
+      bus_ack_o           : out std_ulogic; -- transfer acknowledge
+      -- Debug core interface --
+      dci_halt_ack_o      : out std_ulogic; -- CPU (re-)entered HALT state (single-shot)
+      dci_resume_req_i    : in  std_ulogic; -- DM wants the CPU to resume when set
+      dci_resume_ack_o    : out std_ulogic; -- CPU starts resuming when set (single-shot)
+      dci_execute_req_i   : in  std_ulogic; -- DM wants CPU to execute program buffer when set
+      dci_execute_ack_o   : out std_ulogic; -- CPU starts executing program buffer when set (single-shot)
+      dci_exception_ack_o : out std_ulogic; -- CPU has detected an exception (single-shot)
+      dci_progbuf_i       : in  std_ulogic_vector(255 downto 0); -- program buffer, 4 32-bit entries
+      dci_data_we_i       : in  std_ulogic; -- write abstract data
+      dci_data_i          : in  std_ulogic_vector(31 downto 0); -- abstract write data
+      dci_data_o          : out std_ulogic_vector(31 downto 0)  -- abstract read data
     );
   end component;
 
