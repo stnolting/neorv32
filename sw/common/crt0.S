@@ -43,7 +43,6 @@ _start:
 .cfi_undefined ra
 
   nop
-  nop
 
 // *********************************************************
 // Clear integer register file (lower half, assume E extension)
