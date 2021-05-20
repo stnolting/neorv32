@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 20.05.2021 | 1.5.5.5 | added system time output `mtime_o` (64-bit) driven by processor-internal _MTIME_ unit (idea [#29](https://github.com/stnolting/neorv32/discussions/29))
 | 20.05.2021 | 1.5.5.4 | **on-chip debugger**: added debug memory (`DBMEM`) component |
 | 20.05.2021 | 1.5.5.3 | added flag (SYSINFO.FEATURES) to allow software to discover if on-chip debugger is implemented (`SYSINFO_FEATURES_OCD`); added documentation [https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) |
 | 19.05.2021 | 1.5.5.2 | :sparkles: added **RISC-V CPU Debug Mode**, compatible to [RISC-V debug spec](https://github.com/riscv/riscv-debug-spec); new CSRs: `dcsr`, `dpc`, `dscratch`; new instructions: `dret`; :warning: debug mode is still **work-in-progress* and not operational yet! updated documentation CI [#26](https://github.com/stnolting/neorv32/pull/26), contributed by [umarcor](https://github.com/umarcor) :+1:; `fence.i` will not longer trap if executed but not implemented (`CPU_EXTENSION_RISCV_Zifencei` = false) |
