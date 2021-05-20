@@ -124,7 +124,7 @@ int main() {
 
 
   // intro
-  neorv32_uart_printf("\n<< CPU/PROCESSOR TEST >>\n");
+  neorv32_uart_printf("\n<< PROCESSOR CHECK >>\n");
   neorv32_uart_printf("build: "__DATE__" "__TIME__"\n");
 
 
