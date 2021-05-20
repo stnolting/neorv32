@@ -1,4 +1,4 @@
-# Check NEORV32 software framework and test processor using cpu_test program
+# Check NEORV32 software framework and test processor using .ci/ scripts
 
 name: 'Processor Check'
 

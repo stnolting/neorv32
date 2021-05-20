@@ -10,7 +10,7 @@ repository, extracts the archive and installs the toolchain into new `riscv` fol
 ### `sw_check.sh`
 
 Compiles and generates executables for all example projects from `sw/example/`, compiles and installs the default bootloader and
-compiles and installs the `sw/example/cpu_test` CPU test program.
+compiles and installs the `sw/example/processor_check` CPU test program.
 
 ### `hw_check.sh`
 
