@@ -5,7 +5,7 @@
 -- # and define all the configuration generics according to your needs. Alternatively, you can use #
 -- # one of the alternative top entities provided in the "rtl/top_templates" folder.               #
 -- #                                                                                               #
--- # Check out the processor's data sheet for more information: docs/NEORV32.pdf                   #
+-- # Check out the processor's documentation for more information.                                 #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -190,7 +190,7 @@ end neorv32_top;
 architecture neorv32_top_rtl of neorv32_top is
 
   -- WORK IN PROGRESS ------------------------------------------------
-  constant CPU_EXTENSION_RISCV_DEBUG : boolean := false; -- FIXME TODO
+  constant ON_CHIP_DEBUGGER_EN : boolean := false; -- FIXME TODO
   -- -----------------------------------------------------------------
 
   -- CPU boot address --
@@ -426,7 +426,7 @@ begin
     CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
-    CPU_EXTENSION_RISCV_DEBUG    => CPU_EXTENSION_RISCV_DEBUG,    -- implement CPU debug mode?
+    CPU_EXTENSION_RISCV_DEBUG    => ON_CHIP_DEBUGGER_EN,          -- implement CPU debug mode?
     -- Extension Options --
     FAST_MUL_EN                  => FAST_MUL_EN,         -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,       -- use barrel shifter for shift operations
@@ -1253,6 +1253,8 @@ begin
     ICACHE_ASSOCIATIVITY => ICACHE_ASSOCIATIVITY, -- i-cache: associativity (min 1), has to be a power 2
     -- External memory interface --
     MEM_EXT_EN           => MEM_EXT_EN,           -- implement external memory bus interface?
+    -- On-Chip Debugger --
+    ON_CHIP_DEBUGGER_EN  => ON_CHIP_DEBUGGER_EN,  -- implement OCD?
     -- Processor peripherals --
     IO_GPIO_EN           => IO_GPIO_EN,           -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN          => IO_MTIME_EN,          -- implement machine system timer (MTIME)?

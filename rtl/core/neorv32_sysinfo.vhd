@@ -62,6 +62,8 @@ entity neorv32_sysinfo is
     ICACHE_ASSOCIATIVITY : natural := 1;      -- i-cache: associativity (min 1), has to be a power 2
     -- External memory interface --
     MEM_EXT_EN           : boolean := false;  -- implement external memory bus interface?
+    -- On-Chip Debugger --
+    ON_CHIP_DEBUGGER_EN  : boolean := false;  -- implement OCD?
     -- Processor peripherals --
     IO_GPIO_EN           : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN          : boolean := true;   -- implement machine system timer (MTIME)?
@@ -131,9 +133,10 @@ begin
   sysinfo_mem(2)(05) <= bool_to_ulogic_f(xbus_big_endian_c); -- is external memory bus interface using BIG-endian byte-order?
   sysinfo_mem(2)(06) <= bool_to_ulogic_f(ICACHE_EN);         -- processor-internal instruction cache implemented?
   --
-  sysinfo_mem(2)(14 downto 07) <= (others => '0'); -- reserved
+  sysinfo_mem(2)(13 downto 07) <= (others => '0'); -- reserved
   -- Misc --
-  sysinfo_mem(2)(15) <= bool_to_ulogic_f(dedicated_reset_c); -- dedicated hardware reset of all core registers?
+  sysinfo_mem(2)(14) <= bool_to_ulogic_f(ON_CHIP_DEBUGGER_EN); -- on-chip debugger implemented?
+  sysinfo_mem(2)(15) <= bool_to_ulogic_f(dedicated_reset_c);   -- dedicated hardware reset of all core registers?
   -- IO --
   sysinfo_mem(2)(16) <= bool_to_ulogic_f(IO_GPIO_EN);   -- general purpose input/output port unit (GPIO) implemented?
   sysinfo_mem(2)(17) <= bool_to_ulogic_f(IO_MTIME_EN);  -- machine system timer (MTIME) implemented?
