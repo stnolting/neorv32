@@ -607,4 +607,4 @@ neorv32_rte_exception_uninstall(EXC_MTI);
 
 [TIP]
 More information regarding the NEORV32 runtime environment can be found in the doxygen
-software documentation (also available online at GitHub pages:https://stnolting.github.io/neorv32/sw/files.html).
+software documentation (also available online at https://stnolting.github.io/neorv32/sw/files.html[GitHub pages]).
