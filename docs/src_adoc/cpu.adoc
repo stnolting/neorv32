@@ -340,7 +340,7 @@ of the debugger memory. See section <<_on_chip_debugger_ocd>> for more informati
 The NEORV32 is an RISC-V `rv32i` architecture that provides several optional RISC-V CPU and ISA
 (instruction set architecture) extensions. For more information regarding the RISC-V ISA extensions please
 see the The _RISC-V Instruction Set Manual – Volume I: Unprivileged ISA_ and _The RISC-V Instruction Set Manual
-Volume II: Privileged Architecture_, which are available in the projects `docs/` folder.
+Volume II: Privileged Architecture_, which are available in the projects `docs/reference` folder.
 
 
 ==== **`A`** - Atomic Memory Access
@@ -384,7 +384,7 @@ is provided to utilize the provided bit manipulation extension from C-language c
 
 [NOTE]
 The current version of the bit manipulation specs that are supported by the NEORV32 can be found
-in `docs/bitmanip-draft.pdf`.
+in `docs/reference/bitmanip-draft.pdf`.
 
 
 ==== **`C`** - Compressed Instructions
