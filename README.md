@@ -78,6 +78,7 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
   * external bus interface (Wishbone / [AXI4](#AXI4-Connectivity))
   * dedicated NeoPixel(TM) LED interface
   * subsystem for custom co-processors
+  * on-chip debugger with JTAG interface :warning: :construction:
   * [more ...](#NEORV32-Processor-Features)
 * Software framework
   * core libraries for high-level usage of the provided functions and peripherals
@@ -106,6 +107,13 @@ if you have questions, comments, ideas or bug-fixes. Check out how to [contribut
 
 
 ### Status
+
+:information_source: This project is under active development. Best care is taken to keep the project
+stable while working on new features. The whole processors is checked before updates are pushed to the
+repository and even more tests are made before publishing new releases. New features that are
+*work-in-progress* - like new CPU extension - are disabled by default (and should not be enabled for normal usage).
+Like any other disabled features, these work-in-progress components will not be synthesized at all when disabled
+and **do not** increase area and power requirements and **do not** impact overall timing and performance
 
 The processor is [synthesizable](#FPGA-Implementation-Results) (tested on *real hardware* using Intel Quartus Prime, Xilinx Vivado and Lattice Radiant) and can successfully execute
 all the [provided example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) including the [CoreMark benchmark](#CoreMark-Benchmark) and the custom
@@ -151,6 +159,7 @@ is highly customizable via the processor's top generics and already provides the
 * numerically-controlled oscillator (**NCO**) with three independent channels
 * smart LED interface (**NEOLED**) - WS2812 / NeoPixel(c) compatible
 * system configuration information memory to check hardware configuration by software (**SYSINFO**)
+* on-chip debugger (**OCD**) compliant to the [RISC-V debug spec.](https://github.com/riscv/riscv-debug-spec) and compatible with [OpenOCD](https://github.com/riscv/riscv-openocd) :construction: work-in-progress :warning: OCD is not operational yet!
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
