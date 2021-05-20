@@ -46,7 +46,7 @@ A wrapper for the NEORV32 Processor setup providing resolved port signals can be
 4+^| **Global Control**
 | `clk_i` | 1 | in | global clock line, all registers triggering on rising edge
 | `rstn_i` | 1 | in | global reset, asynchronous, **low-active**
-4+^| **External bus interface (<<_processor_external_memory_interface_wishbone_axi4_lite,WISHBONE>>)**
+4+^| **External Bus Interface (<<_processor_external_memory_interface_wishbone_axi4_lite,WISHBONE>>)**
 | `wb_tag_o` | 3  | out | tag (access type identifier)
 | `wb_adr_o` | 32 | out | destination address
 | `wb_dat_i` | 32 | in | write data
@@ -58,7 +58,7 @@ A wrapper for the NEORV32 Processor setup providing resolved port signals can be
 | `wb_lock_o`| 1  | out | exclusive access request
 | `wb_ack_i` | 1  | in | transfer acknowledge
 | `wb_err_i` | 1  | in | transfer error
-4+^| **Advanced memory control signals**
+4+^| **Advanced Memory Control Signals**
 | `fence_o`  | 1 | out | indicates an executed _fence_ instruction
 | `fencei_o` | 1 | out | indicates an executed _fencei_ instruction
 4+^| **General Purpose Inputs & Outputs (<<_general_purpose_input_and_output_port_gpio,GPIO>>)**
@@ -91,8 +91,9 @@ A wrapper for the NEORV32 Processor setup providing resolved port signals can be
 | `nco_o` | 3 | out | NCO output channels
 4+^| **Smart LED Interface - NeoPixel(TM) compatible (<<_smart_led_interface_neoled,NEOLED>>)**
 | `neoled_o` | 1 | out | asynchronous serial data output
-4+^| **System time input from external MTIME unit**
-| `mtime_i` | 32 | in | machine timer time (to `time[h]` CSRs) from external _MTIME_ unit if the processor-internal <<_machine_system_timer_mtime,**MTIME**>> unit is NOT used
+4+^| **System time (<<_machine_system_timer_mtime,MTIME>>)**
+| `mtime_i` | 64 | in  | machine timer time (to `time[h]` CSRs) from _external MTIME_ unit if the processor-internal _MTIME_ unit is NOT implemented
+| `mtime_o` | 64 | out | machine timer time from _internal MTIME_ unit if processor-internal _MTIME_ unit IS implemented
 4+^| **Interrupts**
 | `nm_irq_i`    | 1 | in | non-maskable interrupt
 | `soc_firq_i`  | 6 | in | platform fast interrupt channels (custom)

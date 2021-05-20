@@ -8,7 +8,8 @@
 | Hardware source file(s): | neorv32_mtime.vhd | 
 | Software driver file(s): | neorv32_mtime.c |
 |                          | neorv32_mtime.h |
-| Top entity port:         | none | 
+| Top entity port:         | `mtime_i` | System time input from external MTIME
+|                          | `mtime_o` | System time output (64-bit) for SoC
 | Configuration generics:  | _IO_MTIME_EN_ | implement MTIME when _true_
 | CPU interrupts:          | `MTI` | machine timer interrupt (see <<_processor_interrupts>>)
 |=======================
@@ -17,15 +18,17 @@
 
 The MTIME machine system timer implements the memory-mapped MTIME timer from the official RISC-V
 specifications. This unit features a 64-bit system timer incremented with the primary processor clock.
+The current system time can also be obtained using the `time[h]` CSRs and is made available for processor-external
+use via the top's `mtime_o` signal.
+
+[NOTE]
+If the processor-internal **MTIME unit is NOT implemented**, the top's `mtime_i` input signal is used to update the `time[h]` CSRs
+and the `MTI` machine timer interrupt) CPU interrupt is directly connected to the top's `mtime_irq_i` input.
 
 The 64-bit system time can be accessed via the `MTIME_LO` and `MTIME_HI` memory-mapped registers (read/write) and also via
 the CPU's `time[h]` CSRs (read-only). A 64-bit time compare register – accessible via memory-mapped `MTIMECMP_LO` and `MTIMECMP_HI`
 registers – are used to configure an interrupt to the CPU. The interrupt is triggered
 whenever `MTIME` (high & low part) >= `MTIMECMP` (high & low part) and is directly forwarded to the CPU's `MTI` interrupt.
-
-[NOTE]
-If the processor-internal **MTIME unit is NOT implemented**, the top's `mtime_i` input signal is used to update the `time[h]` CSRs
-and the `MTI` machine timer interrupt) CPU interrupt is directly connected to the top's `mtime_irq_i` input.
 
 [TIP]
 The interrupt request is a single-shot signal,

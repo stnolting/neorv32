@@ -2,7 +2,7 @@
 :author: Dipl.-Ing. Stephan Nolting
 :email: stnolting@gmail.com
 :description: A size-optimized, customizable and open-source full-scale 32-bit RISC-V soft-core CPU and SoC written in platform-independent VHDL.
-:revnumber: v1.5.5.3
+:revnumber: v1.5.5.5
 :doctype: book
 :sectnums:
 :icons: font
@@ -25,18 +25,6 @@ https://github.com/stnolting/neorv32[image:https://img.shields.io/badge/GitHub-s
 https://github.com/stnolting/neorv32/blob/master/LICENSE[image:https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat-square[title='license']]
 https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf[image:https://img.shields.io/badge/data%20sheet-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor[title='datasheet (pdf)']]
 https://stnolting.github.io/neorv32/sw/files.html[image:https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen[title='doxygen']]
-
-
-<<<
-// ####################################################################################################################
-.**Project is STABLE - even if work is in progress**
-[TIP]
-This project is under active development. Best care is taken to keep the project stable while working on new features. The whole processors is checked
-before updates are pushed to the repository and even more tests are made before publishing new releases. +
- +
-New features that are _work-in-progress_ - like new CPU extension - are disabled by default (and should not be enabled for normal usage). Like any other
-disabled features, these work-in-progress components will not be synthesized at all when disabled and **do not** increase area and power requirements
-and **do not** impact overall timing and performance.
 
 
 include::content.adoc[]
