@@ -11,7 +11,7 @@
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
 [![datasheet (pdf)](https://img.shields.io/badge/data%20sheet-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor)](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf)
 [![datasheet (html)](https://img.shields.io/badge/data%20sheet-HTML-ffbd00?longCache=true&style=flat-square&logo=asciidoctor)](https://stnolting.github.io/neorv32)
-[![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen)](https://stnolting.github.io/neorv32/sw)
+[![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen)](https://stnolting.github.io/neorv32/sw/files.html)
 
 * [Overview](#Overview)
 * [Status](#Status)
