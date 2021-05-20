@@ -277,6 +277,7 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("Clock:         %u Hz\n", SYSINFO_CLK);
   neorv32_uart_printf("User ID:       0x%x\n", SYSINFO_USER_CODE);
   neorv32_uart_printf("Full HW reset: "); __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_HW_RESET));
+  neorv32_uart_printf("On-chip debug: "); __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_OCD));
 
 
   // CPU configuration
