@@ -3,17 +3,46 @@
 == On-Chip Debugger (OCD)
 
 .Work In Progress!
-[WARNING]
-The on-chip debugger is still **work in progress** and _not operational yet_!
-
 [IMPORTANT]
-The OSD requires additional resources and might also increase the critical path resulting in less performance. If the OCD is
+The on-chip debugger is still **work in progress** and **not operational yet**!
+
+The NEORV32 Processor features an _on-chip debugger_ (OCD) implementing **execution-based debugging** that is compatible to the
+"RISC-V debug spec. version 0.13.2". A copy of the spec is available in `docs/reference/riscv-debug-release.pdf`. The OCD provides the
+following key features:
+
+* JTAG test access port
+* run-control of the CPU: halting, single-stepping and resuming
+* accessing core registers (direct access to GPRs, indirect access to CSRs)
+* indirect access to the whole processor address space
+* compatible to the https://github.com/riscv/riscv-openocd[RISC-V port of OpenOCD]; pre-built binaries can be obtained for example from https://www.sifive.com/software[SiFive]
+
+[NOTE]
+The OCD requires additional resources for implementation and _might_ also increase the critical path resulting in less performance. If the OCD is
 not really required for the _final_ implementation, it should be disabled and thus, discarded from implementation. In this
-case all circuitry of the debugger is completely removed (no impact on area, energy or timing).
+case all circuitry of the debugger is completely removed (no impact on area, energy or timing at all).
 
+The NEORV32 on-chip debugger complex is base on _four_ hardware modules:
 
-**Configuration**
+.NEORV32 on-chip debugger complex
+image::neorv32_ocd_complex.png[align=center]
 
+[start=1]
+. <<_debug_transport_module_dtm>> (`rtl/core/neorv32_debug_dtm.vhd`): External JTAG access tap to allow an external adapter to interface with the _debug module(DM)_
+using the _debug module interface (dmi)_.
+. <<_debug_module_dm>> (`rtl/core/neorv32_debug_tm.vhd`): Debugger control via memory-mapped registers that are accessed via the _dmi_.
+. <<_debug_memory_dbmem>> (`rtl/core/neorv32_debug_dbmem.vhd`): This unit is a memory-mapped device that can be accesses by the CPU via
+the processor-internal bus and by the DM via the _debug core interface (dci)_. the DBMEN provides an internal _data buffer_ for data
+transfer from/to the DM, a _code ROM_ containing the "park loop, a _program buffer_ to execute small programs defined by the DM and a
+_status register_ that is used to communicate _halt_, _resume_ and _execute_ requests/acknowledges from/to the DM.
+. CPU <<_cpu_debug_mode>> extension (part of`rtl/core/neorv32_cpu_control.vhd`): This extension provides the "debug execution mode" which executes the "park loop"
+code from the DBMEM. The mode also provides additional CSRs.
+
+**Theory of Operation**
+
+When debugging the system using the OCD, the CPU is brought into _debug mode_. In this state, the application-defined architectural state of the system is
+"frozen" so the debugger can monitor and even modify it. While in debug mode, the CPU executes the "park loop" code from the _debug memory (DBMEM)_. This loop
+implements an endless loop, in which the CPU polls the memory-mapped status registers that are controlled by the _debug module (DM)_.
+These flags are used to trigger either the execution of the program buffer, which is also provided by the DM, or the resuming of the halted application.
 
 
 
@@ -25,6 +54,39 @@ case all circuitry of the debugger is completely removed (no impact on area, ene
 .Work In Progress!
 [WARNING]
 TODO
+
+The debug transport module (hardware module: `rtl/core/neorv32_debug_dtm.vhd`) provides a _JTAG TAP_ (test access port) that is used by an external debug system
+to access the NEORV32 debug system.
+
+[NOTE]
+The actual JTAG clock signal is **not** used as primary clock. Instead it is used to synchronize
+JTGA accesses, while all internal operations trigger on the system clock. Hence, no additional clock domain is required for integration of this module. However, this
+reduces the maximal JTAG clock frequency as the JTAG clock (`jtag_tck_i`) has to be less than or equal to 1/4 of the system clock (`clk_i`) frequency.
+
+[TIP]
+If the on-chip debugger is disabled (_ON_CHIP_DEBUGGER_EN_ = false) the JTAG serial input `jtag_tdi_i` is directly
+connected to the JTAG serial output `jtag_tdo_o` to maintain the JTAG chain.
+
+**TAP Registers**
+
+JTAG access is conducted via the *instruction register* `IR`, which is 5 bit wide, and several *data registers* `DR` with different sizes. The data registers are accessed
+by writing the according address to the instruction register. The following table shows the available data registers:
+
+.TAP registers
+[cols="^2,^2,^2,<8"]
+[options="header",grid="rows"]
+|=======================
+| Address (via `IR`) | Name     | Size [bits] | Description
+| `00001`            | `IDCODE` | 32          | identifier, configurable via the module's generics
+| `10000`            | `DTMCS`  | 32          | debug transport module control and status register
+| `10001`            | `DMI`    | 41          | debug module interface (_dmi_); 7-bit address, 32-bit read/write data, 2-bit operation (`00` = NOP; `10` = write; `01` = read)
+| others             | `BYPASS` | 1           | default JTAG bypass register
+|=======================
+
+[INFO]
+See the https://github.com/riscv/riscv-debug-spec[RISC-V debug specification] for more information regarding the data registers and operations.
+A local copy can be found in `docs/reference`.
+
 
 
 
@@ -38,15 +100,15 @@ TODO
 TODO
 
 
+
 <<<
 // ####################################################################################################################
 :sectnums:
-=== Debug Memory
+=== Debug Memory (DBMEM)
 
 .Work In Progress!
 [WARNING]
 TODO
-
 
 
 
@@ -55,9 +117,10 @@ TODO
 :sectnums:
 === CPU Debug Mode
 
-The NEORV32 CPU Debug Mode is compatible to the "RISC-V Debug Spec Version 0.13.2". It is enabled/implemented by setting the CPU generic
-_CPU_EXTENSION_RISCV_DEBUG_ to "true". It provides a new operation mode called "debug mode". When enabled, three additional CSRs are available
-(section <<_cpu_debug_mode_csrs>>) and also the "return from debug mode" instruction `dret` is available when the CPU is "in" debug mode.
+The NEORV32 CPU Debug Mode (part of `rtl/core/neorv32_cpu_control.vhd`) is compatible to the "RISC-V Debug Spec Version 0.13.2". It is
+enabled/implemented by setting the CPU generic _CPU_EXTENSION_RISCV_DEBUG_ to "true" (done by setting processor generic _ON_CHIP_DEBUGGER_EN_).
+It provides a new operation mode called "debug mode". When enabled, three additional CSRs are available (section <<_cpu_debug_mode_csrs>>) and
+also the "return from debug mode" instruction `dret` is available when the CPU is "in" debug mode.
 
 The CPU debug mode is entered when one of the following events appear:
 
@@ -72,15 +135,15 @@ Whenever the CPU **enters debug mode** it performs the following operations:
 * store the current privilege level to `dcsr.prv`
 * set `dcrs.cause` according to the cause why debug mode is entered
 * **no update** of `mtval`, `mcause`, `mtval` and `mstatus` CSRs
-* load the address configured via the CPU _CPU_EXTENSION_RISCV_DEBUG_ generic t the `pc` to jump to "debugger park loop" code in the debug memory
+* load the address configured via the CPU _CPU_DEBUG_ADDR_ generic to the `pc` to jump to "debugger park loop" code in the debug memory
 
 When the CPU **is in debug mode** the following things are important:
 
 * while in debug mode, the CPU executes the parking loop and the program buffer provided by the DM if requested
 * effective CPU privilege level is `machine` mode, PMP is not active
 * if an exception occurs
-  * if the exception was caused by any debug-mode entry action the CPU jumps to the _normal entry point_ ( = _CPU_EXTENSION_RISCV_DEBUG_) of the park loop again (for example when executing `ebreak` in debug mode)
-  * for all other exception sources the CPU jumps to the _exception entry point_ ( = _CPU_EXTENSION_RISCV_DEBUG_ + 4) of the park loop again to signal an exception to the DM
+  * if the exception was caused by any debug-mode entry action the CPU jumps to the _normal entry point_ ( = _CPU_DEBUG_ADDR_) of the park loop again (for example when executing `ebreak` in debug mode)
+  * for all other exception sources the CPU jumps to the _exception entry point_ ( = _CPU_DEBUG_ADDR_ + 4) of the park loop again to signal an exception to the DM
 * interrupts are masked - including NMIs; interrupts can be enabled _during the execution of single-stepped instructions_ when `dcsr.stepie` is set
 * if the DM makes a resume request, the park loop exits and the CPU leaves debug mode
 
@@ -96,7 +159,7 @@ Whenever the CPU **leaves debug mode** the following things happen:
 
 [NOTE]
 The debug-mode control and status registers (CSRs) are only accessible when the CPU is _in_ debug mode. If these CSRs are accessed
-outside of debug mode (for example when the CPU is in `machine` mode) an illegal instruction exception is raised.
+outside of debug mode (for example when in `machine` mode) an illegal instruction exception is raised.
 
 
 :sectnums!:
@@ -112,13 +175,13 @@ The following bits are implemented. The reaming bits are read-only and always re
 |======
 
 .Debug control and status register bits
-[cols="^1,<2,^1,<8"]
+[cols="^1,^2,^1,<8"]
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [RISC-V] | R/W | Event
 | 31:28 | `xdebugver` | r/- | always `0100` - indicates external debug support exists
-| 15    | `ebereakm`  | r/w | `ebreak` instructions in `machine` mode enter debug mode when set
-| 12    | `ebereaku`  | r/w | `ebreak` instructions in `user` mode enter debug mode when set
+| 15    | `ebereakm`  | r/w | `ebreak` instructions in `machine` mode _enter_ debug mode when set
+| 12    | `ebereaku`  | r/w | `ebreak` instructions in `user` mode _enter_ debug mode when set
 | 11    | `stepie`    | r/w | enable interrupts when in single-stepping mode
 | 10    | `stopcount` | r/- | `0` - counters increment as usual
 | 9     | `stoptime`  | r/- | `0` - timers increment as usual
