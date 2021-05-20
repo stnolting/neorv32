@@ -175,8 +175,9 @@ entity neorv32_top is
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o    : out std_ulogic; -- async serial data line
 
-    -- system time input from external MTIME (available if IO_MTIME_EN = false) --
-    mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
+    -- System time --
+    mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
+    mtime_o     : out std_ulogic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
 
     -- Interrupts --
     nm_irq_i    : in  std_ulogic := '0'; -- non-maskable interrupt
@@ -968,6 +969,8 @@ begin
     mtime_ack   <= '0';
     mtime_irq   <= mtime_irq_i; -- use external machine timer interrupt
   end generate;
+
+  mtime_o <= mtime_time when (IO_MTIME_EN = true) else (others => '0'); -- system time output
 
 
   -- Primary Universal Asynchronous Receiver/Transmitter (UART0) ----------------------------

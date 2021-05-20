@@ -83,7 +83,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050504"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050505"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
   constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
@@ -1000,8 +1000,9 @@ package neorv32_package is
       nco_o       : out std_ulogic_vector(02 downto 0); -- numerically-controlled oscillator channels
       -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
       neoled_o    : out std_ulogic; -- async serial data line
-      -- system time input from external MTIME (available if IO_MTIME_EN = false) --
-      mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
+      -- System time --
+      mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
+      mtime_o     : out std_ulogic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
       -- Interrupts --
       nm_irq_i    : in  std_ulogic := '0'; -- non-maskable interrupt
       soc_firq_i  : in  std_ulogic_vector(5 downto 0) := (others => '0'); -- fast interrupt channels

@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # The processor is configured to use a maximum of functional units (for testing purpose).       #
 -- # Use the "User Configuration" section to configure the testbench according to your needs.      #
--- # See NEORV32 data sheet (docs/NEORV32.pdf) for more information.                               #
+-- # See NEORV32 data sheet for more information.                                                  #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -295,8 +295,9 @@ begin
     nco_o       => open,            -- numerically-controlled oscillator channels
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o    => open,            -- async serial data line
-    -- system time input from external MTIME (available if IO_MTIME_EN = false) --
-    mtime_i     => (others => '0'), -- current system time
+    -- System time --
+    mtime_i     => (others => '0'), -- current system time from ext. MTIME (if IO_MTIME_EN = false)
+    mtime_o     => open,            -- current system time from int. MTIME (if IO_MTIME_EN = true)
     -- Interrupts --
     nm_irq_i    => nmi_ring,        -- non-maskable interrupt
     soc_firq_i  => soc_firq_ring,   -- fast interrupt channels

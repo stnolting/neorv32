@@ -261,8 +261,9 @@ begin
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o    => open,                         -- async serial data line
 
-    -- system time input from external MTIME (available if IO_MTIME_EN = false) --
-    mtime_i     => (others => '0'),              -- current system time
+    -- System time --
+    mtime_i     => (others => '0'), -- current system time from ext. MTIME (if IO_MTIME_EN = false)
+    mtime_o     => open, -- current system time from int. MTIME (if IO_MTIME_EN = true)
 
     -- Interrupts --
     nm_irq_i    => '0',                          -- non-maskable interrupt

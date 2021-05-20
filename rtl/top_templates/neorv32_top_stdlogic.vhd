@@ -148,8 +148,9 @@ entity neorv32_top_stdlogic is
     nco_o       : out std_logic_vector(02 downto 0); -- numerically-controlled oscillator channels
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o    : out std_logic; -- async serial data line
-    -- system time input from external MTIME (available if IO_MTIME_EN = false) --
-    mtime_i     : in  std_logic_vector(63 downto 0) := (others => '0'); -- current system time
+    -- System time --
+    mtime_i     : in  std_logic_vector(63 downto 0) := (others => '0'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
+    mtime_o     : out std_logic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
     -- Interrupts --
     nm_irq_i    : in  std_logic := '0'; -- non-maskable interrupt
     soc_firq_i  : in  std_logic_vector(5 downto 0) := (others => '0'); -- fast interrupt channels
@@ -211,6 +212,7 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   signal neoled_o_int    : std_ulogic;
   --
   signal mtime_i_int     : std_ulogic_vector(63 downto 0);
+  signal mtime_o_int     : std_ulogic_vector(63 downto 0);
   --
   signal nm_irq_i_int    : std_ulogic;
   signal soc_firq_i_int  : std_ulogic_vector(05 downto 0);
@@ -331,8 +333,9 @@ begin
     nco_o       => nco_o_int,       -- numerically-controlled oscillator channels
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o    => neoled_o_int,    -- async serial data line
-    -- system time input from external MTIME (available if IO_MTIME_EN = false) --
-    mtime_i     => mtime_i_int,     -- current system time
+    -- System time --
+    mtime_i     => mtime_i_int,     -- current system time from ext. MTIME (if IO_MTIME_EN = false)
+    mtime_o     => mtime_o_int,     -- current system time from int. MTIME (if IO_MTIME_EN = true)
     -- Interrupts --
     nm_irq_i    => nm_irq_i_int,    -- non-maskable interrupt
     soc_firq_i  => soc_firq_i_int,  -- fast interrupt channels
@@ -383,6 +386,7 @@ begin
   neoled_o        <= std_logic(neoled_o_int);
 
   mtime_i_int     <= std_ulogic_vector(mtime_i);
+  mtime_o         <= std_logic_vector(mtime_o_int);
 
   soc_firq_i_int  <= std_ulogic_vector(soc_firq_i);
   mtime_irq_i_int <= std_ulogic(mtime_irq_i);

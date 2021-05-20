@@ -360,9 +360,10 @@ begin
     -- NCO output (available if IO_NCO_EN = true) --
     nco_o       => nco_o_int,       -- numerically-controlled oscillator channels
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-    neoled_o    =>neoled_o_int,     -- async serial data line
-    -- system time input from external MTIME (available if IO_MTIME_EN = false) --
-    mtime_i     => (others => '0'), -- current system time
+    neoled_o    => neoled_o_int,    -- async serial data line
+    -- System time --
+    mtime_i     => (others => '0'), -- current system time from ext. MTIME (if IO_MTIME_EN = false)
+    mtime_o     => open,            -- current system time from int. MTIME (if IO_MTIME_EN = true)
     -- Interrupts --
     nm_irq_i    => nm_irq_i_int,    -- non-maskable interrupt
     soc_firq_i  => soc_firq_i_int,  -- fast interrupt channels
