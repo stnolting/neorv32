@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32 - CPU Test Program >>                                                              #
+// # << NEORV32 - Processor Test Program >>                                                        #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -34,7 +34,7 @@
 
 
 /**********************************************************************//**
- * @file cpu_test/main.c
+ * @file processor_check/main.c
  * @author Stephan Nolting
  * @brief CPU/Processor test program.
  **************************************************************************/
@@ -96,12 +96,12 @@ int main() {
   // init UART at default baud rate, no parity bits, no hw flow control
   neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
-// Disable cpu_test compilation by default
-#ifndef RUN_CPUTEST
-  #warning cpu_test HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_CPUTEST clean_all exe<< to compile it.
+// Disable processor_check compilation by default
+#ifndef RUN_CHECK
+  #warning processor_check HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.
 
   // inform the user if you are actually executing this
-  neorv32_uart_printf("ERROR! cpu_test has not been compiled. Use >>make USER_FLAGS+=-DRUN_CPUTEST clean_all exe<< to compile it.\n");
+  neorv32_uart_printf("ERROR! processor_check has not been compiled. Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.\n");
 
   return 0;
 #endif
