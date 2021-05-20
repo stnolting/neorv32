@@ -889,7 +889,7 @@ completion should be avoided. The default processor-internal module provide exac
 
 .Bus Keeper: Processor-internal memories and memory-mapped devices with variable / high latency
 [IMPORTANT]
-Processor-internal peripherals or memories do not have to respond within one cycle after the transfer initiation (= latency > 1 cycle). 
+Processor-internal peripherals or memories do not have to respond within one cycle after the transfer initiation (= latency > 1 cycle).
 However, the bus transaction has to be completed (= acknowledged) within a certain **response time window**. This time window is defined
 by the global `max_proc_int_response_time_c` constant (default = 15 cycles) from the processor's VHDL package file (`rtl/neorv32_package.vhd`).
 It defines the maximum number of cycles after which an _unacknowledged_ processor-internal bus transfer will timeout and raise a **bus fault exception**.
