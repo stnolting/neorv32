@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 20.05.2021 | 1.5.5.3 | added flag (SYSINFO.FEATURES) to allow software to discover if on-chip debugger is implemented (`SYSINFO_FEATURES_OCD`); added documentation [https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) |
 | 19.05.2021 | 1.5.5.2 | :sparkles: added **RISC-V CPU Debug Mode**, compatible to [RISC-V debug spec](https://github.com/riscv/riscv-debug-spec); new CSRs: `dcsr`, `dpc`, `dscratch`; new instructions: `dret`; :warning: debug mode is still **work-in-progress* and not operational yet! updated documentation CI [#26](https://github.com/stnolting/neorv32/pull/26), contributed by [umarcor](https://github.com/umarcor) :+1:; `fence.i` will not longer trap if executed but not implemented (`CPU_EXTENSION_RISCV_Zifencei` = false) |
 | 13.05.2021 | 1.5.5.1 | added [`UPduino_v3`](https://github.com/stnolting/neorv32/tree/master/boards/UPduino_v3) example setup; renamed signal in watchdog module (`rtl/core/neorv32_wdt.vhd`) - collision with reserved keyword in vhdl-2008 (fixing issue [#24](https://github.com/stnolting/neorv32/issues/24)) |
 | 10.05.2021 | [**:rocket:1.5.5.0**](https://github.com/stnolting/neorv32/releases/tag/v1.5.5.0) | **New release** |
