@@ -6,12 +6,13 @@
 :doctype: book
 :sectnums:
 :icons: font
+:imagesdir: https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures
 :stem:
 :reproducible:
 :listing-caption: Listing
 :toc: left
 :toclevels: 4
-:title-logo-image: image:../figures/neorv32_logo_dark.png[pdfwidth=6.25in,align=center]
+:title-logo-image: neorv32_logo_dark.png[pdfwidth=6.25in,align=center]
 // Uncomment next line to add a title page (or set doctype to book)
 //:title-page:
 // Uncomment next line to set page size (default is A4)

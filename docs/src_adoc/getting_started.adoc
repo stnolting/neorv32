@@ -149,7 +149,7 @@ select it as top entity.
 . This test setup provides a minimal test hardware setup:
 
 .NEORV32 "hello world" test setup
-image::../figures/neorv32_test_setup.png[align=center]
+image::neorv32_test_setup.png[align=center]
 
 [start=7]
 . This test setup only implements some very basic processor and CPU features. Also, only the

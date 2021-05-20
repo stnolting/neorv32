@@ -37,7 +37,7 @@ value. The actual data bits are transferred by modifying the duty cycle of the s
 WS2812 are shown below). A RESET command is "send" by pulling the data line LOW for at least 50μs.
 
 .WS2812 bit-level protocol - taken from the "Adafruit NeoPixel Überguide"
-image::../figures/neopixel.png[align=center]
+image::neopixel.png[align=center]
 
 .WS2812 interface timing
 [cols="<2,<2,<6"]

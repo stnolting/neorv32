@@ -1,7 +1,7 @@
 :sectnums:
 == NEORV32 Central Processing Unit (CPU)
 
-image:../figures/riscv_logo.png[width=350,align=center]
+image::riscv_logo.png[width=350,align=center]
 
 **Key Features**
 
@@ -36,7 +36,7 @@ can start building your own SoC. Of course you can also use the CPU in it’s tr
 The NEORV32 CPU was designed from scratch based only on the official ISA and privileged architecture
 specifications. The following figure shows the simplified architecture of the CPU.
 
-image:../figures/neorv32_cpu.png[align=center]
+image::neorv32_cpu.png[align=center]
 
 The CPU uses a pipelined architecture with basically two main stages. The first stage (IF – instruction fetch)
 is responsible for fetching new instruction data from memory via the fetch engine. The instruction data is
@@ -904,9 +904,9 @@ an _optional_ bus timeout (see section <<_processor_external_memory_interface_wi
 [cols="^2,^2"]
 [grid="none"]
 |=======================
-| image:../figures/cpu_interface_read_long.png[read,300,150] +
+| image::cpu_interface_read_long.png[read,300,150] +
 Read access
-| image:../figures/cpu_interface_write_long.png[write,300,150] +
+| image::cpu_interface_write_long.png[write,300,150] +
 Write access
 |=======================
 

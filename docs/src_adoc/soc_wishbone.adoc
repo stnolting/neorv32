@@ -62,9 +62,9 @@ first bus clock cycle.
 [cols="^2,^2"]
 [grid="none"]
 |=======================
-| image:../figures/wishbone_classic_read.png[700,300] +
+| image::wishbone_classic_read.png[700,300] +
 **Classic** Wishbone read access
-| image:../figures/wishbone_pipelined_write.png[700,300] +
+| image::wishbone_pipelined_write.png[700,300] +
 **Pipelined** Wishbone write access
 |=======================
 
@@ -149,7 +149,7 @@ The AXI Interface has been verified using Xilinx Vivado IP Packager and Block De
 interface port signals are automatically detected when packaging the core.
 
 .Example AXI SoC using Xilinx Vivado
-image:../figures/neorv32_axi_soc.png[]
+image::neorv32_axi_soc.png[]
 
 [WARNING]
 Using the auto-termination timeout feature (_MEM_EXT_TIMEOUT_ greater than zero) is **not AXI4 compliant** as the AXI protocol does not support canceling of
