@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 21.05.2021 | 1.5.5.6 | **on-chip debugger**: added debug transport module (`DTM`) component |
 | 20.05.2021 | 1.5.5.5 | added system time output `mtime_o` (64-bit) driven by processor-internal _MTIME_ unit (idea [#29](https://github.com/stnolting/neorv32/discussions/29))
 | 20.05.2021 | 1.5.5.4 | **on-chip debugger**: added debug memory (`DBMEM`) component |
 | 20.05.2021 | 1.5.5.3 | added flag (SYSINFO.FEATURES) to allow software to discover if on-chip debugger is implemented (`SYSINFO_FEATURES_OCD`); added documentation [https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) |
