@@ -3,10 +3,9 @@ use ieee.std_logic_1164.all;
 
 package components is
 
+  -- Yosys / IceCube wrapper components
 
-  -- Radiant components
-
-  component HSOSC
+  component SB_HFOSC
   generic (
     CLKHF_DIV : string
   );
@@ -50,55 +49,6 @@ package components is
   );
   end component;
 
-
-  component  RGB
-  generic (
-    CURRENT_MODE : string := "0b0";
-    RGB0_CURRENT : string := "0b000000";
-    RGB1_CURRENT : string := "0b000000";
-    RGB2_CURRENT : string := "0b000000"
-  );
-  port (
-    RGB0PWM  : in  std_logic;
-    RGB1PWM  : in  std_logic;
-    RGB2PWM  : in  std_logic;
-    CURREN   : in  std_logic;
-    RGBLEDEN : in  std_logic;
-    RGB0     : out std_logic;
-    RGB1     : out std_logic;
-    RGB2     : out std_logic
-  );
-  end component;
-
-  component SP256K is
-  port (
-    AD        : in std_logic_vector(13 downto 0);
-    DI        : in std_logic_vector(15 downto 0);
-    MASKWE    : in std_logic_vector(3 downto 0);
-    WE        : in std_logic;
-    CS        : in std_logic;
-    CK        : in std_logic;
-    STDBY     : in std_logic;
-    SLEEP     : in std_logic;
-    PWROFF_N  : in std_logic;
-    DO        : out std_logic_vector(15 downto 0)
-  );
-  end component;
-
-
-  -- Yosys / IceCube wrapper components
-
-  component SB_HFOSC
-  generic (
-    CLKHF_DIV : string
-  );
-  port (
-    CLKHFPU  : in  std_logic;
-    CLKHFEN  : in  std_logic;
-    CLKHF    : out std_logic
-  );
-  end component;
-
   component  SB_RGBA_DRV
   generic (
     CURRENT_MODE : string := "0b0";
@@ -118,7 +68,6 @@ package components is
   );
   end component;
 
-
   component SB_SPRAM256KA
   port (
     ADDRESS    : in std_logic_vector(13 downto 0);
@@ -134,4 +83,4 @@ package components is
   );
   end component;
 
-end components;
+end package components;

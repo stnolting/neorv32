@@ -34,7 +34,6 @@ NEORV32_SRC := \
   ../../rtl/core/neorv32_wishbone.vhd
 
 UPDUINO_SRC := \
-  system_pll.vhd \
   neorv32_upduino_v3_top.vhd
 
 ICE40_SRC := \
@@ -61,7 +60,7 @@ work-obj08.cf: neorv32-obj08.cf ${UPDUINO_SRC}
 	ghdl -a --std=08 --work=work ${UPDUINO_SRC}
 
 ${IMPL_NAME}.json: work-obj08.cf
-	yosys -m ghdl -p 'ghdl --std=08 --no-formal neorv32_upduino_v3_top; synth_ice40 -abc2 -dsp -json $@' 2>&1 | tee yosys-report.txt
+	yosys -m ghdl -p 'ghdl --std=08 --no-formal neorv32_upduino_v3_top; synth_ice40 -dsp -json $@' 2>&1 | tee yosys-report.txt
 
 ${IMPL_NAME}.asc: ${IMPL_NAME}.json ${DESIGN_NAME}.pcf
 	nextpnr-ice40 --ignore-loops --timing-allow-fail \
@@ -72,4 +71,4 @@ ${IMPL_NAME}.bin: ${IMPL_NAME}.asc
 	icepack $< $@
 
 clean:
-	rm -f *.cf ${IMPL_NAME}.* *-report.txt
+	rm -f *.cf ${IMPL_NAME}.{asc,json}  *-report.txt
