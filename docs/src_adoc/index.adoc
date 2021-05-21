@@ -20,6 +20,8 @@
 
 image::neorv32_logo_transparent.png[align=center]
 
+image::riscv_logo.png[width=350,align=center]
+
 [.text-center]
 https://github.com/stnolting/neorv32[image:https://img.shields.io/badge/GitHub-stnolting%2Fneorv32-ffbd00?style=flat-square&logo=github&[title='homepage']]
 https://github.com/stnolting/neorv32/blob/master/LICENSE[image:https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat-square[title='license']]
