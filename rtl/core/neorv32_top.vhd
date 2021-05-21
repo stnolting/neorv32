@@ -260,6 +260,21 @@ architecture neorv32_top_rtl of neorv32_top is
   end record;
   signal dci : dci_t;
 
+  -- debug module interface (DMI) --
+  type dmi_t is record
+    rstn       : std_ulogic;
+    req_valid  : std_ulogic;
+    req_ready  : std_ulogic; -- DMI is allowed to make new requests when set
+    req_addr   : std_ulogic_vector(06 downto 0);
+    req_op     : std_ulogic; -- 0=read, 1=write
+    req_data   : std_ulogic_vector(31 downto 0);
+    resp_valid : std_ulogic; -- response valid when set
+    resp_ready : std_ulogic; -- ready to receive respond
+    resp_data  : std_ulogic_vector(31 downto 0);
+    resp_err   : std_ulogic; -- 0=ok, 1=error
+  end record;
+  signal dmi : dmi_t;
+
   -- io space access --
   signal io_acc  : std_ulogic;
   signal io_rden : std_ulogic;
@@ -384,7 +399,7 @@ begin
   soc_reset_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      sys_rstn <= ext_rstn and wdt_rstn; -- system reset: can also be triggered by watchdog
+      sys_rstn <= ext_rstn and wdt_rstn and dci.ndmrstn; -- system reset: can also be triggered by watchdog and debug module
     end if;
   end process soc_reset_generator;
 
@@ -502,7 +517,7 @@ begin
     firq_i         => fast_irq,     -- fast interrupt trigger
     firq_ack_o     => fast_irq_ack, -- fast interrupt acknowledge mask
     -- debug mode (halt) request --
-    db_halt_req_i  => '0'
+    db_halt_req_i  => dci.halt_req
   );
 
   -- misc --
@@ -1358,11 +1373,60 @@ begin
   dci.progbuf <= (others => '0');
   dci.data_we <= '0';
   dci.wdata <= (others => '0');
+  dci.halt_req <= '0';
+  dci.ndmrstn <= '1';
+  --
+  dmi.req_ready <= '0';
+  dmi.resp_valid <= '0';
+  dmi.resp_data <= (others => '0');
+  dmi.resp_err <= '0';
 
 
-  -- On-Chip Debugger - Debug Transfer Module (DTM) -----------------------------------------
+  -- On-Chip Debugger - Debug Transport Module (DTM) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- TODO --
+  neorv32_neorv32_debug_dtm_true:
+  if (ON_CHIP_DEBUGGER_EN = true) generate
+    neorv32_debug_dtm_inst: neorv32_debug_dtm
+    generic map (
+      IDCODE_VERSION => jtag_tap_idcode_version_c, -- version
+      IDCODE_PARTID  => jtag_tap_idcode_partid_c,  -- part number
+      IDCODE_MANID   => jtag_tap_idcode_manid_c    -- manufacturer id
+    )
+    port map (
+      -- global control --
+      clk_i            => clk_i,          -- global clock line
+      rstn_i           => ext_rstn,       -- external reset, low-active
+      -- jtag connection --
+      jtag_trst_i      => '0',
+      jtag_tck_i       => '0',
+      jtag_tdi_i       => '0',
+      jtag_tdo_o       => open,
+      jtag_tms_i       => '0',
+      -- debug module interface (DMI) --
+      dmi_rstn_o       => dmi.rstn,
+      dmi_req_valid_o  => dmi.req_valid,
+      dmi_req_ready_i  => dmi.req_ready,  -- DMI is allowed to make new requests when set
+      dmi_req_addr_o   => dmi.req_addr,
+      dmi_req_op_o     => dmi.req_op,     -- 0=read, 1=write
+      dmi_req_data_o   => dmi.req_data,
+      dmi_resp_valid_i => dmi.resp_valid, -- response valid when set
+      dmi_resp_ready_o => dmi.resp_ready, -- ready to receive respond
+      dmi_resp_data_i  => dmi.resp_data,
+      dmi_resp_err_i   => dmi.resp_err    -- 0=ok, 1=error
+    );
+  end generate;
+
+  neorv32_debug_dtm_false:
+  if (ON_CHIP_DEBUGGER_EN = false) generate
+--  jtag_tdo_o <= jtag_tdi_i; -- feed-through
+    --
+    dmi.rstn       <= '0';
+    dmi.req_valid  <= '0';
+    dmi.req_addr   <= (others => '0');
+    dmi.req_op     <= '0';
+    dmi.req_data   <= (others => '0');
+    dmi.resp_ready <= '0';
+  end generate;
 
 
 end neorv32_top_rtl;

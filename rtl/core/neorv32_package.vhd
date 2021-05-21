@@ -61,6 +61,11 @@ package neorv32_package is
   -- "response time window" for processor-internal memories and IO devices
   constant max_proc_int_response_time_c : natural := 15; -- cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception (min 2)
 
+  -- jtag tap - identifier --
+  constant jtag_tap_idcode_version_c : std_ulogic_vector(03 downto 0) := x"0"; -- version
+  constant jtag_tap_idcode_partid_c  : std_ulogic_vector(15 downto 0) := x"cafe"; -- part number
+  constant jtag_tap_idcode_manid_c   : std_ulogic_vector(10 downto 0) := "00000000000"; -- manufacturer id
+
   -- Helper Functions -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function index_size_f(input : natural) return natural;
@@ -1876,6 +1881,42 @@ package neorv32_package is
       dci_data_we_i       : in  std_ulogic; -- write abstract data
       dci_data_i          : in  std_ulogic_vector(31 downto 0); -- abstract write data
       dci_data_o          : out std_ulogic_vector(31 downto 0)  -- abstract read data
+    );
+  end component;
+
+  -- Component: On-Chip Debugger - Debug Module (DM) ----------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- TODO
+
+  -- Component: On-Chip Debugger - Debug Transport Module (DTM) -----------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_debug_dtm
+    generic (
+      IDCODE_VERSION : std_ulogic_vector(03 downto 0) := x"0"; -- version
+      IDCODE_PARTID  : std_ulogic_vector(15 downto 0) := x"cafe"; -- part number
+      IDCODE_MANID   : std_ulogic_vector(10 downto 0) := "00000000000" -- manufacturer id
+    );
+    port (
+      -- global control --
+      clk_i            : in  std_ulogic; -- global clock line
+      rstn_i           : in  std_ulogic; -- global reset line, low-active
+      -- jtag connection --
+      jtag_trst_i      : in  std_ulogic;
+      jtag_tck_i       : in  std_ulogic;
+      jtag_tdi_i       : in  std_ulogic;
+      jtag_tdo_o       : out std_ulogic;
+      jtag_tms_i       : in  std_ulogic;
+      -- debug module interface (DMI) --
+      dmi_rstn_o       : out std_ulogic;
+      dmi_req_valid_o  : out std_ulogic;
+      dmi_req_ready_i  : in  std_ulogic; -- DMI is allowed to make new requests when set
+      dmi_req_addr_o   : out std_ulogic_vector(06 downto 0);
+      dmi_req_op_o     : out std_ulogic; -- 0=read, 1=write
+      dmi_req_data_o   : out std_ulogic_vector(31 downto 0);
+      dmi_resp_valid_i : in  std_ulogic; -- response valid when set
+      dmi_resp_ready_o : out std_ulogic; -- ready to receive respond
+      dmi_resp_data_i  : in  std_ulogic_vector(31 downto 0);
+      dmi_resp_err_i   : in  std_ulogic -- 0=ok, 1=error
     );
   end component;
 
