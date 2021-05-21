@@ -61,7 +61,7 @@ ARISING IN ANY WAY OUT OF
 
 
 ==========================
-**The NEORV32 Processor Project** +
+**The NEORV32 RISC-V Processor** +
 Copyright (c) 2021, by Dipl.-Ing. Stephan Nolting. All rights reserved. +
 HQ: https://github.com/stnolting/neorv32 +
 Contact: stnolting@gmail.com +
@@ -73,9 +73,9 @@ _made in Hanover, Germany_
 
 include::overview.adoc[]
 
-include::cpu.adoc[]
-
 include::soc.adoc[]
+
+include::cpu.adoc[]
 
 include::software.adoc[]
 

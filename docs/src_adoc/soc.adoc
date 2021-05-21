@@ -24,6 +24,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ custom functions subsystem for custom co-processor extensions (<<_custom_functions_subsystem_cfs,**CFS**>>)
 * _optional_ numerically-controlled oscillator (<<_numerically_controlled_oscillator_nco,**NCO**>>) with 3 independent channels
 * _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (<<_smart_led_interface_neoled,**NEOLED**>>)
+* _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>)
 * system configuration information memory to check HW configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
 
@@ -94,7 +95,7 @@ A wrapper for the NEORV32 Processor setup providing resolved port signals can be
 4+^| **System time (<<_machine_system_timer_mtime,MTIME>>)**
 | `mtime_i` | 64 | in  | machine timer time (to `time[h]` CSRs) from _external MTIME_ unit if the processor-internal _MTIME_ unit is NOT implemented
 | `mtime_o` | 64 | out | machine timer time from _internal MTIME_ unit if processor-internal _MTIME_ unit IS implemented
-4+^| **Interrupts**
+4+^| **<<_processor_interrupts>>**
 | `nm_irq_i`    | 1 | in | non-maskable interrupt
 | `soc_firq_i`  | 6 | in | platform fast interrupt channels (custom)
 | `mtime_irq_i` | 1 | in | machine timer interrupt13 (RISC-V)

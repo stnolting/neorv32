@@ -2,18 +2,19 @@
 :sectnums:
 == On-Chip Debugger (OCD)
 
-.Work In Progress!
+.WORK IN PROGRESS
 [IMPORTANT]
-The on-chip debugger is still **work in progress** and **not operational yet**!
+The on-chip debugger is still **WORK IN PROGRESS** and **NOT OPERATIONAL YET**!
 
 The NEORV32 Processor features an _on-chip debugger_ (OCD) implementing **execution-based debugging** that is compatible to the
-"RISC-V debug spec. version 0.13.2". A copy of the spec is available in `docs/reference/riscv-debug-release.pdf`. The OCD provides the
-following key features:
+**Minimal RISC-V Debug Specification Version 0.13.2**. Please refer to this spec for in-deep information. A copy of the specification is available
+in `docs/references/riscv-debug-release.pdf`. The NEORV32 OCD provides the following key features:
 
 * JTAG test access port
 * run-control of the CPU: halting, single-stepping and resuming
-* accessing core registers (direct access to GPRs, indirect access to CSRs)
-* indirect access to the whole processor address space
+* executing arbitrary programs during debugging
+* accessing core registers (direct access to GPRs, indirect access to CSRs via program buffer)
+* indirect access to the whole processor address space (via program buffer))
 * compatible to the https://github.com/riscv/riscv-openocd[RISC-V port of OpenOCD]; pre-built binaries can be obtained for example from https://www.sifive.com/software[SiFive]
 
 [NOTE]
@@ -51,12 +52,20 @@ These flags are used to trigger either the execution of the program buffer, whic
 :sectnums:
 === Debug Transport Module (DTM)
 
-.Work In Progress!
-[WARNING]
-TODO - JTAG IDCODE
+The debug transport module (VHDL module: `rtl/core/neorv32_debug_dtm.vhd`) provides a JTAG test access port (TAP). The DTM is the first entity in the debug system,
+which connects and external debugger via JTAG to the next debugging entity: the debug module (DM). External access is provided by the following top-level ports.
 
-The debug transport module (hardware module: `rtl/core/neorv32_debug_dtm.vhd`) provides a _JTAG TAP_ (test access port) that is used by an external debug system
-to access the NEORV32 debug system.
+.JTAG top level signals
+[cols="^2,^2,^2,<8"]
+[options="header",grid="rows"]
+|=======================
+| Name          | Width | Direction | Description
+| `jtag_trst_i` | 1     | in        | TAP reset (low-active); this signal is optional, make sure to pull it _high_ if it is not used
+| `jtag_tck_i`  | 1     | in        | serial clock
+| `jtag_tdi_i`  | 1     | in        | serial data input
+| `jtag_tdo_o`  | 1     | out       | serial data output
+| `jtag_tms_i`  | 1     | in        | mode select
+|=======================
 
 [NOTE]
 The actual JTAG clock signal is **not** used as primary clock. Instead it is used to synchronize
@@ -67,11 +76,12 @@ reduces the maximal JTAG clock frequency as the JTAG clock (`jtag_tck_i`) has to
 If the on-chip debugger is disabled (_ON_CHIP_DEBUGGER_EN_ = false) the JTAG serial input `jtag_tdi_i` is directly
 connected to the JTAG serial output `jtag_tdo_o` to maintain the JTAG chain
 
+The DTM uses the "debug module interface (dmi)" to access the actual debug module (DM). These accesses are controlled by TAP-internal registers. Each registers is selected by
+the JTAG instruction register (`IR`) and accessed through the JTAG data register (`DR`).
+
 [NOTE]
 The DTM's instruction and data registers can be accessed using OpenOCDs `irscan` and `drscan` commands. The RISC-V port of OpenOCD
 also provides low-level command (`riscv dmi_read` & `riscv dmi_write`) to access the _dmi_ debug module interface.
-
-**TAP Registers**
 
 JTAG access is conducted via the *instruction register* `IR`, which is 5 bit wide, and several *data registers* `DR` with different sizes. The data registers are accessed
 by writing the according address to the instruction register. The following table shows the available data registers:
@@ -89,7 +99,7 @@ by writing the according address to the instruction register. The following tabl
 
 [INFO]
 See the https://github.com/riscv/riscv-debug-spec[RISC-V debug specification] for more information regarding the data registers and operations.
-A local copy can be found in `docs/reference`.
+A local copy can be found in `docs/references`.
 
 
 
@@ -98,11 +108,38 @@ A local copy can be found in `docs/reference`.
 :sectnums:
 === Debug Module (DM)
 
-.Work In Progress!
+.Work In Progress
 [WARNING]
 TODO
 
+According to the RISC-V debug specification, the DM acts as a translation interface between abstract operations issued by the debugger and the platform-specific implementation.
+It supports the following operations (excerpt from the debug spec):
 
+[start=1]
+. Gives the debugger necessary information about the implementation.
+. Allows the hart to be halted and resumed and provides status of the current state.
+. Provides abstract read and write access to the halted hart's GPRs.
+. Provides access to a reset signal that allows debugging from the very first instruction after reset.
+. Provides a mechanism to allow debugging the hart immediately out of reset (regardless of the. (_experimental_)
+. Provides a Program Buffer to force the hart to execute arbitrary instructions.
+. Allows memory access from a hart's point of view.
+
+The NEORV32 DM follows the "Minimal RISC-V Debug Specification" to provide full debugging capabilities while keeping resource (area) requirements at a minimum level.
+It implements the **execution based debugging scheme** for a single hart and provides the following hardware features:
+
+* program buffer with 2 entries and implicit `ebreak` instruction afterwards
+* no _direct_ bus access (bus can be accessed via the CPU)
+* abstract commands: "access register"
+* no halt-on-reset capabilities yet
+
+==== DM Registers
+
+The DM is controlled via a set of registers that are accessed via the DTM's _dmi_. The "Minimal RISC-V Debug Specification" requires only a subset of the
+registers specified in the spec. The following registers are implemented. Write accesses to any other registers are ignored and read accesses wil always return zero.
+
+.Work In Progress
+[WARNING]
+TODO
 
 
 
@@ -111,15 +148,15 @@ TODO
 :sectnums:
 === Debug Memory (DBMEM)
 
-.Work In Progress!
+.Work In Progress
 [WARNING]
 TODO - add park loop code
 
-The debug memory provides a direct interfaces between the CPU and the DM. It includes a small ROM that contains the code for the "park loop", which is executed
-when the CPU is _in_ debug mode. The DBMEM uses a total address space of 128 words ( = 512 bytes) divided into four sections of 32 words ( = 128 bytes) each.
-Any CPU access within this address space will succeed. The program buffer only uses 4 effective words in this space but these words are mirrored
-to fill up the whole 128 bytes of the section. The status register and the data buffer are also mirrored to fill their according section's
-address space.
+The debug memory (VHDL module: `rtl/core/neorv32_debug_dbmem.vhd`) provides a direct interfaces between the CPU and the DM. It includes a small ROM that
+contains the code for the "park loop", which is executed when the CPU is _in_ debug mode. The DBMEM uses a total address space of 128 words ( = 512 bytes)
+divided into four sections of 32 words ( = 128 bytes) each. Any CPU access within this address space will succeed. The program buffer only uses 4 effective
+words in this space but these words are mirrored to fill up the whole 128 bytes of the section. The status register and the data buffer are also mirrored
+to fill their according section's address space.
 
 .Debug memory address map
 [cols="^2,^2,^2,<8"]
@@ -162,7 +199,7 @@ driven by the DM and are read-only to the CPU keep their state until the CPU ack
 :sectnums:
 === CPU Debug Mode
 
-The NEORV32 CPU Debug Mode (part of `rtl/core/neorv32_cpu_control.vhd`) is compatible to the "RISC-V Debug Spec Version 0.13.2". It is
+The NEORV32 CPU Debug Mode (part of `rtl/core/neorv32_cpu_control.vhd`) is compatible to the "Minimal RISC-V Debug Specification 0.13.2". It is
 enabled/implemented by setting the CPU generic _CPU_EXTENSION_RISCV_DEBUG_ to "true" (done by setting processor generic _ON_CHIP_DEBUGGER_EN_).
 It provides a new operation mode called "debug mode". When enabled, three additional CSRs are available (section <<_cpu_debug_mode_csrs>>) and
 also the "return from debug mode" instruction `dret` is available when the CPU is "in" debug mode.
@@ -261,4 +298,16 @@ instruction will return to `dpc`.
 3+| Reset value: _UNDEFINED_
 3+| The `dscratch0` CSR is compatible to the RISC-V debug spec. It provides a general purpose scratch register.
 |======
+
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Access via OpenOCD
+
+.Work In Progress
+[WARNING]
+TODO
+
 

@@ -6,7 +6,7 @@ image::riscv_logo.png[width=350,align=center]
 **Key Features**
 
 * 32-bit pipelined/multi-cycle in-order `rv32` RISC-V CPU
-* Optional RISC-V extensions: `rv32[i/e][m][a][c][b][u]` + `[Zfinx][Zicsr][Zifencei]`
+* Optional RISC-V extensions: `rv32[i/e][m][a][c][b][u]` + `[Zfinx][Zicsr][Zifencei]` + `[debug_mode]` (for on-chip debugging)
 * Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications – passes the official RISC-V Architecture Tests (v2+)
 * Official RISC-V open-source architecture ID
 * Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 _fast_ interrupts and 1 non-maskable interrupt
@@ -33,7 +33,7 @@ can start building your own SoC. Of course you can also use the CPU in it’s tr
 :sectnums:
 === Architecture
 
-The NEORV32 CPU was designed from scratch based only on the official ISA and privileged architecture
+The NEORV32 CPU was designed from scratch based only on the official ISA / privileged architecture
 specifications. The following figure shows the simplified architecture of the CPU.
 
 image::neorv32_cpu.png[align=center]
@@ -340,7 +340,7 @@ of the debugger memory. See section <<_on_chip_debugger_ocd>> for more informati
 The NEORV32 is an RISC-V `rv32i` architecture that provides several optional RISC-V CPU and ISA
 (instruction set architecture) extensions. For more information regarding the RISC-V ISA extensions please
 see the The _RISC-V Instruction Set Manual – Volume I: Unprivileged ISA_ and _The RISC-V Instruction Set Manual
-Volume II: Privileged Architecture_, which are available in the projects `docs/reference` folder.
+Volume II: Privileged Architecture_, which are available in the projects `docs/references` folder.
 
 
 ==== **`A`** - Atomic Memory Access
@@ -384,7 +384,7 @@ is provided to utilize the provided bit manipulation extension from C-language c
 
 [NOTE]
 The current version of the bit manipulation specs that are supported by the NEORV32 can be found
-in `docs/reference/bitmanip-draft.pdf`.
+in `docs/references/bitmanip-draft.pdf`.
 
 
 ==== **`C`** - Compressed Instructions
