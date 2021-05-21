@@ -57,7 +57,9 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: NEORV32-HTML
-        path: docs/index.html
+        path: |
+          docs/index.html
+          docs/figures
 
 
   deploy:
