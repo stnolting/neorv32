@@ -54,6 +54,7 @@ ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_cp_muldiv.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_decompressor.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_cpu_regfile.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_debug_dbmem.vhd
+ghdl -a --work=neorv32 $srcdir_core/neorv32_debug_dtm.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_dmem.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_gpio.vhd
 ghdl -a --work=neorv32 $srcdir_core/neorv32_imem.vhd
