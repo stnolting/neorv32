@@ -61,6 +61,7 @@ jobs:
 
 
   deploy:
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/'))
     needs:
       - doxygen
       - asciidoctor
