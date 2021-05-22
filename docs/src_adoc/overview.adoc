@@ -158,6 +158,8 @@ neorv32_top.vhd                      - NEORV32 Processor top entity
 │├neorv32_cpu_cp_muldiv.vhd        - Mul/Div co-processor (M extension)
 │└neorv32_cpu_regfile.vhd          - Data register file
 ├neorv32_debug_dbmem.vhd            - on-chip debug: debug memory
+├neorv32_debug_dm.vhd               - on-chip debug: debug module
+├neorv32_debug_dtm.vhd              - on-chip debug: debug transfer module
 ├neorv32_dmem.vhd                   - Processor-internal data memory
 ├neorv32_gpio.vhd                   - General purpose input/output port unit
 ├neorv32_imem.vhd                   - Processor-internal instruction memory
@@ -191,7 +193,7 @@ between entity boundaries, so the actual utilization results might vary a bit.
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| Hardware version: | `1.5.3.2`
+| Hardware version: | `1.5.5.5`
 | Top entity:       | `rtl/core/neorv32_cpu.vhd`
 |=======================
 
@@ -204,6 +206,7 @@ between entity boundaries, so the actual utilization results might vary a bit.
 | `rv32im_Zicsr`                        | 2443 | 1134 | 1024     | 0    | 124 MHz
 | `rv32imc_Zicsr`                       | 2669 | 1149 | 1024     | 0    | 125 MHz
 | `rv32imac_Zicsr`                      | 2685 | 1156 | 1024     | 0    | 124 MHz
+| `rv32imac_Zicsr` + `debug_mode`       | 3058 | 1225 | 1024     | 0    | 120 MHz
 | `rv32imac_Zicsr` + `u`                | 2698 | 1162 | 1024     | 0    | 124 MHz
 | `rv32imac_Zicsr_Zifencei` + `u`       | 2715 | 1162 | 1024     | 0    | 122 MHz
 | `rv32imac_Zicsr_Zifencei_Zfinx` + `u` | 4004 | 1812 | 1024     | 7    | 121 MHz
@@ -216,7 +219,7 @@ between entity boundaries, so the actual utilization results might vary a bit.
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| Hardware version: | `1.5.4.9`
+| Hardware version: | `1.5.5.5`
 | Top entity:       | `rtl/core/neorv32_top.vhd`
 |=======================
 
@@ -230,9 +233,9 @@ between entity boundaries, so the actual utilization results might vary a bit.
 | **BUSSWITCH** | Bus mux for CPU instr. and data interface           |  49 |   8 |        0 |    0
 | CFS           | Custom functions subsystem                          |   - |   - |        - |    -
 | DMEM          | Processor-internal data memory (8kB)                |  18 |   2 |    65536 |    0
-| DBMEM         | On-chip debugger - debug memory                     |   ? |   ? |        0 |    0
-| DM            | On-chip debugger - debug module                     |   ? |   ? |        0 |    0
-| DTM           | On-chip debugger - debug transfer module (JTAG)     |   ? |   ? |        0 |    0
+| DBMEM         | On-chip debugger - debug memory                     | 248 | 124 |        0 |    0
+| DM            | On-chip debugger - debug module                     | 292 | 171 |        0 |    0
+| DTM           | On-chip debugger - debug transfer module (JTAG)     | 254 | 218 |        0 |    0
 | GPIO          | General purpose input/output ports                  |  67 |  65 |        0 |    0
 | iCACHE        | Instruction cache (1x4 blocks, 256 bytes per block) | 220 | 154 |     8192 |    0
 | IMEM          | Processor-internal instruction memory (16kB)        |   6 |   2 |   131072 |    0
