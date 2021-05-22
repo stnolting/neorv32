@@ -53,6 +53,9 @@ entity neorv32_top is
     USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
 
+    -- On-Chip Debugger (OCD) --
+    ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
+
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit manipulation extensions?
@@ -118,6 +121,13 @@ entity neorv32_top is
     -- Global control --
     clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
     rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
+
+    -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
+    jtag_trst_i : in  std_ulogic := '0'; -- low-active TAP reset (optional)
+    jtag_tck_i  : in  std_ulogic := '0'; -- serial clock
+    jtag_tdi_i  : in  std_ulogic := '0'; -- serial data input
+    jtag_tdo_o  : out std_ulogic;        -- serial data output
+    jtag_tms_i  : in  std_ulogic := '0'; -- mode select
 
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
     wb_tag_o    : out std_ulogic_vector(02 downto 0); -- request tag
@@ -189,10 +199,6 @@ entity neorv32_top is
 end neorv32_top;
 
 architecture neorv32_top_rtl of neorv32_top is
-
-  -- WORK IN PROGRESS ------------------------------------------------
-  constant ON_CHIP_DEBUGGER_EN : boolean := false; -- FIXME TODO
-  -- -----------------------------------------------------------------
 
   -- CPU boot address --
   constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(BOOTLOADER_EN, boot_rom_base_c, ispace_base_c);
@@ -668,10 +674,12 @@ begin
   p_bus.err <= bus_keeper_err or wishbone_err;
 
 
-  -- Processor-Internal Bus Keeper (BUSKEEPER) ----------------------------------------------
+  -- Processor-Internal Bus Keeper (BUS_KEEPER) ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_bus_keeper_inst: neorv32_bus_keeper
   generic map (
+    -- External memory interface --
+    MEM_EXT_EN        => MEM_EXT_EN,        -- implement external memory bus interface?
     -- Internal instruction memory --
     MEM_INT_IMEM_EN   => MEM_INT_IMEM_EN,   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
@@ -1367,19 +1375,55 @@ begin
 
   -- On-Chip Debugger - Debug Module (DM) ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- TODO --
-  dci.resume_req <= '0';
-  dci.execute_req <= '0';
-  dci.progbuf <= (others => '0');
-  dci.data_we <= '0';
-  dci.wdata <= (others => '0');
-  dci.halt_req <= '0';
-  dci.ndmrstn <= '1';
-  --
-  dmi.req_ready <= '0';
-  dmi.resp_valid <= '0';
-  dmi.resp_data <= (others => '0');
-  dmi.resp_err <= '0';
+  neorv32_neorv32_debug_dm_true:
+  if (ON_CHIP_DEBUGGER_EN = true) generate
+    neorv32_debug_dm_inst: neorv32_debug_dm
+    port map (
+      -- global control --
+      clk_i               => clk_i,             -- global clock line
+      rstn_i              => ext_rstn,          -- external reset, low-active
+      -- debug module interface (DMI) --
+      dmi_rstn_i          => dmi.rstn,
+      dmi_req_valid_i     => dmi.req_valid,
+      dmi_req_ready_o     => dmi.req_ready,
+      dmi_req_addr_i      => dmi.req_addr,
+      dmi_req_op_i        => dmi.req_op,
+      dmi_req_data_i      => dmi.req_data,
+      dmi_resp_valid_o    => dmi.resp_valid,    -- response valid when set
+      dmi_resp_ready_i    => dmi.resp_ready,    -- ready to receive respond
+      dmi_resp_data_o     => dmi.resp_data,
+      dmi_resp_err_o      => dmi.resp_err,      -- 0=ok, 1=error
+      -- debug core control interface (DCI) --
+      dci_ndmrstn_o       => dci.ndmrstn,       -- soc reset
+      dci_halt_req_o      => dci.halt_req,      -- request hart to halt (enter debug mode)
+      dci_halt_ack_i      => dci.halt_ack,      -- CPU (re-)entered HALT state (single-shot)
+      dci_resume_req_o    => dci.resume_req,    -- DM wants the CPU to resume when set
+      dci_resume_ack_i    => dci.resume_ack,    -- CPU starts resuming when set (single-shot)
+      dci_execute_req_o   => dci.execute_req,   -- DM wants CPU to execute program buffer when set
+      dci_execute_ack_i   => dci.execute_ack,   -- CPU starts executing program buffer when set (single-shot)
+      dci_exception_ack_i => dci.exception_ack, -- CPU has detected an exception (single-shot)
+      dci_progbuf_o       => dci.progbuf,       -- program buffer
+      dci_data_we_o       => dci.data_we,       -- write abstract data
+      dci_data_o          => dci.wdata,         -- abstract write data
+      dci_data_i          => dci.rdata          -- abstract read data
+    );
+  end generate;
+
+  neorv32_debug_dm_false:
+  if (ON_CHIP_DEBUGGER_EN = false) generate
+    dmi.req_ready   <= '0';
+    dmi.resp_valid  <= '0';
+    dmi.resp_data   <= (others => '0');
+    dmi.resp_err    <= '0';
+    --
+    dci.ndmrstn     <= '1';
+    dci.halt_req    <= '0';
+    dci.resume_req  <= '0';
+    dci.execute_req <= '0';
+    dci.progbuf     <= (others => '0');
+    dci.data_we     <= '0';
+    dci.wdata       <= (others => '0');
+  end generate;
 
 
   -- On-Chip Debugger - Debug Transport Module (DTM) ----------------------------------------
@@ -1397,11 +1441,11 @@ begin
       clk_i            => clk_i,          -- global clock line
       rstn_i           => ext_rstn,       -- external reset, low-active
       -- jtag connection --
-      jtag_trst_i      => '0',
-      jtag_tck_i       => '0',
-      jtag_tdi_i       => '0',
-      jtag_tdo_o       => open,
-      jtag_tms_i       => '0',
+      jtag_trst_i      => jtag_trst_i,
+      jtag_tck_i       => jtag_tck_i,
+      jtag_tdi_i       => jtag_tdi_i,
+      jtag_tdo_o       => jtag_tdo_o,
+      jtag_tms_i       => jtag_tms_i,
       -- debug module interface (DMI) --
       dmi_rstn_o       => dmi.rstn,
       dmi_req_valid_o  => dmi.req_valid,
@@ -1418,7 +1462,7 @@ begin
 
   neorv32_debug_dtm_false:
   if (ON_CHIP_DEBUGGER_EN = false) generate
---  jtag_tdo_o <= jtag_tdi_i; -- feed-through
+    jtag_tdo_o <= jtag_tdi_i; -- feed-through
     --
     dmi.rstn       <= '0';
     dmi.req_valid  <= '0';

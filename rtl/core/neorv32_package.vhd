@@ -88,7 +88,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050506"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050508"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
   constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
@@ -903,6 +903,8 @@ package neorv32_package is
       BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
       USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
       HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
+      -- On-Chip Debugger (OCD) --
+      ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
       CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit manipulation extensions?
@@ -960,6 +962,12 @@ package neorv32_package is
       -- Global control --
       clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
       rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
+      -- JTAG on-chip debugger interface --
+      jtag_trst_i : in  std_ulogic := '0'; -- low-active TAP reset (optional)
+      jtag_tck_i  : in  std_ulogic := '0'; -- serial clock
+      jtag_tdi_i  : in  std_ulogic := '0'; -- serial data input
+      jtag_tdo_o  : out std_ulogic;        -- serial data output
+      jtag_tms_i  : in  std_ulogic := '0'; -- mode select
       -- Wishbone bus interface (available if MEM_EXT_EN = true) --
       wb_tag_o    : out std_ulogic_vector(02 downto 0); -- request tag
       wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
@@ -1348,6 +1356,8 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_bus_keeper is
     generic (
+       -- External memory interface --
+      MEM_EXT_EN        : boolean := false;  -- implement external memory bus interface?
       -- Internal instruction memory --
       MEM_INT_IMEM_EN   : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
@@ -1886,7 +1896,37 @@ package neorv32_package is
 
   -- Component: On-Chip Debugger - Debug Module (DM) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- TODO
+  component neorv32_debug_dm
+    port (
+      -- global control --
+      clk_i               : in  std_ulogic; -- global clock line
+      rstn_i              : in  std_ulogic; -- global reset line, low-active
+      -- debug module interface (DMI) --
+      dmi_rstn_i          : in  std_ulogic;
+      dmi_req_valid_i     : in  std_ulogic;
+      dmi_req_ready_o     : out std_ulogic; -- DMI is allowed to make new requests when set
+      dmi_req_addr_i      : in  std_ulogic_vector(06 downto 0);
+      dmi_req_op_i        : in  std_ulogic; -- 0=read, 1=write
+      dmi_req_data_i      : in  std_ulogic_vector(31 downto 0);
+      dmi_resp_valid_o    : out std_ulogic; -- response valid when set
+      dmi_resp_ready_i    : in  std_ulogic; -- ready to receive respond
+      dmi_resp_data_o     : out std_ulogic_vector(31 downto 0);
+      dmi_resp_err_o      : out std_ulogic; -- 0=ok, 1=error
+      -- debug core control interface (DCI) --
+      dci_ndmrstn_o       : out std_ulogic; -- soc reset
+      dci_halt_req_o      : out std_ulogic; -- request hart to halt (enter debug mode)
+      dci_halt_ack_i      : in  std_ulogic; -- CPU (re-)entered HALT state (single-shot)
+      dci_resume_req_o    : out std_ulogic; -- DM wants the CPU to resume when set
+      dci_resume_ack_i    : in  std_ulogic; -- CPU starts resuming when set (single-shot)
+      dci_execute_req_o   : out std_ulogic; -- DM wants CPU to execute program buffer when set
+      dci_execute_ack_i   : in  std_ulogic; -- CPU starts executing program buffer when set (single-shot)
+      dci_exception_ack_i : in  std_ulogic; -- CPU has detected an exception (single-shot)
+      dci_progbuf_o       : out std_ulogic_vector(255 downto 0); -- program buffer, 4 entries in total
+      dci_data_we_o       : out std_ulogic; -- write abstract data
+      dci_data_o          : out std_ulogic_vector(31 downto 0); -- abstract write data
+      dci_data_i          : in  std_ulogic_vector(31 downto 0)  -- abstract read data
+    );
+  end component;
 
   -- Component: On-Chip Debugger - Debug Transport Module (DTM) -----------------------------
   -- -------------------------------------------------------------------------------------------
