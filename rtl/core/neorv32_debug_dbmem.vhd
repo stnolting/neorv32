@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # This unit contains:                                                                           #
 -- # * code ROM for the "park loop" code                                                           #
--- # * memory-mapped register for communicating with the DM                                        #
+-- # * memory-mapped registers for communicating with the DM                                       #
 -- #   * data buffer for accessing DM.data0                                                        #
 -- #   * program buffer for accessing progbuf0/1 (+ virtual load/store entry & ebreak entry)       #
 -- #   * status and control register to check for REQs from DM and to send ACKs to DM              #
@@ -79,25 +79,25 @@ architecture neorv32_debug_dbmem_rtl of neorv32_debug_dbmem is
     00000000 => x"0180006f",
     00000001 => x"7b241073",
     00000002 => x"02000413",
-    00000003 => x"88802023",
+    00000003 => x"98802023",
     00000004 => x"7b202473",
     00000005 => x"00100073",
     00000006 => x"7b241073",
     00000007 => x"00100413",
-    00000008 => x"88802023",
-    00000009 => x"88002403",
-    00000010 => x"00847413", -- WORK IN PROGRESS
+    00000008 => x"98802023",
+    00000009 => x"98002403",
+    00000010 => x"00847413",
     00000011 => x"02041263",
-    00000012 => x"88002403",
+    00000012 => x"98002403",
     00000013 => x"00247413",
     00000014 => x"00041463",
     00000015 => x"fe9ff06f",
     00000016 => x"00400413",
-    00000017 => x"88802023",
+    00000017 => x"98802023",
     00000018 => x"7b202473",
     00000019 => x"7b200073",
     00000020 => x"01000413",
-    00000021 => x"88802023",
+    00000021 => x"98802023",
     00000022 => x"7b202473",
     00000023 => x"88000067",
     others   => x"00100073"  -- ebreak
