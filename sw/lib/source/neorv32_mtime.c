@@ -125,8 +125,16 @@ uint64_t neorv32_mtime_get_time(void) {
  **************************************************************************/
 void neorv32_mtime_set_timecmp(uint64_t timecmp) {
 
-  MTIMECMP_LO = -1; // prevent mtimecmp from temporarily becoming smaller than the lesser of the old and new values
-  MTIMECMP = timecmp;
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } cycles;
+
+  cycles.uint64 = timecmp;
+
+  MTIMECMP_LO = -1; // prevent MTIMECMP from temporarily becoming smaller than the lesser of the old and new values
+  MTIMECMP_HI = cycles.uint32[1];
+  MTIMECMP_LO = cycles.uint32[0];
 }
 
 
