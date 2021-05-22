@@ -47,6 +47,12 @@ A wrapper for the NEORV32 Processor setup providing resolved port signals can be
 4+^| **Global Control**
 | `clk_i` | 1 | in | global clock line, all registers triggering on rising edge
 | `rstn_i` | 1 | in | global reset, asynchronous, **low-active**
+4+^| **JTAG Access Port for <<_on_chip_debugger_ocd>>**
+| `jtag_trst_i` | 1 | in  | TAP reset, low-active (optionalfootnote:[Pull high if not used.])
+| `jtag_tck_i ` | 1 | in  | serial clock
+| `jtag_tdi_i ` | 1 | in  | serial data input
+| `jtag_tdo_o ` | 1 | out | serial data outputfootnote:[If the on-chip debugger is not implemented (_ON_CHIP_DEBUGGER_EN_ = false) `jtag_tdi_i` is directly forwarded to `jtag_tdo_o` to maintain the JTAG chain.]
+| `jtag_tms_i ` | 1 | in  | mode select
 4+^| **External Bus Interface (<<_processor_external_memory_interface_wishbone_axi4_lite,WISHBONE>>)**
 | `wb_tag_o` | 3  | out | tag (access type identifier)
 | `wb_adr_o` | 32 | out | destination address
@@ -178,6 +184,14 @@ processor's boot address from the beginning of the instruction memory address sp
 |======
 | **HW_THREAD_ID** | _natural_ | 0
 3+| The hart ID of the CPU. Can be read via the `mhartid` CSR. Hart IDs must be unique within a system.
+|======
+
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **ON_CHIP_DEBUGGER_EN** | _boolean_ | false
+3+| Implement on-chip debugger (OCD). See chapter <<_on_chip_debugger_ocd>>.
 |======
 
 
