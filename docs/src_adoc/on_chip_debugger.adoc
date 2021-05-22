@@ -5,7 +5,7 @@
 .**Current Status**
 [IMPORTANT]
 The **on-chip debugger is operational** but still in an _experimental_ stage. OpenOCD can successfully connect to the on-chip debugger and take control of the hart
-(for example: halting, resuming, single-stepping, memory access, executing arbitrary programs).However, work is still in progress.
+(for example: halting, resuming, single-stepping, memory access, executing arbitrary programs). However, _work is still in progress_.
 
 The NEORV32 Processor features an _on-chip debugger_ (OCD) implementing **execution-based debugging** that is compatible to the
 **Minimal RISC-V Debug Specification Version 0.13.2**. Please refer to this spec for in-deep information. A copy of the specification is available
@@ -75,7 +75,10 @@ reduces the maximal JTAG clock frequency as the JTAG clock (`jtag_tck_i`) has to
 
 [NOTE]
 If the on-chip debugger is disabled (_ON_CHIP_DEBUGGER_EN_ = false) the JTAG serial input `jtag_tdi_i` is directly
-connected to the JTAG serial output `jtag_tdo_o` to maintain the JTAG chain
+connected to the JTAG serial output `jtag_tdo_o` to maintain the JTAG chain.
+
+[WARNING]
+The NEORV32 JTAG TAP does not provide a _boundary check_ function (yet?). Hence, physical device pins cannot be accessed.
 
 The DTM uses the "debug module interface (dmi)" to access the actual debug module (DM). These accesses are controlled by TAP-internal registers. Each registers is selected by
 the JTAG instruction register (`IR`) and accessed through the JTAG data register (`DR`).
@@ -186,7 +189,7 @@ read-only. Writing '1' to these bits/fields will be ignored.
 | Bit | Name [RISC-V]  | R/W | Description
 | 31  | `haltreq`      | -/w | set/clear hart halt request
 | 30  | `resumereq`    | -/w | request hart to resume
-| 28  | `ackhavereset` | -/w | write `1` to clear 'havereset' flag
+| 28  | `ackhavereset` | -/w | write `1` to clear `*havereset` flags
 |  1  | `ndmreset`     | r/w | put whole processor into reset when `1`
 |  0  | `dmactive`     | r/w | DM enable; writing `0`-`1` will reset the DM
 |=======================
@@ -288,7 +291,7 @@ Error codes in `cmderr` (highest priority first):
 * `100` - command cannot be executed since hart is not in expected state
 * `011` - exception during command execution
 * `010` - unsupported command
-* `001` - invalid read/write while command is/was executing
+* `001` - invalid DM register read/write while command is/was executing
 
 
 :sectnums!:
