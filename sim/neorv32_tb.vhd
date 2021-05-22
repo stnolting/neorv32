@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - Default Testbench >>                                                             #
+-- # << NEORV32 - Default Processor Testbench >>                                                   #
 -- # ********************************************************************************************* #
 -- # The processor is configured to use a maximum of functional units (for testing purpose).       #
 -- # Use the "User Configuration" section to configure the testbench according to your needs.      #
@@ -193,6 +193,8 @@ begin
     BOOTLOADER_EN                => false,         -- implement processor-internal bootloader?
     USER_CODE                    => x"12345678",   -- custom user code
     HW_THREAD_ID                 => 0,             -- hardware thread id (hartid) (32-bit)
+    -- On-Chip Debugger (OCD) --
+    ON_CHIP_DEBUGGER_EN          => true,          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => true,          -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        => true,          -- implement bit manipulation extensions?
@@ -250,6 +252,12 @@ begin
     -- Global control --
     clk_i       => clk_gen,         -- global clock, rising edge
     rstn_i      => rst_gen,         -- global reset, low-active, async
+    -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
+    jtag_trst_i => '1',             -- low-active TAP reset (optional)
+    jtag_tck_i  => '0',             -- serial clock
+    jtag_tdi_i  => '0',             -- serial data input
+    jtag_tdo_o  => open,            -- serial data output
+    jtag_tms_i  => '0',             -- mode select
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
     wb_tag_o    => wb_cpu.tag,      -- request tag
     wb_adr_o    => wb_cpu.addr,     -- address
