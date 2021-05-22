@@ -338,9 +338,6 @@ int main(void) {
     else if (c == 'e') { // start application program
       start_app();
     }
-    else if (c == '?') {
-      neorv32_uart_print("by Stephan Nolting");
-    }
     else { // unknown command
       neorv32_uart_print("Invalid CMD");
     }
