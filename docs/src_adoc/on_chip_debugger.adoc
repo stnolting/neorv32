@@ -2,9 +2,10 @@
 :sectnums:
 == On-Chip Debugger (OCD)
 
-.WORK IN PROGRESS
+.**Current Status**
 [IMPORTANT]
-The on-chip debugger is still **WORK IN PROGRESS** and **NOT OPERATIONAL YET**!
+The **on-chip debugger is operational** but still in an _experimental_ stage. OpenOCD can successfully connect to the on-chip debugger and take control of the hart
+(for example: halting, resuming, single-stepping, memory access, executing arbitrary programs).However, work is still in progress.
 
 The NEORV32 Processor features an _on-chip debugger_ (OCD) implementing **execution-based debugging** that is compatible to the
 **Minimal RISC-V Debug Specification Version 0.13.2**. Please refer to this spec for in-deep information. A copy of the specification is available
@@ -91,7 +92,7 @@ by writing the according address to the instruction register. The following tabl
 [options="header",grid="rows"]
 |=======================
 | Address (via `IR`) | Name     | Size [bits] | Description
-| `00001`            | `IDCODE` | 32          | identifier, configurable via the module's generics
+| `00001`            | `IDCODE` | 32          | identifier, default: `0x0CAFE001` (configurable via package's `jtag_tap_idcode_*` constants)
 | `10000`            | `DTMCS`  | 32          | debug transport module control and status register
 | `10001`            | `DMI`    | 41          | debug module interface (_dmi_); 7-bit address, 32-bit read/write data, 2-bit operation (`00` = NOP; `10` = write; `01` = read)
 | others             | `BYPASS` | 1           | default JTAG bypass register
@@ -107,10 +108,6 @@ A local copy can be found in `docs/references`.
 // ####################################################################################################################
 :sectnums:
 === Debug Module (DM)
-
-.Work In Progress
-[WARNING]
-TODO
 
 According to the RISC-V debug specification, the DM acts as a translation interface between abstract operations issued by the debugger and the platform-specific implementation.
 It supports the following operations (excerpt from the debug spec):
@@ -135,11 +132,241 @@ It implements the **execution based debugging scheme** for a single hart and pro
 ==== DM Registers
 
 The DM is controlled via a set of registers that are accessed via the DTM's _dmi_. The "Minimal RISC-V Debug Specification" requires only a subset of the
-registers specified in the spec. The following registers are implemented. Write accesses to any other registers are ignored and read accesses wil always return zero.
+registers specified in the spec. The following registers are implemented. Write accesses to any other registers are ignored and read accesses will always return zero.
+Register names that are encapsulated in "( )" are not actually implemented; however, they are listed to explicitly show their functionality.
 
-.Work In Progress
-[WARNING]
-TODO
+.Available DM registers
+[cols="^2,^3,<7"]
+[options="header",grid="rows"]
+|=======================
+| Address | Name           | Description
+|  `0x04` | `data0`        | Abstract data 0, used for data transfer between debugger and processor
+|  `0x10` | `dmcontrol`    | Debug module control
+|  `0x11` | `dmstatus`     | Debug module status
+|  `0x12` | `hartinfo`     | Hart information
+|  `0x16` | `abstracts`    | Abstract control and status
+|  `0x17` | `command`      | Abstract command
+|  `0x18` | `abstractauto` | Abstract command auto-execution
+|  `0x1d` | (`nextdm`)     | Base address of _next_ DM; zero to indicate there is only _one_ DM
+|  `0x20` | `progbuf0`     | Program buffer 0
+|  `0x21` | `progbuf1`     | Program buffer 1
+|  `0x38` | (`sbcs`)       | System bus access control and status; zero to indicate there is no _direct_ system bus access
+|  `0x40` | `haltsum0`     | Halt summary 0
+|=======================
+
+
+:sectnums!:
+===== **`data`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x04 | **Abstract data 0** | `data0`
+3+| Reset value: _UNDEFINED_
+3+| Basic read/write registers to be used with abstract command (for example to read/write data from/to CPU GPRs).
+|======
+
+
+:sectnums!:
+===== **`dmcontrol`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x10 | **Debug module control register** | `dmcontrol`
+3+| Reset value: 0x00000000
+3+| Control of the overall debug module and the hart. The following table shows all implemented bits. All remaining bits/bit-fields are configures as "zero" and are
+read-only. Writing '1' to these bits/fields will be ignored.
+|======
+
+.`dmcontrol` - debug module control register bits
+[cols="^1,^2,^1,<8"]
+[options="header",grid="rows"]
+|=======================
+| Bit | Name [RISC-V]  | R/W | Description
+| 31  | `haltreq`      | -/w | set/clear hart halt request
+| 30  | `resumereq`    | -/w | request hart to resume
+| 28  | `ackhavereset` | -/w | write `1` to clear 'havereset' flag
+|  1  | `ndmreset`     | r/w | put whole processor into reset when `1`
+|  0  | `dmactive`     | r/w | DM enable; writing `0`-`1` will reset the DM
+|=======================
+
+
+:sectnums!:
+===== **`dmstatus`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x11 | **Debug module status register** | `dmstatus`
+3+| Reset value: 0x00000000
+3+| Current status of the overall debug module and the hart. The entire register is read-only.
+|======
+
+.`dmstatus` - debug module status register bits
+[cols="^1,^2,<10"]
+[options="header",grid="rows"]
+|=======================
+| Bit   | Name [RISC-V]     | Description
+| 31:23 | _reserved_        | reserved; always zero
+| 22    | `impebreak`       | always `1`; indicates an implicit `ebreak` instruction after the last program buffer entry
+| 21:20 | _reserved_        | reserved; always zero
+| 19    | `allhavereset`    .2+| `1` when the hart is in reset
+| 18    | `anyhavereset`    
+| 17    | `allresumeack`    .2+| `1` when the hart has acknowledged a resume request
+| 16    | `anyresumeack`    
+| 15    | `allnonexistent`  .2+| always zero to indicate the hart is always existent
+| 14    | `anynonexistent`  
+| 13    | `allunavail`      .2+| `1` when the DM is disabled to indicate the hart is unavailable
+| 12    | `anyunavail`      
+| 11    | `allrunning`      .2+| `1` when the hart is running
+| 10    | `anyrunning`      
+|  9    | `allhalted`       .2+| `1` when the hart is halted
+|  8    | `anyhalted`       
+|  7    | `authenticated`   | always `1`; there is no authentication
+|  6    | `authbusy`        | always `0`; there is no authentication
+|  5    | `hasresethaltreq` | always `0`; halt-on-reset is not supported (directly)
+|  4    | `confstrptrvalid` | always `0`; no configuration string available
+| 3:0   | `version`         | `0010` - DM is compatible to version 0.13
+|=======================
+
+
+:sectnums!:
+===== **`hartinfo`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x12 | **Hart information** | `hartinfo`
+3+| Reset value: see below
+3+| This register gives information about the hart. The entire register is read-only.
+|======
+
+.`hartinfo` - hart information register bits
+[cols="^1,^2,<8"]
+[options="header",grid="rows"]
+|=======================
+| Bit   | Name [RISC-V] | Description
+| 31:24 | _reserved_    | reserved; always zero
+| 23:20 | `nscratch`    | `0001`, number of `dscratch*` CPU registers = 1
+| 19:17 | _reserved_    | reserved; always zero
+| 16    | `dataccess`   | `0`, the `data` registers are shadowed in the hart's address space
+| 15:12 | `datasize`    | `0001`, number of `32-bit words in the address space dedicated to shadowing the `data` registers = 1
+| 11:0  | `dataaddr`    | = `dbmem_data_base_c(11:0)`, signed base address of `data` words (see <<_debug_memory_dbmem>> address map)
+|=======================
+
+
+:sectnums!:
+===== **`abstracts`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x16 | **Abstract control and status** | `abstracts`
+3+| Reset value: see below
+3+| Command execution info and status.
+|======
+
+.`abstracts` - abstract control and status register bits
+[cols="^1,^2,^1,<8"]
+[options="header",grid="rows"]
+|=======================
+| Bit   | Name [RISC-V] | R/W | Description
+| 31:29 | _reserved_    | r/- | reserved; always zero
+| 28:24 | `progbufsize` | r/- | `0010`; size of the program buffer (`progbuf`) = 2 entries
+| 23:11 | _reserved_    | r/- | reserved; always zero
+| 12    | `busy`        | r/- | `1` when a command is being executed
+| 11    | _reserved_    | r/- | reserved; always zero
+| 10:8  | `cmerr`       | r/w | error during command execution (see below); has to be cleared by writing `111`
+| 7:4   | _reserved_    | r/- | reserved; always zero
+| 3:0   | `datacount`   | r/- | `0001`; number of implemented `data` registers for abstract commands = 1
+|=======================
+
+Error codes in `cmderr` (highest priority first):
+
+* `000` - no error
+* `100` - command cannot be executed since hart is not in expected state
+* `011` - exception during command execution
+* `010` - unsupported command
+* `001` - invalid read/write while command is/was executing
+
+
+:sectnums!:
+===== **`command`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x17 | **Abstract command** | `command`
+3+| Reset value: 0x00000000
+3+| Writing this register will trigger the execution of an abstract command. New command can only be executed if `cmderr` is zero. The entire register in write-only (reads will return zero).
+|======
+
+[NOTE]
+The NEORV32 DM only supports **Access Register** abstract commands. These commands can only access the hart's GPRs (abstract command register index
+`0x1000` - `0x101f`).
+
+.`command` - abstract command register - "access register" commands only
+[cols="^1,^2,<8"]
+[options="header",grid="rows"]
+|=======================
+| Bit   | Name [RISC-V]      | Description / required value
+| 31:24 | `cmdtype`          | `00000000` to indicate "access register" command
+| 23    | _reserved_         | reserved, has to be `0` when writing
+| 22:20 | `aarsize`          | `010` to indicate 32-bit accesses
+| 21    | `aarpostincrement` | `0`, postincrement is not supported
+| 18    | `postexec`         | if set the program buffer is executed _after_ the command
+| 17    | `transfer`         | if set the operation in `write` is conducted
+| 16    | `write`            | `1`: copy `data0` to `[regno]`; `0` copy `[regno]` to `data0`
+| 15:0  | `regno`            | GPR-access only; has to be `0x1000` - `0x101f`
+|=======================
+
+
+:sectnums!:
+===== **`abstractauto`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x18 | **Abstract command auto-execution** | `abstractauto`
+3+| Reset value: 0x00000000s
+3+| Register to configure when a read/write access to a DM repeats execution of the last abstract command.
+|======
+
+.`abstractauto` - Abstract command auto-execution register bits
+[cols="^1,^2,^1,<8"]
+[options="header",grid="rows"]
+|=======================
+| Bit   | Name [RISC-V]        | R/W | Description
+| 17    | `autoexecprogbuf[1]` | r/w | when set reading/writing from/to `progbuf1` will execute `command again`
+| 16    | `autoexecprogbuf[0]` | r/w | when set reading/writing from/to `progbuf0` will execute `command again`
+|  0    | `autoexecdata[0]`    | r/w | when set reading/writing from/to `data0` will execute `command again`
+|=======================
+
+
+:sectnums!:
+===== **`progbuf`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x20 | **Program buffer 0** | `progbuf0`
+| 0x21 | **Program buffer 1** | `progbuf1`
+3+| Reset value: `NOP`-instruction
+3+| General purpose program buffer for the DM.
+|======
+
+
+:sectnums!:
+===== **`haltsum0`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x40 | **Halt summary 0** | `haltsum0`
+3+| Reset value: _UNDEFINED_
+3+| Bit 0 of this register is set if the hart is halted (all remaining bits are always zero). The entrie register is read-only.
+|======
 
 
 
@@ -147,10 +374,6 @@ TODO
 // ####################################################################################################################
 :sectnums:
 === Debug Memory (DBMEM)
-
-.Work In Progress
-[WARNING]
-TODO - add park loop code
 
 The debug memory (VHDL module: `rtl/core/neorv32_debug_dbmem.vhd`) provides a direct interfaces between the CPU and the DM. It includes a small ROM that
 contains the code for the "park loop", which is executed when the CPU is _in_ debug mode. The DBMEM uses a total address space of 128 words ( = 512 bytes)
@@ -162,9 +385,9 @@ to fill their according section's address space.
 [cols="^2,^2,^2,<8"]
 [options="header",grid="rows"]
 |=======================
-| Base address | Name                | Actual size | Description
+| Base address | Name [VHDL package] | Actual size | Description
 | `0xfffff800` | `dbmem_code_base_c` |    32 words | Code ROM for the "park loop" code
-| `0xfffff880` | `dbmem_pbuf_base_c` |      4 word | Program buffer, provided by DM
+| `0xfffff880` | `dbmem_pbuf_base_c` |     4 words | Program buffer, provided by DM
 | `0xfffff900` | `dbmem_data_base_c` |      1 word | Data buffer (`dm.data0`)
 | `0xfffff980` | `dbmem_sreg_base_c` |      1 word | Control and status register
 |=======================
