@@ -1,15 +1,11 @@
 -- #################################################################################################
 -- # << NEORV32 - Bus Keeper (BUSKEEPER) >>                                                        #
 -- # ********************************************************************************************* #
--- # This unit monitors the processor-internal bus. If the accessed INTERNAL (IMEM if enabled,     #
+-- # This unit monitors the processor-internal bus. If the accesses INTERNAL (IMEM if enabled,     #
 -- # DMEM if enabled, BOOTROM + IO region) module does not respond within the defined number of    #
--- # cycles (VHDL package: max_proc_int_response_time_c) the BUS KEEPER asserts the error signal   #
--- # to inform the CPU / bus driver.                                                               #
--- #                                                                                               #
--- # WARNING: The bus keeper timeout does not track accesses via the processor-external bus        #
--- #          interface! If the timeout-function of the Wishbone interface is not used, the CPU    #
--- #          might be permanently stalled by an an unacknowledged transfer! If the external bus   #
--- #          interface is disabled, ALL accesses by the CPU are internal.                         #
+-- # cycles (VHDL package: max_proc_int_response_time_c) it asserts the error signal to inform the #
+-- # CPU / bus driver. This timeout does not track accesses via the processor-external bus         #
+-- # interface!                                                                                    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -51,8 +47,6 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_keeper is
   generic (
-    -- External memory interface --
-    MEM_EXT_EN        : boolean := false;  -- implement external memory bus interface?
     -- Internal instruction memory --
     MEM_INT_IMEM_EN   : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
@@ -123,7 +117,7 @@ begin
       -- pending access? --
       control.bus_err <= '0';
       if (control.pending = '0') then -- idle
-        if ((rden_i or wren_i) = '1') and ((access_check.valid = '1') or (MEM_EXT_EN = false)) then -- valid INTERNAL access
+        if ((rden_i or wren_i) = '1') and (access_check.valid = '1') then
           control.pending <= '1';
         end if;
       else -- pending
