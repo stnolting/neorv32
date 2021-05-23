@@ -8,6 +8,5 @@ The provided test program `main.c` verifies all currently implemented instructio
 The emulation functions as well as the available **intrinsics** for the `B` extension are located in `neorv32_b_extension_intrinsics.h`.
 
 :information_source: More information regarding the RISC-V bit manipulation extension can be found in the officail GitHub repo:
-[github.com/riscv/riscv-bitmanip](https://github.com/riscv/riscv-bitmanip). The current specification of the bitmanipulation spec supported by the NEORV32
-can be found in `docs/bitmanip-draft.pdf`.
-
+[github.com/riscv/riscv-bitmanip](https://github.com/riscv/riscv-bitmanip).
+The current specification of the bitmanipulation spec supported by the NEORV32 can be found in `docs/references/bitmanip-draft.pdf`.

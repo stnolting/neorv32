@@ -57,15 +57,18 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: NEORV32-HTML
-        path: docs/index.html
+        path: |
+          docs/index.html
+          docs/figures
 
 
   deploy:
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/'))
     needs:
       - doxygen
       - asciidoctor
     runs-on: ubuntu-latest
-    name: 'Deploy to GitHub Pages'
+    name: 'Deploy to Releases and Pages'
 
     steps:
 
@@ -75,12 +78,27 @@ jobs:
     - name: '📥 Download Artifacts'
       uses: actions/download-artifact@v2
 
-    - name: '🚀 Deploy to GitHub-Pages'
+    - name: '🛠️ Organise public subdir and create a tarball'
       run: |
         mv NEORV32-HTML public
         mv NEORV32-Doxygen public/sw
+        tar zvcf NEORV32-SITE-nightly.tar.gz -C public .
         mv NEORV32-PDF/NEORV32.pdf public
+        cp public/NEORV32.pdf NEORV32-nightly.pdf
 
+    # Tagged: create a pre-release or a release (semver)
+    # Untagged: update the assets of pre-release 'nightly'
+    - name: '📦 Deploy to GitHub-Releases'
+      uses: eine/tip@master
+      with:
+        token: ${{ github.token }}
+        tag: 'nightly'
+        files: |
+          NEORV32-SITE-nightly.tar.gz
+          NEORV32-nightly.pdf
+
+    - name: '🚀 Deploy to GitHub-Pages'
+      run: |
         cd public
         git init
         cp ../.git/config ./.git/config

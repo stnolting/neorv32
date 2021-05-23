@@ -4,24 +4,31 @@
 
 .**Current Status**
 [IMPORTANT]
-The **on-chip debugger is operational** but still in an _experimental_ stage. OpenOCD can successfully connect to the on-chip debugger and take control of the hart
-(for example: halting, resuming, single-stepping, memory access, executing arbitrary programs). However, _work is still in progress_.
+The **on-chip debugger is operational** but still in an _experimental_ stage. OpenOCD can successfully connect to the
+on-chip debugger and take control of the hart (for example: halting, resuming, single-stepping, memory access,
+executing arbitrary programs).
+However, _work is still in progress_.
 
-The NEORV32 Processor features an _on-chip debugger_ (OCD) implementing **execution-based debugging** that is compatible to the
-**Minimal RISC-V Debug Specification Version 0.13.2**. Please refer to this spec for in-deep information. A copy of the specification is available
-in `docs/references/riscv-debug-release.pdf`. The NEORV32 OCD provides the following key features:
+The NEORV32 Processor features an _on-chip debugger_ (OCD) implementing **execution-based debugging** that is compatible
+to the **Minimal RISC-V Debug Specification Version 0.13.2**.
+Please refer to this spec for in-deep information.
+A copy of the specification is available in `docs/references/riscv-debug-release.pdf`.
+The NEORV32 OCD provides the following key features:
 
 * JTAG test access port
 * run-control of the CPU: halting, single-stepping and resuming
 * executing arbitrary programs during debugging
 * accessing core registers (direct access to GPRs, indirect access to CSRs via program buffer)
 * indirect access to the whole processor address space (via program buffer))
-* compatible to the https://github.com/riscv/riscv-openocd[RISC-V port of OpenOCD]; pre-built binaries can be obtained for example from https://www.sifive.com/software[SiFive]
+* compatible to the https://github.com/riscv/riscv-openocd[RISC-V port of OpenOCD];
+  pre-built binaries can be obtained for example from https://www.sifive.com/software[SiFive]
 
 [NOTE]
-The OCD requires additional resources for implementation and _might_ also increase the critical path resulting in less performance. If the OCD is
-not really required for the _final_ implementation, it should be disabled and thus, discarded from implementation. In this
-case all circuitry of the debugger is completely removed (no impact on area, energy or timing at all).
+The OCD requires additional resources for implementation and _might_ also increase the critical path resulting in less
+performance.
+If the OCD is not really required for the _final_ implementation, it should be disabled and thus, discarded from
+implementation.
+In this case all circuitry of the debugger is completely removed (no impact on area, energy or timing at all).
 
 The NEORV32 on-chip debugger complex is based on four hardware modules:
 
@@ -29,22 +36,29 @@ The NEORV32 on-chip debugger complex is based on four hardware modules:
 image::neorv32_ocd_complex.png[align=center]
 
 [start=1]
-. <<_debug_transport_module_dtm>> (`rtl/core/neorv32_debug_dtm.vhd`): External JTAG access tap to allow an external adapter to interface with the _debug module(DM)_
-using the _debug module interface (dmi)_.
-. <<_debug_module_dm>> (`rtl/core/neorv32_debug_tm.vhd`): Debugger control via memory-mapped registers that are accessed via the _dmi_.
-. <<_debug_memory_dbmem>> (`rtl/core/neorv32_debug_dbmem.vhd`): This unit is a memory-mapped device that can be accesses by the CPU via
-the processor-internal bus and by the DM via the _debug core interface (dci)_. the DBMEN provides an internal _data buffer_ for data
-transfer from/to the DM, a _code ROM_ containing the "park loop, a _program buffer_ to execute small programs defined by the DM and a
-_status register_ that is used to communicate _halt_, _resume_ and _execute_ requests/acknowledges from/to the DM.
-. CPU <<_cpu_debug_mode>> extension (part of`rtl/core/neorv32_cpu_control.vhd`): This extension provides the "debug execution mode" which executes the "park loop"
-code from the DBMEM. The mode also provides additional CSRs.
+. <<_debug_transport_module_dtm>> (`rtl/core/neorv32_debug_dtm.vhd`): External JTAG access tap to allow an external
+  adapter to interface with the _debug module(DM)_ using the _debug module interface (dmi)_.
+. <<_debug_module_dm>> (`rtl/core/neorv32_debug_tm.vhd`): Debugger control via memory-mapped registers that are accessed
+  via the _dmi_.
+. <<_debug_memory_dbmem>> (`rtl/core/neorv32_debug_dbmem.vhd`): This unit is a memory-mapped device that can be accessed
+  by the CPU via the processor-internal bus and by the DM via the _debug core interface (dci)_.
+  The DBMEN provides an internal _data buffer_ for data transfer from/to the DM, a _code ROM_ containing the "park loop,
+  a _program buffer_ to execute small programs defined by the DM and a _status register_ that is used to communicate
+  _halt_, _resume_ and _execute_ requests/acknowledges from/to the DM.
+. CPU <<_cpu_debug_mode>> extension (part of`rtl/core/neorv32_cpu_control.vhd`):
+  This extension provides the "debug execution mode" which executes the "park loop" code from the DBMEM.
+  The mode also provides additional CSRs.
 
 **Theory of Operation**
 
-When debugging the system using the OCD, the CPU is brought into _debug mode_. In this state, the application-defined architectural state of the system is
-"frozen" so the debugger can monitor and even modify it. While in debug mode, the CPU executes the "park loop" code from the _debug memory (DBMEM)_. This loop
-implements an endless loop, in which the CPU polls the memory-mapped status registers that are controlled by the _debug module (DM)_.
-These flags are used to trigger either the execution of the program buffer, which is also provided by the DM, or the resuming of the halted application.
+When debugging the system using the OCD, the CPU is brought into _debug mode_.
+In this state, the application-defined architectural state of the system is "frozen" so the debugger can monitor and
+even modify it.
+While in debug mode, the CPU executes the "park loop" code from the _debug memory (DBMEM)_.
+This loop implements an endless loop, in which the CPU polls the memory-mapped status registers that are controlled by
+the _debug module (DM)_.
+These flags are used to trigger either the execution of the program buffer, which is also provided by the DM, or the
+resuming of the halted application.
 
 
 
@@ -53,8 +67,10 @@ These flags are used to trigger either the execution of the program buffer, whic
 :sectnums:
 === Debug Transport Module (DTM)
 
-The debug transport module (VHDL module: `rtl/core/neorv32_debug_dtm.vhd`) provides a JTAG test access port (TAP). The DTM is the first entity in the debug system,
-which connects and external debugger via JTAG to the next debugging entity: the debug module (DM). External access is provided by the following top-level ports.
+The debug transport module (VHDL module: `rtl/core/neorv32_debug_dtm.vhd`) provides a JTAG test access port (TAP).
+The DTM is the first entity in the debug system, which connects and external debugger via JTAG to the next debugging
+entity: the debug module (DM).
+External access is provided by the following top-level ports.
 
 .JTAG top level signals
 [cols="^2,^2,^2,<8"]
@@ -70,8 +86,10 @@ which connects and external debugger via JTAG to the next debugging entity: the 
 
 [NOTE]
 The actual JTAG clock signal is **not** used as primary clock. Instead it is used to synchronize
-JTGA accesses, while all internal operations trigger on the system clock. Hence, no additional clock domain is required for integration of this module. However, this
-reduces the maximal JTAG clock frequency as the JTAG clock (`jtag_tck_i`) has to be less than or equal to 1/4 of the system clock (`clk_i`) frequency.
+JTGA accesses, while all internal operations trigger on the system clock. Hence, no additional clock domain is required
+for integration of this module.
+However, this reduces the maximal JTAG clock frequency as the JTAG clock (`jtag_tck_i`) has to be less than or equal to
+1/4 of the system clock (`clk_i`) frequency.
 
 [NOTE]
 If the on-chip debugger is disabled (_ON_CHIP_DEBUGGER_EN_ = false) the JTAG serial input `jtag_tdi_i` is directly
@@ -80,15 +98,19 @@ connected to the JTAG serial output `jtag_tdo_o` to maintain the JTAG chain.
 [WARNING]
 The NEORV32 JTAG TAP does not provide a _boundary check_ function (yet?). Hence, physical device pins cannot be accessed.
 
-The DTM uses the "debug module interface (dmi)" to access the actual debug module (DM). These accesses are controlled by TAP-internal registers. Each registers is selected by
-the JTAG instruction register (`IR`) and accessed through the JTAG data register (`DR`).
+The DTM uses the "debug module interface (dmi)" to access the actual debug module (DM).
+These accesses are controlled by TAP-internal registers.
+Each registers is selected by the JTAG instruction register (`IR`) and accessed through the JTAG data register (`DR`).
 
 [NOTE]
-The DTM's instruction and data registers can be accessed using OpenOCDs `irscan` and `drscan` commands. The RISC-V port of OpenOCD
-also provides low-level command (`riscv dmi_read` & `riscv dmi_write`) to access the _dmi_ debug module interface.
+The DTM's instruction and data registers can be accessed using OpenOCDs `irscan` and `drscan` commands.
+The RISC-V port of OpenOCD also provides low-level command (`riscv dmi_read` & `riscv dmi_write`) to access the _dmi_
+debug module interface.
 
-JTAG access is conducted via the *instruction register* `IR`, which is 5 bit wide, and several *data registers* `DR` with different sizes. The data registers are accessed
-by writing the according address to the instruction register. The following table shows the available data registers:
+JTAG access is conducted via the *instruction register* `IR`, which is 5 bit wide, and several *data registers* `DR`
+with different sizes.
+The data registers are accessed by writing the according address to the instruction register.
+The following table shows the available data registers:
 
 .JTAG TAP registers
 [cols="^2,^2,^2,<8"]
@@ -102,7 +124,8 @@ by writing the according address to the instruction register. The following tabl
 |=======================
 
 [INFO]
-See the https://github.com/riscv/riscv-debug-spec[RISC-V debug specification] for more information regarding the data registers and operations.
+See the https://github.com/riscv/riscv-debug-spec[RISC-V debug specification] for more information regarding the data
+registers and operations.
 A local copy can be found in `docs/references`.
 
 
@@ -112,7 +135,8 @@ A local copy can be found in `docs/references`.
 :sectnums:
 === Debug Module (DM)
 
-According to the RISC-V debug specification, the DM acts as a translation interface between abstract operations issued by the debugger and the platform-specific implementation.
+According to the RISC-V debug specification, the DM acts as a translation interface between abstract operations issued
+by the debugger and the platform-specific implementation.
 It supports the following operations (excerpt from the debug spec):
 
 [start=1]
@@ -124,7 +148,8 @@ It supports the following operations (excerpt from the debug spec):
 . Provides a Program Buffer to force the hart to execute arbitrary instructions.
 . Allows memory access from a hart's point of view.
 
-The NEORV32 DM follows the "Minimal RISC-V Debug Specification" to provide full debugging capabilities while keeping resource (area) requirements at a minimum level.
+The NEORV32 DM follows the "Minimal RISC-V Debug Specification" to provide full debugging capabilities while keeping
+resource (area) requirements at a minimum level.
 It implements the **execution based debugging scheme** for a single hart and provides the following hardware features:
 
 * program buffer with 2 entries and implicit `ebreak` instruction afterwards
@@ -134,9 +159,12 @@ It implements the **execution based debugging scheme** for a single hart and pro
 
 ==== DM Registers
 
-The DM is controlled via a set of registers that are accessed via the DTM's _dmi_. The "Minimal RISC-V Debug Specification" requires only a subset of the
-registers specified in the spec. The following registers are implemented. Write accesses to any other registers are ignored and read accesses will always return zero.
-Register names that are encapsulated in "( )" are not actually implemented; however, they are listed to explicitly show their functionality.
+The DM is controlled via a set of registers that are accessed via the DTM's _dmi_.
+The "Minimal RISC-V Debug Specification" requires only a subset of the registers specified in the spec.
+The following registers are implemented.
+Write accesses to any other registers are ignored and read accesses will always return zero.
+Register names that are encapsulated in "( )" are not actually implemented; however, they are listed to explicitly show
+their functionality.
 
 .Available DM registers
 [cols="^2,^3,<7"]
@@ -215,17 +243,17 @@ read-only. Writing '1' to these bits/fields will be ignored.
 | 22    | `impebreak`       | always `1`; indicates an implicit `ebreak` instruction after the last program buffer entry
 | 21:20 | _reserved_        | reserved; always zero
 | 19    | `allhavereset`    .2+| `1` when the hart is in reset
-| 18    | `anyhavereset`    
+| 18    | `anyhavereset`
 | 17    | `allresumeack`    .2+| `1` when the hart has acknowledged a resume request
-| 16    | `anyresumeack`    
+| 16    | `anyresumeack`
 | 15    | `allnonexistent`  .2+| always zero to indicate the hart is always existent
-| 14    | `anynonexistent`  
+| 14    | `anynonexistent`
 | 13    | `allunavail`      .2+| `1` when the DM is disabled to indicate the hart is unavailable
-| 12    | `anyunavail`      
+| 12    | `anyunavail`
 | 11    | `allrunning`      .2+| `1` when the hart is running
-| 10    | `anyrunning`      
+| 10    | `anyrunning`
 |  9    | `allhalted`       .2+| `1` when the hart is halted
-|  8    | `anyhalted`       
+|  8    | `anyhalted`
 |  7    | `authenticated`   | always `1`; there is no authentication
 |  6    | `authbusy`        | always `0`; there is no authentication
 |  5    | `hasresethaltreq` | always `0`; halt-on-reset is not supported (directly)
@@ -378,11 +406,15 @@ The NEORV32 DM only supports **Access Register** abstract commands. These comman
 :sectnums:
 === Debug Memory (DBMEM)
 
-The debug memory (VHDL module: `rtl/core/neorv32_debug_dbmem.vhd`) provides a direct interfaces between the CPU and the DM. It includes a small ROM that
-contains the code for the "park loop", which is executed when the CPU is _in_ debug mode. The DBMEM uses a total address space of 128 words ( = 512 bytes)
-divided into four sections of 32 words ( = 128 bytes) each. Any CPU access within this address space will succeed. The program buffer only uses 4 effective
-words in this space but these words are mirrored to fill up the whole 128 bytes of the section. The status register and the data buffer are also mirrored
-to fill their according section's address space.
+The debug memory (VHDL module: `rtl/core/neorv32_debug_dbmem.vhd`) provides a direct interfaces between the CPU and the
+DM.
+It includes a small ROM that contains the code for the "park loop", which is executed when the CPU is _in_ debug mode.
+The DBMEM uses a total address space of 128 words ( = 512 bytes) divided into four sections of 32 words ( = 128 bytes)
+each.
+Any CPU access within this address space will succeed.
+The program buffer only uses 4 effective words in this space but these words are mirrored to fill up the whole 128 bytes
+of the section.
+The status register and the data buffer are also mirrored to fill their according section's address space.
 
 .Debug memory address map
 [cols="^2,^2,^2,<8"]
@@ -395,15 +427,18 @@ to fill their according section's address space.
 | `0xfffff980` | `dbmem_sreg_base_c` |      1 word | Control and status register
 |=======================
 
-When the CPU enters or re-enters (for example via `ebreak` in the DM's program buffer) debug mode, it jumps to `dbmem_code_base_c`,
-which is the "normal entry point" for the park loop code. If an exception is encountered during debug mode, the CPU jumps to `dbmem_code_base_c + 4`,
-which is the "exception entry point".
+When the CPU enters or re-enters (for example via `ebreak` in the DM's program buffer) debug mode, it jumps to
+`dbmem_code_base_c`, which is the "normal entry point" for the park loop code.
+If an exception is encountered during debug mode, the CPU jumps to `dbmem_code_base_c + 4`, which is the "exception entry point".
 
 **Status Register**
 
-The DBMEM status register provides a direct communication channel between the CPU executing the park loop and the controller of the DM.
-Note that all bits that can be written by the CPU (acknowledge flags) cause a single-shot (1-cycle) signal to the DM and auto-clear. The bits that are
-driven by the DM and are read-only to the CPU keep their state until the CPU acknowledges the according request.
+The DBMEM status register provides a direct communication channel between the CPU executing the park loop and the
+controller of the DM.
+Note that all bits that can be written by the CPU (acknowledge flags) cause a single-shot (1-cycle) signal to the DM and
+auto-clear.
+The bits that are driven by the DM and are read-only to the CPU keep their state until the CPU acknowledges the
+according request.
 
 .Debug memory - status register
 [cols="^2,^2,^2,<8"]
@@ -425,10 +460,12 @@ driven by the DM and are read-only to the CPU keep their state until the CPU ack
 :sectnums:
 === CPU Debug Mode
 
-The NEORV32 CPU Debug Mode (part of `rtl/core/neorv32_cpu_control.vhd`) is compatible to the "Minimal RISC-V Debug Specification 0.13.2". It is
-enabled/implemented by setting the CPU generic _CPU_EXTENSION_RISCV_DEBUG_ to "true" (done by setting processor generic _ON_CHIP_DEBUGGER_EN_).
-It provides a new operation mode called "debug mode". When enabled, three additional CSRs are available (section <<_cpu_debug_mode_csrs>>) and
-also the "return from debug mode" instruction `dret` is available when the CPU is "in" debug mode.
+The NEORV32 CPU Debug Mode (part of `rtl/core/neorv32_cpu_control.vhd`) is compatible to the "Minimal RISC-V Debug Specification 0.13.2".
+It is enabled/implemented by setting the CPU generic _CPU_EXTENSION_RISCV_DEBUG_ to "true" (done by setting processor
+generic _ON_CHIP_DEBUGGER_EN_).
+It provides a new operation mode called "debug mode".
+When enabled, three additional CSRs are available (section <<_cpu_debug_mode_csrs>>) and also the "return from debug mode"
+instruction `dret` is available when the CPU is "in" debug mode.
 
 The CPU debug mode is entered when one of the following events appear:
 
@@ -450,9 +487,12 @@ When the CPU **is in debug mode** the following things are important:
 * while in debug mode, the CPU executes the parking loop and the program buffer provided by the DM if requested
 * effective CPU privilege level is `machine` mode, PMP is not active
 * if an exception occurs
-  * if the exception was caused by any debug-mode entry action the CPU jumps to the _normal entry point_ ( = _CPU_DEBUG_ADDR_) of the park loop again (for example when executing `ebreak` in debug mode)
-  * for all other exception sources the CPU jumps to the _exception entry point_ ( = _CPU_DEBUG_ADDR_ + 4) of the park loop again to signal an exception to the DM
-* interrupts are masked - including NMIs; interrupts can be enabled _during the execution of single-stepped instructions_ when `dcsr.stepie` is set
+  * if the exception was caused by any debug-mode entry action the CPU jumps to the _normal entry point_
+    ( = _CPU_DEBUG_ADDR_) of the park loop again (for example when executing `ebreak` in debug mode)
+  * for all other exception sources the CPU jumps to the _exception entry point_ ( = _CPU_DEBUG_ADDR_ + 4) of the park
+    loop again to signal an exception to the DM
+* interrupts are masked - including NMIs; interrupts can be enabled _during the execution of single-stepped instructions_
+  when `dcsr.stepie` is set
 * if the DM makes a resume request, the park loop exits and the CPU leaves debug mode
 
 Whenever the CPU **leaves debug mode** the following things happen:
@@ -466,8 +506,9 @@ Whenever the CPU **leaves debug mode** the following things happen:
 ==== CPU Debug Mode CSRs
 
 [NOTE]
-The debug-mode control and status registers (CSRs) are only accessible when the CPU is _in_ debug mode. If these CSRs are accessed
-outside of debug mode (for example when in `machine` mode) an illegal instruction exception is raised.
+The debug-mode control and status registers (CSRs) are only accessible when the CPU is _in_ debug mode.
+If these CSRs are accessed outside of debug mode (for example when in `machine` mode) an illegal instruction exception
+is raised.
 
 
 :sectnums!:

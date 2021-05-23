@@ -6,7 +6,7 @@
 :doctype: book
 :sectnums:
 :icons: font
-:imagesdir: https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures
+:imagesdir: figures
 :stem:
 :reproducible:
 :listing-caption: Listing
