@@ -37,7 +37,7 @@ at [GitHub-pages](https://stnolting.github.io/neorv32/sw/files.html).
 :label: The project's change log is available in [`CHANGELOG.md`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 To see the changes between *official* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-:rocket: The [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder provides exemplary setups targeting
+:package: The [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder provides exemplary EDA setups targeting
 various FPGA boards to get you started.
 
 :spiral_notepad: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current **ideas**,
@@ -96,8 +96,8 @@ The CPU [passes](https://stnolting.github.io/neorv32/#_risc_v_compatibility) the
 
 In order to provide a reduced-size setup the NEORV32 CPU implements a two-stages pipeline, where each stage
 uses a multi-cycle processing scheme. Instruction and data accesses are conducted via independant bus interfaces,
-that are multiplexed into a single SoC-bus ("modified Harvard architecture"). As a special execution safety features,
-all reserved or unimplemented instructions will raise an exception.
+that are multiplexed into a single SoC-bus ("modified Harvard architecture"). As a special execution safety feature,
+all reserved or unimplemented instructions do raise an exception.
 
 RISC-V-compatible **ISA extensions** currently provided by the NEORV32 (:books: [see full list](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions)):
 * `A` - atomic memory access instructions (optional)
@@ -110,7 +110,7 @@ RISC-V-compatible **ISA extensions** currently provided by the NEORV32 (:books: 
 * `X` - NEORV32-specific extensions (always enabled)
 * `Zfinx` - IEEE-754 single-precision floating-point extensions (optional)
 * `Zicsr` - control and status register access instructions (+ exception/irq system) (optional)
-* `Zifencei - instruction stream synchronization (optional)
+* `Zifencei` - instruction stream synchronization (optional)
 * `PMP` - physical memory protection (optional)
 * `HPM` - hardware performance monitors (optional)
 * `DB` - RISC-V CPU debug mode (optional)
@@ -128,7 +128,7 @@ The NEORV32 Processor (top entity: [`rtl/core/neorv32_top.vhd`](https://github.c
 provides a full-scale SoC build around the NEORV32 CPU. It is highly configurable to allow 
 a flexible customization according to your needs.
 
-Optional SoC modules:
+Included SoC modules:
 * processor-internal data and instruction memories (**DMEM** / **IMEM**) & cache (**iCACHE**)
 * bootloader (**BOOTLDROM**) with UART console and automatic application boot from external SPI flash option
 * machine system timer (**MTIME**), RISC-V-compatible
@@ -233,9 +233,9 @@ Results generated for hardware version [`1.4.9.8`](https://github.com/stnolting/
 
 | CPU (including `Zicsr` extension)           | Executable Size | CoreMark Score | CoreMarks/MHz | Total Clock Cycles | Executed Instructions | Average CPI |
 |:--------------------------------------------|:---------------:|:--------------:|:-------------:|-------------------:|----------------------:|:-----------:|
-| `rv32i`                                     |    28 756 bytes |          36.36 |    **0.3636** |      5 595 750 503 |         1 466 028 607 |    **3.82** |
-| `rv32imc`                                   |    22 008 bytes |          68.97 |    **0.6897** |      2 981 786 734 |           611 814 918 |    **4.87** |
-| `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |    22 008 bytes |          90.91 |    **0.9091** |      2 265 135 174 |           611 814 948 |    **3.70** |
+| `rv32i`                                     |    28 756 bytes |          36.36 |    **0.3636** |         5595750503 |            1466028607 |    **3.82** |
+| `rv32imc`                                   |    22 008 bytes |          68.97 |    **0.6897** |         2981786734 |             611814918 |    **4.87** |
+| `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |    22 008 bytes |          90.91 |    **0.9091** |         2265135174 |             611814948 |    **3.70** |
 
 :information_source: The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension
 (enabled via the `FAST_MUL_EN` generic). The `FAST_SHIFT_EN` configuration uses a barrel shifter for
