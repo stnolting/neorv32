@@ -885,23 +885,32 @@ This will generate the `docs/doxygen_build` folder. To view the documentation, o
 see a list of all documented files.
 
 [TIP]
-The documentation is automatically built and deployed to GitHub pages by the CI workflow (https://stnolting.github.io/neorv32/sw/files.html).
+The documentation is automatically built and deployed to GitHub pages by a CI workflow (https://stnolting.github.io/neorv32/sw/files.html).
 
 
 
 // ####################################################################################################################
 :sectnums:
-=== Building this Data Sheet
+=== Building the Project Documentation
 
-This data sheet is written using `asciidoc` and rendered by `asciidoc-pdf`. To build the pdf by yourself navigate
-to the project's `doc` folder and execute the data sheet generator script:
+This data sheet is written using `asciidoc`. The source files are locates in `docs/src_adoc`.
+a makefiles in project's root directory is provided to either build a single pdf file
+or to build a HTML-based documentation.
 
+Pre-rendered pdf are available online as nightly pre-releases: https://github.com/stnolting/neorv32/releases.
+The HTML-based documentation is also available online at the project' https://stnolting.github.io/neorv32/[GitHub Pages].
+
+.Generate PDF documentation `docs/NEORV32.pdf`
 [source,bash]
 ----
-neorv32/docs$ sh make_datasheet.sh
+neorv32$ make pdf
 ----
 
-This will render all `asciidoc` files from `docs/src_adoc` to generate this document (`docs/NEORV32.pdf`).
+.Generate HTML documentation `docs/index.html`
+[source,bash]
+----
+neorv32$ make html
+----
 
 
 <<<
