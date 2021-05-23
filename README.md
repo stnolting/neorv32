@@ -1,5 +1,5 @@
 [![GitHub Pages](https://img.shields.io/website.svg?label=stnolting.github.io%2Fneorv32&longCache=true&style=flat-square&url=http%3A%2F%2Fstnolting.github.io%2Fneorv32%2Findex.html&logo=GitHub)](https://stnolting.github.io/neorv32)
-[![Processor Check](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor%20Check/master?longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor%20Check)
+[![Processor](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor/master?longCache=true&style=flat-square&label=Processor&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor)
 [![riscv-arch-test](https://img.shields.io/github/workflow/status/stnolting/neorv32/riscv-arch-test/master?longCache=true&style=flat-square&label=riscv-arch-test&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3Ariscv-arch-test)
 [![Documentation](https://img.shields.io/github/workflow/status/stnolting/neorv32/Documentation/master?longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3ADocumentation)
 [![Implementation](https://img.shields.io/github/workflow/status/stnolting/neorv32/Implementation/master?longCache=true&style=flat-square&label=Implementation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AImplementation)
@@ -107,7 +107,7 @@ RISC-V-compatible **ISA extensions** currently provided by the NEORV32 (:books: 
 * `E` - embedded CPU (reduced register file size) (optional)
 * `I` - base integer instruction set (always enabled)
 * `M` - integer multiplication and division hardware (optional)
-* `U` - less-privileged `user` mode in combintation with the standard `machine` mode (optional) 
+* `U` - less-privileged `user` mode in combintation with the standard `machine` mode (optional)
 * `X` - NEORV32-specific extensions (always enabled)
 * `Zfinx` - IEEE-754 single-precision floating-point extensions (optional)
 * `Zicsr` - control and status register access instructions (+ exception/irq system) (optional)
@@ -126,7 +126,7 @@ RISC-V-compatible **ISA extensions** currently provided by the NEORV32 (:books: 
 [online documentation - _"NEORV32 Processors (SoC)"_](https://stnolting.github.io/neorv32/#_neorv32_processor_soc).
 
 The NEORV32 Processor (top entity: [`rtl/core/neorv32_top.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd))
-provides a full-scale SoC build around the NEORV32 CPU. It is highly configurable to allow 
+provides a full-scale SoC build around the NEORV32 CPU. It is highly configurable to allow
 a flexible customization according to your needs.
 
 Included SoC modules:
@@ -190,7 +190,7 @@ Setups with enabled  `E` (embedded CPU extension) provide the same LUT and FF ut
 
 :information_source: Check out the [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder for exemplary setups targeting various FPGA boards.
 
-:books: The hardware resources used by the processor-internal modules is available 
+:books: The hardware resources used by the processor-internal modules is available
 [online documentation - _"NEORV32 Central Processing Unit"_](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu).
 
 Results generated for hardware version [`1.4.9.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
@@ -214,7 +214,7 @@ The NEORV32 CPU is based on a two-stages pipelined architecutre. Each stage uses
 Hence, each instruction requires several clock cycles to execute (2 cycles for ALU operations, and up to 40 cycles for divisions).
 *By default* the CPU-internal shifter as well as the multiplier and divider of the `M` extension use a bit-serial approach
 and require several cycles for completion. The average CPI (cycles per instruction) depends on the instruction mix of a
-specific applications and also on the available CPU extensions. 
+specific applications and also on the available CPU extensions.
 
 The following table shows the performance results for successfully running 2000 iterations of the
 [CoreMark CPU benchmark](https://www.eembc.org/coremark), which reflects a pretty good "real-life" work load.
