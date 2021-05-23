@@ -330,12 +330,13 @@ Error codes in `cmderr` (highest priority first):
 |======
 | 0x17 | **Abstract command** | `command`
 3+| Reset value: 0x00000000
-3+| Writing this register will trigger the execution of an abstract command. New command can only be executed if `cmderr` is zero. The entire register in write-only (reads will return zero).
+3+| Writing this register will trigger the execution of an abstract command. New command can only be executed if
+`cmderr` is zero. The entire register in write-only (reads will return zero).
 |======
 
 [NOTE]
-The NEORV32 DM only supports **Access Register** abstract commands. These commands can only access the hart's GPRs (abstract command register index
-`0x1000` - `0x101f`).
+The NEORV32 DM only supports **Access Register** abstract commands. These commands can only access the
+hart's GPRs (abstract command register index `0x1000` - `0x101f`).
 
 .`command` - abstract command register - "access register" commands only
 [cols="^1,^2,<8"]
@@ -427,6 +428,10 @@ The status register and the data buffer are also mirrored to fill their accordin
 | `0xfffff980` | `dbmem_sreg_base_c` |      1 word | Control and status register
 |=======================
 
+[NOTE]
+From the CPU's point of view, the DBMEM is mapped to an _"unused"_ address range within the processor's <<_address_space>>
+right between the bootloader ROM (BOOTROM) and the processor-internal IO space at addresses `0xfffff800` - `0xfffff9ff`
+
 When the CPU enters or re-enters (for example via `ebreak` in the DM's program buffer) debug mode, it jumps to
 `dbmem_code_base_c`, which is the "normal entry point" for the park loop code.
 If an exception is encountered during debug mode, the CPU jumps to `dbmem_code_base_c + 4`, which is the "exception entry point".
@@ -467,6 +472,9 @@ It provides a new operation mode called "debug mode".
 When enabled, three additional CSRs are available (section <<_cpu_debug_mode_csrs>>) and also the "return from debug mode"
 instruction `dret` is available when the CPU is "in" debug mode.
 
+[IMPORTANT]
+The CPU "debug modes" requires the `Zicsr` CPU extensions to be implemented (top generic _CPU_EXTENSION_RISCV_Zicsr_ = true).
+
 The CPU debug mode is entered when one of the following events appear:
 
 [start=1]
@@ -474,13 +482,16 @@ The CPU debug mode is entered when one of the following events appear:
 . debug halt request from external DM (via CPU signal `db_halt_req_i`, high-active, triggering on rising-edge)
 . finished executing of a single instruction while in single-step debugging mode (enabled via `dcsr.step`)
 
+From a hardware point of view, these "entry conditions" are special synchronous (`ebreak` instruction) or asynchronous
+(single-stepping "interrupt"; halt request "interrupt") traps, that are handled invisibly by the control logic.
+
 Whenever the CPU **enters debug mode** it performs the following operations:
 
 * move `pc` to `dpcs`
-* store the current privilege level to `dcsr.prv`
+* copy the hart's current privilege level to `dcsr.prv`
 * set `dcrs.cause` according to the cause why debug mode is entered
 * **no update** of `mtval`, `mcause`, `mtval` and `mstatus` CSRs
-* load the address configured via the CPU _CPU_DEBUG_ADDR_ generic to the `pc` to jump to "debugger park loop" code in the debug memory
+* load the address configured via the CPU _CPU_DEBUG_ADDR_ generic to the `pc` to jump to "debugger park loop" code in the debug memory (DBMEM)
 
 When the CPU **is in debug mode** the following things are important:
 
@@ -495,9 +506,12 @@ When the CPU **is in debug mode** the following things are important:
   when `dcsr.stepie` is set
 * if the DM makes a resume request, the park loop exits and the CPU leaves debug mode
 
+Debug mode is left either by executing the `dret` instruction footnote:[`dret` should only be executed _inside_ the debugger
+"park loop" code (-> code ROM in the debug memory component _DBMEM_.)] (_in_ debug mode) or by performing
+a hardware reset of the CPU. Executing `dret` outside of debug mode will raise an illegal instruction exception.
 Whenever the CPU **leaves debug mode** the following things happen:
 
-* set the current privilege level according to `dcsr.prv`
+* set the hart's current privilege level according to `dcsr.prv`
 * restore `pc` from `dpcs`
 * resume normal operation at `pc`
 
@@ -550,8 +564,8 @@ The following bits are implemented. The reaming bits are read-only and always re
 |======
 | 0x7b1 | **Debug program counter** | `dpc`
 3+| Reset value: _UNDEFINED_
-3+| The `dcsr` CSR is compatible to the RISC-V debug spec. It is used to store the current program counter when entering debug mode. The `dret`
-instruction will return to `dpc`.
+3+| The `dcsr` CSR is compatible to the RISC-V debug spec. It is used to store the current program counter when
+debug mode is entered. The `dret` instruction will return to `dpc` by moving `dpc` to `pc`.
 |======
 
 
@@ -577,4 +591,6 @@ instruction will return to `dpc`.
 [WARNING]
 TODO
 
+The NEORV32 on-chip debugger can be accessed using the https://github.com/riscv/riscv-openocd[RISC-V port of OpenOCD].
+Prebuilt binaries can be obtained - for example - from https://www.sifive.com/software[SiFive].
 
