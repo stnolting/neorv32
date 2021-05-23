@@ -66,7 +66,7 @@ Architecture.
 
 // ####################################################################################################################
 :sectnums:
-=== RISC-V Compliance
+=== RISC-V Compatibility
 
 The NEORV32 CPU passes the rv32_m/I, rv32_m/M, rv32_m/C, rv32_m/privilege, and
 rv32_m/Zifencei tests of the official RISC-V Architecture Tests (GitHub). The port files for the
