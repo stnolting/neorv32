@@ -25,3 +25,6 @@ docs/doxygen_build
 
 # HTML datasheet
 /docs/index.html
+
+# asciidoctor cache
+/docs/.asciidoctor
