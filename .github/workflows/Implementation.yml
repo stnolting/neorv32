@@ -1,0 +1,33 @@
+name: Implementation
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * 5'
+  workflow_dispatch:
+
+jobs:
+
+  all-in-one:
+    runs-on: ubuntu-latest
+    name: '🛳️ All-in-one'
+
+    steps:
+
+    - name: '🧰 Repository Checkout'
+      uses: actions/checkout@v2
+
+    - name: '⚙️ Generate bitstream'
+      uses: docker://ghcr.io/hdl/debian-buster/impl
+      with:
+        args: make -C boards/UPduino_v3_ghdl-yosys-nextpnr/ all
+
+    - name: '📤 Upload Artifact: bitstream'
+      uses: actions/upload-artifact@v2
+      with:
+        name: UPduino_v3_ghdl-yosys-nextpr
+        path: |
+          boards/UPduino_v3_ghdl-yosys-nextpnr/neorv32_upduino_v3_impl_1.bin
+          boards/UPduino_v3_ghdl-yosys-nextpnr/yosys-report.txt
+          boards/UPduino_v3_ghdl-yosys-nextpnr/nextpnr-report.txt
