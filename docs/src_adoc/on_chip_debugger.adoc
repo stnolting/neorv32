@@ -401,7 +401,7 @@ hart's GPRs (abstract command register index `0x1000` - `0x101f`).
 |======
 | 0x40 | **Halt summary 0** | `haltsum0`
 3+| Reset value: _UNDEFINED_
-3+| Bit 0 of this register is set if the hart is halted (all remaining bits are always zero). The entrie register is read-only.
+3+| Bit 0 of this register is set if the hart is halted (all remaining bits are always zero). The entire register is read-only.
 |======
 
 
@@ -412,8 +412,15 @@ hart's GPRs (abstract command register index `0x1000` - `0x101f`).
 === Debug Memory (DBMEM)
 
 The debug memory (VHDL module: `rtl/core/neorv32_debug_dbmem.vhd`) provides a direct interfaces between the CPU and the
-DM.
-It includes a small ROM that contains the code for the "park loop", which is executed when the CPU is _in_ debug mode.
+DM. It includes a small ROM that contains the code for the "park loop", which is executed when the CPU is _in_ debug
+mode. 
+
+[NOTE]
+The assembly sources of the park loop code are available in `sw/on-chip-debugger/park_loop.S`. Please note, that these
+sources are not intended to be changed by the used. Hence, the makefile does not provide an automatic option
+to compile and "install" the debugger ROM code into the HDL sources and require a manual copy
+(see `sw/on-chip-debugger/README.md`).
+
 The DBMEM uses a total address space of 128 words ( = 512 bytes) divided into four sections of 32 words ( = 128 bytes)
 each.
 Any CPU access within this address space will succeed.

@@ -116,6 +116,7 @@ neorv32            - Project home folder
  ├common          - Linker script and crt0.S start-up code
  ├example         - Various example programs
  │└...
+ ├on-chip-debugger - source code for on-chip debugger's "park loop"
  ├image_gen       - Helper program to generate NEORV32 executables
  └lib             - Processor core library
   ├include        - Header files (*.h)
