@@ -117,6 +117,7 @@ neorv32            - Project home folder
  ├example         - Various example programs
  │└...
  ├ocd_firmware    - source code for on-chip debugger's "park loop"
+ ├openocd         - OpenOCD on-chip debugger configuration files
  ├image_gen       - Helper program to generate NEORV32 executables
  └lib             - Processor core library
   ├include        - Header files (*.h)
