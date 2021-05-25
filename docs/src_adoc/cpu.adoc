@@ -70,8 +70,8 @@ Architecture.
 
 The NEORV32 CPU passes the rv32_m/I, rv32_m/M, rv32_m/C, rv32_m/privilege, and
 rv32_m/Zifencei tests of the official RISC-V Architecture Tests (GitHub). The port files for the
-NEORV32 processor are located in riscv-arch-test folder. See section <<_risc_v_architecture_test_framework>> for information how to run
-the tests on the NEORV32.
+NEORV32 processor are located in the repository's `riscv-arch-test` folder. See section <<_risc_v_architecture_test_framework>>
+for information how to run the tests on the NEORV32.
 
 .**RISC-V `rv32_m/C` Tests**
 ...................................

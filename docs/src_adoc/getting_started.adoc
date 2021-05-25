@@ -900,17 +900,21 @@ or to build a HTML-based documentation.
 Pre-rendered pdf are available online as nightly pre-releases: https://github.com/stnolting/neorv32/releases.
 The HTML-based documentation is also available online at the project' https://stnolting.github.io/neorv32/[GitHub Pages].
 
-.Generate PDF documentation `docs/NEORV32.pdf`
+.Generate PDF documentation `docs/NEORV32.pdf` using `asciidoctor-pdf`
 [source,bash]
 ----
 neorv32$ make pdf
 ----
 
-.Generate HTML documentation `docs/index.html`
+.Generate HTML documentation `docs/index.html` using `asciidoctor`
 [source,bash]
 ----
 neorv32$ make html
 ----
+
+[TIP]
+If you don't have `asciidoctor` / `asciidoctor-pdf` installed, you can still generate all the documentation using
+a _docker container_ via `make container`.
 
 
 <<<
