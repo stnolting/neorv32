@@ -416,10 +416,10 @@ DM. It includes a small ROM that contains the code for the "park loop", which is
 mode. 
 
 [NOTE]
-The assembly sources of the park loop code are available in `sw/on-chip-debugger/park_loop.S`. Please note, that these
+The assembly sources of the park loop code are available in `sw/ocd-firmware/park_loop.S`. Please note, that these
 sources are not intended to be changed by the used. Hence, the makefile does not provide an automatic option
 to compile and "install" the debugger ROM code into the HDL sources and require a manual copy
-(see `sw/on-chip-debugger/README.md`).
+(see `sw/ocd-firmware/README.md`).
 
 The DBMEM uses a total address space of 128 words ( = 512 bytes) divided into four sections of 32 words ( = 128 bytes)
 each.
