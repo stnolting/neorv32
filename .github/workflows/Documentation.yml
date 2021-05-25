@@ -43,6 +43,8 @@ jobs:
 
     - name: '🧰 Repository Checkout'
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
 
     - name: '📚 Build Datasheet (PDF and HTML)'
       run: make container
