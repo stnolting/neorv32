@@ -941,3 +941,16 @@ files) are located in the `riscv-arch-test` folder in the root directory of the 
 look at the provided `riscv-arch-test/README.md` (https://github.com/stnolting/neorv32/blob/master/riscv-arch-test/README.md[online at GitHunb])
 file for more information on how to run the tests and how testing is conducted in detail.
 
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Debugging using the On-Chip Debugger
+
+.Work In Progress
+[WARNING]
+TODO
+
+The NEORV32 on-chip debugger can be accessed using the https://github.com/riscv/riscv-openocd[RISC-V port of OpenOCD].
+Prebuilt binaries can be obtained - for example - from https://www.sifive.com/software[SiFive].

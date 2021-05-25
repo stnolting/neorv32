@@ -9,6 +9,10 @@ on-chip debugger and take control of the hart (for example: halting, resuming, s
 executing arbitrary programs).
 However, _work is still in progress_.
 
+[TIP]
+A simple example on how to use NEORV32 on-chip debugger in combination with `OpenOCD` and `gdb`
+is shown in chapter <<_debugging_using_the_on_chip_debugger>>.
+
 The NEORV32 Processor features an _on-chip debugger_ (OCD) implementing **execution-based debugging** that is compatible
 to the **Minimal RISC-V Debug Specification Version 0.13.2**.
 Please refer to this spec for in-deep information.
@@ -580,17 +584,4 @@ debug mode is entered. The `dret` instruction will return to `dpc` by moving `dp
 3+| The `dscratch0` CSR is compatible to the RISC-V debug spec. It provides a general purpose scratch register.
 |======
 
-
-
-<<<
-// ####################################################################################################################
-:sectnums:
-=== Access via OpenOCD
-
-.Work In Progress
-[WARNING]
-TODO
-
-The NEORV32 on-chip debugger can be accessed using the https://github.com/riscv/riscv-openocd[RISC-V port of OpenOCD].
-Prebuilt binaries can be obtained - for example - from https://www.sifive.com/software[SiFive].
 
