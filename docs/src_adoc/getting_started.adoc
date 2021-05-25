@@ -950,7 +950,218 @@ file for more information on how to run the tests and how testing is conducted i
 
 .Work In Progress
 [WARNING]
-TODO
+Work in Progress
+
+The NEORV32 <<_on_chip_debugger_ocd>> allows _online_ in-system debugging via an external JTAG access port from a
+host machine. The general flow is independent of the host machine's operating system. However, this tutorial uses
+Windows and Linux (Ubuntu on Windows) in parallel.
+
+[NOTE]
+This tutorial uses `gdb` to **directly upload an executable** to the processor. If you are using the default
+processor setup _with_ internal instruction memory (IMEM) make sure it is implemented as RAM
+(_MEM_INT_IMEM_ROM_ generic = false).
+
+
+:sectnums:
+==== Hardware Requirements
+
+Make sure the on-chip debugger of your NEORV32 setups is implemented (_ON_CHIP_DEBUGGER_EN_ generic = true).
+Connect a JTAG adapter to the NEORV32 `jtag_*` interface signals. If you do not have a full-scale JTAG adapter, you can
+also use a FTDI-based adapter like the "FT2232H-56Q Mini Module", which is a simple and inexpensive FTDI breakout board.
+
+.JTAG pin mapping
+[cols="^3,^2,^2"]
+[options="header",grid="rows"]
+|=======================
+| NEORV32 top signal | JTAG signal | FTDI port
+| `jtag_tck_i`       | TCK         | D0
+| `jtag_tdi_i`       | TDI         | D1
+| `jtag_tdo_o`       | TDO         | D2
+| `jtag_tms_i`       | TMS         | D3
+| `jtag_trst_i`      | TRST        | D4
+|=======================
+
+[TIP]
+The low-active JTAG _test reset_ (TRST) signals is _optional_ as a reset can also be triggered via the TAP controller.
+If TRST is not used make sure to pull the signal _high_.
+
+
+:sectnums:
+==== OpenOCD
 
 The NEORV32 on-chip debugger can be accessed using the https://github.com/riscv/riscv-openocd[RISC-V port of OpenOCD].
-Prebuilt binaries can be obtained - for example - from https://www.sifive.com/software[SiFive].
+Prebuilt binaries can be obtained - for example - from https://www.sifive.com/software[SiFive]. A pre-configured
+OpenOCD configuration file (`sw/openocd/openocd_neorv32.cfg`) is available that allows easy access to the NEORV32 CPU.
+
+[NOTE]
+You might need to adapt `ftdi_vid_pid`, `ftdi_channel` and `ftdi_layout_init` in `sw/openocd/openocd_neorv32.cfg`
+according to your interface chip and your operating system.
+
+[TIP]
+If you want to modify the JTAG clock speed (via `adapter speed` in `sw/openocd/openocd_neorv32.cfg`) make sure to meet
+the clock requirements noted in <<_debug_transport_module_dtm>>.
+
+To access the processor using OpenOCD, open a terminal and start OpenOCD with the pre-configured configuration file.
+
+.Connecting via OpenOCD (on Windows)
+[source, bash]
+--------------------------
+N:\Projects\neorv32\sw\openocd>openocd -f openocd_neorv32.cfg
+Open On-Chip Debugger 0.11.0-rc1+dev (SiFive OpenOCD 0.10.0-2020.12.1)
+Licensed under GNU GPL v2
+For bug reports:
+        https://github.com/sifive/freedom-tools/issues
+1
+Info : Listening on port 6666 for tcl connections
+Info : Listening on port 4444 for telnet connections
+Info : clock speed 1000 kHz
+Info : JTAG tap: neorv32.cpu tap/device found: 0x0cafe001 (mfg: 0x000 (<invalid>), part: 0xcafe, ver: 0x0)
+Info : datacount=1 progbufsize=2
+Info : Disabling abstract command reads from CSRs.
+Info : Examined RISC-V core; found 1 harts
+Info :  hart 0: XLEN=32, misa=0x40801105
+Info : starting gdb server for neorv32.cpu.0 on 3333
+Info : Listening on port 3333 for gdb connections
+--------------------------
+
+OpenOCD has successfully connected to the NEORV32 on-chip debugger and has examined the CPU (showing the content of
+the `misa` CSRs). Now you can use `gdb` to connect via port 3333.
+
+
+:sectnums:
+==== Debugging with GDB
+
+This guide uses the simple "blink example" from `sw/example/blink_led` as simplified test application to
+show the basics of in-system debugging.
+
+At first, the application needs to be compiled. We will use the minimal machine architecture configuration
+(`rv32i`) here to be independent of the actual processor/CPU configuration.
+Navigate to `sw/example/blink_led` and compile the application:
+
+.Compile the test application
+[source, bash]
+--------------------------
+.../neorv32/sw/example/blink_led$ make MARCH=-march=rv32i clean_all all
+--------------------------
+
+This will generate an ELF file `main.elf` that contains all the symbols required for debugging.
+Furthermore, an assembly listing file `main.asm` is generated that we will use to define breakpoints.
+
+Open another terminal in `sw/example/blink_led` and start `gdb`.
+The GNU debugger is part of the toolchain (see <<_toolchain_setup>>).
+
+.Starting GDB (on Linux (Ubuntu on Windows))
+[source, bash]
+--------------------------
+.../neorv32/sw/example/blink_led$ riscv32-unknown-elf-gdb
+GNU gdb (GDB) 10.1
+Copyright (C) 2020 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "--host=x86_64-pc-linux-gnu --target=riscv32-unknown-elf".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<https://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word".
+(gdb)
+--------------------------
+
+Now connect to OpenOCD using the default port 3333 on your local machine.
+Set the ELF file we want to debug to the recently generated `main.elf` from the `blink_led` example.
+Finally, upload the program to the processor.
+
+[NOTE]
+The executable that is uploaded to the processor is **not** the default NEORV32 executable (`neorv32_exe.bin`) that
+is used for uploading via the bootloader. Instead, all the required sections (like `.text`) are extracted from `mail.elf`
+by GDB and uploaded via the debugger's indirect memory access.
+
+.Running GDB
+[source, bash]
+--------------------------
+(gdb) target remote localhost:3333 <1>
+Remote debugging using localhost:3333
+warning: No executable has been specified and target does not support
+determining executable automatically.  Try using the "file" command.
+0xffff0c94 in ?? () <2>
+(gdb) file main.elf <3>
+A program is being debugged already.
+Are you sure you want to change the file? (y or n) y
+Reading symbols from main.elf...
+(gdb) load <4>
+Loading section .text, size 0xd0c lma 0x0
+Loading section .rodata, size 0x39c lma 0xd0c
+Start address 0x00000000, load size 4264
+Transfer rate: 43 KB/sec, 2132 bytes/write.
+(gdb)
+--------------------------
+<1> Connect to OpenOCD
+<2> The CPU was still executing code from the bootloader ROM - but that does not matter here
+<3> Select `mail.elf` from the `blink_led` example
+<4> Upload the executable
+
+After the upload, GDB will make the processor jump to the beginning of the uploaded executable
+(by default, this is the beginning of the instruction memory at `0x00000000`) skipping the bootloader
+and halting the CPU right before executing the `blink_led` application.
+
+
+:sectnums:
+===== Breakpoint Example
+
+The following steps are just a small showcase that illustrate a simple debugging scheme.
+
+While compiling `blink_led`, an assembly listing file `main.asm` was generated.
+Open this file with a text editor to check out what the CPU is going to do when resumed.
+
+The `blink_led` example implements a simple counter on the 8 lowest GPIO output ports. The program uses
+"busy wait" to have a visible delay between increments. This waiting is done by calling the `neorv32_cpu_delay_ms`
+function. We will add a _breakpoint_ right at the end of this wait function so we can step through the iterations
+of the counter.
+
+.Cut-out from `main.asm` generated from the `blink_led` example
+[source, assembly]
+--------------------------
+00000688 <__neorv32_cpu_delay_ms_end>:
+ 688:	01c12083          	lw	ra,28(sp)
+ 68c:	02010113          	addi	sp,sp,32
+ 690:	00008067          	ret
+--------------------------
+
+The very last instruction of the `neorv32_cpu_delay_ms` function is `ret` (= return) 
+at `690` in this example. Add this address as _breakpoint_ to GDB.
+
+[NOTE]
+The entry address might be different is you use a different version of the software framework or
+if different CPU ISA features are configured.
+
+.Adding a GDB breakpoint
+[source, bash]
+--------------------------
+(gdb) b * 0x690
+Breakpoint 1 at 0x690
+--------------------------
+
+Now execute `c` (= continue). The CPU will resume operation until it hits the break-point.
+By this we can "step" from increment to increment.
+
+.Iterating from breakpoint to breakpoint
+[source, bash]
+--------------------------
+Breakpoint 1 at 0x690
+(gdb) c
+Continuing.
+
+Breakpoint 1, 0x00000690 in neorv32_cpu_delay_ms ()
+(gdb) c
+Continuing.
+
+Breakpoint 1, 0x00000690 in neorv32_cpu_delay_ms ()
+(gdb) c
+Continuing.
+--------------------------
+
