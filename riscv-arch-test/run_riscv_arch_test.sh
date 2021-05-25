@@ -19,23 +19,11 @@ echo "> Checking GHDL simulator..."
 echo "--------------------------------------------------------------------------"
 ghdl -v
 
-# Clone RISC-V Compliance Test Suite GitHub repository if it not exists already
 echo "--------------------------------------------------------------------------"
-echo "> Checking 'riscv-arch-test' GitHub repository..."
+echo "> Checking 'riscv-arch-test' GitHub repository (submodule)..."
 echo "--------------------------------------------------------------------------"
 
-REPOSRC=https://github.com/riscv/riscv-arch-test.git
-LOCALREPO=$homedir/riscv-arch-test/work/riscv-arch-test
-LOCALREPO_VC_DIR=$LOCALREPO/.git
-
-if [ ! -d $LOCALREPO_VC_DIR ]
-then
-    echo ">>> Cloning repository..."
-    git clone $REPOSRC $LOCALREPO
-else
-    echo ">>> Repository already exists. Checking for updates..."
-    (cd $homedir/riscv-arch-test/work/riscv-arch-test ; git status -uno)
-fi
+git submodule update --init
 
 # Copy NEORV32 files
 echo "--------------------------------------------------------------------------"
