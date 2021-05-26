@@ -1133,11 +1133,11 @@ of the counter.
 --------------------------
 
 The very last instruction of the `neorv32_cpu_delay_ms` function is `ret` (= return) 
-at `690` in this example. Add this address as _breakpoint_ to GDB.
+at hexadecimal `690` in this example. Add this address as _breakpoint_ to GDB.
 
 [NOTE]
-The entry address might be different is you use a different version of the software framework or
-if different CPU ISA features are configured.
+The address might be different if you use a different version of the software framework or
+if different ISA options are configured.
 
 .Adding a GDB breakpoint
 [source, bash]

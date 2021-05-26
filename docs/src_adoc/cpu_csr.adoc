@@ -43,6 +43,11 @@ implemented at all (and are not "disabled" using certain configuration generics)
 access. The CSR that are implemented within the NEORV32 might cause an exception if they are disabled.
 See the according CSR description for more information.
 
+.Debug Mode CSRs
+[IMPORTANT]
+The _debug mode_ CSRs are not listed here since they are only accessible in debug mode and not during normal CPU operation.
+See section <<_cpu_debug_mode_csrs>>.
+
 
 <<<
 // ####################################################################################################################
