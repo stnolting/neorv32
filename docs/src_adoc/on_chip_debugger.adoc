@@ -530,6 +530,11 @@ Whenever the CPU **leaves debug mode** the following things happen:
 :sectnums:
 ==== CPU Debug Mode CSRs
 
+Two additional CSRs are required by the _Minimal RISC-V Debug Specification_: The debug mode control and status register
+`dcsr` and the program counter `dpc`. Providing a general purpose scratch register for debug mode (`dscratch0`) allows
+faster execution of program provided by the debugger, since _one_ general purpose register can be backup-ed and
+directly used.
+
 [NOTE]
 The debug-mode control and status registers (CSRs) are only accessible when the CPU is _in_ debug mode.
 If these CSRs are accessed outside of debug mode (for example when in `machine` mode) an illegal instruction exception
@@ -554,12 +559,16 @@ The following bits are implemented. The reaming bits are read-only and always re
 |=======================
 | Bit   | Name [RISC-V] | R/W | Event
 | 31:28 | `xdebugver` | r/- | always `0100` - indicates external debug support exists
+| 27:16 | -           | r/- | _reserved_, read as zero
 | 15    | `ebereakm`  | r/w | `ebreak` instructions in `machine` mode _enter_ debug mode when set
+| 14    | [line-through]#`ebereakh`#  | r/- | `0` - hypervisor mode not available
+| 13    | [line-through]#`ebereaks`#  | r/- | `0` - supervisor mode not available
 | 12    | `ebereaku`  | r/w | `ebreak` instructions in `user` mode _enter_ debug mode when set
 | 11    | `stepie`    | r/w | enable interrupts when in single-stepping mode
-| 10    | `stopcount` | r/- | `0` - counters increment as usual
-| 9     | `stoptime`  | r/- | `0` - timers increment as usual
+| 10    | [line-through]#`stopcount`# | r/- | `0` - counters increment as usual
+| 9     | [line-through]#`stoptime`#  | r/- | `0` - timers increment as usual
 | 8:6   | `cause`     | r/- | cause identifier - why was debug mode entered
+| 5     | -           | r/- | _reserved_, read as zero
 | 4     | `mprven`    | r/- | `0` - `mstatus.mprv` is ignored when in debug mode
 | 3     | `nmip`      | r/- | set when the non-maskable CPU/processor interrupt is pending
 | 2     | `step`      | r/w | enable single-stepping when set
