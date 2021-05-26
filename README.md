@@ -16,9 +16,10 @@
 
 * [Overview](#Overview)
 * [CPU Features](#NEORV32-CPU-Features)
-* [SoC Features](#NEORV32-Processor-Features)
+* [Processor/SoC Features](#NEORV32-Processor-Features)
 * [FPGA Implementation Results](#FPGA-Implementation-Results)
 * [Performance](#Performance)
+* [**Getting Started**](#Getting-Started)
 * [Legal](#Legal)
 
 
@@ -241,6 +242,44 @@ Results generated for hardware version [`1.4.9.8`](https://github.com/stnolting/
 :information_source: The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension
 (enabled via the `FAST_MUL_EN` generic). The `FAST_SHIFT_EN` configuration uses a barrel shifter for
 CPU shift operations (enabled via the `FAST_SHIFT_EN` generic).
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
+
+
+## Getting Started
+
+This overview provides some *quick links* to the most important sections of the
+[NEORV32 online documentation](https://stnolting.github.io/neorv32).
+
+#### :electric_plug: Hardware Overview
+
+* [NEORV32 Processor](https://stnolting.github.io/neorv32/#_neorv32_processor_soc) - the SoC
+  * [Top Entity - Signals](https://stnolting.github.io/neorv32/#_processor_top_entity_signals) - how to connect to the processor
+  * [Top Entity - Generics](https://stnolting.github.io/neorv32/#_processor_top_entity_generics) - configuration options
+  * [Peripheral Modules](https://stnolting.github.io/neorv32/#_processor_internal_modules) - available IO & peripheral modules and memories
+  * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - debugging the processor via JTAG
+
+* [NEORV32 CPU](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu) - the RISC-V core
+  * [RISC-V compatibility](https://stnolting.github.io/neorv32/#_risc_v_compatibility) - what is compatible to the specs. and what is not
+  * [ISA and Extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions) - available RISC-V ISA extensions
+  * [CSRs](https://stnolting.github.io/neorv32/#_control_and_status_registers_csrs) - control and status registers
+
+#### :floppy_disk: Software Overview
+
+* [Core Libraries](https://stnolting.github.io/neorv32/#_core_libraries) - high-level functions for accessing the processor's peripherals
+  * [Software Framework Documentation](https://stnolting.github.io/neorv32/sw/files.html) - doxygen-based documentation
+* [Application Makefiles](https://stnolting.github.io/neorv32/#_application_makefile) - turning C-code into an executable
+* [Bootloader](https://stnolting.github.io/neorv32/#_bootloader) - the build-in NEORV32 bootloader
+
+#### :rocket: User Guides (see [full overview](https://stnolting.github.io/neorv32/#_lets_get_it_started))
+
+* [Toolchain setup](https://stnolting.github.io/neorv32/#_toolchain_setup) - install and setup RISC-V gcc
+* [General Hardware Setup](https://stnolting.github.io/neorv32/#_general_hardware_setup) - setup a new NEORV32 FPGA project
+* [General Software Setup](https://stnolting.github.io/neorv32/#_general_software_framework_setup) - configure the software framework
+* [Application Compilation](https://stnolting.github.io/neorv32/#_application_program_compilation) - compile an application using `make`
+* [Upload via Bootloader](https://stnolting.github.io/neorv32/#_uploading_and_starting_of_a_binary_executable_image_via_uart) - upload and execute executables
+* [Debugging via the On-Chip Debugger](https://stnolting.github.io/neorv32/#_debugging_using_the_on_chip_debugger) - step through code *online* and *in-system*
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
