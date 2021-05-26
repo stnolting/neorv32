@@ -14,7 +14,9 @@ html:
 	  --out-file index.html
 
 revnumber:
+	if [ `git tag -l | grep nightly` ]; then git tag -d nightly; fi
 	git describe --long --tags  | sed 's#\([^-]*-g\)#r\1#;' > docs/revnumber.txt
+	cat docs/revnumber.txt
 
 container: revnumber
 	docker run --rm -v /$(PWD)://documents/ asciidoctor/docker-asciidoctor make pdf html
