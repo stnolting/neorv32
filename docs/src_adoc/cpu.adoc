@@ -904,10 +904,9 @@ an _optional_ bus timeout (see section <<_processor_external_memory_interface_wi
 [cols="^2,^2"]
 [grid="none"]
 |=======================
-| image::cpu_interface_read_long.png[read,300,150] +
-Read access
-| image::cpu_interface_write_long.png[write,300,150] +
-Write access
+a| image::cpu_interface_read_long.png[read,300,150]
+a| image::cpu_interface_write_long.png[write,300,150]
+| Read access | Write access
 |=======================
 
 

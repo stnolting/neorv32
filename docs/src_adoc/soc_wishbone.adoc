@@ -62,10 +62,9 @@ first bus clock cycle.
 [cols="^2,^2"]
 [grid="none"]
 |=======================
-| image::wishbone_classic_read.png[700,300] +
-**Classic** Wishbone read access
-| image::wishbone_pipelined_write.png[700,300] +
-**Pipelined** Wishbone write access
+a| image::wishbone_classic_read.png[700,300]
+a| image::wishbone_pipelined_write.png[700,300]
+| **Classic** Wishbone read access | **Pipelined** Wishbone write access
 |=======================
 
 
