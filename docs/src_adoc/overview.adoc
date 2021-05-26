@@ -82,7 +82,7 @@ Links in this document are <<_structure,highlighted>>.
 ** general purpose IO and PWM and native NeoPixel (c) compatible smart LED interface
 ** embedded memories / caches for data, instructions and bootloader
 ** external memory interface (Wishbone or AXI4-Lite)
-* on-chip debugging compatible to the _Minimal RISC-V Debug Specification Version 0.13.2_
+* on-chip debugger compatible with OpenOCD and gdb
 * fully synchronous design, no latches, no gated clocks
 * completely described in behavioral, platform-independent VHDL
 * small hardware footprint and high operating frequency
@@ -203,7 +203,7 @@ between entity boundaries, so the actual utilization results might vary a bit.
 [options="header",grid="rows"]
 |=======================
 | CPU                                   | LEs  | FFs  | MEM bits | DSPs | _f~max~_
-| `rv32i`                               |  980 | 409  | 1024     | 0    | 123 MHz
+| `rv32i`                               |  980 |  409 | 1024     | 0    | 123 MHz
 | `rv32i_Zicsr`                         | 1835 |  856 | 1024     | 0    | 124 MHz
 | `rv32im_Zicsr`                        | 2443 | 1134 | 1024     | 0    | 124 MHz
 | `rv32imc_Zicsr`                       | 2669 | 1149 | 1024     | 0    | 125 MHz
