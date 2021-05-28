@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 28.05.2021 | 1.5.5.9 | integrated DBMEM (debug memory) component into DM (debug module); removing now-obsolete `neorv32_debug_dbmem.vhd` component |
 | 22.05.2021 | 1.5.5.8 | :sparkles: **on-chip debugger (OCD)**: added debug module (`DM`) component; **OCD is operational now** (but still experimental) |
 | 22.05.2021 | 1.5.5.7 | :bug: fixed bug in internal memory monitoring: if accessing an unused address which is not re-directed to the external bus interface (because WISHBONE module is disabled) caused the CPU to stall since that bus access was not correctly monitored and aborted by the BUS_KEEPER |
 | 21.05.2021 | 1.5.5.6 | **on-chip debugger**: added debug transport module (`DTM`) component |
