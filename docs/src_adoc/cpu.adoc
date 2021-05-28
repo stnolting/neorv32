@@ -342,6 +342,10 @@ The NEORV32 is an RISC-V `rv32i` architecture that provides several optional RIS
 see the The _RISC-V Instruction Set Manual – Volume I: Unprivileged ISA_ and _The RISC-V Instruction Set Manual
 Volume II: Privileged Architecture_, which are available in the projects `docs/references` folder.
 
+[TIP]
+The CPU can discover available ISA extensions via the <<_misa>> and <<_mzext>> CSRs or by executing an instruction
+and checking for an _illegal instruction exception_.
+
 
 ==== **`A`** - Atomic Memory Access
 
@@ -361,7 +365,6 @@ implemented) AMO (atomic memory operation) will trigger an illegal instruction e
 [NOTE]
 The atomic instructions have special requirements for memory system / bus interconnect. More
 information can be found in sections <<_bus_interface>> and <<_processor_external_memory_interface_wishbone_axi4_lite>>, respectively.
-
 
 
 ==== **`B`** - Bit-Manipulation
@@ -913,7 +916,6 @@ a| image::cpu_interface_read_long.png[read,300,150]
 a| image::cpu_interface_write_long.png[write,300,150]
 | Read access | Write access
 |=======================
-
 
 **Write Access**
 
