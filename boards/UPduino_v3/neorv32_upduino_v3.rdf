@@ -48,9 +48,6 @@
         <Source name="../../rtl/core/neorv32_cpu_regfile.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>
-        <Source name="../../rtl/core/neorv32_debug_dbmem.vhd" type="VHDL" type_short="VHDL">
-            <Options lib="neorv32"/>
-        </Source>
         <Source name="../../rtl/core/neorv32_debug_dm.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>

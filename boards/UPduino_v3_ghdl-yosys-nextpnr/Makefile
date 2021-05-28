@@ -18,7 +18,6 @@ NEORV32_SRC := \
   ../../rtl/core/neorv32_cpu_cp_muldiv.vhd   \
   ../../rtl/core/neorv32_cpu_decompressor.vhd   \
   ../../rtl/core/neorv32_cpu_regfile.vhd   \
-  ../../rtl/core/neorv32_debug_dbmem.vhd  \
   ../../rtl/core/neorv32_debug_dm.vhd  \
   ../../rtl/core/neorv32_debug_dtm.vhd  \
   ../../rtl/core/neorv32_gpio.vhd   \
