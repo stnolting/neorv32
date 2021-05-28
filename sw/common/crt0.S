@@ -212,10 +212,9 @@ __crt0_main_entry:
 // *********************************************************
 __crt0_this_is_the_end:
   csrrci zero, mstatus, 8 // mstatus: disable global IRQs (MIE)
-  nop
-  wfi
 __crt0_this_is_the_end_my_friend:
-  j __crt0_this_is_the_end_my_friend // in case WFI is not available
+  wfi
+  j __crt0_this_is_the_end_my_friend
 
 
 // *********************************************************
