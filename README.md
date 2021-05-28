@@ -17,11 +17,11 @@
 * [Overview](#Overview)
 * [CPU Features](#NEORV32-CPU-Features)
 * [Processor/SoC Features](#NEORV32-Processor-Features)
+* [Software Framework](#NEORV32-Software-Framework)
 * [FPGA Implementation Results](#FPGA-Implementation-Results)
 * [Performance](#Performance)
 * [**Getting Started**](#Getting-Started)
 * [Legal](#Legal)
-
 
 
 ## Overview
@@ -49,36 +49,20 @@ various FPGA boards to get you started.
 [new discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas or bug-fixes.
 Check out how to contribute in [`CONTRIBUTE.md`](https://github.com/stnolting/neorv32/blob/master/CONTRIBUTING.md).
 
-:rocket: Jump to the documentation's chapter [*Let's Get It Started!*](https://stnolting.github.io/neorv32/#_lets_get_it_started)
-to directly get started setting up your NEORV32 setup!
+:rocket: Check out the [quick links below](#Getting-Started) or directly jump to the documentation's
+[*Let's Get It Started!*](https://stnolting.github.io/neorv32/#_lets_get_it_started) section to get started
+setting up your NEORV32 setup!
 
 
-### Project Features
+### Project Key Features
 
-* [CPU](NEORV32-CPU-Features) plus [Processor/SoC](#NEORV32-Processor-Features)
+* [CPU](#NEORV32-CPU-Features) plus [Processor/SoC](#NEORV32-Processor-Features) plus [Software Framework](#NEORV32-Software-Framework)
 * completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
 * fully synchronous design, no latches, no gated clocks
-* small hardware footprint and high operating frequency
-* official RISC-V open-source [architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
-* rich software framework
-  * [core libraries](https://github.com/stnolting/neorv32/tree/master/sw/lib) for high-level usage of the provided functions and peripherals
-  * application compilation based on GNU makefiles
-  * gcc-based toolchain ([pre-compiled toolchains available](https://github.com/stnolting/riscv-gcc-prebuilt))
-  * bootloader with UART interface console
-  * runtime environment for handling traps
-  * several [example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) to get started including CoreMark, FreeRTOS and *Conway's Game of Life* :wink:
-  * `doxygen`-based documentation, available on [GitHub pages](https://stnolting.github.io/neorv32/sw/files.html)
-
-
-#### Design Principles
-
-* From zero to *hello_world*: completely open source and documented.
-* Plain VHDL without technology-specific parts like attributes, macros or primitives.
-* Easy to use – working out of the box.
-* Clean synchronous design, no wacky combinatorial interfaces.
-* Be as small as possible – but with a reasonable size-performance trade-off.
-* Be as RISC-V-compliant as possible.
-* The processor has to fit in a Lattice iCE40 UltraPlus 5k low-power FPGA running at 22+ MHz.
+* be as small as possible (while being as RISC-V-compliant as possible) – but with a reasonable size-performance trade-off
+  * the processor has to fit in a Lattice iCE40 UltraPlus 5k low-power FPGA running at 22+ MHz
+* from zero to `printf("hello world!");`: completely open source and documented
+* easy to use – intended to work out of the box
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -99,11 +83,12 @@ The CPU [passes](https://stnolting.github.io/neorv32/#_risc_v_compatibility) the
 In order to provide a reduced-size setup the NEORV32 CPU implements a two-stages pipeline, where each stage
 uses a multi-cycle processing scheme. Instruction and data accesses are conducted via independant bus interfaces,
 that are multiplexed into a single SoC-bus ("modified Harvard architecture"). As a special execution safety feature,
-all reserved or unimplemented instructions do raise an exception.
+all reserved or unimplemented instructions do raise an exception. Furthermore, the CPU was assigned an *official*
+RISC-V open-source [architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
 
 RISC-V-compatible **ISA extensions** currently provided by the NEORV32 (:books: [see full list](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions)):
 * `A` - atomic memory access instructions (optional)
-* `B` - bit manipulation instructions (subset, optional)
+* `B` - bit manipulation instructions (subset, optional, still experimental)
 * `C` - compressed 16-bit instructions (optional)
 * `E` - embedded CPU (reduced register file size) (optional)
 * `I` - base integer instruction set (always enabled)
@@ -131,28 +116,60 @@ provides a full-scale SoC build around the NEORV32 CPU. It is highly configurabl
 a flexible customization according to your needs.
 
 Included SoC modules:
-* processor-internal data and instruction memories (**DMEM** / **IMEM**) & cache (**iCACHE**)
-* bootloader (**BOOTLDROM**) with UART console and automatic application boot from external SPI flash option
-* machine system timer (**MTIME**), RISC-V-compatible
-* watchdog timer (**WDT**)
-* two independent universal asynchronous receivers and transmitters (**UART0** & **UART1**) with optional TS/CTS hardware flow control
-* 8/16/24/32-bit serial peripheral interface controller (**SPI**) with 8 dedicated chip select lines
-* two wire serial interface controller (**TWI**) with optional clock-stretching, compatible to the I²C standard
-* general purpose parallel IO port (**GPIO**), 32xOut & 32xIn  with pin-change interrupt
-* 32-bit external bus interface, Wishbone b4 compatible (**WISHBONE**)
-  * wrapper for **AXI4-Lite Master Interface**
-* PWM controller with 4 channels and 8-bit duty cycle resolution (**PWM**)
-* ring-oscillator-based *true random* number generator (**TRNG**)
-* custom functions subsystem (**CFS**) for tightly-coupled custom co-processor extensions
-* numerically-controlled oscillator (**NCO**) with three independent channels
-* smart LED interface (**NEOLED**) to directly drive WS2812-compatible (NeoPixel(TM)) LEDs
-* on-chip debugger (**OCD**) via JTGA - compatible to the [*Minimal RISC-V Debug Specification Version 0.13.2*](https://github.com/riscv/riscv-debug-spec)
-and compatible with the [RISC-V OpenOCD port](https://github.com/riscv/riscv-openocd)
+* processor-internal data and instruction memories ([DMEM](https://stnolting.github.io/neorv32/#_data_memory_dmem) /
+[IMEM](https://stnolting.github.io/neorv32/#_instruction_memory_imem)) &
+cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruction_cache_icache))
+* bootloader ([BOOTLDROM](https://stnolting.github.io/neorv32/#_bootloader_rom_bootrom)) with UART console and automatic
+application boot from external SPI flash option
+* machine system timer ([MTIME](https://stnolting.github.io/neorv32/#_machine_system_timer_mtime)), RISC-V-compatible
+* watchdog timer ([WDT](https://stnolting.github.io/neorv32/#_watchdog_timer_wdt))
+* two independent universal asynchronous receivers and transmitters
+([UART0](https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0) and
+[UART1](https://stnolting.github.io/neorv32/#_secondary_universal_asynchronous_receiver_and_transmitter_uart1))
+with optional RTS/CTS hardware flow control
+* 8/16/24/32-bit serial peripheral interface controller
+([SPI](https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi)) with 8 dedicated chip select lines
+* two wire serial interface controller ([TWI](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi))
+supporting clock-stretching, compatible to the I²C standard
+* general purpose parallel IO port ([GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio)),
+32xOut & 32xIn  with pin-change interrupt
+* 32-bit external bus interface, Wishbone b4 compatible
+([WISHBONE](https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite))
+  * wrapper for AXI4-Lite Master Interface
+* PWM controller with 4 channels and 8-bit duty cycle resolution
+([PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm))
+* ring-oscillator-based *true random* number generator ([TRNG](https://stnolting.github.io/neorv32/#_true_random_number_generator_trng))
+* custom functions subsystem ([CFS](https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs))
+for tightly-coupled custom co-processor extensions
+* numerically-controlled oscillator ([NCO](https://stnolting.github.io/neorv32/#_numerically_controlled_oscillator_nco))
+with three independent channels
+* smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled))
+to directly drive WS2812-compatible (*NeoPixel(TM)*) LEDs
+* on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) via JTGA - compatible to
+the [*Minimal RISC-V Debug Specification Version 0.13.2*](https://github.com/riscv/riscv-debug-spec)
+and compatible with the *OpenOCD* and *gdb*
 * alternative [top entities/wrappers](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) available
 
 :information_source: It is recommended to use the processor setup even if you want to **use the CPU in stand-alone mode**. Simply disable all the processor-internal
 modules via the generics and you will get a "CPU wrapper" that already provides a minimal CPU environment and an external memory interface (like AXI4).
 This setup also allows to further use the default bootloader and software framework. From this base you can start building your own processor system.
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
+
+
+## NEORV32 Software Framework
+
+:books: In-depth detailed information regarding the software framework can be found in the
+[online documentation - _"Software Framework"_](https://stnolting.github.io/neorv32/#_software_framework).
+
+* [core libraries](https://github.com/stnolting/neorv32/tree/master/sw/lib) for high-level usage of the provided functions and peripherals
+* application compilation based on GNU makefiles
+* gcc-based toolchain ([pre-compiled toolchains available](https://github.com/stnolting/riscv-gcc-prebuilt))
+* bootloader with UART interface console
+* runtime environment for handling traps
+* several [example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) to get started including CoreMark, FreeRTOS and *Conway's Game of Life*
+* `doxygen`-based documentation, available on [GitHub pages](https://stnolting.github.io/neorv32/sw/files.html)
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -249,32 +266,32 @@ CPU shift operations (enabled via the `FAST_SHIFT_EN` generic).
 
 ## Getting Started
 
-This overview provides some *quick links* to the most important sections of the
+This overview provides some *quick links* to the most important sections of the :books:
 [NEORV32 online documentation](https://stnolting.github.io/neorv32).
 
-#### :electric_plug: Hardware Overview
+### :electric_plug: Hardware Overview
 
 * [NEORV32 Processor](https://stnolting.github.io/neorv32/#_neorv32_processor_soc) - the SoC
   * [Top Entity - Signals](https://stnolting.github.io/neorv32/#_processor_top_entity_signals) - how to connect to the processor
   * [Top Entity - Generics](https://stnolting.github.io/neorv32/#_processor_top_entity_generics) - configuration options
   * [Peripheral Modules](https://stnolting.github.io/neorv32/#_processor_internal_modules) - available IO & peripheral modules and memories
-  * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - debugging the processor via JTAG
+  * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - online debugging of the processor via JTAG
 
 * [NEORV32 CPU](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu) - the RISC-V core
   * [RISC-V compatibility](https://stnolting.github.io/neorv32/#_risc_v_compatibility) - what is compatible to the specs. and what is not
   * [ISA and Extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions) - available RISC-V ISA extensions
   * [CSRs](https://stnolting.github.io/neorv32/#_control_and_status_registers_csrs) - control and status registers
 
-#### :floppy_disk: Software Overview
+### :floppy_disk: Software Overview
 
 * [Core Libraries](https://stnolting.github.io/neorv32/#_core_libraries) - high-level functions for accessing the processor's peripherals
   * [Software Framework Documentation](https://stnolting.github.io/neorv32/sw/files.html) - doxygen-based documentation
 * [Application Makefiles](https://stnolting.github.io/neorv32/#_application_makefile) - turning C-code into an executable
 * [Bootloader](https://stnolting.github.io/neorv32/#_bootloader) - the build-in NEORV32 bootloader
 
-#### :rocket: User Guides (see [full overview](https://stnolting.github.io/neorv32/#_lets_get_it_started))
+### :rocket: User Guides (see [full overview](https://stnolting.github.io/neorv32/#_lets_get_it_started))
 
-* [Toolchain setup](https://stnolting.github.io/neorv32/#_toolchain_setup) - install and setup RISC-V gcc
+* [Toolchain Setup](https://stnolting.github.io/neorv32/#_toolchain_setup) - install and setup RISC-V gcc
 * [General Hardware Setup](https://stnolting.github.io/neorv32/#_general_hardware_setup) - setup a new NEORV32 FPGA project
 * [General Software Setup](https://stnolting.github.io/neorv32/#_general_software_framework_setup) - configure the software framework
 * [Application Compilation](https://stnolting.github.io/neorv32/#_application_program_compilation) - compile an application using `make`
