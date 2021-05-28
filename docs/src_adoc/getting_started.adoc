@@ -333,6 +333,10 @@ shows the actual assembly code of the complete application.
 You have just created the executable. Now it is time to upload it to the processor. There are basically two
 options to do so.
 
+[TIP]
+Executables can also be uploaded via the **on-chip debugger**.
+See section <<_debugging_with_gdb>> for more information.
+
 **Option 1**
 
 The NEORV32 makefiles provide an upload target that allows to directly upload an executable from the
@@ -345,6 +349,7 @@ sw/example/blink_led$ make COM_PORT=/dev/ttyUSB1 upload
 
 Replace `/dev/ttyUSB1` with the actual serial port you are using to communicate with the processor. You
 might have to use `sudo make ...` if the targeted device requires elevated access rights.
+
 
 **Option 2**
 
