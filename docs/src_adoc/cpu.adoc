@@ -529,8 +529,13 @@ generic is _true_. It allows manual synchronization of the instruction stream vi
 [NOTE]
 The `fence.i` instruction resets the CPU's internal instruction fetch engine and flushes the prefetch buffer.
 This allows a clean re-fetch of modified data from memory. Also, the top's `i_bus_fencei_o` signal is set
-high for one cycle to inform the memory system. Any additional flags within the `fence.i` instruction word are ignore by the hardware.
-If _CPU_EXTENSION_RISCV_Zifencei_ is false, executing `fence.i` will **not trap** and none of the described functions will be executed.
+high for one cycle to inform the memory system. Any additional flags within the `fence.i` instruction word
+are ignore by the hardware.
+
+[NOTE]
+If the `Zifencei` extension is disabled (_CPU_EXTENSION_RISCV_Zifencei_ generic = false) executing
+a `fence.i` instruction will be executed as `nop` (and will **not trap**) and none of the functions
+described above will be executed.
 
 
 ==== **`PMP`** Physical Memory Protection
