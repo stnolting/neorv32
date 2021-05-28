@@ -1,13 +1,21 @@
 -- #################################################################################################
 -- # << NEORV32 - RISC-V-Compatible Debug Module (DM) >>                                           #
 -- # ********************************************************************************************* #
+-- # Compatible to the "Minimal RISC-V External Debug Spec. Version 0.13.2"                        #
+-- # -> "Execution-based" debugging scheme                                                         # 
+-- # ********************************************************************************************* #
 -- # Key features:                                                                                 #
--- # * compatible to the "minimal RISC-V debug spec. version 0.13.2"                               #
--- # * execution based debugging scheme                                                            #
--- # * only register access commands                                                               #
+-- # * register access commands only                                                               #
+-- # * auto-execution commands                                                                     #
 -- # * for a single hart only                                                                      #
 -- # * 2 general purpose program buffer entries                                                    #
--- # * no halt-on-reset request                                                                    #
+-- # * 1 general purpose data buffer entry                                                         #
+-- #                                                                                               #
+-- # CPU access:                                                                                   #
+-- # * ROM for "park loop" code                                                                    #
+-- # * program buffer                                                                              #
+-- # * data buffer                                                                                 #
+-- # * control and status register                                                                 #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -50,32 +58,29 @@ use neorv32.neorv32_package.all;
 entity neorv32_debug_dm is
   port (
     -- global control --
-    clk_i               : in  std_ulogic; -- global clock line
-    rstn_i              : in  std_ulogic; -- global reset line, low-active
+    clk_i            : in  std_ulogic; -- global clock line
+    rstn_i           : in  std_ulogic; -- global reset line, low-active
     -- debug module interface (DMI) --
-    dmi_rstn_i          : in  std_ulogic;
-    dmi_req_valid_i     : in  std_ulogic;
-    dmi_req_ready_o     : out std_ulogic; -- DMI is allowed to make new requests when set
-    dmi_req_addr_i      : in  std_ulogic_vector(06 downto 0);
-    dmi_req_op_i        : in  std_ulogic; -- 0=read, 1=write
-    dmi_req_data_i      : in  std_ulogic_vector(31 downto 0);
-    dmi_resp_valid_o    : out std_ulogic; -- response valid when set
-    dmi_resp_ready_i    : in  std_ulogic; -- ready to receive respond
-    dmi_resp_data_o     : out std_ulogic_vector(31 downto 0);
-    dmi_resp_err_o      : out std_ulogic; -- 0=ok, 1=error
-    -- debug core control interface (DCI) --
-    dci_ndmrstn_o       : out std_ulogic; -- soc reset
-    dci_halt_req_o      : out std_ulogic; -- request hart to halt (enter debug mode)
-    dci_halt_ack_i      : in  std_ulogic; -- CPU (re-)entered HALT state (single-shot)
-    dci_resume_req_o    : out std_ulogic; -- DM wants the CPU to resume when set
-    dci_resume_ack_i    : in  std_ulogic; -- CPU starts resuming when set (single-shot)
-    dci_execute_req_o   : out std_ulogic; -- DM wants CPU to execute program buffer when set
-    dci_execute_ack_i   : in  std_ulogic; -- CPU starts executing program buffer when set (single-shot)
-    dci_exception_ack_i : in  std_ulogic; -- CPU has detected an exception (single-shot)
-    dci_progbuf_o       : out std_ulogic_vector(255 downto 0); -- program buffer, 4 entries in total
-    dci_data_we_o       : out std_ulogic; -- write abstract data
-    dci_data_o          : out std_ulogic_vector(31 downto 0); -- abstract write data
-    dci_data_i          : in  std_ulogic_vector(31 downto 0)  -- abstract read data
+    dmi_rstn_i       : in  std_ulogic;
+    dmi_req_valid_i  : in  std_ulogic;
+    dmi_req_ready_o  : out std_ulogic; -- DMI is allowed to make new requests when set
+    dmi_req_addr_i   : in  std_ulogic_vector(06 downto 0);
+    dmi_req_op_i     : in  std_ulogic; -- 0=read, 1=write
+    dmi_req_data_i   : in  std_ulogic_vector(31 downto 0);
+    dmi_resp_valid_o : out std_ulogic; -- response valid when set
+    dmi_resp_ready_i : in  std_ulogic; -- ready to receive respond
+    dmi_resp_data_o  : out std_ulogic_vector(31 downto 0);
+    dmi_resp_err_o   : out std_ulogic; -- 0=ok, 1=error
+    -- CPU bus access --
+    cpu_addr_i       : in  std_ulogic_vector(31 downto 0); -- address
+    cpu_rden_i       : in  std_ulogic; -- read enable
+    cpu_wren_i       : in  std_ulogic; -- write enable
+    cpu_data_i       : in  std_ulogic_vector(31 downto 0); -- data in
+    cpu_data_o       : out std_ulogic_vector(31 downto 0); -- data out
+    cpu_ack_o        : out std_ulogic; -- transfer acknowledge
+    -- CPU control --
+    cpu_ndmrstn_o    : out std_ulogic; -- soc reset
+    cpu_halt_req_o   : out std_ulogic  -- request hart to halt (enter debug mode)
   );
 end neorv32_debug_dm;
 
@@ -85,7 +90,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant nscratch_c   : std_ulogic_vector(03 downto 0) := "0001"; -- number of dscratch* registers in CPU = 1
   constant dataaccess_c : std_ulogic                     := '1';    -- 1: abstract data is memory-mapped, 0: abstract data is CSR-mapped
   constant datasize_c   : std_ulogic_vector(03 downto 0) := "0001"; -- number of data registers in memory/CSR space = 1
-  constant dataaddr_c   : std_ulogic_vector(11 downto 0) := dbmem_data_base_c(11 downto 0); -- signed base address of data registers in memory/CSR space
+  constant dataaddr_c   : std_ulogic_vector(11 downto 0) := dm_data_base_c(11 downto 0); -- signed base address of data registers in memory/CSR space
 
   -- available DMI registers --
   constant addr_data0_c        : std_ulogic_vector(6 downto 0) := "000" & x"4";
@@ -148,6 +153,84 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   end record;
   signal dm_reg : dm_reg_t;
 
+  -- cpu program buffer --
+  type cpu_progbuf_t is array (0 to 4) of std_ulogic_vector(31 downto 0);
+  signal cpu_progbuf : cpu_progbuf_t;
+
+  -- **********************************************************
+  -- CPU Bus Interface
+  -- **********************************************************
+
+  -- Debug Core Interface
+  type dci_t is record
+    halt_ack      : std_ulogic; -- CPU (re-)entered HALT state (single-shot)
+    resume_req    : std_ulogic; -- DM wants the CPU to resume when set
+    resume_ack    : std_ulogic; -- CPU starts resuming when set (single-shot)
+    execute_req   : std_ulogic; -- DM wants CPU to execute program buffer when set
+    execute_ack   : std_ulogic; -- CPU starts executing program buffer when set (single-shot)
+    exception_ack : std_ulogic; -- CPU has detected an exception (single-shot)
+    progbuf       : std_ulogic_vector(255 downto 0); -- program buffer, 4 32-bit entries
+    data_we       : std_ulogic; -- write abstract data
+    wdata         : std_ulogic_vector(31 downto 0); -- abstract write data
+    rdata         : std_ulogic_vector(31 downto 0); -- abstract read data
+  end record;
+  signal dci : dci_t;
+
+  -- IO space: module base address --
+  constant hi_abb_c : natural := 31; -- high address boundary bit
+  constant lo_abb_c : natural := index_size_f(dm_size_c); -- low address boundary bit
+
+  -- status and control register - bits --
+  constant sreg_halt_ack_c      : natural := 0; -- -/w: CPU is halted in debug mode and waits in park loop
+  constant sreg_resume_req_c    : natural := 1; -- r/-: DM requests CPU to resume
+  constant sreg_resume_ack_c    : natural := 2; -- -/w: CPU starts resuming
+  constant sreg_execute_req_c   : natural := 3; -- r/-: DM requests to execute program buffer
+  constant sreg_execute_ack_c   : natural := 4; -- -/w: CPU starts to execute program buffer
+  constant sreg_exception_ack_c : natural := 5; -- -/w: CPU has detected an exception
+
+  -- code ROM for "park loop" --
+  type code_rom_file_t is array (0 to 31) of std_ulogic_vector(31 downto 0);
+  constant code_rom_file : code_rom_file_t := (
+    00000000 => x"0180006f",
+    00000001 => x"7b241073",
+    00000002 => x"02000413",
+    00000003 => x"98802023",
+    00000004 => x"7b202473",
+    00000005 => x"00100073",
+    00000006 => x"7b241073",
+    00000007 => x"00100413",
+    00000008 => x"98802023",
+    00000009 => x"98002403",
+    00000010 => x"00847413",
+    00000011 => x"02041263",
+    00000012 => x"98002403",
+    00000013 => x"00247413",
+    00000014 => x"00041463",
+    00000015 => x"fe9ff06f",
+    00000016 => x"00400413",
+    00000017 => x"98802023",
+    00000018 => x"7b202473",
+    00000019 => x"7b200073",
+    00000020 => x"01000413",
+    00000021 => x"98802023",
+    00000022 => x"7b202473",
+    00000023 => x"88000067",
+    others   => x"00100073"  -- ebreak
+  );
+
+  -- global access control --
+  signal acc_en : std_ulogic;
+  signal rden   : std_ulogic;
+  signal wren   : std_ulogic;
+  signal maddr  : std_ulogic_vector(01 downto 0);
+
+  -- data buffer --
+  signal data_buf : std_ulogic_vector(31 downto 0);
+
+  -- program buffer access --
+  type prog_buf_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
+  signal prog_buf : prog_buf_t;
+
 begin
 
   -- Debug Module Command Controller --------------------------------------------------------
@@ -158,7 +241,7 @@ begin
       if (dm_reg.dmcontrol_dmactive = '0') or (dmi_rstn_i = '0') then -- DM reset / DM disabled
         dm_ctrl.state        <= CMD_IDLE;
         dm_ctrl.ldsw_progbuf <= instr_nop_c;
-        dci_execute_req_o    <= '0';
+        dci.execute_req      <= '0';
         dm_ctrl.pbuf_en      <= '0';
         --
         dm_ctrl.illegal_cmd   <= '-';
@@ -172,7 +255,7 @@ begin
       else -- DM active
 
         -- defaults --
-        dci_execute_req_o     <= '0';
+        dci.execute_req       <= '0';
         dm_ctrl.illegal_cmd   <= '0';
         dm_ctrl.illegal_state <= '0';
 
@@ -236,14 +319,14 @@ begin
 
           when CMD_EXE_TRIGGER => -- request CPU to execute command
           -- ------------------------------------------------------------
-            dci_execute_req_o <= '1'; -- request execution
-            if (dci_execute_ack_i = '1') then -- CPU starts execution
+            dci.execute_req <= '1'; -- request execution
+            if (dci.execute_ack = '1') then -- CPU starts execution
               dm_ctrl.state <= CMD_EXE_BUSY;
             end if;
 
           when CMD_EXE_BUSY => -- wait for CPU to finish
           -- ------------------------------------------------------------
-            if (dci_halt_ack_i = '1') then -- CPU is parked again -> execution done
+            if (dci.halt_ack = '1') then -- CPU is parked again -> execution done
               dm_ctrl.state <= CMD_IDLE;
             end if;
 
@@ -263,7 +346,7 @@ begin
         if (dm_ctrl.cmderr = "000") then
           if (dm_ctrl.illegal_state = '1') then -- cannot execute since hart is not in expected state
             dm_ctrl.cmderr <= "100";
-          elsif (dci_exception_ack_i = '1') then -- exception during execution
+          elsif (dci.exception_ack = '1') then -- exception during execution
             dm_ctrl.cmderr <= "011";
           elsif (dm_ctrl.illegal_cmd = '1') then -- unsupported command
             dm_ctrl.cmderr <= "010";
@@ -281,9 +364,9 @@ begin
         -- HALTED --
         if (dm_reg.dmcontrol_ndmreset = '1') then
           dm_ctrl.hart_halted <= '0';
-        elsif (dci_halt_ack_i = '1') then
+        elsif (dci.halt_ack = '1') then
           dm_ctrl.hart_halted <= '1';
-        elsif (dci_resume_ack_i = '1') then
+        elsif (dci.resume_ack = '1') then
           dm_ctrl.hart_halted <= '0';
         end if;
 
@@ -292,14 +375,14 @@ begin
           dm_ctrl.hart_resume_req <= '0';
         elsif (dm_reg.resume_req = '1') then
           dm_ctrl.hart_resume_req <= '1';
-        elsif (dci_resume_ack_i = '1') then
+        elsif (dci.resume_ack = '1') then
           dm_ctrl.hart_resume_req <= '0';
         end if;
 
         -- RESUME ACK --
         if (dm_reg.dmcontrol_ndmreset = '1') then
           dm_ctrl.hart_resume_ack <= '0';
-        elsif (dci_resume_ack_i = '1') then
+        elsif (dci.resume_ack = '1') then
           dm_ctrl.hart_resume_ack <= '1';
         elsif (dm_reg.resume_req = '1') then
           dm_ctrl.hart_resume_ack <= '0';
@@ -422,36 +505,28 @@ begin
   end process dmi_write_access;
 
 
-  -- Direct Output --------------------------------------------------------------------------
+  -- Direct Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- write to abstract data register --
-  dci_data_we_o <= '1' when (dmi_req_valid_i = '1') and (dmi_req_op_i = '1') and (dmi_req_addr_i = addr_data0_c) and (dm_ctrl.busy = '0') else '0';
-  dci_data_o    <= dmi_req_data_i;
-
-  -- program buffer --
-  dci_progbuf_o((0*32+32)-1 downto 0*32) <= dm_ctrl.ldsw_progbuf; -- pseudo program buffer for GPR access
-  dci_progbuf_o((1*32+32)-1 downto 1*32) <= instr_nop_c when (dm_ctrl.pbuf_en = '0') else dm_reg.progbuf(0);
-  dci_progbuf_o((2*32+32)-1 downto 2*32) <= instr_nop_c when (dm_ctrl.pbuf_en = '0') else dm_reg.progbuf(1);
-  dci_progbuf_o((3*32+32)-1 downto 3*32) <= instr_ebreak_c; -- implicit ebreak instruction
+  dci.data_we <= '1' when (dmi_req_valid_i = '1') and (dmi_req_op_i = '1') and (dmi_req_addr_i = addr_data0_c) and (dm_ctrl.busy = '0') else '0';
+  dci.wdata   <= dmi_req_data_i;
 
   -- CPU halt/resume request --
-  dci_halt_req_o   <= dm_reg.halt_req and dm_reg.dmcontrol_dmactive; -- single shot
-  dci_resume_req_o <= dm_ctrl.hart_resume_req; -- permanent
+  cpu_halt_req_o <= dm_reg.halt_req and dm_reg.dmcontrol_dmactive; -- single shot
+  dci.resume_req <= dm_ctrl.hart_resume_req; -- permanent
 
   -- SoC reset --
-  dci_ndmrstn_o <= not (dm_reg.dmcontrol_ndmreset and dm_reg.dmcontrol_dmactive);
+  cpu_ndmrstn_o <= not (dm_reg.dmcontrol_ndmreset and dm_reg.dmcontrol_dmactive);
+
+  -- build program buffer array for cpu access --
+  cpu_progbuf(0) <= dm_ctrl.ldsw_progbuf; -- pseudo program buffer for GPR access
+  cpu_progbuf(1) <= instr_nop_c when (dm_ctrl.pbuf_en = '0') else dm_reg.progbuf(0);
+  cpu_progbuf(2) <= instr_nop_c when (dm_ctrl.pbuf_en = '0') else dm_reg.progbuf(1);
+  cpu_progbuf(3) <= instr_ebreak_c; -- implicit ebreak instruction
 
   -- DMI status --
   dmi_resp_err_o  <= '0'; -- what can go wrong?
   dmi_req_ready_o <= '1'; -- always ready for new read/write accesses
-
-  -- DMI transfer ack --
-  dmi_ack: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      dmi_resp_valid_o <= dmi_req_valid_i;
-    end if;
-  end process dmi_ack;
 
 
   -- Debug Module Interface - Read Access ---------------------------------------------------
@@ -459,9 +534,11 @@ begin
   dmi_read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
+      dmi_resp_valid_o   <= dmi_req_valid_i; -- DMI transfer ack
       dmi_resp_data_o    <= (others => '0'); -- default
       dm_reg.rd_acc_err  <= '0';
       dm_reg.autoexec_rd <= '0';
+
       case dmi_req_addr_i is
 
         -- debug module status register --
@@ -522,9 +599,9 @@ begin
           dmi_resp_data_o(07 downto 04) <= (others => '0'); -- reserved (r/-)
           dmi_resp_data_o(03 downto 00) <= "0001"; -- datacount (r/-): number of implemented data registers = 1
 
-        -- abstract command (-/w) --
-        when addr_command_c =>
-          dmi_resp_data_o <= (others => '0'); -- register is write-only
+--      -- abstract command (-/w) --
+--      when addr_command_c =>
+--        dmi_resp_data_o <= (others => '0'); -- register is write-only
 
         -- abstract command autoexec (r/w) --
         when addr_abstractauto_c =>
@@ -532,13 +609,13 @@ begin
           dmi_resp_data_o(16) <= dm_reg.abstractauto_autoexecprogbuf(0); -- autoexecprogbuf(0): read/write access to progbuf0 triggers execution of program buffer
           dmi_resp_data_o(17) <= dm_reg.abstractauto_autoexecprogbuf(1); -- autoexecprogbuf(1): read/write access to progbuf1 triggers execution of program buffer
 
-        -- next debug module (r/-) --
-        when addr_nextdm_c =>
-          dmi_resp_data_o <= (others => '0'); -- this is the only DM
+--      -- next debug module (r/-) --
+--      when addr_nextdm_c =>
+--        dmi_resp_data_o <= (others => '0'); -- this is the only DM
 
         -- abstract data 0 (r/w) --
         when addr_data0_c =>
-          dmi_resp_data_o <= dci_data_i;
+          dmi_resp_data_o <= dci.rdata;
 
         -- program buffer (r/w) --
         when addr_progbuf0_c =>
@@ -583,6 +660,71 @@ begin
 
     end if;
   end process dmi_read_access;
-  
+
+
+  -- **************************************************************************************************************************
+  -- CPU Bus Interface
+  -- **************************************************************************************************************************
+
+  -- Access Control ------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  acc_en <= '1' when (cpu_addr_i(hi_abb_c downto lo_abb_c) = dm_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  maddr  <= cpu_addr_i(lo_abb_c-1 downto lo_abb_c-2);
+  rden   <= acc_en and cpu_rden_i;
+  wren   <= acc_en and cpu_wren_i;
+
+
+  -- Write Access ---------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  write_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      -- Data buffer --
+      if (dci.data_we = '1') then -- DM write access
+        data_buf <= dci.wdata;
+      elsif (acc_en = '1') and (maddr = "10") and (wren = '1') then -- BUS write access
+        data_buf <= cpu_data_i;
+      end if;
+      -- Control and Status Register --
+      dci.halt_ack      <= '0'; -- all writable flags auto-clear
+      dci.resume_ack    <= '0';
+      dci.execute_ack   <= '0';
+      dci.exception_ack <= '0';
+      if (acc_en = '1') and (maddr = "11") and (wren = '1') then
+        dci.halt_ack      <= cpu_data_i(sreg_halt_ack_c);
+        dci.resume_ack    <= cpu_data_i(sreg_resume_ack_c);
+        dci.execute_ack   <= cpu_data_i(sreg_execute_ack_c);
+        dci.exception_ack <= cpu_data_i(sreg_exception_ack_c);
+      end if;
+    end if;
+  end process write_access;
+
+  -- DM data buffer read access --
+  dci.rdata <= data_buf;
+
+
+  -- Read Access ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  read_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      cpu_ack_o  <= rden or wren;
+      cpu_data_o <= (others => '0');
+      if (rden = '1') then -- output gate
+        case maddr is -- read data select
+          when "00" => -- code ROM
+            cpu_data_o <= code_rom_file(to_integer(unsigned(cpu_addr_i(6 downto 2))));
+          when "01" => -- program buffer
+            cpu_data_o <= cpu_progbuf(to_integer(unsigned(cpu_addr_i(3 downto 2))));
+          when "10" => -- data buffer
+            cpu_data_o <= data_buf;
+          when others => -- status/control register
+            cpu_data_o(sreg_resume_req_c)  <= dci.resume_req;
+            cpu_data_o(sreg_execute_req_c) <= dci.execute_req;
+        end case;
+      end if;
+    end if;
+  end process read_access;
+
 
 end neorv32_debug_dm_rtl;

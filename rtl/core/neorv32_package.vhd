@@ -88,7 +88,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050508"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050509"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
   constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
@@ -111,13 +111,13 @@ package neorv32_package is
   constant boot_rom_size_c      : natural := 4*1024; -- module's address space in bytes
   constant boot_rom_max_size_c  : natural := 32*1024; -- max module's address space in bytes, fixed!
 
-  -- On-Chip Debugger: Debug Memory --
-  constant dbmem_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff800"; -- base address, fixed!
-  constant dbmem_size_c         : natural := 4*32*4; -- debug ROM address space in bytes
-  constant dbmem_code_base_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff800";
-  constant dbmem_pbuf_base_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff880";
-  constant dbmem_data_base_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff900";
-  constant dbmem_sreg_base_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff980";
+  -- On-Chip Debugger: Debug Module --
+  constant dm_base_c            : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff800"; -- base address, fixed!
+  constant dm_size_c            : natural := 4*32*4; -- debug ROM address space in bytes, fixed
+  constant dm_code_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff800";
+  constant dm_pbuf_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff880";
+  constant dm_data_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff900";
+  constant dm_sreg_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff980";
 
   -- IO: Peripheral Devices ("IO") Area --
   -- Control register(s) (including the device-enable) should be located at the base address of each device
@@ -232,7 +232,7 @@ package neorv32_package is
   constant sysinfo_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffe0"; -- base address
   constant sysinfo_size_c       : natural := 8*4; -- module's address space in bytes
 
-  -- Main Control Bus -----------------------------------------------------------------------
+  -- Main CPU Control Bus -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- register file --
   constant ctrl_rf_in_mux_c     : natural :=  0; -- input source select lsb (0=MEM, 1=ALU)
@@ -1867,64 +1867,34 @@ package neorv32_package is
     );
   end component;
 
-  -- Component: On-Chip Debugger - Debug Memory ---------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_debug_dbmem
-    port (
-      -- global control --
-      clk_i               : in  std_ulogic; -- global clock line
-      -- CPU bus access --
-      bus_addr_i          : in  std_ulogic_vector(31 downto 0); -- address
-      bus_rden_i          : in  std_ulogic; -- read enable
-      bus_wren_i          : in  std_ulogic; -- write enable
-      bus_data_i          : in  std_ulogic_vector(31 downto 0); -- data in
-      bus_data_o          : out std_ulogic_vector(31 downto 0); -- data out
-      bus_ack_o           : out std_ulogic; -- transfer acknowledge
-      -- Debug core interface --
-      dci_halt_ack_o      : out std_ulogic; -- CPU (re-)entered HALT state (single-shot)
-      dci_resume_req_i    : in  std_ulogic; -- DM wants the CPU to resume when set
-      dci_resume_ack_o    : out std_ulogic; -- CPU starts resuming when set (single-shot)
-      dci_execute_req_i   : in  std_ulogic; -- DM wants CPU to execute program buffer when set
-      dci_execute_ack_o   : out std_ulogic; -- CPU starts executing program buffer when set (single-shot)
-      dci_exception_ack_o : out std_ulogic; -- CPU has detected an exception (single-shot)
-      dci_progbuf_i       : in  std_ulogic_vector(255 downto 0); -- program buffer, 4 32-bit entries
-      dci_data_we_i       : in  std_ulogic; -- write abstract data
-      dci_data_i          : in  std_ulogic_vector(31 downto 0); -- abstract write data
-      dci_data_o          : out std_ulogic_vector(31 downto 0)  -- abstract read data
-    );
-  end component;
-
   -- Component: On-Chip Debugger - Debug Module (DM) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_debug_dm
     port (
       -- global control --
-      clk_i               : in  std_ulogic; -- global clock line
-      rstn_i              : in  std_ulogic; -- global reset line, low-active
+      clk_i            : in  std_ulogic; -- global clock line
+      rstn_i           : in  std_ulogic; -- global reset line, low-active
       -- debug module interface (DMI) --
-      dmi_rstn_i          : in  std_ulogic;
-      dmi_req_valid_i     : in  std_ulogic;
-      dmi_req_ready_o     : out std_ulogic; -- DMI is allowed to make new requests when set
-      dmi_req_addr_i      : in  std_ulogic_vector(06 downto 0);
-      dmi_req_op_i        : in  std_ulogic; -- 0=read, 1=write
-      dmi_req_data_i      : in  std_ulogic_vector(31 downto 0);
-      dmi_resp_valid_o    : out std_ulogic; -- response valid when set
-      dmi_resp_ready_i    : in  std_ulogic; -- ready to receive respond
-      dmi_resp_data_o     : out std_ulogic_vector(31 downto 0);
-      dmi_resp_err_o      : out std_ulogic; -- 0=ok, 1=error
-      -- debug core control interface (DCI) --
-      dci_ndmrstn_o       : out std_ulogic; -- soc reset
-      dci_halt_req_o      : out std_ulogic; -- request hart to halt (enter debug mode)
-      dci_halt_ack_i      : in  std_ulogic; -- CPU (re-)entered HALT state (single-shot)
-      dci_resume_req_o    : out std_ulogic; -- DM wants the CPU to resume when set
-      dci_resume_ack_i    : in  std_ulogic; -- CPU starts resuming when set (single-shot)
-      dci_execute_req_o   : out std_ulogic; -- DM wants CPU to execute program buffer when set
-      dci_execute_ack_i   : in  std_ulogic; -- CPU starts executing program buffer when set (single-shot)
-      dci_exception_ack_i : in  std_ulogic; -- CPU has detected an exception (single-shot)
-      dci_progbuf_o       : out std_ulogic_vector(255 downto 0); -- program buffer, 4 entries in total
-      dci_data_we_o       : out std_ulogic; -- write abstract data
-      dci_data_o          : out std_ulogic_vector(31 downto 0); -- abstract write data
-      dci_data_i          : in  std_ulogic_vector(31 downto 0)  -- abstract read data
+      dmi_rstn_i       : in  std_ulogic;
+      dmi_req_valid_i  : in  std_ulogic;
+      dmi_req_ready_o  : out std_ulogic; -- DMI is allowed to make new requests when set
+      dmi_req_addr_i   : in  std_ulogic_vector(06 downto 0);
+      dmi_req_op_i     : in  std_ulogic; -- 0=read, 1=write
+      dmi_req_data_i   : in  std_ulogic_vector(31 downto 0);
+      dmi_resp_valid_o : out std_ulogic; -- response valid when set
+      dmi_resp_ready_i : in  std_ulogic; -- ready to receive respond
+      dmi_resp_data_o  : out std_ulogic_vector(31 downto 0);
+      dmi_resp_err_o   : out std_ulogic; -- 0=ok, 1=error
+      -- CPU bus access --
+      cpu_addr_i       : in  std_ulogic_vector(31 downto 0); -- address
+      cpu_rden_i       : in  std_ulogic; -- read enable
+      cpu_wren_i       : in  std_ulogic; -- write enable
+      cpu_data_i       : in  std_ulogic_vector(31 downto 0); -- data in
+      cpu_data_o       : out std_ulogic_vector(31 downto 0); -- data out
+      cpu_ack_o        : out std_ulogic; -- transfer acknowledge
+      -- CPU control --
+      cpu_ndmrstn_o    : out std_ulogic; -- soc reset
+      cpu_halt_req_o   : out std_ulogic  -- request hart to halt (enter debug mode)
     );
   end component;
 
