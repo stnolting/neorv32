@@ -2,7 +2,7 @@
 :author: Dipl.-Ing. Stephan Nolting
 :email: stnolting@gmail.com
 :description: A size-optimized, customizable and open-source full-scale 32-bit RISC-V soft-core CPU and SoC written in platform-independent VHDL.
-:revnumber: v1.5.5.8
+:revnumber: v1.5.5.9
 :doctype: book
 :sectnums:
 :icons: image
