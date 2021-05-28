@@ -185,8 +185,9 @@ begin
 
   -- Instruction prefetch buffer size --
   assert not (is_power_of_two_f(ipb_entries_c) = false) report "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <ipb_entries_c> has to be a power of two." severity error;
-  -- A extension - only lr.w and sc.w are supported yet --
-  assert not (CPU_EXTENSION_RISCV_A = true) report "NEORV32 CPU CONFIG WARNING! Atomic operations extension (A) only supports <lr.w> and <sc.w> instructions." severity warning;
+
+  -- A extension - only lr.w and sc.w are supported --
+  assert not (CPU_EXTENSION_RISCV_A = true) report "NEORV32 CPU CONFIG NOTE. Atomic operations extension (A) only supports <lr.w> and <sc.w> instructions." severity note;
 
   -- FIXME: Bit manipulation warning --
   assert not (CPU_EXTENSION_RISCV_B = true) report "NEORV32 CPU CONFIG WARNING! Bit manipulation extension (B) is still EXPERIMENTAL (and spec. is not ratified yet)." severity warning;
@@ -196,7 +197,7 @@ begin
 
   -- PMP regions check --
   assert not (PMP_NUM_REGIONS > 64) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out xf valid range (0..64)." severity error;
-  -- PMP granulartiy --
+  -- PMP granularity --
   assert not ((is_power_of_two_f(PMP_MIN_GRANULARITY) = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be a power of two." severity error;
   assert not ((PMP_MIN_GRANULARITY < 8) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be >= 8 bytes." severity error;
   -- PMP notifier --

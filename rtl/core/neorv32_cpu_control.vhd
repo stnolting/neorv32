@@ -1107,7 +1107,7 @@ begin
               end case;
             end if;
 
-            -- multi cycle alu operation? --
+            -- multi cycle ALU operation? --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or -- SLL shift operation?
                (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) or -- SR shift operation?
                ((CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_lsb_c) = '1')) or -- MULDIV CP op?
@@ -1824,10 +1824,10 @@ begin
   trap_ctrl.exc_fire <= or_all_f(trap_ctrl.exc_buf); -- exceptions/faults CANNOT be masked
   trap_ctrl.irq_fire <= (or_all_f(trap_ctrl.irq_buf) and csr.mstatus_mie and trap_ctrl.db_irq_en) or trap_ctrl.db_irq_fire; -- interrupts CAN be masked
 
-  -- debug mode entry interrupts --
-  trap_ctrl.db_irq_en   <= '1' when (CPU_EXTENSION_RISCV_DEBUG = false) else
-                           '0' when (debug_ctrl.running = '1') else -- no interrupts when IN debug mode
-                           csr.dcsr_stepie when (csr.dcsr_step = '1') else '1'; -- allow IRQ in single-step mode when dcsr.stepie is set
+  -- debug mode (entry) interrupts --
+  trap_ctrl.db_irq_en <= '1' when (CPU_EXTENSION_RISCV_DEBUG = false) else
+                         '0' when (debug_ctrl.running = '1') else -- no interrupts when IN debug mode
+                         csr.dcsr_stepie when (csr.dcsr_step = '1') else '1'; -- allow IRQ in single-step mode when dcsr.stepie is set
   trap_ctrl.db_irq_fire <= (trap_ctrl.irq_buf(interrupt_db_step_c) or trap_ctrl.irq_buf(interrupt_db_halt_c)) when (CPU_EXTENSION_RISCV_DEBUG = true) else '0'; -- "NMI" for debug mode entry
 
   -- acknowledge mask output --
@@ -2018,7 +2018,7 @@ begin
 
     -- ----------------------------------------------------------------------------------------
     -- re-enter debug mode during single-stepping; this debug mode entry trap has the lowest
-    -- priority in order to let traps kick in during single stepping
+    -- priority to let "normal" traps kick in during single stepping
     -- ----------------------------------------------------------------------------------------
 
     -- single stepping --
@@ -2573,7 +2573,7 @@ begin
     if (HPM_NUM_CNTS /= 0) then
       for i in 0 to HPM_NUM_CNTS-1 loop
         if (hpm_cnt_lo_width_c > 0) then
-          csr.mhpmcounter_rd(i)(hpm_cnt_lo_width_c-1 downto 0)  <= csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0);
+          csr.mhpmcounter_rd(i)(hpm_cnt_lo_width_c-1 downto 0) <= csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0);
         end if;
         if (hpm_cnt_hi_width_c > 0) then
           csr.mhpmcounterh_rd(i)(hpm_cnt_hi_width_c-1 downto 0) <= csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0);
@@ -3015,39 +3015,37 @@ begin
 
   -- entry debug mode triggers --
   debug_ctrl.trig_break <= trap_ctrl.break_point and (debug_ctrl.running or -- we are in debug mode: re-enter debug mode
-                             (csr.priv_m_mode and csr.dcsr_ebreakm and (not debug_ctrl.running)) or -- enable goto-debug-mode in machine mode on "ebreak"
-                             (csr.priv_u_mode and csr.dcsr_ebreaku and (not debug_ctrl.running))); -- enable goto-debug-mode in user mode on "ebreak"
-  debug_ctrl.trig_halt  <= (not debug_ctrl.ext_halt_req(1)) and debug_ctrl.ext_halt_req(0) and (not debug_ctrl.running); -- rising edge detector from external halt request (if not halted already)
-  debug_ctrl.trig_step  <= csr.dcsr_step and (not debug_ctrl.running); -- single-step mode (trigger when NOT CURRENTLY in debug mode)
+                           (csr.priv_m_mode and csr.dcsr_ebreakm and (not debug_ctrl.running)) or -- enable goto-debug-mode in machine mode on "ebreak"
+                           (csr.priv_u_mode and csr.dcsr_ebreaku and (not debug_ctrl.running))); -- enable goto-debug-mode in user mode on "ebreak"
+  debug_ctrl.trig_halt <= (not debug_ctrl.ext_halt_req(1)) and debug_ctrl.ext_halt_req(0) and (not debug_ctrl.running); -- rising edge detector from external halt request (if not halted already)
+  debug_ctrl.trig_step <= csr.dcsr_step and (not debug_ctrl.running); -- single-step mode (trigger when NOT CURRENTLY in debug mode)
 
 
-  -- Debug Control and Status Register (dcsr) Read-Back --
-  dcsr_readback: process(csr, trap_ctrl)
-  begin
-    if (CPU_EXTENSION_RISCV_DEBUG = false) then
-      csr.dcsr_rd <= (others => '0');
-    else
-      csr.dcsr_rd(31 downto 28) <= "0100"; -- xdebugver: external debug support compatible to spec
-      csr.dcsr_rd(27 downto 16) <= (others => '0'); -- reserved
-      csr.dcsr_rd(15) <= csr.dcsr_ebreakm; -- ebreakm: what happens on ebreak in m-mode? (normal trap OR debug-enter)
-      csr.dcsr_rd(14) <= '0'; -- ebreakh: not available
-      csr.dcsr_rd(13) <= '0'; -- ebreaks: not available
-      if (CPU_EXTENSION_RISCV_U = true) then
-        csr.dcsr_rd(12) <= csr.dcsr_ebreaku; -- ebreaku: what happens on ebreak in u-mode? (normal trap OR debug-enter)
-      else
-        csr.dcsr_rd(12) <= '0';
-      end if;
-      csr.dcsr_rd(11) <= csr.dcsr_stepie; -- stepie: interrupts enabled during single-stepping?
-      csr.dcsr_rd(10) <= '0'; -- stopcount: counters increment as usual FIXME ???
-      csr.dcsr_rd(09) <= '0'; -- stoptime: timers increment as usual FIXME ???
-      csr.dcsr_rd(08 downto 06) <= csr.dcsr_cause; -- cause
-      csr.dcsr_rd(05) <= '0'; -- reserved
-      csr.dcsr_rd(04) <= '0'; -- mprven: mstatus.mprv is ignored in debug mode
-      csr.dcsr_rd(03) <= trap_ctrl.irq_buf(interrupt_nm_irq_c); -- nmip: pending non-maskable interrupt
-      csr.dcsr_rd(02) <= csr.dcsr_step; -- step: single-step mode
-      csr.dcsr_rd(01 downto 00) <= csr.dcsr_prv; -- prv: privilege mode when debug mode was entered
-    end if;
-  end process dcsr_readback;
+  -- Debug Control and Status Register (dcsr) - Read-Back -----------------------------------
+  -- -------------------------------------------------------------------------------------------
+  dcsr_readback_false:
+  if (CPU_EXTENSION_RISCV_DEBUG = false) generate
+    csr.dcsr_rd <= (others => '0');
+  end generate;
+
+  dcsr_readback_true:
+  if (CPU_EXTENSION_RISCV_DEBUG = true) generate
+    csr.dcsr_rd(31 downto 28) <= "0100"; -- xdebugver: external debug support compatible to spec
+    csr.dcsr_rd(27 downto 16) <= (others => '0'); -- reserved
+    csr.dcsr_rd(15) <= csr.dcsr_ebreakm; -- ebreakm: what happens on ebreak in m-mode? (normal trap OR debug-enter)
+    csr.dcsr_rd(14) <= '0'; -- ebreakh: not available
+    csr.dcsr_rd(13) <= '0'; -- ebreaks: not available
+    csr.dcsr_rd(12) <= csr.dcsr_ebreaku when (CPU_EXTENSION_RISCV_U = true) else '0'; -- ebreaku: what happens on ebreak in u-mode? (normal trap OR debug-enter)
+    csr.dcsr_rd(11) <= csr.dcsr_stepie; -- stepie: interrupts enabled during single-stepping?
+    csr.dcsr_rd(10) <= '0'; -- stopcount: counters increment as usual FIXME ???
+    csr.dcsr_rd(09) <= '0'; -- stoptime: timers increment as usual FIXME ???
+    csr.dcsr_rd(08 downto 06) <= csr.dcsr_cause; -- cause
+    csr.dcsr_rd(05) <= '0'; -- reserved
+    csr.dcsr_rd(04) <= '0'; -- mprven: mstatus.mprv is ignored in debug mode
+    csr.dcsr_rd(03) <= trap_ctrl.irq_buf(interrupt_nm_irq_c); -- nmip: pending non-maskable interrupt
+    csr.dcsr_rd(02) <= csr.dcsr_step; -- step: single-step mode
+    csr.dcsr_rd(01 downto 00) <= csr.dcsr_prv; -- prv: privilege mode when debug mode was entered
+  end generate;
 
 
 end neorv32_cpu_control_rtl;
