@@ -159,7 +159,6 @@ neorv32_top.vhd                      - NEORV32 Processor top entity
 │├neorv32_cpu_cp_fpu.vhd           - Floating-point co-processor (Zfinx extension)
 │├neorv32_cpu_cp_muldiv.vhd        - Mul/Div co-processor (M extension)
 │└neorv32_cpu_regfile.vhd          - Data register file
-├neorv32_debug_dbmem.vhd            - on-chip debugger: debug memory
 ├neorv32_debug_dm.vhd               - on-chip debugger: debug module
 ├neorv32_debug_dtm.vhd              - on-chip debugger: debug transfer module
 ├neorv32_dmem.vhd                   - Processor-internal data memory
@@ -221,7 +220,7 @@ between entity boundaries, so the actual utilization results might vary a bit.
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| Hardware version: | `1.5.5.5`
+| Hardware version: | `1.5.5.9`
 | Top entity:       | `rtl/core/neorv32_top.vhd`
 |=======================
 
@@ -235,8 +234,7 @@ between entity boundaries, so the actual utilization results might vary a bit.
 | **BUSSWITCH** | Bus mux for CPU instr. and data interface           |  49 |   8 |        0 |    0
 | CFS           | Custom functions subsystem                          |   - |   - |        - |    -
 | DMEM          | Processor-internal data memory (8kB)                |  18 |   2 |    65536 |    0
-| DBMEM         | On-chip debugger - debug memory                     | 248 | 124 |        0 |    0
-| DM            | On-chip debugger - debug module                     | 292 | 171 |        0 |    0
+| DM            | On-chip debugger - debug module                     | 493 | 240 |        0 |    0
 | DTM           | On-chip debugger - debug transfer module (JTAG)     | 254 | 218 |        0 |    0
 | GPIO          | General purpose input/output ports                  |  67 |  65 |        0 |    0
 | iCACHE        | Instruction cache (1x4 blocks, 256 bytes per block) | 220 | 154 |     8192 |    0
