@@ -262,9 +262,9 @@ Exemplary setups for different technologies and various FPGA boards can be found
 (https://github.com/stnolting/neorv32/tree/master/boards).
 
 The following table shows exemplary NEORV32 processor implementation results for different FPGA
-platforms. The processor setup uses the default peripheral configuration (like no CFS, no caches and no
-TRNG), no external memory interface and only internal instruction and data memories. IMEM uses 16kB
-and DMEM uses 8kB memory space.
+platforms. Most setups use the default peripheral configuration (like no CFS, no caches and no
+TRNG), no external memory interface and only internal instruction and data memories (IMEM uses 16kB
+and DMEM uses 8kB memory space).
 
 [cols="<2,<8"]
 [grid="topbot"]
@@ -276,10 +276,10 @@ and DMEM uses 8kB memory space.
 [cols="<4,<5,<4,<4,<3,<3,<3,<4,<4,<3"]
 [options="header",grid="rows"]
 |=======================
-| Vendor  | FPGA                             | Board            | Toolchain               | CPU                                    | LUT        | FF         | DSP    | Memory                        | _f_
-| Intel   | Cyclone IV `EP4CE22F17-C6N`      | Terasic DE0-Nano | Quartus Prime Lite 20.1 | `rv32imc_Zicsr_Zifencei` + `u` + `PMP` | 3813 (17%) | 1890 (8%)  | 0 (0%) | Memory bits: 231424 (38%)     | 119 MHz
-| Lattice | iCE40 UltraPlus `iCE40UP5KSG48I` | Upduino v2.0     | Radiant 2.1             | `rv32ic_Zicsr_Zifencei` + `u`          | 4397 (83%) | 1679 (31%) | 0 (0%) | EBR: 12 (40%) SPRAM: 4 (100%) | 22.15 MHz
-| Xilinx  | Artix-7 `XC7A35TICSG324-1L`      | Arty A7-35T      | Vivado 2019.2           | `rv32imc_Zicsr_Zifencei` + `u` + `PMP` | 2465 (12%) | 1912 (5%)  | 0 (0%) | BRAM: 8 (16%)                 | 100 MHz
+| Vendor  | FPGA                             | Board            | Toolchain               | CPU                               | LUT        | FF         | DSP    | Memory                        | _f_
+| Intel   | Cyclone IV `EP4CE22F17-C6N`      | Terasic DE0-Nano | Quartus Prime Lite 20.1 | `rv32imcu_Zicsr_Zifencei` + `PMP` | 3813 (17%) | 1890 (8%)  | 0 (0%) | Memory bits: 231424 (38%)     | 119 MHz
+| Lattice | iCE40 UltraPlus `iCE40UP5KSG48I` | Upduino v3.0     | Radiant 2.1             | `rv32icu_Zicsr_Zifencei`          | 5123 (97%) | 1972 (37%) | 0 (0%) | EBR: 12 (40%) SPRAM: 4 (100%) | 24 MHz
+| Xilinx  | Artix-7 `XC7A35TICSG324-1L`      | Arty A7-35T      | Vivado 2019.2           | `rv32imcu_Zicsr_Zifencei` + `PMP` | 2465 (12%) | 1912 (5%)  | 0 (0%) | BRAM: 8 (16%)                 | 100 MHz
 |=======================
 
 **Notes**
