@@ -217,7 +217,7 @@ begin
           elsif (wb_ack_i = '1') then -- normal bus termination
             ctrl.ack   <= '1';
             ctrl.state <= IDLE;
-          elsif (timeout_en_c = true) and (or_all_f(ctrl.timeout) = '0') then -- valid timeout
+          elsif (timeout_en_c = true) and (or_reduce_f(ctrl.timeout) = '0') then -- valid timeout
             ctrl.err   <= '1';
             ctrl.state <= IDLE;
           end if;

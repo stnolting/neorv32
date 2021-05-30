@@ -313,9 +313,9 @@ begin
   begin
     for i in 0 to 1 loop -- for rs1 and rs2 inputs
       -- check for all-zero/all-one --
-      op_m_all_zero_v := not or_all_f(op_data(i)(22 downto 00));
-      op_e_all_zero_v := not or_all_f(op_data(i)(30 downto 23));
-      op_e_all_one_v  := and_all_f(op_data(i)(30 downto 23));
+      op_m_all_zero_v := not or_reduce_f(op_data(i)(22 downto 00));
+      op_e_all_zero_v := not or_reduce_f(op_data(i)(30 downto 23));
+      op_e_all_one_v  := and_reduce_f(op_data(i)(30 downto 23));
 
       -- check special cases --
       op_is_zero_v   := op_e_all_zero_v and      op_m_all_zero_v;  -- zero
@@ -1360,7 +1360,7 @@ begin
           sreg.lower <= mantissa_i(45 downto 23);
           sreg.ext_g <= mantissa_i(22);
           sreg.ext_r <= mantissa_i(21);
-          sreg.ext_s <= or_all_f(mantissa_i(20 downto 0));
+          sreg.ext_s <= or_reduce_f(mantissa_i(20 downto 0));
           -- check for special cases --
           if ((ctrl.class(fp_class_snan_c)       or ctrl.class(fp_class_qnan_c)       or -- NaN
                ctrl.class(fp_class_neg_zero_c)   or ctrl.class(fp_class_pos_zero_c)   or -- zero
@@ -1475,10 +1475,10 @@ begin
   end process ctrl_engine;
 
   -- stop shifting when normalized --
-  sreg.done <= (not or_all_f(sreg.upper(sreg.upper'left downto 1))) and sreg.upper(0); -- input is zero, hidden one is set
+  sreg.done <= (not or_reduce_f(sreg.upper(sreg.upper'left downto 1))) and sreg.upper(0); -- input is zero, hidden one is set
 
   -- all-zero including hidden bit --
-  sreg.zero <= not or_all_f(sreg.upper);
+  sreg.zero <= not or_reduce_f(sreg.upper);
 
   -- result --
   result_o(31)           <= ctrl.res_sgn;
@@ -1717,8 +1717,8 @@ begin
 
         when S_NORMALIZE_BUSY => -- running normalization cycle
         -- ------------------------------------------------------------
-          sreg.ext_s <= sreg.ext_s or or_all_f(sreg.mant(sreg.mant'left-2 downto 0)); -- sticky bit
-          if (or_all_f(ctrl.cnt(ctrl.cnt'left-1 downto 0)) = '0') then
+          sreg.ext_s <= sreg.ext_s or or_reduce_f(sreg.mant(sreg.mant'left-2 downto 0)); -- sticky bit
+          if (or_reduce_f(ctrl.cnt(ctrl.cnt'left-1 downto 0)) = '0') then
             if (ctrl.unsign = '0') then -- signed conversion
               ctrl.over <= ctrl.over or sreg.int(sreg.int'left); -- update overrun flag again to check for numerical overflow into sign bit
             end if;

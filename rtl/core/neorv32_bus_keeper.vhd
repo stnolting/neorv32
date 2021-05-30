@@ -129,7 +129,7 @@ begin
       else -- pending
         if (ack_i = '1') or (err_i = '1') then -- termination by bus system
           control.pending <= '0';
-        elsif (or_all_f(control.timeout) = '0') then -- timeout! terminate bus transfer
+        elsif (or_reduce_f(control.timeout) = '0') then -- timeout! terminate bus transfer
           control.pending <= '0';
           control.bus_err <= '1';
         end if;

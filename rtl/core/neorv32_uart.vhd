@@ -241,8 +241,8 @@ begin
           data_o(ctrl_uart_tx_busy_c)                          <= uart_tx.busy;
           data_o(ctrl_uart_cts_c)                              <= uart_cts_ff(1);
         else -- uart_id_rtx_addr_c
-          data_o(data_rx_avail_c) <= or_all_f(uart_rx.avail);
-          data_o(data_rx_overr_c) <= and_all_f(uart_rx.avail);
+          data_o(data_rx_avail_c) <= or_reduce_f(uart_rx.avail);
+          data_o(data_rx_overr_c) <= and_reduce_f(uart_rx.avail);
           data_o(data_rx_ferr_c)  <= uart_rx.ferr_rd;
           data_o(data_rx_perr_c)  <= uart_rx.perr_rd;
           data_o(7 downto 0)      <= uart_rx.data_rd;
@@ -280,7 +280,7 @@ begin
         uart_tx.sreg(0)  <= '1';
         if (wr_en = '1') and (ctrl(ctrl_uart_en_c) = '1') and (addr = uart_id_rtx_addr_c) and (ctrl(ctrl_uart_sim_en_c) = '0') then -- write trigger and not in SIM mode
           if (ctrl(ctrl_uart_pmode1_c) = '1') then -- add parity flag
-            uart_tx.sreg <= '1' & (xor_all_f(data_i(7 downto 0)) xor ctrl(ctrl_uart_pmode0_c)) & data_i(7 downto 0) & '0'; -- stopbit & parity bit & data & startbit
+            uart_tx.sreg <= '1' & (xor_reduce_f(data_i(7 downto 0)) xor ctrl(ctrl_uart_pmode0_c)) & data_i(7 downto 0) & '0'; -- stopbit & parity bit & data & startbit
           else
             uart_tx.sreg <= '1' & '1' & data_i(7 downto 0) & '0'; -- (dummy fill-bit &) stopbit & data & startbit
           end if;
@@ -344,7 +344,7 @@ begin
         if (uart_rx.bitcnt = "0000") then
           uart_rx.busy <= '0'; -- done
           -- data buffer (double buffering) --
-          uart_rx.perr(0) <= ctrl(ctrl_uart_pmode1_c) and (xor_all_f(uart_rx.sreg(8 downto 0)) xor ctrl(ctrl_uart_pmode0_c));
+          uart_rx.perr(0) <= ctrl(ctrl_uart_pmode1_c) and (xor_reduce_f(uart_rx.sreg(8 downto 0)) xor ctrl(ctrl_uart_pmode0_c));
           uart_rx.ferr(0) <= not uart_rx.sreg(9); -- check stop bit (error if not set)
           if (ctrl(ctrl_uart_pmode1_c) = '1') then -- add parity flag
             uart_rx.data(0) <= uart_rx.sreg(7 downto 0);

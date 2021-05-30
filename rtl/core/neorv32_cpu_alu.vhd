@@ -178,7 +178,7 @@ begin
         elsif (shifter.run = '1') then -- running shift
           -- coarse shift: multiples of 4 --
           if (TINY_SHIFT_EN = false) and -- use coarse shifts first if TINY SHIFT option is NOT enabled
-             (or_all_f(shifter.cnt(shifter.cnt'left downto 2)) = '1') then -- shift amount >= 4
+             (or_reduce_f(shifter.cnt(shifter.cnt'left downto 2)) = '1') then -- shift amount >= 4
             shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 4);
             if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- SLL: shift left logical
               shifter.sreg <= shifter.sreg(shifter.sreg'left-4 downto 0) & "0000";
@@ -266,8 +266,8 @@ begin
   shifter.start <= '1' when (shifter.cmd = '1') and (shifter.cmd_ff = '0') else '0';
 
   -- shift operation running? --
-  shifter.run  <= '1' when (or_all_f(shifter.cnt) = '1') or (shifter.start = '1') else '0';
-  shifter.halt <= '1' when (or_all_f(shifter.cnt(shifter.cnt'left downto 1)) = '1') or (shifter.start = '1') else '0';
+  shifter.run  <= '1' when (or_reduce_f(shifter.cnt) = '1') or (shifter.start = '1') else '0';
+  shifter.halt <= '1' when (or_reduce_f(shifter.cnt(shifter.cnt'left downto 1)) = '1') or (shifter.start = '1') else '0';
 
 
   -- Co-Processor Arbiter -------------------------------------------------------------------
@@ -283,7 +283,7 @@ begin
       cp_ctrl.timeout <= (others => '0');
     elsif rising_edge(clk_i) then
       cp_ctrl.cmd_ff <= cp_ctrl.cmd;
-      if (or_all_f(cp_valid_i) = '1') then -- cp computation done?
+      if (or_reduce_f(cp_valid_i) = '1') then -- cp computation done?
         cp_ctrl.busy <= '0';
       elsif (cp_ctrl.timeout(cp_ctrl.timeout'left) = '1') and (cp_timeout_en_c = true) then -- timeout
         assert false report "NEORV32 CPU CO-PROCESSOR TIMEOUT ERROR!" severity warning;
@@ -317,7 +317,7 @@ begin
   end process;
 
   -- co-processor operation (still) running? --
-  cp_ctrl.halt <= (cp_ctrl.busy and (not or_all_f(cp_valid_i))) or cp_ctrl.start;
+  cp_ctrl.halt <= (cp_ctrl.busy and (not or_reduce_f(cp_valid_i))) or cp_ctrl.start;
 
   -- co-processor result - only the *actually selected* co-processor may output data != 0 --
   cp_res <= cp_result_i(0) or cp_result_i(1) or cp_result_i(2) or cp_result_i(3) or

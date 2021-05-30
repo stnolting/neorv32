@@ -190,7 +190,7 @@ begin
   neumann_debiasing_sync: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      debiasing.sreg  <= debiasing.sreg(debiasing.sreg'left-1 downto 0) & xor_all_f(osc_array_data);
+      debiasing.sreg  <= debiasing.sreg(debiasing.sreg'left-1 downto 0) & xor_reduce_f(osc_array_data);
       debiasing.state <= (not debiasing.state) and osc_array_en_out(num_roscs_c-1); -- start toggling when last RO is enabled -> process in every second cycle
     end if;
   end process neumann_debiasing_sync;
@@ -225,7 +225,7 @@ begin
           processing.cnt <= std_ulogic_vector(unsigned(processing.cnt) + 1);
         end if;
         if (lfsr_en_c = true) then -- LFSR post-processing
-          processing.sreg <= processing.sreg(processing.sreg'left-1 downto 0) & (xnor_all_f(processing.sreg and lfsr_taps_c) xnor debiasing.data);
+          processing.sreg <= processing.sreg(processing.sreg'left-1 downto 0) & ((not xor_reduce_f(processing.sreg and lfsr_taps_c)) xnor debiasing.data);
         else -- NO post-processing
           processing.sreg <= processing.sreg(processing.sreg'left-1 downto 0) & debiasing.data;
         end if;

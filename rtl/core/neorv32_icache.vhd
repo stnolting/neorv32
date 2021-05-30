@@ -259,7 +259,7 @@ begin
           ctrl.state_nxt <= S_BUS_ERROR;
         elsif (bus_ack_i = '1') then -- ACK = write to cache and get next word
           cache.ctrl_we <= '1'; -- write to cache
-          if (and_all_f(ctrl.addr_reg((2+cache_offset_size_c)-1 downto 2)) = '1') then -- block complete?
+          if (and_reduce_f(ctrl.addr_reg((2+cache_offset_size_c)-1 downto 2)) = '1') then -- block complete?
             cache.ctrl_tag_we   <= '1'; -- current block is valid now
             cache.ctrl_valid_we <= '1'; -- write tag of current address
             ctrl.state_nxt      <= S_CACHE_RESYNC_0;
@@ -475,7 +475,7 @@ begin
       history.re_ff <= host_re_i;
       if (invalidate_i = '1') then -- invalidate whole cache
         history.last_used_set <= (others => '1');
-      elsif (history.re_ff = '1') and (or_all_f(hit) = '1') and (ctrl_en_i = '0') then -- store last accessed set that caused a hit
+      elsif (history.re_ff = '1') and (or_reduce_f(hit) = '1') and (ctrl_en_i = '0') then -- store last accessed set that caused a hit
         history.last_used_set(to_integer(unsigned(cache_index))) <= not hit(0);
       end if;
       history.to_be_replaced <= history.last_used_set(to_integer(unsigned(cache_index)));
@@ -546,7 +546,7 @@ begin
   end process comparator;
 
   -- global hit --
-  hit_o <= or_all_f(hit);
+  hit_o <= or_reduce_f(hit);
 
 
 	-- Cache Data Memory ----------------------------------------------------------------------

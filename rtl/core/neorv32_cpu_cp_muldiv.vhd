@@ -163,7 +163,7 @@ begin
             div_res_corr <= '0';
           end if;
           -- divide by zero? --
-          opy_is_zero <= not or_all_f(rs2_i); -- set if rs2 = 0
+          opy_is_zero <= not or_reduce_f(rs2_i); -- set if rs2 = 0
           -- abs(rs1) --
           if ((rs1_i(rs1_i'left) and rs1_is_signed) = '1') then -- signed division?
             div_opx <= std_ulogic_vector(0 - unsigned(rs1_i)); -- make positive

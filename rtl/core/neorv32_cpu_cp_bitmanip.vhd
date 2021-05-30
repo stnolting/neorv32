@@ -337,7 +337,7 @@ begin
   -- or-combine.byte --
   or_combine_byte_gen:
   for i in 0 to (data_width_c/8)-1 generate
-    res_int(op_orcb_c)(i*8+7 downto i*8) <= (others => or_all_f(rs1_reg(i*8+7 downto i*8)));
+    res_int(op_orcb_c)(i*8+7 downto i*8) <= (others => or_reduce_f(rs1_reg(i*8+7 downto i*8)));
   end generate; -- i
 
 
@@ -347,7 +347,7 @@ begin
   res_int(op_bclr_c) <= rs1_reg and (not bit_mask);
   res_int(op_binv_c) <= rs1_reg xor bit_mask;
   res_int(op_bext_c)(data_width_c-1 downto 1) <= (others => '0');
-  res_int(op_bext_c)(0) <= or_all_f(rs1_reg and bit_mask);
+  res_int(op_bext_c)(0) <= or_reduce_f(rs1_reg and bit_mask);
 
 
   -- Shifted-Add ('Zba') Function Core ------------------------------------------------------
