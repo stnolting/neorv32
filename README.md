@@ -20,7 +20,7 @@
 * [Software Framework](#NEORV32-Software-Framework)
 * [FPGA Implementation Results](#FPGA-Implementation-Results)
 * [Performance](#Performance)
-* [**Getting Started**](#Getting-Started)
+* [**Getting Started**](#Getting-Started) :rocket:
 * [Legal](#Legal)
 
 
@@ -84,10 +84,11 @@ The CPU [passes](https://stnolting.github.io/neorv32/#_risc_v_compatibility) the
 In order to provide a reduced-size setup the NEORV32 CPU implements a two-stages pipeline, where each stage
 uses a multi-cycle processing scheme. Instruction and data accesses are conducted via independant bus interfaces,
 that are multiplexed into a single SoC-bus ("modified Harvard architecture"). As a special execution safety feature,
-all reserved or unimplemented instructions do raise an exception. Furthermore, the CPU was assigned an *official*
+all reserved or unimplemented instructions do raise an exception.  Furthermore, the CPU was assigned an *official*
 RISC-V open-source [architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
 
-RISC-V-compatible **ISA extensions** currently provided by the NEORV32 (:books: [see full list](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions)):
+#### Currently implemented RISC-V-compatible _ISA extensions_
+
 * `A` - atomic memory access instructions (optional)
 * `B` - bit manipulation instructions (subset, optional, still experimental)
 * `C` - compressed 16-bit instructions (optional)
@@ -102,6 +103,20 @@ RISC-V-compatible **ISA extensions** currently provided by the NEORV32 (:books: 
 * `PMP` - physical memory protection (optional)
 * `HPM` - hardware performance monitors (optional)
 * `DB` - RISC-V CPU debug mode (optional)
+
+#### Operation modes / privilege levels
+
+* `machine`
+* `user` (`U` extension)
+* `debug_mode` (`DB extension`)
+
+#### Interrupts (machine level)
+
+* RISC-V standard interrupts
+  * _timer_ - via MTIME SoC module or via external signal
+  * _external_ - via external signal
+  * _software_ - via external signal
+* 16 additional "fast interrupt" requests
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
