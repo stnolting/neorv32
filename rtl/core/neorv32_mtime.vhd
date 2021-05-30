@@ -45,18 +45,17 @@ use neorv32.neorv32_package.all;
 entity neorv32_mtime is
   port (
     -- host access --
-    clk_i     : in  std_ulogic; -- global clock line
-    rstn_i    : in  std_ulogic := '0'; -- global reset, low-active, async
-    addr_i    : in  std_ulogic_vector(31 downto 0); -- address
-    rden_i    : in  std_ulogic; -- read enable
-    wren_i    : in  std_ulogic; -- write enable
-    data_i    : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o    : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o     : out std_ulogic; -- transfer acknowledge
+    clk_i  : in  std_ulogic; -- global clock line
+    addr_i : in  std_ulogic_vector(31 downto 0); -- address
+    rden_i : in  std_ulogic; -- read enable
+    wren_i : in  std_ulogic; -- write enable
+    data_i : in  std_ulogic_vector(31 downto 0); -- data in
+    data_o : out std_ulogic_vector(31 downto 0); -- data out
+    ack_o  : out std_ulogic; -- transfer acknowledge
     -- time output for CPU --
-    time_o    : out std_ulogic_vector(63 downto 0); -- current system time
+    time_o : out std_ulogic_vector(63 downto 0); -- current system time
     -- interrupt --
-    irq_o     : out std_ulogic  -- interrupt request
+    irq_o  : out std_ulogic  -- interrupt request
   );
 end neorv32_mtime;
 
