@@ -75,10 +75,9 @@ package neorv32_package is
   function cond_sel_stdulogic_f(cond : boolean; val_t : std_ulogic; val_f : std_ulogic) return std_ulogic;
   function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string;
   function bool_to_ulogic_f(cond : boolean) return std_ulogic;
-  function or_all_f(a : std_ulogic_vector) return std_ulogic;
-  function and_all_f(a : std_ulogic_vector) return std_ulogic;
-  function xor_all_f(a : std_ulogic_vector) return std_ulogic;
-  function xnor_all_f(a : std_ulogic_vector) return std_ulogic;
+  function or_reduce_f(a : std_ulogic_vector) return std_ulogic;
+  function and_reduce_f(a : std_ulogic_vector) return std_ulogic;
+  function xor_reduce_f(a : std_ulogic_vector) return std_ulogic;
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
   function hexchar_to_stdulogicvector_f(input : character) return std_ulogic_vector;
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
@@ -88,7 +87,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050509"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050510"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
   constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
@@ -1530,18 +1529,17 @@ package neorv32_package is
   component neorv32_mtime
     port (
       -- host access --
-      clk_i     : in  std_ulogic; -- global clock line
-      rstn_i    : in  std_ulogic := '0'; -- global reset, low-active, async
-      addr_i    : in  std_ulogic_vector(31 downto 0); -- address
-      rden_i    : in  std_ulogic; -- read enable
-      wren_i    : in  std_ulogic; -- write enable
-      data_i    : in  std_ulogic_vector(31 downto 0); -- data in
-      data_o    : out std_ulogic_vector(31 downto 0); -- data out
-      ack_o     : out std_ulogic; -- transfer acknowledge
+      clk_i  : in  std_ulogic; -- global clock line
+      addr_i : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i : in  std_ulogic; -- read enable
+      wren_i : in  std_ulogic; -- write enable
+      data_i : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o  : out std_ulogic; -- transfer acknowledge
       -- time output for CPU --
-      time_o    : out std_ulogic_vector(63 downto 0); -- current system time
+      time_o : out std_ulogic_vector(63 downto 0); -- current system time
       -- interrupt --
-      irq_o     : out std_ulogic  -- interrupt request
+      irq_o  : out std_ulogic  -- interrupt request
     );
   end component;
 
@@ -2012,9 +2010,9 @@ package body neorv32_package is
     end if;
   end function bool_to_ulogic_f;
 
-  -- Function: OR all bits ------------------------------------------------------------------
+  -- Function: OR-reduce all bits -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function or_all_f(a : std_ulogic_vector) return std_ulogic is
+  function or_reduce_f(a : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
   begin
     tmp_v := '0';
@@ -2024,11 +2022,11 @@ package body neorv32_package is
       end loop; -- i
     end if;
     return tmp_v;
-  end function or_all_f;
+  end function or_reduce_f;
 
-  -- Function: AND all bits -----------------------------------------------------------------
+  -- Function: AND-reduce all bits ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function and_all_f(a : std_ulogic_vector) return std_ulogic is
+  function and_reduce_f(a : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
   begin
     tmp_v := '1';
@@ -2038,11 +2036,11 @@ package body neorv32_package is
       end loop; -- i
     end if;
     return tmp_v;
-  end function and_all_f;
+  end function and_reduce_f;
 
-  -- Function: XOR all bits -----------------------------------------------------------------
+  -- Function: XOR-reduce all bits ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function xor_all_f(a : std_ulogic_vector) return std_ulogic is
+  function xor_reduce_f(a : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
   begin
     tmp_v := '0';
@@ -2052,21 +2050,7 @@ package body neorv32_package is
       end loop; -- i
     end if;
     return tmp_v;
-  end function xor_all_f;
-
-  -- Function: XNOR all bits ----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function xnor_all_f(a : std_ulogic_vector) return std_ulogic is
-    variable tmp_v : std_ulogic;
-  begin
-    tmp_v := '1';
-    if (a'low < a'high) then -- not null range?
-      for i in a'low to a'high loop
-        tmp_v := tmp_v xnor a(i);
-      end loop; -- i
-    end if;
-    return tmp_v;
-  end function xnor_all_f;
+  end function xor_reduce_f;
 
   -- Function: Convert std_ulogic_vector to hex char ----------------------------------------
   -- -------------------------------------------------------------------------------------------
