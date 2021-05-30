@@ -46,7 +46,7 @@
 .equ SREG_EXECUTE_ACK,   (1<<4) // -/w: CPU starts to execute program buffer
 .equ SREG_EXCEPTION_ACK, (1<<5) // -/w: CPU has detected an exception
 
-.file	"debugger.S"
+.file	"park_loop.S"
 .section .text
 .balign 4
 .option norvc
@@ -57,11 +57,11 @@
 
 _start:
 
-// entry location on ebreak in debug-mode, halt request, or return from single-stepped instruction
+// BASE + 0: entry for ebreak in debug-mode, halt request, or return from single-stepped instruction
 entry_normal:
     jal    zero, parking_loop_start
 
-// entry location for exceptions - signal EXCEPTION to DM and restart parking loop
+// BASE + 4: entry for exceptions - signal EXCEPTION to DM and restart parking loop
 entry_exception:
     csrw   dscratch0, s0                    // save s0 to dscratch0 so we have a general purpose register available
     addi   s0, zero, SREG_EXCEPTION_ACK     // mask exception acknowledge flag
