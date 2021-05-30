@@ -188,7 +188,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant sreg_execute_ack_c   : natural := 4; -- -/w: CPU starts to execute program buffer
   constant sreg_exception_ack_c : natural := 5; -- -/w: CPU has detected an exception
 
-  -- code ROM for "park loop" --
+  -- code ROM containing "park loop" --
   type code_rom_file_t is array (0 to 31) of std_ulogic_vector(31 downto 0);
   constant code_rom_file : code_rom_file_t := (
     00000000 => x"0180006f",
@@ -240,9 +240,9 @@ begin
     if rising_edge(clk_i) then
       if (dm_reg.dmcontrol_dmactive = '0') or (dmi_rstn_i = '0') then -- DM reset / DM disabled
         dm_ctrl.state        <= CMD_IDLE;
-        dm_ctrl.ldsw_progbuf <= instr_nop_c;
+        dm_ctrl.ldsw_progbuf <= (others => '-');
         dci.execute_req      <= '0';
-        dm_ctrl.pbuf_en      <= '0';
+        dm_ctrl.pbuf_en      <= '-';
         --
         dm_ctrl.illegal_cmd   <= '-';
         dm_ctrl.illegal_state <= '-';
@@ -306,12 +306,12 @@ begin
                 dm_ctrl.ldsw_progbuf(11 downto 07) <= dm_reg.command(4 downto 0); -- "regno" = destination register
               end if;
             else
-              dm_ctrl.ldsw_progbuf <= instr_nop_c;
+              dm_ctrl.ldsw_progbuf <= instr_nop_c; -- NOP - do nothing
             end if;
             --
-            if (dm_reg.command(18) = '1') then -- "postexec" - execute DMI program buffer
+            if (dm_reg.command(18) = '1') then -- "postexec" - execute program buffer
               dm_ctrl.pbuf_en <= '1';
-            else -- empty program buffer, execute NOPs
+            else -- execute all program buffer entries as NOPs
               dm_ctrl.pbuf_en <= '0';
             end if;
             --
@@ -326,7 +326,7 @@ begin
 
           when CMD_EXE_BUSY => -- wait for CPU to finish
           -- ------------------------------------------------------------
-            if (dci.halt_ack = '1') then -- CPU is parked again -> execution done
+            if (dci.halt_ack = '1') then -- CPU is parked (halted) again -> execution done
               dm_ctrl.state <= CMD_IDLE;
             end if;
 
@@ -341,9 +341,9 @@ begin
         end case;
 
 
-        -- error flag register --
+        -- error flags --
         -- ------------------------------------------------------------
-        if (dm_ctrl.cmderr = "000") then
+        if (dm_ctrl.cmderr = "000") then -- set new error
           if (dm_ctrl.illegal_state = '1') then -- cannot execute since hart is not in expected state
             dm_ctrl.cmderr <= "100";
           elsif (dci.exception_ack = '1') then -- exception during execution
@@ -544,7 +544,7 @@ begin
         -- debug module status register --
         when addr_dmstatus_c =>
           dmi_resp_data_o(31 downto 23) <= (others => '0'); -- reserved (r/-)
-          dmi_resp_data_o(22)           <= '1'; -- impebreak (r/-): there is an implicit ebreak instruction after the program visible buffer
+          dmi_resp_data_o(22)           <= '1'; -- impebreak (r/-): there is an implicit ebreak instruction after the visible program buffer
           dmi_resp_data_o(21 downto 20) <= (others => '0'); -- reserved (r/-)
           dmi_resp_data_o(19)           <= dm_ctrl.hart_reset; -- allhavereset (r/-): there is only one hart that can be reset
           dmi_resp_data_o(18)           <= dm_ctrl.hart_reset; -- anyhavereset (r/-): there is only one hart that can be reset
@@ -623,9 +623,9 @@ begin
         when addr_progbuf1_c =>
           dmi_resp_data_o <= dm_reg.progbuf(1); -- program buffer 1
 
-        -- system bus access control and status (r/-) --
-        when addr_sbcs_c =>
-          dmi_resp_data_o <= (others => '0'); -- bus access not implemented
+--      -- system bus access control and status (r/-) --
+--      when addr_sbcs_c =>
+--        dmi_resp_data_o <= (others => '0'); -- bus access not implemented
 
         -- halt summary 0 (r/-) --
         when addr_haltsum0_c =>
@@ -669,7 +669,7 @@ begin
   -- Access Control ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   acc_en <= '1' when (cpu_addr_i(hi_abb_c downto lo_abb_c) = dm_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  maddr  <= cpu_addr_i(lo_abb_c-1 downto lo_abb_c-2);
+  maddr  <= cpu_addr_i(lo_abb_c-1 downto lo_abb_c-2); -- (sub-)module select address
   rden   <= acc_en and cpu_rden_i;
   wren   <= acc_en and cpu_wren_i;
 
@@ -711,7 +711,7 @@ begin
       cpu_ack_o  <= rden or wren;
       cpu_data_o <= (others => '0');
       if (rden = '1') then -- output gate
-        case maddr is -- read data select
+        case maddr is -- module select
           when "00" => -- code ROM
             cpu_data_o <= code_rom_file(to_integer(unsigned(cpu_addr_i(6 downto 2))));
           when "01" => -- program buffer

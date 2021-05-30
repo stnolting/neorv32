@@ -802,7 +802,7 @@ begin
 
   -- CPU Control Bus Output -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_output: process(ctrl, fetch_engine, trap_ctrl, bus_fast_ir, execute_engine, csr)
+  ctrl_output: process(ctrl, fetch_engine, trap_ctrl, bus_fast_ir, execute_engine, csr, debug_ctrl)
   begin
     -- signals from execute engine --
     ctrl_o <= ctrl;
@@ -828,8 +828,8 @@ begin
     ctrl_o(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_0_c) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c);
     ctrl_o(ctrl_ir_funct3_2_c   downto ctrl_ir_funct3_0_c)  <= execute_engine.i_reg(instr_funct3_msb_c  downto instr_funct3_lsb_c);
     -- cpu status --
-    ctrl_o(ctrl_sleep_c)         <= execute_engine.sleep; -- cpu is in sleep mode
-    ctrl_o(ctrl_trap_c)          <= trap_ctrl.env_start_ack; -- cpu is starting a trap handler
+    ctrl_o(ctrl_sleep_c) <= execute_engine.sleep; -- cpu is in sleep mode
+    ctrl_o(ctrl_trap_c)  <= trap_ctrl.env_start_ack; -- cpu is starting a trap handler
     if (CPU_EXTENSION_RISCV_DEBUG = true) then
       ctrl_o(ctrl_debug_running_c) <= debug_ctrl.running; -- cpu is currently in debug mode
     else
@@ -856,7 +856,7 @@ begin
     decode_aux.alu_immediate <= not execute_engine.i_reg(instr_opcode_msb_c-1);
 
     -- is rs1 == r0? --
-    decode_aux.rs1_is_r0 <= not or_all_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c));
+    decode_aux.rs1_is_r0 <= not or_reduce_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c));
 
     -- is atomic load-reservate/store-conditional? --
     if (CPU_EXTENSION_RISCV_A = true) and (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "11") then -- valid atomic sub-opcode
@@ -1208,7 +1208,7 @@ begin
           when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ECALL
           when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- EBREAK
           when funct12_mret_c   => execute_engine.state_nxt <= TRAP_EXIT; -- MRET
-          when funct12_wfi_c =>
+          when funct12_wfi_c => -- WFI
             if (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') then
               NULL; -- just a NOP when in debug mode
             else
@@ -1221,7 +1221,7 @@ begin
             else
               NULL;
             end if;
-          when others => NULL;-- undefined
+          when others => NULL; -- undefined
         end case;
 
 
@@ -1366,7 +1366,7 @@ begin
        (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) then
       csr_wacc_v := '1'; -- always write CSR
     else -- clear/set
-      csr_wacc_v := or_all_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c)); -- write allowed if rs1/uimm5 != 0
+      csr_wacc_v := or_reduce_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c)); -- write allowed if rs1/uimm5 != 0
     end if;
 
     -- low privilege level access to hpm counters? --
@@ -1821,8 +1821,8 @@ begin
   end process trap_controller;
 
   -- any exception/interrupt? --
-  trap_ctrl.exc_fire <= or_all_f(trap_ctrl.exc_buf); -- exceptions/faults CANNOT be masked
-  trap_ctrl.irq_fire <= (or_all_f(trap_ctrl.irq_buf) and csr.mstatus_mie and trap_ctrl.db_irq_en) or trap_ctrl.db_irq_fire; -- interrupts CAN be masked
+  trap_ctrl.exc_fire <= or_reduce_f(trap_ctrl.exc_buf); -- exceptions/faults CANNOT be masked
+  trap_ctrl.irq_fire <= (or_reduce_f(trap_ctrl.irq_buf) and csr.mstatus_mie and trap_ctrl.db_irq_en) or trap_ctrl.db_irq_fire; -- interrupts CAN be masked
 
   -- debug mode (entry) interrupts --
   trap_ctrl.db_irq_en <= '1' when (CPU_EXTENSION_RISCV_DEBUG = false) else
@@ -2598,7 +2598,7 @@ begin
       hpmcnt_trigger <= (others => '0'); -- default
       if (HPM_NUM_CNTS /= 0) then
         for i in 0 to HPM_NUM_CNTS-1 loop
-          hpmcnt_trigger(i) <= or_all_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0));
+          hpmcnt_trigger(i) <= or_reduce_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0));
         end loop; -- i
       end if;
     end if;
