@@ -214,6 +214,9 @@ write access to it (in machine mode) is ignored and will not cause any exception
 The `mip` CSR is read-only. Pending IRQs can be cleared using the `mie` CSR.
 
 [IMPORTANT]
+The `mtval` CSR is read-only.
+
+[IMPORTANT]
 The physical memory protection (see section <<_machine_physical_memory_protection>>)
 only supports the modes _OFF_ and _NAPOT_ yet and a minimal granularity of 8 bytes per region.
 
@@ -227,7 +230,7 @@ However, these instructions are sufficient to emulate all further AMO operations
 The NEORV32-specific extensions are always enabled and are indicated by the set `X` bit in the `misa` CSR.
 
 [NOTE]
-The CPU provides eight _fast interrupt_ interrupts, which are controlled via custom bit in the `mie`
+The CPU provides 16 _fast interrupt_ interrupts, which are controlled via custom bits in the `mie`
 and `mip` CSR. This extension is mapped to bits, that are available for custom use (according to the
 RISC-V specs). Also, custom trap codes for `mcause` are implemented.
 
@@ -237,7 +240,7 @@ A custom CSR `mzext` is available that can be used to check for implemented `Z*`
 
 [NOTE]
 All undefined/unimplemented/malformed/illegal instructions do raise an illegal instruction exception
-<<_execution_safety>>.
+(see <<_execution_safety>>).
 
 
 <<<
