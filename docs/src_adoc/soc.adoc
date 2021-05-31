@@ -839,11 +839,12 @@ system implements an internal reset generator and a global clock generator/divid
 
 Most processor-internal modules – except for the CPU and the watchdog timer – do not have a dedicated
 reset signal. However, all devices can be reset by software by clearing the corresponding unit's control
-register. The automatically included application start-up code will perform such a software-reset of all
-modules to ensure a clean system reset state. The hardware reset signal of the processor can either be
+register. The automatically included application start-up code (`crt0.S`) will perform a software-reset of all
+modules to ensure a clean system reset state.
+
+The hardware reset signal of the processor can either be
 triggered via the external reset pin (`rstn_i`, low-active) or by the internal watchdog timer (if implemented).
-Before the external reset signal is applied to the system, it is filtered (so no spike can generate a reset, a
-minimum active reset period of one clock cycle is required) and extended to have a minimal duration of four
+Before the external reset signal is applied to the system, it is extended to have a minimal duration of eight
 clock cycles.
 
 **Internal Clock Divider**
