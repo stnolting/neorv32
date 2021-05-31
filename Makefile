@@ -1,3 +1,5 @@
+.DEFAULT_GOAL := help
+
 # Generate PDF datasheet
 pdf:
 	cd docs; \
@@ -26,3 +28,10 @@ revnumber:
 # Build 'pdf' and 'html' in an 'asciidoctor-wavedrom' container
 container: revnumber
 	docker run --rm -v /$(PWD)://documents/ btdi/asciidoctor make pdf html
+
+# Help
+help:
+	@echo "Targets:"
+	@echo " help - show this text"
+	@echo " html - build project documentation as HTML page (docs/index.html)"
+	@echo " pdf  - build project documentation as pdf file (docs/NEORV32.pdf)"
