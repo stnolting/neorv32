@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 31.05.2021 | 1.5.5.12 | `mret` instruction now clears `mstatus.mpp` (according to _new_ RISC-V privileged specs.) |
 | 31.05.2021 | 1.5.5.11 | :warning: `mtval` CSR is now read-only; a write access will raise an illegal instruction exception |
 | 30.05.2021 | 1.5.5.10 | :bug: fixed bug in processor's reset system (system reset stuck at `0` if on-chip debugger not implemented); reworked processor's reset generator system; VHDL code clean-up; reworked SoC's bus infrastructure (now using array of records for module bus response) |
 | 28.05.2021 | 1.5.5.9 | integrated DBMEM (debug memory) component into DM (debug module); removing now-obsolete `neorv32_debug_dbmem.vhd` component |

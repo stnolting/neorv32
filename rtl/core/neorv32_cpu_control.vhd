@@ -2360,15 +2360,9 @@ begin
               csr.mstatus_mpie <= '1';
               if (CPU_EXTENSION_RISCV_U = true) then -- implement user mode
                 csr.privilege   <= csr.mstatus_mpp; -- go back to previous privilege mode
-                csr.mstatus_mpp <= priv_mode_m_c;
+                csr.mstatus_mpp <= (others => '0');
               end if;
             end if;
-          end if;
-
-          -- user mode NOT implemented --
-          if (CPU_EXTENSION_RISCV_U = false) then
-            csr.privilege   <= priv_mode_m_c;
-            csr.mstatus_mpp <= priv_mode_m_c;
           end if;
 
         end if; -- /hardware csr access
