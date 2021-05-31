@@ -1394,9 +1394,9 @@ begin
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only, NOTE: MISA is read-only in the NEORV32 but we do not cause an exception here for compatibility
 
       -- machine trap handling --
-      when csr_mscratch_c | csr_mepc_c | csr_mcause_c | csr_mtval_c  =>
+      when csr_mscratch_c | csr_mepc_c | csr_mcause_c  =>
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_mip_c => -- NOTE: MIP is read-only in the NEORV32
+      when csr_mip_c | csr_mtval_c => -- NOTE: MIP and MTVAL are read-only in the NEORV32!
         csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
 
       -- physical memory protection - configuration --
@@ -2185,10 +2185,6 @@ begin
               csr.mcause(csr.mcause'left) <= csr.wdata(31); -- 1: interrupt, 0: exception
               csr.mcause(4 downto 0)      <= csr.wdata(4 downto 0); -- identifier
             end if;
-            -- R/W: mtval - machine bad address/instruction --
-            if (csr.addr(3 downto 0) = csr_mtval_c(3 downto 0)) then
-              csr.mtval <= csr.wdata;
-            end if;
           end if;
 
           -- physical memory protection: R/W: pmpcfg* - PMP configuration registers --
@@ -2391,6 +2387,7 @@ begin
         csr.mcounteren_ir  <= '0';
         csr.mcounteren_hpm <= (others => '0');
         csr.dcsr_ebreaku   <= '0';
+        csr.dcsr_prv       <= priv_mode_m_c;
       end if;
 
       -- pmp disabled --
@@ -2426,7 +2423,6 @@ begin
         csr.dcsr_ebreaku <= '0';
         csr.dcsr_step    <= '0';
         csr.dcsr_stepie  <= '0';
-        csr.dcsr_prv     <= (others => '0');
         csr.dcsr_cause   <= (others => '0');
         csr.dpc          <= (others => '0');
         csr.dscratch0    <= (others => '0');
