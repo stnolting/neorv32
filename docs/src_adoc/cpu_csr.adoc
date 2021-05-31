@@ -65,51 +65,51 @@ CSRs with the following notes ...
 |=======================
 | Address | Name [ASM]   | Name [C]         | R/W | Function | Note
 6+^| **<<_floating_point_csrs>>**
-| 0x001   | `fflags`     | _CSR_FFLAGS_     | r/w | Floating-point accrued exceptions | 
-| 0x002   | `frm`        | _CSR_FRM_        | r/w | Floating-point dynamic rounding mode | 
-| 0x003   | `fcsr`       | _CSR_FCSR_       | r/w | Floating-point control and status (`frm` + `fflags`) | 
+| 0x001   | <<_fflags>>     | _CSR_FFLAGS_     | r/w | Floating-point accrued exceptions | 
+| 0x002   | <<_frm>>        | _CSR_FRM_        | r/w | Floating-point dynamic rounding mode | 
+| 0x003   | <<_fcsr>>       | _CSR_FCSR_       | r/w | Floating-point control and status (`frm` + `fflags`) | 
 6+^| **<<_machine_trap_setup>>**
-| 0x300   | `mstatus`    | _CSR_MSTATUS_    | r/w | Machine status register | `S`
-| 0x301   | `misa`       | _CSR_MISA_       | r/- | Machine CPU ISA and extensions | `R`
-| 0x304   | `mie`        | _CSR_MIE_        | r/w | Machine interrupt enable register | `C`
-| 0x305   | `mtvec`      | _CSR_MTVEC_      | r/w | Machine trap-handler base address (for ALL traps) | 
-| 0x306   | `mcounteren` | _CSR_MCOUNTEREN_ | r/w | Machine counter-enable register | `S`
-| 0x310   | `mstatush`   | _CSR_MSTATUSH_   | r/- | Machine status register – high word | `RS`
+| 0x300   | <<_mstatus>>    | _CSR_MSTATUS_    | r/w | Machine status register | `S`
+| 0x301   | <<_misa>>       | _CSR_MISA_       | r/- | Machine CPU ISA and extensions | `R`
+| 0x304   | <<_mie>>        | _CSR_MIE_        | r/w | Machine interrupt enable register | `C`
+| 0x305   | <<_mtvec>>      | _CSR_MTVEC_      | r/w | Machine trap-handler base address (for ALL traps) | 
+| 0x306   | <<_mcounteren>> | _CSR_MCOUNTEREN_ | r/w | Machine counter-enable register | `S`
+| 0x310   | <<_mstatush>>   | _CSR_MSTATUSH_   | r/- | Machine status register – high word | `RS`
 6+^| **<<_machine_trap_handling>>**
-| 0x340   | `mscratch`   | _CSR_MSCRATCH_   | r/w | Machine scratch register | 
-| 0x341   | `mepc`       | _CSR_MEPC_       | r/w | Machine exception program counter | 
-| 0x342   | `mcause`     | _CSR_MCAUSE_     | r/w | Machine trap cause | `C`
-| 0x343   | `mtval`      | _CSR_MTVAL_      | r/w | Machine bad address or instruction | 
-| 0x344   | `mip`        | _CSR_MIP_        | r/- | Machine interrupt pending register | `CR`
+| 0x340   | <<_mscratch>>   | _CSR_MSCRATCH_   | r/w | Machine scratch register | 
+| 0x341   | <<_mepc>>       | _CSR_MEPC_       | r/w | Machine exception program counter | 
+| 0x342   | <<_mcause>>     | _CSR_MCAUSE_     | r/w | Machine trap cause | `C`
+| 0x343   | <<_mtval>>      | _CSR_MTVAL_      | r/- | Machine bad address or instruction | `R`
+| 0x344   | <<_mip>>        | _CSR_MIP_        | r/- | Machine interrupt pending register | `CR`
 6+^| **<<_machine_physical_memory_protection>>**
-| 0x3a0 .. 0x3af | `pmpcfg0` .. `pmpcfg15`  | _CSR_PMPCFG0_ .. _CSR_PMPCFG15_ | r/w | Physical memory protection config. for region 0..63 | `S`
-| 0x3b0 .. 0x3ef | `pmpaddr0` .. `pmpaddr63`| _CSR_PMPADDR0_ .. _CSR_PMPADDR63_ | r/w | Physical memory protection addr. register region 0..63 | 
+| 0x3a0 .. 0x3af | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, , `pmpcfg15`>>   | _CSR_PMPCFG0_ .. _CSR_PMPCFG15_ | r/w | Physical memory protection config. for region 0..63 | `S`
+| 0x3b0 .. 0x3ef | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr63`>> | _CSR_PMPADDR0_ .. _CSR_PMPADDR63_ | r/w | Physical memory protection addr. register region 0..63 | 
 6+^| **<<_machine_counters_and_timers>>**
-| 0xb00   | `mcycle`     | _CSR_MCYCLE_     | r/w | Machine cycle counter low word | 
-| 0xb02   | `minstret`   | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter low word | 
-| 0xb80   | `mcycleh`    | _CSR_MCYCLE_     | r/w | Machine cycle counter high word | 
-| 0xb82   | `minstreth`  | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter high word |
-| 0xc00   | `cycle`      | _CSR_CYCLE_      | r/- | Cycle counter low word | 
-| 0xc01   | `time`       | _CSR_TIME_       | r/- | System time (from MTIME) low word | 
-| 0xc02   | `instret`    | _CSR_INSTRET_    | r/- | Instruction-retired counter low word |  
-| 0xc80   | `cycleh`     | _CSR_CYCLEH_     | r/- | Cycle counter high word | 
-| 0xc81   | `timeh`      | _CSR_TIMEH_      | r/- | System time (from MTIME) high word | 
-| 0xc82   | `instreth`   | _CSR_INSTRETH_   | r/- | Instruction-retired counter high word | 
+| 0xb00   | <<_mcycleh, `mcycle`>>     | _CSR_MCYCLE_     | r/w | Machine cycle counter low word | 
+| 0xb02   | <<_minstreth, `_minstret`>>   | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter low word | 
+| 0xb80   | <<_mcycleh>>    | _CSR_MCYCLE_     | r/w | Machine cycle counter high word | 
+| 0xb82   | <<_minstreth>>  | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter high word |
+| 0xc00   | <<_cycleh, `cycle`>>      | _CSR_CYCLE_      | r/- | Cycle counter low word | 
+| 0xc01   | <<_timeh, `time`>>       | _CSR_TIME_       | r/- | System time (from MTIME) low word | 
+| 0xc02   | <<_instreth, `instret`>>    | _CSR_INSTRET_    | r/- | Instruction-retired counter low word |  
+| 0xc80   | <<_cycleh>>     | _CSR_CYCLEH_     | r/- | Cycle counter high word | 
+| 0xc81   | <<_timeh>>      | _CSR_TIMEH_      | r/- | System time (from MTIME) high word | 
+| 0xc82   | <<_instreth>>   | _CSR_INSTRETH_   | r/- | Instruction-retired counter high word | 
 6+^| **<<_hardware_performance_monitors_hpm>>**
-| 0x323 .. 0x33f | `mhpmevent3` .. `mhpmevent31`       | _CSR_MHPMEVENT3_ .. _CSR_MHPMEVENT31_       | r/w | Machine performance-monitoring event selector 3..31 | `C`
-| 0xb03 .. 0xb1f | `mhpmcounter3` .. `mhpmcounter31`   | _CSR_MHPMCOUNTER3_ .. _CSR_MHPMCOUNTER31_   | r/w | Machine performance-monitoring counter 3..31 low word | 
-| 0xb83 .. 0xb9f | `mhpmcounter3h` .. `mhpmcounter31h` | _CSR_MHPMCOUNTER3H_ .. _CSR_MHPMCOUNTER31H_ | r/w | Machine performance-monitoring counter 3..31 high word | 
-| 0xc03 .. 0xc1f | `hpmcounter3` .. `hpmcounter31`     | _CSR_HPMCOUNTER3_ .. _CSR_HPMCOUNTER31_     | r/- | Performance-monitoring counter 3..31 low word |  
-| 0xc83 .. 0xc9f | `hpmcounter3h` .. `hpmcounter31h`   | _CSR_HPMCOUNTER3H_ .. _CSR_HPMCOUNTER31H_   | r/- | Performance-monitoring counter 3..31 high word | 
+| 0x323 .. 0x33f | <<_mhpmevent, `mhpmevent3`>> .. <<_mhpmevent, `mhpmevent31`>>       | _CSR_MHPMEVENT3_ .. _CSR_MHPMEVENT31_       | r/w | Machine performance-monitoring event selector 3..31 | `C`
+| 0xb03 .. 0xb1f | <<_mhpmcounterh, `mhpmcounter3`>> .. <<_mhpmcounterh, `mhpmcounter31`>>   | _CSR_MHPMCOUNTER3_ .. _CSR_MHPMCOUNTER31_   | r/w | Machine performance-monitoring counter 3..31 low word | 
+| 0xb83 .. 0xb9f | <<_mhpmcounterh, `mhpmcounter3h`>> .. <<_mhpmcounterh, `mhpmcounter31h`>> | _CSR_MHPMCOUNTER3H_ .. _CSR_MHPMCOUNTER31H_ | r/w | Machine performance-monitoring counter 3..31 high word | 
+| 0xc03 .. 0xc1f | <<_hpmcounterh, `hpmcounter3`>> .. <<_hpmcounterh, `hpmcounter31`>>     | _CSR_HPMCOUNTER3_ .. _CSR_HPMCOUNTER31_     | r/- | Performance-monitoring counter 3..31 low word |  
+| 0xc83 .. 0xc9f | <<_hpmcounterh, `hpmcounter3h`>> .. <<_hpmcounter31h, `hpmcounter31h`>>   | _CSR_HPMCOUNTER3H_ .. _CSR_HPMCOUNTER31H_   | r/- | Performance-monitoring counter 3..31 high word | 
 6+^| **<<_machine_counter_setup>>**
-| 0x320   | `mcountinhibit` | _CSR_MCOUNTINHIBIT_ | r/w | Machine counter-enable register |
+| 0x320   | <<_mcountinhibit>> | _CSR_MCOUNTINHIBIT_ | r/w | Machine counter-enable register |
 6+^| **<<_machine_information_registers>>**
-| 0xf11   | `mvendorid` | _CSR_MVENDORID_ | r/- | Vendor ID |
-| 0xf12   | `marchid`   | _CSR_MARCHID_   | r/- | Architecture ID |
-| 0xf13   | `mimpid`    | _CSR_MIMPID_    | r/- | Machine implementation ID / version |
-| 0xf14   | `mhartid`   | _CSR_MHARTID_   | r/- | Machine thread ID |
+| 0xf11   | <<_mvendorid>> | _CSR_MVENDORID_ | r/- | Vendor ID |
+| 0xf12   | <<_marchid>>   | _CSR_MARCHID_   | r/- | Architecture ID |
+| 0xf13   | <<_mimpid>>    | _CSR_MIMPID_    | r/- | Machine implementation ID / version |
+| 0xf14   | <<_mhartid>>   | _CSR_MHARTID_   | r/- | Machine thread ID |
 6+^| **<<_neorv32_specific_custom_csrs>>**
-| 0xfc0   | `mzext` | _CSR_MZEXT_ | r/- | Available `Z*` CPU extensions |
+| 0xfc0   | <<_mzext>> | _CSR_MZEXT_ | r/- | Available `Z*` CPU extensions |
 |=======================
 
 
@@ -171,13 +171,12 @@ RISC-V ISA spec for more information.
 ==== Machine Trap Setup
 
 :sectnums!:
-===== **`mstatus[h]`**
+===== **`mstatus`**
 
 [cols="4,27,>7"]
 [frame="topbot",grid="none"]
 |======
 | 0x300 | **Machine status register - low word** | `mstatus`
-| 0x310 | **Machine status register - high word** | `mstatush`
 3+| Reset value: _0x00000020.00000000_
 3+| The `mstatus` CSR is compatible to the RISC-V specifications. It shows the CPU's current execution state.
 The following bits are implemented (all remaining bits are always zero and are read-only).
@@ -192,14 +191,6 @@ The following bits are implemented (all remaining bits are always zero and are r
 | 7     | _CSR_MSTATUS_MPIE_ | r/w | Previous machine global interrupt enable flag state
 | 6     | _CSR_MSTATUS_UBE_ | r/- | User-mode byte-order (Endianness) for load/Store operations, always set indicating BIG-endian byte-order (copy of `CSR_MSTATUSH_MBE`); bit is always zero if user-mode is not implemented
 | 3     | _CSR_MSTATUS_MIE_ | r/w | Machine global interrupt enable flag
-|=======================
-
-.Machine status register - high word
-[cols="^1,<3,^1,<5"]
-[options="header",grid="rows"]
-|=======================
-| Bit | Name [C] | R/W | Function
-| 5   | _CSR_MSTATUSH_MBE_ | r/- | Machine-mode byte-order (Endianness) for load/Store operations, always set indicating BIG-endian byte-order
 |=======================
 
 When entering an exception/interrupt, the `MIE` flag is copied to `MPIE` and cleared afterwards. When leaving
@@ -320,6 +311,26 @@ are read-only). If user mode in not implemented (_CPU_EXTENSION_RISCV_U_ = _fals
 |=======================
 
 
+:sectnums!:
+===== **`mstatush`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x310 | **Machine status register - high word** | `mstatush`
+3+| Reset value: _0x00000020.00000000_
+3+| The `mstatush` CSR is compatible to the RISC-V specifications. It shows the CPU's current execution state.
+The following bits are implemented (all remaining bits are always zero and are read-only).
+|======
+
+.Machine status register - high word
+[cols="^1,<3,^1,<5"]
+[options="header",grid="rows"]
+|=======================
+| Bit | Name [C] | R/W | Function
+| 5   | _CSR_MSTATUSH_MBE_ | r/- | Machine-mode byte-order (Endianness) for load/Store operations, always set indicating BIG-endian byte-order
+|=======================
+
 
 <<<
 // ####################################################################################################################
@@ -352,6 +363,27 @@ interrupt) this register provides the address of the next not-yet-executed instr
 |======
 
 :sectnums!:
+===== **`mcause`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x342 | **Machine trap cause** | `mcause`
+3+| Reset value: _UNDEFINED_
+3+| The `mcause` CSR is compatible to the RISC-V specifications. It show the cause ID for a taken exception.
+|======
+
+.Machine trap cause register
+[cols="^1,^1,<8"]
+[options="header",grid="rows"]
+|=======================
+| Bit  | R/W | Function
+| 31   | r/w | `1` if the trap is caused by an interrupt (`0` if the trap is caused by an exception)
+| 30:5 | r/- | _Reserved_, read as zero
+| 4:0  | r/w | Trap ID, see <<_neorv32_trap_listing>>
+|=======================
+
+:sectnums!:
 ===== **`mtval`**
 
 [cols="4,27,>7"]
@@ -376,6 +408,8 @@ instructions). For interrupts the CSR is set to zero.
 | anything else including interrupts | _0x00000000_ (always zero)
 |=======================
 
+[IMPORTAN]
+The NEORV32 `mtval` CSR is read-only. A write access will raise an illegal instruction exception.
 
 :sectnums!:
 ===== **`mip`**
