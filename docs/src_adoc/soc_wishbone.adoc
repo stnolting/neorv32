@@ -23,7 +23,7 @@
 | Configuration generics:  | _MEM_EXT_EN_ | enable external memory interface when _true_
 |                          | _MEM_EXT_TIMEOUT_ | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
 | Configuration constants in VHDL package file `neorv32_package.vhd`: | `wb_pipe_mode_c` | when _false_ (default): classic/standard Wishbone protocol; when _true_: pipelined Wishbone protocol
-|                                                                     | `xbus_big_endian_c` | byte-order (Endianness) of external memory interface (true=BIG (default), false=little)
+|                                                                     | `xbus_big_endian_c` | byte-order (Endianness) of external memory interface; true=BIG, false=little (default)
 | CPU interrupts:          | none             | 
 |=======================
 
@@ -123,10 +123,11 @@ See section <<_bus_interface>> for the CPU bus interface protocol.
 
 **Endianness**
 
-The NEORV32 CPU and the Processor setup are BIG-endian architectures. However, to allow a connection
-to a little-endian memory system the external bus interface provides an Endianness configuration. The
-Endianness can be configured via the global `xbus_big_endian_c` constant in the main VHDL package file
-(rtl/neorv32_package.vhd). By default, the external memory interface uses BIG-endian byte-order.
+The NEORV32 CPU and the Processor setup are *little-endian* architectures. To allow direct connection
+to a big-endian memory system the external bus interface provides an _Endianness configuration_. The
+Endianness (of the external memory interface) can be configured via the global `xbus_big_endian_c`
+constant in the main VHDL package file (`rtl/neorv32_package.vhd`). By default, the external memory
+interface uses little-endian byte-order.
 
 [source,vhdl]
 ----
