@@ -74,7 +74,6 @@ CSRs with the following notes ...
 | 0x304   | <<_mie>>        | _CSR_MIE_        | r/w | Machine interrupt enable register | `C`
 | 0x305   | <<_mtvec>>      | _CSR_MTVEC_      | r/w | Machine trap-handler base address (for ALL traps) | 
 | 0x306   | <<_mcounteren>> | _CSR_MCOUNTEREN_ | r/w | Machine counter-enable register | `S`
-| 0x310   | <<_mstatush>>   | _CSR_MSTATUSH_   | r/- | Machine status register – high word | `RS`
 6+^| **<<_machine_trap_handling>>**
 | 0x340   | <<_mscratch>>   | _CSR_MSCRATCH_   | r/w | Machine scratch register | 
 | 0x341   | <<_mepc>>       | _CSR_MEPC_       | r/w | Machine exception program counter | 
@@ -189,7 +188,6 @@ The following bits are implemented (all remaining bits are always zero and are r
 | Bit   | Name [C] | R/W | Function
 | 12:11 | _CSR_MSTATUS_MPP_H_ : _CSR_MSTATUS_MPP_L_ | r/w | Previous machine privilege level, 11 = machine (M) level, 00 = user (U) level
 | 7     | _CSR_MSTATUS_MPIE_ | r/w | Previous machine global interrupt enable flag state
-| 6     | _CSR_MSTATUS_UBE_ | r/- | User-mode byte-order (Endianness) for load/Store operations, always set indicating BIG-endian byte-order (copy of `CSR_MSTATUSH_MBE`); bit is always zero if user-mode is not implemented
 | 3     | _CSR_MSTATUS_MIE_ | r/w | Machine global interrupt enable flag
 |=======================
 
@@ -308,27 +306,6 @@ are read-only). If user mode in not implemented (_CPU_EXTENSION_RISCV_U_ = _fals
 | 2     | _CSR_MCOUNTEREN_IR_ | r/w | User-level code is allowed to read `cycle[h]` CSRs when set
 | 1     | _CSR_MCOUNTEREN_TM_ | r/w | User-level code is allowed to read `time[h]` CSRs when set
 | 0     | _CSR_MCOUNTEREN_CY_ | r/w | User-level code is allowed to read `instret[h]` CSRs when set
-|=======================
-
-
-:sectnums!:
-===== **`mstatush`**
-
-[cols="4,27,>7"]
-[frame="topbot",grid="none"]
-|======
-| 0x310 | **Machine status register - high word** | `mstatush`
-3+| Reset value: _0x00000020.00000000_
-3+| The `mstatush` CSR is compatible to the RISC-V specifications. It shows the CPU's current execution state.
-The following bits are implemented (all remaining bits are always zero and are read-only).
-|======
-
-.Machine status register - high word
-[cols="^1,<3,^1,<5"]
-[options="header",grid="rows"]
-|=======================
-| Bit | Name [C] | R/W | Function
-| 5   | _CSR_MSTATUSH_MBE_ | r/- | Machine-mode byte-order (Endianness) for load/Store operations, always set indicating BIG-endian byte-order
 |=======================
 
 
