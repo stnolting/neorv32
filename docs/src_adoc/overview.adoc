@@ -29,15 +29,15 @@ in the root directory of the NEORV32 repository. Please also check out the <<_le
 :sectnums!:
 === Structure
 
-Chapter <<_neorv32_central_processing_unit_cpu>>
-
-* instruction set(s) and extensions, instruction timing, control ans status registers, traps, exceptions and interrupts,
-hardware execution safety, native bus interface
-
 Chapter <<_neorv32_processor_soc>>
 
 * top entity signals and configuration generics, address space layout, internal peripheral devices and interrupts, internal
 memories and caches, internal bus architecture, external bus interface
+
+Chapter <<_neorv32_central_processing_unit_cpu>>
+
+* instruction set(s) and extensions, instruction timing, control ans status registers, traps, exceptions and interrupts,
+hardware execution safety, native bus interface
 
 Chapter <<_on_chip_debugger_ocd>>
 
@@ -50,6 +50,7 @@ Chapter <<_software_framework>>
 Chapter <<_lets_get_it_started>>
 
 * toolchain installation and setup, hardware setup, software setup, application compilation, simulating the processor
+debugging using the on-chip debugger
 
 [TIP]
 Links in this document are <<_structure,highlighted>>.
@@ -322,9 +323,6 @@ system. The according source code and the SW project can be found in the `sw/exa
 The resulting CoreMark score is defined as CoreMark iterations per second.
 The execution time is determined via the RISC-V `[m]cycle[h]` CSRs. The relative CoreMark score is
 defined as CoreMark score divided by the CPU's clock frequency in MHz.
-
-:sectnums!:
-===== Results
 
 [cols="<2,<8"]
 [grid="topbot"]
