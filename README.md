@@ -81,11 +81,13 @@ and a subset of the *Privileged Architecture Specification* [(Version 1.12-draft
 The CPU [passes](https://stnolting.github.io/neorv32/#_risc_v_compatibility) the [official RISC-V architecture tests](https://github.com/riscv/riscv-arch-test)
 (see [`riscv-arch-test/README`](https://github.com/stnolting/neorv32/blob/master/riscv-arch-test/README.md)).
 
-In order to provide a reduced-size setup the NEORV32 CPU implements a two-stages pipeline, where each stage
-uses a multi-cycle processing scheme. Instruction and data accesses are conducted via independant bus interfaces,
-that are multiplexed into a single SoC-bus ("modified Harvard architecture"). As a special execution safety feature,
-all reserved or unimplemented instructions do raise an exception.  Furthermore, the CPU was assigned an *official*
-RISC-V open-source [architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
+#### General
+
+* little-endian
+* two-stage pipeline: each stage uses a multi-cycle processing scheme
+* independant instruction and data bus interfaces
+* `machine` and optional `user` and `debug_mode` operating modes / privilege levels
+* _official_ RISC-V open-source [architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
 
 #### Currently implemented RISC-V-compatible _ISA extensions_
 
@@ -104,19 +106,19 @@ RISC-V open-source [architecture ID](https://github.com/riscv/riscv-isa-manual/b
 * `HPM` - hardware performance monitors (optional)
 * `DB` - RISC-V CPU debug mode (optional)
 
-#### Operation modes / privilege levels
+#### Supported Traps (machine level)
 
-* `machine`
-* `user` (`U` extension)
-* `debug_mode` (`DB extension`)
-
-#### Interrupts (machine level)
-
-* RISC-V standard interrupts
-  * _timer_ - via MTIME SoC module or via external signal
-  * _external_ - via external signal
-  * _software_ - via external signal
-* 16 additional "fast interrupt" requests
+* **interrupts**
+  * _machine timer_ (`MTI`), via MTIME SoC module or via external signal
+  * _machine external_ (`MEI`), via external signal
+  * _machine software_ (`MSI`), via external signal
+  * 16 "fast interrupt" requests (_custom extension_)
+  * 1 non-maskable interrupt (_custom extension_)
+* **exceptions**
+  * instruction: misaligned address, bus access fault, illegal instruction word
+  * load/store: misaligned address, bus access fault
+  * breakpoint
+  * environment call from `u`/`m` mode
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -317,6 +319,11 @@ This overview provides some *quick links* to the most important sections of the 
 * [Upload via Bootloader](https://stnolting.github.io/neorv32/#_uploading_and_starting_of_a_binary_executable_image_via_uart) - upload and execute executables
 * [Debugging via the On-Chip Debugger](https://stnolting.github.io/neorv32/#_debugging_using_the_on_chip_debugger) - step through code *online* and *in-system*
 
+### :copyright: Legal
+
+* [Overview](https://stnolting.github.io/neorv32/#_legal) - license, disclaimer, proprietary notice, ...
+* [Citing](https://stnolting.github.io/neorv32/#_citing) - citing information
+
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
@@ -325,44 +332,9 @@ This overview provides some *quick links* to the most important sections of the 
 
 **A big shoutout to all [contributors](https://github.com/stnolting/neorv32/graphs/contributors), who helped improving this project! :heart:**
 
-[![RISC-V](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/riscv_logo.png)](https://riscv.org/)
-
 [RISC-V](https://riscv.org/) - Instruction Sets Want To Be Free!
 
 Continous integration provided by [:octocat: GitHub Actions](https://github.com/features/actions) and powered by [GHDL](https://github.com/ghdl/ghdl).
-
-![Open Source Hardware Logo https://www.oshwa.org](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/oshw_logo.png)
-
-This project is not affiliated with or endorsed by the Open Source Initiative (https://www.oshwa.org / https://opensource.org).
-
-[[back to top](#The-NEORV32-RISC-V-Processor)]
-
-
-
-## Legal
-
-This project is released under the [BSD 3-Clause license](https://github.com/stnolting/neorv32/blob/master/LICENSE).
-No copyright infringement intended.
-For more information see the [online documentation - _"Proprietary and Legal Notice"_](https://stnolting.github.io/neorv32/#_proprietary_and_legal_notice).
-Other implied or used projects might have different licensing - see their documentation to get more information.
-
-#### Limitation of Liability for External Links
-
-Our website contains links to the websites of third parties ("external links"). As the
-content of these websites is not under our control, we cannot assume any liability for
-such external content. In all cases, the provider of information of the linked websites
-is liable for the content and accuracy of the information provided. At the point in time
-when the links were placed, no infringements of the law were recognisable to us. As soon
-as an infringement of the law becomes known to us, we will immediately remove the
-link in question.
-
-#### Citing
-
-If you are using the NEORV32 or parts of the project in some kind of publication, please cite it as follows:
-
-> S. Nolting, "The NEORV32 RISC-V Processor", github.com/stnolting/neorv32
-
-[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 --------
 
