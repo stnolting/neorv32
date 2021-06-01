@@ -714,21 +714,22 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
 /**********************************************************************//**
  * Check if certain Z* extension is available
  *
- * @param[in] flag Index of the Z-extension to check from #NEORV32_CSR_MZEXT_enum
+ * @param[in] flag_id Index of the Z-extension to check from #NEORV32_CSR_MZEXT_enum
  * @return 0 if extension is NOT available, != 0 if extension is available.
  **************************************************************************/
-int neorv32_check_zextension(uint32_t flag) {
+int neorv32_cpu_check_zext(uint8_t flag_id) {
 
   // check if out of range
-  if (flag > 31) {
+  if (flag_id > 31) {
     return 0;
   }
 
-  uint32_t tmp = neorv32_cpu_csr_read(CSR_MZEXT);
-  if ((tmp & (1 << flag)) == 0) {
+  uint32_t mask = (uint32_t)(1 << flag_id);
+  if ((neorv32_cpu_csr_read(CSR_MZEXT) & mask) == 0) {
     return 0;
   }
   else {
     return 1;
   }
 }
+
