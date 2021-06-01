@@ -296,36 +296,21 @@ void neorv32_rte_print_hw_config(void) {
   // hardware version
   neorv32_uart_printf("\nImplementation ID: 0x%x (", neorv32_cpu_csr_read(CSR_MIMPID));
   neorv32_rte_print_hw_version();
-  neorv32_uart_printf(")\n");
+  neorv32_uart_putc(')');
 
-  // CPU architecture
-  neorv32_uart_printf("Architecture:      ");
+  // CPU architecture and endianness
+  neorv32_uart_printf("\nArchitecture:      ");
   tmp = neorv32_cpu_csr_read(CSR_MISA);
   tmp = (tmp >> 30) & 0x03;
-  if (tmp == 0) {
-    neorv32_uart_printf("unknown");
-  }
   if (tmp == 1) {
-    neorv32_uart_printf("rv32");
-  }
-  if (tmp == 2) {
-    neorv32_uart_printf("rv64");
-  }
-  if (tmp == 3) {
-    neorv32_uart_printf("rv128");
-  }
-  
-  // CPU extensions
-  neorv32_uart_printf("\nEndianness:        ");
-  if (neorv32_cpu_csr_read(CSR_MSTATUSH) & (1<<CSR_MSTATUSH_MBE)) {
-    neorv32_uart_printf("big\n");
+    neorv32_uart_printf("rv32-little");
   }
   else {
-    neorv32_uart_printf("little\n");
+    neorv32_uart_printf("unknown");
   }
   
   // CPU extensions
-  neorv32_uart_printf("Extensions:        ");
+  neorv32_uart_printf("\nExtensions:        ");
   tmp = neorv32_cpu_csr_read(CSR_MISA);
   for (i=0; i<26; i++) {
     if (tmp & (1 << i)) {
