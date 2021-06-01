@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 	         "by Stephan Nolting\n"
 	         "Three arguments are required.\n"
 	         "1st: Option\n"
-	         " -app_bin : Generate application executable binary (with header!) \n"
+	         " -app_bin : Generate application executable binary (little-endian; with header!) \n"
 	         " -app_img : Generate application raw executable memory image (vhdl file, no header!)\n"
 	         " -bld_img : Generate bootloader raw executable memory image (vdhl file, no header!)\n"
 		       "2nd: Input file (raw binary image)\n"
@@ -139,30 +139,30 @@ int main(int argc, char *argv[]) {
       tmp |= (uint32_t)(buffer[2] << 16);
       tmp |= (uint32_t)(buffer[3] << 24);
       checksum += tmp; // checksum: sum complement
-      fputc(buffer[3], output);
-      fputc(buffer[2], output);
-      fputc(buffer[1], output);
       fputc(buffer[0], output);
+      fputc(buffer[1], output);
+      fputc(buffer[2], output);
+      fputc(buffer[3], output);
       size += 4;
     }
 
     rewind(output);
     // header: signature
-    fputc((unsigned char)((signature >> 24) & 0xFF), output);
-    fputc((unsigned char)((signature >> 16) & 0xFF), output);
-    fputc((unsigned char)((signature >>  8) & 0xFF), output);
     fputc((unsigned char)((signature >>  0) & 0xFF), output);
+    fputc((unsigned char)((signature >>  8) & 0xFF), output);
+    fputc((unsigned char)((signature >> 16) & 0xFF), output);
+    fputc((unsigned char)((signature >> 24) & 0xFF), output);
     // header: size
-    fputc((unsigned char)((size >> 24) & 0xFF), output);
-    fputc((unsigned char)((size >> 16) & 0xFF), output);
-    fputc((unsigned char)((size >>  8) & 0xFF), output);
     fputc((unsigned char)((size >>  0) & 0xFF), output);
+    fputc((unsigned char)((size >>  8) & 0xFF), output);
+    fputc((unsigned char)((size >> 16) & 0xFF), output);
+    fputc((unsigned char)((size >> 24) & 0xFF), output);
     // header: checksum (sum complement)
     checksum = (~checksum) + 1;
-    fputc((unsigned char)((checksum >> 24) & 0xFF), output);
-    fputc((unsigned char)((checksum >> 16) & 0xFF), output);
-    fputc((unsigned char)((checksum >>  8) & 0xFF), output);
     fputc((unsigned char)((checksum >>  0) & 0xFF), output);
+    fputc((unsigned char)((checksum >>  8) & 0xFF), output);
+    fputc((unsigned char)((checksum >> 16) & 0xFF), output);
+    fputc((unsigned char)((checksum >> 24) & 0xFF), output);
   }
 
 
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
   if (option == 2) {
 
 	// header
-    sprintf(tmp_string, "-- The NEORV32 Processor by Stephan Nolting, https://github.com/stnolting/neorv32\n"
+    sprintf(tmp_string, "-- The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32\n"
 	 					            "-- Auto-generated memory init file (for APPLICATION) from source file <%s/%s>\n"
 						            "\n"
 						            "library ieee;\n"
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
   if (option == 3) {
 
 	// header
-    sprintf(tmp_string, "-- The NEORV32 Processor by Stephan Nolting, https://github.com/stnolting/neorv32\n"
+    sprintf(tmp_string, "-- The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32\n"
 	 					            "-- Auto-generated memory init file (for BOOTLOADER) from source file <%s/%s>\n"
 						            "\n"
 						            "library ieee;\n"
