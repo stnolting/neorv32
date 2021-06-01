@@ -109,11 +109,11 @@ The CPU [passes](https://stnolting.github.io/neorv32/#_risc_v_compatibility) the
 #### Supported Traps (machine level)
 
 * **interrupts**
-  * _machine timer_ (`MTI`), via MTIME SoC module or via external signal
-  * _machine external_ (`MEI`), via external signal
-  * _machine software_ (`MSI`), via external signal
-  * 16 "fast interrupt" requests (_custom extension_)
-  * 1 non-maskable interrupt (_custom extension_)
+  * _machine timer_ `MTI`, via MTIME SoC module or via external signal
+  * _machine external_ `MEI`, via external signal
+  * _machine software_ `MSI`, via external signal
+  * 16 "fast interrupt" requests `FIRQ` (_custom extension_)
+  * 1 non-maskable interrupt `NMI` (_custom extension_)
 * **exceptions**
   * instruction: misaligned address, bus access fault, illegal instruction word
   * load/store: misaligned address, bus access fault
