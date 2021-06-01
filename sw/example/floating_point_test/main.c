@@ -123,18 +123,18 @@ int main() {
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
   // check if Zfinx extension is implemented at all
-  if (neorv32_check_zextension(CSR_MZEXT_ZFINX) == 0) {
+  if (neorv32_cpu_check_zext(CSR_MZEXT_ZFINX) == 0) {
     neorv32_uart_print("Error! <Zfinx> extension not synthesized!\n");
     return 0;
   }
 
 
 // Disable compilation by default
-#ifndef RUN_TEST
-  #warning Program HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_TEST clean_all exe<< to compile it.
+#ifndef RUN_CHECK
+  #warning Program HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.
 
   // inform the user if you are actually executing this
-  neorv32_uart_printf("ERROR! Program has not been compiled. Use >>make USER_FLAGS+=-DRUN_TEST clean_all exe<< to compile it.\n");
+  neorv32_uart_printf("ERROR! Program has not been compiled. Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.\n");
 
   return 0;
 #endif
