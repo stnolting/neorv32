@@ -27,6 +27,8 @@ wrapper" that provides a minimal CPU environment and an external bus interface (
 setup also allows to further use the default bootloader and software framework. From this base you
 can start building your own SoC. Of course you can also use the CPU in it’s true stand-alone mode.
 
+[NOTE]
+This documentation assumes the reader is familiar with the official RISC-V "User" and "Privileged Architecture" specifications.
 
 <<<
 // ####################################################################################################################

@@ -492,8 +492,8 @@ LED is permanently activated and the system must be reset manually.
 | **`ERROR_2`** | This indicates a checksum error. Something went wrong during the transfer of the program image (upload via UART or loading from the external SPI flash). If the error was caused by a UART upload, just try it again. When the error was generated during a flash access, the stored image might be corrupted.
 | **`ERROR_3`** | This error occurs if the attached SPI flash cannot be accessed. Make sure you have the right type of flash and that it is properly connected to the NEORV32 SPI port using chip select #0.
 | **`ERROR_4`** | The instruction memory is marked as read-only. Set the _MEM_INT_IMEM_ROM_ generic to _false_ to allow write accesses.
-| **`ERROR_5`** | This error pops up when an unexpected exception or interrupt was triggered. The cause of the trap (`mcause` CSR) is displayed for further investigation.
-| **`ERROR_?`** | Something really bad happened when there is no specific error code available...
+| **`ERROR_5`** | This error pops up when an unexpected exception or interrupt was triggered. The cause of the trap (`mcause` CSR) is displayed for further investigation. This might be caused if an ISA extension is used that has not been synthesized.
+| **`ERROR_?`** | Something really bad happened when there is no specific error code available :(
 |=======================
 
 

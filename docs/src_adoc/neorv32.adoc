@@ -33,5 +33,4 @@ The online documentation of the **software framework** is also available on GitH
 // ####################################################################################################################
 toc::[]
 
-
 include::content.adoc[]

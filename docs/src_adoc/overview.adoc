@@ -1,23 +1,29 @@
 :sectnums:
 == Overview
 
-The NEORV32footnote:[Pronounced "neo-R-V-thirty-two" or "neo-risc-five-thirty-two" in its long form.] Processor
-is a customizable microcontroller-like system on chip (SoC) that is based on the
-RISC-V NEORV32 CPU. The processor is intended as ready-to-go auxiliary processor within a larger SoC
-designs or as stand-alone custom microcontroller. Its top entity can be directly synthesized for any target
-technology without modifications.
+[quote]
+____
+RISC-V - Instruction Sets Want To Be Free!
+____
+
+The NEORV32footnote:[Pronounced "neo-R-V-thirty-two" or "neo-risc-five-thirty-two" in its long form.] is an open-source
+RISC-V compatible processor system that is intended as *ready-to-go* auxiliary processor within a larger SoC
+designs or as stand-alone custom / customizable microcontroller.
 
 The system is highly configurable and provides optional common peripherals like embedded memories,
 timers, serial interfaces, general purpose IO ports and an external bus interface to connect custom IP like
-memories, NoCs and peripherals.
+memories, NoCs and other peripherals. On-line and in-system debugging is supported by an OpenOCD/gdb
+compatible on-chip debugger accessible via JTAG.
 
 The software framework of the processor comes with application makefiles, software libraries for all CPU
 and processor features, a bootloader, a runtime environment and several example programs – including a port
 of the CoreMark MCU benchmark and the official RISC-V architecture test suite. RISC-V GCC is used as
-default toolchain (https://github.com/stnolting/riscv-gcc-prebuilt[a prebuilt toolchain is also available on GitHub]).
+default toolchain (https://github.com/stnolting/riscv-gcc-prebuilt[prebuilt toolchains are also provided]).
 
-The project's change log is available in the https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md[CHANGELOG.md]
-file in the root directory of the NEORV32 repository.
+[TIP]
+The project's change log is available in https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md[CHANGELOG.md]
+in the root directory of the NEORV32 repository. Please also check out the <<_legal>> section.
+
 
 
 :sectnums!:
