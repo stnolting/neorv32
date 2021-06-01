@@ -1390,7 +1390,7 @@ begin
         end if;
 
       -- machine trap setup --
-      when csr_mstatus_c | csr_misa_c | csr_mie_c | csr_mtvec_c | csr_mcounteren_c | csr_mstatush_c =>
+      when csr_mstatus_c | csr_misa_c | csr_mie_c | csr_mtvec_c | csr_mcounteren_c =>
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only, NOTE: MISA is read-only in the NEORV32 but we do not cause an exception here for compatibility
 
       -- machine trap handling --
@@ -2643,12 +2643,9 @@ begin
           -- --------------------------------------------------------------------
           when csr_mstatus_c => -- mstatus (r/w): machine status register
             csr.rdata(03) <= csr.mstatus_mie; -- MIE
-            csr.rdata(06) <= '1' and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- UBE: CPU/Processor is BIG-ENDIAN (in user-mode)
             csr.rdata(07) <= csr.mstatus_mpie; -- MPIE
             csr.rdata(11) <= csr.mstatus_mpp(0); -- MPP: machine previous privilege mode low
             csr.rdata(12) <= csr.mstatus_mpp(1); -- MPP: machine previous privilege mode high
-          when csr_mstatush_c => -- mstatush (r/-): machine status register - high part
-            csr.rdata(05) <= '1'; -- MBE: CPU/Processor is BIG-ENDIAN (in machine-mode)
           when csr_misa_c => -- misa (r/-): ISA and extensions
             csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
             csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);     -- B CPU extension
@@ -2939,7 +2936,7 @@ begin
           -- undefined/unavailable --
           -- --------------------------------------------------------------------
           when others =>
-            NULL; -- not implemented
+            NULL; -- not implemented, read as zero if read access is granted
 
         end case;
       end if;
