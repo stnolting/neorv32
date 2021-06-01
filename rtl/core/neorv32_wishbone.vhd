@@ -193,12 +193,12 @@ begin
           -- buffer all outgoing signals --
           ctrl.we  <= wren_i or ctrl.wr_req;
           ctrl.adr <= addr_i;
-          if (xbus_big_endian_c = true) then -- endianness conversion
-            ctrl.wdat <= data_i;
-            ctrl.sel  <= ben_i;
-          else
+          if (xbus_big_endian_c = true) then -- big-endian
             ctrl.wdat <= bswap32_f(data_i);
             ctrl.sel  <= bit_rev_f(ben_i);
+          else -- little-endian
+            ctrl.wdat <= data_i;
+            ctrl.sel  <= ben_i;
           end if;
           ctrl.src  <= src_i;
           ctrl.lock <= lock_i;
@@ -243,7 +243,7 @@ begin
   end process bus_arbiter;
 
   -- host access --
-  data_o <= ctrl.rdat when (xbus_big_endian_c = true) else bswap32_f(ctrl.rdat); -- endianness conversion
+  data_o <= ctrl.rdat when (xbus_big_endian_c = false) else bswap32_f(ctrl.rdat); -- endianness conversion
   ack_o  <= ctrl.ack;
   err_o  <= ctrl.err;
 

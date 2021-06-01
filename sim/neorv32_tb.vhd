@@ -155,7 +155,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   begin
     mem_v := (others => (others => '0'));
     for i in 0 to init'length-1 loop -- init only in range of source data array
-      if (xbus_big_endian_c = true) then
+      if (xbus_big_endian_c = false) then
         mem_v(i) := init(i);
       else
         mem_v(i) := bswap32_f(init(i));
