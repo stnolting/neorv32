@@ -15,7 +15,7 @@ image::riscv_logo.png[width=350,align=center]
 * Optional hardware performance monitors (HPM) for application benchmarking
 * Separated interfaces for instruction fetch and data access (merged into single bus via a bus switch for
 the NEORV32 processor)
-* BIG-endian byte order
+* little-endian byte order
 * Configurable hardware reset
 * No hardware support of unaligned data/instruction accesses – they will trigger an exception. If the C extension is enabled instructions
 can also be 16-bit aligned and a misaligned instruction address exception is not possible anymore
@@ -200,10 +200,6 @@ OK: 1/1 RISCV_TARGET=neorv32 RISCV_DEVICE=Zifencei XLEN=32
 
 This list shows the currently known issues regarding full RISC-V-compatibility. More specific information
 can be found in section <<_instruction_sets_and_extensions>>.
-
-[IMPORTANT]
-CPU and Processor are BIG-ENDIAN, but this should be no problem as the external memory bus
-interface provides big- and little-endian configurations. See section <<_processor_external_memory_interface_wishbone_axi4_lite>> for more information.
 
 [IMPORTANT]
 The `misa` CSR is read-only. It shows the synthesized CPU extensions. Hence, all implemented
