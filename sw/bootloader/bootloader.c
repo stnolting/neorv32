@@ -2,9 +2,10 @@
 // # << NEORV32 - Bootloader >>                                                                    #
 // # ********************************************************************************************* #
 // # In order to run the bootloader on *any* CPU configuration, the bootloader should be compiled  #
-// # unsing the base ISA (rv32i/rv32e) only.                                                       #
+// # using the base ISA (rv32i/rv32e) only.                                                        #
 // # ********************************************************************************************* #
 // # Boot from (internal) instruction memory, UART or SPI Flash.                                   #
+// # Bootloader executables (neorv32_exe.bin) are LITTLE-ENDIAN!                                   #
 // #                                                                                               #
 // # The bootloader uses the primary UART (UART0) for user console interface.                      #
 // #                                                                                               #
@@ -599,10 +600,10 @@ uint32_t get_exe_word(int src, uint32_t addr) {
   uint32_t i;
   for (i=0; i<4; i++) {
     if (src == EXE_STREAM_UART) {
-      data.uint8[3-i] = (uint8_t)neorv32_uart_getc();
+      data.uint8[i] = (uint8_t)neorv32_uart_getc();
     }
     else {
-      data.uint8[3-i] = spi_flash_read_byte(addr + i);
+      data.uint8[i] = spi_flash_read_byte(addr + i);
     }
   }
 
@@ -712,7 +713,7 @@ void spi_flash_write_word(uint32_t addr, uint32_t wdata) {
 
   int i;
   for (i=0; i<4; i++) {
-    spi_flash_write_byte(addr + i, data.uint8[3-i]);
+    spi_flash_write_byte(addr + i, data.uint8[i]);
   }
 }
 
