@@ -62,7 +62,6 @@ enum NEORV32_CSR_enum {
   CSR_MIE            = 0x304, /**< 0x304 - mie        (r/w): Machine interrupt-enable register */
   CSR_MTVEC          = 0x305, /**< 0x305 - mtvec      (r/w): Machine trap-handler base address (for ALL traps) */
   CSR_MCOUNTEREN     = 0x306, /**< 0x305 - mcounteren (r/w): Machine counter enable register (controls access rights from U-mode) */
-  CSR_MSTATUSH       = 0x310, /**< 0x310 - mstatush   (r/-): Machine status register - high word */
 
   CSR_MCOUNTINHIBIT  = 0x320, /**< 0x320 - mcountinhibit (r/w): Machine counter-inhibit register */
 
@@ -332,18 +331,9 @@ enum NEORV32_CSR_enum {
  **************************************************************************/
 enum NEORV32_CSR_MSTATUS_enum {
   CSR_MSTATUS_MIE   =  3, /**< CPU mstatus CSR  (3): MIE - Machine interrupt enable bit (r/w) */
-  CSR_MSTATUS_UBE   =  6, /**< CPU mstatus CSR  (6): UBE - User-mode endianness (little-endian=0, big-endian=1) (r/-) */
   CSR_MSTATUS_MPIE  =  7, /**< CPU mstatus CSR  (7): MPIE - Machine previous interrupt enable bit (r/w) */
   CSR_MSTATUS_MPP_L = 11, /**< CPU mstatus CSR (11): MPP_L - Machine previous privilege mode bit low (r/w) */
   CSR_MSTATUS_MPP_H = 12  /**< CPU mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
-};
-
-
-/**********************************************************************//**
- * CPU <b>mstatush</b> CSR (r/-): Machine status - high word (RISC-V spec.)
- **************************************************************************/
-enum NEORV32_CSR_MSTATUSH_enum {
-  CSR_MSTATUSH_MBE = 5 /**< CPU mstatush CSR (5): MBE - Machine-mode endianness (little-endian=0, big-endian=1) (r/-) */
 };
 
 
