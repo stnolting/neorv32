@@ -1,11 +1,10 @@
-:sectnums:
-== Let's Get It Started!
+Let's Get It Started!
 
 To make your NEORV32 project run, follow the guides from the upcoming sections. Follow these guides
 step by step and in the presented order.
 
 :sectnums:
-=== Toolchain Setup
+== Toolchain Setup
 
 There are two possibilities to get the actual RISC-V GCC toolchain:
 
@@ -24,7 +23,7 @@ emulation) on an architecture without these extensions!
 
 
 :sectnums:
-==== Building the Toolchain from Scratch
+=== Building the Toolchain from Scratch
 
 To build the toolchain by yourself you can follow the guide from the official https://github.com/riscv/riscvgnu-toolchain GitHub page.
 
@@ -64,7 +63,7 @@ After a while you will get `riscv32-unknown-elf-gcc` and all of its friends in y
 
 
 :sectnums:
-==== Downloading and Installing a Prebuilt Toolchain
+=== Downloading and Installing a Prebuilt Toolchain
 
 Alternatively, you can download a prebuilt toolchain.
 
@@ -89,7 +88,7 @@ CPU extensions that are not supported by the NEORV32 (like `D`).
 
 
 :sectnums:
-==== Installation
+=== Installation
 
 Now you have the binaries. The last step is to add them to your `PATH` environment variable (if you have not
 already done so). Make sure to add the binaries folder (`bin`) of your toolchain.
@@ -103,7 +102,7 @@ You should add this command to your `.bashrc` (if you are using bash) to automat
 toolchain at every console start.
 
 :sectnums:
-==== Testing the Installation
+=== Testing the Installation
 
 To make sure everything works fine, navigate to an example project in the NEORV32 example folder and
 execute the following command:
@@ -120,7 +119,7 @@ This will test all the tools required for the NEORV32. Everything is working fin
 <<<
 // ####################################################################################################################
 :sectnums:
-=== General Hardware Setup
+== General Hardware Setup
 
 The following steps are required to generate a bitstream for your FPGA board. If you want to run the
 NEORV32 processor in simulation only, the following steps might also apply.
@@ -234,7 +233,7 @@ flashing now and you should receive the bootloader start prompt in your UART con
 <<<
 // ####################################################################################################################
 :sectnums:
-=== General Software Framework Setup
+== General Software Framework Setup
 
 While your synthesis tool is crunching the NEORV32 HDL files, it is time to configure the project's software
 framework for your processor hardware setup.
@@ -287,7 +286,7 @@ _MEM_INT_DMEM_SIZE_ generic).
 <<<
 // ####################################################################################################################
 :sectnums:
-=== Application Program Compilation
+== Application Program Compilation
 
 [start=1]
 . Open a terminal console and navigate to one of the project's example programs. For instance navigate to the
@@ -328,7 +327,7 @@ shows the actual assembly code of the complete application.
 <<<
 // ####################################################################################################################
 :sectnums:
-=== Uploading and Starting of a Binary Executable Image via UART
+== Uploading and Starting of a Binary Executable Image via UART
 
 You have just created the executable. Now it is time to upload it to the processor. There are basically two
 options to do so.
@@ -455,7 +454,7 @@ Blinking LED demo program
 <<<
 // ####################################################################################################################
 :sectnums:
-=== Setup of a New Application Program Project
+== Setup of a New Application Program Project
 
 Done with all the introduction tutorials and those example programs? Then it is time to start your own
 application project!
@@ -510,7 +509,7 @@ All the assignments made to the makefile variable can also be done "inline" when
 <<<
 // ####################################################################################################################
 :sectnums:
-=== Enabling RISC-V CPU Extensions
+== Enabling RISC-V CPU Extensions
 
 Whenever you enable/disable a RISC-V CPU extensions via the according _CPU_EXTENSION_RISCV_x_ generic, you need to
 adapt the toolchain configuration so the compiler can actually generate according code for it.
@@ -548,7 +547,7 @@ The RISC-V ISA string (for _MARCH_) follows a certain canonical structure:
 <<<
 // ####################################################################################################################
 :sectnums:
-=== Building a Non-Volatile Application without External Boot Memory
+== Building a Non-Volatile Application without External Boot Memory
 
 The primary purpose of the bootloader is to allow an easy and fast update of the current application. In particular, this is very handy
 during the development stage of a project as you can upload modified programs at any time via the UART.
@@ -616,7 +615,7 @@ in the processor's IMEM and is directly executed after reset.
 <<<
 // ####################################################################################################################
 :sectnums:
-=== Customizing the Internal Bootloader
+== Customizing the Internal Bootloader
 
 The bootloader provides several configuration options to customize it for your specific applications. The
 most important user-defined configuration options are available as C `#defines` right at the beginning of the
@@ -714,10 +713,10 @@ minimal `rv32i` ISA only (`rv32e` would be even better).
 <<<
 // ####################################################################################################################
 :sectnums:
-=== Programming an External SPI Flash via the Bootloader
+== Programming an External SPI Flash via the Bootloader
 
 As described in section <<_external_spi_flash_for_booting>> the bootloader provides an option to store an application image to an external SPI flash
-and to read this image back for booting. These steps show how to store a 
+and to read this image back for booting. These steps show how to store a
 
 [start=1]
 . At first, reset the NEORV32 processor and wait until the bootloader start screen appears in your terminal program.
@@ -768,7 +767,7 @@ any user interaction.
 <<<
 // ####################################################################################################################
 :sectnums:
-=== Simulating the Processor
+== Simulating the Processor
 
 **Testbench**
 
@@ -875,7 +874,7 @@ neorv32/sim$ sh ghdl_sim.sh --stop-time=4ms
 <<<
 // ####################################################################################################################
 :sectnums:
-=== Building the Software Framework Documentation
+== Building the Software Framework Documentation
 
 All core library software sources (libraries `sw/lib`, example programs `sw/example`, ...) are highly documented using _doxygen_.
 To build the documentation by yourself navigate to the project's `doc` folder and run _doxygen_:
@@ -896,7 +895,7 @@ The documentation is automatically built and deployed to GitHub pages by a CI wo
 
 // ####################################################################################################################
 :sectnums:
-=== Building the Project Documentation
+== Building the Project Documentation
 
 This data sheet is written using `asciidoc`. The source files are locates in `docs/src_adoc`.
 a makefiles in project's root directory is provided to either build a single pdf file
@@ -925,7 +924,7 @@ a _docker container_ via `make container`.
 <<<
 // ####################################################################################################################
 :sectnums:
-=== FreeRTOS Support
+== FreeRTOS Support
 
 A NEORV32-specific port and a simple demo for FreeRTOS (https://github.com/FreeRTOS/FreeRTOS) are
 available in the `sw/example/demo_freeRTOS` folder.
@@ -936,7 +935,7 @@ See the according documentation (`sw/example/demo_freeRTOS/README.md`) for more 
 
 // ####################################################################################################################
 :sectnums:
-=== RISC-V Architecture Test Framework
+== RISC-V Architecture Test Framework
 
 The NEORV32 Processor passes the according tests provided by the official RISC-V Architecture Test Suite
 (V2.0+), which is available online at GitHub: https://github.com/riscv/riscv-arch-test
@@ -951,7 +950,7 @@ file for more information on how to run the tests and how testing is conducted i
 <<<
 // ####################################################################################################################
 :sectnums:
-=== Debugging using the On-Chip Debugger
+== Debugging using the On-Chip Debugger
 
 The NEORV32 <<_on_chip_debugger_ocd>> allows _online_ in-system debugging via an external JTAG access port from a
 host machine. The general flow is independent of the host machine's operating system. However, this tutorial uses
@@ -964,7 +963,7 @@ processor setup _with_ internal instruction memory (IMEM) make sure it is implem
 
 
 :sectnums:
-==== Hardware Requirements
+=== Hardware Requirements
 
 Make sure the on-chip debugger of your NEORV32 setups is implemented (_ON_CHIP_DEBUGGER_EN_ generic = true).
 Connect a JTAG adapter to the NEORV32 `jtag_*` interface signals. If you do not have a full-scale JTAG adapter, you can
@@ -988,7 +987,7 @@ If TRST is not used make sure to pull the signal _high_.
 
 
 :sectnums:
-==== OpenOCD
+=== OpenOCD
 
 The NEORV32 on-chip debugger can be accessed using the https://github.com/riscv/riscv-openocd[RISC-V port of OpenOCD].
 Prebuilt binaries can be obtained - for example - from https://www.sifive.com/software[SiFive]. A pre-configured
@@ -1030,7 +1029,7 @@ the `misa` CSRs). Now you can use `gdb` to connect via port 3333.
 
 
 :sectnums:
-==== Debugging with GDB
+=== Debugging with GDB
 
 This guide uses the simple "blink example" from `sw/example/blink_led` as simplified test application to
 show the basics of in-system debugging.
@@ -1112,7 +1111,7 @@ and halting the CPU right before executing the `blink_led` application.
 
 
 :sectnums:
-===== Breakpoint Example
+==== Breakpoint Example
 
 The following steps are just a small showcase that illustrate a simple debugging scheme.
 
@@ -1133,7 +1132,7 @@ of the counter.
  690:	00008067          	ret
 --------------------------
 
-The very last instruction of the `neorv32_cpu_delay_ms` function is `ret` (= return) 
+The very last instruction of the `neorv32_cpu_delay_ms` function is `ret` (= return)
 at hexadecimal `690` in this example. Add this address as _breakpoint_ to GDB.
 
 [NOTE]
@@ -1166,3 +1165,4 @@ Breakpoint 1, 0x00000690 in neorv32_cpu_delay_ms ()
 Continuing.
 --------------------------
 
+include::../legal.adoc[]

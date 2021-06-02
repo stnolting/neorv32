@@ -18,10 +18,9 @@ sw/image_gen/image_gen.exe
 ~*
 
 # no generated documentation stuff
-docs/doxygen_build
-docs/NEORV32.pdf
-/docs/.asciidoctor
-/docs/index.html
+/docs/doxygen_build/
+/docs/.asciidoctor/
+/docs/public/
 
 # no compiled ghdl stuff
 *.cf
