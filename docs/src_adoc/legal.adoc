@@ -85,9 +85,17 @@ infringement of the law becomes known to us, we will immediately remove the link
 
 If you are using the NEORV32 or parts of the project in some kind of publication, please cite it as follows:
 
-[quote]
+.BibTeX
+[source]
 ----
-S. Nolting, "The NEORV32 RISC-V Processor", github.com/stnolting/neorv32
+@misc{nolting20,
+  author       = {Nolting, S.},
+  title        = {The NEORV32 RISC-V Processor},
+  year         = {2020},
+  publisher    = {GitHub},
+  journal      = {GitHub repository},
+  howpublished = {\url{https://github.com/stnolting/neorv32}}
+}
 ----
 
 :sectnums!:
