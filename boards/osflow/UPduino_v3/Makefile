@@ -1,8 +1,8 @@
 NEORV32_PKG := ../../../rtl/core/neorv32_package.vhd
 
 NEORV32_SRC := \
-  neorv32_dmem.ice40up_spram.vhd \
-  neorv32_imem.ice40up_spram.vhd \
+  ../devices/ice40/neorv32_dmem.ice40up_spram.vhd \
+  ../devices/ice40/neorv32_imem.ice40up_spram.vhd \
   ../../../rtl/core/neorv32_bootloader_image.vhd \
   ../../../rtl/core/neorv32_application_image.vhd \
   ../../../rtl/core/neorv32_boot_rom.vhd \
@@ -38,7 +38,7 @@ UPDUINO_SRC := \
   neorv32_upduino_v3_top.vhd
 
 ICE40_SRC := \
-  sb_ice40_components.vhd
+  ../devices/ice40/sb_ice40_components.vhd
 
 DESIGN_NAME := neorv32_upduino_v3
 IMPL_NAME := ${DESIGN_NAME}_impl_1
