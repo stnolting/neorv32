@@ -170,8 +170,8 @@ instruction exception.
 
 ### Available ISA Extensions
 
-Currently, the following _optional_ RISC-V-compatible ISA extensions are implemented (note that
-the `X` extension is always enabled):
+Currently, the following _optional_ RISC-V-compatible ISA extensions are implemented (linked to the according
+documentation section). Note that the `X` extension is always enabled.
 
 **RV32
 [[`E`](https://stnolting.github.io/neorv32/#_e_embedded_cpu)/
