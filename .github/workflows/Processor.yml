@@ -44,7 +44,7 @@ jobs:
       - name: '🔧 Setup GHDL Simulator'
         uses: ghdl/setup-ghdl-ci@nightly
         with:
-          backend: gcc
+          backend: llvm
 
       - name: '⚙️ Run Software Framework Tests'
         run: ./sw/example/processor_check/check.sh
