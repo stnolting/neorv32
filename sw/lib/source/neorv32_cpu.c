@@ -47,7 +47,7 @@
  * Unavailable extensions warning.
  **************************************************************************/
 #if defined __riscv_f || (__riscv_flen == 32)
-  #warning Single-precision floating-point extension <F/Zfinx> is WORK-IN-PROGRESS and NOT FULLY OPERATIONAL yet!
+  #warning Single-precision floating-point extension <F/Zfinx> is WORK-IN-PROGRESS and there is NO NATIVE SUPPORT BY THE COMPILER yet!
 #endif
 
 #if defined __riscv_d || (__riscv_flen == 64)
