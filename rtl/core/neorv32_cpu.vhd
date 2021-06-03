@@ -80,7 +80,7 @@ entity neorv32_cpu is
     PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 : natural := 0;     -- number of implemented HPM counters (0..29)
-    HPM_CNT_WIDTH                : natural := 40     -- total size of HPM counters (1..64)
+    HPM_CNT_WIDTH                : natural := 40     -- total size of HPM counters (0..64)
   );
   port (
     -- global control --
@@ -130,30 +130,30 @@ end neorv32_cpu;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- local signals --
-  signal ctrl        : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
-  signal comparator  : std_ulogic_vector(1 downto 0); -- comparator result
-  signal imm         : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
-  signal instr       : std_ulogic_vector(data_width_c-1 downto 0); -- new instruction
-  signal rs1, rs2    : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
-  signal alu_res     : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
-  signal alu_add     : std_ulogic_vector(data_width_c-1 downto 0); -- alu address result
-  signal mem_rdata   : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
-  signal alu_wait    : std_ulogic; -- alu is busy due to iterative unit
-  signal bus_i_wait  : std_ulogic; -- wait for current bus instruction fetch
-  signal bus_d_wait  : std_ulogic; -- wait for current bus data access
-  signal csr_rdata   : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
-  signal mar         : std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
-  signal ma_instr    : std_ulogic; -- misaligned instruction address
-  signal ma_load     : std_ulogic; -- misaligned load data address
-  signal ma_store    : std_ulogic; -- misaligned store data address
-  signal excl_state  : std_ulogic; -- atomic/exclusive access lock status
-  signal be_instr    : std_ulogic; -- bus error on instruction access
-  signal be_load     : std_ulogic; -- bus error on load data access
-  signal be_store    : std_ulogic; -- bus error on store data access
-  signal fetch_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
-  signal curr_pc     : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
-  signal fpu_rm      : std_ulogic_vector(2 downto 0); -- FPU rounding mode
-  signal fpu_flags   : std_ulogic_vector(4 downto 0); -- FPU exception flags
+  signal ctrl       : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+  signal comparator : std_ulogic_vector(1 downto 0); -- comparator result
+  signal imm        : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
+  signal instr      : std_ulogic_vector(data_width_c-1 downto 0); -- new instruction
+  signal rs1, rs2   : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
+  signal alu_res    : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
+  signal alu_add    : std_ulogic_vector(data_width_c-1 downto 0); -- alu address result
+  signal mem_rdata  : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
+  signal alu_wait   : std_ulogic; -- alu is busy due to iterative unit
+  signal bus_i_wait : std_ulogic; -- wait for current bus instruction fetch
+  signal bus_d_wait : std_ulogic; -- wait for current bus data access
+  signal csr_rdata  : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
+  signal mar        : std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
+  signal ma_instr   : std_ulogic; -- misaligned instruction address
+  signal ma_load    : std_ulogic; -- misaligned load data address
+  signal ma_store   : std_ulogic; -- misaligned store data address
+  signal excl_state : std_ulogic; -- atomic/exclusive access lock status
+  signal be_instr   : std_ulogic; -- bus error on instruction access
+  signal be_load    : std_ulogic; -- bus error on load data access
+  signal be_store   : std_ulogic; -- bus error on store data access
+  signal fetch_pc   : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
+  signal curr_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
+  signal fpu_rm     : std_ulogic_vector(2 downto 0); -- FPU rounding mode
+  signal fpu_flags  : std_ulogic_vector(4 downto 0); -- FPU exception flags
 
   -- co-processor interface --
   signal cp_start  : std_ulogic_vector(7 downto 0); -- trigger co-processor i
@@ -207,7 +207,7 @@ begin
 
   -- HPM counters check --
   assert not (HPM_NUM_CNTS > 29) report "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..29)." severity error;
-  assert not ((HPM_CNT_WIDTH < 1) or (HPM_CNT_WIDTH > 64)) report "NEORV32 CPU CONFIG ERROR! HPM counter width <HPM_CNT_WIDTH> has to be 1..64 bit." severity error; 
+  assert not ((HPM_CNT_WIDTH < 0) or (HPM_CNT_WIDTH > 64)) report "NEORV32 CPU CONFIG ERROR! HPM counter width <HPM_CNT_WIDTH> has to be 0..64 bit." severity error; 
   -- HPM counters notifier --
   assert not (HPM_NUM_CNTS > 0) report "NEORV32 CPU CONFIG NOTE: Implementing " & integer'image(HPM_NUM_CNTS) & " HPM counters (each " & integer'image(HPM_CNT_WIDTH) & "-bit wide)." severity note;
   -- HPM CNT requires Zicsr extension --

@@ -69,7 +69,7 @@ entity neorv32_cpu_control is
     PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 : natural := 0;     -- number of implemented HPM counters (0..29)
-    HPM_CNT_WIDTH                : natural := 40     -- total size of HPM counters (1..64)
+    HPM_CNT_WIDTH                : natural := 40     -- total size of HPM counters (0..64)
   );
   port (
     -- global control --
@@ -320,11 +320,14 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mscratch          : std_ulogic_vector(data_width_c-1 downto 0); -- mscratch: scratch register (R/W)
     --
     mcycle            : std_ulogic_vector(32 downto 0); -- mcycle (R/W), plus carry bit
-    minstret          : std_ulogic_vector(32 downto 0); -- minstret (R/W), plus carry bit
+    mcycle_msb        : std_ulogic; -- counter low-to-high-word overflow
     mcycleh           : std_ulogic_vector(31 downto 0); -- mcycleh (R/W)
+    minstret          : std_ulogic_vector(32 downto 0); -- minstret (R/W), plus carry bit
+    minstret_msb      : std_ulogic; -- counter low-to-high-word overflow
     minstreth         : std_ulogic_vector(31 downto 0); -- minstreth (R/W)
     --
     mhpmcounter       : mhpmcnt_t; -- mhpmcounter* (R/W), plus carry bit
+    mhpmcounter_msb   : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0); -- counter low-to-high-word overflow
     mhpmcounterh      : mhpmcnth_t; -- mhpmcounter*h (R/W)
     mhpmcounter_rd    : mhpmcnt_rd_t; -- mhpmcounter* (R/W): actual read data
     mhpmcounterh_rd   : mhpmcnth_rd_t; -- mhpmcounter*h (R/W): actual read data
@@ -365,11 +368,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     ext_halt_req : std_ulogic_vector(1 downto 0); -- rising edge detector for external halt request
   end record;
   signal debug_ctrl : debug_ctrl_t;
-
-  -- counter low-to-high-word carry --
-  signal mcycle_msb      : std_ulogic;
-  signal minstret_msb    : std_ulogic;
-  signal mhpmcounter_msb : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0);
 
   -- (hpm) counter events --
   signal cnt_event, cnt_event_nxt : std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
@@ -1389,26 +1387,13 @@ begin
           NULL;
         end if;
 
-      -- machine trap setup --
-      when csr_mstatus_c | csr_misa_c | csr_mie_c | csr_mtvec_c | csr_mcounteren_c =>
+      -- machine trap setup & handling --
+      when csr_mstatus_c | csr_misa_c | csr_mie_c | csr_mtvec_c | csr_mcounteren_c | csr_mscratch_c | csr_mepc_c | csr_mcause_c =>
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only, NOTE: MISA is read-only in the NEORV32 but we do not cause an exception here for compatibility
-
-      -- machine trap handling --
-      when csr_mscratch_c | csr_mepc_c | csr_mcause_c  =>
-        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
       when csr_mip_c | csr_mtval_c => -- NOTE: MIP and MTVAL are read-only in the NEORV32!
         csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
 
-      -- physical memory protection - configuration --
-      when csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c  | csr_pmpcfg3_c  | csr_pmpcfg4_c  | csr_pmpcfg5_c  | csr_pmpcfg6_c  | csr_pmpcfg7_c |
-           csr_pmpcfg8_c | csr_pmpcfg9_c | csr_pmpcfg10_c | csr_pmpcfg11_c | csr_pmpcfg12_c | csr_pmpcfg13_c | csr_pmpcfg14_c | csr_pmpcfg15_c =>
-        if (PMP_NUM_REGIONS > 0) then
-          csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-        else
-          NULL;
-        end if;
-
-      -- physical memory protection - address --
+      -- physical memory protection - address & configuration --
       when csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  | csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  |
            csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c | csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c |
            csr_pmpaddr16_c | csr_pmpaddr17_c | csr_pmpaddr18_c | csr_pmpaddr19_c | csr_pmpaddr20_c | csr_pmpaddr21_c | csr_pmpaddr22_c | csr_pmpaddr23_c |
@@ -1416,7 +1401,9 @@ begin
            csr_pmpaddr32_c | csr_pmpaddr33_c | csr_pmpaddr34_c | csr_pmpaddr35_c | csr_pmpaddr36_c | csr_pmpaddr37_c | csr_pmpaddr38_c | csr_pmpaddr39_c |
            csr_pmpaddr40_c | csr_pmpaddr41_c | csr_pmpaddr42_c | csr_pmpaddr43_c | csr_pmpaddr44_c | csr_pmpaddr45_c | csr_pmpaddr46_c | csr_pmpaddr47_c |
            csr_pmpaddr48_c | csr_pmpaddr49_c | csr_pmpaddr50_c | csr_pmpaddr51_c | csr_pmpaddr52_c | csr_pmpaddr53_c | csr_pmpaddr54_c | csr_pmpaddr55_c |
-           csr_pmpaddr56_c | csr_pmpaddr57_c | csr_pmpaddr58_c | csr_pmpaddr59_c | csr_pmpaddr60_c | csr_pmpaddr61_c | csr_pmpaddr62_c | csr_pmpaddr63_c =>
+           csr_pmpaddr56_c | csr_pmpaddr57_c | csr_pmpaddr58_c | csr_pmpaddr59_c | csr_pmpaddr60_c | csr_pmpaddr61_c | csr_pmpaddr62_c | csr_pmpaddr63_c |
+           csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c  | csr_pmpcfg3_c  | csr_pmpcfg4_c  | csr_pmpcfg5_c  | csr_pmpcfg6_c  | csr_pmpcfg7_c |
+           csr_pmpcfg8_c | csr_pmpcfg9_c | csr_pmpcfg10_c | csr_pmpcfg11_c | csr_pmpcfg12_c | csr_pmpcfg13_c | csr_pmpcfg14_c | csr_pmpcfg15_c =>
         if (PMP_NUM_REGIONS > 0) then
           csr_acc_valid <= csr.priv_m_mode; -- M-mode only
         else
@@ -1496,7 +1483,7 @@ begin
       -- debug mode CSRs --
       when csr_dcsr_c | csr_dpc_c | csr_dscratch0_c =>
         if (CPU_EXTENSION_RISCV_DEBUG = true) then
-          csr_acc_valid <= debug_ctrl.running; -- DEBUG-mode only
+          csr_acc_valid <= debug_ctrl.running; -- access in only in debug-mode
         else
           NULL;
         end if;
@@ -2465,95 +2452,99 @@ begin
   begin
     -- Counter CSRs (each counter is split into two 32-bit counters - coupled via an MSB overflow detector)
     if (rstn_i = '0') then
-      csr.mcycle       <= (others => def_rst_val_c);
-      mcycle_msb       <= def_rst_val_c;
-      csr.mcycleh      <= (others => def_rst_val_c);
-      csr.minstret     <= (others => def_rst_val_c);
-      minstret_msb     <= def_rst_val_c;
-      csr.minstreth    <= (others => def_rst_val_c);
-      csr.mhpmcounter  <= (others => (others => def_rst_val_c));
-      mhpmcounter_msb  <= (others => def_rst_val_c);
-      csr.mhpmcounterh <= (others => (others => def_rst_val_c));
+      csr.mcycle          <= (others => def_rst_val_c);
+      csr.mcycle_msb      <= def_rst_val_c;
+      csr.mcycleh         <= (others => def_rst_val_c);
+      csr.minstret        <= (others => def_rst_val_c);
+      csr.minstret_msb    <= def_rst_val_c;
+      csr.minstreth       <= (others => def_rst_val_c);
+      csr.mhpmcounter     <= (others => (others => def_rst_val_c));
+      csr.mhpmcounter_msb <= (others => def_rst_val_c);
+      csr.mhpmcounterh    <= (others => (others => def_rst_val_c));
     elsif rising_edge(clk_i) then
 
       -- [m]cycle --
-      csr.mcycle(csr.mcycle'left downto cpu_cnt_lo_width_c+1) <= (others => '0'); -- set unused bits to zero
-      if (cpu_cnt_lo_width_c = 0) then
-        csr.mcycle <= (others => '0');
-        mcycle_msb <= '0';
-      elsif (csr.we = '1') and (csr.addr = csr_mcycle_c) then -- write access
-        csr.mcycle(cpu_cnt_lo_width_c downto 0) <= '0' & csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
-        mcycle_msb <= '0';
-      elsif (csr.mcountinhibit_cy = '0') and (cnt_event(hpmcnt_event_cy_c) = '1') then -- non-inhibited automatic update
-        csr.mcycle(cpu_cnt_lo_width_c downto 0) <= std_ulogic_vector(unsigned(csr.mcycle(cpu_cnt_lo_width_c downto 0)) + 1);
-        mcycle_msb <= csr.mcycle(cpu_cnt_lo_width_c);
+      if (cpu_cnt_lo_width_c > 0) then
+        csr.mcycle_msb <= csr.mcycle(csr.mcycle'left);
+        if (csr.we = '1') and (csr.addr = csr_mcycle_c) then -- write access
+          csr.mcycle(cpu_cnt_lo_width_c downto 0) <= '0' & csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
+        elsif (csr.mcountinhibit_cy = '0') and (cnt_event(hpmcnt_event_cy_c) = '1') then -- non-inhibited automatic update
+          csr.mcycle(cpu_cnt_lo_width_c downto 0) <= std_ulogic_vector(unsigned('0' & csr.mcycle(cpu_cnt_lo_width_c-1 downto 0)) + 1);
+        end if;
+      else
+        csr.mcycle     <= (others => '-');
+        csr.mcycle_msb <= '-';
       end if;
 
       -- [m]cycleh --
-      csr.mcycleh(csr.mcycleh'left downto cpu_cnt_hi_width_c+1) <= (others => '0'); -- set unused bits to zero
-      if (cpu_cnt_hi_width_c = 0) then
-        csr.mcycleh <= (others => '0');
-      elsif (csr.we = '1') and (csr.addr = csr_mcycleh_c) then -- write access
-        csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0) <= csr.wdata(cpu_cnt_hi_width_c-1 downto 0);
-      elsif ((mcycle_msb xor csr.mcycle(cpu_cnt_lo_width_c)) = '1') then -- automatic update (continued)
-        csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0)) + 1);
+      if (cpu_cnt_hi_width_c > 0) then
+        if (csr.we = '1') and (csr.addr = csr_mcycleh_c) then -- write access
+          csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0) <= csr.wdata(cpu_cnt_hi_width_c-1 downto 0);
+        elsif (csr.mcycle_msb = '0') and (csr.mcycle(csr.mcycle'left) = '1') then -- automatic update (continued)
+          csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0)) + 1);
+        end if;
+      else
+        csr.mcycleh <= (others => '-');
       end if;
 
+
       -- [m]instret --
-      csr.minstret(csr.minstret'left downto cpu_cnt_lo_width_c+1) <= (others => '0'); -- set unused bits to zero
-      if (cpu_cnt_lo_width_c = 0) then
-        csr.minstret <= (others => '0');
-        minstret_msb <= '0';
-      elsif (csr.we = '1') and (csr.addr = csr_minstret_c) then -- write access
-        csr.minstret(cpu_cnt_lo_width_c downto 0) <= '0' & csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
-        minstret_msb <= '0';
-      elsif (csr.mcountinhibit_ir = '0') and (cnt_event(hpmcnt_event_ir_c) = '1') then -- non-inhibited automatic update
-        csr.minstret(cpu_cnt_lo_width_c downto 0) <= std_ulogic_vector(unsigned(csr.minstret(cpu_cnt_lo_width_c downto 0)) + 1);
-        minstret_msb <= csr.minstret(csr.minstret'left);
+      if (cpu_cnt_lo_width_c > 0) then
+        csr.minstret_msb <= csr.minstret(csr.minstret'left);
+        if (csr.we = '1') and (csr.addr = csr_minstret_c) then -- write access
+          csr.minstret(cpu_cnt_lo_width_c downto 0) <= '0' & csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
+        elsif (csr.mcountinhibit_ir = '0') and (cnt_event(hpmcnt_event_ir_c) = '1') then -- non-inhibited automatic update
+          csr.minstret(cpu_cnt_lo_width_c downto 0) <= std_ulogic_vector(unsigned('0' & csr.minstret(cpu_cnt_lo_width_c-1 downto 0)) + 1);
+        end if;
+      else
+        csr.minstret     <= (others => '-');
+        csr.minstret_msb <= '-';
       end if;
 
       -- [m]instreth --
-      csr.minstreth(csr.minstreth'left downto cpu_cnt_hi_width_c+1) <= (others => '0'); -- set unsued bits to zero
       if (cpu_cnt_hi_width_c = 0) then
-        csr.minstreth <= (others => '0');
-      elsif (csr.we = '1') and (csr.addr = csr_minstreth_c) then -- write access
-        csr.minstreth(cpu_cnt_hi_width_c-1 downto 0) <= csr.wdata(cpu_cnt_hi_width_c-1 downto 0);
-      elsif ((minstret_msb xor csr.minstret(cpu_cnt_lo_width_c)) = '1') then -- automatic update (continued)
-        csr.minstreth(cpu_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.minstreth(cpu_cnt_hi_width_c-1 downto 0)) + 1);
+        if (csr.we = '1') and (csr.addr = csr_minstreth_c) then -- write access
+          csr.minstreth(cpu_cnt_hi_width_c-1 downto 0) <= csr.wdata(cpu_cnt_hi_width_c-1 downto 0);
+        elsif (csr.minstret_msb = '0') and (csr.minstret(csr.minstret'left) = '1') then -- automatic update (continued)
+          csr.minstreth(cpu_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.minstreth(cpu_cnt_hi_width_c-1 downto 0)) + 1);
+        end if;
+      else
+        csr.minstreth <= (others => '-');
       end if;
+
 
       -- [machine] hardware performance monitors (counters) --
       for i in 0 to HPM_NUM_CNTS-1 loop
-        csr.mhpmcounter(i)(csr.mhpmcounter(i)'left downto hpm_cnt_lo_width_c+1) <= (others => '0'); -- set unused bits to zero
-        if (hpm_cnt_lo_width_c = 0) then
-          csr.mhpmcounter(i) <= (others => '0');
-          mhpmcounter_msb(i) <= '0';
-        else
-          -- [m]hpmcounter* --
+
+        -- [m]hpmcounter* --
+        if (hpm_cnt_lo_width_c > 0) then
+          csr.mhpmcounter_msb(i) <= csr.mhpmcounter(i)(csr.mhpmcounter(i)'left);
           if (csr.we = '1') and (csr.addr = std_ulogic_vector(unsigned(csr_mhpmcounter3_c) + i)) then -- write access
             csr.mhpmcounter(i)(hpm_cnt_lo_width_c downto 0) <= '0' & csr.wdata(hpm_cnt_lo_width_c-1 downto 0);
-            mhpmcounter_msb(i) <= '0';
           elsif (csr.mcountinhibit_hpm(i) = '0') and (hpmcnt_trigger(i) = '1') then -- non-inhibited automatic update
-            csr.mhpmcounter(i)(hpm_cnt_lo_width_c downto 0) <= std_ulogic_vector(unsigned(csr.mhpmcounter(i)(hpm_cnt_lo_width_c downto 0)) + 1);
-            mhpmcounter_msb(i) <= csr.mhpmcounter(i)(csr.mhpmcounter(i)'left);
+            csr.mhpmcounter(i)(hpm_cnt_lo_width_c downto 0) <= std_ulogic_vector(unsigned('0' & csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0)) + 1);
           end if;
+        else
+          csr.mhpmcounter(i)     <= (others => '-');
+          csr.mhpmcounter_msb(i) <= '-';
         end if;
 
         -- [m]hpmcounter*h --
-        csr.mhpmcounterh(i)(csr.mhpmcounterh(i)'left downto hpm_cnt_hi_width_c+1) <= (others => '0'); -- set unused bits to zero
-        if (hpm_cnt_hi_width_c = 0) then
-          csr.mhpmcounterh(i) <= (others => '0');
-        else
+        if (hpm_cnt_hi_width_c > 0) then
           if (csr.we = '1') and (csr.addr = std_ulogic_vector(unsigned(csr_mhpmcounter3h_c) + i)) then -- write access
             csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0) <= csr.wdata(hpm_cnt_hi_width_c-1 downto 0);
-          elsif ((mhpmcounter_msb(i) xor csr.mhpmcounter(i)(hpm_cnt_lo_width_c)) = '1') then -- automatic update (continued)
+          elsif (csr.mhpmcounter_msb(i) = '0') and (csr.mhpmcounter(i)(csr.mhpmcounter(i)'left) = '1') then -- automatic update (continued)
             csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0)) + 1);
           end if;
+        else
+          csr.mhpmcounterh(i) <= (others => '-');
         end if;
+
       end loop; -- i
 
     end if;
   end process csr_counters;
+
 
   -- hpm counters read dummy --
   hpm_rd_dummy: process(csr)
