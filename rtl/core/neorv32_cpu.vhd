@@ -61,7 +61,6 @@ entity neorv32_cpu is
     CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
-    CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
@@ -189,9 +188,6 @@ begin
   -- A extension - only lr.w and sc.w are supported --
   assert not (CPU_EXTENSION_RISCV_A = true) report "NEORV32 CPU CONFIG NOTE. Atomic operations extension (A) only supports <lr.w> and <sc.w> instructions." severity note;
 
-  -- FIXME: Bit manipulation warning --
-  assert not (CPU_EXTENSION_RISCV_B = true) report "NEORV32 CPU CONFIG WARNING! Bit manipulation extension (B) is still EXPERIMENTAL (and spec. is not ratified yet)." severity warning;
-
   -- Co-processor timeout counter (for debugging only) --
   assert not (cp_timeout_en_c = true) report "NEORV32 CPU CONFIG WARNING! Co-processor timeout counter enabled. This should be used for debugging/simulation only." severity warning;
 
@@ -230,7 +226,6 @@ begin
     CPU_DEBUG_ADDR               => CPU_DEBUG_ADDR,               -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
-    CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
@@ -388,32 +383,10 @@ begin
   end generate;
 
 
-  -- Co-Processor 2: Bit Manipulation ('B' Extension) ---------------------------------------
+  -- Co-Processor 2: reseverd ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_bitmanip_inst_true:
-  if (CPU_EXTENSION_RISCV_B = true) generate
-    neorv32_cpu_cp_bitmanip_inst: neorv32_cpu_cp_bitmanip
-    port map (
-      -- global control --
-      clk_i   => clk_i,           -- global clock, rising edge
-      rstn_i  => rstn_i,          -- global reset, low-active, async
-      ctrl_i  => ctrl,            -- main control bus
-      start_i => cp_start(2),     -- trigger operation
-      -- data input --
-      cmp_i   => comparator,      -- comparator status
-      rs1_i   => rs1,             -- rf source 1
-      rs2_i   => rs2,             -- rf source 2
-      -- result and status --
-      res_o   => cp_result(2),    -- operation result
-      valid_o => cp_valid(2)      -- data output valid
-    );
-  end generate;
-
-  neorv32_cpu_cp_bitmanip_inst_false:
-  if (CPU_EXTENSION_RISCV_B = false) generate
-    cp_result(2) <= (others => '0');
-    cp_valid(2)  <= cp_start(2); -- to make sure CPU does not get stalled if there is an accidental access
-  end generate;
+  cp_result(2) <= (others => '0');
+  cp_valid(2)  <= cp_start(2); -- to make sure CPU does not get stalled if there is an accidental access
 
 
   -- Co-Processor 3: Single-Precision Floating-Point Unit ('Zfinx' Extension) ---------------

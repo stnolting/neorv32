@@ -224,7 +224,6 @@ CSR is simply ignored and will NOT cause an illegal instruction exception.
 | 8     | _CSR_MISA_I_EXT_ | r/- | `I` CPU base ISA, cleared when _CPU_EXTENSION_RISCV_E_ enabled
 | 4     | _CSR_MISA_E_EXT_ | r/- | `E` CPU extension (embedded) available, set when _CPU_EXTENSION_RISCV_E_ enabled
 | 2     | _CSR_MISA_C_EXT_ | r/- | `C` CPU extension (compressed instruction) available, set when _CPU_EXTENSION_RISCV_C_ enabled
-| 1     | _CSR_MISA_B_EXT_ | r/- | `B` CPU extension (bit-manipulation) available, set when _CPU_EXTENSION_RISCV_B_ enabled
 | 0     | _CSR_MISA_A_EXT_ | r/- | `A` CPU extension (atomic memory access) available, set when _CPU_EXTENSION_RISCV_A_ enabled
 |=======================
 
@@ -775,7 +774,7 @@ which is assigned via the CPU's _HW_THREAD_ID_ generic.
 | 0xfc0 | **Available Z* extensions** | `mzext`
 3+| Reset value: _0x00000000_
 3+| The `mzext` CSR is a custom read-only CSR that shows the implemented Z* extensions. The following bits
-are implemented (all remaining bits are always zero).
+are implemented (all remaining bits are always zero). The entire CSR is read-only.
 |======
 
 .Machine counter-inhibit register
@@ -785,9 +784,6 @@ are implemented (all remaining bits are always zero).
 | Bit | Name [C] | R/W | Event
 | 0   | _CPU_MZEXT_ZICSR_ | r/- | `Zicsr` extensions available (enabled via _CPU_EXTENSION_RISCV_Zicsr_ generic)
 | 1   | _CPU_MZEXT_ZIFENCEI_ | r/- | `Zifencei` extensions available (enabled via _CPU_EXTENSION_RISCV_Zifencei_ generic)
-| 2   | _CPU_MZEXT_ZBB_ | r/- | `Zbb` extensions available (enabled via _CPU_EXTENSION_RISCV_B_ generic)
-| 3   | _CPU_MZEXT_ZBS_ | r/- | `Zbs` extensions available (enabled via _CPU_EXTENSION_RISCV_B_ generic)
-| 4   | _CPU_MZEXT_ZBA_ | r/- | `Zba` extensions available (enabled via _CPU_EXTENSION_RISCV_B_ generic)
 | 5   | _CPU_MZEXT_ZFINX_ | r/- | `Zfinx` extensions available (enabled via _CPU_EXTENSION_RISCV_Zfinx_ generic)
 | 6   | _CPU_MZEXT_ZXSCNT_ | r/- | custom extension: "Small CPU counters": `cycle[h]` & `instret[h]` CSRs have less than 64-bit when set (when _CPU_CNT_WIDTH_ generic is less than 64)
 | 7   | _CPU_MZEXT_ZXNOCNT_ | r/- | custom extension: "NO CPU counters": `cycle[h]` & `instret[h]` CSRs are not available at all when set (when _CPU_CNT_WIDTH_ generic is 0)

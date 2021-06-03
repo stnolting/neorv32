@@ -13,7 +13,6 @@ NEORV32_SRC := \
   ../../rtl/core/neorv32_cpu_alu.vhd   \
   ../../rtl/core/neorv32_cpu_bus.vhd   \
   ../../rtl/core/neorv32_cpu_control.vhd   \
-  ../../rtl/core/neorv32_cpu_cp_bitmanip.vhd   \
   ../../rtl/core/neorv32_cpu_cp_fpu.vhd   \
   ../../rtl/core/neorv32_cpu_cp_muldiv.vhd   \
   ../../rtl/core/neorv32_cpu_decompressor.vhd   \

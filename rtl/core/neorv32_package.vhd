@@ -87,7 +87,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050601"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050602"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
   constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
@@ -747,7 +747,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   constant cp_sel_csr_rd_c   : std_ulogic_vector(2 downto 0) := "000"; -- CSR read access ('Zicsr' extension)
   constant cp_sel_muldiv_c   : std_ulogic_vector(2 downto 0) := "001"; -- multiplication/division operations ('M' extension)
-  constant cp_sel_bitmanip_c : std_ulogic_vector(2 downto 0) := "010"; -- bit manipulation ('B' extension)
+--constant cp_sel_bitmanip_c : std_ulogic_vector(2 downto 0) := "010"; -- bit manipulation ('B' extension)
   constant cp_sel_fpu_c      : std_ulogic_vector(2 downto 0) := "011"; -- floating-point unit ('Zfinx' extension)
 --constant cp_sel_reserved_c : std_ulogic_vector(2 downto 0) := "100"; -- reserved
 --constant cp_sel_reserved_c : std_ulogic_vector(2 downto 0) := "101"; -- reserved
@@ -905,7 +905,6 @@ package neorv32_package is
       ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
-      CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit manipulation extensions?
       CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
@@ -1033,7 +1032,6 @@ package neorv32_package is
       CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu debug mode start address
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
-      CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
@@ -1109,7 +1107,6 @@ package neorv32_package is
       CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu debug mode start address
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
-      CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
@@ -1240,25 +1237,6 @@ package neorv32_package is
       ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
       start_i : in  std_ulogic; -- trigger operation
       -- data input --
-      rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
-      rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
-      -- result and status --
-      res_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
-      valid_o : out std_ulogic -- data output valid
-    );
-  end component;
-
-  -- Component: CPU Co-Processor Bit Manipulation ('B' extension) ---------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu_cp_bitmanip
-    port (
-      -- global control --
-      clk_i   : in  std_ulogic; -- global clock, rising edge
-      rstn_i  : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
-      start_i : in  std_ulogic; -- trigger operation
-      -- data input --
-      cmp_i   : in  std_ulogic_vector(1 downto 0); -- comparator status
       rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
       rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
       -- result and status --

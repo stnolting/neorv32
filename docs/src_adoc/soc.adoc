@@ -213,14 +213,6 @@ See section <<_instruction_sets_and_extensions>> for more information.
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **CPU_EXTENSION_RISCV_B** | _boolean_ | false
-3+| Implement bit manipulation instructions when _true_.
-|======
-
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
 | **CPU_EXTENSION_RISCV_C** | _boolean_ | false
 3+| Implement compressed instructions (16-bit) when _true_.
 |======

@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 03.06.2021 | 1.5.6.2 | :warning: The `B` ISA extension (bit manipulation) has been (temporarily) removed from the project. See [B ISA Extension](https://github.com/stnolting/neorv32/projects/7) project board. |
 | 03.06.2021 | 1.5.6.1 | CPU/HPM counter size configuration (`CPU_CNT_WIDTH` and `HPM_CNT_WIDTH` generics) can now be 0-bit (no counters implemented at all) to 64-bit (full-scale / RISC-V standard) wide |
 | 01.08.2021 | [**:rocket:1.5.6.0**](https://github.com/stnolting/neorv32/releases/tag/v1.5.6.0) | **New release** |
 | 01.06.2021 | 1.5.5.13 | :warning: fixed project's endianness inconsistency (issue [#50](https://github.com/stnolting/neorv32/issues/50)) - CPU and processor are **little-endian**; changed image generator (`sw/image_gen`) and bootloader to generate/use little-endian executables; external memory interface is little-endian by default; removed `mstatus.ube` bit (reads as zero now); removed `mstatush` CSR |

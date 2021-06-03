@@ -53,7 +53,6 @@ entity neorv32_cpu_control is
     CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
-    CPU_EXTENSION_RISCV_B        : boolean := false; -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
@@ -194,14 +193,12 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction decoding helper logic --
   type decode_aux_t is record
-    alu_immediate   : std_ulogic;
-    rs1_is_r0       : std_ulogic;
-    is_atomic_lr    : std_ulogic;
-    is_atomic_sc    : std_ulogic;
-    is_bitmanip_imm : std_ulogic;
-    is_bitmanip_reg : std_ulogic;
-    is_float_op     : std_ulogic;
-    sys_env_cmd     : std_ulogic_vector(11 downto 0);
+    alu_immediate : std_ulogic;
+    rs1_is_r0     : std_ulogic;
+    is_atomic_lr  : std_ulogic;
+    is_atomic_sc  : std_ulogic;
+    is_float_op   : std_ulogic;
+    sys_env_cmd   : std_ulogic_vector(11 downto 0);
   end record;
   signal decode_aux : decode_aux_t;
 
@@ -842,13 +839,11 @@ begin
     variable sys_env_cmd_mask_v : std_ulogic_vector(11 downto 0);
   begin
     -- defaults --
-    decode_aux.alu_immediate   <= '0';
-    decode_aux.rs1_is_r0       <= '0';
-    decode_aux.is_atomic_lr    <= '0';
-    decode_aux.is_atomic_sc    <= '0';
-    decode_aux.is_bitmanip_imm <= '0';
-    decode_aux.is_bitmanip_reg <= '0';
-    decode_aux.is_float_op     <= '0';
+    decode_aux.alu_immediate <= '0';
+    decode_aux.rs1_is_r0     <= '0';
+    decode_aux.is_atomic_lr  <= '0';
+    decode_aux.is_atomic_sc  <= '0';
+    decode_aux.is_float_op   <= '0';
 
     -- is immediate ALU operation? --
     decode_aux.alu_immediate <= not execute_engine.i_reg(instr_opcode_msb_c-1);
@@ -860,53 +855,6 @@ begin
     if (CPU_EXTENSION_RISCV_A = true) and (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "11") then -- valid atomic sub-opcode
       decode_aux.is_atomic_lr <= not execute_engine.i_reg(instr_funct5_lsb_c);
       decode_aux.is_atomic_sc <=     execute_engine.i_reg(instr_funct5_lsb_c);
-    end if;
-
-    -- is BITMANIP instruction? --
-    -- pretty complex as we have to extract this from the ALU/ALUI instruction space --
-    -- immediate operation --
-    if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001") and
-         (
-          (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00000") or -- CLZ
-          (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00001") or -- CTZ
-          (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00010") or -- PCNT
-          (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00100") or -- SEXT.B
-          (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00101")    -- SEXT.H
-         )
-       ) or
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01001") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- SBCLRI
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- SBSETI
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- SBINVI
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01001") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- SBEXTI
-       --
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- RORI
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and (execute_engine.i_reg(instr_imm12_lsb_c+6 downto instr_imm12_lsb_c) = "0000111")) or -- GORCI.b 7 (orc.b)
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "01101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and (execute_engine.i_reg(instr_imm12_lsb_c+6 downto instr_imm12_lsb_c) = "0011000")) then -- GREVI.-8 (rev8)
-      decode_aux.is_bitmanip_imm <= '1';
-    end if;
-    -- register operation --
-    if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.i_reg(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- ROR / ROL
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.i_reg(instr_funct3_msb_c) = '1')) or -- MIN[U] / MAX[U]
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")) or -- PACK
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100000") and
-        (
-         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "111") or -- ANDN
-         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "110") or -- ORN
-         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")    -- XORN
-         )
-        ) or
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010000") and
-        (
-         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") or -- SH1ADD
-         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100") or -- SH2ADD
-         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "110")    -- SH3ADD
-         )
-        ) or
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- SBCLR
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- SBSET
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- SBINV
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) then -- SBSEXT
-      decode_aux.is_bitmanip_reg <= '1';
     end if;
 
     -- floating-point operations (Zfinx) --
@@ -1088,13 +1036,6 @@ begin
               ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- use MULDIV CP
               execute_engine.is_cp_op_nxt                        <= '1'; -- this is a CP operation
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
-            -- co-processor bit manipulation operation? --
-            elsif (CPU_EXTENSION_RISCV_B = true) and
-              (((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_bitmanip_reg = '1')) or -- register operation
-               ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_bitmanip_imm = '1'))) then -- immediate operation
-              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_bitmanip_c; -- use BITMANIP CP
-              execute_engine.is_cp_op_nxt                        <= '1'; -- this is a CP operation
-              ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
             -- ALU operation, function select --
             else
               execute_engine.is_cp_op_nxt <= '0'; -- no CP operation
@@ -1108,10 +1049,7 @@ begin
             -- multi cycle ALU operation? --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or -- SLL shift operation?
                (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) or -- SR shift operation?
-               ((CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_lsb_c) = '1')) or -- MULDIV CP op?
-               ((CPU_EXTENSION_RISCV_B = true) and (
-                 ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_bitmanip_reg = '1')) or -- BITMANIP CP register operation?
-                 ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_bitmanip_imm = '1'))) ) then -- BITMANIP CP immediate operation?
+               ((CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_lsb_c) = '1')) then -- MULDIV CP op?
               execute_engine.state_nxt <= ALU_WAIT;
             else -- single cycle ALU operation
               ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
@@ -1533,10 +1471,6 @@ begin
             if (CPU_EXTENSION_RISCV_M = false) then -- not implemented
               illegal_instruction <= '1';
             end if;
-          elsif (decode_aux.is_bitmanip_reg = '1') then -- bit manipulation
-            if (CPU_EXTENSION_RISCV_B = false) then -- not implemented
-              illegal_instruction <= '1';
-            end if;
           elsif ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) or
                  (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c)) and -- ADD/SUB or SRA/SRL check
                 ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) /= "0000000") and
@@ -1553,11 +1487,7 @@ begin
 
         when opcode_alui_c => -- check ALUI.funct7
         -- ------------------------------------------------------------
-          if (decode_aux.is_bitmanip_imm = '1') then -- bit manipulation
-            if (CPU_EXTENSION_RISCV_B = false) then -- not implemented
-              illegal_instruction <= '1';
-            end if;
-          elsif ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) and
+          if ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) and
               (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) /= "0000000")) or -- shift logical left
              ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) and
               ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) /= "0000000") and
@@ -2639,7 +2569,6 @@ begin
             csr.rdata(12) <= csr.mstatus_mpp(1); -- MPP: machine previous privilege mode high
           when csr_misa_c => -- misa (r/-): ISA and extensions
             csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
-            csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);     -- B CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
             csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
             csr.rdata(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
@@ -2900,9 +2829,6 @@ begin
           when csr_mzext_c => -- mzext (r/-): available RISC-V Z* sub-extensions
             csr.rdata(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr
             csr.rdata(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei
-            csr.rdata(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);        -- Zbb (B)
-            csr.rdata(3) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);        -- Zbs (B)
-            csr.rdata(4) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);        -- Zba (B)
             csr.rdata(5) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx ("F-alternative")
             if (CPU_CNT_WIDTH = 64) then
               csr.rdata(6) <= '0'; -- Zxscnt (custom)

@@ -152,7 +152,6 @@ begin
 
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => true,        -- implement atomic extension?
-    CPU_EXTENSION_RISCV_B        => false,       -- implement bit manipulation extensions?
     CPU_EXTENSION_RISCV_C        => true,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => false,       -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => true,        -- implement mul/div extension?

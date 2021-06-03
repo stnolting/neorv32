@@ -6,7 +6,7 @@ image::riscv_logo.png[width=350,align=center]
 **Key Features**
 
 * 32-bit pipelined/multi-cycle in-order `rv32` RISC-V CPU
-* Optional RISC-V extensions: `rv32[i/e][m][a][c][b][u]` + `[Zfinx][Zicsr][Zifencei]` + `[debug_mode]` (for on-chip debugging)
+* Optional RISC-V extensions: `rv32[i/e][m][a][c][u]` + `[Zfinx][Zicsr][Zifencei]` + `[debug_mode]` (for on-chip debugging)
 * Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications – passes the official RISC-V Architecture Tests (v2+)
 * Official RISC-V open-source architecture ID
 * Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 _fast_ interrupts and 1 non-maskable interrupt
@@ -348,29 +348,6 @@ implemented) AMO (atomic memory operation) will trigger an illegal instruction e
 [NOTE]
 The atomic instructions have special requirements for memory system / bus interconnect. More
 information can be found in sections <<_bus_interface>> and <<_processor_external_memory_interface_wishbone_axi4_lite>>, respectively.
-
-
-==== **`B`** - Bit-Manipulation
-
-The bit-manipulation instructions extension are available when the `CPU_EXTENSION_RISCV_B` configuration generic
-is _true_. Note that not all sub-extensions are implemented yet. When the bit-manipulation extension is enabled
-the following instructions are available:
-
-* base subset **`Zbb`**: `clz`, `ctz`, `cpop`, `sext.b`, `sext.h`, `min[u]`, `max[u]`, `andn`, `orn`, `xnor`, `rol`, `ror`,
-`rori`, `c.xor`, `zext` (_pseudo instruction_ `for pack rd, rs, zero`), `rev8` (_pseudo instruction_ for `grevi rd, rs, -8`),
-`orc.b` (_pseudo instruction_ for `gorci rd, rs, 7`)
-* single-bit operations **`Zbs`**: `sbset[i]`, `sbclr[i]`, `sbclr[i]`, `sbext[i]`
-* shifted-add operations **`Zba`**: `sh1add`, `sh2add`, `sh3add`
-
-[WARNING]
-The bit manipulation extension is not yet officially ratified and the NEORV32 implementation is still
-_work-in-progess_. There is no software support in the upstream GCC RISC-V port yet. However, an intrinsic library
-is provided to utilize the provided bit manipulation extension from C-language code (see
-`sw/example/bit_manipulation`).
-
-[NOTE]
-The current version of the bit manipulation specs that are supported by the NEORV32 can be found
-in `docs/references/bitmanip-draft.pdf`.
 
 
 ==== **`C`** - Compressed Instructions
