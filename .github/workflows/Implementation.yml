@@ -27,13 +27,12 @@ jobs:
     - name: '⚙️ Generate bitstream'
       uses: docker://ghcr.io/hdl/debian-buster/impl
       with:
-        args: make -C boards/UPduino_v3_ghdl-yosys-nextpnr/ all
+        args: make -C boards/osflow/UPduino_v3/ all
 
     - name: '📤 Upload Artifact: bitstream'
       uses: actions/upload-artifact@v2
       with:
-        name: UPduino_v3_ghdl-yosys-nextpr
+        name: UPduino_v3
         path: |
-          boards/UPduino_v3_ghdl-yosys-nextpnr/neorv32_upduino_v3_impl_1.bin
-          boards/UPduino_v3_ghdl-yosys-nextpnr/yosys-report.txt
-          boards/UPduino_v3_ghdl-yosys-nextpnr/nextpnr-report.txt
+          boards/osflow/UPduino_v3/neorv32_upduino_v3_impl_1.bin
+          boards/osflow/UPduino_v3/*-report.txt
