@@ -317,7 +317,8 @@ this generic is ignored if _FAST_SHIFT_EN_ is _true_.
 [frame="all",grid="none"]
 |======
 | **CPU_CNT_WIDTH** | _natural_ | 0
-3+| This generic configures the total size of the CPU's `cycle` and `instret` CSRs (low word + high word). See
+3+| This generic configures the total size of the CPU's `cycle` and `instret` CSRs (low word + high word).
+The maximum value is 64, the minimal is 0. See
 section <<_machine_counters_and_timers>> for more information. Note: Configurations with _CPU_CNT_WIDTH_
 less than 64 are not RISC-V compliant.
 |======
@@ -369,7 +370,7 @@ in the `mzext` CSR.
 |======
 | **HPM_CNT_WIDTH** | _natural_ | 40
 3+| This generic defines the total LSB-aligned size of each HPM counter (size(`[m]hpmcounter*h`) +
-size(`[m]hpmcounter*`)). The maximum value is 64, the minimal is 1. If the size is less than 64-bit, the
+size(`[m]hpmcounter*`)). The maximum value is 64, the minimal is 0. If the size is less than 64-bit, the
 unused MSB-aligned counter bits are hardwired to zero.
 |======
 

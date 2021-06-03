@@ -608,7 +608,7 @@ Instruction Set Manual – Volume II: Privileged Architecture_ specifications.
 In additions to the mandatory cycles (`[m]cycle[h]`) and instruction (`[m]instret[h]`) counters the NEORV32 CPU provides
 up to 29 hardware performance monitors (HPM 3..31), which can be used to benchmark applications. Each HPM consists of an
 N-bit wide counter (split in a high-word 32-bit CSR and a low-word 32-bit CSR), where N is defined via the top's
-`HPM_CNT_WIDTH` generic (1..64-bit), and a corresponding event configuration CSR. The event configuration
+`HPM_CNT_WIDTH` generic (0..64-bit), and a corresponding event configuration CSR. The event configuration
 CSR defines the architectural events that lead to an increment of the associated HPM counter.
 
 The cycle, time and instructions-retired counters (`[m]cycle[h]`, `time[h]`, `[m]instret[h]`) are

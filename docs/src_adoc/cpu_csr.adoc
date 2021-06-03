@@ -585,7 +585,7 @@ The available hardware performance logic is configured via the _HPM_NUM_CNTS_ to
 _HPM_NUM_CNTS_ defines the number of implemented performance monitors and thus, the availability of the
 according `[m]hpmcounter*[h]` and `mhpmevent*` CSRs.
 
-The total size of the HPMs can be configured before synthesis via the _HPM_CNT_WIDTH_ generic (1..64-bit).
+The total size of the HPMs can be configured before synthesis via the _HPM_CNT_WIDTH_ generic (0..64-bit).
 
 [TIP]
 If trying to access an HPM-related CSR beyond _HPM_NUM_CNTS_ **no illegal instruction exception is
@@ -593,7 +593,7 @@ triggered**. The according CSRs are read-only (writes are ignored) and always re
 
 [NOTE]
 The total LSB-aligned HPM counter size (low word CSR + high word CSR) is defined via the
-_HPM_CNT_WIDTH_ generic (1..64-bit). If _HPM_CNT_WIDTH_ is less than 64, all unused MSB-aligned
+_HPM_CNT_WIDTH_ generic (0..64-bit). If _HPM_CNT_WIDTH_ is less than 64, all unused MSB-aligned
 bits are hardwired to zero.
 
 
