@@ -40,25 +40,19 @@ ghdl -i --work=neorv32 rtl/core/*.vhd
 ghdl -i --work=neorv32 rtl/top_templates/*.vhd
 ghdl -i --work=neorv32 sim/*.vhd
 
-# Prepare simulation output files for UART0
-# Testbench receiver log file
-touch neorv32.testbench_uart0.out
-chmod 777 neorv32.testbench_uart0.out
-# UART0 direct simulation output
-touch neorv32.uart0.sim_mode.text.out
-chmod 777 neorv32.uart0.sim_mode.text.out
-touch neorv32.uart0.sim_mode.data.out
-chmod 777 neorv32.uart0.sim_mode.data.out
-
-# Prepare simulation output files for UART1
-# Testbench receiver log file
-touch neorv32.testbench_uart1.out
-chmod 777 neorv32.testbench_uart1.out
-# UART1 direct simulation output
-touch neorv32.uart1.sim_mode.text.out
-chmod 777 neorv32.uart1.sim_mode.text.out
-touch neorv32.uart1.sim_mode.data.out
-chmod 777 neorv32.uart1.sim_mode.data.out
+# Prepare simulation output files for UART0 and UART 1
+# - Testbench receiver log file (neorv32.testbench_uart?.out)
+# - Direct simulation output (neorv32.uart?.sim_mode.[text|data].out)
+for item in \
+  testbench_uart0 \
+  uart0.sim_mode.text \
+  uart0.sim_mode.data \
+  testbench_uart1 \
+  uart1.sim_mode.text \
+  uart1.sim_mode.data; do
+  touch neorv32."$item".out
+  chmod 777 neorv32."$item".out
+done
 
 # Run simulation
 ghdl -m --work=neorv32 neorv32_tb
