@@ -1,5 +1,6 @@
 # NEORV32 Example Setup for the tinyVision.ai "UPduino v2" FPGA Board
 
+## :warning: This project setup is obsolete and not further maintained!
 
 This example setup turns the UPduino v2.0 / v2.1 board, which features a Lattice iCE40 UltraPlus FPGA, into a small-scale NEORV32 *microcontroller*.
 The processor setup provides 64kB of data and isntruction memory, an RTOS-capable CPU (privileged architecture) and a set of standard peripherals like UART, TWI and SPI.
