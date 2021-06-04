@@ -72,7 +72,7 @@ _**f~PWM~**_ = _f~main~[Hz]_ / (2^8^ * `clock_prescaler`)
                                      <|`23:16` ^| r/w <| 8-bit duty cycle for channel 2
                                      <|`31:24` ^| r/w <| 8-bit duty cycle for channel 3
 | ...     | ...      | ...              | r/w | ...
-.4+<| `0xfffffebc` .4+<| _PWM_DUTY15_ <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 56
+.4+<| `0xfffffebc` .4+<| _PWM_DUTY14_ <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 56
                                       <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 57
                                       <|`23:16` ^| r/w <| 8-bit duty cycle for channel 58
                                       <|`31:24` ^| r/w <| 8-bit duty cycle for channel 59
