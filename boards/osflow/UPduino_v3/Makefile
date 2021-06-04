@@ -27,4 +27,4 @@ include ../synthesis.mk
 include ../PnR_Bit.mk
 
 clean:
-	rm -f *.cf ${IMPL}.{asc,json} *-report.txt
+	rm -f *.cf *.o ${IMPL}.{asc,json} *.history *-report.txt
