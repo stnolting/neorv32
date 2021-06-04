@@ -90,25 +90,78 @@ void neorv32_pwm_disable(void) {
 
 
 /**********************************************************************//**
- * Set duty cycle for channel. The PWM duty cycle bits are listed in #NEORV32_PWM_DUTY_enum.
+ * Get number of implemented channels.
+ * @warning This function will override all duty cycle configuration registers.
  *
- * @param[in] channel Channel select (0..3).
+ * @return Number of implemented channels.
+ **************************************************************************/
+int neorv32_pmw_get_num_channels(void) {
+
+  neorv32_pwm_disable();
+
+  uint8_t index = 0;
+  uint8_t cnt = 0;
+
+  for (index=0; index<60; index++) {
+    neorv32_pwm_set(index, 1);
+    cnt += neorv32_pwm_get(index);
+  }
+
+  return (int)cnt;
+}
+
+
+/**********************************************************************//**
+ * Set duty cycle for channel.
+ *
+ * @param[in] channel Channel select (0..59).
  * @param[in] duty Duty cycle (0..255).
  **************************************************************************/
 void neorv32_pwm_set(uint8_t channel, uint8_t duty) {
 
-  channel = channel & 0x03;
+  if (channel > 59) {
+    return; // out-of-range
+  }
 
+  // compute duty-cycle offset
+  uint32_t reg_offset  = (uint32_t)(channel / 4);
+  uint8_t  byte_offset = channel % 4;
+
+  // read-modify-write
   uint32_t duty_mask = 0xff;
   uint32_t duty_new  = (uint32_t)duty;
 
-  duty_mask = duty_mask << (channel * 8);
-  duty_new  = duty_new  << (channel * 8);
+  duty_mask = duty_mask << (byte_offset * 8);
+  duty_new  = duty_new  << (byte_offset * 8);
 
-  uint32_t duty_cycle = PWM_DUTY;
+  uint32_t duty_cycle = (*(IO_REG32 (&PWM_DUTY0 + reg_offset)));
 
   duty_cycle &= ~duty_mask; // clear previous duty cycle
   duty_cycle |= duty_new; // set new duty cycle
 
-  PWM_DUTY = duty_cycle;
+  (*(IO_REG32 (&PWM_DUTY0 + reg_offset))) = duty_cycle;
+}
+
+
+/**********************************************************************//**
+ * Get duty cycle from channel.
+ *
+ * @param[in] channel Channel select (0..59).
+ * @return Duty cycle (0..255) of channel 'channel'.
+ **************************************************************************/
+uint8_t neorv32_pwm_get(uint8_t channel) {
+
+  if (channel > 59) {
+    return 0; // out-of-range
+  }
+
+  // compute duty-cycle offset
+  uint32_t reg_offset  = (uint32_t)(channel / 4);
+  uint8_t  byte_offset = channel % 4;
+
+  // read
+  uint32_t tmp = (*(IO_REG32 (&PWM_DUTY0 + reg_offset)));
+  tmp = tmp >> ((byte_offset * 8));
+
+  return (uint8_t)tmp;
 }

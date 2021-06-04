@@ -48,6 +48,8 @@
 int neorv32_pwm_available(void);
 void neorv32_pwm_setup(uint8_t prsc);
 void neorv32_pwm_disable(void);
+int neorv32_pmw_get_num_channels(void);
 void neorv32_pwm_set(uint8_t channel, uint8_t duty);
+uint8_t neorv32_pwm_get(uint8_t channel);
 
 #endif // neorv32_pwm_h
