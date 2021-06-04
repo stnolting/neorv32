@@ -185,9 +185,6 @@ begin
   -- Instruction prefetch buffer size --
   assert not (is_power_of_two_f(ipb_entries_c) = false) report "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <ipb_entries_c> has to be a power of two." severity error;
 
-  -- A extension - only lr.w and sc.w are supported --
-  assert not (CPU_EXTENSION_RISCV_A = true) report "NEORV32 CPU CONFIG NOTE. Atomic operations extension (A) only supports <lr.w> and <sc.w> instructions." severity note;
-
   -- Co-processor timeout counter (for debugging only) --
   assert not (cp_timeout_en_c = true) report "NEORV32 CPU CONFIG WARNING! Co-processor timeout counter enabled. This should be used for debugging/simulation only." severity warning;
 
