@@ -87,7 +87,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050603"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050604"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
   constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
@@ -158,40 +158,34 @@ package neorv32_package is
   constant cfs_reg29_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe74";
   constant cfs_reg30_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe78";
   constant cfs_reg31_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe7c";
-  constant cfs_reg32_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe80";
-  constant cfs_reg33_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe84";
-  constant cfs_reg34_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe88";
-  constant cfs_reg35_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe8c";
-  constant cfs_reg36_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe90";
-  constant cfs_reg37_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe94";
-  constant cfs_reg38_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe98";
-  constant cfs_reg39_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe9c";
-  constant cfs_reg40_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea0";
-  constant cfs_reg41_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea4";
-  constant cfs_reg42_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea8";
-  constant cfs_reg43_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeac";
-  constant cfs_reg44_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeb0";
-  constant cfs_reg45_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeb4";
-  constant cfs_reg46_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeb8";
-  constant cfs_reg47_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffebc";
-  constant cfs_reg48_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffec0";
-  constant cfs_reg49_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffec4";
-  constant cfs_reg50_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffec8";
-  constant cfs_reg51_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffecc";
-  constant cfs_reg52_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffed0";
-  constant cfs_reg53_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffed4";
-  constant cfs_reg54_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffed8";
-  constant cfs_reg55_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffedc";
-  constant cfs_reg56_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffee0";
-  constant cfs_reg57_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffee4";
-  constant cfs_reg58_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffee8";
-  constant cfs_reg59_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeec";
-  constant cfs_reg60_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffef0";
-  constant cfs_reg61_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffef4";
-  constant cfs_reg62_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffef8";
-  constant cfs_reg63_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffefc";
 
-  -- ... --
+  -- Pulse-Width Modulation Controller (PWM) --
+  constant pwm_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff80"; -- base address
+  constant pwm_size_c           : natural := 16*4; -- module's address space in bytes
+  constant pwm_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe80";
+  constant pwm_duty0_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe84";
+  constant pwm_duty1_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe88";
+  constant pwm_duty2_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe8c";
+  constant pwm_duty3_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe90";
+  constant pwm_duty4_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe94";
+  constant pwm_duty5_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe98";
+  constant pwm_duty6_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe9c";
+  constant pwm_duty7_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea0";
+  constant pwm_duty8_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea4";
+  constant pwm_duty9_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea8";
+  constant pwm_duty10_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeac";
+  constant pwm_duty11_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeb0";
+  constant pwm_duty12_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeb4";
+  constant pwm_duty13_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeb8";
+  constant pwm_duty14_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffebc";
+
+  -- reserved --
+--constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc0"; -- base address
+--constant reserved_size_c      : natural := 16*4; -- module's address space in bytes
+
+  -- reserved --
+--constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff00"; -- base address
+--constant reserved_size_c      : natural := 32*4; -- module's address space in bytes
 
   -- General Purpose Input/Output Unit (GPIO) --
   constant gpio_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff80"; -- base address
@@ -235,11 +229,9 @@ package neorv32_package is
   constant twi_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffb0";
   constant twi_rtx_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffb4";
 
-  -- Pulse-Width Modulation Controller (PWM) --
-  constant pwm_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffb8"; -- base address
-  constant pwm_size_c           : natural := 2*4; -- module's address space in bytes
-  constant pwm_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffb8";
-  constant pwm_duty_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffbc";
+  -- reserved --
+--constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffb8"; -- base address
+--constant reserved_size_c      : natural := 2*4; -- module's address space in bytes
 
   -- Numerically-Controlled Oscillator (NCO) --
   constant nco_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc0"; -- base address
@@ -979,7 +971,7 @@ package neorv32_package is
       IO_UART1_EN                  : boolean := true;   -- implement secondary universal asynchronous receiver/transmitter (UART1)?
       IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
       IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
-      IO_PWM_EN                    : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+      IO_PWM_NUM_CH                : natural := 4;      -- number of PWM channels to implement (0..60); 0 = disabled
       IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
       IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
@@ -1035,8 +1027,8 @@ package neorv32_package is
       -- TWI (available if IO_TWI_EN = true) --
       twi_sda_io  : inout std_logic; -- twi serial data line
       twi_scl_io  : inout std_logic; -- twi serial clock line
-      -- PWM (available if IO_PWM_EN = true) --
-      pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
+      -- PWM (available if IO_PWM_NUM_CH > 0) --
+      pwm_o       : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0); -- pwm channels
       -- Custom Functions Subsystem IO --
       cfs_in_i    : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom CFS inputs conduit
       cfs_out_o   : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
@@ -1677,6 +1669,9 @@ package neorv32_package is
   -- Component: Pulse-Width Modulation Controller (PWM) -------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_pwm
+    generic (
+      NUM_CHANNELS : natural := 4 -- number of PWM channels (0..60)
+    );
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
@@ -1690,7 +1685,7 @@ package neorv32_package is
       clkgen_en_o : out std_ulogic; -- enable clock generator
       clkgen_i    : in  std_ulogic_vector(07 downto 0);
       -- pwm output channels --
-      pwm_o       : out std_ulogic_vector(03 downto 0)
+      pwm_o       : out std_ulogic_vector(NUM_CHANNELS-1 downto 0)
     );
   end component;
 
@@ -1859,7 +1854,7 @@ package neorv32_package is
       IO_UART1_EN          : boolean := true;   -- implement secondary universal asynchronous receiver/transmitter (UART1)?
       IO_SPI_EN            : boolean := true;   -- implement serial peripheral interface (SPI)?
       IO_TWI_EN            : boolean := true;   -- implement two-wire interface (TWI)?
-      IO_PWM_EN            : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+      IO_PWM_NUM_CH        : natural := 4;      -- number of PWM channels to implement
       IO_WDT_EN            : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_EN           : boolean := true;   -- implement true random number generator (TRNG)?
       IO_CFS_EN            : boolean := true;   -- implement custom functions subsystem (CFS)?
