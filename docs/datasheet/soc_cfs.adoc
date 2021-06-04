@@ -24,7 +24,7 @@ The custom functions subsystem can be used to implement application-specific use
 custom hardware accelerators via the external memory interface, the CFS provide a convenient and low-latency
 extension and customization option.
 
-The CFS provides up to 32x 32-bit memory-mapped registers (see register map table below). The actual
+The CFS provides up to 64x 32-bit memory-mapped registers (see register map table below). The actual
 functionality of these register has to be defined by the hardware designer.
 
 [INFO]
@@ -68,36 +68,9 @@ _IO_CFS_OUT_SIZE_ configuration generic (default = 32-bit). If the custom functi
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Function
-| `0xffffff00` | _CFS_REG_0_  |`31:0` | (r)/(w) | custom CFS interface register 0
-| `0xffffff04` | _CFS_REG_1_  |`31:0` | (r)/(w) | custom CFS interface register 1
-| `0xffffff08` | _CFS_REG_2_  |`31:0` | (r)/(w) | custom CFS interface register 2
-| `0xffffff0c` | _CFS_REG_3_  |`31:0` | (r)/(w) | custom CFS interface register 3
-| `0xffffff10` | _CFS_REG_4_  |`31:0` | (r)/(w) | custom CFS interface register 4
-| `0xffffff14` | _CFS_REG_5_  |`31:0` | (r)/(w) | custom CFS interface register 5
-| `0xffffff18` | _CFS_REG_6_  |`31:0` | (r)/(w) | custom CFS interface register 6
-| `0xffffff1c` | _CFS_REG_7_  |`31:0` | (r)/(w) | custom CFS interface register 7
-| `0xffffff20` | _CFS_REG_8_  |`31:0` | (r)/(w) | custom CFS interface register 8
-| `0xffffff24` | _CFS_REG_9_  |`31:0` | (r)/(w) | custom CFS interface register 9
-| `0xffffff28` | _CFS_REG_10_ |`31:0` | (r)/(w) | custom CFS interface register 10
-| `0xffffff2c` | _CFS_REG_11_ |`31:0` | (r)/(w) | custom CFS interface register 11
-| `0xffffff30` | _CFS_REG_12_ |`31:0` | (r)/(w) | custom CFS interface register 12
-| `0xffffff34` | _CFS_REG_13_ |`31:0` | (r)/(w) | custom CFS interface register 13
-| `0xffffff38` | _CFS_REG_14_ |`31:0` | (r)/(w) | custom CFS interface register 14
-| `0xffffff3c` | _CFS_REG_15_ |`31:0` | (r)/(w) | custom CFS interface register 15
-| `0xffffff40` | _CFS_REG_16_ |`31:0` | (r)/(w) | custom CFS interface register 16
-| `0xffffff44` | _CFS_REG_17_ |`31:0` | (r)/(w) | custom CFS interface register 17
-| `0xffffff48` | _CFS_REG_18_ |`31:0` | (r)/(w) | custom CFS interface register 18
-| `0xffffff4c` | _CFS_REG_19_ |`31:0` | (r)/(w) | custom CFS interface register 19
-| `0xffffff50` | _CFS_REG_20_ |`31:0` | (r)/(w) | custom CFS interface register 20
-| `0xffffff54` | _CFS_REG_21_ |`31:0` | (r)/(w) | custom CFS interface register 21
-| `0xffffff58` | _CFS_REG_22_ |`31:0` | (r)/(w) | custom CFS interface register 22
-| `0xffffff5c` | _CFS_REG_23_ |`31:0` | (r)/(w) | custom CFS interface register 23
-| `0xffffff60` | _CFS_REG_24_ |`31:0` | (r)/(w) | custom CFS interface register 24
-| `0xffffff64` | _CFS_REG_25_ |`31:0` | (r)/(w) | custom CFS interface register 25
-| `0xffffff68` | _CFS_REG_26_ |`31:0` | (r)/(w) | custom CFS interface register 26
-| `0xffffff6c` | _CFS_REG_27_ |`31:0` | (r)/(w) | custom CFS interface register 27
-| `0xffffff70` | _CFS_REG_28_ |`31:0` | (r)/(w) | custom CFS interface register 28
-| `0xffffff74` | _CFS_REG_29_ |`31:0` | (r)/(w) | custom CFS interface register 29
-| `0xffffff78` | _CFS_REG_30_ |`31:0` | (r)/(w) | custom CFS interface register 30
-| `0xffffff7c` | _CFS_REG_31_ |`31:0` | (r)/(w) | custom CFS interface register 31
+| `0xfffffe00` | _CFS_REG_0_  |`31:0` | (r)/(w) | custom CFS interface register 0
+| `0xfffffe04` | _CFS_REG_1_  |`31:0` | (r)/(w) | custom CFS interface register 1
+| ...          | ...          |`31:0` | (r)/(w) | ...
+| `0xfffffef8` | _CFS_REG_62_ |`31:0` | (r)/(w) | custom CFS interface register 62
+| `0xfffffefc` | _CFS_REG_63_ |`31:0` | (r)/(w) | custom CFS interface register 63
 |=======================
