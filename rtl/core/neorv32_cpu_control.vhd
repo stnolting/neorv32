@@ -2432,7 +2432,7 @@ begin
       end if;
 
       -- [m]instreth --
-      if (cpu_cnt_hi_width_c = 0) then
+      if (cpu_cnt_hi_width_c > 0) then
         if (csr.we = '1') and (csr.addr = csr_minstreth_c) then -- write access
           csr.minstreth(cpu_cnt_hi_width_c-1 downto 0) <= csr.wdata(cpu_cnt_hi_width_c-1 downto 0);
         elsif (csr.minstret_msb = '0') and (csr.minstret(csr.minstret'left) = '1') then -- automatic update (continued)
