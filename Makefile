@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-all: pdf html ug-pdf ug-html
+all: pdf html ug-pdf ug-html doxygen
 	mkdir -p docs/public/img/
 	cp -vr docs/figures/* docs/public/img/
 
@@ -42,6 +42,11 @@ ug-html:
 	  userguide/index.adoc \
 	  --out-file public/ug/index.html
 
+# Generate DOXYGEN software documentation
+doxygen:
+	cd docs; \
+	doxygen Doxyfile
+
 # Generate revnumber.txt for overriding the revnumber attribute in 'pdf' and/or 'html'
 revnumber:
 	if [ `git tag -l | grep nightly` ]; then git tag -d nightly; fi
@@ -60,3 +65,4 @@ help:
 	@echo " html    - build datasheet as HTML page (docs/public/index.html)"
 	@echo " ug-pdf  - build user guide as pdf file (docs/public/pdf/NEORV32_UserGuide.pdf)"
 	@echo " ug-html - build user guide as HTML page (docs/public/ug/index.html)"
+	@echo " doxygen - build software documentation as HTML page (docs/doxygen_build/html/index.html)"
