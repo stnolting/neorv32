@@ -90,7 +90,7 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 
 **Timers**
 
-* machine system timer ([MTIME](https://stnolting.github.io/neorv32/#_machine_system_timer_mtime)), RISC-V-compatible
+* machine system timer ([MTIME](https://stnolting.github.io/neorv32/#_machine_system_timer_mtime)), RISC-V spec. compatible
 * watchdog timer ([WDT](https://stnolting.github.io/neorv32/#_watchdog_timer_wdt))
 
 **IO**
@@ -101,14 +101,14 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 [TWI / I²C](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi))
 * general purpose [GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio) and
 [PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)
-* smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly drive *NeoPixel(TM)* LEDs
+* smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly drive _NeoPixel(TM)_ LEDs
 
 **SoC Connectivity and Integration**
 
 * 32-bit external bus interface, Wishbone b4 compatible
 ([WISHBONE](https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite))
-* [wrapper](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_top_axi4lite.vhd) for AXI4-Lite Master Interface
-* alternative [top entities/wrappers](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) available providing
+  * [wrapper](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_top_axi4lite.vhd) for AXI4-Lite master interface
+* alternative [top entities/wrappers](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) providing
 simplified and/or resolved top entity ports for easy system inegration
 * custom functions subsystem ([CFS](https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs))
 for tightly-coupled custom co-processor extensions
@@ -249,9 +249,8 @@ Results generated for hardware version [`1.4.9.8`](https://github.com/stnolting/
 | `rv32imc`                                   |    22 008 bytes |          68.97 |    **0.6897** |         2981786734 |             611814918 |    **4.87** |
 | `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |    22 008 bytes |          90.91 |    **0.9091** |         2265135174 |             611814948 |    **3.70** |
 
-:information_source: The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension
-(enabled via the `FAST_MUL_EN` generic). The `FAST_SHIFT_EN` configuration uses a barrel shifter for
-CPU shift operations (enabled via the `FAST_SHIFT_EN` generic).
+:information_source: The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension.
+The `FAST_SHIFT_EN` configuration uses a barrel shifter for CPU shift operations.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 

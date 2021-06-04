@@ -439,7 +439,7 @@ Hence, any CPU access within this address space will succeed.
 |=======================
 
 [NOTE]
-From the CPU's point of view, the DB is mapped to an _"unused"_ address range within the processor's
+From the CPU's point of view, the DM is mapped to an _"unused"_ address range within the processor's
 <<_address_space>> right between the bootloader ROM (BOOTROM) and the actual processor-internal IO
 space at addresses `0xfffff800` - `0xfffff9ff`
 
@@ -476,7 +476,7 @@ acknowledges the according request.
 :sectnums:
 === CPU Debug Mode
 
-The NEORV32 CPU Debug Mode (part of `rtl/core/neorv32_cpu_control.vhd`) is compatible to the "Minimal RISC-V Debug Specification 0.13.2".
+The NEORV32 CPU Debug Mode `DB` (part of `rtl/core/neorv32_cpu_control.vhd`) is compatible to the "Minimal RISC-V Debug Specification 0.13.2".
 It is enabled/implemented by setting the CPU generic _CPU_EXTENSION_RISCV_DEBUG_ to "true" (done by setting processor
 generic _ON_CHIP_DEBUGGER_EN_).
 It provides a new operation mode called "debug mode".
