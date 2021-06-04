@@ -1,7 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - Custom Functions Subsystem (CFS) >>                                              #
 -- # ********************************************************************************************* #
--- # For tightly-coupled custom co-processors. Provides 32x32-bit memory-mapped registers.         #
+-- # For tightly-coupled custom co-processors. Provides 64x32-bit memory-mapped registers.         #
 -- # This is just an "example/illustrating template". Modify this file to implement your custom    #
 -- # design logic.                                                                                 #
 -- # ********************************************************************************************* #
@@ -188,7 +188,7 @@ begin
   -- modules of the NEORV32 can only be written in full word mode (32-bit). Any other write access (half-word or byte)
   -- will trigger a store bus access fault exception.
   --
-  -- The CFS provides up to 32 memory-mapped 32-bit interface register. For instance, these could be used to provide
+  -- The CFS provides up to 64 memory-mapped 32-bit interface register. For instance, these could be used to provide
   -- a <control register> for global control of the unit, a <data register> for reading/writing from/to a data FIFO, a <command register>
   -- for issueing commands and a <status register> for status information.
   --
