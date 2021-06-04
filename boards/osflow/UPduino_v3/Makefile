@@ -43,6 +43,10 @@ ICE40_SRC := \
 DESIGN_NAME := neorv32_upduino_v3
 IMPL_NAME := ${DESIGN_NAME}_impl_1
 
+ifdef GHDL_PLUGIN_MODULE
+YOSYSFLAGS += -m $(GHDL_PLUGIN_MODULE)
+endif
+
 .PHONY: all syn impl bin clean
 
 # Some phony targets for convenience
@@ -61,7 +65,7 @@ work-obj08.cf: neorv32-obj08.cf ${UPDUINO_SRC}
 	ghdl -a --std=08 --work=work ${UPDUINO_SRC}
 
 ${IMPL_NAME}.json: work-obj08.cf
-	yosys -m ghdl -p 'ghdl --std=08 --no-formal neorv32_upduino_v3_top; synth_ice40 -dsp -json $@' 2>&1 | tee yosys-report.txt
+	yosys $(YOSYSFLAGS) -p 'ghdl --std=08 --no-formal neorv32_upduino_v3_top; synth_ice40 -dsp -json $@' 2>&1 | tee yosys-report.txt
 
 ${IMPL_NAME}.asc: ${IMPL_NAME}.json ${DESIGN_NAME}.pcf
 	nextpnr-ice40 --ignore-loops --timing-allow-fail \

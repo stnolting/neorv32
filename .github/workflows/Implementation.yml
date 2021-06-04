@@ -18,6 +18,8 @@ jobs:
   all-in-one:
     runs-on: ubuntu-latest
     name: '🛳️ All-in-one'
+    env:
+      GHDL_PLUGIN_MODULE: ghdl
 
     steps:
 
