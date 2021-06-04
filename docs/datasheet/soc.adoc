@@ -666,13 +666,13 @@ more information.
 
 
 :sectnums!:
-===== _IO_PWM_EN_
+===== _IO_PWM_NUM_CH_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_PWM_EN** | _boolean_ | true
-3+| Implement pulse-width modulation controller (PWM) when _true_.
+| **IO_PWM_NUM_CH** | _natural_ | 4
+3+| Number of pulse-width modulation (PWM) channels (0..60) to implement. The PWM controller is _not_ implemented if zero.
 See section <<_pulse_width_modulation_controller_pwm>> for more information.
 |======
 
