@@ -871,7 +871,7 @@ begin
 
     -- system/environment instructions --
     sys_env_cmd_mask_v := funct12_ecall_c or funct12_ebreak_c or funct12_mret_c or funct12_wfi_c or funct12_dret_c; -- sum-up set bits
-    decode_aux.sys_env_cmd(11 downto 0) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) and sys_env_cmd_mask_v; -- set unsued bits to always-zero
+    decode_aux.sys_env_cmd <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) and sys_env_cmd_mask_v; -- set unused bits to always-zero
   end process decode_helper;
 
 
@@ -987,27 +987,27 @@ begin
         trap_ctrl.env_end        <= '1';
         execute_engine.state_nxt <= TRAP_EXECUTE;
 
-      when TRAP_EXECUTE => -- Start trap environment - jump to TVEC / return from trap environment - jump to EPC
+      when TRAP_EXECUTE => -- Start trap environment -> jump to TVEC / return from trap environment -> jump to EPC
       -- ------------------------------------------------------------
-        execute_engine.pc_mux_sel <= '0'; -- next PC (csr.mtvec)
+        execute_engine.pc_mux_sel <= '0'; -- next_PC
         fetch_engine.reset        <= '1';
         execute_engine.pc_we      <= '1';
         execute_engine.sleep_nxt  <= '0'; -- disable sleep mode
         execute_engine.state_nxt  <= SYS_WAIT;
 
 
-      when EXECUTE => -- Decode and execute instruction (control has to be here for excatly 1 cyle in any case!)
+      when EXECUTE => -- Decode and execute instruction (control has to be here for exactly 1 cycle in any case!)
       -- ------------------------------------------------------------
         opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11"; -- save some bits here, LSBs are always 11 for rv32
         case opcode_v is
 
-          when opcode_alu_c | opcode_alui_c => -- (immediate) ALU operation
+          when opcode_alu_c | opcode_alui_c => -- (register/immediate) ALU operation
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA
             ctrl_nxt(ctrl_alu_opb_mux_c) <= decode_aux.alu_immediate; -- use IMM as ALU.OPB for immediate operations
             ctrl_nxt(ctrl_rf_in_mux_c)   <= '0'; -- RF input = ALU result
 
-            -- ALU arithmetic operation type and ADD/SUB --
+            -- ALU arithmetic operation type --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_slt_c) or
                (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sltu_c) then
               ctrl_nxt(ctrl_alu_arith_c) <= alu_arith_cmd_slt_c;
@@ -1453,7 +1453,7 @@ begin
       end if;
 
       -- check instructions --
-      opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
+      opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11"; -- save some bits here, LSBs are always 11 for rv32
       case opcode_v is
 
         
@@ -1594,13 +1594,13 @@ begin
               end if;
             end if;
 
-          -- ecall, ebreak, mret, wfi --
+          -- ecall, ebreak, mret, wfi, dret --
           elsif (execute_engine.i_reg(instr_rd_msb_c  downto instr_rd_lsb_c)  = "00000") and
                 (execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") then
             if (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ecall_c)  or -- ECALL
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ebreak_c) or -- EBREAK 
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_mret_c)   or -- MRET
-               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = (funct12_dret_c)) and (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) or
+               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = (funct12_dret_c)) and (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) or -- DRET
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_wfi_c) then  -- WFI
               illegal_instruction <= '0';
             else
@@ -2919,8 +2919,8 @@ begin
 
   -- entry debug mode triggers --
   debug_ctrl.trig_break <= trap_ctrl.break_point and (debug_ctrl.running or -- we are in debug mode: re-enter debug mode
-                           (csr.priv_m_mode and csr.dcsr_ebreakm and (not debug_ctrl.running)) or -- enable goto-debug-mode in machine mode on "ebreak"
-                           (csr.priv_u_mode and csr.dcsr_ebreaku and (not debug_ctrl.running))); -- enable goto-debug-mode in user mode on "ebreak"
+                           (csr.priv_m_mode and csr.dcsr_ebreakm and (not debug_ctrl.running)) or -- enabled goto-debug-mode in machine mode on "ebreak"
+                           (csr.priv_u_mode and csr.dcsr_ebreaku and (not debug_ctrl.running))); -- enabled goto-debug-mode in user mode on "ebreak"
   debug_ctrl.trig_halt <= (not debug_ctrl.ext_halt_req(1)) and debug_ctrl.ext_halt_req(0) and (not debug_ctrl.running); -- rising edge detector from external halt request (if not halted already)
   debug_ctrl.trig_step <= csr.dcsr_step and (not debug_ctrl.running); -- single-step mode (trigger when NOT CURRENTLY in debug mode)
 
@@ -2929,7 +2929,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   dcsr_readback_false:
   if (CPU_EXTENSION_RISCV_DEBUG = false) generate
-    csr.dcsr_rd <= (others => '0');
+    csr.dcsr_rd <= (others => '-');
   end generate;
 
   dcsr_readback_true:
@@ -2943,7 +2943,7 @@ begin
     csr.dcsr_rd(11) <= csr.dcsr_stepie; -- stepie: interrupts enabled during single-stepping?
     csr.dcsr_rd(10) <= '0'; -- stopcount: counters increment as usual FIXME ???
     csr.dcsr_rd(09) <= '0'; -- stoptime: timers increment as usual FIXME ???
-    csr.dcsr_rd(08 downto 06) <= csr.dcsr_cause; -- cause
+    csr.dcsr_rd(08 downto 06) <= csr.dcsr_cause; -- debug mode entry cause
     csr.dcsr_rd(05) <= '0'; -- reserved
     csr.dcsr_rd(04) <= '0'; -- mprven: mstatus.mprv is ignored in debug mode
     csr.dcsr_rd(03) <= trap_ctrl.irq_buf(interrupt_nm_irq_c); -- nmip: pending non-maskable interrupt

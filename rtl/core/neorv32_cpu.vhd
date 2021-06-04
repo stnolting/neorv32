@@ -212,8 +212,6 @@ begin
   -- Debug mode --
   assert not (CPU_EXTENSION_RISCV_DEBUG = true) report "NEORV32 CPU CONFIG NOTE: Implementing RISC-V DEBUG MODE extension." severity note;
   assert not ((CPU_EXTENSION_RISCV_DEBUG = true) and (CPU_EXTENSION_RISCV_Zicsr = false)) report "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
-  -- FIXME: debug mode extension warning --
-  assert not (CPU_EXTENSION_RISCV_DEBUG = true) report "NEORV32 CPU CONFIG WARNING! RISC-V DEBUG MODE extension <CPU_EXTENSION_RISCV_DEBUG> is still EXPERIMENTAL." severity warning;
 
 
   -- Control Unit ---------------------------------------------------------------------------

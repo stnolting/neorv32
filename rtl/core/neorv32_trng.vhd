@@ -124,9 +124,10 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (num_roscs_c = 0) report "NEORV32 PROCESSOR CONFIG NOTE: TRNG - Total number of ring-oscillators has to be >0." severity error;
-  assert not ((num_inv_start_c mod 2)  = 0) report "NEORV32 PROCESSOR CONFIG NOTE: TRNG - Number of inverters in fisrt ring has to be odd." severity error;
-  assert not ((num_inv_inc_c   mod 2) /= 0) report "NEORV32 PROCESSOR CONFIG NOTE: TRNG - Number of inverters increment for each next ring has to be even." severity error;
+  assert not (num_roscs_c = 0) report "NEORV32 PROCESSOR CONFIG ERROR: TRNG - Total number of ring-oscillators has to be >0." severity error;
+  assert not ((num_inv_start_c mod 2)  = 0) report "NEORV32 PROCESSOR CONFIG ERROR: TRNG - Number of inverters in fisrt ring has to be odd." severity error;
+  assert not ((num_inv_inc_c   mod 2) /= 0) report "NEORV32 PROCESSOR CONFIG ERROR: TRNG - Number of inverters increment for each next ring has to be even." severity error;
+
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -320,11 +321,6 @@ architecture neorv32_trng_ring_osc_rtl of neorv32_trng_ring_osc is
   signal sync_ff     : std_ulogic_vector(1 downto 0); -- output signal synchronizer
 
 begin
-
-  -- Sanity Checks --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert not ((NUM_INV mod 2) = 0) report "NEORV32 PROCESSOR CONFIG NOTE: TNRG.ring_oscillator - Number of inverters in ring has to be odd." severity error;
-
 
   -- Ring Oscillator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
