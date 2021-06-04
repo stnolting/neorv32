@@ -4,6 +4,5 @@
 !README.md
 
 !*.vhd
-!*.bin
 !*.pcf
 !Makefile
