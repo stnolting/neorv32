@@ -90,7 +90,7 @@ entity neorv32_top_stdlogic is
     IO_UART1_EN                  : boolean := true;   -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_EN                    : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+    IO_PWM_NUM_CH                : natural := 4;      -- number of PWM channels to implement (0..60); 0 = disabled
     IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
     IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
@@ -146,8 +146,8 @@ entity neorv32_top_stdlogic is
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  : inout std_logic; -- twi serial data line
     twi_scl_io  : inout std_logic; -- twi serial clock line
-    -- PWM (available if IO_PWM_EN = true) --
-    pwm_o       : out std_logic_vector(03 downto 0); -- pwm channels
+    -- PWM (available if IO_PWM_NUM_CH > 0) --
+    pwm_o       : out std_logic_vector(IO_PWM_NUM_CH-1 downto 0); -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i    : in  std_logic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom inputs
     cfs_out_o   : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom outputs
@@ -215,7 +215,7 @@ architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
   signal spi_sdi_i_int   : std_ulogic;
   signal spi_csn_o_int   : std_ulogic_vector(07 downto 0);
   --
-  signal pwm_o_int       : std_ulogic_vector(03 downto 0);
+  signal pwm_o_int       : std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0);
   --
   signal cfs_in_i_int    : std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0);
   signal cfs_out_o_int   : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
@@ -288,7 +288,7 @@ begin
     IO_UART1_EN                  => IO_UART1_EN,        -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN                    => IO_SPI_EN,          -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    => IO_TWI_EN,          -- implement two-wire interface (TWI)?
-    IO_PWM_EN                    => IO_PWM_EN,          -- implement pulse-width modulation unit (PWM)?
+    IO_PWM_NUM_CH                => IO_PWM_NUM_CH,      -- number of PWM channels to implement (0..60); 0 = disabled
     IO_WDT_EN                    => IO_WDT_EN,          -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   => IO_TRNG_EN,         -- implement true random number generator (TRNG)?
     IO_CFS_EN                    => IO_CFS_EN,          -- implement custom functions subsystem (CFS)?
@@ -344,7 +344,7 @@ begin
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  => twi_sda_io,      -- twi serial data line
     twi_scl_io  => twi_scl_io,      -- twi serial clock line
-    -- PWM (available if IO_PWM_EN = true) --
+    -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o       => pwm_o_int,       -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i    => cfs_in_i_int,    -- custom inputs

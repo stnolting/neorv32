@@ -237,7 +237,7 @@ begin
     IO_UART1_EN                  => true,          -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN                    => true,          -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    => true,          -- implement two-wire interface (TWI)?
-    IO_PWM_EN                    => true,          -- implement pulse-width modulation unit (PWM)?
+    IO_PWM_NUM_CH                => 30,            -- number of PWM channels to implement (0..60); 0 = disabled
     IO_WDT_EN                    => true,          -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   => false,         -- trng cannot be simulated
     IO_CFS_EN                    => true,          -- implement custom functions subsystem (CFS)?
@@ -293,7 +293,7 @@ begin
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  => twi_sda,         -- twi serial data line
     twi_scl_io  => twi_scl,         -- twi serial clock line
-    -- PWM (available if IO_PWM_EN = true) --
+    -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o       => open,            -- pwm channels
     -- Custom Functions Subsystem IO --
     cfs_in_i    => (others => '0'), -- custom CFS inputs
