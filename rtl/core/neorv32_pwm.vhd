@@ -1,12 +1,12 @@
 -- #################################################################################################
 -- # << NEORV32 - Pulse Width Modulation Controller (PWM) >>                                       #
 -- # ********************************************************************************************* #
--- # Simple 4-channel PWM controller with 8 bit resolution for the duty cycle and programmable     #
--- # clock.                                                                                        #
+-- # Simple PWM controller with 8 bit resolution for the duty cycle and programmable base          #
+-- # frequency. The controller supports up to 60 PWM channels.                                     #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -43,6 +43,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_pwm is
+  generic (
+    NUM_CHANNELS : natural := 4 -- number of PWM channels (0..60)
+  );
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
@@ -56,14 +59,11 @@ entity neorv32_pwm is
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(07 downto 0);
     -- pwm output channels --
-    pwm_o       : out std_ulogic_vector(03 downto 0)
+    pwm_o       : out std_ulogic_vector(NUM_CHANNELS-1 downto 0)
   );
 end neorv32_pwm;
 
 architecture neorv32_pwm_rtl of neorv32_pwm is
-
-  -- internal configuration --
-  constant num_pwm_channels_c : natural := 4; -- number of PWM channels, fixed!
 
   -- IO space: module base address --
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
@@ -82,10 +82,13 @@ architecture neorv32_pwm_rtl of neorv32_pwm is
   signal rden   : std_ulogic; -- read enable
 
   -- accessible regs --
-  type pwm_ch_t is array (0 to num_pwm_channels_c-1) of std_ulogic_vector(7 downto 0);
+  type pwm_ch_t is array (0 to NUM_CHANNELS-1) of std_ulogic_vector(7 downto 0);
   signal pwm_ch : pwm_ch_t; -- duty cycle (r/w)
   signal enable : std_ulogic; -- enable unit (r/w)
   signal prsc   : std_ulogic_vector(2 downto 0); -- clock prescaler (r/w)
+
+  type pwm_ch_rd_t is array (0 to 60-1) of std_ulogic_vector(7 downto 0);
+  signal pwm_ch_rd : pwm_ch_rd_t; -- duty cycle read-back
 
   -- prescaler clock generator --
   signal prsc_tick : std_ulogic;
@@ -94,6 +97,11 @@ architecture neorv32_pwm_rtl of neorv32_pwm is
   signal pwm_cnt : std_ulogic_vector(7 downto 0);
 
 begin
+
+  -- Sanity Checks --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert not (NUM_CHANNELS > 60) report "NEORV32 PROCESSOR CONFIG ERROR! <IO.PWM> invalid number of channels! Has to be 0..60.!" severity error;
+
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -109,33 +117,56 @@ begin
   begin
     if rising_edge(clk_i) then
       ack_o <= acc_en and (rden_i or wren_i);
+
       -- write access --
       if (wren = '1') then
-        if (addr = pwm_ctrl_addr_c) then -- control register
+        -- control register --
+        if (addr = pwm_ctrl_addr_c) then
           enable <= data_i(ctrl_enable_c);
           prsc   <= data_i(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c);
         end if;
-        if (addr = pwm_duty_addr_c) then -- duty cycle register
-          for i in 0 to 3 loop
-            pwm_ch(i) <= data_i(7+i*8 downto 0+i*8);
-          end loop;
-        end if;
+        -- duty cycle registers --
+        for i in 0 to NUM_CHANNELS-1 loop -- channel loop
+          if (addr(5 downto 2) = std_ulogic_vector(to_unsigned((i/4)+1, 4))) then -- 4 channels per register; add ctrl reg offset
+            pwm_ch(i) <= data_i((i mod 4)*8+7 downto (i mod 4)*8+0);
+          end if;
+        end loop;
       end if;
+
       -- read access --
       data_o <= (others => '0');
       if (rden = '1') then
-        if (addr = pwm_ctrl_addr_c) then
-          data_o(ctrl_enable_c) <= enable;
-          data_o(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c) <= prsc;
-        else -- pwm_duty_addr_c
-          data_o(07 downto 00) <= pwm_ch(0);
-          data_o(15 downto 08) <= pwm_ch(1);
-          data_o(23 downto 16) <= pwm_ch(2);
-          data_o(31 downto 24) <= pwm_ch(3);
-        end if;
+        case addr(5 downto 2) is
+          when x"0"   => data_o(ctrl_enable_c) <= enable; data_o(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c) <= prsc;
+          when x"1"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(3)  & pwm_ch_rd(2)  & pwm_ch_rd(1)  & pwm_ch_rd(0);  else NULL; end if;
+          when x"2"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(7)  & pwm_ch_rd(6)  & pwm_ch_rd(5)  & pwm_ch_rd(4);  else NULL; end if;
+          when x"3"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(11) & pwm_ch_rd(10) & pwm_ch_rd(9)  & pwm_ch_rd(8);  else NULL; end if;
+          when x"4"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(15) & pwm_ch_rd(14) & pwm_ch_rd(13) & pwm_ch_rd(12); else NULL; end if;
+          when x"5"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(19) & pwm_ch_rd(18) & pwm_ch_rd(17) & pwm_ch_rd(16); else NULL; end if;
+          when x"6"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(23) & pwm_ch_rd(22) & pwm_ch_rd(21) & pwm_ch_rd(20); else NULL; end if;
+          when x"7"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(27) & pwm_ch_rd(26) & pwm_ch_rd(25) & pwm_ch_rd(24); else NULL; end if;
+          when x"8"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(31) & pwm_ch_rd(30) & pwm_ch_rd(29) & pwm_ch_rd(28); else NULL; end if;
+          when x"9"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(35) & pwm_ch_rd(34) & pwm_ch_rd(33) & pwm_ch_rd(32); else NULL; end if;
+          when x"a"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(39) & pwm_ch_rd(38) & pwm_ch_rd(37) & pwm_ch_rd(36); else NULL; end if;
+          when x"b"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(43) & pwm_ch_rd(42) & pwm_ch_rd(41) & pwm_ch_rd(40); else NULL; end if;
+          when x"c"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(47) & pwm_ch_rd(46) & pwm_ch_rd(45) & pwm_ch_rd(44); else NULL; end if;
+          when x"d"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(51) & pwm_ch_rd(50) & pwm_ch_rd(49) & pwm_ch_rd(48); else NULL; end if;
+          when x"e"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(55) & pwm_ch_rd(54) & pwm_ch_rd(53) & pwm_ch_rd(52); else NULL; end if;
+          when x"f"   => if (NUM_CHANNELS > 0) then data_o <= pwm_ch_rd(59) & pwm_ch_rd(58) & pwm_ch_rd(57) & pwm_ch_rd(56); else NULL; end if;
+          when others => NULL;
+        end case;
       end if;
     end if;
   end process wr_access;
+
+  -- duty cycle read-back --
+  pwm_dc_rd_gen: process(pwm_ch)
+  begin
+    pwm_ch_rd <= (others => (others => '0'));
+    for i in 0 to NUM_CHANNELS-1 loop
+      pwm_ch_rd(i) <= pwm_ch(i);
+    end loop;
+  end process pwm_dc_rd_gen;
 
   -- PWM clock select --
   clkgen_en_o <= enable; -- enable clock generator
@@ -147,20 +178,26 @@ begin
   pwm_core: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- pwm counter --
+      -- pwm base counter --
       if (enable = '0') then 
         pwm_cnt <= (others => '0');
       elsif (prsc_tick = '1') then
         pwm_cnt <= std_ulogic_vector(unsigned(pwm_cnt) + 1);
       end if;
+
       -- channels --
-      for i in 0 to num_pwm_channels_c-1 loop
+      for i in 0 to NUM_CHANNELS-1 loop
+--if (pwm_cnt = pwm_ch(i)) or (pwm_ch(i) = x"00") or (enable = '0') then
+--  pwm_o(i) <= '0';
+--elsif (pwm_cnt = x"00") then
+--  pwm_o(i) <= '1';
+--end if;
         if (unsigned(pwm_cnt) >= unsigned(pwm_ch(i))) or (enable = '0') then
           pwm_o(i) <= '0';
         else
           pwm_o(i) <= '1';
         end if;
-      end loop; -- i, pwm channel
+      end loop;
     end if;
   end process pwm_core;
 
