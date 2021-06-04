@@ -750,7 +750,7 @@ enum NEORV32_CLOCK_PRSC_enum {
 /** custom CFS register 52 */
 #define CFS_REG_52 (*(IO_REG32 (CFS_BASE + 208))) // /**< (r)/(w): CFS register 52, user-defined */
 /** custom CFS register 53 */
-#define CFS_REG_53 (*(IO_REG32 (CFS_BASE + 212)) // /**< (r)/(w): CFS register 53, user-defined */
+#define CFS_REG_53 (*(IO_REG32 (CFS_BASE + 212))) // /**< (r)/(w): CFS register 53, user-defined */
 /** custom CFS register 54 */
 #define CFS_REG_54 (*(IO_REG32 (CFS_BASE + 216))) // /**< (r)/(w): CFS register 54, user-defined */
 /** custom CFS register 55 */
