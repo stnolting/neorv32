@@ -715,7 +715,8 @@ minimal `rv32i` ISA only (`rv32e` would be even better).
 :sectnums:
 == Programming an External SPI Flash via the Bootloader
 
-As described in section <<_external_spi_flash_for_booting>> the bootloader provides an option to store an application image to an external SPI flash
+As described in section https://stnolting.github.io/neorv32/#_external_spi_flash_for_booting[Documentation: External SPI Flash for Booting]
+the bootloader provides an option to store an application image to an external SPI flash
 and to read this image back for booting. These steps show how to store a
 
 [start=1]
@@ -827,7 +828,7 @@ as part of the testbench. Received chars are send to the simulator console and a
 
 When printing data via the UART the communication speed will always be based on the configured BAUD
 rate. For a simulation this might take some time. To have faster output you can enable the **simulation mode**
-or UART0/UART1 (see section <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>).
+or UART0/UART1 (see section https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0[Documentation: Primary Universal Asynchronous Receiver and Transmitter (UART0)]).
 
 ASCII data send to UART0 will be immediately printed to the simulator console. Additionally, the
 ASCII data is logged in a file (`neorv32.uart0.sim_mode.text.out`) in the simulator home folder. All
@@ -874,43 +875,26 @@ neorv32/sim$ sh ghdl_sim.sh --stop-time=4ms
 <<<
 // ####################################################################################################################
 :sectnums:
-== Building the Software Framework Documentation
+== Building the Documentation
 
-All core library software sources (libraries `sw/lib`, example programs `sw/example`, ...) are highly documented using _doxygen_.
-To build the documentation by yourself navigate to the project's `doc` folder and run _doxygen_:
+The documentation is written using `asciidoc`. The according source files can be found in `docs/...`.
+The documentation of the software framework is written _in-code_ using `doxygen`.
 
-[source,bash]
-----
-neorv32/docs$ doxygen Doxyfile
-----
-
-This will generate the `docs/doxygen_build` folder. To view the documentation, open the
-`docs/doxygen_build/html/index.html` file with your browser of choice. Click on the "files" tab to
-see a list of all documented files.
+A makefiles in the project's root directory is provided to either build all of the documentation as HTML pages
+or as PDF documents.
 
 [TIP]
-The documentation is automatically built and deployed to GitHub pages by a CI workflow (https://stnolting.github.io/neorv32/sw/files.html).
+Pre-rendered PDFs are available online as nightly pre-releases: https://github.com/stnolting/neorv32/releases.
+The HTML-based documentation is also available online at the project's https://stnolting.github.io/neorv32/[GitHub Pages].
 
+The makefile provides a help target to show all available build options and their according outputs.
 
-
-// ####################################################################################################################
-:sectnums:
-== Building the Project Documentation
-
-This data sheet is written using `asciidoc`. The source files are locates in `docs/src_adoc`.
-a makefiles in project's root directory is provided to either build a single pdf file
-or to build a HTML-based documentation.
-
-Pre-rendered pdf are available online as nightly pre-releases: https://github.com/stnolting/neorv32/releases.
-The HTML-based documentation is also available online at the project' https://stnolting.github.io/neorv32/[GitHub Pages].
-
-.Generate PDF documentation `docs/NEORV32.pdf` using `asciidoctor-pdf`
 [source,bash]
 ----
-neorv32$ make pdf
+neorv32$ make help
 ----
 
-.Generate HTML documentation `docs/index.html` using `asciidoctor`
+.Example: Generate HTML documentation (data sheet) using `asciidoctor`
 [source,bash]
 ----
 neorv32$ make html
@@ -919,6 +903,13 @@ neorv32$ make html
 [TIP]
 If you don't have `asciidoctor` / `asciidoctor-pdf` installed, you can still generate all the documentation using
 a _docker container_ via `make container`.
+
+
+
+// ####################################################################################################################
+:sectnums:
+== Building the Project Documentation
+
 
 
 <<<
@@ -952,7 +943,8 @@ file for more information on how to run the tests and how testing is conducted i
 :sectnums:
 == Debugging using the On-Chip Debugger
 
-The NEORV32 <<_on_chip_debugger_ocd>> allows _online_ in-system debugging via an external JTAG access port from a
+The NEORV32 https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd[Documentation: On-Chip Debugger]
+allows _online_ in-system debugging via an external JTAG access port from a
 host machine. The general flow is independent of the host machine's operating system. However, this tutorial uses
 Windows and Linux (Ubuntu on Windows) in parallel.
 
@@ -999,7 +991,7 @@ according to your interface chip and your operating system.
 
 [TIP]
 If you want to modify the JTAG clock speed (via `adapter speed` in `sw/openocd/openocd_neorv32.cfg`) make sure to meet
-the clock requirements noted in <<_debug_transport_module_dtm>>.
+the clock requirements noted in https://stnolting.github.io/neorv32/#_debug_module_dm[Documentation: Debug Transport Module (DTM)].
 
 To access the processor using OpenOCD, open a terminal and start OpenOCD with the pre-configured configuration file.
 
