@@ -36,8 +36,7 @@ The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC
 The project is intended as auxiliary processor in larger SoC designs or as *ready-to-go* stand-alone
 custom / customizable microcontroller.
 
-:books: For detailed information take a look at the [NEORV32 documentation /datasheet (online at GitHub-pages)](https://stnolting.github.io/neorv32/).
-The `asciidoc` sources can be found in [`docs/src_adoc`](https://github.com/stnolting/neorv32/blob/master/docs/src_adoc).
+:books: For detailed information take a look at the [NEORV32 documentation (online at GitHub-pages)](https://stnolting.github.io/neorv32/).
 The *doxygen*-based documentation of the *software framework* is also available online
 at [GitHub-pages](https://stnolting.github.io/neorv32/sw/files.html).
 
@@ -54,8 +53,8 @@ various FPGA boards to get you started.
 [new discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas or bug-fixes.
 Check out how to contribute in [`CONTRIBUTE.md`](https://github.com/stnolting/neorv32/blob/master/CONTRIBUTING.md).
 
-:rocket: Check out the [quick links below](#Getting-Started) or directly jump to the documentation's
-[*Let's Get It Started!*](https://stnolting.github.io/neorv32/#_lets_get_it_started) section to get started
+:rocket: Check out the [quick links below](#Getting-Started) or directly jump to the
+[*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started
 setting up your NEORV32 setup!
 
 
@@ -164,9 +163,9 @@ two-stage (+ multi-cycle) RISC-V CPU with independent instruction/data bus inter
 modes / privilege levels: `machine` and optional `user` and `debug_mode`.
 
 It supports the _standard_ RISC-V machine interrupts (`MTI`, `MEI`, `MSI`) and 1 non-maskable interrupt as well as 16
-_fast interrupt requests_ as custom extension. The CPU also supports **all** standard RISC-V exceptions
+_fast interrupt requests_ as custom extensions. The CPU also supports **all** standard RISC-V exceptions
 (instruction/load/store misaligned address & bus access fault, illegal instruction, breakpoint, environment call).
-As a special "execution safety" extension, _all_ invalid or reserved instruction will raise an illegal
+As a special "execution safety" extension, _all_ invalid, reserved or malformed instructions will raise an illegal
 instruction exception.
 
 
@@ -309,14 +308,14 @@ This overview provides some *quick links* to the most important sections of the 
 * [Application Makefiles](https://stnolting.github.io/neorv32/#_application_makefile) - turning your application into an executable
 * [Bootloader](https://stnolting.github.io/neorv32/#_bootloader) - the build-in NEORV32 bootloader
 
-### :rocket: User Guides (see [full overview](https://stnolting.github.io/neorv32/#_lets_get_it_started))
+### :rocket: User Guides (see [full User Guide](https://stnolting.github.io/neorv32/ug/))
 
-* [Toolchain Setup](https://stnolting.github.io/neorv32/#_toolchain_setup) - install and setup RISC-V gcc
-* [General Hardware Setup](https://stnolting.github.io/neorv32/#_general_hardware_setup) - setup a new NEORV32 EDA project
-* [General Software Setup](https://stnolting.github.io/neorv32/#_general_software_framework_setup) - configure the software framework
-* [Application Compilation](https://stnolting.github.io/neorv32/#_application_program_compilation) - compile an application using `make`
-* [Upload via Bootloader](https://stnolting.github.io/neorv32/#_uploading_and_starting_of_a_binary_executable_image_via_uart) - upload and execute executables
-* [Debugging via the On-Chip Debugger](https://stnolting.github.io/neorv32/#_debugging_using_the_on_chip_debugger) - step through code *online* and *in-system*
+* [Toolchain Setup](https://stnolting.github.io/neorv32/ug/#_toolchain_setup) - install and setup RISC-V gcc
+* [General Hardware Setup](https://stnolting.github.io/neorv32/ug/#_general_hardware_setup) - setup a new NEORV32 EDA project
+* [General Software Setup](https://stnolting.github.io/neorv32/ug/#_general_software_framework_setup) - configure the software framework
+* [Application Compilation](https://stnolting.github.io/neorv32/ug/#_application_program_compilation) - compile an application using `make`
+* [Upload via Bootloader](https://stnolting.github.io/neorv32/ug/#_uploading_and_starting_of_a_binary_executable_image_via_uart) - upload and execute executables
+* [Debugging via the On-Chip Debugger](https://stnolting.github.io/neorv32/ug/#_debugging_using_the_on_chip_debugger) - step through code *online* and *in-system*
 
 ### :copyright: Legal
 
