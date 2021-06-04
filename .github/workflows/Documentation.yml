@@ -46,22 +46,14 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: '📚 Build Datasheet (PDF and HTML)'
+    - name: '📚 Build Datasheet and User Guide (PDF and HTML)'
       run: make container
-
-    - name: '📤 Upload Artifact: PDF'
-      uses: actions/upload-artifact@v2
-      with:
-        name: NEORV32-PDF
-        path: docs/NEORV32.pdf
 
     - name: '📤 Upload Artifact: HTML'
       uses: actions/upload-artifact@v2
       with:
-        name: NEORV32-HTML
-        path: |
-          docs/index.html
-          docs/figures
+        name: NEORV32
+        path: docs/public
 
 
   deploy:
@@ -82,11 +74,13 @@ jobs:
 
     - name: '🛠️ Organise public subdir and create a tarball'
       run: |
-        mv NEORV32-HTML public
+        mv NEORV32 public
+        mv public/pdf ./
         mv NEORV32-Doxygen public/sw
         tar zvcf NEORV32-SITE-nightly.tar.gz -C public .
-        mv NEORV32-PDF/NEORV32.pdf public
-        cp public/NEORV32.pdf NEORV32-nightly.pdf
+        cd pdf
+        mv NEORV32.pdf NEORV32-nightly.pdf
+        mv NEORV32_UserGuide.pdf NEORV32_UserGuide-nightly.pdf
 
     # Tagged: create a pre-release or a release (semver)
     # Untagged: update the assets of pre-release 'nightly'
@@ -97,7 +91,7 @@ jobs:
         tag: 'nightly'
         files: |
           NEORV32-SITE-nightly.tar.gz
-          NEORV32-nightly.pdf
+          pdf/NEORV32*nightly.pdf
 
     - name: '🚀 Deploy to GitHub-Pages'
       run: |

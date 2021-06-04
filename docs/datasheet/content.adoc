@@ -11,6 +11,4 @@ include::software.adoc[]
 
 include::on_chip_debugger.adoc[]
 
-include::getting_started.adoc[]
-
-include::legal.adoc[]
+include::../legal.adoc[]

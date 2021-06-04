@@ -1,4 +1,5 @@
-= The NEORV32 RISC-V Processor
+= The NEORV32 RISC-V Processor: Datasheet
+:title: [Datasheet] The NEORV32 RISC-V Processor
 :author: Dipl.-Ing. Stephan Nolting
 :email: stnolting@gmail.com
 :description: A size-optimized, customizable and open-source full-scale 32-bit RISC-V soft-core CPU and SoC written in platform-independent VHDL.
@@ -6,14 +7,14 @@
 :doctype: book
 :sectnums:
 :icons: font
-:imagesdir: figures
+:imagesdir: img
 :stem:
 :reproducible:
 :listing-caption: Listing
 :toc: left
 :toclevels: 4
 :title-logo-image: neorv32_logo_dark.png[pdfwidth=6.25in,align=center]
-:favicon: figures/icon.png
+:favicon: img/icon.png
 
 image::neorv32_logo_transparent.png[align=center]
 
@@ -23,6 +24,8 @@ image::riscv_logo.png[width=350,align=center]
 https://github.com/stnolting/neorv32[image:https://img.shields.io/badge/GitHub-stnolting%2Fneorv32-ffbd00?style=flat-square&logo=github&[title='homepage']]
 https://github.com/stnolting/neorv32/blob/master/LICENSE[image:https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat-square[title='license']]
 https://github.com/stnolting/neorv32/releases/tag/nightly[image:https://img.shields.io/badge/data%20sheet-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor[title='datasheet (pdf)']]
+https://github.com/stnolting/neorv32/releases/tag/nightly[image:https://img.shields.io/badge/user%20guide-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor[title='userguide (pdf)']]
+https://stnolting.github.io/neorv32/ug[image:https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat-square[title='userguide (html)']]
 https://stnolting.github.io/neorv32/sw/files.html[image:https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen[title='doxygen']]
 
 
