@@ -60,7 +60,7 @@ MEMORY
 
   rom  (rx)  : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 4*1024 : 16*1024
   ram (rwx)  : ORIGIN = 0x80000000, LENGTH = 8*1024
-  iodev (rw) : ORIGIN = 0xFFFFFF00, LENGTH = 256
+  iodev (rw) : ORIGIN = 0xFFFFFE00, LENGTH = 512
 
 }
 /* ************************************************************************* */

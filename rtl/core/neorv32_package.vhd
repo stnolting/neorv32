@@ -87,7 +87,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050602"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050603"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
   constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
@@ -120,44 +120,78 @@ package neorv32_package is
 
   -- IO: Peripheral Devices ("IO") Area --
   -- Control register(s) (including the device-enable) should be located at the base address of each device
-  constant io_base_c            : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff00";
-  constant io_size_c            : natural := 64*4; -- module's address space in bytes, fixed!
+  constant io_base_c            : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe00";
+  constant io_size_c            : natural := 512; -- module's address space in bytes, fixed!
 
   -- Custom Functions Subsystem (CFS) --
-  constant cfs_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff00"; -- base address
-  constant cfs_size_c           : natural := 32*4; -- module's address space in bytes
-  constant cfs_reg0_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff00";
-  constant cfs_reg1_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff04";
-  constant cfs_reg2_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff08";
-  constant cfs_reg3_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff0c";
-  constant cfs_reg4_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff10";
-  constant cfs_reg5_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff14";
-  constant cfs_reg6_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff18";
-  constant cfs_reg7_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff1c";
-  constant cfs_reg8_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff20";
-  constant cfs_reg9_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff24";
-  constant cfs_reg10_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff28";
-  constant cfs_reg11_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff2c";
-  constant cfs_reg12_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff30";
-  constant cfs_reg13_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff34";
-  constant cfs_reg14_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff38";
-  constant cfs_reg15_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff3c";
-  constant cfs_reg16_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff40";
-  constant cfs_reg17_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff44";
-  constant cfs_reg18_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff48";
-  constant cfs_reg19_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff4c";
-  constant cfs_reg20_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff50";
-  constant cfs_reg21_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff54";
-  constant cfs_reg22_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff58";
-  constant cfs_reg23_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff5c";
-  constant cfs_reg24_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff60";
-  constant cfs_reg25_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff64";
-  constant cfs_reg26_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff68";
-  constant cfs_reg27_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff6c";
-  constant cfs_reg28_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff70";
-  constant cfs_reg29_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff74";
-  constant cfs_reg30_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff78";
-  constant cfs_reg31_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff7c";
+  constant cfs_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe00"; -- base address
+  constant cfs_size_c           : natural := 64*4; -- module's address space in bytes
+  constant cfs_reg0_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe00";
+  constant cfs_reg1_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe04";
+  constant cfs_reg2_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe08";
+  constant cfs_reg3_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe0c";
+  constant cfs_reg4_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe10";
+  constant cfs_reg5_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe14";
+  constant cfs_reg6_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe18";
+  constant cfs_reg7_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe1c";
+  constant cfs_reg8_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe20";
+  constant cfs_reg9_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe24";
+  constant cfs_reg10_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe28";
+  constant cfs_reg11_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe2c";
+  constant cfs_reg12_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe30";
+  constant cfs_reg13_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe34";
+  constant cfs_reg14_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe38";
+  constant cfs_reg15_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe3c";
+  constant cfs_reg16_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe40";
+  constant cfs_reg17_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe44";
+  constant cfs_reg18_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe48";
+  constant cfs_reg19_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe4c";
+  constant cfs_reg20_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe50";
+  constant cfs_reg21_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe54";
+  constant cfs_reg22_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe58";
+  constant cfs_reg23_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe5c";
+  constant cfs_reg24_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe60";
+  constant cfs_reg25_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe64";
+  constant cfs_reg26_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe68";
+  constant cfs_reg27_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe6c";
+  constant cfs_reg28_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe70";
+  constant cfs_reg29_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe74";
+  constant cfs_reg30_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe78";
+  constant cfs_reg31_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe7c";
+  constant cfs_reg32_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe80";
+  constant cfs_reg33_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe84";
+  constant cfs_reg34_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe88";
+  constant cfs_reg35_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe8c";
+  constant cfs_reg36_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe90";
+  constant cfs_reg37_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe94";
+  constant cfs_reg38_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe98";
+  constant cfs_reg39_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe9c";
+  constant cfs_reg40_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea0";
+  constant cfs_reg41_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea4";
+  constant cfs_reg42_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea8";
+  constant cfs_reg43_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeac";
+  constant cfs_reg44_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeb0";
+  constant cfs_reg45_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeb4";
+  constant cfs_reg46_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeb8";
+  constant cfs_reg47_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffebc";
+  constant cfs_reg48_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffec0";
+  constant cfs_reg49_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffec4";
+  constant cfs_reg50_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffec8";
+  constant cfs_reg51_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffecc";
+  constant cfs_reg52_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffed0";
+  constant cfs_reg53_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffed4";
+  constant cfs_reg54_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffed8";
+  constant cfs_reg55_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffedc";
+  constant cfs_reg56_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffee0";
+  constant cfs_reg57_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffee4";
+  constant cfs_reg58_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffee8";
+  constant cfs_reg59_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeec";
+  constant cfs_reg60_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffef0";
+  constant cfs_reg61_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffef4";
+  constant cfs_reg62_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffef8";
+  constant cfs_reg63_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffefc";
+
+  -- ... --
 
   -- General Purpose Input/Output Unit (GPIO) --
   constant gpio_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff80"; -- base address
@@ -767,12 +801,12 @@ package neorv32_package is
   -- function select (actual alu result) --
   constant alu_func_cmd_arith_c   : std_ulogic_vector(1 downto 0) := "00"; -- r <= r.arith
   constant alu_func_cmd_logic_c   : std_ulogic_vector(1 downto 0) := "01"; -- r <= r.logic
-  constant alu_func_cmd_shift_c   : std_ulogic_vector(1 downto 0) := "10"; -- r <= A <</>> B (iterative)
-  constant alu_func_cmd_copro_c   : std_ulogic_vector(1 downto 0) := "11"; -- r <= CP result (iterative)
+  constant alu_func_cmd_shift_c   : std_ulogic_vector(1 downto 0) := "10"; -- r <= A <</>> B (multi-cycle)
+  constant alu_func_cmd_copro_c   : std_ulogic_vector(1 downto 0) := "11"; -- r <= CP result (multi-cycle)
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- MSB   : 1 = async exception (IRQ); 0 = sync exception (eg. ebreak)
+  -- MSB   : 1 = async exception (IRQ); 0 = sync exception (e.g. ebreak)
   -- MSB-1 : 1 = entry to debug mode; 0 = normal trapping
   -- RISC-V compliant sync. exceptions --
   constant trap_ima_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00000"; -- 0.0:  instruction misaligned
