@@ -152,6 +152,8 @@ The description of each CSR provides the following summary:
 
 See section <<_system_configuration_information_memory_sysinfo>> for more information.
 
+:sectnums!:
+===== _CLOCK_FREQUENCY_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -160,6 +162,9 @@ See section <<_system_configuration_information_memory_sysinfo>> for more inform
 3+| The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
 |======
 
+
+:sectnums!:
+===== _BOOTLOADER_EN_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -171,6 +176,9 @@ processor's boot address from the beginning of the instruction memory address sp
 |======
 
 
+:sectnums!:
+===== _USER_CODE_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -179,6 +187,9 @@ processor's boot address from the beginning of the instruction memory address sp
 |======
 
 
+:sectnums!:
+===== _HW_THREAD_ID_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -186,6 +197,9 @@ processor's boot address from the beginning of the instruction memory address sp
 3+| The hart ID of the CPU. Can be read via the `mhartid` CSR. Hart IDs must be unique within a system.
 |======
 
+
+:sectnums!:
+===== _ON_CHIP_DEBUGGER_EN_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -202,6 +216,9 @@ processor's boot address from the beginning of the instruction memory address sp
 See section <<_instruction_sets_and_extensions>> for more information.
 
 
+:sectnums!:
+===== _CPU_EXTENSION_RISCV_A_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -209,6 +226,9 @@ See section <<_instruction_sets_and_extensions>> for more information.
 3+| Implement atomic memory access operations when _true_.
 |======
 
+
+:sectnums!:
+===== _CPU_EXTENSION_RISCV_C_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -218,6 +238,9 @@ See section <<_instruction_sets_and_extensions>> for more information.
 |======
 
 
+:sectnums!:
+===== _CPU_EXTENSION_RISCV_E_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -225,6 +248,9 @@ See section <<_instruction_sets_and_extensions>> for more information.
 3+| Implement the embedded CPU extension (only implement the first 16 data registers) when _true_.
 |======
 
+
+:sectnums!:
+===== _CPU_EXTENSION_RISCV_M_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -234,6 +260,9 @@ See section <<_instruction_sets_and_extensions>> for more information.
 |======
 
 
+:sectnums!:
+===== _CPU_EXTENSION_RISCV_U_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -241,6 +270,9 @@ See section <<_instruction_sets_and_extensions>> for more information.
 3+| Implement less-privileged user mode when _true_.
 |======
 
+
+:sectnums!:
+===== _CPU_EXTENSION_RISCV_Zfinx_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -251,6 +283,9 @@ more information see section <<_zfinx_single_precision_floating_point_operations
 |======
 
 
+:sectnums!:
+===== _CPU_EXTENSION_RISCV_Zicsr_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -260,6 +295,9 @@ disabled, the complete privileged architecture / trap system will be excluded fr
 no machine information will be available.
 |======
 
+
+:sectnums!:
+===== _CPU_EXTENSION_RISCV_Zifencei_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -276,15 +314,22 @@ for self-modifying code (and/or for i-cache flushes).
 
 See section <<_instruction_sets_and_extensions>> for more information.
 
+
+:sectnums!:
+===== _FAST_MUL_EN_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
 | **FAST_MUL_EN** | _boolean_ | false
 3+| When this generic is enabled, the multiplier of the `M` extension is realized using DSPs blocks instead of an
 iterative bit-serial approach. This generic is only relevant when the multiplier and divider CPU extension is
-enabled (_CPU_EXTENSION_RISCV_M_ is _true_).
+enabled (<<_cpu_extension_riscv_m>> is _true_).
 |======
 
+
+:sectnums!:
+===== _FAST_SHIFT_EN_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -295,15 +340,21 @@ more hardware resources).
 |======
 
 
+:sectnums!:
+===== _TINY_SHIFT_EN_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
 | **TINY_SHIFT_EN** | _boolean_ | false
 3+| If this generic is enabled the shifter unit of the CPU's ALU is implemented as (slow but tiny) single-bit iterative shifter
 (requires up to 32 clock cycles for a shift operations, but reducing hardware footprint). The configuration of
-this generic is ignored if _FAST_SHIFT_EN_ is _true_.
+this generic is ignored if <<_fast_shift_en>> is _true_.
 |======
 
+
+:sectnums!:
+===== _CPU_CNT_WIDTH_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -311,7 +362,7 @@ this generic is ignored if _FAST_SHIFT_EN_ is _true_.
 | **CPU_CNT_WIDTH** | _natural_ | 0
 3+| This generic configures the total size of the CPU's `cycle` and `instret` CSRs (low word + high word).
 The maximum value is 64, the minimal is 0. See
-section <<_machine_counters_and_timers>> for more information. Note: Configurations with _CPU_CNT_WIDTH_
+section <<_machine_counters_and_timers>> for more information. Note: Configurations with <<_cpu_cnt_width>>
 less than 64 are not RISC-V compliant.
 |======
 
@@ -323,15 +374,21 @@ less than 64 are not RISC-V compliant.
 See section <<_pmp_physical_memory_protection>> for more information.
 
 
+:sectnums!:
+===== _PMP_NUM_REGIONS_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
 | **PMP_NUM_REGIONS** | _natural_ | 0
 3+| Total number of implemented protections regions (0..64). If this generics is zero no physical memory
-protection logic will be implemented at all. Setting _PMP_NUM_REGIONS_ > 0 will set the _CSR_MZEXT_PMP_ flag
-in the `mzext` CSR.
+protection logic will be implemented at all. Setting <<_pmp_num_regions>>_ > 0 will set the _CSR_MZEXT_PMP_ flag
+in the <<_mzext>> CSR.
 |======
 
+
+:sectnums!:
+===== _PMP_MIN_GRANULARITY_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -347,15 +404,22 @@ in the `mzext` CSR.
 
 See section <<_hpm_hardware_performance_monitors>> for more information.
 
+
+:sectnums!:
+===== _HPM_NUM_CNTS_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
 | **HPM_NUM_CNTS** | _natural_ | 0
 3+| Total number of implemented hardware performance monitor counters (0..29). If this generics is zero no
-hardware performance monitor logic will be implemented at all. Setting _HPM_NUM_CNTS_ > 0 will set the _CSR_MZEXT_HPM_ flag
-in the `mzext` CSR.
+hardware performance monitor logic will be implemented at all. Setting <<_hpm_num_cnts>> > 0 will set the _CSR_MZEXT_HPM_ flag
+in the <<_mzext>> CSR.
 |======
 
+
+:sectnums!:
+===== _HPM_CNT_WIDTH_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -374,6 +438,9 @@ unused MSB-aligned counter bits are hardwired to zero.
 See sections <<_address_space>> and <<_instruction_memory_imem>> for more information.
 
 
+:sectnums!:
+===== _MEM_INT_IMEM_EN_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -382,6 +449,9 @@ See sections <<_address_space>> and <<_instruction_memory_imem>> for more inform
 |======
 
 
+:sectnums!:
+===== _MEM_INT_IMEM_SIZE_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -389,6 +459,9 @@ See sections <<_address_space>> and <<_instruction_memory_imem>> for more inform
 3+| Size in bytes of the processor internal instruction memory (IMEM). Has no effect when _MEM_INT_IMEM_EN_ is _false_.
 |======
 
+
+:sectnums!:
+===== _MEM_INT_IMEM_ROM_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -405,6 +478,10 @@ application image at synthesis time. Has no effect when _MEM_INT_IMEM_EN_ is _fa
 
 See sections <<_address_space>> and <<_data_memory_dmem>> for more information.
 
+
+:sectnums!:
+===== _MEM_INT_DMEM_EN_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -412,6 +489,9 @@ See sections <<_address_space>> and <<_data_memory_dmem>> for more information.
 3+| Implement processor internal data memory (DMEM) when _true_.
 |======
 
+
+:sectnums!:
+===== _MEM_INT_DMEM_SIZE_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -427,6 +507,10 @@ See sections <<_address_space>> and <<_data_memory_dmem>> for more information.
 
 See section <<_processor_internal_instruction_cache_icache>> for more information.
 
+
+:sectnums!:
+===== _ICACHE_EN_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -435,14 +519,20 @@ See section <<_processor_internal_instruction_cache_icache>> for more informatio
 |======
 
 
+:sectnums!:
+===== _ICACHE_NUM_BLOCK_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **ICACHE_NUM_BLOCK** | _natural_ | 4
+| **ICACHE_NUM_BLOCKS** | _natural_ | 4
 3+| Number of blocks (cache "pages" or "lines") in the instruction cache. Has to be a power of two. Has no
 effect when _ICACHE_DMEM_EN_ is false.
 |======
 
+
+:sectnums!:
+===== _ICACHE_BLOCK_SIZE_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -452,6 +542,9 @@ effect when _ICACHE_DMEM_EN_ is false.
 _ICACHE_EN_ is _false_.
 |======
 
+
+:sectnums!:
+===== _ICACHE_ASSOCIATIVITY_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -468,6 +561,10 @@ _ICACHE_EN_ is _false_.
 
 See sections <<_address_space>> and <<_processor_external_memory_interface_wishbone_axi4_lite>> for more information.
 
+
+:sectnums!:
+===== _MEM_EXT_EN_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -476,11 +573,14 @@ See sections <<_address_space>> and <<_processor_external_memory_interface_wishb
 |======
 
 
+:sectnums!:
+===== _MEM_EXT_TIMEOUT_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
 | **MEM_EXT_TIMEOUT** | _natural_ | 255
-3+| Clock cycles after which a pending external bus access will auto-terminates and raise a bus fault exception. Set to 0 to disable auto-timeout. 
+3+| Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception. Set to 0 to disable auto-timeout. 
 |======
 
 
@@ -489,6 +589,10 @@ See sections <<_address_space>> and <<_processor_external_memory_interface_wishb
 ==== Processor Peripheral/IO Modules
 
 See section <<_processor_internal_modules>> for more information.
+
+
+:sectnums!:
+===== _IO_GPIO_EN_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -499,6 +603,9 @@ See section <<_general_purpose_input_and_output_port_gpio>> for more information
 |======
 
 
+:sectnums!:
+===== _IO_MTIME_EN_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -507,6 +614,9 @@ See section <<_general_purpose_input_and_output_port_gpio>> for more information
 See section <<_machine_system_timer_mtime>> for more information.
 |======
 
+
+:sectnums!:
+===== _IO_UART0_EN_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -518,6 +628,9 @@ more information.
 |======
 
 
+:sectnums!:
+===== _IO_UART1_EN_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -527,6 +640,9 @@ See section <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>
 |======
 
 
+:sectnums!:
+===== _IO_SPI_EN_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -535,6 +651,9 @@ See section <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>
 See section <<_serial_peripheral_interface_controller_spi>> for more information.
 |======
 
+
+:sectnums!:
+===== _IO_TWI_EN_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -546,6 +665,9 @@ more information.
 |======
 
 
+:sectnums!:
+===== _IO_PWM_EN_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -554,6 +676,9 @@ more information.
 See section <<_pulse_width_modulation_controller_pwm>> for more information.
 |======
 
+
+:sectnums!:
+===== _IO_WDT_EN_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -564,6 +689,9 @@ information.
 |======
 
 
+:sectnums!:
+===== _IO_TRNG_EN_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -572,6 +700,9 @@ information.
 |======
 
 
+:sectnums!:
+===== _IO_CFS_EN_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -579,6 +710,9 @@ information.
 3+| Implement custom functions subsystem (CFS) when _true_. See section <<_custom_functions_subsystem_cfs>> for more information.
 |======
 
+
+:sectnums!:
+===== _IO_CFS_CONFIG_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -589,6 +723,9 @@ functions subsystem entity. See section <<_custom_functions_subsystem_cfs>> for 
 |======
 
 
+:sectnums!:
+===== _IO_CFS_IN_SIZE_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -597,6 +734,9 @@ functions subsystem entity. See section <<_custom_functions_subsystem_cfs>> for 
 |======
 
 
+:sectnums!:
+===== _IO_CFS_OUT_SIZE_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -604,6 +744,9 @@ functions subsystem entity. See section <<_custom_functions_subsystem_cfs>> for 
 3+| Defines the size of the CFS output signal conduit (`cfs_out_o`). See section <<_custom_functions_subsystem_cfs>> for more information.
 |======
 
+
+:sectnums!:
+===== _IO_NCO_EN_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
@@ -614,12 +757,15 @@ See section <<_numerically_controlled_oscillator_nco>> for more information.
 |======
 
 
+:sectnums!:
+===== _IO_NEOLED_EN_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
 | **IO_NEOLED_EN** | _boolean_ | true
 3+| Implement smart LED interface (WS2812 / NeoPixel(TM)-compatible) (NEOLED) when _true_.
-See section <<_smart_led_interface_neoled>> Compatible for more information.
+See section <<_smart_led_interface_neoled>> for more information.
 |======
 
 
@@ -772,7 +918,7 @@ denying execute right for certain region of the IMEM) can be provided using the 
 [options="header",grid="rows"]
 |=======================
 | # | Region | Base address | Size | Attributes
-| 4 | IO/peripheral devices | 0xffffff00 | 256 bytes | `r/w/a/32`
+| 4 | IO/peripheral devices | 0xfffffe00 | 512 bytes | `r/w/a/32`
 | 3 | bootloader ROM        | 0xffff0000 | up to 32kB| `r/x/a`
 | 2 | DMEM                  | 0x80000000 | up to 2GB (-64kB) | `r/w/x/a/8/16/32`
 | 1 | IMEM                  | 0x00000000 | up to 2GB | `r/w/x/a/8/16/32`
@@ -790,11 +936,11 @@ defined by those components or the interconnection fabric.
 
 The processor can implement internal memories for instructions (IMEM) and data (DMEM), which will be
 mapped to FPGA block RAMs. The implementation of these memories is controlled via the boolean
-_MEM_INT_IMEM_EN_ and _MEM_INT_DMEM_EN_ generics.
+<<_mem_int_imem_en>> and <<_mem_int_dmem_en>> generics.
 
 The size of these memories are configured via the _MEM_INT_IMEM_SIZE_ and _MEM_INT_DMEM_SIZE_
 generics (in bytes), respectively. The processor-internal instruction memory (IMEM) can optionally be
-implemented as true ROM (_MEM_INT_IMEM_ROM_), which is initialized with the application code during
+implemented as true ROM (<<_mem_int_imem_rom>>), which is initialized with the application code during
 synthesis.
 
 If the processor-internal IMEM is implemented, it is located right at the base address of the instruction
@@ -812,10 +958,10 @@ to the <<_processor_external_memory_interface_wishbone_axi4_lite>>:
 * access to the processor-internal DMEM and processor-internal DMEM is implemented
 * access to the bootloader ROM and beyond → addresses >= _BOOTROM_BASE_ (default 0xFFFF0000) will never be forwarded to the external memory interface
 
-The external bus interface is available when the _MEM_EXT_EN_ generic is _true_. If this interface is
+The external bus interface is available when the <<_mem_ext_en>> generic is _true_. If this interface is
 deactivated, any access exceeding the internal memories or peripheral devices will trigger a bus access fault
-exception. If _MEM_EXT_TIMEOUT_ is greater than zero any external bus access that is not acknowledged or terminated
-within _MEM_EXT_TIMEOUT_ clock cycles will auto-timeout and raise the according bus fault exception.
+exception. If <<_mem_ext_timeout>> is greater than zero any external bus access that is not acknowledged or terminated
+within <<_mem_ext_timeout>> clock cycles will auto-timeout and raise the according bus fault exception.
 
 
 
@@ -865,7 +1011,7 @@ from the top entity's `clk_i` signal.
 **Peripheral / IO Devices**
 
 The processor-internal peripheral/IO devices are located at the end of the 32-bit address space at base
-address _0xFFFFF00_. A region of 256 bytes is reserved for this devices. Hence, all peripheral/IO devices are
+address _0xFFFFFE00_. A region of 512 bytes is reserved for this devices. Hence, all peripheral/IO devices are
 accessed using a memory-mapped scheme. A special linker script as well as the NEORV32 core software
 library abstract the specific memory layout for the user.
 
