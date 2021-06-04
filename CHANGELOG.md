@@ -24,7 +24,8 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 04.06.2021 | 1.5.6.3 | :warning: increased processor-internal IO size from256 bytes to 512 bytes; relocated base adress of CFS; increased CFS size from 32 to 64 memory-mapped registers |
+| 04.06.2021 | 1.5.6.4 | :warning: removed `IO_PWM_EN` generic, replaced by `IO_PWM_NUM_CH` generic - PWM ontroller now supports implementation of up to 60 channels via `IO_PWM_NUM_CH` (`IO_PWM_NUM_CH` = 0 will omit the PWM controller); :bug: fixed minor bug in `minstreth` counter logic |
+| 04.06.2021 | 1.5.6.3 | :warning: increased processor-internal IO size from 256 bytes to 512 bytes; relocated base adress of CFS |
 | 03.06.2021 | 1.5.6.2 | :warning: The `B` ISA extension (bit manipulation) has been (temporarily) removed from the project. See [B ISA Extension](https://github.com/stnolting/neorv32/projects/7) project board. |
 | 03.06.2021 | 1.5.6.1 | CPU/HPM counter size configuration (`CPU_CNT_WIDTH` and `HPM_CNT_WIDTH` generics) can now be 0-bit (no counters implemented at all) to 64-bit (full-scale / RISC-V standard) wide |
 | 01.08.2021 | [**:rocket:1.5.6.0**](https://github.com/stnolting/neorv32/releases/tag/v1.5.6.0) | **New release** |
