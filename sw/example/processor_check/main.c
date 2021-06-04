@@ -789,7 +789,7 @@ int main() {
   // Machine timer interrupt (MTIME)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] MTI (machine timer) IRQ: ", cnt_test);
+  neorv32_uart_printf("[%i] MTI (via MTIME): ", cnt_test);
 
   if (neorv32_mtime_available()) {
     cnt_test++;
@@ -828,7 +828,7 @@ int main() {
   // Machine software interrupt (MSI) via testbench
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] MSI (via testbench) IRQ: ", cnt_test);
+  neorv32_uart_printf("[%i] MSI (via testbench): ", cnt_test);
 
   if (is_simulation) { // check if this is a simulation
     cnt_test++;
@@ -856,7 +856,7 @@ int main() {
   // Machine external interrupt (MEI) via testbench
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] MEI (via testbench) IRQ: ", cnt_test);
+  neorv32_uart_printf("[%i] MEI (via testbench): ", cnt_test);
 
   if (is_simulation) { // check if this is a simulation
     cnt_test++;
@@ -884,7 +884,7 @@ int main() {
   // Non-maskable interrupt (NMI) via testbench
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] NMI (via testbench) IRQ: ", cnt_test);
+  neorv32_uart_printf("[%i] NMI (via testbench): ", cnt_test);
 
   if (is_simulation) { // check if this is a simulation
     cnt_test++;
