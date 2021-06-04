@@ -6,6 +6,7 @@ on:
     - 'boards/**'
     - 'rtl/**'
   pull_request:
+    paths:
     - 'boards/**'
     - 'rtl/**'
   schedule:
