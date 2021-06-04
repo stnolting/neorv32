@@ -641,7 +641,7 @@ enum NEORV32_CLOCK_PRSC_enum {
 /** CFS base address */
 #define CFS_BASE (0xFFFFFE00UL) // /**< CFS base address */
 /** CFS address space size in bytes */
-#define CFS_SIZE (32*4) // /**< CFS address space size in bytes */
+#define CFS_SIZE (64*4) // /**< CFS address space size in bytes */
 
 /** custom CFS register 0 */
 #define CFS_REG_0  (*(IO_REG32 (CFS_BASE + 0))) // /**< (r)/(w): CFS register 0, user-defined */
@@ -707,70 +707,58 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define CFS_REG_30 (*(IO_REG32 (CFS_BASE + 120))) // /**< (r)/(w): CFS register 30, user-defined */
 /** custom CFS register 31 */
 #define CFS_REG_31 (*(IO_REG32 (CFS_BASE + 124))) // /**< (r)/(w): CFS register 31, user-defined */
-/** custom CFS register 32 */
-#define CFS_REG_32 (*(IO_REG32 (CFS_BASE + 128))) // /**< (r)/(w): CFS register 32, user-defined */
-/** custom CFS register 33 */
-#define CFS_REG_33 (*(IO_REG32 (CFS_BASE + 132))) // /**< (r)/(w): CFS register 33, user-defined */
-/** custom CFS register 34 */
-#define CFS_REG_34 (*(IO_REG32 (CFS_BASE + 136))) // /**< (r)/(w): CFS register 34, user-defined */
-/** custom CFS register 35 */
-#define CFS_REG_35 (*(IO_REG32 (CFS_BASE + 140))) // /**< (r)/(w): CFS register 35, user-defined */
-/** custom CFS register 36 */
-#define CFS_REG_36 (*(IO_REG32 (CFS_BASE + 144))) // /**< (r)/(w): CFS register 36, user-defined */
-/** custom CFS register 37 */
-#define CFS_REG_37 (*(IO_REG32 (CFS_BASE + 148))) // /**< (r)/(w): CFS register 37, user-defined */
-/** custom CFS register 38 */
-#define CFS_REG_38 (*(IO_REG32 (CFS_BASE + 152))) // /**< (r)/(w): CFS register 38, user-defined */
-/** custom CFS register 39 */
-#define CFS_REG_39 (*(IO_REG32 (CFS_BASE + 156))) // /**< (r)/(w): CFS register 39, user-defined */
-/** custom CFS register 40 */
-#define CFS_REG_40 (*(IO_REG32 (CFS_BASE + 160))) // /**< (r)/(w): CFS register 40, user-defined */
-/** custom CFS register 41 */
-#define CFS_REG_41 (*(IO_REG32 (CFS_BASE + 164))) // /**< (r)/(w): CFS register 41, user-defined */
-/** custom CFS register 42 */
-#define CFS_REG_42 (*(IO_REG32 (CFS_BASE + 168))) // /**< (r)/(w): CFS register 42, user-defined */
-/** custom CFS register 43 */
-#define CFS_REG_43 (*(IO_REG32 (CFS_BASE + 172))) // /**< (r)/(w): CFS register 43, user-defined */
-/** custom CFS register 44 */
-#define CFS_REG_44 (*(IO_REG32 (CFS_BASE + 176))) // /**< (r)/(w): CFS register 44, user-defined */
-/** custom CFS register 45 */
-#define CFS_REG_45 (*(IO_REG32 (CFS_BASE + 180))) // /**< (r)/(w): CFS register 45, user-defined */
-/** custom CFS register 46 */
-#define CFS_REG_46 (*(IO_REG32 (CFS_BASE + 184))) // /**< (r)/(w): CFS register 46, user-defined */
-/** custom CFS register 47 */
-#define CFS_REG_47 (*(IO_REG32 (CFS_BASE + 188))) // /**< (r)/(w): CFS register 47, user-defined */
-/** custom CFS register 48 */
-#define CFS_REG_48 (*(IO_REG32 (CFS_BASE + 192))) // /**< (r)/(w): CFS register 48, user-defined */
-/** custom CFS register 49 */
-#define CFS_REG_49 (*(IO_REG32 (CFS_BASE + 196))) // /**< (r)/(w): CFS register 49, user-defined */
-/** custom CFS register 50 */
-#define CFS_REG_50 (*(IO_REG32 (CFS_BASE + 200))) // /**< (r)/(w): CFS register 50, user-defined */
-/** custom CFS register 51 */
-#define CFS_REG_51 (*(IO_REG32 (CFS_BASE + 204))) // /**< (r)/(w): CFS register 51, user-defined */
-/** custom CFS register 52 */
-#define CFS_REG_52 (*(IO_REG32 (CFS_BASE + 208))) // /**< (r)/(w): CFS register 52, user-defined */
-/** custom CFS register 53 */
-#define CFS_REG_53 (*(IO_REG32 (CFS_BASE + 212))) // /**< (r)/(w): CFS register 53, user-defined */
-/** custom CFS register 54 */
-#define CFS_REG_54 (*(IO_REG32 (CFS_BASE + 216))) // /**< (r)/(w): CFS register 54, user-defined */
-/** custom CFS register 55 */
-#define CFS_REG_55 (*(IO_REG32 (CFS_BASE + 220))) // /**< (r)/(w): CFS register 55, user-defined */
-/** custom CFS register 56 */
-#define CFS_REG_56 (*(IO_REG32 (CFS_BASE + 224))) // /**< (r)/(w): CFS register 56, user-defined */
-/** custom CFS register 57 */
-#define CFS_REG_57 (*(IO_REG32 (CFS_BASE + 228))) // /**< (r)/(w): CFS register 57, user-defined */
-/** custom CFS register 58 */
-#define CFS_REG_58 (*(IO_REG32 (CFS_BASE + 232))) // /**< (r)/(w): CFS register 58, user-defined */
-/** custom CFS register 59 */
-#define CFS_REG_59 (*(IO_REG32 (CFS_BASE + 236))) // /**< (r)/(w): CFS register 59, user-defined */
-/** custom CFS register 60 */
-#define CFS_REG_60 (*(IO_REG32 (CFS_BASE + 240))) // /**< (r)/(w): CFS register 60, user-defined */
-/** custom CFS register 61 */
-#define CFS_REG_61 (*(IO_REG32 (CFS_BASE + 244))) // /**< (r)/(w): CFS register 61, user-defined */
-/** custom CFS register 62 */
-#define CFS_REG_62 (*(IO_REG32 (CFS_BASE + 248))) // /**< (r)/(w): CFS register 62, user-defined */
-/** custom CFS register 63 */
-#define CFS_REG_63 (*(IO_REG32 (CFS_BASE + 252))) // /**< (r)/(w): CFS register 63, user-defined */
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: Pulse Width Modulation Controller (PWM)
+ **************************************************************************/
+/**@{*/
+/** PWM base address */
+#define PWM_BASE (0XFFFFFF80UL) // /**< PWM base address */
+/** PWM address space size in bytes */
+#define PWM_SIZE (16*4) // /**< PWM address space size in bytes */
+
+/** PWM control register (r/w) */
+#define PWM_CT     (*(IO_REG32 (PWM_BASE + 0))) // r/w: control register
+/** PWM duty cycle register 0 (r/w) */
+#define PWM_DUTY0  (*(IO_REG32 (PWM_BASE + 4))) // r/w: duty cycle channel 3:0
+/** PWM duty cycle register 1 (r/w) */
+#define PWM_DUTY1  (*(IO_REG32 (PWM_BASE + 8))) // r/w: duty cycle channel 7:4
+/** PWM duty cycle register 2 (r/w) */
+#define PWM_DUTY2  (*(IO_REG32 (PWM_BASE + 12))) // r/w: duty cycle channel 11:8
+/** PWM duty cycle register 3 (r/w) */
+#define PWM_DUTY3  (*(IO_REG32 (PWM_BASE + 16))) // r/w: duty cycle channel 15:12
+/** PWM duty cycle register 4 (r/w) */
+#define PWM_DUTY4  (*(IO_REG32 (PWM_BASE + 20))) // r/w: duty cycle channel 19:16
+/** PWM duty cycle register 5 (r/w) */
+#define PWM_DUTY5  (*(IO_REG32 (PWM_BASE + 24))) // r/w: duty cycle channel 23:20
+/** PWM duty cycle register 6 (r/w) */
+#define PWM_DUTY6  (*(IO_REG32 (PWM_BASE + 28))) // r/w: duty cycle channel 27:24
+/** PWM duty cycle register 7 (r/w) */
+#define PWM_DUTY7  (*(IO_REG32 (PWM_BASE + 32))) // r/w: duty cycle channel 31:28
+/** PWM duty cycle register 8 (r/w) */
+#define PWM_DUTY8  (*(IO_REG32 (PWM_BASE + 36))) // r/w: duty cycle channel 35:32
+/** PWM duty cycle register 9 (r/w) */
+#define PWM_DUTY9  (*(IO_REG32 (PWM_BASE + 40))) // r/w: duty cycle channel 39:36
+/** PWM duty cycle register 10 (r/w) */
+#define PWM_DUTY10 (*(IO_REG32 (PWM_BASE + 44))) // r/w: duty cycle channel 43:40
+/** PWM duty cycle register 11 (r/w) */
+#define PWM_DUTY11 (*(IO_REG32 (PWM_BASE + 48))) // r/w: duty cycle channel 47:44
+/** PWM duty cycle register 12 (r/w) */
+#define PWM_DUTY12 (*(IO_REG32 (PWM_BASE + 52))) // r/w: duty cycle channel 51:48
+/** PWM duty cycle register 13 (r/w) */
+#define PWM_DUTY13 (*(IO_REG32 (PWM_BASE + 56))) // r/w: duty cycle channel 55:52
+/** PWM duty cycle register 14 (r/w) */
+#define PWM_DUTY14 (*(IO_REG32 (PWM_BASE + 60))) // r/w: duty cycle channel 59:56
+
+/** PWM control register bits */
+enum NEORV32_PWM_CT_enum {
+  PWM_CT_EN    =  0, /**< PWM control register(0) (r/w): PWM controller enable */
+  PWM_CT_PRSC0 =  1, /**< PWM control register(1) (r/w): Clock prescaler select bit 0 */
+  PWM_CT_PRSC1 =  2, /**< PWM control register(2) (r/w): Clock prescaler select bit 1 */
+  PWM_CT_PRSC2 =  3  /**< PWM control register(3) (r/w): Clock prescaler select bit 2 */
+};
 /**@}*/
 
 
@@ -1017,42 +1005,6 @@ enum NEORV32_TWI_CT_enum {
 enum NEORV32_TWI_DATA_enum {
   TWI_DATA_LSB = 0, /**< TWI data register(0) (r/w): Receive/transmit data (8-bit) LSB */
   TWI_DATA_MSB = 7  /**< TWI data register(7) (r/w): Receive/transmit data (8-bit) MSB */
-};
-/**@}*/
-
-
-/**********************************************************************//**
- * @name IO Device: Pulse Width Modulation Controller (PWM)
- **************************************************************************/
-/**@{*/
-/** PWM base address */
-#define PWM_BASE (0xFFFFFFB8UL) // /**< PWM base address */
-/** PWM address space size in bytes */
-#define PWM_SIZE (2*4) // /**< PWM address space size in bytes */
-
-/** PWM control register (r/w) */
-#define PWM_CT   (*(IO_REG32 (PWM_BASE + 0))) // r/w: control register
-/** PWM duty cycle register (4-channels) (r/w) */
-#define PWM_DUTY (*(IO_REG32 (PWM_BASE + 4))) // r/w: duty cycle channel 1 and 0
-
-/** PWM control register bits */
-enum NEORV32_PWM_CT_enum {
-  PWM_CT_EN    =  0, /**< PWM control register(0) (r/w): PWM controller enable */
-  PWM_CT_PRSC0 =  1, /**< PWM control register(1) (r/w): Clock prescaler select bit 0 */
-  PWM_CT_PRSC1 =  2, /**< PWM control register(2) (r/w): Clock prescaler select bit 1 */
-  PWM_CT_PRSC2 =  3  /**< PWM control register(3) (r/w): Clock prescaler select bit 2 */
-};
-
-/**PWM duty cycle register bits */
-enum NEORV32_PWM_DUTY_enum {
-  PWM_DUTY_CH0_LSB =  0, /**< PWM duty cycle register(0)  (r/w): Channel 0 duty cycle (8-bit) LSB */
-  PWM_DUTY_CH0_MSB =  7, /**< PWM duty cycle register(7)  (r/w): Channel 0 duty cycle (8-bit) MSB */
-  PWM_DUTY_CH1_LSB =  8, /**< PWM duty cycle register(8)  (r/w): Channel 1 duty cycle (8-bit) LSB */
-  PWM_DUTY_CH1_MSB = 15, /**< PWM duty cycle register(15) (r/w): Channel 1 duty cycle (8-bit) MSB */
-  PWM_DUTY_CH2_LSB = 16, /**< PWM duty cycle register(16) (r/w): Channel 2 duty cycle (8-bit) LSB */
-  PWM_DUTY_CH2_MSB = 23, /**< PWM duty cycle register(23) (r/w): Channel 2 duty cycle (8-bit) MSB */
-  PWM_DUTY_CH3_LSB = 24, /**< PWM duty cycle register(24) (r/w): Channel 3 duty cycle (8-bit) LSB */
-  PWM_DUTY_CH3_MSB = 31  /**< PWM duty cycle register(31) (r/w): Channel 3 duty cycle (8-bit) MSB */
 };
 /**@}*/
 
