@@ -24,7 +24,7 @@ The custom functions subsystem can be used to implement application-specific use
 custom hardware accelerators via the external memory interface, the CFS provide a convenient and low-latency
 extension and customization option.
 
-The CFS provides up to 64x 32-bit memory-mapped registers (see register map table below). The actual
+The CFS provides up to 32x 32-bit memory-mapped registers (see register map table below). The actual
 functionality of these register has to be defined by the hardware designer.
 
 [INFO]
@@ -71,6 +71,6 @@ _IO_CFS_OUT_SIZE_ configuration generic (default = 32-bit). If the custom functi
 | `0xfffffe00` | _CFS_REG_0_  |`31:0` | (r)/(w) | custom CFS interface register 0
 | `0xfffffe04` | _CFS_REG_1_  |`31:0` | (r)/(w) | custom CFS interface register 1
 | ...          | ...          |`31:0` | (r)/(w) | ...
-| `0xfffffef8` | _CFS_REG_62_ |`31:0` | (r)/(w) | custom CFS interface register 62
-| `0xfffffefc` | _CFS_REG_63_ |`31:0` | (r)/(w) | custom CFS interface register 63
+| `0xfffffe78` | _CFS_REG_30_ |`31:0` | (r)/(w) | custom CFS interface register 30
+| `0xfffffe7c` | _CFS_REG_31_ |`31:0` | (r)/(w) | custom CFS interface register 31
 |=======================
