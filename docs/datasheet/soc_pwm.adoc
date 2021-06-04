@@ -46,7 +46,7 @@ _**f~PWM~**_ = _f~main~[Hz]_ / (2^8^ * `clock_prescaler`)
 
 [TIP]
 A more sophisticated frequency generation option is provided by by the numerically-controlled oscillator
-module (see section <<_numerically_controller_oscillator_nco>>).
+module (see section <<_numerically_controlled_oscillator_nco>>).
 
 <<<
 .PWM register map
