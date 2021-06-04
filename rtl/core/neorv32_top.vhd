@@ -106,7 +106,7 @@ entity neorv32_top is
     IO_UART1_EN                  : boolean := true;   -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_EN                    : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+    IO_PWM_NUM_CH                : natural := 4;      -- number of PWM channels to implement (0..60); 0 = disabled
     IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
     IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
@@ -171,8 +171,8 @@ entity neorv32_top is
     twi_sda_io  : inout std_logic; -- twi serial data line
     twi_scl_io  : inout std_logic; -- twi serial clock line
 
-    -- PWM (available if IO_PWM_EN = true) --
-    pwm_o       : out std_ulogic_vector(03 downto 0); -- pwm channels
+    -- PWM (available if IO_PWM_NUM_CH > 0) --
+    pwm_o       : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0); -- pwm channels
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i    : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom CFS inputs conduit
@@ -1111,8 +1111,11 @@ begin
   -- Pulse-Width Modulation Controller (PWM) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_pwm_inst_true:
-  if (IO_PWM_EN = true) generate
+  if (IO_PWM_NUM_CH > 0) generate
     neorv32_pwm_inst: neorv32_pwm
+    generic map (
+      NUM_CHANNELS => IO_PWM_NUM_CH -- number of PWM channels (0..60)
+    )
     port map (
       -- host access --
       clk_i       => clk_i,                    -- global clock line
@@ -1132,7 +1135,7 @@ begin
   end generate;
 
   neorv32_pwm_inst_false:
-  if (IO_PWM_EN = false) generate
+  if (IO_PWM_NUM_CH = 0) generate
     resp_bus(RESP_PWM) <= resp_bus_entry_terminate_c;
     pwm_cg_en <= '0';
     pwm_o     <= (others => '0');
@@ -1259,7 +1262,7 @@ begin
     IO_UART1_EN          => IO_UART1_EN,          -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN            => IO_SPI_EN,            -- implement serial peripheral interface (SPI)?
     IO_TWI_EN            => IO_TWI_EN,            -- implement two-wire interface (TWI)?
-    IO_PWM_EN            => IO_PWM_EN,            -- implement pulse-width modulation unit (PWM)?
+    IO_PWM_NUM_CH        => IO_PWM_NUM_CH,        -- number of PWM channels to implement
     IO_WDT_EN            => IO_WDT_EN,            -- implement watch dog timer (WDT)?
     IO_TRNG_EN           => IO_TRNG_EN,           -- implement true random number generator (TRNG)?
     IO_CFS_EN            => IO_CFS_EN,            -- implement custom functions subsystem (CFS)?

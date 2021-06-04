@@ -71,7 +71,7 @@ entity neorv32_sysinfo is
     IO_UART1_EN          : boolean := true;   -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN            : boolean := true;   -- implement serial peripheral interface (SPI)?
     IO_TWI_EN            : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_EN            : boolean := true;   -- implement pulse-width modulation unit (PWM)?
+    IO_PWM_NUM_CH        : natural := 4;      -- number of PWM channels to implement
     IO_WDT_EN            : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN           : boolean := true;   -- implement true random number generator (TRNG)?
     IO_CFS_EN            : boolean := true;   -- implement custom functions subsystem (CFS)?
@@ -143,7 +143,7 @@ begin
   sysinfo_mem(2)(18) <= bool_to_ulogic_f(IO_UART0_EN);  -- primary universal asynchronous receiver/transmitter (UART0) implemented?
   sysinfo_mem(2)(19) <= bool_to_ulogic_f(IO_SPI_EN);    -- serial peripheral interface (SPI) implemented?
   sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_EN);    -- two-wire interface (TWI) implemented?
-  sysinfo_mem(2)(21) <= bool_to_ulogic_f(IO_PWM_EN);    -- pulse-width modulation unit (PWM) implemented?
+  sysinfo_mem(2)(21) <= bool_to_ulogic_f(boolean(IO_PWM_NUM_CH > 0)); -- pulse-width modulation unit (PWM) implemented?
   sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_EN);    -- watch dog timer (WDT) implemented?
   sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFS_EN);    -- custom functions subsystem (CFS) implemented?
   sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_EN);   -- true random number generator (TRNG) implemented?
