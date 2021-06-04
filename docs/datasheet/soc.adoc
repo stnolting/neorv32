@@ -19,7 +19,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 32xOut, 32xIn
 * _optional_ 32-bit external bus interface, Wishbone b4 / AXI4-Lite compatible (<<_processor_external_memory_interface_wishbone_axi4_lite,**WISHBONE**>>)
 * _optional_ watchdog timer (<<_watchdog_timer_wdt,**WDT**>>)
-* _optional_ PWM controller with 4 channels and 8-bit duty cycle resolution (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
+* _optional_ PWM controller with up to 60 channels & 8-bit duty cycle resolution (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
 * _optional_ ring-oscillator-based true random number generator (<<_true_random_number_generator_trng,**TRNG**>>)
 * _optional_ custom functions subsystem for custom co-processor extensions (<<_custom_functions_subsystem_cfs,**CFS**>>)
 * _optional_ numerically-controlled oscillator (<<_numerically_controlled_oscillator_nco,**NCO**>>) with 3 independent channels

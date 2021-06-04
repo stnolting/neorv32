@@ -248,7 +248,7 @@ between entity boundaries, so the actual utilization results might vary a bit.
 | MTIME         | Machine system timer                                | 289 | 200 |        0 |    0
 | NCO           | Numerically-controlled oscillator                   | 254 | 226 |        0 |    0
 | NEOLED        | Smart LED Interface (NeoPixel/WS28128) [4xFIFO]     | 347 | 309 |        0 |    0
-| PWM           | Pulse_width modulation controller                   |  71 |  69 |        0 |    0
+| PWM           | Pulse_width modulation controller (4 channels)      |  71 |  69 |        0 |    0
 | SPI           | Serial peripheral interface                         | 138 | 124 |        0 |    0
 | **SYSINFO**   | System configuration information memory             |  10 |  10 |        0 |    0
 | TRNG          | True random number generator                        | 132 | 105 |        0 |    0
