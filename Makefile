@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-all: pdf html ug-pdf ug-html doxygen
+all: pdf html ug-pdf ug-html
 	mkdir -p docs/public/img/
 	cp -vr docs/figures/* docs/public/img/
 
