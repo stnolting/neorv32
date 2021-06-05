@@ -25,6 +25,11 @@ jobs:
         include:
           - {
             board: UPduino_v3,
+            design: 'MinimalBoot',
+            bitstream: neorv32_UPduino_v3_MinimalBoot.bin
+          }
+          - {
+            board: UPduino_v3,
             design: 'UP5KDemo',
             bitstream: neorv32_UPduino_v3_UP5KDemo.bin
           }
@@ -37,12 +42,12 @@ jobs:
     - name: '🧰 Repository Checkout'
       uses: actions/checkout@v2
 
-    - name: '⚙️ Generate bitstream'
+    - name: '⚙️ Generate ${{ matrix.board }} ${{ matrix.design }} bitstream'
       uses: docker://ghcr.io/hdl/debian-buster/impl
       with:
         args: make -C examples BOARD=${{ matrix.board }} ${{ matrix.design }}
 
-    - name: '📤 Upload Artifact: bitstream'
+    - name: '📤 Upload Artifact: ${{ matrix.board }} ${{ matrix.design }} bitstream and reports'
       uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.board }}-${{ matrix.design }}

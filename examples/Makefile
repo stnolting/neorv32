@@ -18,6 +18,12 @@ UPduino_v3:
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
 	  build
 
+MinimalBoot:
+	$(MAKE) \
+	  DESIGN=$@ \
+	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_MinimalBoot.vhd \
+	  $(BOARD)
+
 UP5KDemo:
 	$(MAKE) \
 	  DESIGN=$@ \
