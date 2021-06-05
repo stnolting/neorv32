@@ -186,19 +186,21 @@ int main() {
   // Test standard RISC-V performance counter [m]cycle[h]
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] [m]instret[h] counter: ", cnt_test);
+  neorv32_uart_printf("[%i] [m]cycle[h] counter: ", cnt_test);
 
   cnt_test++;
 
   // make sure counter is enabled
   asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTINHIBIT_CY));
 
-  // get current cycle counter LOW
-  tmp_a = neorv32_cpu_csr_read(CSR_MCYCLE);
-  tmp_a = neorv32_cpu_csr_read(CSR_MCYCLE) - tmp_a;
+  // prepare overflow
+  neorv32_cpu_set_mcycle(0x00000000FFFFFFFFULL);
 
-  // make sure cycle counter has incremented and there was no exception during access
-  if ((tmp_a > 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+  // get current cycle counter HIGH
+  tmp_a = neorv32_cpu_csr_read(CSR_MCYCLEH);
+
+  // make sure cycle counter high has incremented and there was no exception during access
+  if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
     test_ok();
   }
   else {
@@ -210,26 +212,22 @@ int main() {
   // Test standard RISC-V performance counter [m]instret[h]
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  neorv32_uart_printf("[%i] [m]cycle[h] counter: ", cnt_test);
+  neorv32_uart_printf("[%i] [m]instret[h] counter: ", cnt_test);
 
   cnt_test++;
 
   // make sure counter is enabled
   asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTINHIBIT_IR));
 
-  // get instruction counter LOW
-  tmp_a = neorv32_cpu_csr_read(CSR_INSTRET);
-  tmp_a = neorv32_cpu_csr_read(CSR_INSTRET) - tmp_a;
+  // prepare overflow
+  neorv32_cpu_set_minstret(0x00000000FFFFFFFFULL);
 
-  // make sure instruction counter has incremented and there was no exception during access
-  if ((tmp_a > 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
-    if (tmp_a > 1) {
-      neorv32_uart_printf("INSTRET_diff > 1 (%u)!", tmp_a);
-      test_fail();
-    }
-    else {
-      test_ok();
-    }
+  // get instruction counter HIGH
+  tmp_a = neorv32_cpu_csr_read(CSR_INSTRETH);
+
+  // make sure instruction counter high has incremented and there was no exception during access
+  if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+    test_ok();
   }
   else {
     test_fail();
@@ -519,8 +517,9 @@ int main() {
     // disable global interrupts
     neorv32_cpu_dint();
 
-    // force MTIME IRQ
-    neorv32_mtime_set_timecmp(0);
+    // prepare MTIME IRQ
+    neorv32_mtime_set_time(0x00000000FFFFFFF8ULL); // prepare overflow
+    neorv32_mtime_set_timecmp(0x0000000100000000ULL); // IRQ on overflow
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
