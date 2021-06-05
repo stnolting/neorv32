@@ -271,10 +271,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type pmp_addr_t     is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-1 downto 0);
   type pmp_ctrl_rd_t  is array (0 to 63) of std_ulogic_vector(7 downto 0);
   type mhpmevent_t    is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
-  type mhpmcnt_t      is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(32 downto 0); -- 32-bit, plus 1-bit overflow
-  type mhpmcnth_t     is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(31 downto 0); -- 32-bit
+  type mhpmcnt_t      is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(31 downto 0);
+  type mhpmcnt_nxt_t  is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(32 downto 0);
+  type mhpmcnt_ovfl_t is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(0 downto 0);
   type mhpmcnt_rd_t   is array (0 to 29) of std_ulogic_vector(31 downto 0);
-  type mhpmcnth_rd_t  is array (0 to 29) of std_ulogic_vector(31 downto 0);
   type csr_t is record
     addr              : std_ulogic_vector(11 downto 0); -- csr address
     we                : std_ulogic; -- csr write enable
@@ -316,18 +316,21 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     --
     mscratch          : std_ulogic_vector(data_width_c-1 downto 0); -- mscratch: scratch register (R/W)
     --
-    mcycle            : std_ulogic_vector(32 downto 0); -- mcycle (R/W), plus carry bit
-    mcycle_msb        : std_ulogic; -- counter low-to-high-word overflow
+    mcycle            : std_ulogic_vector(31 downto 0); -- mcycle (R/W)
+    mcycle_nxt        : std_ulogic_vector(32 downto 0);
+    mcycle_ovfl       : std_ulogic_vector(00 downto 0); -- counter low-to-high-word overflow
     mcycleh           : std_ulogic_vector(31 downto 0); -- mcycleh (R/W)
-    minstret          : std_ulogic_vector(32 downto 0); -- minstret (R/W), plus carry bit
-    minstret_msb      : std_ulogic; -- counter low-to-high-word overflow
+    minstret          : std_ulogic_vector(31 downto 0); -- minstret (R/W)
+    minstret_nxt      : std_ulogic_vector(32 downto 0);
+    minstret_ovfl     : std_ulogic_vector(00 downto 0); -- counter low-to-high-word overflow
     minstreth         : std_ulogic_vector(31 downto 0); -- minstreth (R/W)
     --
     mhpmcounter       : mhpmcnt_t; -- mhpmcounter* (R/W), plus carry bit
-    mhpmcounter_msb   : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0); -- counter low-to-high-word overflow
-    mhpmcounterh      : mhpmcnth_t; -- mhpmcounter*h (R/W)
+    mhpmcounter_nxt   : mhpmcnt_nxt_t;
+    mhpmcounter_ovfl  : mhpmcnt_ovfl_t; -- counter low-to-high-word overflow
+    mhpmcounterh      : mhpmcnt_t; -- mhpmcounter*h (R/W)
     mhpmcounter_rd    : mhpmcnt_rd_t; -- mhpmcounter* (R/W): actual read data
-    mhpmcounterh_rd   : mhpmcnth_rd_t; -- mhpmcounter*h (R/W): actual read data
+    mhpmcounterh_rd   : mhpmcnt_rd_t; -- mhpmcounter*h (R/W): actual read data
     --
     pmpcfg            : pmp_ctrl_t; -- physical memory protection - configuration registers
     pmpcfg_rd         : pmp_ctrl_rd_t; -- physical memory protection - actual read data
@@ -2377,36 +2380,36 @@ begin
   begin
     -- Counter CSRs (each counter is split into two 32-bit counters - coupled via an MSB overflow detector)
     if (rstn_i = '0') then
-      csr.mcycle          <= (others => def_rst_val_c);
-      csr.mcycle_msb      <= def_rst_val_c;
-      csr.mcycleh         <= (others => def_rst_val_c);
-      csr.minstret        <= (others => def_rst_val_c);
-      csr.minstret_msb    <= def_rst_val_c;
-      csr.minstreth       <= (others => def_rst_val_c);
-      csr.mhpmcounter     <= (others => (others => def_rst_val_c));
-      csr.mhpmcounter_msb <= (others => def_rst_val_c);
-      csr.mhpmcounterh    <= (others => (others => def_rst_val_c));
+      csr.mcycle           <= (others => def_rst_val_c);
+      csr.mcycle_ovfl      <= (others => def_rst_val_c);
+      csr.mcycleh          <= (others => def_rst_val_c);
+      csr.minstret         <= (others => def_rst_val_c);
+      csr.minstret_ovfl    <= (others => def_rst_val_c);
+      csr.minstreth        <= (others => def_rst_val_c);
+      csr.mhpmcounter      <= (others => (others => def_rst_val_c));
+      csr.mhpmcounter_ovfl <= (others => (others => def_rst_val_c));
+      csr.mhpmcounterh     <= (others => (others => def_rst_val_c));
     elsif rising_edge(clk_i) then
 
       -- [m]cycle --
       if (cpu_cnt_lo_width_c > 0) then
-        csr.mcycle_msb <= csr.mcycle(csr.mcycle'left);
+        csr.mcycle_ovfl(0) <= csr.mcycle_nxt(csr.mcycle_nxt'left);
         if (csr.we = '1') and (csr.addr = csr_mcycle_c) then -- write access
-          csr.mcycle(cpu_cnt_lo_width_c downto 0) <= '0' & csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
+          csr.mcycle(cpu_cnt_lo_width_c-1 downto 0) <= csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
         elsif (csr.mcountinhibit_cy = '0') and (cnt_event(hpmcnt_event_cy_c) = '1') then -- non-inhibited automatic update
-          csr.mcycle(cpu_cnt_lo_width_c downto 0) <= std_ulogic_vector(unsigned('0' & csr.mcycle(cpu_cnt_lo_width_c-1 downto 0)) + 1);
+          csr.mcycle(cpu_cnt_lo_width_c-1 downto 0) <= csr.mcycle_nxt(cpu_cnt_lo_width_c-1 downto 0);
         end if;
       else
-        csr.mcycle     <= (others => '-');
-        csr.mcycle_msb <= '-';
+        csr.mcycle <= (others => '-');
+        csr.mcycle_ovfl(0) <= '-';
       end if;
 
       -- [m]cycleh --
       if (cpu_cnt_hi_width_c > 0) then
         if (csr.we = '1') and (csr.addr = csr_mcycleh_c) then -- write access
           csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0) <= csr.wdata(cpu_cnt_hi_width_c-1 downto 0);
-        elsif (csr.mcycle_msb = '0') and (csr.mcycle(csr.mcycle'left) = '1') then -- automatic update (continued)
-          csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0)) + 1);
+        elsif (csr.mcountinhibit_cy = '0') and (cnt_event(hpmcnt_event_cy_c) = '1') then -- non-inhibited automatic update
+          csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0)) + unsigned(csr.mcycle_ovfl));
         end if;
       else
         csr.mcycleh <= (others => '-');
@@ -2415,23 +2418,23 @@ begin
 
       -- [m]instret --
       if (cpu_cnt_lo_width_c > 0) then
-        csr.minstret_msb <= csr.minstret(csr.minstret'left);
+        csr.minstret_ovfl(0) <= csr.minstret_nxt(csr.minstret_nxt'left);
         if (csr.we = '1') and (csr.addr = csr_minstret_c) then -- write access
-          csr.minstret(cpu_cnt_lo_width_c downto 0) <= '0' & csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
+          csr.minstret(cpu_cnt_lo_width_c-1 downto 0) <= csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
         elsif (csr.mcountinhibit_ir = '0') and (cnt_event(hpmcnt_event_ir_c) = '1') then -- non-inhibited automatic update
-          csr.minstret(cpu_cnt_lo_width_c downto 0) <= std_ulogic_vector(unsigned('0' & csr.minstret(cpu_cnt_lo_width_c-1 downto 0)) + 1);
+          csr.minstret(cpu_cnt_lo_width_c-1 downto 0) <= csr.minstret_nxt(cpu_cnt_lo_width_c-1 downto 0);
         end if;
       else
-        csr.minstret     <= (others => '-');
-        csr.minstret_msb <= '-';
+        csr.minstret <= (others => '-');
+        csr.minstret_ovfl(0) <= '-';
       end if;
 
       -- [m]instreth --
       if (cpu_cnt_hi_width_c > 0) then
         if (csr.we = '1') and (csr.addr = csr_minstreth_c) then -- write access
           csr.minstreth(cpu_cnt_hi_width_c-1 downto 0) <= csr.wdata(cpu_cnt_hi_width_c-1 downto 0);
-        elsif (csr.minstret_msb = '0') and (csr.minstret(csr.minstret'left) = '1') then -- automatic update (continued)
-          csr.minstreth(cpu_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.minstreth(cpu_cnt_hi_width_c-1 downto 0)) + 1);
+        elsif (csr.mcountinhibit_ir = '0') and (cnt_event(hpmcnt_event_ir_c) = '1') then -- non-inhibited automatic update
+          csr.minstreth(cpu_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.minstreth(cpu_cnt_hi_width_c-1 downto 0)) + unsigned(csr.minstret_ovfl));
         end if;
       else
         csr.minstreth <= (others => '-');
@@ -2443,23 +2446,23 @@ begin
 
         -- [m]hpmcounter* --
         if (hpm_cnt_lo_width_c > 0) then
-          csr.mhpmcounter_msb(i) <= csr.mhpmcounter(i)(csr.mhpmcounter(i)'left);
+          csr.mhpmcounter_ovfl(i)(0) <= csr.mhpmcounter_nxt(i)(csr.mhpmcounter_nxt(i)'left);
           if (csr.we = '1') and (csr.addr = std_ulogic_vector(unsigned(csr_mhpmcounter3_c) + i)) then -- write access
-            csr.mhpmcounter(i)(hpm_cnt_lo_width_c downto 0) <= '0' & csr.wdata(hpm_cnt_lo_width_c-1 downto 0);
+            csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0) <= csr.wdata(hpm_cnt_lo_width_c-1 downto 0);
           elsif (csr.mcountinhibit_hpm(i) = '0') and (hpmcnt_trigger(i) = '1') then -- non-inhibited automatic update
-            csr.mhpmcounter(i)(hpm_cnt_lo_width_c downto 0) <= std_ulogic_vector(unsigned('0' & csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0)) + 1);
+            csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0) <= csr.mhpmcounter_nxt(i)(hpm_cnt_lo_width_c-1 downto 0);
           end if;
         else
-          csr.mhpmcounter(i)     <= (others => '-');
-          csr.mhpmcounter_msb(i) <= '-';
+          csr.mhpmcounter(i) <= (others => '-');
+          csr.mhpmcounter_ovfl(i)(0) <= '-';
         end if;
 
         -- [m]hpmcounter*h --
         if (hpm_cnt_hi_width_c > 0) then
           if (csr.we = '1') and (csr.addr = std_ulogic_vector(unsigned(csr_mhpmcounter3h_c) + i)) then -- write access
             csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0) <= csr.wdata(hpm_cnt_hi_width_c-1 downto 0);
-          elsif (csr.mhpmcounter_msb(i) = '0') and (csr.mhpmcounter(i)(csr.mhpmcounter(i)'left) = '1') then -- automatic update (continued)
-            csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0)) + 1);
+          elsif (csr.mcountinhibit_hpm(i) = '0') and (hpmcnt_trigger(i) = '1') then -- non-inhibited automatic update
+            csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0)) + unsigned(csr.mhpmcounter_ovfl(i)));
           end if;
         else
           csr.mhpmcounterh(i) <= (others => '-');
@@ -2471,7 +2474,18 @@ begin
   end process csr_counters;
 
 
-  -- hpm counters read dummy --
+  -- mcycle & minstret increment LOW --
+  csr.mcycle_nxt   <= std_ulogic_vector(unsigned('0' & csr.mcycle) + 1);
+  csr.minstret_nxt <= std_ulogic_vector(unsigned('0' & csr.minstret) + 1);
+
+  -- hpm counter increment LOW --
+  hmp_cnt_lo_inc:
+  for i in 0 to HPM_NUM_CNTS-1 generate
+    csr.mhpmcounter_nxt(i) <= std_ulogic_vector(unsigned('0' & csr.mhpmcounter(i)) + 1);
+  end generate;
+
+
+  -- hpm counter read --
   hpm_rd_dummy: process(csr)
   begin
     csr.mhpmcounter_rd  <= (others => (others => '0'));

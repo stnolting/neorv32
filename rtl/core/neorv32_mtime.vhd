@@ -71,19 +71,18 @@ architecture neorv32_mtime_rtl of neorv32_mtime is
   signal wren   : std_ulogic; -- module access enable
 
   -- time write access buffer --
-  signal wdata_buf   : std_ulogic_vector(31 downto 0);
   signal mtime_lo_we : std_ulogic;
   signal mtime_hi_we : std_ulogic;
 
   -- accessible regs --
-  signal mtimecmp_lo     : std_ulogic_vector(31 downto 0);
-  signal mtimecmp_hi     : std_ulogic_vector(31 downto 0);
-  signal mtime_lo        : std_ulogic_vector(32 downto 0);
-  signal mtime_lo_msb_ff : std_ulogic;
-  signal mtime_hi        : std_ulogic_vector(31 downto 0);
-  signal inc_hi          : std_ulogic_vector(31 downto 0);
+  signal mtimecmp_lo   : std_ulogic_vector(31 downto 0);
+  signal mtimecmp_hi   : std_ulogic_vector(31 downto 0);
+  signal mtime_lo      : std_ulogic_vector(31 downto 0);
+  signal mtime_lo_nxt  : std_ulogic_vector(32 downto 0);
+  signal mtime_lo_ovfl : std_ulogic_vector(00 downto 0);
+  signal mtime_hi      : std_ulogic_vector(31 downto 0);
 
-  -- irq control --
+  -- comparator and IRQ trigger --
   signal cmp_lo       : std_ulogic;
   signal cmp_lo_ff    : std_ulogic;
   signal cmp_hi       : std_ulogic;
@@ -114,31 +113,29 @@ begin
       end if;
 
       -- mtime access buffer --
-      wdata_buf   <= data_i;
+--    wdata_buf   <= data_i; -- not required, CPU wdata is stable until transfer is acknowledged
       mtime_lo_we <= wren and bool_to_ulogic_f(boolean(addr = mtime_time_lo_addr_c));
       mtime_hi_we <= wren and bool_to_ulogic_f(boolean(addr = mtime_time_hi_addr_c));
 
       -- mtime low --
       if (mtime_lo_we = '1') then -- write access
-        mtime_lo_msb_ff <= '0';
-        mtime_lo <= '0' & wdata_buf;
+        mtime_lo <= data_i;
       else -- auto increment
-        mtime_lo_msb_ff <= mtime_lo(mtime_lo'left);
-        mtime_lo <= std_ulogic_vector(unsigned(mtime_lo) + 1);
+        mtime_lo <= mtime_lo_nxt(31 downto 0);
       end if;
+      mtime_lo_ovfl(0) <= mtime_lo_nxt(32); -- overflow (carry)
 
       -- mtime high --
       if (mtime_hi_we = '1') then -- write access
-        mtime_hi <= wdata_buf;
+        mtime_hi <= data_i;
       else -- auto increment (if mtime.low overflows)
-        mtime_hi <= std_ulogic_vector(unsigned(mtime_hi) + unsigned(inc_hi));
+        mtime_hi <= std_ulogic_vector(unsigned(mtime_hi) + unsigned(mtime_lo_ovfl));
       end if;
     end if;
   end process wr_access;
 
-  -- mtime.time_HI increment (0 or 1) --
-  inc_hi(0) <= mtime_lo_msb_ff xor mtime_lo(mtime_lo'left);
-  inc_hi(31 downto 1) <= (others => '0');
+  -- mtime.time_LO increment --
+  mtime_lo_nxt <= std_ulogic_vector(unsigned('0' & mtime_lo) + 1);
 
 
   -- Read Access ----------------------------------------------------------------------------
@@ -151,7 +148,7 @@ begin
       if (rden_i = '1') and (acc_en = '1') then
         case addr is
           when mtime_time_lo_addr_c => -- mtime LOW
-            data_o <= mtime_lo(31 downto 00);
+            data_o <= mtime_lo;
           when mtime_time_hi_addr_c => -- mtime HIGH
             data_o <= mtime_hi;
           when mtime_cmp_lo_addr_c => -- mtimecmp LOW
@@ -164,7 +161,7 @@ begin
   end process rd_access;
 
   -- system time output for cpu --
-  time_o <= mtime_hi & mtime_lo(31 downto 00);
+  time_o <= mtime_hi & mtime_lo;
 
 
   -- Comparator -----------------------------------------------------------------------------
@@ -179,8 +176,8 @@ begin
   end process cmp_sync;
 
   -- test words --
-  cmp_lo <= '1' when (unsigned(mtime_lo(31 downto 00)) >= unsigned(mtimecmp_lo)) else '0';
-  cmp_hi <= '1' when (unsigned(mtime_hi(31 downto 00)) >= unsigned(mtimecmp_hi)) else '0';
+  cmp_lo <= '1' when (unsigned(mtime_lo) >= unsigned(mtimecmp_lo)) else '0';
+  cmp_hi <= '1' when (unsigned(mtime_hi) >= unsigned(mtimecmp_hi)) else '0';
 
 
 end neorv32_mtime_rtl;
