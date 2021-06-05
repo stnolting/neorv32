@@ -56,18 +56,18 @@
  *
  * @note This program requires the WDT and the UART to be synthesized.
  *
- * @return Irrelevant.
+ * @return 0 if execution was successful
  **************************************************************************/
 int main() {
 
   // check if WDT unit is implemented at all
   if (neorv32_wdt_available() == 0) {
-    return 0; // nope, no WDT unit synthesized
+    return 1; // nope, no WDT unit synthesized
   }
 
   // check if UART unit is implemented at all
   if (neorv32_uart_available() == 0) {
-    return 0; // nope, no UART unit synthesized
+    return 1; // nope, no UART unit synthesized
   }
 
 

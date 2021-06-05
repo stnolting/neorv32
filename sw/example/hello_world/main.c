@@ -57,7 +57,7 @@
  *
  * @note This program requires the UART interface to be synthesized.
  *
- * @return Irrelevant.
+ * @return 0 if execution was successful
  **************************************************************************/
 int main() {
 

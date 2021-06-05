@@ -58,13 +58,13 @@
  *
  * @note This program requires the PWM controller to be synthesized (the UART is optional).
  *
- * @return Irrelevant.
+ * @return 0 if execution was successful
  **************************************************************************/
 int main() {
 
   // check if PWM unit is implemented at all
   if (neorv32_pwm_available() == 0) {
-    return 0;
+    return 1;
   }
 
 

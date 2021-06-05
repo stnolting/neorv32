@@ -99,7 +99,7 @@ void print_report(uint32_t num_err);
  *
  * @note This program requires the Zfinx CPU extension.
  *
- * @return Irrelevant.
+ * @return 0 if execution was successful
  **************************************************************************/
 int main() {
 
@@ -125,7 +125,7 @@ int main() {
   // check if Zfinx extension is implemented at all
   if (neorv32_cpu_check_zext(CSR_MZEXT_ZFINX) == 0) {
     neorv32_uart_print("Error! <Zfinx> extension not synthesized!\n");
-    return 0;
+    return 1;
   }
 
 
@@ -136,7 +136,7 @@ int main() {
   // inform the user if you are actually executing this
   neorv32_uart_printf("ERROR! Program has not been compiled. Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.\n");
 
-  return 0;
+  return 1;
 #endif
 
 
@@ -813,12 +813,13 @@ int main() {
   if (err_cnt_total != 0) {
     neorv32_uart_printf("\n%c[1m[ZFINX EXTENSION VERIFICATION FAILED!]%c[0m\n", 27, 27);
     neorv32_uart_printf("%u errors in %u test cases\n", err_cnt_total, test_cnt*(uint32_t)NUM_TEST_CASES);
+    return 1;
   }
   else {
     neorv32_uart_printf("\n%c[1m[Zfinx extension verification successful!]%c[0m\n", 27, 27);
+    return 0;
   }
 
-  return 0;
 }
 
 

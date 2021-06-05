@@ -69,7 +69,7 @@ void blink_led_c(void);
  *
  * @note This program requires the GPIO controller to be synthesized (the UART is optional).
  *
- * @return Irrelevant.
+ * @return 0 if execution was successful
  **************************************************************************/
 int main() {
 

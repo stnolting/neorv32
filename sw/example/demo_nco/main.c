@@ -63,7 +63,7 @@ uint32_t hexstr_to_uint(char *buffer, uint8_t length);
  *
  * @note This program requires the NCO and the UART modules.
  *
- * @return Irrelevant.
+ * @return 0 if execution was successful
  **************************************************************************/
 int main() {
 
@@ -83,7 +83,7 @@ int main() {
   // check if NCO unit is implemented at all
   if (neorv32_nco_available() == 0) {
     neorv32_uart_printf("ERROR! NCO unit not synthesized!\n");
-    return 0;
+    return 1;
   }
 
   // say hello

@@ -51,7 +51,7 @@ barebones_clock()
 #error \
     "You must implement a method to measure time in barebones_clock()! This function should return current time.\n"
 */
-  return 0;
+  return 1;
 }
 /* Define : TIMER_RES_DIVIDER
         Divider to trade off timer resolution and total time that can be

@@ -65,7 +65,7 @@ void gpio_pin_change_irq_handler(void);
  * @note This program assumes high-active buttons connected to gpio.in(7:0).
  * @note This program assumes high-active LEDS connected to gpio.out(7:0).
  *
- * @return Irrelevant.
+ * @return 0 if execution was successful
  **************************************************************************/
 int main() {
 
@@ -82,7 +82,7 @@ int main() {
   // check if GPIO unit is implemented at all
   if (neorv32_gpio_available() == 0) {
     neorv32_uart_print("ERROR! GPIO unit not synthesized!\n");
-    return 0;
+    return 1;
   }
 
   // say hello
@@ -113,7 +113,7 @@ int main() {
 
   if (install_err) {
     neorv32_uart_printf("RTE install error!\n");
-    return 0;
+    return 1;
   }
 
   // activate fast interrupt channel 8 (which is GPIO_PIN_CHANGE)
@@ -121,7 +121,7 @@ int main() {
 
   if (install_err) {
     neorv32_uart_printf("IRQ enable error!\n");
-    return 0;
+    return 1;
   }
 
   // activate GPIO pin-change irq only for input pins 0 to 7

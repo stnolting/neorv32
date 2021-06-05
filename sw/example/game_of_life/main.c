@@ -82,13 +82,13 @@ uint32_t xorshift32(void);
  *
  * @note This program requires the UART to be synthesized (the TRNG is optional).
  *
- * @return Irrelevant.
+ * @return 0 if execution was successful
  **************************************************************************/
 int main(void) {
 
   // check if UART unit is implemented at all
   if (neorv32_uart_available() == 0) {
-    return 0;
+    return 1;
   }
 
 

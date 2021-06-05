@@ -83,7 +83,7 @@ uint32_t atomic_access_addr;
  *
  * @note Applications has to be compiler with <USER_FLAGS+=-DRUN_CPUTEST>
  *
- * @return Irrelevant.
+ * @return 0 if execution was successful
  **************************************************************************/
 int main() {
 
@@ -103,7 +103,7 @@ int main() {
   // inform the user if you are actually executing this
   neorv32_uart_printf("ERROR! processor_check has not been compiled. Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.\n");
 
-  return 0;
+  return 1;
 #endif
 
   // check if this is a simulation (using primary UART0)
@@ -166,7 +166,7 @@ int main() {
 
   if (install_err) {
     neorv32_uart_printf("RTE install error (%i)!\n", install_err);
-    return 0;
+    return 1;
   }
 
   // enable interrupt sources
@@ -1691,12 +1691,13 @@ int main() {
   // final result
   if (cnt_fail == 0) {
     neorv32_uart_printf("%c[1m[CPU TEST COMPLETED SUCCESSFULLY!]%c[0m\n", 27, 27);
+    return 0;
   }
   else {
     neorv32_uart_printf("%c[1m[CPU TEST FAILED!]%c[0m\n", 27, 27);
+    return 1;
   }
 
-  return 0;
 }
 
 

@@ -62,7 +62,7 @@
  * @note This program requires the NEOLED controller to be synthesized (UART0 is optional).
  * @note NeoPixel stripe connection: NEORV32.neoled_o -> Stripe A ("NUM_LEDS_24BIT" RGB-LEDs) -> Stripe B ("NUM_LEDS_32BIT" RGBW LEDs)
  *
- * @return Irrelevant.
+ * @return 0 if execution was successful
  **************************************************************************/
 int main() {
 
@@ -80,7 +80,7 @@ int main() {
   // check if NEOLED unit is implemented at all, abort if not
   if (neorv32_neoled_available() == 0) {
     neorv32_uart_printf("Error! No NEOLED unit synthesized!\n");
-    return 0;
+    return 1;
   }
 
 

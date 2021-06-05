@@ -61,13 +61,13 @@ void generate_histogram(void);
  *
  * @note This program requires the UART and the TRNG to be synthesized.
  *
- * @return Irrelevant.
+ * @return 0 if execution was successful
  **************************************************************************/
 int main(void) {
 
   // check if UART unit is implemented at all
   if (neorv32_uart_available() == 0) {
-    return 0;
+    return 1;
   }
 
   // capture all exceptions and give debug info via UART
@@ -87,7 +87,7 @@ int main(void) {
   // check if TRNG unit is implemented at all
   if (neorv32_trng_available() == 0) {
     neorv32_uart_printf("No TRNG implemented.");
-    return 0;
+    return 1;
   }
 
   // enable TRNG

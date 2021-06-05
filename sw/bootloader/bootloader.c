@@ -227,7 +227,7 @@ int main(void) {
   // Configure machine system timer interrupt for ~2Hz
   neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (clock_speed/4));
 
-  // confiure trap handler (bare-metal, no neorv32 rte available)
+  // configure trap handler (bare-metal, no neorv32 rte available)
   neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&bootloader_trap_handler));
 
   // active timer IRQ
@@ -251,7 +251,7 @@ int main(void) {
   neorv32_uart_print("\n");
   start_app();
 
-  return 0;
+  return 1; // bootloader should never return
 #endif
 
 
@@ -344,7 +344,7 @@ int main(void) {
     }
   }
 
-  return 0; // bootloader should never return
+  return 1; // bootloader should never return
 }
 
 

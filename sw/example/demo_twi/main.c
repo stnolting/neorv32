@@ -64,7 +64,7 @@ uint32_t hexstr_to_uint(char *buffer, uint8_t length);
  *
  * @note This program requires the UART and the PWM to be synthesized.
  *
- * @return Irrelevant.
+ * @return 0 if execution was successful
  **************************************************************************/
 int main() {
 
@@ -74,7 +74,7 @@ int main() {
 
   // check if UART unit is implemented at all
   if (neorv32_uart_available() == 0) {
-    return 0;
+    return 1;
   }
 
 
@@ -96,7 +96,7 @@ int main() {
   // check if TWI unit is implemented at all
   if (neorv32_twi_available() == 0) {
     neorv32_uart_printf("No TWI unit implemented.");
-    return 0;
+    return 1;
   }
 
 
