@@ -5,6 +5,13 @@ package components is
 
   -- Yosys / IceCube wrapper components
 
+  component SB_GB
+    port(
+      GLOBAL_BUFFER_OUTPUT         : out std_logic;
+      USER_SIGNAL_TO_GLOBAL_BUFFER : in  std_logic
+    );
+  end component;
+
   component SB_HFOSC
   generic (
     CLKHF_DIV : string
