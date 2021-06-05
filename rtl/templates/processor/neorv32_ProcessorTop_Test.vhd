@@ -44,7 +44,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_test_setup is
+entity neorv32_ProcessorTop_Test is
   port (
     -- Global control --
     clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
@@ -55,9 +55,9 @@ entity neorv32_test_setup is
     uart0_txd_o : out std_ulogic; -- UART0 send data
     uart0_rxd_i : in  std_ulogic := '0' -- UART0 receive data
   );
-end neorv32_test_setup;
+end entity;
 
-architecture neorv32_test_setup_rtl of neorv32_test_setup is
+architecture neorv32_ProcessorTop_Test_rtl of neorv32_ProcessorTop_Test is
 
   -- gpio output --
   signal gpio_out : std_ulogic_vector(31 downto 0);
@@ -197,4 +197,4 @@ begin
   gpio_o <= gpio_out(7 downto 0);
 
 
-end neorv32_test_setup_rtl;
+end architecture;

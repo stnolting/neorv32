@@ -42,7 +42,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_top_axi4lite is
+entity neorv32_SystemTop_axi4lite is
   generic (
     -- ------------------------------------------------------------
     -- Configuration Generics --
@@ -181,9 +181,9 @@ entity neorv32_top_axi4lite is
     msw_irq_i     : in  std_logic := '0'; -- machine software interrupt
     mext_irq_i    : in  std_logic := '0'  -- machine external interrupt
   );
-end neorv32_top_axi4lite;
+end entity;
 
-architecture neorv32_top_axi4lite_rtl of neorv32_top_axi4lite is
+architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
 
   -- type conversion --
   constant USER_CODE_INT     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(USER_CODE);
@@ -426,7 +426,7 @@ begin
   soc_firq_i_int  <= std_ulogic_vector(soc_firq_i);
   msw_irq_i_int   <= std_ulogic(msw_irq_i);
   mext_irq_i_int  <= std_ulogic(mext_irq_i);
-  
+
 
   -- Wishbone to AXI4-Lite Bridge -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -511,4 +511,4 @@ begin
   wb_core.err   <= (ack_read and err_read) or (ack_write and err_write) or wb_core.lock;
 
 
-end neorv32_top_axi4lite_rtl;
+end architecture;

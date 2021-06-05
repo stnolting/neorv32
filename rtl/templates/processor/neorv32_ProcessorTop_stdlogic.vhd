@@ -39,7 +39,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_top_stdlogic is
+entity neorv32_ProcessorTop_stdlogic is
   generic (
     -- General --
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
@@ -165,9 +165,9 @@ entity neorv32_top_stdlogic is
     msw_irq_i   : in  std_logic := '0'; -- machine software interrupt
     mext_irq_i  : in  std_logic := '0'  -- machine external interrupt
   );
-end neorv32_top_stdlogic;
+end entity;
 
-architecture neorv32_top_stdlogic_rtl of neorv32_top_stdlogic is
+architecture neorv32_ProcessorTop_stdlogic_rtl of neorv32_ProcessorTop_stdlogic is
 
   -- type conversion --
   constant USER_CODE_INT     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(USER_CODE);
@@ -420,4 +420,4 @@ begin
   mext_irq_i_int  <= std_ulogic(mext_irq_i);
 
 
-end neorv32_top_stdlogic_rtl;
+end architecture;
