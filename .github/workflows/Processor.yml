@@ -49,5 +49,16 @@ jobs:
       - name: '⚙️ Run Software Framework Tests'
         run: ./sw/example/processor_check/check.sh
 
-      - name: '⚙️ Run Processor Hardware Tests'
+      - name: Archive application
+        uses: actions/upload-artifact@v2
+        with:
+          name: application
+          path: rtl/core/neorv32_application_image.vhd
+
+      - name: '⚙️ Run Processor Hardware Tests with VUnit'
+        uses: VUnit/vunit_action@master
+        with:
+          cmd: python3 ./sim/run.py --ci-mode -v
+
+      - name: '⚙️ Run Processor Hardware Tests with Script'
         run: ./sim/ghdl/ghdl_sim.sh
