@@ -339,7 +339,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     dcsr_ebreakm      : std_ulogic; -- dcsr.ebreakm (R/W): behavior of ebreak instruction on m-mode
     dcsr_ebreaku      : std_ulogic; -- dcsr.ebreaku (R/W): behavior of ebreak instruction on u-mode
     dcsr_step         : std_ulogic; -- dcsr.step (R/W): single-step mode
-    dcsr_stepie       : std_ulogic; -- dcsr.stepie (R/W): enable IRQs in single-step mode
     dcsr_prv          : std_ulogic_vector(01 downto 0); -- dcsr.prv (R/W): current privilege level when entering debug mode
     dcsr_cause        : std_ulogic_vector(02 downto 0); -- dcsr.cause (R/-): why was debug mode entered
     dcsr_rd           : std_ulogic_vector(data_width_c-1 downto 0); -- dcsr (R/(W)): debug mode control and status register
@@ -1743,8 +1742,7 @@ begin
 
   -- debug mode (entry) interrupts --
   trap_ctrl.db_irq_en <= '1' when (CPU_EXTENSION_RISCV_DEBUG = false) else
-                         '0' when (debug_ctrl.running = '1') else -- no interrupts when IN debug mode
-                         csr.dcsr_stepie when (csr.dcsr_step = '1') else '1'; -- allow IRQ in single-step mode when dcsr.stepie is set
+                         '0' when (debug_ctrl.running = '1') or (csr.dcsr_step = '1') else '1'; -- no interrupts when IN debug mode or IN single-step mode
   trap_ctrl.db_irq_fire <= (trap_ctrl.irq_buf(interrupt_db_step_c) or trap_ctrl.irq_buf(interrupt_db_halt_c)) when (CPU_EXTENSION_RISCV_DEBUG = true) else '0'; -- "NMI" for debug mode entry
 
   -- acknowledge mask output --
@@ -2015,7 +2013,6 @@ begin
       csr.dcsr_ebreakm <= '0';
       csr.dcsr_ebreaku <= '0';
       csr.dcsr_step    <= '0';
-      csr.dcsr_stepie  <= '0';
       csr.dcsr_prv     <= (others => def_rst_val_c);
       csr.dcsr_cause   <= (others => def_rst_val_c);
       csr.dpc          <= (others => def_rst_val_c);
@@ -2166,7 +2163,6 @@ begin
               -- R/W: dcsr - debug mode control and status register --
               if (csr.addr(1 downto 0) = csr_dcsr_c(1 downto 0)) then
                 csr.dcsr_ebreakm <= csr.wdata(15);
-                csr.dcsr_stepie  <= csr.wdata(2);
                 csr.dcsr_step    <= csr.wdata(2);
                 if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
                   csr.dcsr_ebreaku <= csr.wdata(12);
@@ -2333,7 +2329,6 @@ begin
         csr.dcsr_ebreakm <= '0';
         csr.dcsr_ebreaku <= '0';
         csr.dcsr_step    <= '0';
-        csr.dcsr_stepie  <= '0';
         csr.dcsr_cause   <= (others => '0');
         csr.dpc          <= (others => '0');
         csr.dscratch0    <= (others => '0');
@@ -2940,9 +2935,9 @@ begin
     csr.dcsr_rd(14) <= '0'; -- ebreakh: not available
     csr.dcsr_rd(13) <= '0'; -- ebreaks: not available
     csr.dcsr_rd(12) <= csr.dcsr_ebreaku when (CPU_EXTENSION_RISCV_U = true) else '0'; -- ebreaku: what happens on ebreak in u-mode? (normal trap OR debug-enter)
-    csr.dcsr_rd(11) <= csr.dcsr_stepie; -- stepie: interrupts enabled during single-stepping?
+    csr.dcsr_rd(11) <= '0'; -- stepie: interrupts are disabled during single-stepping
     csr.dcsr_rd(10) <= '0'; -- stopcount: counters increment as usual FIXME ???
-    csr.dcsr_rd(09) <= '0'; -- stoptime: timers increment as usual FIXME ???
+    csr.dcsr_rd(09) <= '0'; -- stoptime: timers increment as usual
     csr.dcsr_rd(08 downto 06) <= csr.dcsr_cause; -- debug mode entry cause
     csr.dcsr_rd(05) <= '0'; -- reserved
     csr.dcsr_rd(04) <= '0'; -- mprven: mstatus.mprv is ignored in debug mode

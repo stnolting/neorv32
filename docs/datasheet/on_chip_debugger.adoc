@@ -513,8 +513,7 @@ When the CPU **is in debug mode** the following things are important:
     ( = _CPU_DEBUG_ADDR_) of the park loop again (for example when executing `ebreak` in debug mode)
   * for all other exception sources the CPU jumps to the _exception entry point_ ( = _CPU_DEBUG_ADDR_ + 4)
     to signal an exception to the DM and restarts the park loop again afterwards
-* interrupts are masked - including NMIs; interrupts can be enabled _during the execution of single-stepped instructions_
-  when `dcsr.stepie` is set
+* interrupts _including_ non-maskable interrupts are disabled; however, they will be buffered and executed when the CPU has left debug mode
 * if the DM makes a resume request, the park loop exits and the CPU leaves debug mode (executing `dret`)
 
 Debug mode is left either by executing the `dret` instruction footnote:[`dret` should only be executed _inside_ the debugger
@@ -560,11 +559,11 @@ The following bits are implemented. The reaming bits are read-only and always re
 | Bit   | Name [RISC-V] | R/W | Event
 | 31:28 | `xdebugver` | r/- | always `0100` - indicates external debug support exists
 | 27:16 | -           | r/- | _reserved_, read as zero
-| 15    | `ebereakm`  | r/w | `ebreak` instructions in `machine` mode _enter_ debug mode when set
-| 14    | [line-through]#`ebereakh`#  | r/- | `0` - hypervisor mode not available
-| 13    | [line-through]#`ebereaks`#  | r/- | `0` - supervisor mode not available
-| 12    | `ebereaku`  | r/w | `ebreak` instructions in `user` mode _enter_ debug mode when set
-| 11    | `stepie`    | r/w | enable interrupts when in single-stepping mode
+| 15    | `ebereakm`  | r/w | `ebreak` instructions in `machine` mode will _enter_ debug mode when set
+| 14    | [line-through]#`ebereakh`# | r/- | `0` - hypervisor mode not supported
+| 13    | [line-through]#`ebereaks`# | r/- | `0` - supervisor mode not supported
+| 12    | `ebereaku`  | r/w | `ebreak` instructions in `user` mode will _enter_ debug mode when set
+| 11    | [line-through]#`stepie`# | r/- | `0` - IRQs are disabled during single-stepping
 | 10    | [line-through]#`stopcount`# | r/- | `0` - counters increment as usual
 | 9     | [line-through]#`stoptime`#  | r/- | `0` - timers increment as usual
 | 8:6   | `cause`     | r/- | cause identifier - why was debug mode entered
