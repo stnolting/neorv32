@@ -1,15 +1,15 @@
-# make a local copy of original "./../../rtl/top_templates/neorv32_test_setup.vhd" file
+# make a local copy of original "./../../rtl/templates/processor/neorv32_ProcessorTop_Test.vhd" file
 # and modify the default clock frequency: set to 50MHz
-set shell_script "cp -f ./../../rtl/top_templates/neorv32_test_setup.vhd . && sed -i '/CLOCK_FREQUENCY/c\CLOCK_FREQUENCY => 50000000,' neorv32_test_setup.vhd"
+set shell_script "cp -f ./../../rtl/templates/processor/neorv32_ProcessorTop_Test.vhd . && sed -i '/CLOCK_FREQUENCY/c\CLOCK_FREQUENCY => 50000000,' neorv32_test_setup.vhd"
 exec sh -c $shell_script
 
 # Copyright (C) 2020  Intel Corporation. All rights reserved.
-# Your use of Intel Corporation's design tools, logic functions 
-# and other software and tools, and any partner logic 
-# functions, and any output files from any of the foregoing 
-# (including device programming or simulation files), and any 
-# associated documentation or information are expressly subject 
-# to the terms and conditions of the Intel Program License 
+# Your use of Intel Corporation's design tools, logic functions
+# and other software and tools, and any partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Intel Program License
 # Subscription Agreement, the Intel Quartus Prime License Agreement,
 # the Intel FPGA IP License Agreement, or other applicable license
 # agreement, including, without limitation, that your use is for

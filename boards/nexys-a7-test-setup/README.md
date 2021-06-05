@@ -1,13 +1,13 @@
 # NEORV32 Test Setup for the Digilent Nexys A7 and Nexys 4 DDR FPGA Boards
 
 This setup provides a very simple script-based "demo setup" that allows to check out the NEORV32 processor on the Digilent Nexys A7 and Nexys 4 DDR boards.
-It uses the simplified [`neorv32_test_setup.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd) top entity, which is a wrapper for the actual processor
+It uses the simplified [`neorv32_ProcessorTop_Test.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/templates/processor/neorv32_ProcessorTop_Test.vhd) top entity, which is a wrapper for the actual processor
 top entity that provides a minimalistic interface (clock, reset, UART and 4 LEDs).
 
-* FPGA Boards: 
+* FPGA Boards:
   * :books: [Digilent Nexys A7 FPGA Boards](https://reference.digilentinc.com/reference/programmable-logic/nexys-a7/reference-manual)
   * :books: [Digilent Nexys 4 DDR FPGA Board](https://reference.digilentinc.com/reference/programmable-logic/nexys-4-ddr/reference-manual)
-* FPGAs: 
+* FPGAs:
   * Xilinx Artix-7 `XC7A50TCSG324-1`
   * Xilinx Artix-7 `XC7A100TCSG324-1`
 * Toolchain: Xilinx Vivado (tested with Vivado 2020.2)
@@ -15,7 +15,7 @@ top entity that provides a minimalistic interface (clock, reset, UART and 4 LEDs
 
 ### NEORV32 Configuration
 
-:information_source: See the top entity [`rtl/top_templates/neorv32_test_setup.vhd` ](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_test_setup.vhd) for 
+:information_source: See the top entity [`rtl/templates/processor/neorv32_ProcessorTop_Test.vhd` ](https://github.com/stnolting/neorv32/blob/master/rtl/templates/processor/neorv32_ProcessorTop_Test.vhd) for
 configuration and entity details and [`nexys_a7_test_setup.xdc`](https://github.com/AWenzel83/neorv32/blob/nexys_a7_example/boards/nexys-a7-test-setup/nexys_a7_test_setup.xdc)
 for the according FPGA pin mapping.
 
@@ -37,15 +37,15 @@ If not already available, this script will create a `work` folder in this direct
 1. start Vivado (in GUI mode)
 2. click on "TCL Console" at the bottom
 3. use the console to naviagte to **this** folder: `cd .../neorv32/boards/nexys-a7-test-setup`
-4. execute the tcl-script according to your board, this will create the actual Vivado project in `work`: 
- * `source create_project_nexys_a7_100.tcl`for a Nexys A7 100 or a Nexys 4 DDR board 
+4. execute the tcl-script according to your board, this will create the actual Vivado project in `work`:
+ * `source create_project_nexys_a7_100.tcl`for a Nexys A7 100 or a Nexys 4 DDR board
  * `source create_project_nexys_a7_50.tcl`for a Nexys A7 50 board
 5. when the Vivado project has openend, click on "Run Implementation"
 6. when the implementation is done create a bitstrem by clicking "Generate Bitstream" (maybe a prompt will ask for that)
 7. open the "Hardware Manager" (maybe a prompt will ask for that)
 8. click on "Open target/Auto Connect"
 9. click on "Program device" and select `work/neorv32_test_setup.runs/impl_1/neorv32_test_setup.bit`; click "Program"
-10. use a serial terminal (like :earth_asia: [Tera Term](https://ttssh2.osdn.jp/index.html.en)) to connect to the USB-UART interface using the following configuration: 
+10. use a serial terminal (like :earth_asia: [Tera Term](https://ttssh2.osdn.jp/index.html.en)) to connect to the USB-UART interface using the following configuration:
 19200 Baud, 8 data bits, 1 stop bit, no parity bits, no transmission / flow control protocol (raw bytes only), newline on `\r\n` (carriage return & newline)
 11. now you can communicate with the bootloader console and upload a new program. Check out the [example programs](https://github.com/stnolting/neorv32/tree/master/sw/example)
 and see section "Let's Get It Started" of the :page_facing_up: [NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf) for further resources.

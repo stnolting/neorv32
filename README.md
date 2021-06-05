@@ -107,9 +107,9 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 
 * 32-bit external bus interface, Wishbone b4 compatible
 ([WISHBONE](https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite))
-  * [wrapper](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates/neorv32_top_axi4lite.vhd) for AXI4-Lite master interface
-* alternative [top entities/wrappers](https://github.com/stnolting/neorv32/blob/master/rtl/top_templates) providing
-simplified and/or resolved top entity ports for easy system inegration
+  * [wrapper](https://github.com/stnolting/neorv32/blob/master/rtl/templates/system/neorv32_SystemTop_axi4lite.vhd) for AXI4-Lite master interface
+* alternative [top entities/wrappers](https://github.com/stnolting/neorv32/blob/master/rtl/templates) providing
+simplified and/or resolved top entity ports for easy system integration
 * custom functions subsystem ([CFS](https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs))
 for tightly-coupled custom co-processor extensions
 
@@ -283,7 +283,7 @@ developed and debugged with open source tooling
 ## Getting Started
 
 This overview provides some *quick links* to the most important sections of the
-[online Data Sheet](https://stnolting.github.io/neorv32) and the 
+[online Data Sheet](https://stnolting.github.io/neorv32) and the
 [online User Guide](https://stnolting.github.io/neorv32/ug).
 
 ### :electric_plug: Hardware Overview

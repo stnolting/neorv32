@@ -20,7 +20,7 @@ add_files [glob ./../../rtl/core/*.vhd]
 set_property library neorv32 [get_files [glob ./../../rtl/core/*.vhd]]
 
 # add source file: top entity
-add_files [glob ./../../rtl/top_templates/neorv32_test_setup.vhd]
+add_files [glob ./../../rtl/templates/processor/neorv32_ProcessorTop_Test.vhd]
 
 # add source files: simulation-only
 add_files -fileset sim_1 ./../../sim/neorv32_tb.vhd
