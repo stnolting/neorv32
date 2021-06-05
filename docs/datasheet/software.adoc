@@ -118,7 +118,7 @@ available:
 |=======================
 | `help` | Show a short help text explaining all available targets.
 | `check` | Check the compiler toolchain. You should run this target at least once after installing the toolchain.
-| `info` | Show the makefile configuration (see next chapter).
+| `info` | Show the makefile configuration (see section <<_configuration>>).
 | `exe` | Compile all sources and generate application executable for upload via bootloader.
 | `install` | Compile all sources, generate executable (via exe target) for upload via bootloader and generate and install IMEM VHDL initialization image file `rtl/core/neorv32_application_image.vhd`.
 | `all` | Execute `exe` and `install`.
@@ -228,7 +228,7 @@ For this purpose, the makefile uses the NEORV32-specific linker script `sw/commo
 |=======================
 
 The `iodev` section is reserved for processor-internal memory-mapped IO and peripheral devices. The linker does not use this section at all
-and just passes the start and end adresses of this section to the start-up code `crt0.S` (see next section).
+and just passes the start and end addresses of this section to the start-up code `crt0.S` (see section <<_start_up_code_crt0>>).
 
 [NOTE]
 The `rom` region is used to place the instructions of "normal" applications. If the bootloader is being compiled, the makefile defines the `make_bootloader`
@@ -291,6 +291,9 @@ The `crt0.S` is directly executed right after a reset and performs the following
 * Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
 * Call the application's `main` function (with no arguments: `argc` = `argv` = 0).
 * If the `main` function returns, the processor goes to an endless sleep mode (using a simple loop or via the `wfi` instruction if available).
+
+[TIP]
+The return code of the `main()` function can be evaluated by reading register `a0` (= 'x10') via the on-chip debugger.
 
 
 <<<
