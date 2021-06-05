@@ -2,12 +2,13 @@ PCF       = upduino_v3.pcf
 PNRFLAGS ?= --up5k --package sg48 --ignore-loops --timing-allow-fail
 
 IMPL := neorv32_upduino_v3_impl_1
-TOP  := neorv32_upduino_v3_top
+TOP  := neorv32_UPduino_v3_BoardTop
 
 include ../filesets.mk
 
 BOARD_SRC := \
-  neorv32_upduino_v3_top.vhd
+  neorv32_UPduino_v3_ProcessorTop.vhd \
+  neorv32_UPduino_v3_BoardTop.vhd
 
 include ../tools.mk
 
