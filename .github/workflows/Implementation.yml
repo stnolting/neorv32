@@ -4,10 +4,12 @@ on:
   push:
     paths:
     - 'boards/**'
+    - 'examples/**'
     - 'rtl/**'
   pull_request:
     paths:
     - 'boards/**'
+    - 'examples/**'
     - 'rtl/**'
   schedule:
     - cron: '0 0 * * 5'
@@ -17,7 +19,16 @@ jobs:
 
   all-in-one:
     runs-on: ubuntu-latest
-    name: '🛳️ All-in-one'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {
+            board: UPduino_v3,
+            design: 'UP5KDemo',
+            bitstream: neorv32_UPduino_v3_UP5KDemo.bin
+          }
+    name: '🛳️ All-in-one | ${{ matrix.board }} | ${{ matrix.design }}'
     env:
       GHDL_PLUGIN_MODULE: ghdl
 
@@ -29,12 +40,12 @@ jobs:
     - name: '⚙️ Generate bitstream'
       uses: docker://ghcr.io/hdl/debian-buster/impl
       with:
-        args: make -C boards/osflow/UPduino_v3/ all
+        args: make -C examples BOARD=${{ matrix.board }} ${{ matrix.design }}
 
     - name: '📤 Upload Artifact: bitstream'
       uses: actions/upload-artifact@v2
       with:
-        name: UPduino_v3
+        name: ${{ matrix.board }}-${{ matrix.design }}
         path: |
-          boards/osflow/UPduino_v3/neorv32_upduino_v3_impl_1.bin
-          boards/osflow/UPduino_v3/*-report.txt
+          examples/${{ matrix.bitstream }}
+          boards/osflow/${{ matrix.board }}/*-report.txt

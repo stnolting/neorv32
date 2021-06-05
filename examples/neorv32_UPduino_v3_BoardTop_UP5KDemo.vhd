@@ -39,7 +39,7 @@ use ieee.numeric_std.all;
 library iCE40UP;
 use iCE40UP.components.all; -- for device primitives and macros
 
-entity neorv32_UPduino_v3_BoardTop is
+entity neorv32_UPduino_v3_BoardTop_UP5KDemo is
   port (
     -- UART (uart0) --
     uart_txd_o  : out std_ulogic;
@@ -65,7 +65,7 @@ entity neorv32_UPduino_v3_BoardTop is
   );
 end entity;
 
-architecture neorv32_UPduino_v3_BoardTop_rtl of neorv32_UPduino_v3_BoardTop is
+architecture neorv32_UPduino_v3_BoardTop_UP5KDemo_rtl of neorv32_UPduino_v3_BoardTop_UP5KDemo is
 
   -- configuration --
   constant f_clock_c : natural := 18000000; -- PLL output clock frequency in Hz
@@ -77,18 +77,10 @@ architecture neorv32_UPduino_v3_BoardTop_rtl of neorv32_UPduino_v3_BoardTop is
   signal pll_rstn : std_logic;
   signal pll_clk  : std_logic;
 
-  -- CPU --
-  signal cpu_clk  : std_ulogic;
-  signal cpu_rstn : std_ulogic;
-
   -- internal IO connection --
   signal con_pwm     : std_ulogic_vector(2 downto 0);
   signal con_spi_sdi : std_ulogic;
   signal con_spi_csn : std_ulogic;
-
-  -- Misc --
-  signal pwm_drive  : std_logic_vector(2 downto 0);
-  signal pwm_driven : std_ulogic_vector(2 downto 0);
 
 begin
 
@@ -141,12 +133,10 @@ begin
     SCLK            => '0'
   );
 
+  -- The core of the problem ----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
 
-  cpu_clk  <= std_ulogic(pll_clk);
-  cpu_rstn <= std_ulogic(pll_rstn);
-
-
-  neorv32_inst: entity work.neorv32_UPduino_v3_ProcessorTop
+  neorv32_inst: entity work.neorv32_ProcessorTop_UP5KDemo
   generic map (
     CLOCK_FREQUENCY => f_clock_c,   -- clock frequency of clk_i in Hz
     USER_CODE       => x"0001ce40"  -- custom user code
@@ -185,11 +175,6 @@ begin
   con_spi_sdi <= flash_sdi_i when (con_spi_csn = '0') else spi_sdi_i;
 
   -- RGB --
-  -- bit 0: red - pwm channel 0
-  -- bit 1: green - pwm channel 1
-  -- bit 2: blue - pwm channel 2
-  pwm_drive <= std_logic_vector(con_pwm(2 downto 0));
-
   RGB_inst: SB_RGBA_DRV
   generic map (
     CURRENT_MODE => "0b1",

@@ -38,7 +38,7 @@ use ieee.numeric_std.all;
 
 library neorv32;
 
-entity neorv32_UPduino_v3_ProcessorTop is
+entity neorv32_ProcessorTop_UP5KDemo is
   generic (
     CLOCK_FREQUENCY : natural := 0;  -- clock frequency of clk_i in Hz
     USER_CODE       : std_ulogic_vector(31 downto 0) := x"00000000"  -- custom user code
@@ -70,7 +70,7 @@ entity neorv32_UPduino_v3_ProcessorTop is
   );
 end entity;
 
-architecture neorv32_UPduino_v3_ProcessorTop_rtl of neorv32_UPduino_v3_ProcessorTop is
+architecture neorv32_ProcessorTop_UP5KDemo_rtl of neorv32_ProcessorTop_UP5KDemo is
 
   -- internal IO connection --
   signal con_pwm      : std_ulogic_vector(02 downto 0);
