@@ -56,7 +56,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- general --
   constant ext_imem_c            : boolean := false; -- false: use and boot from proc-internal IMEM, true: use and boot from external (initialized) simulated IMEM (ext. mem A)
   constant ext_dmem_c            : boolean := false; -- false: use proc-internal DMEM, true: use external simulated DMEM (ext. mem B)
-  constant icache_en_c           : boolean := false; -- set true to use processor-internal instruction cache
+  constant icache_en_c           : boolean := true; -- set true to use processor-internal instruction cache
   constant imem_size_c           : natural := 16*1024; -- size in bytes of processor-internal IMEM / external mem A
   constant dmem_size_c           : natural := 8*1024; -- size in bytes of processor-internal DMEM / external mem B
   constant f_clock_c             : natural := 100000000; -- main clock in Hz
