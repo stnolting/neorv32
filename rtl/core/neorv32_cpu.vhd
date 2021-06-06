@@ -168,8 +168,8 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- hardware reset notifier --
-  assert not ((dedicated_reset_c = false) and (def_rst_val_c = '-')) report "NEORV32 CPU CONFIG NOTE: Using NO dedicated hardware reset for uncritical registers (default, might reduce area footprint). Set the package constant <dedicated_reset_c> to TRUE if you need a defined reset value." severity note;
-  assert not ((dedicated_reset_c = true)  and (def_rst_val_c = '0')) report "NEORV32 CPU CONFIG NOTE: Using defined hardware reset for uncritical registers (non-default, reset-to-zero, might increase area footprint)." severity note;
+  assert not (dedicated_reset_c = false) report "NEORV32 CPU CONFIG NOTE: Implementing NO dedicated hardware reset for uncritical registers (default, might reduce area). Set package constant <dedicated_reset_c> = TRUE to configure a DEFINED reset value for all CPU registers ." severity note;
+  assert not (dedicated_reset_c = true)  report "NEORV32 CPU CONFIG NOTE: Implementing defined hardware reset for uncritical registers (non-default, reset-to-zero, might increase area)." severity note;
   assert not ((def_rst_val_c /= '-') and (def_rst_val_c /= '0')) report "NEORV32 CPU CONFIG ERROR! Invalid configuration of package <def_rst_val_c> constant (has to be '-' or '0')." severity error;
 
   -- CSR system --
@@ -193,21 +193,16 @@ begin
   -- PMP granularity --
   assert not ((is_power_of_two_f(PMP_MIN_GRANULARITY) = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be a power of two." severity error;
   assert not ((PMP_MIN_GRANULARITY < 8) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be >= 8 bytes." severity error;
-  -- PMP notifier --
-  assert not (PMP_NUM_REGIONS > 0) report "NEORV32 CPU CONFIG NOTE: Implementing physical memory protection (PMP) with " & integer'image(PMP_NUM_REGIONS) & " regions and a minimal granularity of " & integer'image(PMP_MIN_GRANULARITY) & " bytes." severity note;
   -- PMP requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
   -- HPM counters check --
   assert not (HPM_NUM_CNTS > 29) report "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..29)." severity error;
   assert not ((HPM_CNT_WIDTH < 0) or (HPM_CNT_WIDTH > 64)) report "NEORV32 CPU CONFIG ERROR! HPM counter width <HPM_CNT_WIDTH> has to be 0..64 bit." severity error; 
-  -- HPM counters notifier --
-  assert not (HPM_NUM_CNTS > 0) report "NEORV32 CPU CONFIG NOTE: Implementing " & integer'image(HPM_NUM_CNTS) & " HPM counters (each " & integer'image(HPM_CNT_WIDTH) & "-bit wide)." severity note;
   -- HPM CNT requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (HPM_NUM_CNTS > 0)) report "NEORV32 CPU CONFIG ERROR! Hardware performance monitors (HPM) require <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
   -- Debug mode --
-  assert not (CPU_EXTENSION_RISCV_DEBUG = true) report "NEORV32 CPU CONFIG NOTE: Implementing RISC-V DEBUG MODE extension." severity note;
   assert not ((CPU_EXTENSION_RISCV_DEBUG = true) and (CPU_EXTENSION_RISCV_Zicsr = false)) report "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
 

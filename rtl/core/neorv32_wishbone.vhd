@@ -135,16 +135,16 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- bus timeout --
-  assert not (BUS_TIMEOUT /= 0) report "NEORV32 PROCESSOR CONFIG NOTE: Using auto-timeout for external bus interface (" & integer'image(BUS_TIMEOUT) & " cycles)." severity note;
-  assert not (BUS_TIMEOUT  = 0) report "NEORV32 PROCESSOR CONFIG NOTE: Using no auto-timeout for external bus interface (might cause permanent CPU stall)." severity note;
+  assert not (BUS_TIMEOUT /= 0) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing auto-timeout (" & integer'image(BUS_TIMEOUT) & " cycles)." severity note;
+  assert not (BUS_TIMEOUT  = 0) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing no auto-timeout (can cause permanent CPU stall!)." severity note;
 
-  -- external memory interface protocol + max timeout latency notifier (warning) --
-  assert not (wb_pipe_mode_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using STANDARD Wishbone protocol." severity note;
-  assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing external memory interface using PIEPLINED Wishbone protocol." severity note;
+  -- external memory interface protocol --
+  assert not (wb_pipe_mode_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing STANDARD Wishbone protocol." severity note;
+  assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing PIEPLINED Wishbone protocol." severity note;
 
   -- endianness --
-  assert not (xbus_big_endian_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: Using LITTLE-ENDIAN byte order for external memory interface." severity note;
-  assert not (xbus_big_endian_c = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Using BIG-ENDIAN byte order for external memory interface." severity note;
+  assert not (xbus_big_endian_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing LITTLE-ENDIAN byte order." severity note;
+  assert not (xbus_big_endian_c = true)  report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing BIG-ENDIAN byte." severity note;
 
 
   -- Access Control -------------------------------------------------------------------------
