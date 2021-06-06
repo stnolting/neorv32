@@ -625,7 +625,7 @@ enum NEORV32_CLOCK_PRSC_enum {
  **************************************************************************/
 /**@{*/
 /** PWM base address */
-#define PWM_BASE (0XFFFFFF80UL) // /**< PWM base address */
+#define PWM_BASE (0xFFFFFE80UL) // /**< PWM base address */
 /** PWM address space size in bytes */
 #define PWM_SIZE (16*4) // /**< PWM address space size in bytes */
 
