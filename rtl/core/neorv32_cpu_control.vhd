@@ -296,7 +296,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mcounteren_cy     : std_ulogic; -- mcounteren.cy: allow cycle[h] access from user-mode
     mcounteren_tm     : std_ulogic; -- mcounteren.tm: allow time[h] access from user-mode
     mcounteren_ir     : std_ulogic; -- mcounteren.ir: allow instret[h] access from user-mode
-    mcounteren_hpm    : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0); -- mcounteren.hpmx: allow mhpmcounterx[h] access from user-mode
     --
     mcountinhibit_cy  : std_ulogic; -- mcounterinhibit.cy: enable auto-increment for [m]cycle[h]
     mcountinhibit_ir  : std_ulogic; -- mcounterinhibit.ir: enable auto-increment for [m]instret[h]
@@ -1296,8 +1295,7 @@ begin
   -- CSR Access Check -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_access_check: process(execute_engine.i_reg, csr, debug_ctrl)
-    variable csr_wacc_v           : std_ulogic; -- to check access to read-only CSRs
-    variable csr_mcounteren_hpm_v : std_ulogic_vector(31 downto 0); -- max 29 HPM counters, plus 3 LSB-aligned dummy bits
+    variable csr_wacc_v : std_ulogic; -- to check access to read-only CSRs
   begin
     -- is this CSR instruction really going to write to a CSR? --
     if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
@@ -1305,14 +1303,6 @@ begin
       csr_wacc_v := '1'; -- always write CSR
     else -- clear/set
       csr_wacc_v := or_reduce_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c)); -- write allowed if rs1/uimm5 != 0
-    end if;
-
-    -- low privilege level access to hpm counters? --
-    csr_mcounteren_hpm_v := (others => '0');
-    if (CPU_EXTENSION_RISCV_U = true) and (HPM_NUM_CNTS /= 0) then
-      csr_mcounteren_hpm_v(3+(HPM_NUM_CNTS-1) downto 3+0) := csr.mcounteren_hpm(HPM_NUM_CNTS-1 downto 0);
-    else -- 'mcounteren' CSR is hardwired to zero if user mode is not implemented
-      csr_mcounteren_hpm_v := (others => '0');
     end if;
 
     -- check CSR access --
@@ -1333,7 +1323,7 @@ begin
       when csr_mip_c | csr_mtval_c => -- NOTE: MIP and MTVAL are read-only in the NEORV32!
         csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
 
-      -- physical memory protection - address & configuration --
+      -- physical memory protection (PMP) - address & configuration --
       when csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  | csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  |
            csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c | csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c |
            csr_pmpaddr16_c | csr_pmpaddr17_c | csr_pmpaddr18_c | csr_pmpaddr19_c | csr_pmpaddr20_c | csr_pmpaddr21_c | csr_pmpaddr22_c | csr_pmpaddr23_c |
@@ -1342,37 +1332,42 @@ begin
            csr_pmpaddr40_c | csr_pmpaddr41_c | csr_pmpaddr42_c | csr_pmpaddr43_c | csr_pmpaddr44_c | csr_pmpaddr45_c | csr_pmpaddr46_c | csr_pmpaddr47_c |
            csr_pmpaddr48_c | csr_pmpaddr49_c | csr_pmpaddr50_c | csr_pmpaddr51_c | csr_pmpaddr52_c | csr_pmpaddr53_c | csr_pmpaddr54_c | csr_pmpaddr55_c |
            csr_pmpaddr56_c | csr_pmpaddr57_c | csr_pmpaddr58_c | csr_pmpaddr59_c | csr_pmpaddr60_c | csr_pmpaddr61_c | csr_pmpaddr62_c | csr_pmpaddr63_c |
-           csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c  | csr_pmpcfg3_c  | csr_pmpcfg4_c  | csr_pmpcfg5_c  | csr_pmpcfg6_c  | csr_pmpcfg7_c |
-           csr_pmpcfg8_c | csr_pmpcfg9_c | csr_pmpcfg10_c | csr_pmpcfg11_c | csr_pmpcfg12_c | csr_pmpcfg13_c | csr_pmpcfg14_c | csr_pmpcfg15_c =>
+           csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c   | csr_pmpcfg4_c   | csr_pmpcfg5_c   | csr_pmpcfg6_c   | csr_pmpcfg7_c   |
+           csr_pmpcfg8_c   | csr_pmpcfg9_c   | csr_pmpcfg10_c  | csr_pmpcfg11_c  | csr_pmpcfg12_c  | csr_pmpcfg13_c  | csr_pmpcfg14_c  | csr_pmpcfg15_c =>
         if (PMP_NUM_REGIONS > 0) then
           csr_acc_valid <= csr.priv_m_mode; -- M-mode only
         else
           NULL;
         end if;
 
-      -- machine counters/timers --
-      when csr_mcycle_c | csr_minstret_c =>
-        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_lo_width_c > 0)); -- M-mode only, access valid if really implemented
-      when csr_mcycleh_c | csr_minstreth_c =>
-        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_hi_width_c > 0)); -- M-mode only, access valid if really implemented
-
-      when csr_mhpmcounter3_c   | csr_mhpmcounter4_c   | csr_mhpmcounter5_c   | csr_mhpmcounter6_c   | csr_mhpmcounter7_c   | csr_mhpmcounter8_c   | -- LOW
+      -- hardware performance monitors (HPM) --
+      when csr_mhpmcounter3_c   | csr_mhpmcounter4_c   | csr_mhpmcounter5_c   | csr_mhpmcounter6_c   | csr_mhpmcounter7_c   | csr_mhpmcounter8_c   | -- counter LOW
            csr_mhpmcounter9_c   | csr_mhpmcounter10_c  | csr_mhpmcounter11_c  | csr_mhpmcounter12_c  | csr_mhpmcounter13_c  | csr_mhpmcounter14_c  |
            csr_mhpmcounter15_c  | csr_mhpmcounter16_c  | csr_mhpmcounter17_c  | csr_mhpmcounter18_c  | csr_mhpmcounter19_c  | csr_mhpmcounter20_c  |
            csr_mhpmcounter21_c  | csr_mhpmcounter22_c  | csr_mhpmcounter23_c  | csr_mhpmcounter24_c  | csr_mhpmcounter25_c  | csr_mhpmcounter26_c  |
            csr_mhpmcounter27_c  | csr_mhpmcounter28_c  | csr_mhpmcounter29_c  | csr_mhpmcounter30_c  | csr_mhpmcounter31_c  |
-           csr_mhpmcounter3h_c  | csr_mhpmcounter4h_c  | csr_mhpmcounter5h_c  | csr_mhpmcounter6h_c  | csr_mhpmcounter7h_c  | csr_mhpmcounter8h_c  | -- HIGH
+           csr_mhpmcounter3h_c  | csr_mhpmcounter4h_c  | csr_mhpmcounter5h_c  | csr_mhpmcounter6h_c  | csr_mhpmcounter7h_c  | csr_mhpmcounter8h_c  | -- counter HIGH
            csr_mhpmcounter9h_c  | csr_mhpmcounter10h_c | csr_mhpmcounter11h_c | csr_mhpmcounter12h_c | csr_mhpmcounter13h_c | csr_mhpmcounter14h_c |
            csr_mhpmcounter15h_c | csr_mhpmcounter16h_c | csr_mhpmcounter17h_c | csr_mhpmcounter18h_c | csr_mhpmcounter19h_c | csr_mhpmcounter20h_c |
            csr_mhpmcounter21h_c | csr_mhpmcounter22h_c | csr_mhpmcounter23h_c | csr_mhpmcounter24h_c | csr_mhpmcounter25h_c | csr_mhpmcounter26h_c |
-           csr_mhpmcounter27h_c | csr_mhpmcounter28h_c | csr_mhpmcounter29h_c | csr_mhpmcounter30h_c | csr_mhpmcounter31h_c =>
+           csr_mhpmcounter27h_c | csr_mhpmcounter28h_c | csr_mhpmcounter29h_c | csr_mhpmcounter30h_c | csr_mhpmcounter31h_c |
+           csr_mhpmevent3_c     | csr_mhpmevent4_c     | csr_mhpmevent5_c     | csr_mhpmevent6_c     | csr_mhpmevent7_c     | csr_mhpmevent8_c     | -- event configuration
+           csr_mhpmevent9_c     | csr_mhpmevent10_c    | csr_mhpmevent11_c    | csr_mhpmevent12_c    | csr_mhpmevent13_c    | csr_mhpmevent14_c    |
+           csr_mhpmevent15_c    | csr_mhpmevent16_c    | csr_mhpmevent17_c    | csr_mhpmevent18_c    | csr_mhpmevent19_c    | csr_mhpmevent20_c    |
+           csr_mhpmevent21_c    | csr_mhpmevent22_c    | csr_mhpmevent23_c    | csr_mhpmevent24_c    | csr_mhpmevent25_c    | csr_mhpmevent26_c    |
+           csr_mhpmevent27_c    | csr_mhpmevent28_c    | csr_mhpmevent29_c    | csr_mhpmevent30_c    | csr_mhpmevent31_c =>
         if (HPM_NUM_CNTS > 0) then
           csr_acc_valid <= csr.priv_m_mode; -- M-mode only
         else
           NULL;
         end if;
 
-      -- user counters/timers --
+      -- counters/timers --
+      when csr_mcycle_c | csr_minstret_c =>
+        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_lo_width_c > 0)); -- M-mode only, access valid if really implemented
+      when csr_mcycleh_c | csr_minstreth_c =>
+        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_hi_width_c > 0)); -- M-mode only, access valid if really implemented
+
       when csr_cycle_c =>
         csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_cy) and bool_to_ulogic_f(boolean(cpu_cnt_lo_width_c > 0)); -- M-mode, U-mode if authorized, read-only, access if implemented
       when csr_cycleh_c =>
@@ -1385,36 +1380,9 @@ begin
       when csr_time_c | csr_timeh_c =>
         csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_tm); -- M-mode, U-mode if authorized, read-only
 
-      when csr_hpmcounter3_c   | csr_hpmcounter4_c   | csr_hpmcounter5_c   | csr_hpmcounter6_c   | csr_hpmcounter7_c   | csr_hpmcounter8_c   | -- LOW
-           csr_hpmcounter9_c   | csr_hpmcounter10_c  | csr_hpmcounter11_c  | csr_hpmcounter12_c  | csr_hpmcounter13_c  | csr_hpmcounter14_c  |
-           csr_hpmcounter15_c  | csr_hpmcounter16_c  | csr_hpmcounter17_c  | csr_hpmcounter18_c  | csr_hpmcounter19_c  | csr_hpmcounter20_c  |
-           csr_hpmcounter21_c  | csr_hpmcounter22_c  | csr_hpmcounter23_c  | csr_hpmcounter24_c  | csr_hpmcounter25_c  | csr_hpmcounter26_c  |
-           csr_hpmcounter27_c  | csr_hpmcounter28_c  | csr_hpmcounter29_c  | csr_hpmcounter30_c  | csr_hpmcounter31_c  |
-           csr_hpmcounter3h_c  | csr_hpmcounter4h_c  | csr_hpmcounter5h_c  | csr_hpmcounter6h_c  | csr_hpmcounter7h_c  | csr_hpmcounter8h_c  | -- HIGH
-           csr_hpmcounter9h_c  | csr_hpmcounter10h_c | csr_hpmcounter11h_c | csr_hpmcounter12h_c | csr_hpmcounter13h_c | csr_hpmcounter14h_c |
-           csr_hpmcounter15h_c | csr_hpmcounter16h_c | csr_hpmcounter17h_c | csr_hpmcounter18h_c | csr_hpmcounter19h_c | csr_hpmcounter20h_c |
-           csr_hpmcounter21h_c | csr_hpmcounter22h_c | csr_hpmcounter23h_c | csr_hpmcounter24h_c | csr_hpmcounter25h_c | csr_hpmcounter26h_c |
-           csr_hpmcounter27h_c | csr_hpmcounter28h_c | csr_hpmcounter29h_c | csr_hpmcounter30h_c | csr_hpmcounter31h_c =>
-        if (HPM_NUM_CNTS > 0) then
-          csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr_mcounteren_hpm_v(to_integer(unsigned(csr.addr(4 downto 0))))); -- M-mode, U-mode if authorized, read-only
-        else
-          NULL;
-        end if;
-
-      -- machine counter setup --
       when csr_mcountinhibit_c =>
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only
 
-      when csr_mhpmevent3_c  | csr_mhpmevent4_c  | csr_mhpmevent5_c  | csr_mhpmevent6_c  | csr_mhpmevent7_c  | csr_mhpmevent8_c  |
-           csr_mhpmevent9_c  | csr_mhpmevent10_c | csr_mhpmevent11_c | csr_mhpmevent12_c | csr_mhpmevent13_c | csr_mhpmevent14_c |
-           csr_mhpmevent15_c | csr_mhpmevent16_c | csr_mhpmevent17_c | csr_mhpmevent18_c | csr_mhpmevent19_c | csr_mhpmevent20_c |
-           csr_mhpmevent21_c | csr_mhpmevent22_c | csr_mhpmevent23_c | csr_mhpmevent24_c | csr_mhpmevent25_c | csr_mhpmevent26_c |
-           csr_mhpmevent27_c | csr_mhpmevent28_c | csr_mhpmevent29_c | csr_mhpmevent30_c | csr_mhpmevent31_c =>
-        if (HPM_NUM_CNTS > 0) then
-          csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-        else
-          NULL;
-        end if;
 
       -- machine information registers & custom (NEORV32-specific) read-only CSRs --
       when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mzext_c =>
@@ -2001,10 +1969,9 @@ begin
       --
       csr.mhpmevent <= (others => (others => def_rst_val_c));
       --
-      csr.mcounteren_cy  <= def_rst_val_c;
-      csr.mcounteren_tm  <= def_rst_val_c;
-      csr.mcounteren_ir  <= def_rst_val_c;
-      csr.mcounteren_hpm <= (others => def_rst_val_c);
+      csr.mcounteren_cy <= def_rst_val_c;
+      csr.mcounteren_tm <= def_rst_val_c;
+      csr.mcounteren_ir <= def_rst_val_c;
       --
       csr.mcountinhibit_cy  <= def_rst_val_c;
       csr.mcountinhibit_ir  <= def_rst_val_c;
@@ -2078,10 +2045,9 @@ begin
             -- R/W: machine counter enable register --
             if (CPU_EXTENSION_RISCV_U = true) then -- this CSR is hardwired to zero if user mode is not implemented
               if (csr.addr(3 downto 0) = csr_mcounteren_c(3 downto 0)) then
-                csr.mcounteren_cy  <= csr.wdata(0); -- enable user-level access to cycle[h]
-                csr.mcounteren_tm  <= csr.wdata(1); -- enable user-level access to time[h]
-                csr.mcounteren_ir  <= csr.wdata(2); -- enable user-level access to instret[h]
-                csr.mcounteren_hpm <= csr.wdata(csr.mcounteren_hpm'left+3 downto 3); -- enable user-level access to hpmcounterx[h]
+                csr.mcounteren_cy <= csr.wdata(0); -- enable user-level access to cycle[h]
+                csr.mcounteren_tm <= csr.wdata(1); -- enable user-level access to time[h]
+                csr.mcounteren_ir <= csr.wdata(2); -- enable user-level access to instret[h]
               end if;
             end if;
           end if;
@@ -2290,14 +2256,13 @@ begin
 
       -- user mode disabled --
       if (CPU_EXTENSION_RISCV_U = false) then
-        csr.privilege      <= priv_mode_m_c;
-        csr.mstatus_mpp    <= priv_mode_m_c;
-        csr.mcounteren_cy  <= '0';
-        csr.mcounteren_tm  <= '0';
-        csr.mcounteren_ir  <= '0';
-        csr.mcounteren_hpm <= (others => '0');
-        csr.dcsr_ebreaku   <= '0';
-        csr.dcsr_prv       <= priv_mode_m_c;
+        csr.privilege     <= priv_mode_m_c;
+        csr.mstatus_mpp   <= priv_mode_m_c;
+        csr.mcounteren_cy <= '0';
+        csr.mcounteren_tm <= '0';
+        csr.mcounteren_ir <= '0';
+        csr.dcsr_ebreaku  <= '0';
+        csr.dcsr_prv      <= priv_mode_m_c;
       end if;
 
       -- pmp disabled --
@@ -2309,7 +2274,6 @@ begin
       -- hpms disabled --
       if (HPM_NUM_CNTS = 0) then
         csr.mhpmevent         <= (others => (others => '0'));
-        csr.mcounteren_hpm    <= (others => '0');
         csr.mcountinhibit_hpm <= (others => '0');
       end if;
 
@@ -2602,7 +2566,6 @@ begin
               csr.rdata(0) <= csr.mcounteren_cy; -- enable user-level access to cycle[h]
               csr.rdata(1) <= csr.mcounteren_tm; -- enable user-level access to time[h]
               csr.rdata(2) <= csr.mcounteren_ir; -- enable user-level access to instret[h]
-              csr.rdata(csr.mcounteren_hpm'left+3 downto 3) <= csr.mcounteren_hpm; -- enable user-level access to hpmcounterx[h]
             end if;
 
           -- machine trap handling --
@@ -2766,65 +2729,65 @@ begin
 
           -- hardware performance counters --
           -- --------------------------------------------------------------------
-          when csr_hpmcounter3_c   | csr_mhpmcounter3_c   => if (HPM_NUM_CNTS > 00) then csr.rdata <= csr.mhpmcounter_rd(00); else NULL; end if; -- (R)/(W): [m]hpmcounter3 - low
-          when csr_hpmcounter4_c   | csr_mhpmcounter4_c   => if (HPM_NUM_CNTS > 01) then csr.rdata <= csr.mhpmcounter_rd(01); else NULL; end if; -- (R)/(W): [m]hpmcounter4 - low
-          when csr_hpmcounter5_c   | csr_mhpmcounter5_c   => if (HPM_NUM_CNTS > 02) then csr.rdata <= csr.mhpmcounter_rd(02); else NULL; end if; -- (R)/(W): [m]hpmcounter5 - low
-          when csr_hpmcounter6_c   | csr_mhpmcounter6_c   => if (HPM_NUM_CNTS > 03) then csr.rdata <= csr.mhpmcounter_rd(03); else NULL; end if; -- (R)/(W): [m]hpmcounter6 - low
-          when csr_hpmcounter7_c   | csr_mhpmcounter7_c   => if (HPM_NUM_CNTS > 04) then csr.rdata <= csr.mhpmcounter_rd(04); else NULL; end if; -- (R)/(W): [m]hpmcounter7 - low
-          when csr_hpmcounter8_c   | csr_mhpmcounter8_c   => if (HPM_NUM_CNTS > 05) then csr.rdata <= csr.mhpmcounter_rd(05); else NULL; end if; -- (R)/(W): [m]hpmcounter8 - low
-          when csr_hpmcounter9_c   | csr_mhpmcounter9_c   => if (HPM_NUM_CNTS > 06) then csr.rdata <= csr.mhpmcounter_rd(06); else NULL; end if; -- (R)/(W): [m]hpmcounter9 - low
-          when csr_hpmcounter10_c  | csr_mhpmcounter10_c  => if (HPM_NUM_CNTS > 07) then csr.rdata <= csr.mhpmcounter_rd(07); else NULL; end if; -- (R)/(W): [m]hpmcounter10 - low
-          when csr_hpmcounter11_c  | csr_mhpmcounter11_c  => if (HPM_NUM_CNTS > 08) then csr.rdata <= csr.mhpmcounter_rd(08); else NULL; end if; -- (R)/(W): [m]hpmcounter11 - low
-          when csr_hpmcounter12_c  | csr_mhpmcounter12_c  => if (HPM_NUM_CNTS > 09) then csr.rdata <= csr.mhpmcounter_rd(09); else NULL; end if; -- (R)/(W): [m]hpmcounter12 - low
-          when csr_hpmcounter13_c  | csr_mhpmcounter13_c  => if (HPM_NUM_CNTS > 10) then csr.rdata <= csr.mhpmcounter_rd(10); else NULL; end if; -- (R)/(W): [m]hpmcounter13 - low
-          when csr_hpmcounter14_c  | csr_mhpmcounter14_c  => if (HPM_NUM_CNTS > 11) then csr.rdata <= csr.mhpmcounter_rd(11); else NULL; end if; -- (R)/(W): [m]hpmcounter14 - low
-          when csr_hpmcounter15_c  | csr_mhpmcounter15_c  => if (HPM_NUM_CNTS > 12) then csr.rdata <= csr.mhpmcounter_rd(12); else NULL; end if; -- (R)/(W): [m]hpmcounter15 - low
-          when csr_hpmcounter16_c  | csr_mhpmcounter16_c  => if (HPM_NUM_CNTS > 13) then csr.rdata <= csr.mhpmcounter_rd(13); else NULL; end if; -- (R)/(W): [m]hpmcounter16 - low
-          when csr_hpmcounter17_c  | csr_mhpmcounter17_c  => if (HPM_NUM_CNTS > 14) then csr.rdata <= csr.mhpmcounter_rd(14); else NULL; end if; -- (R)/(W): [m]hpmcounter17 - low
-          when csr_hpmcounter18_c  | csr_mhpmcounter18_c  => if (HPM_NUM_CNTS > 15) then csr.rdata <= csr.mhpmcounter_rd(15); else NULL; end if; -- (R)/(W): [m]hpmcounter18 - low
-          when csr_hpmcounter19_c  | csr_mhpmcounter19_c  => if (HPM_NUM_CNTS > 16) then csr.rdata <= csr.mhpmcounter_rd(16); else NULL; end if; -- (R)/(W): [m]hpmcounter19 - low
-          when csr_hpmcounter20_c  | csr_mhpmcounter20_c  => if (HPM_NUM_CNTS > 17) then csr.rdata <= csr.mhpmcounter_rd(17); else NULL; end if; -- (R)/(W): [m]hpmcounter20 - low
-          when csr_hpmcounter21_c  | csr_mhpmcounter21_c  => if (HPM_NUM_CNTS > 18) then csr.rdata <= csr.mhpmcounter_rd(18); else NULL; end if; -- (R)/(W): [m]hpmcounter21 - low
-          when csr_hpmcounter22_c  | csr_mhpmcounter22_c  => if (HPM_NUM_CNTS > 19) then csr.rdata <= csr.mhpmcounter_rd(19); else NULL; end if; -- (R)/(W): [m]hpmcounter22 - low
-          when csr_hpmcounter23_c  | csr_mhpmcounter23_c  => if (HPM_NUM_CNTS > 20) then csr.rdata <= csr.mhpmcounter_rd(20); else NULL; end if; -- (R)/(W): [m]hpmcounter23 - low
-          when csr_hpmcounter24_c  | csr_mhpmcounter24_c  => if (HPM_NUM_CNTS > 21) then csr.rdata <= csr.mhpmcounter_rd(21); else NULL; end if; -- (R)/(W): [m]hpmcounter24 - low
-          when csr_hpmcounter25_c  | csr_mhpmcounter25_c  => if (HPM_NUM_CNTS > 22) then csr.rdata <= csr.mhpmcounter_rd(22); else NULL; end if; -- (R)/(W): [m]hpmcounter25 - low
-          when csr_hpmcounter26_c  | csr_mhpmcounter26_c  => if (HPM_NUM_CNTS > 23) then csr.rdata <= csr.mhpmcounter_rd(23); else NULL; end if; -- (R)/(W): [m]hpmcounter26 - low
-          when csr_hpmcounter27_c  | csr_mhpmcounter27_c  => if (HPM_NUM_CNTS > 24) then csr.rdata <= csr.mhpmcounter_rd(24); else NULL; end if; -- (R)/(W): [m]hpmcounter27 - low
-          when csr_hpmcounter28_c  | csr_mhpmcounter28_c  => if (HPM_NUM_CNTS > 25) then csr.rdata <= csr.mhpmcounter_rd(25); else NULL; end if; -- (R)/(W): [m]hpmcounter28 - low
-          when csr_hpmcounter29_c  | csr_mhpmcounter29_c  => if (HPM_NUM_CNTS > 26) then csr.rdata <= csr.mhpmcounter_rd(26); else NULL; end if; -- (R)/(W): [m]hpmcounter29 - low
-          when csr_hpmcounter30_c  | csr_mhpmcounter30_c  => if (HPM_NUM_CNTS > 27) then csr.rdata <= csr.mhpmcounter_rd(27); else NULL; end if; -- (R)/(W): [m]hpmcounter30 - low
-          when csr_hpmcounter31_c  | csr_mhpmcounter31_c  => if (HPM_NUM_CNTS > 28) then csr.rdata <= csr.mhpmcounter_rd(28); else NULL; end if; -- (R)/(W): [m]hpmcounter31 - low
+          when csr_mhpmcounter3_c   => if (HPM_NUM_CNTS > 00) then csr.rdata <= csr.mhpmcounter_rd(00); else NULL; end if; -- r/w: mhpmcounter3 - low
+          when csr_mhpmcounter4_c   => if (HPM_NUM_CNTS > 01) then csr.rdata <= csr.mhpmcounter_rd(01); else NULL; end if; -- r/w: mhpmcounter4 - low
+          when csr_mhpmcounter5_c   => if (HPM_NUM_CNTS > 02) then csr.rdata <= csr.mhpmcounter_rd(02); else NULL; end if; -- r/w: mhpmcounter5 - low
+          when csr_mhpmcounter6_c   => if (HPM_NUM_CNTS > 03) then csr.rdata <= csr.mhpmcounter_rd(03); else NULL; end if; -- r/w: mhpmcounter6 - low
+          when csr_mhpmcounter7_c   => if (HPM_NUM_CNTS > 04) then csr.rdata <= csr.mhpmcounter_rd(04); else NULL; end if; -- r/w: mhpmcounter7 - low
+          when csr_mhpmcounter8_c   => if (HPM_NUM_CNTS > 05) then csr.rdata <= csr.mhpmcounter_rd(05); else NULL; end if; -- r/w: mhpmcounter8 - low
+          when csr_mhpmcounter9_c   => if (HPM_NUM_CNTS > 06) then csr.rdata <= csr.mhpmcounter_rd(06); else NULL; end if; -- r/w: mhpmcounter9 - low
+          when csr_mhpmcounter10_c  => if (HPM_NUM_CNTS > 07) then csr.rdata <= csr.mhpmcounter_rd(07); else NULL; end if; -- r/w: mhpmcounter10 - low
+          when csr_mhpmcounter11_c  => if (HPM_NUM_CNTS > 08) then csr.rdata <= csr.mhpmcounter_rd(08); else NULL; end if; -- r/w: mhpmcounter11 - low
+          when csr_mhpmcounter12_c  => if (HPM_NUM_CNTS > 09) then csr.rdata <= csr.mhpmcounter_rd(09); else NULL; end if; -- r/w: mhpmcounter12 - low
+          when csr_mhpmcounter13_c  => if (HPM_NUM_CNTS > 10) then csr.rdata <= csr.mhpmcounter_rd(10); else NULL; end if; -- r/w: mhpmcounter13 - low
+          when csr_mhpmcounter14_c  => if (HPM_NUM_CNTS > 11) then csr.rdata <= csr.mhpmcounter_rd(11); else NULL; end if; -- r/w: mhpmcounter14 - low
+          when csr_mhpmcounter15_c  => if (HPM_NUM_CNTS > 12) then csr.rdata <= csr.mhpmcounter_rd(12); else NULL; end if; -- r/w: mhpmcounter15 - low
+          when csr_mhpmcounter16_c  => if (HPM_NUM_CNTS > 13) then csr.rdata <= csr.mhpmcounter_rd(13); else NULL; end if; -- r/w: mhpmcounter16 - low
+          when csr_mhpmcounter17_c  => if (HPM_NUM_CNTS > 14) then csr.rdata <= csr.mhpmcounter_rd(14); else NULL; end if; -- r/w: mhpmcounter17 - low
+          when csr_mhpmcounter18_c  => if (HPM_NUM_CNTS > 15) then csr.rdata <= csr.mhpmcounter_rd(15); else NULL; end if; -- r/w: mhpmcounter18 - low
+          when csr_mhpmcounter19_c  => if (HPM_NUM_CNTS > 16) then csr.rdata <= csr.mhpmcounter_rd(16); else NULL; end if; -- r/w: mhpmcounter19 - low
+          when csr_mhpmcounter20_c  => if (HPM_NUM_CNTS > 17) then csr.rdata <= csr.mhpmcounter_rd(17); else NULL; end if; -- r/w: mhpmcounter20 - low
+          when csr_mhpmcounter21_c  => if (HPM_NUM_CNTS > 18) then csr.rdata <= csr.mhpmcounter_rd(18); else NULL; end if; -- r/w: mhpmcounter21 - low
+          when csr_mhpmcounter22_c  => if (HPM_NUM_CNTS > 19) then csr.rdata <= csr.mhpmcounter_rd(19); else NULL; end if; -- r/w: mhpmcounter22 - low
+          when csr_mhpmcounter23_c  => if (HPM_NUM_CNTS > 20) then csr.rdata <= csr.mhpmcounter_rd(20); else NULL; end if; -- r/w: mhpmcounter23 - low
+          when csr_mhpmcounter24_c  => if (HPM_NUM_CNTS > 21) then csr.rdata <= csr.mhpmcounter_rd(21); else NULL; end if; -- r/w: mhpmcounter24 - low
+          when csr_mhpmcounter25_c  => if (HPM_NUM_CNTS > 22) then csr.rdata <= csr.mhpmcounter_rd(22); else NULL; end if; -- r/w: mhpmcounter25 - low
+          when csr_mhpmcounter26_c  => if (HPM_NUM_CNTS > 23) then csr.rdata <= csr.mhpmcounter_rd(23); else NULL; end if; -- r/w: mhpmcounter26 - low
+          when csr_mhpmcounter27_c  => if (HPM_NUM_CNTS > 24) then csr.rdata <= csr.mhpmcounter_rd(24); else NULL; end if; -- r/w: mhpmcounter27 - low
+          when csr_mhpmcounter28_c  => if (HPM_NUM_CNTS > 25) then csr.rdata <= csr.mhpmcounter_rd(25); else NULL; end if; -- r/w: mhpmcounter28 - low
+          when csr_mhpmcounter29_c  => if (HPM_NUM_CNTS > 26) then csr.rdata <= csr.mhpmcounter_rd(26); else NULL; end if; -- r/w: mhpmcounter29 - low
+          when csr_mhpmcounter30_c  => if (HPM_NUM_CNTS > 27) then csr.rdata <= csr.mhpmcounter_rd(27); else NULL; end if; -- r/w: mhpmcounter30 - low
+          when csr_mhpmcounter31_c  => if (HPM_NUM_CNTS > 28) then csr.rdata <= csr.mhpmcounter_rd(28); else NULL; end if; -- r/w: mhpmcounter31 - low
 
-          when csr_hpmcounter3h_c  | csr_mhpmcounter3h_c  => if (HPM_NUM_CNTS > 00) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(00); else NULL; end if; -- (R)/(W): [m]hpmcounter3h - high
-          when csr_hpmcounter4h_c  | csr_mhpmcounter4h_c  => if (HPM_NUM_CNTS > 01) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(01); else NULL; end if; -- (R)/(W): [m]hpmcounter4h - high
-          when csr_hpmcounter5h_c  | csr_mhpmcounter5h_c  => if (HPM_NUM_CNTS > 02) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(02); else NULL; end if; -- (R)/(W): [m]hpmcounter5h - high
-          when csr_hpmcounter6h_c  | csr_mhpmcounter6h_c  => if (HPM_NUM_CNTS > 03) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(03); else NULL; end if; -- (R)/(W): [m]hpmcounter6h - high
-          when csr_hpmcounter7h_c  | csr_mhpmcounter7h_c  => if (HPM_NUM_CNTS > 04) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(04); else NULL; end if; -- (R)/(W): [m]hpmcounter7h - high
-          when csr_hpmcounter8h_c  | csr_mhpmcounter8h_c  => if (HPM_NUM_CNTS > 05) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(05); else NULL; end if; -- (R)/(W): [m]hpmcounter8h - high
-          when csr_hpmcounter9h_c  | csr_mhpmcounter9h_c  => if (HPM_NUM_CNTS > 06) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(06); else NULL; end if; -- (R)/(W): [m]hpmcounter9h - high
-          when csr_hpmcounter10h_c | csr_mhpmcounter10h_c => if (HPM_NUM_CNTS > 07) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(07); else NULL; end if; -- (R)/(W): [m]hpmcounter10h - high
-          when csr_hpmcounter11h_c | csr_mhpmcounter11h_c => if (HPM_NUM_CNTS > 08) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(08); else NULL; end if; -- (R)/(W): [m]hpmcounter11h - high
-          when csr_hpmcounter12h_c | csr_mhpmcounter12h_c => if (HPM_NUM_CNTS > 09) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(09); else NULL; end if; -- (R)/(W): [m]hpmcounter12h - high
-          when csr_hpmcounter13h_c | csr_mhpmcounter13h_c => if (HPM_NUM_CNTS > 10) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(10); else NULL; end if; -- (R)/(W): [m]hpmcounter13h - high
-          when csr_hpmcounter14h_c | csr_mhpmcounter14h_c => if (HPM_NUM_CNTS > 11) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(11); else NULL; end if; -- (R)/(W): [m]hpmcounter14h - high
-          when csr_hpmcounter15h_c | csr_mhpmcounter15h_c => if (HPM_NUM_CNTS > 12) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(12); else NULL; end if; -- (R)/(W): [m]hpmcounter15h - high
-          when csr_hpmcounter16h_c | csr_mhpmcounter16h_c => if (HPM_NUM_CNTS > 13) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(13); else NULL; end if; -- (R)/(W): [m]hpmcounter16h - high
-          when csr_hpmcounter17h_c | csr_mhpmcounter17h_c => if (HPM_NUM_CNTS > 14) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(14); else NULL; end if; -- (R)/(W): [m]hpmcounter17h - high
-          when csr_hpmcounter18h_c | csr_mhpmcounter18h_c => if (HPM_NUM_CNTS > 15) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(15); else NULL; end if; -- (R)/(W): [m]hpmcounter18h - high
-          when csr_hpmcounter19h_c | csr_mhpmcounter19h_c => if (HPM_NUM_CNTS > 16) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(16); else NULL; end if; -- (R)/(W): [m]hpmcounter19h - high
-          when csr_hpmcounter20h_c | csr_mhpmcounter20h_c => if (HPM_NUM_CNTS > 17) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(17); else NULL; end if; -- (R)/(W): [m]hpmcounter20h - high
-          when csr_hpmcounter21h_c | csr_mhpmcounter21h_c => if (HPM_NUM_CNTS > 18) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(18); else NULL; end if; -- (R)/(W): [m]hpmcounter21h - high
-          when csr_hpmcounter22h_c | csr_mhpmcounter22h_c => if (HPM_NUM_CNTS > 19) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(19); else NULL; end if; -- (R)/(W): [m]hpmcounter22h - high
-          when csr_hpmcounter23h_c | csr_mhpmcounter23h_c => if (HPM_NUM_CNTS > 20) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(20); else NULL; end if; -- (R)/(W): [m]hpmcounter23h - high
-          when csr_hpmcounter24h_c | csr_mhpmcounter24h_c => if (HPM_NUM_CNTS > 21) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(21); else NULL; end if; -- (R)/(W): [m]hpmcounter24h - high
-          when csr_hpmcounter25h_c | csr_mhpmcounter25h_c => if (HPM_NUM_CNTS > 22) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(22); else NULL; end if; -- (R)/(W): [m]hpmcounter25h - high
-          when csr_hpmcounter26h_c | csr_mhpmcounter26h_c => if (HPM_NUM_CNTS > 23) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(23); else NULL; end if; -- (R)/(W): [m]hpmcounter26h - high
-          when csr_hpmcounter27h_c | csr_mhpmcounter27h_c => if (HPM_NUM_CNTS > 24) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(24); else NULL; end if; -- (R)/(W): [m]hpmcounter27h - high
-          when csr_hpmcounter28h_c | csr_mhpmcounter28h_c => if (HPM_NUM_CNTS > 25) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(25); else NULL; end if; -- (R)/(W): [m]hpmcounter28h - high
-          when csr_hpmcounter29h_c | csr_mhpmcounter29h_c => if (HPM_NUM_CNTS > 26) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(26); else NULL; end if; -- (R)/(W): [m]hpmcounter29h - high
-          when csr_hpmcounter30h_c | csr_mhpmcounter30h_c => if (HPM_NUM_CNTS > 27) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(27); else NULL; end if; -- (R)/(W): [m]hpmcounter30h - high
-          when csr_hpmcounter31h_c | csr_mhpmcounter31h_c => if (HPM_NUM_CNTS > 28) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(28); else NULL; end if; -- (R)/(W): [m]hpmcounter31h - high
+          when csr_mhpmcounter3h_c  => if (HPM_NUM_CNTS > 00) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(00); else NULL; end if; -- r/w: mhpmcounter3h - high
+          when csr_mhpmcounter4h_c  => if (HPM_NUM_CNTS > 01) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(01); else NULL; end if; -- r/w: mhpmcounter4h - high
+          when csr_mhpmcounter5h_c  => if (HPM_NUM_CNTS > 02) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(02); else NULL; end if; -- r/w: mhpmcounter5h - high
+          when csr_mhpmcounter6h_c  => if (HPM_NUM_CNTS > 03) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(03); else NULL; end if; -- r/w: mhpmcounter6h - high
+          when csr_mhpmcounter7h_c  => if (HPM_NUM_CNTS > 04) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(04); else NULL; end if; -- r/w: mhpmcounter7h - high
+          when csr_mhpmcounter8h_c  => if (HPM_NUM_CNTS > 05) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(05); else NULL; end if; -- r/w: mhpmcounter8h - high
+          when csr_mhpmcounter9h_c  => if (HPM_NUM_CNTS > 06) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(06); else NULL; end if; -- r/w: mhpmcounter9h - high
+          when csr_mhpmcounter10h_c => if (HPM_NUM_CNTS > 07) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(07); else NULL; end if; -- r/w: mhpmcounter10h - high
+          when csr_mhpmcounter11h_c => if (HPM_NUM_CNTS > 08) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(08); else NULL; end if; -- r/w: mhpmcounter11h - high
+          when csr_mhpmcounter12h_c => if (HPM_NUM_CNTS > 09) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(09); else NULL; end if; -- r/w: mhpmcounter12h - high
+          when csr_mhpmcounter13h_c => if (HPM_NUM_CNTS > 10) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(10); else NULL; end if; -- r/w: mhpmcounter13h - high
+          when csr_mhpmcounter14h_c => if (HPM_NUM_CNTS > 11) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(11); else NULL; end if; -- r/w: mhpmcounter14h - high
+          when csr_mhpmcounter15h_c => if (HPM_NUM_CNTS > 12) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(12); else NULL; end if; -- r/w: mhpmcounter15h - high
+          when csr_mhpmcounter16h_c => if (HPM_NUM_CNTS > 13) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(13); else NULL; end if; -- r/w: mhpmcounter16h - high
+          when csr_mhpmcounter17h_c => if (HPM_NUM_CNTS > 14) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(14); else NULL; end if; -- r/w: mhpmcounter17h - high
+          when csr_mhpmcounter18h_c => if (HPM_NUM_CNTS > 15) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(15); else NULL; end if; -- r/w: mhpmcounter18h - high
+          when csr_mhpmcounter19h_c => if (HPM_NUM_CNTS > 16) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(16); else NULL; end if; -- r/w: mhpmcounter19h - high
+          when csr_mhpmcounter20h_c => if (HPM_NUM_CNTS > 17) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(17); else NULL; end if; -- r/w: mhpmcounter20h - high
+          when csr_mhpmcounter21h_c => if (HPM_NUM_CNTS > 18) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(18); else NULL; end if; -- r/w: mhpmcounter21h - high
+          when csr_mhpmcounter22h_c => if (HPM_NUM_CNTS > 19) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(19); else NULL; end if; -- r/w: mhpmcounter22h - high
+          when csr_mhpmcounter23h_c => if (HPM_NUM_CNTS > 20) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(20); else NULL; end if; -- r/w: mhpmcounter23h - high
+          when csr_mhpmcounter24h_c => if (HPM_NUM_CNTS > 21) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(21); else NULL; end if; -- r/w: mhpmcounter24h - high
+          when csr_mhpmcounter25h_c => if (HPM_NUM_CNTS > 22) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(22); else NULL; end if; -- r/w: mhpmcounter25h - high
+          when csr_mhpmcounter26h_c => if (HPM_NUM_CNTS > 23) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(23); else NULL; end if; -- r/w: mhpmcounter26h - high
+          when csr_mhpmcounter27h_c => if (HPM_NUM_CNTS > 24) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(24); else NULL; end if; -- r/w: mhpmcounter27h - high
+          when csr_mhpmcounter28h_c => if (HPM_NUM_CNTS > 25) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(25); else NULL; end if; -- r/w: mhpmcounter28h - high
+          when csr_mhpmcounter29h_c => if (HPM_NUM_CNTS > 26) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(26); else NULL; end if; -- r/w: mhpmcounter29h - high
+          when csr_mhpmcounter30h_c => if (HPM_NUM_CNTS > 27) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(27); else NULL; end if; -- r/w: mhpmcounter30h - high
+          when csr_mhpmcounter31h_c => if (HPM_NUM_CNTS > 28) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(28); else NULL; end if; -- r/w: mhpmcounter31h - high
 
           -- machine information registers --
           -- --------------------------------------------------------------------

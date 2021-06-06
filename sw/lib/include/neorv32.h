@@ -53,9 +53,9 @@
  * Available CPU Control and Status Registers (CSRs)
  **************************************************************************/
 enum NEORV32_CSR_enum {
-  CSR_FFLAGS         = 0x001, /**< 0x001 - fflags     (r/w): Floating-point accrued exception flags */
-  CSR_FRM            = 0x002, /**< 0x002 - frm        (r/w): Floating-point dynamic rounding mode */
-  CSR_FCSR           = 0x003, /**< 0x003 - fcsr       (r/w): Floating-point control/staturs register (frm + fflags) */
+  CSR_FFLAGS         = 0x001, /**< 0x001 - fflags (r/w): Floating-point accrued exception flags */
+  CSR_FRM            = 0x002, /**< 0x002 - frm    (r/w): Floating-point dynamic rounding mode */
+  CSR_FCSR           = 0x003, /**< 0x003 - fcsr   (r/w): Floating-point control/staturs register (frm + fflags) */
 
   CSR_MSTATUS        = 0x300, /**< 0x300 - mstatus    (r/w): Machine status register */
   CSR_MISA           = 0x301, /**< 0x301 - misa       (r/-): CPU ISA and extensions (read-only in NEORV32) */
@@ -183,8 +183,8 @@ enum NEORV32_CSR_enum {
   CSR_PMPADDR62      = 0x3ee, /**< 0x3ee - pmpaddr62 (r/w): Physical memory protection address register 62 */
   CSR_PMPADDR63      = 0x3ef, /**< 0x3ef - pmpaddr63 (r/w): Physical memory protection address register 63 */
 
-  CSR_MCYCLE         = 0xb00, /**< 0xb00 - mcycle        (r/w): Machine cycle counter low word */
-  CSR_MINSTRET       = 0xb02, /**< 0xb02 - minstret      (r/w): Machine instructions-retired counter low word */
+  CSR_MCYCLE         = 0xb00, /**< 0xb00 - mcycle   (r/w): Machine cycle counter low word */
+  CSR_MINSTRET       = 0xb02, /**< 0xb02 - minstret (r/w): Machine instructions-retired counter low word */
 
   CSR_MHPMCOUNTER3   = 0xb03, /**< 0xb03 - mhpmcounter3  (r/w): Machine hardware performance monitor 3  counter low word */
   CSR_MHPMCOUNTER4   = 0xb04, /**< 0xb04 - mhpmcounter4  (r/w): Machine hardware performance monitor 4  counter low word */
@@ -216,8 +216,8 @@ enum NEORV32_CSR_enum {
   CSR_MHPMCOUNTER30  = 0xb1e, /**< 0xb1e - mhpmcounter30 (r/w): Machine hardware performance monitor 30 counter low word */
   CSR_MHPMCOUNTER31  = 0xb1f, /**< 0xb1f - mhpmcounter31 (r/w): Machine hardware performance monitor 31 counter low word */
 
-  CSR_MCYCLEH        = 0xb80, /**< 0xb80 - mcycleh        (r/w): Machine cycle counter high word */
-  CSR_MINSTRETH      = 0xb82, /**< 0xb82 - minstreth      (r/w): Machine instructions-retired counter high word */
+  CSR_MCYCLEH        = 0xb80, /**< 0xb80 - mcycleh   (r/w): Machine cycle counter high word */
+  CSR_MINSTRETH      = 0xb82, /**< 0xb82 - minstreth (r/w): Machine instructions-retired counter high word */
 
   CSR_MHPMCOUNTER3H  = 0xb83, /**< 0xb83 - mhpmcounter3h  (r/w): Machine hardware performance monitor 3  counter high word */
   CSR_MHPMCOUNTER4H  = 0xb84, /**< 0xb84 - mhpmcounter4h  (r/w): Machine hardware performance monitor 4  counter high word */
@@ -249,73 +249,13 @@ enum NEORV32_CSR_enum {
   CSR_MHPMCOUNTER30H = 0xb9e, /**< 0xb9e - mhpmcounter30h (r/w): Machine hardware performance monitor 30 counter high word */
   CSR_MHPMCOUNTER31H = 0xb9f, /**< 0xb9f - mhpmcounter31h (r/w): Machine hardware performance monitor 31 counter high word */
 
-  CSR_CYCLE          = 0xc00, /**< 0xc00 - cycle        (r/-): Cycle counter low word (from MCYCLE) */
-  CSR_TIME           = 0xc01, /**< 0xc01 - time         (r/-): Timer low word (from MTIME.TIME_LO) */
-  CSR_INSTRET        = 0xc02, /**< 0xc02 - instret      (r/-): Instructions-retired counter low word (from MINSTRET) */
+  CSR_CYCLE          = 0xc00, /**< 0xc00 - cycle   (r/-): Cycle counter low word (from MCYCLE) */
+  CSR_TIME           = 0xc01, /**< 0xc01 - time    (r/-): Timer low word (from MTIME.TIME_LO) */
+  CSR_INSTRET        = 0xc02, /**< 0xc02 - instret (r/-): Instructions-retired counter low word (from MINSTRET) */
 
-  CSR_HPMCOUNTER3    = 0xc03, /**< 0xc03 - hpmcounter3  (r/w): Hardware performance monitor 3  counter low word */
-  CSR_HPMCOUNTER4    = 0xc04, /**< 0xc04 - hpmcounter4  (r/w): Hardware performance monitor 4  counter low word */
-  CSR_HPMCOUNTER5    = 0xc05, /**< 0xc05 - hpmcounter5  (r/w): Hardware performance monitor 5  counter low word */
-  CSR_HPMCOUNTER6    = 0xc06, /**< 0xc06 - hpmcounter6  (r/w): Hardware performance monitor 6  counter low word */
-  CSR_HPMCOUNTER7    = 0xc07, /**< 0xc07 - hpmcounter7  (r/w): Hardware performance monitor 7  counter low word */
-  CSR_HPMCOUNTER8    = 0xc08, /**< 0xc08 - hpmcounter8  (r/w): Hardware performance monitor 8  counter low word */
-  CSR_HPMCOUNTER9    = 0xc09, /**< 0xc09 - hpmcounter9  (r/w): Hardware performance monitor 9  counter low word */
-  CSR_HPMCOUNTER10   = 0xc0a, /**< 0xc0a - hpmcounter10 (r/w): Hardware performance monitor 10 counter low word */
-  CSR_HPMCOUNTER11   = 0xc0b, /**< 0xc0b - hpmcounter11 (r/w): Hardware performance monitor 11 counter low word */
-  CSR_HPMCOUNTER12   = 0xc0c, /**< 0xc0c - hpmcounter12 (r/w): Hardware performance monitor 12 counter low word */
-  CSR_HPMCOUNTER13   = 0xc0d, /**< 0xc0d - hpmcounter13 (r/w): Hardware performance monitor 13 counter low word */
-  CSR_HPMCOUNTER14   = 0xc0e, /**< 0xc0e - hpmcounter14 (r/w): Hardware performance monitor 14 counter low word */
-  CSR_HPMCOUNTER15   = 0xc0f, /**< 0xc0f - hpmcounter15 (r/w): Hardware performance monitor 15 counter low word */
-  CSR_HPMCOUNTER16   = 0xc10, /**< 0xc10 - hpmcounter16 (r/w): Hardware performance monitor 16 counter low word */
-  CSR_HPMCOUNTER17   = 0xc11, /**< 0xc11 - hpmcounter17 (r/w): Hardware performance monitor 17 counter low word */
-  CSR_HPMCOUNTER18   = 0xc12, /**< 0xc12 - hpmcounter18 (r/w): Hardware performance monitor 18 counter low word */
-  CSR_HPMCOUNTER19   = 0xc13, /**< 0xc13 - hpmcounter19 (r/w): Hardware performance monitor 19 counter low word */
-  CSR_HPMCOUNTER20   = 0xc14, /**< 0xc14 - hpmcounter20 (r/w): Hardware performance monitor 20 counter low word */
-  CSR_HPMCOUNTER21   = 0xc15, /**< 0xc15 - hpmcounter21 (r/w): Hardware performance monitor 21 counter low word */
-  CSR_HPMCOUNTER22   = 0xc16, /**< 0xc16 - hpmcounter22 (r/w): Hardware performance monitor 22 counter low word */
-  CSR_HPMCOUNTER23   = 0xc17, /**< 0xc17 - hpmcounter23 (r/w): Hardware performance monitor 23 counter low word */
-  CSR_HPMCOUNTER24   = 0xc18, /**< 0xc18 - hpmcounter24 (r/w): Hardware performance monitor 24 counter low word */
-  CSR_HPMCOUNTER25   = 0xc19, /**< 0xc19 - hpmcounter25 (r/w): Hardware performance monitor 25 counter low word */
-  CSR_HPMCOUNTER26   = 0xc1a, /**< 0xc1a - hpmcounter26 (r/w): Hardware performance monitor 26 counter low word */
-  CSR_HPMCOUNTER27   = 0xc1b, /**< 0xc1b - hpmcounter27 (r/w): Hardware performance monitor 27 counter low word */
-  CSR_HPMCOUNTER28   = 0xc1c, /**< 0xc1c - hpmcounter28 (r/w): Hardware performance monitor 28 counter low word */
-  CSR_HPMCOUNTER29   = 0xc1d, /**< 0xc1d - hpmcounter29 (r/w): Hardware performance monitor 29 counter low word */
-  CSR_HPMCOUNTER30   = 0xc1e, /**< 0xc1e - hpmcounter30 (r/w): Hardware performance monitor 30 counter low word */
-  CSR_HPMCOUNTER31   = 0xc1f, /**< 0xc1f - hpmcounter31 (r/w): Hardware performance monitor 31 counter low word */
-
-  CSR_CYCLEH         = 0xc80, /**< 0xc80 - cycleh        (r/-): Cycle counter high word (from MCYCLEH) */
-  CSR_TIMEH          = 0xc81, /**< 0xc81 - timeh         (r/-): Timer high word (from MTIME.TIME_HI) */
-  CSR_INSTRETH       = 0xc82, /**< 0xc82 - instreth      (r/-): Instructions-retired counter high word (from MINSTRETH) */
-
-  CSR_HPMCOUNTER3H   = 0xc83, /**< 0xc83 - hpmcounter3h  (r/w): Hardware performance monitor 3  counter high word */
-  CSR_HPMCOUNTER4H   = 0xc84, /**< 0xc84 - hpmcounter4h  (r/w): Hardware performance monitor 4  counter high word */
-  CSR_HPMCOUNTER5H   = 0xc85, /**< 0xc85 - hpmcounter5h  (r/w): Hardware performance monitor 5  counter high word */
-  CSR_HPMCOUNTER6H   = 0xc86, /**< 0xc86 - hpmcounter6h  (r/w): Hardware performance monitor 6  counter high word */
-  CSR_HPMCOUNTER7H   = 0xc87, /**< 0xc87 - hpmcounter7h  (r/w): Hardware performance monitor 7  counter high word */
-  CSR_HPMCOUNTER8H   = 0xc88, /**< 0xc88 - hpmcounter8h  (r/w): Hardware performance monitor 8  counter high word */
-  CSR_HPMCOUNTER9H   = 0xc89, /**< 0xc89 - hpmcounter9h  (r/w): Hardware performance monitor 9  counter high word */
-  CSR_HPMCOUNTER10H  = 0xc8a, /**< 0xc8a - hpmcounter10h (r/w): Hardware performance monitor 10 counter high word */
-  CSR_HPMCOUNTER11H  = 0xc8b, /**< 0xc8b - hpmcounter11h (r/w): Hardware performance monitor 11 counter high word */
-  CSR_HPMCOUNTER12H  = 0xc8c, /**< 0xc8c - hpmcounter12h (r/w): Hardware performance monitor 12 counter high word */
-  CSR_HPMCOUNTER13H  = 0xc8d, /**< 0xc8d - hpmcounter13h (r/w): Hardware performance monitor 13 counter high word */
-  CSR_HPMCOUNTER14H  = 0xc8e, /**< 0xc8e - hpmcounter14h (r/w): Hardware performance monitor 14 counter high word */
-  CSR_HPMCOUNTER15H  = 0xc8f, /**< 0xc8f - hpmcounter15h (r/w): Hardware performance monitor 15 counter high word */
-  CSR_HPMCOUNTER16H  = 0xc90, /**< 0xc90 - hpmcounter16h (r/w): Hardware performance monitor 16 counter high word */
-  CSR_HPMCOUNTER17H  = 0xc91, /**< 0xc91 - hpmcounter17h (r/w): Hardware performance monitor 17 counter high word */
-  CSR_HPMCOUNTER18H  = 0xc92, /**< 0xc92 - hpmcounter18h (r/w): Hardware performance monitor 18 counter high word */
-  CSR_HPMCOUNTER19H  = 0xc93, /**< 0xc93 - hpmcounter19h (r/w): Hardware performance monitor 19 counter high word */
-  CSR_HPMCOUNTER20H  = 0xc94, /**< 0xc94 - hpmcounter20h (r/w): Hardware performance monitor 20 counter high word */
-  CSR_HPMCOUNTER21H  = 0xc95, /**< 0xc95 - hpmcounter21h (r/w): Hardware performance monitor 21 counter high word */
-  CSR_HPMCOUNTER22H  = 0xc96, /**< 0xc96 - hpmcounter22h (r/w): Hardware performance monitor 22 counter high word */
-  CSR_HPMCOUNTER23H  = 0xc97, /**< 0xc97 - hpmcounter23h (r/w): Hardware performance monitor 23 counter high word */
-  CSR_HPMCOUNTER24H  = 0xc98, /**< 0xc98 - hpmcounter24h (r/w): Hardware performance monitor 24 counter high word */
-  CSR_HPMCOUNTER25H  = 0xc99, /**< 0xc99 - hpmcounter25h (r/w): Hardware performance monitor 25 counter high word */
-  CSR_HPMCOUNTER26H  = 0xc9a, /**< 0xc9a - hpmcounter26h (r/w): Hardware performance monitor 26 counter high word */
-  CSR_HPMCOUNTER27H  = 0xc9b, /**< 0xc9b - hpmcounter27h (r/w): Hardware performance monitor 27 counter high word */
-  CSR_HPMCOUNTER28H  = 0xc9c, /**< 0xc9c - hpmcounter28h (r/w): Hardware performance monitor 28 counter high word */
-  CSR_HPMCOUNTER29H  = 0xc9d, /**< 0xc9d - hpmcounter29h (r/w): Hardware performance monitor 29 counter high word */
-  CSR_HPMCOUNTER30H  = 0xc9e, /**< 0xc9e - hpmcounter30h (r/w): Hardware performance monitor 30 counter high word */
-  CSR_HPMCOUNTER31H  = 0xc9f, /**< 0xc9f - hpmcounter31h (r/w): Hardware performance monitor 31 counter high word */
+  CSR_CYCLEH         = 0xc80, /**< 0xc80 - cycleh   (r/-): Cycle counter high word (from MCYCLEH) */
+  CSR_TIMEH          = 0xc81, /**< 0xc81 - timeh    (r/-): Timer high word (from MTIME.TIME_HI) */
+  CSR_INSTRETH       = 0xc82, /**< 0xc82 - instreth (r/-): Instructions-retired counter high word (from MINSTRETH) */
 
   CSR_MVENDORID      = 0xf11, /**< 0xf11 - mvendorid (r/-): Vendor ID */
   CSR_MARCHID        = 0xf12, /**< 0xf12 - marchid   (r/-): Architecture ID */
@@ -341,39 +281,9 @@ enum NEORV32_CSR_MSTATUS_enum {
  * CPU <b>mcounteren</b> CSR (r/w): Machine counter enable (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CSR_MCOUNTEREN_enum {
-  CSR_MCOUNTEREN_CY    = 0,  /**< CPU mcounteren CSR (0): CY - Allow access to cycle[h]   CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_TM    = 1,  /**< CPU mcounteren CSR (1): TM - Allow access to time[h]    CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_IR    = 2,  /**< CPU mcounteren CSR (2): IR - Allow access to instret[h] CSRs from U-mode when set (r/w) */
-
-  CSR_MCOUNTEREN_HPM3  = 3,  /**< CPU mcounteren CSR (3):  HPM3  - Allow access to hpmcnt3[h]  CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM4  = 4,  /**< CPU mcounteren CSR (4):  HPM4  - Allow access to hpmcnt4[h]  CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM5  = 5,  /**< CPU mcounteren CSR (5):  HPM5  - Allow access to hpmcnt5[h]  CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM6  = 6,  /**< CPU mcounteren CSR (6):  HPM6  - Allow access to hpmcnt6[h]  CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM7  = 7,  /**< CPU mcounteren CSR (7):  HPM7  - Allow access to hpmcnt7[h]  CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM8  = 8,  /**< CPU mcounteren CSR (8):  HPM8  - Allow access to hpmcnt8[h]  CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM9  = 9,  /**< CPU mcounteren CSR (9):  HPM9  - Allow access to hpmcnt9[h]  CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM10 = 10, /**< CPU mcounteren CSR (10): HPM10 - Allow access to hpmcnt10[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM11 = 11, /**< CPU mcounteren CSR (11): HPM11 - Allow access to hpmcnt11[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM12 = 12, /**< CPU mcounteren CSR (12): HPM12 - Allow access to hpmcnt12[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM13 = 13, /**< CPU mcounteren CSR (13): HPM13 - Allow access to hpmcnt13[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM14 = 14, /**< CPU mcounteren CSR (14): HPM14 - Allow access to hpmcnt14[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM15 = 15, /**< CPU mcounteren CSR (15): HPM15 - Allow access to hpmcnt15[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM16 = 16, /**< CPU mcounteren CSR (16): HPM16 - Allow access to hpmcnt16[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM17 = 17, /**< CPU mcounteren CSR (17): HPM17 - Allow access to hpmcnt17[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM18 = 18, /**< CPU mcounteren CSR (18): HPM18 - Allow access to hpmcnt18[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM19 = 19, /**< CPU mcounteren CSR (19): HPM19 - Allow access to hpmcnt19[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM20 = 20, /**< CPU mcounteren CSR (20): HPM20 - Allow access to hpmcnt20[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM21 = 21, /**< CPU mcounteren CSR (21): HPM21 - Allow access to hpmcnt21[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM22 = 22, /**< CPU mcounteren CSR (22): HPM22 - Allow access to hpmcnt22[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM23 = 23, /**< CPU mcounteren CSR (23): HPM23 - Allow access to hpmcnt23[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM24 = 24, /**< CPU mcounteren CSR (24): HPM24 - Allow access to hpmcnt24[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM25 = 25, /**< CPU mcounteren CSR (25): HPM25 - Allow access to hpmcnt25[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM26 = 26, /**< CPU mcounteren CSR (26): HPM26 - Allow access to hpmcnt26[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM27 = 27, /**< CPU mcounteren CSR (27): HPM27 - Allow access to hpmcnt27[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM28 = 28, /**< CPU mcounteren CSR (28): HPM28 - Allow access to hpmcnt28[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM29 = 29, /**< CPU mcounteren CSR (29): HPM29 - Allow access to hpmcnt29[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM30 = 30, /**< CPU mcounteren CSR (30): HPM30 - Allow access to hpmcnt30[h] CSRs from U-mode when set (r/w) */
-  CSR_MCOUNTEREN_HPM31 = 31  /**< CPU mcounteren CSR (31): HPM31 - Allow access to hpmcnt31[h] CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_CY    = 0, /**< CPU mcounteren CSR (0): CY - Allow access to cycle[h]   CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_TM    = 1, /**< CPU mcounteren CSR (1): TM - Allow access to time[h]    CSRs from U-mode when set (r/w) */
+  CSR_MCOUNTEREN_IR    = 2  /**< CPU mcounteren CSR (2): IR - Allow access to instret[h] CSRs from U-mode when set (r/w) */
 };
 
 
