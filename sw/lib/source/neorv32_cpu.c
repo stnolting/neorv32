@@ -685,7 +685,7 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
   }
 
   // inhibt auto-update
-  asm volatile ("csrwi %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTEREN_HPM3));
+  asm volatile ("csrwi %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTINHIBIT_HPM3));
 
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0xffffffff);
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER3H, 0xffffffff);
