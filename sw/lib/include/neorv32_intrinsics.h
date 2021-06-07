@@ -148,19 +148,19 @@
 
 //** Construct custom R3-type instruction (4 registers, funct3, opcode) */
 #define CUSTOM_INSTR_R3_TYPE(rs3, rs2, rs1, funct3, rd, opcode) \
-  asm volatile (".word "STR(CMD_WORD_R3_TYPE(GET_REG_ADDR(rs3), GET_REG_ADDR(rs2), GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
+  asm volatile (".word " STR(CMD_WORD_R3_TYPE(GET_REG_ADDR(rs3), GET_REG_ADDR(rs2), GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
 
 //** Construct custom R2-type instruction (3 registers, funct3, funct7, opcode) */
 #define CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, funct3, rd, opcode) \
-  asm volatile (".word "STR(CMD_WORD_R2_TYPE(funct7, GET_REG_ADDR(rs2), GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
+  asm volatile (".word " STR(CMD_WORD_R2_TYPE(funct7, GET_REG_ADDR(rs2), GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
 
 //** Construct custom R1-type instruction (2 registers, funct3, funct7, funct5, opcode) */
 #define CUSTOM_INSTR_R1_TYPE(funct7, funct5, rs1, funct3, rd, opcode) \
-  asm volatile (".word "STR(CMD_WORD_R2_TYPE(funct7, funct5, GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
+  asm volatile (".word " STR(CMD_WORD_R2_TYPE(funct7, funct5, GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
   
 //** Construct custom I-type instruction (2 registers, funct3, imm12, opcode) */
 #define CUSTOM_INSTR_I_TYPE(imm12, rs1, funct3, rd, opcode) \
-  asm volatile (".word "STR(CMD_WORD_I_TYPE(imm12, GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
+  asm volatile (".word " STR(CMD_WORD_I_TYPE(imm12, GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
 /**@}*/
 
 #endif // neorv32_intrinsics_h
