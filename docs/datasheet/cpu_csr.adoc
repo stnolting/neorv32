@@ -55,15 +55,15 @@ See section <<_cpu_debug_mode_csrs>>.
 
 CSRs with the following notes ...
 
-* `X`: _custom_ - have or are a custom CPU-specifc extension (that is allowed by the RISC-V specs)
+* `X`: _custom_ - have or are a custom CPU-specific extension (that is allowed by the RISC-V specs)
 * `R`: _read-only_ - are read-only (in contrast to the originally specified r/w capability)
 * `C`: _constrained_ - have a constrained compatibility, not all specified bits are implemented
 
 .NEORV32 Control and Status Registers (CSRs)
-[cols="<4,<6,<11,^3,<11,^3"]
+[cols="<4,<7,<10,^3,<11,^3"]
 [options="header"]
 |=======================
-| Address | Name [ASM]   | Name [C]         | R/W | Function | Note
+| Address | Name [ASM] | Name [C] | R/W | Function | Note
 6+^| **<<_floating_point_csrs>>**
 | 0x001   | <<_fflags>>     | _CSR_FFLAGS_     | r/w | Floating-point accrued exceptions | 
 | 0x002   | <<_frm>>        | _CSR_FRM_        | r/w | Floating-point dynamic rounding mode | 
@@ -81,19 +81,19 @@ CSRs with the following notes ...
 | 0x343   | <<_mtval>>      | _CSR_MTVAL_      | r/- | Machine bad address or instruction | `R`
 | 0x344   | <<_mip>>        | _CSR_MIP_        | r/- | Machine interrupt pending register | `XR`
 6+^| **<<_machine_physical_memory_protection>>**
-| 0x3a0 .. 0x3af | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, , `pmpcfg15`>>   | _CSR_PMPCFG0_ .. _CSR_PMPCFG15_ | r/w | Physical memory protection config. for region 0..63 | `C`
+| 0x3a0 .. 0x3af | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg15`>>     | _CSR_PMPCFG0_ .. _CSR_PMPCFG15_   | r/w | Physical memory protection config. for region 0..63 | `C`
 | 0x3b0 .. 0x3ef | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr63`>> | _CSR_PMPADDR0_ .. _CSR_PMPADDR63_ | r/w | Physical memory protection addr. register region 0..63 | 
 6+^| **<<_machine_counters_and_timers>>**
-| 0xb00   | <<_mcycleh, `mcycle`>>     | _CSR_MCYCLE_     | r/w | Machine cycle counter low word | 
-| 0xb02   | <<_minstreth, `_minstret`>>   | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter low word | 
-| 0xb80   | <<_mcycleh>>    | _CSR_MCYCLE_     | r/w | Machine cycle counter high word | 
-| 0xb82   | <<_minstreth>>  | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter high word |
-| 0xc00   | <<_cycleh, `cycle`>>      | _CSR_CYCLE_      | r/- | Cycle counter low word | 
-| 0xc01   | <<_timeh, `time`>>       | _CSR_TIME_       | r/- | System time (from MTIME) low word | 
+| 0xb00   | <<_mcycleh, `mcycle`>>      | _CSR_MCYCLE_     | r/w | Machine cycle counter low word | 
+| 0xb02   | <<_minstreth, `_minstret`>> | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter low word | 
+| 0xb80   | <<_mcycleh>>                | _CSR_MCYCLE_     | r/w | Machine cycle counter high word | 
+| 0xb82   | <<_minstreth>>              | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter high word |
+| 0xc00   | <<_cycleh, `cycle`>>        | _CSR_CYCLE_      | r/- | Cycle counter low word | 
+| 0xc01   | <<_timeh, `time`>>          | _CSR_TIME_       | r/- | System time (from MTIME) low word | 
 | 0xc02   | <<_instreth, `instret`>>    | _CSR_INSTRET_    | r/- | Instruction-retired counter low word |  
-| 0xc80   | <<_cycleh>>     | _CSR_CYCLEH_     | r/- | Cycle counter high word | 
-| 0xc81   | <<_timeh>>      | _CSR_TIMEH_      | r/- | System time (from MTIME) high word | 
-| 0xc82   | <<_instreth>>   | _CSR_INSTRETH_   | r/- | Instruction-retired counter high word | 
+| 0xc80   | <<_cycleh>>                 | _CSR_CYCLEH_     | r/- | Cycle counter high word | 
+| 0xc81   | <<_timeh>>                  | _CSR_TIMEH_      | r/- | System time (from MTIME) high word | 
+| 0xc82   | <<_instreth>>               | _CSR_INSTRETH_   | r/- | Instruction-retired counter high word | 
 6+^| **<<_hardware_performance_monitors_hpm>>**
 | 0x323 .. 0x33f | <<_mhpmevent, `mhpmevent3`>> .. <<_mhpmevent, `mhpmevent31`>>             | _CSR_MHPMEVENT3_ .. _CSR_MHPMEVENT31_       | r/w | Machine performance-monitoring event selector 3..31 | `X`
 | 0xb03 .. 0xb1f | <<_mhpmcounterh, `mhpmcounter3`>> .. <<_mhpmcounterh, `mhpmcounter31`>>   | _CSR_MHPMCOUNTER3_ .. _CSR_MHPMCOUNTER31_   | r/w | Machine performance-monitoring counter 3..31 low word | 
@@ -173,8 +173,8 @@ RISC-V ISA spec for more information.
 [cols="4,27,>7"]
 [frame="topbot",grid="none"]
 |======
-| 0x300 | **Machine status register - low word** | `mstatus`
-3+| Reset value: _0x00000020.00000000_
+| 0x300 | **Machine status register** | `mstatus`
+3+| Reset value: _0x00000000_
 3+| The `mstatus` CSR is compatible to the RISC-V specifications. It shows the CPU's current execution state.
 The following bits are implemented (all remaining bits are always zero and are read-only).
 |======
@@ -186,7 +186,7 @@ The following bits are implemented (all remaining bits are always zero and are r
 | Bit   | Name [C] | R/W | Function
 | 12:11 | _CSR_MSTATUS_MPP_H_ : _CSR_MSTATUS_MPP_L_ | r/w | Previous machine privilege level, 11 = machine (M) level, 00 = user (U) level
 | 7     | _CSR_MSTATUS_MPIE_ | r/w | Previous machine global interrupt enable flag state
-| 3     | _CSR_MSTATUS_MIE_ | r/w | Machine global interrupt enable flag
+| 3     | _CSR_MSTATUS_MIE_  | r/w | Machine global interrupt enable flag
 |=======================
 
 When entering an exception/interrupt, the `MIE` flag is copied to `MPIE` and cleared afterwards. When leaving
@@ -226,7 +226,7 @@ CSR is simply ignored and will NOT cause an illegal instruction exception.
 |=======================
 
 [TIP]
-Information regarding the available RISC-V Z* _sub-extensions_ (like `Zicsr` or `Zfinx`) can be found in the <<_mzext>> CSR.
+Information regarding the implemented RISC-V `Z*` _sub-extensions_ (like `Zicsr` or `Zfinx`) can be found in the <<_mzext>> CSR.
 
 
 :sectnums!:
