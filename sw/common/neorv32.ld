@@ -57,6 +57,7 @@ SEARCH_DIR("/opt/riscv/riscv32-unknown-elf/lib"); SEARCH_DIR("=/opt/riscv/riscv6
 MEMORY
 {
 /* "rom" section: first value of ORIGIN/LENGTH => bootloader ROM; second value of ORIGIN/LENGTH => instruction memory */
+/* section sizes have to be a multiple of 4-bytes! */
 
   rom  (rx)  : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 4*1024 : 16*1024
   ram (rwx)  : ORIGIN = 0x80000000, LENGTH = 8*1024
@@ -67,9 +68,6 @@ MEMORY
 
 SECTIONS
 {
-  /* stack pointer init: last 32-bit entry in data memory */
-  __crt0_stack_begin = (ORIGIN(ram) + LENGTH(ram)) - 4;
-
   /* start section on WORD boundary */
   . = ALIGN(4);
 
@@ -291,7 +289,8 @@ SECTIONS
   /DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }
 
 
-  /* Provide further symbols for neorv32 crt0 */
+  /* Provide symbols for neorv32 crt0 start-up code */
+  PROVIDE(__crt0_stack_begin = (ORIGIN(ram) + LENGTH(ram)) - 4);
   PROVIDE(__crt0_bss_start   = __bss_start);
   PROVIDE(__crt0_bss_end     = __BSS_END__);
   PROVIDE(__crt0_copy_data_src_begin = __etext + SIZEOF(.rodata));
