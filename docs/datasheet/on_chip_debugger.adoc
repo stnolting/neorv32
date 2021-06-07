@@ -16,6 +16,11 @@ The NEORV32 OCD provides the following key features:
 * compatible to the https://github.com/riscv/riscv-openocd[RISC-V port of OpenOCD];
   pre-built binaries can be obtained for example from https://www.sifive.com/software[SiFive]
 
+.OCD Security Note
+[IMPORTANT]
+Access via the OCD is _always authenticated_ (`dmstatus.authenticated` == `1`). Hence, the
+_whole system_ can always be accessed via the on-chip debugger.
+
 [NOTE]
 The OCD requires additional resources for implementation and _might_ also increase the critical path resulting in less
 performance. If the OCD is not really required for the _final_ implementation, it can be disabled and thus,
@@ -65,7 +70,7 @@ application.
 The debug transport module (VHDL module: `rtl/core/neorv32_debug_dtm.vhd`) provides a JTAG test access port (TAP).
 The DTM is the first entity in the debug system, which connects and external debugger via JTAG to the next debugging
 entity: the debug module (DM).
-External access is provided by the following top-level ports.
+External JTAG access is provided by the following top-level ports.
 
 .JTAG top level signals
 [cols="^2,^2,^2,<8"]
