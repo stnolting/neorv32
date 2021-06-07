@@ -277,7 +277,7 @@ int main() {
   neorv32_uart_printf("[%i] mcounteren.cy CSR: ", cnt_test);
 
   // skip if U-mode is not implemented
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_U_EXT)) {
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_U)) {
     cnt_test++;
 
     // do not allow user-level code to access cycle[h] CSRs
@@ -551,7 +551,7 @@ int main() {
   neorv32_uart_printf("[%i] I_ALIGN (instr. alignment) EXC: ", cnt_test);
 
   // skip if C-mode is implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C_EXT)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) == 0) {
 
     cnt_test++;
 
@@ -623,7 +623,7 @@ int main() {
   neorv32_uart_printf("[%i] CI_ILLEG (illegal compr. instr.) EXC: ", cnt_test);
 
   // skip if C-mode is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C_EXT)) != 0) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) != 0) {
 
     cnt_test++;
 
@@ -761,7 +761,7 @@ int main() {
   neorv32_uart_printf("[%i] ENVCALL (ecall instr.) from U-mode EXC: ", cnt_test);
 
   // skip if U-mode is not implemented
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_U_EXT)) {
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_U)) {
 
     cnt_test++;
 
@@ -1363,7 +1363,7 @@ int main() {
   neorv32_uart_printf("[%i] Invalid CSR access (mstatus) from user mode: ", cnt_test);
 
   // skip if U-mode is not implemented
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_U_EXT)) {
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_U)) {
 
     cnt_test++;
 
@@ -1559,7 +1559,7 @@ int main() {
 
 #ifdef __riscv_atomic
   // skip if A-mode is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A_EXT)) != 0) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A)) != 0) {
 
     cnt_test++;
 
@@ -1596,7 +1596,7 @@ int main() {
 
 #ifdef __riscv_atomic
   // skip if A-mode is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A_EXT)) != 0) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A)) != 0) {
 
     cnt_test++;
 
@@ -1632,7 +1632,7 @@ int main() {
 
 #ifdef __riscv_atomic
   // skip if A-mode is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A_EXT)) != 0) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A)) != 0) {
 
     cnt_test++;
 
@@ -1739,4 +1739,18 @@ void test_fail(void) {
 
   neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
   cnt_fail++;
+}
+
+
+/**********************************************************************//**
+ * Register "after-main" handler that is executed if the application's
+ * main function actually returns (called by crt0.S start-up code)
+ *
+ * @note The C-runtime is still available at this point.
+ *
+ * @param[in] return_code Return value of main function
+ **************************************************************************/
+void __neorv32_crt0_after_main(int32_t return_code) {
+
+  neorv32_uart_printf("Main returned with code: %i\n", return_code);
 }
