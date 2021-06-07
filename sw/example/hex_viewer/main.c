@@ -210,7 +210,7 @@ void atomic_cas(void) {
   char terminal_buffer[16];
   uint32_t mem_address, rdata, wdata, status;
 
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A_EXT)) != 0) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A)) != 0) {
 
     // enter memory address
     neorv32_uart_printf("Enter memory address (8 hex chars): 0x");

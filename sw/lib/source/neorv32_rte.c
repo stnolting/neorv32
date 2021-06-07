@@ -620,41 +620,41 @@ uint32_t neorv32_rte_get_compiler_isa(void) {
   uint32_t misa_cc = 0;
 
 #if defined __riscv_atomic || defined __riscv_a
-  misa_cc |= 1 << CSR_MISA_A_EXT;
+  misa_cc |= 1 << CSR_MISA_A;
 #endif
 
 #ifdef __riscv_b
-  misa_cc |= 1 << CSR_MISA_B_EXT;
+  misa_cc |= 1 << CSR_MISA_B;
 #endif
 
 #if defined __riscv_compressed || defined __riscv_c
-  misa_cc |= 1 << CSR_MISA_C_EXT;
+  misa_cc |= 1 << CSR_MISA_C;
 #endif
 
 #if (__riscv_flen == 64) || defined __riscv_d
-  misa_cc |= 1 << CSR_MISA_D_EXT;
+  misa_cc |= 1 << CSR_MISA_D;
 #endif
 
 #ifdef __riscv_32e
-  misa_cc |= 1 << CSR_MISA_E_EXT;
+  misa_cc |= 1 << CSR_MISA_E;
 #else
-  misa_cc |= 1 << CSR_MISA_I_EXT;
+  misa_cc |= 1 << CSR_MISA_I;
 #endif
 
 #if (__riscv_flen == 32) || defined __riscv_f
-  misa_cc |= 1 << CSR_MISA_F_EXT;
+  misa_cc |= 1 << CSR_MISA_F;
 #endif
 
 #if defined __riscv_mul || defined __riscv_m
-  misa_cc |= 1 << CSR_MISA_M_EXT;
+  misa_cc |= 1 << CSR_MISA_M;
 #endif
 
 #if (__riscv_xlen == 32)
-  misa_cc |= 1 << CSR_MISA_MXL_LO_EXT;
+  misa_cc |= 1 << CSR_MISA_MXL_LO;
 #elif (__riscv_xlen == 64)
-  misa_cc |= 2 << CSR_MISA_MXL_LO_EXT;
+  misa_cc |= 2 << CSR_MISA_MXL_LO;
 #else
-  misa_cc |= 3 << CSR_MISA_MXL_LO_EXT;
+  misa_cc |= 3 << CSR_MISA_MXL_LO;
 #endif
 
   return misa_cc;

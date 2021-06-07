@@ -43,6 +43,11 @@
 #ifndef neorv32_h
 #define neorv32_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 // Standard libraries
 #include <stdint.h>
 #include <inttypes.h>
@@ -369,7 +374,6 @@ enum NEORV32_CSR_MIP_enum {
   CSR_MIP_FIRQ5P  = 21, /**< CPU mip CSR (21): FIRQ5P - Fast interrupt channel 5 pending (r/-) */
   CSR_MIP_FIRQ6P  = 22, /**< CPU mip CSR (22): FIRQ6P - Fast interrupt channel 6 pending (r/-) */
   CSR_MIP_FIRQ7P  = 23, /**< CPU mip CSR (23): FIRQ7P - Fast interrupt channel 7 pending (r/-) */
-
   CSR_MIP_FIRQ8P  = 24, /**< CPU mip CSR (24): FIRQ8P - Fast interrupt channel 8 pending (r/-) */
   CSR_MIP_FIRQ9P  = 25, /**< CPU mip CSR (25): FIRQ9P - Fast interrupt channel 9 pending (r/-) */
   CSR_MIP_FIRQ10P = 26, /**< CPU mip CSR (26): FIRQ10P - Fast interrupt channel 10 pending (r/-) */
@@ -385,18 +389,18 @@ enum NEORV32_CSR_MIP_enum {
  * CPU <b>misa</b> CSR (r/-): Machine instruction set extensions (RISC-V spec.)
  **************************************************************************/
 enum NEORV32_CSR_MISA_enum {
-  CSR_MISA_A_EXT      =  0, /**< CPU misa CSR  (0): A: Atomic instructions CPU extension available (r/-)*/
-  CSR_MISA_B_EXT      =  1, /**< CPU misa CSR  (1): B: Bit manipulation CPU extension available (r/-)*/
-  CSR_MISA_C_EXT      =  2, /**< CPU misa CSR  (2): C: Compressed instructions CPU extension available (r/-)*/
-  CSR_MISA_D_EXT      =  3, /**< CPU misa CSR  (3): D: Double-precision floating-point extension available (r/-)*/
-  CSR_MISA_E_EXT      =  4, /**< CPU misa CSR  (4): E: Embedded CPU extension available (r/-) */
-  CSR_MISA_F_EXT      =  5, /**< CPU misa CSR  (5): F: Single-precision floating-point extension available (r/-)*/
-  CSR_MISA_I_EXT      =  8, /**< CPU misa CSR  (8): I: Base integer ISA CPU extension available (r/-) */
-  CSR_MISA_M_EXT      = 12, /**< CPU misa CSR (12): M: Multiplier/divider CPU extension available (r/-)*/
-  CSR_MISA_U_EXT      = 20, /**< CPU misa CSR (20): U: User mode CPU extension available (r/-)*/
-  CSR_MISA_X_EXT      = 23, /**< CPU misa CSR (23): X: Non-standard CPU extension available (r/-) */
-  CSR_MISA_MXL_LO_EXT = 30, /**< CPU misa CSR (30): MXL.lo: CPU data width (r/-) */
-  CSR_MISA_MXL_HI_EXT = 31  /**< CPU misa CSR (31): MXL.Hi: CPU data width (r/-) */
+  CSR_MISA_A      =  0, /**< CPU misa CSR  (0): A: Atomic instructions CPU extension available (r/-)*/
+  CSR_MISA_B      =  1, /**< CPU misa CSR  (1): B: Bit manipulation CPU extension available (r/-)*/
+  CSR_MISA_C      =  2, /**< CPU misa CSR  (2): C: Compressed instructions CPU extension available (r/-)*/
+  CSR_MISA_D      =  3, /**< CPU misa CSR  (3): D: Double-precision floating-point extension available (r/-)*/
+  CSR_MISA_E      =  4, /**< CPU misa CSR  (4): E: Embedded CPU extension available (r/-) */
+  CSR_MISA_F      =  5, /**< CPU misa CSR  (5): F: Single-precision floating-point extension available (r/-)*/
+  CSR_MISA_I      =  8, /**< CPU misa CSR  (8): I: Base integer ISA CPU extension available (r/-) */
+  CSR_MISA_M      = 12, /**< CPU misa CSR (12): M: Multiplier/divider CPU extension available (r/-)*/
+  CSR_MISA_U      = 20, /**< CPU misa CSR (20): U: User mode CPU extension available (r/-)*/
+  CSR_MISA_X      = 23, /**< CPU misa CSR (23): X: Non-standard CPU extension available (r/-) */
+  CSR_MISA_MXL_LO = 30, /**< CPU misa CSR (30): MXL.lo: CPU data width (r/-) */
+  CSR_MISA_MXL_HI = 31  /**< CPU misa CSR (31): MXL.Hi: CPU data width (r/-) */
 };
 
 
@@ -406,9 +410,7 @@ enum NEORV32_CSR_MISA_enum {
 enum NEORV32_CSR_MZEXT_enum {
   CSR_MZEXT_ZICSR     =  0, /**< CPU mzext CSR (0): Zicsr extension (I sub-extension) available when set (r/-) */
   CSR_MZEXT_ZIFENCEI  =  1, /**< CPU mzext CSR (1): Zifencei extension (I sub-extension) available when set (r/-) */
-//CSR_MZEXT_ZBB       =  2, /**< CPU mzext CSR (2): Zbb extension (B sub-extension) available when set (r/-) */
-//CSR_MZEXT_ZBS       =  3, /**< CPU mzext CSR (3): Zbs extension (B sub-extension) available when set (r/-) */
-//CSR_MZEXT_ZBA       =  4, /**< CPU mzext CSR (4): Zba extension (B sub-extension) available when set (r/-) */
+
   CSR_MZEXT_ZFINX     =  5, /**< CPU mzext CSR (5): Zfinx extension (F sub-/alternative-extension) available when set (r/-) */
   CSR_MZEXT_ZXSCNT    =  6, /**< CPU mzext CSR (6): Custom extension - Small CPU counters: "cycle" & "instret" CSRs have less than 64-bit when set (r/-) */
   CSR_MZEXT_ZXNOCNT   =  7, /**< CPU mzext CSR (7): Custom extension - NO CPU counters: "cycle" & "instret" CSRs are NOT available at all when set (r/-) */
@@ -1138,5 +1140,10 @@ enum NEORV32_NEOLED_CT_enum {
 #include "neorv32_twi.h"
 #include "neorv32_uart.h"
 #include "neorv32_wdt.h"
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // neorv32_h
