@@ -168,7 +168,7 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- hardware reset notifier --
-  assert not (dedicated_reset_c = false) report "NEORV32 CPU CONFIG NOTE: Implementing NO dedicated hardware reset for uncritical registers (default, might reduce area). Set package constant <dedicated_reset_c> = TRUE to configure a DEFINED reset value for all CPU registers ." severity note;
+  assert not (dedicated_reset_c = false) report "NEORV32 CPU CONFIG NOTE: Implementing NO dedicated hardware reset for uncritical registers (default, might reduce area). Set package constant <dedicated_reset_c> = TRUE to configure a DEFINED reset value for all CPU registers." severity note;
   assert not (dedicated_reset_c = true)  report "NEORV32 CPU CONFIG NOTE: Implementing defined hardware reset for uncritical registers (non-default, reset-to-zero, might increase area)." severity note;
   assert not ((def_rst_val_c /= '-') and (def_rst_val_c /= '0')) report "NEORV32 CPU CONFIG ERROR! Invalid configuration of package <def_rst_val_c> constant (has to be '-' or '0')." severity error;
 

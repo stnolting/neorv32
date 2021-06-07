@@ -108,11 +108,11 @@ package neorv32_package is
   -- Internal Bootloader ROM --
   constant boot_rom_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffff0000"; -- bootloader base address, fixed!
   constant boot_rom_size_c      : natural := 4*1024; -- module's address space in bytes
-  constant boot_rom_max_size_c  : natural := 32*1024; -- max module's address space in bytes, fixed!
+  constant boot_rom_max_size_c  : natural := 32*1024; -- max module's address space size in bytes, fixed!
 
   -- On-Chip Debugger: Debug Module --
   constant dm_base_c            : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff800"; -- base address, fixed!
-  constant dm_size_c            : natural := 4*32*4; -- debug ROM address space in bytes, fixed
+  constant dm_size_c            : natural := 4*32*4; -- debug ROM address space size in bytes, fixed
   constant dm_code_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff800";
   constant dm_pbuf_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff880";
   constant dm_data_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff900";
@@ -121,7 +121,7 @@ package neorv32_package is
   -- IO: Peripheral Devices ("IO") Area --
   -- Control register(s) (including the device-enable) should be located at the base address of each device
   constant io_base_c            : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe00";
-  constant io_size_c            : natural := 512; -- module's address space in bytes, fixed!
+  constant io_size_c            : natural := 512; -- IO address space size in bytes, fixed!
 
   -- Custom Functions Subsystem (CFS) --
   constant cfs_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe00"; -- base address
@@ -161,7 +161,7 @@ package neorv32_package is
 
   -- Pulse-Width Modulation Controller (PWM) --
   constant pwm_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe80"; -- base address
-  constant pwm_size_c           : natural := 16*4; -- module's address space in bytes
+  constant pwm_size_c           : natural := 16*4; -- module's address space size in bytes
   constant pwm_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe80";
   constant pwm_duty0_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe84";
   constant pwm_duty1_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe88";
@@ -181,31 +181,31 @@ package neorv32_package is
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc0"; -- base address
---constant reserved_size_c      : natural := 16*4; -- module's address space in bytes
+--constant reserved_size_c      : natural := 16*4; -- module's address space size in bytes
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff00"; -- base address
---constant reserved_size_c      : natural := 32*4; -- module's address space in bytes
+--constant reserved_size_c      : natural := 32*4; -- module's address space size in bytes
 
   -- General Purpose Input/Output Unit (GPIO) --
   constant gpio_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff80"; -- base address
-  constant gpio_size_c          : natural := 2*4; -- module's address space in bytes
+  constant gpio_size_c          : natural := 2*4; -- module's address space size in bytes
   constant gpio_in_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff80";
   constant gpio_out_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff84";
 
   -- True Random Number Generator (TRNG) --
   constant trng_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff88"; -- base address
-  constant trng_size_c          : natural := 1*4; -- module's address space in bytes
+  constant trng_size_c          : natural := 1*4; -- module's address space size in bytes
   constant trng_ctrl_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff88";
 
   -- Watch Dog Timer (WDT) --
   constant wdt_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff8c"; -- base address
-  constant wdt_size_c           : natural := 1*4; -- module's address space in bytes
+  constant wdt_size_c           : natural := 1*4; -- module's address space size in bytes
   constant wdt_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff8c";
 
   -- Machine System Timer (MTIME) --
   constant mtime_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff90"; -- base address
-  constant mtime_size_c         : natural := 4*4; -- module's address space in bytes
+  constant mtime_size_c         : natural := 4*4; -- module's address space size in bytes
   constant mtime_time_lo_addr_c : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff90";
   constant mtime_time_hi_addr_c : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff94";
   constant mtime_cmp_lo_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff98";
@@ -213,29 +213,29 @@ package neorv32_package is
 
   -- Primary Universal Asynchronous Receiver/Transmitter (UART0) --
   constant uart0_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffa0"; -- base address
-  constant uart0_size_c         : natural := 2*4; -- module's address space in bytes
+  constant uart0_size_c         : natural := 2*4; -- module's address space size in bytes
   constant uart0_ctrl_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffa0";
   constant uart0_rtx_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffa4";
 
   -- Serial Peripheral Interface (SPI) --
   constant spi_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffa8"; -- base address
-  constant spi_size_c           : natural := 2*4; -- module's address space in bytes
+  constant spi_size_c           : natural := 2*4; -- module's address space size in bytes
   constant spi_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffa8";
   constant spi_rtx_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffac";
 
   -- Two Wire Interface (TWI) --
   constant twi_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffb0"; -- base address
-  constant twi_size_c           : natural := 2*4; -- module's address space in bytes
+  constant twi_size_c           : natural := 2*4; -- module's address space size in bytes
   constant twi_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffb0";
   constant twi_rtx_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffb4";
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffb8"; -- base address
---constant reserved_size_c      : natural := 2*4; -- module's address space in bytes
+--constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
 
   -- Numerically-Controlled Oscillator (NCO) --
   constant nco_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc0"; -- base address
-  constant nco_size_c           : natural := 4*4; -- module's address space in bytes
+  constant nco_size_c           : natural := 4*4; -- module's address space size in bytes
   constant nco_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc0";
   constant nco_ch0_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc4";
   constant nco_ch1_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc8";
@@ -243,19 +243,19 @@ package neorv32_package is
 
   -- Secondary Universal Asynchronous Receiver/Transmitter (UART1) --
   constant uart1_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffd0"; -- base address
-  constant uart1_size_c         : natural := 2*4; -- module's address space in bytes
+  constant uart1_size_c         : natural := 2*4; -- module's address space size in bytes
   constant uart1_ctrl_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffd0";
   constant uart1_rtx_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffd4";
 
   -- Smart LED (WS2811/WS2812) Interface (NEOLED) --
   constant neoled_base_c        : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffd8"; -- base address
-  constant neoled_size_c        : natural := 2*4; -- module's address space in bytes
+  constant neoled_size_c        : natural := 2*4; -- module's address space size in bytes
   constant neoled_ctrl_addr_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffd8";
   constant neoled_data_addr_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffdc";
 
   -- System Information Memory (SYSINFO) --
   constant sysinfo_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffe0"; -- base address
-  constant sysinfo_size_c       : natural := 8*4; -- module's address space in bytes
+  constant sysinfo_size_c       : natural := 8*4; -- module's address space size in bytes
 
   -- Main CPU Control Bus -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
