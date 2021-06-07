@@ -279,8 +279,9 @@ provides a simple protection against data transmission or storage errors.
 
 === Start-Up Code (crt0)
 
-The CPU (and also the processor) requires a minimal start-up and initialization code o bring the CPU (and the SoC) into a stable and initialized state before the
-acutal application can be executed. This start-up code is located in `sw/common/crt0.S` and is automatically linked with _every_ application program.
+The CPU (and also the processor) requires a minimal start-up and initialization code to bring the CPU (and the SoC)
+into a stable and initialized state before the actual application can be executed. This start-up code is located in
+`sw/common/crt0.S` and is automatically linked with _every_ application program.
 The `crt0.S` is directly executed right after a reset and performs the following operations:
 
 * Initialize integer registers `x1 - x31` (or `x1 - x15` when using the `E` CPU extension) to a defined value.
@@ -290,10 +291,33 @@ The `crt0.S` is directly executed right after a reset and performs the following
 * Clear the `.bss` section defined by the linker script.
 * Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
 * Call the application's `main` function (with no arguments: `argc` = `argv` = 0).
-* If the `main` function returns, the processor goes to an endless sleep mode (using a simple loop or via the `wfi` instruction if available).
+* If the `main` function returns `crt0` can call an "after main handler" (see below)
+* If there is no after main handler the processor goes to an endless sleep mode (using a simple loop or via the `wfi` instruction if available).
 
-[TIP]
-The return code of the `main()` function can be evaluated by reading register `a0` (= 'x10') via the on-chip debugger.
+==== After-Main Handler
+
+If the application's `main()` function actually returns, an _after main handler_ can be executed. This handler can be a normal function
+since the C runtime is still available when executed. If the handler uses any kind of peripheral/IO modules, make sure these are
+already initialized within the application or you have to initialize them _inside_ the handler.
+The prototype for the _after main handler_ function is shown below.
+
+[source,c]
+----
+void __neorv32_crt0_after_main(int32_t return_code);
+----
+
+The functions provides one argument (`return_code`) that shows the return value of the application's main function.
+For example, a simple `printf` can be used to inform the user (this example assumes that UART0 has been already
+properly configured in the actual application):
+
+.After-main handler example
+[source,c]
+----
+void __neorv32_crt0_after_main(int32_t return_code) {
+
+  neorv32_uart_printf("Main returned with code: %i\n", return_code);
+}
+----
 
 
 <<<
