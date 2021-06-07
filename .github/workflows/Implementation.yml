@@ -36,6 +36,11 @@ jobs:
             design: 'MinimalBoot',
             bitstream: neorv32_Fomu_pvt_MinimalBoot.bit
           }
+          - {
+            board: Fomu,
+            design: 'UP5KDemo',
+            bitstream: neorv32_Fomu_pvt_UP5KDemo.bit
+          }
     name: '🛳️ All-in-one | ${{ matrix.board }} | ${{ matrix.design }}'
     env:
       GHDL_PLUGIN_MODULE: ghdl
