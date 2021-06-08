@@ -43,8 +43,8 @@ at [GitHub-pages](https://stnolting.github.io/neorv32/sw/files.html).
 :label: The project's change log is available in [`CHANGELOG.md`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 To see the changes between *official* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-:package: The [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder provides exemplary EDA setups targeting
-various FPGA boards to get you started.
+:package: The [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder provides exemplary setups targeting
+various FPGA boards and toolchains to get you started.
 
 :spiral_notepad: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current **ideas**,
 **TODOs**, features being **planned** and **work-in-progress**.
@@ -293,7 +293,7 @@ This overview provides some *quick links* to the most important sections of the
   * [Top Entity - Generics](https://stnolting.github.io/neorv32/#_processor_top_entity_generics) - configuration options
   * [Address Space](https://stnolting.github.io/neorv32/#_address_space) - memory space and memory-mapped IO
   * [SoC Modules](https://stnolting.github.io/neorv32/#_processor_internal_modules) - available IO/peripheral modules and memories
-  * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - online debugging of the processor via JTAG
+  * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - online & in-system debugging of the processor via JTAG
 
 * [NEORV32 CPU](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu) - the RISC-V core
   * [RISC-V compatibility](https://stnolting.github.io/neorv32/#_risc_v_compatibility) - what is compatible to the specs. and what is not
