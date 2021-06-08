@@ -1,6 +1,6 @@
 # make a local copy of original "./../../rtl/templates/processor/neorv32_ProcessorTop_Test.vhd" file
 # and modify the default clock frequency: set to 50MHz
-set shell_script "cp -f ./../../rtl/templates/processor/neorv32_ProcessorTop_Test.vhd . && sed -i '/CLOCK_FREQUENCY/c\CLOCK_FREQUENCY => 50000000,' neorv32_test_setup.vhd"
+set shell_script "cp -f ./../../../rtl/templates/processor/neorv32_ProcessorTop_Test.vhd . && sed -i '/CLOCK_FREQUENCY/c\CLOCK_FREQUENCY => 50000000,' neorv32_test_setup.vhd"
 exec sh -c $shell_script
 
 # Copyright (C) 2020  Intel Corporation. All rights reserved.
@@ -58,7 +58,7 @@ if {$make_assignments} {
   set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
 
   # core VHDL files
-  set core_src_dir [glob ./../../rtl/core/*.vhd]
+  set core_src_dir [glob ./../../../rtl/core/*.vhd]
   foreach core_src_file $core_src_dir {
     set_global_assignment -name VHDL_FILE $core_src_file -library neorv32
   }
