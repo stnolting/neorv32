@@ -8,6 +8,4 @@ When creating a new synthesis/simulation project make sure that all `*.vhd` file
 
 ### [templates`](https://github.com/stnolting/neorv32/tree/master/rtl/templates)
 
-Alternative top entities for the NEORV32 Processor.
-Actually, these *alternative* top entities are wrappers, which instantiate the *real* top entity of processor/CPU and
-provide a different interface.
+Alternative top entities / wrappers for the NEORV32 Processor.

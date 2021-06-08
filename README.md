@@ -43,7 +43,7 @@ at [GitHub-pages](https://stnolting.github.io/neorv32/sw/files.html).
 :label: The project's change log is available in [`CHANGELOG.md`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 To see the changes between *official* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-:package: The [`boards`](https://github.com/stnolting/neorv32/tree/master/boards) folder provides exemplary setups targeting
+:package: The [`setups/boards`](https://github.com/stnolting/neorv32/tree/master/setups/boards) folder provides exemplary setups targeting
 various FPGA boards and toolchains to get you started.
 
 :spiral_notepad: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current **ideas**,
@@ -131,7 +131,7 @@ This setup also allows to further use the default bootloader and software framew
 
 ### FPGA Implementation Results - Processor
 
-:information_source: Check out the [`boards`](https://github.com/stnolting/neorv32/tree/master/boards)
+:information_source: Check out the [`boards`](https://github.com/stnolting/neorv32/tree/master/setups/boards)
 folder for exemplary setups targeting various FPGA boards.
 
 :information_source: The hardware resources used by the processor-internal IO/peripheral modules andmemories is also available in the
@@ -145,7 +145,7 @@ no external memory interface and only internal instruction and data memories
 | Vendor  | FPGA                              | Board            | Toolchain                  | CPU Configuration                 | LUT / LE   | FF / REG   | DSP (9-bit) | Memory Bits  | BRAM / EBR | SPRAM    | Frequency     |
 |:--------|:----------------------------------|:-----------------|:---------------------------|:----------------------------------|:-----------|:-----------|:------------|:-------------|:-----------|:---------|--------------:|
 | Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 20.1    | `rv32imcu_Zicsr_Zifencei`         | 3813 (17%) | 1904  (8%) | 0 (0%)      | 231424 (38%) |          - |        - |       119 MHz |
-| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | [`boards/UPduino_v3`](https://github.com/stnolting/neorv32/tree/master/boards/UPduino_v3) | Radiant 2.1 (LSE) | `rv32imac_Zicsr` | 5123 (97%) | 1972 (37%) | 0 (0%) | - |   12 (40%) | 4 (100%) | *c* 24 MHz |
+| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | [`boards/setups/UPduino_v3`](https://github.com/stnolting/neorv32/tree/master/boards/setups/UPduino_v3) | Radiant 2.1 (LSE) | `rv32imac_Zicsr` | 5123 (97%) | 1972 (37%) | 0 (0%) | - |   12 (40%) | 4 (100%) | *c* 24 MHz |
 | Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2              | `rv32imcu_Zicsr_Zifencei` + `PMP` | 2465 (12%) | 1912  (5%) | 0 (0%)      |            - |    8 (16%) |        - |   *c* 100 MHz |
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
