@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 08.06.2021 | 1.5.6.7 | clean-up of Wishbone interface module (dead code removal); added new package constant `wb_rx_buffer_c` to configure SYNC (default) or ASYNC Wishbone RX path (allows trade-off between performance/latency and timing closure) |
 | 06.06.2021 | 1.5.6.6 | :bug: fixed bug in PWM base address configuration; :warning: removed user-access HPM counter access via `hpmcounter3[h]`:`hpmcounter3[h]` CSRs, hardwaired according `mcounteren` bits to zero: HPM can only be used in machine mode; reworded 64-bit counters (`cycle`, `instret`, `hpmcounter` + `mtime`) overflow logic: now using dedicated CARRY chain instead of overflow detector (can improve timing); |
 | 05.06.2021 | 1.5.6.5 | removed debug mode's `stepie` flag (used to allow interrupts during single-stepping) as the debugger can emulate interrupts | 
 | 04.06.2021 | 1.5.6.4 | :warning: removed `IO_PWM_EN` generic, replaced by `IO_PWM_NUM_CH` generic - PWM ontroller now supports implementation of up to 60 channels via `IO_PWM_NUM_CH` (`IO_PWM_NUM_CH` = 0 will omit the PWM controller); :bug: fixed minor bug in `minstreth` counter logic |

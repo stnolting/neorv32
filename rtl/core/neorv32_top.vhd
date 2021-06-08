@@ -739,7 +739,6 @@ begin
   if (MEM_EXT_EN = true) generate
     neorv32_wishbone_inst: neorv32_wishbone
     generic map (
-      WB_PIPELINED_MODE => wb_pipe_mode_c,    -- false: classic/standard wishbone mode, true: pipelined wishbone mode
       -- Internal instruction memory --
       MEM_INT_IMEM_EN   => MEM_INT_IMEM_EN,   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes

@@ -47,7 +47,7 @@ and default clock speed) for correct operation.
 | `2`  | _SYSINFO_FEATURES_MEM_INT_IMEM_     | set if the processor-internal DMEM implemented (via top's _MEM_INT_DMEM_EN_ generic)
 | `3`  | _SYSINFO_FEATURES_MEM_INT_IMEM_ROM_ | set if the processor-internal IMEM is read-only (via top's _MEM_INT_IMEM_ROM_ generic)
 | `4`  | _SYSINFO_FEATURES_MEM_INT_DMEM_     | set if the processor-internal IMEM is implemented (via top's _MEM_INT_IMEM_EN_ generic)
-| `5`  | _SYSINFO_FEATURES_MEM_EXT_ENDIAN_   | set if external bus interface uses BIG-endian byte-order (via package's `xbus_big_endian_c` constant)
+| `5`  | _SYSINFO_FEATURES_MEM_EXT_ENDIAN_   | set if external bus interface uses BIG-endian byte-order (via package's `wb_big_endian_c` constant)
 | `6`  | _SYSINFO_FEATURES_ICACHE_           | set if processor-internal instruction cache is implemented (via _ICACHE_EN_ generic)
 | `14` | _SYSINFO_FEATURES_HW_RESET_         | set if on-chip debugger implemented (via _ON_CHIP_DEBUGGER_EN_ generic)
 | `15` | _SYSINFO_FEATURES_HW_RST_           | set if a dedicated hardware reset of all core registers is implemented (via package's _dedicated_reset_c_ constant)

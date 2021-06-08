@@ -23,7 +23,8 @@
 | Configuration generics:  | _MEM_EXT_EN_ | enable external memory interface when _true_
 |                          | _MEM_EXT_TIMEOUT_ | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
 | Configuration constants in VHDL package file `neorv32_package.vhd`: | `wb_pipe_mode_c` | when _false_ (default): classic/standard Wishbone protocol; when _true_: pipelined Wishbone protocol
-|                                                                     | `xbus_big_endian_c` | byte-order (Endianness) of external memory interface; true=BIG, false=little (default)
+|                                                                     | `wb_big_endian_c` | byte-order (Endianness) of external memory interface; true=BIG, false=little (default)
+|                                                                     | `wb_rx_buffer_c` | enable register buffer for RX path (default)
 | CPU interrupts:          | none             | 
 |=======================
 
@@ -49,7 +50,7 @@ in the in the main VHDL package file (`rtl/neorv32_package.vhd`):
 
 [source,vhdl]
 ----
--- (external) bus interface --
+-- external bus interface --
 constant wb_pipe_mode_c : boolean := false;
 ----
 
@@ -76,8 +77,19 @@ project.
 
 **Interface Latency**
 
-The Wishbone gateway introduces two additional latency cycles: Processor-outgoing and -incoming signals
-are fully registered. Thus, any access from the CPU to a processor-external devices requires +2 clock cycles.
+By default, the Wishbone gateway introduces two additional latency cycles: processor-outgoing ("TX") and
+processor-incoming ("RX") signals are fully registered. Thus, any access from the CPU to a processor-external devices
+via Wishbone requires 2 additional clock cycles (at least; depending on device's latency).
+
+If the attached Wishbone network / peripheral already provides output registers or if the Wishbone network is not relevant
+for timing closure, the default buffering of incoming ("RX") data within the gateway can be disabled. 
+The configuration is done via the `wb_rx_buffer_c` constant in the in the main VHDL package file (`rtl/neorv32_package.vhd`):
+
+[source,vhdl]
+----
+-- external bus interface --
+constant wb_rx_buffer_c : boolean := false; -- false to implement "async" RX (non-default)
+----
 
 **Bus Access Timeout**
 
@@ -125,14 +137,14 @@ See section <<_bus_interface>> for the CPU bus interface protocol.
 
 The NEORV32 CPU and the Processor setup are *little-endian* architectures. To allow direct connection
 to a big-endian memory system the external bus interface provides an _Endianness configuration_. The
-Endianness (of the external memory interface) can be configured via the global `xbus_big_endian_c`
+Endianness (of the external memory interface) can be configured via the global `wb_big_endian_c`
 constant in the main VHDL package file (`rtl/neorv32_package.vhd`). By default, the external memory
 interface uses little-endian byte-order.
 
 [source,vhdl]
 ----
--- (external) bus interface --
-constant xbus_big_endian_c : boolean := true;
+-- external bus interface --
+constant wb_big_endian_c : boolean := true;
 ----
 
 Application software can check the Endianness configuration of the external bus interface via the

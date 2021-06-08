@@ -56,7 +56,6 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- general --
   constant ext_imem_c            : boolean := false; -- false: use and boot from proc-internal IMEM, true: use and boot from external (initialized) simulated IMEM (ext. mem A)
   constant ext_dmem_c            : boolean := false; -- false: use proc-internal DMEM, true: use external simulated DMEM (ext. mem B)
-  constant icache_en_c           : boolean := true; -- set true to use processor-internal instruction cache
   constant imem_size_c           : natural := 16*1024; -- size in bytes of processor-internal IMEM / external mem A
   constant dmem_size_c           : natural := 8*1024; -- size in bytes of processor-internal DMEM / external mem B
   constant f_clock_c             : natural := 100000000; -- main clock in Hz
@@ -155,7 +154,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   begin
     mem_v := (others => (others => '0'));
     for i in 0 to init'length-1 loop -- init only in range of source data array
-      if (xbus_big_endian_c = false) then
+      if (wb_big_endian_c = false) then
         mem_v(i) := init(i);
       else
         mem_v(i) := bswap32_f(init(i));
@@ -223,7 +222,7 @@ begin
     MEM_INT_DMEM_EN              => int_dmem_c,    -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => dmem_size_c,   -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_EN                    => icache_en_c,   -- implement instruction cache
+    ICACHE_EN                    => true,          -- implement instruction cache
     ICACHE_NUM_BLOCKS            => 8,             -- i-cache: number of blocks (min 2), has to be a power of 2
     ICACHE_BLOCK_SIZE            => 64,            -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         => 2,             -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
