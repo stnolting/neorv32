@@ -106,32 +106,32 @@ begin
 
   -- Memory Access --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dmem_spram_lo_inst : SP256K
+  imem_spram_lo_inst : SB_SPRAM256KA
   port map (
-    AD       => spram_addr,  -- I
-    DI       => spram_di_lo, -- I
-    MASKWE   => spram_be_lo, -- I
-    WE       => spram_we,    -- I
-    CS       => spram_cs,    -- I
-    CK       => spram_clk,   -- I
-    STDBY    => '0',         -- I
-    SLEEP    => spram_pwr_n, -- I
-    PWROFF_N => '1',         -- I
-    DO       => spram_do_lo  -- O
+    ADDRESS    => spram_addr,  -- I
+    DATAIN     => spram_di_lo, -- I
+    MASKWREN   => spram_be_lo, -- I
+    WREN       => spram_we,    -- I
+    CHIPSELECT => spram_cs,    -- I
+    CLOCK      => spram_clk,   -- I
+    STANDBY    => '0',         -- I
+    SLEEP      => spram_pwr_n, -- I
+    POWEROFF   => '1',         -- I
+    DATAOUT    => spram_do_lo  -- O
   );
 
-  dmem_spram_hi_inst : SP256K
+  imem_spram_hi_inst : SB_SPRAM256KA
   port map (
-    AD       => spram_addr,  -- I
-    DI       => spram_di_hi, -- I
-    MASKWE   => spram_be_hi, -- I
-    WE       => spram_we,    -- I
-    CS       => spram_cs,    -- I
-    CK       => spram_clk,   -- I
-    STDBY    => '0',         -- I
-    SLEEP    => spram_pwr_n, -- I
-    PWROFF_N => '1',         -- I
-    DO       => spram_do_hi  -- O
+    ADDRESS    => spram_addr,  -- I
+    DATAIN     => spram_di_hi, -- I
+    MASKWREN   => spram_be_hi, -- I
+    WREN       => spram_we,    -- I
+    CHIPSELECT => spram_cs,    -- I
+    CLOCK      => spram_clk,   -- I
+    STANDBY    => '0',         -- I
+    SLEEP      => spram_pwr_n, -- I
+    POWEROFF   => '1',         -- I
+    DATAOUT    => spram_do_hi  -- O
   );
 
   -- access logic and signal type conversion --
