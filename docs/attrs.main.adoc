@@ -1,0 +1,7 @@
+:icons: image
+:iconsdir: ../icons
+:imagesdir: ../figures
+:toc: macro
+:title-logo-image: image:neorv32_logo_dark.png[pdfwidth=6.25in,align=center]
+// Uncomment next line to set page size (default is A4)
+//:pdf-page-size: Letter
