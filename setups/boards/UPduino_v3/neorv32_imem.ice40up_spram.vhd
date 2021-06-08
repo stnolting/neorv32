@@ -95,6 +95,12 @@ architecture neorv32_imem_rtl of neorv32_imem is
 
 begin
 
+  -- Sanity Checks --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert not ((IMEM_AS_ROM = true) or (BOOTLOADER_EN = false)) report "ICE40 Ultra Plus SPRAM cannot be initialized by bitstream!" severity failure;
+  assert not (IMEM_SIZE > 64*1024) report "IMEM has a fixed physical size of 64kB. Logical size must be less or equal." severity error;
+
+
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = IMEM_BASE(hi_abb_c downto lo_abb_c)) else '0';
@@ -145,14 +151,6 @@ begin
 
   buffer_ff: process(clk_i)
   begin
-    -- sanity check --
-    if (IMEM_AS_ROM = true) or (BOOTLOADER_EN = false) then
-      assert false report "ICE40 Ultra Plus SPRAM cannot be initialized by bitstream!" severity error;
-    end if;
-    if (IMEM_SIZE > 64*1024) then
-      assert false report "IMEM has a physical size of 64kB. Logical size must be less or equal." severity error;
-    end if;
-    -- buffer --
     if rising_edge(clk_i) then
       ack_o <= mem_cs;
       rden  <= acc_en and rden_i;

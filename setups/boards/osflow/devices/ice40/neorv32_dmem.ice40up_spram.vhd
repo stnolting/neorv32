@@ -93,6 +93,11 @@ architecture neorv32_dmem_rtl of neorv32_dmem is
 
 begin
 
+  -- Sanity Checks --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert not (DMEM_SIZE > 64*1024) report "DMEM has a fixed physical size of 64kB. Logical size must be less or equal." severity error;
+  
+
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = DMEM_BASE(hi_abb_c downto lo_abb_c)) else '0';
@@ -101,32 +106,32 @@ begin
 
   -- Memory Access --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dmem_spram_lo_inst : SB_SPRAM256KA
+  dmem_spram_lo_inst : SP256K
   port map (
-    ADDRESS    => spram_addr,  -- I
-    DATAIN     => spram_di_lo, -- I
-    MASKWREN   => spram_be_lo, -- I
-    WREN       => spram_we,    -- I
-    CHIPSELECT => spram_cs,    -- I
-    CLOCK      => spram_clk,   -- I
-    STANDBY    => '0',         -- I
-    SLEEP      => spram_pwr_n, -- I
-    POWEROFF   => '1',         -- I
-    DATAOUT    => spram_do_lo  -- O
+    AD       => spram_addr,  -- I
+    DI       => spram_di_lo, -- I
+    MASKWE   => spram_be_lo, -- I
+    WE       => spram_we,    -- I
+    CS       => spram_cs,    -- I
+    CK       => spram_clk,   -- I
+    STDBY    => '0',         -- I
+    SLEEP    => spram_pwr_n, -- I
+    PWROFF_N => '1',         -- I
+    DO       => spram_do_lo  -- O
   );
 
-  dmem_spram_hi_inst : SB_SPRAM256KA
+  dmem_spram_hi_inst : SP256K
   port map (
-    ADDRESS    => spram_addr,  -- I
-    DATAIN     => spram_di_hi, -- I
-    MASKWREN   => spram_be_hi, -- I
-    WREN       => spram_we,    -- I
-    CHIPSELECT => spram_cs,    -- I
-    CLOCK      => spram_clk,   -- I
-    STANDBY    => '0',         -- I
-    SLEEP      => spram_pwr_n, -- I
-    POWEROFF   => '1',         -- I
-    DATAOUT    => spram_do_hi  -- O
+    AD       => spram_addr,  -- I
+    DI       => spram_di_hi, -- I
+    MASKWE   => spram_be_hi, -- I
+    WE       => spram_we,    -- I
+    CS       => spram_cs,    -- I
+    CK       => spram_clk,   -- I
+    STDBY    => '0',         -- I
+    SLEEP    => spram_pwr_n, -- I
+    PWROFF_N => '1',         -- I
+    DO       => spram_do_hi  -- O
   );
 
   -- access logic and signal type conversion --
@@ -143,11 +148,6 @@ begin
 
   buffer_ff: process(clk_i)
   begin
-    -- sanity check --
-    if (DMEM_SIZE > 64*1024) then
-      assert false report "DMEM has a physical size of 64kB. Logical size must be less or equal." severity error;
-    end if;
-    -- buffer --
     if rising_edge(clk_i) then
       ack_o <= mem_cs;
       rden  <= acc_en and rden_i;

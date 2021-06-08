@@ -93,6 +93,11 @@ architecture neorv32_dmem_rtl of neorv32_dmem is
 
 begin
 
+  -- Sanity Checks --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert not (DMEM_SIZE > 64*1024) report "DMEM has a fixed physical size of 64kB. Logical size must be less or equal." severity error;
+  
+
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = DMEM_BASE(hi_abb_c downto lo_abb_c)) else '0';
@@ -143,11 +148,6 @@ begin
 
   buffer_ff: process(clk_i)
   begin
-    -- sanity check --
-    if (DMEM_SIZE > 64*1024) then
-      assert false report "DMEM has a physical size of 64kB. Logical size must be less or equal." severity error;
-    end if;
-    -- buffer --
     if rising_edge(clk_i) then
       ack_o <= mem_cs;
       rden  <= acc_en and rden_i;
