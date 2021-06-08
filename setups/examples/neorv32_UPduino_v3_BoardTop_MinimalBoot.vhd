@@ -121,10 +121,20 @@ begin
   )
   port map (
     -- Global control --
-    clk_i     => std_ulogic(pll_clk),
-    rstn_i    => std_ulogic(pll_rstn),
+    clk_i      => std_ulogic(pll_clk),
+    rstn_i     => std_ulogic(pll_rstn),
+
+    -- GPIO --
+    gpio_o     => open,
+
+    -- primary UART --
+    uart_txd_o => open, -- UART0 send data
+    uart_rxd_i => '0',  -- UART0 receive data
+    uart_rts_o => open, -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart_cts_i => '0',  -- hw flow control: UART0.TX allowed to transmit, low-active, optional
+
     -- PWM (to on-board RGB LED) --
-    pwm_o     => con_pwm
+    pwm_o      => con_pwm
   );
 
   -- IO Connection --------------------------------------------------------------------------
