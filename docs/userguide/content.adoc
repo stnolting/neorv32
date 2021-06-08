@@ -143,7 +143,7 @@ provide a field to enter the library name, check out the "properties" menu of th
 already have a design, instantiate this unit into your design and proceed.
 . If you do not have a design yet and just want to check out the NEORV32 – no problem! In this guide
 we will use a simplified top entity, that encapsulated the actual processor top entity: add the
-`rtl/core/top_templates/neorv32_test_setup.vhd` VHDL file to your project too, and
+`rtl/templates/processor/neorv32_ProcessorTop_Test.vhd` VHDL file to your project too, and
 select it as top entity.
 . This test setup provides a minimal test hardware setup:
 

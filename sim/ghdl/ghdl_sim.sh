@@ -26,9 +26,9 @@ echo ""
 
 # List files
 #echo "Simulation source files:"
-#ls -l simrtl/core
+#ls -l rtl/core
 #ls -l sim
-#ls -l rtl/top_templates
+#ls -l rtl/templates
 #echo ""
 
 # Just a hint
@@ -37,7 +37,8 @@ echo ""
 
 # Analyse sources; libs and images at first!
 ghdl -i --work=neorv32 rtl/core/*.vhd
-ghdl -i --work=neorv32 rtl/top_templates/*.vhd
+ghdl -i --work=neorv32 rtl/templates/processor/*.vhd
+ghdl -i --work=neorv32 rtl/templates/system/*.vhd
 ghdl -i --work=neorv32 sim/*.vhd
 
 # Prepare simulation output files for UART0 and UART 1

@@ -1,0 +1,18 @@
+# Configuration for the Fomu 'pvt' board
+set_io clki F4       # Clock input from 48MHz Oscillator
+set_io rgb[0] A5     # Blue LED
+set_io rgb[1] B5     # Green LED
+set_io rgb[2] C5     # Red LED
+set_io user[0] E4    # User touch pad 1
+set_io user[1] D5    # User touch pad 2
+set_io user[2] E5    # User touch pad 3
+set_io user[3] F5    # User touch pad 4
+set_io spi_mosi F1   # SPI Master Out, Slave In Pin
+set_io spi_miso E1   # SPI Master In, Slave Out Pin
+set_io spi_clk D1    # SPI Master Clock Output Pin
+set_io spi_cs C1     # SPI Chip Select
+set_io spi_io2 F2
+set_io spi_io3 B1
+set_io usb_dn A2     # USB D- pad
+set_io usb_dp A1     # USB D+ pad
+set_io usb_dp_pu A4  # USB D+ pull up (indicates device connected)

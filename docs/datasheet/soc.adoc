@@ -38,7 +38,7 @@ The type of all signals is _std_ulogic_ or _std_ulogic_vector_, respectively.
 
 [TIP]
 A wrapper for the NEORV32 Processor setup providing resolved port signals can be found in
-`rtl/top_templates/neorv32_top_stdlogic.vhd`.
+`rtl/templates/processor/neorv32_ProcessorTop_stdlogic.vhd`.
 
 [cols="<3,^2,^2,<11"]
 [options="header",grid="rows"]
@@ -580,7 +580,7 @@ See sections <<_address_space>> and <<_processor_external_memory_interface_wishb
 [frame="all",grid="none"]
 |======
 | **MEM_EXT_TIMEOUT** | _natural_ | 255
-3+| Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception. Set to 0 to disable auto-timeout. 
+3+| Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception. Set to 0 to disable auto-timeout.
 |======
 
 
@@ -635,7 +635,7 @@ more information.
 [frame="all",grid="none"]
 |======
 | **IO_UART1_EN** | _boolean_ | true
-3+| Implement secondary universal asynchronous receiver/transmitter (UART1) when _true_. 
+3+| Implement secondary universal asynchronous receiver/transmitter (UART1) when _true_.
 See section <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>> for more information.
 |======
 

@@ -3,11 +3,11 @@ name: Implementation
 on:
   push:
     paths:
-    - 'boards/**'
+    - 'setups/**'
     - 'rtl/**'
   pull_request:
     paths:
-    - 'boards/**'
+    - 'setup/**'
     - 'rtl/**'
   schedule:
     - cron: '0 0 * * 5'
@@ -17,23 +17,38 @@ jobs:
 
   all-in-one:
     runs-on: ubuntu-latest
-    name: '🛳️ All-in-one'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {
+            board: UPduino_v3,
+            design: 'MinimalBoot',
+            bitstream: neorv32_UPduino_v3_MinimalBoot.bin
+          }
+          - {
+            board: UPduino_v3,
+            design: 'UP5KDemo',
+            bitstream: neorv32_UPduino_v3_UP5KDemo.bin
+          }
+    name: '🛳️ All-in-one | ${{ matrix.board }} | ${{ matrix.design }}'
+    env:
+      GHDL_PLUGIN_MODULE: ghdl
 
     steps:
 
     - name: '🧰 Repository Checkout'
       uses: actions/checkout@v2
 
-    - name: '⚙️ Generate bitstream'
+    - name: '⚙️ Generate ${{ matrix.board }} ${{ matrix.design }} bitstream'
       uses: docker://ghcr.io/hdl/debian-buster/impl
       with:
-        args: make -C boards/UPduino_v3_ghdl-yosys-nextpnr/ all
+        args: make -C setups/examples BOARD=${{ matrix.board }} ${{ matrix.design }}
 
-    - name: '📤 Upload Artifact: bitstream'
+    - name: '📤 Upload Artifact: ${{ matrix.board }} ${{ matrix.design }} bitstream and reports'
       uses: actions/upload-artifact@v2
       with:
-        name: UPduino_v3_ghdl-yosys-nextpr
+        name: ${{ matrix.board }}-${{ matrix.design }}
         path: |
-          boards/UPduino_v3_ghdl-yosys-nextpnr/neorv32_upduino_v3_impl_1.bin
-          boards/UPduino_v3_ghdl-yosys-nextpnr/yosys-report.txt
-          boards/UPduino_v3_ghdl-yosys-nextpnr/nextpnr-report.txt
+          setups/examples/${{ matrix.bitstream }}
+          setups/boards/osflow/${{ matrix.board }}/*-report.txt
