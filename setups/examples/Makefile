@@ -5,7 +5,11 @@ MV := mv
 
 TASK := clean $(BITSTREAM)
 
-BOARD ?= UPDuino_v3
+FOMU_REV ?= pvt
+
+ifndef BOARD
+$(error BOARD needs to be set to 'Fomu' or 'UPDuino_v3'!)
+endif
 
 run:
 	$(eval TASK ?= clean $(BITSTREAM))
@@ -15,6 +19,11 @@ run:
 	  ID=$(DESIGN) \
 	  $(TASK)
 	$(MV) $(OSFLOW)/$(BOARD)/$(BITSTREAM) ./
+
+Fomu:
+	$(MAKE) \
+	  BITSTREAM=neorv32_$(BOARD)_$(FOMU_REV)_$(DESIGN).bit \
+	  run
 
 UPduino_v3:
 	$(MAKE) \
