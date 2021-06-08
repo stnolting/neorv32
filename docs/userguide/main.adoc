@@ -1,21 +1,6 @@
 = The NEORV32 RISC-V Processor: User Guide
-:author: Dipl.-Ing. Stephan Nolting
-:email: stnolting@gmail.com
-:description: A size-optimized, customizable and open-source full-scale 32-bit RISC-V soft-core CPU and SoC written in platform-independent VHDL.
-:revnumber: v1.5.6.0
-:doctype: book
-:sectnums:
-:icons: image
-:iconsdir: ../icons
-:imagesdir: ../figures
-:stem:
-:reproducible:
-:listing-caption: Listing
-:toc: macro
-:toclevels: 4
-:title-logo-image: image:neorv32_logo_dark.png[pdfwidth=6.25in,align=center]
-// Uncomment next line to set page size (default is A4)
-//:pdf-page-size: Letter
+include::../attrs.adoc[]
+include::../attrs.main.adoc[]
 
 
 <<<
