@@ -1,6 +1,6 @@
 OSFLOW := ../boards/osflow
 EXAMPLES := ../../../examples
-TEMPLATES := ../../../rtl/templates
+TEMPLATES := ../../../../rtl/templates
 MV := mv
 
 BOARD ?= UPDuino_v3

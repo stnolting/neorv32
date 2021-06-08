@@ -3,13 +3,11 @@ name: Implementation
 on:
   push:
     paths:
-    - 'boards/**'
-    - 'examples/**'
+    - 'setups/**'
     - 'rtl/**'
   pull_request:
     paths:
-    - 'boards/**'
-    - 'examples/**'
+    - 'setup/**'
     - 'rtl/**'
   schedule:
     - cron: '0 0 * * 5'
@@ -45,12 +43,12 @@ jobs:
     - name: '⚙️ Generate ${{ matrix.board }} ${{ matrix.design }} bitstream'
       uses: docker://ghcr.io/hdl/debian-buster/impl
       with:
-        args: make -C examples BOARD=${{ matrix.board }} ${{ matrix.design }}
+        args: make -C setups/examples BOARD=${{ matrix.board }} ${{ matrix.design }}
 
     - name: '📤 Upload Artifact: ${{ matrix.board }} ${{ matrix.design }} bitstream and reports'
       uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.board }}-${{ matrix.design }}
         path: |
-          examples/${{ matrix.bitstream }}
-          boards/osflow/${{ matrix.board }}/*-report.txt
+          setups/examples/${{ matrix.bitstream }}
+          setups/boards/osflow/${{ matrix.board }}/*-report.txt
