@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - Example setup for the tinyVision.ai Inc. "UPduino v3" (c) Board >>               #
+-- # << NEORV32 - Example setup for boards with UP5K devices >>                         #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -65,7 +65,7 @@ entity neorv32_ProcessorTop_UP5KDemo is
     -- GPIO --
     gpio_i      : in  std_ulogic_vector(3 downto 0);
     gpio_o      : out std_ulogic_vector(3 downto 0);
-    -- PWM (to on-board RGB power LED) --
+    -- PWM --
     pwm_o       : out std_ulogic_vector(2 downto 0)
   );
 end entity;
@@ -102,10 +102,7 @@ begin
   con_gpio_i(03 downto 0) <= gpio_i;
   con_gpio_i(31 downto 4) <= (others => '0');
 
-  -- RGB --
-  -- bit 0: red - pwm channel 0
-  -- bit 1: green - pwm channel 1
-  -- bit 2: blue - pwm channel 2
+  -- PWM --
   pwm_o <= con_pwm(2 downto 0);
 
   -- The core of the problem ----------------------------------------------------------------
@@ -236,7 +233,7 @@ begin
     twi_sda_io  => twi_sda_io,                   -- twi serial data line
     twi_scl_io  => twi_scl_io,                   -- twi serial clock line
 
-    -- PWM (available if IO_PWM_EN = true) --
+    -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o       => con_pwm,                      -- pwm channels
 
     -- Custom Functions Subsystem IO --
