@@ -3,20 +3,23 @@ EXAMPLES := ../../../examples
 TEMPLATES := ../../../../rtl/templates
 MV := mv
 
+TASK := clean $(BITSTREAM)
+
 BOARD ?= UPDuino_v3
 
-build:
+run:
+	$(eval TASK ?= clean $(BITSTREAM))
 	$(MAKE) -C $(OSFLOW)/$(BOARD)/ \
 	  BOARD_SRC=$(EXAMPLES)/neorv32_$(BOARD)_BoardTop_$(DESIGN).vhd \
 	  TOP=neorv32_$(BOARD)_BoardTop_$(DESIGN) \
 	  ID=$(DESIGN) \
-	  clean $(BITSTREAM)
+	  $(TASK)
 	$(MV) $(OSFLOW)/$(BOARD)/$(BITSTREAM) ./
 
 UPduino_v3:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
-	  build
+	  run
 
 MinimalBoot:
 	$(MAKE) \
