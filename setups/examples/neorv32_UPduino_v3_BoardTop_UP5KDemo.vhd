@@ -142,27 +142,36 @@ begin
     USER_CODE       => x"0001ce40"  -- custom user code
   )
   port map (
+    -- Global control --
     clk_i       => std_ulogic(pll_clk),
     rstn_i      => std_ulogic(pll_rstn),
-    -- UART (uart0) --
+
+    -- primary UART --
     uart_txd_o  => uart_txd_o,
     uart_rxd_i  => uart_rxd_i,
+    uart_rts_o  => open,
+    uart_cts_i  => '0',
+
     -- SPI to on-board flash --
     flash_sck_o => flash_sck_o,
     flash_sdo_o => flash_sdo_o,
     flash_sdi_i => flash_sdi_i,
     flash_csn_o => flash_csn_o,
+
     -- SPI to IO pins --
     spi_sck_o   => spi_sck_o,
     spi_sdo_o   => spi_sdo_o,
     spi_sdi_i   => con_spi_sdi,
     spi_csn_o   => con_spi_csn,
+
     -- TWI --
     twi_sda_io  => twi_sda_io,
     twi_scl_io  => twi_scl_io,
+
     -- GPIO --
     gpio_i      => gpio_i,
     gpio_o      => gpio_o,
+
     -- PWM (to on-board RGB power LED) --
     pwm_o       => con_pwm
   );

@@ -40,40 +40,99 @@ library neorv32;
 
 entity neorv32_ProcessorTop_UP5KDemo is
   generic (
-    CLOCK_FREQUENCY : natural := 0;  -- clock frequency of clk_i in Hz
-    USER_CODE       : std_ulogic_vector(31 downto 0) := x"00000000"  -- custom user code
+    CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
+    USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000";  -- custom user code
+    HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
+
+    -- On-Chip Debugger (OCD) --
+    ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger?
+
+    -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        : boolean := true;   -- implement atomic extension?
+    CPU_EXTENSION_RISCV_C        : boolean := true;   -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        : boolean := true;   -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
+    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
+
+    -- Extension Options --
+    FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
+    TINY_SHIFT_EN                : boolean := false;  -- use tiny (single-bit) shifter for shift operations
+    CPU_CNT_WIDTH                : natural := 34;     -- total width of CPU cycle and instret counters (0..64)
+
+    -- Physical Memory Protection (PMP) --
+    PMP_NUM_REGIONS              : natural := 0;       -- number of regions (0..64)
+    PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+
+    -- Hardware Performance Monitors (HPM) --
+    HPM_NUM_CNTS                 : natural := 0;       -- number of implemented HPM counters (0..29)
+    HPM_CNT_WIDTH                : natural := 40;      -- total size of HPM counters (0..64)
+
+    -- Internal Instruction memory --
+    MEM_INT_IMEM_EN              : boolean := true;    -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE            : natural := 64*1024; -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_ROM             : boolean := false;   -- implement processor-internal instruction memory as ROM
+
+    -- Internal Data memory --
+    MEM_INT_DMEM_EN              : boolean := true;    -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE            : natural := 64*1024; -- size of processor-internal data memory in bytes
+
+    -- Internal Cache memory --
+    ICACHE_EN                    : boolean := false;  -- implement instruction cache
+    ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
+
+    -- Processor peripherals --
+    IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
+    IO_UART0_EN                  : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
+    IO_PWM_NUM_CH                : natural := 3;      -- number of PWM channels to implement (0..60); 0 = disabled
+    IO_WDT_EN                    : boolean := true    -- implement watch dog timer (WDT)?
   );
   port (
     clk_i       : in  std_logic;
     rstn_i      : in  std_logic;
-    -- UART (uart0) --
-    uart_txd_o  : out std_ulogic;
-    uart_rxd_i  : in  std_ulogic;
+
+    -- GPIO --
+    gpio_i      : in  std_ulogic_vector(3 downto 0);
+    gpio_o      : out std_ulogic_vector(3 downto 0);
+
+    -- primary UART0 (available if IO_UART0_EN = true) --
+    uart_txd_o  : out std_ulogic; -- UART0 send data
+    uart_rxd_i  : in  std_ulogic := '0'; -- UART0 receive data
+    uart_rts_o  : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart_cts_i  : in  std_ulogic := '0'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
+
     -- SPI to on-board flash --
     flash_sck_o : out std_ulogic;
     flash_sdo_o : out std_ulogic;
     flash_sdi_i : in  std_ulogic;
     flash_csn_o : out std_ulogic; -- NEORV32.SPI_CS(0)
-    -- SPI to IO pins --
+
+    -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   : out std_ulogic;
     spi_sdo_o   : out std_ulogic;
     spi_sdi_i   : in  std_ulogic;
     spi_csn_o   : out std_ulogic; -- NEORV32.SPI_CS(1)
-    -- TWI --
+
+    -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  : inout std_logic;
     twi_scl_io  : inout std_logic;
-    -- GPIO --
-    gpio_i      : in  std_ulogic_vector(3 downto 0);
-    gpio_o      : out std_ulogic_vector(3 downto 0);
-    -- PWM --
-    pwm_o       : out std_ulogic_vector(2 downto 0)
+
+    -- PWM (available if IO_PWM_NUM_CH > 0) --
+    pwm_o       : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0)
   );
 end entity;
 
 architecture neorv32_ProcessorTop_UP5KDemo_rtl of neorv32_ProcessorTop_UP5KDemo is
 
   -- internal IO connection --
-  signal con_pwm      : std_ulogic_vector(02 downto 0);
   signal con_gpio_o   : std_ulogic_vector(31 downto 0);
   signal con_gpio_i   : std_ulogic_vector(31 downto 0);
   signal con_spi_sck  : std_ulogic;
@@ -102,9 +161,6 @@ begin
   con_gpio_i(03 downto 0) <= gpio_i;
   con_gpio_i(31 downto 4) <= (others => '0');
 
-  -- PWM --
-  pwm_o <= con_pwm(2 downto 0);
-
   -- The core of the problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_inst: entity neorv32.neorv32_top
@@ -113,70 +169,70 @@ begin
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,  -- clock frequency of clk_i in Hz
     BOOTLOADER_EN                => true,        -- implement processor-internal bootloader?
     USER_CODE                    => USER_CODE,   -- custom user code
-    HW_THREAD_ID                 => 0,           -- hardware thread id (32-bit)
+    HW_THREAD_ID                 => HW_THREAD_ID,     -- hardware thread id (32-bit)
 
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN          => false,       -- implement on-chip debugger?
+    ON_CHIP_DEBUGGER_EN          => ON_CHIP_DEBUGGER_EN,  -- implement on-chip debugger?
 
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        => true,        -- implement atomic extension?
-    CPU_EXTENSION_RISCV_C        => true,        -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        => false,       -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        => true,        -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U        => false,       -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zfinx    => false,       -- implement 32-bit floating-point extension (using INT regs!)
-    CPU_EXTENSION_RISCV_Zicsr    => true,        -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei => false,       -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,         -- implement atomic extension?
+    CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,         -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,         -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,         -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,         -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,     -- implement 32-bit floating-point extension (using INT regs!)
+    CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,     -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei,  -- implement instruction stream sync.?
 
     -- Extension Options --
-    FAST_MUL_EN                  => false,       -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN                => false,       -- use barrel shifter for shift operations
-    TINY_SHIFT_EN                => false,       -- use tiny (single-bit) shifter for shift operations
-    CPU_CNT_WIDTH                => 34,          -- total width of CPU cycle and instret counters (0..64)
+    FAST_MUL_EN                  => FAST_MUL_EN,    -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN                => FAST_SHIFT_EN,  -- use barrel shifter for shift operations
+    TINY_SHIFT_EN                => TINY_SHIFT_EN,  -- use tiny (single-bit) shifter for shift operations
+    CPU_CNT_WIDTH                => CPU_CNT_WIDTH,  -- total width of CPU cycle and instret counters (0..64)
 
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS              => 0,           -- number of regions (0..64)
-    PMP_MIN_GRANULARITY          => 64*1024,     -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    PMP_NUM_REGIONS              => PMP_NUM_REGIONS,       -- number of regions (0..64)
+    PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY,   -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
 
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 => 0,           -- number of implemented HPM counters (0..29)
-    HPM_CNT_WIDTH                => 40,          -- total size of HPM counters (1..64)
+    HPM_NUM_CNTS                 => HPM_NUM_CNTS,          -- number of implemented HPM counters (0..29)
+    HPM_CNT_WIDTH                => HPM_CNT_WIDTH,         -- total size of HPM counters (1..64)
 
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN              => true,        -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE            => 64*1024,     -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM             => false,       -- implement processor-internal instruction memory as ROM
+    MEM_INT_IMEM_EN              => MEM_INT_IMEM_EN,       -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE,     -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_ROM             => MEM_INT_IMEM_ROM,      -- implement processor-internal instruction memory as ROM
 
     -- Internal Data memory --
-    MEM_INT_DMEM_EN              => true,        -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE            => 64*1024,     -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_EN              => MEM_INT_DMEM_EN,       -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE,     -- size of processor-internal data memory in bytes
 
     -- Internal Cache memory --
-    ICACHE_EN                    => false,       -- implement instruction cache
-    ICACHE_NUM_BLOCKS            => 4,           -- i-cache: number of blocks (min 1), has to be a power of 2
-    ICACHE_BLOCK_SIZE            => 64,          -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY         => 1,           -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
+    ICACHE_EN                    => ICACHE_EN,             -- implement instruction cache
+    ICACHE_NUM_BLOCKS            => ICACHE_NUM_BLOCKS,     -- i-cache: number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE            => ICACHE_BLOCK_SIZE,     -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_ASSOCIATIVITY         => ICACHE_ASSOCIATIVITY,  -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
     -- External memory interface --
-    MEM_EXT_EN                   => false,       -- implement external memory bus interface?
-    MEM_EXT_TIMEOUT              => 0,           -- cycles after a pending bus access auto-terminates (0 = disabled)
+    MEM_EXT_EN                   => false,  -- implement external memory bus interface?
+    MEM_EXT_TIMEOUT              => 0,      -- cycles after a pending bus access auto-terminates (0 = disabled)
 
     -- Processor peripherals --
-    IO_GPIO_EN                   => true,        -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_EN                  => true,        -- implement machine system timer (MTIME)?
-    IO_UART0_EN                  => true,        -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART1_EN                  => false,       -- implement secondary universal asynchronous receiver/transmitter (UART1)?
-    IO_SPI_EN                    => true,        -- implement serial peripheral interface (SPI)?
-    IO_TWI_EN                    => true,        -- implement two-wire interface (TWI)?
-    IO_PWM_NUM_CH                => 3,           -- number of PWM channels to implement (0..60); 0 = disabled
-    IO_WDT_EN                    => true,        -- implement watch dog timer (WDT)?
-    IO_TRNG_EN                   => false,       -- implement true random number generator (TRNG)?
-    IO_CFS_EN                    => false,       -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                => x"00000000", -- custom CFS configuration generic
-    IO_CFS_IN_SIZE               => 32,          -- size of CFS input conduit in bits
-    IO_CFS_OUT_SIZE              => 32,          -- size of CFS output conduit in bits
-    IO_NCO_EN                    => false,       -- implement numerically-controlled oscillator (NCO)?
-    IO_NEOLED_EN                 => false        -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_GPIO_EN                   => IO_GPIO_EN,     -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN                  => IO_MTIME_EN,    -- implement machine system timer (MTIME)?
+    IO_UART0_EN                  => IO_UART0_EN,    -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART1_EN                  => false,          -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_SPI_EN                    => IO_SPI_EN,      -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN                    => IO_TWI_EN,      -- implement two-wire interface (TWI)?
+    IO_PWM_NUM_CH                => IO_PWM_NUM_CH,  -- number of PWM channels to implement (0..60); 0 = disabled
+    IO_WDT_EN                    => IO_WDT_EN,      -- implement watch dog timer (WDT)?
+    IO_TRNG_EN                   => false,          -- implement true random number generator (TRNG)?
+    IO_CFS_EN                    => false,          -- implement custom functions subsystem (CFS)?
+    IO_CFS_CONFIG                => x"00000000",    -- custom CFS configuration generic
+    IO_CFS_IN_SIZE               => 32,             -- size of CFS input conduit in bits
+    IO_CFS_OUT_SIZE              => 32,             -- size of CFS output conduit in bits
+    IO_NCO_EN                    => false,          -- implement numerically-controlled oscillator (NCO)?
+    IO_NEOLED_EN                 => false           -- implement NeoPixel-compatible smart LED interface (NEOLED)?
   )
   port map (
     -- Global control --
@@ -214,8 +270,8 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart_txd_o,                   -- UART0 send data
     uart0_rxd_i => uart_rxd_i,                   -- UART0 receive data
-    uart0_rts_o => open,                         -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i => '0',                          -- hw flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_rts_o => uart_rts_o,                   -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i => uart_cts_i,                   -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o => open,                         -- UART1 send data
@@ -234,7 +290,7 @@ begin
     twi_scl_io  => twi_scl_io,                   -- twi serial clock line
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o       => con_pwm,                      -- pwm channels
+    pwm_o       => pwm_o,                        -- pwm channels
 
     -- Custom Functions Subsystem IO --
     cfs_in_i    => (others => '0'),              -- custom CFS inputs conduit
