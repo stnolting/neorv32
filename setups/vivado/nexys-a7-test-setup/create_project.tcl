@@ -27,8 +27,9 @@ switch $board {
 create_project -part $a7part $a7prj $outputdir
 
 # add source files: core sources
-add_files [glob ./../../../rtl/core/*.vhd]
+add_files [glob ./../../../rtl/core/*.vhd] ./../../../rtl/core/mem/neorv32_dmem.default.vhd ./../../../rtl/core/mem/neorv32_imem.default.vhd
 set_property library neorv32 [get_files [glob ./../../../rtl/core/*.vhd]]
+set_property library neorv32 [get_files [glob ./../../../rtl/core/mem/neorv32_*mem.default.vhd]]
 
 # add source file: top entity
 add_files [glob ./../../../rtl/templates/processor/neorv32_ProcessorTop_Test.vhd]

@@ -22,13 +22,13 @@ run:
 
 Fomu:
 ifeq ($(DESIGN),Minimal)
-	$(eval IMEM_SRC := ../../../rtl/core/mem/neorv32_imem.vhd)
+	$(eval IMEM_SRC := ../../../rtl/core/mem/neorv32_imem.default.vhd)
 else
-	$(eval IMEM_SRC := ../devices/ice40/neorv32_imem.ice40up_spram.vhd)
+	$(eval IMEM_SRC := ../../rtl/mem/neorv32_imem.ice40up_spram.osflow.vhd)
 endif
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(FOMU_REV)_$(DESIGN).bit \
-	  NEORV32_MEM_SRC="${IMEM_SRC} ../devices/ice40/neorv32_dmem.ice40up_spram.vhd" \
+	  NEORV32_MEM_SRC="${IMEM_SRC} ../../rtl/mem/neorv32_dmem.ice40up_spram.osflow.vhd" \
 	  run
 
 iCESugar:
@@ -63,5 +63,5 @@ MixedLanguage:
 	$(MAKE) \
 	  DESIGN=$@ \
 	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_Minimal*.vhd \
-	  NEORV32_VERILOG_SRC='../devices/ice40/sb_ice40_components.v ../../examples/neorv32_Fomu_MixedLanguage_ClkGen.v' \
+	  NEORV32_VERILOG_SRC='../devices/sb_ice40_components.v ../../examples/neorv32_Fomu_MixedLanguage_ClkGen.v' \
 	  $(BOARD)

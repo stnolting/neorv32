@@ -1,5 +1,8 @@
 -- #################################################################################################
--- # << NEORV32 - Processor-internal data memory (DMEM) >>                                         #
+-- # << NEORV32 - Processor-Internal DMEM for Lattice iCE40 UltraPlus >>                           #
+-- # ********************************************************************************************* #
+-- # Memory has a physical size of 64kb (2 x SPRAMs).                                              #
+-- # Logical size DMEM_SIZE must be less or equal.                                                 #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -39,107 +42,100 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_dmem is
-  generic (
-    DMEM_BASE : std_ulogic_vector(31 downto 0) := x"80000000"; -- memory base address
-    DMEM_SIZE : natural := 4*1024  -- processor-internal instruction memory size in bytes
-  );
-  port (
-    clk_i  : in  std_ulogic; -- global clock line
-    rden_i : in  std_ulogic; -- read enable
-    wren_i : in  std_ulogic; -- write enable
-    ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
-    addr_i : in  std_ulogic_vector(31 downto 0); -- address
-    data_i : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o  : out std_ulogic -- transfer acknowledge
-  );
-end neorv32_dmem;
+library iCE40UP;
+use iCE40UP.components.all; -- for device primitives
 
 architecture neorv32_dmem_rtl of neorv32_dmem is
 
+  -- advanced configuration --------------------------------------------------------------------------------
+  constant spram_sleep_mode_en_c : boolean := false; -- put DMEM into sleep mode when idle (for low power)
+  -- -------------------------------------------------------------------------------------------------------
+
   -- IO space: module base address --
   constant hi_abb_c : natural := 31; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(DMEM_SIZE); -- low address boundary bit
+  constant lo_abb_c : natural := index_size_f(64*1024); -- low address boundary bit
 
   -- local signals --
   signal acc_en : std_ulogic;
+  signal mem_cs : std_ulogic;
   signal rdata  : std_ulogic_vector(31 downto 0);
   signal rden   : std_ulogic;
-  signal addr   : std_ulogic_vector(index_size_f(DMEM_SIZE/4)-1 downto 0);
 
-  -- -------------------------------------------------------------------------------------------------------------- --
-  -- The memory (RAM) is built from 4 individual byte-wide memories b0..b3, since some synthesis tools have         --
-  -- problems with 32-bit memories that provide dedicated byte-enable signals AND/OR with multi-dimensional arrays. --
-  -- -------------------------------------------------------------------------------------------------------------- --
-
-  -- RAM - not initialized at all --
-  signal mem_ram_b0 : mem8_t(0 to DMEM_SIZE/4-1);
-  signal mem_ram_b1 : mem8_t(0 to DMEM_SIZE/4-1);
-  signal mem_ram_b2 : mem8_t(0 to DMEM_SIZE/4-1);
-  signal mem_ram_b3 : mem8_t(0 to DMEM_SIZE/4-1);
-
-  -- read data --
-  signal mem_ram_b0_rd, mem_ram_b1_rd, mem_ram_b2_rd, mem_ram_b3_rd : std_ulogic_vector(7 downto 0);
+  -- SPRAM signals --
+  signal spram_clk   : std_logic;
+  signal spram_addr  : std_logic_vector(13 downto 0);
+  signal spram_di_lo : std_logic_vector(15 downto 0);
+  signal spram_di_hi : std_logic_vector(15 downto 0);
+  signal spram_do_lo : std_logic_vector(15 downto 0);
+  signal spram_do_hi : std_logic_vector(15 downto 0);
+  signal spram_be_lo : std_logic_vector(03 downto 0);
+  signal spram_be_hi : std_logic_vector(03 downto 0);
+  signal spram_we    : std_logic;
+  signal spram_pwr_n : std_logic;
+  signal spram_cs    : std_logic;
 
 begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal DMEM (RAM, " & natural'image(DMEM_SIZE) & " bytes)." severity note;
+  assert not (DMEM_SIZE > 64*1024) report "DMEM has a fixed physical size of 64kB. Logical size must be less or equal." severity error;
 
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = DMEM_BASE(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= addr_i(index_size_f(DMEM_SIZE/4)+1 downto 2); -- word aligned
+  mem_cs <= acc_en and (rden_i or wren_i);
 
 
   -- Memory Access --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_access: process(clk_i)
+  dmem_spram_lo_inst : SP256K
+  port map (
+    AD       => spram_addr,  -- I
+    DI       => spram_di_lo, -- I
+    MASKWE   => spram_be_lo, -- I
+    WE       => spram_we,    -- I
+    CS       => spram_cs,    -- I
+    CK       => spram_clk,   -- I
+    STDBY    => '0',         -- I
+    SLEEP    => spram_pwr_n, -- I
+    PWROFF_N => '1',         -- I
+    DO       => spram_do_lo  -- O
+  );
+
+  dmem_spram_hi_inst : SP256K
+  port map (
+    AD       => spram_addr,  -- I
+    DI       => spram_di_hi, -- I
+    MASKWE   => spram_be_hi, -- I
+    WE       => spram_we,    -- I
+    CS       => spram_cs,    -- I
+    CK       => spram_clk,   -- I
+    STDBY    => '0',         -- I
+    SLEEP    => spram_pwr_n, -- I
+    PWROFF_N => '1',         -- I
+    DO       => spram_do_hi  -- O
+  );
+
+  -- access logic and signal type conversion --
+  spram_clk   <= std_logic(clk_i);
+  spram_addr  <= std_logic_vector(addr_i(13+2 downto 0+2));
+  spram_di_lo <= std_logic_vector(data_i(15 downto 00));
+  spram_di_hi <= std_logic_vector(data_i(31 downto 16));
+  spram_we    <= '1' when ((acc_en and wren_i) = '1') else '0'; -- global write enable
+  spram_cs    <= std_logic(mem_cs);
+  spram_be_lo <= std_logic(ben_i(1)) & std_logic(ben_i(1)) & std_logic(ben_i(0)) & std_logic(ben_i(0)); -- low byte write enable
+  spram_be_hi <= std_logic(ben_i(3)) & std_logic(ben_i(3)) & std_logic(ben_i(2)) & std_logic(ben_i(2)); -- high byte write enable
+  spram_pwr_n <= '0' when ((spram_sleep_mode_en_c = false) or (mem_cs = '1')) else '1'; -- LP mode disabled or IMEM selected
+  rdata       <= std_ulogic_vector(spram_do_hi) & std_ulogic_vector(spram_do_lo);
+
+  buffer_ff: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- this RAM style should not require "no_rw_check" attributes as the read-after-write behavior
-      -- is intended to be defined implicitly via the if-WRITE-else-READ construct
-      if (acc_en = '1') then -- reduce switching activity when not accessed
-        if (wren_i = '1') and (ben_i(0) = '1') then -- byte 0
-          mem_ram_b0(to_integer(unsigned(addr))) <= data_i(07 downto 00);
-        else
-          mem_ram_b0_rd <= mem_ram_b0(to_integer(unsigned(addr)));
-        end if;
-        if (wren_i = '1') and (ben_i(1) = '1') then -- byte 1
-          mem_ram_b1(to_integer(unsigned(addr))) <= data_i(15 downto 08);
-        else
-          mem_ram_b1_rd <= mem_ram_b1(to_integer(unsigned(addr)));
-        end if;
-        if (wren_i = '1') and (ben_i(2) = '1') then -- byte 2
-          mem_ram_b2(to_integer(unsigned(addr))) <= data_i(23 downto 16);
-        else
-          mem_ram_b2_rd <= mem_ram_b2(to_integer(unsigned(addr)));
-        end if;
-        if (wren_i = '1') and (ben_i(3) = '1') then -- byte 3
-          mem_ram_b3(to_integer(unsigned(addr))) <= data_i(31 downto 24);
-        else
-          mem_ram_b3_rd <= mem_ram_b3(to_integer(unsigned(addr)));
-        end if;
-      end if;
-    end if;
-  end process mem_access;
-
-
-  -- Bus Feedback ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  bus_feedback: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
+      ack_o <= mem_cs;
       rden  <= acc_en and rden_i;
-      ack_o <= acc_en and (rden_i or wren_i);
     end if;
-  end process bus_feedback;
-
-  -- pack --
-  rdata <= mem_ram_b3_rd & mem_ram_b2_rd & mem_ram_b1_rd & mem_ram_b0_rd;
+  end process buffer_ff;
 
   -- output gate --
   data_o <= rdata when (rden = '1') else (others => '0');

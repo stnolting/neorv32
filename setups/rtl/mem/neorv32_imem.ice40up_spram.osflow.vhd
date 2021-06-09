@@ -42,26 +42,8 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-library iCE40UP;
-use iCE40UP.components.all; -- for device primitives
-
-entity neorv32_imem is
-  generic (
-    IMEM_BASE    : std_ulogic_vector(31 downto 0) := x"00000000"; -- memory base address
-    IMEM_SIZE    : natural := 4*1024; -- processor-internal instruction memory size in bytes
-    IMEM_AS_IROM : boolean := false   -- implement IMEM as pre-initialized read-only memory?
-  );
-  port (
-    clk_i  : in  std_ulogic; -- global clock line
-    rden_i : in  std_ulogic; -- read enable
-    wren_i : in  std_ulogic; -- write enable
-    ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
-    addr_i : in  std_ulogic_vector(31 downto 0); -- address
-    data_i : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o  : out std_ulogic -- transfer acknowledge
-  );
-end neorv32_imem;
+library iCE40;
+use iCE40.components.all;
 
 architecture neorv32_imem_rtl of neorv32_imem is
 
@@ -108,32 +90,32 @@ begin
 
   -- Memory Access --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  imem_spram_lo_inst : SP256K
+  imem_spram_lo_inst : SB_SPRAM256KA
   port map (
-    AD       => spram_addr,  -- I
-    DI       => spram_di_lo, -- I
-    MASKWE   => spram_be_lo, -- I
-    WE       => spram_we,    -- I
-    CS       => spram_cs,    -- I
-    CK       => spram_clk,   -- I
-    STDBY    => '0',         -- I
-    SLEEP    => spram_pwr_n, -- I
-    PWROFF_N => '1',         -- I
-    DO       => spram_do_lo  -- O
+    ADDRESS    => spram_addr,  -- I
+    DATAIN     => spram_di_lo, -- I
+    MASKWREN   => spram_be_lo, -- I
+    WREN       => spram_we,    -- I
+    CHIPSELECT => spram_cs,    -- I
+    CLOCK      => spram_clk,   -- I
+    STANDBY    => '0',         -- I
+    SLEEP      => spram_pwr_n, -- I
+    POWEROFF   => '1',         -- I
+    DATAOUT    => spram_do_lo  -- O
   );
 
-  imem_spram_hi_inst : SP256K
+  imem_spram_hi_inst : SB_SPRAM256KA
   port map (
-    AD       => spram_addr,  -- I
-    DI       => spram_di_hi, -- I
-    MASKWE   => spram_be_hi, -- I
-    WE       => spram_we,    -- I
-    CS       => spram_cs,    -- I
-    CK       => spram_clk,   -- I
-    STDBY    => '0',         -- I
-    SLEEP    => spram_pwr_n, -- I
-    PWROFF_N => '1',         -- I
-    DO       => spram_do_hi  -- O
+    ADDRESS    => spram_addr,  -- I
+    DATAIN     => spram_di_hi, -- I
+    MASKWREN   => spram_be_hi, -- I
+    WREN       => spram_we,    -- I
+    CHIPSELECT => spram_cs,    -- I
+    CLOCK      => spram_clk,   -- I
+    STANDBY    => '0',         -- I
+    SLEEP      => spram_pwr_n, -- I
+    POWEROFF   => '1',         -- I
+    DATAOUT    => spram_do_hi  -- O
   );
 
   -- access logic and signal type conversion --

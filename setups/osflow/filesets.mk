@@ -5,9 +5,13 @@ NEORV32_PKG := $(RTL_CORE_SRC)/neorv32_package.vhd
 NEORV32_APP_SRC := \
   $(RTL_CORE_SRC)/neorv32_application_image.vhd \
 
+NEORV32_MEM_ENTITIES := \
+  $(RTL_CORE_SRC)/neorv32_dmem.entity.vhd \
+  $(RTL_CORE_SRC)/neorv32_imem.entity.vhd
+
 NEORV32_MEM_SRC := \
-  ../devices/ice40/neorv32_imem.ice40up_spram.vhd \
-  ../devices/ice40/neorv32_dmem.ice40up_spram.vhd
+  ../../rtl/mem/neorv32_dmem.ice40up_spram.osflow.vhd \
+  ../../rtl/mem/neorv32_imem.ice40up_spram.osflow.vhd
 
 NEORV32_CORE_SRC := \
   $(RTL_CORE_SRC)/neorv32_bootloader_image.vhd \
@@ -42,9 +46,9 @@ NEORV32_CORE_SRC := \
   $(RTL_CORE_SRC)/neorv32_wdt.vhd \
   $(RTL_CORE_SRC)/neorv32_wishbone.vhd
 
-NEORV32_SRC := ${NEORV32_PKG} ${NEORV32_APP_SRC} ${NEORV32_MEM_SRC} ${NEORV32_CORE_SRC}
+NEORV32_SRC := ${NEORV32_PKG} ${NEORV32_APP_SRC} ${NEORV32_MEM_ENTITIES} ${NEORV32_MEM_SRC} ${NEORV32_CORE_SRC}
 
 ICE40_SRC := \
-  ../devices/ice40/sb_ice40_components.vhd
+  ../devices/sb_ice40_components.vhd
 
 # Optionally NEORV32_VERILOG_SRC can be set to a list of Verilog sources
