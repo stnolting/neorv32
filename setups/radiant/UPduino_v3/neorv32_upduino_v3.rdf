@@ -111,10 +111,10 @@
         <Source name="../../../rtl/core/neorv32_imem.entity.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>
-        <Source name="neorv32_dmem.ice40up_spram.vhd" type="VHDL" type_short="VHDL">
+        <Source name="../rtl/mem/neorv32_dmem.ice40up_spram.radiant.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>
-        <Source name="neorv32_imem.ice40up_spram.vhd" type="VHDL" type_short="VHDL">
+        <Source name="../rtl/mem/neorv32_imem.ice40up_spram.radiant.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>
         <Source name="neorv32_upduino_v3_top.vhd" type="VHDL" type_short="VHDL">

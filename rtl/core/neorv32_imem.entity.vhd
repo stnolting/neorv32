@@ -1,9 +1,6 @@
 -- #################################################################################################
 -- # << NEORV32 - Processor-internal instruction memory (IMEM) >>                                  #
 -- # ********************************************************************************************* #
--- # This memory optionally includes the in-place executable image of the application. See the     #
--- # processor's documentary to get more information.                                              #
--- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
 -- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
