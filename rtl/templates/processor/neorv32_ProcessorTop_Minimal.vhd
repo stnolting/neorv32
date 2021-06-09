@@ -45,10 +45,10 @@ entity neorv32_ProcessorTop_Minimal is
     HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
 
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        : boolean := true;   -- implement atomic extension?
-    CPU_EXTENSION_RISCV_C        : boolean := true;   -- implement compressed extension?
+    CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
+    CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean := true;   -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
@@ -84,17 +84,13 @@ entity neorv32_ProcessorTop_Minimal is
     ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
     -- Processor peripherals --
-    IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
+    IO_MTIME_EN                  : boolean := false;  -- implement machine system timer (MTIME)?
     IO_PWM_NUM_CH                : natural := 3;      -- number of PWM channels to implement (0..60); 0 = disabled
-    IO_WDT_EN                    : boolean := true    -- implement watch dog timer (WDT)?
+    IO_WDT_EN                    : boolean := false   -- implement watch dog timer (WDT)?
   );
   port (
     clk_i      : in  std_logic;
     rstn_i     : in  std_logic;
-
-    -- GPIO (available if IO_GPIO_EN = true) --
-    gpio_o     : out std_ulogic_vector(3 downto 0);
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o      : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0)
@@ -103,16 +99,7 @@ end entity;
 
 architecture neorv32_ProcessorTop_Minimal_rtl of neorv32_ProcessorTop_Minimal is
 
-  -- internal IO connection --
-  signal con_gpio_o : std_ulogic_vector(31 downto 0);
-
 begin
-
-  -- IO Connection --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-
-  -- GPIO --
-  gpio_o <= con_gpio_o(3 downto 0);
 
   -- The core of the problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -171,7 +158,7 @@ begin
     MEM_EXT_TIMEOUT              => 0,           -- cycles after a pending bus access auto-terminates (0 = disabled)
 
     -- Processor peripherals --
-    IO_GPIO_EN                   => IO_GPIO_EN,    -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_EN                   => false,         -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  => IO_MTIME_EN,   -- implement machine system timer (MTIME)?
     IO_UART0_EN                  => false,         -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART1_EN                  => false,         -- implement secondary universal asynchronous receiver/transmitter (UART1)?
@@ -217,7 +204,7 @@ begin
     fencei_o    => open,                         -- indicates an executed FENCEI operation
 
     -- GPIO (available if IO_GPIO_EN = true) --
-    gpio_o      => con_gpio_o,                   -- parallel output
+    gpio_o      => open,                         -- parallel output
     gpio_i      => (others => '0'),              -- parallel input
 
     -- primary UART0 (available if IO_UART0_EN = true) --
