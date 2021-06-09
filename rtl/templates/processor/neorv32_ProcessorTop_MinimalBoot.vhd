@@ -41,11 +41,9 @@ library neorv32;
 entity neorv32_ProcessorTop_MinimalBoot is
   generic (
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
+    BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
     USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000";  -- custom user code
     HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
-
-    -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger?
 
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := true;   -- implement atomic extension?
@@ -130,12 +128,12 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,  -- clock frequency of clk_i in Hz
-    BOOTLOADER_EN                => true,             -- implement processor-internal bootloader?
+    BOOTLOADER_EN                => BOOTLOADER_EN,    -- implement processor-internal bootloader?
     USER_CODE                    => USER_CODE,        -- custom user code
     HW_THREAD_ID                 => HW_THREAD_ID,     -- hardware thread id (32-bit)
 
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN          => ON_CHIP_DEBUGGER_EN,  -- implement on-chip debugger?
+    ON_CHIP_DEBUGGER_EN          => false,  -- implement on-chip debugger?
 
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,         -- implement atomic extension?
