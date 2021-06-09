@@ -33,6 +33,11 @@ jobs:
           }
           - {
             board: Fomu,
+            design: 'Minimal',
+            bitstream: neorv32_Fomu_pvt_Minimal.bit
+          }
+          - {
+            board: Fomu,
             design: 'MinimalBoot',
             bitstream: neorv32_Fomu_pvt_MinimalBoot.bit
           }
