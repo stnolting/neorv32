@@ -7,7 +7,7 @@ on:
     - 'rtl/**'
   pull_request:
     paths:
-    - 'setup/**'
+    - 'setups/**'
     - 'rtl/**'
   schedule:
     - cron: '0 0 * * 5'
