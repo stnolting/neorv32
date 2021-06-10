@@ -21,6 +21,7 @@ sw/image_gen/image_gen.exe
 /docs/doxygen_build/
 /docs/.asciidoctor/
 /docs/public/
+/docs/figures/diag-*.svg
 
 # compiled ghdl stuff
 *.cf
