@@ -94,20 +94,10 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- simulation uart0 receiver --
   signal uart0_txd         : std_ulogic; -- local loop-back
   signal uart0_cts         : std_ulogic; -- local loop-back
-  signal uart0_rx_sync     : std_ulogic_vector(04 downto 0) := (others => '1');
-  signal uart0_rx_busy     : std_ulogic := '0';
-  signal uart0_rx_sreg     : std_ulogic_vector(08 downto 0) := (others => '0');
-  signal uart0_rx_baud_cnt : real;
-  signal uart0_rx_bitcnt   : natural;
 
   -- simulation uart1 receiver --
   signal uart1_txd         : std_ulogic; -- local loop-back
   signal uart1_cts         : std_ulogic; -- local loop-back
-  signal uart1_rx_sync     : std_ulogic_vector(04 downto 0) := (others => '1');
-  signal uart1_rx_busy     : std_ulogic := '0';
-  signal uart1_rx_sreg     : std_ulogic_vector(08 downto 0) := (others => '0');
-  signal uart1_rx_baud_cnt : real;
-  signal uart1_rx_bitcnt   : natural;
 
   -- gpio --
   signal gpio : std_ulogic_vector(31 downto 0);
@@ -176,6 +166,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal ext_mem_a, ext_mem_b, ext_mem_c : ext_mem_t;
 
 begin
+
 
   -- Clock/Reset Generator ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -316,109 +307,27 @@ begin
   twi_scl <= 'H';
   twi_sda <= 'H';
 
-
-  -- Console UART0 Receiver -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  uart0_rx_console: process(clk_gen)
-    variable i : integer;
-    variable l : line;
+  uart_checkers : block is
   begin
-    -- "UART" --
-    if rising_edge(clk_gen) then
-      -- synchronizer --
-      uart0_rx_sync <= uart0_rx_sync(3 downto 0) & uart0_txd;
-      -- arbiter --
-      if (uart0_rx_busy = '0') then -- idle
-        uart0_rx_busy     <= '0';
-        uart0_rx_baud_cnt <= round(0.5 * uart0_baud_val_c);
-        uart0_rx_bitcnt   <= 9;
-        if (uart0_rx_sync(4 downto 1) = "1100") then -- start bit? (falling edge)
-          uart0_rx_busy <= '1';
-        end if;
-      else
-        if (uart0_rx_baud_cnt <= 0.0) then
-          if (uart0_rx_bitcnt = 1) then
-            uart0_rx_baud_cnt <= round(0.5 * uart0_baud_val_c);
-          else
-            uart0_rx_baud_cnt <= round(uart0_baud_val_c);
-          end if;
-          if (uart0_rx_bitcnt = 0) then
-            uart0_rx_busy <= '0'; -- done
-            i := to_integer(unsigned(uart0_rx_sreg(8 downto 1)));
-
-            if (i < 32) or (i > 32+95) then -- printable char?
-              report "NEORV32_TB_UART0.TX: (" & integer'image(i) & ")"; -- print code
-            else
-              report "NEORV32_TB_UART0.TX: " & character'val(i); -- print ASCII
-            end if;
-
-            if (i = 10) then -- Linux line break
-              writeline(file_uart0_tx_out, l);
-            elsif (i /= 13) then -- Remove additional carriage return
-              write(l, character'val(i));
-            end if;
-          else
-            uart0_rx_sreg   <= uart0_rx_sync(4) & uart0_rx_sreg(8 downto 1);
-            uart0_rx_bitcnt <= uart0_rx_bitcnt - 1;
-          end if;
-        else
-          uart0_rx_baud_cnt <= uart0_rx_baud_cnt - 1.0;
-        end if;
-      end if;
-    end if;
-  end process uart0_rx_console;
+    uart0_checker: entity work.uart_rx
+      generic map (
+        name => "uart0",
+        expected => nul & nul & cr & lf & "<< PROCESSOR CHECK >>" & cr & lf & "build: ",
+        uart_baud_val_c => uart0_baud_val_c)
+      port map (
+        clk => clk_gen,
+        uart_txd => uart0_txd);
 
 
-  -- Console UART1 Receiver -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  uart1_rx_console: process(clk_gen)
-    variable i : integer;
-    variable l : line;
-  begin
-    -- "UART" --
-    if rising_edge(clk_gen) then
-      -- synchronizer --
-      uart1_rx_sync <= uart1_rx_sync(3 downto 0) & uart1_txd;
-      -- arbiter --
-      if (uart1_rx_busy = '0') then -- idle
-        uart1_rx_busy     <= '0';
-        uart1_rx_baud_cnt <= round(0.5 * uart1_baud_val_c);
-        uart1_rx_bitcnt   <= 9;
-        if (uart1_rx_sync(4 downto 1) = "1100") then -- start bit? (falling edge)
-          uart1_rx_busy <= '1';
-        end if;
-      else
-        if (uart1_rx_baud_cnt <= 0.0) then
-          if (uart1_rx_bitcnt = 1) then
-            uart1_rx_baud_cnt <= round(0.5 * uart1_baud_val_c);
-          else
-            uart1_rx_baud_cnt <= round(uart1_baud_val_c);
-          end if;
-          if (uart1_rx_bitcnt = 0) then
-            uart1_rx_busy <= '0'; -- done
-            i := to_integer(unsigned(uart1_rx_sreg(8 downto 1)));
-
-            if (i < 32) or (i > 32+95) then -- printable char?
-              report "NEORV32_TB_UART1.TX: (" & integer'image(i) & ")"; -- print code
-            else
-              report "NEORV32_TB_UART1.TX: " & character'val(i); -- print ASCII
-            end if;
-
-            if (i = 10) then -- Linux line break
-              writeline(file_uart1_tx_out, l);
-            elsif (i /= 13) then -- Remove additional carriage return
-              write(l, character'val(i));
-            end if;
-          else
-            uart1_rx_sreg   <= uart1_rx_sync(4) & uart1_rx_sreg(8 downto 1);
-            uart1_rx_bitcnt <= uart1_rx_bitcnt - 1;
-          end if;
-        else
-          uart1_rx_baud_cnt <= uart1_rx_baud_cnt - 1.0;
-        end if;
-      end if;
-    end if;
-  end process uart1_rx_console;
+    uart1_checker: entity work.uart_rx
+      generic map (
+        name => "uart1",
+        expected => nul & nul & etx,
+        uart_baud_val_c => uart1_baud_val_c)
+      port map (
+        clk => clk_gen,
+        uart_txd => uart1_txd);
+  end block;
 
 
   -- Wishbone Fabric ------------------------------------------------------------------------
