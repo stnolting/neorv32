@@ -1,3 +1,3 @@
-vivado*
-.Xil
-work/*
+/vivado*
+/.Xil
+/work/*
