@@ -15,18 +15,18 @@ RUN_TARGET=\
 	echo "copying/using SIM-only IMEM (ROM!)"; \
 	rm -f $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
 	cp -f $(NEORV32_LOCAL_COPY)/sim/rtl_modules/neorv32_imem.vhd $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
-	sed -i '/CPU_EXTENSION_RISCV_A/c\CPU_EXTENSION_RISCV_A  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.vhd; \
-	sed -i '/CPU_EXTENSION_RISCV_C/c\CPU_EXTENSION_RISCV_C  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.vhd; \
-	sed -i '/CPU_EXTENSION_RISCV_E/c\CPU_EXTENSION_RISCV_E  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.vhd; \
-	sed -i '/CPU_EXTENSION_RISCV_M/c\CPU_EXTENSION_RISCV_M  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.vhd; \
-	sed -i '/CPU_EXTENSION_RISCV_U/c\CPU_EXTENSION_RISCV_U  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.vhd; \
-	sed -i '/CPU_EXTENSION_RISCV_Zicsr/c\CPU_EXTENSION_RISCV_Zicsr  => true, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.vhd; \
-	sed -i '/CPU_EXTENSION_RISCV_Zifencei/c\CPU_EXTENSION_RISCV_Zifencei  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.vhd; \
-	sed -i '/constant ext_imem_c/c\constant ext_imem_c : boolean := false; -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.vhd; \
-	sed -i '/signal ext_ram_a : ext_mem_a_ram_t/c\signal ext_ram_a : ext_mem_a_ram_t; -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.vhd; \
-	sed -i '/MEM_INT_IMEM_USE/c\MEM_INT_IMEM_USE  => true, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.vhd; \
-	sed -i '/MEM_INT_IMEM_SIZE/c\MEM_INT_IMEM_SIZE  => 2*1024*1024, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.vhd; \
-	sed -i '/MEM_INT_IMEM_ROM/c\MEM_INT_IMEM_ROM  => true, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.vhd; \
+	sed -i '/CPU_EXTENSION_RISCV_A/c\CPU_EXTENSION_RISCV_A  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_simple_tb.vhd; \
+	sed -i '/CPU_EXTENSION_RISCV_C/c\CPU_EXTENSION_RISCV_C  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_simple_tb.vhd; \
+	sed -i '/CPU_EXTENSION_RISCV_E/c\CPU_EXTENSION_RISCV_E  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_simple_tb.vhd; \
+	sed -i '/CPU_EXTENSION_RISCV_M/c\CPU_EXTENSION_RISCV_M  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_simple_tb.vhd; \
+	sed -i '/CPU_EXTENSION_RISCV_U/c\CPU_EXTENSION_RISCV_U  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_simple_tb.vhd; \
+	sed -i '/CPU_EXTENSION_RISCV_Zicsr/c\CPU_EXTENSION_RISCV_Zicsr  => true, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_simple_tb.vhd; \
+	sed -i '/CPU_EXTENSION_RISCV_Zifencei/c\CPU_EXTENSION_RISCV_Zifencei  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_simple_tb.vhd; \
+	sed -i '/constant ext_imem_c/c\constant ext_imem_c : boolean := false; -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_simple_tb.vhd; \
+	sed -i '/signal ext_ram_a : ext_mem_a_ram_t/c\signal ext_ram_a : ext_mem_a_ram_t; -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_simple_tb.vhd; \
+	sed -i '/MEM_INT_IMEM_USE/c\MEM_INT_IMEM_USE  => true, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_simple_tb.vhd; \
+	sed -i '/MEM_INT_IMEM_SIZE/c\MEM_INT_IMEM_SIZE  => 2*1024*1024, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_simple_tb.vhd; \
+	sed -i '/MEM_INT_IMEM_ROM/c\MEM_INT_IMEM_ROM  => true, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_simple_tb.vhd; \
 	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led main.elf; \
 	cp -f $< $(NEORV32_LOCAL_COPY)/sw/example/blink_led/main.elf; \
 	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led main.bin; \

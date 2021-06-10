@@ -4,8 +4,8 @@
 The following tasks are executed by the device makefiles:
 
 * replace the original processor's IMEM rtl file by a simulation-optimized IMEM (ROM!)
-* `sed` command is used to modify the default testbench (`neorv32/sim/neorv32_tb.vhd`):
-  * enable/disable the required `CPU_EXTENSION_RISCV_xxx` VHDL configuration generics in the testbench (`neorv32/sim/neorv32_tb.vhd`)
+* `sed` command is used to modify the default testbench (`neorv32/sim/neorv32_simple_tb.vhd`):
+  * enable/disable the required `CPU_EXTENSION_RISCV_xxx` VHDL configuration generics in the testbench (`neorv32/sim/neorv32_simple_tb.vhd`)
   * configure the processor memory configuration (use internal IMEM, IMEM as ROM, IMEM size of 2MB)
 * compile test code and install application image to processor's `rtl/core` folder
   * compilation uses the `link.imem_rom.ld` linker script as default; code (the test code) is executed from IMEM (which is read-only); data including signature is stored to DMEM (RAM)

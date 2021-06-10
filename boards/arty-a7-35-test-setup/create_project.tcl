@@ -23,7 +23,7 @@ set_property library neorv32 [get_files [glob ./../../rtl/core/*.vhd]]
 add_files [glob ./../../rtl/top_templates/neorv32_test_setup.vhd]
 
 # add source files: simulation-only
-add_files -fileset sim_1 ./../../sim/neorv32_tb.vhd
+add_files -fileset sim_1 ./../../sim/neorv32_simple_tb.vhd
 
 # add source files: constraints
 add_files -fileset constrs_1 [glob ./*.xdc]

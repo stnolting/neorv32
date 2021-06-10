@@ -14,8 +14,8 @@ endif
 RUN_TARGET=\
 	cd $(work_dir_isa); \
 	rm -f $(work_dir_isa)/*.out; \
-	sed -i '/CPU_EXTENSION_RISCV_Zicsr/c\  CPU_EXTENSION_RISCV_Zicsr => true, -- MOD. BY RISCV-COMPL. TEST SCRIPT' $(NEORV32_HOME)/sim/neorv32_tb.vhd; \
-	sed -i '/CPU_EXTENSION_RISCV_Zifencei/c\  CPU_EXTENSION_RISCV_Zifencei => true, -- MOD. BY RISCV-COMPL. TEST SCRIPT' $(NEORV32_HOME)/sim/neorv32_tb.vhd; \
+	sed -i '/CPU_EXTENSION_RISCV_Zicsr/c\  CPU_EXTENSION_RISCV_Zicsr => true, -- MOD. BY RISCV-COMPL. TEST SCRIPT' $(NEORV32_HOME)/sim/neorv32_simple_tb.vhd; \
+	sed -i '/CPU_EXTENSION_RISCV_Zifencei/c\  CPU_EXTENSION_RISCV_Zifencei => true, -- MOD. BY RISCV-COMPL. TEST SCRIPT' $(NEORV32_HOME)/sim/neorv32_simple_tb.vhd; \
 	make -C $(NEORV32_HOME)/sw/example/blink_led main.elf; \
 	cp -f $< $(NEORV32_HOME)/sw/example/blink_led/main.elf; \
 	make -C $(NEORV32_HOME)/sw/example/blink_led main.bin; \
