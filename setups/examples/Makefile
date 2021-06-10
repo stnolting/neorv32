@@ -1,6 +1,6 @@
-OSFLOW := ../boards/osflow
-EXAMPLES := ../../../examples
-TEMPLATES := ../../../../rtl/templates
+OSFLOW := ../osflow
+EXAMPLES := ../../examples
+TEMPLATES := ../../../rtl/templates
 MV := mv
 
 TASK := clean $(BITSTREAM)

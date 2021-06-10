@@ -1,4 +1,4 @@
-RTL_CORE_SRC := ../../../../rtl/core
+RTL_CORE_SRC := ../../../rtl/core
 
 NEORV32_PKG := $(RTL_CORE_SRC)/neorv32_package.vhd
 

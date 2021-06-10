@@ -7,7 +7,7 @@ on:
     - 'rtl/**'
   pull_request:
     paths:
-    - 'setup/**'
+    - 'setups/**'
     - 'rtl/**'
   schedule:
     - cron: '0 0 * * 5'
@@ -51,4 +51,4 @@ jobs:
         name: ${{ matrix.board }}-${{ matrix.design }}
         path: |
           setups/examples/${{ matrix.bitstream }}
-          setups/boards/osflow/${{ matrix.board }}/*-report.txt
+          setups/osflow/${{ matrix.board }}/*-report.txt
