@@ -125,8 +125,8 @@ The following steps are required to generate a bitstream for your FPGA board. If
 NEORV32 processor in simulation only, the following steps might also apply.
 
 [TIP]
-Check out the example setups in the `setup` folder  (@GitHub: https://github.com/stnolting/neorv32/tree/master/setups),
-which provides script-based demo projects for various FPGA boards and toolchains.
+Check out the example setups in the `setups` folder (@GitHub: https://github.com/stnolting/neorv32/tree/master/setups),
+which provides (script-based) demo setups for various FPGA boards and toolchains.
 
 In this tutorial we will use a test implementation of the processor – using many of the processor's optional
 modules but just propagating the minimal signals to the outer world. Hence, this guide is intended as
