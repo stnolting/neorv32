@@ -34,6 +34,10 @@ print('::set-output name=matrix::' + str([
   'design': 'MinimalBoot',
   'bitstream': 'neorv32_iCESugar_MinimalBoot.bit'
 }, {
+  'board': 'TinyFPGA_BX',
+  'design': 'MinimalBoot',
+  'bitstream': 'neorv32_TinyFPGA_BX_MinimalBoot.bit'
+}, {
   'board': 'OrangeCrab',
   'design': 'MinimalBoot',
   'bitstream': 'neorv32_OrangeCrab_r02-25F_MinimalBoot.bit'
