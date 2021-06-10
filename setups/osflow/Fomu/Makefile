@@ -46,6 +46,6 @@ load: $(IMPL).dfu
 
 # Cleanup the generated files.
 clean:
-	rm -rf *.cf ${IMPL}.{asc,json} *.history *-report.txt *.bit *.dfu
+	rm -rf *.{asc,bit,cf,dfu,history,json,o} *-report.txt
 
 .PHONY: clean

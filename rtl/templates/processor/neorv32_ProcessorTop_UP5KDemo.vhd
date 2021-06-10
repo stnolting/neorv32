@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - Example setup for boards with UP5K devices >>                         #
+-- # << NEORV32 - Example setup for boards with UP5K devices >>                                    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -99,7 +99,7 @@ entity neorv32_ProcessorTop_UP5KDemo is
     clk_i       : in  std_logic;
     rstn_i      : in  std_logic;
 
-    -- GPIO --
+    -- GPIO (available if IO_GPIO_EN = true) --
     gpio_i      : in  std_ulogic_vector(3 downto 0);
     gpio_o      : out std_ulogic_vector(3 downto 0);
 

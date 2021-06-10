@@ -21,14 +21,26 @@ run:
 	$(MV) $(OSFLOW)/$(BOARD)/$(BITSTREAM) ./
 
 Fomu:
+ifeq ($(DESIGN),Minimal)
+	$(eval IMEM_SRC := ../../../rtl/core/neorv32_imem.vhd)
+else
+	$(eval IMEM_SRC := ../devices/ice40/neorv32_imem.ice40up_spram.vhd)
+endif
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(FOMU_REV)_$(DESIGN).bit \
+	  NEORV32_MEM_SRC="${IMEM_SRC} ../devices/ice40/neorv32_dmem.ice40up_spram.vhd" \
 	  run
 
 UPduino_v3:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
 	  run
+
+Minimal:
+	$(MAKE) \
+	  DESIGN=$@ \
+	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_Minimal.vhd \
+	  $(BOARD)
 
 MinimalBoot:
 	$(MAKE) \

@@ -31,6 +31,21 @@ jobs:
             design: 'UP5KDemo',
             bitstream: neorv32_UPduino_v3_UP5KDemo.bin
           }
+          - {
+            board: Fomu,
+            design: 'Minimal',
+            bitstream: neorv32_Fomu_pvt_Minimal.bit
+          }
+          - {
+            board: Fomu,
+            design: 'MinimalBoot',
+            bitstream: neorv32_Fomu_pvt_MinimalBoot.bit
+          }
+          - {
+            board: Fomu,
+            design: 'UP5KDemo',
+            bitstream: neorv32_Fomu_pvt_UP5KDemo.bit
+          }
     name: '🛳️ All-in-one | ${{ matrix.board }} | ${{ matrix.design }}'
     env:
       GHDL_PLUGIN_MODULE: ghdl
