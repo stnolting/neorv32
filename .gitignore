@@ -28,4 +28,4 @@ sw/image_gen/image_gen.exe
 *.o
 
 # example bitstreams
-/examples/*.bit
+/setups/examples/*.bit
