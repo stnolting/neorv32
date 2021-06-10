@@ -60,5 +60,8 @@ jobs:
         with:
           cmd: ./sim/run.py -v
 
+      - name: '🔧 Clean simulation artifacts'
+        run: sudo rm *.testbench_uart?.out *.data.out *.text.out
+
       - name: '⚙️ Run Processor Hardware Tests with shell script'
         run: ./sim/ghdl/ghdl_sim.sh
