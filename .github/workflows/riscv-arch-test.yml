@@ -34,4 +34,4 @@ jobs:
           backend: gcc
 
       - name: '⚙️ Run RISC-V Architecture Tests'
-        run: /bin/bash -c "chmod u+x ./riscv-arch-test/run_riscv_arch_test.sh && ./riscv-arch-test/run_riscv_arch_test.sh"
+        run: ./riscv-arch-test/run_riscv_arch_test.sh
