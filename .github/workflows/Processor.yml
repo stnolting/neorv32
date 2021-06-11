@@ -58,7 +58,7 @@ jobs:
       - name: '⚙️ Run Processor Hardware Tests with VUnit'
         uses: VUnit/vunit_action@master
         with:
-          cmd: ./sim/run.py -v
+          cmd: ./sim/run.py --ci-mode -v
 
       - name: '🔧 Clean simulation artifacts'
         run: sudo rm *.testbench_uart?.out *.data.out *.text.out
