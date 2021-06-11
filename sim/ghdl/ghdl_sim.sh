@@ -40,7 +40,7 @@ ghdl -i --work=neorv32 rtl/core/*.vhd
 ghdl -i --work=neorv32 rtl/templates/processor/*.vhd
 ghdl -i --work=neorv32 rtl/templates/system/*.vhd
 ghdl -i --work=neorv32 sim/neorv32_tb.simple.vhd
-ghdl -i --work=neorv32 sim/uart_rx.vhd
+ghdl -i --work=neorv32 sim/uart_rx.simple.vhd
 
 # Prepare simulation output files for UART0 and UART 1
 # - Testbench receiver log file (neorv32.testbench_uart?.out)

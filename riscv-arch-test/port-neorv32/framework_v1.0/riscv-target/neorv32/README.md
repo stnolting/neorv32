@@ -3,7 +3,7 @@
 The NEORV32 Processor is simulated using the its default testbench.
 
 Each architecture-specific makefile in the `device` folder uses an _uncool hack_: `sed` is used to
-enable/disable the required `CPU_EXTENSION_RISCV_xxx` VHDL configuration generics in the testbench (`neorv32/sim/neorv32_tb.vhd`).
+enable/disable the required `CPU_EXTENSION_RISCV_xxx` VHDL configuration generics in the testbench (`neorv32/sim/neorv32_tb.simple.vhd`).
 
 For instance, the `rv32i` tests requires the `C`-extensions to be disabled - which is enabled by default in the testbench.
 
