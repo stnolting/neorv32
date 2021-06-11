@@ -1712,8 +1712,7 @@ begin
   trap_ctrl.irq_fire <= (or_reduce_f(trap_ctrl.irq_buf) and csr.mstatus_mie and trap_ctrl.db_irq_en) or trap_ctrl.db_irq_fire; -- interrupts CAN be masked
 
   -- debug mode (entry) interrupts --
-  trap_ctrl.db_irq_en <= '1' when (CPU_EXTENSION_RISCV_DEBUG = false) else
-                         '0' when (debug_ctrl.running = '1') or (csr.dcsr_step = '1') else '1'; -- no interrupts when IN debug mode or IN single-step mode
+  trap_ctrl.db_irq_en   <= '0' when (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) else '1'; -- no interrupts when IN debug mode or IN single-step mode
   trap_ctrl.db_irq_fire <= (trap_ctrl.irq_buf(interrupt_db_step_c) or trap_ctrl.irq_buf(interrupt_db_halt_c)) when (CPU_EXTENSION_RISCV_DEBUG = true) else '0'; -- "NMI" for debug mode entry
 
   -- acknowledge mask output --
@@ -2197,7 +2196,7 @@ begin
 
             end if;
 
-            -- trap enter: write dpc and dcsr --
+            -- DEBUG MODE (trap) enter: write dpc and dcsr --
             -- --------------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.cause(5) = '1') and (debug_ctrl.running = '0') then -- debug mode entry exception
 
