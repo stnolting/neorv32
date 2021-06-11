@@ -300,10 +300,9 @@ begin
   twi_scl <= 'H';
   twi_sda <= 'H';
 
-  uart0_checker: entity work.uart_rx
+  uart0_checker: entity work.uart_rx_simple
     generic map (
       name => "uart0",
-      expected => nul & nul & cr & lf & "<< PROCESSOR CHECK >>" & cr & lf & "build: ",
       uart_baud_val_c => uart0_baud_val_c)
     port map (
       clk => clk_gen,

@@ -5,13 +5,9 @@ use ieee.math_real.all;
 
 use std.textio.all;
 
-library vunit_lib;
-context vunit_lib.vunit_context;
-
-entity uart_rx is
+entity uart_rx_simple is
   generic (
     name : string;
-    expected : string;
     uart_baud_val_c : real);
 
   port (
@@ -20,7 +16,7 @@ entity uart_rx is
     );
 end entity;
 
-architecture a of uart_rx is
+architecture a of uart_rx_simple is
   signal uart_rx_sync : std_ulogic_vector(04 downto 0) := (others => '1');
   signal uart_rx_busy : std_ulogic := '0';
   signal uart_rx_sreg : std_ulogic_vector(08 downto 0) := (others => '0');
@@ -33,7 +29,6 @@ begin
   uart_rx_console : process(clk)
     variable i : integer;
     variable l : line;
-    variable expected_idx : positive := 1;
   begin
     -- "UART" --
     if rising_edge(clk) then
@@ -58,14 +53,10 @@ begin
             uart_rx_busy <= '0';  -- done
             i := to_integer(unsigned(uart_rx_sreg(8 downto 1)));
 
-            check(expected_idx <= expected'length, "Extra characters received");
-            check_equal(character'val(i), expected(expected_idx), result("for " & name & ".tx"));
-            expected_idx := expected_idx + 1;
-
             if (i < 32) or (i > 32+95) then  -- printable char?
-              info(name & ".tx: (" & integer'image(i) & ")");  -- print code
+              report name & ".tx: (" & integer'image(i) & ")";  -- print code
             else
-              info(name & ".tx: " & character'val(i));  -- print ASCII
+              report name & ".tx: " & character'val(i);  -- print ASCII
             end if;
 
             if (i = 10) then  -- Linux line break
