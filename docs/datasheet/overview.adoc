@@ -19,8 +19,8 @@ default toolchain (https://github.com/stnolting/riscv-gcc-prebuilt[prebuilt tool
 The project's change log is available in https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md[CHANGELOG.md]
 in the root directory of the NEORV32 repository. Please also check out the <<_legal>> section.
 
-:sectnums!:
-=== Structure
+
+**Structure**
 
 Chapter <<_neorv32_processor_soc>>
 
@@ -29,7 +29,7 @@ memories and caches, internal bus architecture, external bus interface
 
 Chapter <<_neorv32_central_processing_unit_cpu>>
 
-* instruction set(s) and extensions, instruction timing, control ans status registers, traps, exceptions and interrupts,
+* instruction set(s) and extensions, instruction timing, control and status registers, traps, exceptions and interrupts,
 hardware execution safety, native bus interface
 
 Chapter <<_on_chip_debugger_ocd>>
