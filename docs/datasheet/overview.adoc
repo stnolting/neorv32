@@ -40,7 +40,7 @@ Chapter <<_software_framework>>
 
 * core libraries, bootloader, makefiles, runtime environment
 
-Chapter <<_lets_get_it_started>>
+Additional documentation: **https://stnolting.github.io/neorv32/ug[User Guide]**
 
 * toolchain installation and setup, hardware setup, software setup, application compilation, simulating the processor
 debugging using the on-chip debugger
