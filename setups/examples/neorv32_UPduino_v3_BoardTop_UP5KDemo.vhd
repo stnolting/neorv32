@@ -36,8 +36,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library iCE40UP;
-use iCE40UP.components.all; -- for device primitives and macros
+library iCE40;
+use iCE40.components.all; -- for device primitives and macros
 
 entity neorv32_UPduino_v3_BoardTop_UP5KDemo is
   port (
