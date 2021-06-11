@@ -42,8 +42,8 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-library iCE40UP;
-use iCE40UP.components.all;
+library iCE40;
+use iCE40.components.all;
 
 entity neorv32_dmem is
   generic (

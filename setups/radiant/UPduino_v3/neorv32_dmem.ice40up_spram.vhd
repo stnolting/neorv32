@@ -42,8 +42,8 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-library iCE40UP;
-use iCE40UP.components.all;
+library iCE40;
+use iCE40.components.all;
 
 entity neorv32_dmem is
   generic (
@@ -96,7 +96,7 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert not (DMEM_SIZE > 64*1024) report "DMEM has a fixed physical size of 64kB. Logical size must be less or equal." severity error;
-  
+
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
