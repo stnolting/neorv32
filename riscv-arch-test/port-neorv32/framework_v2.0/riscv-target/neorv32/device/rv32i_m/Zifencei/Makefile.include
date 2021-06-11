@@ -31,6 +31,7 @@ RUN_TARGET=\
 	cp -f $< $(NEORV32_LOCAL_COPY)/sw/example/blink_led/main.elf; \
 	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led main.bin; \
 	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led install; \
+	touch $(work_dir_isa)/neorv32.uart0.sim_mode.data.out; \
 	sh $(NEORV32_LOCAL_COPY)/sim/ghdl/ghdl_sim.sh --stop-time=$(SIM_TIME) >> /dev/null; \
 	cp $(work_dir_isa)/neorv32.uart0.sim_mode.data.out $(*).signature.output;
 
