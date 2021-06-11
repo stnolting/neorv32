@@ -424,29 +424,24 @@ int main() {
   }
 
 
-//// ----------------------------------------------------------
-//// Test FENCE.I instruction (instruction buffer / i-cache clear & reload)
-//// ----------------------------------------------------------
-//neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-//neorv32_uart_printf("[%i] FENCE.I: ", cnt_test);
-//
-//// check if implemented
-//if (neorv32_cpu_csr_read(CSR_MZEXT) & (1 << CSR_MZEXT_ZIFENCEI)) {
-//  cnt_test++;
-//
-//  asm volatile ("fence.i");
-//
-//  // make sure there was no exception (and that the cpu did not crash...)
-//  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
-//    test_ok();
-//  }
-//  else {
-//    test_fail();
-//  }
-//}
-//else {
-//  neorv32_uart_printf("skipped (not implemented)\n");
-//}
+  // ----------------------------------------------------------
+  // Test FENCE.I instruction (instruction buffer / i-cache clear & reload)
+  // if Zifencei is not implemented FENCE.I should execute as NOP
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_uart_printf("[%i] FENCE.I: ", cnt_test);
+
+  cnt_test++;
+
+  asm volatile ("fence.i");
+
+  // make sure there was no exception (and that the cpu did not crash...)
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
 
 
   // ----------------------------------------------------------
