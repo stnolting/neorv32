@@ -39,7 +39,8 @@ echo ""
 ghdl -i --work=neorv32 rtl/core/*.vhd
 ghdl -i --work=neorv32 rtl/templates/processor/*.vhd
 ghdl -i --work=neorv32 rtl/templates/system/*.vhd
-ghdl -i --work=neorv32 sim/*.vhd
+ghdl -i --work=neorv32 sim/neorv32_tb.simple.vhd
+ghdl -i --work=neorv32 sim/uart_rx.vhd
 
 # Prepare simulation output files for UART0 and UART 1
 # - Testbench receiver log file (neorv32.testbench_uart?.out)
@@ -56,7 +57,7 @@ for item in \
 done
 
 # Run simulation
-ghdl -m --work=neorv32 neorv32_tb
-ghdl -r --work=neorv32 neorv32_tb --max-stack-alloc=0 --ieee-asserts=disable --assert-level=error $SIM_CONFIG
+ghdl -m --work=neorv32 neorv32_tb_simple
+ghdl -r --work=neorv32 neorv32_tb_simple --max-stack-alloc=0 --ieee-asserts=disable --assert-level=error $SIM_CONFIG
 
 cat neorv32.uart0.sim_mode.text.out | grep "CPU TEST COMPLETED SUCCESSFULLY!"
