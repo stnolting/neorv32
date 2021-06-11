@@ -6,7 +6,19 @@ image::riscv_logo.png[width=350,align=center]
 **Key Features**
 
 * 32-bit pipelined/multi-cycle in-order `rv32` RISC-V CPU
-* Optional RISC-V extensions: `rv32[i/e][m][a][c][u]` + `[Zfinx][Zicsr][Zifencei]` + `[debug_mode]` (for on-chip debugging)
+* Optional RISC-V extensions:
+** `A` - atomic memory access operations
+** `C` - 16-bit compressed instructions
+** `I` - integer base ISA (always enabled)
+** `E` - embedded CPU version (reduced register file size)
+** `M` - integer multiplication and division hardware
+** `U` - less-privileged _user_ mode
+** `Zfinx` - single-precision floating-point unit
+** `Zicsr` - control and status register access (privileged architecture)
+** `Zifencei` - instruction stream synchronization
+** `PMP` - physical memory protection
+** `HPM` - hardware performance monitors
+** `DB` - debug mode
 * Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications – passes the official RISC-V Architecture Tests (v2+)
 * Official RISC-V open-source architecture ID
 * Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 _fast_ interrupts and 1 non-maskable interrupt
