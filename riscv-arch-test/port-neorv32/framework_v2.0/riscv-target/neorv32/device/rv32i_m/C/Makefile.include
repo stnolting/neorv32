@@ -11,7 +11,7 @@ endif
 
 RUN_TARGET=\
 	cd $(work_dir_isa); \
-	rm -f $(work_dir_isa)/*.out; \
+	rm -f $(NEORV32_LOCAL_COPY)/*.out; \
 	echo "copying/using SIM-only IMEM (ROM!)"; \
 	rm -f $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
 	cp -f $(NEORV32_LOCAL_COPY)/sim/rtl_modules/neorv32_imem.vhd $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
@@ -32,9 +32,9 @@ RUN_TARGET=\
 	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led main.bin; \
 	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led install; \
 	sed -i '/type application_init_image_t/c\type application_init_image_t is array (0 to ((2*1024*1024)/4)-1) of std_ulogic_vector(31 downto 0); -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_application_image.vhd; \
-	touch $(work_dir_isa)/neorv32.uart0.sim_mode.data.out; \
+	touch $(NEORV32_LOCAL_COPY)/neorv32.uart0.sim_mode.data.out; \
 	sh $(NEORV32_LOCAL_COPY)/sim/ghdl/ghdl_sim.sh --stop-time=$(SIM_TIME) >> /dev/null; \
-	cp $(work_dir_isa)/neorv32.uart0.sim_mode.data.out $(*).signature.output;
+	cp $(NEORV32_LOCAL_COPY)/neorv32.uart0.sim_mode.data.out $(*).signature.output;
 
 
 RISCV_PREFIX   ?= riscv32-unknown-elf-
