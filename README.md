@@ -36,6 +36,8 @@ The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC
 The project is intended as auxiliary processor in larger SoC designs or as *ready-to-go* stand-alone
 custom / customizable microcontroller.
 
+:information_source: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
+
 :books: For detailed information take a look at the [NEORV32 documentation (online at GitHub-pages)](https://stnolting.github.io/neorv32/).
 The *doxygen*-based documentation of the *software framework* is also available online
 at [GitHub-pages](https://stnolting.github.io/neorv32/sw/files.html).
@@ -287,6 +289,8 @@ This overview provides some *quick links* to the most important sections of the
 [online User Guide](https://stnolting.github.io/neorv32/ug).
 
 ### :electric_plug: Hardware Overview
+
+* [Rationale](https://stnolting.github.io/neorv32/#_rationale) - NEORV32: why, how come, what for
 
 * [NEORV32 Processor](https://stnolting.github.io/neorv32/#_neorv32_processor_soc) - the SoC
   * [Top Entity - Signals](https://stnolting.github.io/neorv32/#_processor_top_entity_signals) - how to connect to the processor

@@ -1,11 +1,6 @@
 :sectnums:
 == Overview
 
-[quote]
-____
-RISC-V - Instruction Sets Want To Be Free!
-____
-
 The NEORV32footnote:[Pronounced "neo-R-V-thirty-two" or "neo-risc-five-thirty-two" in its long form.] is an open-source
 RISC-V compatible processor system that is intended as *ready-to-go* auxiliary processor within a larger SoC
 designs or as stand-alone custom / customizable microcontroller.
@@ -23,8 +18,6 @@ default toolchain (https://github.com/stnolting/riscv-gcc-prebuilt[prebuilt tool
 [TIP]
 The project's change log is available in https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md[CHANGELOG.md]
 in the root directory of the NEORV32 repository. Please also check out the <<_legal>> section.
-
-
 
 :sectnums!:
 === Structure
@@ -60,22 +53,91 @@ Links in this document are <<_structure,highlighted>>.
 <<<
 // ####################################################################################################################
 :sectnums:
+=== Rationale
+
+**Why did you make this?**
+
+I am fascinated by processor and CPU architecture design: it is the magic frontier where software meets hardware.
+This project has started as something like a _journey_ into this magic realm to understand how things actually work
+down on this very low level.
+
+But there is more! When I started to dive into the emerging RISC-V ecosystem I felt overwhelmed by the complexity.
+As a beginner it is hard to get an overview - especially when you want to setup a minimal platform to tinker with:
+Which core to use? How to get the right toolchain? What features do I need? How does the booting work? How do I
+create an actual executable? How to get that into the hardware? How to customize things? **_Where to start???_**
+
+So this project aims to provides a _simple to understand_ and _easy to use_ yet _powerful_ and _flexible_ platform
+that targets FPGA and RISC-V beginners as well as advanced users. Join me and us on this journey! 🙃
+
+
+**Why a _soft_-core processor?**
+
+As a matter of fact soft-core processors _cannot_ compete with discrete or FPGA hard-macro processors in terms
+of performance, energy and size. But they do fill a niche in FPGA design space. For example, soft-core processors
+allow to implement the _control flow part_ of certain applications (like communication protocol handling) using
+software like plain C. This provides high flexibility as software can be easily changed, re-compiled and
+re-uploaded again.
+
+Furthermore, the concept of flexibility applies to all aspects of a soft-core processor. The user can add
+_exactly_ the features that are required by the application: additional memories, custom interfaces, specialized
+IP and even user-defined instructions.
+
+
+**Why RISC-V?**
+
+[quote, RISC-V International, https://riscv.org/about/]
+____
+RISC-V is a free and open ISA enabling a new era of processor innovation through open standard collaboration.
+____
+
+I love the idea of open-source. **Knowledge can help best if it is freely available.**
+While open-source has already become quite popular in _software_, hardware projects still need to catch up.
+Admittedly, there has been quite a development, but mainly in terms of _platforms_ and _applications_ (so
+schematics, PCBs, etc.). Although processors and CPUs are the heart of almost every digital system, having a true
+open-source silicon is still a rarity. RISC-V aims to change that. Even it is _just one approach_, it helps paving
+the road for future development.
+
+Furthermore, I welcome the community aspect of RISC-V. The ISA and everything beyond is developed with direct
+contact to the community: this includes businesses and professionals but also hobbyist, amateurs and people
+that are just curious. Everyone can join discussions and contribute to RISC-V in their very own way.
+
+Finally, I really like the RISC-V ISA itself. It aims to be a clean, orthogonal and "intuitive" ISA that
+resembles with the basic concepts of _RISC_: simple yet effective.
+
+
+**Yet another RISC-V core? What makes it special?**
+
+The NEORV32 is not based on another RISC-V core. It was build entirely from ground up (just following the official
+ISA specs) having a different design goal in mind. The project does not intend to replace certain RISC-V cores or
+just beat existing ones like https://github.com/SpinalHDL/VexRiscv[VexRISC] in terms of performance or
+https://github.com/olofk/serv[SERV] in terms of size.
+
+The project aims to provide _another option_ in the RISC-V / soft-core design space with a different performance
+vs. size trade-off and a different focus: _embrace_ concepts like documentation, platform-independence / portability,
+RISC-V compatibility, _customization_ and _ease of use_. See the <<_project_key_features>> below.
+
+
+// ####################################################################################################################
+:sectnums:
 === Project Key Features
 
-* **NEORV32 CPU**: 32-bit `rv32i` RISC-V CPU - passes the official RISC-V architecture tests
-* official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]
-* optional RISC-V CPU extensions:
-** `A` - atomic memory access operations
-** `B` - bit-manipulation instructions
-** `C` - 16-bit compressed instructions
-** `E` - embedded CPU version (reduced register file size)
-** `M` - integer multiplication and division hardware
-** `U` - less-privileged _user_ mode
-** `Zfinx` - single-precision floating-point unit
-** `Zicsr` - control and status register access (privileged architecture)
-** `Zifencei` - instruction stream synchronization
-** `PMP` - physical memory protection
-** `HPM` - hardware performance monitors
+* open-source and documented; including user guides to get started
+* completely described in behavioral, platform-independent VHDL (yet platform-optimized modules are provided)
+* fully synchronous design, no latches, no gated clocks
+* small hardware footprint and high operating frequency for easy integration
+* **NEORV32 CPU**: 32-bit `rv32i` RISC-V CPU
+** RISC-V compatibility: passes the official architecture tests
+** base architecture + privileged architecture (optional) + ISA extensions (optional)
+** rich set of customization options (ISA extensions, design goal: performance / area (/ energy), ...)
+** official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]
+* **NEORV32 Processor (SoC)**: highly-configurable full-scale microcontroller-like processor system
+** based on the NEORV32 CPU
+** optional serial interfaces (UARTs, TWI, SPI)
+** optional timers and counters (WDT, MTIME, NCO)
+** optional general purpose IO and PWM and native NeoPixel (c) compatible smart LED interface
+** optional embedded memories / caches for data, instructions and bootloader
+** optional external memory interface for custom connectivity (Wishbone or AXI4-Lite)
+** on-chip debugger compatible with OpenOCD and gdb
 * **Software framework**
 ** GCC-based toolchain - prebuilt toolchains available; application compilation based on GNU makefiles
 ** internal bootloader with serial user interface
@@ -83,16 +145,10 @@ Links in this document are <<_structure,highlighted>>.
 ** runtime environment and several example programs
 ** doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
 ** FreeRTOS port + demos available
-* **NEORV32 Processor**: highly-configurable full-scale microcontroller-like processor system / SoC based on the NEORV32 CPU with optional standard peripherals:
-** serial interfaces (UARTs, TWI, SPI)
-** timers and counters (WDT, MTIME, NCO)
-** general purpose IO and PWM and native NeoPixel (c) compatible smart LED interface
-** embedded memories / caches for data, instructions and bootloader
-** external memory interface (Wishbone or AXI4-Lite)
-* on-chip debugger compatible with OpenOCD and gdb
-* fully synchronous design, no latches, no gated clocks
-* completely described in behavioral, platform-independent VHDL
-* small hardware footprint and high operating frequency
+
+[TIP]
+For more in-depth details regarding the feature provided by he hardware see the according sections:
+<<_neorv32_central_processing_unit_cpu>> and <<_neorv32_processor_soc>>.
 
 
 <<<
@@ -104,6 +160,7 @@ Links in this document are <<_structure,highlighted>>.
 neorv32            - Project home folder
 ├.ci              - Scripts for continuous integration
 ├setups           - Example setups for various FPGA boards and toolchains
+│└...
 ├CHANGELOG.md     - Project change log
 ├docs             - Project documentation
 │├doxygen_build  - Software framework documentation (generated by doxygen)
