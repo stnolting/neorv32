@@ -18,10 +18,13 @@ ghdl -v
 
 # Simulation time define by user?
 echo ""
-[ -z ${1} ] && echo "Using default simulation config: $SIM_CONFIG" || (
+if [ -z $1 ]
+then
+  echo "Using default simulation config: $SIM_CONFIG"
+else
   SIM_CONFIG=$1;
   echo "Using user simulation config: $SIM_CONFIG";
-)
+fi
 echo ""
 
 # List files
