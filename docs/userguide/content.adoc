@@ -772,7 +772,7 @@ any user interaction.
 
 **Testbench**
 
-The NEORV32 project features a simple default testbench (`sim/neorv32_tb.vhd`) that can be used to simulate
+The NEORV32 project features a simple default testbench (`sim/neorv32_tb.simple.vhd`) that can be used to simulate
 and test the processor setup. This testbench features a 100MHz clock and enables all optional peripheral and
 CPU extensions except for the `E` extension and the TRNG IO module (that CANNOT be simulated due to its
 combinatorial (looped) oscillator architecture).
