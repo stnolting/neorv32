@@ -132,13 +132,16 @@ architecture neorv32_icache_rtl of neorv32_icache is
   type ctrl_engine_state_t is (S_IDLE, S_CACHE_CLEAR, S_CACHE_CHECK, S_CACHE_MISS, S_BUS_DOWNLOAD_REQ, S_BUS_DOWNLOAD_GET,
                                S_CACHE_RESYNC_0, S_CACHE_RESYNC_1, S_BUS_ERROR);
   type ctrl_t is record
-    state        : ctrl_engine_state_t; -- current state
-    state_nxt    : ctrl_engine_state_t; -- next state
-    addr_reg     : std_ulogic_vector(31 downto 0); -- address register for block download
-    addr_reg_nxt : std_ulogic_vector(31 downto 0);
+    state         : ctrl_engine_state_t; -- current state
+    state_nxt     : ctrl_engine_state_t; -- next state
+    addr_reg      : std_ulogic_vector(31 downto 0); -- address register for block download
+    addr_reg_nxt  : std_ulogic_vector(31 downto 0);
     --
-    re_buf       : std_ulogic; -- read request buffer
-    re_buf_nxt   : std_ulogic;
+    re_buf        : std_ulogic; -- read request buffer
+    re_buf_nxt    : std_ulogic;
+    --
+    clear_buf     : std_ulogic; -- clear request buffer
+    clear_buf_nxt : std_ulogic;
   end record;
   signal ctrl : ctrl_t;
 
@@ -161,11 +164,13 @@ begin
   ctrl_engine_fsm_sync_rst: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl.state  <= S_CACHE_CLEAR;
-      ctrl.re_buf <= '0';
+      ctrl.state     <= S_CACHE_CLEAR;
+      ctrl.re_buf    <= '0';
+      ctrl.clear_buf <= '0';
     elsif rising_edge(clk_i) then
-      ctrl.state  <= ctrl.state_nxt;
-      ctrl.re_buf <= ctrl.re_buf_nxt;
+      ctrl.state     <= ctrl.state_nxt;
+      ctrl.re_buf    <= ctrl.re_buf_nxt;
+      ctrl.clear_buf <= ctrl.clear_buf_nxt;
     end if;
   end process ctrl_engine_fsm_sync_rst;
 
@@ -186,6 +191,7 @@ begin
     ctrl.state_nxt        <= ctrl.state;
     ctrl.addr_reg_nxt     <= ctrl.addr_reg;
     ctrl.re_buf_nxt       <= ctrl.re_buf or host_re_i;
+    ctrl.clear_buf_nxt    <= ctrl.clear_buf or clear_i; -- buffer clear request from CPU
 
     -- cache defaults --
     cache.clear           <= '0';
@@ -215,7 +221,7 @@ begin
 
       when S_IDLE => -- wait for host access request or cache control operation
       -- ------------------------------------------------------------
-        if (clear_i = '1') then -- cache control operation?
+        if (ctrl.clear_buf = '1') then -- cache control operation?
           ctrl.state_nxt <= S_CACHE_CLEAR;
         elsif (host_re_i = '1') or (ctrl.re_buf = '1') then -- cache access
           ctrl.re_buf_nxt <= '0';
@@ -224,8 +230,9 @@ begin
 
       when S_CACHE_CLEAR => -- invalidate all cache entries
       -- ------------------------------------------------------------
-        cache.clear    <= '1';
-        ctrl.state_nxt <= S_IDLE;
+        ctrl.clear_buf_nxt <= '0';
+        cache.clear        <= '1';
+        ctrl.state_nxt     <= S_IDLE;
 
       when S_CACHE_CHECK => -- finalize host access if cache hit
       -- ------------------------------------------------------------
