@@ -9,7 +9,6 @@ The processor setup provides 64kB of data and instruction memory, an RTOS-capabl
 * FPGA: Lattice iCE40 UltraPlus 5k `iCE40UP5K-SG48I`
 * Toolchain: Lattice Radiant (tested with Radiant version 2.1.0), using *Lattice Synthesis Engine (LSE)*
 * Top entity: [`neorv32_upduino_v3_top.vhd`](https://github.com/stnolting/neorv32/blob/master/boards/UPduino_v3/neorv32_upduino_v3_top.vhd) (instantiates NEORV32 top entity)
-* Pre-compiled bitstream available: `neorv32_upduino_v3_impl_1.bin`
 
 
 ### Processor Configuration
