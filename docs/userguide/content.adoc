@@ -133,7 +133,7 @@ modules but just propagating the minimal signals to the outer world. Hence, this
 evaluation or "hello world" project to check out the NEORV32. A little note: The order of the following
 steps might be a little different for your specific EDA tool.
 
-[start=0]
+[start=1]
 . Create a new project with your FPGA EDA tool of choice.
 . Add all VHDL files from the project's `rtl/core` folder to your project. Make sure to _reference_ the
 files only – do not copy them.
@@ -141,6 +141,12 @@ files only – do not copy them.
 provide a field to enter the library name, check out the "properties" menu of the rtl files.
 . The `rtl/core/neorv32_top.vhd` VHDL file is the top entity of the NEORV32 processor. If you
 already have a design, instantiate this unit into your design and proceed.
+
+[IMPORTANT]
+Make sure to include the `neorv32` package into your design when instantiating the processor: add
+`library neorv32;` and `use neorv32.neorv32_package.all;` to your design unit.
+
+[start=5]
 . If you do not have a design yet and just want to check out the NEORV32 – no problem! In this guide
 we will use a simplified top entity, that encapsulated the actual processor top entity: add the
 `rtl/templates/processor/neorv32_ProcessorTop_Test.vhd` VHDL file to your project too, and
