@@ -841,6 +841,13 @@ image::address_space.png[900]
 These four memory regions are handled by the linker when compiling a NEORV32 executable.
 See section <<_executable_image_format>> for more information.
 
+[NOTE]
+If the IMEM (internal or external) is less than the (default) maximum size (2GB), there is
+a "dead address space" between it and the DMEM. This provides an additional safety feature
+since data corrupting scenarios like stack overflow cannot directly corrupt the content of the IMEM:
+any access to the "dead address space" in between will raise an exception that can be caught
+by the runtime environment.
+
 **Address Space Layout**
 
 The general address space layout consists of two main configuration constants: `ispace_base_c` defining
