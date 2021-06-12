@@ -12,6 +12,11 @@
 | CPU interrupts:          | none             | 
 |=======================
 
+[NOTE]
+The default `neorv32_boot_rom.vhd` HDL source file provides a _generic_ memory design that infers embedded
+memory. You might need to replace/modify the source file in order to use platform-specific features
+(like advanced memory resources) or to improve technology mapping and/or timing.
+
 As the name already suggests, the boot ROM contains the read-only bootloader image. When the bootloader
 is enabled via the _BOOTLOADER_EN_ generic it is directly executed after system reset.
 

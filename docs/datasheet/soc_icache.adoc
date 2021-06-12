@@ -15,6 +15,11 @@
 | CPU interrupts:          | none             | 
 |=======================
 
+[NOTE]
+The default `neorv32_icache.vhd` HDL source file provides a _generic_ memory design that infers embedded
+memory. You might need to replace/modify the source file in order to use platform-specific features
+(like advanced memory resources) or to improve technology mapping and/or timing.
+
 The processor features an optional cache for instructions to compensate memories with high latency. The
 cache is directly connected to the CPU's instruction fetch interface and provides a full-transparent buffering
 of instruction fetch accesses to the entire 4GB address space.
