@@ -23,32 +23,12 @@ jobs:
 
     steps:
 
+    - name: '🧰 Repository Checkout'
+      uses: actions/checkout@v2
+
     - name: '🔧 Generate examples matrix'
       id: generate
-      shell: python
-      run: |
-        print('::set-output name=matrix::' + str([
-        {
-          'board': 'UPduino_v3',
-          'design': 'MinimalBoot',
-          'bitstream': 'neorv32_UPduino_v3_MinimalBoot.bin'
-        }, {
-          'board': 'UPduino_v3',
-          'design': 'UP5KDemo',
-          'bitstream': 'neorv32_UPduino_v3_UP5KDemo.bin'
-        }, {
-          'board': 'Fomu',
-          'design': 'Minimal',
-          'bitstream': 'neorv32_Fomu_pvt_Minimal.bit'
-        }, {
-          'board': 'Fomu',
-          'design': 'MinimalBoot',
-          'bitstream': 'neorv32_Fomu_pvt_MinimalBoot.bit'
-        }, {
-          'board': 'Fomu',
-          'design': 'UP5KDemo',
-          'bitstream': 'neorv32_Fomu_pvt_UP5KDemo.bit'
-        }]))
+      run: ./.github/generate-job-matrix.py
 
 
   All-in-one:
@@ -79,45 +59,3 @@ jobs:
         path: |
           setups/examples/${{ matrix.bitstream }}
           setups/osflow/${{ matrix.board }}/*-report.txt
-
-
-  MSYS2:
-    needs: Matrix
-    runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [
-          {icon: '⬛', installs: 'MINGW32', arch: i686,   pkg: 'mcode' },
-          {icon: '🟦', installs: 'MINGW64', arch: x86_64, pkg: 'llvm'  },
-        ]
-        example: ${{ fromJson(needs.Matrix.outputs.matrix) }}
-    name: '${{ matrix.platform.icon }} ${{ matrix.platform.installs }} | ${{ matrix.example.board }} · ${{ matrix.example.design }}'
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-
-    - name: '${{ matrix.platform.icon }} Setup MSYS2'
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: ${{ matrix.platform.installs }}
-        update: true
-        install: >
-          make
-          mingw-w64-${{ matrix.platform.arch }}-yosys
-          mingw-w64-${{ matrix.platform.arch }}-nextpnr
-          mingw-w64-${{ matrix.platform.arch }}-icestorm
-
-    - name: '⚙️ git config'
-      run: git config --global core.autocrlf input
-      shell: bash
-
-    - name: '🧰 Checkout'
-      uses: actions/checkout@v2
-      with:
-        # The command 'git describe' (used for version) needs the history.
-        fetch-depth: 0
-
-    - name: '🚧 Generate ${{ matrix.example.board }} ${{ matrix.example.design }} bitstream'
-      run: make -C setups/examples BOARD=${{ matrix.example.board }} ${{ matrix.example.design }}
