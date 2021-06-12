@@ -93,17 +93,19 @@ int main() {
   uint32_t is_simulation = 0;
 
 
-  // init UARTs
-  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE); // UART1 at default baud rate, no parity bits, no hw flow control
-  UART1_CT = UART0_CT; // init UART1 (by copying UART0 control reg)
-
+  // init UART at default baud rate, no parity bits, no hw flow control
+  #ifdef SUPPRESS_OPTIONAL_UART_PRINT
+  neorv32_uart1_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  #else
+  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  #endif
 
 // Disable processor_check compilation by default
 #ifndef RUN_CHECK
   #warning processor_check HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.
 
   // inform the user if you are actually executing this
-  neorv32_uart_printf("ERROR! processor_check has not been compiled. Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.\n");
+  neorv32_uart1_printf("ERROR! processor_check has not been compiled. Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.\n");
 
   return 1;
 #endif
@@ -167,7 +169,7 @@ int main() {
   }
 
   if (install_err) {
-    neorv32_uart_printf("RTE install error (%i)!\n", install_err);
+    neorv32_uart1_printf("RTE install error (%i)!\n", install_err);
     return 1;
   }
 
@@ -968,8 +970,8 @@ int main() {
     // backup current UART0 configuration
     tmp_a = UART0_CT;
 
-    // make sure sim mode is disabled
-    UART0_CT &= ~(1 << UART_CT_SIM_MODE);
+    // reset UART0 and enable it
+    UART0_CT = (1 << UART_CT_EN);
 
     // trigger UART0 RX IRQ
     // the default test bench connects UART0.TXD_O to UART0_RXD_I
@@ -1017,8 +1019,8 @@ int main() {
   // backup current UART0 configuration
   tmp_a = UART0_CT;
 
-  // make sure sim mode is disabled
-  UART0_CT &= ~(1 << UART_CT_SIM_MODE);
+  // reset UART0 and enable it
+  UART0_CT = (1 << UART_CT_EN);
 
   // trigger UART0 TX IRQ
   UART0_DATA = 0; // we need to access the raw HW here, since >UART0_SIM_MODE< might be active
@@ -1058,8 +1060,8 @@ int main() {
     // backup current UART1 configuration
     tmp_a = UART1_CT;
 
-    // make sure sim mode is disabled
-    UART1_CT &= ~(1 << UART_CT_SIM_MODE);
+    // reset UART0 and enable it
+    UART1_CT = (1 << UART_CT_EN);
 
     // trigger UART1 RX IRQ
     UART1_DATA = 0;
@@ -1104,8 +1106,8 @@ int main() {
     // backup current UART1 configuration
     tmp_a = UART1_CT;
 
-    // make sure sim mode is disabled
-    UART1_CT &= ~(1 << UART_CT_SIM_MODE);
+    // reset UART0 and enable it
+    UART1_CT = (1 << UART_CT_EN);
 
     // trigger UART1 TX IRQ
     UART1_DATA = 0;
@@ -1682,7 +1684,7 @@ int main() {
   // ----------------------------------------------------------
   // Final test reports
   // ----------------------------------------------------------
-  neorv32_uart_printf("\n\nTest results:\nOK:     %i/%i\nFAILED: %i/%i\n\n", cnt_ok, cnt_test, cnt_fail, cnt_test);
+  neorv32_uart1_printf("\n\nTest results:\nOK:     %i/%i\nFAILED: %i/%i\n\n", cnt_ok, cnt_test, cnt_fail, cnt_test);
 
   // final result
   if (cnt_fail == 0) {
@@ -1734,7 +1736,7 @@ void test_ok(void) {
  **************************************************************************/
 void test_fail(void) {
 
-  neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+  neorv32_uart1_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
   cnt_fail++;
 }
 

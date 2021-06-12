@@ -61,7 +61,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- general --
   constant ext_imem_c              : boolean := false; -- false: use and boot from proc-internal IMEM, true: use and boot from external (initialized) simulated IMEM (ext. mem A)
   constant ext_dmem_c              : boolean := false; -- false: use proc-internal DMEM, true: use external simulated DMEM (ext. mem B)
-  constant imem_size_c             : natural := 16*1024; -- size in bytes of processor-internal IMEM / external mem A
+  constant imem_size_c             : natural := 32*1024; -- size in bytes of processor-internal IMEM / external mem A
   constant dmem_size_c             : natural := 8*1024; -- size in bytes of processor-internal DMEM / external mem B
   constant f_clock_c               : natural := 100000000; -- main clock in Hz
   constant baud0_rate_c            : natural := 19200; -- simulation UART0 (primary UART) baud rate
@@ -152,7 +152,7 @@ begin
   test_runner : process
   begin
     test_runner_setup(runner, runner_cfg);
-    wait for 20 ms; -- Just wait for all UART output to be produced
+    wait for 35 ms; -- Just wait for all UART output to be produced
     test_runner_cleanup(runner);
   end process;
 
@@ -301,7 +301,7 @@ begin
     impure function uart0_expectation return string is
     begin
       if ci_mode then
-        return nul & nul & cr & lf & "<< PROCESSOR CHECK >>" & cr & lf & "build: ";
+        return character'val(255) & etx;
       else
         return "Blinking LED demo program" & cr & lf & etx;
       end if;
@@ -310,7 +310,7 @@ begin
     impure function uart1_expectation return string is
     begin
       if ci_mode then
-        return nul & nul & etx;
+        return character'val(255) & cr & lf & cr & lf & "Test results:" & cr & lf & "OK:     37/37" & cr & lf & "FAILED: 0/37" & cr & lf & cr & lf & etx;
       else
         return "" & etx;
       end if;
