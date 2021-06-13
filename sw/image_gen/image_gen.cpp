@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 
   FILE *input, *output;
   unsigned char buffer[4];
-  char tmp_string[512];
+  char tmp_string[1024];
   uint32_t tmp = 0, size = 0, checksum = 0;
   unsigned int i = 0;
   int option = 0;
@@ -88,6 +88,12 @@ int main(int argc, char *argv[]) {
     printf("Output file error!");
     return 3;
   }
+
+  // get input file size
+  fseek(input, 0L, SEEK_END);
+  unsigned int input_size = (unsigned int)ftell(input);
+  rewind(input);
+  unsigned int input_words = input_size / 4;
 
 
 // ------------------------------------------------------------
@@ -174,14 +180,17 @@ int main(int argc, char *argv[]) {
 	// header
     sprintf(tmp_string, "-- The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32\n"
 	 					            "-- Auto-generated memory init file (for APPLICATION) from source file <%s/%s>\n"
+	 					            "-- Size: %lu bytes\n"
 						            "\n"
 						            "library ieee;\n"
 						            "use ieee.std_logic_1164.all;\n"
 						            "\n"
+                        "library neorv32;\n"
+                        "use neorv32.neorv32_package.all;\n"
+						            "\n"
 						            "package neorv32_application_image is\n"
 						            "\n"
-						            "  type application_init_image_t is array (0 to %lu) of std_ulogic_vector(31 downto 0);\n"
-						            "  constant application_init_image : application_init_image_t := (\n", argv[4], argv[2], raw_exe_size/4);
+						            "  constant application_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size);
     fputs(tmp_string, output);
 
 	// data
@@ -190,12 +199,33 @@ int main(int argc, char *argv[]) {
     buffer[2] = 0;
     buffer[3] = 0;
     i = 0;
-    while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
+
+    while (i < (input_words-1)) {
+      if (fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
+        tmp  = (uint32_t)(buffer[0] << 0);
+        tmp |= (uint32_t)(buffer[1] << 8);
+        tmp |= (uint32_t)(buffer[2] << 16);
+        tmp |= (uint32_t)(buffer[3] << 24);
+        sprintf(tmp_string, "    %08d => x\"%08x\",\n", i, (unsigned int)tmp);
+        fputs(tmp_string, output);
+        buffer[0] = 0;
+        buffer[1] = 0;
+        buffer[2] = 0;
+        buffer[3] = 0;
+        i++;
+      }
+      else {
+        printf("Unexpected input file end!\n");
+        break;
+      }
+    }
+
+    if (fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
       tmp  = (uint32_t)(buffer[0] << 0);
       tmp |= (uint32_t)(buffer[1] << 8);
       tmp |= (uint32_t)(buffer[2] << 16);
       tmp |= (uint32_t)(buffer[3] << 24);
-      sprintf(tmp_string, "    %08d => x\"%08x\",\n", i, tmp);
+      sprintf(tmp_string, "    %08d => x\"%08x\"\n", i, (unsigned int)tmp);
       fputs(tmp_string, output);
       buffer[0] = 0;
       buffer[1] = 0;
@@ -203,9 +233,9 @@ int main(int argc, char *argv[]) {
       buffer[3] = 0;
       i++;
     }
-
-    sprintf(tmp_string, "    others   => x\"00000000\"\n");
-    fputs(tmp_string, output);
+    else {
+      printf("Unexpected input file end!\n");
+    }
 
 	// end
     sprintf(tmp_string, "  );\n"
@@ -223,28 +253,52 @@ int main(int argc, char *argv[]) {
 	// header
     sprintf(tmp_string, "-- The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32\n"
 	 					            "-- Auto-generated memory init file (for BOOTLOADER) from source file <%s/%s>\n"
+	 					            "-- Size: %lu bytes\n"
 						            "\n"
 						            "library ieee;\n"
 						            "use ieee.std_logic_1164.all;\n"
 						            "\n"
+                        "library neorv32;\n"
+                        "use neorv32.neorv32_package.all;\n"
+						            "\n"
 						            "package neorv32_bootloader_image is\n"
 						            "\n"
-						            "  type bootloader_init_image_t is array (0 to %lu) of std_ulogic_vector(31 downto 0);\n"
-						            "  constant bootloader_init_image : bootloader_init_image_t := (\n", argv[4], argv[2], raw_exe_size/4);
+						            "  constant bootloader_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size);
     fputs(tmp_string, output);
 
-	// data
+    // data
     buffer[0] = 0;
     buffer[1] = 0;
     buffer[2] = 0;
     buffer[3] = 0;
     i = 0;
-    while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
+
+    while (i < (input_words-1)) {
+      if (fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
+        tmp  = (uint32_t)(buffer[0] << 0);
+        tmp |= (uint32_t)(buffer[1] << 8);
+        tmp |= (uint32_t)(buffer[2] << 16);
+        tmp |= (uint32_t)(buffer[3] << 24);
+        sprintf(tmp_string, "    %08d => x\"%08x\",\n", i, (unsigned int)tmp);
+        fputs(tmp_string, output);
+        buffer[0] = 0;
+        buffer[1] = 0;
+        buffer[2] = 0;
+        buffer[3] = 0;
+        i++;
+      }
+      else {
+        printf("Unexpected input file end!\n");
+        break;
+      }
+    }
+
+    if (fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
       tmp  = (uint32_t)(buffer[0] << 0);
       tmp |= (uint32_t)(buffer[1] << 8);
       tmp |= (uint32_t)(buffer[2] << 16);
       tmp |= (uint32_t)(buffer[3] << 24);
-      sprintf(tmp_string, "    %08d => x\"%08x\",\n", i, tmp);
+      sprintf(tmp_string, "    %08d => x\"%08x\"\n", i, (unsigned int)tmp);
       fputs(tmp_string, output);
       buffer[0] = 0;
       buffer[1] = 0;
@@ -252,9 +306,9 @@ int main(int argc, char *argv[]) {
       buffer[3] = 0;
       i++;
     }
-
-    sprintf(tmp_string, "    others   => x\"00000000\"\n");
-    fputs(tmp_string, output);
+    else {
+      printf("Unexpected input file end!\n");
+    }
 
 	// end
     sprintf(tmp_string, "  );\n"
