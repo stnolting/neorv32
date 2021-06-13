@@ -39,8 +39,8 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-library iCE40;
-use iCE40.components.all; -- for device primitives and macros
+library iCE40UP;
+use iCE40UP.components.all; -- for device primitives
 
 entity neorv32_upduino_v3_top is
   port (
@@ -143,7 +143,7 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY              => f_clock_c,   -- clock frequency of clk_i in Hz
-    BOOTLOADER_EN                => true,        -- implement processor-internal bootloader?
+    INT_BOOTLOADER_EN            => true,        -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     USER_CODE                    => x"0001ce40", -- custom user code
     HW_THREAD_ID                 => 0,           -- hardware thread id (32-bit)
 
@@ -177,7 +177,6 @@ begin
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              => true,        -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => 64*1024,     -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM             => false,       -- implement processor-internal instruction memory as ROM
 
     -- Internal Data memory --
     MEM_INT_DMEM_EN              => true,        -- implement processor-internal data memory
