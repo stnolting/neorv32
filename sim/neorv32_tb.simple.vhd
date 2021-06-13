@@ -54,26 +54,26 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   -- User Configuration ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- general --
-  constant ext_imem_c            : boolean := false; -- false: use and boot from proc-internal IMEM, true: use and boot from external (initialized) simulated IMEM (ext. mem A)
-  constant ext_dmem_c            : boolean := false; -- false: use proc-internal DMEM, true: use external simulated DMEM (ext. mem B)
-  constant imem_size_c           : natural := 16*1024; -- size in bytes of processor-internal IMEM / external mem A
-  constant dmem_size_c           : natural := 8*1024; -- size in bytes of processor-internal DMEM / external mem B
-  constant f_clock_c             : natural := 100000000; -- main clock in Hz
-  constant baud0_rate_c          : natural := 19200; -- simulation UART0 (primary UART) baud rate
+  constant ext_imem_c              : boolean := false; -- false: use and boot from proc-internal IMEM, true: use and boot from external (initialized) simulated IMEM (ext. mem A)
+  constant ext_dmem_c              : boolean := false; -- false: use proc-internal DMEM, true: use external simulated DMEM (ext. mem B)
+  constant imem_size_c             : natural := 16*1024; -- size in bytes of processor-internal IMEM / external mem A
+  constant dmem_size_c             : natural := 8*1024; -- size in bytes of processor-internal DMEM / external mem B
+  constant f_clock_c               : natural := 100000000; -- main clock in Hz
+  constant baud0_rate_c            : natural := 19200; -- simulation UART0 (primary UART) baud rate
   -- simulated external Wishbone memory A (can be used as external IMEM) --
-  constant ext_mem_a_base_addr_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- wishbone memory base address (external IMEM base)
-  constant ext_mem_a_size_c      : natural := imem_size_c; -- wishbone memory size in bytes
-  constant ext_mem_a_latency_c   : natural := 8; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
+  constant ext_mem_a_base_addr_c   : std_ulogic_vector(31 downto 0) := x"00000000"; -- wishbone memory base address (external IMEM base)
+  constant ext_mem_a_size_c        : natural := imem_size_c; -- wishbone memory size in bytes
+  constant ext_mem_a_latency_c     : natural := 8; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
   -- simulated external Wishbone memory B (can be used as external DMEM) --
-  constant ext_mem_b_base_addr_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- wishbone memory base address (external DMEM base)
-  constant ext_mem_b_size_c      : natural := dmem_size_c; -- wishbone memory size in bytes
-  constant ext_mem_b_latency_c   : natural := 8; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
+  constant ext_mem_b_base_addr_c   : std_ulogic_vector(31 downto 0) := x"80000000"; -- wishbone memory base address (external DMEM base)
+  constant ext_mem_b_size_c        : natural := dmem_size_c; -- wishbone memory size in bytes
+  constant ext_mem_b_latency_c     : natural := 8; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
   -- simulated external Wishbone memory C (can be used to simulate external IO access) --
-  constant ext_mem_c_base_addr_c : std_ulogic_vector(31 downto 0) := x"F0000000"; -- wishbone memory base address (default begin of EXTERNAL IO area)
-  constant ext_mem_c_size_c      : natural := 64; -- wishbone memory size in bytes
-  constant ext_mem_c_latency_c   : natural := 3; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
+  constant ext_mem_c_base_addr_c   : std_ulogic_vector(31 downto 0) := x"F0000000"; -- wishbone memory base address (default begin of EXTERNAL IO area)
+  constant ext_mem_c_size_c        : natural := 64; -- wishbone memory size in bytes
+  constant ext_mem_c_latency_c     : natural := 3; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
   -- simulation interrupt trigger --
-  constant irq_trigger_c         : std_ulogic_vector(31 downto 0) := x"FF000000";
+  constant irq_trigger_base_addr_c : std_ulogic_vector(31 downto 0) := x"FF000000";
   -- -------------------------------------------------------------------------------------------
 
   -- internals - hands off! --
@@ -88,9 +88,11 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   -- text.io --
   file file_uart0_tx_out : text open write_mode is "neorv32.testbench_uart0.out";
 
-  -- simulation uart0 receiver --
-  signal uart0_txd         : std_ulogic; -- local loop-back
-  signal uart0_cts         : std_ulogic; -- local loop-back
+  -- uart --
+  signal uart0_txd : std_ulogic; -- local loop-back
+  signal uart0_cts : std_ulogic; -- local loop-back
+  signal uart1_txd : std_ulogic; -- local loop-back
+  signal uart1_cts : std_ulogic; -- local loop-back
 
   -- gpio --
   signal gpio : std_ulogic_vector(31 downto 0);
@@ -121,36 +123,18 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   end record;
   signal wb_cpu, wb_mem_a, wb_mem_b, wb_mem_c, wb_irq : wishbone_t;
 
-  -- Wishbone memories --
-  type ext_mem_a_ram_t is array (0 to ext_mem_a_size_c/4-1) of std_ulogic_vector(31 downto 0);
-  type ext_mem_b_ram_t is array (0 to ext_mem_b_size_c/4-1) of std_ulogic_vector(31 downto 0);
-  type ext_mem_c_ram_t is array (0 to ext_mem_c_size_c/4-1) of std_ulogic_vector(31 downto 0);
+  -- Wishbone access latency type --
   type ext_mem_read_latency_t is array (0 to 255) of std_ulogic_vector(31 downto 0);
 
   -- exclusive access / reservation --
   signal ext_mem_c_atomic_reservation : std_ulogic := '0';
 
-  -- init function --
-  -- impure function: returns NOT the same result every time it is evaluated with the same arguments since the source file might have changed
-  impure function init_wbmem(init : application_init_image_t) return ext_mem_a_ram_t is
-    variable mem_v : ext_mem_a_ram_t;
-  begin
-    mem_v := (others => (others => '0'));
-    for i in 0 to init'length-1 loop -- init only in range of source data array
-      if (wb_big_endian_c = false) then
-        mem_v(i) := init(i);
-      else
-        mem_v(i) := bswap32_f(init(i));
-      end if;
-    end loop; -- i
-    return mem_v;
-  end function init_wbmem;
+  -- simulated external memories --
+  signal ext_ram_a : mem32_t(0 to ext_mem_a_size_c/4-1) := mem32_init_f(application_init_image, ext_mem_a_size_c/4); -- initialized, used to simulate external IMEM
+  signal ext_ram_b : mem32_t(0 to ext_mem_b_size_c/4-1) := (others => (others => '0')); -- zero, used to simulate external DMEM
+  signal ext_ram_c : mem32_t(0 to ext_mem_c_size_c/4-1); -- uninitialized, used to simulate external IO
 
-  -- external memory components --
-  signal ext_ram_a : ext_mem_a_ram_t := init_wbmem(application_init_image); -- initialized, used to simulate external IMEM
-  signal ext_ram_b : ext_mem_b_ram_t := (others => (others => '0')); -- zero, used to simulate external DMEM
-  signal ext_ram_c : ext_mem_c_ram_t; -- uninitialized, used to simulate external IO
-
+  -- simulated external memory bus feedback type --
   type ext_mem_t is record
     rdata  : ext_mem_read_latency_t;
     acc_en : std_ulogic;
@@ -173,9 +157,9 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY              => f_clock_c,     -- clock frequency of clk_i in Hz
-    BOOTLOADER_EN                => false,         -- implement processor-internal bootloader?
     USER_CODE                    => x"12345678",   -- custom user code
     HW_THREAD_ID                 => 0,             -- hardware thread id (hartid) (32-bit)
+    INT_BOOTLOADER_EN            => false,         -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          => true,          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
@@ -201,7 +185,6 @@ begin
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              => int_imem_c ,   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => imem_size_c,   -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM             => false,         -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
     MEM_INT_DMEM_EN              => int_dmem_c,    -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => dmem_size_c,   -- size of processor-internal data memory in bytes
@@ -217,7 +200,7 @@ begin
     IO_GPIO_EN                   => true,          -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  => true,          -- implement machine system timer (MTIME)?
     IO_UART0_EN                  => true,          -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART1_EN                  => false,         -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_UART1_EN                  => true,         -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN                    => true,          -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    => true,          -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                => 30,            -- number of PWM channels to implement (0..60); 0 = disabled
@@ -264,10 +247,10 @@ begin
     uart0_rts_o => uart0_cts,       -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
     uart0_cts_i => uart0_cts,       -- hw flow control: UART0.TX allowed to transmit, low-active, optional
     -- secondary UART1 (available if IO_UART1_EN = true) --
-    uart1_txd_o => open,            -- UART1 send data
-    uart1_rxd_i => '0',             -- UART1 receive data
-    uart1_rts_o => open,            -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i => '0',             -- hw flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_txd_o => uart1_txd,       -- UART1 send data
+    uart1_rxd_i => uart1_txd,       -- UART1 receive data
+    uart1_rts_o => uart1_cts,       -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i => uart1_cts,       -- hw flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o   => open,            -- SPI serial clock
     spi_sdo_o   => spi_data,        -- controller data out, peripheral data in
@@ -349,7 +332,7 @@ begin
   wb_mem_a.stb <= wb_cpu.stb when (wb_cpu.addr >= ext_mem_a_base_addr_c) and (wb_cpu.addr < std_ulogic_vector(unsigned(ext_mem_a_base_addr_c) + ext_mem_a_size_c)) else '0';
   wb_mem_b.stb <= wb_cpu.stb when (wb_cpu.addr >= ext_mem_b_base_addr_c) and (wb_cpu.addr < std_ulogic_vector(unsigned(ext_mem_b_base_addr_c) + ext_mem_b_size_c)) else '0';
   wb_mem_c.stb <= wb_cpu.stb when (wb_cpu.addr >= ext_mem_c_base_addr_c) and (wb_cpu.addr < std_ulogic_vector(unsigned(ext_mem_c_base_addr_c) + ext_mem_c_size_c)) else '0';
-  wb_irq.stb   <= wb_cpu.stb when (wb_cpu.addr =  irq_trigger_c) else '0';
+  wb_irq.stb   <= wb_cpu.stb when (wb_cpu.addr =  irq_trigger_base_addr_c) else '0';
 
 
   -- Wishbone Memory A (simulated external IMEM) --------------------------------------------
