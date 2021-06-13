@@ -56,29 +56,14 @@ end neorv32_boot_rom;
 
 architecture neorv32_boot_rom_rtl of neorv32_boot_rom is
 
-  -- local types --
-  type boot_img_t is array (0 to BOOTROM_SIZE/4-1) of std_ulogic_vector(31 downto 0);
-
-  -- init function --
-  -- impure function: returns NOT the same result every time it is evaluated with the same arguments since the source file might have changed
-  impure function init_boot_rom(init : bootloader_init_image_t) return boot_img_t is
-    variable mem_v : boot_img_t;
-  begin
-    mem_v := (others => (others => '0'));
-    for i in 0 to init'length-1 loop -- init only in range of source data array
-      mem_v(i) := init(i);
-    end loop; -- i
-    return mem_v;
-  end function init_boot_rom;
-
   -- local signals --
   signal acc_en : std_ulogic;
   signal rden   : std_ulogic;
   signal rdata  : std_ulogic_vector(31 downto 0);
   signal addr   : std_ulogic_vector(index_size_f(BOOTROM_SIZE/4)-1 downto 0);
 
-  -- bootloader image --
-  constant boot_img : boot_img_t := init_boot_rom(bootloader_init_image);
+  -- ROM - initialized with executable code --
+  constant mem_rom : mem32_t(0 to BOOTROM_SIZE/4-1) := mem32_init_f(bootloader_init_image, BOOTROM_SIZE/4);
 
 begin
 
@@ -95,7 +80,7 @@ begin
     if rising_edge(clk_i) then
       rden <= rden_i and acc_en;
       if (acc_en = '1') then -- reduce switching activity when not accessed
-        rdata <= boot_img(to_integer(unsigned(addr)));
+        rdata <= mem_rom(to_integer(unsigned(addr)));
       end if;
     end if;
   end process mem_file_access;
