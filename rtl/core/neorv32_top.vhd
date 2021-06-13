@@ -49,9 +49,9 @@ entity neorv32_top is
   generic (
     -- General --
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
-    BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
     USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
+    INT_BOOTLOADER_EN            : boolean := true;   -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
@@ -60,7 +60,7 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
@@ -83,7 +83,6 @@ entity neorv32_top is
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
 
     -- Internal Data memory --
     MEM_INT_DMEM_EN              : boolean := true;   -- implement processor-internal data memory
@@ -199,8 +198,8 @@ end neorv32_top;
 
 architecture neorv32_top_rtl of neorv32_top is
 
-  -- CPU boot address --
-  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(BOOTLOADER_EN, boot_rom_base_c, ispace_base_c);
+  -- CPU boot configuration --
+  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(INT_BOOTLOADER_EN, boot_rom_base_c, ispace_base_c);
 
   -- alignment check for internal memories --
   constant imem_align_check_c : std_ulogic_vector(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) := (others => '0');
@@ -312,27 +311,35 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- clock --
   assert not (CLOCK_FREQUENCY = 0) report "NEORV32 PROCESSOR CONFIG ERROR! Core clock frequency (CLOCK_FREQUENCY) not specified." severity error;
-  -- internal bootloader ROM --
-  assert not ((BOOTLOADER_EN = true) and (boot_rom_size_c > boot_rom_max_size_c)) report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range." severity error;
-  assert not ((BOOTLOADER_EN = true) and (MEM_INT_IMEM_ROM = true)) report "NEORV32 PROCESSOR CONFIG WARNING! IMEM is configured as read-only. Bootloader will not be able to load new executables." severity warning;
-  -- memory system - data/instruction fetch --
-  assert not ((MEM_EXT_EN = false) and (MEM_INT_DMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal data memory." severity error;
-  assert not ((MEM_EXT_EN = false) and (MEM_INT_IMEM_EN = false) and (BOOTLOADER_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal data memory and bootloader." severity error;
+
+  -- boot configuration --
+  assert not (INT_BOOTLOADER_EN = true) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Indirect boot via bootloader (processor-internal BOOTROM)." severity note;
+  assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Direct boot from memory (processor-internal IMEM)." severity note;
+  assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Direct boot from memory (processor-external (I)MEM)." severity note;
+  --
+  assert not (((INT_BOOTLOADER_EN = true) and (boot_rom_size_c > boot_rom_max_size_c))) report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range." severity error;
+  assert not ((MEM_EXT_EN = false) and (MEM_INT_DMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal IMEM." severity error;
+  assert not ((MEM_EXT_EN = false) and (MEM_INT_IMEM_EN = false) and (INT_BOOTLOADER_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal IMEM and bootloader." severity error;
+
   -- memory system - size --
   assert not ((MEM_INT_DMEM_EN = true) and (is_power_of_two_f(MEM_INT_IMEM_SIZE) = false)) report "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_IMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
   assert not ((MEM_INT_IMEM_EN = true) and (is_power_of_two_f(MEM_INT_DMEM_SIZE) = false)) report "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_DMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
+
   -- memory system - alignment --
   assert not (ispace_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address must be 4-byte-aligned." severity error;
   assert not (dspace_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 4-byte-aligned." severity error;
   assert not ((ispace_base_c(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) /= imem_align_check_c) and (MEM_INT_IMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address has to be aligned to IMEM size." severity error;
   assert not ((dspace_base_c(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) /= dmem_align_check_c) and (MEM_INT_DMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address has to be aligned to DMEM size." severity error;
+
   -- memory system - layout warning --
   assert not (ispace_base_c /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framework." severity warning;
   assert not (dspace_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framework." severity warning;
+
   -- memory system - the i-cache is intended to accelerate instruction fetch via the external memory interface only --
   assert not ((ICACHE_EN = true) and (MEM_EXT_EN = false)) report "NEORV32 PROCESSOR CONFIG NOTE. Implementing i-cache without having the external memory interface implemented. The i-cache is intended to accelerate instruction fetch via the external memory interface." severity note;
+
   -- on-chip debugger --
-  assert not (ON_CHIP_DEBUGGER_EN = true) report "NEORV32 PROCESSOR CONFIG NOTE. Implementing on-chip debugger (OCD)." severity note;
+  assert not (ON_CHIP_DEBUGGER_EN = true) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing on-chip debugger (OCD)." severity note;
 
 
   -- Reset Generator ------------------------------------------------------------------------
@@ -656,10 +663,9 @@ begin
   if (MEM_INT_IMEM_EN = true) generate
     neorv32_int_imem_inst: neorv32_imem
     generic map (
-      IMEM_BASE      => imem_base_c,       -- memory base address
-      IMEM_SIZE      => MEM_INT_IMEM_SIZE, -- processor-internal instruction memory size in bytes
-      IMEM_AS_ROM    => MEM_INT_IMEM_ROM,  -- implement IMEM as read-only memory?
-      BOOTLOADER_EN  => BOOTLOADER_EN      -- implement and use bootloader?
+      IMEM_BASE    => imem_base_c,          -- memory base address
+      IMEM_SIZE    => MEM_INT_IMEM_SIZE,    -- processor-internal instruction memory size in bytes
+      IMEM_AS_IROM => not INT_BOOTLOADER_EN -- implement IMEM as pre-initialized read-only memory?
     )
     port map (
       clk_i  => clk_i,                     -- global clock line
@@ -711,7 +717,7 @@ begin
   -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_boot_rom_inst_true:
-  if (BOOTLOADER_EN = true) generate
+  if (INT_BOOTLOADER_EN = true) generate
     neorv32_boot_rom_inst: neorv32_boot_rom
     generic map (
       BOOTROM_BASE => boot_rom_base_c, -- boot ROM base address
@@ -728,7 +734,7 @@ begin
   end generate;
 
   neorv32_boot_rom_inst_false:
-  if (BOOTLOADER_EN = false) generate
+  if (INT_BOOTLOADER_EN = false) generate
     resp_bus(RESP_BOOTROM) <= resp_bus_entry_terminate_c;
   end generate;
 
@@ -1253,12 +1259,11 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY      => CLOCK_FREQUENCY,      -- clock frequency of clk_i in Hz
-    BOOTLOADER_EN        => BOOTLOADER_EN,        -- implement processor-internal bootloader?
+    INT_BOOTLOADER_EN    => INT_BOOTLOADER_EN,    -- implement processor-internal bootloader?
     USER_CODE            => USER_CODE,            -- custom user code
     -- internal Instruction memory --
     MEM_INT_IMEM_EN      => MEM_INT_IMEM_EN,      -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE    => MEM_INT_IMEM_SIZE,    -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM     => MEM_INT_IMEM_ROM,     -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
     MEM_INT_DMEM_EN      => MEM_INT_DMEM_EN,      -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE    => MEM_INT_DMEM_SIZE,    -- size of processor-internal data memory in bytes

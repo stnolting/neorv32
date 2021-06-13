@@ -106,8 +106,7 @@ enum ERROR_CODES {
   ERROR_SIZE      = 1, /**< 1: Insufficient instruction memory capacity */
   ERROR_CHECKSUM  = 2, /**< 2: Checksum error in executable */
   ERROR_FLASH     = 3, /**< 3: SPI flash access error */
-  ERROR_ROM       = 4, /**< 4: Instruction memory is marked as read-only */
-  ERROR_SYSTEM    = 5  /**< 5: System exception */
+  ERROR_SYSTEM    = 4  /**< 4: System exception */
 };
 
 
@@ -436,6 +435,8 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
       print_hex_word(cause);
       neorv32_uart_print(" @ pc=");
       print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
+      neorv32_uart_print(" mtval=");
+      print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL));
       system_error(ERROR_SYSTEM);
     }
   }
@@ -450,12 +451,6 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
 void get_exe(int src) {
 
   getting_exe = 1; // to inform trap handler we were trying to get an executable
-
-  // is MEM implemented and read-only?
-  if ((SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM_ROM)) &&
-      (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM)))  {
-    system_error(ERROR_ROM);
-  }
 
   // flash image base address
   uint32_t addr = SPI_FLASH_BOOT_ADR;

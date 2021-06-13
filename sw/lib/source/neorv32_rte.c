@@ -276,10 +276,17 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart_printf("\n\n<<< Processor Configuration Overview >>>\n");
 
   // Processor - general stuff
-  neorv32_uart0_printf("\n=== << General >> ===\n");
-  neorv32_uart0_printf("Clock:         %u Hz\n", SYSINFO_CLK);
-  neorv32_uart0_printf("User ID:       0x%x\n", SYSINFO_USER_CODE);
+  neorv32_uart0_printf("\n=== << General >> ===\n"
+                       "Clock:         %u Hz\n"
+                       "User ID:       0x%x\n", SYSINFO_CLK, SYSINFO_USER_CODE);
   neorv32_uart0_printf("Full HW reset: "); __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_HW_RESET));
+  neorv32_uart0_printf("Boot Config.:  Boot ");
+  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_BOOTLOADER)) {
+    neorv32_uart0_printf("via Bootloader\n");
+  }
+  else {
+    neorv32_uart0_printf("from memory (@ 0x%x)\n", SYSINFO_ISPACE_BASE);
+  }
   neorv32_uart0_printf("On-chip debug: "); __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_OCD));
 
 
@@ -287,8 +294,8 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\n=== << CPU >> ===\n");
 
   // ID
-  neorv32_uart0_printf("Hart ID:           0x%x\n", neorv32_cpu_csr_read(CSR_MHARTID));
-  neorv32_uart0_printf("Vendor ID:         0x%x\n", neorv32_cpu_csr_read(CSR_MVENDORID));
+  neorv32_uart0_printf("Hart ID:           0x%x\n"
+                       "Vendor ID:         0x%x\n", neorv32_cpu_csr_read(CSR_MHARTID), neorv32_cpu_csr_read(CSR_MVENDORID));
 
   tmp = neorv32_cpu_csr_read(CSR_MARCHID);
   neorv32_uart0_printf("Architecture ID:   0x%x", tmp);
@@ -367,15 +374,11 @@ void neorv32_rte_print_hw_config(void) {
   // IMEM
   neorv32_uart0_printf("Internal IMEM:        ");
   if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM)) {
-    neorv32_uart0_printf("yes, %u bytes", SYSINFO_IMEM_SIZE);
-    if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM_ROM)) {
-      neorv32_uart0_printf(", read-only (ROM)");
-    }
+    neorv32_uart0_printf("yes, %u bytes\n", SYSINFO_IMEM_SIZE);
   }
   else {
-    neorv32_uart0_printf("no");
+    neorv32_uart0_printf("no\n");
   }
-  neorv32_uart0_printf("\n");
 
   // DMEM
   neorv32_uart0_printf("Data base address:    0x%x\n", SYSINFO_DSPACE_BASE);
@@ -419,9 +422,6 @@ void neorv32_rte_print_hw_config(void) {
       neorv32_uart0_printf("\n");
     }
   }
-
-  neorv32_uart0_printf("Bootloader:           ");
-  __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_BOOTLOADER));
 
   neorv32_uart0_printf("Ext. bus interface:   ");
   __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT));

@@ -67,6 +67,24 @@ package neorv32_package is
   constant jtag_tap_idcode_partid_c  : std_ulogic_vector(15 downto 0) := x"cafe"; -- part number
   constant jtag_tap_idcode_manid_c   : std_ulogic_vector(10 downto 0) := "00000000000"; -- manufacturer id
 
+  -- Architecture Constants (do not modify!) ------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  constant data_width_c   : natural := 32; -- native data path width - do not change!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050609"; -- no touchy!
+  constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
+  constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
+
+  -- Internal Interface Types ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  type pmp_ctrl_if_t is array (0 to 63) of std_ulogic_vector(07 downto 0);
+  type pmp_addr_if_t is array (0 to 63) of std_ulogic_vector(33 downto 0);
+  type cp_data_if_t  is array (0 to 7)  of std_ulogic_vector(data_width_c-1 downto 0);
+
+  -- Internal Memory Types Configuration Types ----------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  type mem32_t is array (natural range <>) of std_ulogic_vector(31 downto 0); -- memory with 32-bit entries
+  type mem8_t  is array (natural range <>) of std_ulogic_vector(07 downto 0); -- memory with 8-bit entries
+
   -- Helper Functions -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function index_size_f(input : natural) return natural;
@@ -84,20 +102,13 @@ package neorv32_package is
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
   function bswap32_f(input : std_ulogic_vector) return std_ulogic_vector;
+  function char_tolower_f(ch : character) return character;
+  function str_equal_f(str0 : string; str1 : string) return boolean;
+  impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
 
-  -- Architecture Constants (do not modify!) ------------------------------------------------
+  -- Internal (auto-generated) Configurations -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050608"; -- no touchy!
-  constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
-  constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
-  constant def_rst_val_c  : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
-
-  -- Internal Types -------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  type pmp_ctrl_if_t is array (0 to 63) of std_ulogic_vector(07 downto 0);
-  type pmp_addr_if_t is array (0 to 63) of std_ulogic_vector(33 downto 0);
-  type cp_data_if_t  is array (0 to 7)  of std_ulogic_vector(data_width_c-1 downto 0);
+  constant def_rst_val_c : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
 
   -- Processor-Internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -865,16 +876,16 @@ package neorv32_package is
     generic (
       -- General --
       CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
-      BOOTLOADER_EN                : boolean := true;   -- implement processor-internal bootloader?
       USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
       HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
+      INT_BOOTLOADER_EN            : boolean := true;   -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
       -- On-Chip Debugger (OCD) --
       ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
       CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
-      CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement muld/div extension?
+      CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
@@ -893,7 +904,6 @@ package neorv32_package is
       -- Internal Instruction memory --
       MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
-      MEM_INT_IMEM_ROM             : boolean := false;  -- implement processor-internal instruction memory as ROM
       -- Internal Data memory --
       MEM_INT_DMEM_EN              : boolean := true;   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
@@ -1001,7 +1011,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
-      CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
+      CPU_EXTENSION_RISCV_M        : boolean := false; -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
@@ -1076,7 +1086,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
       CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
-      CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
+      CPU_EXTENSION_RISCV_M        : boolean := false; -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
@@ -1165,7 +1175,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_alu
     generic (
-      CPU_EXTENSION_RISCV_M : boolean := true;  -- implement muld/div extension?
+      CPU_EXTENSION_RISCV_M : boolean := true;  -- implement mul/div extension?
       FAST_SHIFT_EN         : boolean := false; -- use barrel shifter for shift operations
       TINY_SHIFT_EN         : boolean := false  -- use tiny (single-bit) shifter for shift operations
     );
@@ -1416,10 +1426,9 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_imem
     generic (
-      IMEM_BASE      : std_ulogic_vector(31 downto 0) := x"00000000"; -- memory base address
-      IMEM_SIZE      : natural := 4*1024; -- processor-internal instruction memory size in bytes
-      IMEM_AS_ROM    : boolean := false;  -- implement IMEM as read-only memory?
-      BOOTLOADER_EN  : boolean := true    -- implement and use bootloader?
+      IMEM_BASE    : std_ulogic_vector(31 downto 0) := x"00000000"; -- memory base address
+      IMEM_SIZE    : natural := 4*1024; -- processor-internal instruction memory size in bytes
+      IMEM_AS_IROM : boolean := false   -- implement IMEM as pre-initialized read-only memory?
     );
     port (
       clk_i  : in  std_ulogic; -- global clock line
@@ -1769,12 +1778,11 @@ package neorv32_package is
     generic (
       -- General --
       CLOCK_FREQUENCY      : natural := 0;      -- clock frequency of clk_i in Hz
-      BOOTLOADER_EN        : boolean := true;   -- implement processor-internal bootloader?
+      INT_BOOTLOADER_EN            : boolean := true; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
       USER_CODE            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
       -- Internal Instruction memory --
       MEM_INT_IMEM_EN      : boolean := true;   -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE    : natural := 8*1024; -- size of processor-internal instruction memory in bytes
-      MEM_INT_IMEM_ROM     : boolean := false;  -- implement processor-internal instruction memory as ROM
       -- Internal Data memory --
       MEM_INT_DMEM_EN      : boolean := true;   -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE    : natural := 4*1024; -- size of processor-internal data memory in bytes
@@ -2087,5 +2095,81 @@ package body neorv32_package is
     output_v(31 downto 24) := input(07 downto 00);
     return output_v;
   end function bswap32_f;
+
+  -- Function: Convert char to lowercase ----------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function char_tolower_f(ch : character) return character is
+    variable res: character;
+   begin
+     case ch is
+       when 'A'    => res := 'a';
+       when 'B'    => res := 'b';
+       when 'C'    => res := 'c';
+       when 'D'    => res := 'd';
+       when 'E'    => res := 'e';
+       when 'F'    => res := 'f';
+       when 'G'    => res := 'g';
+       when 'H'    => res := 'h';
+       when 'I'    => res := 'i';
+       when 'J'    => res := 'j';
+       when 'K'    => res := 'k';
+       when 'L'    => res := 'l';
+       when 'M'    => res := 'm';
+       when 'N'    => res := 'n';
+       when 'O'    => res := 'o';
+       when 'P'    => res := 'p';
+       when 'Q'    => res := 'q';
+       when 'R'    => res := 'r';
+       when 'S'    => res := 's';
+       when 'T'    => res := 't';
+       when 'U'    => res := 'u';
+       when 'V'    => res := 'v';
+       when 'W'    => res := 'w';
+       when 'X'    => res := 'x';
+       when 'Y'    => res := 'y';
+       when 'Z'    => res := 'z';
+       when others => res := ch;
+      end case;
+    return res;
+  end function char_tolower_f;
+
+  -- Function: Compare strings (convert to lower case, check lengths) -----------------------
+  -- -------------------------------------------------------------------------------------------
+  function str_equal_f(str0 : string; str1 : string) return boolean is
+    variable tmp0_v : string(str0'range);
+    variable tmp1_v : string(str1'range);
+  begin
+    if (str0'length /= str1'length) then -- equal length?
+      return false;
+    else
+      -- convert to lower case --
+      for i in str0'range loop
+        tmp0_v(i) := char_tolower_f(str0(i));
+      end loop;
+      for i in str1'range loop
+        tmp1_v(i) := char_tolower_f(str1(i));
+      end loop;
+      -- compare lowercase strings --
+      if (tmp0_v = tmp1_v) then
+        return true;
+      else
+        return false;
+      end if;
+    end if;
+  end function str_equal_f;
+
+  -- Function: Initialize mem32_t array from another mem32_t array --------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- impure function: returns NOT the same result every time it is evaluated with the same arguments since the source file might have changed
+  impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t is
+    variable mem_v : mem32_t(0 to depth-1);
+    variable idx_v : natural;
+  begin
+    mem_v := (others => (others => '0')); -- make sure remaining memory entries are set to zero
+    for idx_v in 0 to init'length-1 loop -- init only in range of source data array
+      mem_v(idx_v) := init(idx_v);
+    end loop; -- idx_v
+    return mem_v;
+  end function mem32_init_f;
 
 end neorv32_package;

@@ -46,12 +46,11 @@ entity neorv32_sysinfo is
   generic (
     -- General --
     CLOCK_FREQUENCY      : natural := 0;      -- clock frequency of clk_i in Hz
-    BOOTLOADER_EN        : boolean := true;   -- implement processor-internal bootloader?
+    INT_BOOTLOADER_EN            : boolean := true; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     USER_CODE            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN      : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE    : natural := 8*1024; -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM     : boolean := false;  -- implement processor-internal instruction memory as ROM
     -- Internal Data memory --
     MEM_INT_DMEM_EN      : boolean := true;   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE    : natural := 4*1024; -- size of processor-internal data memory in bytes
@@ -125,15 +124,14 @@ begin
 
   -- SYSINFO(2): Implemented processor devices/features --
   -- Memory --
-  sysinfo_mem(2)(00) <= bool_to_ulogic_f(BOOTLOADER_EN);     -- processor-internal bootloader implemented?
+  sysinfo_mem(2)(00) <= bool_to_ulogic_f(INT_BOOTLOADER_EN); -- processor-internal bootloader implemented?
   sysinfo_mem(2)(01) <= bool_to_ulogic_f(MEM_EXT_EN);        -- external memory bus interface implemented?
   sysinfo_mem(2)(02) <= bool_to_ulogic_f(MEM_INT_IMEM_EN);   -- processor-internal instruction memory implemented?
-  sysinfo_mem(2)(03) <= bool_to_ulogic_f(MEM_INT_IMEM_ROM);  -- processor-internal instruction memory implemented as ROM?
-  sysinfo_mem(2)(04) <= bool_to_ulogic_f(MEM_INT_DMEM_EN);   -- processor-internal data memory implemented?
-  sysinfo_mem(2)(05) <= bool_to_ulogic_f(wb_big_endian_c);   -- is external memory bus interface using BIG-endian byte-order?
-  sysinfo_mem(2)(06) <= bool_to_ulogic_f(ICACHE_EN);         -- processor-internal instruction cache implemented?
+  sysinfo_mem(2)(03) <= bool_to_ulogic_f(MEM_INT_DMEM_EN);   -- processor-internal data memory implemented?
+  sysinfo_mem(2)(04) <= bool_to_ulogic_f(wb_big_endian_c);   -- is external memory bus interface using BIG-endian byte-order?
+  sysinfo_mem(2)(05) <= bool_to_ulogic_f(ICACHE_EN);         -- processor-internal instruction cache implemented?
   --
-  sysinfo_mem(2)(13 downto 07) <= (others => '0'); -- reserved
+  sysinfo_mem(2)(13 downto 06) <= (others => '0'); -- reserved
   -- Misc --
   sysinfo_mem(2)(14) <= bool_to_ulogic_f(ON_CHIP_DEBUGGER_EN); -- on-chip debugger implemented?
   sysinfo_mem(2)(15) <= bool_to_ulogic_f(dedicated_reset_c);   -- dedicated hardware reset of all core registers?

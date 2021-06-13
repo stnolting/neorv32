@@ -1065,13 +1065,12 @@ enum NEORV32_NEOLED_CT_enum {
  * SYSINFO_FEATURES (r/-): Implemented processor devices/features
  **************************************************************************/
  enum NEORV32_SYSINFO_FEATURES_enum {
-  SYSINFO_FEATURES_BOOTLOADER       =  0, /**< SYSINFO_FEATURES  (0) (r/-): Bootloader implemented when 1 (via BOOTLOADER_EN generic) */
+  SYSINFO_FEATURES_BOOTLOADER       =  0, /**< SYSINFO_FEATURES  (0) (r/-): Bootloader implemented when 1 (via INT_BOOTLOADER_EN generic) */
   SYSINFO_FEATURES_MEM_EXT          =  1, /**< SYSINFO_FEATURES  (1) (r/-): External bus interface implemented when 1 (via MEM_EXT_EN generic) */
   SYSINFO_FEATURES_MEM_INT_IMEM     =  2, /**< SYSINFO_FEATURES  (2) (r/-): Processor-internal instruction memory implemented when 1 (via MEM_INT_IMEM_EN generic) */
-  SYSINFO_FEATURES_MEM_INT_IMEM_ROM =  3, /**< SYSINFO_FEATURES  (3) (r/-): Processor-internal instruction memory implemented as ROM when 1 (via MEM_INT_IMEM_ROM generic) */
-  SYSINFO_FEATURES_MEM_INT_DMEM     =  4, /**< SYSINFO_FEATURES  (4) (r/-): Processor-internal data memory implemented when 1 (via MEM_INT_DMEM_EN generic) */
-  SYSINFO_FEATURES_MEM_EXT_ENDIAN   =  5, /**< SYSINFO_FEATURES  (5) (r/-): External bus interface uses BIG-endian byte-order when 1 (via package.xbus_big_endian_c constant) */
-  SYSINFO_FEATURES_ICACHE           =  6, /**< SYSINFO_FEATURES  (6) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
+  SYSINFO_FEATURES_MEM_INT_DMEM     =  3, /**< SYSINFO_FEATURES  (3) (r/-): Processor-internal data memory implemented when 1 (via MEM_INT_DMEM_EN generic) */
+  SYSINFO_FEATURES_MEM_EXT_ENDIAN   =  4, /**< SYSINFO_FEATURES  (4) (r/-): External bus interface uses BIG-endian byte-order when 1 (via package.xbus_big_endian_c constant) */
+  SYSINFO_FEATURES_ICACHE           =  5, /**< SYSINFO_FEATURES  (5) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
 
   SYSINFO_FEATURES_OCD              = 14, /**< SYSINFO_FEATURES (14) (r/-): On-chip debugger implemented when 1 (via ON_CHIP_DEBUGGER_EN generic) */
   SYSINFO_FEATURES_HW_RESET         = 15, /**< SYSINFO_FEATURES (15) (r/-): Dedicated hardware reset of core registers implemented when 1 (via package's dedicated_reset_c constant) */
