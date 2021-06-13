@@ -71,7 +71,6 @@ entity neorv32_ProcessorTop_Minimal is
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              : boolean := true;    -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 8*1024;  -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM             : boolean := true;    -- implement processor-internal instruction memory as ROM
 
     -- Internal Data memory --
     MEM_INT_DMEM_EN              : boolean := true;    -- implement processor-internal data memory
@@ -107,7 +106,7 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,  -- clock frequency of clk_i in Hz
-    BOOTLOADER_EN                => false,            -- implement processor-internal bootloader?
+    INT_BOOTLOADER_EN            => false,            -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     USER_CODE                    => USER_CODE,        -- custom user code
     HW_THREAD_ID                 => HW_THREAD_ID,     -- hardware thread id (32-bit)
 
@@ -141,7 +140,6 @@ begin
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              => MEM_INT_IMEM_EN,       -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE,     -- size of processor-internal instruction memory in bytes
-    MEM_INT_IMEM_ROM             => MEM_INT_IMEM_ROM,      -- implement processor-internal instruction memory as ROM
 
     -- Internal Data memory --
     MEM_INT_DMEM_EN              => MEM_INT_DMEM_EN,       -- implement processor-internal data memory
