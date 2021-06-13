@@ -130,28 +130,30 @@ begin
   if (IMEM_AS_IROM = false) generate
     mem_access: process(clk_i)
     begin
-      -- this RAM style should not require "no_rw_check" attributes as the read-after-write behavior
-      -- is intended to be defined implicitly via the if-WRITE-else-READ construct
       if rising_edge(clk_i) then
-        if (wren_i = '1') and (ben_i(0) = '1') then -- byte 0
-          mem_ram_b0(to_integer(unsigned(addr))) <= data_i(07 downto 00);
-        else
-          mem_b0_rd <= mem_ram_b0(to_integer(unsigned(addr)));
-        end if;
-        if (wren_i = '1') and (ben_i(1) = '1') then -- byte 1
-          mem_ram_b1(to_integer(unsigned(addr))) <= data_i(15 downto 08);
-        else
-          mem_b1_rd <= mem_ram_b1(to_integer(unsigned(addr)));
-        end if;
-        if (wren_i = '1') and (ben_i(2) = '1') then -- byte 2
-          mem_ram_b2(to_integer(unsigned(addr))) <= data_i(23 downto 16);
-        else
-          mem_b2_rd <= mem_ram_b2(to_integer(unsigned(addr)));
-        end if;
-        if (wren_i = '1') and (ben_i(3) = '1') then -- byte 3
-          mem_ram_b3(to_integer(unsigned(addr))) <= data_i(31 downto 24);
-        else
-          mem_b3_rd <= mem_ram_b3(to_integer(unsigned(addr)));
+        -- this RAM style should not require "no_rw_check" attributes as the read-after-write behavior
+        -- is intended to be defined implicitly via the if-WRITE-else-READ construct
+        if (acc_en = '1') then -- reduce switching activity when not accessed
+          if (wren_i = '1') and (ben_i(0) = '1') then -- byte 0
+            mem_ram_b0(to_integer(unsigned(addr))) <= data_i(07 downto 00);
+          else
+            mem_b0_rd <= mem_ram_b0(to_integer(unsigned(addr)));
+          end if;
+          if (wren_i = '1') and (ben_i(1) = '1') then -- byte 1
+            mem_ram_b1(to_integer(unsigned(addr))) <= data_i(15 downto 08);
+          else
+            mem_b1_rd <= mem_ram_b1(to_integer(unsigned(addr)));
+          end if;
+          if (wren_i = '1') and (ben_i(2) = '1') then -- byte 2
+            mem_ram_b2(to_integer(unsigned(addr))) <= data_i(23 downto 16);
+          else
+            mem_b2_rd <= mem_ram_b2(to_integer(unsigned(addr)));
+          end if;
+          if (wren_i = '1') and (ben_i(3) = '1') then -- byte 3
+            mem_ram_b3(to_integer(unsigned(addr))) <= data_i(31 downto 24);
+          else
+            mem_b3_rd <= mem_ram_b3(to_integer(unsigned(addr)));
+          end if;
         end if;
       end if;
     end process mem_access;
