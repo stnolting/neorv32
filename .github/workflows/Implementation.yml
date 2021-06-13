@@ -15,38 +15,30 @@ on:
 
 jobs:
 
-  all-in-one:
+
+  Matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate.outputs.matrix }}
+
+    steps:
+
+    - name: '🧰 Repository Checkout'
+      uses: actions/checkout@v2
+
+    - name: '🔧 Generate examples matrix'
+      id: generate
+      run: ./.github/generate-job-matrix.py
+
+
+  All-in-one:
+    needs: Matrix
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - {
-            board: UPduino_v3,
-            design: 'MinimalBoot',
-            bitstream: neorv32_UPduino_v3_MinimalBoot.bin
-          }
-          - {
-            board: UPduino_v3,
-            design: 'UP5KDemo',
-            bitstream: neorv32_UPduino_v3_UP5KDemo.bin
-          }
-          - {
-            board: Fomu,
-            design: 'Minimal',
-            bitstream: neorv32_Fomu_pvt_Minimal.bit
-          }
-          - {
-            board: Fomu,
-            design: 'MinimalBoot',
-            bitstream: neorv32_Fomu_pvt_MinimalBoot.bit
-          }
-          - {
-            board: Fomu,
-            design: 'UP5KDemo',
-            bitstream: neorv32_Fomu_pvt_UP5KDemo.bit
-          }
-    name: '🛳️ All-in-one | ${{ matrix.board }} | ${{ matrix.design }}'
+        include: ${{ fromJson(needs.Matrix.outputs.matrix) }}
+    name: '🛳️ All-in-one | ${{ matrix.board }} · ${{ matrix.design }}'
     env:
       GHDL_PLUGIN_MODULE: ghdl
 
