@@ -966,6 +966,9 @@ int main() {
     // backup current UART0 configuration
     tmp_a = UART0_CT;
 
+    // make sure UART is enabled
+    UART0_CT |= (1 << UART_CT_EN);
+
     // disable UART0 sim_mode if it is enabled
     UART0_CT &= ~(1 << UART_CT_SIM_MODE);
 
@@ -1015,6 +1018,9 @@ int main() {
   // backup current UART0 configuration
   tmp_a = UART0_CT;
 
+  // make sure UART is enabled
+  UART0_CT |= (1 << UART_CT_EN);
+
   // disable UART0 sim_mode if it is enabled
   UART0_CT &= ~(1 << UART_CT_SIM_MODE);
 
@@ -1056,6 +1062,7 @@ int main() {
     // initialize UART1
     UART1_CT = 0;
     tmp_a = UART0_CT; // copy configuration from UART0
+    tmp_a |= (1 << UART_CT_EN); // make sure UART is enabled
     tmp_a &= ~(1 << UART_CT_SIM_MODE); // make sure sim_mode is disabled
     UART1_CT = tmp_a;
 
@@ -1102,6 +1109,7 @@ int main() {
     // initialize UART1
     UART1_CT = 0;
     tmp_a = UART0_CT; // copy configuration from UART0
+    tmp_a |= (1 << UART_CT_EN); // make sure UART is enabled
     tmp_a &= ~(1 << UART_CT_SIM_MODE); // make sure sim_mode is disabled
     UART1_CT = tmp_a;
 
