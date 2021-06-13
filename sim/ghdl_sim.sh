@@ -8,7 +8,7 @@
 # Abort if any command returns != 0
 set -e
 
-cd $(dirname "$0")/../..
+cd $(dirname "$0")/..
 
 # Default simulation configuration
 SIM_CONFIG=--stop-time=8ms
