@@ -138,9 +138,9 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal ext_mem_c_atomic_reservation : std_ulogic := '0';
 
   -- external memory components --
-  signal ext_ram_a : ext_mem_a_ram_t := init_wbmem(application_init_image); -- initialized, used to simulate external IMEM
-  signal ext_ram_b : ext_mem_b_ram_t := (others => (others => '0')); -- zero, used to simulate external DMEM
-  signal ext_ram_c : ext_mem_c_ram_t; -- uninitialized, used to simulate external IO
+  signal ext_ram_a : mem32_t(0 to ext_mem_a_size_c/4-1) := init_wbmem(application_init_image); -- initialized, used to simulate external IMEM
+  signal ext_ram_b : mem32_t(0 to ext_mem_b_size_c/4-1) := (others => (others => '0')); -- zero, used to simulate external DMEM
+  signal ext_ram_c : mem32_t(0 to ext_mem_c_size_c/4-1); -- uninitialized, used to simulate external IO
 
   -- simulated external memory bus feedback type --
   type ext_mem_t is record
