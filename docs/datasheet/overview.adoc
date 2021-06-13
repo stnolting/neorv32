@@ -22,28 +22,11 @@ in the root directory of the NEORV32 repository. Please also check out the <<_le
 
 **Structure**
 
-Chapter <<_neorv32_processor_soc>>
-
-* top entity signals and configuration generics, address space layout, internal peripheral devices and interrupts, internal
-memories and caches, internal bus architecture, external bus interface
-
-Chapter <<_neorv32_central_processing_unit_cpu>>
-
-* instruction set(s) and extensions, instruction timing, control and status registers, traps, exceptions and interrupts,
-hardware execution safety, native bus interface
-
-Chapter <<_on_chip_debugger_ocd>>
-
-* on-chip debugging compatible to the "Minimal RISC-V Debug Specification Version 0.13.2".
-
-Chapter <<_software_framework>>
-
-* core libraries, bootloader, makefiles, runtime environment
-
-Additional documentation: **https://stnolting.github.io/neorv32/ug[User Guide]**
-
-* toolchain installation and setup, hardware setup, software setup, application compilation, simulating the processor
-debugging using the on-chip debugger
+* <<_neorv32_processor_soc>>
+* <<_neorv32_central_processing_unit_cpu>>
+* <<_on_chip_debugger_ocd>>
+* <<_software_framework>>
+* Additional documentation: **https://stnolting.github.io/neorv32/ug[User Guide]**
 
 [TIP]
 Links in this document are <<_structure,highlighted>>.

@@ -1018,11 +1018,11 @@ This read-only memory is pre-initialized with the default bootloader and is mapp
 
 The bootloader provides several options to upload an executable (via UART or from external SPI flash) and store it to
 the _instruction address space_ so the CPU can execute it. Boot scenario **1a** uses the processor-internal IMEM
-(<<_mem_int_imem_en>> = _true_). This scenario implements the internal <<_Instruction Memory (IMEM)>> as non-initialized
+(<<_mem_int_imem_en>> = _true_). This scenario implements the internal <<_instruction_memory_imem>> as non-initialized
 true RAM so the bootloader can write the actual executable to it.
 
 Boot scenario **1b** uses a processor-external IMEM (<<_mem_int_imem_en>> = _false_) that is connected via the processor's bus interface.
-In this scenario the internal <<_Instruction Memory (IMEM)>> is not implemented at all and the bootloader will write the executable
+In this scenario the internal <<_instruction_memory_imem>> is not implemented at all and the bootloader will write the executable
 to the processor-external memory.
 
 :sectnums!:
