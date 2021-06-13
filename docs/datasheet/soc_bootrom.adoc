@@ -8,7 +8,7 @@
 | Hardware source file(s): | neorv32_boot_rom.vhd | 
 | Software driver file(s): | none             | _implicitly used_
 | Top entity port:         | none             | 
-| Configuration generics:  | _BOOTLOADER_EN_ | implement processor-internal bootloader when _true_
+| Configuration generics:  | _INT_BOOTLOADER_EN_ | implement processor-internal bootloader when _true_
 | CPU interrupts:          | none             | 
 |=======================
 
@@ -17,8 +17,8 @@ The default `neorv32_boot_rom.vhd` HDL source file provides a _generic_ memory d
 memory. You might need to replace/modify the source file in order to use platform-specific features
 (like advanced memory resources) or to improve technology mapping and/or timing.
 
-As the name already suggests, the boot ROM contains the read-only bootloader image. When the bootloader
-is enabled via the _BOOTLOADER_EN_ generic it is directly executed after system reset.
+As the name already suggests, the processor-internal boot ROM contains the read-only bootloader image. When the bootloader
+is enabled via the __INT_BOOTLOADER_EN__ generic it is directly executed after system reset.
 
 The bootloader ROM is located at address 0xFFFF0000. This location is fixed and the bootloader ROM size
 must not exceed 32kB. The bootloader read-only memory is automatically initialized during synthesis via the
@@ -28,14 +28,9 @@ bootloader sources.
 The bootloader ROM address space cannot be used for other applications even when the bootloader is not
 implemented.
 
-**Boot Configuration**
-
-If the bootloader is implemented, the CPU starts execution after reset right at the beginning of the boot
-ROM. If the bootloader is not implemented, the CPU starts execution at the beginning of the instruction
-memory space (defined via `ispace_base_c` constant in the `neorv32_package.vhd` VHDL package file,
-default `ispace_base_c` = 0x00000000). In this case, the instruction memory has to contain a valid
-executable – either by using the internal IMEM with an initialization during synthesis or by a user-defined
-initialization process.
+.Boot Configuration
+[TIP]
+See section <<_boot_configuration>> for more information regarding the processor's different boot scenarios.
 
 [TIP]
 See section <<_bootloader>> for more information regarding the bootloader's boot process and configuration options.

@@ -308,7 +308,7 @@ The _specific_ generics are listed below.
 | **CPU_BOOT_ADDR** | _std_ulogic_vector(31 downto 0)_ | 0x00000000
 3+| This address defines the reset address at which the CPU starts fetching instructions after reset. In terms of the NEORV32 processor, this
 generic is configured with the base address of the bootloader ROM (default) or with the base address of the processor-internal instruction
-memory (IMEM) if the bootloader is disabled (_BOOTLOADER_EN_ = _false_). See section <<_address_space>> for more information.
+memory (IMEM) if the bootloader is disabled (_INT_BOOTLOADER_EN_ = _false_). See section <<_address_space>> for more information.
 |======
 
 [cols="4,4,2"]

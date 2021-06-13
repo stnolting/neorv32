@@ -10,7 +10,7 @@
 | Top entity port:         | none             | 
 | Configuration generics:  | _MEM_INT_IMEM_EN_ | implement processor-internal IMEM when _true_
 |                          | _MEM_INT_IMEM_SIZE_ | IMEM size in bytes
-|                          | _MEM_INT_IMEM_ROM_ | implement IMEM as ROM when _true_
+|                          | _INT_BOOTLOADER_EN_ | use internal bootlodaer when _true_ (implements IMEM as ROM)
 | CPU interrupts:          | none             | 
 |=======================
 
@@ -27,8 +27,8 @@ beginning of the instruction memory space (default `ispace_base_c` = 0x00000000)
 By default, the IMEM is implemented as RAM, so the content can be modified during run time. This is
 required when using a bootloader that can update the content of the IMEM at any time. If you do not need
 the bootloader anymore – since your application development has completed and you want the program to
-permanently reside in the internal instruction memory – the IMEM can also be implemented as true _read-only_
-memory. In this case set the _MEM_INT_IMEM_ROM_ generic of the processor's top entity to _true_.
+permanently reside in the internal instruction memory – the IMEM is automatically implemented as _pre-intialized_
+ROM when the processor-internal bootloader is disabled (_INT_BOOTLOADER_EN_ = _false_).
 
 When the IMEM is implemented as ROM, it will be initialized during synthesis with the actual application
 program image. The compiler toolchain will generate a VHDL initialization

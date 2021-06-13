@@ -133,6 +133,10 @@ respectively.
 If optional modules (like CPU extensions or peripheral devices) are *not enabled* the according circuitry **will not be synthesized at all**.
 Hence, the disabled modules do not increase area and power requirements and do not impact the timing.
 
+[TIP]
+Not all configuration combinations are valid. The processor RTL code provides sanity checks to inform the user
+during synthesis/simulation if an invalid combination has been detected.
+
 **CSR Description**
 
 The description of each CSR provides the following summary:
@@ -164,15 +168,15 @@ See section <<_system_configuration_information_memory_sysinfo>> for more inform
 
 
 :sectnums!:
-===== _BOOTLOADER_EN_
+===== _INT_BOOTLOADER_EN_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **BOOTLOADER_EN** | _boolean_ | true
-3+| Implement the boot ROM, pre-initialized with the bootloader image when true. This will also change the
-processor's boot address from the beginning of the instruction memory address space (default =
-0x00000000) to the base address of the boot ROM. See section <<_bootloader>> for more information.
+| **INT_BOOTLOADER_EN** | _boolean_ | true
+3+| Implement the processor-internal boot ROM, pre-initialized with the default bootloader image when _true_.
+This will also change the processor's boot address from the beginning of the instruction memory address space (default =
+0x00000000) to the base address of the boot ROM. See section <<_boot_configuration>> for more information.
 |======
 
 
@@ -457,18 +461,6 @@ See sections <<_address_space>> and <<_instruction_memory_imem>> for more inform
 |======
 | **MEM_INT_IMEM_SIZE** | _natural_ | 16*1024
 3+| Size in bytes of the processor internal instruction memory (IMEM). Has no effect when _MEM_INT_IMEM_EN_ is _false_.
-|======
-
-
-:sectnums!:
-===== _MEM_INT_IMEM_ROM_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **MEM_INT_IMEM_ROM** | _boolean_ | false
-3+| Implement processor-internal instruction memory as read-only memory, which will be initialized with the
-application image at synthesis time. Has no effect when _MEM_INT_IMEM_EN_ is _false_.
 |======
 
 
@@ -822,61 +814,31 @@ The NEORV32 features a single non-maskable interrupt source via the `nm_irq_i` t
 entity signal that can be used to signal critical system conditions. This interrupt source _cannot_ be disabled. Hence, it does _not_ provide
 configuration/status flags in the `mie` and `mip` CSRs. The RISC-V-compatible `mcause` value `0x80000000` is used to indicate the non-maskable interrupt.
 
+
+
 <<<
 // ####################################################################################################################
 :sectnums:
 === Address Space
 
-By default, the total 32-bit (4GB) address space of the NEORV32 Processor is divided into four main regions:
+The NEORV32 Processor provides 32-bit physical addresses accessing up to 4GB of address space.
+By default, this address space is divided into four main regions:
 
-1. Instruction memory (IMEM) space – for instructions and constants.
-2. Data memory (DMEM) space – for application runtime data (heap, stack, etc.).
-3. Bootloader ROM address space – for the processor-internal bootloader.
-4. IO/peripheral address space – for the processor-internal IO/peripheral devices (e.g., UART).
-
-.NEORV32 processor - address space (default configuration)
-image::address_space.png[900]
+1. **Instruction address space** – for instructions (=code) and constants. A configurable section of this address space is used by
+internal and/or external _instruction memory_ (IMEM).
+2. **Data address space** – for application runtime data (heap, stack, etc.). A configurable section of this address space is used by
+internal and/or external _data memory_ (DMEM).
+3. **Bootloader address space**. A _fixed_ section of this address space is used by
+internal _bootloader memory_ (BOOTLDROM).
+4. **IO/peripheral address space** – for the processor-internal IO/peripheral devices (e.g., UART).
 
 [TIP]
 These four memory regions are handled by the linker when compiling a NEORV32 executable.
 See section <<_executable_image_format>> for more information.
 
-[NOTE]
-If the IMEM (internal or external) is less than the (default) maximum size (2GB), there is
-a "dead address space" between it and the DMEM. This provides an additional safety feature
-since data corrupting scenarios like stack overflow cannot directly corrupt the content of the IMEM:
-any access to the "dead address space" in between will raise an exception that can be caught
-by the runtime environment.
+.NEORV32 processor - address space (default configuration)
+image::address_space.png[900]
 
-**Address Space Layout**
-
-The general address space layout consists of two main configuration constants: `ispace_base_c` defining
-the base address of the instruction memory address space and `dspace_base_c` defining the base address of
-the data memory address space. Both constants are defined in the NEORV32 VHDL package file
-`rtl/core/neorv32_package.vhd`:
-
-[source,vhdl]
-----
--- Architecture Configuration ----------------------------------------------------
--- ----------------------------------------------------------------------------------
-constant ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000";
-constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000";
-----
-
-The default configuration assumes the instruction memory address space starting at address _0x00000000_
-and the data memory address space starting at _0x80000000_. Both values can be modified for a specific
-setup and the address space may overlap or can be completely identical.
-
-The base address of the bootloader (at _0xFFFF0000_) and the IO region (at _0xFFFFFF00_) for the peripheral
-devices are also defined in the package and are fixed. These address regions cannot be used for other
-applications – even if the bootloader or all IO devices are not implemented.
-
-[WARNING]
-When using the processor-internal data and/or instruction memories (DMEM/IMEM) and using a non-default
-configuration for the `dspace_base_c` and/or `ispace_base_c` base addresses, the
-following requirements have to be fulfilled:
-**1.** Both base addresses have to be aligned to a 4-byte boundary.
-**2.** Both base addresses have to be aligned to the according internal memory sizes.
 
 :sectnums:
 ==== CPU Data and Instruction Access
@@ -905,10 +867,41 @@ a periodic interrupt from the _MTIME_ timer unit, user-level programs could alte
 configuration corrupting this interrupt. This kind of security issues can be compensated using the
 PMP system (see <<_machine_physical_memory_protection>>).
 
+
+:sectnums:
+==== Address Space Layout
+
+The general address space layout consists of two main configuration constants: `ispace_base_c` defining
+the base address of the _instruction memory address space_ and `dspace_base_c` defining the base address of
+the _data memory address space_. Both constants are defined in the NEORV32 VHDL package file
+`rtl/core/neorv32_package.vhd`:
+
+[source,vhdl]
+----
+-- Architecture Configuration ----------------------------------------------------
+-- ----------------------------------------------------------------------------------
+constant ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000";
+constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000";
+----
+
+The default configuration assumes the _instruction memory address space_ starting at address _0x00000000_
+and the _data memory address space_ starting at _0x80000000_. Both values can be modified for a specific
+setup and the address space may overlap or can be completely identical. Make sure that both base addresses
+are _aligned_ to a 4-byte boundary.
+
+[NOTE]
+The base address of the internal bootloader (at _0xFFFF0000_) and the internal IO region (at _0xFFFFFE00_) for
+peripheral devices are also defined in the package and are fixed. These address regions cannot not be used for other
+applications – even if the bootloader or all IO devices are not implemented - without modifying the core's
+hardware sources.
+
+
 :sectnums:
 ==== Physical Memory Attributes
 
-The processor setup defines four simple attributes for the four processor-internal address space regions:
+The processor setup defines fixed attributes for the four processor-internal address space regions.
+Accessing a memory region in a way that violates any of these attributes will raise an according
+access exception..
 
 * `r` – read access (from CPU data access interface, e.g. via "load")
 * `w` – write access (from CPU data access interface, e.g. via "store")
@@ -918,8 +911,8 @@ The processor setup defines four simple attributes for the four processor-intern
 * `16` – half-word (16-bit)-accessible (when writing)
 * `32` – word (32-bit)-accessible (when writing)
 
-The following table shows the provided physical memory attributes of each region. Additional attributes (like
-denying execute right for certain region of the IMEM) can be provided using the RISC-V <<_machine_physical_memory_protection>> extension.
+[NOTE]
+Read accesses (i.e. loads) can always access data in word, half-word and byte quantities (requiring an accordingly aligned address).
 
 [cols="^1,^2,^2,^3,^2"]
 [options="header",grid="rows"]
@@ -931,44 +924,119 @@ denying execute right for certain region of the IMEM) can be provided using the 
 | 1 | IMEM                  | 0x00000000 | up to 2GB | `r/w/x/a/8/16/32`
 |=======================
 
-Only the CPU of the processor has access to the internal memories and IO devices, hence all accesses are
-always exclusive. Accessing a memory region in a way that violates the provided attributes will trigger a
-load/store/instruction fetch access exception or will return a failed atomic access result, respectively.
+[TIP]
+The following table shows the provided physical memory attributes of each region. Additional attributes (for example
+controlling certain right for specific address space regions) can be provided using the RISC-V <<_machine_physical_memory_protection>> extension.
 
-The physical memory attributes of memories and/or devices connected via the external bus interface have to
-defined by those components or the interconnection fabric.
 
 :sectnums:
-==== Internal Memories
+==== Memory Configuration
 
-The processor can implement internal memories for instructions (IMEM) and data (DMEM), which will be
-mapped to FPGA block RAMs. The implementation of these memories is controlled via the boolean
-<<_mem_int_imem_en>> and <<_mem_int_dmem_en>> generics.
+The NEORV32 Processor was designed to provide maximum flexibility for the memory configuration.
+The processor can populate the _instruction address space_ and/or the _data address space_ with **internal memories**
+for instructions (IMEM) and data (DMEM). Processor **external memories** can be used as an _alternative_ or even _in combination_ with
+the internal ones. The figure below show some exemplary memory configurations.
 
-The size of these memories are configured via the _MEM_INT_IMEM_SIZE_ and _MEM_INT_DMEM_SIZE_
-generics (in bytes), respectively. The processor-internal instruction memory (IMEM) can optionally be
-implemented as true ROM (<<_mem_int_imem_rom>>), which is initialized with the application code during
-synthesis.
+.Exemplary memory configurations
+image::neorv32_memory_configurations.png[800]
+
+:sectnums!:
+===== Internal Memories
+
+The processor-internal memories (<<_instruction_memory_imem>> and <<_data_memory_dmem>>) are enabled (=implemented)
+via the <<_mem_int_imem_en>> and <<_mem_int_dmem_en>> generics. Their sizes are configures via the according
+<<_mem_int_imem_size>> and <<_mem_int_dmem_size>> generics.
 
 If the processor-internal IMEM is implemented, it is located right at the base address of the instruction
 address space (default `ispace_base_c` = _0x00000000_). Vice versa, the processor-internal data memory is
 located right at the beginning of the data address space (default `dspace_base_c` = _0x80000000_) when
 implemented.
 
-:sectnums:
-==== External Memory/Bus Interface
+[TIP]
+The default processor setup uses only _internal_ memories.
 
-Any CPU access (data or instructions), which does not fulfill one of the following conditions, is forwarded
-to the <<_processor_external_memory_interface_wishbone_axi4_lite>>:
+[NOTE]
+If the IMEM (internal or external) is less than the (default) maximum size (2GB), there is
+a "dead address space" between it and the DMEM. This provides an additional safety feature
+since data corrupting scenarios like stack overflow cannot directly corrupt the content of the IMEM:
+any access to the "dead address space" in between will raise an exception that can be caught
+by the runtime environment.
+
+:sectnums!:
+===== External Memories
+
+If external memories (or further IP modules) shall be connected via the _processor's external bus interface_,
+the interface has to be enabled via <<_mem_ext_en>> generic (=_true_). More information regarding this interface can be
+found in section <<_processor_external_memory_interface_wishbone_axi4_lite>>.
+
+Any CPU access (data or instructions), which does not fulfill _at least one_ of the following conditions, is forwarded
+via the processor's bus interface to external components:
 
 * access to the processor-internal IMEM and processor-internal IMEM is implemented
 * access to the processor-internal DMEM and processor-internal DMEM is implemented
 * access to the bootloader ROM and beyond → addresses >= _BOOTROM_BASE_ (default 0xFFFF0000) will never be forwarded to the external memory interface
 
-The external bus interface is available when the <<_mem_ext_en>> generic is _true_. If this interface is
-deactivated, any access exceeding the internal memories or peripheral devices will trigger a bus access fault
-exception. If <<_mem_ext_timeout>> is greater than zero any external bus access that is not acknowledged or terminated
-within <<_mem_ext_timeout>> clock cycles will auto-timeout and raise the according bus fault exception.
+If no (or not all) processor-internal memories are implemented, the according base addresses are mapped to external memories.
+For example, if the processor-internal IMEM is not implemented (<<_mem_int_imem_en>> = _false_), the processor will forward
+any access to the instruction address space (starting at `ispace_base_c`) via the external bus interface to the external
+memory system.
+
+[NOTE]
+If the external interface is deactivated, any access exceeding the internal memory address space (instruction, data, bootloader) or
+the internal peripheral address space will trigger a bus access fault exception.
+
+
+:sectnums:
+==== Boot Configuration
+
+Due to the flexible memory configuration concept, the NEORV32 Processor provides several different boot mechanisms.
+The figure below shows details and further options of the two most common boot scenarios.
+
+.NEORV32 boot configurations
+image::neorv32_boot_configurations.png[800]
+
+[NOTE]
+The configuration of internal or external data memory (DMEM; <<_mem_int_dmem_en>> = _true_ / _false_) is not further
+relevant for the boot configuration itself. Hence, it is not further illustrated here.
+
+The general boot scenario (**1** or **2**) is configured via the <<_int_bootloader_en>> generic. If this generic is set
+**true**, boot scenario **1** is used. If it is set **false**, boot scenario **2** is used.
+
+[NOTE]
+Please note that the provided boot scenarios are just exemplary setups that (should) fit most common requirements.
+Much more sophisticated boot scenarios are possible by combining internal and external memories. For example, the default
+internal bootloader could be used as first-level bootloader that loads (from extern SPI flash) a second-level bootloader
+that is placed and execute in internal IMEM. This second-level bootloader could then fetch the actual application and
+store it to external _data_ memory and transfers CPU control to that.
+
+:sectnums!:
+===== Boot Scenario 1
+
+Boot scenarios **1a** and **1b** use the processor-internal <<_bootloader>>. This general setup is enabled by setting
+the <<_int_bootloader_en>> generic to true, which will implement the processor-internal <<_bootloader_rom_bootrom>>.
+This read-only memory is pre-initialized with the default bootloader and is mapped to the processor _bootloader address space_.
+
+The bootloader provides several options to upload an executable (via UART or from external SPI flash) and store it to
+the _instruction address space_ so the CPU can execute it. Boot scenario **1a** uses the processor-internal IMEM
+(<<_mem_int_imem_en>> = _true_). This scenario implements the internal <<_Instruction Memory (IMEM)>> as non-initialized
+true RAM so the bootloader can write the actual executable to it.
+
+Boot scenario **1b** uses a processor-external IMEM (<<_mem_int_imem_en>> = _false_) that is connected via the processor's bus interface.
+In this scenario the internal <<_Instruction Memory (IMEM)>> is not implemented at all and the bootloader will write the executable
+to the processor-external memory.
+
+:sectnums!:
+===== Boot Scenario 2
+
+Boot scenarios **2a** and **2b** do not use the processor-internal bootloader. Hence, the <<_int_bootloader_en>> generic
+is set _false_. In this configuration to <<_bootloader_rom_bootrom>> is not implemented at all and a "pre-initialization"
+mechanism is required in order to provide an executable _in_ memory.
+
+Boot scenario **2a** uses the processor-internal IMEM (<<_mem_int_imem_en>> = _true_) that is implemented as _read-only memory_
+in this scenario. It is pre-initialized (by the bitstream) with the actual application executable.
+
+In contrast, boot scenario **2b** uses a processor-external IMEM (<<_mem_int_imem_en>> = _false_). In this scenario the system designer
+is responsible for providing a initialized external memory that contains the actual application to be executed.
 
 
 
