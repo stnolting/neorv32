@@ -1,4 +1,4 @@
-# Check NEORV32 software framework and test processor using .ci/ scripts
+# Check NEORV32 software framework and test processor
 
 name: Processor
 
@@ -21,77 +21,78 @@ on:
 
 jobs:
 
+
   Processor:
     runs-on: ubuntu-latest
-    name: '🐧 Ubuntu'
+    name: '🐧 Ubuntu | Shell script'
 
     steps:
 
-      - name: '🧰 Repository Checkout'
-        uses: actions/checkout@v2
+    - name: '🧰 Repository Checkout'
+      uses: actions/checkout@v2
 
-      - name: '🔧 Setup Environment Variables'
-        run: |
-          echo "$GITHUB_WORKSPACE/riscv/bin" >> $GITHUB_PATH
-          echo $GITHUB_WORKSPACE
+    - name: '🔧 Setup Environment Variables'
+      run: |
+        echo "$GITHUB_WORKSPACE/riscv/bin" >> $GITHUB_PATH
+        echo $GITHUB_WORKSPACE
 
-      - name: '⚙️ Setup RISC-V GCC'
-        run: |
-          mkdir riscv
-          curl -fsSL https://github.com/stnolting/riscv-gcc-prebuilt/releases/download/rv32i-2.0.0/riscv32-unknown-elf.gcc-10.2.0.rv32i.ilp32.newlib.tar.gz | \
-          tar -xzf - -C riscv
-          ls -al riscv
+    - name: '⚙️ Setup RISC-V GCC'
+      run: |
+        mkdir riscv
+        curl -fsSL https://github.com/stnolting/riscv-gcc-prebuilt/releases/download/rv32i-2.0.0/riscv32-unknown-elf.gcc-10.2.0.rv32i.ilp32.newlib.tar.gz | \
+        tar -xzf - -C riscv
+        ls -al riscv
 
-      - name: '⚙️ Setup GHDL Simulator'
-        uses: ghdl/setup-ghdl-ci@nightly
-        with:
-          backend: llvm
+    - name: '⚙️ Setup GHDL Simulator'
+      uses: ghdl/setup-ghdl-ci@nightly
+      with:
+        backend: llvm
 
-      - name: '🚧 Run Software Framework Tests'
-        run: ./sw/example/processor_check/check.sh
+    - name: '🚧 Run Software Framework Tests'
+      run: ./sw/example/processor_check/check.sh
 
-      - name: '🚧 Run Processor Hardware Tests with shell script'
-        run: ./sim/ghdl/ghdl_sim.sh
+    - name: '🚧 Run Processor Hardware Tests with shell script'
+      run: ./sim/ghdl/ghdl_sim.sh
 
 
-  VUnit:
+  VUnit-Container:
     runs-on: ubuntu-latest
-    name: '🛳️ VUnit'
+    name: '🛳️ Container | VUnit'
 
     steps:
 
-      - name: '🧰 Repository Checkout'
-        uses: actions/checkout@v2
+    - name: '🧰 Repository Checkout'
+      uses: actions/checkout@v2
 
-      - name: '🔧 Setup Environment Variables'
-        run: |
-          echo "$GITHUB_WORKSPACE/riscv/bin" >> $GITHUB_PATH
-          echo $GITHUB_WORKSPACE
+    - name: '🔧 Setup Environment Variables'
+      run: |
+        echo "$GITHUB_WORKSPACE/riscv/bin" >> $GITHUB_PATH
+        echo $GITHUB_WORKSPACE
 
-      - name: '⚙️ Setup RISC-V GCC'
-        run: |
-          mkdir riscv
-          curl -fsSL https://github.com/stnolting/riscv-gcc-prebuilt/releases/download/rv32i-2.0.0/riscv32-unknown-elf.gcc-10.2.0.rv32i.ilp32.newlib.tar.gz | \
-          tar -xzf - -C riscv
-          ls -al riscv
+    - name: '⚙️ Setup RISC-V GCC'
+      run: |
+        mkdir riscv
+        curl -fsSL https://github.com/stnolting/riscv-gcc-prebuilt/releases/download/rv32i-2.0.0/riscv32-unknown-elf.gcc-10.2.0.rv32i.ilp32.newlib.tar.gz | \
+        tar -xzf - -C riscv
+        ls -al riscv
 
-      - name: '⚙️ Build and install Processor Check software'
-        run: |
-          make -C sw/example/processor_check \
-            clean_all \
-            USER_FLAGS+=-DRUN_CHECK \
-            USER_FLAGS+=-DUART0_SIM_MODE \
-            MARCH=-march=rv32imac \
-            info \
-            all
+    - name: '⚙️ Build and install Processor Check software'
+      run: |
+        make -C sw/example/processor_check \
+          clean_all \
+          USER_FLAGS+=-DRUN_CHECK \
+          USER_FLAGS+=-DUART0_SIM_MODE \
+          MARCH=-march=rv32imac \
+          info \
+          all
 
-      - name: '📤 Archive Processor Check application image'
-        uses: actions/upload-artifact@v2
-        with:
-          name: application
-          path: rtl/core/neorv32_application_image.vhd
+    - name: '📤 Archive Processor Check application image'
+      uses: actions/upload-artifact@v2
+      with:
+        name: application
+        path: rtl/core/neorv32_application_image.vhd
 
-      - name: '🚧 Run Processor Hardware Tests with VUnit'
-        uses: VUnit/vunit_action@master
-        with:
-          cmd: ./sim/run.py --ci-mode -v
+    - name: '🚧 Run Processor Hardware Tests with VUnit'
+      uses: VUnit/vunit_action@master
+      with:
+        cmd: ./sim/run.py --ci-mode -v
