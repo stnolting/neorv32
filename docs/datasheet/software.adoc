@@ -34,7 +34,7 @@ The default toolchain prefix used by the project's makefiles is (can be changed 
 
 [TIP]
 More information regarding the toolchain (building from scratch or downloading the prebuilt ones)
-can be found in section <<_toolchain_setup>>.
+can be found in the user guides' section https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup[Software Toolchain Setup].
 
 
 
@@ -342,13 +342,6 @@ For the automatic boot from an SPI flash, the SPI controller has to be implement
 generic is _true_) and the machine system timer MTIME has to be implemented (_IO_MTIME_EN_
 generic is _true_), too, to allow an auto-boot timeout counter.
 
-[WARNING]
-The bootloader is intended to work independent of the actual hardware (-configuration). Hence, it
-should be compiled with the minimal base ISA only. The current version of the bootloader uses the
-`rv32i` ISA – so it will not work on `rv32e` architectures. To make the bootloader work on an embedded
-CPU configuration or on any other more sophisticated configuration, recompile it using the according ISA
-(see section <<_customizing_the_internal_bootloader>>).
-
 To interact with the bootloader, connect the primary UART (UART0) signals (`uart0_txd_o` and
 `uart0_rxd_o`) of the processor's top entity via a serial port (-adapter) to your computer (hardware flow control is
 not used so the according interface signals can be ignored.), configure your
@@ -490,9 +483,12 @@ change the default sector size if your flash has a sector size greater or less t
 #define SPI_FLASH_SECTOR_SIZE (64*1024)
 ----
 
-[IMPORTANT]
-For any change you made inside the bootloader, you have to recompile the bootloader (see section
-<<_customizing_the_internal_bootloader>>) and do a new synthesis of the processor.
+[TIP]
+More information regarding customization of the bootloader can be found in section
+https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader[Customizing the Internal Bootloader]
+of the NEORV32 user guide. This guide also provides a tutorial how to program an external SPI flash
+to automatically boot from it after reset (
+https://stnolting.github.io/neorv32/ug/#_programming_an_external_spi_flash_via_the_bootloader[Programming an External SPI Flash via the Bootloader]).
 
 
 :sectnums:

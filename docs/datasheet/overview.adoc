@@ -157,9 +157,7 @@ neorv32            - Project home folder
 │ ├processor      - Processor wrappers
 │ └system         - System wrappers for advanced connectivity
 ├sim              - Simulation files
-│├ghdl           - Simulation scripts for GHDL
-│├rtl_modules    - Processor modules for simulation-only
-│└vivado         - Pre-configured Xilinx ISIM waveform
+│└rtl_modules    - Processor modules for simulation-only
 └sw               - Software framework
  ├bootloader      - Sources and scripts for the NEORV32 internal bootloader
  ├common          - Linker script and crt0.S start-up code
