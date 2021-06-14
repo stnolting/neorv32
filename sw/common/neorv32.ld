@@ -46,21 +46,24 @@ OUTPUT_ARCH(riscv)
 ENTRY(_start)
 SEARCH_DIR("/opt/riscv/riscv32-unknown-elf/lib"); SEARCH_DIR("=/opt/riscv/riscv64-unknown-linux-gnu/lib"); SEARCH_DIR("=/usr/local/lib"); SEARCH_DIR("=/lib"); SEARCH_DIR("=/usr/lib");
 
-/* ************************************************************************* */
-/* NEORV32 memory configuration.                                             */
-/* Make sure this is sync with your processor/memory hardware configuration! */
-/* ************************************************************************* */
-/* "rom"   : instruction memory (IMEM) / bootloader ROM                      */
-/* "ram"   : data memory (DMEM)                                              */
-/* "iodev" : peripheral/IO devices (not used here; passed to crt0)           */
-/* ************************************************************************* */
+/* ************************************************************************** */
+/* NEORV32 memory section configuration.                                      */
+/* ************************************************************************** */
+/* "ram"   : data memory (int/ext DMEM) - make sure this is sync with the HW! */
+/* ************************************************************************** */
+/* "rom"   : instruction memory (int/ext IMEM or bootloader ROM)              */
+/* "iodev" : peripheral/IO devices                                            */
+/* ************************************************************************** */
 MEMORY
 {
-/* "rom" section: first value of ORIGIN/LENGTH => bootloader ROM; second value of ORIGIN/LENGTH => instruction memory */
-/* section sizes have to be a multiple of 4-bytes! */
+/* section sizes have to be a multiple of 4-bytes */
 
-  rom  (rx)  : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 4*1024 : 16*1024
-  ram (rwx)  : ORIGIN = 0x80000000, LENGTH = 8*1024
+  ram  (rwx) : ORIGIN = 0x80000000, LENGTH = 8*1024
+
+/* rom and iodev sections should NOT be modified by the user at all! */
+/* rom section: first value of ORIGIN/LENGTH => bootloader ROM; second value of ORIGIN/LENGTH => instruction memory */
+
+  rom   (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 32K : 2048M
   iodev (rw) : ORIGIN = 0xFFFFFE00, LENGTH = 512
 
 }

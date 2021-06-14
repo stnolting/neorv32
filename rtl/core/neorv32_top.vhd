@@ -317,7 +317,6 @@ begin
   assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Direct boot from memory (processor-internal IMEM)." severity note;
   assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Direct boot from memory (processor-external (I)MEM)." severity note;
   --
-  assert not (((INT_BOOTLOADER_EN = true) and (boot_rom_size_c > boot_rom_max_size_c))) report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range." severity error;
   assert not ((MEM_EXT_EN = false) and (MEM_INT_DMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal IMEM." severity error;
   assert not ((MEM_EXT_EN = false) and (MEM_INT_IMEM_EN = false) and (INT_BOOTLOADER_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal IMEM and bootloader." severity error;
 
@@ -720,8 +719,7 @@ begin
   if (INT_BOOTLOADER_EN = true) generate
     neorv32_boot_rom_inst: neorv32_boot_rom
     generic map (
-      BOOTROM_BASE => boot_rom_base_c, -- boot ROM base address
-      BOOTROM_SIZE => boot_rom_size_c  -- processor-internal boot TOM memory size in bytes
+      BOOTROM_BASE => boot_rom_base_c -- boot ROM base address
     )
     port map (
       clk_i  => clk_i,                        -- global clock line

@@ -14,23 +14,26 @@
 
 [NOTE]
 The default `neorv32_boot_rom.vhd` HDL source file provides a _generic_ memory design that infers embedded
-memory. You might need to replace/modify the source file in order to use platform-specific features
-(like advanced memory resources) or to improve technology mapping and/or timing.
+memory for _larger_ memory configurations. You might need to replace/modify the source file in order to use
+platform-specific features (like advanced memory resources) or to improve technology mapping and/or timing.
 
-As the name already suggests, the processor-internal boot ROM contains the read-only bootloader image. When the bootloader
-is enabled via the __INT_BOOTLOADER_EN__ generic it is directly executed after system reset.
+This HDL modules provides a read-only memory that contain the executable code image of the bootloader.
+If the <<_int_bootloader_en>> generic is _true_ this module will be implemented and the CPU boot address
+is modified to directly execute the code from the bootloader ROM after reset.
 
-The bootloader ROM is located at address 0xFFFF0000. This location is fixed and the bootloader ROM size
-must not exceed 32kB. The bootloader read-only memory is automatically initialized during synthesis via the
-`rtl/core/neorv32_bootloader_image.vhd` file, which is generated when compiling and installing the
-bootloader sources.
+The bootloader ROM is located at address `0xFFFF0000` and can occupy a address space of up to 32kB. The base
+address as well as the maximum address space size are fixed and cannot (should not!) be modified as this
+might address collision with other processor modules.
 
-The bootloader ROM address space cannot be used for other applications even when the bootloader is not
-implemented.
+The bootloader memory is _read-only_ and is automatically initialized with the bootloader executable image
+`rtl/core/neorv32_bootloader_image.vhd` during synthesis. The actual _physical_ size of the ROM is also
+determined via synthesis and expanded to the next power of two. For example, if the bootloader code requires
+10kB of storage, a ROM with 16kB will be generated. The maximum size must not exceed 32kB.
+
+.Bootloader - Software
+[TIP]
+See section <<_bootloader>> for more information regarding the actual bootloader software/executable itself.
 
 .Boot Configuration
 [TIP]
 See section <<_boot_configuration>> for more information regarding the processor's different boot scenarios.
-
-[TIP]
-See section <<_bootloader>> for more information regarding the bootloader's boot process and configuration options.

@@ -75,9 +75,12 @@ architecture neorv32_imem_rtl of neorv32_imem is
   signal rden   : std_ulogic;
   signal addr   : std_ulogic_vector(index_size_f(IMEM_SIZE/4)-1 downto 0);
 
-  -- -------------------------- --
-  -- IMEM as pre-initalized ROM --
-  -- -------------------------- --
+  -- --------------------------- --
+  -- IMEM as pre-initialized ROM --
+  -- --------------------------- --
+
+  -- application (image) size in bytes --
+  constant imem_app_size_c : natural := (application_init_image'length)*4;
 
   -- ROM - initialized with executable code --
   constant mem_rom : mem32_t(0 to IMEM_SIZE/4-1) := mem32_init_f(application_init_image, IMEM_SIZE/4);
@@ -100,6 +103,15 @@ architecture neorv32_imem_rtl of neorv32_imem is
   signal mem_b0_rd, mem_b1_rd, mem_b2_rd, mem_b3_rd : std_ulogic_vector(7 downto 0);
 
 begin
+
+  -- Sanity Checks --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert not (IMEM_AS_IROM = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as ROM (" & natural'image(IMEM_SIZE) & " bytes), pre-initialized with application." severity note;
+  assert not (IMEM_AS_IROM = false) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as blank RAM (" & natural'image(IMEM_SIZE) & " bytes)." severity note;
+  --
+  assert false report "imem app size: " & natural'image(imem_app_size_c) & " bytes." severity note;
+  assert not ((IMEM_AS_IROM = true) and (imem_app_size_c > IMEM_SIZE)) report "NEORV32 PROCESSOR CONFIG ERROR: Application (image, " & natural'image(imem_app_size_c) & " bytes) does not fit into processor-internal IMEM (ROM, " & natural'image(IMEM_SIZE) & " bytes)!" severity error;
+
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

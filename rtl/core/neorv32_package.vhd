@@ -70,7 +70,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050609"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050610"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
 
@@ -118,8 +118,8 @@ package neorv32_package is
   --> internal data/instruction memory sizes are configured via top's generics
 
   -- Internal Bootloader ROM --
+  -- Actual bootloader size is determined during runtime via the length of the bootloader initialization image
   constant boot_rom_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffff0000"; -- bootloader base address, fixed!
-  constant boot_rom_size_c      : natural := 4*1024; -- module's address space in bytes
   constant boot_rom_max_size_c  : natural := 32*1024; -- max module's address space size in bytes, fixed!
 
   -- On-Chip Debugger: Debug Module --
@@ -1465,8 +1465,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_boot_rom
     generic (
-      BOOTROM_BASE : std_ulogic_vector(31 downto 0) := x"FFFF0000"; -- boot ROM base address
-      BOOTROM_SIZE : natural := 4*1024  -- processor-internal boot ROM memory size in bytes
+      BOOTROM_BASE : std_ulogic_vector(31 downto 0) := x"FFFF0000" -- boot ROM base address
     );
     port (
       clk_i  : in  std_ulogic; -- global clock line
@@ -2165,10 +2164,10 @@ package body neorv32_package is
     variable mem_v : mem32_t(0 to depth-1);
     variable idx_v : natural;
   begin
-    mem_v := (others => (others => '0')); -- make sure remaining memory entries are set to zero
-    for idx_v in 0 to init'length-1 loop -- init only in range of source data array
-      mem_v(idx_v) := init(idx_v);
-    end loop; -- idx_v
+      mem_v := (others => (others => '0')); -- make sure remaining memory entries are set to zero
+      for idx_v in 0 to init'length-1 loop -- init only in range of source data array
+        mem_v(idx_v) := init(idx_v);
+      end loop; -- idx_v
     return mem_v;
   end function mem32_init_f;
 
