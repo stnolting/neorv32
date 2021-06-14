@@ -52,7 +52,7 @@ jobs:
       run: ./sw/example/processor_check/check.sh
 
     - name: '🚧 Run Processor Hardware Tests with shell script'
-      run: /bin/bash -c "chmod u+x ./sim/ghdl_sim.sh && ./sim/ghdl_sim.sh"
+      run: ./sim/ghdl_sim.sh
 
 
   VUnit-Container:
