@@ -213,31 +213,68 @@ example: `$ make MARCH=-march=rv32ic clean_all exe`
 :sectnums:
 === Executable Image Format
 
-When all the application sources have been compiled and linked, a final executable file has to be generated.
-For this purpose, the makefile uses the NEORV32-specific linker script `sw/common/neorv32.ld`. This linker script defines three memory sections:
-`rom`, `ram` and `iodev`. These sections have specific access attributes: Read access (`r`), write access (`w`) and executable (`x`).
+In order to generate a file, which can be executed by the processor, all source files have to be compiler, linked
+and packed into a final _executable_.
 
-.Linker memory sections
+:sectnums:
+==== Linker Script
+
+When all the application sources have been compiled, they need to be _linked_ in order to generate a unified
+program file. For this purpose the makefile uses the NEORV32-specific linker script `sw/common/neorv32.ld` for
+linking all object files that were generated during compilation.
+
+The linker script defines three memory _sections_: `rom`, `ram` and `iodev`. Each section provides specific
+access _attributes_: read access (`r`), write access (`w`) and executable (`x`).
+
+.Linker memory sections - general
 [cols="<2,^1,<7"]
 [options="header",grid="rows"]
 |=======================
 | Memory section  | Attributes | Description
-| `rom`           | `rx`       | Instruction memory (IMEM) **OR** bootloader ROM
-| `ram`           | `rwx`      | Data memory (DMEM)
-| `iodev`         | `rw`       | Memory-mapped IO/peripheral devices
+| `ram`           | `rwx`      | Data memory address space (processor-internal/external DMEM)
+| `rom`           | `rx`       | Instruction memory address space (processor-internal/external IMEM) _or_ internal bootloader ROM
+| `iodev`         | `rw`       | Processor-internal memory-mapped IO/peripheral devices address space
 |=======================
 
-The `iodev` section is reserved for processor-internal memory-mapped IO and peripheral devices. The linker does not use this section at all
-and just passes the start and end addresses of this section to the start-up code `crt0.S` (see section <<_start_up_code_crt0>>).
+These sections are defined right at the beginning of the linker script:
+
+.Linker memory sections - cut-out from linker script `neorv32.ld`
+[source,c]
+----
+MEMORY
+{
+  ram  (rwx) : ORIGIN = 0x80000000, LENGTH = 8*1024
+  rom   (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 32K : 2048M
+  iodev (rw) : ORIGIN = 0xFFFFFE00, LENGTH = 512
+}
+----
+
+Each memory section provides a _base address_ `ORIGIN` and a _size_ `LENGTH`. The base address and size of the `iodev` section is
+fixed and must not be altered. The base addresses and sizes of the `ram` and `rom` regions correspond to the total available instruction
+and data memory address space (see section <<_address_space_layout>>).
+
+`ORIGIN` of the `ram` section has to be always identical to the processor's `dspace_base_c` hardware configuration. Additonally,
+`ORIGIN` of the `rom` section has to be always identical to the processor's `ispace_base_c` hardware configuration.
+
+The sizes of `ram` section has to be equal to the size of the _physical_ available data instruction memory. For example, if the processor
+setup only uses processor-internal DMEM (<<_mem_int_dmem_en>> = _true_ and no external data memory attached) the `LENGTH` parameter of
+this memory section has to be equal to the size configured by the <<_mem_int_dmem_size>> generic.
+
+The sizes of `rom` section is a little bit more complicated. The default linker script configuration assumes a _maximum_ of 2GB for this
+memory space which is also the default configuration of the processor's hardware instruction memory address space. This size _does not_ have
+to reflect the _actual_ physical size of the instruction memory (internal IMEM and/or processor-external memory). It just provides a maximum
+limit. When uploading new executable via the bootloader, the bootloader itself checks if sufficient _physical_ instruction memory is available.
+If a new executable is embedded right into the internal-IMEM the synthesis tool will check, if the configured instruction memory size
+is sufficient (e.g., via the <<_mem_int_imem_size>> generic).
 
 [NOTE]
-The `rom` region is used to place the instructions of "normal" applications. If the bootloader is being compiled, the makefile defines the `make_bootloader`
-symbol, which changes the _ORIGIN_ (base address) and _LENGTH_ (size) attributes of the `rom` region according to the BOOTROM definitions.
+The `rom` region uses a conditional assignment (via the `make_bootloader` symbol) for `ORIGIN` and `LENGTH` that is used to place
+"normal executable" (i.e. for the IMEM) or "the bootloader image" to their according memories.
 
-The linker maps all the regions from the compiled object files into only four final sections: `.text`, `.rodata`, `.data` and `.bss`
-using the specified memory section. These four regions contain everything required for the application to run:
+The linker maps all the regions from the compiled object files into four final sections: `.text`, `.rodata`, `.data` and `.bss`.
+These four regions contain everything required for the application to run:
 
-.Executable regions
+.Linker memory regions
 [cols="<1,<9"]
 [options="header",grid="rows"]
 |=======================
@@ -249,14 +286,19 @@ using the specified memory section. These four regions contain everything requir
 |=======================
 
 The `.text` and `.rodata` sections are mapped to processor's instruction memory space and the `.data` and
-`.bss` sections are mapped to the processor's data memory space. Finally, the `.text`, `.rodata` and `.data` sections are extracted and concatenated into a single file
-**`main.bin`**.
+`.bss` sections are mapped to the processor's data memory space. Finally, the `.text`, `.rodata` and `.data`
+sections are extracted and concatenated into a single file `main.bin`.
 
-**Executable Image Generator**
 
-The **`main.bin`** file is processed by the NEORV32 image generator (`sw/image_gen`) to generate the final
-executable. It is automatically compiled when invoking the makefile. The image generator can generate three
-types of executables, selected by a flag when calling the generator:
+:sectnums:
+==== Executable Image Generator
+
+The `main.bin` file is packed by the NEORV32 image generator (`sw/image_gen`) to generate the final executable file.
+
+[NOTE]
+The sources of the image generator are automatically compiled when invoking the makefile.
+
+The image generator can generate three types of executables, selected by a flag when calling the generator:
 
 [cols="<1,<9"]
 [grid="none"]
@@ -266,51 +308,57 @@ types of executables, selected by a flag when calling the generator:
 | `-bld_img` | Generates an executable VHDL memory initialization image for the processor-internal BOOT ROM. This option generates the `rtl/core/neorv32_bootloader_image.vhd` file.
 |=======================
 
-All these options are managed by the makefile – so you don't actually have to think about them. The normal
-application compilation flow will generate the `neorv32_exe.bin` file in the current software project folder
-ready for upload via UART to the NEORV32 bootloader.
+All these options are managed by the makefile. The _normal application_ compilation flow will generate the `neorv32_exe.bin`
+executable to be upload via UART to the NEORV32 bootloader.
 
-The actual executable provides a very small header consisting of three 32-bit words located right at the
-beginning of the file. This header is generated by the image generator. The first word of the executable is the signature
-word and is always `0x4788cafe`. Based on this word, the bootloader can identify a valid image file. The next word represents the size in bytes of the actual program
+The image generator add a small header to the `neorv32_exe.bin` executable, which consists of three 32-bit words located right at the
+beginning of the file. The first word of the executable is the signature word and is always `0x4788cafe`. Based on this word the bootloader
+can identify a valid image file. The next word represents the size in bytes of the actual program
 image in bytes. A simple "complement" checksum of the actual program image is given by the third word. This
 provides a simple protection against data transmission or storage errors.
 
 
-=== Start-Up Code (crt0)
+:sectnums:
+==== Start-Up Code (crt0)
 
-The CPU (and also the processor) requires a minimal start-up and initialization code to bring the CPU (and the SoC)
-into a stable and initialized state before the actual application can be executed. This start-up code is located in
-`sw/common/crt0.S` and is automatically linked with _every_ application program.
-The `crt0.S` is directly executed right after a reset and performs the following operations:
+The CPU and also the processor require a minimal start-up and initialization code to bring the CPU (and the SoC)
+into a stable and initialized state and to initialize the C runtime environment before the actual application can be executed.
+This start-up code is located in `sw/common/crt0.S` and is automatically linked _every_ application program
+and placed right before the actual application code so it gets executed right after reset.
 
-* Initialize integer registers `x1 - x31` (or `x1 - x15` when using the `E` CPU extension) to a defined value.
-* Initialize all CPU core CSRs and also install a default "dummy" trap handler for _all_ traps.
-* Initialize the global pointer `gp` and the stack pointer `sp` according to the `.data` segment layout provided by the linker script.
-* Clear IO area: Write zero to all memory-mapped registers within the IO region (`iodev` section). If certain devices have not been implemented, a bus access fault exception will occur. This exception is captured by the dummy trap handler.
-* Clear the `.bss` section defined by the linker script.
-* Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
-* Call the application's `main` function (with no arguments: `argc` = `argv` = 0).
-* If the `main` function returns `crt0` can call an "after main handler" (see below)
-* If there is no after main handler the processor goes to an endless sleep mode (using a simple loop or via the `wfi` instruction if available).
+The `crt0.S` start-up performs the following operations:
 
-==== After-Main Handler
+[start=1]
+. Initialize all integer registers `x1 - x31` (or jsut `x1 - x15` when using the `E` CPU extension) to a defined value.
+. Initialize the global pointer `gp` and the stack pointer `sp` according to the `.data` segment layout provided by the linker script.
+. Initialize all CPU core CSRs and also install a default "dummy" trap handler for _all_ traps. This handler catches all traps during the early boot phase.
+. Clear IO area: Write zero to all memory-mapped registers within the IO region (`iodev` section). If certain devices have not been implemented, a bus access fault exception will occur. This exception is captured by the dummy trap handler.
+. Clear the `.bss` section defined by the linker script.
+. Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
+. Call the application's `main` function (with _no_ arguments: `argc` = `argv` = 0).
+. If the `main` function returns `crt0` can call an "after-main handler" (see below)
+. If there is no after-main handler or after returning from the after-main handler the processor goes to an endless sleep mode (using a simple loop or via the `wfi` instruction if available).
+
+:sectnums:
+===== After-Main Handler
 
 If the application's `main()` function actually returns, an _after main handler_ can be executed. This handler can be a normal function
-since the C runtime is still available when executed. If the handler uses any kind of peripheral/IO modules, make sure these are
+since the C runtime is still available when executed. If this handler uses any kind of peripheral/IO modules make sure these are
 already initialized within the application or you have to initialize them _inside_ the handler.
-The prototype for the _after main handler_ function is shown below.
 
+.After-main handler - function prototype
 [source,c]
 ----
 void __neorv32_crt0_after_main(int32_t return_code);
 ----
 
-The functions provides one argument (`return_code`) that shows the return value of the application's main function.
-For example, a simple `printf` can be used to inform the user (this example assumes that UART0 has been already
-properly configured in the actual application):
+The function has exactly one argument (`return_code`) that provides the _return value_ of the application's main function.
+For instance, this variable contains _-1_ if the main function returned with `return -1;`.
 
-.After-main handler example
+A simple `printf` can be used to inform the user when the application main function return
+(this example assumes that UART0 has been already properly configured in the actual application):
+
+.After-main handler - example
 [source,c]
 ----
 void __neorv32_crt0_after_main(int32_t return_code) {

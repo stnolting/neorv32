@@ -15,8 +15,8 @@
 
 [NOTE]
 The default `neorv32_dmem.vhd` HDL source file provides a _generic_ memory design that infers embedded
-memory. You might need to replace/modify the source file in order to use platform-specific features
-(like advanced memory resources) or to improve technology mapping and/or timing.
+memory for _larger_ memory configurations. You might need to replace/modify the source file in order to use
+platform-specific features (like advanced memory resources) or to improve technology mapping and/or timing.
 
 Implementation of the processor-internal data memory is enabled via the processor's _MEM_INT_DMEM_EN_
 generic. The size in bytes is defined via the _MEM_INT_DMEM_SIZE_ generic. If the DMEM is implemented,
