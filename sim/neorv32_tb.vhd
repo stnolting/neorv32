@@ -137,7 +137,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- exclusive access / reservation --
   signal ext_mem_c_atomic_reservation : std_ulogic := '0';
 
-  -- external memory components --
+  -- simulated external memory c (IO) --
   signal ext_ram_c : mem32_t(0 to ext_mem_c_size_c/4-1); -- uninitialized, used to simulate external IO
 
   -- simulated external memory bus feedback type --
@@ -421,6 +421,12 @@ begin
         end if;
       end if;
     end process ext_mem_a_access;
+  end generate;
+
+  generate_ext_imem_false:
+  if (ext_imem_c = false) generate
+    wb_mem_a.rdata <= (others => '0');
+    wb_mem_a.ack   <= '0';
   end generate;
 
 

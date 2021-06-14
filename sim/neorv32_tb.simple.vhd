@@ -60,6 +60,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   constant dmem_size_c             : natural := 8*1024; -- size in bytes of processor-internal DMEM / external mem B
   constant f_clock_c               : natural := 100000000; -- main clock in Hz
   constant baud0_rate_c            : natural := 19200; -- simulation UART0 (primary UART) baud rate
+  constant baud1_rate_c            : natural := 19200; -- simulation UART1 (secondary UART) baud rate
   -- simulated external Wishbone memory A (can be used as external IMEM) --
   constant ext_mem_a_base_addr_c   : std_ulogic_vector(31 downto 0) := x"00000000"; -- wishbone memory base address (external IMEM base)
   constant ext_mem_a_size_c        : natural := imem_size_c; -- wishbone memory size in bytes
@@ -80,6 +81,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   constant int_imem_c       : boolean := not ext_imem_c;
   constant int_dmem_c       : boolean := not ext_dmem_c;
   constant uart0_baud_val_c : real := real(f_clock_c) / real(baud0_rate_c);
+  constant uart1_baud_val_c : real := real(f_clock_c) / real(baud1_rate_c);
   constant t_clock_c        : time := (1 sec) / f_clock_c;
 
   -- generators --
@@ -129,7 +131,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   -- exclusive access / reservation --
   signal ext_mem_c_atomic_reservation : std_ulogic := '0';
 
-  -- simulated external memories --
+  -- simulated external memory c (IO) --
   signal ext_ram_c : mem32_t(0 to ext_mem_c_size_c/4-1); -- uninitialized, used to simulate external IO
 
   -- simulated external memory bus feedback type --
@@ -198,7 +200,7 @@ begin
     IO_GPIO_EN                   => true,          -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  => true,          -- implement machine system timer (MTIME)?
     IO_UART0_EN                  => true,          -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART1_EN                  => true,         -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_UART1_EN                  => true,          -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN                    => true,          -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    => true,          -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                => 30,            -- number of PWM channels to implement (0..60); 0 = disabled
@@ -374,6 +376,12 @@ begin
         end if;
       end if;
     end process ext_mem_a_access;
+  end generate;
+
+  generate_ext_imem_false:
+  if (ext_imem_c = false) generate
+    wb_mem_a.rdata <= (others => '0');
+    wb_mem_a.ack   <= '0';
   end generate;
 
 
