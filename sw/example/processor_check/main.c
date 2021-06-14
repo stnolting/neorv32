@@ -966,11 +966,8 @@ int main() {
     // backup current UART0 configuration
     tmp_a = UART0_CT;
 
-    // make sure UART is enabled
-    UART0_CT |= (1 << UART_CT_EN);
-
-    // disable UART0 sim_mode if it is enabled
-    UART0_CT &= ~(1 << UART_CT_SIM_MODE);
+    // reset UART0 and enable it
+    UART0_CT = (1 << UART_CT_EN);
 
     // trigger UART0 RX IRQ
     // the default test bench connects UART0.TXD_O to UART0_RXD_I
@@ -983,7 +980,7 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
 
-    // re-enable UART0 sim_mode if it was enabled
+    // restore original configuration
     UART0_CT = tmp_a;
 
     // disable fast interrupt
@@ -1018,11 +1015,8 @@ int main() {
   // backup current UART0 configuration
   tmp_a = UART0_CT;
 
-  // make sure UART is enabled
-  UART0_CT |= (1 << UART_CT_EN);
-
-  // disable UART0 sim_mode if it is enabled
-  UART0_CT &= ~(1 << UART_CT_SIM_MODE);
+  // reset UART0 and enable it
+  UART0_CT = (1 << UART_CT_EN);
 
   // trigger UART0 TX IRQ
   UART0_DATA = 0; // we need to access the raw HW here, since >UART0_SIM_MODE< might be active
@@ -1034,7 +1028,7 @@ int main() {
   asm volatile("nop");
   asm volatile("nop");
 
-  // re-enable UART sim_mode if it was enabled
+  // restore original configuration
   UART0_CT = tmp_a;
 
   neorv32_cpu_irq_disable(CSR_MIE_FIRQ3E);
@@ -1059,12 +1053,11 @@ int main() {
     // UART1 RX interrupt enable
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ4E);
 
-    // initialize UART1
-    UART1_CT = 0;
-    tmp_a = UART0_CT; // copy configuration from UART0
-    tmp_a |= (1 << UART_CT_EN); // make sure UART is enabled
-    tmp_a &= ~(1 << UART_CT_SIM_MODE); // make sure sim_mode is disabled
-    UART1_CT = tmp_a;
+    // backup current UART1 configuration
+    tmp_a = UART1_CT;
+
+    // reset UART0 and enable it
+    UART1_CT = (1 << UART_CT_EN);
 
     // trigger UART1 RX IRQ
     UART1_DATA = 0;
@@ -1076,8 +1069,8 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
 
-    // disable UART1
-    UART1_CT = 0;
+    // restore original configuration
+    UART1_CT = tmp_a;
 
     // disable fast interrupt
     neorv32_cpu_irq_disable(CSR_MIE_FIRQ4E);
@@ -1106,12 +1099,11 @@ int main() {
     // UART1 RX interrupt enable
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ5E);
 
-    // initialize UART1
-    UART1_CT = 0;
-    tmp_a = UART0_CT; // copy configuration from UART0
-    tmp_a |= (1 << UART_CT_EN); // make sure UART is enabled
-    tmp_a &= ~(1 << UART_CT_SIM_MODE); // make sure sim_mode is disabled
-    UART1_CT = tmp_a;
+    // backup current UART1 configuration
+    tmp_a = UART1_CT;
+
+    // reset UART0 and enable it
+    UART1_CT = (1 << UART_CT_EN);
 
     // trigger UART1 TX IRQ
     UART1_DATA = 0;
@@ -1123,8 +1115,8 @@ int main() {
     asm volatile("nop");
     asm volatile("nop");
 
-    // disable UART1
-    UART1_CT = 0;
+    // restore original configuration
+    UART1_CT = tmp_a;
 
     // disable fast interrupt
     neorv32_cpu_irq_disable(CSR_MIE_FIRQ5E);
