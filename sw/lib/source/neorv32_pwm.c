@@ -90,6 +90,15 @@ void neorv32_pwm_disable(void) {
 
 
 /**********************************************************************//**
+ * Enable pulse width modulation controller.
+ **************************************************************************/
+void neorv32_pwm_enable(void) {
+
+  PWM_CT |= ((uint32_t)(1 << PWM_CT_EN));
+}
+
+
+/**********************************************************************//**
  * Get number of implemented channels.
  * @warning This function will override all duty cycle configuration registers.
  *

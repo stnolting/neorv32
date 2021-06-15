@@ -98,6 +98,15 @@ void neorv32_spi_disable(void) {
 
 
 /**********************************************************************//**
+ * Enable SPI controller.
+ **************************************************************************/
+void neorv32_spi_enable(void) {
+
+  SPI_CT |= ((uint32_t)(1 << SPI_CT_EN));
+}
+
+
+/**********************************************************************//**
  * Activate SPI chip select signal.
  *
  * @note The chip select output lines are LOW when activated.

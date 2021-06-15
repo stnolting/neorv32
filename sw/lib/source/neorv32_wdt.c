@@ -64,9 +64,9 @@ int neorv32_wdt_available(void) {
 /**********************************************************************//**
  * Configure and enable watchdog timer. The WDT control register bits are listed in #NEORV32_WDT_CT_enum.
  *
- * @param[in] prsc Clock prescaler to selet timeout interval. See #NEORV32_CLOCK_PRSC_enum.
+ * @param[in] prsc Clock prescaler to select timeout interval. See #NEORV32_CLOCK_PRSC_enum.
  * @param[in] mode Trigger system reset on timeout when 1, trigger interrupt on timeout when 0.
- * @param[in] lock Control register will be locked when 1 (unitl next reset).
+ * @param[in] lock Control register will be locked when 1 (until next reset).
  **************************************************************************/
 void neorv32_wdt_setup(uint8_t prsc, uint8_t mode, uint8_t lock) {
 
@@ -91,7 +91,7 @@ void neorv32_wdt_setup(uint8_t prsc, uint8_t mode, uint8_t lock) {
 /**********************************************************************//**
  * Disable watchdog timer.
  *
- * @return Returns 0 if WDT is really deativated, -1 otherwise.
+ * @return Returns 0 if WDT is really deactivated, -1 otherwise.
  **************************************************************************/
 int neorv32_wdt_disable(void) {
   

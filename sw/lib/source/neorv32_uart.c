@@ -95,6 +95,13 @@ void neorv32_uart_disable(void) { neorv32_uart0_disable(); }
 
 
 /**********************************************************************//**
+ * Enable UART0.
+ * @warning This functions maps to UART0 (primary UART).
+ **************************************************************************/
+void neorv32_uart_enable(void) { neorv32_uart0_enable(); }
+
+
+/**********************************************************************//**
  * Send single char via UART0.
  *
  * @warning This functions maps to UART0 (primary UART).
@@ -307,6 +314,15 @@ void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
 void neorv32_uart0_disable(void) {
 
   UART0_CT &= ~((uint32_t)(1 << UART_CT_EN));
+}
+
+
+/**********************************************************************//**
+ * Enable UART0.
+ **************************************************************************/
+void neorv32_uart0_enable(void) {
+
+  UART0_CT = ((uint32_t)(1 << UART_CT_EN));
 }
 
 
@@ -662,6 +678,15 @@ void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
 void neorv32_uart1_disable(void) {
 
   UART1_CT &= ~((uint32_t)(1 << UART_CT_EN));
+}
+
+
+/**********************************************************************//**
+ * Enable UART1.
+ **************************************************************************/
+void neorv32_uart1_enable(void) {
+
+  UART1_CT |= ((uint32_t)(1 << UART_CT_EN));
 }
 
 

@@ -48,6 +48,7 @@
 int neorv32_twi_available(void);
 void neorv32_twi_setup(uint8_t prsc, uint8_t ckst_en);
 void neorv32_twi_disable(void);
+void neorv32_twi_enable(void);
 void neorv32_twi_mack_enable(void);
 int neorv32_twi_busy(void);
 int neorv32_twi_start_trans(uint8_t a);
