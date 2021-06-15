@@ -93,8 +93,10 @@ int main() {
   uint32_t is_simulation = 0;
 
 
-  // init UART at default baud rate, no parity bits, no hw flow control
-  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  // init UARTs
+  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE); // UART1 at default baud rate, no parity bits, no hw flow control
+  UART1_CT = UART0_CT; // init UART1 (by copying UART0 control reg)
+
 
 // Disable processor_check compilation by default
 #ifndef RUN_CHECK
@@ -966,8 +968,8 @@ int main() {
     // backup current UART0 configuration
     tmp_a = UART0_CT;
 
-    // reset UART0 and enable it
-    UART0_CT = (1 << UART_CT_EN);
+    // make sure sim mode is disabled
+    UART0_CT &= ~(1 << UART_CT_SIM_MODE);
 
     // trigger UART0 RX IRQ
     // the default test bench connects UART0.TXD_O to UART0_RXD_I
@@ -1015,8 +1017,8 @@ int main() {
   // backup current UART0 configuration
   tmp_a = UART0_CT;
 
-  // reset UART0 and enable it
-  UART0_CT = (1 << UART_CT_EN);
+  // make sure sim mode is disabled
+  UART0_CT &= ~(1 << UART_CT_SIM_MODE);
 
   // trigger UART0 TX IRQ
   UART0_DATA = 0; // we need to access the raw HW here, since >UART0_SIM_MODE< might be active
@@ -1056,8 +1058,8 @@ int main() {
     // backup current UART1 configuration
     tmp_a = UART1_CT;
 
-    // reset UART0 and enable it
-    UART1_CT = (1 << UART_CT_EN);
+    // make sure sim mode is disabled
+    UART1_CT &= ~(1 << UART_CT_SIM_MODE);
 
     // trigger UART1 RX IRQ
     UART1_DATA = 0;
@@ -1102,8 +1104,8 @@ int main() {
     // backup current UART1 configuration
     tmp_a = UART1_CT;
 
-    // reset UART0 and enable it
-    UART1_CT = (1 << UART_CT_EN);
+    // make sure sim mode is disabled
+    UART1_CT &= ~(1 << UART_CT_SIM_MODE);
 
     // trigger UART1 TX IRQ
     UART1_DATA = 0;
