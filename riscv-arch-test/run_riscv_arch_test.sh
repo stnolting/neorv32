@@ -40,13 +40,6 @@ echo "> Copying neorv32 test-target into riscv-arch-test framework..."
 echo "--------------------------------------------------------------------------"
 cp -rf $homedir/riscv-arch-test/port-neorv32/framework_v2.0/riscv-target/neorv32 $homedir/riscv-arch-test/work/riscv-arch-test/riscv-target/.
 
-# Use simulation-optimized DMEM
-echo ""
-echo ">>> Replacing default DMEM *vhd file with simulation-optimized one..."
-echo ""
-rm -rf $homedir/riscv-arch-test/work/neorv32/rtl/core/neorv32_dmem.vhd
-cp  $homedir/riscv-arch-test/work/neorv32/sim/rtl_modules/neorv32_dmem.vhd $homedir/riscv-arch-test/work/neorv32/rtl/core/.
-
 # Make a local copy of the original IMEM rtl file
 echo ""
 echo ">>> Making local backup of original IMEM rtl file (work/neorv32/rtl/core/neorv32_imem.ORIGINAL)..."
@@ -70,6 +63,13 @@ echo "--------------------------------------------------------------------------
 
 # Clean up everything
 make -C $homedir/riscv-arch-test/work/riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME XLEN=32 RISCV_TARGET=neorv32 clean
+
+
+# work in progress FIXME
+echo ""
+echo "\e[1;33mWARNING! 'Zifencei' test is currently disabled (work in progress). \e[0m"
+echo ""
+
 
 # Run tests and check results
 make --silent -C $homedir/riscv-arch-test/work/riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME SIM_TIME=850us XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=I build run verify
