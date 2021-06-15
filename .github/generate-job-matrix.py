@@ -4,11 +4,11 @@ print('::set-output name=matrix::' + str([
 {
   'board': 'UPduino_v3',
   'design': 'MinimalBoot',
-  'bitstream': 'neorv32_UPduino_v3_MinimalBoot.bin'
+  'bitstream': 'neorv32_UPduino_v3_MinimalBoot.bit'
 }, {
   'board': 'UPduino_v3',
   'design': 'UP5KDemo',
-  'bitstream': 'neorv32_UPduino_v3_UP5KDemo.bin'
+  'bitstream': 'neorv32_UPduino_v3_UP5KDemo.bit'
 }, {
   'board': 'Fomu',
   'design': 'Minimal',
