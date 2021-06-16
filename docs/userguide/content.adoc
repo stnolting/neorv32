@@ -318,14 +318,14 @@ shows the actual assembly code of the application.
 
 Follow this guide to use the bootloader to upload an executable via UART.
 
+[NOTE]
+This concept uses the default "Indirect Boot" scenario that uses the bootloader to upload new executables.
+See datasheet section https://stnolting.github.io/neorv32/#_indirect_boot[Indirect Boot] for more information.
+
 [IMPORTANT]
 If your FPGA board does not provide such an interface - don't worry!
 Section <<_installing_an_executable_directly_into_memory>> shows how to
 run custom programs on your FPGA setup without having a UART.
-
-[TIP]
-Executables can also be uploaded via the **on-chip debugger**.
-See section <<_debugging_with_gdb>> for more information.
 
 [start=1]
 . Connect the primary UART (UART0) interface of your FPGA board to a serial port of your host computer.
@@ -428,6 +428,10 @@ See section https://stnolting.github.io/neorv32/#_bootloader[Bootloader] of the 
 See section <<_programming_an_external_spi_flash_via_the_bootloader>> to learn how to use an external SPI
 flash for nonvolatile program storage.
 
+[TIP]
+Executables can also be uploaded via the **on-chip debugger**.
+See section <<_debugging_with_gdb>> for more information.
+
 
 
 <<<
@@ -438,13 +442,13 @@ flash for nonvolatile program storage.
 If you do not want to use the bootloader (or the on-chip debugger) for executable upload or if your setup does not provide
 a serial interface for that, you can also directly install an application into embedded memory.
 
-This concept uses "boot scenario **2a**" that implements the processor-internal IMEM as ROM, which is
+This concept uses the "Direct Boot" scenario that implements the processor-internal IMEM as ROM, which is
 pre-initialized with the application's executable during synthesis. Hence, it provides _non-volatile_ storage of the
 executable inside the processor. This storage cannot be altered during runtime and any source code modification of
 the application requires to re-program the FPGA via the bitstream.
 
 [TIP]
-See datasheet section https://stnolting.github.io/neorv32/#_boot_scenario_2[Boot Scenario 2] for more information.
+See datasheet section https://stnolting.github.io/neorv32/#_direct_boot[Direct Boot] for more information.
 
 
 

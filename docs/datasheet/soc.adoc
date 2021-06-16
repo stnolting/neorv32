@@ -989,8 +989,8 @@ the internal peripheral address space will trigger a bus access fault exception.
 :sectnums:
 ==== Boot Configuration
 
-Due to the flexible memory configuration concept, the NEORV32 Processor provides several different boot mechanisms.
-The figure below shows details and further options of the two most common boot scenarios.
+Due to the flexible memory configuration concept, the NEORV32 Processor provides several different boot concepts.
+The figure below shows the exemplary concepts for the two most common boot scenarios.
 
 .NEORV32 boot configurations
 image::neorv32_boot_configurations.png[800]
@@ -999,8 +999,9 @@ image::neorv32_boot_configurations.png[800]
 The configuration of internal or external data memory (DMEM; <<_mem_int_dmem_en>> = _true_ / _false_) is not further
 relevant for the boot configuration itself. Hence, it is not further illustrated here.
 
-The general boot scenario (**1** or **2**) is configured via the <<_int_bootloader_en>> generic. If this generic is set
-**true**, boot scenario **1** is used. If it is set **false**, boot scenario **2** is used.
+There are two general boot scenarios: _Indirect Boot_ (1a and 1b) and _Direct Boot_ (2a and 2b) configured via the
+<<_int_bootloader_en>> generic  If this generic is set **true** the _indirect_ boot scenario is used. This is also the
+default boot configuration of the processor. If <<_int_bootloader_en>> is set **false** the _direct_ boot scenario is used.
 
 [NOTE]
 Please note that the provided boot scenarios are just exemplary setups that (should) fit most common requirements.
@@ -1010,33 +1011,34 @@ that is placed and execute in internal IMEM. This second-level bootloader could 
 store it to external _data_ memory and transfers CPU control to that.
 
 :sectnums!:
-===== Boot Scenario 1
+===== Indirect Boot
 
-Boot scenarios **1a** and **1b** use the processor-internal <<_bootloader>>. This general setup is enabled by setting
-the <<_int_bootloader_en>> generic to true, which will implement the processor-internal <<_bootloader_rom_bootrom>>.
-This read-only memory is pre-initialized with the default bootloader and is mapped to the processor _bootloader address space_.
+The _indirect_ boot scenarios **1a** and **1b** use the processor-internal <<_bootloader>>. This general setup is enabled
+by setting the <<_int_bootloader_en>> generic to true, which will implement the processor-internal <<_bootloader_rom_bootrom>>.
+This read-only memory is pre-initialized during synthesis with the default bootloader firmware.
 
 The bootloader provides several options to upload an executable (via UART or from external SPI flash) and store it to
 the _instruction address space_ so the CPU can execute it. Boot scenario **1a** uses the processor-internal IMEM
 (<<_mem_int_imem_en>> = _true_). This scenario implements the internal <<_instruction_memory_imem>> as non-initialized
-true RAM so the bootloader can write the actual executable to it.
+RAM so the bootloader can write the actual executable to it.
 
-Boot scenario **1b** uses a processor-external IMEM (<<_mem_int_imem_en>> = _false_) that is connected via the processor's bus interface.
-In this scenario the internal <<_instruction_memory_imem>> is not implemented at all and the bootloader will write the executable
-to the processor-external memory.
+Boot scenario **1b** uses a processor-external IMEM (<<_mem_int_imem_en>> = _false_) that is connected via the processor's
+bus interface. In this scenario the internal <<_instruction_memory_imem>> is not implemented at all and the bootloader will
+write the executable to the processor-external memory.
 
 :sectnums!:
-===== Boot Scenario 2
+===== Direct Boot
 
-Boot scenarios **2a** and **2b** do not use the processor-internal bootloader. Hence, the <<_int_bootloader_en>> generic
-is set _false_. In this configuration to <<_bootloader_rom_bootrom>> is not implemented at all and a "pre-initialization"
-mechanism is required in order to provide an executable _in_ memory.
+The _direct_ boot scenarios **2a** and **2b** do not use the processor-internal bootloader. Hence, the <<_int_bootloader_en>>
+generic is set _false_. In this configuration the <<_bootloader_rom_bootrom>> is not implemented at all and the CPU will
+directly begin executing code from the instruction address space after reset. A "pre-initialization mechanism is required
+in order to provide an executable _in_ memory.
 
 Boot scenario **2a** uses the processor-internal IMEM (<<_mem_int_imem_en>> = _true_) that is implemented as _read-only memory_
 in this scenario. It is pre-initialized (by the bitstream) with the actual application executable.
 
-In contrast, boot scenario **2b** uses a processor-external IMEM (<<_mem_int_imem_en>> = _false_). In this scenario the system designer
-is responsible for providing a initialized external memory that contains the actual application to be executed.
+In contrast, boot scenario **2b** uses a processor-external IMEM (<<_mem_int_imem_en>> = _false_). In this scenario the
+system designer is responsible for providing a initialized external memory that contains the actual application to be executed.
 
 
 
