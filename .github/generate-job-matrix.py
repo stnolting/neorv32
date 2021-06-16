@@ -23,6 +23,10 @@ print('::set-output name=matrix::' + str([
   'bitstream': 'neorv32_Fomu_pvt_UP5KDemo.bit'
 }, {
   'board': 'iCESugar',
+  'design': 'Minimal',
+  'bitstream': 'neorv32_iCESugar_Minimal.bit'
+}, {
+  'board': 'iCESugar',
   'design': 'MinimalBoot',
   'bitstream': 'neorv32_iCESugar_MinimalBoot.bit'
 }]))
