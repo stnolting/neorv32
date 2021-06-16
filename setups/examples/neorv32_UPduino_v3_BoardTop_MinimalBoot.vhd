@@ -41,8 +41,13 @@ use iCE40.components.all; -- for device primitives and macros
 
 entity neorv32_UPduino_v3_BoardTop_MinimalBoot is
   port (
-    -- LED outputs
-    pwm_o : out std_logic_vector(2 downto 0)
+    -- UART (uart0) --
+    uart_txd_o : out std_ulogic;
+    uart_rxd_i : in  std_ulogic;
+    -- GPIO --
+    gpio_o     : out std_ulogic_vector(3 downto 0);
+    -- PWM (to on-board RGB power LED) --
+    pwm_o      : out std_logic_vector(2 downto 0)
   );
 end entity;
 
@@ -59,7 +64,7 @@ architecture neorv32_UPduino_v3_BoardTop_MinimalBoot_rtl of neorv32_UPduino_v3_B
   signal pll_clk  : std_logic;
 
   -- internal IO connection --
-  signal con_pwm  : std_logic_vector(2 downto 0);
+  signal con_pwm : std_logic_vector(2 downto 0);
 
 begin
 
@@ -113,7 +118,6 @@ begin
 
   -- The core of the problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
   neorv32_inst: entity work.neorv32_ProcessorTop_MinimalBoot
   generic map (
     CLOCK_FREQUENCY => f_clock_c,   -- clock frequency of clk_i in Hz
@@ -125,11 +129,11 @@ begin
     rstn_i     => std_ulogic(pll_rstn),
 
     -- GPIO --
-    gpio_o     => open,
+    gpio_o     => gpio_o,
 
     -- primary UART --
-    uart_txd_o => open, -- UART0 send data
-    uart_rxd_i => '0',  -- UART0 receive data
+    uart_txd_o => uart_txd_o, -- UART0 send data
+    uart_rxd_i => uart_rxd_i, -- UART0 receive data
     uart_rts_o => open, -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
     uart_cts_i => '0',  -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
@@ -139,7 +143,6 @@ begin
 
   -- IO Connection --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
   RGB_inst: SB_RGBA_DRV
   generic map (
     CURRENT_MODE => "0b1",
