@@ -44,7 +44,7 @@ UPduino_v3:
 Minimal:
 	$(MAKE) \
 	  DESIGN=$@ \
-	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_Minimal.vhd \
+	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_Minimal*.vhd \
 	  $(BOARD)
 
 MinimalBoot:
