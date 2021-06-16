@@ -243,7 +243,7 @@ These sections are defined right at the beginning of the linker script:
 ----
 MEMORY
 {
-  ram  (rwx) : ORIGIN = 0x80000000, LENGTH = 8*1024
+  ram  (rwx) : ORIGIN = 0x80000000, LENGTH = DEFINED(make_bootloader) ? 512 : 8*1024
   rom   (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 32K : 2048M
   iodev (rw) : ORIGIN = 0xFFFFFE00, LENGTH = 512
 }
@@ -253,23 +253,28 @@ Each memory section provides a _base address_ `ORIGIN` and a _size_ `LENGTH`. Th
 fixed and must not be altered. The base addresses and sizes of the `ram` and `rom` regions correspond to the total available instruction
 and data memory address space (see section <<_address_space_layout>>).
 
-`ORIGIN` of the `ram` section has to be always identical to the processor's `dspace_base_c` hardware configuration. Additonally,
+[IMPORTANT]
+`ORIGIN` of the `ram` section has to be always identical to the processor's `dspace_base_c` hardware configuration. Additionally,
 `ORIGIN` of the `rom` section has to be always identical to the processor's `ispace_base_c` hardware configuration.
 
-The sizes of `ram` section has to be equal to the size of the _physical_ available data instruction memory. For example, if the processor
+The sizes of `ram` section has to be equal to the size of the **physical available data instruction memory**. For example, if the processor
 setup only uses processor-internal DMEM (<<_mem_int_dmem_en>> = _true_ and no external data memory attached) the `LENGTH` parameter of
 this memory section has to be equal to the size configured by the <<_mem_int_dmem_size>> generic.
 
-The sizes of `rom` section is a little bit more complicated. The default linker script configuration assumes a _maximum_ of 2GB for this
-memory space which is also the default configuration of the processor's hardware instruction memory address space. This size _does not_ have
+The sizes of `rom` section is a little bit more complicated. The default linker script configuration assumes a _maximum_ of 2GB _logical_
+memory space, which is also the default configuration of the processor's hardware instruction memory address space. This size _does not_ have
 to reflect the _actual_ physical size of the instruction memory (internal IMEM and/or processor-external memory). It just provides a maximum
 limit. When uploading new executable via the bootloader, the bootloader itself checks if sufficient _physical_ instruction memory is available.
 If a new executable is embedded right into the internal-IMEM the synthesis tool will check, if the configured instruction memory size
 is sufficient (e.g., via the <<_mem_int_imem_size>> generic).
 
-[NOTE]
+[IMPORTANT]
 The `rom` region uses a conditional assignment (via the `make_bootloader` symbol) for `ORIGIN` and `LENGTH` that is used to place
-"normal executable" (i.e. for the IMEM) or "the bootloader image" to their according memories.
+"normal executable" (i.e. for the IMEM) or "the bootloader image" to their according memories. +
+ +
+The `ram` region also uses a conditional assignment (via the `make_bootloader` symbol) for `LENGTH`. When compiling the bootloader
+(`make_bootloader` symbol is set) the generated bootloader will only use the _first_ 512 bytes of the data address space. This is
+a fall-back to ensure the bootloader can operate independently of the actual _physical_ data memory size.
 
 The linker maps all the regions from the compiled object files into four final sections: `.text`, `.rodata`, `.data` and `.bss`.
 These four regions contain everything required for the application to run:
@@ -382,8 +387,13 @@ bootloader can directly boot from the flash without any user interaction.
 The bootloader is only implemented when the _INT_BOOTLOADER_EN_ generic is true and requires the
 CSR access CPU extension (_CPU_EXTENSION_RISCV_Zicsr_ generic is true).
 
+.Requirements
 [IMPORTANT]
-The bootloader requires the primary UART (UART0) for user interaction (_IO_UART0_EN_ generic is _true_).
+The default bootloader requires the primary UART (UART0) for user interaction (_IO_UART0_EN_ generic is _true_).
+Furthermore, the bootloader requires at least 512 bytes of data memory (processor-internal DMEM or external DMEM). +
+ +
+The auto-boot feature, which is optional, requires the machine timer (MTIME; _IO_MTIME_EN_ generic is _true_)
+and the SPI controller (_IO_SPI_EN_ generic is _true_) when used.
 
 [IMPORTANT]
 For the automatic boot from an SPI flash, the SPI controller has to be implemented (_IO_SPI_EN_

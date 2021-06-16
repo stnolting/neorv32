@@ -162,8 +162,8 @@ generic map (
   ...
 ----
 <1> Clock frequency of `clk_i` signal in Hertz
-<2> Default size of internal instruction memory: 16kB (no need to change that _now_)
-<3> Default size of internal data memory: 8kB (no need to change that _now_)
+<2> Default size of internal instruction memory: 16kB
+<3> Default size of internal data memory: 8kB
 
 [start=9]
 . There is one generic that has to be set according to your FPGA board setup: the actual clock frequency
@@ -236,15 +236,21 @@ beginning of this script you will find the `MEMORY` configuration listing the di
 ----
 MEMORY
 {
-  ram (rwx)  : ORIGIN = 0x80000000, LENGTH = 8*1024 # <1>
+  ram  (rwx) : ORIGIN = 0x80000000, LENGTH = DEFINED(make_bootloader) ? 512 : 8*1024 # <1>
 ...
 ----
-<1> Size of the data memory address space (internal/external DMEM); here 8kB
+<1> Size of the data memory address space (right-most value) (internal/external DMEM); here 8kB
 
 [start=2]
 . We only need to change the `ram` section, which presents the available data address space.
 If you have changed the DMEM (_MEM_INT_DMEM_SIZE_ generic) size adapt the `LENGTH` parameter of the `ram`
 section (here: `8*1024`) so it is equal to your DMEM hardware configuration.
+
+[IMPORTANT]
+Make sure you only modify the _right-most_ value (here: 8*1024)! +
+The "`512`" are not relevant for the application.
+
+[start=3]
 . Done! Save your changes and close the linker script.
 
 .Advanced: Section base address and size
