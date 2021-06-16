@@ -31,6 +31,11 @@ endif
 	  NEORV32_MEM_SRC="${IMEM_SRC} ../devices/ice40/neorv32_dmem.ice40up_spram.vhd" \
 	  run
 
+iCESugar:
+	$(MAKE) \
+	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
+	  run
+
 UPduino_v3:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
