@@ -33,6 +33,7 @@ make \
   clean_all \
   USER_FLAGS+=-DRUN_CHECK \
   USER_FLAGS+=-DUART0_SIM_MODE \
+  USER_FLAGS+=-DUART1_SIM_MODE \
   MARCH=-march=rv32imac \
   info \
   all
