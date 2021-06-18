@@ -301,7 +301,7 @@ begin
     impure function uart0_expectation return string is
     begin
       if ci_mode then
-        return character'val(255) & etx;
+        return nul & nul & etx;
       else
         return "Blinking LED demo program" & cr & lf & etx;
       end if;
@@ -310,7 +310,7 @@ begin
     impure function uart1_expectation return string is
     begin
       if ci_mode then
-        return character'val(255) & cr & lf & cr & lf & "Test results:" & cr & lf & "OK:     37/37" & cr & lf & "FAILED: 0/37" & cr & lf & cr & lf & etx;
+        return nul & nul & cr & lf & cr & lf & "Test results:" & cr & lf & "OK:     37/37" & cr & lf & "FAILED: 0/37" & cr & lf & cr & lf & etx;
       else
         return "" & etx;
       end if;
