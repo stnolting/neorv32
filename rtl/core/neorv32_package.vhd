@@ -70,7 +70,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050611"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050612"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
 
@@ -78,7 +78,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   type pmp_ctrl_if_t is array (0 to 63) of std_ulogic_vector(07 downto 0);
   type pmp_addr_if_t is array (0 to 63) of std_ulogic_vector(33 downto 0);
-  type cp_data_if_t  is array (0 to 7)  of std_ulogic_vector(data_width_c-1 downto 0);
+  type cp_data_if_t  is array (0 to 3)  of std_ulogic_vector(data_width_c-1 downto 0);
 
   -- Internal Memory Types Configuration Types ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -320,39 +320,38 @@ package neorv32_package is
   constant ctrl_bus_ch_lock_c   : natural := 43; -- evaluate atomic/exclusive lock (SC operation)
   -- co-processors --
   constant ctrl_cp_id_lsb_c     : natural := 44; -- cp select ID lsb
-  constant ctrl_cp_id_hsb_c     : natural := 45; -- cp select ID
-  constant ctrl_cp_id_msb_c     : natural := 46; -- cp select ID msb
+  constant ctrl_cp_id_msb_c     : natural := 45; -- cp select ID msb
   -- instruction's control blocks (used by cpu co-processors) --
-  constant ctrl_ir_funct3_0_c   : natural := 47; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 48; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 49; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 50; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 51; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 52; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 53; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 54; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 55; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 56; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 57; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 58; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 59; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 60; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 61; -- funct12 bit 11
-  constant ctrl_ir_opcode7_0_c  : natural := 62; -- opcode7 bit 0
-  constant ctrl_ir_opcode7_1_c  : natural := 63; -- opcode7 bit 1
-  constant ctrl_ir_opcode7_2_c  : natural := 64; -- opcode7 bit 2
-  constant ctrl_ir_opcode7_3_c  : natural := 65; -- opcode7 bit 3
-  constant ctrl_ir_opcode7_4_c  : natural := 66; -- opcode7 bit 4
-  constant ctrl_ir_opcode7_5_c  : natural := 67; -- opcode7 bit 5
-  constant ctrl_ir_opcode7_6_c  : natural := 68; -- opcode7 bit 6
+  constant ctrl_ir_funct3_0_c   : natural := 46; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 47; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 48; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 49; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 50; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 51; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 52; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 53; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 54; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 55; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 56; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 57; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 58; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 59; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 60; -- funct12 bit 11
+  constant ctrl_ir_opcode7_0_c  : natural := 61; -- opcode7 bit 0
+  constant ctrl_ir_opcode7_1_c  : natural := 62; -- opcode7 bit 1
+  constant ctrl_ir_opcode7_2_c  : natural := 63; -- opcode7 bit 2
+  constant ctrl_ir_opcode7_3_c  : natural := 64; -- opcode7 bit 3
+  constant ctrl_ir_opcode7_4_c  : natural := 65; -- opcode7 bit 4
+  constant ctrl_ir_opcode7_5_c  : natural := 66; -- opcode7 bit 5
+  constant ctrl_ir_opcode7_6_c  : natural := 67; -- opcode7 bit 6
   -- CPU status --
-  constant ctrl_priv_lvl_lsb_c  : natural := 69; -- privilege level lsb
-  constant ctrl_priv_lvl_msb_c  : natural := 70; -- privilege level msb
-  constant ctrl_sleep_c         : natural := 71; -- set when CPU is in sleep mode
-  constant ctrl_trap_c          : natural := 72; -- set when CPU is entering trap execution
-  constant ctrl_debug_running_c : natural := 73; -- CPU is in debug mode when set
+  constant ctrl_priv_lvl_lsb_c  : natural := 68; -- privilege level lsb
+  constant ctrl_priv_lvl_msb_c  : natural := 69; -- privilege level msb
+  constant ctrl_sleep_c         : natural := 70; -- set when CPU is in sleep mode
+  constant ctrl_trap_c          : natural := 71; -- set when CPU is entering trap execution
+  constant ctrl_debug_running_c : natural := 72; -- CPU is in debug mode when set
   -- control bus size --
-  constant ctrl_width_c         : natural := 74; -- control bus size
+  constant ctrl_width_c         : natural := 73; -- control bus size
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -723,14 +722,10 @@ package neorv32_package is
 
   -- Co-Processor IDs -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant cp_sel_csr_rd_c   : std_ulogic_vector(2 downto 0) := "000"; -- CSR read access ('Zicsr' extension)
-  constant cp_sel_muldiv_c   : std_ulogic_vector(2 downto 0) := "001"; -- multiplication/division operations ('M' extension)
---constant cp_sel_bitmanip_c : std_ulogic_vector(2 downto 0) := "010"; -- bit manipulation ('B' extension)
-  constant cp_sel_fpu_c      : std_ulogic_vector(2 downto 0) := "011"; -- floating-point unit ('Zfinx' extension)
---constant cp_sel_reserved_c : std_ulogic_vector(2 downto 0) := "100"; -- reserved
---constant cp_sel_reserved_c : std_ulogic_vector(2 downto 0) := "101"; -- reserved
---constant cp_sel_reserved_c : std_ulogic_vector(2 downto 0) := "110"; -- reserved
---constant cp_sel_reserved_c : std_ulogic_vector(2 downto 0) := "111"; -- reserved
+  constant cp_sel_csr_rd_c   : std_ulogic_vector(1 downto 0) := "00"; -- CSR read access ('Zicsr' extension)
+  constant cp_sel_muldiv_c   : std_ulogic_vector(1 downto 0) := "01"; -- multiplication/division operations ('M' extension)
+--constant cp_sel_bitmanip_c : std_ulogic_vector(1 downto 0) := "10"; -- bit manipulation ('B' extension)
+  constant cp_sel_fpu_c      : std_ulogic_vector(1 downto 0) := "11"; -- floating-point unit ('Zfinx' extension)
 
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1193,8 +1188,8 @@ package neorv32_package is
       res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
       add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- address computation result
       -- co-processor interface --
-      cp_start_o  : out std_ulogic_vector(7 downto 0); -- trigger co-processor i
-      cp_valid_i  : in  std_ulogic_vector(7 downto 0); -- co-processor i done
+      cp_start_o  : out std_ulogic_vector(3 downto 0); -- trigger co-processor i
+      cp_valid_i  : in  std_ulogic_vector(3 downto 0); -- co-processor i done
       cp_result_i : in  cp_data_if_t; -- co-processor result
       -- status --
       wait_o      : out std_ulogic -- busy due to iterative processing units

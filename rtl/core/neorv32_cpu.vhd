@@ -155,13 +155,13 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal fpu_flags  : std_ulogic_vector(4 downto 0); -- FPU exception flags
 
   -- co-processor interface --
-  signal cp_start  : std_ulogic_vector(7 downto 0); -- trigger co-processor i
-  signal cp_valid  : std_ulogic_vector(7 downto 0); -- co-processor i done
+  signal cp_start  : std_ulogic_vector(3 downto 0); -- trigger co-processor i
+  signal cp_valid  : std_ulogic_vector(3 downto 0); -- co-processor i done
   signal cp_result : cp_data_if_t; -- co-processor result
 
   -- pmp interface --
-  signal pmp_addr  : pmp_addr_if_t;
-  signal pmp_ctrl  : pmp_ctrl_if_t;
+  signal pmp_addr : pmp_addr_if_t;
+  signal pmp_ctrl : pmp_ctrl_if_t;
 
 begin
 
@@ -373,7 +373,7 @@ begin
   end generate;
 
 
-  -- Co-Processor 2: reseverd ---------------------------------------------------------------
+  -- Co-Processor 2: reserved ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   cp_result(2) <= (others => '0');
   cp_valid(2)  <= cp_start(2); -- to make sure CPU does not get stalled if there is an accidental access
@@ -408,21 +408,6 @@ begin
     fpu_flags    <= (others => '0');
     cp_valid(3)  <= cp_start(3); -- to make sure CPU does not get stalled if there is an accidental access
   end generate;
-
-
-  -- Co-Processor 4,5,6,7: Not Implemented --------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  cp_result(4) <= (others => '0');
-  cp_valid(4)  <= '0';
-  --
-  cp_result(5) <= (others => '0');
-  cp_valid(5)  <= '0';
-  --
-  cp_result(6) <= (others => '0');
-  cp_valid(6)  <= '0';
-  --
-  cp_result(7) <= (others => '0');
-  cp_valid(7)  <= '0';
 
 
   -- Bus Interface Unit ---------------------------------------------------------------------

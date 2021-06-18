@@ -2514,10 +2514,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   csr_read_access: process(rstn_i, clk_i)
   begin
-    if (rstn_i = '0') then
-      csr.re    <= def_rst_val_c;
-      csr.rdata <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       csr.re    <= csr.re_nxt; -- read access?
       csr.rdata <= (others => '0'); -- default output
       if (CPU_EXTENSION_RISCV_Zicsr = true) and (csr.re = '1') then
@@ -2790,7 +2787,7 @@ begin
 
           -- machine information registers --
           -- --------------------------------------------------------------------
-          when csr_mvendorid_c => csr.rdata <= (others => '0'); -- mvendorid (r/-): vendor ID
+--        when csr_mvendorid_c => csr.rdata <= (others => '0'); -- mvendorid (r/-): vendor ID, implemented but always zero
           when csr_marchid_c   => csr.rdata(4 downto 0) <= "10011"; -- marchid (r/-): arch ID - official RISC-V open-source arch ID
           when csr_mimpid_c    => csr.rdata <= hw_version_c; -- mimpid (r/-): implementation ID -- NEORV32 hardware version
           when csr_mhartid_c   => csr.rdata <= std_ulogic_vector(to_unsigned(HW_THREAD_ID, 32)); -- mhartid (r/-): hardware thread ID

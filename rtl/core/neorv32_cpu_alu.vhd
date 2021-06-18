@@ -61,8 +61,8 @@ entity neorv32_cpu_alu is
     res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
     add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- address computation result
     -- co-processor interface --
-    cp_start_o  : out std_ulogic_vector(7 downto 0); -- trigger co-processor i
-    cp_valid_i  : in  std_ulogic_vector(7 downto 0); -- co-processor i done
+    cp_start_o  : out std_ulogic_vector(3 downto 0); -- trigger co-processor i
+    cp_valid_i  : in  std_ulogic_vector(3 downto 0); -- co-processor i done
     cp_result_i : in  cp_data_if_t; -- co-processor result
     -- status --
     wait_o      : out std_ulogic -- busy due to iterative processing units
@@ -304,24 +304,17 @@ begin
   cp_ctrl.cmd   <= '1' when (ctrl_i(ctrl_alu_func1_c downto ctrl_alu_func0_c) = alu_func_cmd_copro_c) else '0';
   cp_ctrl.start <= '1' when (cp_ctrl.cmd = '1') and (cp_ctrl.cmd_ff = '0') else '0';
 
-  -- co-processor select --
-  cp_operation_trigger: process(cp_ctrl, ctrl_i)
-  begin
-    for i in 0 to 7 loop
-      if (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = std_ulogic_vector(to_unsigned(i, 3))) then
-        cp_start_o(i) <= '1';
-      else
-        cp_start_o(i) <= '0';
-      end if;
-    end loop; -- i
-  end process;
+  -- co-processor select / star trigger --
+  cp_start_o(0) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "00") else '0';
+  cp_start_o(1) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "01") else '0';
+  cp_start_o(2) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "10") else '0';
+  cp_start_o(3) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "11") else '0';
 
   -- co-processor operation (still) running? --
   cp_ctrl.halt <= (cp_ctrl.busy and (not or_reduce_f(cp_valid_i))) or cp_ctrl.start;
 
   -- co-processor result - only the *actually selected* co-processor may output data != 0 --
-  cp_res <= cp_result_i(0) or cp_result_i(1) or cp_result_i(2) or cp_result_i(3) or
-            cp_result_i(4) or cp_result_i(5) or cp_result_i(6) or cp_result_i(7);
+  cp_res <= cp_result_i(0) or cp_result_i(1) or cp_result_i(2) or cp_result_i(3);
 
 
   -- ALU Logic Core -------------------------------------------------------------------------

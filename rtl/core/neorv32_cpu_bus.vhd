@@ -478,7 +478,7 @@ begin
   end generate; -- r
 
 
-  -- check access type and regions's permissions --
+  -- check access type and region's permissions --
   pmp_check_permission: process(pmp, pmp_ctrl_i, ctrl_i)
   begin
     for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
