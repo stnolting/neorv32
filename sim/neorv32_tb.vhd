@@ -152,7 +152,7 @@ begin
   test_runner : process
   begin
     test_runner_setup(runner, runner_cfg);
-    wait for 20 ms; -- Just wait for all UART output to be produced
+    wait for 35 ms; -- Just wait for all UART output to be produced
     test_runner_cleanup(runner);
   end process;
 
@@ -301,7 +301,7 @@ begin
     impure function uart0_expectation return string is
     begin
       if ci_mode then
-        return nul & nul & cr & lf & "<< PROCESSOR CHECK >>" & cr & lf & "build: ";
+        return nul & nul & etx;
       else
         return "Blinking LED demo program" & cr & lf & etx;
       end if;
@@ -310,7 +310,7 @@ begin
     impure function uart1_expectation return string is
     begin
       if ci_mode then
-        return nul & nul & etx;
+        return nul & nul & cr & lf & cr & lf & "Test results:" & cr & lf & "OK:     37/37" & cr & lf & "FAILED: 0/37" & cr & lf & cr & lf & etx;
       else
         return "" & etx;
       end if;
