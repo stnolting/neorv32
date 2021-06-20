@@ -1,10 +1,10 @@
 (* blackbox *)
-module SB_HFOSS (
+module SB_HFOSC (
   input  CLKHFEN,
   input  CLKHFPU,
-  output CLKHF,
+  output CLKHF
 );
-  parameter CLKHF_DIV = 2'd0;
+  parameter CLKHF_DIV = 2'b00;
 endmodule
 
 (* blackbox *)

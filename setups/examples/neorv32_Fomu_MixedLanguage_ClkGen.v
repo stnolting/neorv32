@@ -1,12 +1,12 @@
 module neorv32_Fomu_MixedLanguage_ClkGen (
   output wire clk_o,
-  output wire rstn_o,
+  output wire rstn_o
 );
 
   wire hf_osc_clk;
 
-  SB_HFOSS #(
-    .CLKHF_DIV(2'd2) // 12 MHz
+  SB_HFOSC #(
+    .CLKHF_DIV("0b10") // 12 MHz
   ) HSOSC_inst (
     .CLKHFPU(1'b1),
     .CLKHFEN(1'b1),
