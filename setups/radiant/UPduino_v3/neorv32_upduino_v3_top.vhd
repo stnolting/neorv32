@@ -163,7 +163,6 @@ begin
     -- Extension Options --
     FAST_MUL_EN                  => false,       -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => false,       -- use barrel shifter for shift operations
-    TINY_SHIFT_EN                => false,       -- use tiny (single-bit) shifter for shift operations
     CPU_CNT_WIDTH                => 34,          -- total width of CPU cycle and instret counters (0..64)
 
     -- Physical Memory Protection (PMP) --

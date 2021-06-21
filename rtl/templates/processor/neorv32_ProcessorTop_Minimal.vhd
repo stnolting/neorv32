@@ -57,7 +57,6 @@ entity neorv32_ProcessorTop_Minimal is
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
-    TINY_SHIFT_EN                : boolean := false;  -- use tiny (single-bit) shifter for shift operations
     CPU_CNT_WIDTH                : natural := 34;     -- total width of CPU cycle and instret counters (0..64)
 
     -- Physical Memory Protection (PMP) --
@@ -126,7 +125,6 @@ begin
     -- Extension Options --
     FAST_MUL_EN                  => FAST_MUL_EN,    -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,  -- use barrel shifter for shift operations
-    TINY_SHIFT_EN                => TINY_SHIFT_EN,  -- use tiny (single-bit) shifter for shift operations
     CPU_CNT_WIDTH                => CPU_CNT_WIDTH,  -- total width of CPU cycle and instret counters (0..64)
 
     -- Physical Memory Protection (PMP) --

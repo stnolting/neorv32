@@ -174,7 +174,6 @@ begin
     -- Extension Options --
     FAST_MUL_EN                  => false,         -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => false,         -- use barrel shifter for shift operations
-    TINY_SHIFT_EN                => false,         -- use tiny (single-bit) shifter for shift operations
     CPU_CNT_WIDTH                => 64,            -- total width of CPU cycle and instret counters (0..64)
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              => 5,             -- number of regions (0..64)
@@ -283,13 +282,28 @@ begin
   twi_scl <= 'H';
   twi_sda <= 'H';
 
+
+  -- UART Simulation Receiver ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   uart0_checker: entity work.uart_rx_simple
-    generic map (
-      name => "uart0",
-      uart_baud_val_c => uart0_baud_val_c)
-    port map (
-      clk => clk_gen,
-      uart_txd => uart0_txd);
+  generic map (
+    name => "uart0",
+    uart_baud_val_c => uart0_baud_val_c
+  )
+  port map (
+    clk => clk_gen,
+    uart_txd => uart0_txd
+  );
+
+  uart1_checker: entity work.uart_rx_simple
+  generic map (
+    name => "uart1",
+    uart_baud_val_c => uart1_baud_val_c
+  )
+  port map (
+    clk => clk_gen,
+    uart_txd => uart1_txd
+  );
 
 
   -- Wishbone Fabric ------------------------------------------------------------------------
