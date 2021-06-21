@@ -23,43 +23,43 @@ set_io --warn-no-port iCESugarv15_USB_DP_PU 11
 
 
 #> PMOD 1
-set_io --warn-no-port iCESugarv15_PMOD1A[0] 10
-set_io --warn-no-port iCESugarv15_PMOD1A[1]  6
-set_io --warn-no-port iCESugarv15_PMOD1A[2]  3
-set_io --warn-no-port iCESugarv15_PMOD1A[3] 48
-set_io --warn-no-port iCESugarv15_PMOD1B[0] 47
-set_io --warn-no-port iCESugarv15_PMOD1B[1]  2
-set_io --warn-no-port iCESugarv15_PMOD1B[2]  4
-set_io --warn-no-port iCESugarv15_PMOD1B[3]  9
+set_io --warn-no-port iCESugarv15_PMOD1A_0 10
+set_io --warn-no-port iCESugarv15_PMOD1A_1  6
+set_io --warn-no-port iCESugarv15_PMOD1A_2  3
+set_io --warn-no-port iCESugarv15_PMOD1A_3 48
+set_io --warn-no-port iCESugarv15_PMOD1B_0 47
+set_io --warn-no-port iCESugarv15_PMOD1B_1  2
+set_io --warn-no-port iCESugarv15_PMOD1B_2  4
+set_io --warn-no-port iCESugarv15_PMOD1B_3  9
 
 
 #> PMOD 2
-set_io --warn-no-port iCESugarv15_PMOD2A[0] 46
-set_io --warn-no-port iCESugarv15_PMOD2A[1] 44
-set_io --warn-no-port iCESugarv15_PMOD2A[2] 42
-set_io --warn-no-port iCESugarv15_PMOD2A[3] 37
-set_io --warn-no-port iCESugarv15_PMOD2B[0] 36
-set_io --warn-no-port iCESugarv15_PMOD2B[1] 38
-set_io --warn-no-port iCESugarv15_PMOD2B[2] 43
-set_io --warn-no-port iCESugarv15_PMOD2B[3] 45
+set_io --warn-no-port iCESugarv15_PMOD2A_0 46
+set_io --warn-no-port iCESugarv15_PMOD2A_1 44
+set_io --warn-no-port iCESugarv15_PMOD2A_2 42
+set_io --warn-no-port iCESugarv15_PMOD2A_3 37
+set_io --warn-no-port iCESugarv15_PMOD2B_0 36
+set_io --warn-no-port iCESugarv15_PMOD2B_1 38
+set_io --warn-no-port iCESugarv15_PMOD2B_2 43
+set_io --warn-no-port iCESugarv15_PMOD2B_3 45
 
 
 #> PMOD 3
-set_io --warn-no-port iCESugarv15_PMOD3A[0] 34
-set_io --warn-no-port iCESugarv15_PMOD3A[1] 31
-set_io --warn-no-port iCESugarv15_PMOD3A[2] 27
-set_io --warn-no-port iCESugarv15_PMOD3A[3] 25
-set_io --warn-no-port iCESugarv15_PMOD3B[0] 23
-set_io --warn-no-port iCESugarv15_PMOD3B[1] 26
-set_io --warn-no-port iCESugarv15_PMOD3B[2] 28
-set_io --warn-no-port iCESugarv15_PMOD3B[3] 32
+set_io --warn-no-port iCESugarv15_PMOD3A_0 34
+set_io --warn-no-port iCESugarv15_PMOD3A_1 31
+set_io --warn-no-port iCESugarv15_PMOD3A_2 27
+set_io --warn-no-port iCESugarv15_PMOD3A_3 25
+set_io --warn-no-port iCESugarv15_PMOD3B_0 23
+set_io --warn-no-port iCESugarv15_PMOD3B_1 26
+set_io --warn-no-port iCESugarv15_PMOD3B_2 28
+set_io --warn-no-port iCESugarv15_PMOD3B_3 32
 
 
 #> PMOD 4 | Switches
-set_io --warn-no-port iCESugarv15_PMOD4[0] 21
-set_io --warn-no-port iCESugarv15_PMOD4[1] 20
-set_io --warn-no-port iCESugarv15_PMOD4[2] 19
-set_io --warn-no-port iCESugarv15_PMOD4[3] 18
+set_io --warn-no-port iCESugarv15_PMOD4_0 21
+set_io --warn-no-port iCESugarv15_PMOD4_1 20
+set_io --warn-no-port iCESugarv15_PMOD4_2 19
+set_io --warn-no-port iCESugarv15_PMOD4_3 18
 
 
 #> SPI
