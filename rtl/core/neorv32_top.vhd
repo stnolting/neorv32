@@ -69,7 +69,6 @@ entity neorv32_top is
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
-    TINY_SHIFT_EN                : boolean := false;  -- use tiny (single-bit) shifter for shift operations
     CPU_CNT_WIDTH                : natural := 64;     -- total width of CPU cycle and instret counters (0..64)
 
     -- Physical Memory Protection (PMP) --

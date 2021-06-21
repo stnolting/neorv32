@@ -72,7 +72,6 @@ entity neorv32_cpu is
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false; -- use barrel shifter for shift operations
-    TINY_SHIFT_EN                : boolean := false; -- use tiny (single-bit) shifter for shift operations
     CPU_CNT_WIDTH                : natural := 64;    -- total width of CPU cycle and instret counters (0..64)
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              : natural := 0;     -- number of regions (0..64)
@@ -137,7 +136,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal alu_res    : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
   signal alu_add    : std_ulogic_vector(data_width_c-1 downto 0); -- alu address result
   signal mem_rdata  : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
-  signal alu_wait   : std_ulogic; -- alu is busy due to iterative unit
+  signal alu_idone  : std_ulogic; -- iterative alu operation done
   signal bus_i_wait : std_ulogic; -- wait for current bus instruction fetch
   signal bus_d_wait : std_ulogic; -- wait for current bus data access
   signal csr_rdata  : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
@@ -151,13 +150,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal be_store   : std_ulogic; -- bus error on store data access
   signal fetch_pc   : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
   signal curr_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
-  signal fpu_rm     : std_ulogic_vector(2 downto 0); -- FPU rounding mode
   signal fpu_flags  : std_ulogic_vector(4 downto 0); -- FPU exception flags
-
-  -- co-processor interface --
-  signal cp_start  : std_ulogic_vector(3 downto 0); -- trigger co-processor i
-  signal cp_valid  : std_ulogic_vector(3 downto 0); -- co-processor i done
-  signal cp_result : cp_data_if_t; -- co-processor result
 
   -- pmp interface --
   signal pmp_addr : pmp_addr_if_t;
@@ -238,7 +231,7 @@ begin
     rstn_i        => rstn_i,      -- global reset, low-active, async
     ctrl_o        => ctrl,        -- main control bus
     -- status input --
-    alu_wait_i    => alu_wait,    -- wait for ALU
+    alu_idone_i   => alu_idone,   -- ALU iterative operation done
     bus_i_wait_i  => bus_i_wait,  -- wait for bus
     bus_d_wait_i  => bus_d_wait,  -- wait for bus
     excl_state_i  => excl_state,  -- atomic/exclusive access lock status
@@ -253,7 +246,6 @@ begin
     curr_pc_o     => curr_pc,     -- current PC (corresponding to current instruction)
     csr_rdata_o   => csr_rdata,   -- CSR read data
     -- FPU interface --
-    fpu_rm_o      => fpu_rm,      -- rounding mode
     fpu_flags_i   => fpu_flags,   -- exception flags
     -- debug mode (halt) request --
     db_halt_req_i => db_halt_req_i,
@@ -309,9 +301,12 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_inst: neorv32_cpu_alu
   generic map (
-    CPU_EXTENSION_RISCV_M => CPU_EXTENSION_RISCV_M, -- implement muld/div extension?
-    FAST_SHIFT_EN         => FAST_SHIFT_EN,         -- use barrel shifter for shift operations
-    TINY_SHIFT_EN         => TINY_SHIFT_EN          -- use tiny (single-bit) shifter for shift operations
+    -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_M     => CPU_EXTENSION_RISCV_M,     -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_Zfinx => CPU_EXTENSION_RISCV_Zfinx, -- implement 32-bit floating-point extension (using INT reg!)
+    -- Extension Options --
+    FAST_MUL_EN               => FAST_MUL_EN,               -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN             => FAST_SHIFT_EN              -- use barrel shifter for shift operations
   )
   port map (
     -- global control --
@@ -323,91 +318,15 @@ begin
     rs2_i       => rs2,           -- rf source 2
     pc2_i       => curr_pc,       -- delayed PC
     imm_i       => imm,           -- immediate
+    csr_i       => csr_rdata,     -- CSR read data
+    cmp_i       => comparator,    -- comparator status
     -- data output --
     res_o       => alu_res,       -- ALU result
     add_o       => alu_add,       -- address computation result
-    -- co-processor interface --
-    cp_start_o  => cp_start,      -- trigger co-processor i
-    cp_valid_i  => cp_valid,      -- co-processor i done
-    cp_result_i => cp_result,     -- co-processor result
+    fpu_flags_o => fpu_flags,     -- FPU exception flags
     -- status --
-    wait_o      => alu_wait       -- busy due to iterative processing units
+    idone_o     => alu_idone      -- iterative processing units done?
   );
-
-
-  -- Co-Processor 0: CSR (Read) Access ('Zicsr' Extension) ----------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- "pseudo" co-processor for CSR *read* access operations
-  -- required to get CSR read data into the data path
-  cp_result(0) <= csr_rdata when (CPU_EXTENSION_RISCV_Zicsr = true) else (others => '0');
-  cp_valid(0)  <= cp_start(0); -- always assigned even if Zicsr extension is disabled to make sure CPU does not get stalled if there is an accidental access
-
-
-  -- Co-Processor 1: Integer Multiplication/Division ('M' Extension) ------------------------
-  -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_muldiv_inst_true:
-  if (CPU_EXTENSION_RISCV_M = true) generate
-    neorv32_cpu_cp_muldiv_inst: neorv32_cpu_cp_muldiv
-    generic map (
-      FAST_MUL_EN => FAST_MUL_EN  -- use DSPs for faster multiplication
-    )
-    port map (
-      -- global control --
-      clk_i   => clk_i,           -- global clock, rising edge
-      rstn_i  => rstn_i,          -- global reset, low-active, async
-      ctrl_i  => ctrl,            -- main control bus
-      start_i => cp_start(1),     -- trigger operation
-      -- data input --
-      rs1_i   => rs1,             -- rf source 1
-      rs2_i   => rs2,             -- rf source 2
-      -- result and status --
-      res_o   => cp_result(1),    -- operation result
-      valid_o => cp_valid(1)      -- data output valid
-    );
-  end generate;
-
-  neorv32_cpu_cp_muldiv_inst_false:
-  if (CPU_EXTENSION_RISCV_M = false) generate
-    cp_result(1) <= (others => '0');
-    cp_valid(1)  <= cp_start(1); -- to make sure CPU does not get stalled if there is an accidental access
-  end generate;
-
-
-  -- Co-Processor 2: reserved ---------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  cp_result(2) <= (others => '0');
-  cp_valid(2)  <= cp_start(2); -- to make sure CPU does not get stalled if there is an accidental access
-
-
-  -- Co-Processor 3: Single-Precision Floating-Point Unit ('Zfinx' Extension) ---------------
-  -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_fpu_inst_true:
-  if (CPU_EXTENSION_RISCV_Zfinx = true) generate
-    neorv32_cpu_cp_fpu_inst: neorv32_cpu_cp_fpu
-    port map (
-      -- global control --
-      clk_i    => clk_i,        -- global clock, rising edge
-      rstn_i   => rstn_i,       -- global reset, low-active, async
-      ctrl_i   => ctrl,         -- main control bus
-      start_i  => cp_start(3),  -- trigger operation
-      -- data input --
-      frm_i    => fpu_rm,       -- rounding mode
-      cmp_i    => comparator,   -- comparator status
-      rs1_i    => rs1,          -- rf source 1
-      rs2_i    => rs2,          -- rf source 2
-      -- result and status --
-      res_o    => cp_result(3), -- operation result
-      fflags_o => fpu_flags,    -- exception flags
-      valid_o  => cp_valid(3)   -- data output valid
-    );
-  end generate;
-
-  neorv32_cpu_cp_fpu_inst_false:
-  if (CPU_EXTENSION_RISCV_Zfinx = false) generate
-    cp_result(3) <= (others => '0');
-    fpu_flags    <= (others => '0');
-    cp_valid(3)  <= cp_start(3); -- to make sure CPU does not get stalled if there is an accidental access
-  end generate;
 
 
   -- Bus Interface Unit ---------------------------------------------------------------------
@@ -446,7 +365,7 @@ begin
     be_store_o     => be_store,       -- bus error on store data access
     -- physical memory protection --
     pmp_addr_i     => pmp_addr,       -- addresses
-    pmp_ctrl_i     => pmp_ctrl,       -- configs
+    pmp_ctrl_i     => pmp_ctrl,       -- configurations
     -- instruction bus --
     i_bus_addr_o   => i_bus_addr_o,   -- bus access address
     i_bus_rdata_i  => i_bus_rdata_i,  -- bus read data

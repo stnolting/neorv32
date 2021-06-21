@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 21.06.2021 | 1.5.6.13 | removed `TINY_SHIFT_EN` generic; clean-up of CPU co-processor system: removed "dummy co-processor" for CSR read access, moved CPU shifter core into new co-processor; simplified default (bit-serial) shifter logic (single bit-shifts only) and multi-cycl instructions decode logic |
 | 18.06.2021 | 1.5.6.12 | clean-up of CPU co-processor system (removed unused co-processor slots 4,5,6,7) |
 | 15.06.2021 | 1.5.6.11 | made bootloader more configuration-independent: bootloader now only uses the first 512 bytes of internal/external DMEM for runtime data - hence, the DMEM size is not further relevant as long as it greater than or equal to 512 bytes |
 | 14.06.2021 | 1.5.6.10 | :sparkles: physical size of bootloader ROM (BOOTROM) is atutomatically determined during synthesis based on the size of the initialization image, max physical size is 32kB; simplified BOOTROM access check logic; added size check when using IMEM as ROM (check if application image fits); simplified linker script: _logical_ instruction address space 2GB now, no need to adapt this to hardware configuration, hardware checks if application fits into _physical_ memory size (which configured via generics) |

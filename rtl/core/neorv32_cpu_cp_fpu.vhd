@@ -63,7 +63,6 @@ entity neorv32_cpu_cp_fpu is
     ctrl_i   : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     start_i  : in  std_ulogic; -- trigger operation
     -- data input --
-    frm_i    : in  std_ulogic_vector(2 downto 0); -- rounding mode
     cmp_i    : in  std_ulogic_vector(1 downto 0); -- comparator status
     rs1_i    : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
     rs2_i    : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
@@ -367,7 +366,7 @@ begin
           -- rounding mode --
           -- TODO / FIXME "round to nearest, ties to max magnitude" (0b100) is not supported yet
           if (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "111") then
-            fpu_operands.frm <= '0' & frm_i(1 downto 0);
+            fpu_operands.frm <= '0' & ctrl_i(ctrl_alu_frm1_c downto ctrl_alu_frm0_c);
           else
             fpu_operands.frm <= '0' & ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c);
           end if;

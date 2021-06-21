@@ -1,9 +1,9 @@
 -- #################################################################################################
--- # << NEORV32 - CPU Co-Processor: Integer Multiplier/Divider Unit (RISC-V "M" Extension)>>       #
+-- # << NEORV32 - CPU Co-Processor: Integer Multiplier/Divider Unit (RISC-V "M" Extension) >>      #
 -- # ********************************************************************************************* #
 -- # Multiplier and Divider unit. Implements the RISC-V M CPU extension.                           #
 -- #                                                                                               #
--- # Multiplier core (signed/unsigned) uses classical serial algorithm. Unit atency: 31+3 cycles   #
+-- # Multiplier core (signed/unsigned) uses classical serial algorithm. Unit latency: 31+3 cycles  #
 -- # Divider core (unsigned) uses classical serial algorithm. Unit latency: 32+4 cycles            #
 -- #                                                                                               #
 -- # Multiplications can be mapped to DSP blocks (faster!) when FAST_MUL_EN = true.                #
