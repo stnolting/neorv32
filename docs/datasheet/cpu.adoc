@@ -399,12 +399,10 @@ instructions:
 * environment: `ecall`, `ebreak`, `fence`
 
 [NOTE]
-In order to keep the hardware footprint low, the CPU's shift unit uses a hybrid parallel/serial approach. Shift
-operations are split in coarse shifts (multiples of 4) and a final fine shift (0 to 3). The total execution
-time depends on the shift amount. Alternatively, the shift operations can be processed completely in parallels by a fast
-(but large) barrel shifter when the `FAST_SHIFT_EN` generic is _true_. In that case, shift operations
-complete within 2 cycles regardless of the shift amount. Shift operations can also be executed in a pure serial manner when
-then `TINY_SHIFT_EN` generic is _true_. In that case, shift operations take up to 32 cycles depending on the shift amount.
+In order to keep the hardware footprint low, the CPU's shift unit uses a bit-serial serial approach. Hence, shift operations
+take up to 32 cycles (plus overhead) depending on the actual shift amount. Alternatively, the shift operations can be processed
+completely in parallels by a fast (but large) barrel shifter when the `FAST_SHIFT_EN` generic is _true_. In that case, shift operations
+complete within 2 cycles (plus overhead) regardless of the actual shift amount. 
 
 [NOTE]
 Internally, the `fence` instruction does not perform any operation inside the CPU. It only sets the
@@ -643,7 +641,7 @@ configurations are presented in <<_cpu_performance>>.
 | ALU           | `I/E` | `addi` `slti` `sltiu` `xori` `ori` `andi` `add` `sub` `slt` `sltu` `xor` `or` `and` `lui` `auipc` | 2
 | ALU           | `C`   | `c.addi4spn` `c.nop` `c.addi` `c.li` `c.addi16sp` `c.lui` `c.andi` `c.sub` `c.xor` `c.or` `c.and` `c.add` `c.mv` | 2
 | ALU           | `I/E` | `slli` `srli` `srai` `sll` `srl` `sra` | 3 + SAfootnote:[Shift amount.]/4 + SA%4; FAST_SHIFTfootnote:[Barrel shift when `FAST_SHIFT_EN` is enabled.]: 4; TINY_SHIFTfootnote:[Serial shift when `TINY_SHIFT_EN` is enabled.]: 2..32
-| ALU           | `C`   | `c.srli` `c.srai` `c.slli` | 3 + SAfootnote:[Shift amount.]/4 + SA%4; FAST_SHIFTfootnote:[Barrel shift when `FAST_SHIFT_EN` is enabled.]: 4; TINY_SHIFTfootnote:[Serial shift when `TINS_SHIFT_EN` is enabled.]: 2..32
+| ALU           | `C`   | `c.srli` `c.srai` `c.slli` | 3 + SAfootnote:[Shift amount (0..31).]; FAST_SHIFTfootnote:[Barrel shifter when `FAST_SHIFT_EN` is enabled.]:
 | Branches      | `I/E` | `beq` `bne` `blt` `bge` `bltu` `bgeu` | Taken: 5 + MLfootnote:[Memory latency.]; Not taken: 3
 | Branches      | `C`   | `c.beqz` `c.bnez`                     | Taken: 5 + MLfootnote:[Memory latency.]; Not taken: 3
 | Jumps / Calls | `I/E` | `jal` `jalr`                  | 4 + ML

@@ -339,21 +339,9 @@ enabled (<<_cpu_extension_riscv_m>> is _true_).
 [frame="all",grid="none"]
 |======
 | **FAST_SHIFT_EN** | _boolean_ | false
-3+| When this generic is enabled the shifter unit of the CPU's ALU is implement as fast barrel shifter (requiring
-more hardware resources).
-|======
-
-
-:sectnums!:
-===== _TINY_SHIFT_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **TINY_SHIFT_EN** | _boolean_ | false
-3+| If this generic is enabled the shifter unit of the CPU's ALU is implemented as (slow but tiny) single-bit iterative shifter
-(requires up to 32 clock cycles for a shift operations, but reducing hardware footprint). The configuration of
-this generic is ignored if <<_fast_shift_en>> is _true_.
+3+| When this generic is set _true_ the shifter unit of the CPU's ALU is implemented as fast barrel shifter (requiring
+more hardware resources). If it is set _false_ the CPU uses a serial shifter that only performs a single bit shift per cycle
+(small but slow).
 |======
 
 
