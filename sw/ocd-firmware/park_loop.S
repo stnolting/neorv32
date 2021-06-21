@@ -99,4 +99,5 @@ execute_progbuf:
     addi   s0, zero, SREG_EXECUTE_ACK
     sw     s0, DBMEM_SREG_BASE(zero)        // ACK that execution is about to start
     csrr   s0, dscratch0                    // restore s0 from dscratch0
+    fence.i                                 // synchronize i-cache & prefetch with memory (program buffer)
     jalr   zero, zero, %lo(DBMEM_PBUF_BASE) // jump to beginning of program buffer
