@@ -45,3 +45,5 @@ NEORV32_SRC := ${NEORV32_PKG} ${NEORV32_APP_SRC} ${NEORV32_MEM_SRC} ${NEORV32_CO
 
 ICE40_SRC := \
   ../devices/ice40/sb_ice40_components.vhd
+
+# Optionally NEORV32_VERILOG_SRC can be set to a list of Verilog sources

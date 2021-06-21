@@ -58,3 +58,10 @@ UP5KDemo:
 	  DESIGN=$@ \
 	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_UP5KDemo.vhd \
 	  $(BOARD)
+
+MixedLanguage:
+	$(MAKE) \
+	  DESIGN=$@ \
+	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_Minimal*.vhd \
+	  NEORV32_VERILOG_SRC='../devices/ice40/sb_ice40_components.v ../../examples/neorv32_Fomu_MixedLanguage_ClkGen.v' \
+	  $(BOARD)

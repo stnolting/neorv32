@@ -19,6 +19,10 @@ print('::set-output name=matrix::' + str([
   'bitstream': 'neorv32_Fomu_pvt_MinimalBoot.bit'
 }, {
   'board': 'Fomu',
+  'design': 'MixedLanguage',
+  'bitstream': 'neorv32_Fomu_pvt_MixedLanguage.bit'
+}, {
+  'board': 'Fomu',
   'design': 'UP5KDemo',
   'bitstream': 'neorv32_Fomu_pvt_UP5KDemo.bit'
 }, {
