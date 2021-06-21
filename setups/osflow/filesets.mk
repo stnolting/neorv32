@@ -21,6 +21,7 @@ NEORV32_CORE_SRC := \
   $(RTL_CORE_SRC)/neorv32_cpu_control.vhd \
   $(RTL_CORE_SRC)/neorv32_cpu_cp_fpu.vhd \
   $(RTL_CORE_SRC)/neorv32_cpu_cp_muldiv.vhd \
+  $(RTL_CORE_SRC)/neorv32_cpu_cp_shifter.vhd \
   $(RTL_CORE_SRC)/neorv32_cpu_decompressor.vhd \
   $(RTL_CORE_SRC)/neorv32_cpu_regfile.vhd \
   $(RTL_CORE_SRC)/neorv32_debug_dm.vhd \
