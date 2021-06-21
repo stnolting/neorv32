@@ -2180,7 +2180,6 @@ package body neorv32_package is
   -- impure function: returns NOT the same result every time it is evaluated with the same arguments since the source file might have changed
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t is
     variable mem_v : mem32_t(0 to depth-1);
-    variable idx_v : natural;
   begin
       mem_v := (others => (others => '0')); -- make sure remaining memory entries are set to zero
       for idx_v in 0 to init'length-1 loop -- init only in range of source data array
