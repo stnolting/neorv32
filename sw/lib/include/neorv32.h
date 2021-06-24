@@ -410,6 +410,7 @@ enum NEORV32_CSR_MISA_enum {
 enum NEORV32_CSR_MZEXT_enum {
   CSR_MZEXT_ZICSR     =  0, /**< CPU mzext CSR (0): Zicsr extension (I sub-extension) available when set (r/-) */
   CSR_MZEXT_ZIFENCEI  =  1, /**< CPU mzext CSR (1): Zifencei extension (I sub-extension) available when set (r/-) */
+  CSR_MZEXT_ZMMUL     =  2, /**< CPU mzext CSR (2): Zmmul extension (M sub-extension) available when set (r/-) */
 
   CSR_MZEXT_ZFINX     =  5, /**< CPU mzext CSR (5): Zfinx extension (F sub-/alternative-extension) available when set (r/-) */
   CSR_MZEXT_ZXSCNT    =  6, /**< CPU mzext CSR (6): Custom extension - Small CPU counters: "cycle" & "instret" CSRs have less than 64-bit when set (r/-) */

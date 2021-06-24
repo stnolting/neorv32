@@ -45,6 +45,7 @@ entity neorv32_cpu_alu is
   generic (
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_M     : boolean := false; -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_Zmmul : boolean := false; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zfinx : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
     -- Extension Options --
     FAST_MUL_EN               : boolean := false; -- use DSPs for M extension's multiplier
@@ -249,10 +250,11 @@ begin
   -- Co-Processor 1: Integer Multiplication/Division ('M' Extension) ------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_muldiv_inst_true:
-  if (CPU_EXTENSION_RISCV_M = true) generate
+  if (CPU_EXTENSION_RISCV_M = true) or (CPU_EXTENSION_RISCV_Zmmul = true) generate
     neorv32_cpu_cp_muldiv_inst: neorv32_cpu_cp_muldiv
     generic map (
-      FAST_MUL_EN => FAST_MUL_EN  -- use DSPs for faster multiplication
+      FAST_MUL_EN => FAST_MUL_EN,          -- use DSPs for faster multiplication
+      DIVISION_EN => CPU_EXTENSION_RISCV_M -- implement divider hardware
     )
     port map (
       -- global control --
@@ -270,7 +272,7 @@ begin
   end generate;
 
   neorv32_cpu_cp_muldiv_inst_false:
-  if (CPU_EXTENSION_RISCV_M = false) generate
+  if (CPU_EXTENSION_RISCV_M = false) and (CPU_EXTENSION_RISCV_Zmmul = false) generate
     cp_result(1) <= (others => '0');
     cp_valid(1)  <= cp_start(1); -- to make sure CPU does not get stalled if there is an accidental access
   end generate;

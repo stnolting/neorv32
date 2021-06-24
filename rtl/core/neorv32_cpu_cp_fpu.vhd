@@ -504,7 +504,7 @@ begin
 
   -- Min/Max Select (FMIN/FMAX) -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  min_max_select: process(fpu_operands, comp_less_ff, fpu_operands, fu_compare, ctrl_i)
+  min_max_select: process(fpu_operands, comp_less_ff, fu_compare, ctrl_i)
     variable cond_v : std_ulogic_vector(2 downto 0);
   begin
     -- comparison restul - check for special cases: -0 is less than +0

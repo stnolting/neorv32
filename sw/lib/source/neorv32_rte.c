@@ -338,6 +338,9 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<CSR_MZEXT_ZIFENCEI)) {
     neorv32_uart0_printf("Zifencei ");
   }
+  if (tmp & (1<<CSR_MZEXT_ZMMUL)) {
+    neorv32_uart0_printf("Zmmul ");
+  }
 
   if (tmp & (1<<CSR_MZEXT_ZFINX)) {
     neorv32_uart0_printf("Zfinx ");

@@ -7,7 +7,6 @@
 -- # Divider core (unsigned) uses classical serial algorithm. Unit latency: 32+4 cycles            #
 -- #                                                                                               #
 -- # Multiplications can be mapped to DSP blocks (faster!) when FAST_MUL_EN = true.                #
--- # Unit latency: 3 cycles                                                                        #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -49,7 +48,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_muldiv is
   generic (
-    FAST_MUL_EN : boolean := false -- use DSPs for faster multiplication
+    FAST_MUL_EN : boolean := false; -- use DSPs for faster multiplication
+    DIVISION_EN : boolean := true   -- implement divider hardware
   );
   port (
     -- global control --
@@ -104,8 +104,6 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   signal div_res          : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- multiplier core --
-  signal mul_product_p  : std_ulogic_vector(63 downto 0);
-  signal mul_product_s  : std_ulogic_vector(63 downto 0);
   signal mul_product    : std_ulogic_vector(63 downto 0);
   signal mul_do_add     : std_ulogic_vector(data_width_c downto 0);
   signal mul_sign_cycle : std_ulogic;
@@ -140,7 +138,7 @@ begin
         when IDLE =>
           cp_op_ff <= cp_op;
           if (start_i = '1') then
-            if (operation = '1') then -- division
+            if (operation = '1') and (DIVISION_EN = true) then -- division
               cnt <= "11111";
               state <= DIV_PREPROCESS;
             else
@@ -154,31 +152,35 @@ begin
           end if;
 
         when DIV_PREPROCESS =>
-          -- check rlevatn input signs --
-          if (cp_op = cp_op_div_c) then -- result sign compensation for div?
-            div_res_corr <= rs1_i(rs1_i'left) xor rs2_i(rs2_i'left);
-          elsif (cp_op = cp_op_rem_c) then -- result sign compensation for rem?
-            div_res_corr <= rs1_i(rs1_i'left);
+          if (DIVISION_EN = true) then
+            -- check rlevatn input signs --
+            if (cp_op = cp_op_div_c) then -- result sign compensation for div?
+              div_res_corr <= rs1_i(rs1_i'left) xor rs2_i(rs2_i'left);
+            elsif (cp_op = cp_op_rem_c) then -- result sign compensation for rem?
+              div_res_corr <= rs1_i(rs1_i'left);
+            else
+              div_res_corr <= '0';
+            end if;
+            -- divide by zero? --
+            opy_is_zero <= not or_reduce_f(rs2_i); -- set if rs2 = 0
+            -- abs(rs1) --
+            if ((rs1_i(rs1_i'left) and rs1_is_signed) = '1') then -- signed division?
+              div_opx <= std_ulogic_vector(0 - unsigned(rs1_i)); -- make positive
+            else
+              div_opx <= rs1_i;
+            end if;
+            -- abs(rs2) --
+            if ((rs2_i(rs2_i'left) and rs2_is_signed) = '1') then -- signed division?
+              div_opy <= std_ulogic_vector(0 - unsigned(rs2_i)); -- make positive
+            else
+              div_opy <= rs2_i;
+            end if;
+            --
+            start_div <= '1';
+            state     <= PROCESSING;
           else
-            div_res_corr <= '0';
+            state <= IDLE;
           end if;
-          -- divide by zero? --
-          opy_is_zero <= not or_reduce_f(rs2_i); -- set if rs2 = 0
-          -- abs(rs1) --
-          if ((rs1_i(rs1_i'left) and rs1_is_signed) = '1') then -- signed division?
-            div_opx <= std_ulogic_vector(0 - unsigned(rs1_i)); -- make positive
-          else
-            div_opx <= rs1_i;
-          end if;
-          -- abs(rs2) --
-          if ((rs2_i(rs2_i'left) and rs2_is_signed) = '1') then -- signed division?
-            div_opy <= std_ulogic_vector(0 - unsigned(rs2_i)); -- make positive
-          else
-            div_opy <= rs2_i;
-          end if;
-          --
-          start_div <= '1';
-          state     <= PROCESSING;
 
         when PROCESSING =>
           cnt <= std_ulogic_vector(unsigned(cnt) - 1);
@@ -214,40 +216,42 @@ begin
 
   -- Multiplier Core (signed/unsigned) ------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  multiplier_core_serial: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      mul_product_s <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
-      if (FAST_MUL_EN = false) then -- use small iterative computation
+  -- iterative multiplication (bit-serial) --
+  multiplier_core_serial:
+  if (FAST_MUL_EN = false) generate
+    multiplier_core: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        mul_product <= (others => def_rst_val_c);
+      elsif rising_edge(clk_i) then
         if (start_mul = '1') then -- start new multiplication
-          mul_product_s(63 downto 32) <= (others => '0');
-          mul_product_s(31 downto 00) <= rs2_i;
+          mul_product(63 downto 32) <= (others => '0');
+          mul_product(31 downto 00) <= rs2_i;
         elsif (state = PROCESSING) or (state = FINALIZE) then -- processing step or sign-finalization step
-          mul_product_s(63 downto 31) <= mul_do_add(32 downto 0);
-          mul_product_s(30 downto 00) <= mul_product_s(31 downto 1);
+          mul_product(63 downto 31) <= mul_do_add(32 downto 0);
+          mul_product(30 downto 00) <= mul_product(31 downto 1);
         end if;
       end if;
-    end if;
-  end process multiplier_core_serial;
+    end process multiplier_core;
+  end generate;
 
-  multiplier_core_dsp: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (FAST_MUL_EN = true) then -- use direct approach using DSP blocks
+  -- parallel multiplication --
+  multiplier_core_dsp:
+  if (FAST_MUL_EN = true) generate
+    multiplier_core: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
         if (start_mul = '1') then
           mul_op_x <= signed((rs1_i(rs1_i'left) and rs1_is_signed) & rs1_i);
           mul_op_y <= signed((rs2_i(rs2_i'left) and rs2_is_signed) & rs2_i);
         end if;
-        mul_buf_ff    <= mul_op_x * mul_op_y;
-        mul_product_p <= std_ulogic_vector(mul_buf_ff(63 downto 0)); -- let the register balancing do the magic here
+        mul_buf_ff  <= mul_op_x * mul_op_y;
+        mul_product <= std_ulogic_vector(mul_buf_ff(63 downto 0)); -- let the register balancing do the magic here
       end if;
-    end if;
-  end process multiplier_core_dsp;
+    end process multiplier_core;
+  end generate;
 
-  mul_product <= mul_product_p when (FAST_MUL_EN = true) else mul_product_s;
-
-  -- do another addition --
+  -- do another addition (bit-serial) --
   mul_update: process(mul_product, mul_sign_cycle, mul_p_sext, rs1_is_signed, rs1_i)
   begin
     -- current bit of rs2_i to take care of --
@@ -269,33 +273,44 @@ begin
 
   -- Divider Core (unsigned) ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  divider_core: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      quotient  <= (others => def_rst_val_c);
-      remainder <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
-      if (start_div = '1') then -- start new division
-        quotient  <= div_opx;
-        remainder <= (others => '0');
-      elsif (state = PROCESSING) or (state = FINALIZE) then -- running?
-        quotient <= quotient(30 downto 0) & (not div_sub(32));
-        if (div_sub(32) = '0') then -- still overflowing
-          remainder <= div_sub(31 downto 0);
-        else -- underflow
-          remainder <= remainder(30 downto 0) & quotient(31);
+  divider_core_serial:
+  if (DIVISION_EN = true) generate
+    divider_core: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        quotient  <= (others => def_rst_val_c);
+        remainder <= (others => def_rst_val_c);
+      elsif rising_edge(clk_i) then
+        if (start_div = '1') then -- start new division
+          quotient  <= div_opx;
+          remainder <= (others => '0');
+        elsif (state = PROCESSING) or (state = FINALIZE) then -- running?
+          quotient <= quotient(30 downto 0) & (not div_sub(32));
+          if (div_sub(32) = '0') then -- still overflowing
+            remainder <= div_sub(31 downto 0);
+          else -- underflow
+            remainder <= remainder(30 downto 0) & quotient(31);
+          end if;
         end if;
       end if;
-    end if;
-  end process divider_core;
+    end process divider_core;
 
-  -- try another subtraction --
-  div_sub <= std_ulogic_vector(unsigned('0' & remainder(30 downto 0) & quotient(31)) - unsigned('0' & div_opy));
+    -- try another subtraction --
+    div_sub <= std_ulogic_vector(unsigned('0' & remainder(30 downto 0) & quotient(31)) - unsigned('0' & div_opy));
 
-  -- result sign compensation --
-  div_sign_comp_in <= quotient when (cp_op = cp_op_div_c) else remainder;
-  div_sign_comp    <= std_ulogic_vector(0 - unsigned(div_sign_comp_in));
-  div_res          <= div_sign_comp when (div_res_corr = '1') and (opy_is_zero = '0') else div_sign_comp_in;
+    -- result sign compensation --
+    div_sign_comp_in <= quotient when (cp_op = cp_op_div_c) else remainder;
+    div_sign_comp    <= std_ulogic_vector(0 - unsigned(div_sign_comp_in));
+    div_res          <= div_sign_comp when (div_res_corr = '1') and (opy_is_zero = '0') else div_sign_comp_in;
+  end generate;
+
+  -- no divider --
+  divider_core_serial_none:
+  if (DIVISION_EN = false) generate
+    remainder <= (others => '-');
+    quotient  <= (others => '-');
+    div_res   <= (others => '-');
+  end generate;
 
 
   -- Data Output ----------------------------------------------------------------------------
@@ -313,17 +328,21 @@ begin
           when cp_op_mulh_c | cp_op_mulhsu_c | cp_op_mulhu_c =>
             res_o <= mul_product(63 downto 32);
           when cp_op_div_c =>
-            res_o <= div_res;
+            if (DIVISION_EN = true) then res_o <= div_res; else NULL; end if;
           when cp_op_divu_c =>
-            res_o <= quotient;
+            if (DIVISION_EN = true) then res_o <= quotient; else NULL; end if;
           when cp_op_rem_c =>
-            if (opy_is_zero = '0') then
-              res_o <= div_res;
+            if (DIVISION_EN = true) then 
+              if (opy_is_zero = '0') then
+                res_o <= div_res;
+              else
+                res_o <= rs1_i;
+              end if;
             else
-              res_o <= rs1_i;
+              NULL;
             end if;
           when others => -- cp_op_remu_c
-            res_o <= remainder;
+            if (DIVISION_EN = true) then res_o <= remainder; else NULL; end if;
         end case;
       end if;
     end if;

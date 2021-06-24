@@ -68,6 +68,7 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zmmul    : boolean := false; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_DEBUG    : boolean := false; -- implement CPU debug mode?
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
@@ -195,6 +196,9 @@ begin
   -- HPM CNT requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (HPM_NUM_CNTS > 0)) report "NEORV32 CPU CONFIG ERROR! Hardware performance monitors (HPM) require <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
+  -- Mul-extension --
+  assert not ((CPU_EXTENSION_RISCV_Zmmul = true) and (CPU_EXTENSION_RISCV_M = true)) report "NEORV32 CPU CONFIG ERROR! <M> and <ZMMUL> extensions cannot co-exist!" severity error;
+
   -- Debug mode --
   assert not ((CPU_EXTENSION_RISCV_DEBUG = true) and (CPU_EXTENSION_RISCV_Zicsr = false)) report "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
@@ -215,6 +219,7 @@ begin
     CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zmmul    => CPU_EXTENSION_RISCV_Zmmul,     -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_DEBUG    => CPU_EXTENSION_RISCV_DEBUG,    -- implement CPU debug mode?
     -- Extension Options --
     CPU_CNT_WIDTH                => CPU_CNT_WIDTH,                -- total width of CPU cycle and instret counters (0..64)
@@ -303,6 +308,7 @@ begin
   generic map (
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_M     => CPU_EXTENSION_RISCV_M,     -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_Zmmul => CPU_EXTENSION_RISCV_Zmmul, -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zfinx => CPU_EXTENSION_RISCV_Zfinx, -- implement 32-bit floating-point extension (using INT reg!)
     -- Extension Options --
     FAST_MUL_EN               => FAST_MUL_EN,               -- use DSPs for M extension's multiplier

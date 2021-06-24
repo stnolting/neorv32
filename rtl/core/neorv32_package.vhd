@@ -70,7 +70,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050700"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050701"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
 
@@ -888,6 +888,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
+      CPU_EXTENSION_RISCV_Zmmul    : boolean := false; -- implement multiply-only M sub-extension?
       -- Extension Options --
       FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
@@ -1013,6 +1014,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
+      CPU_EXTENSION_RISCV_Zmmul    : boolean := false; -- implement multiply-only M sub-extension?
       CPU_EXTENSION_RISCV_DEBUG    : boolean := false; -- implement CPU debug mode?
       -- Extension Options --
       FAST_MUL_EN                  : boolean := false; -- use DSPs for M extension's multiplier
@@ -1087,6 +1089,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
+      CPU_EXTENSION_RISCV_Zmmul    : boolean := false; -- implement multiply-only M sub-extension?
       CPU_EXTENSION_RISCV_DEBUG    : boolean := false; -- implement CPU debug mode?
       -- Extension Options --
       CPU_CNT_WIDTH                : natural := 64; -- total width of CPU cycle and instret counters (0..64)
@@ -1172,6 +1175,7 @@ package neorv32_package is
     generic (
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_M     : boolean := false; -- implement mul/div extension?
+      CPU_EXTENSION_RISCV_Zmmul : boolean := false; -- implement multiply-only M sub-extension?
       CPU_EXTENSION_RISCV_Zfinx : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
       -- Extension Options --
       FAST_MUL_EN               : boolean := false; -- use DSPs for M extension's multiplier
@@ -1224,7 +1228,8 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_muldiv
     generic (
-      FAST_MUL_EN : boolean := false -- use DSPs for faster multiplication
+      FAST_MUL_EN : boolean := false; -- use DSPs for faster multiplication
+      DIVISION_EN : boolean := true   -- implement divider hardware
     );
     port (
       -- global control --

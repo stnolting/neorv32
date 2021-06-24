@@ -60,6 +60,7 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zmmul    : boolean := false; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_DEBUG    : boolean := false; -- implement CPU debug mode?
     -- Extension Options --
     CPU_CNT_WIDTH                : natural := 64; -- total width of CPU cycle and instret counters (0..64)
@@ -198,6 +199,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     is_atomic_sc  : std_ulogic;
     is_float_op   : std_ulogic;
     sys_env_cmd   : std_ulogic_vector(11 downto 0);
+    is_m_mul      : std_ulogic;
+    is_m_div      : std_ulogic;
   end record;
   signal decode_aux : decode_aux_t;
 
@@ -842,6 +845,8 @@ begin
     decode_aux.is_atomic_lr  <= '0';
     decode_aux.is_atomic_sc  <= '0';
     decode_aux.is_float_op   <= '0';
+    decode_aux.is_m_mul      <= '0';
+    decode_aux.is_m_div      <= '0';
 
     -- is immediate ALU operation? --
     decode_aux.alu_immediate <= not execute_engine.i_reg(instr_opcode_msb_c-1);
@@ -870,6 +875,13 @@ begin
     -- system/environment instructions --
     sys_env_cmd_mask_v := funct12_ecall_c or funct12_ebreak_c or funct12_mret_c or funct12_wfi_c or funct12_dret_c; -- sum-up set bits
     decode_aux.sys_env_cmd <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) and sys_env_cmd_mask_v; -- set unused bits to always-zero
+
+    -- integer MUL (M/Zmmul) / DIV (M) operation --
+    if (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and
+       (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000001") then
+      decode_aux.is_m_mul <= not execute_engine.i_reg(instr_funct3_msb_c);
+      decode_aux.is_m_div <=     execute_engine.i_reg(instr_funct3_msb_c);
+    end if;
   end process decode_helper;
 
 
@@ -1026,7 +1038,8 @@ begin
             end case;
 
             -- co-processor MULDIV operation? --
-            if (CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000001") then -- MULDIV CP op?
+            if ((CPU_EXTENSION_RISCV_M = true) and ((decode_aux.is_m_mul = '1') or (decode_aux.is_m_div = '1'))) or -- MUL/DIV
+               ((CPU_EXTENSION_RISCV_Zmmul = true) and (decode_aux.is_m_mul = '1')) then -- MUL
               ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- use MULDIV CP
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
             else
@@ -1045,7 +1058,8 @@ begin
             -- multi cycle ALU operation? --
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or -- SLL shift operation?
                (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) or -- SR shift operation?
-               ((CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (execute_engine.i_reg(instr_funct7_lsb_c) = '1')) then -- MULDIV CP op?
+               ((CPU_EXTENSION_RISCV_M = true) and ((decode_aux.is_m_mul = '1') or (decode_aux.is_m_div = '1'))) or -- MUL/DIV
+               ((CPU_EXTENSION_RISCV_Zmmul = true) and (decode_aux.is_m_mul = '1')) then -- MUL
               execute_engine.state_nxt <= ALU_WAIT;
             else -- single cycle ALU operation
               ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
@@ -1423,7 +1437,11 @@ begin
 
         when opcode_alu_c => -- check ALU.funct3 & ALU.funct7
         -- ------------------------------------------------------------
-          if (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000001") then -- MULDIV
+          if (decode_aux.is_m_mul = '1') then -- MUL
+            if (CPU_EXTENSION_RISCV_M = false) and (CPU_EXTENSION_RISCV_Zmmul = false) then -- not implemented
+              illegal_instruction <= '1';
+            end if;
+          elsif (decode_aux.is_m_div = '1') then -- DIV
             if (CPU_EXTENSION_RISCV_M = false) then -- not implemented
               illegal_instruction <= '1';
             end if;
@@ -2779,6 +2797,8 @@ begin
           when csr_mzext_c => -- mzext (r/-): available RISC-V Z* sub-extensions
             csr.rdata(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr
             csr.rdata(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei
+            csr.rdata(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul
+            -- ... --
             csr.rdata(5) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx ("F-alternative")
             if (CPU_CNT_WIDTH = 64) then
               csr.rdata(6) <= '0'; -- Zxscnt (custom)

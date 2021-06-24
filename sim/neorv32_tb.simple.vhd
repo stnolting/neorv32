@@ -166,11 +166,12 @@ begin
     CPU_EXTENSION_RISCV_A        => true,          -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        => true,          -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => false,         -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        => true,          -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_M        => false,          -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        => true,          -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    => true,          -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => true,          -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => true,          -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zmmul    => true,          -- implement multiply-only M sub-extension?
     -- Extension Options --
     FAST_MUL_EN                  => false,         -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => false,         -- use barrel shifter for shift operations
