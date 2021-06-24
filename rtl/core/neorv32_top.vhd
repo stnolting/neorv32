@@ -307,6 +307,26 @@ architecture neorv32_top_rtl of neorv32_top is
 
 begin
 
+  -- Processor IO/Peripherals Configuration -------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert false report
+  "NEORV32 PROCESSOR IO Configuration: " &
+  cond_sel_string_f(IO_GPIO_EN, "GPIO ", "") &
+  cond_sel_string_f(IO_MTIME_EN, "MTIME ", "") &
+  cond_sel_string_f(IO_UART0_EN, "UART0 ", "") &
+  cond_sel_string_f(IO_UART1_EN, "UART1 ", "") &
+  cond_sel_string_f(IO_SPI_EN, "SPI ", "") &
+  cond_sel_string_f(IO_TWI_EN, "TWI ", "") &
+  cond_sel_string_f(boolean(IO_PWM_NUM_CH > 0), "PWM ", "") &
+  cond_sel_string_f(IO_WDT_EN, "WDT ", "") &
+  cond_sel_string_f(IO_TRNG_EN, "TRNG ", "") &
+  cond_sel_string_f(IO_CFS_EN, "CFS ", "") &
+  cond_sel_string_f(IO_NCO_EN, "NCO ", "") &
+  cond_sel_string_f(IO_NEOLED_EN, "NEOLED ", "") &
+  ""
+  severity note;
+
+
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- clock --

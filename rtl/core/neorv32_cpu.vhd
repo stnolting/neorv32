@@ -159,6 +159,24 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
 begin
 
+  -- CPU ISA Configuration ---------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert false report
+  "NEORV32 CPU ISA Configuration (MARCH): " &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_E, "RV32E", "RV32I") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_M, "M", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_A, "A", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_C, "C", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_U, "U", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_Zicsr, "_Zicsr", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_Zifencei, "_Zifencei", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx, "_Zfinx", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul, "_Zmmul", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_DEBUG, "_Debug", "") &
+  ""
+  severity note;
+
+
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- hardware reset notifier --
