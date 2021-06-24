@@ -329,6 +329,7 @@ This overview provides some *quick links* to the most important sections of the
 
 * [Overview](https://stnolting.github.io/neorv32/#_legal) - license, disclaimer, proprietary notice, ...
 * [Citing](https://stnolting.github.io/neorv32/#_citing) - citing information
+* [Impressum](https://github.com/stnolting/neorv32/blob/master/docs/impressum.md) - imprint (:de:)
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 

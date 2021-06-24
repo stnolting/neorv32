@@ -107,6 +107,9 @@ who helped improving this project! ❤️**
 https://riscv.org[RISC-V] - instruction sets want to be free!
 
 
+=== Impressum (Imprint)
+
+See https://github.com/stnolting/neorv32/blob/master/docs/impressum.md[`docs/impressum.md`].
 
 
 
