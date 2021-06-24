@@ -16,6 +16,7 @@ image::riscv_logo.png[width=350,align=center]
 ** `Zfinx` - single-precision floating-point unit
 ** `Zicsr` - control and status register access (privileged architecture)
 ** `Zifencei` - instruction stream synchronization
+** `Zmmul` - integer multiplication hardware
 ** `PMP` - physical memory protection
 ** `HPM` - hardware performance monitors
 ** `DB` - debug mode
@@ -416,14 +417,34 @@ Hardware-accelerated integer multiplication and division instructions are availa
 `CPU_EXTENSION_RISCV_M` configuration generic is _true_. In this case the following instructions are
 available:
 
-• multiplication: `mul`, `mulh`, `mulhsu`, `mulhu`
-• division: `div`, `divu`, `rem`, `remu`
+* multiplication: `mul`, `mulh`, `mulhsu`, `mulhu`
+* division: `div`, `divu`, `rem`, `remu`
 
 [NOTE]
 By default, multiplication and division operations are executed in a bit-serial approach.
 Alternatively, the multiplier core can be implemented using DSP blocks if the `FAST_MUL_EN`
 generic is _true_ allowing faster execution. Multiplications and divisions
 always require a fixed amount of cycles to complete - regardless of the input operands.
+
+
+==== **`Zmmul`** - Integer Multiplication
+
+This is a _sub-extension_ of the `M` ISA extension. It implements the multiplication-only operations
+of the `M` extensions and is intended for small scale applications, that require hardware-based
+integer multiplications but not hardware-based divisions, which will be computed entirely in software.
+This extension requires only ~50% of the hardware utilization of the `M` extension.
+
+* multiplication: `mul`, `mulh`, `mulhsu`, `mulhu`
+
+If `Zmmul` is enabled, executing any division instruction from the `M` ISA (`div`, `divu`, `rem`, `remu`)
+will raise an illegal instruction exception.
+
+Note that `M` and `Zmmul` extensions _cannot_ be enabled in parallel.
+
+[TIP]
+If your RISC-V GCC toolchain does not (yet) support the `_Zmmul` ISA extensions, it can be "emulated"
+using a `rv32im` machine architecture and setting the `-mno-div` compiler flag
+(example `$ make MARCH=-march=rv32im USER_FLAGS+=-mno-div clean_all exe`).
 
 
 ==== **`U`** - Less-Privileged User Mode

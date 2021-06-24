@@ -228,6 +228,7 @@ See section <<_instruction_sets_and_extensions>> for more information.
 |======
 | **CPU_EXTENSION_RISCV_A** | _boolean_ | false
 3+| Implement atomic memory access operations when _true_.
+See section <<_a_atomic_memory_access>>.
 |======
 
 
@@ -239,6 +240,7 @@ See section <<_instruction_sets_and_extensions>> for more information.
 |======
 | **CPU_EXTENSION_RISCV_C** | _boolean_ | false
 3+| Implement compressed instructions (16-bit) when _true_.
+See section <<_c_compressed_instructions>>.
 |======
 
 
@@ -250,6 +252,7 @@ See section <<_instruction_sets_and_extensions>> for more information.
 |======
 | **CPU_EXTENSION_RISCV_E** | _boolean_ | false
 3+| Implement the embedded CPU extension (only implement the first 16 data registers) when _true_.
+See section <<_e_embedded_cpu>>.
 |======
 
 
@@ -261,6 +264,7 @@ See section <<_instruction_sets_and_extensions>> for more information.
 |======
 | **CPU_EXTENSION_RISCV_M** | _boolean_ | false
 3+| Implement integer multiplication and division instructions when _true_.
+See section <<_m_integer_multiplication_and_division>>.
 |======
 
 
@@ -272,6 +276,7 @@ See section <<_instruction_sets_and_extensions>> for more information.
 |======
 | **CPU_EXTENSION_RISCV_U** | _boolean_ | false
 3+| Implement less-privileged user mode when _true_.
+See section <<_u_less_privileged_user_mode>>.
 |======
 
 
@@ -282,8 +287,8 @@ See section <<_instruction_sets_and_extensions>> for more information.
 [frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_Zfinx** | _boolean_ | false
-3+| Implement the 32-bit single-precision floating-point extension (using integer registers) when _true_. For
-more information see section <<_zfinx_single_precision_floating_point_operations>>.
+3+| Implement the 32-bit single-precision floating-point extension (using integer registers) when _true_.
+See section <<_zfinx_single_precision_floating_point_operations>>.
 |======
 
 
@@ -297,6 +302,7 @@ more information see section <<_zfinx_single_precision_floating_point_operations
 3+| Implement the control and status register (CSR) access instructions when true. Note: When this option is
 disabled, the complete privileged architecture / trap system will be excluded from synthesis. Hence, no interrupts, no exceptions and
 no machine information will be available.
+See section <<_zicsr_control_and_status_register_access_privileged_architecture>>.
 |======
 
 
@@ -307,8 +313,21 @@ no machine information will be available.
 [frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_Zifencei** | _boolean_ | false
-3+| Implement the instruction fetch synchronization instruction _fence.i_. For example, this option is required
+3+| Implement the instruction fetch synchronization instruction `fence.i`. For example, this option is required
 for self-modifying code (and/or for i-cache flushes).
+See section <<_zifencei_instruction_stream_synchronization>>.
+|======
+
+
+:sectnums!:
+===== _CPU_EXTENSION_RISCV_Zmmul_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CPU_EXTENSION_RISCV_Zmmul** | _boolean_ | false
+3+| Implement integer multiplication-only instructions when _true_. This is a sub-extensions of the `M` extension.
+See section <<_zmmul_integer_multiplication>>.
 |======
 
 

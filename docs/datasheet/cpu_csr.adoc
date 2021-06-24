@@ -766,12 +766,13 @@ are implemented (all remaining bits are always zero). The entire CSR is read-onl
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Event
-| 0   | _CPU_MZEXT_ZICSR_ | r/- | `Zicsr` extensions available (enabled via _CPU_EXTENSION_RISCV_Zicsr_ generic)
-| 1   | _CPU_MZEXT_ZIFENCEI_ | r/- | `Zifencei` extensions available (enabled via _CPU_EXTENSION_RISCV_Zifencei_ generic)
-| 5   | _CPU_MZEXT_ZFINX_ | r/- | `Zfinx` extensions available (enabled via _CPU_EXTENSION_RISCV_Zfinx_ generic)
-| 6   | _CPU_MZEXT_ZXSCNT_ | r/- | custom extension: "Small CPU counters": `cycle[h]` & `instret[h]` CSRs have less than 64-bit when set (when _CPU_CNT_WIDTH_ generic is less than 64)
-| 7   | _CPU_MZEXT_ZXNOCNT_ | r/- | custom extension: "NO CPU counters": `cycle[h]` & `instret[h]` CSRs are not available at all when set (when _CPU_CNT_WIDTH_ generic is 0)
-| 8   | _CSR_MZEXT_PMP_ | r/- | PMP (physical memory protection) extension available (_PMP_NUM_REGIONS_ generic > 0)
-| 9   | _CSR_MZEXT_HPM_ | r/- | HPM (hardware performance monitors) extension available (_HPM_NUM_CNTS_ generic > 0)
-| 10  | _CSR_MZEXT_DEBUGMODE_ | r/- | RISC-V "CPU debug mode" extension available (enabled via _CPU_EXTENSION_RISCV_DEBUG_ generic)
+| 0   | _CPU_MZEXT_ZICSR_ | r/- | `Zicsr` extensions available (enabled via <<_cpu_extension_riscv_zicsr>> generic)
+| 1   | _CPU_MZEXT_ZIFENCEI_ | r/- | `Zifencei` extensions available (enabled via <<_cpu_extension_riscv_zifencei>> generic)
+| 2   | _CPU_MZEXT_ZMMUL_ | r/- | `Zmmul` extensions available (enabled via <<_cpu_extension_riscv_zmmul>> generic)
+| 5   | _CPU_MZEXT_ZFINX_ | r/- | `Zfinx` extensions available (enabled via <<_cpu_extension_riscv_zfinx>> generic)
+| 6   | _CPU_MZEXT_ZXSCNT_ | r/- | custom extension: "Small CPU counters": `cycle[h]` & `instret[h]` CSRs have less than 64-bit when set (when <<_cpu_cnt_width>> generic is less than 64)
+| 7   | _CPU_MZEXT_ZXNOCNT_ | r/- | custom extension: "NO CPU counters": `cycle[h]` & `instret[h]` CSRs are not available at all when set (when <<_cpu_cnt_width>> generic is 0)
+| 8   | _CSR_MZEXT_PMP_ | r/- | PMP (physical memory protection) extension available (<<_pmp_num_regions>> generic > 0)
+| 9   | _CSR_MZEXT_HPM_ | r/- | HPM (hardware performance monitors) extension available (<<_hpm_num_cnts>> generic > 0)
+| 10  | _CSR_MZEXT_DEBUGMODE_ | r/- | RISC-V "CPU debug mode" extension available (enabled via <<_cpu_top_entity_generics,_CPU_EXTENSION_RISCV_DEBUG_>> generic)
 |=======================
