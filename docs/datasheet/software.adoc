@@ -383,22 +383,25 @@ new program executables at every time. If there is an external SPI flash connect
 FPGA's configuration memory), the bootloader can store the program executable to it. After reset, the
 bootloader can directly boot from the flash without any user interaction.
 
-[WARNING]
-The bootloader is only implemented when the _INT_BOOTLOADER_EN_ generic is true and requires the
-CSR access CPU extension (_CPU_EXTENSION_RISCV_Zicsr_ generic is true).
+[NOTE]
+The bootloader is only implemented if the <<_int_bootloader_en>> generic is _true_. This will
+select the <<_indirect_boot>> boot configuration.
 
-.Requirements
+.Hardware requirements of the _default_ NEORV32 bootloader
 [IMPORTANT]
-The default bootloader requires the primary UART (UART0) for user interaction (_IO_UART0_EN_ generic is _true_).
+**REQUIRED**: The bootloader requires the CSR access CPU extension (<<_cpu_extension_riscv_zicsr>> generic is _true_).
 Furthermore, the bootloader requires at least 512 bytes of data memory (processor-internal DMEM or external DMEM). +
  +
-The auto-boot feature, which is optional, requires the machine timer (MTIME; _IO_MTIME_EN_ generic is _true_)
-and the SPI controller (_IO_SPI_EN_ generic is _true_) when used.
-
-[IMPORTANT]
-For the automatic boot from an SPI flash, the SPI controller has to be implemented (_IO_SPI_EN_
-generic is _true_) and the machine system timer MTIME has to be implemented (_IO_MTIME_EN_
-generic is _true_), too, to allow an auto-boot timeout counter.
+_RECOMMENDED_: For user interaction via UART (like uploading executables) the primary UART (UART0) has to be
+implemented (<<_io_uart0_en>> generic is _true_). Without UART the bootloader does not make much sense. However, auto-boot
+via SPI is still supported but the bootloader should be customized (see User Guide) for this purpose. +
+ +
+_OPTIONAL_: The bootloader uses bit 0 of the GPIO output port as "heart beat" and status LED if the
+GPIO controller is implemented (<<_io_gpio_en>> generic is _true_). +
+ +
+_OPTIONAL_: The MTIME machine timer (<<_io_mtime_en>> generic is _true_) and the SPI controller
+(<<_io_spi_en>> generic is _true_) are required in order to use the bootloader's auto-boot feature
+(automatic boot from external SPI flash).
 
 To interact with the bootloader, connect the primary UART (UART0) signals (`uart0_txd_o` and
 `uart0_rxd_o`) of the processor's top entity via a serial port (-adapter) to your computer (hardware flow control is
@@ -425,7 +428,6 @@ following intro screen should show up in your terminal:
 BLDV: Mar 23 2021
 HWV:  0x01050208
 CLK:  0x05F5E100
-USER: 0x10000DE0
 MISA: 0x40901105
 ZEXT: 0x00000023
 PROC: 0x0EFF0037
@@ -442,7 +444,6 @@ This start-up screen also gives some brief information about the bootloader and 
 |=======================
 | `BLDV` | Bootloader version (built date).
 | `HWV`  | Processor hardware version (from the `mimpid` CSR) in BCD format (example: `0x01040606` = v1.4.6.6).
-| `USER` | Custom user code (from the _USER_CODE_ generic).
 | `CLK`  | Processor clock speed in Hz (via the SYSINFO module, from the _CLOCK_FREQUENCY_ generic).
 | `MISA` | CPU extensions (from the `misa` CSR).
 | `ZEXT` | CPU sub-extensions (from the `mzext` CSR)
@@ -490,7 +491,6 @@ corresponding operation:
 * `s`: Store executable to SPI flash at `spi_csn_o(0)`
 * `l`: Load executable from SPI flash at `spi_csn_o(0)`
 * `e`: Start the application, which is currently stored in the instruction memory (IMEM)
-* `#`: Shortcut for executing u and e afterwards (not shown in help menu)
 
 A new executable can be uploaded via UART by executing the `u` command. After that, the executable can be directly
 executed via the `e` command. To store the recently uploaded executable to an attached SPI flash press `s`. To

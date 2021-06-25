@@ -65,27 +65,25 @@
  **************************************************************************/
 /**@{*/
 /** UART BAUD rate */
-#define BAUD_RATE              (19200)
+#define BAUD_RATE              19200
 /** Enable auto-boot sequence if != 0 */
-#define AUTOBOOT_EN            (1)
+#define AUTOBOOT_EN            1
 /** Time until the auto-boot sequence starts (in seconds) */
-#define AUTOBOOT_TIMEOUT       (8)
+#define AUTOBOOT_TIMEOUT       8
 /** Set to 0 to disable bootloader status LED */
-#define STATUS_LED_EN          (1)
+#define STATUS_LED_EN          1
 /** Set to 1 to enable SPI direct boot (disables the entire user console!) */
-#define SPI_DIRECT_BOOT_EN     (0)
+#define SPI_DIRECT_BOOT_EN     0
 /** Bootloader status LED at GPIO output port */
-#define STATUS_LED             (0)
+#define STATUS_LED             0
 /** SPI flash boot image base address (warning! address might wrap-around!) */
-#define SPI_FLASH_BOOT_ADR     (0x00800000)
+#define SPI_FLASH_BOOT_ADR     0x00800000
 /** SPI flash chip select line at spi_csn_o */
-#define SPI_FLASH_CS           (0)
+#define SPI_FLASH_CS           0
 /** Default SPI flash clock prescaler */
-#define SPI_FLASH_CLK_PRSC     (CLK_PRSC_8)
+#define SPI_FLASH_CLK_PRSC     CLK_PRSC_8
 /** SPI flash sector size in bytes (default = 64kb) */
-#define SPI_FLASH_SECTOR_SIZE  (64*1024)
-/** ASCII char to start fast executable upload process (for use with automatic upload scripts) */
-#define FAST_UPLOAD_CMD        ('#')
+#define SPI_FLASH_SECTOR_SIZE  64*1024
 /**@}*/
 
 
@@ -105,8 +103,7 @@ enum ERROR_CODES {
   ERROR_SIGNATURE = 0, /**< 0: Wrong signature in executable */
   ERROR_SIZE      = 1, /**< 1: Insufficient instruction memory capacity */
   ERROR_CHECKSUM  = 2, /**< 2: Checksum error in executable */
-  ERROR_FLASH     = 3, /**< 3: SPI flash access error */
-  ERROR_SYSTEM    = 4  /**< 4: System exception */
+  ERROR_FLASH     = 3  /**< 3: SPI flash access error */
 };
 
 
@@ -159,14 +156,13 @@ volatile uint32_t exe_available = 0;
 
 
 /**********************************************************************//**
- * Only set during executable fetch (required for cpaturing STORE-BUS-TIMOUT exception).
+ * Only set during executable fetch (required for capturing STORE BUS-TIMOUT exception).
  **************************************************************************/
 volatile uint32_t getting_exe = 0;
 
 
 // Function prototypes
 void __attribute__((__interrupt__)) bootloader_trap_handler(void);
-void fast_upload(int src);
 void print_help(void);
 void start_app(void);
 void get_exe(int src);
@@ -184,6 +180,14 @@ uint8_t spi_flash_read_1st_id(void);
 void spi_flash_write_wait(void);
 void spi_flash_write_enable(void);
 void spi_flash_write_addr(uint32_t addr);
+
+
+/**********************************************************************//**
+ * Sanity check: Do not compile with C extension
+ **************************************************************************/
+#if defined __riscv_compressed || defined __riscv_c
+  #error Bootloader has to be compiled without C ISA extension!
+#endif
 
 
 /**********************************************************************//**
@@ -216,21 +220,25 @@ int main(void) {
   }
 
 #if (STATUS_LED_EN != 0)
+  if (neorv32_gpio_available()) {
     // activate status LED, clear all others
     neorv32_gpio_port_set(1 << STATUS_LED);
+  }
 #endif
 
   // init UART (no parity bit, no hardware flow control)
   neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // Configure machine system timer interrupt for ~2Hz
-  neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (clock_speed/4));
+  if (neorv32_mtime_available()) {
+    neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (clock_speed/4));
+  }
 
   // configure trap handler (bare-metal, no neorv32 rte available)
   neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&bootloader_trap_handler));
 
   // active timer IRQ
-  neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate MTIME IRQ source
+  neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate MTIME IRQ source only!
   neorv32_cpu_eint(); // enable global interrupts
 
 
@@ -257,13 +265,11 @@ int main(void) {
   // ------------------------------------------------
   // Show bootloader intro and system info
   // ------------------------------------------------
-  neorv32_uart_print("\n\n\n\n<< NEORV32 Bootloader >>\n\n"
+  neorv32_uart_print("\n\n\n<< NEORV32 Bootloader >>\n\n"
                      "BLDV: "__DATE__"\nHWV:  ");
   print_hex_word(neorv32_cpu_csr_read(CSR_MIMPID));
   neorv32_uart_print("\nCLK:  ");
   print_hex_word(SYSINFO_CLK);
-  neorv32_uart_print("\nUSER: ");
-  print_hex_word(SYSINFO_USER_CODE);
   neorv32_uart_print("\nMISA: ");
   print_hex_word(neorv32_cpu_csr_read(CSR_MISA));
   neorv32_uart_print("\nZEXT: ");
@@ -272,11 +278,11 @@ int main(void) {
   print_hex_word(SYSINFO_FEATURES);
   neorv32_uart_print("\nIMEM: ");
   print_hex_word(SYSINFO_IMEM_SIZE);
-  neorv32_uart_print(" bytes @ ");
+  neorv32_uart_print(" bytes @");
   print_hex_word(SYSINFO_ISPACE_BASE);
   neorv32_uart_print("\nDMEM: ");
   print_hex_word(SYSINFO_DMEM_SIZE);
-  neorv32_uart_print(" bytes @ ");
+  neorv32_uart_print(" bytes @");
   print_hex_word(SYSINFO_DSPACE_BASE);
 
 
@@ -284,21 +290,28 @@ int main(void) {
   // Auto boot sequence
   // ------------------------------------------------
 #if (AUTOBOOT_EN != 0)
-  neorv32_uart_print("\n\nAutoboot in "xstr(AUTOBOOT_TIMEOUT)"s. Press key to abort.\n");
+  if (neorv32_mtime_available()) {
 
-  uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTOBOOT_TIMEOUT * clock_speed);
+    neorv32_uart_print("\n\nAutoboot in "xstr(AUTOBOOT_TIMEOUT)"s. Press key to abort.\n");
+    uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTOBOOT_TIMEOUT * clock_speed);
 
-  while (neorv32_uart_char_received() == 0) { // wait for any key to be pressed
+    while(1){
 
-    if (neorv32_mtime_get_time() >= timeout_time) { // timeout? start auto boot sequence
-      fast_upload(EXE_STREAM_FLASH); // try booting from flash
+      if (neorv32_uart0_available()) { // wait for any key to be pressed
+        if (neorv32_uart_char_received()) {
+          break;
+        }
+      }
+
+      if (neorv32_mtime_get_time() >= timeout_time) { // timeout? start auto boot sequence
+        get_exe(EXE_STREAM_FLASH); // try booting from flash
+        neorv32_uart_print("\n");
+        start_app();
+        while(1);
+      }
+
     }
-  }
-  neorv32_uart_print("Aborted.\n\n");
-
-  // fast executable upload?
-  if (neorv32_uart_char_received_get() == FAST_UPLOAD_CMD) {
-    fast_upload(EXE_STREAM_UART);
+    neorv32_uart_print("Aborted.\n\n");
   }
 #else
   neorv32_uart_print("\n\n");
@@ -317,10 +330,7 @@ int main(void) {
     neorv32_uart_putc(c); // echo
     neorv32_uart_print("\n");
 
-    if (c == FAST_UPLOAD_CMD) { // fast executable upload
-      fast_upload(EXE_STREAM_UART);
-    }
-    else if (c == 'r') { // restart bootloader
+    if (c == 'r') { // restart bootloader
       asm volatile ("li t0, %[input_i]; jr t0" :  : [input_i] "i" (BOOTLOADER_BASE_ADDRESS)); // jump to beginning of boot ROM
     }
     else if (c == 'h') { // help menu
@@ -344,20 +354,6 @@ int main(void) {
   }
 
   return 1; // bootloader should never return
-}
-
-
-/**********************************************************************//**
- * Get executable stream and execute it.
- *
- * @param src Source of executable stream data. See #EXE_STREAM_SOURCE.
- **************************************************************************/
-void fast_upload(int src) {
-
-  get_exe(src);
-  neorv32_uart_print("\n");
-  start_app();
-  while(1);
 }
 
 
@@ -408,37 +404,48 @@ void start_app(void) {
 
 /**********************************************************************//**
  * Bootloader trap handler. Used for the MTIME tick and to capture any other traps.
- * @warning Since we have no runtime environment, we have to use the interrupt attribute here. Here and only here!
+ *
+ * @warning Adapt exception PC only for sync exceptions!
+ *
+ * @note Since we have no runtime environment, we have to use the interrupt attribute here. Here and only here!
  **************************************************************************/
 void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
 
   uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
 
-  // make sure this was caused by MTIME IRQ
+  // Machine timer interrupt
   if (cause == TRAP_CODE_MTI) { // raw exception code for MTI
 #if (STATUS_LED_EN != 0)
-      // toggle status LED
-      neorv32_gpio_pin_toggle(STATUS_LED);
+    if (neorv32_gpio_available()) {
+      neorv32_gpio_pin_toggle(STATUS_LED); // toggle status LED
+    }
 #endif
     // set time for next IRQ
-    neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (SYSINFO_CLK/4));
+    if (neorv32_mtime_available()) {
+      neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (SYSINFO_CLK/4));
+    }
   }
+
+  // Bus store access error during get_exe
+  else if ((cause == TRAP_CODE_S_ACCESS) && (getting_exe)) {
+    system_error(ERROR_SIZE); // -> seems like executable is too large
+  }
+
+  // Anything else (that was not expected); output exception notifier and try to resume
   else {
-    // store bus access error during get_exe
-    // -> seems like executable is too large
-    if ((cause == TRAP_CODE_S_ACCESS) && (getting_exe)) {
-      system_error(ERROR_SIZE);
+    uint32_t epc = neorv32_cpu_csr_read(CSR_MEPC);
+
+    if (neorv32_uart0_available()) {
+      neorv32_uart_print("\n[EXC ");
+      print_hex_word(cause); // MCAUSE
+      neorv32_uart_putc(' ');
+      print_hex_word(epc); // MEPC
+      neorv32_uart_putc(' ');
+      print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL)); // MTVAL
+      neorv32_uart_print("]\n");
     }
-    // unknown error
-    else {
-      neorv32_uart_print("\n\nEXCEPTION mcause=");
-      print_hex_word(cause);
-      neorv32_uart_print(" @ pc=");
-      print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
-      neorv32_uart_print(" mtval=");
-      print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL));
-      system_error(ERROR_SYSTEM);
-    }
+
+    neorv32_cpu_csr_write(CSR_MEPC, epc + 4); // advance to next instruction
   }
 }
 
@@ -462,13 +469,9 @@ void get_exe(int src) {
   else {
     neorv32_uart_print("Loading... ");
 
-    // check if SPI is available at all
-    if (neorv32_spi_available() == 0) {
-      system_error(ERROR_FLASH);
-    }
-
-    // check if flash ready (or available at all)
-    if (spi_flash_read_1st_id() == 0x00) { // manufacturer ID
+    // flash checks
+    if ((neorv32_spi_available() == 0) ||    // check if SPI is available at all
+        (spi_flash_read_1st_id() == 0x00)) { // check if flash ready (or available at all)
       system_error(ERROR_FLASH);
     }
   }
@@ -544,7 +547,7 @@ void save_exe(void) {
   neorv32_uart_print("\nFlashing... ");
 
   // clear memory before writing
-  uint32_t num_sectors = (size / SPI_FLASH_SECTOR_SIZE) + 1; // clear at least 1 sector
+  uint32_t num_sectors = (size / (SPI_FLASH_SECTOR_SIZE)) + 1; // clear at least 1 sector
   uint32_t sector = SPI_FLASH_BOOT_ADR;
   while (num_sectors--) {
     spi_flash_erase_sector(sector);
@@ -614,12 +617,14 @@ uint32_t get_exe_word(int src, uint32_t addr) {
 void system_error(uint8_t err_code) {
 
   neorv32_uart_print("\a\nERROR_"); // output error code with annoying bell sound
-  neorv32_uart_putc('0' + ((char)err_code)); // FIXME err_code should/must be below 10
+  neorv32_uart_putc('0' + ((char)err_code));
 
   neorv32_cpu_dint(); // deactivate IRQs
-  if (STATUS_LED_EN == 1) {
+#if (STATUS_LED_EN != 0)
+  if (neorv32_gpio_available()) {
     neorv32_gpio_port_set(1 << STATUS_LED); // permanently light up status LED
   }
+#endif
 
   while(1); // freeze
 }
