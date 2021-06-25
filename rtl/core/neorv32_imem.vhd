@@ -112,8 +112,8 @@ begin
   assert not (IMEM_AS_IROM = false) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as blank RAM (" & natural'image(IMEM_SIZE) &
   " bytes)." severity note;
   --
-  assert not ((IMEM_AS_IROM = true) and (imem_app_size_c > IMEM_SIZE)) report "NEORV32 PROCESSOR CONFIG ERROR: Application (image, " & natural'image(imem_app_size_c) &
-  " bytes) does not fit into processor-internal IMEM (ROM, " & natural'image(IMEM_SIZE) & " bytes)!" severity error;
+  assert not ((IMEM_AS_IROM = true) and (imem_app_size_c > IMEM_SIZE)) report "NEORV32 PROCESSOR CONFIG ERROR: Application (image = " & natural'image(imem_app_size_c) &
+  " bytes) does not fit into processor-internal IMEM (ROM = " & natural'image(IMEM_SIZE) & " bytes)!" severity error;
 
 
   -- Access Control -------------------------------------------------------------------------

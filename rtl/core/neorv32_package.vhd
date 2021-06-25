@@ -2187,6 +2187,9 @@ package body neorv32_package is
     variable mem_v : mem32_t(0 to depth-1);
   begin
       mem_v := (others => (others => '0')); -- make sure remaining memory entries are set to zero
+      if (init'length > depth) then
+        return mem_v;
+      end if;
       for idx_v in 0 to init'length-1 loop -- init only in range of source data array
         mem_v(idx_v) := init(idx_v);
       end loop; -- idx_v
