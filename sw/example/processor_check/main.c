@@ -324,7 +324,7 @@ int main() {
     }
   }
     else {
-    PRINT_STANDARD("skipped (not implemented)\n");
+    PRINT_STANDARD("skipped (n.a.)\n");
   }
 
 
@@ -338,7 +338,7 @@ int main() {
   // Test performance counter: setup as many events and counter as feasible
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] Initializing HPMs: ", cnt_test);
+  PRINT_STANDARD("[%i] Configuring HPM events: ", cnt_test);
 
   num_hpm_cnts_global = neorv32_cpu_hpm_get_counters();
 
@@ -369,29 +369,8 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("skipped (not implemented)\n");
+    PRINT_STANDARD("skipped (n.a.)\n");
   }
-
-
-//// ----------------------------------------------------------
-//// Bus timeout latency estimation
-//// out of order :P
-//// ----------------------------------------------------------
-//neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-//PRINT_STANDARD("[%i] Estimating bus time-out latency: ", cnt_test);
-//cnt_test++;
-//
-//// start timing
-//neorv32_cpu_csr_write(CSR_MCYCLE, 0);
-//
-//// make sure there was a timeout
-//if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) {
-//  PRINT_STANDARD("~%u cycles ", trap_timestamp32-175); // remove trap handler overhead - empiric value ;)
-//  test_ok();
-//}
-//else {
-//  test_fail();
-//}
 
 
   // ----------------------------------------------------------
@@ -433,7 +412,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("skipped (not implemented)\n");
+    PRINT_STANDARD("skipped (n.a.)\n");
   }
 
 
@@ -461,7 +440,7 @@ int main() {
   // Illegal CSR access (CSR not implemented)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] Illegal CSR (0xfff) access: ", cnt_test);
+  PRINT_STANDARD("[%i] Non-existent CSR access: ", cnt_test);
 
   cnt_test++;
 
@@ -483,7 +462,7 @@ int main() {
   // Write-access to read-only CSR
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] Read-only CSR (time) write access: ", cnt_test);
+  PRINT_STANDARD("[%i] Read-only CSR write access: ", cnt_test);
 
   cnt_test++;
 
@@ -501,7 +480,7 @@ int main() {
   // No "real" CSR write access (because rs1 = r0)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] Read-only CSR (time) no-write (rs1=0) access: ", cnt_test);
+  PRINT_STANDARD("[%i] Read-only CSR 'no-write' (rs1=0) access: ", cnt_test);
 
   cnt_test++;
 
@@ -521,7 +500,7 @@ int main() {
   // Test pending interrupt
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] Pending IRQ test (from MTIME): ", cnt_test);
+  PRINT_STANDARD("[%i] Pending IRQ test (MTIME): ", cnt_test);
 
   cnt_test++;
 
@@ -942,7 +921,7 @@ int main() {
   // Fast interrupt channel 1 (CFS)
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] FIRQ1 test (via CFS): ", cnt_test);
-  PRINT_STANDARD("skipped (not implemented)\n");
+  PRINT_STANDARD("skipped (n.a.)\n");
 
 
   // ----------------------------------------------------------
@@ -1250,7 +1229,7 @@ int main() {
   // Fast interrupt channel 9 (reserved)
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] FIRQ9: ", cnt_test);
-  PRINT_STANDARD("skipped (not implemented)\n");
+  PRINT_STANDARD("skipped (n.a.)\n");
 
 
   // ----------------------------------------------------------
@@ -1342,13 +1321,12 @@ int main() {
       tmp_a = neorv32_cpu_csr_read(CSR_MISA);
     }
 
+    if (tmp_a != 0) {
+      PRINT_CRITICAL("%c[1m<SECURITY FAILURE> %c[0m\n", 27, 27);
+    }
+
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
-      if (tmp_a == 0) { // make sure user-level code CANNOT read machine-level CSR content!
-        test_ok();
-      }
-      else {
-        test_fail();
-      }
+      test_ok();
     }
     else {
       test_fail();
@@ -1364,7 +1342,7 @@ int main() {
   // Test RTE debug trap handler
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] RTE (runtime env.) debug trap handler: ", cnt_test);
+  PRINT_STANDARD("[%i] RTE debug trap handler: ", cnt_test);
 
   cnt_test++;
 
@@ -1418,7 +1396,7 @@ int main() {
 
 
     // ------ EXECUTE: should fail ------
-    PRINT_STANDARD("[%i] PMP: U-mode [!X,!W,!R] execute: ", cnt_test);
+    PRINT_STANDARD("[%i] PMP: U-mode execute: ", cnt_test);
     cnt_test++;
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
@@ -1443,7 +1421,7 @@ int main() {
 
 
     // ------ LOAD: should fail ------
-    PRINT_STANDARD("[%i] PMP: U-mode [!X,!W,!R] read: ", cnt_test);
+    PRINT_STANDARD("[%i] PMP: U-mode read: ", cnt_test);
     cnt_test++;
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
@@ -1472,7 +1450,7 @@ int main() {
 
 
     // ------ STORE: should fail ------
-    PRINT_STANDARD("[%i] PMP: U-mode [!X,!W,!R] write: ", cnt_test);
+    PRINT_STANDARD("[%i] PMP: U-mode write: ", cnt_test);
     cnt_test++;
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
@@ -1519,7 +1497,7 @@ int main() {
 
   }
   else {
-    PRINT_STANDARD("skipped (not implemented)\n");
+    PRINT_STANDARD("skipped (n.a.)\n");
   }
 
 
@@ -1553,10 +1531,10 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("skipped (not implemented)\n");
+    PRINT_STANDARD("skipped (n.a.)\n");
   }
 #else
-  PRINT_STANDARD("skipped (not implemented)\n");
+  PRINT_STANDARD("skipped (n.a.)\n");
 #endif
 
 
@@ -1589,10 +1567,10 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("skipped (not implemented)\n");
+    PRINT_STANDARD("skipped (n.a.)\n");
   }
 #else
-  PRINT_STANDARD("skipped (not implemented)\n");
+  PRINT_STANDARD("skipped (n.a.)\n");
 #endif
 
 
@@ -1628,7 +1606,7 @@ int main() {
     PRINT_STANDARD("skipped (on real HW)\n");
   }
 #else
-  PRINT_STANDARD("skipped (not implemented)\n");
+  PRINT_STANDARD("skipped (n.a.)\n");
 #endif
 
 
