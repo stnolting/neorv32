@@ -887,8 +887,8 @@ begin
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(execute_engine, debug_ctrl, decode_aux, fetch_engine, cmd_issue, trap_ctrl, csr, ctrl, csr_acc_valid,
-                                   alu_idone_i, bus_d_wait_i, ma_load_i, be_load_i, ma_store_i, be_store_i, excl_state_i)
+  execute_engine_fsm_comb: process(execute_engine, debug_ctrl, trap_ctrl, decode_aux, fetch_engine, cmd_issue,
+                                   csr, ctrl, csr_acc_valid, alu_idone_i, bus_d_wait_i, excl_state_i)
     variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     -- arbiter defaults --
@@ -1263,19 +1263,18 @@ begin
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load (and SC.W) operations)
         ctrl_nxt(ctrl_rf_in_mux_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
-        -- wait for memory response --
-        if ((ma_load_i or be_load_i or ma_store_i or be_store_i) = '1') then -- abort if exception
-          execute_engine.state_nxt <= DISPATCH;
-        elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
+        -- data write-back --
+        if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or -- normal load
+           (decode_aux.is_atomic_lr = '1') or -- atomic load-reservate
+           (decode_aux.is_atomic_sc = '1') then -- atomic store-conditional
+          ctrl_nxt(ctrl_rf_wb_en_c) <= '1';
+        end if;
+        -- wait for memory response / exception --
+        if (bus_d_wait_i = '0') or -- wait for bus to finish transaction
+           (trap_ctrl.env_start = '1') then -- abort if exception
           -- remove atomic lock if this is NOT the LR.W instruction used to SET the lock --
           if (decode_aux.is_atomic_lr = '0') then -- execute and evaluate atomic store-conditional
             ctrl_nxt(ctrl_bus_de_lock_c) <= '1';
-          end if;
-          -- data write-back --
-          if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or -- normal load
-             (decode_aux.is_atomic_lr = '1') or -- atomic load-reservate
-             (decode_aux.is_atomic_sc = '1') then -- atomic store-conditional
-            ctrl_nxt(ctrl_rf_wb_en_c) <= '1';
           end if;
           execute_engine.state_nxt <= DISPATCH;
         end if;
