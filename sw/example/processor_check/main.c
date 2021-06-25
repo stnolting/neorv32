@@ -465,7 +465,11 @@ int main() {
 
   cnt_test++;
 
-  neorv32_cpu_csr_read(0xfff); // CSR 0xfff not implemented
+  tmp_a = neorv32_cpu_csr_read(0xfff); // CSR 0xfff not implemented
+
+  if (tmp_a != 0) {
+    PRINT_CRITICAL("%c[1m<SECURITY FAILURE> %c[0m\n", 27, 27);
+  }
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
     test_ok();
@@ -676,7 +680,11 @@ int main() {
   cnt_test++;
 
   // load from unaligned address
-  asm volatile ("lw zero, %[input_i](zero)" :  : [input_i] "i" (ADDR_UNALIGNED));
+  tmp_a = neorv32_cpu_load_unsigned_word(ADDR_UNALIGNED);
+
+  if (tmp_a != 0) {
+    PRINT_CRITICAL("%c[1m<SECURITY FAILURE> %c[0m\n", 27, 27);
+  }
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_MISALIGNED) {
     test_ok();
@@ -694,7 +702,11 @@ int main() {
   cnt_test++;
 
   // load from unreachable aligned address
-  dummy_dst = neorv32_cpu_load_unsigned_word(ADDR_UNREACHABLE);
+  tmp_a = neorv32_cpu_load_unsigned_word(ADDR_UNREACHABLE);
+
+  if (tmp_a != 0) {
+    PRINT_CRITICAL("%c[1m<SECURITY FAILURE> %c[0m\n", 27, 27);
+  }
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) {
     test_ok();
@@ -1388,14 +1400,14 @@ int main() {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
     cnt_test++;
 
-    // find out mininmal region size (granulartiy)
+    // find out minimal region size (granularity)
     tmp_b = neorv32_cpu_pmp_get_granularity();
 
     tmp_a = SYSINFO_DSPACE_BASE; // base address of protected region
-    PRINT_STANDARD("Creating protected page (NAPOT, [!X,!W,R], %u bytes) @ 0x%x: ", tmp_b, tmp_a);
+    PRINT_STANDARD("Creating protected page (NAPOT, [!X,!W,!R], %u bytes) @ 0x%x: ", tmp_b, tmp_a);
 
     // configure
-    int pmp_return = neorv32_cpu_pmp_configure_region(0, tmp_a, tmp_b, 0b00011001); // NAPOT, read permission, NO write and NO execute permissions
+    int pmp_return = neorv32_cpu_pmp_configure_region(0, tmp_a, tmp_b, 0b00011000); // NAPOT, NO read permission, NO write permission, and NO execute permissions
 
     if ((pmp_return == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
       test_ok();
@@ -1406,7 +1418,7 @@ int main() {
 
 
     // ------ EXECUTE: should fail ------
-    PRINT_STANDARD("[%i] PMP: U-mode [!X,!W,R] execute: ", cnt_test);
+    PRINT_STANDARD("[%i] PMP: U-mode [!X,!W,!R] execute: ", cnt_test);
     cnt_test++;
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
@@ -1417,38 +1429,42 @@ int main() {
     }
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
-      // switch back to machine mode (if not allready)
+      // switch back to machine mode (if not already)
       asm volatile ("ecall");
 
       test_fail();
     }
     else {
-      // switch back to machine mode (if not allready)
+      // switch back to machine mode (if not already)
       asm volatile ("ecall");
 
       test_ok();
     }
 
 
-    // ------ LOAD: should work ------
-    PRINT_STANDARD("[%i] PMP: U-mode [!X,!W,R] read: ", cnt_test);
+    // ------ LOAD: should fail ------
+    PRINT_STANDARD("[%i] PMP: U-mode [!X,!W,!R] read: ", cnt_test);
     cnt_test++;
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
     {
-      asm volatile ("lw zero, 0(%[input_i])" :  : [input_i] "r" (tmp_a)); // load access -> should work
+      tmp_b = neorv32_cpu_load_unsigned_word(tmp_a); // load access -> should fail
     }
 
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
-      // switch back to machine mode (if not allready)
+    if (tmp_b != 0) {
+      PRINT_CRITICAL("%c[1m<SECURITY FAILURE> %c[0m\n", 27, 27);
+    }
+
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) {
+      // switch back to machine mode (if not already)
       asm volatile ("ecall");
 
       test_ok();
     }
     else {
-      // switch back to machine mode (if not allready)
+      // switch back to machine mode (if not already)
       asm volatile ("ecall");
 
       test_fail();
@@ -1456,24 +1472,24 @@ int main() {
 
 
     // ------ STORE: should fail ------
-    PRINT_STANDARD("[%i] PMP: U-mode [!X,!W,R] write: ", cnt_test);
+    PRINT_STANDARD("[%i] PMP: U-mode [!X,!W,!R] write: ", cnt_test);
     cnt_test++;
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
     {
-      asm volatile ("sw zero, 0(%[input_i])" :  : [input_i] "r" (tmp_a)); // store access -> should fail
+      neorv32_cpu_store_unsigned_word(tmp_a, 0); // store access -> should fail
     }
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) {
-      // switch back to machine mode (if not allready)
+      // switch back to machine mode (if not already)
       asm volatile ("ecall");
 
       test_ok();
     }
     else {
-      // switch back to machine mode (if not allready)
+      // switch back to machine mode (if not already)
       asm volatile ("ecall");
 
       test_fail();
