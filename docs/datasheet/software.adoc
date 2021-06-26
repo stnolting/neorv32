@@ -381,30 +381,36 @@ int __neorv32_crt0_after_main(int32_t return_code) {
 :sectnums:
 === Bootloader
 
-The default bootloader (sw/bootloader/bootloader.c) of the NEORV32 processor allows to upload
-new program executables at every time. If there is an external SPI flash connected to the processor (like the
-FPGA's configuration memory), the bootloader can store the program executable to it. After reset, the
-bootloader can directly boot from the flash without any user interaction.
-
 [NOTE]
+This section illustrated the **default** bootloader from the repository. The bootloader can be customized
+to target application-specific scenarios. See User Guide section
+https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader[Customizing the Internal Bootloader]
+for more information.
+
+The default NEORV32 bootloader (source code `sw/bootloader/bootloader.c`) provides a build-in firmware that
+allows to upload new application executables via UART at every time and to optionally store/boot them to/from
+an external SPI flash. It features a simple "automatic boot" feature that will try to fetch an executable
+from SPI flash if there is _no_ UART user interaction. This allows to build processor setup with
+non-volatile application storage, which can be updated at any time.
+
 The bootloader is only implemented if the <<_int_bootloader_en>> generic is _true_. This will
 select the <<_indirect_boot>> boot configuration.
 
 .Hardware requirements of the _default_ NEORV32 bootloader
 [IMPORTANT]
-**REQUIRED**: The bootloader requires the CSR access CPU extension (<<_cpu_extension_riscv_zicsr>> generic is _true_).
-Furthermore, the bootloader requires at least 512 bytes of data memory (processor-internal DMEM or external DMEM). +
+**REQUIRED**: The bootloader requires the CSR access CPU extension (<<_cpu_extension_riscv_zicsr>> generic is _true_)
+and at least 512 bytes of data memory (processor-internal DMEM or external DMEM). +
  +
 _RECOMMENDED_: For user interaction via UART (like uploading executables) the primary UART (UART0) has to be
 implemented (<<_io_uart0_en>> generic is _true_). Without UART the bootloader does not make much sense. However, auto-boot
 via SPI is still supported but the bootloader should be customized (see User Guide) for this purpose. +
  +
-_OPTIONAL_: The bootloader uses bit 0 of the GPIO output port as "heart beat" and status LED if the
+_OPTIONAL_: The default bootloader uses bit 0 of the GPIO output port as "heart beat" and status LED if the
 GPIO controller is implemented (<<_io_gpio_en>> generic is _true_). +
  +
 _OPTIONAL_: The MTIME machine timer (<<_io_mtime_en>> generic is _true_) and the SPI controller
 (<<_io_spi_en>> generic is _true_) are required in order to use the bootloader's auto-boot feature
-(automatic boot from external SPI flash).
+(automatic boot from external SPI flash if there is no user interaction via UART).
 
 To interact with the bootloader, connect the primary UART (UART0) signals (`uart0_txd_o` and
 `uart0_rxd_o`) of the processor's top entity via a serial port (-adapter) to your computer (hardware flow control is
@@ -504,61 +510,18 @@ manually restarted via the `r` command.
 The CPU is in machine level privilege mode after reset. When the bootloader boots an application,
 this application is also started in machine level privilege mode.
 
-:sectnums:
-==== External SPI Flash for Booting
-
-If you want the NEORV32 bootloader to automatically fetch and execute an application at system start, you
-can store it to an external SPI flash. The advantage of the external memory is to have a non-volatile program
-storage, which can be re-programmed at any time just by executing some bootloader commands. Thus, no
-FPGA bitstream recompilation is required at all.
-
-**SPI Flash Requirements**
-
-The bootloader can access an SPI compatible flash via the processor top entity's SPI port and connected to
-chip select `spi_csn_o(0)`. The flash must be capable of operating at least at 1/8 of the processor's main
-clock. Only single read and write byte operations are used. The address has to be 24 bit long. Furthermore,
-the SPI flash has to support at least the following commands:
-
-* READ (`0x03`)
-* READ STATUS (`0x05`)
-* WRITE ENABLE (`0x06`)
-* PAGE PROGRAM (`0x02`)
-* SECTOR ERASE (`0xD8`)
-* READ ID (`0x9E`)
-
-Compatible (FGPA configuration) SPI flash memories are for example the "Winbond W25Q64FV2 or the "Micron N25Q032A".
-
-**SPI Flash Configuration**
-
-The base address `SPI_FLASH_BOOT_ADR` for the executable image inside the SPI flash is defined in the
-"user configuration" section of the bootloader source code (`sw/bootloader/bootloader.c`). Most
-FPGAs that use an external configuration flash, store the golden configuration bitstream at base address 0.
-Make sure there is no address collision between the FPGA bitstream and the application image. You need to
-change the default sector size if your flash has a sector size greater or less than 64kB:
-
-[source,c]
-----
-/** SPI flash boot image base address */
-#define SPI_FLASH_BOOT_ADR 0x00800000
-/** SPI flash sector size in bytes */
-#define SPI_FLASH_SECTOR_SIZE (64*1024)
-----
-
 [TIP]
-More information regarding customization of the bootloader can be found in section
-https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader[Customizing the Internal Bootloader]
-of the NEORV32 user guide. This guide also provides a tutorial how to program an external SPI flash
-to automatically boot from it after reset (
-https://stnolting.github.io/neorv32/ug/#_programming_an_external_spi_flash_via_the_bootloader[Programming an External SPI Flash via the Bootloader]).
+For detailed information on using an SPI flash for application storage see User Guide section
+https://stnolting.github.io/neorv32/ug/#_programming_an_external_spi_flash_via_the_bootloader[Programming an External SPI Flash via the Bootloader].
 
 
 :sectnums:
 ==== Auto Boot Sequence
-When you reset the NEORV32 processor, the bootloader waits 8 seconds for a user console input before it
+When you reset the NEORV32 processor, the bootloader waits 8 seconds for a UART console input before it
 starts the automatic boot sequence. This sequence tries to fetch a valid boot image from the external SPI
-flash, connected to SPI chip select `spi_csn_o(0)`. If a valid boot image is found and can be successfully
-transferred into the instruction memory, it is automatically started. If no SPI flash was detected or if there
-was no valid boot image found, the bootloader stalls and the status LED is permanently activated.
+flash, connected to SPI chip select `spi_csn_o(0)`. If a valid boot image is found that can be successfully
+transferred into the instruction memory, it is automatically started. If no SPI flash is detected or if there
+is no valid boot image found, and error code will be shown.
 
 
 :sectnums:
@@ -566,7 +529,7 @@ was no valid boot image found, the bootloader stalls and the status LED is perma
 
 If something goes wrong during bootloader operation, an error code is shown. In this case the processor
 stalls, a bell command and one of the following error codes are send to the terminal, the bootloader status
-LED is permanently activated and the system must be reset manually.
+LED is permanently activated and the system must be manually reset.
 
 [cols="<2,<13"]
 [grid="rows"]
@@ -575,8 +538,6 @@ LED is permanently activated and the system must be reset manually.
 | **`ERROR_1`** | Your program is way too big for the internal processor’s instructions memory. Increase the memory size or reduce (optimize!) your application code.
 | **`ERROR_2`** | This indicates a checksum error. Something went wrong during the transfer of the program image (upload via UART or loading from the external SPI flash). If the error was caused by a UART upload, just try it again. When the error was generated during a flash access, the stored image might be corrupted.
 | **`ERROR_3`** | This error occurs if the attached SPI flash cannot be accessed. Make sure you have the right type of flash and that it is properly connected to the NEORV32 SPI port using chip select #0.
-| **`ERROR_4`** | This error pops up when an unexpected exception or interrupt was triggered. The cause of the trap (`mcause` CSR) is displayed for further investigation. This might be caused if an ISA extension is used that has not been synthesized.
-| **`ERROR_?`** | Something really bad happened when there is no specific error code available :(
 |=======================
 
 
