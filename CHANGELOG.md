@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 26.06.2021 | 1.5.7.3 | edit of v1.5.7.2: RISC-V spec claims to leave destination registers of trapping load operation unchanged (do _not_ set to zero); minor CPU control logic optimizations |
 | 25.06.2021 | 1.5.7.2 | optimized instruction execution FSM: less hardware utilization, :lock: now _ensures_ to write ZERO to destination register if there is an exception during a load operation; made default bootloader even more HW configuration independent (GPIO, SPI and MTIME are optional; UART is optional but highly recommended); |
 | 24.06.2021 | 1.5.7.1 | sparkles: added RISC-V `Zmmul` ISA extension (via `CPU_EXTENSION_RISCV_Zmmul` generic; default = _false_): implements only the integer multiplication instructions sub-set of the `M` extension; for size-constrained setups, requires ~50% less hardware ressources than the `M` extension |
 | 23.06.2021 | [**:rocket:1.5.7**](https://github.com/stnolting/neorv32/releases/tag/v1.5.7) | **New release** |

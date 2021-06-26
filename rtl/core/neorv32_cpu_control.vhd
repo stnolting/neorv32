@@ -739,7 +739,7 @@ begin
       end if;
       --
       execute_engine.state    <= execute_engine.state_nxt;
-      execute_engine.sleep    <= execute_engine.sleep_nxt;
+      execute_engine.sleep    <= execute_engine.sleep_nxt and (not debug_ctrl.running); -- do not execute when in debug mode
       execute_engine.branched <= execute_engine.branched_nxt;
       --
       execute_engine.state_prev <= execute_engine.state;
@@ -973,7 +973,9 @@ begin
           trap_ctrl.instr_be <= cmd_issue.data(34); -- bus access fault during instruction fetch
           illegal_compressed <= cmd_issue.data(35); -- invalid decompressed instruction
           -- any reason to go to trap state? --
-          if (execute_engine.sleep = '1') or (trap_ctrl.env_start = '1') or (trap_ctrl.exc_fire = '1') or ((cmd_issue.data(33) or cmd_issue.data(34)) = '1') then
+          if (execute_engine.sleep = '1') or -- WFI instruction - this will enter sleep state
+             (trap_ctrl.env_start = '1') or -- pending trap (IRQ or exception)
+             ((cmd_issue.data(33) or cmd_issue.data(34)) = '1') then -- exception during instruction fetch of the CURRENT instruction
             execute_engine.state_nxt <= TRAP_ENTER;
           else
             execute_engine.state_nxt <= EXECUTE;
@@ -984,8 +986,8 @@ begin
       when TRAP_ENTER => -- Start trap environment - get TVEC, stay here for sleep mode
       -- ------------------------------------------------------------
         if (trap_ctrl.env_start = '1') then -- trap triggered?
-          trap_ctrl.env_start_ack   <= '1';
-          execute_engine.state_nxt  <= TRAP_EXECUTE;
+          trap_ctrl.env_start_ack  <= '1';
+          execute_engine.state_nxt <= TRAP_EXECUTE;
         end if;
 
       when TRAP_EXIT => -- Return from trap environment - get EPC
@@ -993,7 +995,7 @@ begin
         trap_ctrl.env_end        <= '1';
         execute_engine.state_nxt <= TRAP_EXECUTE;
 
-      when TRAP_EXECUTE => -- Start trap environment -> jump to TVEC / return from trap environment -> jump to EPC
+      when TRAP_EXECUTE => -- Start trap environment -> jump to *TVEC / return from trap environment -> jump to EPC
       -- ------------------------------------------------------------
         execute_engine.pc_mux_sel <= '0'; -- next_PC
         fetch_engine.reset        <= '1';
@@ -1130,7 +1132,7 @@ begin
           when opcode_fop_c => -- floating-point operations
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zfinx = true) and (decode_aux.is_float_op = '1') then
-              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_fpu_c; -- use FPU CP
+              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_fpu_c; -- trigger FPU CP
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
               execute_engine.state_nxt                           <= ALU_WAIT;
             else
@@ -1151,13 +1153,8 @@ begin
           when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ECALL
           when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- EBREAK
           when funct12_mret_c   => execute_engine.state_nxt <= TRAP_EXIT; -- MRET
-          when funct12_wfi_c => -- WFI
-            if (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') then
-              NULL; -- just a NOP when in debug mode
-            else
-              execute_engine.sleep_nxt <= '1'; -- WFI (normal)
-            end if;
-          when funct12_dret_c => -- DRET
+          when funct12_wfi_c    => execute_engine.sleep_nxt <= '1'; -- WFI
+          when funct12_dret_c   => -- DRET
             if (CPU_EXTENSION_RISCV_DEBUG = true) then
               execute_engine.state_nxt <= TRAP_EXIT;
               debug_ctrl.dret <= '1';
@@ -1253,9 +1250,9 @@ begin
         execute_engine.state_nxt <= LOADSTORE_1;
 
 
-      when LOADSTORE_1 => -- memory latency
+      when LOADSTORE_1 => -- memory access latency
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- write input data to MDI (only relevant for LOAD)
+        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- write input data to MDI (only relevant for LOADs)
         execute_engine.state_nxt   <= LOADSTORE_2;
 
 
@@ -1263,15 +1260,16 @@ begin
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load (and SC.W) operations)
         ctrl_nxt(ctrl_rf_in_mux_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
-        -- data write-back --
-        if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or -- normal load
-           (decode_aux.is_atomic_lr = '1') or -- atomic load-reservate
-           (decode_aux.is_atomic_sc = '1') then -- atomic store-conditional
-          ctrl_nxt(ctrl_rf_wb_en_c) <= '1';
-        end if;
         -- wait for memory response / exception --
-        if (bus_d_wait_i = '0') or -- wait for bus to finish transaction
-           (trap_ctrl.env_start = '1') then -- abort if exception
+        if (trap_ctrl.env_start = '1') then -- abort if exception
+          execute_engine.state_nxt <= SYS_WAIT;
+        elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
+          -- data write-back --
+          if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or -- normal load
+             (decode_aux.is_atomic_lr = '1') or -- atomic load-reservate
+             (decode_aux.is_atomic_sc = '1') then -- atomic store-conditional
+            ctrl_nxt(ctrl_rf_wb_en_c) <= '1';
+          end if;
           -- remove atomic lock if this is NOT the LR.W instruction used to SET the lock --
           if (decode_aux.is_atomic_lr = '0') then -- execute and evaluate atomic store-conditional
             ctrl_nxt(ctrl_bus_de_lock_c) <= '1';
