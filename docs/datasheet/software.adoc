@@ -354,11 +354,13 @@ already initialized within the application or you have to initialize them _insid
 .After-main handler - function prototype
 [source,c]
 ----
-void __neorv32_crt0_after_main(int32_t return_code);
+int __neorv32_crt0_after_main(int32_t return_code);
 ----
 
 The function has exactly one argument (`return_code`) that provides the _return value_ of the application's main function.
-For instance, this variable contains _-1_ if the main function returned with `return -1;`.
+For instance, this variable contains _-1_ if the main function returned with `return -1;`. The return value of the
+`__neorv32_crt0_after_main` function is irrelevant as there is no further "software instance" executed afterwards that can check this.
+However, the on-chip debugger could still evaluate the return value of the after-main handler.
 
 A simple `printf` can be used to inform the user when the application main function return
 (this example assumes that UART0 has been already properly configured in the actual application):
@@ -366,9 +368,10 @@ A simple `printf` can be used to inform the user when the application main funct
 .After-main handler - example
 [source,c]
 ----
-void __neorv32_crt0_after_main(int32_t return_code) {
+int __neorv32_crt0_after_main(int32_t return_code) {
 
   neorv32_uart_printf("Main returned with code: %i\n", return_code);
+  return 0;
 }
 ----
 

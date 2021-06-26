@@ -1255,19 +1255,23 @@ int main() {
 
   // make sure all SoC FIRQs have been triggered
   tmp_a = (1 << CSR_MIP_FIRQ10P) | (1 << CSR_MIP_FIRQ11P) | (1 << CSR_MIP_FIRQ12P) | (1 << CSR_MIP_FIRQ13P) | (1 << CSR_MIP_FIRQ14P) | (1 << CSR_MIP_FIRQ15P);
-
   if (neorv32_cpu_csr_read(CSR_MIP) == tmp_a) {
-    neorv32_cpu_eint(); // allow IRQs to fire again
-    asm volatile ("nop");
-    asm volatile ("nop"); // irq should kick in HERE
+    tmp_b = 0;
+  }
+  else {
+    tmp_b = 1;
+  }
 
-    tmp_a = neorv32_cpu_csr_read(CSR_MCAUSE);
-    if ((tmp_a >= TRAP_CODE_FIRQ_8) && (tmp_a <= TRAP_CODE_FIRQ_15)) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
+  neorv32_cpu_eint(); // allow IRQs to fire again
+  asm volatile ("nop");
+  asm volatile ("nop"); // irq should kick in HERE
+
+  tmp_a = neorv32_cpu_csr_read(CSR_MCAUSE);
+  if ((tmp_a >= TRAP_CODE_FIRQ_10) && (tmp_a <= TRAP_CODE_FIRQ_15) && (tmp_b == 0)) {
+    test_ok();
+  }
+  else {
+    test_fail();
   }
 
   // disable SOC FIRQs
@@ -1700,7 +1704,9 @@ void test_fail(void) {
  *
  * @param[in] return_code Return value of main function
  **************************************************************************/
-void __neorv32_crt0_after_main(int32_t return_code) {
+int __neorv32_crt0_after_main(int32_t return_code) {
 
   PRINT_STANDARD("Main returned with code: %i\n", return_code);
+
+  return 0;
 }
