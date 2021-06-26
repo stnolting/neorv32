@@ -535,10 +535,10 @@ void neorv32_rte_print_credits(void) {
     return; // cannot output anything if UART0 is not implemented
   }
 
-  neorv32_uart0_print("The NEORV32 Processor Project\n"
-                     "Copyright 2021, Stephan Nolting\n"
-                     "BSD 3-Clause License\n"
-                     "https://github.com/stnolting/neorv32\n\n");
+  neorv32_uart0_print("The NEORV32 RISC-V Processor\n"
+                      "(c) Stephan Nolting\n"
+                      "BSD 3-Clause License\n"
+                      "https://github.com/stnolting/neorv32\n\n");
 }
 
 
@@ -574,7 +574,7 @@ void neorv32_rte_print_logo(void) {
     for (v=0; v<4; v++) {
       tmp = logo_data_c[u][v];
       for (w=0; w<32; w++){
-        if (tmp & 0x80000000UL) { // check MSB
+        if (((int32_t)tmp) < 0) { // check MSB
           neorv32_uart0_putc('#');
         }
         else {

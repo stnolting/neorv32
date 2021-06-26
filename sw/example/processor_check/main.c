@@ -659,11 +659,7 @@ int main() {
   cnt_test++;
 
   // load from unaligned address
-  tmp_a = neorv32_cpu_load_unsigned_word(ADDR_UNALIGNED);
-
-  if (tmp_a != 0) {
-    PRINT_CRITICAL("%c[1m<SECURITY FAILURE> %c[0m\n", 27, 27);
-  }
+  neorv32_cpu_load_unsigned_word(ADDR_UNALIGNED);
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_MISALIGNED) {
     test_ok();
@@ -681,11 +677,7 @@ int main() {
   cnt_test++;
 
   // load from unreachable aligned address
-  tmp_a = neorv32_cpu_load_unsigned_word(ADDR_UNREACHABLE);
-
-  if (tmp_a != 0) {
-    PRINT_CRITICAL("%c[1m<SECURITY FAILURE> %c[0m\n", 27, 27);
-  }
+  neorv32_cpu_load_unsigned_word(ADDR_UNREACHABLE);
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) {
     test_ok();
