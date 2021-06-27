@@ -70,9 +70,13 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050704"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050705"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
+
+  -- External Interface Types ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  type sdata_8x32_t is array (0 to 7)  of std_ulogic_vector(31 downto 0);
 
   -- Internal Interface Types ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -245,13 +249,9 @@ package neorv32_package is
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffb8"; -- base address
 --constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
 
-  -- Numerically-Controlled Oscillator (NCO) --
-  constant nco_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc0"; -- base address
-  constant nco_size_c           : natural := 4*4; -- module's address space size in bytes
-  constant nco_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc0";
-  constant nco_ch0_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc4";
-  constant nco_ch1_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc8";
-  constant nco_ch2_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffcc";
+  -- reserved --
+--constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc0"; -- base address
+--constant reserved_size_c      : natural := 4*4; -- module's address space size in bytes
 
   -- Secondary Universal Asynchronous Receiver/Transmitter (UART1) --
   constant uart1_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffd0"; -- base address
@@ -927,7 +927,6 @@ package neorv32_package is
       IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
       IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
       IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
-      IO_NCO_EN                    : boolean := true;   -- implement numerically-controlled oscillator (NCO)?
       IO_NEOLED_EN                 : boolean := true    -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     );
     port (
@@ -981,8 +980,6 @@ package neorv32_package is
       -- Custom Functions Subsystem IO --
       cfs_in_i    : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom CFS inputs conduit
       cfs_out_o   : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
-      -- NCO output (available if IO_NCO_EN = true) --
-      nco_o       : out std_ulogic_vector(02 downto 0); -- numerically-controlled oscillator channels
       -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
       neoled_o    : out std_ulogic; -- async serial data line
       -- System time --
@@ -1751,26 +1748,6 @@ package neorv32_package is
     );
   end component;
 
-  -- Component: Numerically-Controlled Oscillator (NCO) -------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_nco
-    port (
-      -- host access --
-      clk_i       : in  std_ulogic; -- global clock line
-      addr_i      : in  std_ulogic_vector(31 downto 0); -- address
-      rden_i      : in  std_ulogic; -- read enable
-      wren_i      : in  std_ulogic; -- write enable
-      data_i      : in  std_ulogic_vector(31 downto 0); -- data in
-      data_o      : out std_ulogic_vector(31 downto 0); -- data out
-      ack_o       : out std_ulogic; -- transfer acknowledge
-      -- clock generator --
-      clkgen_en_o : out std_ulogic; -- enable clock generator
-      clkgen_i    : in  std_ulogic_vector(07 downto 0);
-      -- NCO output --
-      nco_o       : out std_ulogic_vector(02 downto 0)
-    );
-  end component;
-
   -- Component: Smart LED (WS2811/WS2812) Interface (NEOLED) --------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_neoled
@@ -1827,7 +1804,6 @@ package neorv32_package is
       IO_WDT_EN            : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_EN           : boolean := true;   -- implement true random number generator (TRNG)?
       IO_CFS_EN            : boolean := true;   -- implement custom functions subsystem (CFS)?
-      IO_NCO_EN            : boolean := true;   -- implement numerically-controlled oscillator (NCO)?
       IO_NEOLED_EN         : boolean := true    -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     );
     port (

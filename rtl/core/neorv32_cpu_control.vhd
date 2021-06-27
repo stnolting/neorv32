@@ -461,8 +461,8 @@ begin
   generic map (
     FIFO_DEPTH => ipb_entries_c,    -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => ipb.wdata'length, -- size of data elements in fifo
-    FIFO_RSYNC => false,            -- false = async read; true = sync read
-    FIFO_SAFE  => false             -- true = allow read/write only if data available
+    FIFO_RSYNC => false,            -- we NEED to read data asynchronously
+    FIFO_SAFE  => false             -- no safe access required (ensured by FIFO-external control)
   )
   port map (
     -- control --

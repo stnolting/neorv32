@@ -144,22 +144,20 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
   type tx_buffer_t is record
     we       : std_ulogic; -- write enable
     re       : std_ulogic; -- read enable
-    wdata    : std_ulogic_vector(31 downto 0); -- write data (excluding excluding)
+    wdata    : std_ulogic_vector(31 downto 0); -- write data (excluding mode)
     rdata    : std_ulogic_vector(31+1 downto 0); -- read data (including mode)
     --
-    w_pnt    : std_ulogic_vector(index_size_f(tx_buffer_entries_c) downto 0); -- write pointer
-    r_pnt    : std_ulogic_vector(index_size_f(tx_buffer_entries_c) downto 0); -- read pointer
-    match    : std_ulogic;
-    empty    : std_ulogic;
-    empty_ff : std_ulogic;
-    full     : std_ulogic;
     avail    : std_ulogic; -- data available?
     free     : std_ulogic; -- free entry available?
     free_ff  : std_ulogic;
+    empty    : std_ulogic;
+    empty_ff : std_ulogic;
     --
     data  : tx_fifo_t; -- fifo memory
   end record;
   signal tx_buffer : tx_buffer_t;
+  signal fifo_clear : std_ulogic;
+  signal fifo_wdata : std_ulogic_vector(31+1 downto 0);
 
   -- serial transmission engine --
   type serial_state_t is (S_IDLE, S_INIT, S_GETBIT, S_PULSE);
@@ -246,37 +244,32 @@ begin
 
   -- TX Buffer (FIFO) -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  instr_prefetch_buffer: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      -- write port --
-      if (ctrl.enable = '0') then
-        tx_buffer.w_pnt <= (others => '0');
-      elsif (tx_buffer.we = '1') then
-        tx_buffer.w_pnt <= std_ulogic_vector(unsigned(tx_buffer.w_pnt) + 1);
-      end if;
-      if (tx_buffer.we = '1') then -- write data
-        tx_buffer.data(to_integer(unsigned(tx_buffer.w_pnt(tx_buffer.w_pnt'left-1 downto 0)))) <=  ctrl.mode & tx_buffer.wdata;
-      end if;
-      -- read port --
-      if (ctrl.enable = '0') then
-        tx_buffer.r_pnt <= (others => '0');
-      elsif (tx_buffer.re = '1') then
-        tx_buffer.r_pnt <= std_ulogic_vector(unsigned(tx_buffer.r_pnt) + 1);
-      end if;
-      tx_buffer.rdata <= tx_buffer.data(to_integer(unsigned(tx_buffer.r_pnt(tx_buffer.r_pnt'left-1 downto 0)))); -- sync read
-      -- status buffer --
-      tx_buffer.empty_ff <= tx_buffer.empty;
-      tx_buffer.free_ff  <= tx_buffer.free;
-    end if;
-  end process instr_prefetch_buffer;
+  tx_data_fifo: neorv32_fifo
+  generic map (
+    FIFO_DEPTH => tx_buffer_entries_c, -- number of fifo entries; has to be a power of two; min 1
+    FIFO_WIDTH => 32+1,                -- size of data elements in fifo
+    FIFO_RSYNC => true,                -- sync read
+    FIFO_SAFE  => false                -- no safe access required (ensured by FIFO-external control)
+  )
+  port map (
+    -- control --
+    clk_i   => clk_i,           -- clock, rising edge
+    rstn_i  => '1',             -- async reset, low-active
+    clear_i => fifo_clear,      -- sync reset, high-active
+    -- write port --
+    wdata_i => fifo_wdata,      -- write data
+    we_i    => tx_buffer.we,    -- write enable
+    free_o  => tx_buffer.free,  -- at least one entry is free when set
+    -- read port --
+    re_i    => tx_buffer.re,    -- read enable
+    rdata_o => tx_buffer.rdata, -- read data
+    avail_o => tx_buffer.avail  -- data available when set
+  );
 
-  -- status --
-  tx_buffer.match <= '1' when (tx_buffer.r_pnt(tx_buffer.r_pnt'left-1 downto 0) = tx_buffer.w_pnt(tx_buffer.w_pnt'left-1 downto 0)) else '0';
-  tx_buffer.full  <= '1' when (tx_buffer.r_pnt(tx_buffer.r_pnt'left) /= tx_buffer.w_pnt(tx_buffer.w_pnt'left)) and (tx_buffer.match = '1') else '0';
-  tx_buffer.empty <= '1' when (tx_buffer.r_pnt(tx_buffer.r_pnt'left)  = tx_buffer.w_pnt(tx_buffer.w_pnt'left)) and (tx_buffer.match = '1') else '0';
-  tx_buffer.free  <= not tx_buffer.full;
-  tx_buffer.avail <= not tx_buffer.empty;
+  -- helper signals --
+  fifo_clear <= not ctrl.enable;
+  fifo_wdata <= ctrl.mode & tx_buffer.wdata;
+  tx_buffer.empty <= not tx_buffer.avail;
 
 
   -- Buffer Status Flag and IRQ Generator ---------------------------------------------------

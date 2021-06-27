@@ -11,7 +11,7 @@
 | Top entity port:         | `gpio_o` | 32-bit parallel output port
 |                          | `gpio_i` | 32-bit parallel input port
 | Configuration generics:  | _IO_GPIO_EN_ | implement GPIO port when _true_
-| CPU interrupts:          | FIRQ channel 8 | pin-change interrupt (see <<_processor_interrupts>>)
+| CPU interrupts:          | fast IRQ channel 8 | pin-change interrupt (see <<_processor_interrupts>>)
 |=======================
 
 **Theory of Operation**
