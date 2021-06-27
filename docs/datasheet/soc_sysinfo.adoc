@@ -60,7 +60,6 @@ and default clock speed) for correct operation.
 | `22` | _SYSINFO_FEATURES_IO_WDT_           | set if the WDT is implemented (via top's _IO_WDT_EN_ generic)
 | `23` | _SYSINFO_FEATURES_IO_CFS_           | set if the custom functions subsystem is implemented (via top's _IO_CFS_EN_ generic)
 | `24` | _SYSINFO_FEATURES_IO_TRNG_          | set if the TRNG is implemented (via top's _IO_TRNG_EN_ generic)
-| `25` | _SYSINFO_FEATURES_IO_NCO_           | set if the NCO is implemented (via top's _IO_NCO_EN_ generic)
 | `26` | _SYSINFO_FEATURES_IO_UART1_         | set if the secondary UART1 is implemented (via top's _IO_UART1_EN_ generic)
 | `27` | _SYSINFO_FEATURES_IO_NEOLED_        | set if the NEOLED is implemented (via top's _IO_NEOLED_EN_ generic)
 |=======================

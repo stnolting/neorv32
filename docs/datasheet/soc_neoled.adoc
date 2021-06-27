@@ -167,7 +167,7 @@ command).
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.22+<| `0xffffffd8` .22+<| _NEOLED_CT_ <|`0` _NEOLED_CT_EN_         ^| r/w <| NCO enable
+.22+<| `0xffffffd8` .22+<| _NEOLED_CT_ <|`0` _NEOLED_CT_EN_         ^| r/w <| NEOLED enable
                                        <|`1` _NEOLED_CT_MODE_       ^| r/w <| data transfer size; `0`=24-bit; `1`=32-bit
                                        <|`2` _NEOLED_CT_BSCON_      ^| r/w <| busy flag / IRQ trigger configuration (see table above)
                                        <|`3` _NEOLED_CT_PRSC0_      ^| r/w <| 3-bit clock prescaler, bit 0

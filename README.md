@@ -122,7 +122,6 @@ for tightly-coupled custom co-processor extensions
 **Advanced**
 
 * _true random_ number generator ([TRNG](https://stnolting.github.io/neorv32/#_true_random_number_generator_trng))
-* numerically-controlled oscillator ([NCO](https://stnolting.github.io/neorv32/#_numerically_controlled_oscillator_nco))
 * on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) via JTGA - implementing
 the [*Minimal RISC-V Debug Specification Version 0.13.2*](https://github.com/riscv/riscv-debug-spec)
 and compatible with the *OpenOCD* and *gdb*
@@ -329,7 +328,7 @@ This overview provides some *quick links* to the most important sections of the
 ### :copyright: Legal
 
 * [Overview](https://stnolting.github.io/neorv32/#_legal) - license, disclaimer, proprietary notice, ...
-* [Citing](https://stnolting.github.io/neorv32/#_citing) - citing information
+* [Citing](https://stnolting.github.io/neorv32/#_citing) - citing information (_DOI_)
 * [Impressum](https://github.com/stnolting/neorv32/blob/master/docs/impressum.md) - imprint (:de:)
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]

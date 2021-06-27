@@ -22,7 +22,6 @@ image::neorv32_processor.png[align=center]
 * _optional_ PWM controller with up to 60 channels & 8-bit duty cycle resolution (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
 * _optional_ ring-oscillator-based true random number generator (<<_true_random_number_generator_trng,**TRNG**>>)
 * _optional_ custom functions subsystem for custom co-processor extensions (<<_custom_functions_subsystem_cfs,**CFS**>>)
-* _optional_ numerically-controlled oscillator (<<_numerically_controlled_oscillator_nco,**NCO**>>) with 3 independent channels
 * _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (<<_smart_led_interface_neoled,**NEOLED**>>)
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>)
 * system configuration information memory to check HW configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
@@ -94,8 +93,6 @@ A wrapper for the NEORV32 Processor setup providing resolved port signals can be
 | `cfs_out_o` | 32 | out | custom CFS output signal conduit
 4+^| **Pulse-Width Modulation Channels (<<_pulse_width_modulation_controller_pwm,PWM>>)**
 | `pwm_o` | 4 | out | pulse-width modulated channels
-4+^| **Numerically-Controller Oscillator (<<_numerically_controlled_oscillator_nco,NCO>>)**
-| `nco_o` | 3 | out | NCO output channels
 4+^| **Smart LED Interface - NeoPixel(TM) compatible (<<_smart_led_interface_neoled,NEOLED>>)**
 | `neoled_o` | 1 | out | asynchronous serial data output
 4+^| **System time (<<_machine_system_timer_mtime,MTIME>>)**
@@ -744,18 +741,6 @@ functions subsystem entity. See section <<_custom_functions_subsystem_cfs>> for 
 
 
 :sectnums!:
-===== _IO_NCO_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_NCO_EN** | _boolean_ | true
-3+| Implement numerically-controlled oscillator (NCO) when _true_.
-See section <<_numerically_controlled_oscillator_nco>> for more information.
-|======
-
-
-:sectnums!:
 ===== _IO_NEOLED_EN_
 
 [cols="4,4,2"]
@@ -1167,8 +1152,6 @@ include::soc_pwm.adoc[]
 include::soc_trng.adoc[]
 
 include::soc_cfs.adoc[]
-
-include::soc_nco.adoc[]
 
 include::soc_neoled.adoc[]
 

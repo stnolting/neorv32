@@ -119,7 +119,7 @@ RISC-V compatibility, _customization_ and _ease of use_. See the <<_project_key_
 * **NEORV32 Processor (SoC)**: highly-configurable full-scale microcontroller-like processor system
 ** based on the NEORV32 CPU
 ** optional serial interfaces (UARTs, TWI, SPI)
-** optional timers and counters (WDT, MTIME, NCO)
+** optional timers and counters (WDT, MTIME)
 ** optional general purpose IO and PWM and native NeoPixel (c) compatible smart LED interface
 ** optional embedded memories / caches for data, instructions and bootloader
 ** optional external memory interface for custom connectivity (Wishbone or AXI4-Lite)
@@ -220,7 +220,6 @@ neorv32_top.vhd                      - NEORV32 Processor top entity
 ├neorv32_imem.vhd                   - Processor-internal instruction memory
 │└neor32_application_image.vhd     - IMEM application initialization image
 ├neorv32_mtime.vhd                  - Machine system timer
-├neorv32_nco.vhd                    - Numerically-controlled oscillator
 ├neorv32_neoled.vhd                 - NeoPixel (TM) compatible smart LED interface
 ├neorv32_pwm.vhd                    - Pulse-width modulation controller
 ├neorv32_spi.vhd                    - Serial peripheral interface controller
@@ -294,7 +293,6 @@ between entity boundaries, so the actual utilization results might vary a bit.
 | iCACHE        | Instruction cache (1x4 blocks, 256 bytes per block) | 220 | 154 |     8192 |    0
 | IMEM          | Processor-internal instruction memory (16kB)        |   6 |   2 |   131072 |    0
 | MTIME         | Machine system timer                                | 289 | 200 |        0 |    0
-| NCO           | Numerically-controlled oscillator                   | 254 | 226 |        0 |    0
 | NEOLED        | Smart LED Interface (NeoPixel/WS28128) [4xFIFO]     | 347 | 309 |        0 |    0
 | PWM           | Pulse_width modulation controller (4 channels)      |  71 |  69 |        0 |    0
 | SPI           | Serial peripheral interface                         | 138 | 124 |        0 |    0

@@ -66,7 +66,6 @@ files are currently part of the NEORV32 core library:
 | `neorv32_gpio.c`   | `neorv32_gpio.h`       | HW driver functions for the **GPIO**
 | -                  | `neorv32_intrinsics.h` | macros for custom intrinsics/instructions
 | `neorv32_mtime.c`  | `neorv32_mtime.h`      | HW driver functions for the **MTIME**
-| `neorv32_nco.c`    | `neorv32_nco.h`        | HW driver functions for the **NCO**
 | `neorv32_neoled.c` | `neorv32_neoled.h`     | HW driver functions for the **NEOLED**
 | `neorv32_pwm.c`    | `neorv32_pwm.h`        | HW driver functions for the **PWM**
 | `neorv32_rte.c`    | `neorv32_rte.h`        | NEORV32 **runtime environment** and helpers
