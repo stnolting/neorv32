@@ -66,9 +66,6 @@
         <Source name="../../../rtl/core/neorv32_mtime.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>
-        <Source name="../../../rtl/core/neorv32_nco.vhd" type="VHDL" type_short="VHDL">
-            <Options lib="neorv32"/>
-        </Source>
         <Source name="../../../rtl/core/neorv32_neoled.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>

@@ -167,7 +167,6 @@ begin
     IO_CFS_CONFIG                => x"00000000",   -- custom CFS configuration generic
     IO_CFS_IN_SIZE               => 32,            -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              => 32,            -- size of CFS output conduit in bits
-    IO_NCO_EN                    => false,         -- implement numerically-controlled oscillator (NCO)?
     IO_NEOLED_EN                 => false          -- implement NeoPixel-compatible smart LED interface (NEOLED)?
   )
   port map (
@@ -231,9 +230,6 @@ begin
     -- Custom Functions Subsystem IO --
     cfs_in_i    => (others => '0'),              -- custom CFS inputs conduit
     cfs_out_o   => open,                         -- custom CFS outputs conduit
-
-    -- NCO output (available if IO_NCO_EN = true) --
-    nco_o       => open,                         -- numerically-controlled oscillator channels
 
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o    => open,                         -- async serial data line

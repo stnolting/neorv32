@@ -95,7 +95,6 @@ entity neorv32_ProcessorTop_stdlogic is
     IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0); -- custom CFS configuration generic
     IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
-    IO_NCO_EN                    : boolean := true;   -- implement numerically-controlled oscillator (NCO)?
     IO_NEOLED_EN                 : boolean := true    -- implement NeoPixel-compatible smart LED interface (NEOLED)?
   );
   port (
@@ -149,8 +148,6 @@ entity neorv32_ProcessorTop_stdlogic is
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i    : in  std_logic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom inputs
     cfs_out_o   : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom outputs
-    -- NCO output (available if IO_NCO_EN = true) --
-    nco_o       : out std_logic_vector(02 downto 0); -- numerically-controlled oscillator channels
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o    : out std_logic; -- async serial data line
     -- System time --
@@ -216,8 +213,6 @@ architecture neorv32_ProcessorTop_stdlogic_rtl of neorv32_ProcessorTop_stdlogic 
   --
   signal cfs_in_i_int    : std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0);
   signal cfs_out_o_int   : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
-  --
-  signal nco_o_int       : std_ulogic_vector(02 downto 0);
   --
   signal neoled_o_int    : std_ulogic;
   --
@@ -289,7 +284,6 @@ begin
     IO_CFS_CONFIG                => IO_CFS_CONFIG_INT,  -- custom CFS configuration generic
     IO_CFS_IN_SIZE               => IO_CFS_IN_SIZE,     -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              => IO_CFS_OUT_SIZE,    -- size of CFS output conduit in bits
-    IO_NCO_EN                    => IO_NCO_EN,          -- implement numerically-controlled oscillator (NCO)?
     IO_NEOLED_EN                 => IO_NEOLED_EN        -- implement NeoPixel-compatible smart LED interface (NEOLED)?
   )
   port map (
@@ -343,8 +337,6 @@ begin
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i    => cfs_in_i_int,    -- custom inputs
     cfs_out_o   => cfs_out_o_int,   -- custom outputs
-    -- NCO output (available if IO_NCO_EN = true) --
-    nco_o       => nco_o_int,       -- numerically-controlled oscillator channels
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o    => neoled_o_int,    -- async serial data line
     -- System time --
@@ -399,8 +391,6 @@ begin
 
   cfs_in_i_int    <= std_ulogic_vector(cfs_in_i);
   cfs_out_o       <= std_logic_vector(cfs_out_o_int);
-
-  nco_o           <= std_logic_vector(nco_o_int);
 
   neoled_o        <= std_logic(neoled_o_int);
 
