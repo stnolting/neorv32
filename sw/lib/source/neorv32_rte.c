@@ -450,7 +450,6 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("WDT    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_WDT));
   neorv32_uart0_printf("TRNG   - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_TRNG));
   neorv32_uart0_printf("CFS    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_CFS));
-  neorv32_uart0_printf("NCO    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_NCO));
   neorv32_uart0_printf("NEOLED - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_NEOLED));
 }
 

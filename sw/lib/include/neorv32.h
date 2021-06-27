@@ -923,67 +923,6 @@ enum NEORV32_TWI_DATA_enum {
 
 
 /**********************************************************************//**
- * @name IO Device: Numerically-Controlled Oscillator (NCO)
- **************************************************************************/
-/**@{*/
-/** NCO base address */
-#define NCO_BASE (0xFFFFFFC0UL) // /**< NCO base address */
-/** NCO address space size in bytes */
-#define NCO_SIZE (4*4) // /**< NCO address space size in bytes */
-
-/** NCO control register (r/w) */
-#define NCO_CT       (*(IO_REG32 (NCO_BASE + 0))) // r/w: control register
-/** NCO channel 0 tuning word (r/w) */
-#define NCO_TUNE_CH0 (*(IO_REG32 (NCO_BASE + 4))) // r/w: tuning word channel 0
-/** NCO channel 1 tuning word (r/w) */
-#define NCO_TUNE_CH1 (*(IO_REG32 (NCO_BASE + 8))) // r/w: tuning word channel 1
-/** NCO channel 2 tuning word (r/w) */
-#define NCO_TUNE_CH2 (*(IO_REG32 (NCO_BASE + 12))) // r/w: tuning word channel 2
-
-/** NCO control register bits */
-enum NEORV32_NCO_CT_enum {
-  NCO_CT_EN           =  0, /**< NCO control register(0) (r/w): NCO global enable */
-  // channel 0
-  NCO_CT_CH0_MODE     =  1, /**< NCO control register(1)  - channel 0 (r/w): Output mode (0=fixed 50% duty cycle; 1=pulse mode) */
-  NCO_CT_CH0_IDLE_POL =  2, /**< NCO control register(2)  - channel 0 (r/w): Output idle polarity (0=low, 1=high) */
-  NCO_CT_CH0_OE       =  3, /**< NCO control register(3)  - channel 0 (r/w): Enable processor output pin */
-  NCO_CT_CH0_OUTPUT   =  4, /**< NCO control register(4)  - channel 0 (r/-): Current channel output state */
-  NCO_CT_CH0_PRSC0    =  5, /**< NCO control register(5)  - channel 0 (r/w): Clock prescaler select bit 0 */
-  NCO_CT_CH0_PRSC1    =  6, /**< NCO control register(6)  - channel 0 (r/w): Clock prescaler select bit 1 */
-  NCO_CT_CH0_PRSC2    =  7, /**< NCO control register(7)  - channel 0 (r/w): Clock prescaler select bit 2 */
-  NCO_CT_CH0_PULSE0   =  8, /**< NCO control register(8)  - channel 0 (r/w): Pulse-mode: Pulse length select bit 0 */
-  NCO_CT_CH0_PULSE1   =  9, /**< NCO control register(9)  - channel 0 (r/w): Pulse-mode: Pulse length select bit 1 */
-  NCO_CT_CH0_PULSE2   = 10, /**< NCO control register(10) - channel 0 (r/w): Pulse-mode: Pulse length select bit 2 */
-  // channel 1
-  NCO_CT_CH1_MODE     = 11, /**< NCO control register(11) - channel 1 (r/w): Output mode (0=fixed 50% duty cycle; 1=pulse mode) */
-  NCO_CT_CH1_IDLE_POL = 12, /**< NCO control register(12) - channel 1 (r/w): Output idle polarity (0=low, 1=high) */
-  NCO_CT_CH1_OE       = 13, /**< NCO control register(13) - channel 1 (r/w): Enable processor output pin */
-  NCO_CT_CH1_OUTPUT   = 14, /**< NCO control register(14) - channel 1 (r/-): Current channel output state */
-  NCO_CT_CH1_PRSC0    = 15, /**< NCO control register(15) - channel 1 (r/w): Clock prescaler select bit 0 */
-  NCO_CT_CH1_PRSC1    = 16, /**< NCO control register(16) - channel 1 (r/w): Clock prescaler select bit 1 */
-  NCO_CT_CH1_PRSC2    = 17, /**< NCO control register(17) - channel 1 (r/w): Clock prescaler select bit 2 */
-  NCO_CT_CH1_PULSE0   = 18, /**< NCO control register(18) - channel 1 (r/w): Pulse-mode: Pulse length select bit 0 */
-  NCO_CT_CH1_PULSE1   = 19, /**< NCO control register(19) - channel 1 (r/w): Pulse-mode: Pulse length select bit 1 */
-  NCO_CT_CH1_PULSE2   = 20, /**< NCO control register(20) - channel 1 (r/w): Pulse-mode: Pulse length select bit 2 */
-  // channel 2
-  NCO_CT_CH2_MODE     = 21, /**< NCO control register(21) - channel 2 (r/w): Output mode (0=fixed 50% duty cycle; 1=pulse mode) */
-  NCO_CT_CH2_IDLE_POL = 22, /**< NCO control register(22) - channel 2 (r/w): Output idle polarity (0=low, 1=high) */
-  NCO_CT_CH2_OE       = 23, /**< NCO control register(23) - channel 2 (r/w): Enable processor output pin */
-  NCO_CT_CH2_OUTPUT   = 24, /**< NCO control register(24) - channel 2 (r/-): Current channel output state */
-  NCO_CT_CH2_PRSC0    = 25, /**< NCO control register(25) - channel 2 (r/w): Clock prescaler select bit 0 */
-  NCO_CT_CH2_PRSC1    = 26, /**< NCO control register(26) - channel 2 (r/w): Clock prescaler select bit 1 */
-  NCO_CT_CH2_PRSC2    = 27, /**< NCO control register(27) - channel 2 (r/w): Clock prescaler select bit 2 */
-  NCO_CT_CH2_PULSE0   = 28, /**< NCO control register(28) - channel 2 (r/w): Pulse-mode: Pulse length select bit 0 */
-  NCO_CT_CH2_PULSE1   = 29, /**< NCO control register(29) - channel 2 (r/w): Pulse-mode: Pulse length select bit 1 */
-  NCO_CT_CH2_PULSE2   = 20  /**< NCO control register(30) - channel 2 (r/w): Pulse-mode: Pulse length select bit 2 */
-};
-
-/** Size of one "channel entry" in control register in bits */
-#define NCO_CHX_WIDTH 10 // Size of one "channel entry" in control register in bits
-/**@}*/
-
-
-/**********************************************************************//**
  * @name IO Device: Smart LED Hardware Interface (NEOLED)
  **************************************************************************/
 /**@{*/
@@ -1085,7 +1024,7 @@ enum NEORV32_NEOLED_CT_enum {
   SYSINFO_FEATURES_IO_WDT           = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_EN generic) */
   SYSINFO_FEATURES_IO_CFS           = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions subsystem implemented when 1 (via IO_CFS_EN generic) */
   SYSINFO_FEATURES_IO_TRNG          = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_EN generic) */
-  SYSINFO_FEATURES_IO_NCO           = 25, /**< SYSINFO_FEATURES (25) (r/-): Numerically-controlled oscillator implemented when 1 (via IO_NCO_EN generic) */
+
   SYSINFO_FEATURES_IO_UART1         = 26, /**< SYSINFO_FEATURES (26) (r/-): Secondary universal asynchronous receiver/transmitter 1 implemented when 1 (via IO_UART1_EN generic) */
   SYSINFO_FEATURES_IO_NEOLED        = 27  /**< SYSINFO_FEATURES (27) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
 };
@@ -1132,7 +1071,6 @@ enum NEORV32_NEOLED_CT_enum {
 #include "neorv32_cfs.h"
 #include "neorv32_gpio.h"
 #include "neorv32_mtime.h"
-#include "neorv32_nco.h"
 #include "neorv32_neoled.h"
 #include "neorv32_pwm.h"
 #include "neorv32_spi.h"
