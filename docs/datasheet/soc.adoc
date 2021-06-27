@@ -103,7 +103,6 @@ A wrapper for the NEORV32 Processor setup providing resolved port signals can be
 | `mtime_o` | 64 | out | machine timer time from _internal MTIME_ unit if processor-internal _MTIME_ unit IS implemented
 4+^| **<<_processor_interrupts>>**
 | `nm_irq_i`    | 1 | in | non-maskable interrupt
-| `soc_firq_i`  | 6 | in | platform fast interrupt channels (custom)
 | `mtime_irq_i` | 1 | in | machine timer interrupt13 (RISC-V)
 | `msw_irq_i`   | 1 | in | machine software interrupt (RISC-V)
 | `mext_irq_i`  | 1 | in | machine external interrupt (RISC-V)
@@ -789,11 +788,8 @@ synthesis, the machine timer interrupt is also available via the processor's top
 **NEORV32-Specific Fast Interrupt Requests**
 
 As part of the custom/NEORV32-specific CPU extensions, the CPU features 16 fast interrupt request signals
-(`FIRQ0` – `FIRQ15`).
-
-The fast interrupt request signals are divided into two groups. The FIRQs with higher priority (FIRQ0 –
-FIRQ9) are dedicated for processor-internal usage. The FIRQs with lower priority (FIRQ10 – FIRQ15) are
-available for custom usage via the processor's top entity signal `soc_firq_i`.
+(`FIRQ0` – `FIRQ15`). These are used for _processor-internal_ modules only (for example for the communication
+interfaces to signal "available incoming data" or "ready to send new data").
 
 The mapping of the 16 FIRQ channels is shown in the following table (the channel number corresponds to the FIRQ priority):
 
@@ -812,7 +808,7 @@ The mapping of the 16 FIRQ channels is shown in the following table (the channel
 | 7       | _TWI_ | TWI transmission done interrupt
 | 8       | _GPIO_ | GPIO input pin-change interrupt
 | 9       | _NEOLED_ | NEOLED buffer TX empty / not full interrupt
-| 10:15   | `soc_firq_i(5:0)` | Custom platform use; available via processor's top signal
+| 10:15   | - | _reserved_
 |=======================
 
 **Non-Maskable Interrupt**

@@ -10,7 +10,7 @@
 |                          | neorv32_wdt.h |
 | Top entity port:         | none | 
 | Configuration generics:  | _IO_WDT_EN_ | implement GPIO port when _true_
-| CPU interrupts:          | FIRQ channel 0 | watchdog timer overflow (see <<_processor_interrupts>>)
+| CPU interrupts:          | fast IRQ channel 0 | watchdog timer overflow (see <<_processor_interrupts>>)
 |=======================
 
 **Theory of Operation**

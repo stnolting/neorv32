@@ -194,8 +194,10 @@ files, like alternative top entities, can be assigned to any library.
 ...................................
 neorv32_top.vhd                      - NEORV32 Processor top entity
 │
+├neorv32_fifo.vhd                  - General purpose FIFO component
+├neorv32_package.vhd               - Processor/CPU main VHDL package file
+│
 ├neorv32_cpu.vhd                    - NEORV32 CPU top entity
-│├neorv32_package.vhd              - Processor/CPU main VHDL package file
 │├neorv32_cpu_alu.vhd              - Arithmetic/logic unit
 ││├neorv32_cpu_cp_fpu.vhd           - Floating-point co-processor (Zfinx extension)
 ││├neorv32_cpu_cp_muldiv.vhd        - Mul/Div co-processor (M extension)
