@@ -107,7 +107,6 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
 
   -- irq --
   signal msi_ring, mei_ring, nmi_ring : std_ulogic;
-  signal soc_firq_ring : std_ulogic_vector(5 downto 0);
 
   -- Wishbone bus --
   type wishbone_t is record
@@ -273,7 +272,6 @@ begin
     mtime_o     => open,            -- current system time from int. MTIME (if IO_MTIME_EN = true)
     -- Interrupts --
     nm_irq_i    => nmi_ring,        -- non-maskable interrupt
-    soc_firq_i  => soc_firq_ring,   -- fast interrupt channels
     mtime_irq_i => '0',             -- machine software interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => msi_ring,        -- machine software interrupt
     mext_irq_i  => mei_ring         -- machine external interrupt
@@ -501,21 +499,13 @@ begin
       wb_irq.ack   <= wb_irq.cyc and wb_irq.stb and wb_irq.we and and_reduce_f(wb_irq.sel);
       wb_irq.err   <= '0';
       -- trigger IRQ using CSR.MIE bit layout --
-      nmi_ring      <= '0';
-      msi_ring      <= '0';
-      mei_ring      <= '0';
-      soc_firq_ring <= (others => '0');
+      nmi_ring <= '0';
+      msi_ring <= '0';
+      mei_ring <= '0';
       if ((wb_irq.cyc and wb_irq.stb and wb_irq.we and and_reduce_f(wb_irq.sel)) = '1') then
-        nmi_ring         <= wb_irq.wdata(00); -- non-maskable interrupt
-        msi_ring         <= wb_irq.wdata(03); -- machine software interrupt
-        mei_ring         <= wb_irq.wdata(11); -- machine software interrupt
-        --
-        soc_firq_ring(0) <= wb_irq.wdata(26); -- fast interrupt SoC channel 0 (-> FIRQ channel 10)
-        soc_firq_ring(1) <= wb_irq.wdata(27); -- fast interrupt SoC channel 1 (-> FIRQ channel 11)
-        soc_firq_ring(2) <= wb_irq.wdata(28); -- fast interrupt SoC channel 2 (-> FIRQ channel 12)
-        soc_firq_ring(3) <= wb_irq.wdata(29); -- fast interrupt SoC channel 3 (-> FIRQ channel 13)
-        soc_firq_ring(4) <= wb_irq.wdata(30); -- fast interrupt SoC channel 4 (-> FIRQ channel 14)
-        soc_firq_ring(5) <= wb_irq.wdata(31); -- fast interrupt SoC channel 5 (-> FIRQ channel 15)
+        nmi_ring <= wb_irq.wdata(00); -- non-maskable interrupt
+        msi_ring <= wb_irq.wdata(03); -- machine software interrupt
+        mei_ring <= wb_irq.wdata(11); -- machine software interrupt
       end if;
     end if;
   end process irq_trigger;

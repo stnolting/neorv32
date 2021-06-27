@@ -189,7 +189,6 @@ entity neorv32_top is
 
     -- Interrupts --
     nm_irq_i    : in  std_ulogic := '0'; -- non-maskable interrupt
-    soc_firq_i  : in  std_ulogic_vector(5 downto 0) := (others => '0'); -- fast interrupt channels
     mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
     mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
@@ -500,7 +499,7 @@ begin
   fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
 
-  -- fast interrupts - processor-internal --
+  -- fast interrupts --
   fast_irq(00) <= wdt_irq;       -- HIGHEST PRIORITY - watchdog timeout
   fast_irq(01) <= cfs_irq;       -- custom functions subsystem
   fast_irq(02) <= uart0_rxd_irq; -- primary UART (UART0) data received
@@ -512,18 +511,7 @@ begin
   fast_irq(08) <= gpio_irq;      -- GPIO pin-change
   fast_irq(09) <= neoled_irq;    -- NEOLED buffer free
 
-  -- fast interrupts - platform level (for custom use) --
-  soc_firq_sync: process(clk_i)
-  begin
-    if rising_edge(clk_i) then -- make sure they are sync
-      fast_irq(10) <= soc_firq_i(0);
-      fast_irq(11) <= soc_firq_i(1);
-      fast_irq(12) <= soc_firq_i(2);
-      fast_irq(13) <= soc_firq_i(3);
-      fast_irq(14) <= soc_firq_i(4);
-      fast_irq(15) <= soc_firq_i(5);
-    end if;
-  end process soc_firq_sync;
+  fast_irq(15 downto 10) <= (others => '0'); -- reserved
 
   -- CFS IRQ acknowledge --
   cfs_irq_ack <= fast_irq_ack(1);

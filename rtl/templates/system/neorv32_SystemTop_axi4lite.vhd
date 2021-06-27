@@ -175,7 +175,6 @@ entity neorv32_SystemTop_axi4lite is
     neoled_o      : out std_logic; -- async serial data line
     -- Interrupts --
     nm_irq_i      : in  std_logic := '0'; -- non-maskable interrupt
-    soc_firq_i    : in  std_logic_vector(5 downto 0) := (others => '0'); -- fast interrupt channels
     msw_irq_i     : in  std_logic := '0'; -- machine software interrupt
     mext_irq_i    : in  std_logic := '0'  -- machine external interrupt
   );
@@ -224,7 +223,6 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
   signal neoled_o_int    : std_ulogic;
   --
   signal nm_irq_i_int    : std_ulogic;
-  signal soc_firq_i_int  : std_ulogic_vector(05 downto 0);
   signal msw_irq_i_int   : std_ulogic;
   signal mext_irq_i_int  : std_ulogic;
 
@@ -384,7 +382,6 @@ begin
     mtime_o     => open,            -- current system time from int. MTIME (if IO_MTIME_EN = true)
     -- Interrupts --
     nm_irq_i    => nm_irq_i_int,    -- non-maskable interrupt
-    soc_firq_i  => soc_firq_i_int,  -- fast interrupt channels
     mtime_irq_i => '0',             -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => msw_irq_i_int,   -- machine software interrupt
     mext_irq_i  => mext_irq_i_int   -- machine external interrupt
@@ -419,8 +416,6 @@ begin
 
   neoled_o        <= std_logic(neoled_o_int);
 
-  soc_firq_i_int  <= std_ulogic_vector(soc_firq_i);
-  msw_irq_i_int   <= std_ulogic(msw_irq_i);
   mext_irq_i_int  <= std_ulogic(mext_irq_i);
 
 

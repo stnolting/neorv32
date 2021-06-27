@@ -282,7 +282,6 @@ begin
 
     -- Interrupts --
     nm_irq_i    => '0',                          -- non-maskable interrupt
-    soc_firq_i  => (others => '0'),              -- fast interrupt channels
     mtime_irq_i => '0',                          -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => '0',                          -- machine software interrupt
     mext_irq_i  => '0'                           -- machine external interrupt

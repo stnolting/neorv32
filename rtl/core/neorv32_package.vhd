@@ -70,7 +70,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050703"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050704"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
 
@@ -990,7 +990,6 @@ package neorv32_package is
       mtime_o     : out std_ulogic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
       -- Interrupts --
       nm_irq_i    : in  std_ulogic := '0'; -- non-maskable interrupt
-      soc_firq_i  : in  std_ulogic_vector(5 downto 0) := (others => '0'); -- fast interrupt channels
       mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
       msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
       mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
@@ -1838,6 +1837,31 @@ package neorv32_package is
       rden_i : in  std_ulogic; -- read enable
       data_o : out std_ulogic_vector(31 downto 0); -- data out
       ack_o  : out std_ulogic  -- transfer acknowledge
+    );
+  end component;
+
+  -- Component: General Purpose FIFO .............................---------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_fifo
+    generic (
+      FIFO_DEPTH : natural := 4;     -- number of fifo entries; has to be a power of two; min 1
+      FIFO_WIDTH : natural := 32;    -- size of data elements in fifo
+      FIFO_RSYNC : boolean := false; -- false = async read; true = sync read
+      FIFO_SAFE  : boolean := false  -- true = allow read/write only if data available
+    );
+    port (
+      -- control --
+      clk_i   : in  std_ulogic; -- clock, rising edge
+      rstn_i  : in  std_ulogic; -- async reset, low-active
+      clear_i : in  std_ulogic; -- sync reset, high-active
+      -- write port --
+      wdata_i : in  std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- write data
+      we_i    : in  std_ulogic; -- write enable
+      free_o  : out std_ulogic; -- at least one entry is free when set
+      -- read port --
+      re_i    : in  std_ulogic; -- read enable
+      rdata_o : out std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- read data
+      avail_o : out std_ulogic  -- data available when set
     );
   end component;
 
