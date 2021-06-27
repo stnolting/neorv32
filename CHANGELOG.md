@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 27.06.2021 | 1.5.7.6 | :bug: fixed bug in CFS (custom functions subsystem) address map layout |
 | 27.06.2021 | 1.5.7.5 | :warning: removed numerically-controlled oscillator (NCO, `neorv32_nco.vhd`) module as it appears to be an over-engineered clock-generator without many use cases (if you really need this module, you can wrap it within the custom functions subsystem CFS) |
 | 27.06.2021 | 1.5.7.4 | :warning: removed top's fast IRQ (FIRQ) inputs `soc_firq_i`: the FIRQs are reserved for processor-internal usage only, use the `mext_irq_i` RISC-V external interrupt signal for all external interrupt applications (via dedicated interrupt conttoller), a follow-up version of the project will introduce a customizable external interrupt controller; sourced-out FIFOs into new HDL component `neorv32_fifo.vhd` |
 | 26.06.2021 | 1.5.7.3 | edit of v1.5.7.2: RISC-V spec claims to leave destination registers of trapping load operation unchanged (do _not_ set to zero); minor CPU control logic optimizations; :sparkles: reworked bootloader to provide several new configuration and customization options |
