@@ -145,8 +145,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal fetch_engine : fetch_engine_t;
 
-  -- instruction prefetch buffer (IPB, real FIFO) --
-  type ipb_data_fifo_t is array (0 to ipb_entries_c-1) of std_ulogic_vector(2+31 downto 0);
+  -- instruction prefetch buffer (FIFO) interface --
   type ipb_t is record
     wdata : std_ulogic_vector(2+31 downto 0); -- write status (bus_error, align_error) + 32-bit instruction data
     we    : std_ulogic; -- trigger write
@@ -156,14 +155,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     rdata : std_ulogic_vector(2+31 downto 0); -- read data: status (bus_error, align_error) + 32-bit instruction data
     re    : std_ulogic; -- read enable
     avail : std_ulogic; -- data available?
-    --
-    w_pnt : std_ulogic_vector(index_size_f(ipb_entries_c) downto 0); -- write pointer
-    r_pnt : std_ulogic_vector(index_size_f(ipb_entries_c) downto 0); -- read pointer
-    match : std_ulogic;
-    empty : std_ulogic;
-    full  : std_ulogic;
-    --
-    data  : ipb_data_fifo_t; -- fifo memory
   end record;
   signal ipb : ipb_t;
 
@@ -466,45 +457,27 @@ begin
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  instr_prefetch_buffer_ctrl: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      ipb.w_pnt <= (others => def_rst_val_c);
-      ipb.r_pnt <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
-      -- write port --
-      if (ipb.clear = '1') then
-        ipb.w_pnt <= (others => '0');
-      elsif (ipb.we = '1') then
-        ipb.w_pnt <= std_ulogic_vector(unsigned(ipb.w_pnt) + 1);
-      end if;
-      -- read port --
-      if (ipb.clear = '1') then
-        ipb.r_pnt <= (others => '0');
-      elsif (ipb.re = '1') then
-        ipb.r_pnt <= std_ulogic_vector(unsigned(ipb.r_pnt) + 1);
-      end if;
-    end if;
-  end process instr_prefetch_buffer_ctrl;
-
-  instr_prefetch_buffer_data: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (ipb.we = '1') then -- write access
-        ipb.data(to_integer(unsigned(ipb.w_pnt(ipb.w_pnt'left-1 downto 0)))) <= ipb.wdata;
-      end if;
-    end if;
-  end process instr_prefetch_buffer_data;
-
-  -- async read --
-  ipb.rdata <= ipb.data(to_integer(unsigned(ipb.r_pnt(ipb.r_pnt'left-1 downto 0))));
-
-  -- status --
-  ipb.match <= '1' when (ipb.r_pnt(ipb.r_pnt'left-1 downto 0) = ipb.w_pnt(ipb.w_pnt'left-1 downto 0))  else '0';
-  ipb.full  <= '1' when (ipb.r_pnt(ipb.r_pnt'left) /= ipb.w_pnt(ipb.w_pnt'left)) and (ipb.match = '1') else '0';
-  ipb.empty <= '1' when (ipb.r_pnt(ipb.r_pnt'left)  = ipb.w_pnt(ipb.w_pnt'left)) and (ipb.match = '1') else '0';
-  ipb.free  <= not ipb.full;
-  ipb.avail <= not ipb.empty;
+  instr_prefetch_buffer: neorv32_fifo
+  generic map (
+    FIFO_DEPTH => ipb_entries_c,    -- number of fifo entries; has to be a power of two; min 1
+    FIFO_WIDTH => ipb.wdata'length, -- size of data elements in fifo
+    FIFO_RSYNC => false,            -- false = async read; true = sync read
+    FIFO_SAFE  => false             -- true = allow read/write only if data available
+  )
+  port map (
+    -- control --
+    clk_i   => clk_i,     -- clock, rising edge
+    rstn_i  => '1',       -- async reset, low-active
+    clear_i => ipb.clear, -- sync reset, high-active
+    -- write port --
+    wdata_i => ipb.wdata, -- write data
+    we_i    => ipb.we,    -- write enable
+    free_o  => ipb.free,  -- at least one entry is free when set
+    -- read port --
+    re_i    => ipb.re,    -- read enable
+    rdata_o => ipb.rdata, -- read data
+    avail_o => ipb.avail  -- data available when set
+  );
 
 
 -- ****************************************************************************************************************************
