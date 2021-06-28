@@ -8,6 +8,7 @@ use std.textio.all;
 library vunit_lib;
 context vunit_lib.vunit_context;
 context vunit_lib.com_context;
+context vunit_lib.vc_context;
 
 use work.uart_rx_pkg.all;
 
@@ -36,7 +37,7 @@ architecture a of uart_rx is
 
 begin
   control : process
-    variable msg : msg_t;
+    variable request_msg, reply_msg : msg_t;
     variable msg_type : msg_type_t;
 
     procedure put_characters_in_queue(s : string) is
@@ -46,11 +47,24 @@ begin
       end loop;
     end procedure put_characters_in_queue;
   begin
-    receive(net, actor, msg);
-    msg_type := message_type(msg);
+    receive(net, actor, request_msg);
+    msg_type := message_type(request_msg);
+
+    -- Standard handling of standard wait_for_time messages = wait for the given time
+    -- before proceeeding
+    handle_wait_for_time(net, msg_type, request_msg);
 
     if msg_type = check_uart_msg then
-      put_characters_in_queue(pop(msg));
+      put_characters_in_queue(pop(request_msg));
+
+    -- Custom handling of standard wait_until_idle message
+    elsif msg_type = wait_until_idle_msg then
+      while not is_empty(character_queue) loop
+        wait until rising_edge(clk);
+      end loop;
+      reply_msg := new_msg(wait_until_idle_reply_msg);
+      reply(net, request_msg, reply_msg);
+
     else
       unexpected_msg_type(msg_type);
     end if;
@@ -60,7 +74,6 @@ begin
     variable i : integer;
     variable l : line;
     variable expected_character : character;
-    variable extra_characters_are_allowed : boolean := true;
   begin
     -- "UART" --
     if rising_edge(clk) then
@@ -85,15 +98,11 @@ begin
             uart_rx_busy <= '0';  -- done
             i := to_integer(unsigned(uart_rx_sreg(8 downto 1)));
 
-            if is_empty(character_queue) and not extra_characters_are_allowed then
+            if is_empty(character_queue) then
               check_failed(checker, "Extra characters received");
             else
               expected_character := pop(character_queue);
-              if expected_character = etx then
-                extra_characters_are_allowed := false;
-              else
-                check_equal(checker, character'val(i), expected_character);
-              end if;
+              check_equal(checker, character'val(i), expected_character);
             end if;
 
             if (i = 10) then  -- Linux line break

@@ -39,6 +39,7 @@
 library vunit_lib;
 context vunit_lib.vunit_context;
 context vunit_lib.com_context;
+context vunit_lib.vc_context;
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -167,31 +168,35 @@ begin
 
     -- Sending messages with the expected data to receive takes no simulation
     -- time, only data cycles.
-    --
-    -- Expectations terminated with etx (end of text) are interpreted by
-    -- uart_rx as an absolute expectation and that no extra characters are allowed.
     msg := new_msg(check_uart_msg);
     if ci_mode then
-        push(msg, nul & nul & etx);
+        push(msg, nul & nul);
     else
-      push(msg, "Blinking LED demo program" & cr & lf & etx);
+      push(msg, "Blinking LED demo program" & cr & lf);
     end if;
     send(net, uart0_actor, msg);
 
     msg := new_msg(check_uart_msg);
     if ci_mode then
-      -- No need to push the full expectation in one big chunk
-      push(msg, nul & nul & cr & lf & cr & lf & "Test results:" & cr & lf);
-      push(msg, "OK:     37/37" & cr & lf & "FAILED: 0/37" & cr & lf & cr & lf & etx);
-    else
-      push(msg, "" & etx);
+      push(msg, nul & nul & "0/45" & cr & lf);
+      send(net, uart1_actor, msg);
     end if;
-    send(net, uart1_actor, msg);
 
-    wait for 20 ms; -- Just wait for all UART output to be produced
+
+    -- Wait until all expected data has been received
+    wait_until_idle(net, uart0_actor);
+    wait_until_idle(net, uart1_actor);
+
+    -- Wait a bit more if some extra unexpected data is produced. If so,
+    -- uart_rx will fail
+    wait for (20 * 1e9 / baud0_rate_c) * ns;
 
     test_runner_cleanup(runner);
   end process;
+
+  -- In case we get stuck waiting there is a watchdog timeout to terminate and fail the
+  -- testbench
+  test_runner_watchdog(runner, 50 ms);
 
   -- Clock/Reset Generator ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
