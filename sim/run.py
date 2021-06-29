@@ -13,6 +13,8 @@ cli.parser.add_argument(
 args = cli.parse_args()
 
 PRJ = VUnit.from_args(args=args)
+PRJ.add_com()
+PRJ.add_verification_components()
 
 ROOT = Path(__file__).parent
 
