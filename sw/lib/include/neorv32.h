@@ -676,6 +676,77 @@ enum NEORV32_PWM_CT_enum {
 
 
 /**********************************************************************//**
+ * @name IO Device: Stream link interface (SLINK)
+ **************************************************************************/
+/**@{*/
+/** SLINK base address */
+#define SLINK_BASE (0xFFFFFEC0UL) // /**< SLINK base address */
+/** SLINK address space size in bytes */
+#define SLINK_SIZE (16*4) // /**< SLINK address space size in bytes */
+
+/** SLINK control register (r/w) */
+#define SLINK_CT  (*(IO_REG32 (SLINK_BASE + 0))) // r/w: control register
+/** stream link 0 (r/w) */
+#define SLINK_CH0 (*(IO_REG32 (SLINK_BASE + 32 + 0))) // r/w: link 0
+/** stream link 1 (r/w) */
+#define SLINK_CH1 (*(IO_REG32 (SLINK_BASE + 32 + 4))) // r/w: link 1
+/** stream link 2 (r/w) */
+#define SLINK_CH2 (*(IO_REG32 (SLINK_BASE + 32 + 8))) // r/w: link 2
+/** stream link 3 (r/w) */
+#define SLINK_CH3 (*(IO_REG32 (SLINK_BASE + 32 + 12))) // r/w: link 3
+/** stream link 4 (r/w) */
+#define SLINK_CH4 (*(IO_REG32 (SLINK_BASE + 32 + 16))) // r/w: link 4
+/** stream link 5 (r/w) */
+#define SLINK_CH5 (*(IO_REG32 (SLINK_BASE + 32 + 20))) // r/w: link 5
+/** stream link 6 (r/w) */
+#define SLINK_CH6 (*(IO_REG32 (SLINK_BASE + 32 + 24))) // r/w: link 6
+/** stream link 7 (r/w) */
+#define SLINK_CH7 (*(IO_REG32 (SLINK_BASE + 32 + 28))) // r/w: link 7
+
+/** SLINK control register bits */
+enum NEORV32_SLINK_CT_enum {
+  SLINK_CT_RX0_AVAIL  =  0, /**< SLINK control register(0) (r/-): RX link 0 data available */
+  SLINK_CT_RX1_AVAIL  =  1, /**< SLINK control register(1) (r/-): RX link 1 data available */
+  SLINK_CT_RX2_AVAIL  =  2, /**< SLINK control register(2) (r/-): RX link 2 data available */
+  SLINK_CT_RX3_AVAIL  =  3, /**< SLINK control register(3) (r/-): RX link 3 data available */
+  SLINK_CT_RX4_AVAIL  =  4, /**< SLINK control register(4) (r/-): RX link 4 data available */
+  SLINK_CT_RX5_AVAIL  =  5, /**< SLINK control register(5) (r/-): RX link 5 data available */
+  SLINK_CT_RX6_AVAIL  =  6, /**< SLINK control register(6) (r/-): RX link 6 data available */
+  SLINK_CT_RX7_AVAIL  =  7, /**< SLINK control register(7) (r/-): RX link 7 data available */
+
+  SLINK_CT_TX0_FREE   =  8, /**< SLINK control register(8)  (r/-): RT link 0 ready to send */
+  SLINK_CT_TX1_FREE   =  9, /**< SLINK control register(9)  (r/-): RT link 1 ready to send */
+  SLINK_CT_TX2_FREE   = 10, /**< SLINK control register(10) (r/-): RT link 2 ready to send */
+  SLINK_CT_TX3_FREE   = 11, /**< SLINK control register(11) (r/-): RT link 3 ready to send */
+  SLINK_CT_TX4_FREE   = 12, /**< SLINK control register(12) (r/-): RT link 4 ready to send */
+  SLINK_CT_TX5_FREE   = 13, /**< SLINK control register(13) (r/-): RT link 5 ready to send */
+  SLINK_CT_TX6_FREE   = 14, /**< SLINK control register(14) (r/-): RT link 6 ready to send */
+  SLINK_CT_TX7_FREE   = 15, /**< SLINK control register(15) (r/-): RT link 7 ready to send */
+
+  SLINK_CT_RX_NUM0    = 16, /**< SLINK control register(16) (r/-): number of implemented RX links -1 bit 0 */
+  SLINK_CT_RX_NUM1    = 17, /**< SLINK control register(17) (r/-): number of implemented RX links -1 bit 1 */
+  SLINK_CT_RX_NUM2    = 18, /**< SLINK control register(18) (r/-): number of implemented RX links -1 bit 2 */
+
+  SLINK_CT_TX_NUM0    = 19, /**< SLINK control register(19) (r/-): number of implemented TX links -1bit 0 */
+  SLINK_CT_TX_NUM1    = 20, /**< SLINK control register(20) (r/-): number of implemented TX links -1bit 1 */
+  SLINK_CT_TX_NUM2    = 21, /**< SLINK control register(21) (r/-): number of implemented TX links -1bit 2 */
+
+  SLINK_CT_RX_FIFO_S0 = 22, /**< SLINK control register(22) (r/-): log2(RX FIFO size) bit 0 */
+  SLINK_CT_RX_FIFO_S1 = 23, /**< SLINK control register(23) (r/-): log2(RX FIFO size) bit 1 */
+  SLINK_CT_RX_FIFO_S2 = 24, /**< SLINK control register(24) (r/-): log2(RX FIFO size) bit 2 */
+  SLINK_CT_RX_FIFO_S3 = 25, /**< SLINK control register(25) (r/-): log2(RX FIFO size) bit 3 */
+
+  SLINK_CT_TX_FIFO_S0 = 26, /**< SLINK control register(26) (r/-): log2(TX FIFO size) bit 0 */
+  SLINK_CT_TX_FIFO_S1 = 27, /**< SLINK control register(27) (r/-): log2(TX FIFO size) bit 1 */
+  SLINK_CT_TX_FIFO_S2 = 28, /**< SLINK control register(28) (r/-): log2(TX FIFO size) bit 2 */
+  SLINK_CT_TX_FIFO_S3 = 29, /**< SLINK control register(29) (r/-): log2(TX FIFO size) bit 3 */
+
+  SLINK_CT_EN         = 31  /**< SLINK control register(31) (r/w): SLINK controller enable */
+};
+/**@}*/
+
+
+/**********************************************************************//**
  * @name IO Device: General Purpose Input/Output Port Unit (GPIO)
  **************************************************************************/
 /**@{*/
@@ -1024,7 +1095,7 @@ enum NEORV32_NEOLED_CT_enum {
   SYSINFO_FEATURES_IO_WDT           = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_EN generic) */
   SYSINFO_FEATURES_IO_CFS           = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions subsystem implemented when 1 (via IO_CFS_EN generic) */
   SYSINFO_FEATURES_IO_TRNG          = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_EN generic) */
-
+  SYSINFO_FEATURES_IO_SLINK         = 25, /**< SYSINFO_FEATURES (24) (r/-): Stream link interface implemented when 1 (via SLINK_NUM_RX & SLINK_NUM_TX generics) */
   SYSINFO_FEATURES_IO_UART1         = 26, /**< SYSINFO_FEATURES (26) (r/-): Secondary universal asynchronous receiver/transmitter 1 implemented when 1 (via IO_UART1_EN generic) */
   SYSINFO_FEATURES_IO_NEOLED        = 27  /**< SYSINFO_FEATURES (27) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
 };
@@ -1073,6 +1144,7 @@ enum NEORV32_NEOLED_CT_enum {
 #include "neorv32_mtime.h"
 #include "neorv32_neoled.h"
 #include "neorv32_pwm.h"
+#include "neorv32_slink.h"
 #include "neorv32_spi.h"
 #include "neorv32_trng.h"
 #include "neorv32_twi.h"
