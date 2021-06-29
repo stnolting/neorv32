@@ -14,7 +14,7 @@ top entity that provides a minimalistic interface (clock, reset, UART and 8 LEDs
 :information_source: See the top entity [`rtl/templates/processor/neorv32_ProcessorTop_Test.vhd` ](https://github.com/stnolting/neorv32/blob/master/rtl/templates/processor/neorv32_ProcessorTop_Test.vhd) for
 configuration and entity details and `create_project.tcl` for the according FPGA pin mapping.
 
-* CPU: `rv32imcu_Zicsr` + 4 `HPM` (hardware performance monitors)
+* CPU: `rv32imcu_Zicsr` + 4 `HPM` (hardware performance monitors, 40-bit wide)
 * Memory: 16kB instruction memory (internal IMEM), 8kB data memory (internal DMEM), bootloader ROM
 * Peripherals: `GPIO`, `MTIME`, `UART0`, `WDT`
 * Tested with version [`1.5.7.6`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)
@@ -30,6 +30,18 @@ is configured for a 100MHz input clock. Since the on-board oscillator of the DE0
 This is automatically done by the `create_project.tcl` TCL script, which makes a local copy of the original test setup VHDL file
 (in *this* folder) and uses `sed` to configure the `CLOCK_FREQUENCY` generic (in the local copy) for 50MHz. The local copy is then used as actual
 top entity.
+
+### FPGA Utilization
+
+```
+Total logic elements 4,009 / 22,320 ( 18 % )
+Total registers      1860
+Total pins           12 / 154 ( 8 % )
+Total virtual pins   0
+Total memory bits    230,400 / 608,256 ( 38 % )
+Embedded Multiplier  9-bit elements	0 / 132 ( 0 % )
+Total PLLs           0 / 4 ( 0 % )
+```
 
 
 ## How To Run
