@@ -17,7 +17,7 @@ configuration and entity details and `create_project.tcl` for the according FPGA
 * CPU: `rv32imcu_Zicsr` + 4 `HPM` (hardware performance monitors)
 * Memory: 16kB instruction memory (internal IMEM), 8kB data memory (internal DMEM), bootloader ROM
 * Peripherals: `GPIO`, `MTIME`, `UART0`, `WDT`
-* Tested with version [`1.5.3.8`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)
+* Tested with version [`1.5.7.6`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)
 * Clock: 50MHz from on-board oscillator
 * Reset: via on-board button "KEY0"
 * GPIO output port `gpio_o` (8-bit) connected to the 8 green user LEDs ("LED7" - "LED0")
