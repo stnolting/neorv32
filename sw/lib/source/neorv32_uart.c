@@ -335,13 +335,9 @@ void neorv32_uart0_enable(void) {
  **************************************************************************/
 void neorv32_uart0_putc(char c) {
 
-#if defined UART0_SIM_MODE || defined UART_SIM_MODE
-  UART0_DATA = ((uint32_t)c) << UART_DATA_LSB;
-#else
   // wait for previous transfer to finish
   while ((UART0_CT & (1<<UART_CT_TX_BUSY)) != 0);
   UART0_DATA = ((uint32_t)c) << UART_DATA_LSB;
-#endif
 }
 
 
@@ -699,13 +695,9 @@ void neorv32_uart1_enable(void) {
  **************************************************************************/
 void neorv32_uart1_putc(char c) {
 
-#ifdef UART1_SIM_MODE
-  UART1_DATA = ((uint32_t)c) << UART_DATA_LSB;
-#else
   // wait for previous transfer to finish
   while ((UART1_CT & (1<<UART_CT_TX_BUSY)) != 0);
   UART1_DATA = ((uint32_t)c) << UART_DATA_LSB;
-#endif
 }
 
 
