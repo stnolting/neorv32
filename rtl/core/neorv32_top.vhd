@@ -98,6 +98,12 @@ entity neorv32_top is
     MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              : natural := 255;    -- cycles after a pending bus access auto-terminates (0 = disabled)
 
+    -- Stream link interface --
+    SLINK_NUM_TX                 : natural := 0;      -- number of TX links (0..8)
+    SLINK_NUM_RX                 : natural := 0;      -- number of TX links (0..8)
+    SLINK_TX_FIFO                : natural := 1;      -- TX fifo depth, has to be a power of two
+    SLINK_RX_FIFO                : natural := 1;      -- RX fifo depth, has to be a power of two
+
     -- Processor peripherals --
     IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
@@ -116,78 +122,88 @@ entity neorv32_top is
   );
   port (
     -- Global control --
-    clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
-    rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
+    clk_i          : in  std_ulogic := '0'; -- global clock, rising edge
+    rstn_i         : in  std_ulogic := '0'; -- global reset, low-active, async
 
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_trst_i : in  std_ulogic := '0'; -- low-active TAP reset (optional)
-    jtag_tck_i  : in  std_ulogic := '0'; -- serial clock
-    jtag_tdi_i  : in  std_ulogic := '0'; -- serial data input
-    jtag_tdo_o  : out std_ulogic;        -- serial data output
-    jtag_tms_i  : in  std_ulogic := '0'; -- mode select
+    jtag_trst_i    : in  std_ulogic := '0'; -- low-active TAP reset (optional)
+    jtag_tck_i     : in  std_ulogic := '0'; -- serial clock
+    jtag_tdi_i     : in  std_ulogic := '0'; -- serial data input
+    jtag_tdo_o     : out std_ulogic;        -- serial data output
+    jtag_tms_i     : in  std_ulogic := '0'; -- mode select
 
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_tag_o    : out std_ulogic_vector(02 downto 0); -- request tag
-    wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
-    wb_dat_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
-    wb_dat_o    : out std_ulogic_vector(31 downto 0); -- write data
-    wb_we_o     : out std_ulogic; -- read/write
-    wb_sel_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-    wb_stb_o    : out std_ulogic; -- strobe
-    wb_cyc_o    : out std_ulogic; -- valid cycle
-    wb_lock_o   : out std_ulogic; -- exclusive access request
-    wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
-    wb_err_i    : in  std_ulogic := '0'; -- transfer error
+    wb_tag_o       : out std_ulogic_vector(02 downto 0); -- request tag
+    wb_adr_o       : out std_ulogic_vector(31 downto 0); -- address
+    wb_dat_i       : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
+    wb_dat_o       : out std_ulogic_vector(31 downto 0); -- write data
+    wb_we_o        : out std_ulogic; -- read/write
+    wb_sel_o       : out std_ulogic_vector(03 downto 0); -- byte enable
+    wb_stb_o       : out std_ulogic; -- strobe
+    wb_cyc_o       : out std_ulogic; -- valid cycle
+    wb_lock_o      : out std_ulogic; -- exclusive access request
+    wb_ack_i       : in  std_ulogic := '0'; -- transfer acknowledge
+    wb_err_i       : in  std_ulogic := '0'; -- transfer error
 
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
-    fence_o     : out std_ulogic; -- indicates an executed FENCE operation
-    fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
+    fence_o        : out std_ulogic; -- indicates an executed FENCE operation
+    fencei_o       : out std_ulogic; -- indicates an executed FENCEI operation
+
+    -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
+    slink_tx_dat_o : out sdata_8x32_t; -- output data
+    slink_tx_val_o : out std_ulogic_vector(7 downto 0); -- valid output
+    slink_tx_rdy_i : in  std_ulogic_vector(7 downto 0) := (others => '0'); -- ready to send
+
+    -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
+    slink_rx_dat_i : in  sdata_8x32_t := (others => (others => '0')); -- input data
+    slink_rx_val_i : in  std_ulogic_vector(7 downto 0) := (others => '0'); -- valid input
+    slink_rx_rdy_o : out std_ulogic_vector(7 downto 0); -- ready to receive
 
     -- GPIO (available if IO_GPIO_EN = true) --
-    gpio_o      : out std_ulogic_vector(31 downto 0); -- parallel output
-    gpio_i      : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
+    gpio_o         : out std_ulogic_vector(31 downto 0); -- parallel output
+    gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
 
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o : out std_ulogic; -- UART0 send data
-    uart0_rxd_i : in  std_ulogic := '0'; -- UART0 receive data
-    uart0_rts_o : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i : in  std_ulogic := '0'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_txd_o    : out std_ulogic; -- UART0 send data
+    uart0_rxd_i    : in  std_ulogic := '0'; -- UART0 receive data
+    uart0_rts_o    : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i    : in  std_ulogic := '0'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
-    uart1_txd_o : out std_ulogic; -- UART1 send data
-    uart1_rxd_i : in  std_ulogic := '0'; -- UART1 receive data
-    uart1_rts_o : out std_ulogic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i : in  std_ulogic := '0'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_txd_o    : out std_ulogic; -- UART1 send data
+    uart1_rxd_i    : in  std_ulogic := '0'; -- UART1 receive data
+    uart1_rts_o    : out std_ulogic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i    : in  std_ulogic := '0'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
-    spi_sck_o   : out std_ulogic; -- SPI serial clock
-    spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
-    spi_sdi_i   : in  std_ulogic := '0'; -- controller data in, peripheral data out
-    spi_csn_o   : out std_ulogic_vector(07 downto 0); -- chip-select
+    spi_sck_o      : out std_ulogic; -- SPI serial clock
+    spi_sdo_o      : out std_ulogic; -- controller data out, peripheral data in
+    spi_sdi_i      : in  std_ulogic := '0'; -- controller data in, peripheral data out
+    spi_csn_o      : out std_ulogic_vector(07 downto 0); -- chip-select
 
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_io  : inout std_logic; -- twi serial data line
-    twi_scl_io  : inout std_logic; -- twi serial clock line
+    twi_sda_io     : inout std_logic; -- twi serial data line
+    twi_scl_io     : inout std_logic; -- twi serial clock line
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o       : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0); -- pwm channels
+    pwm_o          : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0); -- pwm channels
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i    : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom CFS inputs conduit
-    cfs_out_o   : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
+    cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom CFS inputs conduit
+    cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
 
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-    neoled_o    : out std_ulogic; -- async serial data line
+    neoled_o       : out std_ulogic; -- async serial data line
 
     -- System time --
-    mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
-    mtime_o     : out std_ulogic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
+    mtime_i        : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
+    mtime_o        : out std_ulogic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
 
     -- Interrupts --
-    nm_irq_i    : in  std_ulogic := '0'; -- non-maskable interrupt
-    mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
-    msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
-    mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
+    nm_irq_i       : in  std_ulogic := '0'; -- non-maskable interrupt
+    mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
+    msw_irq_i      : in  std_ulogic := '0'; -- machine software interrupt
+    mext_irq_i     : in  std_ulogic := '0'  -- machine external interrupt
   );
 end neorv32_top;
 
@@ -199,6 +215,9 @@ architecture neorv32_top_rtl of neorv32_top is
   -- alignment check for internal memories --
   constant imem_align_check_c : std_ulogic_vector(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) := (others => '0');
   constant dmem_align_check_c : std_ulogic_vector(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) := (others => '0');
+
+  -- helpers --
+  constant io_slink_en_c : boolean := boolean(SLINK_NUM_RX > 0) or boolean(SLINK_NUM_TX > 0); -- implement slink at all?
 
   -- reset generator --
   signal rstn_gen : std_ulogic_vector(7 downto 0);
@@ -272,7 +291,7 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- module response bus - device ID --
   type resp_bus_id_t is (RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO, RESP_MTIME, RESP_UART0, RESP_UART1, RESP_SPI,
-                         RESP_TWI, RESP_PWM, RESP_WDT, RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD);
+                         RESP_TWI, RESP_PWM, RESP_WDT, RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_SLINK);
 
   -- module response bus --
   type resp_bus_t is array (resp_bus_id_t) of resp_bus_entry_t;
@@ -293,6 +312,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cfs_irq       : std_ulogic;
   signal cfs_irq_ack   : std_ulogic;
   signal neoled_irq    : std_ulogic;
+  signal slink_tx_irq  : std_ulogic;
+  signal slink_rx_irq  : std_ulogic;
 
   -- misc --
   signal mtime_time     : std_ulogic_vector(63 downto 0); -- current system time from MTIME
@@ -315,6 +336,7 @@ begin
   cond_sel_string_f(IO_WDT_EN, "WDT ", "") &
   cond_sel_string_f(IO_TRNG_EN, "TRNG ", "") &
   cond_sel_string_f(IO_CFS_EN, "CFS ", "") &
+  cond_sel_string_f(io_slink_en_c, "SLINK ", "") &
   cond_sel_string_f(IO_NEOLED_EN, "NEOLED ", "") &
   ""
   severity note;
@@ -503,8 +525,10 @@ begin
   fast_irq(07) <= twi_irq;       -- TWI transmission done
   fast_irq(08) <= gpio_irq;      -- GPIO pin-change
   fast_irq(09) <= neoled_irq;    -- NEOLED buffer free
-
-  fast_irq(15 downto 10) <= (others => '0'); -- reserved
+  fast_irq(10) <= slink_rx_irq;  -- SLINK data received
+  fast_irq(11) <= slink_tx_irq;  -- SLINK data send
+  --
+  fast_irq(15 downto 12) <= (others => '0'); -- reserved
 
   -- CFS IRQ acknowledge --
   cfs_irq_ack <= fast_irq_ack(1);
@@ -1222,6 +1246,52 @@ begin
   end generate;
 
 
+  -- Stream Link Interface (SLINK) ----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_slink_inst_true:
+  if (io_slink_en_c = true) generate
+    neorv32_slink_inst: neorv32_slink
+    generic map (
+      SLINK_NUM_TX  => SLINK_NUM_TX,  -- number of TX links (0..8)
+      SLINK_NUM_RX  => SLINK_NUM_RX,  -- number of TX links (0..8)
+      SLINK_TX_FIFO => SLINK_TX_FIFO, -- TX fifo depth, has to be a power of two
+      SLINK_RX_FIFO => SLINK_RX_FIFO  -- RX fifo depth, has to be a power of two
+    )
+    port map (
+      -- host access --
+      clk_i          => clk_i,                      -- global clock line
+      addr_i         => p_bus.addr,                 -- address
+      rden_i         => io_rden,                    -- read enable
+      wren_i         => io_wren,                    -- write enable
+      data_i         => p_bus.wdata,                -- data in
+      data_o         => resp_bus(RESP_SLINK).rdata, -- data out
+      ack_o          => resp_bus(RESP_SLINK).ack,   -- transfer acknowledge
+      -- interrupt --
+      irq_tx_o       => slink_tx_irq,               -- transmission done
+      irq_rx_o       => slink_rx_irq,               -- data received
+      -- TX stream interfaces --
+      slink_tx_dat_o => slink_tx_dat_o,             -- output data
+      slink_tx_val_o => slink_tx_val_o,             -- valid output
+      slink_tx_rdy_i => slink_tx_rdy_i,             -- ready to send
+      -- RX stream interfaces --
+      slink_rx_dat_i => slink_rx_dat_i,             -- input data
+      slink_rx_val_i => slink_rx_val_i,             -- valid input
+      slink_rx_rdy_o => slink_rx_rdy_o              -- ready to receive
+    );
+    resp_bus(RESP_SLINK).err <= '0'; -- no access error possible
+  end generate;
+
+  neorv32_slink_inst_false:
+  if (io_slink_en_c = false) generate
+    resp_bus(RESP_SLINK) <= resp_bus_entry_terminate_c;
+    slink_tx_irq   <= '0';
+    slink_rx_irq   <= '0';
+    slink_tx_dat_o <= (others => (others => '0'));
+    slink_tx_val_o <= (others => '0');
+    slink_rx_rdy_o <= (others => '0');
+  end generate;
+
+
   -- System Configuration Information Memory (SYSINFO) --------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_sysinfo_inst: neorv32_sysinfo
@@ -1256,6 +1326,7 @@ begin
     IO_WDT_EN            => IO_WDT_EN,            -- implement watch dog timer (WDT)?
     IO_TRNG_EN           => IO_TRNG_EN,           -- implement true random number generator (TRNG)?
     IO_CFS_EN            => IO_CFS_EN,            -- implement custom functions subsystem (CFS)?
+    IO_SLINK_EN          => io_slink_en_c,        -- implement stream link interface?
     IO_NEOLED_EN         => IO_NEOLED_EN          -- implement NeoPixel-compatible smart LED interface (NEOLED)?
   )
   port map (

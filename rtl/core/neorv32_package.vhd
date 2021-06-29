@@ -70,7 +70,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050706"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050707"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
 
@@ -195,9 +195,9 @@ package neorv32_package is
   constant pwm_duty13_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeb8";
   constant pwm_duty14_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffebc";
 
-  -- reserved --
---constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc0"; -- base address
---constant reserved_size_c      : natural := 16*4; -- module's address space size in bytes
+  -- Stream link interface (SLINK) --
+  constant slink_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffec0"; -- base address
+  constant slink_size_c         : natural := 16*4; -- module's address space size in bytes
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff00"; -- base address
@@ -913,6 +913,11 @@ package neorv32_package is
       -- External memory interface --
       MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
       MEM_EXT_TIMEOUT              : natural := 255;    -- cycles after a pending bus access auto-terminates (0 = disabled)
+      -- Stream link interface --
+      SLINK_NUM_TX                 : natural := 0;      -- number of TX links (0..8)
+      SLINK_NUM_RX                 : natural := 0;      -- number of TX links (0..8)
+      SLINK_TX_FIFO                : natural := 1;      -- TX fifo depth, has to be a power of two
+      SLINK_RX_FIFO                : natural := 1;      -- RX fifo depth, has to be a power of two
       -- Processor peripherals --
       IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
       IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
@@ -931,65 +936,73 @@ package neorv32_package is
     );
     port (
       -- Global control --
-      clk_i       : in  std_ulogic := '0'; -- global clock, rising edge
-      rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
+      clk_i          : in  std_ulogic := '0'; -- global clock, rising edge
+      rstn_i         : in  std_ulogic := '0'; -- global reset, low-active, async
       -- JTAG on-chip debugger interface --
-      jtag_trst_i : in  std_ulogic := '0'; -- low-active TAP reset (optional)
-      jtag_tck_i  : in  std_ulogic := '0'; -- serial clock
-      jtag_tdi_i  : in  std_ulogic := '0'; -- serial data input
-      jtag_tdo_o  : out std_ulogic;        -- serial data output
-      jtag_tms_i  : in  std_ulogic := '0'; -- mode select
+      jtag_trst_i    : in  std_ulogic := '0'; -- low-active TAP reset (optional)
+      jtag_tck_i     : in  std_ulogic := '0'; -- serial clock
+      jtag_tdi_i     : in  std_ulogic := '0'; -- serial data input
+      jtag_tdo_o     : out std_ulogic;        -- serial data output
+      jtag_tms_i     : in  std_ulogic := '0'; -- mode select
       -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-      wb_tag_o    : out std_ulogic_vector(02 downto 0); -- request tag
-      wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
-      wb_dat_i    : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
-      wb_dat_o    : out std_ulogic_vector(31 downto 0); -- write data
-      wb_we_o     : out std_ulogic; -- read/write
-      wb_sel_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-      wb_stb_o    : out std_ulogic; -- strobe
-      wb_cyc_o    : out std_ulogic; -- valid cycle
-      wb_lock_o   : out std_ulogic; -- exclusive access request
-      wb_ack_i    : in  std_ulogic := '0'; -- transfer acknowledge
-      wb_err_i    : in  std_ulogic := '0'; -- transfer error
+      wb_tag_o       : out std_ulogic_vector(02 downto 0); -- request tag
+      wb_adr_o       : out std_ulogic_vector(31 downto 0); -- address
+      wb_dat_i       : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
+      wb_dat_o       : out std_ulogic_vector(31 downto 0); -- write data
+      wb_we_o        : out std_ulogic; -- read/write
+      wb_sel_o       : out std_ulogic_vector(03 downto 0); -- byte enable
+      wb_stb_o       : out std_ulogic; -- strobe
+      wb_cyc_o       : out std_ulogic; -- valid cycle
+      wb_lock_o      : out std_ulogic; -- exclusive access request
+      wb_ack_i       : in  std_ulogic := '0'; -- transfer acknowledge
+      wb_err_i       : in  std_ulogic := '0'; -- transfer error
       -- Advanced memory control signals (available if MEM_EXT_EN = true) --
-      fence_o     : out std_ulogic; -- indicates an executed FENCE operation
-      fencei_o    : out std_ulogic; -- indicates an executed FENCEI operation
+      fence_o        : out std_ulogic; -- indicates an executed FENCE operation
+      fencei_o       : out std_ulogic; -- indicates an executed FENCEI operation
+      -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
+      slink_tx_dat_o : out sdata_8x32_t; -- output data
+      slink_tx_val_o : out std_ulogic_vector(7 downto 0); -- valid output
+      slink_tx_rdy_i : in  std_ulogic_vector(7 downto 0) := (others => '0'); -- ready to send
+      -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
+      slink_rx_dat_i : in  sdata_8x32_t := (others => (others => '0')); -- input data
+      slink_rx_val_i : in  std_ulogic_vector(7 downto 0) := (others => '0'); -- valid input
+      slink_rx_rdy_o : out std_ulogic_vector(7 downto 0); -- ready to receive
       -- GPIO (available if IO_GPIO_EN = true) --
-      gpio_o      : out std_ulogic_vector(31 downto 0); -- parallel output
-      gpio_i      : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
+      gpio_o         : out std_ulogic_vector(31 downto 0); -- parallel output
+      gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
       -- primary UART0 (available if IO_UART0_EN = true) --
-      uart0_txd_o : out std_ulogic; -- UART0 send data
-      uart0_rxd_i : in  std_ulogic := '0'; -- UART0 receive data
-      uart0_rts_o : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-      uart0_cts_i : in  std_ulogic := '0'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
+      uart0_txd_o    : out std_ulogic; -- UART0 send data
+      uart0_rxd_i    : in  std_ulogic := '0'; -- UART0 receive data
+      uart0_rts_o    : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+      uart0_cts_i    : in  std_ulogic := '0'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
       -- secondary UART1 (available if IO_UART1_EN = true) --
-      uart1_txd_o : out std_ulogic; -- UART1 send data
-      uart1_rxd_i : in  std_ulogic := '0'; -- UART1 receive data
-      uart1_rts_o : out std_ulogic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-      uart1_cts_i : in  std_ulogic := '0'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
+      uart1_txd_o    : out std_ulogic; -- UART1 send data
+      uart1_rxd_i    : in  std_ulogic := '0'; -- UART1 receive data
+      uart1_rts_o    : out std_ulogic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+      uart1_cts_i    : in  std_ulogic := '0'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
       -- SPI (available if IO_SPI_EN = true) --
-      spi_sck_o   : out std_ulogic; -- SPI serial clock
-      spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
-      spi_sdi_i   : in  std_ulogic := '0'; -- controller data in, peripheral data out
-      spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
+      spi_sck_o      : out std_ulogic; -- SPI serial clock
+      spi_sdo_o      : out std_ulogic; -- controller data out, peripheral data in
+      spi_sdi_i      : in  std_ulogic := '0'; -- controller data in, peripheral data out
+      spi_csn_o      : out std_ulogic_vector(07 downto 0); -- SPI CS
       -- TWI (available if IO_TWI_EN = true) --
-      twi_sda_io  : inout std_logic; -- twi serial data line
-      twi_scl_io  : inout std_logic; -- twi serial clock line
+      twi_sda_io     : inout std_logic; -- twi serial data line
+      twi_scl_io     : inout std_logic; -- twi serial clock line
       -- PWM (available if IO_PWM_NUM_CH > 0) --
-      pwm_o       : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0); -- pwm channels
+      pwm_o          : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0); -- pwm channels
       -- Custom Functions Subsystem IO --
-      cfs_in_i    : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom CFS inputs conduit
-      cfs_out_o   : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
+      cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom CFS inputs conduit
+      cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
       -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-      neoled_o    : out std_ulogic; -- async serial data line
+      neoled_o       : out std_ulogic; -- async serial data line
       -- System time --
-      mtime_i     : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
-      mtime_o     : out std_ulogic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
+      mtime_i        : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
+      mtime_o        : out std_ulogic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
       -- Interrupts --
-      nm_irq_i    : in  std_ulogic := '0'; -- non-maskable interrupt
-      mtime_irq_i : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
-      msw_irq_i   : in  std_ulogic := '0'; -- machine software interrupt
-      mext_irq_i  : in  std_ulogic := '0'  -- machine external interrupt
+      nm_irq_i       : in  std_ulogic := '0'; -- non-maskable interrupt
+      mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
+      msw_irq_i      : in  std_ulogic := '0'; -- machine software interrupt
+      mext_irq_i     : in  std_ulogic := '0'  -- machine external interrupt
     );
   end component;
 
@@ -1770,6 +1783,38 @@ package neorv32_package is
     );
   end component;
 
+  -- Component: Stream Link Interface (SLINK) -----------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_slink
+    generic (
+      SLINK_NUM_TX  : natural := 8; -- number of TX links (0..8)
+      SLINK_NUM_RX  : natural := 8; -- number of TX links (0..8)
+      SLINK_TX_FIFO : natural := 1; -- TX fifo depth, has to be a power of two
+      SLINK_RX_FIFO : natural := 1  -- RX fifo depth, has to be a power of two
+    );
+    port (
+      -- host access --
+      clk_i          : in  std_ulogic; -- global clock line
+      addr_i         : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i         : in  std_ulogic; -- read enable
+      wren_i         : in  std_ulogic; -- write enable
+      data_i         : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o         : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o          : out std_ulogic; -- transfer acknowledge
+      -- interrupt --
+      irq_tx_o       : out std_ulogic; -- transmission done
+      irq_rx_o       : out std_ulogic; -- data received
+      -- TX stream interfaces --
+      slink_tx_dat_o : out sdata_8x32_t; -- output data
+      slink_tx_val_o : out std_ulogic_vector(7 downto 0); -- valid output
+      slink_tx_rdy_i : in  std_ulogic_vector(7 downto 0); -- ready to send
+      -- RX stream interfaces --
+      slink_rx_dat_i : in  sdata_8x32_t; -- input data
+      slink_rx_val_i : in  std_ulogic_vector(7 downto 0); -- valid input
+      slink_rx_rdy_o : out std_ulogic_vector(7 downto 0)  -- ready to receive
+    );
+  end component;
+
   -- Component: System Configuration Information Memory (SYSINFO) ---------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_sysinfo
@@ -1804,6 +1849,7 @@ package neorv32_package is
       IO_WDT_EN            : boolean := true;   -- implement watch dog timer (WDT)?
       IO_TRNG_EN           : boolean := true;   -- implement true random number generator (TRNG)?
       IO_CFS_EN            : boolean := true;   -- implement custom functions subsystem (CFS)?
+      IO_SLINK_EN          : boolean := true;   -- implement stream link interface?
       IO_NEOLED_EN         : boolean := true    -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     );
     port (
