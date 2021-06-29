@@ -154,8 +154,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
 
   constant uart0_rx_logger : logger_t := get_logger("UART0.RX");
   constant uart1_rx_logger : logger_t := get_logger("UART1.RX");
-  constant uart0_actor : actor_t := new_actor;
-  constant uart1_actor : actor_t := new_actor;
+  constant uart0_rx_handle : uart_rx_t := new_uart_rx(uart0_baud_val_c, uart0_rx_logger);
+  constant uart1_rx_handle : uart_rx_t := new_uart_rx(uart1_baud_val_c, uart1_rx_logger);
 
 begin
   test_runner : process
@@ -166,26 +166,21 @@ begin
     show(uart0_rx_logger, display_handler, pass);
     show(uart1_rx_logger, display_handler, pass);
 
-    -- Sending messages with the expected data to receive takes no simulation
-    -- time, only data cycles.
-    msg := new_msg(check_uart_msg);
     if ci_mode then
-        push(msg, nul & nul);
+      check_uart(net, uart0_rx_handle, nul & nul);
     else
-      push(msg, "Blinking LED demo program" & cr & lf);
+      check_uart(net, uart0_rx_handle, "Blinking LED demo program" & cr & lf);
     end if;
-    send(net, uart0_actor, msg);
 
-    msg := new_msg(check_uart_msg);
     if ci_mode then
-      push(msg, nul & nul & "0/45" & cr & lf);
-      send(net, uart1_actor, msg);
+      -- No need to send the full expectation in one big chunk
+      check_uart(net, uart1_rx_handle, nul & nul);
+      check_uart(net, uart1_rx_handle, "0/45" & cr & lf);
     end if;
-
 
     -- Wait until all expected data has been received
-    wait_until_idle(net, uart0_actor);
-    wait_until_idle(net, uart1_actor);
+    wait_until_idle(net, get_actor(uart0_rx_handle));
+    wait_until_idle(net, get_actor(uart1_rx_handle));
 
     -- Wait a bit more if some extra unexpected data is produced. If so,
     -- uart_rx will fail
@@ -347,19 +342,13 @@ begin
   uart_checkers : block is
   begin
     uart0_checker: entity work.uart_rx
-      generic map (
-        actor => uart0_actor,
-        logger => uart0_rx_logger,
-        uart_baud_val_c => uart0_baud_val_c)
+      generic map (uart0_rx_handle)
       port map (
         clk => clk_gen,
         uart_txd => uart0_txd);
 
     uart1_checker: entity work.uart_rx
-      generic map (
-        actor => uart1_actor,
-        logger => uart1_rx_logger,
-        uart_baud_val_c => uart1_baud_val_c)
+      generic map (uart1_rx_handle)
       port map (
         clk => clk_gen,
         uart_txd => uart1_txd);
