@@ -18,7 +18,7 @@ The processor setup provides 64kB of data and instruction memory, an RTOS-capabl
 * Peripherals: `GPIO`, `MTIME`, `UART0`, `SPI`, `TWI`, `PWM`, `WDT`, `TRNG`
 * Clock: 24 MHz from on-chip HF oscillator (via PLL)
 * Reset: via PLL "locked" signal; "external reset" via FPGA reconfiguration (`creset_n`)
-* Tested with version [`1.5.5.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)
+* Tested with version [`1.5.7.6`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)
 * On-board FPGA bitstream flash storage can also be used to store/load NEORV32 application software (via the bootloader)
 
 :information_source: This setup uses optimized platform-specific memory modules for the internal data and instruction memories (DMEM & IMEM). Each memory uses two
@@ -66,21 +66,20 @@ for the FPGA pin mapping.
 ### FPGA Utilization
 
 ```
-Number of slice registers: 1972 out of  5280 (37%)
-Number of I/O registers:      7 out of   117  (6%)
-Number of LUT4s:           5123 out of  5280 (97%)
-Number of IO sites used:     24 out of    39 (62%)
-Number of DSPs:               0 out of    8   (0%)
-Number of I2Cs:               0 out of    2   (0%)
+Number of slice registers: 1676 out of 5280 (32%)
+Number of I/O registers:      8 out of  117 (7%)
+Number of LUT4s:           4560 out of 5280 (86%)
+Number of DSPs:               0 out of    8 (0%)
+Number of I2Cs:               0 out of    2 (0%)
 Number of High Speed OSCs:    1 out of    1 (100%)
-Number of Low Speed OSCs:     0 out of    1   (0%)
-Number of RGB PWM:            0 out of    1   (0%)
+Number of Low Speed OSCs:     0 out of    1 (0%)
+Number of RGB PWM:            0 out of    1 (0%)
 Number of RGB Drivers:        1 out of    1 (100%)
-Number of SCL FILTERs:        0 out of    2   (0%)
+Number of SCL FILTERs:        0 out of    2 (0%)
 Number of SRAMs:              4 out of    4 (100%)
-Number of WARMBOOTs:          0 out of    1   (0%)
-Number of SPIs:               0 out of    2   (0%)
-Number of EBRs:              12 out of    30 (40%)
+Number of WARMBOOTs:          0 out of    1 (0%)
+Number of SPIs:               0 out of    2 (0%)
+Number of EBRs:              15 out of   30 (50%)
 Number of PLLs:               1 out of    1 (100%)
 ```
 

@@ -39,6 +39,9 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
+library work;
+use work.all;
+
 library iCE40UP;
 use iCE40UP.components.all; -- for device primitives
 
@@ -96,12 +99,6 @@ architecture neorv32_upduino_v3_top_rtl of neorv32_upduino_v3_top is
 
   -- internal IO connection --
   signal con_pwm      : std_ulogic_vector(02 downto 0);
-  signal con_gpio_o   : std_ulogic_vector(31 downto 0);
-  signal con_gpio_i   : std_ulogic_vector(31 downto 0);
-  signal con_spi_sck  : std_ulogic;
-  signal con_spi_sdi  : std_ulogic;
-  signal con_spi_sdo  : std_ulogic;
-  signal con_spi_csn  : std_ulogic_vector(07 downto 0);
 
   -- Misc --
   signal pwm_drive  : std_logic_vector(2 downto 0);
@@ -139,11 +136,10 @@ begin
 
   -- The core of the problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_inst: neorv32_top
+  neorv32_inst: entity work.neorv32_ProcessorTop_UP5KDemo
   generic map (
     -- General --
     CLOCK_FREQUENCY              => f_clock_c,   -- clock frequency of clk_i in Hz
-    INT_BOOTLOADER_EN            => true,        -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     USER_CODE                    => x"0001ce40", -- custom user code
     HW_THREAD_ID                 => 0,           -- hardware thread id (32-bit)
 
@@ -187,123 +183,50 @@ begin
     ICACHE_BLOCK_SIZE            => 64,          -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         => 1,           -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
-    -- External memory interface --
-    MEM_EXT_EN                   => false,       -- implement external memory bus interface?
-    MEM_EXT_TIMEOUT              => 0,           -- cycles after a pending bus access auto-terminates (0 = disabled)
-
     -- Processor peripherals --
     IO_GPIO_EN                   => true,        -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  => true,        -- implement machine system timer (MTIME)?
     IO_UART0_EN                  => true,        -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART1_EN                  => false,       -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN                    => true,        -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    => true,        -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                => 3,           -- number of PWM channels to implement (0..60); 0 = disabled
-    IO_WDT_EN                    => true,        -- implement watch dog timer (WDT)?
-    IO_TRNG_EN                   => true,        -- implement true random number generator (TRNG)?
-    IO_CFS_EN                    => false,       -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                => x"00000000", -- custom CFS configuration generic
-    IO_CFS_IN_SIZE               => 32,          -- size of CFS input conduit in bits
-    IO_CFS_OUT_SIZE              => 32,          -- size of CFS output conduit in bits
-    IO_NEOLED_EN                 => false        -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_WDT_EN                    => true         -- implement watch dog timer (WDT)?
   )
   port map (
     -- Global control --
     clk_i       => cpu_clk,                      -- global clock, rising edge
     rstn_i      => cpu_rstn,                     -- global reset, low-active, async
 
-    -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_trst_i => '0',                          -- low-active TAP reset (optional)
-    jtag_tck_i  => '0',                          -- serial clock
-    jtag_tdi_i  => '0',                          -- serial data input
-    jtag_tdo_o  => open,                         -- serial data output
-    jtag_tms_i  => '0',                          -- mode select
-
-    -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_tag_o    => open,                         -- request tag
-    wb_adr_o    => open,                         -- address
-    wb_dat_i    => (others => '0'),              -- read data
-    wb_dat_o    => open,                         -- write data
-    wb_we_o     => open,                         -- read/write
-    wb_sel_o    => open,                         -- byte enable
-    wb_stb_o    => open,                         -- strobe
-    wb_cyc_o    => open,                         -- valid cycle
-    wb_lock_o   => open,                         -- exclusive access request
-    wb_ack_i    => '0',                          -- transfer acknowledge
-    wb_err_i    => '0',                          -- transfer error
-
-    -- Advanced memory control signals (available if MEM_EXT_EN = true) --
-    fence_o     => open,                         -- indicates an executed FENCE operation
-    fencei_o    => open,                         -- indicates an executed FENCEI operation
-
     -- GPIO (available if IO_GPIO_EN = true) --
-    gpio_o      => con_gpio_o,                   -- parallel output
-    gpio_i      => con_gpio_i,                   -- parallel input
+    gpio_o      => gpio_o,                       -- parallel output
+    gpio_i      => gpio_i,                       -- parallel input
 
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o => uart_txd_o,                   -- UART0 send data
-    uart0_rxd_i => uart_rxd_i,                   -- UART0 receive data
-    uart0_rts_o => open,                         -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i => '0',                          -- hw flow control: UART0.TX allowed to transmit, low-active, optional
+    uart_txd_o => uart_txd_o,                    -- UART0 send data
+    uart_rxd_i => uart_rxd_i,                    -- UART0 receive data
+    uart_rts_o => open,                          -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart_cts_i => '0',                           -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
-    -- secondary UART1 (available if IO_UART1_EN = true) --
-    uart1_txd_o => open,                         -- UART1 send data
-    uart1_rxd_i => '0',                          -- UART1 receive data
-    uart1_rts_o => open,                         -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i => '0',                          -- hw flow control: UART1.TX allowed to transmit, low-active, optional
+    -- SPI to on-board flash --
+    flash_sck_o => flash_sck_o,
+    flash_sdo_o => flash_sdo_o,
+    flash_sdi_i => flash_sdi_i,
+    flash_csn_o => flash_csn_o,                  -- NEORV32.SPI_CS(0)
 
-    -- SPI (available if IO_SPI_EN = true) --
-    spi_sck_o   => con_spi_sck,                  -- SPI serial clock
-    spi_sdo_o   => con_spi_sdo,                  -- controller data out, peripheral data in
-    spi_sdi_i   => con_spi_sdi,                  -- controller data in, peripheral data out
-    spi_csn_o   => con_spi_csn,                  -- SPI CS
+    -- SPI to board header --
+    spi_sck_o   => spi_sck_o,
+    spi_sdo_o   => spi_sdo_o,
+    spi_sdi_i   => spi_sdi_i,
+    spi_csn_o   => spi_csn_o,                    -- NEORV32.SPI_CS(1)
 
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  => twi_sda_io,                   -- twi serial data line
     twi_scl_io  => twi_scl_io,                   -- twi serial clock line
 
     -- PWM (available if IO_PWM_EN = true) --
-    pwm_o       => con_pwm,                      -- pwm channels
-
-    -- Custom Functions Subsystem IO --
-    cfs_in_i    => (others => '0'),              -- custom CFS inputs conduit
-    cfs_out_o   => open,                         -- custom CFS outputs conduit
-
-    -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-    neoled_o    => open,                         -- async serial data line
-
-    -- System time --
-    mtime_i     => (others => '0'), -- current system time from ext. MTIME (if IO_MTIME_EN = false)
-    mtime_o     => open, -- current system time from int. MTIME (if IO_MTIME_EN = true)
-
-    -- Interrupts --
-    nm_irq_i    => '0',                          -- non-maskable interrupt
-    mtime_irq_i => '0',                          -- machine timer interrupt, available if IO_MTIME_EN = false
-    msw_irq_i   => '0',                          -- machine software interrupt
-    mext_irq_i  => '0'                           -- machine external interrupt
+    pwm_o       => con_pwm                       -- pwm channels
   );
 
-
-  -- IO Connection --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-
-  -- SPI: on-board flash --
-  flash_sck_o <= con_spi_sck;
-  flash_sdo_o <= con_spi_sdo;
-  flash_csn_o <= con_spi_csn(0);
-
-  -- SPI: user port --
-  spi_sck_o   <= con_spi_sck;
-  spi_sdo_o   <= con_spi_sdo;
-  spi_csn_o   <= con_spi_csn(1);
-
-  -- SPI sdi read-back --
-  con_spi_sdi <= flash_sdi_i when (con_spi_csn(0) = '0') else spi_sdi_i;
-
-  -- GPIO --
-  gpio_o <= con_gpio_o(3 downto 0);
-  con_gpio_i(03 downto 0) <= gpio_i;
-  con_gpio_i(31 downto 4) <= (others => '0');
 
   -- RGB --
   -- bit 0: red - pwm channel 0
