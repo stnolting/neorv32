@@ -1076,7 +1076,7 @@ int main() {
     UART1_CT &= ~(1 << UART_CT_SIM_MODE);
 
     // trigger UART1 TX IRQ
-    neorv32_uart1_putc(1);
+    neorv32_uart1_putc(0);
 
     // wait for UART1 to finish transmitting
     while(neorv32_uart1_tx_busy());
