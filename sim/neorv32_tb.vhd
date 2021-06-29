@@ -147,6 +147,11 @@ architecture neorv32_tb_rtl of neorv32_tb is
   end record;
   signal ext_mem_a, ext_mem_b, ext_mem_c : ext_mem_t;
 
+  -- stream link interface - local echo --
+  signal slink_dat : sdata_8x32_t;
+  signal slink_val : std_ulogic_vector(7 downto 0);
+  signal slink_rdy : std_ulogic_vector(7 downto 0);
+
   constant uart0_rx_logger : logger_t := get_logger("UART0.RX");
   constant uart1_rx_logger : logger_t := get_logger("UART1.RX");
 
@@ -211,6 +216,11 @@ begin
     -- External memory interface --
     MEM_EXT_EN                   => true,          -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              => 255,           -- cycles after a pending bus access auto-terminates (0 = disabled)
+    -- Stream link interface --
+    SLINK_NUM_TX                 => 8,             -- number of TX links (0..8)
+    SLINK_NUM_RX                 => 8,             -- number of TX links (0..8)
+    SLINK_TX_FIFO                => 4,             -- TX fifo depth, has to be a power of two
+    SLINK_RX_FIFO                => 1,             -- RX fifo depth, has to be a power of two
     -- Processor peripherals --
     IO_GPIO_EN                   => true,          -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  => true,          -- implement machine system timer (MTIME)?
@@ -229,65 +239,73 @@ begin
   )
   port map (
     -- Global control --
-    clk_i       => clk_gen,         -- global clock, rising edge
-    rstn_i      => rst_gen,         -- global reset, low-active, async
+    clk_i          => clk_gen,         -- global clock, rising edge
+    rstn_i         => rst_gen,         -- global reset, low-active, async
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_trst_i => '1',             -- low-active TAP reset (optional)
-    jtag_tck_i  => '0',             -- serial clock
-    jtag_tdi_i  => '0',             -- serial data input
-    jtag_tdo_o  => open,            -- serial data output
-    jtag_tms_i  => '0',             -- mode select
+    jtag_trst_i    => '1',             -- low-active TAP reset (optional)
+    jtag_tck_i     => '0',             -- serial clock
+    jtag_tdi_i     => '0',             -- serial data input
+    jtag_tdo_o     => open,            -- serial data output
+    jtag_tms_i     => '0',             -- mode select
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_tag_o    => wb_cpu.tag,      -- request tag
-    wb_adr_o    => wb_cpu.addr,     -- address
-    wb_dat_i    => wb_cpu.rdata,    -- read data
-    wb_dat_o    => wb_cpu.wdata,    -- write data
-    wb_we_o     => wb_cpu.we,       -- read/write
-    wb_sel_o    => wb_cpu.sel,      -- byte enable
-    wb_stb_o    => wb_cpu.stb,      -- strobe
-    wb_cyc_o    => wb_cpu.cyc,      -- valid cycle
-    wb_lock_o   => wb_cpu.lock,     -- exclusive access request
-    wb_ack_i    => wb_cpu.ack,      -- transfer acknowledge
-    wb_err_i    => wb_cpu.err,      -- transfer error
+    wb_tag_o       => wb_cpu.tag,      -- request tag
+    wb_adr_o       => wb_cpu.addr,     -- address
+    wb_dat_i       => wb_cpu.rdata,    -- read data
+    wb_dat_o       => wb_cpu.wdata,    -- write data
+    wb_we_o        => wb_cpu.we,       -- read/write
+    wb_sel_o       => wb_cpu.sel,      -- byte enable
+    wb_stb_o       => wb_cpu.stb,      -- strobe
+    wb_cyc_o       => wb_cpu.cyc,      -- valid cycle
+    wb_lock_o      => wb_cpu.lock,     -- exclusive access request
+    wb_ack_i       => wb_cpu.ack,      -- transfer acknowledge
+    wb_err_i       => wb_cpu.err,      -- transfer error
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
-    fence_o     => open,            -- indicates an executed FENCE operation
-    fencei_o    => open,            -- indicates an executed FENCEI operation
+    fence_o        => open,            -- indicates an executed FENCE operation
+    fencei_o       => open,            -- indicates an executed FENCEI operation
+    -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
+    slink_tx_dat_o => slink_dat,       -- output data
+    slink_tx_val_o => slink_val,       -- valid output
+    slink_tx_rdy_i => slink_rdy,       -- ready to send
+    -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
+    slink_rx_dat_i => slink_dat,       -- input data
+    slink_rx_val_i => slink_val,       -- valid input
+    slink_rx_rdy_o => slink_rdy,       -- ready to receive
     -- GPIO (available if IO_GPIO_EN = true) --
-    gpio_o      => gpio,            -- parallel output
-    gpio_i      => gpio,            -- parallel input
+    gpio_o         => gpio,            -- parallel output
+    gpio_i         => gpio,            -- parallel input
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o => uart0_txd,       -- UART0 send data
-    uart0_rxd_i => uart0_txd,       -- UART0 receive data
-    uart0_rts_o => uart0_cts,       -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i => uart0_cts,       -- hw flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_txd_o    => uart0_txd,       -- UART0 send data
+    uart0_rxd_i    => uart0_txd,       -- UART0 receive data
+    uart0_rts_o    => uart0_cts,       -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i    => uart0_cts,       -- hw flow control: UART0.TX allowed to transmit, low-active, optional
     -- secondary UART1 (available if IO_UART1_EN = true) --
-    uart1_txd_o => uart1_txd,       -- UART1 send data
-    uart1_rxd_i => uart1_txd,       -- UART1 receive data
-    uart1_rts_o => uart1_cts,       -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i => uart1_cts,       -- hw flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_txd_o    => uart1_txd,       -- UART1 send data
+    uart1_rxd_i    => uart1_txd,       -- UART1 receive data
+    uart1_rts_o    => uart1_cts,       -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i    => uart1_cts,       -- hw flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
-    spi_sck_o   => open,            -- SPI serial clock
-    spi_sdo_o   => spi_data,        -- controller data out, peripheral data in
-    spi_sdi_i   => spi_data,        -- controller data in, peripheral data out
-    spi_csn_o   => open,            -- SPI CS
+    spi_sck_o      => open,            -- SPI serial clock
+    spi_sdo_o      => spi_data,        -- controller data out, peripheral data in
+    spi_sdi_i      => spi_data,        -- controller data in, peripheral data out
+    spi_csn_o      => open,            -- SPI CS
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_io  => twi_sda,         -- twi serial data line
-    twi_scl_io  => twi_scl,         -- twi serial clock line
+    twi_sda_io     => twi_sda,         -- twi serial data line
+    twi_scl_io     => twi_scl,         -- twi serial clock line
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o       => open,            -- pwm channels
+    pwm_o          => open,            -- pwm channels
     -- Custom Functions Subsystem IO --
-    cfs_in_i    => (others => '0'), -- custom CFS inputs
-    cfs_out_o   => open,            -- custom CFS outputs
+    cfs_in_i       => (others => '0'), -- custom CFS inputs
+    cfs_out_o      => open,            -- custom CFS outputs
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-    neoled_o    => open,            -- async serial data line
+    neoled_o       => open,            -- async serial data line
     -- System time --
-    mtime_i     => (others => '0'), -- current system time from ext. MTIME (if IO_MTIME_EN = false)
-    mtime_o     => open,            -- current system time from int. MTIME (if IO_MTIME_EN = true)
+    mtime_i        => (others => '0'), -- current system time from ext. MTIME (if IO_MTIME_EN = false)
+    mtime_o        => open,            -- current system time from int. MTIME (if IO_MTIME_EN = true)
     -- Interrupts --
-    nm_irq_i    => nmi_ring,        -- non-maskable interrupt
-    mtime_irq_i => '0',             -- machine software interrupt, available if IO_MTIME_EN = false
-    msw_irq_i   => msi_ring,        -- machine software interrupt
-    mext_irq_i  => mei_ring         -- machine external interrupt
+    nm_irq_i       => nmi_ring,        -- non-maskable interrupt
+    mtime_irq_i    => '0',             -- machine software interrupt, available if IO_MTIME_EN = false
+    msw_irq_i      => msi_ring,        -- machine software interrupt
+    mext_irq_i     => mei_ring         -- machine external interrupt
   );
 
   -- TWI termination (pull-ups) --
