@@ -6,7 +6,7 @@
 [frame="topbot",grid="none"]
 |=======================
 | Hardware source file(s): | neorv32_sysinfo.vhd | 
-| Software driver file(s): | (neorv32.h) |
+| Software driver file(s): | neorv32.h |
 | Top entity port:         | none | 
 | Configuration generics:  | * | most of the top's configuration generics
 | CPU interrupts:          | none | 
@@ -60,6 +60,7 @@ and default clock speed) for correct operation.
 | `22` | _SYSINFO_FEATURES_IO_WDT_           | set if the WDT is implemented (via top's _IO_WDT_EN_ generic)
 | `23` | _SYSINFO_FEATURES_IO_CFS_           | set if the custom functions subsystem is implemented (via top's _IO_CFS_EN_ generic)
 | `24` | _SYSINFO_FEATURES_IO_TRNG_          | set if the TRNG is implemented (via top's _IO_TRNG_EN_ generic)
+| `25` | _SYSINFO_FEATURES_IO_SLINK_         | set if the SLINK is implemented (via top's _SLINK_NUM_TX_ / _SLINK_NUM_RX_ generics)
 | `26` | _SYSINFO_FEATURES_IO_UART1_         | set if the secondary UART1 is implemented (via top's _IO_UART1_EN_ generic)
 | `27` | _SYSINFO_FEATURES_IO_NEOLED_        | set if the NEOLED is implemented (via top's _IO_NEOLED_EN_ generic)
 |=======================

@@ -11,9 +11,7 @@
 # The NEORV32 RISC-V Processor
 
 [![license](https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat-square)](https://github.com/stnolting/neorv32/blob/master/LICENSE)
-[![DOI](https://zenodo.org/badge/274442284.svg)](https://zenodo.org/badge/latestdoi/274442284)
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
-
 [![datasheet (pdf)](https://img.shields.io/badge/data%20sheet-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor)](https://github.com/stnolting/neorv32/releases/tag/nightly)
 [![datasheet (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat-square)](https://stnolting.github.io/neorv32)
 [![userguide (pdf)](https://img.shields.io/badge/user%20guide-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor)](https://github.com/stnolting/neorv32/releases/tag/nightly)
@@ -114,6 +112,9 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 * 32-bit external bus interface, Wishbone b4 compatible
 ([WISHBONE](https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite))
   * [wrapper](https://github.com/stnolting/neorv32/blob/master/rtl/templates/system/neorv32_SystemTop_axi4lite.vhd) for AXI4-Lite master interface
+* 32-bit stram link interface with up to 8 independent RX and TX links
+([SLINK](https://stnolting.github.io/neorv32/#_stream_link_interface_slink))
+  * AXI4-Stream compatible
 * alternative [top entities/wrappers](https://github.com/stnolting/neorv32/blob/master/rtl/templates) providing
 simplified and/or resolved top entity ports for easy system integration
 * custom functions subsystem ([CFS](https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs))
@@ -124,34 +125,26 @@ for tightly-coupled custom co-processor extensions
 * _true random_ number generator ([TRNG](https://stnolting.github.io/neorv32/#_true_random_number_generator_trng))
 * on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) via JTGA - implementing
 the [*Minimal RISC-V Debug Specification Version 0.13.2*](https://github.com/riscv/riscv-debug-spec)
-and compatible with the *OpenOCD* and *gdb*
+and compatible with *OpenOCD* and *gdb*
 
-
-:information_source: It is recommended to use the processor setup even if you want to **use the CPU in stand-alone mode**. Simply disable all the processor-internal
-modules via the generics and you will get a "CPU wrapper" that already provides a minimal CPU environment and an external memory interface (like AXI4).
-This setup also allows to further use the default bootloader and software framework. From this base you can start building your own processor system.
+:information_source: It is recommended to use the processor setup even if you want to **use the CPU in stand-alone mode**.
+Just disable all optional processor-internal modules via the according generics and you will get a "CPU wrapper" that
+provides a minimal CPU environment and an external memory interface (like AXI4). This minimal setup allows to further use
+the default bootloader and software framework. From this base you can start building your own processor system.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 ### FPGA Implementation Results - Processor
 
-:information_source: Check out the [`setups`](https://github.com/stnolting/neorv32/tree/master/setups)
-folder for exemplary setups targeting various FPGA boards.
+The hardware resources used by a specifc processor setup is defined by the implemented CPU extensions
+([see below](#FPGA-Implementation-Results---CPU)), the configuration of the peripheral modules and some "glue logic".
+Section [_"Processor Modules"_](https://stnolting.github.io/neorv32/#_processor_modules) of the online datasheet shows
+the ressource utilization of each optional processor module to estimate the actual setup's hardware requirements.
 
-:information_source: The hardware resources used by the processor-internal IO/peripheral modules andmemories is also available in the
-[online documentation - _"NEORV32 Central Processing Unit"_](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu).
-
-Results generated for hardware version [`1.4.9.0`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
-If not otherwise note, the setups use *the default configuration* (like no *TRNG*),
-no external memory interface and only internal instruction and data memories
-(IMEM uses 16kB and DMEM uses 8kB memory space).
-
-| Vendor  | FPGA                              | Board            | Toolchain                  | CPU Configuration                 | LUT / LE   | FF / REG   | DSP (9-bit) | Memory Bits  | BRAM / EBR | SPRAM    | Frequency     |
-|:--------|:----------------------------------|:-----------------|:---------------------------|:----------------------------------|:-----------|:-----------|:------------|:-------------|:-----------|:---------|--------------:|
-| Intel   | Cyclone IV `EP4CE22F17C6N`        | Terasic DE0-Nano | Quartus Prime Lite 20.1    | `rv32imcu_Zicsr_Zifencei`         | 3813 (17%) | 1904  (8%) | 0 (0%)      | 231424 (38%) |          - |        - |       119 MHz |
-| Lattice | iCE40 UltraPlus `iCE40UP5K-SG48I` | [`setups\radiant\UPduino_v3`](https://github.com/stnolting/neorv32/tree/master/setups\radiant\UPduino_v3) | Radiant 2.1 (LSE) | `rv32imac_Zicsr` | 5123 (97%) | 1972 (37%) | 0 (0%) | - |   12 (40%) | 4 (100%) | *c* 24 MHz |
-| Xilinx  | Artix-7 `XC7A35TICSG324-1L`       | Arty A7-35T      | Vivado 2019.2              | `rv32imcu_Zicsr_Zifencei` + `PMP` | 2465 (12%) | 1912  (5%) | 0 (0%)      |            - |    8 (16%) |        - |   *c* 100 MHz |
+:information_source: The [`setups`](https://github.com/stnolting/neorv32/tree/master/setups) folder provides exemplary FPGA
+setups targeting various FPGA boards and toolchains. These setups also provide ressource utilization reports for different
+SoC configurations
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -163,21 +156,18 @@ no external memory interface and only internal instruction and data memories
 [online documentation - _"NEORV32 Central Processing Unit"_](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu).
 
 The CPU (top entity: [`rtl/core/neorv32_cpu.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd))
-implements the RISC-V 32-bit `rv32` ISA with optional extensions. It is compatible to a subset of the
+implements the RISC-V 32-bit `rv32` ISA with optional extensions (see below). It is compatible to a subset of the
 *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/references/riscv-spec.pdf)
 and a subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/references/riscv-privileged.pdf).
-The CPU _passes_ the [official RISC-V architecture tests](https://github.com/riscv/riscv-arch-test)
+Compatiility is checked by passing the [official RISC-V architecture tests](https://github.com/riscv/riscv-arch-test)
 (see [`riscv-arch-test/README`](https://github.com/stnolting/neorv32/blob/master/riscv-arch-test/README.md)).
 
-NEORV32 is an official (see [architecture ID](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)) little-endian
-two-stage (+ multi-cycle) RISC-V CPU with independent instruction/data bus interfaces, and multiple supported operating
-modes / privilege levels: `machine` and optional `user` and `debug_mode`.
-
-It supports the _standard_ RISC-V machine interrupts (`MTI`, `MEI`, `MSI`) and 1 non-maskable interrupt as well as 16
-_fast interrupt requests_ as custom extensions. The CPU also supports **all** standard RISC-V exceptions
-(instruction/load/store misaligned address & bus access fault, illegal instruction, breakpoint, environment call).
-As a special "execution safety" extension, _all_ invalid, reserved or malformed instructions will raise an illegal
-instruction exception.
+The core implements a little-endian von-Neumann architecture using two pipeline stages. Each stage uses a multi-cycle processing
+scheme. The CPU supports three privilege levels (`machine` and optional `user` and `debug_mode`), three standard RISC-V machine
+interrupts (`MTI`, `MEI`, `MSI`), a single non-maskable interrupt plus 16 _fast interrupt requests_ as custom extensions.
+It also supports **all** standard RISC-V exceptions (instruction/load/store misaligned address & bus access fault, illegal
+instruction, breakpoint, environment call). As a special "execution safety" extension, _all_ invalid, reserved or
+malformed instructions will raise an exception.
 
 
 ### Available ISA Extensions
@@ -208,7 +198,7 @@ See [B ISA Extension](https://github.com/stnolting/neorv32/projects/7) project b
 
 ### FPGA Implementation Results - CPU
 
-:books: More details regarding exemplary FPGA setups including a listing of resource utilization by each SoC module can be found in the
+:books: More details regarding exemplary FPGA setups including a list of resource utilization by each SoC module can be found in the
 [online documentation - _"FPGA Implementation Results"_](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
 
 Implementation results for exemplary CPU configuration generated for an **Intel Cyclone IV EP4CE22F17C6N FPGA**
@@ -219,24 +209,23 @@ Results generated for hardware version [`1.5.3.2`](https://github.com/stnolting/
 
 | CPU Configuration                                 | LEs  | FFs  | Memory bits | DSPs (9-bit) | f_max   |
 |:--------------------------------------------------|:----:|:----:|:-----------:|:------------:|:-------:|
-| `rv32i`                                           |  980 |  409 |        1024 |            0 | 123 MHz |
-| `rv32i`    + `Zicsr`                              | 1835 |  856 |        1024 |            0 | 124 MHz |
-| `rv32imac` + `Zicsr`                              | 2685 | 1156 |        1024 |            0 | 124 MHz |
-| `rv32imac` + `Zicsr` + `u` + `Zifencei` + `Zfinx` | 4004 | 1812 |        1024 |            7 | 121 MHz |
+| `rv32i`                                           |  980 |  409 |        1024 |            0 | 125 MHz |
+| `rv32i`    + `Zicsr`                              | 1835 |  856 |        1024 |            0 | 125 MHz |
+| `rv32imac` + `Zicsr`                              | 2685 | 1156 |        1024 |            0 | 125 MHz |
+| `rv32imac` + `Zicsr` + `u` + `Zifencei` + `Zfinx` | 4004 | 1812 |        1024 |            7 | 118 MHz |
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 ### Performance
 
-The NEORV32 CPU is based on a two-stages pipelined architecutre. Each stage uses a multi-cycle processing scheme.
-Hence, each instruction requires several clock cycles to execute (2 cycles for ALU operations, and up to 40 cycles for divisions).
-*By default* the CPU-internal shifter as well as the multiplier and divider of the `M` extension use a bit-serial approach
-and require several cycles for completion. The average CPI (cycles per instruction) depends on the instruction mix of a
-specific applications and also on the available CPU extensions.
+The NEORV32 CPU is based on a two-stages pipelined architecutre. Since both stage use a multi-cycle processing scheme,
+each instruction requires several clock cycles to execute (2 cycles for ALU operations, up to 40 cycles for divisions).
+The average CPI (cycles per instruction) depends on the instruction mix of a specific applications and also on the
+available CPU extensions.
 
 The following table shows the performance results(relative CoreMark score and average cycles per instruction) for successfully
-running 2000 iterations of the [CoreMark CPU benchmark](https://www.eembc.org/coremark), which reflects a pretty good "real-life" work load.
+running 2000 iterations of the [CoreMark CPU benchmark](https://www.eembc.org/coremark).
 The source files are available in [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark).
 
 ~~~
@@ -328,7 +317,7 @@ This overview provides some *quick links* to the most important sections of the
 ### :copyright: Legal
 
 * [Overview](https://stnolting.github.io/neorv32/#_legal) - license, disclaimer, proprietary notice, ...
-* [Citing](https://stnolting.github.io/neorv32/#_citing) - citing information (_DOI_)
+* [Citing](https://stnolting.github.io/neorv32/#_citing) - citing information (DOI)
 * [Impressum](https://github.com/stnolting/neorv32/blob/master/docs/impressum.md) - imprint (:de:)
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]

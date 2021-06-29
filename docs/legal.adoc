@@ -48,7 +48,7 @@ _made in Hanover, Germany_
 
 * "GitHub" is a Subsidiary of Microsoft Corporation.
 * "Vivado" and "Artix" are trademarks of Xilinx Inc.
-* "AXI" and "AXI4-Lite" are trademarks of Arm Holdings plc.
+* "AXI", "AXI4-Lite" and "AXI4-Stream" are trademarks of Arm Holdings plc.
 * "ModelSim" is a trademark of Mentor Graphics – A Siemens Business.
 * "Quartus Prime" and "Cyclone" are trademarks of Intel Corporation.
 * "iCE40", "UltraPlus" and "Radiant" are trademarks of Lattice Semiconductor Corporation.
