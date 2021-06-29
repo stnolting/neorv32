@@ -61,6 +61,15 @@ int neorv32_cpu_check_zext(uint8_t flag_id);
 
 
 /**********************************************************************//**
+ * Prototype for "after-main handler". This function is called if main() returns.
+ *
+ * @param[in] return_code Return value of main() function.
+ * @return Return value is irrelevant (there is no one left to check for it...).
+ **************************************************************************/
+extern int __neorv32_crt0_after_main(int32_t return_code);
+
+
+/**********************************************************************//**
  * Store unsigned word to address space.
  *
  * @note An unaligned access address will raise an alignment exception.
