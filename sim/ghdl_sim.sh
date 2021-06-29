@@ -11,7 +11,7 @@ set -e
 cd $(dirname "$0")/..
 
 # Default simulation configuration
-SIM_CONFIG=--stop-time=8ms
+SIM_CONFIG=--stop-time=10ms
 
 # Show GHDL version
 ghdl -v
