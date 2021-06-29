@@ -109,7 +109,6 @@ uint32_t atomic_access_addr;
 int main() {
 
   register uint32_t tmp_a, tmp_b;
-  volatile uint32_t dummy_dst __attribute__((unused));
   uint8_t id;
 
 
@@ -940,8 +939,7 @@ int main() {
     UART0_CT &= ~(1 << UART_CT_SIM_MODE);
 
     // trigger UART0 RX IRQ
-    // the default test bench connects UART0.TXD_O to UART0_RXD_I
-    UART0_DATA = 0; // we need to access the raw HW here, since >UART0_SIM_MODE< might be active
+    neorv32_uart0_putc(0);
 
     // wait for UART0 to finish transmitting
     while(neorv32_uart0_tx_busy());
@@ -989,7 +987,7 @@ int main() {
     UART0_CT &= ~(1 << UART_CT_SIM_MODE);
 
     // trigger UART0 TX IRQ
-    UART0_DATA = 0; // we need to access the raw HW here, since >UART0_SIM_MODE< might be active
+    neorv32_uart0_putc(0);
 
     // wait for UART to finish transmitting
     while(neorv32_uart0_tx_busy());
@@ -1033,7 +1031,7 @@ int main() {
     UART1_CT &= ~(1 << UART_CT_SIM_MODE);
 
     // trigger UART1 RX IRQ
-    UART1_DATA = 0;
+    neorv32_uart1_putc(0);
 
     // wait for UART1 to finish transmitting
     while(neorv32_uart1_tx_busy());
@@ -1078,7 +1076,7 @@ int main() {
     UART1_CT &= ~(1 << UART_CT_SIM_MODE);
 
     // trigger UART1 TX IRQ
-    UART1_DATA = 0;
+    neorv32_uart1_putc(1);
 
     // wait for UART1 to finish transmitting
     while(neorv32_uart1_tx_busy());
@@ -1218,64 +1216,64 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 9 (reserved)
+  // Fast interrupt channel 9 (NEOLED)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ9: ", cnt_test);
-  PRINT_STANDARD("skipped (n.a.)\n");
+  PRINT_STANDARD("[%i] FIRQ9 (NEOLED): skipped\n", cnt_test);
 
-
-/*
-  !! OBSOLETE !!
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 10..15 (SoC fast IRQ 0..5)
+  // Fast interrupt channel 10 & 11 (SLINK)
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] FIRQ10..15 (SoC fast IRQ 0..5; via testbench): ", cnt_test);
+  if (neorv32_slink_available()) {
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    PRINT_STANDARD("[%i] FIRQ10 & 11 (SLINK): ", cnt_test);
 
-  cnt_test++;
+    cnt_test++;
 
-  // enable SOC FIRQs
-  for (id=CSR_MIE_FIRQ10E; id<=CSR_MIE_FIRQ15E; id++) {
-    neorv32_cpu_irq_enable(id);
+    // enable SLINK
+    neorv32_slink_enable();
+
+    // enable SLINK FIRQs
+    neorv32_cpu_irq_enable(CSR_MIE_FIRQ10E);
+    neorv32_cpu_irq_enable(CSR_MIE_FIRQ11E);
+
+    tmp_a = 0; // error counter
+
+    // send single data word via link 0
+    if (neorv32_slink_tx0_nonblocking(0xA1B2C3D4)) {
+      tmp_a++; // sending failed
+    }
+
+    // get single data word from link 0
+    uint32_t slink_rx_data;
+    if (neorv32_slink_rx0_nonblocking(&slink_rx_data)) {
+      tmp_a++; // receiving failed
+    }
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    asm volatile("nop");
+
+    tmp_b = neorv32_cpu_csr_read(CSR_MCAUSE);
+    if (((tmp_b == TRAP_CODE_FIRQ_10) || (tmp_b == TRAP_CODE_FIRQ_11)) && // right trap code
+        (tmp_a == 0) && // local error counter = 0
+        (slink_rx_data == 0xA1B2C3D4)) { // correct data read-back
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+    // shutdown SLINK
+    neorv32_slink_disable();
   }
 
-  // trigger all SoC Fast interrupts at once
-  neorv32_cpu_dint(); // do not fire yet!
-  sim_irq_trigger((1 << CSR_MIE_FIRQ10E) | (1 << CSR_MIE_FIRQ11E) | (1 << CSR_MIE_FIRQ12E) | (1 << CSR_MIE_FIRQ13E) | (1 << CSR_MIE_FIRQ14E) | (1 << CSR_MIE_FIRQ15E));
 
-  // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
-  asm volatile("nop");
-
-  // make sure all SoC FIRQs have been triggered
-  tmp_a = (1 << CSR_MIP_FIRQ10P) | (1 << CSR_MIP_FIRQ11P) | (1 << CSR_MIP_FIRQ12P) | (1 << CSR_MIP_FIRQ13P) | (1 << CSR_MIP_FIRQ14P) | (1 << CSR_MIP_FIRQ15P);
-  if (neorv32_cpu_csr_read(CSR_MIP) == tmp_a) {
-    tmp_b = 0;
-  }
-  else {
-    tmp_b = 1;
-  }
-
-  neorv32_cpu_eint(); // allow IRQs to fire again
-  asm volatile ("nop");
-  asm volatile ("nop"); // irq should kick in HERE
-
-  tmp_a = neorv32_cpu_csr_read(CSR_MCAUSE);
-  if ((tmp_a >= TRAP_CODE_FIRQ_10) && (tmp_a <= TRAP_CODE_FIRQ_15) && (tmp_b == 0)) {
-    test_ok();
-  }
-  else {
-    test_fail();
-  }
-
-  // disable SOC FIRQs
-  for (id=CSR_MIE_FIRQ10E; id<=CSR_MIE_FIRQ15E; id++) {
-    neorv32_cpu_irq_disable(id);
-  }
-
-  neorv32_cpu_eint(); // re-enable IRQs globally
-*/
+//// ----------------------------------------------------------
+//// Fast interrupt channel 12..15 (reserved)
+//// ----------------------------------------------------------
+//PRINT_STANDARD("[%i] FIRQ12..15: ", cnt_test);
+//PRINT_STANDARD("skipped (n.a.)\n");
 
 
   // ----------------------------------------------------------
@@ -1615,38 +1613,37 @@ int main() {
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
   PRINT_STANDARD("\n\n-- HPM reports LOW (%u HPMs available) --\n", num_hpm_cnts_global);
-  PRINT_STANDARD("#IR - Total number of instr.:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET)); // = "HPM_0"
-//PRINT_STANDARD("#TM - Current system time:      %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_TIME)); // = "HPM_1"
-  PRINT_STANDARD("#CY - Total number of clk cyc.: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE)); // = "HPM_2"
-  PRINT_STANDARD("#03 - Retired compr. instr.:    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));
-  PRINT_STANDARD("#04 - I-fetch wait cyc.:        %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));
-  PRINT_STANDARD("#05 - I-issue wait cyc.:        %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5));
-  PRINT_STANDARD("#06 - Multi-cyc. ALU wait cyc.: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6));
-  PRINT_STANDARD("#07 - Load operations:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7));
-  PRINT_STANDARD("#08 - Store operations:         %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8));
-  PRINT_STANDARD("#09 - Load/store wait cycles:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9));
-  PRINT_STANDARD("#10 - Unconditional jumps:      %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10));
-  PRINT_STANDARD("#11 - Cond. branches (total):   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11));
-  PRINT_STANDARD("#12 - Cond. branches (taken):   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER12));
-  PRINT_STANDARD("#13 - Entered traps:            %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER13));
-  PRINT_STANDARD("#14 - Illegal operations:       %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER14));
+  PRINT_STANDARD("#IR - Instr.:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET)); // = "HPM_0"
+//PRINT_STANDARD("#TM - Time:     %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_TIME));    // = "HPM_1"
+  PRINT_STANDARD("#CY - CLKs:     %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));   // = "HPM_2"
+  PRINT_STANDARD("#03 - Compr.:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));
+  PRINT_STANDARD("#04 - IF wait:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));
+  PRINT_STANDARD("#05 - II wait:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5));
+  PRINT_STANDARD("#06 - ALU wait: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6));
+  PRINT_STANDARD("#07 - Loads:    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7));
+  PRINT_STANDARD("#08 - Stores:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8));
+  PRINT_STANDARD("#09 - MEM wait: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9));
+  PRINT_STANDARD("#10 - Jumps:    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10));
+  PRINT_STANDARD("#11 - Branches: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11));
+  PRINT_STANDARD("#12 -  Taken:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER12));
+  PRINT_STANDARD("#13 - Traps:    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER13));
+  PRINT_STANDARD("#14 - Illegals: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER14));
 
 
   // ----------------------------------------------------------
   // Final test reports
   // ----------------------------------------------------------
-  PRINT_CRITICAL("\n\nTest results:\nOK:     %i/%i\nFAILED: %i/%i\n\n", cnt_ok, cnt_test, cnt_fail, cnt_test);
+  PRINT_CRITICAL("\n\nTest results:\nPASS: %i/%i\nFAIL: %i/%i\n\n", cnt_ok, cnt_test, cnt_fail, cnt_test);
 
   // final result
   if (cnt_fail == 0) {
     PRINT_STANDARD("%c[1m[CPU TEST COMPLETED SUCCESSFULLY!]%c[0m\n", 27, 27);
-    return 0;
   }
   else {
     PRINT_STANDARD("%c[1m[CPU TEST FAILED!]%c[0m\n", 27, 27);
-    return 1;
   }
 
+  return (int)cnt_fail; // return error counter for after-main handler
 }
 
 
@@ -1683,26 +1680,31 @@ void test_ok(void) {
 
 
 /**********************************************************************//**
- * Test results helper function: Shows "[FAILED]" and increments global cnt_fail
+ * Test results helper function: Shows "[FAIL]" and increments global cnt_fail
  **************************************************************************/
 void test_fail(void) {
 
-  PRINT_CRITICAL("%c[1m[FAILED]%c[0m\n", 27, 27);
+  PRINT_CRITICAL("%c[1m[FAIL]%c[0m\n", 27, 27);
   cnt_fail++;
 }
 
 
 /**********************************************************************//**
- * Register "after-main" handler that is executed if the application's
- * main function actually returns (called by crt0.S start-up code)
- *
- * @note The C-runtime is still available at this point.
+ * "after-main" handler that is executed after the application's
+ * main function returns (called by crt0.S start-up code): Output minimal
+ * test report to physical UART
  *
  * @param[in] return_code Return value of main function
  **************************************************************************/
 int __neorv32_crt0_after_main(int32_t return_code) {
 
-  PRINT_STANDARD("Main returned with code: %i\n", return_code);
+  // make sure sim mode is disabled and UARTs are actually enabled
+  UART0_CT |=  (1 << UART_CT_EN);
+  UART0_CT &= ~(1 << UART_CT_SIM_MODE);
+  UART1_CT = UART0_CT;
+
+  // minimal result report
+  PRINT_CRITICAL("%u/%u\n", (uint32_t)return_code, (uint32_t)cnt_test);
 
   return 0;
 }
