@@ -45,13 +45,13 @@
 #define neorv32_gpio_h
 
 // prototypes
-int neorv32_gpio_available(void);
-void neorv32_gpio_pin_set(uint8_t p);
-void neorv32_gpio_pin_clr(uint8_t p);
-void neorv32_gpio_pin_toggle(uint8_t p);
-uint32_t neorv32_gpio_pin_get(uint8_t p);
-void neorv32_gpio_port_set(uint32_t d);
-uint32_t neorv32_gpio_port_get(void);
-void neorv32_gpio_pin_change_config(uint32_t pin_sel);
+int      neorv32_gpio_available(void);
+void     neorv32_gpio_pin_set(int pin);
+void     neorv32_gpio_pin_clr(int pin);
+void     neorv32_gpio_pin_toggle(int pin);
+uint32_t neorv32_gpio_pin_get(int pin);
+
+void     neorv32_gpio_port_set(uint64_t d);
+uint64_t neorv32_gpio_port_get(void);
 
 #endif // neorv32_gpio_h

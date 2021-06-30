@@ -747,22 +747,6 @@ enum NEORV32_SLINK_CT_enum {
 
 
 /**********************************************************************//**
- * @name IO Device: General Purpose Input/Output Port Unit (GPIO)
- **************************************************************************/
-/**@{*/
-/** GPIO base address */
-#define GPIO_BASE (0xFFFFFF80UL) // /**< GPIO base address */
-/** GPIO address space size in bytes */
-#define GPIO_SIZE (2*4) // /**< GPIO address space size in bytes */
-
-/** read access: GPIO parallel input port 32-bit (r/-), write_access: pin-change IRQ for each input pin (-/w) */
-#define GPIO_INPUT  (*(IO_REG32 (GPIO_BASE + 0)))
-/** GPIO parallel output port 32-bit (r/w) */
-#define GPIO_OUTPUT (*(IO_REG32 (GPIO_BASE + 4)))
-/**@}*/
-
-
-/**********************************************************************//**
  * @name IO Device: True Random Number Generator (TRNG)
  **************************************************************************/
 /**@{*/
@@ -990,6 +974,31 @@ enum NEORV32_TWI_DATA_enum {
   TWI_DATA_LSB = 0, /**< TWI data register(0) (r/w): Receive/transmit data (8-bit) LSB */
   TWI_DATA_MSB = 7  /**< TWI data register(7) (r/w): Receive/transmit data (8-bit) MSB */
 };
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: General Purpose Input/Output Port Unit (GPIO)
+ **************************************************************************/
+/**@{*/
+/** GPIO base address */
+#define GPIO_BASE (0xFFFFFFC0UL) // /**< GPIO base address */
+/** GPIO address space size in bytes */
+#define GPIO_SIZE (4*4) // /**< GPIO address space size in bytes */
+
+/** GPIO parallel input port lower 32-bit (r/-) */
+#define GPIO_INPUT_LO  (*(IO_REG32 (GPIO_BASE +  0)))
+/** GPIO parallel input port upper 32-bit (r/-) */
+#define GPIO_INPUT_HI  (*(IO_REG32 (GPIO_BASE +  4)))
+/** GPIO parallel output port lower 32-bit (r/w) */
+#define GPIO_OUTPUT_LO (*(IO_REG32 (GPIO_BASE +  8)))
+/** GPIO parallel output port upper 32-bit (r/w) */
+#define GPIO_OUTPUT_HI (*(IO_REG32 (GPIO_BASE + 12)))
+
+/** GPIO parallel input 64-bit access (r/-) */
+#define GPIO_INPUT   (*(IO_REG64 (&GPIO_INPUT_LO)))
+/** GPIO parallel output 64-bit access (r/w) */
+#define GPIO_OUTPUT (*(IO_REG64 (&GPIO_OUTPUT_LO)))
 /**@}*/
 
 

@@ -1175,44 +1175,12 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 8 (GPIO)
+  // Fast interrupt channel 8 (???)
   // ----------------------------------------------------------
-  if (neorv32_gpio_available()) {
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-    PRINT_STANDARD("[%i] FIRQ8 test (via GPIO): ", cnt_test);
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  PRINT_STANDARD("[%i] FIRQ8 test (via ?): work-in-progress", cnt_test);
 
-    cnt_test++;
-
-    // clear output port
-    neorv32_gpio_port_set(0);
-
-    neorv32_cpu_irq_enable(CSR_MIE_FIRQ8E);
-
-    // configure GPIO.in(31) for pin-change IRQ
-    neorv32_gpio_pin_change_config(0x80000000);
-
-    // trigger pin-change IRQ by setting GPIO.out(31)
-    // the testbench connects GPIO.out => GPIO.in
-    neorv32_gpio_pin_set(31);
-
-    // wait some time for the IRQ to arrive the CPU
-    asm volatile("nop");
-    asm volatile("nop");
-
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_8) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-
-    // disable GPIO pin-change IRQ
-    neorv32_gpio_pin_change_config(0);
-
-    // clear output port
-    neorv32_gpio_port_set(0);
-    neorv32_cpu_irq_disable(CSR_MIE_FIRQ8E);
-  }
+  cnt_test++;
 
 
   // ----------------------------------------------------------
@@ -1693,8 +1661,6 @@ void test_fail(void) {
  * "after-main" handler that is executed after the application's
  * main function returns (called by crt0.S start-up code): Output minimal
  * test report to physical UART
- *
- * @param[in] return_code Return value of main function
  **************************************************************************/
 int __neorv32_crt0_after_main(int32_t return_code) {
 
