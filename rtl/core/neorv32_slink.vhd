@@ -311,6 +311,7 @@ begin
   for i in SLINK_NUM_RX to 7 generate
     rx_fifo_avail(i)  <= '0';
     slink_rx_rdy_o(i) <= '0';
+    rx_fifo_rdata(i)  <= (others => '0');
   end generate;
 
 
