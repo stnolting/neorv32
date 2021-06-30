@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 30.06.2021 | 1.5.7.8 | :warning: increased GPIO port size from 32-bit to 64-bit; relocated GPIO base address; removed GPIO.input pin-change interrupt |
 | 29.06.2021 | 1.5.7.7 | :sparkles: added new processor module **stream link interface (SLINK)**: up to 8 individual RX and TX stream links, comptaible to AXI4-Stream base protocol; added software driver files; added documentation |
 | 27.06.2021 | 1.5.7.6 | :bug: fixed bug in CFS (custom functions subsystem) address map layout |
 | 27.06.2021 | 1.5.7.5 | :warning: removed numerically-controlled oscillator (NCO, `neorv32_nco.vhd`) module as it appears to be an over-engineered clock-generator without many use cases (if you really need this module, you can wrap it within the custom functions subsystem CFS) |

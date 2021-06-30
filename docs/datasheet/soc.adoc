@@ -16,7 +16,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ two independent universal asynchronous receivers and transmitters (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,**UART0**>>, <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,**UART1**>>) with optional hardware flow control (RTS/CTS)
 * _optional_ 8/16/24/32-bit serial peripheral interface controller (<<_serial_peripheral_interface_controller_spi,**SPI**>>) with 8 dedicated CS lines
 * _optional_ two wire serial interface controller (<<_two_wire_serial_interface_controller_twi,**TWI**>>), compatible to the I²C standard
-* _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 32xOut, 32xIn
+* _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 64xOut, 64xIn
 * _optional_ 32-bit external bus interface, Wishbone b4 / AXI4-Lite compatible (<<_processor_external_memory_interface_wishbone_axi4_lite,**WISHBONE**>>)
 * _optional_ 32-bit stream link interface with up to 8 independent links, AXI4-Stream compatible (<<_stream_link_interface_slink,**SLINK**>>)
 * _optional_ watchdog timer (<<_watchdog_timer_wdt,**WDT**>>)
@@ -76,8 +76,8 @@ A wrapper for the NEORV32 Processor setup providing resolved port signals can be
 | `slink_rx_val_i` |    8 | in  | RX link _n_ data valid
 | `slink_rx_rdy_o` |    8 | out | RX link _n_ ready to receive
 4+^| **General Purpose Inputs & Outputs (<<_general_purpose_input_and_output_port_gpio,GPIO>>)**
-| `gpio_o` | 32 | out | general purpose parallel output
-| `gpio_i` | 32 | in | general purpose parallel input
+| `gpio_o` | 64 | out | general purpose parallel output
+| `gpio_i` | 64 | in | general purpose parallel input
 4+^| **Primary Universal Asynchronous Receiver/Transmitter (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>>)**
 | `uart0_txd_o` | 1 | out | UART0 serial transmitter
 | `uart0_rxd_i` | 1 | in | UART0 serial receiver
@@ -853,7 +853,7 @@ the according FIRQ priority):
 | 5       | _UART1_ (TXD) | UART1 sending done interrupt (TX complete)
 | 6       | _SPI_ | SPI transmission done interrupt
 | 7       | _TWI_ | TWI transmission done interrupt
-| 8       | _GPIO_ | GPIO input pin-change interrupt
+| 8       | - | _reserved_ (FIXME!!!)
 | 9       | _NEOLED_ | NEOLED buffer TX empty / not full interrupt
 | 10      | _SLINK_ | RX data received
 | 11      | _SLINK_ | TX data send

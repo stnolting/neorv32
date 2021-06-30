@@ -8,35 +8,32 @@
 | Hardware source file(s): | neorv32_gpio.vhd | 
 | Software driver file(s): | neorv32_gpio.c |
 |                          | neorv32_gpio.h |
-| Top entity port:         | `gpio_o` | 32-bit parallel output port
-|                          | `gpio_i` | 32-bit parallel input port
+| Top entity port:         | `gpio_o` | 64-bit parallel output port
+|                          | `gpio_i` | 64-bit parallel input port
 | Configuration generics:  | _IO_GPIO_EN_ | implement GPIO port when _true_
-| CPU interrupts:          | fast IRQ channel 8 | pin-change interrupt (see <<_processor_interrupts>>)
+| CPU interrupts:          | none |
 |=======================
 
 **Theory of Operation**
 
-The general purpose parallel IO port unit provides a simple 32-bit parallel input port and a 32-bit parallel
+The general purpose parallel IO port unit provides a simple 64-bit parallel input port and a 64-bit parallel
 output port. These ports can be used chip-externally (for example to drive status LEDs, connect buttons, etc.)
-or system-internally to provide control signals for other IP modules. When the modules is disabled for
-implementation the GPIO output port is tied to zero.
+or system-internally to provide control signals for other IP modules. The component is disabled for
+implementation when the _IO_GPIO_EN_ generic is set _false_. In this case GPIO output port is tied to all-zero.
 
-**Pin-Change Interrupt**
-
-The parallel input port `gpio_i` features a single pin-change interrupt. Whenever an input pin has a low-to-high
-or high-to-low transition, the interrupt is triggered. By default, the pin-change interrupt is disabled and
-can be enabled using a bit mask that has to be written to the _GPIO_INPUT_ register. Each set bit in this mask
-enables the pin-change interrupt for the corresponding input pin. If more than one input pin is enabled for
-triggering the pin-change interrupt, any transition on one of the enabled input pins will trigger the CPU's pinchange
-interrupt. If the modules is disabled for implementation, the pin-change interrupt is also permanently
-disabled.
+.Access atomicity
+[NOTE]
+The GPIO modules uses two memory-mapped registers (each 32-bit) each for accessing the input and
+output signals. Since the CPU can only process 32-bit "at once" updating the entire output cannot
+be performed within a single clock cycle.
 
 .GPIO unit register map
 [cols="<2,<2,^1,^1,<6"]
 [options="header",grid="rows"]
 |=======================
-| Address      | Name [C]      | Bit(s) | R/W | Function
-.2+<| `0xffffff80` .2+<| _GPIO_INPUT_  ^| 31:0   ^| r/- <| parallel input port
-                                       ^| 31:0   ^| -/w <| parallel input pin-change IRQ enable mask
-| `0xffffff84` | _GPIO_OUTPUT_ | 31:0   | r/w | parallel output port
+| Address      | Name [C]         | Bit(s) | R/W | Function
+| `0xffffffc0` | _GPIO_INPUT_LO_  | 31:0   | r/- | parallel input port pins 31:0 (write accesses are ignored)
+| `0xffffffc4` | _GPIO_INPUT_HI_  | 31:0   | r/- | parallel input port pins 63:32 (write accesses are ignored)
+| `0xffffffc8` | _GPIO_OUTPUT_LO_ | 31:0   | r/w | parallel output port pins 31:0
+| `0xffffffcc` | _GPIO_OUTPUT_HI_ | 31:0   | r/w | parallel output port pins 63:32
 |=======================
