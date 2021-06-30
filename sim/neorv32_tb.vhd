@@ -103,7 +103,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal uart1_cts : std_ulogic; -- local loop-back
 
   -- gpio --
-  signal gpio : std_ulogic_vector(31 downto 0);
+  signal gpio : std_ulogic_vector(63 downto 0);
 
   -- twi --
   signal twi_scl, twi_sda : std_logic;
