@@ -772,7 +772,7 @@ All instructions execute as atomic operations – interrupts can only trigger be
 
 **Custom Fast Interrupt Request Lines**
 
-As a custom extension, the NEORV32 CPU features 16 fast interrupt request lines via the `firq_i` CPU (/Processor) top
+As a custom extension, the NEORV32 CPU features 16 fast interrupt request lines via the `firq_i` CPU top
 entity signals. These interrupts have custom configuration and status flags in the `mie` and `mip` CSRs and also
 provide custom trap codes in `mcause`.
 
