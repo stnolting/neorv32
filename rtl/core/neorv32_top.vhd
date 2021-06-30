@@ -160,8 +160,8 @@ entity neorv32_top is
     slink_rx_rdy_o : out std_ulogic_vector(7 downto 0); -- ready to receive
 
     -- GPIO (available if IO_GPIO_EN = true) --
-    gpio_o         : out std_ulogic_vector(31 downto 0); -- parallel output
-    gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
+    gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
+    gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- parallel input
 
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic; -- UART0 send data
@@ -301,7 +301,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal fast_irq      : std_ulogic_vector(15 downto 0);
   signal fast_irq_ack  : std_ulogic_vector(15 downto 0);
   signal mtime_irq     : std_ulogic;
-  signal gpio_irq      : std_ulogic;
   signal wdt_irq       : std_ulogic;
   signal uart0_rxd_irq : std_ulogic;
   signal uart0_txd_irq : std_ulogic;
@@ -523,7 +522,7 @@ begin
   fast_irq(05) <= uart1_txd_irq; -- secondary UART (UART1) sending done
   fast_irq(06) <= spi_irq;       -- SPI transmission done
   fast_irq(07) <= twi_irq;       -- TWI transmission done
-  fast_irq(08) <= gpio_irq;      -- GPIO pin-change
+  fast_irq(08) <= '0';           -- reserved
   fast_irq(09) <= neoled_irq;    -- NEOLED buffer free
   fast_irq(10) <= slink_rx_irq;  -- SLINK data received
   fast_irq(11) <= slink_tx_irq;  -- SLINK data send
@@ -892,9 +891,7 @@ begin
       ack_o  => resp_bus(RESP_GPIO).ack,   -- transfer acknowledge
       -- parallel io --
       gpio_o => gpio_o,
-      gpio_i => gpio_i,
-      -- interrupt --
-      irq_o  => gpio_irq                   -- pin-change interrupt
+      gpio_i => gpio_i
     );
     resp_bus(RESP_GPIO).err <= '0'; -- no access error possible
   end generate;
@@ -902,8 +899,7 @@ begin
   neorv32_gpio_inst_false:
   if (IO_GPIO_EN = false) generate
     resp_bus(RESP_GPIO) <= resp_bus_entry_terminate_c;
-    gpio_o   <= (others => '0');
-    gpio_irq <= '0';
+    gpio_o <= (others => '0');
   end generate;
 
 

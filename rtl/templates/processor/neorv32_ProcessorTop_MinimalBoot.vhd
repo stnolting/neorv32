@@ -110,7 +110,7 @@ end entity;
 architecture neorv32_ProcessorTop_MinimalBoot_rtl of neorv32_ProcessorTop_MinimalBoot is
 
   -- internal IO connection --
-  signal con_gpio_o : std_ulogic_vector(31 downto 0);
+  signal con_gpio_o : std_ulogic_vector(63 downto 0);
 
 begin
 

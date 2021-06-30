@@ -60,7 +60,7 @@ end entity;
 architecture neorv32_ProcessorTop_Test_rtl of neorv32_ProcessorTop_Test is
 
   -- gpio output --
-  signal gpio_out : std_ulogic_vector(31 downto 0);
+  signal gpio_out : std_ulogic_vector(63 downto 0);
 
 begin
 

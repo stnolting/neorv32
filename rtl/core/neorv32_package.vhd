@@ -70,7 +70,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050707"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050708"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
 
@@ -203,11 +203,9 @@ package neorv32_package is
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff00"; -- base address
 --constant reserved_size_c      : natural := 32*4; -- module's address space size in bytes
 
-  -- General Purpose Input/Output Unit (GPIO) --
-  constant gpio_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff80"; -- base address
-  constant gpio_size_c          : natural := 2*4; -- module's address space size in bytes
-  constant gpio_in_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff80";
-  constant gpio_out_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff84";
+  -- reserved --
+--constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff80"; -- base address
+--constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
 
   -- True Random Number Generator (TRNG) --
   constant trng_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff88"; -- base address
@@ -250,8 +248,12 @@ package neorv32_package is
 --constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
 
   -- reserved --
---constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc0"; -- base address
---constant reserved_size_c      : natural := 4*4; -- module's address space size in bytes
+  constant gpio_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc0"; -- base address
+  constant gpio_size_c          : natural := 4*4; -- module's address space size in bytes
+  constant gpio_in_lo_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc0";
+  constant gpio_in_hi_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc4";
+  constant gpio_out_lo_addr_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffc8";
+  constant gpio_out_hi_addr_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffcc";
 
   -- Secondary Universal Asynchronous Receiver/Transmitter (UART1) --
   constant uart1_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffffd0"; -- base address
@@ -968,8 +970,8 @@ package neorv32_package is
       slink_rx_val_i : in  std_ulogic_vector(7 downto 0) := (others => '0'); -- valid input
       slink_rx_rdy_o : out std_ulogic_vector(7 downto 0); -- ready to receive
       -- GPIO (available if IO_GPIO_EN = true) --
-      gpio_o         : out std_ulogic_vector(31 downto 0); -- parallel output
-      gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- parallel input
+      gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
+      gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- parallel input
       -- primary UART0 (available if IO_UART0_EN = true) --
       uart0_txd_o    : out std_ulogic; -- UART0 send data
       uart0_rxd_i    : in  std_ulogic := '0'; -- UART0 receive data
@@ -1540,10 +1542,8 @@ package neorv32_package is
       data_o : out std_ulogic_vector(31 downto 0); -- data out
       ack_o  : out std_ulogic; -- transfer acknowledge
       -- parallel io --
-      gpio_o : out std_ulogic_vector(31 downto 0);
-      gpio_i : in  std_ulogic_vector(31 downto 0);
-      -- interrupt --
-      irq_o  : out std_ulogic
+      gpio_o : out std_ulogic_vector(63 downto 0);
+      gpio_i : in  std_ulogic_vector(63 downto 0)
     );
   end component;
 

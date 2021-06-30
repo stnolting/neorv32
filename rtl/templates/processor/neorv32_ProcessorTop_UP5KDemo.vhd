@@ -131,8 +131,8 @@ end entity;
 architecture neorv32_ProcessorTop_UP5KDemo_rtl of neorv32_ProcessorTop_UP5KDemo is
 
   -- internal IO connection --
-  signal con_gpio_o   : std_ulogic_vector(31 downto 0);
-  signal con_gpio_i   : std_ulogic_vector(31 downto 0);
+  signal con_gpio_o   : std_ulogic_vector(63 downto 0);
+  signal con_gpio_i   : std_ulogic_vector(63 downto 0);
   signal con_spi_sck  : std_ulogic;
   signal con_spi_sdi  : std_ulogic;
   signal con_spi_sdo  : std_ulogic;
@@ -157,7 +157,7 @@ begin
   -- GPIO --
   gpio_o <= con_gpio_o(3 downto 0);
   con_gpio_i(03 downto 0) <= gpio_i;
-  con_gpio_i(31 downto 4) <= (others => '0');
+  con_gpio_i(63 downto 4) <= (others => '0');
 
   -- The core of the problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

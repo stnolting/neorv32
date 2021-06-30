@@ -143,8 +143,8 @@ entity neorv32_SystemTop_axi4lite is
     -- Processor IO --
     -- ------------------------------------------------------------
     -- GPIO (available if IO_GPIO_EN = true) --
-    gpio_o        : out std_logic_vector(31 downto 0); -- parallel output
-    gpio_i        : in  std_logic_vector(31 downto 0) := (others => '0'); -- parallel input
+    gpio_o        : out std_logic_vector(63 downto 0); -- parallel output
+    gpio_i        : in  std_logic_vector(63 downto 0) := (others => '0'); -- parallel input
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o   : out std_logic; -- UART0 send data
     uart0_rxd_i   : in  std_logic := '0'; -- UART0 receive data
@@ -192,8 +192,8 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
   signal jtag_tdo_o_int  :std_ulogic;
   signal jtag_tms_i_int  :std_ulogic;
   --
-  signal gpio_o_int      : std_ulogic_vector(31 downto 0);
-  signal gpio_i_int      : std_ulogic_vector(31 downto 0);
+  signal gpio_o_int      : std_ulogic_vector(63 downto 0);
+  signal gpio_i_int      : std_ulogic_vector(63 downto 0);
   --
   signal uart0_txd_o_int : std_ulogic;
   signal uart0_rxd_i_int : std_ulogic;

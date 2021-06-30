@@ -1,8 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - General Purpose Parallel Input/Output Port (GPIO) >>                             #
 -- # ********************************************************************************************* #
--- # 32-bit parallel input & output unit. Any pin change (HI->LO or LO->HI) of an enabled input    #
--- # pin (via irq_en register) triggers an IRQ.                                                    #
+-- # 64-bit general purpose parallel input & output port unit.                                     #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -53,10 +52,8 @@ entity neorv32_gpio is
     data_o : out std_ulogic_vector(31 downto 0); -- data out
     ack_o  : out std_ulogic; -- transfer acknowledge
     -- parallel io --
-    gpio_o : out std_ulogic_vector(31 downto 0);
-    gpio_i : in  std_ulogic_vector(31 downto 0);
-    -- interrupt --
-    irq_o  : out std_ulogic
+    gpio_o : out std_ulogic_vector(63 downto 0);
+    gpio_i : in  std_ulogic_vector(63 downto 0)
   );
 end neorv32_gpio;
 
@@ -71,12 +68,8 @@ architecture neorv32_gpio_rtl of neorv32_gpio is
   signal addr   : std_ulogic_vector(31 downto 0); -- access address
 
   -- accessible regs --
-  signal din    : std_ulogic_vector(31 downto 0); -- r/-
-  signal dout   : std_ulogic_vector(31 downto 0); -- r/w
-  signal irq_en : std_ulogic_vector(31 downto 0); -- -/w, uses the same address as data_in
-
-  -- misc --
-  signal in_buf : std_ulogic_vector(31 downto 0);
+  signal din_lo,  din_hi  : std_ulogic_vector(31 downto 0); -- r/-
+  signal dout_lo, dout_hi : std_ulogic_vector(31 downto 0); -- r/w
 
 begin
 
@@ -91,43 +84,40 @@ begin
   rw_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
+      -- bus handshake --
       ack_o <= acc_en and (rden_i or wren_i);
+
       -- write access --
       if ((acc_en and wren_i) = '1') then
-        if (addr = gpio_in_addr_c) then
-          irq_en <= data_i; -- pin change IRQ enable
-        else -- gpio_out_addr_c
-          dout <= data_i; -- data output port
+        if (addr = gpio_out_lo_addr_c) then
+          dout_lo <= data_i;
+        end if;
+        if (addr = gpio_out_hi_addr_c) then
+          dout_hi <= data_i;
         end if;
       end if;
+
+      -- input buffer --
+      din_lo <= gpio_i(31 downto 00);
+      din_hi <= gpio_i(63 downto 32);
+
       -- read access --
       data_o <= (others => '0');
       if ((acc_en and rden_i) = '1') then
-        if (addr = gpio_in_addr_c) then
-          data_o <= din; -- data input port
-        else -- gpio_out_addr_c
-          data_o <= dout; -- data output port
-        end if;
+        case addr is
+          when gpio_in_lo_addr_c  => data_o <= din_lo;
+          when gpio_in_hi_addr_c  => data_o <= din_hi;
+          when gpio_out_lo_addr_c => data_o <= dout_lo;
+          when gpio_out_hi_addr_c => data_o <= dout_hi;
+          when others             => data_o <= (others => '0');
+        end case;
       end if;
+
     end if;
   end process rw_access;
 
   -- output --
-  gpio_o <= dout;
-
-
-  -- IRQ Detector ------------------------------------------------------------
-  -- -----------------------------------------------------------------------------
-  irq_detector: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      -- input synchronizer --
-      in_buf <= gpio_i;
-      din    <= in_buf;
-      -- IRQ --
-      irq_o <= or_reduce_f((in_buf xor din) and irq_en); -- any enabled pin transition triggers an interrupt
-    end if;
-  end process irq_detector;
+  gpio_o <= dout_hi & dout_lo;
 
 
 end neorv32_gpio_rtl;
