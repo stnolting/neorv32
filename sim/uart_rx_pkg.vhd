@@ -1,6 +1,7 @@
 library vunit_lib;
 context vunit_lib.vunit_context;
 context vunit_lib.com_context;
+use vunit_lib.sync_pkg.all;
 
 package uart_rx_pkg is
   constant check_uart_msg : msg_type_t := new_msg_type("check_uart");
@@ -16,7 +17,7 @@ package uart_rx_pkg is
     logger : logger_t := null_logger;
     actor : actor_t := null_actor) return uart_rx_t;
 
-  function get_actor(handle : uart_rx_t) return actor_t;
+  function as_sync(handle : uart_rx_t) return sync_handle_t;
 
   procedure check_uart(
     signal net : inout network_t;
@@ -40,7 +41,7 @@ package body uart_rx_pkg is
     return result;
   end;
 
-  function get_actor(handle : uart_rx_t) return actor_t is
+  function as_sync(handle : uart_rx_t) return sync_handle_t is
   begin
     return handle.p_actor;
   end;

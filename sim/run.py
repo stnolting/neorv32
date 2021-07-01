@@ -15,6 +15,7 @@ args = cli.parse_args()
 PRJ = VUnit.from_args(args=args)
 PRJ.add_com()
 PRJ.add_verification_components()
+PRJ.add_osvvm()
 
 ROOT = Path(__file__).parent
 
