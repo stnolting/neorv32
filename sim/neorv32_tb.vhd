@@ -171,7 +171,10 @@ architecture neorv32_tb_rtl of neorv32_tb is
     variable result : axi_stream_master_vec_t(slink_transmitter_val'range);
   begin
     for idx in result'range loop
-      result(idx) := new_axi_stream_master(data_length => slink_transmitter_dat(idx)'length);
+      result(idx) := new_axi_stream_master(
+        data_length => slink_transmitter_dat(idx)'length,
+        stall_config => new_stall_config(0.05, 1, 10)
+      );
     end loop;
 
     return result;
@@ -181,7 +184,10 @@ architecture neorv32_tb_rtl of neorv32_tb is
     variable result : axi_stream_slave_vec_t(slink_receiver_val'range);
   begin
     for idx in result'range loop
-      result(idx) := new_axi_stream_slave(data_length => slink_receiver_dat(idx)'length);
+      result(idx) := new_axi_stream_slave(
+        data_length => slink_receiver_dat(idx)'length,
+        stall_config => new_stall_config(0.05, 1, 10)
+      );
     end loop;
 
     return result;
@@ -220,7 +226,7 @@ begin
     -- be echoed by the CPU. No blocking. Let the SLINK transmitters
     -- and receivers do this work in parallel.
     for idx in slink_transmitters'range loop
-      for iter in 1 to 10 loop
+      for iter in 1 to 100 loop
         value := rnd.RandSlv(value'length);
 
         -- SLINK is AXI Stream compatible so the SLINK transmitters and
