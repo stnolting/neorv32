@@ -747,56 +747,6 @@ enum NEORV32_SLINK_CT_enum {
 
 
 /**********************************************************************//**
- * @name IO Device: True Random Number Generator (TRNG)
- **************************************************************************/
-/**@{*/
-/** TRNG base address */
-#define TRNG_BASE (0xFFFFFF88UL) // /**< TRNG base address */
-/** TRNG address space size in bytes */
-#define TRNG_SIZE (1*4) // /**< TRNG address space size in bytes */
-
-/** TRNG control/data register (r/w) */
-#define TRNG_CT (*(IO_REG32 (TRNG_BASE + 0)))
-
-/** TRNG control/data register bits */
-enum NEORV32_TRNG_CT_enum {
-  TRNG_CT_DATA_LSB =  0, /**< TRNG data/control register(0)  (r/-): Random data byte LSB */
-  TRNG_CT_DATA_MSB =  7, /**< TRNG data/control register(7)  (r/-): Random data byte MSB */
-
-  TRNG_CT_EN       = 30, /**< TRNG data/control register(30) (r/w): TRNG enable */
-  TRNG_CT_VALID    = 31  /**< TRNG data/control register(31) (r/-): Random data output valid */
-};
-/**@}*/
-
-
-/**********************************************************************//**
- * @name IO Device: Watchdog Timer (WDT)
- **************************************************************************/
-/**@{*/
-/** WDT base address */
-#define WDT_BASE (0xFFFFFF8CUL) // /**< WDT base address */
-/** WDT address space size in bytes */
-#define WDT_SIZE (1*4) // /**< WDT address space size in bytes */
-
-/** Watchdog control register (r/w) */
-#define WDT_CT (*(IO_REG32 (WDT_BASE + 0)))
-
-/** WTD control register bits */
-enum NEORV32_WDT_CT_enum {
-  WDT_CT_EN       = 0, /**< WDT control register(0) (r/w): Watchdog enable */
-  WDT_CT_CLK_SEL0 = 1, /**< WDT control register(1) (r/w): Clock prescaler select bit 0 */
-  WDT_CT_CLK_SEL1 = 2, /**< WDT control register(2) (r/w): Clock prescaler select bit 1 */
-  WDT_CT_CLK_SEL2 = 3, /**< WDT control register(3) (r/w): Clock prescaler select bit 2 */
-  WDT_CT_MODE     = 4, /**< WDT control register(4) (r/w): Watchdog mode: 0=timeout causes interrupt, 1=timeout causes processor reset */
-  WDT_CT_RCAUSE   = 5, /**< WDT control register(5) (r/-): Cause of last system reset: 0=external reset, 1=watchdog */
-  WDT_CT_RESET    = 6, /**< WDT control register(6) (-/w): Reset WDT counter when set, auto-clears */
-  WDT_CT_FORCE    = 7, /**< WDT control register(7) (-/w): Force WDT action, auto-clears */
-  WDT_CT_LOCK     = 8  /**< WDT control register(8) (r/w): Lock write access to control register, clears on reset (HW or WDT) only */
-};
-/**@}*/
-
-
-/**********************************************************************//**
  * @name IO Device: Machine System Timer (MTIME)
  **************************************************************************/
 /**@{*/
@@ -973,6 +923,56 @@ enum NEORV32_TWI_CT_enum {
 enum NEORV32_TWI_DATA_enum {
   TWI_DATA_LSB = 0, /**< TWI data register(0) (r/w): Receive/transmit data (8-bit) LSB */
   TWI_DATA_MSB = 7  /**< TWI data register(7) (r/w): Receive/transmit data (8-bit) MSB */
+};
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: True Random Number Generator (TRNG)
+ **************************************************************************/
+/**@{*/
+/** TRNG base address */
+#define TRNG_BASE (0xFFFFFFB8UL) // /**< TRNG base address */
+/** TRNG address space size in bytes */
+#define TRNG_SIZE (1*4) // /**< TRNG address space size in bytes */
+
+/** TRNG control/data register (r/w) */
+#define TRNG_CT (*(IO_REG32 (TRNG_BASE + 0)))
+
+/** TRNG control/data register bits */
+enum NEORV32_TRNG_CT_enum {
+  TRNG_CT_DATA_LSB =  0, /**< TRNG data/control register(0)  (r/-): Random data byte LSB */
+  TRNG_CT_DATA_MSB =  7, /**< TRNG data/control register(7)  (r/-): Random data byte MSB */
+
+  TRNG_CT_EN       = 30, /**< TRNG data/control register(30) (r/w): TRNG enable */
+  TRNG_CT_VALID    = 31  /**< TRNG data/control register(31) (r/-): Random data output valid */
+};
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: Watchdog Timer (WDT)
+ **************************************************************************/
+/**@{*/
+/** WDT base address */
+#define WDT_BASE (0xFFFFFFBCUL) // /**< WDT base address */
+/** WDT address space size in bytes */
+#define WDT_SIZE (1*4) // /**< WDT address space size in bytes */
+
+/** Watchdog control register (r/w) */
+#define WDT_CT (*(IO_REG32 (WDT_BASE + 0)))
+
+/** WTD control register bits */
+enum NEORV32_WDT_CT_enum {
+  WDT_CT_EN       = 0, /**< WDT control register(0) (r/w): Watchdog enable */
+  WDT_CT_CLK_SEL0 = 1, /**< WDT control register(1) (r/w): Clock prescaler select bit 0 */
+  WDT_CT_CLK_SEL1 = 2, /**< WDT control register(2) (r/w): Clock prescaler select bit 1 */
+  WDT_CT_CLK_SEL2 = 3, /**< WDT control register(3) (r/w): Clock prescaler select bit 2 */
+  WDT_CT_MODE     = 4, /**< WDT control register(4) (r/w): Watchdog mode: 0=timeout causes interrupt, 1=timeout causes processor reset */
+  WDT_CT_RCAUSE   = 5, /**< WDT control register(5) (r/-): Cause of last system reset: 0=external reset, 1=watchdog */
+  WDT_CT_RESET    = 6, /**< WDT control register(6) (-/w): Reset WDT counter when set, auto-clears */
+  WDT_CT_FORCE    = 7, /**< WDT control register(7) (-/w): Force WDT action, auto-clears */
+  WDT_CT_LOCK     = 8  /**< WDT control register(8) (r/w): Lock write access to control register, clears on reset (HW or WDT) only */
 };
 /**@}*/
 
