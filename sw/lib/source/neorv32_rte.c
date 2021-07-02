@@ -132,7 +132,7 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(16)))  __neorv
   register uint32_t rte_mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
 
   // compute return address
-  if ((rte_mcause & 0x80000000) == 0) { // modify pc only if exception
+  if (((int32_t)rte_mcause) >= 0) { // modify pc only if exception (MSB cleared)
 
     // get low half word of faulting instruction
     register uint32_t rte_trap_inst;
