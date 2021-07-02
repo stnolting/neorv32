@@ -78,7 +78,7 @@ average of the random numbers = 127). A simple evaluation test/demo program can 
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.3+<| `0xffffff88` .3+<| _TRNG_CT_ <|`7:0` _TRNG_CT_DATA_MSB_ : _TRNG_CT_DATA_MSB_ ^| r/- <| 8-bit random data output
+.3+<| `0xffffffb8` .3+<| _TRNG_CT_ <|`7:0` _TRNG_CT_DATA_MSB_ : _TRNG_CT_DATA_MSB_ ^| r/- <| 8-bit random data output
                                    <|`30` _TRNG_CT_EN_                             ^| r/w <| TRNG enable
                                    <|`31` _TRNG_CT_VALID_                          ^| r/- <| random data output is valid when set
 |=======================

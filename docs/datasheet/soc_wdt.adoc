@@ -57,7 +57,7 @@ lock can only be removed by a system reset (via external reset signal or via a w
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Writable if locked | Function
-.9+<| `0xffffff8c` .9+<| _WDT_CT_ <|`0` _WDT_CT_EN_       ^| r/w ^| no  <| watchdog enable
+.9+<| `0xffffffbc` .9+<| _WDT_CT_ <|`0` _WDT_CT_EN_       ^| r/w ^| no  <| watchdog enable
                                   <|`1` _WDT_CT_CLK_SEL0_ ^| r/w ^| no  .3+<| 3-bit clock prescaler select
                                   <|`2` _WDT_CT_CLK_SEL1_ ^| r/w ^| no 
                                   <|`3` _WDT_CT_CLK_SEL2_ ^| r/w ^| no 
