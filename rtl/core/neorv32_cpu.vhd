@@ -120,7 +120,6 @@ entity neorv32_cpu is
     mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt
     -- fast interrupts (custom) --
     firq_i         : in  std_ulogic_vector(15 downto 0) := (others => '0');
-    firq_ack_o     : out std_ulogic_vector(15 downto 0);
     -- debug mode (halt) request --
     db_halt_req_i  : in  std_ulogic := '0'
   );
@@ -280,7 +279,6 @@ begin
     nm_irq_i      => nm_irq_i,    -- nmi
     -- fast interrupts (custom) --
     firq_i        => firq_i,      -- fast interrupt trigger
-    firq_ack_o    => firq_ack_o,  -- fast interrupt acknowledge mask
     -- system time input from MTIME --
     time_i        => time_i,      -- current system time
     -- physical memory protection --

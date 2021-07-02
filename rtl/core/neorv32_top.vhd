@@ -299,7 +299,6 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- IRQs --
   signal fast_irq      : std_ulogic_vector(15 downto 0);
-  signal fast_irq_ack  : std_ulogic_vector(15 downto 0);
   signal mtime_irq     : std_ulogic;
   signal wdt_irq       : std_ulogic;
   signal uart0_rxd_irq : std_ulogic;
@@ -309,7 +308,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal spi_irq       : std_ulogic;
   signal twi_irq       : std_ulogic;
   signal cfs_irq       : std_ulogic;
-  signal cfs_irq_ack   : std_ulogic;
   signal neoled_irq    : std_ulogic;
   signal slink_tx_irq  : std_ulogic;
   signal slink_rx_irq  : std_ulogic;
@@ -500,7 +498,6 @@ begin
     mtime_irq_i    => mtime_irq,    -- machine timer interrupt
     -- fast interrupts (custom) --
     firq_i         => fast_irq,     -- fast interrupt trigger
-    firq_ack_o     => fast_irq_ack, -- fast interrupt acknowledge mask
     -- debug mode (halt) request --
     db_halt_req_i  => dci_halt_req
   );
@@ -528,9 +525,6 @@ begin
   fast_irq(11) <= slink_tx_irq;  -- SLINK data send
   --
   fast_irq(15 downto 12) <= (others => '0'); -- reserved
-
-  -- CFS IRQ acknowledge --
-  cfs_irq_ack <= fast_irq_ack(1);
 
 
   -- CPU Instruction Cache ------------------------------------------------------------------
@@ -858,7 +852,6 @@ begin
       sleep_i     => cpu_sleep,                -- set if cpu is in sleep mode
       -- interrupt --
       irq_o       => cfs_irq,                  -- interrupt request
-      irq_ack_i   => cfs_irq_ack,              -- interrupt acknowledge
       -- custom io (conduit) --
       cfs_in_i    => cfs_in_i,                 -- custom inputs
       cfs_out_o   => cfs_out_o                 -- custom outputs

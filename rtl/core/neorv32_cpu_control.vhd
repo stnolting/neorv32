@@ -103,7 +103,6 @@ entity neorv32_cpu_control is
     mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
     -- fast interrupts (custom) --
     firq_i        : in  std_ulogic_vector(15 downto 0);
-    firq_ack_o    : out std_ulogic_vector(15 downto 0);
     -- system time input from MTIME --
     time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
     -- physical memory protection --
@@ -1687,9 +1686,6 @@ begin
   -- debug mode (entry) interrupts --
   trap_ctrl.db_irq_en   <= '0' when (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) else '1'; -- no interrupts when IN debug mode or IN single-step mode
   trap_ctrl.db_irq_fire <= (trap_ctrl.irq_buf(interrupt_db_step_c) or trap_ctrl.irq_buf(interrupt_db_halt_c)) when (CPU_EXTENSION_RISCV_DEBUG = true) else '0'; -- "NMI" for debug mode entry
-
-  -- acknowledge mask output --
-  firq_ack_o <= trap_ctrl.irq_ack(interrupt_firq_15_c downto interrupt_firq_0_c);
 
 
   -- Trap Priority Encoder ------------------------------------------------------------------

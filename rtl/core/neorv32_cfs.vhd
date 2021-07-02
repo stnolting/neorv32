@@ -66,7 +66,6 @@ entity neorv32_cfs is
     sleep_i     : in  std_ulogic; -- set if cpu is in sleep mode
     -- interrupt --
     irq_o       : out std_ulogic; -- interrupt request
-    irq_ack_i   : in  std_ulogic; -- interrupt acknowledge
     -- custom io (conduits) --
     cfs_in_i    : in  std_ulogic_vector(CFS_IN_SIZE-1 downto 0);  -- custom inputs
     cfs_out_o   : out std_ulogic_vector(CFS_OUT_SIZE-1 downto 0)  -- custom outputs
