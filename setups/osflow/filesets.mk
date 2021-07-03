@@ -40,7 +40,8 @@ NEORV32_CORE_SRC := \
   $(RTL_CORE_SRC)/neorv32_twi.vhd \
   $(RTL_CORE_SRC)/neorv32_uart.vhd \
   $(RTL_CORE_SRC)/neorv32_wdt.vhd \
-  $(RTL_CORE_SRC)/neorv32_wishbone.vhd
+  $(RTL_CORE_SRC)/neorv32_wishbone.vhd \
+  $(RTL_CORE_SRC)/neorv32_xirq.vhd
 
 NEORV32_SRC := ${NEORV32_PKG} ${NEORV32_APP_SRC} ${NEORV32_MEM_SRC} ${NEORV32_CORE_SRC}
 

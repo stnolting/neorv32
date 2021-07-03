@@ -99,6 +99,9 @@
         <Source name="../../../rtl/core/neorv32_wishbone.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>
+        <Source name="../../../rtl/core/neorv32_xirq.vhd" type="VHDL" type_short="VHDL">
+            <Options lib="neorv32"/>
+        </Source>
         <Source name="neorv32_dmem.ice40up_spram.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>

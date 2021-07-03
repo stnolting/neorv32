@@ -80,29 +80,34 @@ entity neorv32_top is
     HPM_NUM_CNTS                 : natural := 0;      -- number of implemented HPM counters (0..29)
     HPM_CNT_WIDTH                : natural := 40;     -- total size of HPM counters (0..64)
 
-    -- Internal Instruction memory --
+    -- Internal Instruction memory (IMEM) --
     MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
 
-    -- Internal Data memory --
+    -- Internal Data memory (DMEM) --
     MEM_INT_DMEM_EN              : boolean := true;   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
 
-    -- Internal Cache memory --
+    -- Internal Cache memory (iCACHE) --
     ICACHE_EN                    : boolean := false;  -- implement instruction cache
     ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
-    -- External memory interface --
+    -- External memory interface (WISHBONE) --
     MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              : natural := 255;    -- cycles after a pending bus access auto-terminates (0 = disabled)
 
-    -- Stream link interface --
+    -- Stream link interface (SLINK) --
     SLINK_NUM_TX                 : natural := 0;      -- number of TX links (0..8)
     SLINK_NUM_RX                 : natural := 0;      -- number of TX links (0..8)
     SLINK_TX_FIFO                : natural := 1;      -- TX fifo depth, has to be a power of two
     SLINK_RX_FIFO                : natural := 1;      -- RX fifo depth, has to be a power of two
+
+    -- External Interrupts Controller (XIRQ) --
+    XIRQ_NUM_CH                  : natural := 0;      -- number of external IRQ channels (0..32)
+    XIRQ_TRIGGER_TYPE            : std_ulogic_vector(31 downto 0) := (others => '1'); -- trigger type: 0=level, 1=edge
+    XIRQ_TRIGGER_POLARITY        : std_ulogic_vector(31 downto 0) := (others => '1'); -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
 
     -- Processor peripherals --
     IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
@@ -199,7 +204,10 @@ entity neorv32_top is
     mtime_i        : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
     mtime_o        : out std_ulogic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
 
-    -- Interrupts --
+    -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
+    xirq_i         : in  std_ulogic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0'); -- IRQ channels
+
+    -- CPU interrupts --
     nm_irq_i       : in  std_ulogic := '0'; -- non-maskable interrupt
     mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i      : in  std_ulogic := '0'; -- machine software interrupt
@@ -291,7 +299,7 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- module response bus - device ID --
   type resp_bus_id_t is (RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO, RESP_MTIME, RESP_UART0, RESP_UART1, RESP_SPI,
-                         RESP_TWI, RESP_PWM, RESP_WDT, RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_SLINK);
+                         RESP_TWI, RESP_PWM, RESP_WDT, RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_SLINK, RESP_XIRQ);
 
   -- module response bus --
   type resp_bus_t is array (resp_bus_id_t) of resp_bus_entry_t;
@@ -311,6 +319,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal neoled_irq    : std_ulogic;
   signal slink_tx_irq  : std_ulogic;
   signal slink_rx_irq  : std_ulogic;
+  signal xirq_irq      : std_ulogic;
 
   -- misc --
   signal mtime_time     : std_ulogic_vector(63 downto 0); -- current system time from MTIME
@@ -335,6 +344,7 @@ begin
   cond_sel_string_f(IO_CFS_EN, "CFS ", "") &
   cond_sel_string_f(io_slink_en_c, "SLINK ", "") &
   cond_sel_string_f(IO_NEOLED_EN, "NEOLED ", "") &
+  cond_sel_string_f(boolean(XIRQ_NUM_CH > 0), "XIRQ ", "") &
   ""
   severity note;
 
@@ -519,7 +529,7 @@ begin
   fast_irq(05) <= uart1_txd_irq; -- secondary UART (UART1) sending done
   fast_irq(06) <= spi_irq;       -- SPI transmission done
   fast_irq(07) <= twi_irq;       -- TWI transmission done
-  fast_irq(08) <= '0';           -- reserved
+  fast_irq(08) <= xirq_irq;      -- external interrupt controller
   fast_irq(09) <= neoled_irq;    -- NEOLED buffer free
   fast_irq(10) <= slink_rx_irq;  -- SLINK data received
   fast_irq(11) <= slink_tx_irq;  -- SLINK data send
@@ -1281,6 +1291,40 @@ begin
   end generate;
 
 
+  -- External Interrupt Controller (XIRQ) ---------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_xirq_inst_true:
+  if (XIRQ_NUM_CH > 0) generate
+    neorv32_slink_inst: neorv32_xirq
+    generic map (
+      XIRQ_NUM_CH           => XIRQ_NUM_CH,          -- number of external IRQ channels (0..32)
+      XIRQ_TRIGGER_TYPE     => XIRQ_TRIGGER_TYPE,    -- trigger type: 0=level, 1=edge
+      XIRQ_TRIGGER_POLARITY => XIRQ_TRIGGER_POLARITY -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
+    )
+    port map (
+      -- host access --
+      clk_i     => clk_i,                     -- global clock line
+      addr_i    => p_bus.addr,                -- address
+      rden_i    => io_rden,                   -- read enable
+      wren_i    => io_wren,                   -- write enable
+      data_i    => p_bus.wdata,               -- data in
+      data_o    => resp_bus(RESP_XIRQ).rdata, -- data out
+      ack_o     => resp_bus(RESP_XIRQ).ack,   -- transfer acknowledge
+      -- external interrupt lines --
+      xirq_i    => xirq_i,
+      -- CPU interrupt --
+      cpu_irq_o => xirq_irq
+    );
+    resp_bus(RESP_XIRQ).err <= '0'; -- no access error possible
+  end generate;
+
+  neorv32_xirq_inst_false:
+  if (XIRQ_NUM_CH = 0) generate
+    resp_bus(RESP_XIRQ) <= resp_bus_entry_terminate_c;
+    xirq_irq <= '0';
+  end generate;
+
+
   -- System Configuration Information Memory (SYSINFO) --------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_sysinfo_inst: neorv32_sysinfo
@@ -1316,7 +1360,8 @@ begin
     IO_TRNG_EN           => IO_TRNG_EN,           -- implement true random number generator (TRNG)?
     IO_CFS_EN            => IO_CFS_EN,            -- implement custom functions subsystem (CFS)?
     IO_SLINK_EN          => io_slink_en_c,        -- implement stream link interface?
-    IO_NEOLED_EN         => IO_NEOLED_EN          -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_NEOLED_EN         => IO_NEOLED_EN,         -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_XIRQ_NUM_CH       => XIRQ_NUM_CH           -- number of external interrupt (XIRQ) channels to implement
   )
   port map (
     -- host access --

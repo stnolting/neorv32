@@ -86,6 +86,10 @@ entity neorv32_ProcessorTop_stdlogic is
     SLINK_NUM_RX                 : natural := 0;      -- number of TX links (0..8)
     SLINK_TX_FIFO                : natural := 1;      -- TX fifo depth, has to be a power of two
     SLINK_RX_FIFO                : natural := 1;      -- RX fifo depth, has to be a power of two
+    -- External Interrupts Controller (XIRQ) --
+    XIRQ_NUM_CH                  : natural := 0;      -- number of external IRQ channels (0..32)
+    XIRQ_TRIGGER_TYPE            : std_logic_vector(31 downto 0) := (others => '1'); -- trigger type: 0=level, 1=edge
+    XIRQ_TRIGGER_POLARITY        : std_logic_vector(31 downto 0) := (others => '1'); -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
     -- Processor peripherals --
     IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
@@ -166,7 +170,9 @@ entity neorv32_ProcessorTop_stdlogic is
     -- System time --
     mtime_i        : in  std_logic_vector(63 downto 0) := (others => '0'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
     mtime_o        : out std_logic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
-    -- Interrupts --
+    -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
+    xirq_i         : in  std_logic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0'); -- IRQ channels
+    -- CPU Interrupts --
     nm_irq_i       : in  std_logic := '0'; -- non-maskable interrupt
     mtime_irq_i    : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i      : in  std_logic := '0'; -- machine software interrupt
@@ -177,8 +183,10 @@ end entity;
 architecture neorv32_ProcessorTop_stdlogic_rtl of neorv32_ProcessorTop_stdlogic is
 
   -- type conversion --
-  constant USER_CODE_INT     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(USER_CODE);
-  constant IO_CFS_CONFIG_INT : std_ulogic_vector(31 downto 0) := std_ulogic_vector(IO_CFS_CONFIG);
+  constant USER_CODE_INT             : std_ulogic_vector(31 downto 0) := std_ulogic_vector(USER_CODE);
+  constant IO_CFS_CONFIG_INT         : std_ulogic_vector(31 downto 0) := std_ulogic_vector(IO_CFS_CONFIG);
+  constant XIRQ_TRIGGER_TYPE_INT     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(XIRQ_TRIGGER_TYPE);
+  constant XIRQ_TRIGGER_POLARITY_INT : std_ulogic_vector(31 downto 0) := std_ulogic_vector(XIRQ_TRIGGER_POLARITY);
   --
   signal clk_i_int       : std_ulogic;
   signal rstn_i_int      : std_ulogic;
@@ -239,6 +247,8 @@ architecture neorv32_ProcessorTop_stdlogic_rtl of neorv32_ProcessorTop_stdlogic 
   signal mtime_i_int     : std_ulogic_vector(63 downto 0);
   signal mtime_o_int     : std_ulogic_vector(63 downto 0);
   --
+  signal xirq_i_int      : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
+  --
   signal nm_irq_i_int    : std_ulogic;
   signal mtime_irq_i_int : std_ulogic;
   signal msw_irq_i_int   : std_ulogic;
@@ -290,12 +300,15 @@ begin
     -- External memory interface --
     MEM_EXT_EN                   => MEM_EXT_EN,         -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              => MEM_EXT_TIMEOUT,    -- cycles after a pending bus access auto-terminates (0 = disabled)
-
     -- Stream link interface --
     SLINK_NUM_TX                 => SLINK_NUM_TX,       -- number of TX links (0..8)
     SLINK_NUM_RX                 => SLINK_NUM_RX,       -- number of TX links (0..8)
     SLINK_TX_FIFO                => SLINK_TX_FIFO,      -- TX fifo depth, has to be a power of two
     SLINK_RX_FIFO                => SLINK_RX_FIFO,      -- RX fifo depth, has to be a power of two
+    -- External Interrupts Controller (XIRQ) --
+    XIRQ_NUM_CH                  => XIRQ_NUM_CH, -- number of external IRQ channels (0..32)
+    XIRQ_TRIGGER_TYPE            => XIRQ_TRIGGER_TYPE_INT, -- trigger type: 0=level, 1=edge
+    XIRQ_TRIGGER_POLARITY        => XIRQ_TRIGGER_POLARITY_INT, -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
     -- Processor peripherals --
     IO_GPIO_EN                   => IO_GPIO_EN,         -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  => IO_MTIME_EN,        -- implement machine system timer (MTIME)?
@@ -376,7 +389,9 @@ begin
     -- System time --
     mtime_i        => mtime_i_int,     -- current system time from ext. MTIME (if IO_MTIME_EN = false)
     mtime_o        => mtime_o_int,     -- current system time from int. MTIME (if IO_MTIME_EN = true)
-    -- Interrupts --
+    -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
+    xirq_i         => xirq_i_int,      -- IRQ channels
+    -- CPU Interrupts --
     nm_irq_i       => nm_irq_i_int,    -- non-maskable interrupt
     mtime_irq_i    => mtime_irq_i_int, -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i      => msw_irq_i_int,   -- machine software interrupt
@@ -441,6 +456,8 @@ begin
 
   mtime_i_int     <= std_ulogic_vector(mtime_i);
   mtime_o         <= std_logic_vector(mtime_o_int);
+
+  xirq_i_int      <= std_ulogic_vector(xirq_i);
 
   msw_irq_i_int   <= std_ulogic(msw_irq_i);
   mext_irq_i_int  <= std_ulogic(mext_irq_i);
