@@ -84,6 +84,10 @@ entity neorv32_SystemTop_axi4lite is
     ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
+    -- External Interrupts Controller (XIRQ) --
+    XIRQ_NUM_CH                  : natural := 0;      -- number of external IRQ channels (0..32)
+    XIRQ_TRIGGER_TYPE            : std_logic_vector(31 downto 0) := (others => '1'); -- trigger type: 0=level, 1=edge
+    XIRQ_TRIGGER_POLARITY        : std_logic_vector(31 downto 0) := (others => '1'); -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
     -- Processor peripherals --
     IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
@@ -170,7 +174,9 @@ entity neorv32_SystemTop_axi4lite is
     cfs_out_o     : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom outputs
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o      : out std_logic; -- async serial data line
-    -- Interrupts --
+    -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
+    xirq_i        : in  std_logic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0'); -- IRQ channels
+    -- CPU Interrupts --
     nm_irq_i      : in  std_logic := '0'; -- non-maskable interrupt
     msw_irq_i     : in  std_logic := '0'; -- machine software interrupt
     mext_irq_i    : in  std_logic := '0'  -- machine external interrupt
@@ -180,8 +186,10 @@ end entity;
 architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
 
   -- type conversion --
-  constant USER_CODE_INT     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(USER_CODE);
-  constant IO_CFS_CONFIG_INT : std_ulogic_vector(31 downto 0) := std_ulogic_vector(IO_CFS_CONFIG);
+  constant USER_CODE_INT             : std_ulogic_vector(31 downto 0) := std_ulogic_vector(USER_CODE);
+  constant IO_CFS_CONFIG_INT         : std_ulogic_vector(31 downto 0) := std_ulogic_vector(IO_CFS_CONFIG);
+  constant XIRQ_TRIGGER_TYPE_INT     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(XIRQ_TRIGGER_TYPE);
+  constant XIRQ_TRIGGER_POLARITY_INT : std_ulogic_vector(31 downto 0) := std_ulogic_vector(XIRQ_TRIGGER_POLARITY);
   --
   signal clk_i_int       : std_ulogic;
   signal rstn_i_int      : std_ulogic;
@@ -216,6 +224,8 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
   signal cfs_out_o_int   : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
   --
   signal neoled_o_int    : std_ulogic;
+  --
+  signal xirq_i_int      : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
   --
   signal nm_irq_i_int    : std_ulogic;
   signal msw_irq_i_int   : std_ulogic;
@@ -300,6 +310,10 @@ begin
     -- External memory interface --
     MEM_EXT_EN                   => true,               -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              => 0,                  -- cycles after a pending bus access auto-terminates (0 = disabled)
+    -- External Interrupts Controller (XIRQ) --
+    XIRQ_NUM_CH                  => XIRQ_NUM_CH, -- number of external IRQ channels (0..32)
+    XIRQ_TRIGGER_TYPE            => XIRQ_TRIGGER_TYPE_INT, -- trigger type: 0=level, 1=edge
+    XIRQ_TRIGGER_POLARITY        => XIRQ_TRIGGER_POLARITY_INT, -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
     -- Processor peripherals --
     IO_GPIO_EN                   => IO_GPIO_EN,         -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  => IO_MTIME_EN,        -- implement machine system timer (MTIME)?
@@ -372,7 +386,9 @@ begin
     -- System time --
     mtime_i     => (others => '0'), -- current system time from ext. MTIME (if IO_MTIME_EN = false)
     mtime_o     => open,            -- current system time from int. MTIME (if IO_MTIME_EN = true)
-    -- Interrupts --
+    -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
+    xirq_i      => xirq_i_int,      -- IRQ channels
+    -- CPU Interrupts --
     nm_irq_i    => nm_irq_i_int,    -- non-maskable interrupt
     mtime_irq_i => '0',             -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => msw_irq_i_int,   -- machine software interrupt
