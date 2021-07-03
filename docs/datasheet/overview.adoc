@@ -228,7 +228,8 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 ├neorv32_twi.vhd                 - Two wire serial interface controller
 ├neorv32_uart.vhd                - Universal async. receiver/transmitter
 ├neorv32_wdt.vhd                 - Watchdog timer
-└neorv32_wb_interface.vhd        - External (Wishbone) bus interface
+├neorv32_wishbone.vhd            - External (Wishbone) bus interface
+└neorv32_xirq.vhd                - External interrupt controller
 ...................................
 
 
@@ -303,6 +304,7 @@ between entity boundaries, so the actual utilization results might vary a bit.
 | UART0/1       | Universal asynchronous receiver/transmitter 0/1     | 183 | 132 |        0 |    0
 | WDT           | Watchdog timer                                      |  53 |  43 |        0 |    0
 | WISHBONE      | External memory interface                           | 114 | 110 |        0 |    0
+| XIRQ          | External interrupt controller (32 channels)         | 241 | 201 |        0 |    0
 |=======================
 
 

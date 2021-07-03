@@ -740,53 +740,60 @@ destination register will not be written at all).
 :sectnums:
 ==== Traps, Exceptions and Interrupts
 
-In this document a (maybe) special nomenclature regarding traps is used:
+In this document the following nomenclature regarding traps is used:
 
 * _interrupt_ = asynchronous exceptions
 * _exceptions_ = synchronous exceptions
 * _traps_ = exceptions + interrupts (synchronous or asynchronous exceptions)
 
-Whenever an exception or interrupt is triggered, the CPU transfers control to the address stored in the `mtvec`
-CSR. The cause of the according interrupt or exception can be determined via the content of the `mcause`
-CSR The address that reflected the current program counter when a trap was taken is stored to `mepc`.
-Additional information regarding the cause of the trap can be retrieved from `mtval`.
+Whenever an exception or interrupt is triggered, the CPU transfers control to the address stored in `mtvec`
+CSR. The cause of the according interrupt or exception can be determined via the content of `mcause`
+CSR. The address that reflects the current program counter when a trap was taken is stored to `mepc` CSR.
+Additional information regarding the cause of the trap can be retrieved from `mtval` CSR.
 
-The traps are prioritized. If several exceptions occur at once only the one with highest priority is triggered. If
-several interrupts trigger at once, the one with highest priority is triggered while the remaining ones are
-queued. After completing the interrupt handler the interrupt with the second highest priority will issues and
-so on.
+The traps are prioritized. If several _exceptions_ occur at once only the one with highest priority is triggered
+while all remaining exceptions are ignored. If several _interrupts_ trigger at once, the one with highest priority
+is serviced first while the remaining ones are queued. After completing the interrupt handler the interrupt with
+the second highest priority will get serviced and so on until no further interrupt are pending.
 
+.Trigger Type
+[IMPORTANT]
+All CPU interrupt request signals are high-level triggered. So an interrupt request will be generated if the
+according signal is _high_ for exactly one cycle (being high for several cycles might cause multiple
+triggering of the same interrupt).
 
-**Memory Access Exceptions**
-
-If a load operation causes any exception, the destination register is not written at all. Exceptions caused by a
-misalignment or a physical memory protection fault do not trigger a bus read-operation at all.
-Exceptions caused by a store address misalignment or a store physical memory protection fault do not trigger
-a bus write-operation at all.
-
-
-**Instruction Atomicity**
-
+.Instruction Atomicity
+[NOTE]
 All instructions execute as atomic operations – interrupts can only trigger between two instructions.
 
 
-**Custom Fast Interrupt Request Lines**
+:sectnums:
+==== Memory Access Exceptions**
 
-As a custom extension, the NEORV32 CPU features 16 fast interrupt request lines via the `firq_i` CPU top
+If a load operation causes any exception, the instruction's destination register is
+_not written_ at all. Load exceptions caused by a misalignment or a physical memory protection fault do not
+trigger a bus read-operation at all. Exceptions caused by a store address misalignment or a store physical
+memory protection fault do not trigger
+a bus write-operation at all.
+
+
+:sectnums:
+==== Custom Fast Interrupt Request Lines
+
+As a custom extension, the NEORV32 CPU features 16 fast interrupt request (FIRQ) lines via the `firq_i` CPU top
 entity signals. These interrupts have custom configuration and status flags in the `mie` and `mip` CSRs and also
-provide custom trap codes in `mcause`.
+provide custom trap codes in `mcause`. Thes FIRQs are reserved for processor-internal usage only.
 
 
-**Non-Maskable Interrupt**
+:sectnums:
+==== Non-Maskable Interrupt
 
 The NEORV32 CPU features a single non-maskable interrupt source via the `nm_irq_i` CPU (/Processor) top
-entity signal that can be used to signal critical system conditions. This interrupt source _cannot_ be disabled at all (even not in interrupt service routines).
+entity signal. This interrupt can be used to signal _critical_ system conditions that need immediate handling.
+The non-maskable interrupt _cannot_ be masked/disabled at all (even not in interrupt service routines).
 Hence, it does _not_ provide configuration/status flags in the `mie` and `mip` CSRs. The RISC-V-compatible
 `mcause` value `0x80000000` is used to indicate the non-maskable interrupt.
 
-[IMPORTANT]
-All CPU/Processor interrupt request signals are triggered when the signal is _high_ for exactly one cycle (being high for several cycles might
-cause multiple triggering of the interrupt).
 
 
 <<<

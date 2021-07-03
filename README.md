@@ -115,6 +115,8 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 * 32-bit stram link interface with up to 8 independent RX and TX links
 ([SLINK](https://stnolting.github.io/neorv32/#_stream_link_interface_slink))
   * AXI4-Stream compatible
+* external interrupt controller with up to 32 channels
+([XIRQ](https://stnolting.github.io/neorv32/#_external_interrupt_controller_xirq))
 * alternative [top entities/wrappers](https://github.com/stnolting/neorv32/blob/master/rtl/templates) providing
 simplified and/or resolved top entity ports for easy system integration
 * custom functions subsystem ([CFS](https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs))

@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 03.07.2021 | 1.5.7.10 | :sparkles: added new component: External Interrupt Controller (XIRQ): up to 32 external interrupt channels `xirq_i` (via `XIRQ_NUM_CH` generic), configurable trigger (via `XIRQ_TRIGGER_TYPE` and `XIRQ_TRIGGER_POLARITY` generics), prioritized or non-prioritized servicing |
 | 02.07.2021 | 1.5.7.9 | relocated base addresses of watchdog timer (WDT) and true-random number generator (TRNG); removed CPU's `firq_ack_o` signal (was not used at all) |
 | 30.06.2021 | 1.5.7.8 | :warning: increased GPIO port size from 32-bit to 64-bit; relocated GPIO base address; removed GPIO.input pin-change interrupt |
 | 29.06.2021 | 1.5.7.7 | :sparkles: added new processor module **stream link interface (SLINK)**: up to 8 individual RX and TX stream links, comptaible to AXI4-Stream base protocol; added software driver files; added documentation |
@@ -33,7 +34,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 | 26.06.2021 | 1.5.7.3 | edit of v1.5.7.2: RISC-V spec claims to leave destination registers of trapping load operation unchanged (do _not_ set to zero); minor CPU control logic optimizations; :sparkles: reworked bootloader to provide several new configuration and customization options |
 | 25.06.2021 | 1.5.7.2 | optimized instruction execution FSM: less hardware utilization, :lock: now _ensures_ to write ZERO to destination register if there is an exception during a load operation; made default bootloader even more HW configuration independent (GPIO, SPI and MTIME are optional; UART is optional but highly recommended); |
 | 24.06.2021 | 1.5.7.1 | sparkles: added RISC-V `Zmmul` ISA extension (via `CPU_EXTENSION_RISCV_Zmmul` generic; default = _false_): implements only the integer multiplication instructions sub-set of the `M` extension; for size-constrained setups, requires ~50% less hardware ressources than the `M` extension |
-| 23.06.2021 | [**:rocket:1.5.7**](https://github.com/stnolting/neorv32/releases/tag/v1.5.7) | **New release** one year NEORV32! :tada: |
+| 23.06.2021 | [**:rocket:1.5.7**](https://github.com/stnolting/neorv32/releases/tag/v1.5.7) | **New release** _one year NEORV32!_ :tada: |
 | 21.06.2021 | 1.5.6.14 | :bug: fixed bug in debugger "park loop": `fence.i` instruction was missing before executing the DM's program buffer - this caused execution of outdated instructions from the program buffer if the **instruction cache** is implemented |
 | 21.06.2021 | 1.5.6.13 | removed `TINY_SHIFT_EN` generic; clean-up of CPU co-processor system: removed "dummy co-processor" for CSR read access, moved CPU shifter core into new co-processor; simplified default (bit-serial) shifter logic (single bit-shifts only) and multi-cycl instructions decode logic |
 | 18.06.2021 | 1.5.6.12 | clean-up of CPU co-processor system (removed unused co-processor slots 4,5,6,7) |

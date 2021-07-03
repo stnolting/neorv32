@@ -122,7 +122,6 @@ The SLINK handshake protocol is compatible to the AXI4-Stream base protocol.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Function
-
 .8+<| `0xfffffec0` .8+<| _SLINK_CT_ <| `31` _SLINK_CT_EN_ ^| r/w | SLINK global enable
                                     <| `30` _reserved_    ^| r/- <| reserved, read as zero
                                     <| `29:26` _SLINK_CT_TX_FIFO_S3_ : _SLINK_CT_TX_FIFO_S0_ ^| r/- <| TX links FIFO depth, log2 of_SLINK_TX_FIFO_ generic
