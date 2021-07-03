@@ -204,6 +204,10 @@ begin
     SLINK_NUM_RX                 => 8,             -- number of TX links (0..8)
     SLINK_TX_FIFO                => 4,             -- TX fifo depth, has to be a power of two
     SLINK_RX_FIFO                => 1,             -- RX fifo depth, has to be a power of two
+    -- External Interrupts Controller (XIRQ) --
+    XIRQ_NUM_CH                  => 32,            -- number of external IRQ channels (0..32)
+    XIRQ_TRIGGER_TYPE            => (others => '1'), -- trigger type: 0=level, 1=edge
+    XIRQ_TRIGGER_POLARITY        => (others => '1'), -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge 
     -- Processor peripherals --
     IO_GPIO_EN                   => true,          -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  => true,          -- implement machine system timer (MTIME)?
@@ -284,7 +288,9 @@ begin
     -- System time --
     mtime_i        => (others => '0'), -- current system time from ext. MTIME (if IO_MTIME_EN = false)
     mtime_o        => open,            -- current system time from int. MTIME (if IO_MTIME_EN = true)
-    -- Interrupts --
+    -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
+    xirq_i         => gpio(31 downto 0), -- IRQ channels
+    -- CPU Interrupts --
     nm_irq_i       => nmi_ring,        -- non-maskable interrupt
     mtime_irq_i    => '0',             -- machine software interrupt, available if IO_MTIME_EN = false
     msw_irq_i      => msi_ring,        -- machine software interrupt

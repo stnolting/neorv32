@@ -65,7 +65,7 @@
 //** for simulation only! */
 #ifdef SUPPRESS_OPTIONAL_UART_PRINT
 //** print standard output to UART0 */
-#define PRINT_STANDARD(...) neorv32_uart0_printf(__VA_ARGS__)
+#define PRINT_STANDARD(...) 
 //** print critical output to UART1 */
 #define PRINT_CRITICAL(...) neorv32_uart1_printf(__VA_ARGS__)
 #else
@@ -80,6 +80,8 @@
 // Prototypes
 void sim_irq_trigger(uint32_t sel);
 void global_trap_handler(void);
+void xirq_trap_handler0(void);
+void xirq_trap_handler1(void);
 void test_ok(void);
 void test_fail(void);
 
@@ -90,8 +92,10 @@ int cnt_fail = 0;
 int cnt_ok   = 0;
 /// Global counter for total number of tests
 int cnt_test = 0;
-/// Global numbe rof available HPMs
+/// Global number of available HPMs
 uint32_t num_hpm_cnts_global = 0;
+/// XIRQ trap handler acknowledge
+uint32_t xirq_trap_handler_ack = 0;
 
 /// Variable to test atomic accesses
 uint32_t atomic_access_addr;
@@ -1175,12 +1179,44 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 8 (???)
+  // Fast interrupt channel 8 (XIRQ)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] FIRQ8 test (via ?): work-in-progress", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ8 test (via XIRQ): ", cnt_test);
+  if (neorv32_xirq_available()) {
 
-  cnt_test++;
+    cnt_test++;
+
+    int xirq_err_cnt = 0;
+    xirq_trap_handler_ack = 0;
+
+    xirq_err_cnt += neorv32_xirq_setup(); // initialize XIRQ
+    xirq_err_cnt += neorv32_xirq_install(0, xirq_trap_handler0); // install XIRQ IRQ handler channel 0
+    xirq_err_cnt += neorv32_xirq_install(1, xirq_trap_handler1); // install XIRQ IRQ handler channel 1
+
+    neorv32_xirq_global_enable(); // enable XIRQ FIRQ
+
+    // trigger XIRQ channel 1 and 0
+    neorv32_gpio_port_set(3);
+
+    // wait for IRQs to arrive CPU
+    asm volatile("nop");
+    asm volatile("nop");
+    asm volatile("nop");
+
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_8) && // FIRQ8 IRQ
+        (xirq_err_cnt == 0) && // no errors during XIRQ configuration
+        (xirq_trap_handler_ack == 4)) { // XIRQ channel handler 0 executed before handler 1
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+    neorv32_xirq_global_disable();
+    XIRQ_IER = 0;
+    XIRQ_IPR = -1;
+  }
 
 
   // ----------------------------------------------------------
@@ -1634,6 +1670,24 @@ void global_trap_handler(void) {
   // hack: always come back in MACHINE MODE
   register uint32_t mask = (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L);
   asm volatile ("csrrs zero, mstatus, %[input_j]" :  : [input_j] "r" (mask));
+}
+
+
+/**********************************************************************//**
+ * XIRQ handler channel 0.
+ **************************************************************************/
+void xirq_trap_handler0(void) {
+
+  xirq_trap_handler_ack += 2;
+}
+
+
+/**********************************************************************//**
+ * XIRQ handler channel 1.
+ **************************************************************************/
+void xirq_trap_handler1(void) {
+
+  xirq_trap_handler_ack *= 2;
 }
 
 
