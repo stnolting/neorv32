@@ -24,6 +24,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ ring-oscillator-based true random number generator (<<_true_random_number_generator_trng,**TRNG**>>)
 * _optional_ custom functions subsystem for custom co-processor extensions (<<_custom_functions_subsystem_cfs,**CFS**>>)
 * _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (<<_smart_led_interface_neoled,**NEOLED**>>)
+* _optional_ external interrupt controller with up to 32 channels (<<_external_interrupt_controller_xirq,**XIRQ**>>)
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>)
 * system configuration information memory to check HW configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
@@ -106,7 +107,9 @@ A wrapper for the NEORV32 Processor setup providing resolved port signals can be
 4+^| **System time (<<_machine_system_timer_mtime,MTIME>>)**
 | `mtime_i` | 64 | in  | machine timer time (to `time[h]` CSRs) from _external MTIME_ unit if the processor-internal _MTIME_ unit is NOT implemented
 | `mtime_o` | 64 | out | machine timer time from _internal MTIME_ unit if processor-internal _MTIME_ unit IS implemented
-4+^| **<<_processor_interrupts>>**
+4+^| **<<_processor_interrupts, External Interrupts>>**
+| `xirq_i` | 32 | in | external interrupt requests (up to 32 channels)
+4+^| **<<_processor_interrupts, CPU Interrupts>>**
 | `nm_irq_i`    | 1 | in | non-maskable interrupt
 | `mtime_irq_i` | 1 | in | machine timer interrupt13 (RISC-V)
 | `msw_irq_i`   | 1 | in | machine software interrupt (RISC-V)
@@ -640,6 +643,48 @@ See section <<_stream_link_interface_slink>> for more information.
 
 // ####################################################################################################################
 :sectnums:
+==== External Interrupt Controller
+
+See section <<_external_interrupt_controller_xirq>> for more information.
+
+
+:sectnums!:
+===== _XIRQ_NUM_CH_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **XIRQ_NUM_CH** | _natural_ | 0
+3+| Number of external interrupt channels o implement. Valid values are 0..32.
+|======
+
+
+:sectnums!:
+===== _XIRQ_TRIGGER_TYPE_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **XIRQ_TRIGGER_TYPE** | _std_ulogic_vector(31 downto 0)_ | 0xFFFFFFFF
+3+| Interrupt trigger type configuration (one bit for each IRQ channel): `0` = level-triggered, '1' = edge triggered.
+_XIRQ_TRIGGER_POLARITY_ generic is used to specify the actual level (high/low) or edge (falling/rising).
+|======
+
+
+:sectnums!:
+===== _XIRQ_TRIGGER_POLARITY_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **XIRQ_TRIGGER_POLARITY** | _std_ulogic_vector(31 downto 0)_ | 0xFFFFFFFF
+3+| Interrupt trigger polarity configuration (one bit for each IRQ channel): `0` = low-level/falling-edge,
+'1' = high-level/rising-edge. _XIRQ_TRIGGER_TYPE_ generic is used to specify the actual type (level or edge).
+|======
+
+
+// ####################################################################################################################
+:sectnums:
 ==== Processor Peripheral/IO Modules
 
 See section <<_processor_internal_modules>> for more information.
@@ -816,19 +861,66 @@ See section <<_smart_led_interface_neoled>> for more information.
 :sectnums:
 === Processor Interrupts
 
-[TIP]
-The interrupt request signals have specific `mip` CSR bits (see <<_machine_trap_setup>>), specific
-`mie` CSR bits (see <<_machine_trap_handling>>) and specific `mcause` CSR trap codes and trap
-priorities. For more information (also regarding the signaling protocol) see section <<_traps_exceptions_and_interrupts>>.
+The NEORV32 Processor provides several interrupt request signals (IRQs) for custom platform use.
+
 
 :sectnums:
 ==== RISC-V Standard Interrupts
 
 The processor setup features the standard RISC-V interrupt lines for "machine timer interrupt", "machine
-software interrupt" and "machine external interrupt". The software and external interrupt lines are available
-via the processor's top entity. By default, the timer interrupt is connected to the internal machine timer
-MTIME timer unit (<<_machine_system_timer_mtime>>). If this module has not been enabled for
-synthesis, the machine timer interrupt is also available via the processor's top entity.
+software interrupt" and "machine external interrupt". Their usage is defined by the RISC-V privileged architecture
+specifications. However, bare-metal system can also repurpose these interrupts. See CPU section
+<<_traps_exceptions_and_interrupts>> for more information.
+
+[cols="<3,^2,<11"]
+[options="header",grid="rows"]
+|=======================
+| Top signal | Width | Description
+| `mtime_irq_i` | 1 | Machine timer interrupt from _processor-external_ MTIME unit. This IRQ is only available if the processor-internal MTIME unit is not used (<<_io_mtime_en>> = false).
+| `msw_irq_i`   | 1 | Machine software interrupt. This interrupt is used for inter-processor interrupts in multi-core systems. However, it can also be used for any custom purpose.
+| `mext_irq_i`  | 1 | Machine external interrupt. This interrupt is used for any processor-external interrupt source (like a platform interrupt controller).
+|=======================
+
+[NOTE]
+These IRQs trigger on high-level.
+
+
+:sectnums:
+==== Non-Maskable Interrupt
+
+[cols="<3,^2,<11"]
+[options="header",grid="rows"]
+|=======================
+| Top signal | Width | Description
+| `nm_irq_i` | 1 | Non-maskable interrupt.
+|=======================
+
+The processor features a single non-maskable interrupt source via the `nm_irq_i` top
+entity signal that can be used to signal _critical system conditions_. This interrupt source _cannot_ be masked/disabled.
+See CPU section <<_traps_exceptions_and_interrupts>> for more information.
+
+[NOTE]
+This IRQ triggers on high-level.
+
+
+:sectnums:
+==== Platform External Interrupts
+
+[cols="<3,^2,<11"]
+[options="header",grid="rows"]
+|=======================
+| Top signal | Width | Description
+| `xirq_i` | up to 32 | External platform interrupts (user-defined).
+|=======================
+
+The processor provides an optional interrupt controller for up to 32 user-defined external interrupts
+(see section <<_external_interrupt_controller_xirq>>). These external IRQs are mapped to a _single_ CPU
+fast interrupt request so a software handler is required to differentiate / prioritize these interrupts.
+
+[NOTE]
+The trigger for these interrupt can be defines via generics. See section
+<<_external_interrupt_controller_xirq>> for more information.
+
 
 :sectnums:
 ==== NEORV32-Specific Fast Interrupt Requests
@@ -838,35 +930,28 @@ As part of the custom/NEORV32-specific CPU extensions, the CPU features 16 fast 
 interfaces to signal "available incoming data" or "ready to send new data").
 
 The mapping of the 16 FIRQ channels is shown in the following table (the channel number also corresponds to
-the according FIRQ priority):
+the according FIRQ priority; 0 = highest, 15 = lowest):
 
 .NEORV32 fast interrupt channel mapping
 [cols="^1,<2,<7"]
 [options="header",grid="rows"]
 |=======================
 | Channel | Source | Description
-| 0       | _WDT_ | watchdog timeout interrupt
-| 1       | _CFS_ | custom functions subsystem (CFS) interrupt (user-defined)
-| 2       | _UART0_ (RXD) | UART0 data received interrupt (RX complete)
-| 3       | _UART0_ (TXD) | UART0 sending done interrupt (TX complete)
-| 4       | _UART1_ (RXD) | UART1 data received interrupt (RX complete)
-| 5       | _UART1_ (TXD) | UART1 sending done interrupt (TX complete)
-| 6       | _SPI_ | SPI transmission done interrupt
-| 7       | _TWI_ | TWI transmission done interrupt
-| 8       | - | _reserved_ (FIXME!!!)
-| 9       | _NEOLED_ | NEOLED buffer TX empty / not full interrupt
-| 10      | _SLINK_ | RX data received
-| 11      | _SLINK_ | TX data send
-| 12:15   | - | _reserved_
+| 0       | <<_watchdog_timer_wdt,WDT>> | watchdog timeout interrupt
+| 1       | <<_custom_functions_subsystem_cfs,CFS>> | custom functions subsystem (CFS) interrupt (user-defined)
+| 2       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 data received interrupt (RX complete)
+| 3       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 sending done interrupt (TX complete)
+| 4       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 data received interrupt (RX complete)
+| 5       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 sending done interrupt (TX complete)
+| 6       | <<_serial_peripheral_interface_controller_spi,SPI>> | SPI transmission done interrupt
+| 7       | <<_two_wire_serial_interface_controller_twi,TWI>> | TWI transmission done interrupt
+| 8       | <<_external_interrupt_controller_xirq,XIRQ>> | External interrupt controller interrupt
+| 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED buffer TX empty / not full interrupt
+| 10      | <<_stream_link_interface_slink,SLINK>> | RX data received
+| 11      | <<_stream_link_interface_slink,SLINK>> | TX data send
+| 12:15   | - | _reserved_, cannot fire
 |=======================
 
-:sectnums:
-==== Non-Maskable Interrupt
-
-The NEORV32 features a single non-maskable interrupt source via the `nm_irq_i` top
-entity signal that can be used to signal critical system conditions. This interrupt source _cannot_ be disabled.
-Hence, it does _not_ provide configuration/status flags in the `mie` and `mip` CSRs. The RISC-V-compatible
-`mcause` value `0x80000000` is used to indicate the non-maskable interrupt.
 
 
 <<<
@@ -1221,6 +1306,8 @@ include::soc_trng.adoc[]
 include::soc_cfs.adoc[]
 
 include::soc_neoled.adoc[]
+
+include::soc_xirq.adoc[]
 
 include::soc_sysinfo.adoc[]
 
