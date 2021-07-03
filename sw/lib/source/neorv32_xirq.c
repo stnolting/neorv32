@@ -146,7 +146,7 @@ int neorv32_xirq_get_num(void) {
 /**********************************************************************//**
  * Install exception handler function for XIRQ channel.
  *
- * @note This will also activate the according XIRQ channel.
+ * @note This will also activate the according XIRQ channel and clear a pending IRQ at this channel.
  *
  * @param[in] ch XIRQ interrupt channel (0..31).
  * @param[in] handler The actual handler function for the specified exception (function MUST be of type "void function(void);").

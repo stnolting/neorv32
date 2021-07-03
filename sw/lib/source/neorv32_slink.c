@@ -60,7 +60,7 @@ int neorv32_slink_available(void) {
 
 
 /**********************************************************************//**
- * Active stream link interface.
+ * Activate stream link interface.
  **************************************************************************/
 void neorv32_slink_enable(void) {
 
