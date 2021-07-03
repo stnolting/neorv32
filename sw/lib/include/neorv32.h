@@ -747,6 +747,26 @@ enum NEORV32_SLINK_CT_enum {
 
 
 /**********************************************************************//**
+ * @name IO Device: External Interrupt Controller (XIRQ)
+ **************************************************************************/
+/**@{*/
+/** XIRQ base address */
+#define XIRQ_BASE (0xFFFFFF80UL) // /**< XIRQ base address */
+/** XIRQ address space size in bytes */
+#define XIRQ_SIZE (4*4) // /**< XIRQ address space size in bytes */
+
+/** XIRQ IRQ input enable register (r/w) */
+#define XIRQ_IER (*(IO_REG32 (XIRQ_BASE + 0)))
+/** XIRQ pending IRQ register /ack/clear (r/w) */
+#define XIRQ_IPR (*(IO_REG32 (XIRQ_BASE + 4)))
+/** EXTIRW  (time compare register) low word (r/w) */
+#define XIRQ_SCR (*(IO_REG32 (XIRQ_BASE + 8)))
+// reserved
+//#define XIRQ_reserved (*(IO_REG32 (XIRQ_BASE + 12)))
+/**@}*/
+
+
+/**********************************************************************//**
  * @name IO Device: Machine System Timer (MTIME)
  **************************************************************************/
 /**@{*/
@@ -1104,9 +1124,10 @@ enum NEORV32_NEOLED_CT_enum {
   SYSINFO_FEATURES_IO_WDT           = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_EN generic) */
   SYSINFO_FEATURES_IO_CFS           = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions subsystem implemented when 1 (via IO_CFS_EN generic) */
   SYSINFO_FEATURES_IO_TRNG          = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_EN generic) */
-  SYSINFO_FEATURES_IO_SLINK         = 25, /**< SYSINFO_FEATURES (24) (r/-): Stream link interface implemented when 1 (via SLINK_NUM_RX & SLINK_NUM_TX generics) */
+  SYSINFO_FEATURES_IO_SLINK         = 25, /**< SYSINFO_FEATURES (25) (r/-): Stream link interface implemented when 1 (via SLINK_NUM_RX & SLINK_NUM_TX generics) */
   SYSINFO_FEATURES_IO_UART1         = 26, /**< SYSINFO_FEATURES (26) (r/-): Secondary universal asynchronous receiver/transmitter 1 implemented when 1 (via IO_UART1_EN generic) */
-  SYSINFO_FEATURES_IO_NEOLED        = 27  /**< SYSINFO_FEATURES (27) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
+  SYSINFO_FEATURES_IO_NEOLED        = 27, /**< SYSINFO_FEATURES (27) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
+  SYSINFO_FEATURES_IO_XIRQ          = 28  /**< SYSINFO_FEATURES (28) (r/-): External interrupt controller implemented when 1 (via XIRQ_NUM_IO generic) */
 };
 
 /**********************************************************************//**
@@ -1159,6 +1180,7 @@ enum NEORV32_NEOLED_CT_enum {
 #include "neorv32_twi.h"
 #include "neorv32_uart.h"
 #include "neorv32_wdt.h"
+#include "neorv32_xirq.h"
 
 
 #ifdef __cplusplus
