@@ -6,6 +6,7 @@ MV := mv
 TASK := clean $(BITSTREAM)
 
 FOMU_REV ?= pvt
+OrangeCrab_REV ?= r02-25F
 
 ifndef BOARD
 $(error BOARD needs to be set to 'Fomu' or 'UPDuino_v3'!)
@@ -41,6 +42,12 @@ iCESugar:
 UPduino_v3:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
+	  run
+
+OrangeCrab:
+	$(MAKE) \
+	  BITSTREAM=neorv32_$(BOARD)_$(OrangeCrab_REV)_$(DESIGN).bit \
+	  NEORV32_MEM_SRC="../../rtl/core/neorv32_imem.vhd ../../rtl/core/neorv32_dmem.vhd" \
 	  run
 
 # Designs
