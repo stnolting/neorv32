@@ -47,7 +47,7 @@ jobs:
         fetch-depth: 0
 
     - name: '📚 Build Datasheet and User Guide (PDF and HTML)'
-      run: make container
+      run: make -C docs container
 
     - name: '📤 Upload Artifact: HTML'
       uses: actions/upload-artifact@v2
