@@ -47,6 +47,7 @@ jobs:
           mingw-w64-x86_64-nextpnr
           mingw-w64-x86_64-icestorm
           mingw-w64-x86_64-prjtrellis
+          mingw-w64-x86_64-python-pip
 
     - name: '⚙️ git config'
       run: git config --global core.autocrlf input
@@ -58,8 +59,11 @@ jobs:
         # The command 'git describe' (used for version) needs the history.
         fetch-depth: 0
 
+    - name: '🐍 Install doit'
+      run: pip install doit
+
     - name: '🚧 Generate ${{ matrix.board }} ${{ matrix.design }} bitstream'
-      run: make -C setups/osflow BOARD=${{ matrix.board }} ${{ matrix.design }}
+      run: ./do.py ex:${{ matrix.board }} -d ${{ matrix.design }} clean bit
 
 
   Processor:
