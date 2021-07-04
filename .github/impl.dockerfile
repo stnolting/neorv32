@@ -9,3 +9,5 @@ RUN apt-get update -qq \
  && rm -rf /var/lib/apt/lists/*
 
 ENV GHDL_PLUGIN_MODULE=ghdl
+
+ENTRYPOINT ["doit"]

@@ -48,7 +48,7 @@ jobs:
     - name: '🚧 Generate ${{ matrix.board }} ${{ matrix.design }} bitstream'
       uses: docker://ghcr.io/stnolting/neorv32/impl
       with:
-        args: doit ex:${{ matrix.board }} -d ${{ matrix.design }} clean bit
+        args: ex:${{ matrix.board }} -d ${{ matrix.design }} clean bit
 
     - name: '📤 Upload Artifact: ${{ matrix.board }} ${{ matrix.design }} bitstream and reports'
       uses: actions/upload-artifact@v2
