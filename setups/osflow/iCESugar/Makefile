@@ -1,5 +1,5 @@
-PCF       = iCESugar.pcf
-PNRFLAGS ?= --up5k --package sg48 --ignore-loops --timing-allow-fail
+CONSTRAINTS ?= iCESugar.pcf
+PNRFLAGS    ?= --up5k --package sg48 --ignore-loops --timing-allow-fail
 
 ID   := impl_1
 IMPL := neorv32_iCESugar_$(ID)

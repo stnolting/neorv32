@@ -1,5 +1,5 @@
-PCF       = upduino_v3.pcf
-PNRFLAGS ?= --up5k --package sg48 --ignore-loops --timing-allow-fail
+CONSTRAINTS ?= upduino_v3.pcf
+PNRFLAGS    ?= --up5k --package sg48 --ignore-loops --timing-allow-fail
 
 ID   := impl_1
 IMPL := neorv32_UPduino_v3_$(ID)
