@@ -1,0 +1,6 @@
+*.asc
+*.bit
+*.dfu
+*.history
+*.json
+*-report.txt

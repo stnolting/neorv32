@@ -1,4 +1,4 @@
-RTL_CORE_SRC := ../../../rtl/core
+RTL_CORE_SRC := ../../rtl/core
 
 NEORV32_PKG := $(RTL_CORE_SRC)/neorv32_package.vhd
 
@@ -6,8 +6,8 @@ NEORV32_APP_SRC := \
   $(RTL_CORE_SRC)/neorv32_application_image.vhd \
 
 NEORV32_MEM_SRC := \
-  ../devices/ice40/neorv32_imem.ice40up_spram.vhd \
-  ../devices/ice40/neorv32_dmem.ice40up_spram.vhd
+  devices/ice40/neorv32_imem.ice40up_spram.vhd \
+  devices/ice40/neorv32_dmem.ice40up_spram.vhd
 
 NEORV32_CORE_SRC := \
   $(RTL_CORE_SRC)/neorv32_bootloader_image.vhd \
@@ -46,7 +46,7 @@ NEORV32_CORE_SRC := \
 NEORV32_SRC := ${NEORV32_PKG} ${NEORV32_APP_SRC} ${NEORV32_MEM_SRC} ${NEORV32_CORE_SRC}
 
 ICE40_SRC := \
-  ../devices/ice40/sb_ice40_components.vhd
+  devices/ice40/sb_ice40_components.vhd
 
 DEVICE_SRC := ${ICE40_SRC}
 

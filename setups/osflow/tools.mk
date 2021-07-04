@@ -13,15 +13,14 @@ YOSYSSYNTH    ?= $(DEVICE_SERIES)
 NEXTPNR       ?= nextpnr-$(DEVICE_SERIES)
 
 ifeq ($(DEVICE_SERIES),ice40)
-YOSYSPIPE ?= -dsp
+YOSYSPIPE          ?= -dsp
 CONSTRAINTS_FORMAT ?= pcf
-NEXTPNR_OUT ?= asc
-PNR2BIT_EXT ?= asc
-PACKTOOL ?= $(ICEPACK)
-
+NEXTPNR_OUT        ?= asc
+PNR2BIT_EXT        ?= asc
+PACKTOOL           ?= $(ICEPACK)
 else
 CONSTRAINTS_FORMAT ?= lpf
-NEXTPNR_OUT ?= textcfg
-PNR2BIT_EXT ?= cfg
-PACKTOOL ?= $(ECPPACK)
+NEXTPNR_OUT        ?= textcfg
+PNR2BIT_EXT        ?= cfg
+PACKTOOL           ?= $(ECPPACK)
 endif
