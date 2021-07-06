@@ -1,4 +1,4 @@
-# NEORV32 Test Setups for the Digilent Boards
+# NEORV32 Xilinx Vivado Example Setups
 
 ## How To Run
 
@@ -8,7 +8,7 @@ If not already available, this script will create a `work` folder in those subdi
 ### Batch mode
 
 Execute `vivado -mode batch -nojournal -nolog -source create_project.tcl` from the board subdir.
-The project will be created, and implementation will be run until generation of `work/neorv32_test_setup.runs/impl_1/neorv32_test_setup.bit`.
+The project will be created and implementation will be run until generation of `work/neorv32_test_setup.runs/impl_1/neorv32_test_setup.bit`.
 
 ### GUI
 
@@ -19,7 +19,7 @@ The project will be created, and implementation will be run until generation of 
 5. when the Vivado project has openend, Implementation will run and a bitstream will be generated.
 6. maybe a prompt will notify about it.
 
-### Testing the bitstream
+### Programming the Bitstream
 
 1. open the "Hardware Manager" (maybe a prompt will ask for that)
 2. click on "Open target/Auto Connect"

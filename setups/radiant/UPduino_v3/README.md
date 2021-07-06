@@ -99,25 +99,3 @@ you can use the pre-build configuration `source/impl_1.xcf`
 9. close the dialog by clicking "ok"
 10. click on "Program Device"
 
-
-#### NEORV32 Software Framework Modification
-
-In order to use the features provided by this setup, minor *optional* changes can be made to the default NEORV32 setup.
-
-To use the full 64kB capacity of the DMEM and IMEM, the linker script has to be modified. Open the linker script (`sw/common/neorv32.ld`) and change the default `LENGTH` assignments of `rom` and `ram` to 64kB (modify the RIGHT-most value only, see below):
-
-```
-rom  (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 4*1024 : 64*1024
-ram (rwx) : ORIGIN = 0x80000000, LENGTH = 64*1024
-```
-
-If you want to use the on-board SPI flash also for storing (and automatically booting) NEORV32 software applications you need to configure the default bootloader base address of the
-software image in order to prevent overriding the FPGA bitstream. Open the bootloader source code (`sw/bootloader/bootloader.c`) and modify the following definition (see below). 
-You will need to re-compile (and re-install) the bootloader. This will also require to rerun synthesis.
-
-```c
-/** SPI flash boot image base address (warning! address might wrap-around!) */
-#define SPI_FLASH_BOOT_ADR (0x00020000)
-```
-
-You will need to recompile the bootloader and re-do FPGA synthesis.
