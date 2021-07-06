@@ -126,7 +126,8 @@ If the UART is configured for simulation mode there will be **NO physical UART0 
 `uart0_txd_o`** at all. Furthermore, no interrupts (RX done or TX done) will be triggered in any situation.
 
 [TIP]
-More information regarding the simulation-mode of the UART0 can be found in section <<_simulating_the_processor>>.
+More information regarding the simulation-mode of the UART0 can be found in the Uer Guide
+section https://stnolting.github.io/neorv32/ug/#_simulating_the_processor[Simulating the Processor].
 
 .UART0 register map
 [cols="<6,<7,<10,^2,<18"]

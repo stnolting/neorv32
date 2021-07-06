@@ -95,9 +95,10 @@ at least the makefile to your new project folder. I suggest to create new projec
 the file dependencies. Of course, these dependencies can be manually configured via makefiles variables
 when your project is located somewhere else.
 
+[NOTE]
 Before you can use the makefiles, you need to install the RISC-V GCC toolchain. Also, you have to add the
-installation folder of the compiler to your system's `PATH` variable. More information can be found in chapter
-<<_lets_get_it_started>>.
+installation folder of the compiler to your system's `PATH` variable. More information can be found in
+https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup[User Guide: Software Toolchain Setup].
 
 The makefile is invoked by simply executing make in your console:
 
@@ -170,7 +171,7 @@ NEORV32_HOME ?= ../../..
 | _ASM_INC_         | Include file folders that are used only for the assembly source files (`*.S`/`*.s`).
 | _EFFORT_          | Optimization level, optimize for size (`-Os`) is default; legal values: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`
 | _RISCV_TOOLCHAIN_ | The toolchain prefix to be used; follows the naming convention "architecture-vendor-output"
-| _MARCH_           | The targetd RISC-V architecture/ISA. Only `rv32` is supported by the NEORV32. Enable compiler support of optional CPU extension by adding the according extension letter (e.g. `rv32im` for _M_ CPU extension). See section <<_enabling_risc_v_cpu_extensions>>.
+| _MARCH_           | The targetd RISC-V architecture/ISA. Only `rv32` is supported by the NEORV32. Enable compiler support of optional CPU extension by adding the according extension letter (e.g. `rv32im` for _M_ CPU extension). See https://stnolting.github.io/neorv32/ug/#_enabling_risc_v_cpu_extensions[User Guide: Enabling RISC-V CPU Extensions] for more information.
 | _MABI_            | The default 32-bit integer ABI.
 | _USER_FLAGS_      | Additional flags that will be forwarded to the compiler tools
 | _NEORV32_HOME_    | Relative or absolute path to the NEORV32 project home folder. Adapt this if the makefile/project is not in the project's `sw/example folder`.
@@ -533,8 +534,8 @@ LED is permanently activated and the system must be manually reset.
 [cols="<2,<13"]
 [grid="rows"]
 |=======================
-| **`ERROR_0`** | If you try to transfer an invalid executable (via UART or from the external SPI flash), this error message shows up. There might be a transfer protocol configuration error in the terminal program. See section <<_uploading_and_starting_of_a_binary_executable_image_via_uart>> for more information. Also, if no SPI flash was found during an auto-boot attempt, this message will be displayed.
-| **`ERROR_1`** | Your program is way too big for the internal processor’s instructions memory. Increase the memory size or reduce (optimize!) your application code.
+| **`ERROR_0`** | If you try to transfer an invalid executable (via UART or from the external SPI flash), this error message shows up. There might be a transfer protocol configuration error in the terminal program. Also, if no SPI flash was found during an auto-boot attempt, this message will be displayed.
+| **`ERROR_1`** | Your program is way too big for the internal processor’s instructions memory. Increase the memory size or reduce your application code.
 | **`ERROR_2`** | This indicates a checksum error. Something went wrong during the transfer of the program image (upload via UART or loading from the external SPI flash). If the error was caused by a UART upload, just try it again. When the error was generated during a flash access, the stored image might be corrupted.
 | **`ERROR_3`** | This error occurs if the attached SPI flash cannot be accessed. Make sure you have the right type of flash and that it is properly connected to the NEORV32 SPI port using chip select #0.
 |=======================
