@@ -1,6 +1,6 @@
 OSFLOW := ../osflow
-EXAMPLES := ../../examples
-TEMPLATES := ../../../rtl/templates
+EXAMPLES := ../examples
+TEMPLATES := ../../rtl/templates
 MV := mv
 
 TASK := clean $(BITSTREAM)
@@ -13,22 +13,24 @@ endif
 
 run:
 	$(eval TASK ?= clean $(BITSTREAM))
-	$(MAKE) -C $(OSFLOW)/$(BOARD)/ \
+	$(MAKE) -C $(OSFLOW) -f common.mk \
 	  BOARD_SRC=$(EXAMPLES)/neorv32_$(BOARD)_BoardTop_$(DESIGN).vhd \
 	  TOP=neorv32_$(BOARD)_BoardTop_$(DESIGN) \
 	  ID=$(DESIGN) \
-	  $(TASK)
-	$(MV) $(OSFLOW)/$(BOARD)/$(BITSTREAM) ./
+	  $(TASK) \
+	&& $(MV) $(OSFLOW)/$(BITSTREAM) ./
+
+# Boards
 
 Fomu:
 ifeq ($(DESIGN),Minimal)
-	$(eval IMEM_SRC := ../../../rtl/core/neorv32_imem.vhd)
+	$(eval IMEM_SRC := ../../rtl/core/neorv32_imem.vhd)
 else
-	$(eval IMEM_SRC := ../devices/ice40/neorv32_imem.ice40up_spram.vhd)
+	$(eval IMEM_SRC := devices/ice40/neorv32_imem.ice40up_spram.vhd)
 endif
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(FOMU_REV)_$(DESIGN).bit \
-	  NEORV32_MEM_SRC="${IMEM_SRC} ../devices/ice40/neorv32_dmem.ice40up_spram.vhd" \
+	  NEORV32_MEM_SRC="${IMEM_SRC} devices/ice40/neorv32_dmem.ice40up_spram.vhd" \
 	  run
 
 iCESugar:
@@ -40,6 +42,8 @@ UPduino_v3:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
 	  run
+
+# Designs
 
 Minimal:
 	$(MAKE) \
@@ -63,5 +67,5 @@ MixedLanguage:
 	$(MAKE) \
 	  DESIGN=$@ \
 	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_Minimal*.vhd \
-	  NEORV32_VERILOG_SRC='../devices/ice40/sb_ice40_components.v ../../examples/neorv32_Fomu_MixedLanguage_ClkGen.v' \
+	  NEORV32_VERILOG_SRC='devices/ice40/sb_ice40_components.v ../examples/neorv32_Fomu_MixedLanguage_ClkGen.v' \
 	  $(BOARD)

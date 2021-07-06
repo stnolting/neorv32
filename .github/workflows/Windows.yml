@@ -29,27 +29,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [
-          {icon: '⬛', installs: 'MINGW32', arch: i686,   pkg: 'mcode' },
-          {icon: '🟦', installs: 'MINGW64', arch: x86_64, pkg: 'llvm'  },
-        ]
-        example: ${{ fromJson(needs.Matrix.outputs.matrix) }}
-    name: '${{ matrix.platform.icon }} ${{ matrix.platform.installs }} | ${{ matrix.example.board }} · ${{ matrix.example.design }}'
+        include: ${{ fromJson(needs.Matrix.outputs.matrix) }}
+    name: '🟦 MINGW64 | ${{ matrix.board }} · ${{ matrix.design }}'
     defaults:
       run:
         shell: msys2 {0}
     steps:
 
-    - name: '${{ matrix.platform.icon }} Setup MSYS2'
+    - name: '🟦 Setup MSYS2'
       uses: msys2/setup-msys2@v2
       with:
-        msystem: ${{ matrix.platform.installs }}
+        msystem: MINGW64
         update: true
         install: >
           make
-          mingw-w64-${{ matrix.platform.arch }}-yosys
-          mingw-w64-${{ matrix.platform.arch }}-nextpnr
-          mingw-w64-${{ matrix.platform.arch }}-icestorm
+          mingw-w64-x86_64-yosys
+          mingw-w64-x86_64-nextpnr
+          mingw-w64-x86_64-icestorm
+          mingw-w64-x86_64-prjtrellis
 
     - name: '⚙️ git config'
       run: git config --global core.autocrlf input
@@ -61,8 +58,8 @@ jobs:
         # The command 'git describe' (used for version) needs the history.
         fetch-depth: 0
 
-    - name: '🚧 Generate ${{ matrix.example.board }} ${{ matrix.example.design }} bitstream'
-      run: make -C setups/examples BOARD=${{ matrix.example.board }} ${{ matrix.example.design }}
+    - name: '🚧 Generate ${{ matrix.board }} ${{ matrix.design }} bitstream'
+      run: make -C setups/examples BOARD=${{ matrix.board }} ${{ matrix.design }}
 
 
   Processor:
