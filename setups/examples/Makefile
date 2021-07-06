@@ -18,8 +18,12 @@ run:
 	  BOARD_SRC=$(EXAMPLES)/neorv32_$(BOARD)_BoardTop_$(DESIGN).vhd \
 	  TOP=neorv32_$(BOARD)_BoardTop_$(DESIGN) \
 	  ID=$(DESIGN) \
-	  $(TASK) \
-	&& $(MV) $(OSFLOW)/$(BITSTREAM) ./
+	  $(TASK)
+	IMPL="$${BITSTREAM%%.*}"; for item in ".bit" ".svf"; do \
+	  if [ -f "$(OSFLOW)/$$IMPL$$item" ]; then \
+	    $(MV) "$(OSFLOW)/$$IMPL$$item" ./; \
+	  fi \
+	done
 
 # Boards
 
