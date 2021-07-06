@@ -141,8 +141,9 @@ the default bootloader and software framework. From this base you can start buil
 
 The hardware resources used by a specifc processor setup is defined by the implemented CPU extensions
 ([see below](#FPGA-Implementation-Results---CPU)), the configuration of the peripheral modules and some "glue logic".
-Section [_"Processor Modules"_](https://stnolting.github.io/neorv32/#_processor_modules) of the online datasheet shows
-the ressource utilization of each optional processor module to estimate the actual setup's hardware requirements.
+Section [_"FPGA Implementation Results - Processor Modules"_](https://stnolting.github.io/neorv32/#_processor_modules)
+of the online datasheet shows the ressource utilization of each optional processor module to allow an
+estimation of the actual setup's hardware requirements.
 
 :information_source: The [`setups`](https://github.com/stnolting/neorv32/tree/master/setups) folder provides exemplary FPGA
 setups targeting various FPGA boards and toolchains. These setups also provide ressource utilization reports for different
@@ -200,21 +201,20 @@ See [B ISA Extension](https://github.com/stnolting/neorv32/projects/7) project b
 
 ### FPGA Implementation Results - CPU
 
-:books: More details regarding exemplary FPGA setups including a list of resource utilization by each SoC module can be found in the
-[online documentation - _"FPGA Implementation Results"_](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
-
-Implementation results for exemplary CPU configuration generated for an **Intel Cyclone IV EP4CE22F17C6N FPGA**
+Implementation results for _exemplary_ CPU configuration generated for an **Intel Cyclone IV EP4CE22F17C6N FPGA**
 using **Intel Quartus Prime Lite 20.1** ("balanced implementation"). The timing information is derived
 from the Timing Analyzer / Slow 1200mV 0C Model. No constraints were used at all.
 
-Results generated for hardware version [`1.5.3.2`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.5.7.10`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
 | CPU Configuration                                 | LEs  | FFs  | Memory bits | DSPs (9-bit) | f_max   |
 |:--------------------------------------------------|:----:|:----:|:-----------:|:------------:|:-------:|
-| `rv32i`                                           |  980 |  409 |        1024 |            0 | 125 MHz |
-| `rv32i`    + `Zicsr`                              | 1835 |  856 |        1024 |            0 | 125 MHz |
-| `rv32imac` + `Zicsr`                              | 2685 | 1156 |        1024 |            0 | 125 MHz |
-| `rv32imac` + `Zicsr` + `u` + `Zifencei` + `Zfinx` | 4004 | 1812 |        1024 |            7 | 118 MHz |
+| `rv32i`                                           |  806 |  359 |        1024 |            0 | 125 MHz |
+| `rv32i_Zicsr`                                     | 1729 |  813 |        1024 |            0 | 124 MHz |
+| `rv32imac_Zicsr`                                  | 2511 | 1074 |        1024 |            0 | 124 MHz |
+
+:information_source: An incrmental list of CPU exntension's hardware utilization can found in
+[online documentation - _"FPGA Implementation Results - CPU"_](https://stnolting.github.io/neorv32/#_cpu).
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -226,9 +226,9 @@ each instruction requires several clock cycles to execute (2 cycles for ALU oper
 The average CPI (cycles per instruction) depends on the instruction mix of a specific applications and also on the
 available CPU extensions.
 
-The following table shows the performance results(relative CoreMark score and average cycles per instruction) for successfully
-running 2000 iterations of the [CoreMark CPU benchmark](https://www.eembc.org/coremark).
-The source files are available in [sw/example/coremark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark).
+The following table shows the performance results (relative CoreMark score and average cycles per instruction) for
+_exemplary_ CPU configuration running 2000 iterations of the [CoreMark CPU benchmark](https://www.eembc.org/coremark).
+The source files are available in [`sw/example/coremark`](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark).
 
 ~~~
 **CoreMark Setup**
@@ -238,16 +238,16 @@ Compiler:       RISCV32-GCC 10.1.0 (rv32i toolchain)
 Compiler flags: default, see makefile; optimization -O3
 ~~~
 
-Results generated for hardware version [`1.4.9.8`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
+Results generated for hardware version [`1.5.7.10`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
-| CPU (including `Zicsr` extension)           | Executable Size | CoreMark Score | CoreMarks/MHz | Total Clock Cycles | Executed Instructions | Average CPI |
-|:--------------------------------------------|:---------------:|:--------------:|:-------------:|-------------------:|----------------------:|:-----------:|
-| `rv32i`                                     |    28 756 bytes |          36.36 |    **0.3636** |         5595750503 |            1466028607 |    **3.82** |
-| `rv32imc`                                   |    22 008 bytes |          68.97 |    **0.6897** |         2981786734 |             611814918 |    **4.87** |
-| `rv32imc` + `FAST_MUL_EN` + `FAST_SHIFT_EN` |    22 008 bytes |          90.91 |    **0.9091** |         2265135174 |             611814948 |    **3.70** |
+| CPU Configuration                              | CoreMark Score | CoreMarks/MHz | Average CPI |
+|:-----------------------------------------------|:--------------:|:-------------:|:-----------:|
+| _small_ (`rv32i_Zicsr`)                        |          33.89 | **0.3389**    | **4.04**    |
+| _medium_ (`rv32imc_Zicsr`)                     |          62.50 | **0.6250**    | **5.34**    |
+| _performance_(`rv32imc_Zicsr` + perf. options) |          95.23 | **0.9523**    | **3.54**    |
 
-:information_source: The `FAST_MUL_EN` configuration uses DSPs for the multiplier of the `M` extension.
-The `FAST_SHIFT_EN` configuration uses a barrel shifter for CPU shift operations.
+:information_source: Mor information regarding the CPU performance can be found in the
+[online documentation - _"CPU Performance"_](https://stnolting.github.io/neorv32/#_cpu_performance).
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 

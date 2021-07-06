@@ -238,9 +238,7 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 :sectnums:
 === FPGA Implementation Results
 
-This chapter shows exemplary implementation results of the NEORV32 CPU and Processor. Please note, that
-the provided results are just a relative measure as logic functions of different modules might be merged
-between entity boundaries, so the actual utilization results might vary a bit.
+This chapter shows _exemplary_ implementation results of the NEORV32 CPU and NEORV32 Processor.
 
 :sectnums:
 ==== CPU
@@ -248,24 +246,27 @@ between entity boundaries, so the actual utilization results might vary a bit.
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| Hardware version: | `1.5.5.5`
+| Hardware version: | `1.5.7.10`
 | Top entity:       | `rtl/core/neorv32_cpu.vhd`
 |=======================
 
 [cols="<5,>1,>1,>1,>1,>1"]
 [options="header",grid="rows"]
 |=======================
-| CPU                                   | LEs  | FFs  | MEM bits | DSPs | _f~max~_
-| `rv32i`                               |  980 |  409 | 1024     | 0    | 125 MHz
-| `rv32i_Zicsr`                         | 1835 |  856 | 1024     | 0    | 125 MHz
-| `rv32im_Zicsr`                        | 2443 | 1134 | 1024     | 0    | 125 MHz
-| `rv32imc_Zicsr`                       | 2669 | 1149 | 1024     | 0    | 125 MHz
-| `rv32imac_Zicsr`                      | 2685 | 1156 | 1024     | 0    | 125 MHz
-| `rv32imac_Zicsr` + `debug_mode`       | 3058 | 1225 | 1024     | 0    | 125 MHz
-| `rv32imac_Zicsr` + `u`                | 2698 | 1162 | 1024     | 0    | 125 MHz
-| `rv32imac_Zicsr_Zifencei` + `u`       | 2715 | 1162 | 1024     | 0    | 125 MHz
-| `rv32imac_Zicsr_Zifencei_Zfinx` + `u` | 4004 | 1812 | 1024     | 7    | 118 MHz
+| CPU                                        | LEs  | FFs  | MEM bits | DSPs | _f~max~_
+| `rv32i`                                    |  806 |  359 |     1024 |    0 | 125 MHz
+| `rv32i_Zicsr`                              | 1729 |  813 |     1024 |    0 | 124 MHz
+| `rv32im_Zicsr`                             | 2269 | 1055 |     1024 |    0 | 124 MHz
+| `rv32imc_Zicsr`                            | 2501 | 1070 |     1024 |    0 | 124 MHz
+| `rv32imac_Zicsr`                           | 2511 | 1074 |     1024 |    0 | 124 MHz
+| `rv32imacu_Zicsr`                          | 2521 | 1079 |     1024 |    0 | 124 MHz
+| `rv32imacu_Zicsr_Zifencei`                 | 2522 | 1079 |     1024 |    0 | 122 MHz
+| `rv32imacu_Zicsr_Zifencei_Zfinx`           | 3807 | 1731 |     1024 |    7 | 116 MHz
+| `rv32imacu_Zicsr_Zifencei_Zfinx_DebugMode` | 3974 | 1815 |     1024 |    7 | 116 MHz
 |=======================
+
+[NOTE]
+No HPM counters and no PMP regions were implemented for generating these results.
 
 
 :sectnums:
@@ -274,7 +275,7 @@ between entity boundaries, so the actual utilization results might vary a bit.
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| Hardware version: | `1.5.7.8`
+| Hardware version: | `1.5.7.10`
 | Top entity:       | `rtl/core/neorv32_top.vhd`
 |=======================
 
@@ -312,7 +313,6 @@ between entity boundaries, so the actual utilization results might vary a bit.
 :sectnums:
 ==== Exemplary Setups
 
-[TIP]
 Check out the `setups` folder (@GitHub: https://github.com/stnolting/neorv32/tree/master/setups),
 which provides several demo setups for various FPGA boards and toolchains.
 
@@ -322,92 +322,48 @@ which provides several demo setups for various FPGA boards and toolchains.
 :sectnums:
 === CPU Performance
 
-:sectnums:
-==== CoreMark Benchmark
-
-.Configuration
-[cols="<2,<8"]
-[grid="topbot"]
-|=======================
-| Hardware:       | 32kB IMEM, 16kB DMEM, no caches, 100MHz clock
-| CoreMark:       | 2000 iterations, MEM_METHOD is MEM_STACK
-| Compiler:       | RISCV32-GCC 10.1.0
-| Peripherals:    | UART for printing the results
-| Compiler flags: | default, see makefile
-|=======================
-
-The performance of the NEORV32 was tested and evaluated using the https://www.eembc.org/coremark/[Core Mark CPU benchmark]. This
-benchmark focuses on testing the capabilities of the CPU core itself rather than the performance of the whole
-system. The according source code and the SW project can be found in the `sw/example/coremark` folder.
+The performance of the NEORV32 was tested and evaluated using the https://www.eembc.org/coremark/[Core Mark CPU benchmark].
+This benchmark focuses on testing the capabilities of the CPU core itself rather than the performance of the whole
+system. The according sources can be found in the `sw/example/coremark` folder.
 
 The resulting CoreMark score is defined as CoreMark iterations per second.
 The execution time is determined via the RISC-V `[m]cycle[h]` CSRs. The relative CoreMark score is
 defined as CoreMark score divided by the CPU's clock frequency in MHz.
 
+.Configuration
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| Hardware version: | `1.4.9.8`
+| HW version:     | `1.5.7.10`
+| Hardware:       | 32kB int. IMEM, 16kB int. DMEM, no caches, 100MHz clock
+| CoreMark:       | 2000 iterations, MEM_METHOD is MEM_STACK
+| Compiler:       | RISCV32-GCC 10.2.0
+| Compiler flags: | default, see makefile
 |=======================
 
 .CoreMark results
-[cols="<4,>1,>1,>1"]
+[cols="<4,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
-| CPU (incl. `Zicsr`)                         | Executable size | CoreMark Score | CoreMarks/Mhz
-| `rv32i`                                     |     28756 bytes |          36.36 | **0.3636**
-| `rv32im`                                    |     27516 bytes |          68.97 | **0.6897**
-| `rv32imc`                                   |     22008 bytes |          68.97 | **0.6897**
-| `rv32imc` + _FAST_MUL_EN_                   |     22008 bytes |          86.96 | **0.8696**
-| `rv32imc` + _FAST_MUL_EN_ + _FAST_SHIFT_EN_ |     22008 bytes |          90.91 | **0.9091**
+| CPU                                            | CoreMark Score | CoreMarks/Mhz | Average CPI
+| _small_ (`rv32i_Zicsr`)                        |          33.89 | **0.3389**    | **4.04**
+| _medium_ (`rv32imc_Zicsr`)                     |          62.50 | **0.6250**    | **5.34**
+| _performance_(`rv32imc_Zicsr` + perf. options) |          95.23 | **0.9523**    | **3.54**
 |=======================
 
 [NOTE]
-All executable were generated using maximum optimization `-O3`.
-The _FAST_MUL_EN_ configuration uses DSPs for the multiplier of the _M_ extension (enabled via the
-_FAST_MUL_EN_ generic). The _FAST_SHIFT_EN_ configuration uses a barrel shifter for CPU shift
-operations (enabled via the _FAST_SHIFT_EN_ generic).
+The "_performance_" CPU configuration uses the <<_fast_mul_en>> and <<_fast_shift_en>> options.
 
-
-<<<
-:sectnums:
-==== Instruction Timing
-
+[NOTE]
 The NEORV32 CPU is based on a multi-cycle architecture. Each instruction is executed in a sequence of
-several consecutive micro operations. Hence, each instruction requires several clock cycles to execute.
+several consecutive micro operations.
 
+[NOTE]
 The average CPI (cycles per instruction) depends on the instruction mix of a specific applications and also on
-the available CPU extensions. The following table shows the performance results for successfully (!) running
-2000 CoreMark iterations.
-
-The average CPI is computed by dividing the total number of required clock cycles (only the timed core to
-avoid distortion due to IO wait cycles) by the number of executed instructions (`[m]instret[h]` CSRs). The
-executables were generated using optimization `-O3`.
-
-[cols="<2,<8"]
-[grid="topbot"]
-|=======================
-| Hardware version: | `1.4.9.8`
-|=======================
-
-.CoreMark instruction timing
-[cols="<4,>2,>2,>2"]
-[options="header",grid="rows"]
-|=======================
-| CPU (incl. `Zicsr`)                         | Required clock cycles | Executed instruction | Average CPI
-| `rv32i`                                     |            5595750503 | 1466028607           | **3.82**
-| `rv32im`                                    |            2966086503 |  598651143           | **4.95**
-| `rv32imc`                                   |            2981786734 |  611814918           | **4.87**
-| `rv32imc` + _FAST_MUL_EN_                   |            2399234734 |  611814918           | **3.92**
-| `rv32imc` + _FAST_MUL_EN_ + _FAST_SHIFT_EN_ |            2265135174 |  611814948           | **3.70**
-|=======================
-
-[TIP]
-The _FAST_MUL_EN_ configuration uses DSPs for the multiplier of the M extension (enabled via the
-_FAST_MUL_EN_ generic). The _FAST_SHIFT_EN_ configuration uses a barrel shifter for CPU shift
-operations (enabled via the _FAST_SHIFT_EN_ generic).
+the available CPU extensions. The average CPI is computed by dividing the total number of required clock cycles
+(only the timed core to avoid distortion due to IO wait cycles) by the number of executed instructions
+(`[m]instret[h]` CSRs).
 
 [TIP]
 More information regarding the execution time of each implemented instruction can be found in
 chapter <<_instruction_timing>>.
-
