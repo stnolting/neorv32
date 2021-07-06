@@ -917,7 +917,7 @@ neorv32/sim$ sh ghdl_sim.sh --stop-time=20ms
 The documentation (datasheet + user guide) is written using `asciidoc`. The according source files
 can be found in `docs/...`. The documentation of the software framework is written _in-code_ using `doxygen`.
 
-A makefiles in the project's root directory is provided to build all of the documentation as HTML pages
+A makefiles in the project's `docs` directory is provided to build all of the documentation as HTML pages
 or as PDF documents.
 
 [TIP]
@@ -928,13 +928,13 @@ The makefile provides a help target to show all available build options and thei
 
 [source,bash]
 ----
-neorv32$ make help
+neorv32/docs$ make help
 ----
 
 .Example: Generate HTML documentation (data sheet) using `asciidoctor`
 [source,bash]
 ----
-neorv32$ make html
+neorv32/docs$ make html
 ----
 
 [TIP]
