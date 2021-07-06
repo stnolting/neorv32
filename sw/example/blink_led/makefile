@@ -59,9 +59,6 @@ MABI  ?= -mabi=ilp32
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?=
 
-# Serial port for executable upload via bootloer
-COM_PORT ?= /dev/ttyUSB0
-
 # Relative or absolute path to the NEORV32 home folder
 NEORV32_HOME ?= ../../..
 # *****************************************************************************
@@ -94,6 +91,7 @@ LD_SCRIPT = $(NEORV32_COM_PATH)/neorv32.ld
 
 # Main output files
 APP_EXE  = neorv32_exe.bin
+APP_HEX  = neorv32_exe.hex
 APP_ASM  = main.asm
 APP_IMG  = neorv32_application_image.vhd
 BOOT_IMG = neorv32_bootloader_image.vhd
@@ -141,9 +139,10 @@ CC_OPTS += $(USER_FLAGS)
 
 # 'compile' is still here for compatibility
 exe:     $(APP_ASM) $(APP_EXE)
+hex:     $(APP_ASM) $(APP_HEX)
 compile: $(APP_ASM) $(APP_EXE)
 install: $(APP_ASM) $(APP_IMG)
-all:     $(APP_ASM) $(APP_EXE) $(APP_IMG)
+all:     $(APP_ASM) $(APP_EXE) $(APP_IMG) $(APP_HEX)
 
 # Check if making bootloader
 # Use different base address and legth for instruction memory/"rom" (BOOTMEM instead of IMEM)
@@ -215,6 +214,11 @@ $(APP_IMG): main.bin $(IMAGE_GEN)
 	@echo "Installing application image to $(NEORV32_RTL_PATH)/$(APP_IMG)"
 	@cp $(APP_IMG) $(NEORV32_RTL_PATH)/.
 
+# Generate NEORV32 executable image in plain hex format
+$(APP_HEX): main.bin $(IMAGE_GEN)
+	@set -e
+	@$(IMAGE_GEN) -app_hex $< $@ $(shell basename $(CURDIR))
+
 
 # -----------------------------------------------------------------------------
 # Bootloader targets
@@ -253,13 +257,6 @@ endif
 	@$(CC_X86) -v
 	@echo
 	@echo "Toolchain check OK"
-
-
-# -----------------------------------------------------------------------------
-# Upload executable via serial port to bootloader
-# -----------------------------------------------------------------------------
-upload: $(APP_EXE)
-	@sh $(NEORV32_EXG_PATH)/uart_upload.sh $(COM_PORT) $(APP_EXE)
 
 
 # -----------------------------------------------------------------------------
@@ -320,19 +317,20 @@ help:
 	@echo " check      - check toolchain"
 	@echo " info       - show makefile/toolchain configuration"
 	@echo " exe        - compile and generate <neorv32_exe.bin> executable for upload via bootloader"
+	@echo " hex        - compile and generate <neorv32_exe.hex> executable raw file"
 	@echo " install    - compile, generate and install VHDL IMEM boot image (for application)"
-	@echo " all        - compile and generate <neorv32_exe.bin> executable for upload via bootloader and generate and install VHDL IMEM boot image (for application)"
+	@echo " all        - exe + hex + install"
+	@echo " elf_info   - show ELF layout info"
 	@echo " clean      - clean up project"
 	@echo " clean_all  - clean up project, core libraries and image generator"
 	@echo " bootloader - compile, generate and install VHDL BOOTROM boot image (for bootloader only!)"
-	@echo " upload     - upload <neorv32_exe.bin> executable via serial port <COM_PORT> to bootloader"
 
 
 # -----------------------------------------------------------------------------
 # Clean up
 # -----------------------------------------------------------------------------
 clean:
-	@rm -f *.elf *.o *.bin *.out *.asm *.vhd
+	@rm -f *.elf *.o *.bin *.out *.asm *.vhd *.hex
 
 clean_all: clean
 	@rm -f $(OBJ) $(IMAGE_GEN)
