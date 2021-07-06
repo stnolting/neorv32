@@ -268,6 +268,11 @@ This chapter shows _exemplary_ implementation results of the NEORV32 CPU and NEO
 [NOTE]
 No HPM counters and no PMP regions were implemented for generating these results.
 
+[TIP]
+The CPU provides further options to reduce the area footprint (for example by constraining the CPU-internal
+counter sizes) or to increase performance (for example by using a barrel-shifter; at cost of extra hardware).
+See section <<_processor_top_entity_generics>> for more information.
+
 
 :sectnums:
 ==== Processor Modules

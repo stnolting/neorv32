@@ -216,6 +216,9 @@ Results generated for hardware version [`1.5.7.10`](https://github.com/stnolting
 :information_source: An incrmental list of CPU exntension's hardware utilization can found in
 [online documentation - _"FPGA Implementation Results - CPU"_](https://stnolting.github.io/neorv32/#_cpu).
 
+:information_source: The CPU provides options to further reduce the footprint (for example by constraining
+the CPU-internal counters). See the [online data](https://stnolting.github.io/neorv32) sheet for more information.
+
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
@@ -246,7 +249,7 @@ Results generated for hardware version [`1.5.7.10`](https://github.com/stnolting
 | _medium_ (`rv32imc_Zicsr`)                     |          62.50 | **0.6250**    | **5.34**    |
 | _performance_(`rv32imc_Zicsr` + perf. options) |          95.23 | **0.9523**    | **3.54**    |
 
-:information_source: Mor information regarding the CPU performance can be found in the
+:information_source: More information regarding the CPU performance can be found in the
 [online documentation - _"CPU Performance"_](https://stnolting.github.io/neorv32/#_cpu_performance).
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
