@@ -47,9 +47,10 @@ int main(int argc, char *argv[]) {
 	         "by Stephan Nolting\n"
 	         "Three arguments are required.\n"
 	         "1st: Option\n"
-	         " -app_bin : Generate application executable binary (little-endian; with header!) \n"
-	         " -app_img : Generate application raw executable memory image (vhdl file, no header!)\n"
-	         " -bld_img : Generate bootloader raw executable memory image (vdhl file, no header!)\n"
+	         " -app_bin : Generate application executable binary (binary file, little-endian, with header) \n"
+	         " -app_hex : Generate application raw executable (hex file, no header)\n"
+	         " -app_img : Generate application raw executable memory image (vhdl file, no header)\n"
+	         " -bld_img : Generate bootloader raw executable memory image (vdhl file, no header)\n"
 		       "2nd: Input file (raw binary image)\n"
 		       "3rd: Output file\n"
 		       "4th: Project folder (optional)\n");
@@ -70,6 +71,8 @@ int main(int argc, char *argv[]) {
     option = 2;
   else if (strcmp(argv[1], "-bld_img") == 0)
     option = 3;
+  else if (strcmp(argv[1], "-app_hex") == 0)
+    option = 4;
   else {
   	printf("Invalid option!");
   	return 1;
@@ -315,6 +318,29 @@ int main(int argc, char *argv[]) {
 						            "\n"
 						            "end neorv32_bootloader_image;\n");
     fputs(tmp_string, output);
+  }
+
+
+// ------------------------------------------------------------
+// Generate APPLICATION's executable hex file (no header!!!)
+// ------------------------------------------------------------
+  if (option == 4) {
+
+    // data
+    buffer[0] = 0;
+    buffer[1] = 0;
+    buffer[2] = 0;
+    buffer[3] = 0;
+    i = 0;
+
+    while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
+      tmp  = (uint32_t)(buffer[0] << 0);
+      tmp |= (uint32_t)(buffer[1] << 8);
+      tmp |= (uint32_t)(buffer[2] << 16);
+      tmp |= (uint32_t)(buffer[3] << 24);
+      sprintf(tmp_string, "%08x\n", (unsigned int)tmp);
+      fputs(tmp_string, output);
+    }
   }
 
 
