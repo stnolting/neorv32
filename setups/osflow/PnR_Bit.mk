@@ -1,9 +1,9 @@
-${IMPL}.asc: $(IMPL).json $(PCF)
+${IMPL}.${PNR2BIT_EXT}: $(IMPL).json $(CONSTRAINTS)
 	$(NEXTPNR) \
 	  $(PNRFLAGS) \
-	  --pcf $(PCF) \
+	  --$(CONSTRAINTS_FORMAT) $(CONSTRAINTS) \
 	  --json $(IMPL).json \
-	  --asc $@ 2>&1 | tee nextpnr-report.txt
+	  --${NEXTPNR_OUT} $@ 2>&1 | tee nextpnr-report.txt
 
-${IMPL}.bit: $(IMPL).asc
-	$(ICEPACK) $< $@
+${IMPL}.bit: ${IMPL}.${PNR2BIT_EXT}
+	$(PACKTOOL) $< $@
