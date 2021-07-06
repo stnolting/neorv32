@@ -109,26 +109,27 @@ neorv32/sw/example/blink_led$ make
 :sectnums:
 ==== Targets
 
-Just executing `make` will show the help menu showing all available targets. The following targets are
-available:
+Just executing `make` (or executing `make help`) will show the help menu listing all available targets.
 
-[cols="<3,<15"]
-[grid="none"]
-|=======================
-| `help` | Show a short help text explaining all available targets.
-| `check` | Check the compiler toolchain. You should run this target at least once after installing the toolchain.
-| `info` | Show the makefile configuration (see section <<_configuration>>).
-| `exe` | Compile all sources and generate application executable for upload via bootloader.
-| `install` | Compile all sources, generate executable (via exe target) for upload via bootloader and generate and install IMEM VHDL initialization image file `rtl/core/neorv32_application_image.vhd`.
-| `all` | Execute `exe` and `install`.
-| `clean` | Remove all generated files in the current folder.
-| `clean_all` | Remove all generated files in the current folder and also removes the compiled core libraries and the compiled image generator tool.
-| `bootloader` | Compile all sources, generate executable and generate and install BOOTROM VHDL initialization image file `rtl/core/neorv32_bootloader_image.vhd`. This target modifies the ROM origin and length in the linker script by setting the `make_bootloader` define.
-| `upload` | Upload NEORV32 executable to the bootloader via serial port
-|=======================
+[source,makefile]
+----
+$ make
+<<< NEORV32 Application Makefile >>>
+Make sure to add the bin folder of RISC-V GCC to your PATH variable.
+Targets:
+ help       - show this text
+ check      - check toolchain
+ info       - show makefile/toolchain configuration
+ exe        - compile and generate <neorv32_exe.bin> executable for upload via bootloader
+ hex        - compile and generate <neorv32_exe.hex> executable raw file
+ install    - compile, generate and install VHDL IMEM boot image (for application)
+ all        - exe + hex + install
+ elf_info   - show ELF layout info
+ clean      - clean up project
+ clean_all  - clean up project, core libraries and image generator
+ bootloader - compile, generate and install VHDL BOOTROM boot image (for bootloader only!)
+----
 
-[TIP]
-An assembly listing file (`main.asm`) is created by the compilation flow for further analysis or debugging purpose.
 
 :sectnums:
 ==== Configuration
@@ -156,8 +157,6 @@ MARCH ?= -march=rv32i
 MABI  ?= -mabi=ilp32
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?=
-# Serial port for executable upload via bootloer
-COM_PORT ?= /dev/ttyUSB0
 # Relative or absolute path to the NEORV32 home folder
 NEORV32_HOME ?= ../../..
 # *****************************************************************************
@@ -308,6 +307,7 @@ The image generator can generate three types of executables, selected by a flag 
 [grid="none"]
 |=======================
 | `-app_bin` | Generates an executable binary file `neorv32_exe.bin` (for UART uploading via the bootloader).
+| `-app_hex` | Generates a plain ASCII hex-char file `neorv32_exe.hex` that can be used to initialize custom (instruction-) memories (in synthesis/simulation).
 | `-app_img` | Generates an executable VHDL memory initialization image for the processor-internal IMEM. This option generates the `rtl/core/neorv32_application_image.vhd` file.
 | `-bld_img` | Generates an executable VHDL memory initialization image for the processor-internal BOOT ROM. This option generates the `rtl/core/neorv32_bootloader_image.vhd` file.
 |=======================
