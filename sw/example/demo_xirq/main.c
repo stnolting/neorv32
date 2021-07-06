@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file demo_xirq/main.c
  * @author Stephan Nolting
- * @brief External interrupt controller (XIRQ) demo program.
+ * @brief External interrupt controller (XIRQ) demo program (using hardware-assisted prioritization).
  **************************************************************************/
 
 #include <neorv32.h>
@@ -139,12 +139,17 @@ int main() {
   }
 
 
-  // wait for interrupts
+  // --- wait for interrupts ---
+  // All incoming XIRQ interrupt requests are "prioritized" in this example. The XIRQ FIRQ handler
+  // reads the ID of the interrupt with the highest priority from the XIRQ controller ("source" register) and calls the according
+  // handler function.
+  // Non-prioritized handling of interrupts (or custom prioritization) can be implemented by manually reading the
+  // XIRQ controller's "pending" register. It is up to the software to define which pending IRQ should be served.
   while(1);
 
 
   // just as an example: to disable certain XIRQ interrupt channels, we can
-  // uninstall the according handler. this will also clear a pending interrupt for that channel
+  // un-install the according handler. this will also clear a pending interrupt for that channel
   neorv32_xirq_uninstall(0); // disable XIRQ channel 0 and remove associated handler
   neorv32_xirq_uninstall(1); // disable XIRQ channel 1 and remove associated handler
   neorv32_xirq_uninstall(2); // disable XIRQ channel 2 and remove associated handler

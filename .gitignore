@@ -4,6 +4,7 @@
 *.elf
 *.asm
 *.out
+*.hex
 *_image.vhd
 
 # keep default VHDL memory images

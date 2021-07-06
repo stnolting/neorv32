@@ -2,7 +2,7 @@
 -- # << NEORV32 - External Interrupt Controller (XIRQ) >>                                          #
 -- # ********************************************************************************************* #
 -- # Simple interrupt controller for platform (processor-external) interrupts. Up to 32 channels   #
--- # are supported that get prioritized into a single CPU interrupt.                               #
+-- # are supported that get (optionally) prioritized into a single CPU interrupt.                  #
 -- #                                                                                               #
 -- # The actual trigger configuration has to be done before synthesis using the XIRQ_TRIGGER_TYPE  #
 -- # and XIRQ_TRIGGER_POLARITY generics. These allow to configure channel-independent low-level,   #

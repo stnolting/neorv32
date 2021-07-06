@@ -66,7 +66,7 @@ int neorv32_cpu_check_zext(uint8_t flag_id);
  * @param[in] return_code Return value of main() function.
  * @return Return value is irrelevant (there is no one left to check for it...).
  **************************************************************************/
-extern int __neorv32_crt0_after_main(int32_t return_code);
+extern int __neorv32_crt0_after_main(int32_t return_code) __attribute__ ((weak));
 
 
 /**********************************************************************//**

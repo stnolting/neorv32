@@ -50,7 +50,7 @@ package neorv32_package is
   constant wb_rx_buffer_c  : boolean := true;  -- use register buffer for RX data when true (default)
 
   -- CPU core --
-  constant ipb_entries_c     : natural := 4; -- entries in CPU instruction prefetch buffer, has to be a power of 2, default=2
+  constant ipb_entries_c     : natural := 2; -- entries in CPU instruction prefetch buffer, has to be a power of 2, default=2
   constant cp_timeout_en_c   : boolean := false; -- auto-terminate pending co-processor operations after 256 cycles (for debugging only), default = false
   constant dedicated_reset_c : boolean := false; -- use dedicated hardware reset value for UNCRITICAL registers (FALSE=reset value is irrelevant (might simplify HW), default; TRUE=defined LOW reset value)
 
