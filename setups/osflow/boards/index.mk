@@ -14,23 +14,23 @@ FOMU_REV ?= pvt
 ifeq ($(FOMU_REV),evt1)
 YOSYSFLAGS  ?= -D EVT=1 -D EVT1=1 -D HAVE_PMOD=1
 PNRFLAGS    ?= --up5k --package sg48
-CONSTRAINTS ?= $(PCF_PATH)/fomu-evt2.pcf
+CONSTRAINTS ?= $(PCF_PATH)/$(BOARD)-evt2.pcf
 else ifeq ($(FOMU_REV),evt2)
 YOSYSFLAGS  ?= -D EVT=1 -D EVT2=1 -D HAVE_PMOD=1
 PNRFLAGS    ?= --up5k --package sg48
-CONSTRAINTS ?= $(PCF_PATH)/fomu-evt2.pcf
+CONSTRAINTS ?= $(PCF_PATH)/$(BOARD)-$(FOMU_REV).pcf
 else ifeq ($(FOMU_REV),evt3)
 YOSYSFLAGS  ?= -D EVT=1 -D EVT3=1 -D HAVE_PMOD=1
 PNRFLAGS    ?= --up5k --package sg48
-CONSTRAINTS ?= $(PCF_PATH)/fomu-evt3.pcf
+CONSTRAINTS ?= $(PCF_PATH)/$(BOARD)-$(FOMU_REV).pcf
 else ifeq ($(FOMU_REV),hacker)
 YOSYSFLAGS  ?= -D HACKER=1
 PNRFLAGS    ?= --up5k --package uwg30
-CONSTRAINTS ?= $(PCF_PATH)/fomu-hacker.pcf
+CONSTRAINTS ?= $(PCF_PATH)/$(BOARD)-$(FOMU_REV).pcf
 else ifeq ($(FOMU_REV),pvt)
 YOSYSFLAGS  ?= -D PVT=1
 PNRFLAGS    ?= --up5k --package uwg30
-CONSTRAINTS ?= $(PCF_PATH)/fomu-pvt.pcf
+CONSTRAINTS ?= $(PCF_PATH)/$(BOARD)-$(FOMU_REV).pcf
 else
 $(error Unrecognized FOMU_REV value. must be "evt1", "evt2", "evt3", "pvt", or "hacker")
 endif
@@ -43,19 +43,21 @@ endif
 ifeq ($(BOARD),iCESugar)
 $(info Setting constraints and implementation args for BOARD iCESugar)
 
-CONSTRAINTS ?= $(PCF_PATH)/iCESugar.pcf
+CONSTRAINTS ?= $(PCF_PATH)/$(BOARD).pcf
 PNRFLAGS    ?= --up5k --package sg48 --ignore-loops --timing-allow-fail
-IMPL        ?= neorv32_iCESugar_$(ID)
+IMPL        ?= neorv32_$(BOARD)_$(ID)
 
 endif
 
 
-ifeq ($(BOARD),UPduino_v3)
+ifeq ($(BOARD),UPduino)
 $(info Setting constraints and implementation args for BOARD UPduino)
 
-CONSTRAINTS ?= $(PCF_PATH)/UPduino_v3.pcf
+UPduino_REV ?= v3
+
+CONSTRAINTS ?= $(PCF_PATH)/$(BOARD)_v3.pcf
 PNRFLAGS    ?= --up5k --package sg48 --ignore-loops --timing-allow-fail
-IMPL        ?= neorv32_UPduino_v3_$(ID)
+IMPL        ?= neorv32_$(BOARD)_$(UPduino_REV)_$(ID)
 
 endif
 
@@ -65,8 +67,10 @@ $(info Setting constraints and implementation args for BOARD OrangeCrab)
 
 DEVICE_SERIES = ecp5
 
-CONSTRAINTS ?= $(PCF_PATH)/OrangeCrab.lpf
+OrangeCrab_REV ?= r02-25F
+
+CONSTRAINTS ?= $(PCF_PATH)/$(BOARD).lpf
 PNRFLAGS    ?= --25k --package CSFBGA285 --ignore-loops --timing-allow-fail
-IMPL        ?= neorv32_OrangeCrab_r02-25F_$(ID)
+IMPL        ?= neorv32_$(BOARD)_$(OrangeCrab_REV)_$(ID)
 
 endif
