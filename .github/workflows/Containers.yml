@@ -18,6 +18,8 @@ jobs:
         image:
         - impl
         - sim
+    env:
+      DOCKER_BUILDKIT: true
     name: '🛳️ ${{ matrix.image }}'
 
     steps:
@@ -26,7 +28,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: '⛴️ Build neorv32/${{ matrix.image }}'
-      run: docker build -t ghcr.io/stnolting/neorv32/${{ matrix.image }} - < .github/${{ matrix.image }}.dockerfile
+      run: docker build -t ghcr.io/stnolting/neorv32/${{ matrix.image }} -f .github/${{ matrix.image }}.dockerfile .
 
     - name: '🔑 Login to ghcr.io'
       if: github.event_name != 'pull_request'
