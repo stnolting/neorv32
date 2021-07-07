@@ -7,9 +7,10 @@ TASK := clean $(BITSTREAM)
 
 FOMU_REV ?= pvt
 OrangeCrab_REV ?= r02-25F
+UPduino_REV ?= v3
 
 ifndef BOARD
-$(error BOARD needs to be set to 'Fomu' or 'UPDuino_v3'!)
+$(error BOARD needs to be set to 'Fomu', 'iCESugar', 'UPDuino' or 'OrangeCrab' !)
 endif
 
 run:
@@ -43,9 +44,9 @@ iCESugar:
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
 	  run
 
-UPduino_v3:
+UPduino:
 	$(MAKE) \
-	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
+	  BITSTREAM=neorv32_$(BOARD)_$(UPduino_REV)_$(DESIGN).bit \
 	  run
 
 OrangeCrab:

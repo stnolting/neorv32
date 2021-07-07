@@ -39,7 +39,7 @@ use ieee.numeric_std.all;
 library iCE40;
 use iCE40.components.all; -- for device primitives and macros
 
-entity neorv32_UPduino_v3_BoardTop_MinimalBoot is
+entity neorv32_UPduino_BoardTop_MinimalBoot is
   port (
     -- UART (uart0) --
     uart_txd_o : out std_ulogic;
@@ -51,7 +51,7 @@ entity neorv32_UPduino_v3_BoardTop_MinimalBoot is
   );
 end entity;
 
-architecture neorv32_UPduino_v3_BoardTop_MinimalBoot_rtl of neorv32_UPduino_v3_BoardTop_MinimalBoot is
+architecture neorv32_UPduino_BoardTop_MinimalBoot_rtl of neorv32_UPduino_BoardTop_MinimalBoot is
 
   -- configuration --
   constant f_clock_c : natural := 18000000; -- PLL output clock frequency in Hz
