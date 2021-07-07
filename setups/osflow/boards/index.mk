@@ -58,3 +58,15 @@ PNRFLAGS    ?= --up5k --package sg48 --ignore-loops --timing-allow-fail
 IMPL        ?= neorv32_UPduino_v3_$(ID)
 
 endif
+
+
+ifeq ($(BOARD),OrangeCrab)
+$(info Setting constraints and implementation args for BOARD OrangeCrab)
+
+DEVICE_SERIES = ecp5
+
+CONSTRAINTS ?= $(PCF_PATH)/OrangeCrab.lpf
+PNRFLAGS    ?= --25k --package CSFBGA285 --ignore-loops --timing-allow-fail
+IMPL        ?= neorv32_OrangeCrab_r02-25F_$(ID)
+
+endif

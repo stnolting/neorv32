@@ -6,6 +6,7 @@ MV := mv
 TASK := clean $(BITSTREAM)
 
 FOMU_REV ?= pvt
+OrangeCrab_REV ?= r02-25F
 
 ifndef BOARD
 $(error BOARD needs to be set to 'Fomu' or 'UPDuino_v3'!)
@@ -17,8 +18,12 @@ run:
 	  BOARD_SRC=$(EXAMPLES)/neorv32_$(BOARD)_BoardTop_$(DESIGN).vhd \
 	  TOP=neorv32_$(BOARD)_BoardTop_$(DESIGN) \
 	  ID=$(DESIGN) \
-	  $(TASK) \
-	&& $(MV) $(OSFLOW)/$(BITSTREAM) ./
+	  $(TASK)
+	IMPL="$${BITSTREAM%%.*}"; for item in ".bit" ".svf"; do \
+	  if [ -f "$(OSFLOW)/$$IMPL$$item" ]; then \
+	    $(MV) "$(OSFLOW)/$$IMPL$$item" ./; \
+	  fi \
+	done
 
 # Boards
 
@@ -41,6 +46,12 @@ iCESugar:
 UPduino_v3:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
+	  run
+
+OrangeCrab:
+	$(MAKE) \
+	  BITSTREAM=neorv32_$(BOARD)_$(OrangeCrab_REV)_$(DESIGN).bit \
+	  NEORV32_MEM_SRC="../../rtl/core/neorv32_imem.vhd ../../rtl/core/neorv32_dmem.vhd" \
 	  run
 
 # Designs

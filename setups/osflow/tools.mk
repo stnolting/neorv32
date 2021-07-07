@@ -18,9 +18,11 @@ CONSTRAINTS_FORMAT ?= pcf
 NEXTPNR_OUT        ?= asc
 PNR2BIT_EXT        ?= asc
 PACKTOOL           ?= $(ICEPACK)
+PACKARGS           ?=
 else
 CONSTRAINTS_FORMAT ?= lpf
 NEXTPNR_OUT        ?= textcfg
 PNR2BIT_EXT        ?= cfg
 PACKTOOL           ?= $(ECPPACK)
+PACKARGS           ?= --compress
 endif

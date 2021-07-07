@@ -48,6 +48,13 @@ NEORV32_SRC := ${NEORV32_PKG} ${NEORV32_APP_SRC} ${NEORV32_MEM_SRC} ${NEORV32_CO
 ICE40_SRC := \
   devices/ice40/sb_ice40_components.vhd
 
+ECP5_SRC := \
+  devices/ecp5/ecp5_components.vhd
+
+ifeq ($(DEVICE_SERIES),ecp5)
+DEVICE_SRC := ${ECP5_SRC}
+else
 DEVICE_SRC := ${ICE40_SRC}
+endif
 
 # Optionally NEORV32_VERILOG_SRC can be set to a list of Verilog sources

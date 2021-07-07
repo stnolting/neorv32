@@ -7,3 +7,8 @@ ${IMPL}.${PNR2BIT_EXT}: $(IMPL).json $(CONSTRAINTS)
 
 ${IMPL}.bit: ${IMPL}.${PNR2BIT_EXT}
 	$(PACKTOOL) $< $@
+
+ifeq ($(DEVICE_SERIES),ecp5)
+${IMPL}.svf: ${IMPL}.${PNR2BIT_EXT}
+	$(PACKTOOL) $(PACKARGS) --svf $@ $<
+endif
