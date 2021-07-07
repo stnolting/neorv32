@@ -5,10 +5,6 @@ NEORV32_PKG := $(RTL_CORE_SRC)/neorv32_package.vhd
 NEORV32_APP_SRC := \
   $(RTL_CORE_SRC)/neorv32_application_image.vhd \
 
-NEORV32_MEM_SRC := \
-  devices/ice40/neorv32_imem.ice40up_spram.vhd \
-  devices/ice40/neorv32_dmem.ice40up_spram.vhd
-
 NEORV32_CORE_SRC := \
   $(RTL_CORE_SRC)/neorv32_bootloader_image.vhd \
   $(RTL_CORE_SRC)/neorv32_boot_rom.vhd \
@@ -42,6 +38,9 @@ NEORV32_CORE_SRC := \
   $(RTL_CORE_SRC)/neorv32_wdt.vhd \
   $(RTL_CORE_SRC)/neorv32_wishbone.vhd \
   $(RTL_CORE_SRC)/neorv32_xirq.vhd
+
+# Before including this partial makefile, NEORV32_MEM_SRC needs to be set
+# (containing two VHDL sources: one for IMEM and one for DMEM)
 
 NEORV32_SRC := ${NEORV32_PKG} ${NEORV32_APP_SRC} ${NEORV32_MEM_SRC} ${NEORV32_CORE_SRC}
 
