@@ -10,5 +10,5 @@ ${IMPL}.bit: ${IMPL}.${PNR2BIT_EXT}
 
 ifeq ($(DEVICE_SERIES),ecp5)
 ${IMPL}.svf: ${IMPL}.${PNR2BIT_EXT}
-	$(PACKTOOL) --svf $@ $<
+	$(PACKTOOL) $(PACKARGS) --svf $@ $<
 endif
