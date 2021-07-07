@@ -42,11 +42,13 @@ endif
 iCESugar:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
+	  NEORV32_MEM_SRC="devices/ice40/neorv32_imem.ice40up_spram.vhd devices/ice40/neorv32_dmem.ice40up_spram.vhd" \
 	  run
 
 UPduino:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(UPduino_REV)_$(DESIGN).bit \
+	  NEORV32_MEM_SRC="devices/ice40/neorv32_imem.ice40up_spram.vhd devices/ice40/neorv32_dmem.ice40up_spram.vhd" \
 	  run
 
 OrangeCrab:
