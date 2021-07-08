@@ -191,3 +191,24 @@ def task_Documentation():
         "uptodate": [False],
         "pos_arg": "posargs",
     }
+
+
+def task_DeployToGitHubPages():
+    cwd = str(ROOT / "public")
+    return {
+        "actions": [
+            CmdAction(cmd, cwd=cwd)
+            for cmd in [
+                "git init",
+                "cp ../.git/config ./.git/config",
+                "touch .nojekyll",
+                "git add .",
+                'git config --local user.email "push@gha"',
+                'git config --local user.name "GHA"',
+                "git commit -am '{posargs}'",
+                "git push -u origin +HEAD:gh-pages",
+            ]
+        ],
+        "doc": "Create a clean branch in subdir 'public' and push to branch 'gh-pages'",
+        "pos_arg": "posargs",
+    }
