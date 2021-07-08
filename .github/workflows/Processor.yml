@@ -31,10 +31,10 @@ jobs:
     - name: '🧰 Repository Checkout'
       uses: actions/checkout@v2
 
-    - name: '🚧 Run Software Framework Tests'
+    - name: '⚙️ Build Software Framework Tests'
       uses: docker://ghcr.io/stnolting/neorv32/sim
       with:
-        args: ./sw/example/processor_check/check.sh
+        args: doit BuildAndInstallSoftwareFrameworkTests
 
     - name: '🚧 Run Processor Hardware Tests with shell script'
       uses: docker://ghcr.io/stnolting/neorv32/sim
