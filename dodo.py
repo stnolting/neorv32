@@ -156,3 +156,29 @@ def task_BuildAndInstallSoftwareFrameworkTests():
         ],
         "doc": "Build all sw/example/*; install bootloader and processor check",
     }
+
+
+def task_RunRISCVArchitectureTests():
+    return {
+        "actions": ["sh {} {{suite}}".format(ROOT / "sim" / "run_riscv_arch_test.sh")],
+        "doc": "Run RISC-V Architecture Tests",
+        "params": [
+            {
+                "name": "suite",
+                "short": "s",
+                "long": "suite",
+                "default": "M",
+                "choices": ((board, "") for board in [
+                    "I",
+                    "C",
+                    "M",
+                    "privilege",
+                    "Zifencei",
+                    "rv32e_C",
+                    "rv32e_E",
+                    "rv32e_M"
+                ]),
+                "help": "Test suite to be executed",
+            }
+        ],
+    }

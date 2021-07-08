@@ -37,5 +37,5 @@ jobs:
       with:
         backend: gcc
 
-    - name: '⚙️ Run RISC-V Architecture Tests'
-      run: ./sim/run_riscv_arch_test.sh ${{ matrix.suite }}
+    - name: '🚧 Run RISC-V Architecture Tests'
+      run: doit RunRISCVArchitectureTests -s ${{ matrix.suite }}
