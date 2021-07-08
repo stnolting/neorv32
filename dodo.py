@@ -6,7 +6,7 @@ from pathlib import Path
 
 from doit.action import CmdAction
 
-from tasks.examples import Example, PRJ
+from tasks.examples import Example, GenerateExamplesJobMatrix, PRJ
 
 BOARDS = PRJ.Boards
 
@@ -99,6 +99,13 @@ def task_sim():
                 "help": "Arguments to pass to the VUnit script",
             }
         ],
+    }
+
+
+def task_GenerateExamplesJobMatrix():
+    return {
+        "actions": [GenerateExamplesJobMatrix],
+        "doc": "Generate JSON of the examples, and print it as 'set-output' (for CI)",
     }
 
 
