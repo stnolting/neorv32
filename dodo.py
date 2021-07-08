@@ -182,3 +182,12 @@ def task_RunRISCVArchitectureTests():
             }
         ],
     }
+
+
+def task_Documentation():
+    return {
+        "actions": ["make -C docs {posargs}"],
+        "doc": "Run a target in subdir 'doc'",
+        "uptodate": [False],
+        "pos_arg": "posargs",
+    }
