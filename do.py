@@ -15,6 +15,35 @@ DOIT_CONFIG = {"verbosity": 2, "action_string_formatting": "both"}
 ROOT = Path(__file__).parent
 
 
+def task_RunRISCVArchitectureTests():
+    return {
+        "actions": [CmdAction(
+            "./run_riscv_arch_test.sh {suite}",
+            cwd=ROOT / "sim"
+        )],
+        "doc": "Run RISC-V Architecture Tests",
+        "params": [
+            {
+                "name": "suite",
+                "short": "s",
+                "long": "suite",
+                "default": "M",
+                "choices": ((item, "") for item in [
+                    "I",
+                    "C",
+                    "M",
+                    "privilege",
+                    "Zifencei",
+                    "rv32e_C",
+                    "rv32e_E",
+                    "rv32e_M"
+                ]),
+                "help": "Test suite to be executed",
+            }
+        ],
+    }
+
+
 def task_Documentation():
     return {
         "actions": ["make -C docs {posargs}"],

@@ -30,17 +30,19 @@ jobs:
           echo "$GITHUB_WORKSPACE/riscv/bin" >> $GITHUB_PATH
           echo $GITHUB_WORKSPACE
 
-      - name: '🔧 Setup RISC-V GCC'
+      - name: '🔧 Setup RISC-V GCC and doit'
         run: |
           mkdir riscv
           curl -fsSL https://github.com/stnolting/riscv-gcc-prebuilt/releases/download/rv32i-2.0.0/riscv32-unknown-elf.gcc-10.2.0.rv32i.ilp32.newlib.tar.gz | \
           tar -xzf - -C riscv
           ls -al riscv
 
+          pip3 install doit
+
       - name: '🔧 Setup GHDL Simulator'
         uses: ghdl/setup-ghdl-ci@nightly
         with:
           backend: gcc
 
-      - name: '⚙️ Run RISC-V Architecture Tests'
-        run: ./sim/run_riscv_arch_test.sh ${{ matrix.suite }}
+      - name: '🚧 Run RISC-V Architecture Tests'
+        run: ./do.py RunRISCVArchitectureTests -s ${{ matrix.suite }}
