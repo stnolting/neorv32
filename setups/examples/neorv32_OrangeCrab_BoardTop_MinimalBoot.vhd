@@ -51,7 +51,7 @@ entity neorv32_OrangeCrab_BoardTop_MinimalBoot is
     -- UART0
     OrangeCrab_GPIO_0 : in  std_logic;
     OrangeCrab_GPIO_1 : out std_logic;
-    OrangeCrab_GPIO_4 : out std_logic;
+    OrangeCrab_GPIO_9 : out std_logic;
     -- USB Pins (which should be statically driven if not being used)
     OrangeCrab_USB_D_P   : out std_logic;
     OrangeCrab_USB_D_N   : out std_logic;
@@ -93,7 +93,7 @@ begin
     CLKFB   => pll_clk,
     ENCLKOP => '1',
     CLKOP   => pll_clk,
-    LOCK    => OrangeCrab_GPIO_4
+    LOCK    => OrangeCrab_GPIO_9
   );
 
   -- The core of the problem ----------------------------------------------------------------
