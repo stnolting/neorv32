@@ -1,6 +1,8 @@
 # doit
 
+from sys import executable
 from os import environ
+from pathlib import Path
 
 from doit.action import CmdAction
 
@@ -8,8 +10,9 @@ from tasks.examples import Example, PRJ
 
 BOARDS = PRJ.Boards
 
-DOIT_CONFIG = {"verbosity": 2}
+DOIT_CONFIG = {"verbosity": 2, "action_string_formatting": "both"}
 
+ROOT = Path(__file__).parent
 
 # > doit list --all
 #
@@ -72,6 +75,33 @@ def task_Example():
     }
 
 
+def task_sim():
+    simdir = ROOT / "sim"
+    yield {
+        "name": "Simple",
+        "actions": [str(simdir / "simple/ghdl.sh")],
+        "doc": "Run simple testbench with GHDL",
+        "uptodate": [False],
+    }
+    yield {
+        "name": "VUnit",
+        # FIXME: It should we possible to use '--' for separating the args to be passed raw to the action, instead of
+        # requiring a param and wrapping all the args in a single string
+        "actions": ["{} {} {{args}}".format(executable, str(simdir / "run.py"))],
+        "doc": "Run VUnit testbench",
+        "uptodate": [False],
+        "params": [
+            {
+                "name": "args",
+                "short": "a",
+                "long": "args",
+                "default": "--ci-mode -v",
+                "help": "Arguments to pass to the VUnit script",
+            }
+        ],
+    }
+
+
 def task_SetupRISCVGCC():
     return {
         "actions": [
@@ -80,4 +110,24 @@ def task_SetupRISCVGCC():
             "ls -al riscv",
         ],
         "doc": "Download and extract stnolting/riscv-gcc-prebuilt to subdir 'riscv'",
+    }
+
+
+def task_BuildAndInstallCheckSoftware():
+    return {
+        "actions": [
+            " ".join(
+                [
+                    "make -C sw/example/processor_check",
+                    "clean_all",
+                    "USER_FLAGS+=-DRUN_CHECK",
+                    "USER_FLAGS+=-DUART0_SIM_MODE",
+                    "USER_FLAGS+=-DSUPPRESS_OPTIONAL_UART_PRINT",
+                    "MARCH=-march=rv32imac",
+                    "info",
+                    "all",
+                ]
+            )
+        ],
+        "doc": "Build and install Processor Check software",
     }

@@ -39,7 +39,7 @@ jobs:
     - name: '🚧 Run Processor Hardware Tests with shell script'
       uses: docker://ghcr.io/stnolting/neorv32/sim
       with:
-        args: ./sim/simple/ghdl.sh
+        args: doit sim:Simple
 
 
   VUnit-Container:
@@ -54,15 +54,7 @@ jobs:
     - name: '⚙️ Build and install Processor Check software'
       uses: docker://ghcr.io/stnolting/neorv32/sim
       with:
-        args: >-
-          make -C sw/example/processor_check
-          clean_all
-          USER_FLAGS+=-DRUN_CHECK
-          USER_FLAGS+=-DUART0_SIM_MODE
-          USER_FLAGS+=-DSUPPRESS_OPTIONAL_UART_PRINT
-          MARCH=-march=rv32imac
-          info
-          all
+        args: doit BuildAndInstallCheckSoftware
 
     - name: '📤 Archive Processor Check application image'
       uses: actions/upload-artifact@v2
@@ -71,7 +63,6 @@ jobs:
         path: rtl/core/neorv32_application_image.vhd
 
     - name: '🚧 Run Processor Hardware Tests with VUnit'
-      uses: VUnit/vunit_action@master
+      uses: docker://ghcr.io/stnolting/neorv32/sim
       with:
-        image: ghcr.io/stnolting/neorv32/sim
-        cmd: ./sim/run.py --ci-mode -v
+        args: doit sim:VUnit
