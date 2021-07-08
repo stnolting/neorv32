@@ -18,9 +18,12 @@ jobs:
     - name: '🧰 Repository Checkout'
       uses: actions/checkout@v2
 
+    - name: '🐍 Install doit'
+      run: pip install doit
+
     - name: '🔧 Generate examples matrix'
       id: generate
-      run: ./.github/generate-job-matrix.py
+      run: ./do.py GenerateExamplesJobMatrix
 
 
   Implementation:

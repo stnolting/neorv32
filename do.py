@@ -10,7 +10,7 @@ from doit.action import CmdAction
 from doit.cmd_base import ModuleTaskLoader
 from doit.doit_cmd import DoitMain
 
-from tasks.examples import Example, PRJ
+from tasks.examples import Example, GenerateExamplesJobMatrix, PRJ
 
 
 BOARDS = PRJ.Boards
@@ -78,6 +78,13 @@ def task_Example():
                 "help": "Name of the design",
             },
         ],
+    }
+
+
+def task_GenerateExamplesJobMatrix():
+    return {
+        "actions": [GenerateExamplesJobMatrix],
+        "doc": "Generate JSON of the examples, and print it as 'set-output' (for CI)",
     }
 
 

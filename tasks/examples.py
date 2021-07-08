@@ -54,7 +54,9 @@ def Example(board: str, design: str, posargs: str) -> str:
     if board not in PRJ.Boards:
         raise Exception("Unknown board {}".format(board))
 
-    DesignSources = next((item for item in PRJ.Filesets.Designs if item.Name == design), None)
+    DesignSources = next(
+        (item for item in PRJ.Filesets.Designs if item.Name == design), None
+    )
 
     if DesignSources == None:
         raise Exception("Unknown design {}".format(design))
@@ -88,3 +90,68 @@ def Example(board: str, design: str, posargs: str) -> str:
 #       "_{}".format(PRJ.Board_Revisions[board]) if board in PRJ.Board_Revisions else "",
 #       design
 #   )
+
+
+def GenerateExamplesJobMatrix():
+    print(
+        "::set-output name=matrix::"
+        + str(
+            [
+                {
+                    "board": "UPduino",
+                    "design": "MinimalBoot",
+                    "bitstream": "neorv32_UPduino_v3_MinimalBoot.bit",
+                },
+                {
+                    "board": "UPduino",
+                    "design": "UP5KDemo",
+                    "bitstream": "neorv32_UPduino_v3_UP5KDemo.bit",
+                },
+                {
+                    "board": "Fomu",
+                    "design": "Minimal",
+                    "bitstream": "neorv32_Fomu_pvt_Minimal.bit",
+                },
+                {
+                    "board": "Fomu",
+                    "design": "MinimalBoot",
+                    "bitstream": "neorv32_Fomu_pvt_MinimalBoot.bit",
+                },
+                {
+                    "board": "Fomu",
+                    "design": "MixedLanguage",
+                    "bitstream": "neorv32_Fomu_pvt_MixedLanguage.bit",
+                },
+                {
+                    "board": "Fomu",
+                    "design": "UP5KDemo",
+                    "bitstream": "neorv32_Fomu_pvt_UP5KDemo.bit",
+                },
+                {
+                    "board": "iCESugar",
+                    "design": "Minimal",
+                    "bitstream": "neorv32_iCESugar_Minimal.bit",
+                },
+                {
+                    "board": "iCESugar",
+                    "design": "MinimalBoot",
+                    "bitstream": "neorv32_iCESugar_MinimalBoot.bit",
+                },
+                {
+                    "board": "OrangeCrab",
+                    "design": "MinimalBoot",
+                    "bitstream": "neorv32_OrangeCrab_r02-25F_MinimalBoot.bit",
+                },
+                {
+                    "board": "AlhambraII",
+                    "design": "MinimalBoot",
+                    "bitstream": "neorv32_AlhambraII_MinimalBoot.bit",
+                },
+                {
+                    "board": "ULX3S",
+                    "design": "MinimalBoot",
+                    "bitstream": "neorv32_ULX3S_MinimalBoot.bit",
+                },
+            ]
+        )
+    )
