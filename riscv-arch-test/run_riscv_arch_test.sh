@@ -1,82 +1,64 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Abort if any command returns != 0
 set -e
 
-# Project home folder
-homedir="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-homedir=$homedir/..
+cd $(dirname "$0")
 
-# Check GCC toolchain installation
-echo "--------------------------------------------------------------------------"
-echo "> Checking RISC-V GCC toolchain..."
-echo "--------------------------------------------------------------------------"
+rm -rf work/neorv32
+mkdir -p work/neorv32
+
+cd ..
+
+header() {
+  echo "--------------------------------------------------------------------------"
+  echo "> $@..."
+  echo "--------------------------------------------------------------------------"
+}
+
+header "Checking RISC-V GCC toolchain"
 riscv32-unknown-elf-gcc -v
 
-# Check GHDL installation
-echo "--------------------------------------------------------------------------"
-echo "> Checking GHDL simulator..."
-echo "--------------------------------------------------------------------------"
+header "Checking GHDL simulator"
 ghdl -v
 
-echo "--------------------------------------------------------------------------"
-echo "> Checking 'riscv-arch-test' GitHub repository (submodule)..."
-echo "--------------------------------------------------------------------------"
-
+header "Checking 'riscv-arch-test' GitHub repository (submodule)"
 git submodule update --init
 
-# Copy NEORV32 files
-echo "--------------------------------------------------------------------------"
-echo "> Making local copy of NEORV32 'rtl', 'sim' & 'sw' folders..."
-echo "--------------------------------------------------------------------------"
-(cd $homedir/riscv-arch-test/work ; rm -rf neorv32 ; mkdir neorv32)
-cp -r $homedir/rtl/ $homedir/riscv-arch-test/work/neorv32/.
-cp -r $homedir/sim/ $homedir/riscv-arch-test/work/neorv32/.
-cp -r $homedir/sw/ $homedir/riscv-arch-test/work/neorv32/.
-
-# Copy neorv32 target folder into test suite
-echo "--------------------------------------------------------------------------"
-echo "> Copying neorv32 test-target into riscv-arch-test framework..."
-echo "--------------------------------------------------------------------------"
-cp -rf $homedir/riscv-arch-test/port-neorv32/framework_v2.0/riscv-target/neorv32 $homedir/riscv-arch-test/work/riscv-arch-test/riscv-target/.
-
-# Make a local copy of the original IMEM rtl file
-echo ""
-echo ">>> Making local backup of original IMEM rtl file (work/neorv32/rtl/core/neorv32_imem.ORIGINAL)..."
-echo ""
-cp $homedir/riscv-arch-test/work/neorv32/rtl/core/neorv32_imem.vhd $homedir/riscv-arch-test/work/neorv32/rtl/core/neorv32_imem.ORIGINAL
-
-# Component installation done
-ls -al
-echo "--------------------------------------------------------------------------"
-echo "> Component installation done!"
-echo "--------------------------------------------------------------------------"
-echo ""
-
-
+archWork='riscv-arch-test/work'
 # neorv32 home folder
-NEORV32_LOCAL_HOME=$homedir/riscv-arch-test/work/neorv32
+NEORV32_LOCAL_HOME=$(pwd)/"$archWork"/neorv32
 
-echo "--------------------------------------------------------------------------"
-echo "> Starting RISC-V architecture tests..."
-echo "--------------------------------------------------------------------------"
+header "Making local copy of NEORV32 'rtl', 'sim' & 'sw' folders"
+for item in 'rtl' 'sim' 'sw'; do
+  cp -r "$item"/ "$archWork"/neorv32/.
+done
 
-# Clean up everything
-make -C $homedir/riscv-arch-test/work/riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME XLEN=32 RISCV_TARGET=neorv32 clean
+header "Copying neorv32 test-target into riscv-arch-test framework"
+cp -rf riscv-arch-test/port-neorv32/framework_v2.0/riscv-target/neorv32 "$archWork"/riscv-arch-test/riscv-target/.
 
+printf "\n>>> Making local backup of original IMEM rtl file (work/neorv32/rtl/core/neorv32_imem.ORIGINAL)\n\n"
+cp "$archWork"/neorv32/rtl/core/neorv32_imem.vhd "$archWork"/neorv32/rtl/core/neorv32_imem.ORIGINAL
+
+ls -al
+header "> Component installation done"
+echo ""
+
+header "Starting RISC-V architecture tests"
+
+makeArgs="-C $archWork/riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME XLEN=32 RISCV_TARGET=neorv32"
+
+make $makeArgs clean
 
 # work in progress FIXME
-echo ""
-echo "\e[1;33mWARNING! 'Zifencei' test is currently disabled (work in progress). \e[0m"
-echo ""
-
+printf "\n\e[1;33mWARNING! 'Zifencei' test is currently disabled (work in progress). \e[0m\n\n"
 
 # Run tests and check results
-make --silent -C $homedir/riscv-arch-test/work/riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME SIM_TIME=850us XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=I build run verify
-make --silent -C $homedir/riscv-arch-test/work/riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME SIM_TIME=400us XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=C build run verify
-make --silent -C $homedir/riscv-arch-test/work/riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME SIM_TIME=800us XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=M build run verify
-make --silent -C $homedir/riscv-arch-test/work/riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME SIM_TIME=200us XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=privilege build run verify
-#make --silent -C $homedir/riscv-arch-test/work/riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME SIM_TIME=200us XLEN=32 RISCV_TARGET=neorv32 RISCV_DEVICE=Zifencei RISCV_TARGET_FLAGS=-DNEORV32_NO_DATA_INIT build run verify
+makeTargets='build run verify'
+make --silent $makeArgs SIM_TIME=850us RISCV_DEVICE=I $makeTargets
+make --silent $makeArgs SIM_TIME=400us RISCV_DEVICE=C $makeTargets
+make --silent $makeArgs SIM_TIME=800us RISCV_DEVICE=M $makeTargets
+make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=privilege $makeTargets
+#make $makeArgs SIM_TIME=200us RISCV_DEVICE=Zifencei RISCV_TARGET_FLAGS=-DNEORV32_NO_DATA_INIT $makeTargets
 
-echo ""
-echo "RISC-V architecture tests completed successfully"
+printf "\nRISC-V architecture tests completed successfully"
