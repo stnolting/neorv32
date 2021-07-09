@@ -1,6 +1,8 @@
 *.asc
 *.bit
+*.cfg
 *.dfu
 *.history
 *.json
+*.svf
 *-report.txt
