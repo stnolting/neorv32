@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 09.07.2021 | 1.5.7.11 | :bug: fixed minor bug in FIFO component (mapping might fail if `FIFO_DEPTH` = 1); fixed broken `sw/example/demo_freeRTOS` makefile (all freeRTOS includes were missing) |
 | 03.07.2021 | 1.5.7.10 | :sparkles: added new component: **External Interrupt Controller (XIRQ)**: up to 32 external interrupt channels `xirq_i` (via `XIRQ_NUM_CH` generic), configurable trigger (via `XIRQ_TRIGGER_TYPE` and `XIRQ_TRIGGER_POLARITY` generics), prioritized or non-prioritized servicing |
 | 02.07.2021 | 1.5.7.9 | relocated base addresses of watchdog timer (WDT) and true-random number generator (TRNG); removed CPU's `firq_ack_o` signal (was not used at all) |
 | 30.06.2021 | 1.5.7.8 | :warning: increased GPIO port size from 32-bit to 64-bit; relocated GPIO base address; removed GPIO.input pin-change interrupt |

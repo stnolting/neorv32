@@ -70,7 +70,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050710"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050711"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
 
@@ -1898,7 +1898,7 @@ package neorv32_package is
       FIFO_DEPTH : natural := 4;     -- number of fifo entries; has to be a power of two; min 1
       FIFO_WIDTH : natural := 32;    -- size of data elements in fifo
       FIFO_RSYNC : boolean := false; -- false = async read; true = sync read
-      FIFO_SAFE  : boolean := false  -- true = allow read/write only if data available
+      FIFO_SAFE  : boolean := false  -- true = allow read/write only if entry available
     );
     port (
       -- control --
