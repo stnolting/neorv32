@@ -5,6 +5,10 @@ set -e
 
 cd $(dirname "$0")
 
+if [ -z "$RISCV_PREFIX" ]; then
+  export RISCV_PREFIX='riscv32-unknown-elf-'
+fi
+
 rm -rf work/neorv32
 mkdir -p work/neorv32
 
@@ -17,7 +21,7 @@ header() {
 }
 
 header "Checking RISC-V GCC toolchain"
-riscv32-unknown-elf-gcc -v
+"$RISCV_PREFIX"gcc -v
 
 header "Checking GHDL simulator"
 ghdl -v
