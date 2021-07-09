@@ -50,7 +50,7 @@ ASM_INC ?= -I .
 EFFORT ?= -Os
 
 # Compiler toolchain
-RISCV_TOOLCHAIN ?= riscv32-unknown-elf
+RISCV_PREFIX ?= riscv32-unknown-elf-
 
 # CPU architecture and ABI
 MARCH ?= -march=rv32i
@@ -185,10 +185,10 @@ OBJ = $(SRC:%=%.o)
 # Tools and flags
 # -----------------------------------------------------------------------------
 # Compiler tools
-CC      = $(RISCV_TOOLCHAIN)-gcc
-OBJDUMP = $(RISCV_TOOLCHAIN)-objdump
-OBJCOPY = $(RISCV_TOOLCHAIN)-objcopy
-SIZE    = $(RISCV_TOOLCHAIN)-size
+CC      = $(RISCV_PREFIX)gcc
+OBJDUMP = $(RISCV_PREFIX)objdump
+OBJCOPY = $(RISCV_PREFIX)objcopy
+SIZE    = $(RISCV_PREFIX)size
 
 # Host native compiler
 CC_X86 = g++ -Wall -O -g
