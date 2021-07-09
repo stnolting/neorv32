@@ -1993,8 +1993,6 @@ begin
               if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
                 csr.mstatus_mpp(0) <= csr.wdata(11) or csr.wdata(12);
                 csr.mstatus_mpp(1) <= csr.wdata(11) or csr.wdata(12);
-              else -- only machine mode is available
-                csr.mstatus_mpp <= priv_mode_m_c;
               end if;
             end if;
             -- R/W: mie - machine interrupt enable register --

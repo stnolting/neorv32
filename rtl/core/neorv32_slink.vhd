@@ -252,7 +252,7 @@ begin
       FIFO_DEPTH => SLINK_TX_FIFO, -- number of fifo entries; has to be a power of two; min 1
       FIFO_WIDTH => 32,            -- size of data elements in fifo
       FIFO_RSYNC => false,         -- false = async read; true = sync read
-      FIFO_SAFE  => true           -- true = allow read/write only if data available
+      FIFO_SAFE  => true           -- true = allow read/write only if entry available
     )
     port map (
       -- control --
@@ -288,7 +288,7 @@ begin
       FIFO_DEPTH => SLINK_RX_FIFO, -- number of fifo entries; has to be a power of two; min 1
       FIFO_WIDTH => 32,            -- size of data elements in fifo
       FIFO_RSYNC => false,         -- false = async read; true = sync read
-      FIFO_SAFE  => true           -- true = allow read/write only if data available
+      FIFO_SAFE  => true           -- true = allow read/write only if entry available
     )
     port map (
       -- control --
