@@ -21,8 +21,10 @@ git submodule update --init
 
 header "Copying neorv32 test-target into riscv-arch-test framework"
 (
-  cd ../riscv-arch-test
-  cp -vr port-neorv32 riscv-arch-test/riscv-target/neorv32
+  cd ../sw/isa-test
+  target_device='riscv-arch-test/riscv-target/neorv32'
+  if [ -d "$target_device" ]; then rm -rf "$target_device"; fi
+  cp -vr port-neorv32 "$target_device"
 )
 
 header "Making local copy of NEORV32 'rtl', 'sim' & 'sw' folders"
@@ -43,7 +45,7 @@ header "Making local backup of original IMEM rtl file (work/rtl/core/neorv32_ime
 
 header "Starting RISC-V architecture tests"
 
-makeArgs="-C ../riscv-arch-test/riscv-arch-test NEORV32_LOCAL_COPY=$(pwd)/work XLEN=32 RISCV_TARGET=neorv32"
+makeArgs="-C ../sw/isa-test/riscv-arch-test NEORV32_LOCAL_COPY=$(pwd)/work XLEN=32 RISCV_TARGET=neorv32"
 
 make $makeArgs clean
 
