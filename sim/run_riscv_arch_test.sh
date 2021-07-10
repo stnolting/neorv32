@@ -33,7 +33,7 @@ mkdir -p work/sim
 for item in 'rtl' 'sw'; do
   cp -r ../"$item" work
 done
-for item in rtl_modules *.simple.vhd ghdl_sim.sh; do
+for item in *.simple.vhd ghdl_sim.sh; do
   cp -r "$item" work/sim
 done
 

@@ -14,7 +14,7 @@ RUN_TARGET=\
 	rm -f $(NEORV32_LOCAL_COPY)/*.out; \
 	echo "copying/using SIM-only IMEM (ROM!)"; \
 	rm -f $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
-	cp -f $(NEORV32_LOCAL_COPY)/sim/rtl_modules/neorv32_imem.vhd $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
+	cp -f $(NEORV32_LOCAL_COPY)/sim/neorv32_imem.simple.vhd $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
 	sed -i '/CPU_EXTENSION_RISCV_A/c\CPU_EXTENSION_RISCV_A  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.simple.vhd; \
 	sed -i '/CPU_EXTENSION_RISCV_C/c\CPU_EXTENSION_RISCV_C  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.simple.vhd; \
 	sed -i '/CPU_EXTENSION_RISCV_E/c\CPU_EXTENSION_RISCV_E  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.simple.vhd; \
