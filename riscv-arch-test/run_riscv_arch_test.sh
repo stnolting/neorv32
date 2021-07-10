@@ -5,14 +5,12 @@ set -e
 
 cd $(dirname "$0")
 
+# neorv32 home folder
+NEORV32_LOCAL_HOME=$(pwd)/work
+
 if [ -z "$RISCV_PREFIX" ]; then
   export RISCV_PREFIX='riscv32-unknown-elf-'
 fi
-
-rm -rf work/neorv32
-mkdir -p work/neorv32
-
-cd ..
 
 header() {
   echo "--------------------------------------------------------------------------"
@@ -29,26 +27,25 @@ ghdl -v
 header "Checking 'riscv-arch-test' GitHub repository (submodule)"
 git submodule update --init
 
-archWork='riscv-arch-test/work'
-# neorv32 home folder
-NEORV32_LOCAL_HOME=$(pwd)/"$archWork"/neorv32
+rm -rf "$NEORV32_LOCAL_HOME"
+mkdir -p "$NEORV32_LOCAL_HOME"
 
 header "Making local copy of NEORV32 'rtl', 'sim' & 'sw' folders"
 for item in 'rtl' 'sim' 'sw'; do
-  cp -r "$item"/ "$archWork"/neorv32/.
+  cp -r ../"$item"/ "$NEORV32_LOCAL_HOME"/.
 done
 
 header "Copying neorv32 test-target into riscv-arch-test framework"
-cp -vr riscv-arch-test/port-neorv32 "$archWork"/riscv-arch-test/riscv-target/neorv32
+cp -vr port-neorv32 riscv-arch-test/riscv-target/neorv32
 
-printf "\n>>> Making local backup of original IMEM rtl file (work/neorv32/rtl/core/neorv32_imem.ORIGINAL)\n\n"
-cp "$archWork"/neorv32/rtl/core/neorv32_imem.vhd "$archWork"/neorv32/rtl/core/neorv32_imem.ORIGINAL
+printf "\n>>> Making local backup of original IMEM rtl file ($NEORV32_LOCAL_HOME/rtl/core/neorv32_imem.ORIGINAL)\n\n"
+cp "$NEORV32_LOCAL_HOME"/rtl/core/neorv32_imem.vhd "$NEORV32_LOCAL_HOME"/rtl/core/neorv32_imem.ORIGINAL
 
 header "Component installation done"
 
 header "Starting RISC-V architecture tests"
 
-makeArgs="-C $archWork/riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME XLEN=32 RISCV_TARGET=neorv32"
+makeArgs="-C riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME XLEN=32 RISCV_TARGET=neorv32"
 
 make $makeArgs clean
 
