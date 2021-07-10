@@ -5,47 +5,45 @@ set -e
 
 cd $(dirname "$0")
 
-# neorv32 home folder
-NEORV32_LOCAL_HOME=$(pwd)/work
-
-if [ -z "$RISCV_PREFIX" ]; then
-  export RISCV_PREFIX='riscv32-unknown-elf-'
-fi
-
 header() {
   echo "--------------------------------------------------------------------------"
   echo "> $@..."
   echo "--------------------------------------------------------------------------"
 }
 
+RISCV_PREFIX="${RISCV_PREFIX:-riscv32-unknown-elf-}"
+
 header "Checking RISC-V GCC toolchain"
 "$RISCV_PREFIX"gcc -v
-
-header "Checking GHDL simulator"
-ghdl -v
 
 header "Checking 'riscv-arch-test' GitHub repository (submodule)"
 git submodule update --init
 
-rm -rf "$NEORV32_LOCAL_HOME"
-mkdir -p "$NEORV32_LOCAL_HOME"
+header "Copying neorv32 test-target into riscv-arch-test framework"
+(
+  cd ../riscv-arch-test
+  cp -vr port-neorv32 riscv-arch-test/riscv-target/neorv32
+)
 
 header "Making local copy of NEORV32 'rtl', 'sim' & 'sw' folders"
-for item in 'rtl' 'sim' 'sw'; do
-  cp -r ../"$item"/ "$NEORV32_LOCAL_HOME"/.
+rm -rf work
+mkdir -p work/sim
+for item in 'rtl' 'sw'; do
+  cp -r ../"$item" work
+done
+for item in rtl_modules *.simple.vhd ghdl_sim.sh; do
+  cp -r "$item" work/sim
 done
 
-header "Copying neorv32 test-target into riscv-arch-test framework"
-cp -vr port-neorv32 riscv-arch-test/riscv-target/neorv32
-
-printf "\n>>> Making local backup of original IMEM rtl file ($NEORV32_LOCAL_HOME/rtl/core/neorv32_imem.ORIGINAL)\n\n"
-cp "$NEORV32_LOCAL_HOME"/rtl/core/neorv32_imem.vhd "$NEORV32_LOCAL_HOME"/rtl/core/neorv32_imem.ORIGINAL
-
-header "Component installation done"
+header "Making local backup of original IMEM rtl file (work/rtl/core/neorv32_imem.ORIGINAL)"
+(
+  cd work/rtl/core/
+  cp neorv32_imem.vhd neorv32_imem.ORIGINAL
+)
 
 header "Starting RISC-V architecture tests"
 
-makeArgs="-C riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME XLEN=32 RISCV_TARGET=neorv32"
+makeArgs="-C ../riscv-arch-test/riscv-arch-test NEORV32_LOCAL_COPY=$(pwd)/work XLEN=32 RISCV_TARGET=neorv32"
 
 make $makeArgs clean
 

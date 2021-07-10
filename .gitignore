@@ -31,3 +31,7 @@ sw/image_gen/image_gen.exe
 # example bitstreams
 /setups/examples/*.bit
 /setups/examples/*.svf
+
+# riscv-arch-test
+
+/sim/work/
