@@ -39,14 +39,12 @@ for item in 'rtl' 'sim' 'sw'; do
 done
 
 header "Copying neorv32 test-target into riscv-arch-test framework"
-cp -rf riscv-arch-test/port-neorv32/framework_v2.0/riscv-target/neorv32 "$archWork"/riscv-arch-test/riscv-target/.
+cp -vr riscv-arch-test/port-neorv32 "$archWork"/riscv-arch-test/riscv-target/neorv32
 
 printf "\n>>> Making local backup of original IMEM rtl file (work/neorv32/rtl/core/neorv32_imem.ORIGINAL)\n\n"
 cp "$archWork"/neorv32/rtl/core/neorv32_imem.vhd "$archWork"/neorv32/rtl/core/neorv32_imem.ORIGINAL
 
-ls -al
-header "> Component installation done"
-echo ""
+header "Component installation done"
 
 header "Starting RISC-V architecture tests"
 
