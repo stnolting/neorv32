@@ -1,26 +1,3 @@
-include $(NEORV32_ROOT)/sw/isa-test/common.mk
+NEORV32_CPU_EXTENSION_RISCV_C ?= true
 
-RUN_TARGET=\
-	cd $(work_dir_isa); \
-	echo ">"; \
-	rm -f $(NEORV32_LOCAL_COPY)/*.out; \
-	echo "copying/using SIM-only IMEM (ROM!)"; \
-	rm -f $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
-	cp -f $(NEORV32_LOCAL_COPY)/sim/neorv32_imem.simple.vhd $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
-	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led main.elf; \
-	cp -f $< $(NEORV32_LOCAL_COPY)/sw/example/blink_led/main.elf; \
-	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led main.bin install; \
-	touch $(NEORV32_LOCAL_COPY)/neorv32.uart0.sim_mode.data.out; \
-	GHDL_DEVNULL=true $(shell which time) -v $(NEORV32_LOCAL_COPY)/sim/ghdl.run.sh \
-	  --stop-time=$(SIM_TIME) \
-	  -gCPU_EXTENSION_RISCV_A=false \
-	  -gCPU_EXTENSION_RISCV_C=true \
-	  -gCPU_EXTENSION_RISCV_E=false \
-	  -gCPU_EXTENSION_RISCV_M=false \
-	  -gCPU_EXTENSION_RISCV_U=false \
-	  -gCPU_EXTENSION_RISCV_Zicsr=true \
-	  -gCPU_EXTENSION_RISCV_Zifencei=false \
-	  -gEXT_IMEM_C=false \
-	  -gMEM_INT_IMEM_SIZE='2097152'; \
-	cp $(NEORV32_LOCAL_COPY)/sim/neorv32.uart0.sim_mode.data.out $(*).signature.output; \
-	echo "<";
+include $(NEORV32_ROOT)/sw/isa-test/common.mk
