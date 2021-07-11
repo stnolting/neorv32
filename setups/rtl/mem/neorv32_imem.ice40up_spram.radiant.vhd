@@ -1,8 +1,8 @@
 -- #################################################################################################
--- # << NEORV32 - Processor-Internal DMEM for Lattice iCE40 UltraPlus >>                           #
+-- # << NEORV32 - Processor-Internal IMEM for Lattice iCE40 UltraPlus >>                           #
 -- # ********************************************************************************************* #
 -- # Memory has a physical size of 64kb (2 x SPRAMs).                                              #
--- # Logical size DMEM_SIZE must be less or equal.                                                 #
+-- # Logical size IMEM_SIZE must be less or equal.                                                 #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -45,27 +45,10 @@ use neorv32.neorv32_package.all;
 library iCE40UP;
 use iCE40UP.components.all; -- for device primitives
 
-entity neorv32_dmem is
-  generic (
-    DMEM_BASE : std_ulogic_vector(31 downto 0) := x"80000000"; -- memory base address
-    DMEM_SIZE : natural := 64*1024 -- processor-internal instruction memory size in bytes
-  );
-  port (
-    clk_i  : in  std_ulogic; -- global clock line
-    rden_i : in  std_ulogic; -- read enable
-    wren_i : in  std_ulogic; -- write enable
-    ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
-    addr_i : in  std_ulogic_vector(31 downto 0); -- address
-    data_i : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o  : out std_ulogic -- transfer acknowledge
-  );
-end neorv32_dmem;
-
-architecture neorv32_dmem_rtl of neorv32_dmem is
+architecture neorv32_imem_rtl of neorv32_imem is
 
   -- advanced configuration --------------------------------------------------------------------------------
-  constant spram_sleep_mode_en_c : boolean := false; -- put DMEM into sleep mode when idle (for low power)
+  constant spram_sleep_mode_en_c : boolean := false; -- put IMEM into sleep mode when idle (for low power)
   -- -------------------------------------------------------------------------------------------------------
 
   -- IO space: module base address --
@@ -95,18 +78,19 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (DMEM_SIZE > 64*1024) report "DMEM has a fixed physical size of 64kB. Logical size must be less or equal." severity error;
+  assert not (IMEM_AS_IROM = true) report "ICE40 Ultra Plus SPRAM cannot be initialized by bitstream!" severity failure;
+  assert not (IMEM_SIZE > 64*1024) report "IMEM has a fixed physical size of 64kB. Logical size must be less or equal." severity error;
 
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = DMEM_BASE(hi_abb_c downto lo_abb_c)) else '0';
+  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = IMEM_BASE(hi_abb_c downto lo_abb_c)) else '0';
   mem_cs <= acc_en and (rden_i or wren_i);
 
 
   -- Memory Access --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dmem_spram_lo_inst : SP256K
+  imem_spram_lo_inst : SP256K
   port map (
     AD       => spram_addr,  -- I
     DI       => spram_di_lo, -- I
@@ -120,7 +104,7 @@ begin
     DO       => spram_do_lo  -- O
   );
 
-  dmem_spram_hi_inst : SP256K
+  imem_spram_hi_inst : SP256K
   port map (
     AD       => spram_addr,  -- I
     DI       => spram_di_hi, -- I
@@ -158,4 +142,4 @@ begin
   data_o <= rdata when (rden = '1') else (others => '0');
 
 
-end neorv32_dmem_rtl;
+end neorv32_imem_rtl;
