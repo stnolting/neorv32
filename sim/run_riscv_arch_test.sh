@@ -45,15 +45,13 @@ header "Making local backup of original IMEM rtl file (work/rtl/core/neorv32_ime
 
 header "Starting RISC-V architecture tests"
 
-makeArgs="-C ../sw/isa-test/riscv-arch-test NEORV32_LOCAL_COPY=$(pwd)/work XLEN=32 RISCV_TARGET=neorv32"
-
-make $makeArgs clean
+./work/sim/ghdl.setup.sh
 
 # work in progress FIXME
 printf "\n\e[1;33mWARNING! 'Zifencei' test is currently disabled (work in progress). \e[0m\n\n"
 
-# Run tests and check results
-makeTargets='build run verify'
+makeArgs="-C ../sw/isa-test/riscv-arch-test NEORV32_ROOT=$(pwd)/.. XLEN=32 RISCV_TARGET=neorv32"
+makeTargets='clean build run verify'
 
 [ -n "$1" ] && SUITES="$@" || SUITES='I C M privilege'
 
