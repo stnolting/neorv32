@@ -152,7 +152,7 @@ ASM_INC ?= -I .
 # Optimization
 EFFORT ?= -Os
 # Compiler toolchain
-RISCV_TOOLCHAIN ?= riscv32-unknown-elf
+RISCV_PREFIX ?= riscv32-unknown-elf-
 # CPU architecture and ABI
 MARCH ?= -march=rv32i
 MABI  ?= -mabi=ilp32
@@ -170,7 +170,7 @@ NEORV32_HOME ?= ../../..
 | _APP_INC_         | Include file folders; separated by white spaces; must be defined with `-I` prefix
 | _ASM_INC_         | Include file folders that are used only for the assembly source files (`*.S`/`*.s`).
 | _EFFORT_          | Optimization level, optimize for size (`-Os`) is default; legal values: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`
-| _RISCV_TOOLCHAIN_ | The toolchain prefix to be used; follows the naming convention "architecture-vendor-output"
+| _RISCV_PREFIX_    | The toolchain prefix to be used; follows the naming convention "architecture-vendor-output-"
 | _MARCH_           | The targetd RISC-V architecture/ISA. Only `rv32` is supported by the NEORV32. Enable compiler support of optional CPU extension by adding the according extension letter (e.g. `rv32im` for _M_ CPU extension). See https://stnolting.github.io/neorv32/ug/#_enabling_risc_v_cpu_extensions[User Guide: Enabling RISC-V CPU Extensions] for more information.
 | _MABI_            | The default 32-bit integer ABI.
 | _USER_FLAGS_      | Additional flags that will be forwarded to the compiler tools
@@ -282,7 +282,7 @@ These four regions contain everything required for the application to run:
 [cols="<1,<9"]
 [options="header",grid="rows"]
 |=======================
-| Region    | Description 
+| Region    | Description
 | `.text`   | Executable instructions generated from the start-up code and all application sources.
 | `.rodata` | Constants (like strings) from the application; also the initial data for initialized variables.
 | `.data`   | This section is required for the address generation of fixed (= global) variables only.
@@ -415,7 +415,7 @@ _OPTIONAL_: The MTIME machine timer (<<_io_mtime_en>> generic is _true_) and the
 To interact with the bootloader, connect the primary UART (UART0) signals (`uart0_txd_o` and
 `uart0_rxd_o`) of the processor's top entity via a serial port (-adapter) to your computer (hardware flow control is
 not used so the according interface signals can be ignored.), configure your
-terminal program using the following settings and perform a reset of the processor. 
+terminal program using the following settings and perform a reset of the processor.
 
 Terminal console settings (`19200-8-N-1`):
 
