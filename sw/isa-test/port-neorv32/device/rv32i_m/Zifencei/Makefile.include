@@ -9,24 +9,20 @@ RUN_TARGET=\
 	echo "restoring/using original IMEM rtl file"; \
 	rm -f $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
 	cp -f $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.ORIGINAL $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
-	sed -i \
-	  -e '/CPU_EXTENSION_RISCV_A/c\CPU_EXTENSION_RISCV_A  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' \
-	  -e '/CPU_EXTENSION_RISCV_C/c\CPU_EXTENSION_RISCV_C  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' \
-	  -e '/CPU_EXTENSION_RISCV_E/c\CPU_EXTENSION_RISCV_E  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' \
-	  -e '/CPU_EXTENSION_RISCV_M/c\CPU_EXTENSION_RISCV_M  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' \
-	  -e '/CPU_EXTENSION_RISCV_U/c\CPU_EXTENSION_RISCV_U  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' \
-	  -e '/CPU_EXTENSION_RISCV_Zicsr/c\CPU_EXTENSION_RISCV_Zicsr  => true, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' \
-	  -e '/CPU_EXTENSION_RISCV_Zifencei/c\CPU_EXTENSION_RISCV_Zifencei  => true, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' \
-	  -e '/constant ext_imem_c/c\constant ext_imem_c : boolean := false; -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' \
-	  -e '/signal ext_ram_a : ext_mem_a_ram_t/c\signal ext_ram_a : ext_mem_a_ram_t; -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' \
-	  -e '/MEM_INT_IMEM_USE/c\MEM_INT_IMEM_USE  => true, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' \
-	  -e '/MEM_INT_IMEM_SIZE/c\MEM_INT_IMEM_SIZE  => 32*1024, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' \
-	  -e '/MEM_INT_IMEM_ROM/c\MEM_INT_IMEM_ROM  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' \
-	  $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.simple.vhd; \
 	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led main.elf; \
 	cp -f $< $(NEORV32_LOCAL_COPY)/sw/example/blink_led/main.elf; \
 	make -C $(NEORV32_LOCAL_COPY)/sw/example/blink_led main.bin install; \
 	touch $(NEORV32_LOCAL_COPY)/neorv32.uart0.sim_mode.data.out; \
-	GHDL_DEVNULL=true $(shell which time) -v $(NEORV32_LOCAL_COPY)/sim/ghdl.run.sh --stop-time=$(SIM_TIME); \
+	GHDL_DEVNULL=true $(shell which time) -v $(NEORV32_LOCAL_COPY)/sim/ghdl.run.sh \
+	  --stop-time=$(SIM_TIME) \
+	  -gCPU_EXTENSION_RISCV_A=false \
+	  -gCPU_EXTENSION_RISCV_C=false \
+	  -gCPU_EXTENSION_RISCV_E=false \
+	  -gCPU_EXTENSION_RISCV_M=false \
+	  -gCPU_EXTENSION_RISCV_U=false \
+	  -gCPU_EXTENSION_RISCV_Zicsr=true \
+	  -gCPU_EXTENSION_RISCV_Zifencei=true \
+	  -gEXT_IMEM_C=false \
+	  -gMEM_INT_IMEM_SIZE='32768'; \
 	cp $(NEORV32_LOCAL_COPY)/sim/neorv32.uart0.sim_mode.data.out $(*).signature.output; \
 	echo "<";
