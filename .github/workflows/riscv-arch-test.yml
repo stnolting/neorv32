@@ -9,6 +9,14 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+        - I
+        - C
+        - M
+        - privilege
     name: 'RISC-V Compatibility Check'
 
     steps:
@@ -34,4 +42,4 @@ jobs:
           backend: gcc
 
       - name: '⚙️ Run RISC-V Architecture Tests'
-        run: ./sim/run_riscv_arch_test.sh
+        run: ./sim/run_riscv_arch_test.sh ${{ matrix.suite }}

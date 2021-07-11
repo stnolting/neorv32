@@ -54,10 +54,18 @@ printf "\n\e[1;33mWARNING! 'Zifencei' test is currently disabled (work in progre
 
 # Run tests and check results
 makeTargets='build run verify'
-make --silent $makeArgs SIM_TIME=850us RISCV_DEVICE=I $makeTargets
-make --silent $makeArgs SIM_TIME=400us RISCV_DEVICE=C $makeTargets
-make --silent $makeArgs SIM_TIME=800us RISCV_DEVICE=M $makeTargets
-make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=privilege $makeTargets
+
+[ -n "$1" ] && SUITES="$@" || SUITES='I C M privilege'
+
+for suite in $SUITES; do
+  case "$suite" in
+    I) make --silent $makeArgs SIM_TIME=850us RISCV_DEVICE=I $makeTargets;;
+    C) make --silent $makeArgs SIM_TIME=400us RISCV_DEVICE=C $makeTargets;;
+    M) make --silent $makeArgs SIM_TIME=800us RISCV_DEVICE=M $makeTargets;;
+    privilege) make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=privilege $makeTargets;;
+  esac
+done
+
 #make $makeArgs SIM_TIME=200us RISCV_DEVICE=Zifencei RISCV_TARGET_FLAGS=-DNEORV32_NO_DATA_INIT $makeTargets
 
 printf "\nRISC-V architecture tests completed successfully"
