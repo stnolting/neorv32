@@ -13,8 +13,8 @@ There are two possibilities to get this:
 2. Download and install a prebuilt version of the toolchain; this might also done via the package manager / app store of your OS
 
 [TIP]
-The default toolchain prefix for this project is **`riscv32-unknown-elf`**. Of course you can use any other RISC-V
-toolchain (like `riscv64-unknown-elf`) that is capable to emit code for a `rv32` architecture. Just change the _RISCV_TOOLCHAIN_ variable in the application
+The default toolchain prefix for this project is **`riscv32-unknown-elf-`**. Of course you can use any other RISC-V
+toolchain (like `riscv64-unknown-elf-`) that is capable to emit code for a `rv32` architecture. Just change the _RISCV_PREFIX_ variable in the application
 makefile(s) according to your needs or define this variable when invoking the makefile.
 
 [IMPORTANT]
@@ -264,7 +264,7 @@ More information can be found in the datasheet section https://stnolting.github.
 :sectnums:
 == Application Program Compilation
 
-This guide shows how to compile an example C-code application into a NEORV32 executable that 
+This guide shows how to compile an example C-code application into a NEORV32 executable that
 can be uploaded via the bootloader or the on-chip debugger.
 
 [IMPORTANT]
@@ -298,7 +298,7 @@ Memory utilization:
    3176       0     120    3296     ce0 main.elf
 Compiling ../../../sw/image_gen/image_gen
 Executable (neorv32_exe.bin) size in bytes:
-3188  
+3188
 ----
 
 [start=5]
@@ -455,7 +455,7 @@ Using the IMEM as ROM:
 
 * for this boot concept the bootloader is no longer required
 * this concept only works for the internal IMEM (but can be extended to work with external memories coupled via the processor's bus interface)
-* make sure that the memory components (like block RAM) the IMEM is mapped to support an initialization via the bitstream 
+* make sure that the memory components (like block RAM) the IMEM is mapped to support an initialization via the bitstream
 
 [start=1]
 . At first, make sure your processor setup actually implements the internal IMEM: the `MEM_INT_IMEM_EN` generics has to be set to `true`:
@@ -469,7 +469,7 @@ Using the IMEM as ROM:
 
 [start=2]
 . For this setup we do not want the bootloader to be implemented at all. Disable implementation of the bootloader by setting the
-`INT_BOOTLOADER_EN` generic to `false`. This will also modify the processor-internal IMEM so it is initialized with the executable during synthesis. 
+`INT_BOOTLOADER_EN` generic to `false`. This will also modify the processor-internal IMEM so it is initialized with the executable during synthesis.
 
 .Processor top entity configuration - disable internal bootloader
 [source,vhdl]
@@ -698,7 +698,7 @@ All bootloader boot configuration support uploading new executables via the on-c
 
 [WARNING]
 Note that this boot configuration does not load any executable at all! Hence,
-this boot configuration is intended to be used with the on-chip debugger only. 
+this boot configuration is intended to be used with the on-chip debugger only.
 
 
 
