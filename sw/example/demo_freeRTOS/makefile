@@ -138,5 +138,7 @@ endif
 
 
 
+NEORV32_HOME ?= ../../..
+
 # Include central makefile
 include ../../common/common.mk
