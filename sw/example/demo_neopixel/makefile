@@ -34,4 +34,4 @@
 # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
 #################################################################################################
 
-include ../common.mk
+include ../../common/common.mk
