@@ -104,10 +104,10 @@ Each signal is an "array" with eight entires (one for each link). Note that an e
 wide while entries in `slink_*x_val` and `slink_*x_rdy` are are just 1-bit wide.
 
 The stream link protocol is based on a simple FIFO-like interface between a source (sender) and a sink (receiver).
-Each link provides two signals for implementing a simple FIFO-style handshake. The `slink_*x_val` signal is set
-if the according `slink_*x_dat` contains valid data. The stream source has to ensure that both signals remain
-stable until the according `slink_*x_rdy` signal is set. This signal is set by the stream source to indicate it
-can accept another data word.
+Each link provides two signals for implementing a simple FIFO-style handshake. The `slink_*x_val` signal is set by
+the source if the according `slink_*x_dat` (also set by the source) contains valid data. The stream source has to 
+ensure that both signals remain stable until the according `slink_*x_rdy` signal is set by the stream sink to 
+indicate it can accept another data word.
 
 In summary, a data word is transferred if both `slink_*x_val` and `slink_*x_rdy` are high.
 
