@@ -28,6 +28,12 @@ memory initializiation files (for memory-persistent applications and for the boo
 This program is automatically compiled using the native GCC when invoking one of the application compilation makefiles.
 
 
+## [`isa-test`](isa-test)
+
+NEORV32 RISC-V Architecture Test Framework.
+See [sim/README](../sim/README.md).
+
+
 ## [`lib`](lib)
 
 Core libraries (sources and header files) and helper functions for using the processor peripherals and the CPU itself.
@@ -35,15 +41,10 @@ Core libraries (sources and header files) and helper functions for using the pro
 
 ## [`ocd-firmware`](ocd-firmware)
 
-*TBC*
+Firmware (debugger "park loop") for the on-chip debugger. This folder is just for documenting the source code.
+Modifying the sources is not recommended as this could break the on-chip debugger.
 
 
 ## [`openocd`](openocd)
 
-*TBC*
-
-
-## [`isa-test`](isa-test)
-
-NEORV32 RISC-V Architecture Test Framework.
-See [sim/README](../sim/README.md).
+Configuration file for openOCD to connect to the NEORV32 on-chip debugger via JTAG.

@@ -153,7 +153,6 @@ neorv32           - Project home folder
 │├src_adoc        - AsciiDoc sources for this document
 │├references      - Data sheets and RISC-V specs.
 │└figures         - Figures and logos
-├riscv-arch-test  - Port files for the official RISC-V architecture tests
 ├rtl              - VHDL sources
 │├core            - Sources of the CPU & SoC
 │└templates       - Alternate/additional top entities/wrappers
@@ -166,6 +165,7 @@ neorv32           - Project home folder
  ├common          - Linker script and crt0.S start-up code
  ├example         - Various example programs
  │└...
+ ├isa_test        - Files for the official RISC-V architecture tests
  ├ocd_firmware    - source code for on-chip debugger's "park loop"
  ├openocd         - OpenOCD on-chip debugger configuration files
  ├image_gen       - Helper program to generate NEORV32 executables

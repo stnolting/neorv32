@@ -163,7 +163,7 @@ implements the RISC-V 32-bit `rv32` ISA with optional extensions (see below). It
 *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/references/riscv-spec.pdf)
 and a subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/references/riscv-privileged.pdf).
 Compatiility is checked by passing the [official RISC-V architecture tests](https://github.com/riscv/riscv-arch-test)
-(see [`riscv-arch-test/README`](https://github.com/stnolting/neorv32/blob/master/riscv-arch-test/README.md)).
+(see [`sim/README`](sim/README.md)).
 
 The core implements a little-endian von-Neumann architecture using two pipeline stages. Each stage uses a multi-cycle processing
 scheme. The CPU supports three privilege levels (`machine` and optional `user` and `debug_mode`), three standard RISC-V machine

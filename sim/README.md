@@ -28,8 +28,8 @@ The core's HDL sources are *simulated* using `GHDL` to provide a virtual executi
 * `rv32i_m/privilege` - privileged architecture
 * `rv32i_m/Zifencei` - instruction stream synchronization (for example for self-modifying code)
 
-:warning: The RISC-V GCC toolchain (`riscv{32|64}-unknown-elf`) is required for program compilation, and the tests
-  depend on `ghdl_sim.sh`.
+:warning: The RISC-V GCC toolchain (`riscv{32|64}-unknown-elf`) is required for program compilation, and the simulation
+depends on `ghdl_sim.sh`.
 
 To execute all the supported tests open a terminal and run [`./sim/run_riscv_arch_test.sh`](run_riscv_arch_test.sh),
 which does the following:
@@ -50,5 +50,3 @@ try increasing the simulation time by modiying the `SIM_TIME` variable when call
 
 More datails regarding the actual simulation process can be found in the
 [target's `README`](../sw/riscv-arch-test/port-neorv32/framework_v2.0/riscv-target/neorv32/README.md).
-For more information regarding the NEORV32 Processor see the :page_facing_up:
-[NEORV32 data sheet](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/NEORV32.pdf).
