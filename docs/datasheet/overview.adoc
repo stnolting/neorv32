@@ -162,7 +162,7 @@ neorv32           - Project home folder
 │└rtl_modules     - Processor modules for simulation-only
 └sw               - Software framework
  ├bootloader      - Sources and scripts for the NEORV32 internal bootloader
- ├common          - Linker script and crt0.S start-up code
+ ├common          - Linker script, central makefile & crt0.S start-up code
  ├example         - Various example programs
  │└...
  ├isa_test        - Files for the official RISC-V architecture tests
