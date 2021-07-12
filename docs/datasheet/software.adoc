@@ -10,7 +10,7 @@ ecosystem is based on the RISC-V port of the GCC GNU Compiler Collection and con
 | Application/bootloader start-up code | `sw/common/crt0.S`
 | Application/bootloader linker script | `sw/common/neorv32.ld`
 | Core hardware driver libraries | `sw/lib/include/` & `sw/lib/source/`
-| Makefiles | e.g. `sw/example/blink_led/makefile`
+| Central makefile | `sw/common/common.mk`
 | Auxiliary tool for generating NEORV32 executables | `sw/image_gen/`
 | Default bootloader | `sw/bootloader/bootloader.c`
 |=======================
@@ -89,8 +89,8 @@ The documentation is automatically built and deployed to GitHub pages by the CI 
 :sectnums:
 === Application Makefile
 
-Application compilation is based on **GNU makefiles**. Each project in the `sw/example` folder features
-a makefile. All these makefiles are identical. When creating a new project, copy an existing project folder or
+Application compilation is based on a single, centralized **GNU makefiles** `sw/common/common.mk`. Each project in the
+`sw/example` folder features a makefile that just includes this central makefile. When creating a new project, copy an existing project folder or
 at least the makefile to your new project folder. I suggest to create new projects also in `sw/example` to keep
 the file dependencies. Of course, these dependencies can be manually configured via makefiles variables
 when your project is located somewhere else.
@@ -135,7 +135,13 @@ Targets:
 :sectnums:
 ==== Configuration
 
-The compilation flow is configured via variables right at the beginning of the makefile:
+The compilation flow is configured via variables right at the beginning of the **central**
+makefile (`sw/common/common.mk`):
+
+[TIP]
+The makefile configuration variables can be (re-)defined directly when invoking the makefile. For
+example via `$ make MARCH=-march=rv32ic clean_all exe`. You can also make project-specific definitions
+of all variables inside the project's actual makefile (e.g., `sw/example/blink_led/makefile`).
 
 [source,makefile]
 ----
@@ -200,10 +206,6 @@ The following default compiler flags are used for compiling an application. Thes
 | `-falign-loops=4`
 | `-falign-jumps=4`
 |=======================
-
-[TIP]
-The makefile configuration variables can be (re-)defined directly when invoking the makefile. For
-example: `$ make MARCH=-march=rv32ic clean_all exe`
 
 
 
