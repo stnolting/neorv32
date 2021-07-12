@@ -14,11 +14,11 @@ RUN_TARGET=\
 	rm -f $(NEORV32_LOCAL_COPY)/*.out; \
 	echo "copying/using SIM-only IMEM (ROM!)"; \
 	rm -f $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
-	cp -f $(NEORV32_LOCAL_COPY)/sim/rtl_modules/neorv32_imem.vhd $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
+	cp -f $(NEORV32_LOCAL_COPY)/sim/neorv32_imem.simple.vhd $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
 	sed -i '/CPU_EXTENSION_RISCV_A/c\CPU_EXTENSION_RISCV_A  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.simple.vhd; \
-	sed -i '/CPU_EXTENSION_RISCV_C/c\CPU_EXTENSION_RISCV_C  => true,  -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.simple.vhd; \
+	sed -i '/CPU_EXTENSION_RISCV_C/c\CPU_EXTENSION_RISCV_C  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.simple.vhd; \
 	sed -i '/CPU_EXTENSION_RISCV_E/c\CPU_EXTENSION_RISCV_E  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.simple.vhd; \
-	sed -i '/CPU_EXTENSION_RISCV_M/c\CPU_EXTENSION_RISCV_M  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.simple.vhd; \
+	sed -i '/CPU_EXTENSION_RISCV_M/c\CPU_EXTENSION_RISCV_M  => true,  -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.simple.vhd; \
 	sed -i '/CPU_EXTENSION_RISCV_U/c\CPU_EXTENSION_RISCV_U  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.simple.vhd; \
 	sed -i '/CPU_EXTENSION_RISCV_Zicsr/c\CPU_EXTENSION_RISCV_Zicsr  => true, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.simple.vhd; \
 	sed -i '/CPU_EXTENSION_RISCV_Zifencei/c\CPU_EXTENSION_RISCV_Zifencei  => false, -- MOD. BY RISCV-ARCH-TEST TEST SCRIPT' $(NEORV32_LOCAL_COPY)/sim/neorv32_tb.simple.vhd; \
@@ -41,7 +41,7 @@ RISCV_GCC      ?= $(RISCV_PREFIX)gcc
 RISCV_OBJDUMP  ?= $(RISCV_PREFIX)objdump
 RISCV_OBJCOPY  ?= $(RISCV_PREFIX)objcopy
 RISCV_READELF  ?= $(RISCV_PREFIX)readelf
-RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=rv32i -mabi=ilp32
+RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=rv32im -mabi=ilp32
 
 COMPILE_TARGET=\
 	$$(RISCV_GCC) $(1) $$(RISCV_GCC_OPTS) \

@@ -5,52 +5,47 @@ set -e
 
 cd $(dirname "$0")
 
-if [ -z "$RISCV_PREFIX" ]; then
-  export RISCV_PREFIX='riscv32-unknown-elf-'
-fi
-
-rm -rf work/neorv32
-mkdir -p work/neorv32
-
-cd ..
-
 header() {
   echo "--------------------------------------------------------------------------"
   echo "> $@..."
   echo "--------------------------------------------------------------------------"
 }
 
+RISCV_PREFIX="${RISCV_PREFIX:-riscv32-unknown-elf-}"
+
 header "Checking RISC-V GCC toolchain"
 "$RISCV_PREFIX"gcc -v
-
-header "Checking GHDL simulator"
-ghdl -v
 
 header "Checking 'riscv-arch-test' GitHub repository (submodule)"
 git submodule update --init
 
-archWork='riscv-arch-test/work'
-# neorv32 home folder
-NEORV32_LOCAL_HOME=$(pwd)/"$archWork"/neorv32
+header "Copying neorv32 test-target into riscv-arch-test framework"
+(
+  cd ../sw/isa-test
+  target_device='riscv-arch-test/riscv-target/neorv32'
+  if [ -d "$target_device" ]; then rm -rf "$target_device"; fi
+  cp -vr port-neorv32 "$target_device"
+)
 
 header "Making local copy of NEORV32 'rtl', 'sim' & 'sw' folders"
-for item in 'rtl' 'sim' 'sw'; do
-  cp -r "$item"/ "$archWork"/neorv32/.
+rm -rf work
+mkdir -p work/sim
+for item in 'rtl' 'sw'; do
+  cp -r ../"$item" work
+done
+for item in *.simple.vhd ghdl_sim.sh; do
+  cp -r "$item" work/sim
 done
 
-header "Copying neorv32 test-target into riscv-arch-test framework"
-cp -rf riscv-arch-test/port-neorv32/framework_v2.0/riscv-target/neorv32 "$archWork"/riscv-arch-test/riscv-target/.
-
-printf "\n>>> Making local backup of original IMEM rtl file (work/neorv32/rtl/core/neorv32_imem.ORIGINAL)\n\n"
-cp "$archWork"/neorv32/rtl/core/neorv32_imem.vhd "$archWork"/neorv32/rtl/core/neorv32_imem.ORIGINAL
-
-ls -al
-header "> Component installation done"
-echo ""
+header "Making local backup of original IMEM rtl file (work/rtl/core/neorv32_imem.ORIGINAL)"
+(
+  cd work/rtl/core/
+  cp neorv32_imem.vhd neorv32_imem.ORIGINAL
+)
 
 header "Starting RISC-V architecture tests"
 
-makeArgs="-C $archWork/riscv-arch-test NEORV32_LOCAL_COPY=$NEORV32_LOCAL_HOME XLEN=32 RISCV_TARGET=neorv32"
+makeArgs="-C ../sw/isa-test/riscv-arch-test NEORV32_LOCAL_COPY=$(pwd)/work XLEN=32 RISCV_TARGET=neorv32"
 
 make $makeArgs clean
 
