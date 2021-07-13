@@ -33,7 +33,7 @@ mkdir -p work/sim
 for item in 'rtl' 'sw'; do
   cp -r ../"$item" work
 done
-for item in *.simple.vhd ghdl_sim.sh; do
+for item in *.simple.vhd ghdl*.sh; do
   cp -r "$item" work/sim
 done
 
@@ -45,19 +45,25 @@ header "Making local backup of original IMEM rtl file (work/rtl/core/neorv32_ime
 
 header "Starting RISC-V architecture tests"
 
-makeArgs="-C ../sw/isa-test/riscv-arch-test NEORV32_LOCAL_COPY=$(pwd)/work XLEN=32 RISCV_TARGET=neorv32"
-
-make $makeArgs clean
+./work/sim/ghdl.setup.sh
 
 # work in progress FIXME
 printf "\n\e[1;33mWARNING! 'Zifencei' test is currently disabled (work in progress). \e[0m\n\n"
 
-# Run tests and check results
-makeTargets='build run verify'
-make --silent $makeArgs SIM_TIME=850us RISCV_DEVICE=I $makeTargets
-make --silent $makeArgs SIM_TIME=400us RISCV_DEVICE=C $makeTargets
-make --silent $makeArgs SIM_TIME=800us RISCV_DEVICE=M $makeTargets
-make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=privilege $makeTargets
+makeArgs="-C ../sw/isa-test/riscv-arch-test NEORV32_ROOT=$(pwd)/.. XLEN=32 RISCV_TARGET=neorv32"
+makeTargets='clean build run verify'
+
+[ -n "$1" ] && SUITES="$@" || SUITES='I C M privilege'
+
+for suite in $SUITES; do
+  case "$suite" in
+    I) make --silent $makeArgs SIM_TIME=850us RISCV_DEVICE=I $makeTargets;;
+    C) make --silent $makeArgs SIM_TIME=400us RISCV_DEVICE=C $makeTargets;;
+    M) make --silent $makeArgs SIM_TIME=800us RISCV_DEVICE=M $makeTargets;;
+    privilege) make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=privilege $makeTargets;;
+  esac
+done
+
 #make $makeArgs SIM_TIME=200us RISCV_DEVICE=Zifencei RISCV_TARGET_FLAGS=-DNEORV32_NO_DATA_INIT $makeTargets
 
 printf "\nRISC-V architecture tests completed successfully"
