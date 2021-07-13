@@ -175,7 +175,7 @@ neorv32            - Project home folder
  ├openocd          - OpenOCD on-chip debugger configuration files
  ├image_gen        - Helper program to generate NEORV32 executables
  └lib              - Processor core library
- │├include         - Header files (*.h)
+  ├include         - Header files (*.h)
   └source          - Source files (*.c)
 ...................................
 
