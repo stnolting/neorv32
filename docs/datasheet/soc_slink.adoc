@@ -115,7 +115,7 @@ In summary, a data word is transferred if both `slink_*x_val` and `slink_*x_rdy`
 image::stream_link_interface.png[width=560,align=center]
 
 [TIP]
-The SLINK handshake protocol is compatible to the AXI4-Stream base protocol.
+The SLINK handshake protocol is compatible with the https://developer.arm.com/documentation/ihi0051/a/Introduction/About-the-AXI4-Stream-protocol[AXI4-Stream] base protocol.
 
 .SLINK register map
 [cols="^4,<5,^2,^2,<14"]
