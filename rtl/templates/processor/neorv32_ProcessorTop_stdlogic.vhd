@@ -212,10 +212,10 @@ architecture neorv32_ProcessorTop_stdlogic_rtl of neorv32_ProcessorTop_stdlogic 
   signal fence_o_int     : std_ulogic;
   signal fencei_o_int    : std_ulogic;
   --
-  signal slink_tx_dat_o_int : sdata_8x32r_t;
+  signal slink_tx_dat_o_int : sdata_8x32_t;
   signal slink_tx_val_o_int : std_logic_vector(7 downto 0);
   signal slink_tx_rdy_i_int : std_logic_vector(7 downto 0);
-  signal slink_rx_dat_i_int : sdata_8x32r_t;
+  signal slink_rx_dat_i_int : sdata_8x32_t;
   signal slink_rx_val_i_int : std_logic_vector(7 downto 0);
   signal slink_rx_rdy_o_int : std_logic_vector(7 downto 0);
   --
