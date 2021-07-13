@@ -406,7 +406,7 @@ instructions:
 In order to keep the hardware footprint low, the CPU's shift unit uses a bit-serial serial approach. Hence, shift operations
 take up to 32 cycles (plus overhead) depending on the actual shift amount. Alternatively, the shift operations can be processed
 completely in parallels by a fast (but large) barrel shifter when the `FAST_SHIFT_EN` generic is _true_. In that case, shift operations
-complete within 2 cycles (plus overhead) regardless of the actual shift amount. 
+complete within 2 cycles (plus overhead) regardless of the actual shift amount.
 
 [NOTE]
 Internally, the `fence` instruction does not perform any operation inside the CPU. It only sets the
