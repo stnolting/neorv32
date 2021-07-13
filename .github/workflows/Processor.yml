@@ -11,12 +11,12 @@ on:
     - 'sw/**'
     - 'sim/**'
   pull_request:
-    branches:
-    - master
-    paths:
-    - 'rtl/**'
-    - 'sw/**'
-    - 'sim/**'
+    #branches:
+    #- master
+    #paths:
+    #- 'rtl/**'
+    #- 'sw/**'
+    #- 'sim/**'
   workflow_dispatch:
 
 jobs:
@@ -57,6 +57,16 @@ jobs:
 
   VUnit-Container:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend:
+        - mcode
+        - llvm
+        - gcc
+        - mcode-master
+        - llvm-master
+        - gcc-master
     name: '🛳️ Container | VUnit'
 
     steps:
@@ -96,4 +106,5 @@ jobs:
     - name: '🚧 Run Processor Hardware Tests with VUnit'
       uses: VUnit/vunit_action@master
       with:
+        image: ghdl/vunit:${{ matrix.backend }}
         cmd: ./sim/run.py --ci-mode -v
