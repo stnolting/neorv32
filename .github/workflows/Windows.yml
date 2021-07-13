@@ -101,7 +101,7 @@ jobs:
     - name: '⚙️ Build and install Processor Check software'
       run: |
         make -C sw/example/processor_check \
-          RISCV_TOOLCHAIN=riscv64-unknown-elf \
+          RISCV_PREFIX=riscv64-unknown-elf- \
           clean_all \
           USER_FLAGS+=-DRUN_CHECK \
           USER_FLAGS+=-DUART0_SIM_MODE \
