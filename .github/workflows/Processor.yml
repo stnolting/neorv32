@@ -31,28 +31,15 @@ jobs:
     - name: '🧰 Repository Checkout'
       uses: actions/checkout@v2
 
-    - name: '🔧 Setup Environment Variables'
-      run: |
-        echo "$GITHUB_WORKSPACE/riscv/bin" >> $GITHUB_PATH
-        echo $GITHUB_WORKSPACE
-
-    - name: '⚙️ Setup RISC-V GCC'
-      run: |
-        mkdir riscv
-        curl -fsSL https://github.com/stnolting/riscv-gcc-prebuilt/releases/download/rv32i-2.0.0/riscv32-unknown-elf.gcc-10.2.0.rv32i.ilp32.newlib.tar.gz | \
-        tar -xzf - -C riscv
-        ls -al riscv
-
-    - name: '⚙️ Setup GHDL Simulator'
-      uses: ghdl/setup-ghdl-ci@nightly
-      with:
-        backend: llvm
-
     - name: '🚧 Run Software Framework Tests'
-      run: ./sw/example/processor_check/check.sh
+      uses: docker://ghcr.io/stnolting/neorv32/sim
+      with:
+        args: ./sw/example/processor_check/check.sh
 
     - name: '🚧 Run Processor Hardware Tests with shell script'
-      run: ./sim/ghdl.sh
+      uses: docker://ghcr.io/stnolting/neorv32/sim
+      with:
+        args: ./sim/ghdl.sh
 
 
   VUnit-Container:
@@ -64,27 +51,17 @@ jobs:
     - name: '🧰 Repository Checkout'
       uses: actions/checkout@v2
 
-    - name: '🔧 Setup Environment Variables'
-      run: |
-        echo "$GITHUB_WORKSPACE/riscv/bin" >> $GITHUB_PATH
-        echo $GITHUB_WORKSPACE
-
-    - name: '⚙️ Setup RISC-V GCC'
-      run: |
-        mkdir riscv
-        curl -fsSL https://github.com/stnolting/riscv-gcc-prebuilt/releases/download/rv32i-2.0.0/riscv32-unknown-elf.gcc-10.2.0.rv32i.ilp32.newlib.tar.gz | \
-        tar -xzf - -C riscv
-        ls -al riscv
-
     - name: '⚙️ Build and install Processor Check software'
-      run: |
-        make -C sw/example/processor_check \
-          clean_all \
-          USER_FLAGS+=-DRUN_CHECK \
-          USER_FLAGS+=-DUART0_SIM_MODE \
-          USER_FLAGS+=-DSUPPRESS_OPTIONAL_UART_PRINT \
-          MARCH=-march=rv32imac \
-          info \
+      uses: docker://ghcr.io/stnolting/neorv32/sim
+      with:
+        args: >-
+          make -C sw/example/processor_check
+          clean_all
+          USER_FLAGS+=-DRUN_CHECK
+          USER_FLAGS+=-DUART0_SIM_MODE
+          USER_FLAGS+=-DSUPPRESS_OPTIONAL_UART_PRINT
+          MARCH=-march=rv32imac
+          info
           all
 
     - name: '📤 Archive Processor Check application image'
@@ -96,4 +73,5 @@ jobs:
     - name: '🚧 Run Processor Hardware Tests with VUnit'
       uses: VUnit/vunit_action@master
       with:
+        image: ghcr.io/stnolting/neorv32/sim
         cmd: ./sim/run.py --ci-mode -v
