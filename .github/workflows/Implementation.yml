@@ -39,16 +39,14 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.Matrix.outputs.matrix) }}
     name: '🛳️ All-in-one | ${{ matrix.board }} · ${{ matrix.design }}'
-    env:
-      GHDL_PLUGIN_MODULE: ghdl
 
     steps:
 
     - name: '🧰 Repository Checkout'
       uses: actions/checkout@v2
 
-    - name: '⚙️ Generate ${{ matrix.board }} ${{ matrix.design }} bitstream'
-      uses: docker://ghcr.io/hdl/debian-buster/impl
+    - name: '🚧 Generate ${{ matrix.board }} ${{ matrix.design }} bitstream'
+      uses: docker://ghcr.io/stnolting/neorv32/impl
       with:
         args: make -C setups/examples BOARD=${{ matrix.board }} ${{ matrix.design }}
 
