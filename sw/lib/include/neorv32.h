@@ -685,63 +685,88 @@ enum NEORV32_PWM_CT_enum {
 #define SLINK_SIZE (16*4) // /**< SLINK address space size in bytes */
 
 /** SLINK control register (r/w) */
-#define SLINK_CT  (*(IO_REG32 (SLINK_BASE + 0))) // r/w: control register
+#define SLINK_CT     (*(IO_REG32 (SLINK_BASE + 0))) // r/w: control register
+/** SLINK status register (r/-) */
+#define SLINK_STATUS (*(IO_REG32 (SLINK_BASE + 16))) // r/-: status register
 /** stream link 0 (r/w) */
-#define SLINK_CH0 (*(IO_REG32 (SLINK_BASE + 32 + 0))) // r/w: link 0
+#define SLINK_CH0    (*(IO_REG32 (SLINK_BASE + 32 + 0))) // r/w: link 0
 /** stream link 1 (r/w) */
-#define SLINK_CH1 (*(IO_REG32 (SLINK_BASE + 32 + 4))) // r/w: link 1
+#define SLINK_CH1    (*(IO_REG32 (SLINK_BASE + 32 + 4))) // r/w: link 1
 /** stream link 2 (r/w) */
-#define SLINK_CH2 (*(IO_REG32 (SLINK_BASE + 32 + 8))) // r/w: link 2
+#define SLINK_CH2    (*(IO_REG32 (SLINK_BASE + 32 + 8))) // r/w: link 2
 /** stream link 3 (r/w) */
-#define SLINK_CH3 (*(IO_REG32 (SLINK_BASE + 32 + 12))) // r/w: link 3
+#define SLINK_CH3    (*(IO_REG32 (SLINK_BASE + 32 + 12))) // r/w: link 3
 /** stream link 4 (r/w) */
-#define SLINK_CH4 (*(IO_REG32 (SLINK_BASE + 32 + 16))) // r/w: link 4
+#define SLINK_CH4    (*(IO_REG32 (SLINK_BASE + 32 + 16))) // r/w: link 4
 /** stream link 5 (r/w) */
-#define SLINK_CH5 (*(IO_REG32 (SLINK_BASE + 32 + 20))) // r/w: link 5
+#define SLINK_CH5    (*(IO_REG32 (SLINK_BASE + 32 + 20))) // r/w: link 5
 /** stream link 6 (r/w) */
-#define SLINK_CH6 (*(IO_REG32 (SLINK_BASE + 32 + 24))) // r/w: link 6
+#define SLINK_CH6    (*(IO_REG32 (SLINK_BASE + 32 + 24))) // r/w: link 6
 /** stream link 7 (r/w) */
-#define SLINK_CH7 (*(IO_REG32 (SLINK_BASE + 32 + 28))) // r/w: link 7
+#define SLINK_CH7    (*(IO_REG32 (SLINK_BASE + 32 + 28))) // r/w: link 7
 
 /** SLINK control register bits */
 enum NEORV32_SLINK_CT_enum {
-  SLINK_CT_RX0_AVAIL  =  0, /**< SLINK control register(0) (r/-): RX link 0 data available */
-  SLINK_CT_RX1_AVAIL  =  1, /**< SLINK control register(1) (r/-): RX link 1 data available */
-  SLINK_CT_RX2_AVAIL  =  2, /**< SLINK control register(2) (r/-): RX link 2 data available */
-  SLINK_CT_RX3_AVAIL  =  3, /**< SLINK control register(3) (r/-): RX link 3 data available */
-  SLINK_CT_RX4_AVAIL  =  4, /**< SLINK control register(4) (r/-): RX link 4 data available */
-  SLINK_CT_RX5_AVAIL  =  5, /**< SLINK control register(5) (r/-): RX link 5 data available */
-  SLINK_CT_RX6_AVAIL  =  6, /**< SLINK control register(6) (r/-): RX link 6 data available */
-  SLINK_CT_RX7_AVAIL  =  7, /**< SLINK control register(7) (r/-): RX link 7 data available */
+  SLINK_CT_RX_NUM0    =  0, /**< SLINK control register(0) (r/-): number of implemented RX links bit 0 */
+  SLINK_CT_RX_NUM1    =  1, /**< SLINK control register(1) (r/-): number of implemented RX links bit 1 */
+  SLINK_CT_RX_NUM2    =  2, /**< SLINK control register(2) (r/-): number of implemented RX links bit 2 */
+  SLINK_CT_RX_NUM3    =  3, /**< SLINK control register(3) (r/-): number of implemented RX links bit 3 */
 
-  SLINK_CT_TX0_FREE   =  8, /**< SLINK control register(8)  (r/-): RT link 0 ready to send */
-  SLINK_CT_TX1_FREE   =  9, /**< SLINK control register(9)  (r/-): RT link 1 ready to send */
-  SLINK_CT_TX2_FREE   = 10, /**< SLINK control register(10) (r/-): RT link 2 ready to send */
-  SLINK_CT_TX3_FREE   = 11, /**< SLINK control register(11) (r/-): RT link 3 ready to send */
-  SLINK_CT_TX4_FREE   = 12, /**< SLINK control register(12) (r/-): RT link 4 ready to send */
-  SLINK_CT_TX5_FREE   = 13, /**< SLINK control register(13) (r/-): RT link 5 ready to send */
-  SLINK_CT_TX6_FREE   = 14, /**< SLINK control register(14) (r/-): RT link 6 ready to send */
-  SLINK_CT_TX7_FREE   = 15, /**< SLINK control register(15) (r/-): RT link 7 ready to send */
+  SLINK_CT_TX_NUM0    =  4, /**< SLINK control register(4) (r/-): number of implemented TX links bit 0 */
+  SLINK_CT_TX_NUM1    =  5, /**< SLINK control register(5) (r/-): number of implemented TX links bit 1 */
+  SLINK_CT_TX_NUM2    =  6, /**< SLINK control register(6) (r/-): number of implemented TX links bit 2 */
+  SLINK_CT_TX_NUM3    =  7, /**< SLINK control register(7) (r/-): number of implemented TX links bit 3 */
 
-  SLINK_CT_RX_NUM0    = 16, /**< SLINK control register(16) (r/-): number of implemented RX links -1 bit 0 */
-  SLINK_CT_RX_NUM1    = 17, /**< SLINK control register(17) (r/-): number of implemented RX links -1 bit 1 */
-  SLINK_CT_RX_NUM2    = 18, /**< SLINK control register(18) (r/-): number of implemented RX links -1 bit 2 */
+  SLINK_CT_RX_FIFO_S0 =  8, /**< SLINK control register( 8) (r/-): log2(RX FIFO size) bit 0 */
+  SLINK_CT_RX_FIFO_S1 =  9, /**< SLINK control register( 9) (r/-): log2(RX FIFO size) bit 1 */
+  SLINK_CT_RX_FIFO_S2 = 10, /**< SLINK control register(10) (r/-): log2(RX FIFO size) bit 2 */
+  SLINK_CT_RX_FIFO_S3 = 11, /**< SLINK control register(11) (r/-): log2(RX FIFO size) bit 3 */
 
-  SLINK_CT_TX_NUM0    = 19, /**< SLINK control register(19) (r/-): number of implemented TX links -1bit 0 */
-  SLINK_CT_TX_NUM1    = 20, /**< SLINK control register(20) (r/-): number of implemented TX links -1bit 1 */
-  SLINK_CT_TX_NUM2    = 21, /**< SLINK control register(21) (r/-): number of implemented TX links -1bit 2 */
+  SLINK_CT_TX_FIFO_S0 = 12, /**< SLINK control register(12) (r/-): log2(TX FIFO size) bit 0 */
+  SLINK_CT_TX_FIFO_S1 = 13, /**< SLINK control register(13) (r/-): log2(TX FIFO size) bit 1 */
+  SLINK_CT_TX_FIFO_S2 = 14, /**< SLINK control register(14) (r/-): log2(TX FIFO size) bit 2 */
+  SLINK_CT_TX_FIFO_S3 = 15, /**< SLINK control register(15) (r/-): log2(TX FIFO size) bit 3 */
 
-  SLINK_CT_RX_FIFO_S0 = 22, /**< SLINK control register(22) (r/-): log2(RX FIFO size) bit 0 */
-  SLINK_CT_RX_FIFO_S1 = 23, /**< SLINK control register(23) (r/-): log2(RX FIFO size) bit 1 */
-  SLINK_CT_RX_FIFO_S2 = 24, /**< SLINK control register(24) (r/-): log2(RX FIFO size) bit 2 */
-  SLINK_CT_RX_FIFO_S3 = 25, /**< SLINK control register(25) (r/-): log2(RX FIFO size) bit 3 */
+  SLINK_CT_EN         = 31, /**< SLINK control register(0) (r/w): SLINK controller enable */
+};
 
-  SLINK_CT_TX_FIFO_S0 = 26, /**< SLINK control register(26) (r/-): log2(TX FIFO size) bit 0 */
-  SLINK_CT_TX_FIFO_S1 = 27, /**< SLINK control register(27) (r/-): log2(TX FIFO size) bit 1 */
-  SLINK_CT_TX_FIFO_S2 = 28, /**< SLINK control register(28) (r/-): log2(TX FIFO size) bit 2 */
-  SLINK_CT_TX_FIFO_S3 = 29, /**< SLINK control register(29) (r/-): log2(TX FIFO size) bit 3 */
+/** SLINK status register bits */
+enum NEORV32_SLINK_STATUS_enum {
+  SLINK_STATUS_RX0_AVAIL =  0, /**< SLINK status register(0) (r/-): RX link 0 data available */
+  SLINK_STATUS_RX1_AVAIL =  1, /**< SLINK status register(1) (r/-): RX link 1 data available */
+  SLINK_STATUS_RX2_AVAIL =  2, /**< SLINK status register(2) (r/-): RX link 2 data available */
+  SLINK_STATUS_RX3_AVAIL =  3, /**< SLINK status register(3) (r/-): RX link 3 data available */
+  SLINK_STATUS_RX4_AVAIL =  4, /**< SLINK status register(4) (r/-): RX link 4 data available */
+  SLINK_STATUS_RX5_AVAIL =  5, /**< SLINK status register(5) (r/-): RX link 5 data available */
+  SLINK_STATUS_RX6_AVAIL =  6, /**< SLINK status register(6) (r/-): RX link 6 data available */
+  SLINK_STATUS_RX7_AVAIL =  7, /**< SLINK status register(7) (r/-): RX link 7 data available */
 
-  SLINK_CT_EN         = 31  /**< SLINK control register(31) (r/w): SLINK controller enable */
+  SLINK_STATUS_TX0_FREE  =  8, /**< SLINK status register(8)  (r/-): TX link 0 ready to send */
+  SLINK_STATUS_TX1_FREE  =  9, /**< SLINK status register(9)  (r/-): TX link 1 ready to send */
+  SLINK_STATUS_TX2_FREE  = 10, /**< SLINK status register(10) (r/-): TX link 2 ready to send */
+  SLINK_STATUS_TX3_FREE  = 11, /**< SLINK status register(11) (r/-): TX link 3 ready to send */
+  SLINK_STATUS_TX4_FREE  = 12, /**< SLINK status register(12) (r/-): TX link 4 ready to send */
+  SLINK_STATUS_TX5_FREE  = 13, /**< SLINK status register(13) (r/-): TX link 5 ready to send */
+  SLINK_STATUS_TX6_FREE  = 14, /**< SLINK status register(14) (r/-): TX link 6 ready to send */
+  SLINK_STATUS_TX7_FREE  = 15, /**< SLINK status register(15) (r/-): TX link 7 ready to send */
+
+  SLINK_STATUS_RX0_HALF  = 16, /**< SLINK status register(16) (r/-): RX link 0 FIFO fill level is >= half-full */
+  SLINK_STATUS_RX1_HALF  = 17, /**< SLINK status register(17) (r/-): RX link 1 FIFO fill level is >= half-full */
+  SLINK_STATUS_RX2_HALF  = 18, /**< SLINK status register(18) (r/-): RX link 2 FIFO fill level is >= half-full */
+  SLINK_STATUS_RX3_HALF  = 19, /**< SLINK status register(19) (r/-): RX link 3 FIFO fill level is >= half-full */
+  SLINK_STATUS_RX4_HALF  = 20, /**< SLINK status register(20) (r/-): RX link 4 FIFO fill level is >= half-full */
+  SLINK_STATUS_RX5_HALF  = 21, /**< SLINK status register(21) (r/-): RX link 5 FIFO fill level is >= half-full */
+  SLINK_STATUS_RX6_HALF  = 22, /**< SLINK status register(22) (r/-): RX link 6 FIFO fill level is >= half-full */
+  SLINK_STATUS_RX7_HALF  = 23, /**< SLINK status register(23) (r/-): RX link 7 FIFO fill level is >= half-full */
+
+  SLINK_STATUS_TX0_HALF  = 24, /**< SLINK status register(24) (r/-): TX link 0 FIFO fill level is > half-full */
+  SLINK_STATUS_TX1_HALF  = 25, /**< SLINK status register(25) (r/-): TX link 1 FIFO fill level is > half-full */
+  SLINK_STATUS_TX2_HALF  = 26, /**< SLINK status register(26) (r/-): TX link 2 FIFO fill level is > half-full */
+  SLINK_STATUS_TX3_HALF  = 27, /**< SLINK status register(27) (r/-): TX link 3 FIFO fill level is > half-full */
+  SLINK_STATUS_TX4_HALF  = 28, /**< SLINK status register(28) (r/-): TX link 4 FIFO fill level is > half-full */
+  SLINK_STATUS_TX5_HALF  = 29, /**< SLINK status register(29) (r/-): TX link 5 FIFO fill level is > half-full */
+  SLINK_STATUS_TX6_HALF  = 30, /**< SLINK status register(30) (r/-): TX link 6 FIFO fill level is > half-full */
+  SLINK_STATUS_TX7_HALF  = 31  /**< SLINK status register(31) (r/-): TX link 7 FIFO fill level is > half-full */
 };
 /**@}*/
 

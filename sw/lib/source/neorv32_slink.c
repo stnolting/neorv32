@@ -87,7 +87,7 @@ void neorv32_slink_disable(void) {
 int neorv32_slink_get_rx_num(void) {
 
   if (neorv32_slink_available()) {
-    return (int)(((SLINK_CT >> SLINK_CT_RX_NUM0) & 0x07) + 1);
+    return (int)((SLINK_CT >> SLINK_CT_RX_NUM0) & 0xf);
   }
   else {
     return 0;
@@ -103,7 +103,7 @@ int neorv32_slink_get_rx_num(void) {
 int neorv32_slink_get_tx_num(void) {
 
   if (neorv32_slink_available()) {
-    return (int)(((SLINK_CT >> SLINK_CT_TX_NUM0) & 0x07) + 1);
+    return (int)((SLINK_CT >> SLINK_CT_TX_NUM0) & 0xf);
   }
   else {
     return 0;
@@ -146,6 +146,44 @@ int neorv32_slink_get_tx_depth(void) {
 
 
 /**********************************************************************//**
+ * Check if RX link FIFO fill level is >= half-full
+ *
+ * @param[in] link_id Link id (0..7).
+ * @return 1 if fill level is >= half-full.
+ **************************************************************************/
+int neorv32_slink_check_rx_half_full(int link_id) {
+
+  const uint32_t mask = 1 << SLINK_STATUS_RX0_HALF;
+
+  if (SLINK_STATUS & (mask << (link_id & 0x7))) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
+
+
+/**********************************************************************//**
+ * Check if TX link FIFO fill level is > half-full
+ *
+ * @param[in] link_id Link id (0..7).
+ * @return 1 if fill level is > half-full.
+ **************************************************************************/
+int neorv32_slink_check_tx_half_full(int link_id) {
+
+  const uint32_t mask = 1 << SLINK_STATUS_TX0_HALF;
+
+  if (SLINK_STATUS & (mask << (link_id & 0x7))) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
+
+
+/**********************************************************************//**
  * Write data to TX stream link 0 (non-blocking)
  *
  * @param[in] tx_data Data to send to link.
@@ -153,7 +191,7 @@ int neorv32_slink_get_tx_depth(void) {
  **************************************************************************/
 int neorv32_slink_tx0_nonblocking(uint32_t tx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_TX0_FREE)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_TX0_FREE)) {
     SLINK_CH0 = tx_data;
     return 0;
   }
@@ -169,7 +207,7 @@ int neorv32_slink_tx0_nonblocking(uint32_t tx_data) {
  **************************************************************************/
 int neorv32_slink_tx1_nonblocking(uint32_t tx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_TX1_FREE)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_TX1_FREE)) {
     SLINK_CH1 = tx_data;
     return 0;
   }
@@ -185,7 +223,7 @@ int neorv32_slink_tx1_nonblocking(uint32_t tx_data) {
  **************************************************************************/
 int neorv32_slink_tx2_nonblocking(uint32_t tx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_TX2_FREE)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_TX2_FREE)) {
     SLINK_CH2 = tx_data;
     return 0;
   }
@@ -201,7 +239,7 @@ int neorv32_slink_tx2_nonblocking(uint32_t tx_data) {
  **************************************************************************/
 int neorv32_slink_tx3_nonblocking(uint32_t tx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_TX3_FREE)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_TX3_FREE)) {
     SLINK_CH3 = tx_data;
     return 0;
   }
@@ -217,7 +255,7 @@ int neorv32_slink_tx3_nonblocking(uint32_t tx_data) {
  **************************************************************************/
 int neorv32_slink_tx4_nonblocking(uint32_t tx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_TX4_FREE)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_TX4_FREE)) {
     SLINK_CH4 = tx_data;
     return 0;
   }
@@ -233,7 +271,7 @@ int neorv32_slink_tx4_nonblocking(uint32_t tx_data) {
  **************************************************************************/
 int neorv32_slink_tx5_nonblocking(uint32_t tx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_TX5_FREE)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_TX5_FREE)) {
     SLINK_CH5 = tx_data;
     return 0;
   }
@@ -249,7 +287,7 @@ int neorv32_slink_tx5_nonblocking(uint32_t tx_data) {
  **************************************************************************/
 int neorv32_slink_tx6_nonblocking(uint32_t tx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_TX6_FREE)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_TX6_FREE)) {
     SLINK_CH6 = tx_data;
     return 0;
   }
@@ -265,7 +303,7 @@ int neorv32_slink_tx6_nonblocking(uint32_t tx_data) {
  **************************************************************************/
 int neorv32_slink_tx7_nonblocking(uint32_t tx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_TX7_FREE)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_TX7_FREE)) {
     SLINK_CH7 = tx_data;
     return 0;
   }
@@ -281,7 +319,7 @@ int neorv32_slink_tx7_nonblocking(uint32_t tx_data) {
  **************************************************************************/
 int neorv32_slink_rx0_nonblocking(uint32_t *rx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_RX0_AVAIL)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_RX0_AVAIL)) {
     *rx_data = SLINK_CH0;
     return 0;
   }
@@ -297,7 +335,7 @@ int neorv32_slink_rx0_nonblocking(uint32_t *rx_data) {
  **************************************************************************/
 int neorv32_slink_rx1_nonblocking(uint32_t *rx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_RX1_AVAIL)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_RX1_AVAIL)) {
     *rx_data = SLINK_CH1;
     return 0;
   }
@@ -313,7 +351,7 @@ int neorv32_slink_rx1_nonblocking(uint32_t *rx_data) {
  **************************************************************************/
 int neorv32_slink_rx2_nonblocking(uint32_t *rx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_RX2_AVAIL)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_RX2_AVAIL)) {
     *rx_data = SLINK_CH2;
     return 0;
   }
@@ -329,7 +367,7 @@ int neorv32_slink_rx2_nonblocking(uint32_t *rx_data) {
  **************************************************************************/
 int neorv32_slink_rx3_nonblocking(uint32_t *rx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_RX3_AVAIL)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_RX3_AVAIL)) {
     *rx_data = SLINK_CH3;
     return 0;
   }
@@ -345,7 +383,7 @@ int neorv32_slink_rx3_nonblocking(uint32_t *rx_data) {
  **************************************************************************/
 int neorv32_slink_rx4_nonblocking(uint32_t *rx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_RX4_AVAIL)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_RX4_AVAIL)) {
     *rx_data = SLINK_CH4;
     return 0;
   }
@@ -361,7 +399,7 @@ int neorv32_slink_rx4_nonblocking(uint32_t *rx_data) {
  **************************************************************************/
 int neorv32_slink_rx5_nonblocking(uint32_t *rx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_RX5_AVAIL)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_RX5_AVAIL)) {
     *rx_data = SLINK_CH5;
     return 0;
   }
@@ -377,7 +415,7 @@ int neorv32_slink_rx5_nonblocking(uint32_t *rx_data) {
  **************************************************************************/
 int neorv32_slink_rx6_nonblocking(uint32_t *rx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_RX6_AVAIL)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_RX6_AVAIL)) {
     *rx_data = SLINK_CH6;
     return 0;
   }
@@ -393,7 +431,7 @@ int neorv32_slink_rx6_nonblocking(uint32_t *rx_data) {
  **************************************************************************/
 int neorv32_slink_rx7_nonblocking(uint32_t *rx_data) {
 
-  if (SLINK_CT & (1 << SLINK_CT_RX7_AVAIL)) {
+  if (SLINK_STATUS & (1 << SLINK_STATUS_RX7_AVAIL)) {
     *rx_data = SLINK_CH7;
     return 0;
   }

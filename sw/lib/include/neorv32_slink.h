@@ -50,6 +50,8 @@ int neorv32_slink_get_rx_num(void);
 int neorv32_slink_get_tx_num(void);
 int neorv32_slink_get_rx_depth(void);
 int neorv32_slink_get_tx_depth(void);
+int neorv32_slink_check_rx_half_full(int link_id);
+int neorv32_slink_check_tx_half_full(int link_id);
 // non-blocking transmit
 int neorv32_slink_tx0_nonblocking(uint32_t tx_data);
 int neorv32_slink_tx1_nonblocking(uint32_t tx_data);
