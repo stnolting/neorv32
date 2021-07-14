@@ -424,6 +424,7 @@ begin
   if (EXT_IMEM_C = false) generate
     wb_mem_a.rdata <= (others => '0');
     wb_mem_a.ack   <= '0';
+    wb_mem_a.err   <= '0';
   end generate;
 
 
