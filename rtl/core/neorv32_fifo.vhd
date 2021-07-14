@@ -51,6 +51,7 @@ entity neorv32_fifo is
     clk_i   : in  std_ulogic; -- clock, rising edge
     rstn_i  : in  std_ulogic; -- async reset, low-active
     clear_i : in  std_ulogic; -- sync reset, high-active
+    level_o : out std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0); -- fill level
     -- write port --
     wdata_i : in  std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- write data
     we_i    : in  std_ulogic; -- write enable
@@ -71,6 +72,7 @@ architecture neorv32_fifo_rtl of neorv32_fifo is
     re    : std_ulogic; -- read enable
     w_pnt : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0); -- write pointer
     r_pnt : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0); -- read pointer
+    level : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0); -- fill count
     data  : fifo_data_t; -- fifo memory
     datas : std_ulogic_vector(FIFO_WIDTH-1 downto 0);
     match : std_ulogic;
@@ -124,8 +126,10 @@ begin
   fifo.empty <= '1' when (fifo.r_pnt(fifo.r_pnt'left)  = fifo.w_pnt(fifo.w_pnt'left)) and (fifo.match = '1') else '0';
   fifo.free  <= not fifo.full;
   fifo.avail <= not fifo.empty;
+  fifo.level <= std_ulogic_vector(to_unsigned(FIFO_DEPTH, fifo.level'length)) when (fifo.full = '1') else std_ulogic_vector(unsigned(fifo.w_pnt) - unsigned(fifo.r_pnt));
 
   -- status output --
+  level_o <= fifo.level;
   free_o  <= fifo.free;
   avail_o <= fifo.avail;
 

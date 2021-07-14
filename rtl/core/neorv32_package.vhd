@@ -1905,6 +1905,7 @@ package neorv32_package is
       clk_i   : in  std_ulogic; -- clock, rising edge
       rstn_i  : in  std_ulogic; -- async reset, low-active
       clear_i : in  std_ulogic; -- sync reset, high-active
+      level_o : out std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0); -- fill level
       -- write port --
       wdata_i : in  std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- write data
       we_i    : in  std_ulogic; -- write enable
