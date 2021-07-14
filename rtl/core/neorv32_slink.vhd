@@ -1,9 +1,10 @@
 -- #################################################################################################
 -- # << NEORV32 - Stream Link Interface (SLINK) >>                                                 #
 -- # ********************************************************************************************* #
--- # Up to 8 input (RX) and up to 8 output (TX) stream links are supported. Each stream direction  #
--- # provides a global interrupt to indicate that a RX link has received new data or that a TX     #
--- # has finished sending data. Each link is provides an internal FIFO for buffering.              #
+-- # Up to 8 input (RX) and up to 8 output (TX) stream links are supported. Each link provides an  #
+-- # internal FIFO for buffering. Each stream direction provides a global interrupt to indicate    #
+-- # that a RX link has received new data or that a TX link has finished sending data              #
+-- # (if FIFO_DEPTH = 1) OR if RX/TX link FIFO has become half full (if FIFO_DEPTH > 1).           #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -79,42 +80,33 @@ architecture neorv32_slink_rtl of neorv32_slink is
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(slink_size_c); -- low address boundary bit
 
-  -- control reg bits --
-  constant ctrl_rx0_avail_c : natural :=  0; -- r/-: set if TX link 0 is ready to send
-  constant ctrl_rx1_avail_c : natural :=  1; -- r/-: set if TX link 1 is ready to send
-  constant ctrl_rx2_avail_c : natural :=  2; -- r/-: set if TX link 2 is ready to send
-  constant ctrl_rx3_avail_c : natural :=  3; -- r/-: set if TX link 3 is ready to send
-  constant ctrl_rx4_avail_c : natural :=  4; -- r/-: set if TX link 4 is ready to send
-  constant ctrl_rx5_avail_c : natural :=  5; -- r/-: set if TX link 5 is ready to send
-  constant ctrl_rx6_avail_c : natural :=  6; -- r/-: set if TX link 6 is ready to send
-  constant ctrl_rx7_avail_c : natural :=  7; -- r/-: set if TX link 7 is ready to send
+  -- control register bits --
+  constant ctrl_rx_num_lsb_c  : natural :=  0; -- r/-: number of implemented RX links
+  constant ctrl_rx_num_msb_c  : natural :=  3;
   --
-  constant ctrl_tx0_free_c  : natural :=  8; -- r/-: set if RX link 0 data available
-  constant ctrl_tx1_free_c  : natural :=  9; -- r/-: set if RX link 1 data available
-  constant ctrl_tx2_free_c  : natural := 10; -- r/-: set if RX link 2 data available
-  constant ctrl_tx3_free_c  : natural := 11; -- r/-: set if RX link 3 data available
-  constant ctrl_tx4_free_c  : natural := 12; -- r/-: set if RX link 4 data available
-  constant ctrl_tx5_free_c  : natural := 13; -- r/-: set if RX link 5 data available
-  constant ctrl_tx6_free_c  : natural := 14; -- r/-: set if RX link 6 data available
-  constant ctrl_tx7_free_c  : natural := 15; -- r/-: set if RX link 7 data available
+  constant ctrl_tx_num_lsb_c  : natural :=  4; -- r/-: number of implemented TX links
+  constant ctrl_tx_num_msb_c  : natural :=  7;
   --
-  constant ctrl_rx_num0_c   : natural := 16; -- r/-: number of implemented RX links -1 bit 0
-  constant ctrl_rx_num1_c   : natural := 17; -- r/-: number of implemented RX links -1 bit 1
-  constant ctrl_rx_num2_c   : natural := 18; -- r/-: number of implemented RX links -1 bit 2
-  constant ctrl_tx_num0_c   : natural := 19; -- r/-: number of implemented TX links -1 bit 0
-  constant ctrl_tx_num1_c   : natural := 20; -- r/-: number of implemented TX links -1 bit 1
-  constant ctrl_tx_num2_c   : natural := 21; -- r/-: number of implemented TX links -1 bit 2
+  constant ctrl_rx_size_lsb_c : natural :=  8; -- r/-: log2(RX FIFO size)
+  constant ctrl_rx_size_msb_c : natural := 11;
   --
-  constant ctrl_rx_size0_c  : natural := 22; -- r/-: log2(RX FIFO size) bit 0
-  constant ctrl_rx_size1_c  : natural := 23; -- r/-: log2(RX FIFO size) bit 1
-  constant ctrl_rx_size2_c  : natural := 24; -- r/-: log2(RX FIFO size) bit 2
-  constant ctrl_rx_size3_c  : natural := 25; -- r/-: log2(RX FIFO size) bit 3
-  constant ctrl_tx_size0_c  : natural := 26; -- r/-: log2(TX FIFO size) bit 0
-  constant ctrl_tx_size1_c  : natural := 27; -- r/-: log2(TX FIFO size) bit 1
-  constant ctrl_tx_size2_c  : natural := 28; -- r/-: log2(TX FIFO size) bit 2
-  constant ctrl_tx_size3_c  : natural := 29; -- r/-: log2(TX FIFO size) bit 3
+  constant ctrl_tx_size_lsb_c : natural := 12; -- r/-: log2(TX FIFO size)
+  constant ctrl_tx_size_msb_c : natural := 15;
   --
-  constant ctrl_en_c        : natural := 31; -- r/w: global enable
+  constant ctrl_en_c          : natural := 31; -- r/w: global enable
+
+  -- status register bits --
+  constant status_rx_avail_lsb_c : natural :=  0; -- r/-: set if TX link 0..7 is ready to send
+  constant status_rx_avail_msb_c : natural :=  7;
+  --
+  constant status_tx_free_lsb_c  : natural :=  8; -- r/-: set if RX link 0..7 data available
+  constant status_tx_free_msb_c  : natural := 15;
+  --
+  constant status_rx_half_lsb_c  : natural := 16; -- r/-: set if TX link 0..7 FIFO fill-level is >= half-full
+  constant status_rx_half_msb_c  : natural := 23;
+  --
+  constant status_tx_half_lsb_c  : natural := 24; -- r/-: set if RX link 0..7 FIFO fill-level is > half-full
+  constant status_tx_half_msb_c  : natural := 31;
 
   -- bus access control --
   signal ack_read  : std_ulogic;
@@ -125,17 +117,33 @@ architecture neorv32_slink_rtl of neorv32_slink is
   -- control register --
   signal enable : std_ulogic; -- global enable
 
-  -- interrupt generator --
-  signal tx_fifo_free_buf  : std_ulogic_vector(7 downto 0);
-  signal rx_fifo_avail_buf : std_ulogic_vector(7 downto 0);
-
   -- stream link fifo interface --
   type fifo_data_t is array (0 to 7) of std_ulogic_vector(31 downto 0);
-  signal rx_fifo_rdata             : fifo_data_t;
-  signal fifo_clear                : std_ulogic;
-  signal link_sel                  : std_ulogic_vector(7 downto 0);
-  signal tx_fifo_we, tx_fifo_free  : std_ulogic_vector(7 downto 0);
-  signal rx_fifo_re, rx_fifo_avail : std_ulogic_vector(7 downto 0);
+  type fifo_rx_level_t is array (0 to 7) of std_ulogic_vector(index_size_f(SLINK_RX_FIFO) downto 0);
+  type fifo_tx_level_t is array (0 to 7) of std_ulogic_vector(index_size_f(SLINK_TX_FIFO) downto 0);
+  signal rx_fifo_rdata                   : fifo_data_t;
+  signal rx_fifo_level                   : fifo_rx_level_t;
+  signal tx_fifo_level                   : fifo_tx_level_t;
+  signal fifo_clear                      : std_ulogic;
+  signal link_sel                        : std_ulogic_vector(7 downto 0);
+  signal tx_fifo_we,    rx_fifo_re       : std_ulogic_vector(7 downto 0);
+  signal rx_fifo_avail, rx_fifo_avail_ff : std_ulogic_vector(7 downto 0);
+  signal tx_fifo_free,  tx_fifo_free_ff  : std_ulogic_vector(7 downto 0);
+  signal rx_fifo_half,  rx_fifo_half_ff  : std_ulogic_vector(7 downto 0);
+  signal tx_fifo_half,  tx_fifo_half_ff  : std_ulogic_vector(7 downto 0);
+
+  -- interrupt controller --
+  type irq_t is record
+    rx_pending    : std_ulogic;
+    rx_pending_ff : std_ulogic;
+    rx_fire       : std_ulogic;
+    tx_pending    : std_ulogic;
+    tx_pending_ff : std_ulogic;
+    tx_fire       : std_ulogic;
+    wr_ack        : std_ulogic;
+    rd_ack        : std_ulogic;
+  end record;
+  signal irq : irq_t;
 
 begin
 
@@ -166,10 +174,15 @@ begin
   begin
     if rising_edge(clk_i) then
       -- write access --
-      ack_write <= '0';
+      irq.wr_ack <= '0';
+      ack_write  <= '0';
       if (acc_en = '1') and (wren_i = '1') then
-        if (addr(5) = '0') then -- control register
-          enable    <= data_i(ctrl_en_c);
+        if (addr(5) = '0') then -- control/status 
+          if (addr(4) = '0') then -- control register
+            enable <= data_i(ctrl_en_c);
+          else -- status register
+            irq.wr_ack <= '1';
+          end if;
           ack_write <= '1';
         else -- TX links
           ack_write <= or_reduce_f(link_sel and tx_fifo_free);
@@ -177,18 +190,25 @@ begin
       end if;
 
       -- read access --
-      data_o   <= (others => '0');
-      ack_read <= '0';
+      irq.rd_ack <= '0';
+      data_o     <= (others => '0');
+      ack_read   <= '0';
       if (acc_en = '1') and (rden_i = '1') then
-        if (addr(5) = '0') then -- control register
-          data_o(ctrl_rx7_avail_c downto ctrl_rx0_avail_c) <= rx_fifo_avail;
-          data_o(ctrl_tx7_free_c  downto ctrl_tx0_free_c)  <= tx_fifo_free;
-          data_o(ctrl_rx_num2_c   downto ctrl_rx_num0_c)   <= std_ulogic_vector(to_unsigned(SLINK_NUM_RX-1, 3));
-          data_o(ctrl_tx_num2_c   downto ctrl_tx_num0_c)   <= std_ulogic_vector(to_unsigned(SLINK_NUM_TX-1, 3));
-          data_o(ctrl_rx_size3_c  downto ctrl_rx_size0_c)  <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_RX_FIFO), 4));
-          data_o(ctrl_tx_size3_c  downto ctrl_tx_size0_c)  <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_TX_FIFO), 4));
-          data_o(ctrl_en_c)                                <= enable;
+        if (addr(5) = '0') then -- control/status registers
           ack_read <= '1';
+          if (addr(4) = '0') then -- control register
+            data_o(ctrl_rx_num_msb_c  downto ctrl_rx_num_lsb_c)  <= std_ulogic_vector(to_unsigned(SLINK_NUM_RX, 4));
+            data_o(ctrl_tx_num_msb_c  downto ctrl_tx_num_lsb_c)  <= std_ulogic_vector(to_unsigned(SLINK_NUM_TX, 4));
+            data_o(ctrl_rx_size_msb_c downto ctrl_rx_size_lsb_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_RX_FIFO), 4));
+            data_o(ctrl_tx_size_msb_c downto ctrl_tx_size_lsb_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_TX_FIFO), 4));
+            data_o(ctrl_en_c)                                    <= enable;
+          else -- fifo status register
+            data_o(status_rx_avail_msb_c downto status_rx_avail_lsb_c) <= rx_fifo_avail;
+            data_o(status_tx_free_msb_c  downto status_tx_free_lsb_c)  <= tx_fifo_free;
+            data_o(status_rx_half_msb_c  downto status_rx_half_lsb_c)  <= rx_fifo_half;
+            data_o(status_tx_half_msb_c  downto status_tx_half_lsb_c)  <= tx_fifo_half;
+            irq.rd_ack <= '1';
+          end if;
         else -- RX links
           data_o   <= rx_fifo_rdata(to_integer(unsigned(addr(4 downto 2))));
           ack_read <= or_reduce_f(link_sel and rx_fifo_avail);
@@ -204,19 +224,89 @@ begin
   fifo_clear <= not enable;
 
 
+  -- FIFO Level Monitoring ------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  level_monitor: process(rx_fifo_level, tx_fifo_level)
+  begin
+    -- RX FIFO --
+    rx_fifo_half <= (others => '0');
+    for i in 0 to SLINK_NUM_RX-1 loop
+      if (rx_fifo_level(i) >= std_ulogic_vector(to_unsigned(cond_sel_natural_f(boolean(SLINK_RX_FIFO > 1), SLINK_RX_FIFO/2, 1), rx_fifo_level(i)'length))) then
+        rx_fifo_half(i) <= '1';
+      end if;
+    end loop;
+    -- TX FIFO --
+    tx_fifo_half <= (others => '0');
+    for i in 0 to SLINK_NUM_TX-1 loop
+      if (tx_fifo_level(i) >= std_ulogic_vector(to_unsigned(cond_sel_natural_f(boolean(SLINK_TX_FIFO > 1), SLINK_TX_FIFO/2, 1), tx_fifo_level(i)'length))) then
+        tx_fifo_half(i) <= '1';
+      end if;
+    end loop;
+  end process level_monitor;
+
+
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_generator: process(clk_i)
+  irq_arbiter: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- buffer status --
-      tx_fifo_free_buf  <= tx_fifo_free;
-      rx_fifo_avail_buf <= rx_fifo_avail;
-      -- rising edge detector --
-      irq_tx_o <= enable and or_reduce_f(tx_fifo_free  and (not tx_fifo_free_buf));
-      irq_rx_o <= enable and or_reduce_f(rx_fifo_avail and (not rx_fifo_avail_buf));
+      if (enable = '0') then
+        irq.rx_pending <= '0';
+        irq.tx_pending <= '0';
+      else
+        -- RX IRQ --
+        if (irq.rx_pending = '0') then
+          irq.rx_pending <= irq.rx_fire;
+        elsif (irq.rd_ack = '1') or (irq.wr_ack = '1') then
+          irq.rx_pending <= '0';
+        end if;
+        -- TX IRQ --
+        if (irq.tx_pending = '0') then
+          irq.tx_pending <= irq.tx_fire;
+        elsif (irq.rd_ack = '1') or (irq.wr_ack = '1') then
+          irq.tx_pending <= '0';
+        end if;
+      end if;
+      -- CPU IRQs --
+      irq.rx_pending_ff <= irq.rx_pending;
+      irq.tx_pending_ff <= irq.tx_pending;
+      irq_rx_o <= irq.rx_pending and (not irq.rx_pending_ff);
+      irq_tx_o <= irq.tx_pending and (not irq.tx_pending_ff);
     end if;
-  end process irq_generator;
+  end process irq_arbiter;
+
+  -- status buffer --
+  irq_generator_sync: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      rx_fifo_avail_ff <= rx_fifo_avail;
+      rx_fifo_half_ff  <= rx_fifo_half;
+      tx_fifo_free_ff  <= tx_fifo_free;
+      tx_fifo_half_ff  <= tx_fifo_half;
+    end if;
+  end process irq_generator_sync;
+
+  -- IRQ event detector --
+  irq_generator_comb: process(clk_i)
+  begin
+    -- RX interrupt --
+    if (SLINK_RX_FIFO = 1) then
+      -- fire if any RX_FIFO gets full
+      irq.rx_fire <= or_reduce_f(rx_fifo_avail and (not rx_fifo_half_ff));
+    else
+      -- fire if any RX_FIFO.level becomes half-full
+      irq.rx_fire <= or_reduce_f(rx_fifo_half and (not rx_fifo_half_ff));
+    end if;
+  
+    -- TX interrupt --
+    if (SLINK_TX_FIFO = 1) then
+      -- fire if any TX_FIFO gets empty
+      irq.tx_fire <= or_reduce_f(tx_fifo_free and (not tx_fifo_half_ff));
+    else
+      -- fire if any TX_FIFO.level falls below half-full level
+      irq.tx_fire <= or_reduce_f((not tx_fifo_half) and tx_fifo_half_ff);
+    end if;
+  end process irq_generator_comb;
 
 
   -- Link Select ----------------------------------------------------------------------------
@@ -259,6 +349,7 @@ begin
       clk_i   => clk_i,             -- clock, rising edge
       rstn_i  => '1',               -- async reset, low-active
       clear_i => fifo_clear,        -- sync reset, high-active
+      level_o => tx_fifo_level(i),  -- fill level
       -- write port --
       wdata_i => data_i,            -- write data
       we_i    => tx_fifo_we(i),     -- write enable
@@ -276,6 +367,7 @@ begin
     tx_fifo_free(i)   <= '0';
     slink_tx_dat_o(i) <= (others => '0');
     slink_tx_val_o(i) <= '0';
+    tx_fifo_level(i)  <= (others => '0');
   end generate;
 
 
@@ -295,6 +387,7 @@ begin
       clk_i   => clk_i,             -- clock, rising edge
       rstn_i  => '1',               -- async reset, low-active
       clear_i => fifo_clear,        -- sync reset, high-active
+      level_o => rx_fifo_level(i),  -- fill level
       -- write port --
       wdata_i => slink_rx_dat_i(i), -- write data
       we_i    => slink_rx_val_i(i), -- write enable
@@ -312,6 +405,7 @@ begin
     rx_fifo_avail(i)  <= '0';
     slink_rx_rdy_o(i) <= '0';
     rx_fifo_rdata(i)  <= (others => '0');
+    rx_fifo_level(i)  <= (others => '0');
   end generate;
 
 
