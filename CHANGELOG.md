@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 14.07.2021 | 1.5.7.12 | reworked SLINK interrupt concept (now using FIFO fill level "half-full" as interrupt condition, see [#122](https://github.com/stnolting/neorv32/issues/122)); added fill level output to processor FIFO component |
 | 09.07.2021 | 1.5.7.11 | :bug: fixed minor bug in FIFO component (mapping might fail if `FIFO_DEPTH` = 1); fixed broken `sw/example/demo_freeRTOS` makefile (all freeRTOS includes were missing) |
 | 03.07.2021 | 1.5.7.10 | :sparkles: added new component: **External Interrupt Controller (XIRQ)**: up to 32 external interrupt channels `xirq_i` (via `XIRQ_NUM_CH` generic), configurable trigger (via `XIRQ_TRIGGER_TYPE` and `XIRQ_TRIGGER_POLARITY` generics), prioritized or non-prioritized servicing |
 | 02.07.2021 | 1.5.7.9 | relocated base addresses of watchdog timer (WDT) and true-random number generator (TRNG); removed CPU's `firq_ack_o` signal (was not used at all) |

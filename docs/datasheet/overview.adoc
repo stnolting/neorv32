@@ -285,7 +285,7 @@ See section <<_processor_top_entity_generics>> for more information.
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| Hardware version: | `1.5.7.10`
+| Hardware version: | `1.5.7.12`
 | Top entity:       | `rtl/core/neorv32_top.vhd`
 |=======================
 
@@ -306,7 +306,7 @@ See section <<_processor_top_entity_generics>> for more information.
 | IMEM          | Processor-internal instruction memory (16kB)        |  13 |   2 |   131072 |    0
 | MTIME         | Machine system timer                                | 319 | 167 |        0 |    0
 | NEOLED        | Smart LED Interface (NeoPixel/WS28128) [4xFIFO]     | 342 | 307 |        0 |    0
-| SLINK         | Stream link interface (4 links, FIFO_depth=1)       | 345 | 313 |        0 |    0
+| SLINK         | Stream link interface (2xRX, 2xTX, FIFO_depth=1)    | 208 | 181 |        0 |    0
 | PWM           | Pulse_width modulation controller (4 channels)      |  71 |  69 |        0 |    0
 | SPI           | Serial peripheral interface                         | 148 | 127 |        0 |    0
 | **SYSINFO**   | System configuration information memory             |  14 |  11 |        0 |    0
