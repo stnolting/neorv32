@@ -34,12 +34,14 @@ image::neorv32_processor.png[align=center]
 :sectnums:
 === Processor Top Entity - Signals
 
-The following table shows all interface ports of the processor top entity (`rtl/core/neorv32_top.vhd`).
-The type of all signals is _std_ulogic_ or _std_ulogic_vector_, respectively.
+The following table shows signals of the processor top entity (`rtl/core/neorv32_top.vhd`).
+The type of all signals is `std_ulogic` or `std_ulogic_vector`, respectively.
 
-[TIP]
-A wrapper for the NEORV32 Processor setup providing resolved port signals can be found in
-`rtl/templates/processor/neorv32_ProcessorTop_stdlogic.vhd`.
+[IMPORTAN]
+All _input signals_ provide default values in case they are not explicitly assigned during instantiation.
+For control signals the value `L` (weak pull-down) is used. For serial and parallel data signals
+the value `U` (unknown) is used. Pulled-down signals will not cause "accidental" system crashes
+since all control signals have defined level.
 
 [cols="<3,^2,^2,<11"]
 [options="header",grid="rows"]
@@ -169,7 +171,7 @@ See section <<_system_configuration_information_memory_sysinfo>> for more inform
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **CLOCK_FREQUENCY** | _natural_ | 0
+| **CLOCK_FREQUENCY** | _natural_ | _none_
 3+| The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
 |======
 
@@ -180,7 +182,7 @@ See section <<_system_configuration_information_memory_sysinfo>> for more inform
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **INT_BOOTLOADER_EN** | _boolean_ | true
+| **INT_BOOTLOADER_EN** | _boolean_ | false
 3+| Implement the processor-internal boot ROM, pre-initialized with the default bootloader image when _true_.
 This will also change the processor's boot address from the beginning of the instruction memory address space (default =
 0x00000000) to the base address of the boot ROM. See section <<_boot_configuration>> for more information.
@@ -462,7 +464,7 @@ See sections <<_address_space>> and <<_instruction_memory_imem>> for more inform
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **MEM_INT_IMEM_EN** | _boolean_ | true
+| **MEM_INT_IMEM_EN** | _boolean_ | false
 3+| Implement processor internal instruction memory (IMEM) when _true_.
 |======
 
@@ -491,7 +493,7 @@ See sections <<_address_space>> and <<_data_memory_dmem>> for more information.
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **MEM_INT_DMEM_EN** | _boolean_ | true
+| **MEM_INT_DMEM_EN** | _boolean_ | false
 3+| Implement processor internal data memory (DMEM) when _true_.
 |======
 
@@ -696,7 +698,7 @@ See section <<_processor_internal_modules>> for more information.
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_GPIO_EN** | _boolean_ | true
+| **IO_GPIO_EN** | _boolean_ | false
 3+| Implement general purpose input/output port unit (GPIO) when _true_.
 See section <<_general_purpose_input_and_output_port_gpio>> for more information.
 |======
@@ -708,7 +710,7 @@ See section <<_general_purpose_input_and_output_port_gpio>> for more information
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_MTIME_EN** | _boolean_ | true
+| **IO_MTIME_EN** | _boolean_ | false
 3+| Implement machine system timer (MTIME) when _true_.
 See section <<_machine_system_timer_mtime>> for more information.
 |======
@@ -720,7 +722,7 @@ See section <<_machine_system_timer_mtime>> for more information.
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_UART0_EN** | _boolean_ | true
+| **IO_UART0_EN** | _boolean_ | false
 3+| Implement primary universal asynchronous receiver/transmitter (UART0) when _true_.
 See section <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>> for
 more information.
@@ -733,7 +735,7 @@ more information.
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_UART1_EN** | _boolean_ | true
+| **IO_UART1_EN** | _boolean_ | false
 3+| Implement secondary universal asynchronous receiver/transmitter (UART1) when _true_.
 See section <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>> for more information.
 |======
@@ -745,7 +747,7 @@ See section <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_SPI_EN** | _boolean_ | true
+| **IO_SPI_EN** | _boolean_ | false
 3+| Implement serial peripheral interface controller (SPI) when _true_.
 See section <<_serial_peripheral_interface_controller_spi>> for more information.
 |======
@@ -757,7 +759,7 @@ See section <<_serial_peripheral_interface_controller_spi>> for more information
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_TWI_EN** | _boolean_ | true
+| **IO_TWI_EN** | _boolean_ | false
 3+| Implement two-wire interface controller (TWI) when _true_.
 See section <<_two_wire_serial_interface_controller_twi>> for
 more information.
@@ -770,7 +772,7 @@ more information.
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_PWM_NUM_CH** | _natural_ | 4
+| **IO_PWM_NUM_CH** | _natural_ | 0
 3+| Number of pulse-width modulation (PWM) channels (0..60) to implement. The PWM controller is _not_ implemented if zero.
 See section <<_pulse_width_modulation_controller_pwm>> for more information.
 |======
@@ -782,7 +784,7 @@ See section <<_pulse_width_modulation_controller_pwm>> for more information.
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_WDT_EN** | _boolean_ | true
+| **IO_WDT_EN** | _boolean_ | false
 3+| Implement watchdog timer (WDT) when _true_. See section <<_watchdog_timer_wdt>> for more
 information.
 |======
@@ -816,7 +818,7 @@ information.
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_CFS_CONFIG** | _std_ulogic_vector(31 downto 0)_ | 0x"00000000"
+| **IO_CFS_CONFIG** | _std_ulogic_vector(31 downto 0)_ | 0x"UUUUUUUU"
 3+| This is a "conduit" generic that can be used to pass user-defined CFS implementation flags to the custom
 functions subsystem entity. See section <<_custom_functions_subsystem_cfs>> for more information.
 |======
@@ -850,7 +852,7 @@ functions subsystem entity. See section <<_custom_functions_subsystem_cfs>> for 
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_NEOLED_EN** | _boolean_ | true
+| **IO_NEOLED_EN** | _boolean_ | false
 3+| Implement smart LED interface (WS2812 / NeoPixel(TM)-compatible) (NEOLED) when _true_.
 See section <<_smart_led_interface_neoled>> for more information.
 |======

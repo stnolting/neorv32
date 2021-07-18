@@ -48,10 +48,10 @@ use neorv32.neorv32_package.all;
 entity neorv32_top is
   generic (
     -- General --
-    CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
+    CLOCK_FREQUENCY              : natural;           -- clock frequency of clk_i in Hz
     USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
-    INT_BOOTLOADER_EN            : boolean := true;   -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    INT_BOOTLOADER_EN            : boolean := false;  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
@@ -81,11 +81,11 @@ entity neorv32_top is
     HPM_CNT_WIDTH                : natural := 40;     -- total size of HPM counters (0..64)
 
     -- Internal Instruction memory (IMEM) --
-    MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_EN              : boolean := false;  -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
 
     -- Internal Data memory (DMEM) --
-    MEM_INT_DMEM_EN              : boolean := true;   -- implement processor-internal data memory
+    MEM_INT_DMEM_EN              : boolean := false;  -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
 
     -- Internal Cache memory (iCACHE) --
@@ -110,45 +110,45 @@ entity neorv32_top is
     XIRQ_TRIGGER_POLARITY        : std_ulogic_vector(31 downto 0) := (others => '1'); -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
 
     -- Processor peripherals --
-    IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
-    IO_UART0_EN                  : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART1_EN                  : boolean := true;   -- implement secondary universal asynchronous receiver/transmitter (UART1)?
-    IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
-    IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_NUM_CH                : natural := 4;      -- number of PWM channels to implement (0..60); 0 = disabled
-    IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
+    IO_GPIO_EN                   : boolean := false;  -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN                  : boolean := false;  -- implement machine system timer (MTIME)?
+    IO_UART0_EN                  : boolean := false;  -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART1_EN                  : boolean := false;  -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
+    IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..60); 0 = disabled
+    IO_WDT_EN                    : boolean := false;  -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
     IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
+    IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := (others => 'U'); -- custom CFS configuration generic
     IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
-    IO_NEOLED_EN                 : boolean := true    -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_NEOLED_EN                 : boolean := false   -- implement NeoPixel-compatible smart LED interface (NEOLED)?
   );
   port (
     -- Global control --
-    clk_i          : in  std_ulogic := '0'; -- global clock, rising edge
-    rstn_i         : in  std_ulogic := '0'; -- global reset, low-active, async
+    clk_i          : in  std_ulogic; -- global clock, rising edge
+    rstn_i         : in  std_ulogic; -- global reset, low-active, async
 
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_trst_i    : in  std_ulogic := '0'; -- low-active TAP reset (optional)
-    jtag_tck_i     : in  std_ulogic := '0'; -- serial clock
-    jtag_tdi_i     : in  std_ulogic := '0'; -- serial data input
+    jtag_trst_i    : in  std_ulogic := 'U'; -- low-active TAP reset (optional)
+    jtag_tck_i     : in  std_ulogic := 'U'; -- serial clock
+    jtag_tdi_i     : in  std_ulogic := 'U'; -- serial data input
     jtag_tdo_o     : out std_ulogic;        -- serial data output
-    jtag_tms_i     : in  std_ulogic := '0'; -- mode select
+    jtag_tms_i     : in  std_ulogic := 'U'; -- mode select
 
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
     wb_tag_o       : out std_ulogic_vector(02 downto 0); -- request tag
     wb_adr_o       : out std_ulogic_vector(31 downto 0); -- address
-    wb_dat_i       : in  std_ulogic_vector(31 downto 0) := (others => '0'); -- read data
+    wb_dat_i       : in  std_ulogic_vector(31 downto 0) := (others => 'U'); -- read data
     wb_dat_o       : out std_ulogic_vector(31 downto 0); -- write data
     wb_we_o        : out std_ulogic; -- read/write
     wb_sel_o       : out std_ulogic_vector(03 downto 0); -- byte enable
     wb_stb_o       : out std_ulogic; -- strobe
     wb_cyc_o       : out std_ulogic; -- valid cycle
     wb_lock_o      : out std_ulogic; -- exclusive access request
-    wb_ack_i       : in  std_ulogic := '0'; -- transfer acknowledge
-    wb_err_i       : in  std_ulogic := '0'; -- transfer error
+    wb_ack_i       : in  std_ulogic := 'L'; -- transfer acknowledge
+    wb_err_i       : in  std_ulogic := 'L'; -- transfer error
 
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o        : out std_ulogic; -- indicates an executed FENCE operation
@@ -157,61 +157,61 @@ entity neorv32_top is
     -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
     slink_tx_dat_o : out sdata_8x32_t; -- output data
     slink_tx_val_o : out std_ulogic_vector(7 downto 0); -- valid output
-    slink_tx_rdy_i : in  std_ulogic_vector(7 downto 0) := (others => '0'); -- ready to send
+    slink_tx_rdy_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- ready to send
 
     -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
-    slink_rx_dat_i : in  sdata_8x32_t := (others => (others => '0')); -- input data
-    slink_rx_val_i : in  std_ulogic_vector(7 downto 0) := (others => '0'); -- valid input
+    slink_rx_dat_i : in  sdata_8x32_t := (others => (others => 'U')); -- input data
+    slink_rx_val_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- valid input
     slink_rx_rdy_o : out std_ulogic_vector(7 downto 0); -- ready to receive
 
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
-    gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- parallel input
+    gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'U'); -- parallel input
 
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic; -- UART0 send data
-    uart0_rxd_i    : in  std_ulogic := '0'; -- UART0 receive data
+    uart0_rxd_i    : in  std_ulogic := 'U'; -- UART0 receive data
     uart0_rts_o    : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i    : in  std_ulogic := '0'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_cts_i    : in  std_ulogic := 'L'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_ulogic; -- UART1 send data
-    uart1_rxd_i    : in  std_ulogic := '0'; -- UART1 receive data
+    uart1_rxd_i    : in  std_ulogic := 'U'; -- UART1 receive data
     uart1_rts_o    : out std_ulogic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i    : in  std_ulogic := '0'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_cts_i    : in  std_ulogic := 'L'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
     spi_sck_o      : out std_ulogic; -- SPI serial clock
     spi_sdo_o      : out std_ulogic; -- controller data out, peripheral data in
-    spi_sdi_i      : in  std_ulogic := '0'; -- controller data in, peripheral data out
+    spi_sdi_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
     spi_csn_o      : out std_ulogic_vector(07 downto 0); -- chip-select
 
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_io     : inout std_logic; -- twi serial data line
-    twi_scl_io     : inout std_logic; -- twi serial clock line
+    twi_sda_io     : inout std_logic := 'U'; -- twi serial data line
+    twi_scl_io     : inout std_logic := 'U'; -- twi serial clock line
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0); -- pwm channels
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom CFS inputs conduit
+    cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0) := (others => 'U'); -- custom CFS inputs conduit
     cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
 
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_ulogic; -- async serial data line
 
     -- System time --
-    mtime_i        : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
+    mtime_i        : in  std_ulogic_vector(63 downto 0) := (others => 'U'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
     mtime_o        : out std_ulogic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
 
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i         : in  std_ulogic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0'); -- IRQ channels
+    xirq_i         : in  std_ulogic_vector(XIRQ_NUM_CH-1 downto 0) := (others => 'L'); -- IRQ channels
 
     -- CPU interrupts --
-    nm_irq_i       : in  std_ulogic := '0'; -- non-maskable interrupt
-    mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
-    msw_irq_i      : in  std_ulogic := '0'; -- machine software interrupt
-    mext_irq_i     : in  std_ulogic := '0'  -- machine external interrupt
+    nm_irq_i       : in  std_ulogic := 'L'; -- non-maskable interrupt
+    mtime_irq_i    : in  std_ulogic := 'L'; -- machine timer interrupt, available if IO_MTIME_EN = false
+    msw_irq_i      : in  std_ulogic := 'L'; -- machine software interrupt
+    mext_irq_i     : in  std_ulogic := 'L'  -- machine external interrupt
   );
 end neorv32_top;
 
@@ -351,9 +351,6 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- clock --
-  assert not (CLOCK_FREQUENCY = 0) report "NEORV32 PROCESSOR CONFIG ERROR! Core clock frequency (CLOCK_FREQUENCY) not specified." severity error;
-
   -- boot configuration --
   assert not (INT_BOOTLOADER_EN = true) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Indirect boot via bootloader (processor-internal BOOTROM)." severity note;
   assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Direct boot from memory (processor-internal IMEM)." severity note;

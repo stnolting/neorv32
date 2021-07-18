@@ -83,45 +83,45 @@ entity neorv32_cpu is
   );
   port (
     -- global control --
-    clk_i          : in  std_ulogic := '0'; -- global clock, rising edge
-    rstn_i         : in  std_ulogic := '0'; -- global reset, low-active, async
+    clk_i          : in  std_ulogic; -- global clock, rising edge
+    rstn_i         : in  std_ulogic; -- global reset, low-active, async
     sleep_o        : out std_ulogic; -- cpu is in sleep mode when set
     -- instruction bus interface --
     i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
+    i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
     i_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
     i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
     i_bus_we_o     : out std_ulogic; -- write enable
     i_bus_re_o     : out std_ulogic; -- read enable
     i_bus_lock_o   : out std_ulogic; -- exclusive access request
-    i_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
-    i_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
+    i_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
+    i_bus_err_i    : in  std_ulogic; -- bus transfer error
     i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
     i_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
     -- data bus interface --
     d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0) := (others => '0'); -- bus read data
+    d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
     d_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
     d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
     d_bus_we_o     : out std_ulogic; -- write enable
     d_bus_re_o     : out std_ulogic; -- read enable
     d_bus_lock_o   : out std_ulogic; -- exclusive access request
-    d_bus_ack_i    : in  std_ulogic := '0'; -- bus transfer acknowledge
-    d_bus_err_i    : in  std_ulogic := '0'; -- bus transfer error
+    d_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
+    d_bus_err_i    : in  std_ulogic; -- bus transfer error
     d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
     d_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
     -- system time input from MTIME --
-    time_i         : in  std_ulogic_vector(63 downto 0) := (others => '0'); -- current system time
+    time_i         : in  std_ulogic_vector(63 downto 0); -- current system time
     -- non-maskable interrupt --
-    nm_irq_i       : in  std_ulogic := '0'; -- NMI
+    nm_irq_i       : in  std_ulogic; -- NMI
     -- interrupts (risc-v compliant) --
-    msw_irq_i      : in  std_ulogic := '0'; -- machine software interrupt
-    mext_irq_i     : in  std_ulogic := '0'; -- machine external interrupt
-    mtime_irq_i    : in  std_ulogic := '0'; -- machine timer interrupt
+    msw_irq_i      : in  std_ulogic;-- machine software interrupt
+    mext_irq_i     : in  std_ulogic;-- machine external interrupt
+    mtime_irq_i    : in  std_ulogic;-- machine timer interrupt
     -- fast interrupts (custom) --
-    firq_i         : in  std_ulogic_vector(15 downto 0) := (others => '0');
+    firq_i         : in  std_ulogic_vector(15 downto 0);
     -- debug mode (halt) request --
-    db_halt_req_i  : in  std_ulogic := '0'
+    db_halt_req_i  : in  std_ulogic
   );
 end neorv32_cpu;
 
