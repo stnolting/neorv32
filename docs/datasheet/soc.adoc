@@ -379,11 +379,25 @@ more hardware resources). If it is set _false_ the CPU uses a serial shifter tha
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **CPU_CNT_WIDTH** | _natural_ | 0
+| **CPU_CNT_WIDTH** | _natural_ | 64
 3+| This generic configures the total size of the CPU's `cycle` and `instret` CSRs (low word + high word).
-The maximum value is 64, the minimal is 0. See
+The maximum value is 64, the minimum value is 0. See
 section <<_machine_counters_and_timers>> for more information. Note: Configurations with <<_cpu_cnt_width>>
-less than 64 are not RISC-V compliant.
+less than 64 bits do not comply to the RISC-V specs.
+|======
+
+
+:sectnums!:
+===== _CPU_IPB_ENTRIES_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CPU_IPB_ENTRIES** | _natural_ | 2
+3+| This generic configures the number of entries in the CPU's instruction prefetch buffer (a FIFO).
+The value has to be a power of two and has to be greater than zero.
+Long linear sequences of code can benefit from an increased IPB size. For setups that use the instruction
+cache (<<_icache_en>>) this generic should be set to 1.
 |======
 
 

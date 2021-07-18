@@ -63,9 +63,10 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_Zmmul    : boolean := false; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_DEBUG    : boolean := false; -- implement CPU debug mode?
     -- Extension Options --
-    CPU_CNT_WIDTH                : natural := 64; -- total width of CPU cycle and instret counters (0..64)
+    CPU_CNT_WIDTH                : natural := 64;    -- total width of CPU cycle and instret counters (0..64)
+    CPU_IPB_ENTRIES              : natural := 2;     -- entries is instruction prefetch buffer, has to be a power of 2
     -- Physical memory protection (PMP) --
-    PMP_NUM_REGIONS              : natural := 0;       -- number of regions (0..64)
+    PMP_NUM_REGIONS              : natural := 0;     -- number of regions (0..64)
     PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 : natural := 0;     -- number of implemented HPM counters (0..29)
@@ -458,7 +459,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   instr_prefetch_buffer: neorv32_fifo
   generic map (
-    FIFO_DEPTH => ipb_entries_c,    -- number of fifo entries; has to be a power of two; min 1
+    FIFO_DEPTH => CPU_IPB_ENTRIES,  -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => ipb.wdata'length, -- size of data elements in fifo
     FIFO_RSYNC => false,            -- we NEED to read data asynchronously
     FIFO_SAFE  => false             -- no safe access required (ensured by FIFO-external control)
