@@ -124,7 +124,8 @@ entity neorv32_top is
     IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := (others => 'U'); -- custom CFS configuration generic
     IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
-    IO_NEOLED_EN                 : boolean := false   -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_NEOLED_TX_FIFO            : natural := 1       -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
   );
   port (
     -- Global control --
@@ -1215,6 +1216,9 @@ begin
   neorv32_neoled_inst_true:
   if (IO_NEOLED_EN = true) generate
     neorv32_neoled_inst: neorv32_neoled
+    generic map (
+      FIFO_DEPTH => IO_NEOLED_TX_FIFO -- TX FIFO depth (1..32k, power of two)
+    )
     port map (
       -- host access --
       clk_i       => clk_i,                       -- global clock line

@@ -69,7 +69,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050714"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050715"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
 
@@ -939,7 +939,8 @@ package neorv32_package is
       IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := (others => 'U'); -- custom CFS configuration generic
       IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
       IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
-      IO_NEOLED_EN                 : boolean := false   -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+      IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+      IO_NEOLED_TX_FIFO            : natural := 1       -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     );
     port (
       -- Global control --
@@ -1762,14 +1763,17 @@ package neorv32_package is
       -- interrupt --
       irq_o       : out std_ulogic; -- interrupt request
       -- custom io (conduit) --
-      cfs_in_i    : in  std_ulogic_vector(CFS_IN_SIZE-1 downto 0);  -- custom inputs
-      cfs_out_o   : out std_ulogic_vector(CFS_OUT_SIZE-1 downto 0)  -- custom outputs
+      cfs_in_i    : in  std_ulogic_vector(CFS_IN_SIZE-1 downto 0); -- custom inputs
+      cfs_out_o   : out std_ulogic_vector(CFS_OUT_SIZE-1 downto 0) -- custom outputs
     );
   end component;
 
   -- Component: Smart LED (WS2811/WS2812) Interface (NEOLED) --------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_neoled
+    generic (
+      FIFO_DEPTH : natural := 1 -- TX FIFO depth (1..32k, power of two)
+    );
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
