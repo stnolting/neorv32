@@ -1065,7 +1065,7 @@ enum NEORV32_WDT_CT_enum {
 enum NEORV32_NEOLED_CT_enum {
   NEOLED_CT_EN         =  0, /**< NEOLED control register(0) (r/w): NEOLED global enable */
   NEOLED_CT_MODE       =  1, /**< NEOLED control register(1) (r/w): TX mode (0=24-bit, 1=32-bit) */
-  NEOLED_CT_BSCON      =  2, /**< NEOLED control register(2) (r/w): buffer status configuration -> busy_flag/IRQ config (0=at least one free entry, 1=whole buffer empty) */
+  NEOLED_CT_STROBE     =  2, /**< NEOLED control register(2) (r/w): Strobe (0=send normal data, 1=send RESET command on data write) */
   NEOLED_CT_PRSC0      =  3, /**< NEOLED control register(3) (r/w): Clock prescaler select bit 0 (pulse-clock speed select) */
   NEOLED_CT_PRSC1      =  4, /**< NEOLED control register(4) (r/w): Clock prescaler select bit 1 (pulse-clock speed select) */
   NEOLED_CT_PRSC2      =  5, /**< NEOLED control register(5) (r/w): Clock prescaler select bit 2 (pulse-clock speed select) */
@@ -1093,8 +1093,10 @@ enum NEORV32_NEOLED_CT_enum {
   NEOLED_CT_T_ONE_H_3  = 23, /**< NEOLED control register(23) (r/w): pulse-clock ticks per ONE high-time bit 3 */
   NEOLED_CT_T_ONE_H_4  = 24, /**< NEOLED control register(24) (r/w): pulse-clock ticks per ONE high-time bit 4 */
   //
-  NEOLED_CT_TX_STATUS  = 30, /**< NEOLED control register(30) (r/-): serial transmit engine still busy when set */
-  NEOLED_CT_BUSY       = 31  /**< NEOLED control register(31) (r/-): busy / buffer status flag (configured via #NEOLED_CT_BSCON) */
+  NEOLED_CT_TX_EMPTY   = 28, /**< NEOLED control register(28) (r/-): TX FIFO is empty */
+  NEOLED_CT_TX_HALF    = 29, /**< NEOLED control register(29) (r/-): TX FIFO is at least half-full */
+  NEOLED_CT_TX_FULL    = 30, /**< NEOLED control register(30) (r/-): TX FIFO is full */
+  NEOLED_CT_TX_BUSY    = 31  /**< NEOLED control register(31) (r/-): busy / buffer status flag (configured via #NEOLED_CT_BSCON) */
 };
 /**@}*/
 

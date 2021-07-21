@@ -65,21 +65,17 @@ int neorv32_neoled_available(void) {
  * Enable and configure NEOLED controller. The NEOLED control register bits are listed in #NEORV32_NEOLED_CT_enum.
  * This function performs a "raw" configuration (just configuraing the according control register bit).
  *
- * @param[in] bs_config Busy flag / IRQ configuration (0 = at least one free entry, 1 = whole buffer empty).
  * @param[in] prsc Clock prescaler select (0..7). See #NEORV32_CLOCK_PRSC_enum.
  * @param[in] t_total Number of pre-scaled clock ticks for total bit period (0..31).
  * @param[in] t_high_zero Number of pre-scaled clock ticks to generate high-time for sending a '0' (0..31).
  * @param[in] t_high_one Number of pre-scaled clock ticks to generate high-time for sending a '1' (0..31).
  **************************************************************************/
-void neorv32_neoled_setup_raw(uint32_t bs_config, uint32_t prsc, uint32_t t_total, uint32_t t_high_zero, uint32_t t_high_one) {
+void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero, uint32_t t_high_one) {
 
   NEOLED_CT = 0; // reset
 
   // module enable
   uint32_t ct_enable = 1 << NEOLED_CT_EN;
-
-  // busy flag / IRQ config
-  uint32_t ct_bs_config = (bs_config & 0x1) << NEOLED_CT_BSCON;
 
   // clock pre-scaler
   uint32_t ct_prsc = (prsc & 0x7) << NEOLED_CT_PRSC0;
@@ -94,7 +90,7 @@ void neorv32_neoled_setup_raw(uint32_t bs_config, uint32_t prsc, uint32_t t_tota
   uint32_t ct_t_one = (t_high_one & 0x1f) << NEOLED_CT_T_ONE_H_0;
 
   // set new configuration
-  NEOLED_CT = ct_enable | ct_bs_config | ct_prsc | ct_t_total | ct_t_zero | ct_t_one;
+  NEOLED_CT = ct_enable | ct_prsc | ct_t_total | ct_t_zero | ct_t_one;
 }
 
 
@@ -104,10 +100,8 @@ void neorv32_neoled_setup_raw(uint32_t bs_config, uint32_t prsc, uint32_t t_tota
  *
  * @note WS2812 timing: T_period = 1.2us, T_high_zero = 0.4us, T_high_one = 0.8us. Change the constants if required.
  * @note This function uses the SYSINFO_CLK value (from the SYSINFO HW module) to do the timing computations.
- *
- * @param[in] bs_config Busy flag / IRQ configuration (0 = at least one free entry, 1 = whole buffer empty).
  **************************************************************************/
-void neorv32_neoled_setup_ws2812(uint32_t bs_config) {
+void neorv32_neoled_setup_ws2812(void) {
 
   // WS2812 timing
   const uint32_t T_TOTAL_C  = 1200; // ns
@@ -157,7 +151,50 @@ void neorv32_neoled_setup_ws2812(uint32_t bs_config) {
   }
 
   // set raw configuration
-  neorv32_neoled_setup_raw(bs_config, clk_prsc_sel, t_total, t_high_zero, t_high_one);
+  neorv32_neoled_setup(clk_prsc_sel, t_total, t_high_zero, t_high_one);
+}
+
+
+/**********************************************************************//**
+ * Set NEOLED mode (24-bit RGB / 32-bit RGBW).
+ *
+ * @param[in] mode 0 = 24-bit mode (RGB), 1 = 32-bit mode (RGBW)
+ **************************************************************************/
+void neorv32_neoled_set_mode(uint32_t mode) {
+
+  uint32_t ctrl = NEOLED_CT;
+  ctrl &= ~(0b1 << NEOLED_CT_MODE); // clear current mode
+  ctrl |= ((mode & 1) << NEOLED_CT_MODE); // set new mode
+  NEOLED_CT = ctrl;
+}
+
+
+/**********************************************************************//**
+ * Send strobe command ("RESET") - blocking.
+ **************************************************************************/
+void neorv32_neoled_strobe_blocking(void) {
+
+  while(1) { // wait for FIFO full flag to clear
+    if ((NEOLED_CT & (1 << NEOLED_CT_TX_FULL)) == 0) {
+      break;
+    }
+  }
+
+  neorv32_neoled_strobe_nonblocking();
+}
+
+
+/**********************************************************************//**
+ * Send strobe command ("RESET") - non-blocking.
+ **************************************************************************/
+void neorv32_neoled_strobe_nonblocking(void) {
+
+  const uint32_t mask = 1 << NEOLED_CT_STROBE; // strobe bit
+  uint32_t ctrl = NEOLED_CT;
+
+  NEOLED_CT = ctrl | mask; // set strobe bit
+  NEOLED_DATA = 0; // send any data to trigger strobe command
+  NEOLED_CT = ctrl & (~mask); // clear strobe bit
 }
 
 
@@ -180,39 +217,21 @@ void neorv32_neoled_disable(void) {
 
 
 /**********************************************************************//**
- * Send single data word to NEOLED module.
+ * Send single RGB(W) data word to NEOLED module (blocking).
  *
- * @warning This function is blocking as it polls the NEOLED busy flag.
+ * @warning This function is blocking as it polls the NEOLED FIFO full flag.
  *
- * @param[in] mode 0 = 24-bit mode (RGB), 1 = 32-bit mode (RGBW)
- * @param[in] data 24-bit RGB or 32-bit RGBW data
+ * @param[in] data LSB-aligned 24-bit RGB or 32-bit RGBW data
  **************************************************************************/
-void neorv32_neoled_send_polling(uint32_t mode, uint32_t data) {
+void neorv32_neoled_write_blocking(uint32_t data) {
 
-  while(NEOLED_CT & (1 << NEOLED_CT_BUSY)); // wait for busy flag to clear
+  while(1) { // wait for FIFO full flag to clear
+    if ((NEOLED_CT & (1 << NEOLED_CT_TX_FULL)) == 0) {
+      break;
+    }
+  }
 
-  neorv32_neoled_send_direct(mode, data);
-}
-
-
-/**********************************************************************//**
- * Send single data word to NEOLED module.
- *
- * @warning This function used NO busy checks at all!
- * @note This function can be called several times in a row to fill the TX buffer (when busy_flag is cleared and bscon = 1).
- *
- * @param[in] mode 0 = 24-bit mode (RGB), 1 = 32-bit mode (RGBW)
- * @param[in] data 24-bit RGB or 32-bit RGBW data
- **************************************************************************/
-void neorv32_neoled_send_direct(uint32_t mode, uint32_t data) {
-
-  // configure TX mode (data size)
-  uint32_t ctrl = NEOLED_CT;
-  ctrl &= ~(0b1 << NEOLED_CT_MODE); // clear current mode
-  ctrl |= ((mode & 1) << NEOLED_CT_MODE); // set new mode
-  NEOLED_CT = ctrl;
-
-  NEOLED_DATA = data; // send new LED data
+  neorv32_neoled_write_nonblocking(data); // send new LED data
 }
 
 
@@ -225,7 +244,7 @@ uint32_t neorv32_neoled_get_buffer_size(void) {
 
   uint32_t tmp = NEOLED_CT;
   tmp = tmp >> NEOLED_CT_BUFS_0;
-  tmp = tmp & 0b1111; // insulate buffer size flags
+  tmp = tmp & 0xf; // isolate buffer size bits
 
   return (1 << tmp); // num entries = pow(2, buffer size flags)
 }

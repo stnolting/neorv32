@@ -48,19 +48,22 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE 19200
-/** Number of RGB LEDs in stripe A (24-bit data) */
+/** Number of RGB LEDs in stripe (24-bit data) */
 #define NUM_LEDS_24BIT (12)
-/** Number of RGBW LEDs in stripe B (32-bit data) */
-#define NUM_LEDS_32BIT (8)
+/** Max intensity (0..255) */
+#define MAX_INTENSITY (16)
 /**@}*/
+
+
+// prototypes
+uint32_t hsv2rgb(int h, int v);
 
 
 /**********************************************************************//**
  * Main function
- * This demo uses two NeoPixel stripes: Stripe A is a 12-LED RGB ring (arranged as ring - NOT CONNECTED as ring), stripe B is a 8-LED RGBW stripe
+ * This demo uses a 12-LED RGB ring
  *
  * @note This program requires the NEOLED controller to be synthesized (UART0 is optional).
- * @note NeoPixel stripe connection: NEORV32.neoled_o -> Stripe A ("NUM_LEDS_24BIT" RGB-LEDs) -> Stripe B ("NUM_LEDS_32BIT" RGBW LEDs)
  *
  * @return 0 if execution was successful
  **************************************************************************/
@@ -71,10 +74,8 @@ int main() {
   neorv32_rte_setup();
 
 
-  // init UART0 at default baud rate, no parity bits, no hw flow control
+  // setup UART0 at default baud rate, no parity bits, no hw flow control
   neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
-  neorv32_uart0_printf("<<< NEORV32 NeoPixel (WS2812) hardware interface (NEOLED) demo >>>\n");
-  neorv32_uart0_printf("(c) 'NeoPixel' is a trademark of Adafruit Industries.\n");
 
 
   // check if NEOLED unit is implemented at all, abort if not
@@ -84,75 +85,110 @@ int main() {
   }
 
 
-  // clearify setup
-  neorv32_uart0_printf("\nThis demo uses the following LED setup:\n");
-  neorv32_uart0_printf("NEORV32.neoled_o -> %u RGB-LEDs (24-bit) -> %u RGBW-LEDs (32-bit)\n\n", (uint32_t)NUM_LEDS_24BIT, (uint32_t)NUM_LEDS_32BIT);
+  // illustrate setup
+  neorv32_uart0_printf("<<< NEORV32 NeoPixel (WS2812) hardware interface (NEOLED) demo >>>\n"
+                       "(TM) 'NeoPixel' is a trademark of Adafruit Industries.\n\n"
+                       "This demo uses the following LED setup:\n"
+                       "NEORV32.neoled_o -> %u RGB-LEDs (24-bit)\n\n", (uint32_t)NUM_LEDS_24BIT);
 
 
-  // use the "neorv32_neoled_setup_ws2812()" setup function here instead the raw "neorv32_neoled_setup_raw()"
+  // use the "neorv32_neoled_setup_ws2812()" setup function here instead the raw "neorv32_neoled_setup()"
   // neorv32_neoled_setup_ws2812() will configure all timing parameters according to the WS2812 specs. for the current processor clock speed
-  neorv32_neoled_setup_ws2812(0); // use bscon = 0 (busy_flag clears / IRQ fires if at least one buffer entry is free)
+  neorv32_neoled_setup_ws2812();
+  neorv32_neoled_enable(); // enable module
+  neorv32_neoled_set_mode(0); // mode = 0 = 24-bit
 
 
   // check NEOLED configuration
-  neorv32_uart0_printf("Checking NEOLED configuration:\n", neorv32_neoled_get_buffer_size());
-  neorv32_uart0_printf(" Hardware buffer size: %u entries\n", neorv32_neoled_get_buffer_size());
-  neorv32_uart0_printf(" Control register:     0x%x\n\n", NEOLED_CT);
+  neorv32_uart0_printf("Checking NEOLED configuration:\n"
+                       " Hardware FIFO size: %u entries\n"
+                       " Control register:   0x%x\n\n", neorv32_neoled_get_buffer_size(), NEOLED_CT);
 
 
   // clear all LEDs
   neorv32_uart0_printf("Clearing all LEDs...\n");
   int i;
-  for (i=0; i<(NUM_LEDS_24BIT+NUM_LEDS_32BIT); i++) { // just send a lot of zeros
-    neorv32_neoled_send_polling(1, 0); // mode = 1 = 32-bit, -> send 32 zero bits in each iteration
+  for (i=0; i<NUM_LEDS_24BIT; i++) {
+    neorv32_neoled_write_blocking(0);
   }
-  neorv32_cpu_delay_ms(1000);
+  neorv32_cpu_delay_ms(500);
 
 
-  // a simple (but fancy!) animation example
+  // a simple animation example: rotating rainbow
+  // this example uses BLOCKING NEOLED functions that check the FIFO flags before writing new data
+  // non-blocking functions should only be used when checking the FIFO flags (half-full) in advance (for example using the NEOLED interrupt)
   neorv32_uart0_printf("Starting animation...\n");
-  int stripe_pos_rgb = 0, flash_position = 0, flash_direction = -1;
-  int stripe_pos_rgbw = 0, circle_position = 0;
-  uint32_t circle_color = 0x00000004;
 
+  int angle = 0, led_id = 0;
   while (1) {
-
-    // RGB LEDs: turning circle, changes color after each completed cycle
-    for (stripe_pos_rgb=0; stripe_pos_rgb<NUM_LEDS_24BIT; stripe_pos_rgb++) {
-      if (stripe_pos_rgb == circle_position) {
-        neorv32_neoled_send_polling(0, circle_color);
-      }
-      else {
-        neorv32_neoled_send_polling(0, 0); // LED off
-      }
+    for (led_id=0; led_id<NUM_LEDS_24BIT; led_id++) {
+      // give every LED a different color
+      neorv32_neoled_write_blocking(hsv2rgb(angle + (360/NUM_LEDS_24BIT) * led_id, MAX_INTENSITY));
     }
-    if (circle_position == (NUM_LEDS_24BIT-1)) {
-      circle_position = 0;
-      circle_color = (circle_color << 8) | ((circle_color >> 16) & 0xff);
-    }
-    else {
-      circle_position++;
-    }
+    angle += 1; // rotation increment per frame
 
-
-    // RGBW LEDs: knight rider!
-    if ((flash_position == (NUM_LEDS_32BIT-1)) || (flash_position == 0)) {
-      flash_direction = -flash_direction;
-    }
-    for (stripe_pos_rgbw=0; stripe_pos_rgbw<NUM_LEDS_32BIT; stripe_pos_rgbw++) {
-      if (stripe_pos_rgbw == flash_position) {
-        neorv32_neoled_send_polling(1, 0x00000004); // white dot using the dedicated white LED chip
-      }
-      else {
-        neorv32_neoled_send_polling(1, 0); // LED off
-      }
-    }
-    flash_position += flash_direction;
-
-
-    // delay between frames; also used to "send" ws2812.reset command
-    neorv32_cpu_delay_ms(100);
+    neorv32_neoled_strobe_blocking(); // send strobe ("RESET") command
+    neorv32_cpu_delay_ms(10); // delay between frames
   }
 
   return 0;
+}
+
+
+/**********************************************************************//**
+ * Convert HSV color to RGB.
+ *
+ * @note Very simple version: using integer arithmetic and ignoring saturation (saturation is always MAX).
+ *
+ * @param[in] h Hue (color angle), 0..359
+ * @param[in] v Value (intensity), 0..255
+ * @return LSB-aligned 24-bit RGB data [G,R,B]
+ **************************************************************************/
+uint32_t hsv2rgb(int h, int v) {
+
+  h = h % 360;
+  int r, g, b;
+  int i = h / 60;
+  int difs = h % 60;
+  int rgb_adj = (v * difs) / 60;
+
+  switch (i) {
+    case 0:
+      r = v;
+      g = 0 + rgb_adj;
+      b = 0;
+      break;
+    case 1:
+      r = v - rgb_adj;
+      g = v;
+      b = 0;
+      break;
+    case 2:
+      r = 0;
+      g = v;
+      b = 0 + rgb_adj;
+      break;
+    case 3:
+      r = 0;
+      g = v - rgb_adj;
+      b = v;
+      break;
+    case 4:
+      r = 0 + rgb_adj;
+      g = 0;
+      b = v;
+      break;
+    default:
+      r = v;
+      g = 0;
+      b = v - rgb_adj;
+      break;
+  }
+
+  uint32_t res = 0;
+  res |= (((uint32_t)g) & 0xff) << 16;
+  res |= (((uint32_t)r) & 0xff) << 8;
+  res |= (((uint32_t)b) & 0xff) << 0;
+
+  return res;
 }
