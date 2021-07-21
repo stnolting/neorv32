@@ -231,14 +231,14 @@ begin
     -- RX FIFO --
     rx_fifo_half <= (others => '0');
     for i in 0 to SLINK_NUM_RX-1 loop
-      if (rx_fifo_level(i) >= std_ulogic_vector(to_unsigned(cond_sel_natural_f(boolean(SLINK_RX_FIFO > 1), SLINK_RX_FIFO/2, 1), rx_fifo_level(i)'length))) then
+      if (unsigned(rx_fifo_level(i)) >= to_unsigned(cond_sel_natural_f(boolean(SLINK_RX_FIFO > 1), SLINK_RX_FIFO/2, 1), rx_fifo_level(i)'length)) then
         rx_fifo_half(i) <= '1';
       end if;
     end loop;
     -- TX FIFO --
     tx_fifo_half <= (others => '0');
     for i in 0 to SLINK_NUM_TX-1 loop
-      if (tx_fifo_level(i) >= std_ulogic_vector(to_unsigned(cond_sel_natural_f(boolean(SLINK_TX_FIFO > 1), SLINK_TX_FIFO/2, 1), tx_fifo_level(i)'length))) then
+      if (unsigned(tx_fifo_level(i)) >= to_unsigned(cond_sel_natural_f(boolean(SLINK_TX_FIFO > 1), SLINK_TX_FIFO/2, 1), tx_fifo_level(i)'length)) then
         tx_fifo_half(i) <= '1';
       end if;
     end loop;
@@ -287,26 +287,10 @@ begin
   end process irq_generator_sync;
 
   -- IRQ event detector --
-  irq_generator_comb: process(clk_i)
-  begin
-    -- RX interrupt --
-    if (SLINK_RX_FIFO = 1) then
-      -- fire if any RX_FIFO gets full
-      irq.rx_fire <= or_reduce_f(rx_fifo_avail and (not rx_fifo_half_ff));
-    else
-      -- fire if any RX_FIFO.level becomes half-full
-      irq.rx_fire <= or_reduce_f(rx_fifo_half and (not rx_fifo_half_ff));
-    end if;
-  
-    -- TX interrupt --
-    if (SLINK_TX_FIFO = 1) then
-      -- fire if any TX_FIFO gets empty
-      irq.tx_fire <= or_reduce_f(tx_fifo_free and (not tx_fifo_half_ff));
-    else
-      -- fire if any TX_FIFO.level falls below half-full level
-      irq.tx_fire <= or_reduce_f((not tx_fifo_half) and tx_fifo_half_ff);
-    end if;
-  end process irq_generator_comb;
+  -- RX interrupt: fire if any RX_FIFO gets full / fire if any RX_FIFO.level becomes half-full
+  irq.rx_fire <= or_reduce_f(rx_fifo_avail and (not rx_fifo_avail_ff)) when (SLINK_RX_FIFO = 1) else or_reduce_f(rx_fifo_half and (not rx_fifo_half_ff));
+  -- TX interrupt: fire if any TX_FIFO gets empty / fire if any TX_FIFO.level falls below half-full level
+  irq.tx_fire <= or_reduce_f(tx_fifo_free and (not tx_fifo_free_ff)) when (SLINK_TX_FIFO = 1) else or_reduce_f((not tx_fifo_half) and tx_fifo_half_ff);
 
 
   -- Link Select ----------------------------------------------------------------------------
