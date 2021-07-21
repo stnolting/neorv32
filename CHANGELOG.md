@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 21.07.2021 | 1.5.7.15 | :bug: fixed minor bug in SLINK module (signals were missing in sensitivity lists); :warning: simplified NEOLED interrupt system (now triggered if TX FIFO fill level falls below half-full), added option to send LED strobe command ("RESET"), added FIFO status signals to status register, simplified FIFO access logic, added new top generic `IO_NEOLED_TX_FIFO` to configure NEOLED FIFO depth |
 | 18.07.2021 | 1.5.7.14 | exposed new generic `CPU_IPB_ENTRIES` to configure size of CPU instruction prefetch buffer |
 | 18.07.2021 | 1.5.7.13 | clean-up of processor top entity: using more sophisticated default values for all input signals and generics (all generics are "off" by default; input signals use `L` for control lines and `U` for data lines by default) |
 | 14.07.2021 | 1.5.7.12 | reworked SLINK interrupt concept (now using FIFO fill level "half-full" as interrupt condition, see [#122](https://github.com/stnolting/neorv32/issues/122)); added fill level output to processor FIFO component |

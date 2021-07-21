@@ -285,7 +285,7 @@ See section <<_processor_top_entity_generics>> for more information.
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| Hardware version: | `1.5.7.12`
+| Hardware version: | `1.5.7.15`
 | Top entity:       | `rtl/core/neorv32_top.vhd`
 |=======================
 
@@ -293,29 +293,29 @@ See section <<_processor_top_entity_generics>> for more information.
 [cols="<2,<8,>1,>1,>2,>1"]
 [options="header",grid="rows"]
 |=======================
-| Module        | Description                                         | LEs | FFs | MEM bits | DSPs
-| Boot ROM      | Bootloader ROM (4kB)                                |   2 |   1 |    32768 |    0
-| **BUSKEEPER** | Processor-internal bus monitor                      |   9 |   6 |        0 |    0
-| **BUSSWITCH** | Bus mux for CPU instr. and data interface           |  63 |   8 |        0 |    0
+| Module        | Description                                           | LEs | FFs | MEM bits | DSPs
+| Boot ROM      | Bootloader ROM (4kB)                                  |   2 |   1 |    32768 |    0
+| **BUSKEEPER** | Processor-internal bus monitor                        |   9 |   6 |        0 |    0
+| **BUSSWITCH** | Bus mux for CPU instr. and data interface             |  63 |   8 |        0 |    0
 | CFS           | Custom functions subsystemfootnote:[Resource utilization depends on actually implemented custom functionality.] | - | - | - | -
-| DMEM          | Processor-internal data memory (8kB)                |  19 |   2 |    65536 |    0
-| DM            | On-chip debugger - debug module                     | 493 | 240 |        0 |    0
-| DTM           | On-chip debugger - debug transfer module (JTAG)     | 254 | 218 |        0 |    0
-| GPIO          | General purpose input/output ports                  | 134 | 161 |        0 |    0
-| iCACHE        | Instruction cache (1x4 blocks, 256 bytes per block) | 2 21| 156 |     8192 |    0
-| IMEM          | Processor-internal instruction memory (16kB)        |  13 |   2 |   131072 |    0
-| MTIME         | Machine system timer                                | 319 | 167 |        0 |    0
-| NEOLED        | Smart LED Interface (NeoPixel/WS28128) [4xFIFO]     | 342 | 307 |        0 |    0
-| SLINK         | Stream link interface (2xRX, 2xTX, FIFO_depth=1)    | 208 | 181 |        0 |    0
-| PWM           | Pulse_width modulation controller (4 channels)      |  71 |  69 |        0 |    0
-| SPI           | Serial peripheral interface                         | 148 | 127 |        0 |    0
-| **SYSINFO**   | System configuration information memory             |  14 |  11 |        0 |    0
-| TRNG          | True random number generator                        |  89 |  76 |        0 |    0
-| TWI           | Two-wire interface                                  |  77 |  43 |        0 |    0
-| UART0/1       | Universal asynchronous receiver/transmitter 0/1     | 183 | 132 |        0 |    0
-| WDT           | Watchdog timer                                      |  53 |  43 |        0 |    0
-| WISHBONE      | External memory interface                           | 114 | 110 |        0 |    0
-| XIRQ          | External interrupt controller (32 channels)         | 241 | 201 |        0 |    0
+| DMEM          | Processor-internal data memory (8kB)                  |  19 |   2 |    65536 |    0
+| DM            | On-chip debugger - debug module                       | 493 | 240 |        0 |    0
+| DTM           | On-chip debugger - debug transfer module (JTAG)       | 254 | 218 |        0 |    0
+| GPIO          | General purpose input/output ports                    | 134 | 161 |        0 |    0
+| iCACHE        | Instruction cache (1x4 blocks, 256 bytes per block)   | 2 21| 156 |     8192 |    0
+| IMEM          | Processor-internal instruction memory (16kB)          |  13 |   2 |   131072 |    0
+| MTIME         | Machine system timer                                  | 319 | 167 |        0 |    0
+| NEOLED        | Smart LED Interface (NeoPixel/WS28128) [FIFO_depth=1] | 226 | 182 |        0 |    0
+| SLINK         | Stream link interface (2xRX, 2xTX, FIFO_depth=1)      | 208 | 181 |        0 |    0
+| PWM           | Pulse_width modulation controller (4 channels)        |  71 |  69 |        0 |    0
+| SPI           | Serial peripheral interface                           | 148 | 127 |        0 |    0
+| **SYSINFO**   | System configuration information memory               |  14 |  11 |        0 |    0
+| TRNG          | True random number generator                          |  89 |  76 |        0 |    0
+| TWI           | Two-wire interface                                    |  77 |  43 |        0 |    0
+| UART0/1       | Universal asynchronous receiver/transmitter 0/1       | 183 | 132 |        0 |    0
+| WDT           | Watchdog timer                                        |  53 |  43 |        0 |    0
+| WISHBONE      | External memory interface                             | 114 | 110 |        0 |    0
+| XIRQ          | External interrupt controller (32 channels)           | 241 | 201 |        0 |    0
 |=======================
 
 

@@ -382,7 +382,7 @@ more hardware resources). If it is set _false_ the CPU uses a serial shifter tha
 | **CPU_CNT_WIDTH** | _natural_ | 64
 3+| This generic configures the total size of the CPU's `cycle` and `instret` CSRs (low word + high word).
 The maximum value is 64, the minimum value is 0. See
-section <<_machine_counters_and_timers>> for more information. Note: Configurations with <<_cpu_cnt_width>>
+section <<_machine_counters_and_timers>> for more information. Note: configurations with <<_cpu_cnt_width>>
 less than 64 bits do not comply to the RISC-V specs.
 |======
 
@@ -870,6 +870,19 @@ functions subsystem entity. See section <<_custom_functions_subsystem_cfs>> for 
 3+| Implement smart LED interface (WS2812 / NeoPixel(TM)-compatible) (NEOLED) when _true_.
 See section <<_smart_led_interface_neoled>> for more information.
 |======
+
+
+:sectnums!:
+===== _IO_NEOLED_TX_FIFO_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **IO_NEOLED_TX_FIFO** | _natural_ | 1
+3+| TX FIFO depth of the the NEOLED module. Minimal value is 1, maximal value is 32k, has to be a power of two.
+See section <<_smart_led_interface_neoled>> for more information.
+|======
+
 
 
 <<<
