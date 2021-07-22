@@ -69,11 +69,12 @@ CSRs with the following notes ...
 | 0x002   | <<_frm>>        | _CSR_FRM_        | r/w | Floating-point dynamic rounding mode | 
 | 0x003   | <<_fcsr>>       | _CSR_FCSR_       | r/w | Floating-point control and status (`frm` + `fflags`) | 
 6+^| **<<_machine_trap_setup>>**
-| 0x300   | <<_mstatus>>    | _CSR_MSTATUS_    | r/w | Machine status register | `C`
+| 0x300   | <<_mstatus>>    | _CSR_MSTATUS_    | r/w | Machine status register - low word | `C`
 | 0x301   | <<_misa>>       | _CSR_MISA_       | r/- | Machine CPU ISA and extensions | `R`
 | 0x304   | <<_mie>>        | _CSR_MIE_        | r/w | Machine interrupt enable register | `X`
 | 0x305   | <<_mtvec>>      | _CSR_MTVEC_      | r/w | Machine trap-handler base address (for ALL traps) | 
 | 0x306   | <<_mcounteren>> | _CSR_MCOUNTEREN_ | r/w | Machine counter-enable register | `C`
+| 0x310   | <<_mstatush>>   | _CSR_MSTATUSH_   | r/- | Machine status register - high word | `C`
 6+^| **<<_machine_trap_handling>>**
 | 0x340   | <<_mscratch>>   | _CSR_MSCRATCH_   | r/w | Machine scratch register | 
 | 0x341   | <<_mepc>>       | _CSR_MEPC_       | r/w | Machine exception program counter | 
@@ -303,6 +304,25 @@ exception is raised. If user mode in not implemented (_CPU_EXTENSION_RISCV_U_ = 
 | 1     | _CSR_MCOUNTEREN_TM_ | r/w | User-level code is allowed to read `time[h]` CSRs when set
 | 0     | _CSR_MCOUNTEREN_CY_ | r/w | User-level code is allowed to read `instret[h]` CSRs when set
 |=======================
+
+
+:sectnums!:
+===== **`mstatush`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x310 | **Machine status register - high word** | `mstatush`
+3+| Reset value: _0x00000000_
+3+| The `mstatush` CSR is compatible to the RISC-V specifications. In combination with <<_mstatus>> it shows additional
+execution state information. The NEORV32 `mstatush` CSR is read-only and all bits are hardwired to zero.
+|======
+
+[NOTE]
+The NEORV32 `mstatush` CSR is not a physical register. All write access are ignored and all read accesses will always
+return zero. However, any access will not raise an illegal instruction exception. The CSR address is implemented
+in order to comply with the RISC-V privilege architecture specs.
+
 
 
 <<<
