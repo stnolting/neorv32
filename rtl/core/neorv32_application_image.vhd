@@ -11,7 +11,7 @@ use neorv32.neorv32_package.all;
 package neorv32_application_image is
 
   constant application_init_image : mem32_t := (
-    00000000 => x"00000013",
+    00000000 => x"00000037",
     00000001 => x"80002117",
     00000002 => x"ff810113",
     00000003 => x"80000197",

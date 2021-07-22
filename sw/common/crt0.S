@@ -42,7 +42,8 @@ _start:
 .cfi_startproc
 .cfi_undefined ra
 
-  nop
+  lui zero, 0 // dummy instruction that uses no reg-file operands at all
+
 
 // ************************************************************************************************
 // Setup pointers using linker script symbols
