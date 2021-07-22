@@ -1,3 +1,9 @@
+# doit databases
+/.doit.db.*
+
+# python
+__pycache__
+
 # generated application files
 *.bin
 *.o

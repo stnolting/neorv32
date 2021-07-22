@@ -26,9 +26,12 @@ jobs:
     - name: '🧰 Repository Checkout'
       uses: actions/checkout@v2
 
+    - name: '🐍 Install doit'
+      run: pip install doit
+
     - name: '🔧 Generate examples matrix'
       id: generate
-      run: ./.github/generate-job-matrix.py
+      run: doit GenerateExamplesJobMatrix
 
 
   All-in-one:
@@ -48,12 +51,12 @@ jobs:
     - name: '🚧 Generate ${{ matrix.board }} ${{ matrix.design }} bitstream'
       uses: docker://ghcr.io/stnolting/neorv32/impl
       with:
-        args: make -C setups/examples BOARD=${{ matrix.board }} ${{ matrix.design }}
+        args: ex:${{ matrix.board }} -d ${{ matrix.design }} clean bit
 
     - name: '📤 Upload Artifact: ${{ matrix.board }} ${{ matrix.design }} bitstream and reports'
       uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.board }}-${{ matrix.design }}
         path: |
-          setups/examples/${{ matrix.bitstream }}
+          setups/osflow/${{ matrix.bitstream }}
           setups/osflow/${{ matrix.board }}/*-report.txt
