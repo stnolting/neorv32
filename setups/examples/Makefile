@@ -44,6 +44,12 @@ iCESugar:
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
 	  run
 
+TinyFPGA_BX:
+	$(MAKE) \
+	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
+	  NEORV32_MEM_SRC="../../rtl/core/neorv32_imem.vhd devices/ice40/neorv32_dmem.alt.vhd" \
+	  run
+
 UPduino:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(UPduino_REV)_$(DESIGN).bit \

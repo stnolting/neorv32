@@ -1,0 +1,64 @@
+#| TinyFPGA-BX
+
+
+#> Clock (16 MHz)
+set_io --warn-no-port TinyFPGABX_CLK B2
+
+
+#> LED (bottom of the board)
+set_io --warn-no-port TinyFPGABX_LED B3
+
+
+#> Left side of the board
+set_io --warn-no-port TinyFPGABX_PIN_1  A2
+set_io --warn-no-port TinyFPGABX_PIN_2  A1
+set_io --warn-no-port TinyFPGABX_PIN_3  B1
+set_io --warn-no-port TinyFPGABX_PIN_4  C2
+set_io --warn-no-port TinyFPGABX_PIN_5  C1
+set_io --warn-no-port TinyFPGABX_PIN_6  D2
+set_io --warn-no-port TinyFPGABX_PIN_7  D1
+set_io --warn-no-port TinyFPGABX_PIN_8  E2
+set_io --warn-no-port TinyFPGABX_PIN_9  E1
+set_io --warn-no-port TinyFPGABX_PIN_10 G2
+set_io --warn-no-port TinyFPGABX_PIN_11 H1
+set_io --warn-no-port TinyFPGABX_PIN_12 J1
+set_io --warn-no-port TinyFPGABX_PIN_13 H2
+
+
+#> Right side of the board
+set_io --warn-no-port TinyFPGABX_PIN_14 H9
+set_io --warn-no-port TinyFPGABX_PIN_15 D9
+set_io --warn-no-port TinyFPGABX_PIN_16 D8
+set_io --warn-no-port TinyFPGABX_PIN_17 C9
+set_io --warn-no-port TinyFPGABX_PIN_18 A9
+set_io --warn-no-port TinyFPGABX_PIN_19 B8
+set_io --warn-no-port TinyFPGABX_PIN_20 A8
+set_io --warn-no-port TinyFPGABX_PIN_21 B7
+set_io --warn-no-port TinyFPGABX_PIN_22 A7
+set_io --warn-no-port TinyFPGABX_PIN_23 B6
+set_io --warn-no-port TinyFPGABX_PIN_24 A6
+
+
+#> GP I/O (bottom of the board)
+set_io --warn-no-port TinyFPGABX_PIN_25 G1
+set_io --warn-no-port TinyFPGABX_PIN_26 J3
+set_io --warn-no-port TinyFPGABX_PIN_27 J4
+set_io --warn-no-port TinyFPGABX_PIN_28 G9
+set_io --warn-no-port TinyFPGABX_PIN_29 J9
+set_io --warn-no-port TinyFPGABX_PIN_30 E8
+set_io --warn-no-port TinyFPGABX_PIN_31 J2
+
+
+#> SPI flash
+set_io --warn-no-port TinyFPGABX_SPI_SS  F7
+set_io --warn-no-port TinyFPGABX_SPI_SCK G7
+set_io --warn-no-port TinyFPGABX_SPI_IO0 G6
+set_io --warn-no-port TinyFPGABX_SPI_IO1 H7
+set_io --warn-no-port TinyFPGABX_SPI_IO2 H4
+set_io --warn-no-port TinyFPGABX_SPI_IO3 J8
+
+
+#> USB
+set_io --warn-no-port TinyFPGABX_USBP  B4
+set_io --warn-no-port TinyFPGABX_USBN  A4
+set_io --warn-no-port TinyFPGABX_USBPU A3
