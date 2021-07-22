@@ -60,6 +60,8 @@ end entity;
 
 architecture neorv32_testsetup_bootloader_rtl of neorv32_testsetup_bootloader is
 
+  signal con_gpio_o : std_ulogic_vector(63 downto 0);
+
 begin
 
   -- The Core Of The Problem ----------------------------------------------------------------
@@ -86,14 +88,17 @@ begin
   )
   port map (
     -- Global control --
-    clk_i              => clk_i,       -- global clock, rising edge
-    rstn_i             => rstn_i,      -- global reset, low-active, async
+    clk_i       => clk_i,       -- global clock, rising edge
+    rstn_i      => rstn_i,      -- global reset, low-active, async
     -- GPIO (available if IO_GPIO_EN = true) --
-    gpio_o(7 downto 0) => gpio_o,      -- parallel output
+    gpio_o      => con_gpio_o,  -- parallel output
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o        => uart0_txd_o, -- UART0 send data
-    uart0_rxd_i        => uart0_rxd_i  -- UART0 receive data
+    uart0_txd_o => uart0_txd_o, -- UART0 send data
+    uart0_rxd_i => uart0_rxd_i  -- UART0 receive data
   );
+
+  -- GPIO output --
+  gpio_o <= con_gpio_o(7 downto 0);
 
 
 end architecture;
