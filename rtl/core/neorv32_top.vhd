@@ -323,6 +323,12 @@ architecture neorv32_top_rtl of neorv32_top is
   signal slink_rx_irq  : std_ulogic;
   signal xirq_irq      : std_ulogic;
 
+  -- machine (CPU) interrupts --
+  signal x_nm_irq,    nm_irq_ff    : std_ulogic;
+  signal x_mtime_irq, mtime_irq_ff : std_ulogic;
+  signal x_msw_irq,   msw_irq_ff   : std_ulogic;
+  signal x_mext_irq,  mext_irq_ff  : std_ulogic;
+
   -- misc --
   signal mtime_time     : std_ulogic_vector(63 downto 0); -- current system time from MTIME
   signal cpu_sleep      : std_ulogic; -- CPU is in sleep mode when set
@@ -501,10 +507,9 @@ begin
     -- system time input from MTIME --
     time_i         => mtime_time,   -- current system time
     -- non-maskable interrupt --
-    nm_irq_i       => nm_irq_i,     -- NMI
-    -- interrupts (risc-v compliant) --
-    msw_irq_i      => msw_irq_i,    -- machine software interrupt
-    mext_irq_i     => mext_irq_i,   -- machine external interrupt request
+    nm_irq_i       => x_nm_irq,     -- NMI
+    msw_irq_i      => x_msw_irq,    -- machine software interrupt
+    mext_irq_i     => x_mext_irq,   -- machine external interrupt request
     mtime_irq_i    => mtime_irq,    -- machine timer interrupt
     -- fast interrupts (custom) --
     firq_i         => fast_irq,     -- fast interrupt trigger
@@ -520,6 +525,17 @@ begin
   fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
 
+  -- external machine-level (CPU) interrupts --
+  nm_irq_ff    <= nm_irq_i    when rising_edge(clk_i);
+  mtime_irq_ff <= mtime_irq_i when rising_edge(clk_i);
+  msw_irq_ff   <= msw_irq_i   when rising_edge(clk_i);
+  mext_irq_ff  <= mext_irq_i  when rising_edge(clk_i);
+  -- rising-edge detector --
+  x_nm_irq    <= nm_irq_i    and (not nm_irq_ff);
+  x_mtime_irq <= mtime_irq_i and (not mtime_irq_ff);
+  x_msw_irq   <= msw_irq_i   and (not msw_irq_ff);
+  x_mext_irq  <= mext_irq_i  and (not mext_irq_ff);
+
   -- fast interrupts --
   fast_irq(00) <= wdt_irq;       -- HIGHEST PRIORITY - watchdog timeout
   fast_irq(01) <= cfs_irq;       -- custom functions subsystem
@@ -534,7 +550,10 @@ begin
   fast_irq(10) <= slink_rx_irq;  -- SLINK data received
   fast_irq(11) <= slink_tx_irq;  -- SLINK data send
   --
-  fast_irq(15 downto 12) <= (others => '0'); -- reserved
+  fast_irq(12) <= '0'; -- reserved
+  fast_irq(13) <= '0'; -- reserved
+  fast_irq(14) <= '0'; -- reserved
+  fast_irq(15) <= '0'; -- reserved
 
 
   -- CPU Instruction Cache ------------------------------------------------------------------
@@ -966,7 +985,7 @@ begin
   if (IO_MTIME_EN = false) generate
     resp_bus(RESP_MTIME) <= resp_bus_entry_terminate_c;
     mtime_time <= mtime_i; -- use external machine timer time signal
-    mtime_irq  <= mtime_irq_i; -- use external machine timer interrupt
+    mtime_irq  <= x_mtime_irq; -- use external machine timer interrupt
   end generate;
 
 

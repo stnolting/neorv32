@@ -112,10 +112,10 @@ since all control signals have defined level.
 4+^| **<<_processor_interrupts, External Interrupts>>**
 | `xirq_i` | 32 | in | external interrupt requests (up to 32 channels)
 4+^| **<<_processor_interrupts, CPU Interrupts>>**
-| `nm_irq_i`    | 1 | in | non-maskable interrupt
-| `mtime_irq_i` | 1 | in | machine timer interrupt13 (RISC-V)
-| `msw_irq_i`   | 1 | in | machine software interrupt (RISC-V)
-| `mext_irq_i`  | 1 | in | machine external interrupt (RISC-V)
+| `nm_irq_i`    | 1 | in | non-maskable interrupt, rising-edge-triggered
+| `mtime_irq_i` | 1 | in | machine timer interrupt13 (RISC-V), rising-edge-triggered
+| `msw_irq_i`   | 1 | in | machine software interrupt (RISC-V), rising-edge-triggered
+| `mext_irq_i`  | 1 | in | machine external interrupt (RISC-V), rising-edge-triggered
 |=======================
 
 
@@ -896,7 +896,7 @@ The NEORV32 Processor provides several interrupt request signals (IRQs) for cust
 :sectnums:
 ==== RISC-V Standard Interrupts
 
-The processor setup features the standard RISC-V interrupt lines for "machine timer interrupt", "machine
+The processor setup features the standard machine-level RISC-V interrupt lines for "machine timer interrupt", "machine
 software interrupt" and "machine external interrupt". Their usage is defined by the RISC-V privileged architecture
 specifications. However, bare-metal system can also repurpose these interrupts. See CPU section
 <<_traps_exceptions_and_interrupts>> for more information.
@@ -910,8 +910,8 @@ specifications. However, bare-metal system can also repurpose these interrupts. 
 | `mext_irq_i`  | 1 | Machine external interrupt. This interrupt is used for any processor-external interrupt source (like a platform interrupt controller).
 |=======================
 
-[NOTE]
-These IRQs trigger on high-level.
+[IMPORTANT]
+These IRQs trigger on a **rising-edge**.
 
 
 :sectnums:
@@ -928,8 +928,8 @@ The processor features a single non-maskable interrupt source via the `nm_irq_i`
 entity signal that can be used to signal _critical system conditions_. This interrupt source _cannot_ be masked/disabled.
 See CPU section <<_traps_exceptions_and_interrupts>> for more information.
 
-[NOTE]
-This IRQ triggers on high-level.
+[IMPORTANT]
+This IRQ triggers on a **rising-edge**.
 
 
 :sectnums:
@@ -947,7 +947,7 @@ The processor provides an optional interrupt controller for up to 32 user-define
 fast interrupt request so a software handler is required to differentiate / prioritize these interrupts.
 
 [NOTE]
-The trigger for these interrupt can be defines via generics. See section
+The trigger for these interrupt can be defined via generics. See section
 <<_external_interrupt_controller_xirq>> for more information.
 
 
@@ -978,7 +978,7 @@ the according FIRQ priority; 0 = highest, 15 = lowest):
 | 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED buffer TX empty / not full interrupt
 | 10      | <<_stream_link_interface_slink,SLINK>> | RX data received
 | 11      | <<_stream_link_interface_slink,SLINK>> | TX data send
-| 12:15   | - | _reserved_, cannot fire
+| 12:15   | - | _reserved_, will never fire
 |=======================
 
 
