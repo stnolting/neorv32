@@ -45,38 +45,39 @@ use neorv32.neorv32_package.all;
 entity neorv32_sysinfo is
   generic (
     -- General --
-    CLOCK_FREQUENCY      : natural := 0;      -- clock frequency of clk_i in Hz
-    INT_BOOTLOADER_EN            : boolean := true; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
+    INT_BOOTLOADER_EN    : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     USER_CODE            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN      : boolean := true;   -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE    : natural := 8*1024; -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_EN      : boolean; -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE    : natural; -- size of processor-internal instruction memory in bytes
     -- Internal Data memory --
-    MEM_INT_DMEM_EN      : boolean := true;   -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE    : natural := 4*1024; -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_EN      : boolean; -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE    : natural; -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_EN            : boolean := true;   -- implement instruction cache
-    ICACHE_NUM_BLOCKS    : natural := 4;      -- i-cache: number of blocks (min 2), has to be a power of 2
-    ICACHE_BLOCK_SIZE    : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY : natural := 1;      -- i-cache: associativity (min 1), has to be a power 2
+    ICACHE_EN            : boolean; -- implement instruction cache
+    ICACHE_NUM_BLOCKS    : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
+    ICACHE_BLOCK_SIZE    : natural; -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_ASSOCIATIVITY : natural; -- i-cache: associativity (min 1), has to be a power 2
     -- External memory interface --
-    MEM_EXT_EN           : boolean := false;  -- implement external memory bus interface?
+    MEM_EXT_EN           : boolean; -- implement external memory bus interface?
+    MEM_EXT_BIG_ENDIAN   : boolean; -- byte order: true=big-endian, false=little-endian
     -- On-Chip Debugger --
-    ON_CHIP_DEBUGGER_EN  : boolean := false;  -- implement OCD?
+    ON_CHIP_DEBUGGER_EN  : boolean; -- implement OCD?
     -- Processor peripherals --
-    IO_GPIO_EN           : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_EN          : boolean := true;   -- implement machine system timer (MTIME)?
-    IO_UART0_EN          : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART1_EN          : boolean := true;   -- implement secondary universal asynchronous receiver/transmitter (UART1)?
-    IO_SPI_EN            : boolean := true;   -- implement serial peripheral interface (SPI)?
-    IO_TWI_EN            : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_NUM_CH        : natural := 4;      -- number of PWM channels to implement
-    IO_WDT_EN            : boolean := true;   -- implement watch dog timer (WDT)?
-    IO_TRNG_EN           : boolean := true;   -- implement true random number generator (TRNG)?
-    IO_CFS_EN            : boolean := true;   -- implement custom functions subsystem (CFS)?
-    IO_SLINK_EN          : boolean := true;   -- implement stream link interface?
-    IO_NEOLED_EN         : boolean := true;   -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_XIRQ_NUM_CH       : natural := 32      -- number of external interrupt (XIRQ) channels to implement
+    IO_GPIO_EN           : boolean; -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN          : boolean; -- implement machine system timer (MTIME)?
+    IO_UART0_EN          : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART1_EN          : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_SPI_EN            : boolean; -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN            : boolean; -- implement two-wire interface (TWI)?
+    IO_PWM_NUM_CH        : natural; -- number of PWM channels to implement
+    IO_WDT_EN            : boolean; -- implement watch dog timer (WDT)?
+    IO_TRNG_EN           : boolean; -- implement true random number generator (TRNG)?
+    IO_CFS_EN            : boolean; -- implement custom functions subsystem (CFS)?
+    IO_SLINK_EN          : boolean; -- implement stream link interface?
+    IO_NEOLED_EN         : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_XIRQ_NUM_CH       : natural  -- number of external interrupt (XIRQ) channels to implement
   );
   port (
     -- host access --
@@ -129,7 +130,7 @@ begin
   sysinfo_mem(2)(01) <= bool_to_ulogic_f(MEM_EXT_EN);        -- external memory bus interface implemented?
   sysinfo_mem(2)(02) <= bool_to_ulogic_f(MEM_INT_IMEM_EN);   -- processor-internal instruction memory implemented?
   sysinfo_mem(2)(03) <= bool_to_ulogic_f(MEM_INT_DMEM_EN);   -- processor-internal data memory implemented?
-  sysinfo_mem(2)(04) <= bool_to_ulogic_f(wb_big_endian_c);   -- is external memory bus interface using BIG-endian byte-order?
+  sysinfo_mem(2)(04) <= bool_to_ulogic_f(MEM_EXT_BIG_ENDIAN); -- is external memory bus interface using BIG-endian byte-order?
   sysinfo_mem(2)(05) <= bool_to_ulogic_f(ICACHE_EN);         -- processor-internal instruction cache implemented?
   --
   sysinfo_mem(2)(13 downto 06) <= (others => '0'); -- reserved

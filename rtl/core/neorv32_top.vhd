@@ -98,6 +98,9 @@ entity neorv32_top is
     -- External memory interface (WISHBONE) --
     MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              : natural := 255;    -- cycles after a pending bus access auto-terminates (0 = disabled)
+    MEM_EXT_PIPE_MODE            : boolean := false;  -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    MEM_EXT_BIG_ENDIAN           : boolean := false;  -- byte order: true=big-endian, false=little-endian
+    MEM_EXT_ASYNC_RX             : boolean := false;  -- use register buffer for RX data when false
 
     -- Stream link interface (SLINK) --
     SLINK_NUM_TX                 : natural := 0;      -- number of TX links (0..8)
@@ -792,13 +795,16 @@ begin
     neorv32_wishbone_inst: neorv32_wishbone
     generic map (
       -- Internal instruction memory --
-      MEM_INT_IMEM_EN   => MEM_INT_IMEM_EN,   -- implement processor-internal instruction memory
-      MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
+      MEM_INT_IMEM_EN   => MEM_INT_IMEM_EN,    -- implement processor-internal instruction memory
+      MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE,  -- size of processor-internal instruction memory in bytes
       -- Internal data memory --
-      MEM_INT_DMEM_EN   => MEM_INT_DMEM_EN,   -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
-      -- Bus Timeout --
-      BUS_TIMEOUT       => MEM_EXT_TIMEOUT    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
+      MEM_INT_DMEM_EN   => MEM_INT_DMEM_EN,    -- implement processor-internal data memory
+      MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE,  -- size of processor-internal data memory in bytes
+      -- Interface Configuration --
+      BUS_TIMEOUT       => MEM_EXT_TIMEOUT,    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
+      PIPE_MODE         => MEM_EXT_PIPE_MODE,  -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+      BIG_ENDIAN        => MEM_EXT_BIG_ENDIAN, -- byte order: true=big-endian, false=little-endian
+      ASYNC_RX          => MEM_EXT_ASYNC_RX    -- use register buffer for RX data when false
     )
     port map (
       -- global control --
@@ -1368,6 +1374,7 @@ begin
     ICACHE_ASSOCIATIVITY => ICACHE_ASSOCIATIVITY, -- i-cache: associativity (min 1), has to be a power 2
     -- External memory interface --
     MEM_EXT_EN           => MEM_EXT_EN,           -- implement external memory bus interface?
+    MEM_EXT_BIG_ENDIAN   => MEM_EXT_BIG_ENDIAN,   -- byte order: true=big-endian, false=little-endian
     -- On-Chip Debugger --
     ON_CHIP_DEBUGGER_EN  => ON_CHIP_DEBUGGER_EN,  -- implement OCD?
     -- Processor peripherals --
