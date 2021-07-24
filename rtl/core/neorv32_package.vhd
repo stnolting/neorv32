@@ -44,11 +44,6 @@ package neorv32_package is
   constant ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- default instruction memory address space base address
   constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
 
-  -- external bus interface --
-  constant wb_pipe_mode_c  : boolean := false; -- protocol: false=classic/standard wishbone mode (default), true=pipelined wishbone mode
-  constant wb_big_endian_c : boolean := false; -- byte order: true=big-endian, false=little-endian (default)
-  constant wb_rx_buffer_c  : boolean := true;  -- use register buffer for RX data when true (default)
-
   -- CPU core --
   constant cp_timeout_en_c   : boolean := false; -- auto-terminate pending co-processor operations after 256 cycles (for debugging only), default = false
   constant dedicated_reset_c : boolean := false; -- use dedicated hardware reset value for UNCRITICAL registers (FALSE=reset value is irrelevant (might simplify HW), default; TRUE=defined LOW reset value)
@@ -69,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c   : natural := 32; -- native data path width - do not change!
-  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050800"; -- no touchy!
+  constant hw_version_c   : std_ulogic_vector(31 downto 0) := x"01050801"; -- no touchy!
   constant archid_c       : natural := 19; -- official NEORV32 architecture ID - hands off!
   constant rf_r0_is_reg_c : boolean := true; -- x0 is a *physical register* that has to be initialized to zero by the CPU
 
@@ -918,6 +913,9 @@ package neorv32_package is
       -- External memory interface (WISHBONE) --
       MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
       MEM_EXT_TIMEOUT              : natural := 255;    -- cycles after a pending bus access auto-terminates (0 = disabled)
+      MEM_EXT_PIPE_MODE            : boolean := false;  -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+      MEM_EXT_BIG_ENDIAN           : boolean := false;  -- byte order: true=big-endian, false=little-endian
+      MEM_EXT_ASYNC_RX             : boolean := false;  -- use register buffer for RX data when false
       -- Stream link interface (SLINK) --
       SLINK_NUM_TX                 : natural := 0;      -- number of TX links (0..8)
       SLINK_NUM_RX                 : natural := 0;      -- number of TX links (0..8)
@@ -1700,13 +1698,16 @@ package neorv32_package is
   component neorv32_wishbone
     generic (
       -- Internal instruction memory --
-      MEM_INT_IMEM_EN   : boolean := true;   -- implement processor-internal instruction memory
-      MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
+      MEM_INT_IMEM_EN   : boolean; -- implement processor-internal instruction memory
+      MEM_INT_IMEM_SIZE : natural; -- size of processor-internal instruction memory in bytes
       -- Internal data memory --
-      MEM_INT_DMEM_EN   : boolean := true;   -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE : natural := 4*1024; -- size of processor-internal data memory in bytes
-      -- Bus Timeout --
-      BUS_TIMEOUT       : natural := 63      -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
+      MEM_INT_DMEM_EN   : boolean; -- implement processor-internal data memory
+      MEM_INT_DMEM_SIZE : natural; -- size of processor-internal data memory in bytes
+      -- Interface Configuration --
+      BUS_TIMEOUT       : natural; -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
+      PIPE_MODE         : boolean; -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+      BIG_ENDIAN        : boolean; -- byte order: true=big-endian, false=little-endian
+      ASYNC_RX          : boolean  -- use register buffer for RX data when false
     );
     port (
       -- global control --
@@ -1856,38 +1857,39 @@ package neorv32_package is
   component neorv32_sysinfo
     generic (
       -- General --
-      CLOCK_FREQUENCY      : natural := 0;      -- clock frequency of clk_i in Hz
-      INT_BOOTLOADER_EN            : boolean := true; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+      CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
+      INT_BOOTLOADER_EN    : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
       USER_CODE            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
       -- Internal Instruction memory --
-      MEM_INT_IMEM_EN      : boolean := true;   -- implement processor-internal instruction memory
-      MEM_INT_IMEM_SIZE    : natural := 8*1024; -- size of processor-internal instruction memory in bytes
+      MEM_INT_IMEM_EN      : boolean; -- implement processor-internal instruction memory
+      MEM_INT_IMEM_SIZE    : natural; -- size of processor-internal instruction memory in bytes
       -- Internal Data memory --
-      MEM_INT_DMEM_EN      : boolean := true;   -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE    : natural := 4*1024; -- size of processor-internal data memory in bytes
+      MEM_INT_DMEM_EN      : boolean; -- implement processor-internal data memory
+      MEM_INT_DMEM_SIZE    : natural; -- size of processor-internal data memory in bytes
       -- Internal Cache memory --
-      ICACHE_EN            : boolean := true;   -- implement instruction cache
-      ICACHE_NUM_BLOCKS    : natural := 4;      -- i-cache: number of blocks (min 2), has to be a power of 2
-      ICACHE_BLOCK_SIZE    : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
-      ICACHE_ASSOCIATIVITY : natural := 1;      -- i-cache: associativity (min 1), has to be a power 2
+      ICACHE_EN            : boolean; -- implement instruction cache
+      ICACHE_NUM_BLOCKS    : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
+      ICACHE_BLOCK_SIZE    : natural; -- i-cache: block size in bytes (min 4), has to be a power of 2
+      ICACHE_ASSOCIATIVITY : natural; -- i-cache: associativity (min 1), has to be a power 2
       -- External memory interface --
-      MEM_EXT_EN           : boolean := false;  -- implement external memory bus interface?
+      MEM_EXT_EN           : boolean; -- implement external memory bus interface?
+      MEM_EXT_BIG_ENDIAN   : boolean; -- byte order: true=big-endian, false=little-endian
       -- On-Chip Debugger --
-      ON_CHIP_DEBUGGER_EN  : boolean := false;  -- implement OCD?
+      ON_CHIP_DEBUGGER_EN  : boolean; -- implement OCD?
       -- Processor peripherals --
-      IO_GPIO_EN           : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
-      IO_MTIME_EN          : boolean := true;   -- implement machine system timer (MTIME)?
-      IO_UART0_EN          : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
-      IO_UART1_EN          : boolean := true;   -- implement secondary universal asynchronous receiver/transmitter (UART1)?
-      IO_SPI_EN            : boolean := true;   -- implement serial peripheral interface (SPI)?
-      IO_TWI_EN            : boolean := true;   -- implement two-wire interface (TWI)?
-      IO_PWM_NUM_CH        : natural := 4;      -- number of PWM channels to implement
-      IO_WDT_EN            : boolean := true;   -- implement watch dog timer (WDT)?
-      IO_TRNG_EN           : boolean := true;   -- implement true random number generator (TRNG)?
-      IO_CFS_EN            : boolean := true;   -- implement custom functions subsystem (CFS)?
-      IO_SLINK_EN          : boolean := true;   -- implement stream link interface?
-      IO_NEOLED_EN         : boolean := true;   -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-      IO_XIRQ_NUM_CH       : natural := 32      -- number of external interrupt (XIRQ) channels to implement
+      IO_GPIO_EN           : boolean; -- implement general purpose input/output port unit (GPIO)?
+      IO_MTIME_EN          : boolean; -- implement machine system timer (MTIME)?
+      IO_UART0_EN          : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
+      IO_UART1_EN          : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+      IO_SPI_EN            : boolean; -- implement serial peripheral interface (SPI)?
+      IO_TWI_EN            : boolean; -- implement two-wire interface (TWI)?
+      IO_PWM_NUM_CH        : natural; -- number of PWM channels to implement
+      IO_WDT_EN            : boolean; -- implement watch dog timer (WDT)?
+      IO_TRNG_EN           : boolean; -- implement true random number generator (TRNG)?
+      IO_CFS_EN            : boolean; -- implement custom functions subsystem (CFS)?
+      IO_SLINK_EN          : boolean; -- implement stream link interface?
+      IO_NEOLED_EN         : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+      IO_XIRQ_NUM_CH       : natural  -- number of external interrupt (XIRQ) channels to implement
     );
     port (
       -- host access --

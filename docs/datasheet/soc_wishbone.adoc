@@ -20,12 +20,12 @@
 |                          | `wb_err_i`  | bus error (1-bit)
 |                          | `fence_o`   | an executed `fence` instruction
 |                          | `fencei_o`  | an executed `fence.i` instruction
-| Configuration generics:  | _MEM_EXT_EN_ | enable external memory interface when _true_
-|                          | _MEM_EXT_TIMEOUT_ | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
-| Configuration constants in VHDL package file `neorv32_package.vhd`: | `wb_pipe_mode_c` | when _false_ (default): classic/standard Wishbone protocol; when _true_: pipelined Wishbone protocol
-|                                                                     | `wb_big_endian_c` | byte-order (Endianness) of external memory interface; true=BIG, false=little (default)
-|                                                                     | `wb_rx_buffer_c` | enable register buffer for RX path (default)
-| CPU interrupts:          | none             |
+| Configuration generics:  | _MEM_EXT_EN_         | enable external memory interface when _true_
+|                          | _MEM_EXT_TIMEOUT_    | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
+|                          | _MEM_EXT_PIPE_MODE_  | when _false_ (default): classic/standard Wishbone protocol; when _true_: pipelined Wishbone protocol
+|                          | _MEM_EXT_BIG_ENDIAN_ | byte-order (Endianness) of external memory interface; true=BIG, false=little (default)
+|                          | _MEM_EXT_ASYNC_RX_   | use registered RX path when _false_ (default); use async/direct RX path when _true_
+| CPU interrupts:          | none |
 |=======================
 
 The external memory interface uses the Wishbone interface protocol. The external interface port is available
@@ -45,17 +45,10 @@ instruction memory (IMEM) or the (actually enabled/implemented) processor-intern
 **Wishbone Bus Protocol**
 
 The external memory interface either uses **standard** ("classic") Wishbone transactions (default) or
-**pipelined** Wishbone transactions. The transaction protocol is configured via the wb_pipe_mode_c constant
-in the in the main VHDL package file (`rtl/neorv32_package.vhd`):
+**pipelined** Wishbone transactions. The transaction protocol is configured via the _MEM_EXT_PIPE_MODE_ generic:
 
-[source,vhdl]
-----
--- external bus interface --
-constant wb_pipe_mode_c : boolean := false;
-----
-
-When `wb_pipe_mode_c` is disabled, all bus control signals including _STB_ are active (and stable) until the
-transfer is acknowledged/terminated. If `wb_pipe_mode_c` is enabled, all bus control except _STB_ are active
+When _MEM_EXT_PIPE_MODE_ is _false_, all bus control signals including _STB_ are active (and stable) until the
+transfer is acknowledged/terminated. If _MEM_EXT_PIPE_MODE_ is _true_, all bus control except _STB_ are active
 (and stable) until the transfer is acknowledged/terminated. In this case, _STB_ is active only during the very
 first bus clock cycle.
 
@@ -82,14 +75,8 @@ processor-incoming ("RX") signals are fully registered. Thus, any access from th
 via Wishbone requires 2 additional clock cycles (at least; depending on device's latency).
 
 If the attached Wishbone network / peripheral already provides output registers or if the Wishbone network is not relevant
-for timing closure, the default buffering of incoming ("RX") data within the gateway can be disabled.
-The configuration is done via the `wb_rx_buffer_c` constant in the in the main VHDL package file (`rtl/neorv32_package.vhd`):
-
-[source,vhdl]
-----
--- external bus interface --
-constant wb_rx_buffer_c : boolean := false; -- false to implement "async" RX (non-default)
-----
+for timing closure, the default buffering of incoming ("RX") data within the gateway can be disabled by implementing an
+"asynchronous" RX path. The configuration is done via the _MEM_EXT_ASYNC_RX_ generic.
 
 **Bus Access Timeout**
 
@@ -137,15 +124,8 @@ See section <<_bus_interface>> for the CPU bus interface protocol.
 
 The NEORV32 CPU and the Processor setup are *little-endian* architectures. To allow direct connection
 to a big-endian memory system the external bus interface provides an _Endianness configuration_. The
-Endianness (of the external memory interface) can be configured via the global `wb_big_endian_c`
-constant in the main VHDL package file (`rtl/neorv32_package.vhd`). By default, the external memory
-interface uses little-endian byte-order.
-
-[source,vhdl]
-----
--- external bus interface --
-constant wb_big_endian_c : boolean := true;
-----
+Endianness (of the external memory interface) can be configured via the _MEM_EXT_BIG_ENDIAN_ generic.
+By default, the external memory interface uses little-endian byte-order (like the rest of the processor / CPU).
 
 Application software can check the Endianness configuration of the external bus interface via the
 _SYSINFO_FEATURES_MEM_EXT_ENDIAN_ flag in the processor's SYSINFO module (see section

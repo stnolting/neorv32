@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 24.07.2021 | 1.5.8.1 | machine-level interrupts (top entity signals; "external" `mext_irq_i`, "software" `msw_irq_i`, "mtime" `mtime_irq_i` and "non-maskable" `nm_irq_i`) now trigger on rising edges; exposed advanced external bus interface configuration options as new top entity generics (moved from package constants): `MEM_EXT_PIPE_MODE`, `MEM_EXT_BIG_ENDIAN`, `MEM_EXT_ASYNC_RX` |
 | 22.07.2021 | [**:rocket:1.5.8**](https://github.com/stnolting/neorv32/releases/tag/v1.5.8) | **New release** |
 | 22.07.2021 | 1.5.7.16 | (re-)added `mstatush` CSR (all bits are hardwired to zero: writes are ignored, reads will always return zero) - CSR address is assigned to comply with RISC-V priv. arch. spec. 1.12 |
 | 21.07.2021 | 1.5.7.15 | :bug: fixed minor bug in SLINK module (signals were missing in sensitivity lists); :warning: simplified NEOLED interrupt system (now triggered if TX FIFO fill level falls below half-full), added option to send LED strobe command ("RESET"), added FIFO status signals to status register, simplified FIFO access logic, added new top generic `IO_NEOLED_TX_FIFO` to configure NEOLED FIFO depth |
