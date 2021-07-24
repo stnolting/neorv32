@@ -1,5 +1,5 @@
 /* ################################################################################################# */
-/* # << NEORV32 - debugger.S - Execution-Based On-Chip Debugger - Park Loop Code >>                # */
+/* # << NEORV32 - park_loop.S - Execution-Based On-Chip Debugger - Park Loop Code >>               # */
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
@@ -57,7 +57,7 @@
 
 _start:
 
-// BASE + 0: entry for ebreak in debug-mode, halt request, or return from single-stepped instruction
+// BASE + 0: entry for ebreak in debug-mode, halt request or return from single-stepped instruction
 entry_normal:
     jal    zero, parking_loop_start
 
