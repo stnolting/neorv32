@@ -42,7 +42,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_testsetup_bootloader is
   generic (
     -- adapt these for your setup --
-    CLOCK_SPEED       : natural := 100000000; -- clock frequency of clk_i in Hz
+    CLOCK_FREQUENCY   : natural := 100000000; -- clock frequency of clk_i in Hz
     MEM_INT_IMEM_SIZE : natural := 16*1024;   -- size of processor-internal instruction memory in bytes
     MEM_INT_DMEM_SIZE : natural := 8*1024     -- size of processor-internal data memory in bytes
   );
@@ -69,7 +69,7 @@ begin
   neorv32_top_inst: neorv32_top
   generic map (
     -- General --
-    CLOCK_FREQUENCY              => CLOCK_SPEED,       -- clock frequency of clk_i in Hz
+    CLOCK_FREQUENCY              => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
     INT_BOOTLOADER_EN            => true,              -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        => true,              -- implement compressed extension?
