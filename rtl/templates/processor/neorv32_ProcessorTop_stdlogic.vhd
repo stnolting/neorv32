@@ -81,6 +81,9 @@ entity neorv32_ProcessorTop_stdlogic is
     -- External memory interface --
     MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              : natural := 255;    -- cycles after a pending bus access auto-terminates (0 = disabled)
+    MEM_EXT_PIPE_MODE            : boolean := false;  -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    MEM_EXT_BIG_ENDIAN           : boolean := false;  -- byte order: true=big-endian, false=little-endian
+    MEM_EXT_ASYNC_RX             : boolean := false;  -- use register buffer for RX data when false
     -- Stream link interface --
     SLINK_NUM_TX                 : natural := 0;      -- number of TX links (0..8)
     SLINK_NUM_RX                 : natural := 0;      -- number of TX links (0..8)
@@ -300,6 +303,9 @@ begin
     -- External memory interface --
     MEM_EXT_EN                   => MEM_EXT_EN,         -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              => MEM_EXT_TIMEOUT,    -- cycles after a pending bus access auto-terminates (0 = disabled)
+    MEM_EXT_PIPE_MODE            => MEM_EXT_PIPE_MODE,  -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    MEM_EXT_BIG_ENDIAN           => MEM_EXT_BIG_ENDIAN, -- byte order: true=big-endian, false=little-endian
+    MEM_EXT_ASYNC_RX             => MEM_EXT_ASYNC_RX,   -- use register buffer for RX data when false
     -- Stream link interface --
     SLINK_NUM_TX                 => SLINK_NUM_TX,       -- number of TX links (0..8)
     SLINK_NUM_RX                 => SLINK_NUM_RX,       -- number of TX links (0..8)
