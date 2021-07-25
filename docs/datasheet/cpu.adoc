@@ -536,6 +536,10 @@ The "wait for interrupt instruction" `wfi` works like a sleep command. When exec
 halted until a valid interrupt request occurs. To wake up again, the according interrupt source has to
 be enabled via the `mie` CSR and the global interrupt enable flag in `mstatus` has to be set.
 
+[IMPORTANT]
+The `wfi` instruction will raise an illegal instruction exception when executed outside of machine-mode
+and <<_mstatus>> bit `TW` (timeout wait) is set.
+
 
 ==== **`Zifencei`** Instruction Stream Synchronization
 

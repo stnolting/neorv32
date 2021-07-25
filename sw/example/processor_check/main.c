@@ -1291,8 +1291,17 @@ int main() {
   // program wake-up timer
   neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 1000);
 
-  // put CPU into sleep mode
-  asm volatile ("wfi");
+  // clear timeout wait flag
+  tmp_a = neorv32_cpu_csr_read(CSR_MSTATUS);
+  tmp_a &= ~(1 << CSR_MSTATUS_TW);
+  neorv32_cpu_csr_write(CSR_MSTATUS, tmp_a);
+
+  // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+  neorv32_cpu_goto_user_mode();
+  {
+    // only when mstatus.TW = 0 executing WFI in user mode is allowed
+    asm volatile ("wfi"); // put CPU into sleep mode
+  }
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_MTI) {
     test_fail();
