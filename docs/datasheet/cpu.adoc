@@ -623,7 +623,7 @@ N-bit wide counter (split in a high-word 32-bit CSR and a low-word 32-bit CSR), 
 CSR defines the architectural events that lead to an increment of the associated HPM counter.
 
 The cycle, time and instructions-retired counters (`[m]cycle[h]`, `time[h]`, `[m]instret[h]`) are
-mandatory performance monitors on every RISC-V platform and have fixed increment event. For example,
+mandatory performance monitors on every RISC-V platform and have fixed increment events. For example,
 the instructions-retired counter increments with each executed instructions. The actual hardware performance
 monitors are optional and can be configured to increment on arbitrary hardware events. The number of
 available HPM is configured via the top's `HPM_NUM_CNTS` generic at synthesis time. Assigning a zero will exclude
@@ -631,15 +631,19 @@ all HPM logic from the design.
 
 Depending on the configuration, the following additional CSR are available:
 
-* counters: `[m]hpmcounter*[h]` (3..31, depending on configuration)
+* counters: `mhpmcounter*[h]` (3..31, depending on configuration)
 * event configuration: `mhpmevent*` (3..31, depending on configuration)
 
-User-level access to the counter registers `hpmcounter*[h]` can be individually restricted via the `mcounteren` CSR.
+[IMPORTANT]
+The HPM counter CSR can only be accessed in machine-mode. Hence, the according `mcounteren` CSR bits
+are always zero and read-only.
+
 Auto-increment of the HPMs can be individually deactivated via the `mcountinhibit` CSR.
 
-If `HPM_NUM_CNTS` is lower than the maximumg value (=29) the remaining HPMs are not implemented.
-However, accessing their associated CSRs will not raise an illegal instructions exception. These CSR are
-read-only and will always return 0.
+If `HPM_NUM_CNTS` is lower than the maximum value (=29) the remaining HPM CSRs are not implemented and the
+according `mcountinhibit` CSR bits are hardwired to zero.
+However, accessing their associated CSRs will not raise an illegal instruction exception (if in machine mode).
+The according CSRs are read-only and will always return 0.
 
 [NOTE]
 For a list of all allocated HPM-related CSRs and all provided event configurations see section <<_hardware_performance_monitors_hpm>>.
