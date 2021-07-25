@@ -43,11 +43,11 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_bus is
   generic (
-    CPU_EXTENSION_RISCV_A : boolean := false;  -- implement atomic extension?
-    CPU_EXTENSION_RISCV_C : boolean := true;   -- implement compressed extension?
+    CPU_EXTENSION_RISCV_A : boolean; -- implement atomic extension?
+    CPU_EXTENSION_RISCV_C : boolean; -- implement compressed extension?
     -- Physical memory protection (PMP) --
-    PMP_NUM_REGIONS       : natural := 0;      -- number of regions (0..64)
-    PMP_MIN_GRANULARITY   : natural := 64*1024 -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    PMP_NUM_REGIONS       : natural; -- number of regions (0..64)
+    PMP_MIN_GRANULARITY   : natural  -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
   );
   port (
     -- global control --
@@ -118,6 +118,7 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   constant pmp_cfg_x_c  : natural := 2; -- execute permit
   constant pmp_cfg_al_c : natural := 3; -- mode bit low
   constant pmp_cfg_ah_c : natural := 4; -- mode bit high
+  --
   constant pmp_cfg_l_c  : natural := 7; -- locked entry
 
   -- data interface registers --

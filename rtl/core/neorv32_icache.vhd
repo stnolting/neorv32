@@ -44,9 +44,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_icache is
   generic (
-    ICACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
-    ICACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
-    ICACHE_NUM_SETS   : natural := 1   -- associativity / number of sets (1=direct_mapped), has to be a power of 2
+    ICACHE_NUM_BLOCKS : natural; -- number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE : natural; -- block size in bytes (min 4), has to be a power of 2
+    ICACHE_NUM_SETS   : natural  -- associativity / number of sets (1=direct_mapped), has to be a power of 2
   );
   port (
     -- global control --

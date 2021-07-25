@@ -112,10 +112,10 @@ since all control signals have defined level.
 4+^| **<<_processor_interrupts, External Interrupts>>**
 | `xirq_i` | 32 | in | external interrupt requests (up to 32 channels)
 4+^| **<<_processor_interrupts, CPU Interrupts>>**
-| `nm_irq_i`    | 1 | in | non-maskable interrupt
-| `mtime_irq_i` | 1 | in | machine timer interrupt13 (RISC-V)
-| `msw_irq_i`   | 1 | in | machine software interrupt (RISC-V)
-| `mext_irq_i`  | 1 | in | machine external interrupt (RISC-V)
+| `nm_irq_i`    | 1 | in | non-maskable interrupt, rising-edge-triggered
+| `mtime_irq_i` | 1 | in | machine timer interrupt13 (RISC-V), rising-edge-triggered
+| `msw_irq_i`   | 1 | in | machine software interrupt (RISC-V), rising-edge-triggered
+| `mext_irq_i`  | 1 | in | machine external interrupt (RISC-V), rising-edge-triggered
 |=======================
 
 
@@ -606,6 +606,41 @@ See sections <<_address_space>> and <<_processor_external_memory_interface_wishb
 |======
 
 
+:sectnums!:
+===== _MEM_EXT_PIPE_MODE_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **MEM_EXT_PIPE_MODE** | _boolean_ | false
+3+| Use _standard_ ("classic") Wishbone protocol for external bus when _false_; use _pipelined_ Wishbone protocol when _true_.
+|======
+
+
+:sectnums!:
+===== _MEM_EXT_BIG_ENDIAN_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **MEM_EXT_BIG_ENDIAN** | _boolean_ | false
+3+| Use BIG endian interface for external bus when _true_; use little endian interface when _false_.
+|======
+
+
+:sectnums!:
+===== _MEM_EXT_ASYNC_RX_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **MEM_EXT_ASYNC_RX** | _boolen_ | false
+3+| By default, _MEM_EXT_ASYNC_RX_ = _false_ implements a registered read-back path (RX) for incoming data in the bus interface
+in order to shorten the critical path. By setting _MEM_EXT_ASYNC_RX_ = _true_ an _asynchronous_ ("direct") read-back path is
+implemented reducing access latency by one cycle.
+|======
+
+
 // ####################################################################################################################
 :sectnums:
 ==== Stream Link Interface
@@ -896,7 +931,7 @@ The NEORV32 Processor provides several interrupt request signals (IRQs) for cust
 :sectnums:
 ==== RISC-V Standard Interrupts
 
-The processor setup features the standard RISC-V interrupt lines for "machine timer interrupt", "machine
+The processor setup features the standard machine-level RISC-V interrupt lines for "machine timer interrupt", "machine
 software interrupt" and "machine external interrupt". Their usage is defined by the RISC-V privileged architecture
 specifications. However, bare-metal system can also repurpose these interrupts. See CPU section
 <<_traps_exceptions_and_interrupts>> for more information.
@@ -910,8 +945,8 @@ specifications. However, bare-metal system can also repurpose these interrupts. 
 | `mext_irq_i`  | 1 | Machine external interrupt. This interrupt is used for any processor-external interrupt source (like a platform interrupt controller).
 |=======================
 
-[NOTE]
-These IRQs trigger on high-level.
+[IMPORTANT]
+These IRQs trigger on a **rising-edge**.
 
 
 :sectnums:
@@ -928,8 +963,8 @@ The processor features a single non-maskable interrupt source via the `nm_irq_i`
 entity signal that can be used to signal _critical system conditions_. This interrupt source _cannot_ be masked/disabled.
 See CPU section <<_traps_exceptions_and_interrupts>> for more information.
 
-[NOTE]
-This IRQ triggers on high-level.
+[IMPORTANT]
+This IRQ triggers on a **rising-edge**.
 
 
 :sectnums:
@@ -947,7 +982,7 @@ The processor provides an optional interrupt controller for up to 32 user-define
 fast interrupt request so a software handler is required to differentiate / prioritize these interrupts.
 
 [NOTE]
-The trigger for these interrupt can be defines via generics. See section
+The trigger for these interrupt can be defined via generics. See section
 <<_external_interrupt_controller_xirq>> for more information.
 
 
@@ -978,7 +1013,7 @@ the according FIRQ priority; 0 = highest, 15 = lowest):
 | 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED buffer TX empty / not full interrupt
 | 10      | <<_stream_link_interface_slink,SLINK>> | RX data received
 | 11      | <<_stream_link_interface_slink,SLINK>> | TX data send
-| 12:15   | - | _reserved_, cannot fire
+| 12:15   | - | _reserved_, will never fire
 |=======================
 
 

@@ -48,9 +48,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_xirq is
   generic (
-    XIRQ_NUM_CH           : natural := 32; -- number of external IRQ channels (0..32)
-    XIRQ_TRIGGER_TYPE     : std_ulogic_vector(31 downto 0) := (others => '1'); -- trigger type: 0=level, 1=edge
-    XIRQ_TRIGGER_POLARITY : std_ulogic_vector(31 downto 0) := (others => '1')  -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
+    XIRQ_NUM_CH           : natural; -- number of external IRQ channels (0..32)
+    XIRQ_TRIGGER_TYPE     : std_ulogic_vector(31 downto 0); -- trigger type: 0=level, 1=edge
+    XIRQ_TRIGGER_POLARITY : std_ulogic_vector(31 downto 0)  -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
   );
   port (
     -- host access --

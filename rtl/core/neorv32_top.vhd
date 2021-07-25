@@ -98,6 +98,9 @@ entity neorv32_top is
     -- External memory interface (WISHBONE) --
     MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              : natural := 255;    -- cycles after a pending bus access auto-terminates (0 = disabled)
+    MEM_EXT_PIPE_MODE            : boolean := false;  -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    MEM_EXT_BIG_ENDIAN           : boolean := false;  -- byte order: true=big-endian, false=little-endian
+    MEM_EXT_ASYNC_RX             : boolean := false;  -- use register buffer for RX data when false
 
     -- Stream link interface (SLINK) --
     SLINK_NUM_TX                 : natural := 0;      -- number of TX links (0..8)
@@ -323,6 +326,12 @@ architecture neorv32_top_rtl of neorv32_top is
   signal slink_rx_irq  : std_ulogic;
   signal xirq_irq      : std_ulogic;
 
+  -- machine (CPU) interrupts --
+  signal x_nm_irq,    nm_irq_ff    : std_ulogic;
+  signal x_mtime_irq, mtime_irq_ff : std_ulogic;
+  signal x_msw_irq,   msw_irq_ff   : std_ulogic;
+  signal x_mext_irq,  mext_irq_ff  : std_ulogic;
+
   -- misc --
   signal mtime_time     : std_ulogic_vector(63 downto 0); -- current system time from MTIME
   signal cpu_sleep      : std_ulogic; -- CPU is in sleep mode when set
@@ -501,10 +510,9 @@ begin
     -- system time input from MTIME --
     time_i         => mtime_time,   -- current system time
     -- non-maskable interrupt --
-    nm_irq_i       => nm_irq_i,     -- NMI
-    -- interrupts (risc-v compliant) --
-    msw_irq_i      => msw_irq_i,    -- machine software interrupt
-    mext_irq_i     => mext_irq_i,   -- machine external interrupt request
+    nm_irq_i       => x_nm_irq,     -- NMI
+    msw_irq_i      => x_msw_irq,    -- machine software interrupt
+    mext_irq_i     => x_mext_irq,   -- machine external interrupt request
     mtime_irq_i    => mtime_irq,    -- machine timer interrupt
     -- fast interrupts (custom) --
     firq_i         => fast_irq,     -- fast interrupt trigger
@@ -520,6 +528,17 @@ begin
   fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
 
+  -- external machine-level (CPU) interrupts --
+  nm_irq_ff    <= nm_irq_i    when rising_edge(clk_i);
+  mtime_irq_ff <= mtime_irq_i when rising_edge(clk_i);
+  msw_irq_ff   <= msw_irq_i   when rising_edge(clk_i);
+  mext_irq_ff  <= mext_irq_i  when rising_edge(clk_i);
+  -- rising-edge detector --
+  x_nm_irq    <= nm_irq_i    and (not nm_irq_ff);
+  x_mtime_irq <= mtime_irq_i and (not mtime_irq_ff);
+  x_msw_irq   <= msw_irq_i   and (not msw_irq_ff);
+  x_mext_irq  <= mext_irq_i  and (not mext_irq_ff);
+
   -- fast interrupts --
   fast_irq(00) <= wdt_irq;       -- HIGHEST PRIORITY - watchdog timeout
   fast_irq(01) <= cfs_irq;       -- custom functions subsystem
@@ -534,7 +553,10 @@ begin
   fast_irq(10) <= slink_rx_irq;  -- SLINK data received
   fast_irq(11) <= slink_tx_irq;  -- SLINK data send
   --
-  fast_irq(15 downto 12) <= (others => '0'); -- reserved
+  fast_irq(12) <= '0'; -- reserved
+  fast_irq(13) <= '0'; -- reserved
+  fast_irq(14) <= '0'; -- reserved
+  fast_irq(15) <= '0'; -- reserved
 
 
   -- CPU Instruction Cache ------------------------------------------------------------------
@@ -773,13 +795,16 @@ begin
     neorv32_wishbone_inst: neorv32_wishbone
     generic map (
       -- Internal instruction memory --
-      MEM_INT_IMEM_EN   => MEM_INT_IMEM_EN,   -- implement processor-internal instruction memory
-      MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
+      MEM_INT_IMEM_EN   => MEM_INT_IMEM_EN,    -- implement processor-internal instruction memory
+      MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE,  -- size of processor-internal instruction memory in bytes
       -- Internal data memory --
-      MEM_INT_DMEM_EN   => MEM_INT_DMEM_EN,   -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
-      -- Bus Timeout --
-      BUS_TIMEOUT       => MEM_EXT_TIMEOUT    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
+      MEM_INT_DMEM_EN   => MEM_INT_DMEM_EN,    -- implement processor-internal data memory
+      MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE,  -- size of processor-internal data memory in bytes
+      -- Interface Configuration --
+      BUS_TIMEOUT       => MEM_EXT_TIMEOUT,    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
+      PIPE_MODE         => MEM_EXT_PIPE_MODE,  -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+      BIG_ENDIAN        => MEM_EXT_BIG_ENDIAN, -- byte order: true=big-endian, false=little-endian
+      ASYNC_RX          => MEM_EXT_ASYNC_RX    -- use register buffer for RX data when false
     )
     port map (
       -- global control --
@@ -966,7 +991,7 @@ begin
   if (IO_MTIME_EN = false) generate
     resp_bus(RESP_MTIME) <= resp_bus_entry_terminate_c;
     mtime_time <= mtime_i; -- use external machine timer time signal
-    mtime_irq  <= mtime_irq_i; -- use external machine timer interrupt
+    mtime_irq  <= x_mtime_irq; -- use external machine timer interrupt
   end generate;
 
 
@@ -1349,6 +1374,7 @@ begin
     ICACHE_ASSOCIATIVITY => ICACHE_ASSOCIATIVITY, -- i-cache: associativity (min 1), has to be a power 2
     -- External memory interface --
     MEM_EXT_EN           => MEM_EXT_EN,           -- implement external memory bus interface?
+    MEM_EXT_BIG_ENDIAN   => MEM_EXT_BIG_ENDIAN,   -- byte order: true=big-endian, false=little-endian
     -- On-Chip Debugger --
     ON_CHIP_DEBUGGER_EN  => ON_CHIP_DEBUGGER_EN,  -- implement OCD?
     -- Processor peripherals --

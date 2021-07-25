@@ -394,8 +394,6 @@ begin
           dm_ctrl.hart_reset <= '1';
         elsif (dm_reg.reset_ack = '1') then
           dm_ctrl.hart_reset <= '0';
-        elsif (dm_reg.dmcontrol_ndmreset = '1') then
-          dm_ctrl.hart_reset <= '1';
         end if;
 
       end if;

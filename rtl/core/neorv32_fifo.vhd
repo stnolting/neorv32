@@ -41,10 +41,10 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_fifo is
   generic (
-    FIFO_DEPTH : natural := 4;     -- number of fifo entries; has to be a power of two; min 1
-    FIFO_WIDTH : natural := 32;    -- size of data elements in fifo
-    FIFO_RSYNC : boolean := false; -- false = async read; true = sync read
-    FIFO_SAFE  : boolean := false  -- true = allow read/write only if entry available
+    FIFO_DEPTH : natural; -- number of fifo entries; has to be a power of two; min 1
+    FIFO_WIDTH : natural; -- size of data elements in fifo
+    FIFO_RSYNC : boolean; -- false = async read; true = sync read
+    FIFO_SAFE  : boolean  -- true = allow read/write only if entry available
   );
   port (
     -- control --

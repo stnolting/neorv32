@@ -263,7 +263,6 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG ERROR: AXI4-Lite bridge requires STANDARD/CLASSIC Wishbone mode (package.wb_pipe_mode_c = false)." severity error;
   assert not (CPU_EXTENSION_RISCV_A = true) report "NEORV32 PROCESSOR CONFIG WARNING: AXI4-Lite provides NO support for atomic memory operations. LR/SC access via AXI will raise a bus exception." severity warning;
 
 
@@ -311,6 +310,9 @@ begin
     -- External memory interface --
     MEM_EXT_EN                   => true,               -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              => 0,                  -- cycles after a pending bus access auto-terminates (0 = disabled)
+    MEM_EXT_PIPE_MODE            => false,              -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    MEM_EXT_BIG_ENDIAN           => false,              -- byte order: true=big-endian, false=little-endian
+    MEM_EXT_ASYNC_RX             => false,              -- use register buffer for RX data when false
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  => XIRQ_NUM_CH, -- number of external IRQ channels (0..32)
     XIRQ_TRIGGER_TYPE            => XIRQ_TRIGGER_TYPE_INT, -- trigger type: 0=level, 1=edge

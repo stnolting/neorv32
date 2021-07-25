@@ -52,13 +52,13 @@ use neorv32.neorv32_package.all;
 entity neorv32_bus_keeper is
   generic (
     -- External memory interface --
-    MEM_EXT_EN        : boolean := false;  -- implement external memory bus interface?
+    MEM_EXT_EN        : boolean; -- implement external memory bus interface?
     -- Internal instruction memory --
-    MEM_INT_IMEM_EN   : boolean := true;   -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_EN   : boolean; -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE : natural; -- size of processor-internal instruction memory in bytes
     -- Internal data memory --
-    MEM_INT_DMEM_EN   : boolean := true;   -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE : natural := 8*1024  -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_EN   : boolean; -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE : natural  -- size of processor-internal data memory in bytes
   );
   port (
     -- host access --

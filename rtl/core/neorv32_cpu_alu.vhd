@@ -44,12 +44,12 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_alu is
   generic (
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_M     : boolean := false; -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zmmul : boolean := false; -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zfinx : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_M     : boolean; -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_Zmmul : boolean; -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zfinx : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     -- Extension Options --
-    FAST_MUL_EN               : boolean := false; -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN             : boolean := false  -- use barrel shifter for shift operations
+    FAST_MUL_EN               : boolean; -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN             : boolean  -- use barrel shifter for shift operations
   );
   port (
     -- global control --

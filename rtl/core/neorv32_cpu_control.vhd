@@ -48,29 +48,29 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
-    HW_THREAD_ID                 : natural := 0;     -- hardware thread id (32-bit)
-    CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu boot address
-    CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0) := x"00000000"; -- cpu debug mode start address
+    HW_THREAD_ID                 : natural; -- hardware thread id (32-bit)
+    CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
+    CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        : boolean := false; -- implement atomic extension?
-    CPU_EXTENSION_RISCV_C        : boolean := false; -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        : boolean := false; -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean := false; -- implement muld/div extension?
-    CPU_EXTENSION_RISCV_U        : boolean := false; -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zfinx    : boolean := false; -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;  -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zifencei : boolean := false; -- implement instruction stream sync.?
-    CPU_EXTENSION_RISCV_Zmmul    : boolean := false; -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_DEBUG    : boolean := false; -- implement CPU debug mode?
+    CPU_EXTENSION_RISCV_A        : boolean; -- implement atomic extension?
+    CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        : boolean; -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
     -- Extension Options --
-    CPU_CNT_WIDTH                : natural := 64;    -- total width of CPU cycle and instret counters (0..64)
-    CPU_IPB_ENTRIES              : natural := 2;     -- entries is instruction prefetch buffer, has to be a power of 2
+    CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
+    CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2
     -- Physical memory protection (PMP) --
-    PMP_NUM_REGIONS              : natural := 0;     -- number of regions (0..64)
-    PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    PMP_NUM_REGIONS              : natural; -- number of regions (0..64)
+    PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 : natural := 0;     -- number of implemented HPM counters (0..29)
-    HPM_CNT_WIDTH                : natural := 40     -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..29)
+    HPM_CNT_WIDTH                : natural  -- total size of HPM counters (0..64)
   );
   port (
     -- global control --
@@ -197,7 +197,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction execution engine --
   type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, EXECUTE, ALU_WAIT, BRANCH,
-                                  FENCE_OP,LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, SYS_ENV, CSR_ACCESS);
+                                  FENCE_OP, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, SYS_ENV, CSR_ACCESS);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
@@ -615,16 +615,16 @@ begin
 
   -- Immediate Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  imm_gen: process(execute_engine.i_reg, rstn_i, clk_i)
+  imm_gen: process(rstn_i, clk_i)
     variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
-    opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
     if (rstn_i = '0') then
       imm_o <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       if (execute_engine.state = BRANCH) then -- next_PC as immediate for jump-and-link operations (=return address) via ALU.MOV_B
         imm_o <= execute_engine.next_pc;
       else -- "normal" immediate from instruction word
+        opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
         case opcode_v is -- save some bits here, the two LSBs are always "11" for rv32
           when opcode_store_c => -- S-immediate
             imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
@@ -691,7 +691,7 @@ begin
       execute_engine.sleep    <= '0';
       execute_engine.branched <= '1'; -- reset is a branch from "somewhere"
       -- no dedicated RESET required --
-      execute_engine.state_prev <= SYS_WAIT;
+      execute_engine.state_prev <= SYS_WAIT; -- actual reset value is not relevant
       execute_engine.i_reg      <= (others => def_rst_val_c);
       execute_engine.is_ci      <= def_rst_val_c;
       execute_engine.last_pc    <= (others => def_rst_val_c);
@@ -1121,7 +1121,7 @@ begin
 
       when SYS_ENV => -- system environment operation - execution
       -- ------------------------------------------------------------
-        execute_engine.state_nxt <= SYS_WAIT;
+        execute_engine.state_nxt <= SYS_WAIT; -- default
         case decode_aux.sys_env_cmd is -- use a simplified input here (with permanent zeros)
           when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ECALL
           when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- EBREAK
@@ -1172,7 +1172,7 @@ begin
         -- get and store return address (only relevant for jump-and-link operations) --
         ctrl_nxt(ctrl_alu_opb_mux_c)                         <= '1'; -- use IMM as ALU.OPB (next_pc from immediate generator = return address)
         ctrl_nxt(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) <= alu_logic_cmd_movb_c; -- MOVB
-        ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c)   <= alu_func_cmd_logic_c; -- actual ALU operation = MOVB
+        ctrl_nxt(ctrl_alu_func1_c  downto ctrl_alu_func0_c)  <= alu_func_cmd_logic_c; -- actual ALU operation = MOVB
         ctrl_nxt(ctrl_rf_in_mux_c)                           <= '0'; -- RF input = ALU result
         ctrl_nxt(ctrl_rf_wb_en_c)                            <= execute_engine.i_reg(instr_opcode_lsb_c+2); -- valid RF write-back? (is jump-and-link?)
         -- destination address --
@@ -1192,7 +1192,7 @@ begin
         execute_engine.state_nxt <= SYS_WAIT;
         -- FENCE.I --
         if (CPU_EXTENSION_RISCV_Zifencei = true) then
-          execute_engine.pc_mux_sel <= '0'; -- linear next PC = start *new* instruction fetch with next instruction (only relevant for fence.i)
+          execute_engine.pc_mux_sel <= '0'; -- linear next PC = start *new* instruction fetch with next instruction
           if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) then
             execute_engine.pc_we        <= '1'; -- update PC
             execute_engine.branched_nxt <= '1'; -- this is an actual branch
@@ -2081,7 +2081,7 @@ begin
               csr.mcountinhibit_ir  <= csr.wdata(2); -- enable auto-increment of [m]instret[h] counter
               csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- enable auto-increment of [m]hpmcounter*[h] counter
             end if;
-            -- machine performance-monitoring event selector --
+            -- machine performance-monitors event selector --
             if (HPM_NUM_CNTS > 0) then
               for i in 0 to HPM_NUM_CNTS-1 loop
                 if (csr.addr(4 downto 0) = std_ulogic_vector(to_unsigned(i+3, 5))) then
@@ -2538,7 +2538,7 @@ begin
           when csr_mcause_c => -- mcause (r/w): machine trap cause
             csr.rdata(31) <= csr.mcause(csr.mcause'left);
             csr.rdata(csr.mcause'left-1 downto 0) <= csr.mcause(csr.mcause'left-1 downto 0);
-          when csr_mtval_c => -- mtval (r/w): machine bad address or instruction
+          when csr_mtval_c => -- mtval (r/-): machine bad address or instruction
             csr.rdata <= csr.mtval;
           when csr_mip_c => -- mip (r/-): machine interrupt pending
             csr.rdata(03) <= trap_ctrl.irq_buf(interrupt_msw_irq_c);

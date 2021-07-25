@@ -44,7 +44,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_pwm is
   generic (
-    NUM_CHANNELS : natural := 4 -- number of PWM channels (0..60)
+    NUM_CHANNELS : natural -- number of PWM channels (0..60)
   );
   port (
     -- host access --

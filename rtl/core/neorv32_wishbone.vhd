@@ -8,12 +8,6 @@
 -- #                                                                                               #
 -- # Even when all processor-internal memories and IO devices are disabled, the EXTERNAL address   #
 -- # space ENDS at address 0xffff0000 (begin of internal BOOTROM address space).                   #
--- #                                                                                               #
--- # The interface uses registers for ALL OUTGOING AND FOR ALL INCOMING signals. Hence, an access  #
--- # latency of (at least) 2 cycles is added.                                                      #
--- #                                                                                               #
--- # This interface supports classic/standard Wishbone transactions (pkg.wb_pipe_mode_c = false)   #
--- # and also pipelined transactions (pkg.wb_pipe_mode_c = true).                                  #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -56,13 +50,16 @@ use neorv32.neorv32_package.all;
 entity neorv32_wishbone is
   generic (
     -- Internal instruction memory --
-    MEM_INT_IMEM_EN   : boolean := true;   -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE : natural := 8*1024; -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_EN   : boolean; -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE : natural; -- size of processor-internal instruction memory in bytes
     -- Internal data memory --
-    MEM_INT_DMEM_EN   : boolean := true;   -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE : natural := 4*1024; -- size of processor-internal data memory in bytes
-    -- Bus Timeout --
-    BUS_TIMEOUT       : natural := 63      -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
+    MEM_INT_DMEM_EN   : boolean; -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE : natural; -- size of processor-internal data memory in bytes
+    -- Interface Configuration --
+    BUS_TIMEOUT       : natural; -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
+    PIPE_MODE         : boolean; -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    BIG_ENDIAN        : boolean; -- byte order: true=big-endian, false=little-endian
+    ASYNC_RX          : boolean  -- use register buffer for RX data when false
   );
   port (
     -- global control --
@@ -136,19 +133,20 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- protocol --
-  assert not (wb_pipe_mode_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing STANDARD Wishbone protocol." severity note;
-  assert not (wb_pipe_mode_c = true) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing PIEPLINED Wishbone protocol." severity note;
+  assert not (PIPE_MODE = false) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing STANDARD Wishbone protocol." severity note;
+  assert not (PIPE_MODE = true) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing PIEPLINED Wishbone protocol." severity note;
 
   -- bus timeout --
   assert not (BUS_TIMEOUT /= 0) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing auto-timeout (" & integer'image(BUS_TIMEOUT) & " cycles)." severity note;
   assert not (BUS_TIMEOUT  = 0) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing no auto-timeout (can cause permanent CPU stall!)." severity note;
 
   -- endianness --
-  assert not (wb_big_endian_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing LITTLE-endian byte order." severity note;
-  assert not (wb_big_endian_c = true)  report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing BIG-endian byte." severity note;
+  assert not (BIG_ENDIAN = false) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing LITTLE-endian byte order." severity note;
+  assert not (BIG_ENDIAN = true)  report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing BIG-endian byte." severity note;
 
-  -- async RC --
-  assert not (wb_rx_buffer_c = false) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing ASYNC RX path." severity note;
+  -- async RX --
+  assert not (ASYNC_RX = false) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing registered RX path." severity note;
+  assert not (ASYNC_RX = true)  report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing ASYNC RX path." severity note;
 
 
   -- Access Control -------------------------------------------------------------------------
@@ -194,7 +192,7 @@ begin
           -- buffer all outgoing signals --
           ctrl.we  <= wren_i;
           ctrl.adr <= addr_i;
-          if (wb_big_endian_c = true) then -- big-endian
+          if (BIG_ENDIAN = true) then -- big-endian
             ctrl.wdat <= bswap32_f(data_i);
             ctrl.sel  <= bit_rev_f(ben_i);
           else -- little-endian
@@ -236,10 +234,10 @@ begin
   -- host access --
   ack_gated   <= wb_ack_i when (ctrl.state = BUSY) else '0'; -- CPU ack gate for "async" RX
   rdata_gated <= wb_dat_i when (ctrl.state = BUSY) else (others => '0'); -- CPU read data gate for "async" RX
-  rdata       <= ctrl.rdat when (wb_rx_buffer_c = true) else rdata_gated;
+  rdata       <= ctrl.rdat when (ASYNC_RX = false) else rdata_gated;
 
-  data_o <= rdata when (wb_big_endian_c = false) else bswap32_f(rdata); -- endianness conversion
-  ack_o  <= ctrl.ack when (wb_rx_buffer_c = true) else ack_gated;
+  data_o <= rdata when (BIG_ENDIAN = false) else bswap32_f(rdata); -- endianness conversion
+  ack_o  <= ctrl.ack when (ASYNC_RX = false) else ack_gated;
   err_o  <= ctrl.err;
 
   -- wishbone interface --
@@ -253,7 +251,7 @@ begin
   wb_dat_o <= ctrl.wdat;
   wb_we_o  <= ctrl.we;
   wb_sel_o <= ctrl.sel;
-  wb_stb_o <= stb_int when (wb_pipe_mode_c = true) else cyc_int;
+  wb_stb_o <= stb_int when (PIPE_MODE = true) else cyc_int;
   wb_cyc_o <= cyc_int;
 
   stb_int <= '1' when (ctrl.state = BUSY) else '0';

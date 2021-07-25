@@ -299,7 +299,7 @@ exception is raised. If user mode in not implemented (_CPU_EXTENSION_RISCV_U_ = 
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 31:16 | -                   | r/- | User-level code is **not** allowed to read HPM counter
+| 31:16 | `0`                 | r/- | Always zero: user-level code is **not** allowed to read HPM counters
 | 2     | _CSR_MCOUNTEREN_IR_ | r/w | User-level code is allowed to read `cycle[h]` CSRs when set
 | 1     | _CSR_MCOUNTEREN_TM_ | r/w | User-level code is allowed to read `time[h]` CSRs when set
 | 0     | _CSR_MCOUNTEREN_CY_ | r/w | User-level code is allowed to read `instret[h]` CSRs when set
@@ -626,7 +626,7 @@ bits are hardwired to zero.
 | 0x232 -0x33f | **Machine hardware performance monitor event selector** | `mhpmevent3` - `mhpmevent31`
 3+| Reset value: _UNDEFINED_
 3+| The `mhpmevent*` CSRs are compatible to the RISC-V specifications. The configuration of these CSR define
-the architectural events that cause the according `[m]hpmcounter*[h]` counters to increment. All available events are
+the architectural events that cause the according `mhpmcounter*[h]` counters to increment. All available events are
 listed in the table below. If more than one event is selected, the according counter will increment if any of
 the enabled events is observed (logical OR). Note that the counter will only increment by 1 step per clock
 cycle even if more than one event is observed. If the CPU is in sleep mode, no HPM counter will increment
@@ -635,7 +635,7 @@ at all.
 
 The available hardware performance logic is configured via the _HPM_NUM_CNTS_ top entity generic.
 _HPM_NUM_CNTS_ defines the number of implemented performance monitors and thus, the availability of the
-according `[m]hpmcounter*[h]` and `mhpmevent*` CSRs.
+according `mhpmcounter*[h]` and `mhpmevent*` CSRs.
 
 .HPM event selector
 [cols="^1,<3,^1,<5"]
@@ -701,7 +701,7 @@ always zero and are read-only).
 | Bit  | Name [C] | R/W | Event
 | 0    | _CSR_MCOUNTINHIBIT_IR_ | r/w | the `[m]instret[h]` CSRs will auto-increment with each committed instruction when set
 | 2    | _CSR_MCOUNTINHIBIT_IR_ | r/w | the `[m]cycle[h]` CSRs will auto-increment with each clock cycle (if CPU is not in sleep state) when set
-| 3:31 | _CSR_MCOUNTINHIBIT_HPM3_ _: _CSR_MCOUNTINHIBIT_HPM31_ | r/w | the `[m]hpmcount*[h]` CSRs will auto-increment according to the configured `mhpmevent*` selector
+| 3:31 | _CSR_MCOUNTINHIBIT_HPM3_ _: _CSR_MCOUNTINHIBIT_HPM31_ | r/w | the `mhpmcount*[h]` CSRs will auto-increment according to the configured `mhpmevent*` selector
 |=======================
 
 
