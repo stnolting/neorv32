@@ -46,8 +46,8 @@ use neorv32.neorv32_package.all;
 entity neorv32_cfs is
   generic (
     CFS_CONFIG   : std_ulogic_vector(31 downto 0); -- custom CFS configuration generic
-    CFS_IN_SIZE  : positive := 32; -- size of CFS input conduit in bits
-    CFS_OUT_SIZE : positive := 32  -- size of CFS output conduit in bits
+    CFS_IN_SIZE  : positive; -- size of CFS input conduit in bits
+    CFS_OUT_SIZE : positive  -- size of CFS output conduit in bits
   );
   port (
     -- host access --

@@ -45,7 +45,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_shifter is
   generic (
-    FAST_SHIFT_EN : boolean := false -- use barrel shifter for shift operations
+    FAST_SHIFT_EN : boolean -- use barrel shifter for shift operations
   );
   port (
     -- global control --

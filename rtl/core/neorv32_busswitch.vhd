@@ -44,8 +44,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_busswitch is
   generic (
-    PORT_CA_READ_ONLY : boolean := false; -- set if controller port A is read-only
-    PORT_CB_READ_ONLY : boolean := false  -- set if controller port B is read-only
+    PORT_CA_READ_ONLY : boolean; -- set if controller port A is read-only
+    PORT_CB_READ_ONLY : boolean  -- set if controller port B is read-only
   );
   port (
     -- global control --

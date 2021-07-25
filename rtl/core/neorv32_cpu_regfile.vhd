@@ -51,7 +51,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_regfile is
   generic (
-    CPU_EXTENSION_RISCV_E : boolean := false -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_E : boolean -- implement embedded RF extension?
   );
   port (
     -- global control --

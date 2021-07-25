@@ -48,8 +48,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_muldiv is
   generic (
-    FAST_MUL_EN : boolean := false; -- use DSPs for faster multiplication
-    DIVISION_EN : boolean := true   -- implement divider hardware
+    FAST_MUL_EN : boolean; -- use DSPs for faster multiplication
+    DIVISION_EN : boolean  -- implement divider hardware
   );
   port (
     -- global control --

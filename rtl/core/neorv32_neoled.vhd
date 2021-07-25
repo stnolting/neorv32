@@ -56,7 +56,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_neoled is
   generic (
-    FIFO_DEPTH : natural := 1 -- TX FIFO depth (1..32k, power of two)
+    FIFO_DEPTH : natural -- TX FIFO depth (1..32k, power of two)
   );
   port (
     -- host access --

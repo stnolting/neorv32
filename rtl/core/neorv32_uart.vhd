@@ -66,7 +66,7 @@ use std.textio.all; -- obviously only for simulation
 
 entity neorv32_uart is
   generic (
-    UART_PRIMARY : boolean := true -- true = primary UART (UART0), false = secondary UART (UART1)
+    UART_PRIMARY : boolean -- true = primary UART (UART0), false = secondary UART (UART1)
   );
   port (
     -- host access --

@@ -41,9 +41,9 @@ use ieee.numeric_std.all;
 
 entity neorv32_debug_dtm is
   generic (
-    IDCODE_VERSION : std_ulogic_vector(03 downto 0) := x"0"; -- version
-    IDCODE_PARTID  : std_ulogic_vector(15 downto 0) := x"cafe"; -- part number
-    IDCODE_MANID   : std_ulogic_vector(10 downto 0) := "00000000000" -- manufacturer id
+    IDCODE_VERSION : std_ulogic_vector(03 downto 0); -- version
+    IDCODE_PARTID  : std_ulogic_vector(15 downto 0); -- part number
+    IDCODE_MANID   : std_ulogic_vector(10 downto 0)  -- manufacturer id
   );
   port (
     -- global control --

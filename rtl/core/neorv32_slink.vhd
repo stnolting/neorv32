@@ -46,10 +46,10 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_slink is
   generic (
-    SLINK_NUM_TX  : natural := 8; -- number of TX links (0..8)
-    SLINK_NUM_RX  : natural := 8; -- number of TX links (0..8)
-    SLINK_TX_FIFO : natural := 1; -- TX fifo depth, has to be a power of two
-    SLINK_RX_FIFO : natural := 1  -- RX fifo depth, has to be a power of two
+    SLINK_NUM_TX  : natural; -- number of TX links (0..8)
+    SLINK_NUM_RX  : natural; -- number of TX links (0..8)
+    SLINK_TX_FIFO : natural; -- TX fifo depth, has to be a power of two
+    SLINK_RX_FIFO : natural  -- RX fifo depth, has to be a power of two
   );
   port (
     -- host access --
