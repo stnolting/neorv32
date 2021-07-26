@@ -110,7 +110,7 @@ int main() {
  **************************************************************************/
 void blink_led_c(void) {
 
-  neorv32_gpio_port_set(0); // clear gpio output put
+  neorv32_gpio_port_set(0); // clear gpio output
 
   int cnt = 0;
 
