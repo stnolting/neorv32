@@ -1235,7 +1235,8 @@ begin
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load (and SC.W) operations)
         ctrl_nxt(ctrl_rf_in_mux_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
         -- wait for memory response / exception --
-        if (trap_ctrl.env_start = '1') then -- abort if exception
+        if (trap_ctrl.env_start = '1') and -- only abort if BUS EXCEPTION
+           ((trap_ctrl.cause = trap_lma_c) or (trap_ctrl.cause = trap_lbe_c) or (trap_ctrl.cause = trap_sma_c) or (trap_ctrl.cause = trap_sbe_c)) then
           execute_engine.state_nxt <= SYS_WAIT;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           -- data write-back --
