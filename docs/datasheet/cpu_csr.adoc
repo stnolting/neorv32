@@ -185,6 +185,7 @@ The following bits are implemented (all remaining bits are always zero and are r
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
+| 21    | _CSR_MSTATUS_TW_ | r/w | Timeout wait: raise illegal instruction exception if `WFI` instruction is executed outside of M-mode when set
 | 12:11 | _CSR_MSTATUS_MPP_H_ : _CSR_MSTATUS_MPP_L_ | r/w | Previous machine privilege level, 11 = machine (M) level, 00 = user (U) level
 | 7     | _CSR_MSTATUS_MPIE_ | r/w | Previous machine global interrupt enable flag state
 | 3     | _CSR_MSTATUS_MIE_  | r/w | Machine global interrupt enable flag

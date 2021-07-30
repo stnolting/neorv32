@@ -867,7 +867,7 @@ information.
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_CFS_CONFIG** | _std_ulogic_vector(31 downto 0)_ | 0x"UUUUUUUU"
+| **IO_CFS_CONFIG** | _std_ulogic_vector(31 downto 0)_ | 0x"00000000"
 3+| This is a "conduit" generic that can be used to pass user-defined CFS implementation flags to the custom
 functions subsystem entity. See section <<_custom_functions_subsystem_cfs>> for more information.
 |======

@@ -278,6 +278,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mstatus_mie       : std_ulogic; -- mstatus.MIE: global IRQ enable (R/W)
     mstatus_mpie      : std_ulogic; -- mstatus.MPIE: previous global IRQ enable (R/W)
     mstatus_mpp       : std_ulogic_vector(1 downto 0); -- mstatus.MPP: machine previous privilege mode
+    mstatus_tw        : std_ulogic; -- mstatus:TW trigger illegal instruction exception if WFI is executed outside of M-mode
     --
     mie_msie          : std_ulogic; -- mie.MSIE: machine software interrupt enable (R/W)
     mie_meie          : std_ulogic; -- mie.MEIE: machine external interrupt enable (R/W)
@@ -1234,7 +1235,8 @@ begin
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load (and SC.W) operations)
         ctrl_nxt(ctrl_rf_in_mux_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
         -- wait for memory response / exception --
-        if (trap_ctrl.env_start = '1') then -- abort if exception
+        if (trap_ctrl.env_start = '1') and -- only abort if BUS EXCEPTION
+           ((trap_ctrl.cause = trap_lma_c) or (trap_ctrl.cause = trap_lbe_c) or (trap_ctrl.cause = trap_sma_c) or (trap_ctrl.cause = trap_sbe_c)) then
           execute_engine.state_nxt <= SYS_WAIT;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           -- data write-back --
@@ -1376,7 +1378,7 @@ begin
 
   -- Illegal Instruction Check --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  illegal_instruction_check: process(execute_engine, decode_aux, csr_acc_valid, debug_ctrl)
+  illegal_instruction_check: process(execute_engine, decode_aux, csr, csr_acc_valid, debug_ctrl)
     variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     -- illegal instructions are checked in the EXECUTE stage
@@ -1544,7 +1546,7 @@ begin
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ebreak_c) or -- EBREAK 
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_mret_c)   or -- MRET
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = (funct12_dret_c)) and (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) or -- DRET
-               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_wfi_c) then  -- WFI
+               ((execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_wfi_c) and ((csr.priv_m_mode = '1') or (csr.mstatus_tw = '0'))) then -- WFI allowed in M-mode or if mstatus.TW=0
               illegal_instruction <= '0';
             else
               illegal_instruction <= '1';
@@ -1922,6 +1924,7 @@ begin
       csr.mstatus_mie  <= '0';
       csr.mstatus_mpie <= '0';
       csr.mstatus_mpp  <= (others => '0');
+      csr.mstatus_tw   <= '0';
       csr.privilege    <= priv_mode_m_c; -- start in MACHINE mode
       csr.mie_msie     <= def_rst_val_c;
       csr.mie_meie     <= def_rst_val_c;
@@ -1994,6 +1997,7 @@ begin
               if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
                 csr.mstatus_mpp(0) <= csr.wdata(11) or csr.wdata(12);
                 csr.mstatus_mpp(1) <= csr.wdata(11) or csr.wdata(12);
+                csr.mstatus_tw     <= csr.wdata(21);
               end if;
             end if;
             -- R/W: mie - machine interrupt enable register --
@@ -2225,6 +2229,7 @@ begin
       if (CPU_EXTENSION_RISCV_U = false) then
         csr.privilege     <= priv_mode_m_c;
         csr.mstatus_mpp   <= priv_mode_m_c;
+        csr.mstatus_tw    <= '0';
         csr.mcounteren_cy <= '0';
         csr.mcounteren_tm <= '0';
         csr.mcounteren_ir <= '0';
@@ -2501,6 +2506,7 @@ begin
             csr.rdata(07) <= csr.mstatus_mpie; -- MPIE
             csr.rdata(11) <= csr.mstatus_mpp(0); -- MPP: machine previous privilege mode low
             csr.rdata(12) <= csr.mstatus_mpp(1); -- MPP: machine previous privilege mode high
+            csr.rdata(21) <= csr.mstatus_tw; -- TW: WFI timeout wait
           when csr_misa_c => -- misa (r/-): ISA and extensions
             csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
