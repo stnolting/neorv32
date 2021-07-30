@@ -8,7 +8,7 @@ if [ $# -ne 2 ]
 then
   echo "Upload image via serial port (UART) to the NEORV32 bootloader."
   echo "Reset processor before starting the upload."
-  echo "Usage:   [sudo] sh uart_upload.sh <tty> <file>"
+  echo "Usage:   [sudo] sh uart_upload.sh <port> <NEORV32 executable>"
   echo "Example: sh uart_upload.sh /dev/ttyS6 neorv32_exe.bin"
   exit
 fi
@@ -20,7 +20,7 @@ stty -F "$1" 19200 -hup raw -echo -echoe -echok -echoctl -echoke -crtscts cs8 -c
 exec 3<$1                              # redirect serial output to fd 3
   cat <&3 > uart_upload.response.dat & # redirect serial output to file
   PID=$!                               # save pid to kill cat
-    printf "#" > $1                    # send fast/silent upload to serial port
+    printf "u" > $1                    # send upload command to serial port
     sleep 0.5s                         # wait for bootloader response
   kill $PID                            # kill cat process
 
