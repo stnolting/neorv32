@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 30.07.2021 | 1.5.8.5 | fixed minor bug in top entity / AXI4 wrapper (Vivado "issue": generic defaults need a _fixed-size_ intialization value) [#113](https://github.com/stnolting/neorv32/issues/133) |
 | 26.07.2021 | 1.5.8.4 | :bug: **fixed major bug in CPU interrupt system**: interrupts during memory accesses (load/store instruction) terminated those memory accesses violating the crucial "instruction atomicity" concept: traps (interrupts and exceptions) must only intervent _between_ instructions |
 | 25.07.2021 | 1.5.8.3 | added `mstauts.TW` CSR flag (when set executing `wfi` instruction outside of machine-mode will raise an illegal instruction exception); flag is hardwired to zero if user mode is not implemented |
 | 25.07.2021 | 1.5.8.2 | :bug: fixed bug in `E` ISA extension: extension could not be enabled due to missing generic propagation; clean-up of generic defaults: only the processor top entity provides defaults for the configuration generics |
