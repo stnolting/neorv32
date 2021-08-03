@@ -296,12 +296,14 @@ SECTIONS
 
 
   /* Provide symbols for neorv32 crt0 start-up code */
-  PROVIDE(__crt0_stack_begin = (ORIGIN(ram) + LENGTH(ram)) - 4);
-  PROVIDE(__crt0_bss_start   = __bss_start);
-  PROVIDE(__crt0_bss_end     = __BSS_END__);
+  PROVIDE(__ctr0_imem_begin          = ORIGIN(rom));
+  PROVIDE(__ctr0_dmem_begin          = ORIGIN(ram));
+  PROVIDE(__crt0_stack_begin         = (ORIGIN(ram) + LENGTH(ram)) - 4);
+  PROVIDE(__crt0_bss_start           = __bss_start);
+  PROVIDE(__crt0_bss_end             = __BSS_END__);
   PROVIDE(__crt0_copy_data_src_begin = __etext + SIZEOF(.rodata));
   PROVIDE(__crt0_copy_data_dst_begin = __DATA_BEGIN__);
   PROVIDE(__crt0_copy_data_dst_end   = __DATA_BEGIN__ + SIZEOF(.data));
-  PROVIDE(__ctr0_io_space_begin = ORIGIN(iodev));
-  PROVIDE(__ctr0_io_space_end   = ORIGIN(iodev) + LENGTH(iodev));
+  PROVIDE(__ctr0_io_space_begin      = ORIGIN(iodev));
+  PROVIDE(__ctr0_io_space_end        = ORIGIN(iodev) + LENGTH(iodev));
 }
