@@ -102,10 +102,11 @@ CSRs with the following notes ...
 6+^| **<<_machine_counter_setup>>**
 | 0x320   | <<_mcountinhibit>> | _CSR_MCOUNTINHIBIT_ | r/w | Machine counter-enable register |
 6+^| **<<_machine_information_registers>>**
-| 0xf11   | <<_mvendorid>> | _CSR_MVENDORID_ | r/- | Vendor ID |
-| 0xf12   | <<_marchid>>   | _CSR_MARCHID_   | r/- | Architecture ID |
-| 0xf13   | <<_mimpid>>    | _CSR_MIMPID_    | r/- | Machine implementation ID / version |
-| 0xf14   | <<_mhartid>>   | _CSR_MHARTID_   | r/- | Machine thread ID |
+| 0xf11   | <<_mvendorid>>  | _CSR_MVENDORID_  | r/- | Vendor ID |
+| 0xf12   | <<_marchid>>    | _CSR_MARCHID_    | r/- | Architecture ID |
+| 0xf13   | <<_mimpid>>     | _CSR_MIMPID_     | r/- | Machine implementation ID / version |
+| 0xf14   | <<_mhartid>>    | _CSR_MHARTID_    | r/- | Machine thread ID |
+| 0xf15   | <<_mconfigptr>> | _CSR_MCONFIGPTR_ | r/- | Machine configuration pointer register |
 6+^| **<<_neorv32_specific_custom_csrs>>**
 | 0xfc0   | <<_mzext>> | _CSR_MZEXT_ | r/- | Available `Z*` CPU extensions |
 |=======================
@@ -760,6 +761,20 @@ NEORV32 as BCD-coded number (example: `mimpid` = _0x01020312_ â†’ 01.02.03.12 â†
 3+| Reset value: _HW_THREAD_ID_ generic
 3+| The `mhartid` CSR is compatible to the RISC-V specifications. It is read-only and shows the core's hart ID,
 which is assigned via the CPU's _HW_THREAD_ID_ generic.
+|======
+
+
+:sectnums!:
+===== **`mconfigptr`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0xf15 | **Machine configuration pointer register** | `mconfigptr`
+3+| Reset value: `0x00000000`
+3+| This register holds a physical address (if not zero) that points to the base address of an architecture configuration structure.
+Software can traverse this data structure to discover information about the harts, the platform, and their configuration.
+**NOTE: Not assigned yet.**
 |======
 
 

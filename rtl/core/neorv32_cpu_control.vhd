@@ -1358,7 +1358,7 @@ begin
 
 
       -- machine information registers & custom (NEORV32-specific) read-only CSRs --
-      when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mzext_c =>
+      when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mconfigptr_c | csr_mzext_c =>
         csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
 
       -- debug mode CSRs --
@@ -2758,10 +2758,11 @@ begin
 
           -- machine information registers --
           -- --------------------------------------------------------------------
---        when csr_mvendorid_c => csr.rdata <= (others => '0'); -- mvendorid (r/-): vendor ID, implemented but always zero
-          when csr_marchid_c   => csr.rdata(4 downto 0) <= "10011"; -- marchid (r/-): arch ID - official RISC-V open-source arch ID
-          when csr_mimpid_c    => csr.rdata <= hw_version_c; -- mimpid (r/-): implementation ID -- NEORV32 hardware version
-          when csr_mhartid_c   => csr.rdata <= std_ulogic_vector(to_unsigned(HW_THREAD_ID, 32)); -- mhartid (r/-): hardware thread ID
+--        when csr_mvendorid_c  => csr.rdata <= (others => '0'); -- mvendorid (r/-): vendor ID, implemented but always zero
+          when csr_marchid_c    => csr.rdata(4 downto 0) <= "10011"; -- marchid (r/-): arch ID - official RISC-V open-source arch ID
+          when csr_mimpid_c     => csr.rdata <= hw_version_c; -- mimpid (r/-): implementation ID -- NEORV32 hardware version
+          when csr_mhartid_c    => csr.rdata <= std_ulogic_vector(to_unsigned(HW_THREAD_ID, 32)); -- mhartid (r/-): hardware thread ID
+--        when csr_mconfigptr_c => csr.rdata <= (others => '0'); -- mconfigptr (r/-): machine configuration pointer register, implemented but not assigned yet
 
           -- custom machine read-only CSRs --
           -- --------------------------------------------------------------------
