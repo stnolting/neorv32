@@ -516,6 +516,10 @@ software support for the `Zfinx` extension in the upstream GCC RISC-V port yet. 
 intrinsic library is provided to utilize the provided `Zfinx` floating-point extension from C-language
 code (see `sw/example/floating_point_test`).
 
+[IMPORTANT]
+Note that any FPU instruction including all FPU-related CSR accesses will raise an illegal instruction exception
+if the FPU is not enabled via the <<_mstatus>> CSR (`FS` bits).
+
 
 ==== **`Zicsr`** Control and Status Register Access / Privileged Architecture
 

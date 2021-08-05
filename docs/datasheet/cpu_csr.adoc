@@ -86,7 +86,7 @@ CSRs with the following notes ...
 | 0x3b0 .. 0x3ef | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr63`>> | _CSR_PMPADDR0_ .. _CSR_PMPADDR63_ | r/w | Physical memory protection addr. register region 0..63 | 
 6+^| **<<_machine_counters_and_timers>>**
 | 0xb00   | <<_mcycleh, `mcycle`>>      | _CSR_MCYCLE_     | r/w | Machine cycle counter low word | 
-| 0xb02   | <<_minstreth, `_minstret`>> | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter low word | 
+| 0xb02   | <<_minstreth, `minstret`>> | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter low word | 
 | 0xb80   | <<_mcycleh>>                | _CSR_MCYCLE_     | r/w | Machine cycle counter high word | 
 | 0xb82   | <<_minstreth>>              | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter high word |
 | 0xc00   | <<_cycleh, `cycle`>>        | _CSR_CYCLE_      | r/- | Cycle counter low word | 
@@ -186,7 +186,11 @@ The following bits are implemented (all remaining bits are always zero and are r
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
+| 31    | _CSR_MSTATUS_SD_ | r/- | Read-only bit that is set if the FS field is not all-zero (state _OFF_)
 | 21    | _CSR_MSTATUS_TW_ | r/w | Timeout wait: raise illegal instruction exception if `WFI` instruction is executed outside of M-mode when set
+| 14:13 | _CSR_MSTATUS_FS_H_ : _CSR_MSTATUS_FS_L_ | r/w | Floating-point extension state; `00` = _OFF_, `11` = _DIRTY_; writing any other value will
+always set _DIRTY_; if `FS` is _off_ all FPU instructions and FPU CSR access will raise an illegal instruction exception; these status bits are hardwired
+to zero if no FPU is present (_CPU_MZEXT_ZFINX_ = false)
 | 12:11 | _CSR_MSTATUS_MPP_H_ : _CSR_MSTATUS_MPP_L_ | r/w | Previous machine privilege level, 11 = machine (M) level, 00 = user (U) level
 | 7     | _CSR_MSTATUS_MPIE_ | r/w | Previous machine global interrupt enable flag state
 | 3     | _CSR_MSTATUS_MIE_  | r/w | Machine global interrupt enable flag
@@ -712,6 +716,8 @@ always zero and are read-only).
 :sectnums:
 ==== Machine Information Registers
 
+[NOTE]
+All machine information registers can only be accessed in machine mode and are read-only.
 
 :sectnums!:
 ===== **`mvendorid`**
