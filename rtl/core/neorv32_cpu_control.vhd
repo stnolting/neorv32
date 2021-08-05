@@ -275,6 +275,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     wdata             : std_ulogic_vector(data_width_c-1 downto 0); -- csr write data
     rdata             : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
     --
+    mstatus_fs        : std_ulogic; -- mstatus.FS: FPU status (single-bit, only OFF and DIRTY states)
     mstatus_mie       : std_ulogic; -- mstatus.MIE: global IRQ enable (R/W)
     mstatus_mpie      : std_ulogic; -- mstatus.MPIE: previous global IRQ enable (R/W)
     mstatus_mpp       : std_ulogic_vector(1 downto 0); -- mstatus.MPP: machine previous privilege mode
@@ -1105,7 +1106,7 @@ begin
 
           when opcode_fop_c => -- floating-point operations
           -- ------------------------------------------------------------
-            if (CPU_EXTENSION_RISCV_Zfinx = true) and (decode_aux.is_float_op = '1') then
+            if (CPU_EXTENSION_RISCV_Zfinx = true) and (decode_aux.is_float_op = '1') and (csr.mstatus_fs = '1') then
               ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_fpu_c; -- trigger FPU CP
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
               execute_engine.state_nxt                           <= ALU_WAIT;
@@ -1284,8 +1285,8 @@ begin
 
       -- floating-point CSRs --
       when csr_fflags_c | csr_frm_c | csr_fcsr_c =>
-        if (CPU_EXTENSION_RISCV_Zfinx = true) then
-          csr_acc_valid <= '1'; -- full access for everyone if Zfinx extension is implemented
+        if (CPU_EXTENSION_RISCV_Zfinx = true) and (csr.mstatus_fs = '1') then -- FPU implemented and enabled?
+          csr_acc_valid <= '1'; -- full access for everyone
         else
           NULL;
         end if;
@@ -1567,7 +1568,7 @@ begin
 
         when opcode_fop_c => -- floating point operations - single/dual operands
         -- ------------------------------------------------------------
-          if (CPU_EXTENSION_RISCV_Zfinx = true) and -- F extension enabled
+          if (CPU_EXTENSION_RISCV_Zfinx = true) and (csr.mstatus_fs = '1') and -- F extension implemented and enabled
              (execute_engine.i_reg(instr_funct7_lsb_c+1 downto instr_funct7_lsb_c) = float_single_c) and -- single-precision operations only
              (decode_aux.is_float_op = '1') then -- is correct/supported floating-point instruction
             illegal_instruction <= '0';
@@ -1922,6 +1923,7 @@ begin
       csr.we           <= '0';
       --
       csr.mstatus_mie  <= '0';
+      csr.mstatus_fs   <= '0';
       csr.mstatus_mpie <= '0';
       csr.mstatus_mpp  <= (others => '0');
       csr.mstatus_tw   <= '0';
@@ -1998,6 +2000,9 @@ begin
                 csr.mstatus_mpp(0) <= csr.wdata(11) or csr.wdata(12);
                 csr.mstatus_mpp(1) <= csr.wdata(11) or csr.wdata(12);
                 csr.mstatus_tw     <= csr.wdata(21);
+              end if;
+              if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented
+                csr.mstatus_fs <= csr.wdata(14) or csr.wdata(13);
               end if;
             end if;
             -- R/W: mie - machine interrupt enable register --
@@ -2259,8 +2264,9 @@ begin
 
       -- floating-point extension disabled --
       if (CPU_EXTENSION_RISCV_Zfinx = false) then
-        csr.fflags <= (others => '0');
-        csr.frm    <= (others => '0');
+        csr.mstatus_fs <= '0';
+        csr.fflags     <= (others => '0');
+        csr.frm        <= (others => '0');
       end if;
 
       -- debug mode disabled --
@@ -2506,7 +2512,10 @@ begin
             csr.rdata(07) <= csr.mstatus_mpie; -- MPIE
             csr.rdata(11) <= csr.mstatus_mpp(0); -- MPP: machine previous privilege mode low
             csr.rdata(12) <= csr.mstatus_mpp(1); -- MPP: machine previous privilege mode high
+            csr.rdata(13) <= csr.mstatus_fs; -- FS(0): FPU status - OFF or DIRTY
+            csr.rdata(14) <= csr.mstatus_fs; -- FS(1): FPU status - OFF or DIRTY
             csr.rdata(21) <= csr.mstatus_tw; -- TW: WFI timeout wait
+            csr.rdata(31) <= csr.mstatus_fs; -- SD: state dirty (only FPU yet)
           when csr_misa_c => -- misa (r/-): ISA and extensions
             csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
