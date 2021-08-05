@@ -83,6 +83,8 @@ __crt0_cpu_csr_init:
   csrw minstreth, zero
 
 #if defined(__riscv_flen)
+  li   x11, 0x00005000                  // enable FPU (state = initial)
+  csrs mstatus, x11
   csrw fcsr, zero                       // reset floating-point CSR
 #endif
 

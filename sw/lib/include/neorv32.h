@@ -282,7 +282,10 @@ enum NEORV32_CSR_MSTATUS_enum {
   CSR_MSTATUS_MPIE  =  7, /**< CPU mstatus CSR  (7): MPIE - Machine previous interrupt enable bit (r/w) */
   CSR_MSTATUS_MPP_L = 11, /**< CPU mstatus CSR (11): MPP_L - Machine previous privilege mode bit low (r/w) */
   CSR_MSTATUS_MPP_H = 12, /**< CPU mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
-  CSR_MSTATUS_TW    = 21  /**< CPU mstatus CSR (21): TW - timeout wait (trigger illegal instruction exception if WFI is executed outside of m-mode when set) (r/w) */
+  CSR_MSTATUS_FS_L  = 13, /**< CPU mstatus CSR (13): FS_L - FPU state bit low (r/w) */
+  CSR_MSTATUS_FS_H  = 14, /**< CPU mstatus CSR (14): FS_H - FPU state bit high (r/w) */
+  CSR_MSTATUS_TW    = 21, /**< CPU mstatus CSR (21): TW - timeout wait (trigger illegal instruction exception if WFI is executed outside of m-mode when set) (r/w) */
+  CSR_MSTATUS_SD    = 31  /**< CPU mstatus CSR (31): SD - extension's state summary (set = non-clean) (r/-) */
 };
 
 
