@@ -8,7 +8,7 @@ can be found [online at GitHub-pages](https://stnolting.github.io/neorv32).
 
 :information_source: To see a list of all commits between releases run `git log RELEASE_A..RELEASE_B` (example: `v1.4.7.0..v1.4.8.0`).
 
-:information_source: The processor can determine it's version from the `mimpid` CSR (at CSR address 0xf13). A 8x4-bit BCD representation is used.
+:information_source: The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 8x4-bit BCD representation is used.
 Leading zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`. The version number is globally
 defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/neorv32_package.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
 
