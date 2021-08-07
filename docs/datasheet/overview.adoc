@@ -115,6 +115,7 @@ RISC-V compatibility, _customization_ and _ease of use_. See the <<_project_key_
 ** RISC-V compatibility: passes the official architecture tests
 ** base architecture + privileged architecture (optional) + ISA extensions (optional)
 ** rich set of customization options (ISA extensions, design goal: performance / area (/ energy), ...)
+** aims to support <<_full_virtualization>> capabilities (CPU _and_ SoC) to increase execution safety
 ** official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]
 * **NEORV32 Processor (SoC)**: highly-configurable full-scale microcontroller-like processor system
 ** based on the NEORV32 CPU

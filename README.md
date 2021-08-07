@@ -172,8 +172,8 @@ The core implements a little-endian von-Neumann architecture using two pipeline 
 scheme. The CPU supports three privilege levels (`machine` and optional `user` and `debug_mode`), three standard RISC-V machine
 interrupts (`MTI`, `MEI`, `MSI`), a single non-maskable interrupt plus 16 _fast interrupt requests_ as custom extensions.
 It also supports **all** standard RISC-V exceptions (instruction/load/store misaligned address & bus access fault, illegal
-instruction, breakpoint, environment call). As a special "execution safety" extension, _all_ invalid, reserved or
-malformed instructions will raise an exception.
+instruction, breakpoint, environment call)
+(see :books: [_"Full Virtualization"_](https://stnolting.github.io/neorv32/#_full_virtualization)).
 
 
 ### Available ISA Extensions

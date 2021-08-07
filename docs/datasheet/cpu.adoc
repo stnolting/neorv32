@@ -475,7 +475,7 @@ A custom CSR `mzext` is available that can be used to check for implemented `Z*`
 
 [NOTE]
 All undefined/unimplemented/malformed/illegal instructions do raise an illegal instruction exception
-(see <<_execution_safety>>).
+(see <<_full_virtualization>>).
 
 
 ==== **`Zfinx`** Single-Precision Floating-Point Operations
@@ -723,31 +723,25 @@ include::cpu_csr.adoc[]
 <<<
 // ####################################################################################################################
 :sectnums:
-==== Execution Safety
+==== Full Virtualization
 
-The hardware of the NEORV32 CPU was designed for maximum *execution safety*. If the `Zicsr` CPU
-extension is enabled, the core supports **all** traps specified by the official RISC-V specifications (obviously,
-not the ones that are related to yet unimplemented extensions/features). Thus, the CPU provides well-defined
-hardware fall-backs for (nearly) everything that can go wrong. Even if any kind of trap is triggered, the core
-is always in a defined and fully synchronized state throughout the whole architecture (i.e. no need to make
-out-of-order operations undone) that allows predictable execution behavior at any time.
+Just like the RISC-V ISA the NEORV32 aims to support _ maximum virtualization_ capabilities
+on CPU _and_ SoC level. The CPU supports **all** traps specified by the official RISC-V specifications.footnote:[If the `Zicsr` CPU
+extension is enabled (implementing the full set of the privileged architecture).]
+Thus, the CPU provides defined hardware fall-backs for any expected and unexpected situation (e.g. executing an
+malformed instruction word or accessing a not-allocated address). For any kind of trap the core is always in a
+defined and fully synchronized state throughout the whole architecture (i.e. there are no out-of-order operations that
+have to be made undone). This allows predictable execution behavior - and thus, defined operations to resolve the cause
+of the trap - at any time improving overall _execution safety_.
 
-**Core Safety Features**
+**NEORV32-Specific Virtualization Features**
 
-* Due to the acknowledged memory accesses the CPU is _always_ sync with the memory system (no speculative execution / out-of-order states).
-* The CPU supports all bus exceptions including bus access exceptions that are triggered if an
-accessed address does not respond or encounters an internal error during access (which is a rare
-feature in many open-source RISC-V cores).
-* The CPU raises an illegal instruction trap for **all** unimplemented/malformed/illegal instructions (to support _full_ virtualization).
-* If user-level code tries to read from machine-level-only CSRs (like `mstatus`) an illegal instruction
-exception is raised. The results of this operations is always zero (though, machine-level
-code handling this exception can modify the target register of the illegal access-causing
-instruction to allow full virtualization). Illegal write accesses to machine CSRs will not be write any data at all.
-* Illegal user-level memory accesses to protected addresses or address regions (via physical memory
-protection) will not be conducted at all (no actual write and no actual read; prevents triggering of
-memory-mapped devices). Illegal load operations will not return any data (the instruction's
-destination register will not be written at all).
-
+* Due to the acknowledged memory accesses the CPU is _always_ sync with the memory system
+(i.e. there is no speculative execution / no out-of-order states).
+* The CPU supports _all_ RISC-V bus exceptions including access exceptions that are triggered if an
+accessed address does not respond or encounters an internal error during access.
+* The CPU raises an illegal instruction trap for _all_ unimplemented/malformed/illegal instructions.
+* To be continued...
 
 
 <<<
