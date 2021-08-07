@@ -24,6 +24,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 07.09.2021 | 1.5.8.8 | :bug: fixed bug in execution (trapping) of `xRET` instructions: `dret` (return from debug-mode handler) has to raise an illegal instruction exception if executed outside of debug-mode, `mret` (return from machine-mode handler) has to raise an illegal instruction exception if executed in lower-privileged modes (lower than machine-mode) |
 | 05.08.2021 | 1.5.8.7 | added `mstatus.FS` and `mstatus.SD` CSR bits: control the state of the FPU (`Zfinx`) extension; supported states for `mstatus.FS`: `00` = _off, `11` = _dirty_; writing other states will always set _dirty_ state; note that all FPU instructions including FPU CSR access instructions will raise an illegal instrution exception if `mstatus.FS` = _off_ |
 | 03.08.2021 | 1.5.8.6 | :bug: fixed bug in linker script [#134](https://github.com/stnolting/neorv32/issues/134): `.rodata.*` "sub"-sections were missing, caused wrong linking of implicit constants (like strings); added `mconfigptr` CSR (RISC-V priv. ISA spec. v1.12-draft ;read-only): holds a pointer to a platfrom/system configuration structure - not actually used yet |
 | 30.07.2021 | 1.5.8.5 | fixed minor bug in top entity / AXI4 wrapper (Vivado "issue": generic defaults need a _fixed-size_ intialization value) [#113](https://github.com/stnolting/neorv32/issues/133) |

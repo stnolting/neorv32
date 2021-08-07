@@ -1127,10 +1127,15 @@ begin
         case decode_aux.sys_env_cmd is -- use a simplified input here (with permanent zeros)
           when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ECALL
           when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- EBREAK
-          when funct12_mret_c   => execute_engine.state_nxt <= TRAP_EXIT; -- MRET
           when funct12_wfi_c    => execute_engine.sleep_nxt <= '1'; -- WFI
-          when funct12_dret_c   => -- DRET
-            if (CPU_EXTENSION_RISCV_DEBUG = true) then
+          when funct12_mret_c =>  -- MRET
+            if (CPU_EXTENSION_RISCV_U = true) and (csr.priv_m_mode = '1') then -- only allowed in M-mode
+              execute_engine.state_nxt <= TRAP_EXIT;
+            else
+              NULL;
+            end if;
+          when funct12_dret_c => -- DRET
+            if (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') then -- only allowed in debug-mode
               execute_engine.state_nxt <= TRAP_EXIT;
               debug_ctrl.dret <= '1';
             else
@@ -1545,7 +1550,7 @@ begin
                 (execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") then
             if (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ecall_c)  or -- ECALL
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ebreak_c) or -- EBREAK 
-               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_mret_c)   or -- MRET
+               ((execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_mret_c)and (CPU_EXTENSION_RISCV_U = true) and (csr.priv_m_mode = '1')) or -- MRET (only allowed in M-mode)
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = (funct12_dret_c)) and (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) or -- DRET
                ((execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_wfi_c) and ((csr.priv_m_mode = '1') or (csr.mstatus_tw = '0'))) then -- WFI allowed in M-mode or if mstatus.TW=0
               illegal_instruction <= '0';

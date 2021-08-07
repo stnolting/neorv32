@@ -337,6 +337,66 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCOUNTEREN, tmp_a);
 
 
+/*
+  // ----------------------------------------------------------
+  // Execute DRET in M-mode (has to trap!)
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  PRINT_STANDARD("[%i] DRET in M-mode: ", cnt_test);
+
+  // skip if U-mode is not implemented
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_U)) {
+
+    cnt_test++;
+
+    asm volatile("dret");
+
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+  }
+  else {
+    PRINT_STANDARD("skipped (n.a. without U-ext)\n");
+  }
+*/
+
+
+/*
+  // ----------------------------------------------------------
+  // Execute MRET in U-mode (has to trap!)
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  PRINT_STANDARD("[%i] MRET in U-mode: ", cnt_test);
+
+  // skip if U-mode is not implemented
+  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CSR_MZEXT_DEBUGMODE)) {
+
+    cnt_test++;
+
+    // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+    neorv32_cpu_goto_user_mode();
+    {
+      asm volatile("mret");
+    }
+
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+  }
+  else {
+    PRINT_STANDARD("skipped (n.a. without U-ext)\n");
+  }
+*/
+
+
   // ----------------------------------------------------------
   // Test performance counter: setup as many events and counter as feasible
   // ----------------------------------------------------------
