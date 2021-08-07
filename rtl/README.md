@@ -11,7 +11,7 @@ When creating a new synthesis/simulation project make sure that all `*.vhd` file
 ### [`test_setups`](https://github.com/stnolting/neorv32/tree/master/rtl/test_setups`)
 
 Minimal test setups (FPGA- and board-independent) for the processor. See the
-[README](https://github.com/stnolting/neorv32/tree/master/rtl/test_setups`)
+[README](https://github.com/stnolting/neorv32/tree/master/rtl/test_setups)
 in that folder for more information. Note that these test setups are used in the
 [NEORV32 USer Guide](https://stnolting.github.io/neorv32/ug).
 
