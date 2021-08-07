@@ -48,12 +48,12 @@ jobs:
     - name: '🚧 Generate ${{ matrix.board }} ${{ matrix.design }} bitstream'
       uses: docker://ghcr.io/stnolting/neorv32/impl
       with:
-        args: make -C setups/examples BOARD=${{ matrix.board }} ${{ matrix.design }}
+        args: make -C setups/osflow BOARD=${{ matrix.board }} ${{ matrix.design }}
 
     - name: '📤 Upload Artifact: ${{ matrix.board }} ${{ matrix.design }} bitstream and reports'
       uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.board }}-${{ matrix.design }}
         path: |
-          setups/examples/${{ matrix.bitstream }}
+          setups/osflow/${{ matrix.bitstream }}
           setups/osflow/${{ matrix.board }}/*-report.txt
