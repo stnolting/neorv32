@@ -157,7 +157,8 @@ neorv32            - Project home folder
 │├core             - Core sources of the CPU & SoC
 │└templates        - Alternate/additional top entities & wrappers
 │ ├processor       - Processor SoC wrappers
-│ └system          - System wrappers for advanced connectivity
+│ ├system          - System wrappers for advanced connectivity
+│ └test_setups     - Minimal test setup "SoCs" used in the User Guide
 │
 ├setups            - Example setups for various FPGAs, boards and toolchains
 │└...
