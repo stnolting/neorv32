@@ -3,15 +3,17 @@ EXAMPLES := ../examples
 TEMPLATES := ../../rtl/templates
 MV := mv
 
+.DEFAULT_GOAL := help
+
 TASK := clean $(BITSTREAM)
 
 FOMU_REV ?= pvt
 OrangeCrab_REV ?= r02-25F
 UPduino_REV ?= v3
 
-ifndef BOARD
-$(error BOARD needs to be set to 'Fomu', 'iCESugar', 'UPDuino' or 'OrangeCrab' !)
-endif
+#ifndef BOARD
+#$(error BOARD needs to be set to 'Fomu', 'iCESugar', 'UPDuino' or 'OrangeCrab' !)
+#endif
 
 run:
 	$(eval TASK ?= clean $(BITSTREAM))
@@ -81,3 +83,10 @@ MixedLanguage:
 	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_Minimal*.vhd \
 	  NEORV32_VERILOG_SRC='devices/ice40/sb_ice40_components.v ../examples/neorv32_Fomu_MixedLanguage_ClkGen.v' \
 	  $(BOARD)
+
+# Help
+
+help:
+	@echo "Open-Source Synthesis, P&R, Routing and Bitstream Generation"
+	@echo "Usage:   make BOARD=<fpga board> <board top>"
+	@echo "Example: make BOARD=Fomu Minimal"
