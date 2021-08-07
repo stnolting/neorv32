@@ -6,6 +6,7 @@ open source toolchains. Synthesis based on [ghdl-yosys](https://github.com/ghdl/
 ## Folder Structure
 
 * `boards`: board-specific makefiles for generating bitstreams
+* `board_top`: board-specific top entities (board wrappers; may include FPGA-specific modules)
 * `constraints`: physical constraints (mainly pin mappings)
 * `devices`: FPGA-specific primitives and optimized processor modules (like memories)
 
