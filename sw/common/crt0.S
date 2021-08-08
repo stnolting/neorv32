@@ -42,7 +42,12 @@ _start:
 .cfi_startproc
 .cfi_undefined ra
 
-  lui zero, 0 // dummy instruction that uses no reg-file operands at all
+
+// ************************************************************************************************
+// This is the very first instruction that is executed after hardware reset. It ensures that x0 is
+// written at least once - the CPU HW will ensure it is always set to zero on any write access.
+// ************************************************************************************************
+  lui zero, 0 // "dummy" instruction that uses no reg-file input operands at all
 
 
 // ************************************************************************************************

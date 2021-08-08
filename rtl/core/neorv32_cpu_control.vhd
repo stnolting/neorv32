@@ -920,14 +920,8 @@ begin
     -- state machine --
     case execute_engine.state is
 
-      when SYS_WAIT => -- System delay cycle (used to wait for side effects to kick in) [and to init r0 with zero if it is a physical register]
+      when SYS_WAIT => -- System delay cycle (to let side effects kick in)
       -- ------------------------------------------------------------
-        -- set reg_file's r0 to zero --
-        if (rf_r0_is_reg_c = true) then -- is r0 implemented as physical register, which has to be set to zero?
-          ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_csrr_c; -- hacky! CSR read-access without a valid CSR-read -> results zero
-          ctrl_nxt(ctrl_rf_r0_we_c)                          <= '1'; -- force RF write access and force rd=r0
-        end if;
-        --
         execute_engine.state_nxt <= DISPATCH;
 
 
