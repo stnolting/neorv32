@@ -79,7 +79,7 @@ MixedLanguage:
 	$(MAKE) \
 	  DESIGN=$@ \
 	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_Minimal*.vhd \
-	  NEORV32_VERILOG_SRC='devices/ice40/sb_ice40_components.v ../board_tops/neorv32_Fomu_MixedLanguage_ClkGen.v' \
+	  NEORV32_VERILOG_SRC='devices/ice40/sb_ice40_components.v board_tops/neorv32_Fomu_MixedLanguage_ClkGen.v' \
 	  $(BOARD)
 
 # Help
