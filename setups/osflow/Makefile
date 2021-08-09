@@ -1,5 +1,3 @@
-OSFLOW := .
-BOARD_TOPS := ./board_tops
 TEMPLATES := ../../rtl/templates
 MV := mv
 
@@ -17,14 +15,14 @@ UPduino_REV ?= v3
 
 run:
 	$(eval TASK ?= clean $(BITSTREAM))
-	$(MAKE) -C $(OSFLOW) -f common.mk \
-	  BOARD_SRC=$(BOARD_TOPS)/neorv32_$(BOARD)_BoardTop_$(DESIGN).vhd \
+	$(MAKE) -f common.mk \
+	  BOARD_SRC=./board_tops/neorv32_$(BOARD)_BoardTop_$(DESIGN).vhd \
 	  TOP=neorv32_$(BOARD)_BoardTop_$(DESIGN) \
 	  ID=$(DESIGN) \
 	  $(TASK)
 	IMPL="$${BITSTREAM%%.*}"; for item in ".bit" ".svf"; do \
-	  if [ -f "$(OSFLOW)/$$IMPL$$item" ]; then \
-	    $(MV) "$(OSFLOW)/$$IMPL$$item" ./; \
+	  if [ -f "./$$IMPL$$item" ]; then \
+	    $(MV) "./$$IMPL$$item" ./; \
 	  fi \
 	done
 
