@@ -1,0 +1,73 @@
+# -----------------------------------------------------------------------------
+#- Alhambra II constraint file (.pcf)
+#- By Carlos Dominguez
+#- May - 2021
+#- GPL license
+#- Repo: https://github.com/zipotron/neorv32
+# -----------------------------------------------------------------------------
+
+# --- FTDI 1: (Serial port)
+set_io --warn-no-port AlhambraII_TX  61  # output (ser-tx)
+set_io --warn-no-port AlhambraII_RX  62  # input (ser-rx)
+
+#> Clock (12 MHz)
+set_io --warn-no-port AlhambraII_CLK 49
+
+
+#> Tri-colour LED
+set_io --warn-no-port AlhambraII_LED_G 41
+set_io --warn-no-port AlhambraII_LED_R 38
+set_io --warn-no-port AlhambraII_LED_B 39
+
+
+#> USB
+set_io --warn-no-port AlhambraII_USB_DN     9
+set_io --warn-no-port AlhambraII_USB_DP    10
+set_io --warn-no-port AlhambraII_USB_DP_PU 11
+
+
+#> PMOD 1
+set_io --warn-no-port AlhambraII_PMOD1A_0 10
+set_io --warn-no-port AlhambraII_PMOD1A_1  6
+set_io --warn-no-port AlhambraII_PMOD1A_2  3
+set_io --warn-no-port AlhambraII_PMOD1A_3 48
+set_io --warn-no-port AlhambraII_PMOD1B_0 47
+set_io --warn-no-port AlhambraII_PMOD1B_1  2
+set_io --warn-no-port AlhambraII_PMOD1B_2  4
+set_io --warn-no-port AlhambraII_PMOD1B_3  9
+
+
+#> PMOD 2
+set_io --warn-no-port AlhambraII_PMOD2A_0 46
+set_io --warn-no-port AlhambraII_PMOD2A_1 44
+set_io --warn-no-port AlhambraII_PMOD2A_2 42
+set_io --warn-no-port AlhambraII_PMOD2A_3 37
+set_io --warn-no-port AlhambraII_PMOD2B_0 36
+set_io --warn-no-port AlhambraII_PMOD2B_1 38
+set_io --warn-no-port AlhambraII_PMOD2B_2 43
+set_io --warn-no-port AlhambraII_PMOD2B_3 45
+
+
+#> PMOD 3
+set_io --warn-no-port AlhambraII_PMOD3A_0 34
+set_io --warn-no-port AlhambraII_PMOD3A_1 31
+set_io --warn-no-port AlhambraII_PMOD3A_2 27
+set_io --warn-no-port AlhambraII_PMOD3A_3 25
+set_io --warn-no-port AlhambraII_PMOD3B_0 23
+set_io --warn-no-port AlhambraII_PMOD3B_1 26
+set_io --warn-no-port AlhambraII_PMOD3B_2 28
+set_io --warn-no-port AlhambraII_PMOD3B_3 32
+
+
+#> PMOD 4 | Switches
+set_io --warn-no-port AlhambraII_PMOD4_0 21
+set_io --warn-no-port AlhambraII_PMOD4_1 20
+set_io --warn-no-port AlhambraII_PMOD4_2 19
+set_io --warn-no-port AlhambraII_PMOD4_3 18
+
+
+#> SPI
+set_io --warn-no-port AlhambraII_SPI_SS   71
+set_io --warn-no-port AlhambraII_SPI_SCK  70
+set_io --warn-no-port AlhambraII_SPI_MOSI 67
+set_io --warn-no-port AlhambraII_SPI_MISO 68

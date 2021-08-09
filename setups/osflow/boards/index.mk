@@ -1,3 +1,5 @@
+GHDL_PLUGIN_MODULE ?= ghdl.so
+
 PCF_PATH ?= constraints
 
 
@@ -72,5 +74,26 @@ OrangeCrab_REV ?= r02-25F
 CONSTRAINTS ?= $(PCF_PATH)/$(BOARD).lpf
 PNRFLAGS    ?= --25k --package CSFBGA285 --ignore-loops --timing-allow-fail
 IMPL        ?= neorv32_$(BOARD)_$(OrangeCrab_REV)_$(ID)
+
+endif
+
+ifeq ($(BOARD),AlhambraII)
+$(info Setting constraints and implementation args for BOARD AlhambraII)
+
+CONSTRAINTS ?= $(PCF_PATH)/$(BOARD).pcf
+PNRFLAGS    ?= --hx8k --package tq144:4k --ignore-loops --timing-allow-fail
+IMPL        ?= neorv32_$(BOARD)_$(ID)
+
+endif
+
+
+ifeq ($(BOARD),ULX3S)
+$(info Setting constraints and implementation args for BOARD ULX3S)
+
+DEVICE_SERIES = ecp5
+
+CONSTRAINTS ?= $(PCF_PATH)/$(BOARD).lpf
+PNRFLAGS    ?= --85k --freq 25 --package CABGA381 --textcfg --ignore-loops --timing-allow-fail
+IMPL        ?= neorv32_$(BOARD)_$(ID)
 
 endif
