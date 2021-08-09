@@ -134,6 +134,13 @@ bootloader to upload new software executables. Use this setup if your board prov
 .NEORV32 "hello world" test setup (`rtl/test_setups/neorv32_testsetup_bootloader.vhd`)
 image::neorv32_test_setup.png[align=center]
 
+.External Clock Source
+[NOTE]
+These test setups are intended to be directly used as **design top entity**. Of course you can also instantiate them
+into another design unit. If your FPGA board only provides _very fast_ external clock sources (like on the FOMU board)
+you might need to add clock management components (PLLs, DCMs, MMCMs, ...) to the test setup or to the according top entity
+if you instantiate one of the test setups.
+
 [start=1]
 . Create a new project with your FPGA EDA tool of choice.
 . Add all VHDL files from the project's `rtl/core` folder to your project.
