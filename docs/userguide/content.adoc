@@ -211,12 +211,18 @@ corresponding test setup:
   );
 ----
 
+.Signal Polarity
+[NOTE]
+If your FPGA board has inverse polarity for certain input/output you can add `not` gates. Example: The reset signal
+`rstn_i` is low-active by default; the LEDs connected to `gpio_o` high-active by default.
+You can do this in your board top if you instantiate the test setup,
+or _inside_ the test setup if this is your top entity (low-active LEDs example: `gpio_o <= NOT con_gpio_o(7 downto 0);`).
+
 [start=10]
 . Attach the clock input `clk_i` to your clock source and connect the reset line `rstn_i` to a button of
 your FPGA board. Check whether it is low-active or high-active – the reset signal of the processor is
 **low-active**, so maybe you need to invert the input signal.
-. If possible, connected at least bit `0` of the GPIO output port `gpio_o` to a high-active LED (invert
-the signal when your LEDs are low-active).
+. If possible, connected _at least_ bit `0` of the GPIO output port `gpio_o` to a LED (see "Signal Polarity" note above).
 . Finally, if your are using the UART-based test setup (`neorv32_testsetup_bootloader.vhd`)
 connect the UART communication signals `uart0_txd_o` and `uart0_rxd_i` to the host interface (e.g. USB-UART converter).
 . Perform the project HDL compilation (synthesis, mapping, bitstream generation).
