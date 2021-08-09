@@ -37,8 +37,7 @@ The setup uses the [indidrect boot](https://stnolting.github.io/neorv32/#_indire
 configuration, so software applications are "installed" directly into the
 processor-internal IMEM during synthesis.
 
-:books: See User Guide section
-[_Uploading and Starting of a Binary Executable Image via UART_](https://stnolting.github.io/neorv32/ug/#_uploading_and_starting_of_a_binary_executable_image_via_uart).
+:books: See User Guide section [_Installing an Executable Directly Into Memory_](https://stnolting.github.io/neorv32/ug/#_installing_an_executable_directly_into_memory).
 
 
 ### [`neorv32_test_setup_bootloader.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/test_setups/neorv32_test_setup_bootloader.vhd)
@@ -50,4 +49,5 @@ module for generating timer interrupts and UART0 to interface with the bootloade
 The setup uses the [direct boot](https://stnolting.github.io/neorv32/#_direct_boot)
 configuration, so software applications can be uploaded and run at any timer via a serial terminal.
 
-:books: See User Guide section [_Installing an Executable Directly Into Memory_](https://stnolting.github.io/neorv32/ug/#_installing_an_executable_directly_into_memory).
+:books: See User Guide section
+[_Uploading and Starting of a Binary Executable Image via UART_](https://stnolting.github.io/neorv32/ug/#_uploading_and_starting_of_a_binary_executable_image_via_uart).
