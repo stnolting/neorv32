@@ -6,7 +6,8 @@ The latest release is [![release](https://img.shields.io/github/v/release/stnolt
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases). The most recent version of the *NEORV32 data sheet*
 can be found [online at GitHub-pages](https://stnolting.github.io/neorv32).
 
-:information_source: To see a list of all commits between releases run `git log RELEASE_A..RELEASE_B` (example: `v1.4.7.0..v1.4.8.0`).
+:information_source: Starting with version `1.5.7` this project uses [semantic versioning](https://semver.org) syntax for official releases.
+The _hardware version identifier_ uses an addtional custom version element (i.e. `MAJOR.MINOR.PATCH.individual`) to track individual changes.
 
 :information_source: The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 8x4-bit BCD representation is used.
 Leading zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`. The version number is globally
