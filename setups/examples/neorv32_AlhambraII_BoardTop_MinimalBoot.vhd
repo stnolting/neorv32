@@ -41,6 +41,8 @@ use iCE40.components.all; -- for device primitives and macros
 
 entity neorv32_AlhambraII_BoardTop_MinimalBoot is
   port (
+    -- external clock (12 MHz)
+    AlhambraII_CLK : in std_logic;
     -- LED outputs
     AlhambraII_LED_R : out std_logic;
     AlhambraII_LED_G : out std_logic;
@@ -60,9 +62,6 @@ architecture neorv32_AlhambraII_BoardTop_MinimalBoot_rtl of neorv32_AlhambraII_B
   -- configuration --
   constant f_clock_c : natural := 18000000; -- PLL output clock frequency in Hz
 
-  -- On-chip oscillator --
-  signal hf_osc_clk : std_logic;
-
   -- Globals
   signal pll_rstn : std_logic;
   signal pll_clk  : std_logic;
@@ -80,17 +79,6 @@ begin
   AlhambraII_USB_DN    <= '0';
   AlhambraII_USB_DP_PU <= '0';
 
-  -- On-Chip HF Oscillator ------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  HSOSC_inst : SB_HFOSC
-  generic map (
-    CLKHF_DIV => "0b10" -- 12 MHz
-  )
-  port map (
-    CLKHFPU => '1',
-    CLKHFEN => '1',
-    CLKHF   => hf_osc_clk
-  );
 
   -- System PLL -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -114,7 +102,7 @@ begin
     FILTER_RANGE  => 3x"1"
   )
   port map (
-    REFERENCECLK    => hf_osc_clk,
+    REFERENCECLK    => AlhambraII_CLK,
     PLLOUTCORE      => open,
     PLLOUTGLOBAL    => pll_clk,
     EXTFEEDBACK     => '0',
