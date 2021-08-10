@@ -37,4 +37,8 @@ print('::set-output name=matrix::' + str([
   'board': 'OrangeCrab',
   'design': 'MinimalBoot',
   'bitstream': 'neorv32_OrangeCrab_r02-25F_MinimalBoot.bit'
+}, {
+  'board': 'AlhambraII',
+  'design': 'MinimalBoot',
+  'bitstream': 'neorv32_AlhambraII_MinimalBoot.bit'
 }]))
