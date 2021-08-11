@@ -49,11 +49,7 @@ entity neorv32_AlhambraII_BoardTop_MinimalBoot is
     AlhambraII_LED_B : out std_logic;
     -- UART0
     AlhambraII_RX : in  std_logic;
-    AlhambraII_TX : out std_logic;
-    -- USB Pins (which should be statically driven if not being used)
-    AlhambraII_USB_DP    : out std_logic;
-    AlhambraII_USB_DN    : out std_logic;
-    AlhambraII_USB_DP_PU : out std_logic
+    AlhambraII_TX : out std_logic
   );
 end entity;
 
@@ -71,14 +67,6 @@ architecture neorv32_AlhambraII_BoardTop_MinimalBoot_rtl of neorv32_AlhambraII_B
   signal con_pwm  : std_logic_vector(2 downto 0);
 
 begin
-
-  -- Assign USB pins to "0" so as to disconnect AlhambraII from
-  -- the host system.  Otherwise it would try to talk to
-  -- us over USB, which wouldn't work since we have no stack.
-  AlhambraII_USB_DP    <= '0';
-  AlhambraII_USB_DN    <= '0';
-  AlhambraII_USB_DP_PU <= '0';
-
 
   -- System PLL -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
