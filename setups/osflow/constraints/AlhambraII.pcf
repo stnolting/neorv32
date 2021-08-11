@@ -6,22 +6,19 @@
 #- Repo: https://github.com/zipotron/neorv32
 # -----------------------------------------------------------------------------
 
-# --- FTDI 1: (Serial port)
-set_io --warn-no-port AlhambraII_TX  61  # output (ser-tx)
-set_io --warn-no-port AlhambraII_RX  62  # input (ser-rx)
+# UART port (on-board FTDI)
+set_io --warn-no-port AlhambraII_TX 61  # output (ser-tx)
+set_io --warn-no-port AlhambraII_RX 62  # input (ser-rx)
 
-#> Clock (12 MHz)
+#> External clock (12 MHz)
 set_io --warn-no-port AlhambraII_CLK 49
 
-
-#> Tri-colour LED
-set_io --warn-no-port AlhambraII_LED_G 41
-set_io --warn-no-port AlhambraII_LED_R 38
-set_io --warn-no-port AlhambraII_LED_B 39
-
-
-#> SPI
-set_io --warn-no-port AlhambraII_SPI_SS   71
-set_io --warn-no-port AlhambraII_SPI_SCK  70
-set_io --warn-no-port AlhambraII_SPI_MOSI 67
-set_io --warn-no-port AlhambraII_SPI_MISO 68
+#> On-Board LEDs
+set_io --warn-no-port AlhambraII_LED0 45
+set_io --warn-no-port AlhambraII_LED1 44
+set_io --warn-no-port AlhambraII_LED2 43
+set_io --warn-no-port AlhambraII_LED3 42
+set_io --warn-no-port AlhambraII_LED4 41
+set_io --warn-no-port AlhambraII_LED5 39
+set_io --warn-no-port AlhambraII_LED6 38
+set_io --warn-no-port AlhambraII_LED7 37
