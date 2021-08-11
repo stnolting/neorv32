@@ -93,7 +93,7 @@ $(info Setting constraints and implementation args for BOARD ULX3S)
 DEVICE_SERIES = ecp5
 
 CONSTRAINTS ?= $(PCF_PATH)/$(BOARD).lpf
-PNRFLAGS    ?= --85k --freq 25 --package CABGA381 --textcfg --ignore-loops --timing-allow-fail
+PNRFLAGS    ?= --85k --freq 25 --package CABGA381 --ignore-loops --timing-allow-fail
 IMPL        ?= neorv32_$(BOARD)_$(ID)
 
 endif
