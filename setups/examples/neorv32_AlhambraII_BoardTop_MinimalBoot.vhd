@@ -44,9 +44,14 @@ entity neorv32_AlhambraII_BoardTop_MinimalBoot is
     -- external clock (12 MHz)
     AlhambraII_CLK : in std_logic;
     -- LED outputs
-    AlhambraII_LED_R : out std_logic;
-    AlhambraII_LED_G : out std_logic;
-    AlhambraII_LED_B : out std_logic;
+    AlhambraII_LED0 : out std_logic;
+    AlhambraII_LED1 : out std_logic;
+    AlhambraII_LED2 : out std_logic;
+    AlhambraII_LED3 : out std_logic;
+    AlhambraII_LED4 : out std_logic;
+    AlhambraII_LED5 : out std_logic;
+    AlhambraII_LED6 : out std_logic;
+    AlhambraII_LED7 : out std_logic;
     -- UART0
     AlhambraII_RX : in  std_logic;
     AlhambraII_TX : out std_logic
@@ -64,7 +69,7 @@ architecture neorv32_AlhambraII_BoardTop_MinimalBoot_rtl of neorv32_AlhambraII_B
 
   -- internal IO connection --
   signal con_gpio_o : std_ulogic_vector(3 downto 0);
-  signal con_pwm  : std_logic_vector(2 downto 0);
+  signal con_pwm    : std_logic_vector(2 downto 0);
 
 begin
 
@@ -106,7 +111,6 @@ begin
 
   -- The core of the problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
   neorv32_inst: entity work.neorv32_ProcessorTop_MinimalBoot
   generic map (
     CLOCK_FREQUENCY => f_clock_c  -- clock frequency of clk_i in Hz
@@ -131,23 +135,14 @@ begin
 
   -- IO Connection --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  AlhambraII_LED0 <= con_gpio_o(0);
+  AlhambraII_LED1 <= con_gpio_o(1);
+  AlhambraII_LED2 <= con_gpio_o(2);
+  AlhambraII_LED3 <= con_gpio_o(3);
+  AlhambraII_LED4 <= '0'; -- unused
+  AlhambraII_LED5 <= con_pwm(0);
+  AlhambraII_LED6 <= con_pwm(1);
+  AlhambraII_LED7 <= con_pwm(2);
 
-  RGB_inst: SB_RGBA_DRV
-  generic map (
-    CURRENT_MODE => "0b1",
-    RGB0_CURRENT => "0b000011",
-    RGB1_CURRENT => "0b000011",
-    RGB2_CURRENT => "0b000011"
-  )
-  port map (
-    CURREN   => '1',  -- I
-    RGBLEDEN => '1',  -- I
-    RGB2PWM  => con_pwm(2),                   -- I - blue  - pwm channel 2
-    RGB1PWM  => con_pwm(1) or con_gpio_o(0),  -- I - red   - pwm channel 1 || BOOT blink
-    RGB0PWM  => con_pwm(0),                   -- I - green - pwm channel 0
-    RGB2     => AlhambraII_LED_B,  -- O - blue
-    RGB1     => AlhambraII_LED_R,  -- O - red
-    RGB0     => AlhambraII_LED_G   -- O - green
-  );
 
 end architecture;
