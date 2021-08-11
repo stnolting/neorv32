@@ -115,7 +115,7 @@ begin
   generic map (
     CLOCK_FREQUENCY   => f_clock_c, -- clock frequency of clk_i in Hz
     MEM_INT_IMEM_SIZE => 8*1024,    -- size of processor-internal instruction memory in bytes
-    MEM_INT_DMEM_SIZE => 4*1024     -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_SIZE => 2*1024     -- size of processor-internal data memory in bytes
   )
   port map (
     -- Global control --
