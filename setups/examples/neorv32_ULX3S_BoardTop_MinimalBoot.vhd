@@ -87,8 +87,8 @@ begin
     gpio_o     => con_gpio_o,
 
     -- primary UART --
-    uart_txd_o => ULX3S_GPIO_1, -- UART0 send data
-    uart_rxd_i => ULX3S_GPIO_0, -- UART0 receive data
+    uart_txd_o => ULX3S_TX, -- UART0 send data
+    uart_rxd_i => ULX3S_RX, -- UART0 receive data
     uart_rts_o => open, -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
     uart_cts_i => '0',  -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
