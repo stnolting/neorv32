@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - Example setup including the bootloader, for the ULX3S (c) Board >>          #
+-- # << NEORV32 - Example setup including the bootloader, for the ULX3S (c) Board >>               #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -54,22 +54,15 @@ entity neorv32_ULX3S_BoardTop_MinimalBoot is
     ULX3S_LED6 : out std_logic;
     ULX3S_LED7 : out std_logic;
     -- UART0
-    ULX3S_GPIO_0 : in  std_logic;
-    ULX3S_GPIO_1 : out std_logic;
-    -- USB Pins (which should be statically driven if not being used)
-    ULX3S_USB_D_P   : out std_logic;
-    ULX3S_USB_D_N   : out std_logic;
-    ULX3S_USB_DP_PU : out std_logic
+    ULX3S_RX : in  std_logic;
+    ULX3S_TX : out std_logic
   );
 end entity;
 
 architecture neorv32_ULX3S_BoardTop_MinimalBoot_rtl of neorv32_ULX3S_BoardTop_MinimalBoot is
 
   -- configuration --
-  constant f_clock_c : natural := 24000000; -- PLL output clock frequency in Hz
-
-  -- Globals
-  signal pll_clk: std_logic;
+  constant f_clock_c : natural := 25000000; -- clock frequency in Hz
 
   -- internal IO connection --
   signal con_pwm    : std_logic_vector(2 downto 0);
@@ -77,40 +70,17 @@ architecture neorv32_ULX3S_BoardTop_MinimalBoot_rtl of neorv32_ULX3S_BoardTop_Mi
 
 begin
 
-  -- Assign USB pins to "0" so as to disconnect ULX3S from
-  -- the host system.  Otherwise it would try to talk to
-  -- us over USB, which wouldn't work since we have no stack.
-  ULX3S_USB_D_P   <= '0';
-  ULX3S_USB_D_N   <= '0';
-  ULX3S_USB_DP_PU <= '0';
-
-  -- System PLL -----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  PLL_inst: EHXPLLL
-  generic map (
-    CLKI_DIV  =>  2, -- from `ecppll -i 48 -o 24`
-    CLKFB_DIV =>  1,
-    CLKOP_DIV =>  25
-  )
-  port map (
-    CLKI    => ULX3S_CLK,
-    CLKFB   => pll_clk,
-    ENCLKOP => '1',
-    CLKOP   => pll_clk
-  );
-
   -- The core of the problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
   neorv32_inst: entity work.neorv32_ProcessorTop_MinimalBoot
   generic map (
-    CLOCK_FREQUENCY => f_clock_c,  -- clock frequency of clk_i in Hz
+    CLOCK_FREQUENCY   => f_clock_c, -- clock frequency of clk_i in Hz
     MEM_INT_IMEM_SIZE => 16*1024,
     MEM_INT_DMEM_SIZE => 8*1024
   )
   port map (
     -- Global control --
-    clk_i      => std_ulogic(pll_clk),
+    clk_i      => std_ulogic(ULX3S_CLK),
     rstn_i     => std_ulogic(ULX3S_RST_N),
 
     -- GPIO --
