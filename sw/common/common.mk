@@ -248,6 +248,8 @@ info:
 	@echo "OBJDUMP:    $(OBJDUMP)"
 	@echo "OBJCOPY:    $(OBJCOPY)"
 	@echo "SIZE:       $(SIZE)"
+	@echo "---------------- Info: Compiler Configuration ----------------"
+	@$(CC) -v
 	@echo "---------------- Info: Compiler Libraries ----------------"
 	@echo "LIBGCC:"
 	@$(CC) -print-libgcc-file-name
