@@ -25,6 +25,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 13.08.2021 | [**:rocket:1.5.9**](https://github.com/stnolting/neorv32/releases/tag/v1.5.9) | **New release** |
 | 08.08.2021 | 1.5.8.9 | reworked CPU register file logic: any write access to `x0` will be masked to actually write zero - no special treatment by the CPU control unit required anymore; slighlty less hardware ressources required; first instruction after hardware reset should write `x0` (_any_ value; implemented in start-up code `crt0.S`) |
 | 07.08.2021 | 1.5.8.8 | :bug: fixed bug in execution (trapping) of `xRET` instructions: `dret` (return from debug-mode handler) has to raise an illegal instruction exception if executed outside of debug-mode, `mret` (return from machine-mode handler) has to raise an illegal instruction exception if executed in lower-privileged modes (lower than machine-mode) |
 | 05.08.2021 | 1.5.8.7 | :sparkles: added `mstatus.FS` and `mstatus.SD` CSR bits: control the state of the FPU (`Zfinx`) extension; supported states for `mstatus.FS`: `00` = _off_, `11` = _dirty_; writing other states will always set _dirty_ state; note that all FPU instructions including FPU CSR access instructions will raise an illegal instrution exception if `mstatus.FS` = _off_ |
