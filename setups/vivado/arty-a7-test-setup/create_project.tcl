@@ -31,7 +31,7 @@ set_property target_language VHDL [current_project]
 set fileset_neorv32 [glob ./../../../rtl/core/*.vhd]
 
 ## Design: processor subsystem template, and (optionally) BoardTop and/or other additional sources
-set fileset_design ./../../../rtl/templates/processor/neorv32_ProcessorTop_Test.vhd
+set fileset_design ./../../../rtl/test_setups/neorv32_test_setup_bootloader.vhd
 
 ## Constraints
 set fileset_constraints [glob ./*.xdc]

@@ -1,6 +1,6 @@
-# make a local copy of original "./../../rtl/templates/processor/neorv32_ProcessorTop_Test.vhd" file
+# make a local copy of original "./../../rtl/test_setups/neorv32_test_setup_bootloader.vhd " file
 # and modify the default clock frequency: set to 50MHz
-set shell_script "cp -f ./../../../rtl/templates/processor/neorv32_ProcessorTop_Test.vhd . && sed -i '/CLOCK_FREQUENCY/c\CLOCK_FREQUENCY => 50000000,' neorv32_ProcessorTop_Test.vhd"
+set shell_script "cp -f ./../../../rtl/test_setups/neorv32_test_setup_bootloader.vhd  . && sed -i 's/100000000/50000000/g' neorv32_test_setup_bootloader.vhd "
 exec sh -c $shell_script
 
 # Copyright (C) 2020  Intel Corporation. All rights reserved.
@@ -48,7 +48,7 @@ if {[is_project_open]} {
 if {$make_assignments} {
   set_global_assignment -name FAMILY "Cyclone IV E"
   set_global_assignment -name DEVICE EP4CE22F17C6
-  set_global_assignment -name TOP_LEVEL_ENTITY neorv32_ProcessorTop_Test
+  set_global_assignment -name TOP_LEVEL_ENTITY neorv32_test_setup_bootloader
   set_global_assignment -name ORIGINAL_QUARTUS_VERSION 20.1.0
   set_global_assignment -name PROJECT_CREATION_TIME_DATE "16:40:53  APRIL 10, 2021"
   set_global_assignment -name LAST_QUARTUS_VERSION "20.1.0 Lite Edition"
@@ -64,7 +64,7 @@ if {$make_assignments} {
   }
 
   # top entity: use local modified copy of the original test setup
-  set_global_assignment -name VHDL_FILE "neorv32_ProcessorTop_Test.vhd"
+  set_global_assignment -name VHDL_FILE "neorv32_test_setup_bootloader.vhd"
 
   set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
   set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"

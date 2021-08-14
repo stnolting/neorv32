@@ -1,7 +1,7 @@
 # NEORV32 Test Setup for the Terasic DE0-Nano FPGA Board
 
 This setup provides a very simple script-based "demo setup" that allows to check out the NEORV32 processor on the Terasic DE0-Nano board.
-It uses the simplified [`neorv32_ProcessorTop_Test.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/templates/processor/neorv32_ProcessorTop_Test.vhd) top entity, which is a wrapper for the actual processor
+It uses the simplified [`neorv32_test_setup_bootloader.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/test_setups/neorv32_test_setup_bootloader.vhd) top entity, which is a wrapper for the actual processor
 top entity that provides a minimalistic interface (clock, reset, UART and 8 LEDs).
 
 * FPGA Board: :books: [Terasic DE0-Nano FPGA Board](https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=139&No=593)
@@ -11,7 +11,7 @@ top entity that provides a minimalistic interface (clock, reset, UART and 8 LEDs
 
 ### NEORV32 Configuration
 
-:information_source: See the top entity [`rtl/templates/processor/neorv32_ProcessorTop_Test.vhd` ](https://github.com/stnolting/neorv32/blob/master/rtl/templates/processor/neorv32_ProcessorTop_Test.vhd) for
+:information_source: See the top entity [`rtl/test_setups/neorv32_test_setup_bootloader.vhd` ](https://github.com/stnolting/neorv32/blob/master/rtl/test_setups/neorv32_test_setup_bootloader.vhd) for
 configuration and entity details and `create_project.tcl` for the according FPGA pin mapping.
 
 * CPU: `rv32imcu_Zicsr` + 4 `HPM` (hardware performance monitors, 40-bit wide)
@@ -25,7 +25,7 @@ configuration and entity details and `create_project.tcl` for the according FPGA
   * `uart0_txd_o:` output, connected to FPGA pin `C3` - header pin `GPIO_01` (pin number "4")
   * `uart0_rxd_i:` input, connected to FPGA pin `A3` - header pin `GPIO_03` (pin number "6")
 
-:warning: The default [`neorv32_ProcessorTop_Test.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/templates/processor/neorv32_ProcessorTop_Test.vhd) top entity
+:warning: The default [`neorv32_test_setup_bootloader.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/test_setups/neorv32_test_setup_bootloader.vhd) top entity
 is configured for a 100MHz input clock. Since the on-board oscillator of the DE0-nano board generates a 50MHz clock, the test setup has to be modified.
 This is automatically done by the `create_project.tcl` TCL script, which makes a local copy of the original test setup VHDL file
 (in *this* folder) and uses `sed` to configure the `CLOCK_FREQUENCY` generic (in the local copy) for 50MHz. The local copy is then used as actual

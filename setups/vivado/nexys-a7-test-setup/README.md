@@ -1,7 +1,7 @@
 # NEORV32 Test Setup for the Digilent Nexys A7 and Nexys 4 DDR FPGA Boards
 
 This setup provides a very simple script-based "demo setup" that allows to check out the NEORV32 processor on the Digilent Nexys A7 and Nexys 4 DDR boards.
-It uses the simplified [`neorv32_ProcessorTop_Test.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/templates/processor/neorv32_ProcessorTop_Test.vhd) top entity, which is a wrapper for the actual processor
+It uses the simplified [`neorv32_test_setup_bootloader.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/test_setups/neorv32_test_setup_bootloader.vhd) top entity, which is a wrapper for the actual processor
 top entity that provides a minimalistic interface (clock, reset, UART and 4 LEDs).
 
 * FPGA Boards:
@@ -15,7 +15,7 @@ top entity that provides a minimalistic interface (clock, reset, UART and 4 LEDs
 
 ## NEORV32 Configuration
 
-:information_source: See the top entity [`rtl/templates/processor/neorv32_ProcessorTop_Test.vhd` ](https://github.com/stnolting/neorv32/blob/master/rtl/templates/processor/neorv32_ProcessorTop_Test.vhd) for
+:information_source: See the top entity [`rtl/test_setups/neorv32_test_setup_bootloader.vhd` ](https://github.com/stnolting/neorv32/blob/master/rtl/test_setups/neorv32_test_setup_bootloader.vhd) for
 configuration and entity details and [`nexys_a7_test_setup.xdc`](https://github.com/AWenzel83/neorv32/blob/nexys_a7_example/boards/nexys-a7-test-setup/nexys_a7_test_setup.xdc)
 for the according FPGA pin mapping.
 
