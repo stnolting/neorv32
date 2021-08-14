@@ -39,7 +39,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_testsetup_approm is
+entity neorv32_test_setup_approm is
   generic (
     -- adapt these for your setup --
     CLOCK_FREQUENCY   : natural := 100000000; -- clock frequency of clk_i in Hz
@@ -55,7 +55,7 @@ entity neorv32_testsetup_approm is
   );
 end entity;
 
-architecture neorv32_testsetup_approm_rtl of neorv32_testsetup_approm is
+architecture neorv32_test_setup_approm_rtl of neorv32_test_setup_approm is
 
   signal con_gpio_o : std_ulogic_vector(63 downto 0);
 
