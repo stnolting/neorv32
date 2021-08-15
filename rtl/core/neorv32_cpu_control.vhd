@@ -952,19 +952,19 @@ begin
         end if;
 
 
-      when TRAP_ENTER => -- Start trap environment - get TVEC, stay here for sleep mode
+      when TRAP_ENTER => -- Start trap environment - get xTVEC, stay here for sleep mode
       -- ------------------------------------------------------------
         if (trap_ctrl.env_start = '1') then -- trap triggered?
           trap_ctrl.env_start_ack  <= '1';
           execute_engine.state_nxt <= TRAP_EXECUTE;
         end if;
 
-      when TRAP_EXIT => -- Return from trap environment - get EPC
+      when TRAP_EXIT => -- Return from trap environment - get xEPC
       -- ------------------------------------------------------------
         trap_ctrl.env_end        <= '1';
         execute_engine.state_nxt <= TRAP_EXECUTE;
 
-      when TRAP_EXECUTE => -- Start trap environment -> jump to *TVEC / return from trap environment -> jump to EPC
+      when TRAP_EXECUTE => -- Start trap environment -> jump to xTVEC / return from trap environment -> jump to xEPC
       -- ------------------------------------------------------------
         execute_engine.pc_mux_sel <= '0'; -- next_PC
         fetch_engine.reset        <= '1';
@@ -1123,7 +1123,7 @@ begin
           when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- EBREAK
           when funct12_wfi_c    => execute_engine.sleep_nxt <= '1'; -- WFI
           when funct12_mret_c =>  -- MRET
-            if (CPU_EXTENSION_RISCV_U = true) and (csr.priv_m_mode = '1') then -- only allowed in M-mode
+            if (csr.priv_m_mode = '1') then -- only allowed in M-mode
               execute_engine.state_nxt <= TRAP_EXIT;
             else
               NULL;
@@ -1544,9 +1544,9 @@ begin
                 (execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") then
             if (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ecall_c)  or -- ECALL
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ebreak_c) or -- EBREAK 
-               ((execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_mret_c)and (CPU_EXTENSION_RISCV_U = true) and (csr.priv_m_mode = '1')) or -- MRET (only allowed in M-mode)
-               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = (funct12_dret_c)) and (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) or -- DRET
-               ((execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_wfi_c) and ((csr.priv_m_mode = '1') or (csr.mstatus_tw = '0'))) then -- WFI allowed in M-mode or if mstatus.TW=0
+               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_mret_c) and (csr.priv_m_mode = '1')) or -- MRET (only allowed in M-mode)
+               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_dret_c) and (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) or -- DRET
+               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_wfi_c) and ((csr.priv_m_mode = '1') or (csr.mstatus_tw = '0'))) then -- WFI allowed in M-mode or if mstatus.TW=0
               illegal_instruction <= '0';
             else
               illegal_instruction <= '1';
@@ -2699,7 +2699,7 @@ begin
           when csr_instreth_c | csr_minstreth_c => -- [m]instreth (r/w): Instructions-retired counter HIGH
             if (cpu_cnt_hi_width_c > 0) then csr.rdata(cpu_cnt_hi_width_c-1 downto 0) <= csr.minstreth(cpu_cnt_hi_width_c-1 downto 0); else NULL; end if;
 
-          when csr_time_c  => csr.rdata <= time_i(31 downto 0); -- time (r/-): System time LOW (from MTIME unit)
+          when csr_time_c  => csr.rdata <= time_i(31 downto 0);  -- time (r/-): System time LOW (from MTIME unit)
           when csr_timeh_c => csr.rdata <= time_i(63 downto 32); -- timeh (r/-): System time HIGH (from MTIME unit)
 
           -- hardware performance counters --
@@ -2766,11 +2766,11 @@ begin
 
           -- machine information registers --
           -- --------------------------------------------------------------------
---        when csr_mvendorid_c  => csr.rdata <= (others => '0'); -- mvendorid (r/-): vendor ID, implemented but always zero
+--        when csr_mvendorid_c  => NULL; -- mvendorid (r/-): vendor ID, implemented but always zero
           when csr_marchid_c    => csr.rdata(4 downto 0) <= "10011"; -- marchid (r/-): arch ID - official RISC-V open-source arch ID
           when csr_mimpid_c     => csr.rdata <= hw_version_c; -- mimpid (r/-): implementation ID -- NEORV32 hardware version
           when csr_mhartid_c    => csr.rdata <= std_ulogic_vector(to_unsigned(HW_THREAD_ID, 32)); -- mhartid (r/-): hardware thread ID
---        when csr_mconfigptr_c => csr.rdata <= (others => '0'); -- mconfigptr (r/-): machine configuration pointer register, implemented but not assigned yet
+--        when csr_mconfigptr_c => NULL; -- mconfigptr (r/-): machine configuration pointer register, implemented but not assigned yet
 
           -- custom machine read-only CSRs --
           -- --------------------------------------------------------------------
