@@ -195,7 +195,7 @@ int main (void)
 */
 
   { /* *****  NEORV32-SPECIFIC ***** */
-    Begin_Time = (long)neorv32_cpu_get_cycle();
+    Begin_Time = (long)neorv32_cpu_get_systime();
   } /* ***** /NEORV32-SPECIFIC ***** */
 
   for (Run_Index = 1; Run_Index <= Number_Of_Runs; ++Run_Index)
@@ -262,7 +262,7 @@ int main (void)
 */
 
   { /* *****  NEORV32-SPECIFIC ***** */
-    End_Time = (long)neorv32_cpu_get_cycle();
+    End_Time = (long)neorv32_cpu_get_systime();
   } /* ***** /NEORV32-SPECIFIC ***** */
   
 
@@ -352,11 +352,17 @@ int main (void)
     uint32_t vax_per_sec = dhry_per_sec / 1757;
 
 neorv32_uart_printf("NEORV32: << DETAILED RESULTS (integer parts only) >>\n");
-neorv32_uart_printf("NEORV32: Total elapsed cycles:     %u\n", (uint32_t)User_Time);
-neorv32_uart_printf("NEORV32: Cycles per second:        %u\n", (uint32_t)SYSINFO_CLK);
-neorv32_uart_printf("NEORV32: Total runs:               %u\n", (uint32_t)Number_Of_Runs);
-neorv32_uart_printf("NEORV32: VAX-normalized DMIPS/s:   %u\n", (uint32_t)vax_per_sec);
-neorv32_uart_printf("NEORV32: VAX-normalized DMIPS/MHz: %u/%u\n", (uint32_t)vax_per_sec, (uint32_t)(SYSINFO_CLK / 1000000));
+neorv32_uart_printf("NEORV32: Total cycles:      %u\n", (uint32_t)User_Time);
+neorv32_uart_printf("NEORV32: Cycles per second: %u\n", (uint32_t)SYSINFO_CLK);
+neorv32_uart_printf("NEORV32: Total runs:        %u\n", (uint32_t)Number_Of_Runs);
+
+neorv32_uart_printf("\n");
+neorv32_uart_printf("NEORV32: DMIPS/s:           %u\n", (uint32_t)dhry_per_sec);
+neorv32_uart_printf("NEORV32: DMIPS/MHz:         %u\n", (uint32_t)(dhry_per_sec / (SYSINFO_CLK / 1000000)));
+
+neorv32_uart_printf("\n");
+neorv32_uart_printf("NEORV32: VAX DMIPS/s:       %u\n", (uint32_t)vax_per_sec);
+neorv32_uart_printf("NEORV32: VAX DMIPS/MHz:     %u/%u\n", (uint32_t)vax_per_sec, (uint32_t)(SYSINFO_CLK / 1000000));
   } /* ***** /NEORV32-SPECIFIC ***** */
   /*
     neorv32_uart_printf ("Microseconds for one run through Dhrystone: ");

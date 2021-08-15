@@ -18,7 +18,8 @@ All results only show the integer parts.
 
 ### Exemplary Output
 
-Output generated for processor HW version: [1.5.9.1](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)
+Output generated for processor HW version [v1.5.9.1](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)
+using performance-optimized configuration options.
 
 ```
 NEORV32: Processor running at 100000000 Hz
@@ -82,12 +83,16 @@ Str_2_Loc:           DHRYSTONE PROGRAM, 2'ND STRING
         should be:   DHRYSTONE PROGRAM, 2'ND STRING
 
 Microseconds for one run through Dhrystone: 13
-Dhrystones per Second:                      74074
+Dhrystones per Second:                      76923
 
 NEORV32: << DETAILED RESULTS (integer parts only) >>
-NEORV32: Total elapsed cycles:     2722000186
-NEORV32: Cycles per second:        100000000
-NEORV32: Total runs:               2000000
-NEORV32: VAX-normalized DMIPS/s:   42
-NEORV32: VAX-normalized DMIPS/MHz: 42/100
+NEORV32: Total cycles:      2662000187
+NEORV32: Cycles per second: 100000000
+NEORV32: Total runs:        2000000
+
+NEORV32: DMIPS/s:           76923
+NEORV32: DMIPS/MHz:         769
+
+NEORV32: VAX DMIPS/s:       43
+NEORV32: VAX DMIPS/MHz:     43/100
 ```
