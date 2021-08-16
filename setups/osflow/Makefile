@@ -1,5 +1,3 @@
-OSFLOW := ../osflow
-EXAMPLES := ../examples
 TEMPLATES := ../../rtl/templates
 MV := mv
 
@@ -17,14 +15,14 @@ UPduino_REV ?= v3
 
 run:
 	$(eval TASK ?= clean $(BITSTREAM))
-	$(MAKE) -C $(OSFLOW) -f common.mk \
-	  BOARD_SRC=$(EXAMPLES)/neorv32_$(BOARD)_BoardTop_$(DESIGN).vhd \
+	$(MAKE) -f common.mk \
+	  BOARD_SRC=./board_tops/neorv32_$(BOARD)_BoardTop_$(DESIGN).vhd \
 	  TOP=neorv32_$(BOARD)_BoardTop_$(DESIGN) \
 	  ID=$(DESIGN) \
 	  $(TASK)
 	IMPL="$${BITSTREAM%%.*}"; for item in ".bit" ".svf"; do \
-	  if [ -f "$(OSFLOW)/$$IMPL$$item" ]; then \
-	    $(MV) "$(OSFLOW)/$$IMPL$$item" ./; \
+	  if [ -f "./$$IMPL$$item" ]; then \
+	    $(MV) "./$$IMPL$$item" ./; \
 	  fi \
 	done
 
@@ -81,7 +79,7 @@ MixedLanguage:
 	$(MAKE) \
 	  DESIGN=$@ \
 	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_Minimal*.vhd \
-	  NEORV32_VERILOG_SRC='devices/ice40/sb_ice40_components.v ../examples/neorv32_Fomu_MixedLanguage_ClkGen.v' \
+	  NEORV32_VERILOG_SRC='devices/ice40/sb_ice40_components.v board_tops/neorv32_Fomu_MixedLanguage_ClkGen.v' \
 	  $(BOARD)
 
 # Help
