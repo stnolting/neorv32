@@ -39,7 +39,7 @@ make BOARD=Fomu Minimal
 targets are listed in the `boards/` folder where each partial-makefile corresponds to a supported platform. 
 
 `<System_Top_HDL>` is used to define the actual SoC top. Available SoCs are located in
-[`rtl/templates/processor`](https://github.com/stnolting/neorv32/tree/master/rtl/templates/processor).
+[`rtl/processor_templates`](https://github.com/stnolting/neorv32/tree/master/rtl/processor_templates).
 
 
 See https://github.com/stnolting/neorv32/blob/master/.github/workflows/Implementation.yml

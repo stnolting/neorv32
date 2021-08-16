@@ -1,4 +1,4 @@
-TEMPLATES := ../../rtl/templates
+TEMPLATES := ../../rtl/processor_templates
 MV := mv
 
 .DEFAULT_GOAL := help
