@@ -7,18 +7,18 @@
 # -----------------------------------------------------------------------------
 
 # UART port (on-board FTDI)
-set_io --warn-no-port AlhambraII_TX 61  # output (ser-tx)
-set_io --warn-no-port AlhambraII_RX 62  # input (ser-rx)
+set_io AlhambraII_TX 61  # output (ser-tx)
+set_io AlhambraII_RX 62  # input (ser-rx)
 
 #> External clock (12 MHz)
-set_io --warn-no-port AlhambraII_CLK 49
+set_io AlhambraII_CLK 49
 
 #> On-Board LEDs
-set_io --warn-no-port AlhambraII_LED0 45
-set_io --warn-no-port AlhambraII_LED1 44
-set_io --warn-no-port AlhambraII_LED2 43
-set_io --warn-no-port AlhambraII_LED3 42
-set_io --warn-no-port AlhambraII_LED4 41
-set_io --warn-no-port AlhambraII_LED5 39
-set_io --warn-no-port AlhambraII_LED6 38
-set_io --warn-no-port AlhambraII_LED7 37
+set_io AlhambraII_LED0 45
+set_io AlhambraII_LED1 44
+set_io AlhambraII_LED2 43
+set_io AlhambraII_LED3 42
+set_io AlhambraII_LED4 41
+set_io AlhambraII_LED5 39
+set_io AlhambraII_LED6 38
+set_io AlhambraII_LED7 37
