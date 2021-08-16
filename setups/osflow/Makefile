@@ -60,25 +60,25 @@ OrangeCrab:
 Minimal:
 	$(MAKE) \
 	  DESIGN=$@ \
-	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_Minimal*.vhd \
+	  DESIGN_SRC=$(TEMPLATES)/neorv32_ProcessorTop_Minimal*.vhd \
 	  $(BOARD)
 
 MinimalBoot:
 	$(MAKE) \
 	  DESIGN=$@ \
-	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_MinimalBoot.vhd \
+	  DESIGN_SRC=$(TEMPLATES)/neorv32_ProcessorTop_MinimalBoot.vhd \
 	  $(BOARD)
 
 UP5KDemo:
 	$(MAKE) \
 	  DESIGN=$@ \
-	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_UP5KDemo.vhd \
+	  DESIGN_SRC=$(TEMPLATES)/neorv32_ProcessorTop_UP5KDemo.vhd \
 	  $(BOARD)
 
 MixedLanguage:
 	$(MAKE) \
 	  DESIGN=$@ \
-	  DESIGN_SRC=$(TEMPLATES)/processor/neorv32_ProcessorTop_Minimal*.vhd \
+	  DESIGN_SRC=$(TEMPLATES)/neorv32_ProcessorTop_Minimal*.vhd \
 	  NEORV32_VERILOG_SRC='devices/ice40/sb_ice40_components.v board_tops/neorv32_Fomu_MixedLanguage_ClkGen.v' \
 	  $(BOARD)
 
