@@ -133,7 +133,7 @@ _SYSINFO_FEATURES_MEM_EXT_ENDIAN_ flag in the processor's SYSINFO module (see se
 
 **AXI4-Lite Connectivity**
 
-The AXI4-Lite wrapper (`rtl/templates/system/neorv32_SystemTop_axi4lite.vhd`) provides a Wishbone-to-
+The AXI4-Lite wrapper (`rtl/system_integration/neorv32_SystemTop_axi4lite.vhd`) provides a Wishbone-to-
 AXI4-Lite bridge, compatible with Xilinx Vivado (IP packager and block design editor). All entity signals of
 this wrapper are of type _std_logic_ or _std_logic_vector_, respectively.
 
@@ -145,4 +145,4 @@ image::neorv32_axi_soc.png[]
 
 [WARNING]
 Using the auto-termination timeout feature (_MEM_EXT_TIMEOUT_ greater than zero) is **not AXI4 compliant** as the AXI protocol does not support canceling of
-bus transactions. Therefore, the NEORV32 top wrapper with AXI4-Lite interface (`rtl/templates/system/neorv32_SystemTop_axi4lite`) configures _MEM_EXT_TIMEOUT_ = 0 by default.
+bus transactions. Therefore, the NEORV32 top wrapper with AXI4-Lite interface (`rtl/system_integration/neorv32_SystemTop_axi4lite`) configures _MEM_EXT_TIMEOUT_ = 0 by default.

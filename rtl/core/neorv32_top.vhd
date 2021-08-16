@@ -2,8 +2,7 @@
 -- # << NEORV32 - Processor Top Entity >>                                                          #
 -- # ********************************************************************************************* #
 -- # This is the top entity of the NEORV32 PROCESSOR. Instantiate this unit in your own project    #
--- # and define all the configuration generics according to your needs. Alternatively, you can use #
--- # one of the alternative top entities provided in the "rtl/templates" folder.                   #
+-- # and define all the configuration generics according to your needs.                            #
 -- #                                                                                               #
 -- # Check out the processor's documentation for more information.                                 #
 -- # ********************************************************************************************* #
