@@ -236,6 +236,9 @@ The following table shows the performance results (relative CoreMark score and a
 _exemplary_ CPU configuration running 2000 iterations of the [CoreMark CPU benchmark](https://www.eembc.org/coremark).
 The source files are available in [`sw/example/coremark`](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark).
 
+:information_source: A _simple_ port of the **Dhrystone** benchmark is also available:
+[`sw/example/dhrystone`](https://github.com/stnolting/neorv32/blob/master/sw/example/dhrystone)
+
 ~~~
 **CoreMark Setup**
 Hardware:       32kB IMEM, 8kB DMEM, no caches, 100MHz clock

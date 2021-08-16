@@ -85,6 +85,12 @@ infringement of the law becomes known to us, we will immediately remove the link
 
 If you are using the NEORV32 or parts of the project in some kind of publication, please cite it as follows:
 
+.Contributors ❤️
+[NOTE]
+Please add as many https://github.com/stnolting/neorv32/graphs/contributors[contributors] as possible to the `authors` field 😉. +
+This project would not be where it is without them. +
+Full names can be found in the repository's https://github.com/stnolting/neorv32/blob/master/.mailmap[`.mailmap`].
+
 .BibTeX
 [source]
 ----
@@ -98,9 +104,9 @@ If you are using the NEORV32 or parts of the project in some kind of publication
 }
 ----
 
+.DOI
 [TIP]
-Each official release of the project (see https://github.com/stnolting/neorv32/releases[releases page]) provides
-a _digital object identifiere_ (**DOI**) provided by https://zenodo.org/.
+This project also provides a _digital object identifier_ provided by https://zenodo.org[zenodo]: https://zenodo.org/record/5121427
 
 
 :sectnums!:

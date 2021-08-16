@@ -694,7 +694,7 @@ enum NEORV32_PWM_CT_enum {
 /** SLINK control register (r/w) */
 #define SLINK_CT     (*(IO_REG32 (SLINK_BASE + 0))) // r/w: control register
 /** SLINK status register (r/-) */
-#define SLINK_STATUS (*(IO_REG32 (SLINK_BASE + 16))) // r/-: status register
+#define SLINK_STATUS (*(IO_ROM32 (SLINK_BASE + 16))) // r/-: status register
 /** stream link 0 (r/w) */
 #define SLINK_CH0    (*(IO_REG32 (SLINK_BASE + 32 + 0))) // r/w: link 0
 /** stream link 1 (r/w) */
@@ -1039,16 +1039,16 @@ enum NEORV32_WDT_CT_enum {
 #define GPIO_SIZE (4*4) // /**< GPIO address space size in bytes */
 
 /** GPIO parallel input port lower 32-bit (r/-) */
-#define GPIO_INPUT_LO  (*(IO_REG32 (GPIO_BASE +  0)))
+#define GPIO_INPUT_LO  (*(IO_ROM32 (GPIO_BASE +  0)))
 /** GPIO parallel input port upper 32-bit (r/-) */
-#define GPIO_INPUT_HI  (*(IO_REG32 (GPIO_BASE +  4)))
+#define GPIO_INPUT_HI  (*(IO_ROM32 (GPIO_BASE +  4)))
 /** GPIO parallel output port lower 32-bit (r/w) */
 #define GPIO_OUTPUT_LO (*(IO_REG32 (GPIO_BASE +  8)))
 /** GPIO parallel output port upper 32-bit (r/w) */
 #define GPIO_OUTPUT_HI (*(IO_REG32 (GPIO_BASE + 12)))
 
 /** GPIO parallel input 64-bit access (r/-) */
-#define GPIO_INPUT   (*(IO_REG64 (&GPIO_INPUT_LO)))
+#define GPIO_INPUT  (*(IO_ROM64 (&GPIO_INPUT_LO)))
 /** GPIO parallel output 64-bit access (r/w) */
 #define GPIO_OUTPUT (*(IO_REG64 (&GPIO_OUTPUT_LO)))
 /**@}*/
@@ -1112,9 +1112,9 @@ enum NEORV32_NEOLED_CT_enum {
  * @name IO Device: System Configuration Info Memory (SYSINFO)
  **************************************************************************/
 /**@{*/
-/** NEOLED base address */
+/** SYSINFO base address */
 #define SYSINFO_BASE (0xFFFFFFE0UL) // /**< SYSINFO base address */
-/** NEOLED address space size in bytes */
+/** SYSINFO address space size in bytes */
 #define SYSINFO_SIZE (8*4) // /**< SYSINFO address space size in bytes */
 
 /** SYSINFO(0): Clock speed */

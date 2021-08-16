@@ -16,12 +16,6 @@ This setup provides the minimal I/O, for testing the smallest possible design on
 
 This processor setup provides 64kB of data and instruction memory, an RTOS-capable CPU (privileged architecture) and a set of standard peripherals like UART, TWI and SPI.
 
-#### [`neorv32_ProcessorTop_Test.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/templates/processor/neorv32_ProcessorTop_Test.vhd)
-
-This entity is intended as "FPGA hello world" example for playing with the NEORV32. It uses only some of the
-provided peripherals and provides a very simple and basic interface - only the clock, reset, UART and a subset
-of the GPIO output port are propagated to the outer world.
-
 #### [`neorv32_ProcessorTop_stdlogic.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/templates/processor/neorv32_ProcessorTop_stdlogic.vhd)
 
 Same entity (generics and interface ports) as the default NEORV32 Processor top entity (`rtl/core/neorv32_top.vhd`),

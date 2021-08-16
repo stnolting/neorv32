@@ -145,7 +145,7 @@ target bootloader: CC_OPTS += -Wl,--defsym=make_bootloader=1 -Dmake_bootloader
 # Image generator targets
 # -----------------------------------------------------------------------------
 # install/compile tools
-$(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.cpp
+$(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 	@echo Compiling $(IMAGE_GEN)
 	@$(CC_X86) $< -o $(IMAGE_GEN)
 

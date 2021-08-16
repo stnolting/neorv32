@@ -237,7 +237,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     cause         : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR
     cause_nxt     : std_ulogic_vector(6 downto 0);
     db_irq_fire   : std_ulogic; -- set if there is a valid IRQ source in the "enter debug mode" trap buffer
-    db_irq_en     : std_ulogic; -- set if IRQs are allowed in debu mode
+    db_irq_en     : std_ulogic; -- set if IRQs are allowed in debug mode
     --
     env_start     : std_ulogic; -- start trap handler env
     env_start_ack : std_ulogic; -- start of trap handler acknowledged
@@ -952,19 +952,19 @@ begin
         end if;
 
 
-      when TRAP_ENTER => -- Start trap environment - get TVEC, stay here for sleep mode
+      when TRAP_ENTER => -- Start trap environment - get xTVEC, stay here for sleep mode
       -- ------------------------------------------------------------
         if (trap_ctrl.env_start = '1') then -- trap triggered?
           trap_ctrl.env_start_ack  <= '1';
           execute_engine.state_nxt <= TRAP_EXECUTE;
         end if;
 
-      when TRAP_EXIT => -- Return from trap environment - get EPC
+      when TRAP_EXIT => -- Return from trap environment - get xEPC
       -- ------------------------------------------------------------
         trap_ctrl.env_end        <= '1';
         execute_engine.state_nxt <= TRAP_EXECUTE;
 
-      when TRAP_EXECUTE => -- Start trap environment -> jump to *TVEC / return from trap environment -> jump to EPC
+      when TRAP_EXECUTE => -- Start trap environment -> jump to xTVEC / return from trap environment -> jump to xEPC
       -- ------------------------------------------------------------
         execute_engine.pc_mux_sel <= '0'; -- next_PC
         fetch_engine.reset        <= '1';
@@ -1123,7 +1123,7 @@ begin
           when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- EBREAK
           when funct12_wfi_c    => execute_engine.sleep_nxt <= '1'; -- WFI
           when funct12_mret_c =>  -- MRET
-            if (CPU_EXTENSION_RISCV_U = true) and (csr.priv_m_mode = '1') then -- only allowed in M-mode
+            if (csr.priv_m_mode = '1') then -- only allowed in M-mode
               execute_engine.state_nxt <= TRAP_EXIT;
             else
               NULL;
@@ -1296,8 +1296,8 @@ begin
       when csr_mip_c | csr_mtval_c => -- NOTE: MIP and MTVAL are read-only in the NEORV32!
         csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
 
-      -- physical memory protection (PMP) - address & configuration --
-      when csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  | csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  |
+      -- physical memory protection (PMP) --
+      when csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  | csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  | -- address
            csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c | csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c |
            csr_pmpaddr16_c | csr_pmpaddr17_c | csr_pmpaddr18_c | csr_pmpaddr19_c | csr_pmpaddr20_c | csr_pmpaddr21_c | csr_pmpaddr22_c | csr_pmpaddr23_c |
            csr_pmpaddr24_c | csr_pmpaddr25_c | csr_pmpaddr26_c | csr_pmpaddr27_c | csr_pmpaddr28_c | csr_pmpaddr29_c | csr_pmpaddr30_c | csr_pmpaddr31_c |
@@ -1305,7 +1305,7 @@ begin
            csr_pmpaddr40_c | csr_pmpaddr41_c | csr_pmpaddr42_c | csr_pmpaddr43_c | csr_pmpaddr44_c | csr_pmpaddr45_c | csr_pmpaddr46_c | csr_pmpaddr47_c |
            csr_pmpaddr48_c | csr_pmpaddr49_c | csr_pmpaddr50_c | csr_pmpaddr51_c | csr_pmpaddr52_c | csr_pmpaddr53_c | csr_pmpaddr54_c | csr_pmpaddr55_c |
            csr_pmpaddr56_c | csr_pmpaddr57_c | csr_pmpaddr58_c | csr_pmpaddr59_c | csr_pmpaddr60_c | csr_pmpaddr61_c | csr_pmpaddr62_c | csr_pmpaddr63_c |
-           csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c   | csr_pmpcfg4_c   | csr_pmpcfg5_c   | csr_pmpcfg6_c   | csr_pmpcfg7_c   |
+           csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c   | csr_pmpcfg4_c   | csr_pmpcfg5_c   | csr_pmpcfg6_c   | csr_pmpcfg7_c   | -- configuration
            csr_pmpcfg8_c   | csr_pmpcfg9_c   | csr_pmpcfg10_c  | csr_pmpcfg11_c  | csr_pmpcfg12_c  | csr_pmpcfg13_c  | csr_pmpcfg14_c  | csr_pmpcfg15_c =>
         if (PMP_NUM_REGIONS > 0) then
           csr_acc_valid <= csr.priv_m_mode; -- M-mode only
@@ -1364,7 +1364,7 @@ begin
       -- debug mode CSRs --
       when csr_dcsr_c | csr_dpc_c | csr_dscratch0_c =>
         if (CPU_EXTENSION_RISCV_DEBUG = true) then
-          csr_acc_valid <= debug_ctrl.running; -- access in only in debug-mode
+          csr_acc_valid <= debug_ctrl.running; -- access only in debug-mode
         else
           NULL;
         end if;
@@ -1544,9 +1544,9 @@ begin
                 (execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") then
             if (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ecall_c)  or -- ECALL
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ebreak_c) or -- EBREAK 
-               ((execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_mret_c)and (CPU_EXTENSION_RISCV_U = true) and (csr.priv_m_mode = '1')) or -- MRET (only allowed in M-mode)
-               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = (funct12_dret_c)) and (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) or -- DRET
-               ((execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_wfi_c) and ((csr.priv_m_mode = '1') or (csr.mstatus_tw = '0'))) then -- WFI allowed in M-mode or if mstatus.TW=0
+               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_mret_c) and (csr.priv_m_mode = '1')) or -- MRET (only allowed in M-mode)
+               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_dret_c) and (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) or -- DRET
+               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_wfi_c) and ((csr.priv_m_mode = '1') or (csr.mstatus_tw = '0'))) then -- WFI allowed in M-mode or if mstatus.TW=0
               illegal_instruction <= '0';
             else
               illegal_instruction <= '1';
@@ -1990,9 +1990,9 @@ begin
 
           -- machine trap setup --
           -- --------------------------------------------------------------------
-          if (csr.addr(11 downto 4) = csr_class_setup_c) then -- trap setup CSR class
+          if (csr.addr(11 downto 3) = csr_class_setup_c) then -- trap setup CSR class
             -- R/W: mstatus - machine status register --
-            if (csr.addr(3 downto 0) = csr_mstatus_c(3 downto 0)) then
+            if (csr.addr(2 downto 0) = csr_mstatus_c(2 downto 0)) then
               csr.mstatus_mie  <= csr.wdata(03);
               csr.mstatus_mpie <= csr.wdata(07);
               if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
@@ -2005,7 +2005,7 @@ begin
               end if;
             end if;
             -- R/W: mie - machine interrupt enable register --
-            if (csr.addr(3 downto 0) = csr_mie_c(3 downto 0)) then
+            if (csr.addr(2 downto 0) = csr_mie_c(2 downto 0)) then
               csr.mie_msie <= csr.wdata(03); -- machine SW IRQ enable
               csr.mie_mtie <= csr.wdata(07); -- machine TIMER IRQ enable
               csr.mie_meie <= csr.wdata(11); -- machine EXT IRQ enable
@@ -2014,12 +2014,12 @@ begin
               end loop; -- i
             end if;
             -- R/W: mtvec - machine trap-handler base address (for ALL exceptions) --
-            if (csr.addr(3 downto 0) = csr_mtvec_c(3 downto 0)) then
+            if (csr.addr(2 downto 0) = csr_mtvec_c(2 downto 0)) then
               csr.mtvec <= csr.wdata(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
             end if;
             -- R/W: machine counter enable register --
             if (CPU_EXTENSION_RISCV_U = true) then -- this CSR is hardwired to zero if user mode is not implemented
-              if (csr.addr(3 downto 0) = csr_mcounteren_c(3 downto 0)) then
+              if (csr.addr(2 downto 0) = csr_mcounteren_c(2 downto 0)) then
                 csr.mcounteren_cy <= csr.wdata(0); -- enable user-level access to cycle[h]
                 csr.mcounteren_tm <= csr.wdata(1); -- enable user-level access to time[h]
                 csr.mcounteren_ir <= csr.wdata(2); -- enable user-level access to instret[h]
@@ -2029,17 +2029,17 @@ begin
 
           -- machine trap handling --
           -- --------------------------------------------------------------------
-          if (csr.addr(11 downto 4) = csr_class_trap_c) then -- machine trap handling CSR class
+          if (csr.addr(11 downto 3) = csr_class_trap_c) then -- machine trap handling CSR class
             -- R/W: mscratch - machine scratch register --
-            if (csr.addr(3 downto 0) = csr_mscratch_c(3 downto 0)) then
+            if (csr.addr(2 downto 0) = csr_mscratch_c(2 downto 0)) then
               csr.mscratch <= csr.wdata;
             end if;
             -- R/W: mepc - machine exception program counter --
-            if (csr.addr(3 downto 0) = csr_mepc_c(3 downto 0)) then
+            if (csr.addr(2 downto 0) = csr_mepc_c(2 downto 0)) then
               csr.mepc <= csr.wdata(data_width_c-1 downto 1) & '0';
             end if;
             -- R/W: mcause - machine trap cause --
-            if (csr.addr(3 downto 0) = csr_mcause_c(3 downto 0)) then
+            if (csr.addr(2 downto 0) = csr_mcause_c(2 downto 0)) then
               csr.mcause(csr.mcause'left) <= csr.wdata(31); -- 1: interrupt, 0: exception
               csr.mcause(4 downto 0)      <= csr.wdata(4 downto 0); -- identifier
             end if;
@@ -2087,7 +2087,9 @@ begin
             if (csr.addr(4 downto 0) = csr_mcountinhibit_c(4 downto 0)) then
               csr.mcountinhibit_cy  <= csr.wdata(0); -- enable auto-increment of [m]cycle[h] counter
               csr.mcountinhibit_ir  <= csr.wdata(2); -- enable auto-increment of [m]instret[h] counter
-              csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- enable auto-increment of [m]hpmcounter*[h] counter
+              if (HPM_NUM_CNTS > 0) then -- any HPMs available?
+                csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- enable auto-increment of [m]hpmcounter*[h] counter
+              end if;
             end if;
             -- machine performance-monitors event selector --
             if (HPM_NUM_CNTS > 0) then
@@ -2511,10 +2513,12 @@ begin
             csr.rdata(07) <= csr.mstatus_mpie; -- MPIE
             csr.rdata(11) <= csr.mstatus_mpp(0); -- MPP: machine previous privilege mode low
             csr.rdata(12) <= csr.mstatus_mpp(1); -- MPP: machine previous privilege mode high
-            csr.rdata(13) <= csr.mstatus_fs; -- FS(0): FPU status - OFF or DIRTY
-            csr.rdata(14) <= csr.mstatus_fs; -- FS(1): FPU status - OFF or DIRTY
             csr.rdata(21) <= csr.mstatus_tw; -- TW: WFI timeout wait
-            csr.rdata(31) <= csr.mstatus_fs; -- SD: state dirty (only FPU yet)
+            if (CPU_EXTENSION_RISCV_Zfinx = true) then
+              csr.rdata(13) <= csr.mstatus_fs; -- FS(0): FPU status - OFF or DIRTY
+              csr.rdata(14) <= csr.mstatus_fs; -- FS(1): FPU status - OFF or DIRTY
+              csr.rdata(31) <= csr.mstatus_fs; -- SD: state dirty (only FPU yet)
+            end if;
           when csr_misa_c => -- misa (r/-): ISA and extensions
             csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
@@ -2562,130 +2566,132 @@ begin
               csr.rdata(16+i) <= trap_ctrl.irq_buf(interrupt_firq_0_c+i);
             end loop; -- i
 
-          -- physical memory protection - configuration --
+          -- physical memory protection - configuration (r/w) --
           -- --------------------------------------------------------------------
-          when csr_pmpcfg0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata <= csr.pmpcfg_rd(03) & csr.pmpcfg_rd(02) & csr.pmpcfg_rd(01) & csr.pmpcfg_rd(00); else NULL; end if; -- R/W: pmpcfg0
-          when csr_pmpcfg1_c  => if (PMP_NUM_REGIONS > 03) then csr.rdata <= csr.pmpcfg_rd(07) & csr.pmpcfg_rd(06) & csr.pmpcfg_rd(05) & csr.pmpcfg_rd(04); else NULL; end if; -- R/W: pmpcfg1
-          when csr_pmpcfg2_c  => if (PMP_NUM_REGIONS > 07) then csr.rdata <= csr.pmpcfg_rd(11) & csr.pmpcfg_rd(10) & csr.pmpcfg_rd(09) & csr.pmpcfg_rd(08); else NULL; end if; -- R/W: pmpcfg2
-          when csr_pmpcfg3_c  => if (PMP_NUM_REGIONS > 11) then csr.rdata <= csr.pmpcfg_rd(15) & csr.pmpcfg_rd(14) & csr.pmpcfg_rd(13) & csr.pmpcfg_rd(12); else NULL; end if; -- R/W: pmpcfg3
-          when csr_pmpcfg4_c  => if (PMP_NUM_REGIONS > 15) then csr.rdata <= csr.pmpcfg_rd(19) & csr.pmpcfg_rd(18) & csr.pmpcfg_rd(17) & csr.pmpcfg_rd(16); else NULL; end if; -- R/W: pmpcfg4
-          when csr_pmpcfg5_c  => if (PMP_NUM_REGIONS > 19) then csr.rdata <= csr.pmpcfg_rd(23) & csr.pmpcfg_rd(22) & csr.pmpcfg_rd(21) & csr.pmpcfg_rd(20); else NULL; end if; -- R/W: pmpcfg5
-          when csr_pmpcfg6_c  => if (PMP_NUM_REGIONS > 23) then csr.rdata <= csr.pmpcfg_rd(27) & csr.pmpcfg_rd(26) & csr.pmpcfg_rd(25) & csr.pmpcfg_rd(24); else NULL; end if; -- R/W: pmpcfg6
-          when csr_pmpcfg7_c  => if (PMP_NUM_REGIONS > 27) then csr.rdata <= csr.pmpcfg_rd(31) & csr.pmpcfg_rd(30) & csr.pmpcfg_rd(29) & csr.pmpcfg_rd(28); else NULL; end if; -- R/W: pmpcfg7
-          when csr_pmpcfg8_c  => if (PMP_NUM_REGIONS > 31) then csr.rdata <= csr.pmpcfg_rd(35) & csr.pmpcfg_rd(34) & csr.pmpcfg_rd(33) & csr.pmpcfg_rd(32); else NULL; end if; -- R/W: pmpcfg8
-          when csr_pmpcfg9_c  => if (PMP_NUM_REGIONS > 35) then csr.rdata <= csr.pmpcfg_rd(39) & csr.pmpcfg_rd(38) & csr.pmpcfg_rd(37) & csr.pmpcfg_rd(36); else NULL; end if; -- R/W: pmpcfg9
-          when csr_pmpcfg10_c => if (PMP_NUM_REGIONS > 39) then csr.rdata <= csr.pmpcfg_rd(43) & csr.pmpcfg_rd(42) & csr.pmpcfg_rd(41) & csr.pmpcfg_rd(40); else NULL; end if; -- R/W: pmpcfg10
-          when csr_pmpcfg11_c => if (PMP_NUM_REGIONS > 43) then csr.rdata <= csr.pmpcfg_rd(47) & csr.pmpcfg_rd(46) & csr.pmpcfg_rd(45) & csr.pmpcfg_rd(44); else NULL; end if; -- R/W: pmpcfg11
-          when csr_pmpcfg12_c => if (PMP_NUM_REGIONS > 47) then csr.rdata <= csr.pmpcfg_rd(51) & csr.pmpcfg_rd(50) & csr.pmpcfg_rd(49) & csr.pmpcfg_rd(48); else NULL; end if; -- R/W: pmpcfg12
-          when csr_pmpcfg13_c => if (PMP_NUM_REGIONS > 51) then csr.rdata <= csr.pmpcfg_rd(55) & csr.pmpcfg_rd(54) & csr.pmpcfg_rd(53) & csr.pmpcfg_rd(52); else NULL; end if; -- R/W: pmpcfg13
-          when csr_pmpcfg14_c => if (PMP_NUM_REGIONS > 55) then csr.rdata <= csr.pmpcfg_rd(59) & csr.pmpcfg_rd(58) & csr.pmpcfg_rd(57) & csr.pmpcfg_rd(56); else NULL; end if; -- R/W: pmpcfg14
-          when csr_pmpcfg15_c => if (PMP_NUM_REGIONS > 59) then csr.rdata <= csr.pmpcfg_rd(63) & csr.pmpcfg_rd(62) & csr.pmpcfg_rd(61) & csr.pmpcfg_rd(60); else NULL; end if; -- R/W: pmpcfg15
+          when csr_pmpcfg0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata <= csr.pmpcfg_rd(03) & csr.pmpcfg_rd(02) & csr.pmpcfg_rd(01) & csr.pmpcfg_rd(00); else NULL; end if;
+          when csr_pmpcfg1_c  => if (PMP_NUM_REGIONS > 03) then csr.rdata <= csr.pmpcfg_rd(07) & csr.pmpcfg_rd(06) & csr.pmpcfg_rd(05) & csr.pmpcfg_rd(04); else NULL; end if;
+          when csr_pmpcfg2_c  => if (PMP_NUM_REGIONS > 07) then csr.rdata <= csr.pmpcfg_rd(11) & csr.pmpcfg_rd(10) & csr.pmpcfg_rd(09) & csr.pmpcfg_rd(08); else NULL; end if;
+          when csr_pmpcfg3_c  => if (PMP_NUM_REGIONS > 11) then csr.rdata <= csr.pmpcfg_rd(15) & csr.pmpcfg_rd(14) & csr.pmpcfg_rd(13) & csr.pmpcfg_rd(12); else NULL; end if;
+          when csr_pmpcfg4_c  => if (PMP_NUM_REGIONS > 15) then csr.rdata <= csr.pmpcfg_rd(19) & csr.pmpcfg_rd(18) & csr.pmpcfg_rd(17) & csr.pmpcfg_rd(16); else NULL; end if;
+          when csr_pmpcfg5_c  => if (PMP_NUM_REGIONS > 19) then csr.rdata <= csr.pmpcfg_rd(23) & csr.pmpcfg_rd(22) & csr.pmpcfg_rd(21) & csr.pmpcfg_rd(20); else NULL; end if;
+          when csr_pmpcfg6_c  => if (PMP_NUM_REGIONS > 23) then csr.rdata <= csr.pmpcfg_rd(27) & csr.pmpcfg_rd(26) & csr.pmpcfg_rd(25) & csr.pmpcfg_rd(24); else NULL; end if;
+          when csr_pmpcfg7_c  => if (PMP_NUM_REGIONS > 27) then csr.rdata <= csr.pmpcfg_rd(31) & csr.pmpcfg_rd(30) & csr.pmpcfg_rd(29) & csr.pmpcfg_rd(28); else NULL; end if;
+          when csr_pmpcfg8_c  => if (PMP_NUM_REGIONS > 31) then csr.rdata <= csr.pmpcfg_rd(35) & csr.pmpcfg_rd(34) & csr.pmpcfg_rd(33) & csr.pmpcfg_rd(32); else NULL; end if;
+          when csr_pmpcfg9_c  => if (PMP_NUM_REGIONS > 35) then csr.rdata <= csr.pmpcfg_rd(39) & csr.pmpcfg_rd(38) & csr.pmpcfg_rd(37) & csr.pmpcfg_rd(36); else NULL; end if;
+          when csr_pmpcfg10_c => if (PMP_NUM_REGIONS > 39) then csr.rdata <= csr.pmpcfg_rd(43) & csr.pmpcfg_rd(42) & csr.pmpcfg_rd(41) & csr.pmpcfg_rd(40); else NULL; end if;
+          when csr_pmpcfg11_c => if (PMP_NUM_REGIONS > 43) then csr.rdata <= csr.pmpcfg_rd(47) & csr.pmpcfg_rd(46) & csr.pmpcfg_rd(45) & csr.pmpcfg_rd(44); else NULL; end if;
+          when csr_pmpcfg12_c => if (PMP_NUM_REGIONS > 47) then csr.rdata <= csr.pmpcfg_rd(51) & csr.pmpcfg_rd(50) & csr.pmpcfg_rd(49) & csr.pmpcfg_rd(48); else NULL; end if;
+          when csr_pmpcfg13_c => if (PMP_NUM_REGIONS > 51) then csr.rdata <= csr.pmpcfg_rd(55) & csr.pmpcfg_rd(54) & csr.pmpcfg_rd(53) & csr.pmpcfg_rd(52); else NULL; end if;
+          when csr_pmpcfg14_c => if (PMP_NUM_REGIONS > 55) then csr.rdata <= csr.pmpcfg_rd(59) & csr.pmpcfg_rd(58) & csr.pmpcfg_rd(57) & csr.pmpcfg_rd(56); else NULL; end if;
+          when csr_pmpcfg15_c => if (PMP_NUM_REGIONS > 59) then csr.rdata <= csr.pmpcfg_rd(63) & csr.pmpcfg_rd(62) & csr.pmpcfg_rd(61) & csr.pmpcfg_rd(60); else NULL; end if;
 
-          -- physical memory protection - addresses --
+          -- physical memory protection - addresses (r/w) --
           -- --------------------------------------------------------------------
-          when csr_pmpaddr0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata <= csr.pmpaddr(00); else NULL; end if; -- R/W: pmpaddr0
-          when csr_pmpaddr1_c  => if (PMP_NUM_REGIONS > 01) then csr.rdata <= csr.pmpaddr(01); else NULL; end if; -- R/W: pmpaddr1
-          when csr_pmpaddr2_c  => if (PMP_NUM_REGIONS > 02) then csr.rdata <= csr.pmpaddr(02); else NULL; end if; -- R/W: pmpaddr2
-          when csr_pmpaddr3_c  => if (PMP_NUM_REGIONS > 03) then csr.rdata <= csr.pmpaddr(03); else NULL; end if; -- R/W: pmpaddr3
-          when csr_pmpaddr4_c  => if (PMP_NUM_REGIONS > 04) then csr.rdata <= csr.pmpaddr(04); else NULL; end if; -- R/W: pmpaddr4
-          when csr_pmpaddr5_c  => if (PMP_NUM_REGIONS > 05) then csr.rdata <= csr.pmpaddr(05); else NULL; end if; -- R/W: pmpaddr5
-          when csr_pmpaddr6_c  => if (PMP_NUM_REGIONS > 06) then csr.rdata <= csr.pmpaddr(06); else NULL; end if; -- R/W: pmpaddr6
-          when csr_pmpaddr7_c  => if (PMP_NUM_REGIONS > 07) then csr.rdata <= csr.pmpaddr(07); else NULL; end if; -- R/W: pmpaddr7
-          when csr_pmpaddr8_c  => if (PMP_NUM_REGIONS > 08) then csr.rdata <= csr.pmpaddr(08); else NULL; end if; -- R/W: pmpaddr8
-          when csr_pmpaddr9_c  => if (PMP_NUM_REGIONS > 09) then csr.rdata <= csr.pmpaddr(09); else NULL; end if; -- R/W: pmpaddr9
-          when csr_pmpaddr10_c => if (PMP_NUM_REGIONS > 10) then csr.rdata <= csr.pmpaddr(10); else NULL; end if; -- R/W: pmpaddr10
-          when csr_pmpaddr11_c => if (PMP_NUM_REGIONS > 11) then csr.rdata <= csr.pmpaddr(11); else NULL; end if; -- R/W: pmpaddr11
-          when csr_pmpaddr12_c => if (PMP_NUM_REGIONS > 12) then csr.rdata <= csr.pmpaddr(12); else NULL; end if; -- R/W: pmpaddr12
-          when csr_pmpaddr13_c => if (PMP_NUM_REGIONS > 13) then csr.rdata <= csr.pmpaddr(13); else NULL; end if; -- R/W: pmpaddr13
-          when csr_pmpaddr14_c => if (PMP_NUM_REGIONS > 14) then csr.rdata <= csr.pmpaddr(14); else NULL; end if; -- R/W: pmpaddr14
-          when csr_pmpaddr15_c => if (PMP_NUM_REGIONS > 15) then csr.rdata <= csr.pmpaddr(15); else NULL; end if; -- R/W: pmpaddr15
-          when csr_pmpaddr16_c => if (PMP_NUM_REGIONS > 16) then csr.rdata <= csr.pmpaddr(16); else NULL; end if; -- R/W: pmpaddr16
-          when csr_pmpaddr17_c => if (PMP_NUM_REGIONS > 17) then csr.rdata <= csr.pmpaddr(17); else NULL; end if; -- R/W: pmpaddr17
-          when csr_pmpaddr18_c => if (PMP_NUM_REGIONS > 18) then csr.rdata <= csr.pmpaddr(18); else NULL; end if; -- R/W: pmpaddr18
-          when csr_pmpaddr19_c => if (PMP_NUM_REGIONS > 19) then csr.rdata <= csr.pmpaddr(19); else NULL; end if; -- R/W: pmpaddr19
-          when csr_pmpaddr20_c => if (PMP_NUM_REGIONS > 20) then csr.rdata <= csr.pmpaddr(20); else NULL; end if; -- R/W: pmpaddr20
-          when csr_pmpaddr21_c => if (PMP_NUM_REGIONS > 21) then csr.rdata <= csr.pmpaddr(21); else NULL; end if; -- R/W: pmpaddr21
-          when csr_pmpaddr22_c => if (PMP_NUM_REGIONS > 22) then csr.rdata <= csr.pmpaddr(22); else NULL; end if; -- R/W: pmpaddr22
-          when csr_pmpaddr23_c => if (PMP_NUM_REGIONS > 23) then csr.rdata <= csr.pmpaddr(23); else NULL; end if; -- R/W: pmpaddr23
-          when csr_pmpaddr24_c => if (PMP_NUM_REGIONS > 24) then csr.rdata <= csr.pmpaddr(24); else NULL; end if; -- R/W: pmpaddr24
-          when csr_pmpaddr25_c => if (PMP_NUM_REGIONS > 25) then csr.rdata <= csr.pmpaddr(25); else NULL; end if; -- R/W: pmpaddr25
-          when csr_pmpaddr26_c => if (PMP_NUM_REGIONS > 26) then csr.rdata <= csr.pmpaddr(26); else NULL; end if; -- R/W: pmpaddr26
-          when csr_pmpaddr27_c => if (PMP_NUM_REGIONS > 27) then csr.rdata <= csr.pmpaddr(27); else NULL; end if; -- R/W: pmpaddr27
-          when csr_pmpaddr28_c => if (PMP_NUM_REGIONS > 28) then csr.rdata <= csr.pmpaddr(28); else NULL; end if; -- R/W: pmpaddr28
-          when csr_pmpaddr29_c => if (PMP_NUM_REGIONS > 29) then csr.rdata <= csr.pmpaddr(29); else NULL; end if; -- R/W: pmpaddr29
-          when csr_pmpaddr30_c => if (PMP_NUM_REGIONS > 30) then csr.rdata <= csr.pmpaddr(30); else NULL; end if; -- R/W: pmpaddr30
-          when csr_pmpaddr31_c => if (PMP_NUM_REGIONS > 31) then csr.rdata <= csr.pmpaddr(31); else NULL; end if; -- R/W: pmpaddr31
-          when csr_pmpaddr32_c => if (PMP_NUM_REGIONS > 32) then csr.rdata <= csr.pmpaddr(32); else NULL; end if; -- R/W: pmpaddr32
-          when csr_pmpaddr33_c => if (PMP_NUM_REGIONS > 33) then csr.rdata <= csr.pmpaddr(33); else NULL; end if; -- R/W: pmpaddr33
-          when csr_pmpaddr34_c => if (PMP_NUM_REGIONS > 34) then csr.rdata <= csr.pmpaddr(34); else NULL; end if; -- R/W: pmpaddr34
-          when csr_pmpaddr35_c => if (PMP_NUM_REGIONS > 35) then csr.rdata <= csr.pmpaddr(35); else NULL; end if; -- R/W: pmpaddr35
-          when csr_pmpaddr36_c => if (PMP_NUM_REGIONS > 36) then csr.rdata <= csr.pmpaddr(36); else NULL; end if; -- R/W: pmpaddr36
-          when csr_pmpaddr37_c => if (PMP_NUM_REGIONS > 37) then csr.rdata <= csr.pmpaddr(37); else NULL; end if; -- R/W: pmpaddr37
-          when csr_pmpaddr38_c => if (PMP_NUM_REGIONS > 38) then csr.rdata <= csr.pmpaddr(38); else NULL; end if; -- R/W: pmpaddr38
-          when csr_pmpaddr39_c => if (PMP_NUM_REGIONS > 39) then csr.rdata <= csr.pmpaddr(39); else NULL; end if; -- R/W: pmpaddr39
-          when csr_pmpaddr40_c => if (PMP_NUM_REGIONS > 40) then csr.rdata <= csr.pmpaddr(40); else NULL; end if; -- R/W: pmpaddr40
-          when csr_pmpaddr41_c => if (PMP_NUM_REGIONS > 41) then csr.rdata <= csr.pmpaddr(41); else NULL; end if; -- R/W: pmpaddr41
-          when csr_pmpaddr42_c => if (PMP_NUM_REGIONS > 42) then csr.rdata <= csr.pmpaddr(42); else NULL; end if; -- R/W: pmpaddr42
-          when csr_pmpaddr43_c => if (PMP_NUM_REGIONS > 43) then csr.rdata <= csr.pmpaddr(43); else NULL; end if; -- R/W: pmpaddr43
-          when csr_pmpaddr44_c => if (PMP_NUM_REGIONS > 44) then csr.rdata <= csr.pmpaddr(44); else NULL; end if; -- R/W: pmpaddr44
-          when csr_pmpaddr45_c => if (PMP_NUM_REGIONS > 45) then csr.rdata <= csr.pmpaddr(45); else NULL; end if; -- R/W: pmpaddr45
-          when csr_pmpaddr46_c => if (PMP_NUM_REGIONS > 46) then csr.rdata <= csr.pmpaddr(46); else NULL; end if; -- R/W: pmpaddr46
-          when csr_pmpaddr47_c => if (PMP_NUM_REGIONS > 47) then csr.rdata <= csr.pmpaddr(47); else NULL; end if; -- R/W: pmpaddr47
-          when csr_pmpaddr48_c => if (PMP_NUM_REGIONS > 48) then csr.rdata <= csr.pmpaddr(48); else NULL; end if; -- R/W: pmpaddr48
-          when csr_pmpaddr49_c => if (PMP_NUM_REGIONS > 49) then csr.rdata <= csr.pmpaddr(49); else NULL; end if; -- R/W: pmpaddr49
-          when csr_pmpaddr50_c => if (PMP_NUM_REGIONS > 50) then csr.rdata <= csr.pmpaddr(50); else NULL; end if; -- R/W: pmpaddr50
-          when csr_pmpaddr51_c => if (PMP_NUM_REGIONS > 51) then csr.rdata <= csr.pmpaddr(51); else NULL; end if; -- R/W: pmpaddr51
-          when csr_pmpaddr52_c => if (PMP_NUM_REGIONS > 52) then csr.rdata <= csr.pmpaddr(52); else NULL; end if; -- R/W: pmpaddr52
-          when csr_pmpaddr53_c => if (PMP_NUM_REGIONS > 53) then csr.rdata <= csr.pmpaddr(53); else NULL; end if; -- R/W: pmpaddr53
-          when csr_pmpaddr54_c => if (PMP_NUM_REGIONS > 54) then csr.rdata <= csr.pmpaddr(54); else NULL; end if; -- R/W: pmpaddr54
-          when csr_pmpaddr55_c => if (PMP_NUM_REGIONS > 55) then csr.rdata <= csr.pmpaddr(55); else NULL; end if; -- R/W: pmpaddr55
-          when csr_pmpaddr56_c => if (PMP_NUM_REGIONS > 56) then csr.rdata <= csr.pmpaddr(56); else NULL; end if; -- R/W: pmpaddr56
-          when csr_pmpaddr57_c => if (PMP_NUM_REGIONS > 57) then csr.rdata <= csr.pmpaddr(57); else NULL; end if; -- R/W: pmpaddr57
-          when csr_pmpaddr58_c => if (PMP_NUM_REGIONS > 58) then csr.rdata <= csr.pmpaddr(58); else NULL; end if; -- R/W: pmpaddr58
-          when csr_pmpaddr59_c => if (PMP_NUM_REGIONS > 59) then csr.rdata <= csr.pmpaddr(59); else NULL; end if; -- R/W: pmpaddr59
-          when csr_pmpaddr60_c => if (PMP_NUM_REGIONS > 60) then csr.rdata <= csr.pmpaddr(60); else NULL; end if; -- R/W: pmpaddr60
-          when csr_pmpaddr61_c => if (PMP_NUM_REGIONS > 61) then csr.rdata <= csr.pmpaddr(61); else NULL; end if; -- R/W: pmpaddr61
-          when csr_pmpaddr62_c => if (PMP_NUM_REGIONS > 62) then csr.rdata <= csr.pmpaddr(62); else NULL; end if; -- R/W: pmpaddr62
-          when csr_pmpaddr63_c => if (PMP_NUM_REGIONS > 63) then csr.rdata <= csr.pmpaddr(63); else NULL; end if; -- R/W: pmpaddr63
+          when csr_pmpaddr0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata <= csr.pmpaddr(00); else NULL; end if;
+          when csr_pmpaddr1_c  => if (PMP_NUM_REGIONS > 01) then csr.rdata <= csr.pmpaddr(01); else NULL; end if;
+          when csr_pmpaddr2_c  => if (PMP_NUM_REGIONS > 02) then csr.rdata <= csr.pmpaddr(02); else NULL; end if;
+          when csr_pmpaddr3_c  => if (PMP_NUM_REGIONS > 03) then csr.rdata <= csr.pmpaddr(03); else NULL; end if;
+          when csr_pmpaddr4_c  => if (PMP_NUM_REGIONS > 04) then csr.rdata <= csr.pmpaddr(04); else NULL; end if;
+          when csr_pmpaddr5_c  => if (PMP_NUM_REGIONS > 05) then csr.rdata <= csr.pmpaddr(05); else NULL; end if;
+          when csr_pmpaddr6_c  => if (PMP_NUM_REGIONS > 06) then csr.rdata <= csr.pmpaddr(06); else NULL; end if;
+          when csr_pmpaddr7_c  => if (PMP_NUM_REGIONS > 07) then csr.rdata <= csr.pmpaddr(07); else NULL; end if;
+          when csr_pmpaddr8_c  => if (PMP_NUM_REGIONS > 08) then csr.rdata <= csr.pmpaddr(08); else NULL; end if;
+          when csr_pmpaddr9_c  => if (PMP_NUM_REGIONS > 09) then csr.rdata <= csr.pmpaddr(09); else NULL; end if;
+          when csr_pmpaddr10_c => if (PMP_NUM_REGIONS > 10) then csr.rdata <= csr.pmpaddr(10); else NULL; end if;
+          when csr_pmpaddr11_c => if (PMP_NUM_REGIONS > 11) then csr.rdata <= csr.pmpaddr(11); else NULL; end if;
+          when csr_pmpaddr12_c => if (PMP_NUM_REGIONS > 12) then csr.rdata <= csr.pmpaddr(12); else NULL; end if;
+          when csr_pmpaddr13_c => if (PMP_NUM_REGIONS > 13) then csr.rdata <= csr.pmpaddr(13); else NULL; end if;
+          when csr_pmpaddr14_c => if (PMP_NUM_REGIONS > 14) then csr.rdata <= csr.pmpaddr(14); else NULL; end if;
+          when csr_pmpaddr15_c => if (PMP_NUM_REGIONS > 15) then csr.rdata <= csr.pmpaddr(15); else NULL; end if;
+          when csr_pmpaddr16_c => if (PMP_NUM_REGIONS > 16) then csr.rdata <= csr.pmpaddr(16); else NULL; end if;
+          when csr_pmpaddr17_c => if (PMP_NUM_REGIONS > 17) then csr.rdata <= csr.pmpaddr(17); else NULL; end if;
+          when csr_pmpaddr18_c => if (PMP_NUM_REGIONS > 18) then csr.rdata <= csr.pmpaddr(18); else NULL; end if;
+          when csr_pmpaddr19_c => if (PMP_NUM_REGIONS > 19) then csr.rdata <= csr.pmpaddr(19); else NULL; end if;
+          when csr_pmpaddr20_c => if (PMP_NUM_REGIONS > 20) then csr.rdata <= csr.pmpaddr(20); else NULL; end if;
+          when csr_pmpaddr21_c => if (PMP_NUM_REGIONS > 21) then csr.rdata <= csr.pmpaddr(21); else NULL; end if;
+          when csr_pmpaddr22_c => if (PMP_NUM_REGIONS > 22) then csr.rdata <= csr.pmpaddr(22); else NULL; end if;
+          when csr_pmpaddr23_c => if (PMP_NUM_REGIONS > 23) then csr.rdata <= csr.pmpaddr(23); else NULL; end if;
+          when csr_pmpaddr24_c => if (PMP_NUM_REGIONS > 24) then csr.rdata <= csr.pmpaddr(24); else NULL; end if;
+          when csr_pmpaddr25_c => if (PMP_NUM_REGIONS > 25) then csr.rdata <= csr.pmpaddr(25); else NULL; end if;
+          when csr_pmpaddr26_c => if (PMP_NUM_REGIONS > 26) then csr.rdata <= csr.pmpaddr(26); else NULL; end if;
+          when csr_pmpaddr27_c => if (PMP_NUM_REGIONS > 27) then csr.rdata <= csr.pmpaddr(27); else NULL; end if;
+          when csr_pmpaddr28_c => if (PMP_NUM_REGIONS > 28) then csr.rdata <= csr.pmpaddr(28); else NULL; end if;
+          when csr_pmpaddr29_c => if (PMP_NUM_REGIONS > 29) then csr.rdata <= csr.pmpaddr(29); else NULL; end if;
+          when csr_pmpaddr30_c => if (PMP_NUM_REGIONS > 30) then csr.rdata <= csr.pmpaddr(30); else NULL; end if;
+          when csr_pmpaddr31_c => if (PMP_NUM_REGIONS > 31) then csr.rdata <= csr.pmpaddr(31); else NULL; end if;
+          when csr_pmpaddr32_c => if (PMP_NUM_REGIONS > 32) then csr.rdata <= csr.pmpaddr(32); else NULL; end if;
+          when csr_pmpaddr33_c => if (PMP_NUM_REGIONS > 33) then csr.rdata <= csr.pmpaddr(33); else NULL; end if;
+          when csr_pmpaddr34_c => if (PMP_NUM_REGIONS > 34) then csr.rdata <= csr.pmpaddr(34); else NULL; end if;
+          when csr_pmpaddr35_c => if (PMP_NUM_REGIONS > 35) then csr.rdata <= csr.pmpaddr(35); else NULL; end if;
+          when csr_pmpaddr36_c => if (PMP_NUM_REGIONS > 36) then csr.rdata <= csr.pmpaddr(36); else NULL; end if;
+          when csr_pmpaddr37_c => if (PMP_NUM_REGIONS > 37) then csr.rdata <= csr.pmpaddr(37); else NULL; end if;
+          when csr_pmpaddr38_c => if (PMP_NUM_REGIONS > 38) then csr.rdata <= csr.pmpaddr(38); else NULL; end if;
+          when csr_pmpaddr39_c => if (PMP_NUM_REGIONS > 39) then csr.rdata <= csr.pmpaddr(39); else NULL; end if;
+          when csr_pmpaddr40_c => if (PMP_NUM_REGIONS > 40) then csr.rdata <= csr.pmpaddr(40); else NULL; end if;
+          when csr_pmpaddr41_c => if (PMP_NUM_REGIONS > 41) then csr.rdata <= csr.pmpaddr(41); else NULL; end if;
+          when csr_pmpaddr42_c => if (PMP_NUM_REGIONS > 42) then csr.rdata <= csr.pmpaddr(42); else NULL; end if;
+          when csr_pmpaddr43_c => if (PMP_NUM_REGIONS > 43) then csr.rdata <= csr.pmpaddr(43); else NULL; end if;
+          when csr_pmpaddr44_c => if (PMP_NUM_REGIONS > 44) then csr.rdata <= csr.pmpaddr(44); else NULL; end if;
+          when csr_pmpaddr45_c => if (PMP_NUM_REGIONS > 45) then csr.rdata <= csr.pmpaddr(45); else NULL; end if;
+          when csr_pmpaddr46_c => if (PMP_NUM_REGIONS > 46) then csr.rdata <= csr.pmpaddr(46); else NULL; end if;
+          when csr_pmpaddr47_c => if (PMP_NUM_REGIONS > 47) then csr.rdata <= csr.pmpaddr(47); else NULL; end if;
+          when csr_pmpaddr48_c => if (PMP_NUM_REGIONS > 48) then csr.rdata <= csr.pmpaddr(48); else NULL; end if;
+          when csr_pmpaddr49_c => if (PMP_NUM_REGIONS > 49) then csr.rdata <= csr.pmpaddr(49); else NULL; end if;
+          when csr_pmpaddr50_c => if (PMP_NUM_REGIONS > 50) then csr.rdata <= csr.pmpaddr(50); else NULL; end if;
+          when csr_pmpaddr51_c => if (PMP_NUM_REGIONS > 51) then csr.rdata <= csr.pmpaddr(51); else NULL; end if;
+          when csr_pmpaddr52_c => if (PMP_NUM_REGIONS > 52) then csr.rdata <= csr.pmpaddr(52); else NULL; end if;
+          when csr_pmpaddr53_c => if (PMP_NUM_REGIONS > 53) then csr.rdata <= csr.pmpaddr(53); else NULL; end if;
+          when csr_pmpaddr54_c => if (PMP_NUM_REGIONS > 54) then csr.rdata <= csr.pmpaddr(54); else NULL; end if;
+          when csr_pmpaddr55_c => if (PMP_NUM_REGIONS > 55) then csr.rdata <= csr.pmpaddr(55); else NULL; end if;
+          when csr_pmpaddr56_c => if (PMP_NUM_REGIONS > 56) then csr.rdata <= csr.pmpaddr(56); else NULL; end if;
+          when csr_pmpaddr57_c => if (PMP_NUM_REGIONS > 57) then csr.rdata <= csr.pmpaddr(57); else NULL; end if;
+          when csr_pmpaddr58_c => if (PMP_NUM_REGIONS > 58) then csr.rdata <= csr.pmpaddr(58); else NULL; end if;
+          when csr_pmpaddr59_c => if (PMP_NUM_REGIONS > 59) then csr.rdata <= csr.pmpaddr(59); else NULL; end if;
+          when csr_pmpaddr60_c => if (PMP_NUM_REGIONS > 60) then csr.rdata <= csr.pmpaddr(60); else NULL; end if;
+          when csr_pmpaddr61_c => if (PMP_NUM_REGIONS > 61) then csr.rdata <= csr.pmpaddr(61); else NULL; end if;
+          when csr_pmpaddr62_c => if (PMP_NUM_REGIONS > 62) then csr.rdata <= csr.pmpaddr(62); else NULL; end if;
+          when csr_pmpaddr63_c => if (PMP_NUM_REGIONS > 63) then csr.rdata <= csr.pmpaddr(63); else NULL; end if;
 
           -- machine counter setup --
           -- --------------------------------------------------------------------
           when csr_mcountinhibit_c => -- mcountinhibit (r/w): machine counter-inhibit register
             csr.rdata(0) <= csr.mcountinhibit_cy; -- enable auto-increment of [m]cycle[h] counter
             csr.rdata(2) <= csr.mcountinhibit_ir; -- enable auto-increment of [m]instret[h] counter
-            csr.rdata(csr.mcountinhibit_hpm'left+3 downto 3) <= csr.mcountinhibit_hpm; -- enable auto-increment of [m]hpmcounterx[h] counter
+            if (HPM_NUM_CNTS > 0) then -- any HPMs available?
+              csr.rdata(csr.mcountinhibit_hpm'left+3 downto 3) <= csr.mcountinhibit_hpm; -- enable auto-increment of [m]hpmcounterx[h] counter
+            end if;
 
-          -- machine performance-monitoring event selector --
+          -- machine performance-monitoring event selector (r/w) --
           -- --------------------------------------------------------------------
-          when csr_mhpmevent3_c  => if (HPM_NUM_CNTS > 00) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(00); else NULL; end if; -- R/W: mhpmevent3
-          when csr_mhpmevent4_c  => if (HPM_NUM_CNTS > 01) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(01); else NULL; end if; -- R/W: mhpmevent4
-          when csr_mhpmevent5_c  => if (HPM_NUM_CNTS > 02) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(02); else NULL; end if; -- R/W: mhpmevent5
-          when csr_mhpmevent6_c  => if (HPM_NUM_CNTS > 03) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(03); else NULL; end if; -- R/W: mhpmevent6
-          when csr_mhpmevent7_c  => if (HPM_NUM_CNTS > 04) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(04); else NULL; end if; -- R/W: mhpmevent7
-          when csr_mhpmevent8_c  => if (HPM_NUM_CNTS > 05) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(05); else NULL; end if; -- R/W: mhpmevent8
-          when csr_mhpmevent9_c  => if (HPM_NUM_CNTS > 06) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(06); else NULL; end if; -- R/W: mhpmevent9
-          when csr_mhpmevent10_c => if (HPM_NUM_CNTS > 07) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(07); else NULL; end if; -- R/W: mhpmevent10
-          when csr_mhpmevent11_c => if (HPM_NUM_CNTS > 08) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(08); else NULL; end if; -- R/W: mhpmevent11
-          when csr_mhpmevent12_c => if (HPM_NUM_CNTS > 09) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(09); else NULL; end if; -- R/W: mhpmevent12
-          when csr_mhpmevent13_c => if (HPM_NUM_CNTS > 10) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(10); else NULL; end if; -- R/W: mhpmevent13
-          when csr_mhpmevent14_c => if (HPM_NUM_CNTS > 11) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(11); else NULL; end if; -- R/W: mhpmevent14
-          when csr_mhpmevent15_c => if (HPM_NUM_CNTS > 12) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(12); else NULL; end if; -- R/W: mhpmevent15
-          when csr_mhpmevent16_c => if (HPM_NUM_CNTS > 13) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(13); else NULL; end if; -- R/W: mhpmevent16
-          when csr_mhpmevent17_c => if (HPM_NUM_CNTS > 14) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(14); else NULL; end if; -- R/W: mhpmevent17
-          when csr_mhpmevent18_c => if (HPM_NUM_CNTS > 15) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(15); else NULL; end if; -- R/W: mhpmevent18
-          when csr_mhpmevent19_c => if (HPM_NUM_CNTS > 16) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(16); else NULL; end if; -- R/W: mhpmevent19
-          when csr_mhpmevent20_c => if (HPM_NUM_CNTS > 17) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(17); else NULL; end if; -- R/W: mhpmevent20
-          when csr_mhpmevent21_c => if (HPM_NUM_CNTS > 18) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(18); else NULL; end if; -- R/W: mhpmevent21
-          when csr_mhpmevent22_c => if (HPM_NUM_CNTS > 19) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(19); else NULL; end if; -- R/W: mhpmevent22
-          when csr_mhpmevent23_c => if (HPM_NUM_CNTS > 20) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(20); else NULL; end if; -- R/W: mhpmevent23
-          when csr_mhpmevent24_c => if (HPM_NUM_CNTS > 21) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(21); else NULL; end if; -- R/W: mhpmevent24
-          when csr_mhpmevent25_c => if (HPM_NUM_CNTS > 22) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(22); else NULL; end if; -- R/W: mhpmevent25
-          when csr_mhpmevent26_c => if (HPM_NUM_CNTS > 23) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(23); else NULL; end if; -- R/W: mhpmevent26
-          when csr_mhpmevent27_c => if (HPM_NUM_CNTS > 24) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(24); else NULL; end if; -- R/W: mhpmevent27
-          when csr_mhpmevent28_c => if (HPM_NUM_CNTS > 25) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(25); else NULL; end if; -- R/W: mhpmevent28
-          when csr_mhpmevent29_c => if (HPM_NUM_CNTS > 26) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(26); else NULL; end if; -- R/W: mhpmevent29
-          when csr_mhpmevent30_c => if (HPM_NUM_CNTS > 27) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(27); else NULL; end if; -- R/W: mhpmevent30
-          when csr_mhpmevent31_c => if (HPM_NUM_CNTS > 28) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(28); else NULL; end if; -- R/W: mhpmevent31
+          when csr_mhpmevent3_c  => if (HPM_NUM_CNTS > 00) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(00); else NULL; end if;
+          when csr_mhpmevent4_c  => if (HPM_NUM_CNTS > 01) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(01); else NULL; end if;
+          when csr_mhpmevent5_c  => if (HPM_NUM_CNTS > 02) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(02); else NULL; end if;
+          when csr_mhpmevent6_c  => if (HPM_NUM_CNTS > 03) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(03); else NULL; end if;
+          when csr_mhpmevent7_c  => if (HPM_NUM_CNTS > 04) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(04); else NULL; end if;
+          when csr_mhpmevent8_c  => if (HPM_NUM_CNTS > 05) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(05); else NULL; end if;
+          when csr_mhpmevent9_c  => if (HPM_NUM_CNTS > 06) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(06); else NULL; end if;
+          when csr_mhpmevent10_c => if (HPM_NUM_CNTS > 07) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(07); else NULL; end if;
+          when csr_mhpmevent11_c => if (HPM_NUM_CNTS > 08) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(08); else NULL; end if;
+          when csr_mhpmevent12_c => if (HPM_NUM_CNTS > 09) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(09); else NULL; end if;
+          when csr_mhpmevent13_c => if (HPM_NUM_CNTS > 10) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(10); else NULL; end if;
+          when csr_mhpmevent14_c => if (HPM_NUM_CNTS > 11) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(11); else NULL; end if;
+          when csr_mhpmevent15_c => if (HPM_NUM_CNTS > 12) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(12); else NULL; end if;
+          when csr_mhpmevent16_c => if (HPM_NUM_CNTS > 13) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(13); else NULL; end if;
+          when csr_mhpmevent17_c => if (HPM_NUM_CNTS > 14) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(14); else NULL; end if;
+          when csr_mhpmevent18_c => if (HPM_NUM_CNTS > 15) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(15); else NULL; end if;
+          when csr_mhpmevent19_c => if (HPM_NUM_CNTS > 16) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(16); else NULL; end if;
+          when csr_mhpmevent20_c => if (HPM_NUM_CNTS > 17) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(17); else NULL; end if;
+          when csr_mhpmevent21_c => if (HPM_NUM_CNTS > 18) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(18); else NULL; end if;
+          when csr_mhpmevent22_c => if (HPM_NUM_CNTS > 19) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(19); else NULL; end if;
+          when csr_mhpmevent23_c => if (HPM_NUM_CNTS > 20) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(20); else NULL; end if;
+          when csr_mhpmevent24_c => if (HPM_NUM_CNTS > 21) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(21); else NULL; end if;
+          when csr_mhpmevent25_c => if (HPM_NUM_CNTS > 22) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(22); else NULL; end if;
+          when csr_mhpmevent26_c => if (HPM_NUM_CNTS > 23) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(23); else NULL; end if;
+          when csr_mhpmevent27_c => if (HPM_NUM_CNTS > 24) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(24); else NULL; end if;
+          when csr_mhpmevent28_c => if (HPM_NUM_CNTS > 25) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(25); else NULL; end if;
+          when csr_mhpmevent29_c => if (HPM_NUM_CNTS > 26) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(26); else NULL; end if;
+          when csr_mhpmevent30_c => if (HPM_NUM_CNTS > 27) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(27); else NULL; end if;
+          when csr_mhpmevent31_c => if (HPM_NUM_CNTS > 28) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(28); else NULL; end if;
 
           -- counters and timers --
           -- --------------------------------------------------------------------
@@ -2699,78 +2705,79 @@ begin
           when csr_instreth_c | csr_minstreth_c => -- [m]instreth (r/w): Instructions-retired counter HIGH
             if (cpu_cnt_hi_width_c > 0) then csr.rdata(cpu_cnt_hi_width_c-1 downto 0) <= csr.minstreth(cpu_cnt_hi_width_c-1 downto 0); else NULL; end if;
 
-          when csr_time_c  => csr.rdata <= time_i(31 downto 0); -- time (r/-): System time LOW (from MTIME unit)
+          when csr_time_c  => csr.rdata <= time_i(31 downto 0);  -- time (r/-): System time LOW (from MTIME unit)
           when csr_timeh_c => csr.rdata <= time_i(63 downto 32); -- timeh (r/-): System time HIGH (from MTIME unit)
 
           -- hardware performance counters --
           -- --------------------------------------------------------------------
-          when csr_mhpmcounter3_c   => if (HPM_NUM_CNTS > 00) then csr.rdata <= csr.mhpmcounter_rd(00); else NULL; end if; -- r/w: mhpmcounter3 - low
-          when csr_mhpmcounter4_c   => if (HPM_NUM_CNTS > 01) then csr.rdata <= csr.mhpmcounter_rd(01); else NULL; end if; -- r/w: mhpmcounter4 - low
-          when csr_mhpmcounter5_c   => if (HPM_NUM_CNTS > 02) then csr.rdata <= csr.mhpmcounter_rd(02); else NULL; end if; -- r/w: mhpmcounter5 - low
-          when csr_mhpmcounter6_c   => if (HPM_NUM_CNTS > 03) then csr.rdata <= csr.mhpmcounter_rd(03); else NULL; end if; -- r/w: mhpmcounter6 - low
-          when csr_mhpmcounter7_c   => if (HPM_NUM_CNTS > 04) then csr.rdata <= csr.mhpmcounter_rd(04); else NULL; end if; -- r/w: mhpmcounter7 - low
-          when csr_mhpmcounter8_c   => if (HPM_NUM_CNTS > 05) then csr.rdata <= csr.mhpmcounter_rd(05); else NULL; end if; -- r/w: mhpmcounter8 - low
-          when csr_mhpmcounter9_c   => if (HPM_NUM_CNTS > 06) then csr.rdata <= csr.mhpmcounter_rd(06); else NULL; end if; -- r/w: mhpmcounter9 - low
-          when csr_mhpmcounter10_c  => if (HPM_NUM_CNTS > 07) then csr.rdata <= csr.mhpmcounter_rd(07); else NULL; end if; -- r/w: mhpmcounter10 - low
-          when csr_mhpmcounter11_c  => if (HPM_NUM_CNTS > 08) then csr.rdata <= csr.mhpmcounter_rd(08); else NULL; end if; -- r/w: mhpmcounter11 - low
-          when csr_mhpmcounter12_c  => if (HPM_NUM_CNTS > 09) then csr.rdata <= csr.mhpmcounter_rd(09); else NULL; end if; -- r/w: mhpmcounter12 - low
-          when csr_mhpmcounter13_c  => if (HPM_NUM_CNTS > 10) then csr.rdata <= csr.mhpmcounter_rd(10); else NULL; end if; -- r/w: mhpmcounter13 - low
-          when csr_mhpmcounter14_c  => if (HPM_NUM_CNTS > 11) then csr.rdata <= csr.mhpmcounter_rd(11); else NULL; end if; -- r/w: mhpmcounter14 - low
-          when csr_mhpmcounter15_c  => if (HPM_NUM_CNTS > 12) then csr.rdata <= csr.mhpmcounter_rd(12); else NULL; end if; -- r/w: mhpmcounter15 - low
-          when csr_mhpmcounter16_c  => if (HPM_NUM_CNTS > 13) then csr.rdata <= csr.mhpmcounter_rd(13); else NULL; end if; -- r/w: mhpmcounter16 - low
-          when csr_mhpmcounter17_c  => if (HPM_NUM_CNTS > 14) then csr.rdata <= csr.mhpmcounter_rd(14); else NULL; end if; -- r/w: mhpmcounter17 - low
-          when csr_mhpmcounter18_c  => if (HPM_NUM_CNTS > 15) then csr.rdata <= csr.mhpmcounter_rd(15); else NULL; end if; -- r/w: mhpmcounter18 - low
-          when csr_mhpmcounter19_c  => if (HPM_NUM_CNTS > 16) then csr.rdata <= csr.mhpmcounter_rd(16); else NULL; end if; -- r/w: mhpmcounter19 - low
-          when csr_mhpmcounter20_c  => if (HPM_NUM_CNTS > 17) then csr.rdata <= csr.mhpmcounter_rd(17); else NULL; end if; -- r/w: mhpmcounter20 - low
-          when csr_mhpmcounter21_c  => if (HPM_NUM_CNTS > 18) then csr.rdata <= csr.mhpmcounter_rd(18); else NULL; end if; -- r/w: mhpmcounter21 - low
-          when csr_mhpmcounter22_c  => if (HPM_NUM_CNTS > 19) then csr.rdata <= csr.mhpmcounter_rd(19); else NULL; end if; -- r/w: mhpmcounter22 - low
-          when csr_mhpmcounter23_c  => if (HPM_NUM_CNTS > 20) then csr.rdata <= csr.mhpmcounter_rd(20); else NULL; end if; -- r/w: mhpmcounter23 - low
-          when csr_mhpmcounter24_c  => if (HPM_NUM_CNTS > 21) then csr.rdata <= csr.mhpmcounter_rd(21); else NULL; end if; -- r/w: mhpmcounter24 - low
-          when csr_mhpmcounter25_c  => if (HPM_NUM_CNTS > 22) then csr.rdata <= csr.mhpmcounter_rd(22); else NULL; end if; -- r/w: mhpmcounter25 - low
-          when csr_mhpmcounter26_c  => if (HPM_NUM_CNTS > 23) then csr.rdata <= csr.mhpmcounter_rd(23); else NULL; end if; -- r/w: mhpmcounter26 - low
-          when csr_mhpmcounter27_c  => if (HPM_NUM_CNTS > 24) then csr.rdata <= csr.mhpmcounter_rd(24); else NULL; end if; -- r/w: mhpmcounter27 - low
-          when csr_mhpmcounter28_c  => if (HPM_NUM_CNTS > 25) then csr.rdata <= csr.mhpmcounter_rd(25); else NULL; end if; -- r/w: mhpmcounter28 - low
-          when csr_mhpmcounter29_c  => if (HPM_NUM_CNTS > 26) then csr.rdata <= csr.mhpmcounter_rd(26); else NULL; end if; -- r/w: mhpmcounter29 - low
-          when csr_mhpmcounter30_c  => if (HPM_NUM_CNTS > 27) then csr.rdata <= csr.mhpmcounter_rd(27); else NULL; end if; -- r/w: mhpmcounter30 - low
-          when csr_mhpmcounter31_c  => if (HPM_NUM_CNTS > 28) then csr.rdata <= csr.mhpmcounter_rd(28); else NULL; end if; -- r/w: mhpmcounter31 - low
-
-          when csr_mhpmcounter3h_c  => if (HPM_NUM_CNTS > 00) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(00); else NULL; end if; -- r/w: mhpmcounter3h - high
-          when csr_mhpmcounter4h_c  => if (HPM_NUM_CNTS > 01) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(01); else NULL; end if; -- r/w: mhpmcounter4h - high
-          when csr_mhpmcounter5h_c  => if (HPM_NUM_CNTS > 02) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(02); else NULL; end if; -- r/w: mhpmcounter5h - high
-          when csr_mhpmcounter6h_c  => if (HPM_NUM_CNTS > 03) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(03); else NULL; end if; -- r/w: mhpmcounter6h - high
-          when csr_mhpmcounter7h_c  => if (HPM_NUM_CNTS > 04) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(04); else NULL; end if; -- r/w: mhpmcounter7h - high
-          when csr_mhpmcounter8h_c  => if (HPM_NUM_CNTS > 05) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(05); else NULL; end if; -- r/w: mhpmcounter8h - high
-          when csr_mhpmcounter9h_c  => if (HPM_NUM_CNTS > 06) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(06); else NULL; end if; -- r/w: mhpmcounter9h - high
-          when csr_mhpmcounter10h_c => if (HPM_NUM_CNTS > 07) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(07); else NULL; end if; -- r/w: mhpmcounter10h - high
-          when csr_mhpmcounter11h_c => if (HPM_NUM_CNTS > 08) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(08); else NULL; end if; -- r/w: mhpmcounter11h - high
-          when csr_mhpmcounter12h_c => if (HPM_NUM_CNTS > 09) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(09); else NULL; end if; -- r/w: mhpmcounter12h - high
-          when csr_mhpmcounter13h_c => if (HPM_NUM_CNTS > 10) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(10); else NULL; end if; -- r/w: mhpmcounter13h - high
-          when csr_mhpmcounter14h_c => if (HPM_NUM_CNTS > 11) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(11); else NULL; end if; -- r/w: mhpmcounter14h - high
-          when csr_mhpmcounter15h_c => if (HPM_NUM_CNTS > 12) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(12); else NULL; end if; -- r/w: mhpmcounter15h - high
-          when csr_mhpmcounter16h_c => if (HPM_NUM_CNTS > 13) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(13); else NULL; end if; -- r/w: mhpmcounter16h - high
-          when csr_mhpmcounter17h_c => if (HPM_NUM_CNTS > 14) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(14); else NULL; end if; -- r/w: mhpmcounter17h - high
-          when csr_mhpmcounter18h_c => if (HPM_NUM_CNTS > 15) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(15); else NULL; end if; -- r/w: mhpmcounter18h - high
-          when csr_mhpmcounter19h_c => if (HPM_NUM_CNTS > 16) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(16); else NULL; end if; -- r/w: mhpmcounter19h - high
-          when csr_mhpmcounter20h_c => if (HPM_NUM_CNTS > 17) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(17); else NULL; end if; -- r/w: mhpmcounter20h - high
-          when csr_mhpmcounter21h_c => if (HPM_NUM_CNTS > 18) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(18); else NULL; end if; -- r/w: mhpmcounter21h - high
-          when csr_mhpmcounter22h_c => if (HPM_NUM_CNTS > 19) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(19); else NULL; end if; -- r/w: mhpmcounter22h - high
-          when csr_mhpmcounter23h_c => if (HPM_NUM_CNTS > 20) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(20); else NULL; end if; -- r/w: mhpmcounter23h - high
-          when csr_mhpmcounter24h_c => if (HPM_NUM_CNTS > 21) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(21); else NULL; end if; -- r/w: mhpmcounter24h - high
-          when csr_mhpmcounter25h_c => if (HPM_NUM_CNTS > 22) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(22); else NULL; end if; -- r/w: mhpmcounter25h - high
-          when csr_mhpmcounter26h_c => if (HPM_NUM_CNTS > 23) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(23); else NULL; end if; -- r/w: mhpmcounter26h - high
-          when csr_mhpmcounter27h_c => if (HPM_NUM_CNTS > 24) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(24); else NULL; end if; -- r/w: mhpmcounter27h - high
-          when csr_mhpmcounter28h_c => if (HPM_NUM_CNTS > 25) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(25); else NULL; end if; -- r/w: mhpmcounter28h - high
-          when csr_mhpmcounter29h_c => if (HPM_NUM_CNTS > 26) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(26); else NULL; end if; -- r/w: mhpmcounter29h - high
-          when csr_mhpmcounter30h_c => if (HPM_NUM_CNTS > 27) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(27); else NULL; end if; -- r/w: mhpmcounter30h - high
-          when csr_mhpmcounter31h_c => if (HPM_NUM_CNTS > 28) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(28); else NULL; end if; -- r/w: mhpmcounter31h - high
+          -- low word (r/w) --
+          when csr_mhpmcounter3_c   => if (HPM_NUM_CNTS > 00) then csr.rdata <= csr.mhpmcounter_rd(00); else NULL; end if;
+          when csr_mhpmcounter4_c   => if (HPM_NUM_CNTS > 01) then csr.rdata <= csr.mhpmcounter_rd(01); else NULL; end if;
+          when csr_mhpmcounter5_c   => if (HPM_NUM_CNTS > 02) then csr.rdata <= csr.mhpmcounter_rd(02); else NULL; end if;
+          when csr_mhpmcounter6_c   => if (HPM_NUM_CNTS > 03) then csr.rdata <= csr.mhpmcounter_rd(03); else NULL; end if;
+          when csr_mhpmcounter7_c   => if (HPM_NUM_CNTS > 04) then csr.rdata <= csr.mhpmcounter_rd(04); else NULL; end if;
+          when csr_mhpmcounter8_c   => if (HPM_NUM_CNTS > 05) then csr.rdata <= csr.mhpmcounter_rd(05); else NULL; end if;
+          when csr_mhpmcounter9_c   => if (HPM_NUM_CNTS > 06) then csr.rdata <= csr.mhpmcounter_rd(06); else NULL; end if;
+          when csr_mhpmcounter10_c  => if (HPM_NUM_CNTS > 07) then csr.rdata <= csr.mhpmcounter_rd(07); else NULL; end if;
+          when csr_mhpmcounter11_c  => if (HPM_NUM_CNTS > 08) then csr.rdata <= csr.mhpmcounter_rd(08); else NULL; end if;
+          when csr_mhpmcounter12_c  => if (HPM_NUM_CNTS > 09) then csr.rdata <= csr.mhpmcounter_rd(09); else NULL; end if;
+          when csr_mhpmcounter13_c  => if (HPM_NUM_CNTS > 10) then csr.rdata <= csr.mhpmcounter_rd(10); else NULL; end if;
+          when csr_mhpmcounter14_c  => if (HPM_NUM_CNTS > 11) then csr.rdata <= csr.mhpmcounter_rd(11); else NULL; end if;
+          when csr_mhpmcounter15_c  => if (HPM_NUM_CNTS > 12) then csr.rdata <= csr.mhpmcounter_rd(12); else NULL; end if;
+          when csr_mhpmcounter16_c  => if (HPM_NUM_CNTS > 13) then csr.rdata <= csr.mhpmcounter_rd(13); else NULL; end if;
+          when csr_mhpmcounter17_c  => if (HPM_NUM_CNTS > 14) then csr.rdata <= csr.mhpmcounter_rd(14); else NULL; end if;
+          when csr_mhpmcounter18_c  => if (HPM_NUM_CNTS > 15) then csr.rdata <= csr.mhpmcounter_rd(15); else NULL; end if;
+          when csr_mhpmcounter19_c  => if (HPM_NUM_CNTS > 16) then csr.rdata <= csr.mhpmcounter_rd(16); else NULL; end if;
+          when csr_mhpmcounter20_c  => if (HPM_NUM_CNTS > 17) then csr.rdata <= csr.mhpmcounter_rd(17); else NULL; end if;
+          when csr_mhpmcounter21_c  => if (HPM_NUM_CNTS > 18) then csr.rdata <= csr.mhpmcounter_rd(18); else NULL; end if;
+          when csr_mhpmcounter22_c  => if (HPM_NUM_CNTS > 19) then csr.rdata <= csr.mhpmcounter_rd(19); else NULL; end if;
+          when csr_mhpmcounter23_c  => if (HPM_NUM_CNTS > 20) then csr.rdata <= csr.mhpmcounter_rd(20); else NULL; end if;
+          when csr_mhpmcounter24_c  => if (HPM_NUM_CNTS > 21) then csr.rdata <= csr.mhpmcounter_rd(21); else NULL; end if;
+          when csr_mhpmcounter25_c  => if (HPM_NUM_CNTS > 22) then csr.rdata <= csr.mhpmcounter_rd(22); else NULL; end if;
+          when csr_mhpmcounter26_c  => if (HPM_NUM_CNTS > 23) then csr.rdata <= csr.mhpmcounter_rd(23); else NULL; end if;
+          when csr_mhpmcounter27_c  => if (HPM_NUM_CNTS > 24) then csr.rdata <= csr.mhpmcounter_rd(24); else NULL; end if;
+          when csr_mhpmcounter28_c  => if (HPM_NUM_CNTS > 25) then csr.rdata <= csr.mhpmcounter_rd(25); else NULL; end if;
+          when csr_mhpmcounter29_c  => if (HPM_NUM_CNTS > 26) then csr.rdata <= csr.mhpmcounter_rd(26); else NULL; end if;
+          when csr_mhpmcounter30_c  => if (HPM_NUM_CNTS > 27) then csr.rdata <= csr.mhpmcounter_rd(27); else NULL; end if;
+          when csr_mhpmcounter31_c  => if (HPM_NUM_CNTS > 28) then csr.rdata <= csr.mhpmcounter_rd(28); else NULL; end if;
+          -- high word (r/w) --
+          when csr_mhpmcounter3h_c  => if (HPM_NUM_CNTS > 00) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(00); else NULL; end if;
+          when csr_mhpmcounter4h_c  => if (HPM_NUM_CNTS > 01) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(01); else NULL; end if;
+          when csr_mhpmcounter5h_c  => if (HPM_NUM_CNTS > 02) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(02); else NULL; end if;
+          when csr_mhpmcounter6h_c  => if (HPM_NUM_CNTS > 03) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(03); else NULL; end if;
+          when csr_mhpmcounter7h_c  => if (HPM_NUM_CNTS > 04) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(04); else NULL; end if;
+          when csr_mhpmcounter8h_c  => if (HPM_NUM_CNTS > 05) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(05); else NULL; end if;
+          when csr_mhpmcounter9h_c  => if (HPM_NUM_CNTS > 06) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(06); else NULL; end if;
+          when csr_mhpmcounter10h_c => if (HPM_NUM_CNTS > 07) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(07); else NULL; end if;
+          when csr_mhpmcounter11h_c => if (HPM_NUM_CNTS > 08) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(08); else NULL; end if;
+          when csr_mhpmcounter12h_c => if (HPM_NUM_CNTS > 09) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(09); else NULL; end if;
+          when csr_mhpmcounter13h_c => if (HPM_NUM_CNTS > 10) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(10); else NULL; end if;
+          when csr_mhpmcounter14h_c => if (HPM_NUM_CNTS > 11) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(11); else NULL; end if;
+          when csr_mhpmcounter15h_c => if (HPM_NUM_CNTS > 12) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(12); else NULL; end if;
+          when csr_mhpmcounter16h_c => if (HPM_NUM_CNTS > 13) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(13); else NULL; end if;
+          when csr_mhpmcounter17h_c => if (HPM_NUM_CNTS > 14) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(14); else NULL; end if;
+          when csr_mhpmcounter18h_c => if (HPM_NUM_CNTS > 15) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(15); else NULL; end if;
+          when csr_mhpmcounter19h_c => if (HPM_NUM_CNTS > 16) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(16); else NULL; end if;
+          when csr_mhpmcounter20h_c => if (HPM_NUM_CNTS > 17) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(17); else NULL; end if;
+          when csr_mhpmcounter21h_c => if (HPM_NUM_CNTS > 18) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(18); else NULL; end if;
+          when csr_mhpmcounter22h_c => if (HPM_NUM_CNTS > 19) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(19); else NULL; end if;
+          when csr_mhpmcounter23h_c => if (HPM_NUM_CNTS > 20) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(20); else NULL; end if;
+          when csr_mhpmcounter24h_c => if (HPM_NUM_CNTS > 21) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(21); else NULL; end if;
+          when csr_mhpmcounter25h_c => if (HPM_NUM_CNTS > 22) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(22); else NULL; end if;
+          when csr_mhpmcounter26h_c => if (HPM_NUM_CNTS > 23) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(23); else NULL; end if;
+          when csr_mhpmcounter27h_c => if (HPM_NUM_CNTS > 24) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(24); else NULL; end if;
+          when csr_mhpmcounter28h_c => if (HPM_NUM_CNTS > 25) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(25); else NULL; end if;
+          when csr_mhpmcounter29h_c => if (HPM_NUM_CNTS > 26) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(26); else NULL; end if;
+          when csr_mhpmcounter30h_c => if (HPM_NUM_CNTS > 27) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(27); else NULL; end if;
+          when csr_mhpmcounter31h_c => if (HPM_NUM_CNTS > 28) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(28); else NULL; end if;
 
           -- machine information registers --
           -- --------------------------------------------------------------------
---        when csr_mvendorid_c  => csr.rdata <= (others => '0'); -- mvendorid (r/-): vendor ID, implemented but always zero
+--        when csr_mvendorid_c  => NULL; -- mvendorid (r/-): vendor ID, implemented but always zero
           when csr_marchid_c    => csr.rdata(4 downto 0) <= "10011"; -- marchid (r/-): arch ID - official RISC-V open-source arch ID
           when csr_mimpid_c     => csr.rdata <= hw_version_c; -- mimpid (r/-): implementation ID -- NEORV32 hardware version
           when csr_mhartid_c    => csr.rdata <= std_ulogic_vector(to_unsigned(HW_THREAD_ID, 32)); -- mhartid (r/-): hardware thread ID
---        when csr_mconfigptr_c => csr.rdata <= (others => '0'); -- mconfigptr (r/-): machine configuration pointer register, implemented but not assigned yet
+--        when csr_mconfigptr_c => NULL; -- mconfigptr (r/-): machine configuration pointer register, implemented but not assigned yet
 
           -- custom machine read-only CSRs --
           -- --------------------------------------------------------------------

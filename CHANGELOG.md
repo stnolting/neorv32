@@ -6,7 +6,8 @@ The latest release is [![release](https://img.shields.io/github/v/release/stnolt
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases). The most recent version of the *NEORV32 data sheet*
 can be found [online at GitHub-pages](https://stnolting.github.io/neorv32).
 
-:information_source: To see a list of all commits between releases run `git log RELEASE_A..RELEASE_B` (example: `v1.4.7.0..v1.4.8.0`).
+:information_source: Starting with version `1.5.7` this project uses [semantic versioning](https://semver.org) syntax for official releases.
+The _hardware version identifier_ uses an addtional custom version element (i.e. `MAJOR.MINOR.PATCH.individual`) to track individual changes.
 
 :information_source: The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 8x4-bit BCD representation is used.
 Leading zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`. The version number is globally
@@ -24,7 +25,11 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 08.08.2021 | 1.5.8.9 | reworked CPU register file logic: any write access to `x0` will be masked to actually write zero - no special treatment by the CPU control unit required anymore; slighlty less hardware ressources required; first instruction after hardware reset should write `x0` (implemented in start-up code `crt0.S`) |
+| 16.08.2021 | 1.5.9.2 | minor CPU control logic optimizations |
+| 15.08.2021 | 1.5.9.1 | :bug: fixed bug in `mret` instruction that caused an exception if user mode was not implemented (bug caused by modifications in v1.5.8.8) |
+| 14.08.2021 | 1.5.9.0 | Added new designated test setups: [`rtl/test_setups`](https://github.com/stnolting/neorv32/tree/master/rtl/test_setups), :books: [_UG: General Hardware Setup_](https://stnolting.github.io/neorv32/ug/#_general_hardware_setup) |
+| 13.08.2021 | [**:rocket:1.5.9**](https://github.com/stnolting/neorv32/releases/tag/v1.5.9) | **New release** |
+| 08.08.2021 | 1.5.8.9 | reworked CPU register file logic: any write access to `x0` will be masked to actually write zero - no special treatment by the CPU control unit required anymore; slighlty less hardware ressources required; first instruction after hardware reset should write `x0` (_any_ value; implemented in start-up code `crt0.S`) |
 | 07.08.2021 | 1.5.8.8 | :bug: fixed bug in execution (trapping) of `xRET` instructions: `dret` (return from debug-mode handler) has to raise an illegal instruction exception if executed outside of debug-mode, `mret` (return from machine-mode handler) has to raise an illegal instruction exception if executed in lower-privileged modes (lower than machine-mode) |
 | 05.08.2021 | 1.5.8.7 | :sparkles: added `mstatus.FS` and `mstatus.SD` CSR bits: control the state of the FPU (`Zfinx`) extension; supported states for `mstatus.FS`: `00` = _off_, `11` = _dirty_; writing other states will always set _dirty_ state; note that all FPU instructions including FPU CSR access instructions will raise an illegal instrution exception if `mstatus.FS` = _off_ |
 | 03.08.2021 | 1.5.8.6 | :bug: fixed bug in linker script [#134](https://github.com/stnolting/neorv32/issues/134): `.rodata.*` "sub"-sections were missing, caused wrong linking of implicit constants (like strings); added `mconfigptr` CSR (RISC-V priv. ISA spec. v1.12-draft ;read-only): holds a pointer to a platfrom/system configuration structure - not actually used yet |

@@ -158,7 +158,8 @@ neorv32            - Project home folder
 │├core             - Core sources of the CPU & SoC
 │└templates        - Alternate/additional top entities & wrappers
 │ ├processor       - Processor SoC wrappers
-│ └system          - System wrappers for advanced connectivity
+│ ├system          - System wrappers for advanced connectivity
+│ └test_setups     - Minimal test setup "SoCs" used in the User Guide
 │
 ├setups            - Example setups for various FPGAs, boards and toolchains
 │└...
@@ -334,6 +335,10 @@ which provides several demo setups for various FPGA boards and toolchains.
 The performance of the NEORV32 was tested and evaluated using the https://www.eembc.org/coremark/[Core Mark CPU benchmark].
 This benchmark focuses on testing the capabilities of the CPU core itself rather than the performance of the whole
 system. The according sources can be found in the `sw/example/coremark` folder.
+
+.Dhrystone
+[TIP]
+A _simple_ port of the Dhrystone benchmark is also available in `sw/example/dhrystone`.
 
 The resulting CoreMark score is defined as CoreMark iterations per second.
 The execution time is determined via the RISC-V `[m]cycle[h]` CSRs. The relative CoreMark score is

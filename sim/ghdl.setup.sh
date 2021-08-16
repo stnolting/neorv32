@@ -10,5 +10,6 @@ ghdl -i --work=neorv32 --workdir=build \
   ../rtl/core/*.vhd \
   ../rtl/templates/processor/*.vhd \
   ../rtl/templates/system/*.vhd \
+  ../rtl/test_setups/*.vhd \
   neorv32_tb.simple.vhd \
   uart_rx.simple.vhd
