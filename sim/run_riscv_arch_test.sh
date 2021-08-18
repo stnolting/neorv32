@@ -48,12 +48,12 @@ header "Starting RISC-V architecture tests"
 ./work/sim/ghdl.setup.sh
 
 # work in progress FIXME
-printf "\n\e[1;33mWARNING! 'Zifencei' test is currently disabled (work in progress). \e[0m\n\n"
+#printf "\n\e[1;33mWARNING! 'rv32e' tests are work in progress! \e[0m\n\n"
 
 makeArgs="-C ../sw/isa-test/riscv-arch-test NEORV32_ROOT=$(pwd)/.. XLEN=32 RISCV_TARGET=neorv32"
 makeTargets='clean build run verify'
 
-[ -n "$1" ] && SUITES="$@" || SUITES='I C M privilege'
+[ -n "$1" ] && SUITES="$@" || SUITES='I C M privilege Zifencei'
 
 for suite in $SUITES; do
   case "$suite" in
@@ -61,9 +61,8 @@ for suite in $SUITES; do
     C) make --silent $makeArgs SIM_TIME=400us RISCV_DEVICE=C $makeTargets;;
     M) make --silent $makeArgs SIM_TIME=800us RISCV_DEVICE=M $makeTargets;;
     privilege) make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=privilege $makeTargets;;
+    Zifencei) make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=Zifencei RISCV_TARGET_FLAGS=-DNEORV32_NO_DATA_INIT $makeTargets;;
   esac
 done
-
-#make $makeArgs SIM_TIME=200us RISCV_DEVICE=Zifencei RISCV_TARGET_FLAGS=-DNEORV32_NO_DATA_INIT $makeTargets
 
 printf "\nRISC-V architecture tests completed successfully"
