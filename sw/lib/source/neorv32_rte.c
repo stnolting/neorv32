@@ -329,28 +329,28 @@ void neorv32_rte_print_hw_config(void) {
     }
   }
   
-  // Z* CPU extensions (from custom "mzext" CSR)
-  tmp = neorv32_cpu_csr_read(CSR_MZEXT);
-  if (tmp & (1<<CSR_MZEXT_ZICSR)) {
+  // Z* CPU extensions
+  tmp = SYSINFO_CPU;
+  if (tmp & (1<<SYSINFO_CPU_ZICSR)) {
     neorv32_uart0_printf("Zicsr ");
   }
-  if (tmp & (1<<CSR_MZEXT_ZIFENCEI)) {
+  if (tmp & (1<<SYSINFO_CPU_ZIFENCEI)) {
     neorv32_uart0_printf("Zifencei ");
   }
-  if (tmp & (1<<CSR_MZEXT_ZMMUL)) {
+  if (tmp & (1<<SYSINFO_CPU_ZMMUL)) {
     neorv32_uart0_printf("Zmmul ");
   }
 
-  if (tmp & (1<<CSR_MZEXT_ZFINX)) {
+  if (tmp & (1<<SYSINFO_CPU_ZFINX)) {
     neorv32_uart0_printf("Zfinx ");
   }
-  if (tmp & (1<<CSR_MZEXT_ZXNOCNT)) {
+  if (tmp & (1<<SYSINFO_CPU_ZXNOCNT)) {
     neorv32_uart0_printf("Zxnocnt(!) ");
   }
-  if (tmp & (1<<CSR_MZEXT_ZXSCNT)) {
+  if (tmp & (1<<SYSINFO_CPU_ZXSCNT)) {
     neorv32_uart0_printf("Zxscnt(!) ");
   }
-  if (tmp & (1<<CSR_MZEXT_DEBUGMODE)) {
+  if (tmp & (1<<SYSINFO_CPU_DEBUGMODE)) {
     neorv32_uart0_printf("Debug-Mode ");
   }
 

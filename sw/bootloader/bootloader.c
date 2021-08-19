@@ -351,7 +351,7 @@ int main(void) {
   PRINT_TEXT("\nMISA: ");
   PRINT_XNUM(neorv32_cpu_csr_read(CSR_MISA));
   PRINT_TEXT("\nZEXT: ");
-  PRINT_XNUM(neorv32_cpu_csr_read(CSR_MZEXT));
+  PRINT_XNUM(SYSINFO_CPU);
   PRINT_TEXT("\nPROC: ");
   PRINT_XNUM(SYSINFO_FEATURES);
   PRINT_TEXT("\nIMEM: ");
