@@ -268,9 +268,7 @@ enum NEORV32_CSR_enum {
   CSR_MARCHID        = 0xf12, /**< 0xf12 - marchid    (r/-): Architecture ID */
   CSR_MIMPID         = 0xf13, /**< 0xf13 - mimpid     (r/-): Implementation ID/version */
   CSR_MHARTID        = 0xf14, /**< 0xf14 - mhartid    (r/-): Hardware thread ID (always 0) */
-  CSR_MCONFIGPTR     = 0xf15, /**< 0xf15 - mconfigptr (r/-): Machine configuration pointer register */
-
-  CSR_MZEXT          = 0xfc0  /**< 0xfc0 - mzext (custom CSR) (r/-): Available Z* CPU extensions */
+  CSR_MCONFIGPTR     = 0xf15  /**< 0xf15 - mconfigptr (r/-): Machine configuration pointer register */
 };
 
 
@@ -408,23 +406,6 @@ enum NEORV32_CSR_MISA_enum {
   CSR_MISA_X      = 23, /**< CPU misa CSR (23): X: Non-standard CPU extension available (r/-) */
   CSR_MISA_MXL_LO = 30, /**< CPU misa CSR (30): MXL.lo: CPU data width (r/-) */
   CSR_MISA_MXL_HI = 31  /**< CPU misa CSR (31): MXL.Hi: CPU data width (r/-) */
-};
-
-
-/**********************************************************************//**
- * CPU <b>mzext</b> custom CSR (r/-): Implemented Z* CPU extensions
- **************************************************************************/
-enum NEORV32_CSR_MZEXT_enum {
-  CSR_MZEXT_ZICSR     =  0, /**< CPU mzext CSR (0): Zicsr extension (I sub-extension) available when set (r/-) */
-  CSR_MZEXT_ZIFENCEI  =  1, /**< CPU mzext CSR (1): Zifencei extension (I sub-extension) available when set (r/-) */
-  CSR_MZEXT_ZMMUL     =  2, /**< CPU mzext CSR (2): Zmmul extension (M sub-extension) available when set (r/-) */
-
-  CSR_MZEXT_ZFINX     =  5, /**< CPU mzext CSR (5): Zfinx extension (F sub-/alternative-extension) available when set (r/-) */
-  CSR_MZEXT_ZXSCNT    =  6, /**< CPU mzext CSR (6): Custom extension - Small CPU counters: "cycle" & "instret" CSRs have less than 64-bit when set (r/-) */
-  CSR_MZEXT_ZXNOCNT   =  7, /**< CPU mzext CSR (7): Custom extension - NO CPU counters: "cycle" & "instret" CSRs are NOT available at all when set (r/-) */
-  CSR_MZEXT_PMP       =  8, /**< CPU mzext CSR (8): PMP (physical memory protection) extension available when set (r/-) */
-  CSR_MZEXT_HPM       =  9, /**< CPU mzext CSR (9): HPM (hardware performance monitors) extension available when set (r/-) */
-  CSR_MZEXT_DEBUGMODE = 10  /**< CPU mzext CSR (10): RISC-V CPU debug mode available when set (r/-) */
 };
 
 
@@ -1119,9 +1100,9 @@ enum NEORV32_NEOLED_CT_enum {
 
 /** SYSINFO(0): Clock speed */
 #define SYSINFO_CLK         (*(IO_ROM32 (SYSINFO_BASE + 0)))
-/** SYSINFO(1): Custom user code (via "USER_CODE" generic) */
-#define SYSINFO_USER_CODE   (*(IO_ROM32 (SYSINFO_BASE + 4)))
-/** SYSINFO(2): Clock speed */
+/** SYSINFO(1): CPU core features */
+#define SYSINFO_CPU        (*(IO_ROM32 (SYSINFO_BASE + 4)))
+/** SYSINFO(2): Processor/SoC features */
 #define SYSINFO_FEATURES    (*(IO_ROM32 (SYSINFO_BASE + 8)))
 /** SYSINFO(3): Cache configuration */
 #define SYSINFO_CACHE       (*(IO_ROM32 (SYSINFO_BASE + 12)))
@@ -1134,6 +1115,24 @@ enum NEORV32_NEOLED_CT_enum {
 /** SYSINFO(7): Internal data memory (DMEM) size in bytes */
 #define SYSINFO_DMEM_SIZE   (*(IO_ROM32 (SYSINFO_BASE + 28)))
 /**@}*/
+
+
+
+/**********************************************************************//**
+ * SYSINFO_CPU (r/-): Implemented CPU sub-extensions/features
+ **************************************************************************/
+enum NEORV32_SYSINFO_CPU_enum {
+  SYSINFO_CPU_ZICSR     =  0, /**< SYSINFO_CPU (0): Zicsr extension (I sub-extension) available when set (r/-) */
+  SYSINFO_CPU_ZIFENCEI  =  1, /**< SYSINFO_CPU (1): Zifencei extension (I sub-extension) available when set (r/-) */
+  SYSINFO_CPU_ZMMUL     =  2, /**< SYSINFO_CPU (2): Zmmul extension (M sub-extension) available when set (r/-) */
+
+  SYSINFO_CPU_ZFINX     =  5, /**< SYSINFO_CPU (5): Zfinx extension (F sub-/alternative-extension) available when set (r/-) */
+  SYSINFO_CPU_ZXSCNT    =  6, /**< SYSINFO_CPU (6): Custom extension - Small CPU counters: "cycle" & "instret" CSRs have less than 64-bit when set (r/-) */
+  SYSINFO_CPU_ZXNOCNT   =  7, /**< SYSINFO_CPU (7): Custom extension - NO CPU counters: "cycle" & "instret" CSRs are NOT available at all when set (r/-) */
+  SYSINFO_CPU_PMP       =  8, /**< SYSINFO_CPU (8): PMP (physical memory protection) extension available when set (r/-) */
+  SYSINFO_CPU_HPM       =  9, /**< SYSINFO_CPU (9): HPM (hardware performance monitors) extension available when set (r/-) */
+  SYSINFO_CPU_DEBUGMODE = 10  /**< SYSINFO_CPU (10): RISC-V CPU debug mode available when set (r/-) */
+};
 
 /**********************************************************************//**
  * SYSINFO_FEATURES (r/-): Implemented processor devices/features

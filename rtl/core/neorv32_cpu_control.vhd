@@ -1357,8 +1357,8 @@ begin
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only
 
 
-      -- machine information registers & custom (NEORV32-specific) read-only CSRs --
-      when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mconfigptr_c | csr_mzext_c =>
+      -- machine information registers, read-only --
+      when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mconfigptr_c =>
         csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
 
       -- debug mode CSRs --
@@ -2778,28 +2778,6 @@ begin
           when csr_mimpid_c     => csr.rdata <= hw_version_c; -- mimpid (r/-): implementation ID -- NEORV32 hardware version
           when csr_mhartid_c    => csr.rdata <= std_ulogic_vector(to_unsigned(HW_THREAD_ID, 32)); -- mhartid (r/-): hardware thread ID
 --        when csr_mconfigptr_c => NULL; -- mconfigptr (r/-): machine configuration pointer register, implemented but not assigned yet
-
-          -- custom machine read-only CSRs --
-          -- --------------------------------------------------------------------
-          when csr_mzext_c => -- mzext (r/-): available RISC-V Z* sub-extensions
-            csr.rdata(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr
-            csr.rdata(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei
-            csr.rdata(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul
-            -- ... --
-            csr.rdata(5) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx ("F-alternative")
-            if (CPU_CNT_WIDTH = 64) then
-              csr.rdata(6) <= '0'; -- Zxscnt (custom)
-              csr.rdata(7) <= '0'; -- Zxnocnt (custom)
-            elsif (CPU_CNT_WIDTH = 0) then
-              csr.rdata(6) <= '0'; -- Zxscnt (custom)
-              csr.rdata(7) <= '1'; -- Zxnocnt (custom)
-            else -- counters available but 0-bit < actual_size < 64-bit
-              csr.rdata(6) <= '1'; -- Zxscnt (custom)
-              csr.rdata(7) <= '0'; -- Zxnocnt (custom)
-            end if;
-            csr.rdata(8) <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- PMP (physical memory protection)
-            csr.rdata(9) <= bool_to_ulogic_f(boolean(HPM_NUM_CNTS > 0)); -- HPM (hardware performance monitors)
-            csr.rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG); -- RISC-V debug mode
 
           -- debug mode CSRs --
           -- --------------------------------------------------------------------

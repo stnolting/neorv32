@@ -138,8 +138,7 @@ begin
 
   neorv32_inst: entity work.neorv32_ProcessorTop_UP5KDemo
   generic map (
-    CLOCK_FREQUENCY => f_clock_c,   -- clock frequency of clk_i in Hz
-    USER_CODE       => x"0001ce40"  -- custom user code
+    CLOCK_FREQUENCY => f_clock_c -- clock frequency of clk_i in Hz
   )
   port map (
     -- Global control --

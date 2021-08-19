@@ -332,7 +332,7 @@ void __attribute__((naked)) neorv32_cpu_goto_user_mode(void) {
 uint32_t neorv32_cpu_pmp_get_num_regions(void) {
 
   // PMP implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CSR_MZEXT_PMP)) == 0) {
+  if ((SYSINFO_CPU & (1<<SYSINFO_CPU_PMP)) == 0) {
     return 0;
   }
 
@@ -597,7 +597,7 @@ static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data) {
 uint32_t neorv32_cpu_hpm_get_counters(void) {
 
   // HPMs implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CSR_MZEXT_HPM)) == 0) {
+  if ((SYSINFO_CPU & (1<<SYSINFO_CPU_HPM)) == 0) {
     return 0;
   }
 
@@ -680,7 +680,7 @@ uint32_t neorv32_cpu_hpm_get_counters(void) {
 uint32_t neorv32_cpu_hpm_get_size(void) {
 
   // HPMs implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CSR_MZEXT_HPM)) == 0) {
+  if ((SYSINFO_CPU & (1<<SYSINFO_CPU_HPM)) == 0) {
     return 0;
   }
 
@@ -708,28 +708,5 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
   }
 
   return size;
-}
-
-
-/**********************************************************************//**
- * Check if certain Z* extension is available
- *
- * @param[in] flag_id Index of the Z-extension to check from #NEORV32_CSR_MZEXT_enum
- * @return 0 if extension is NOT available, != 0 if extension is available.
- **************************************************************************/
-int neorv32_cpu_check_zext(uint8_t flag_id) {
-
-  // check if out of range
-  if (flag_id > 31) {
-    return 0;
-  }
-
-  uint32_t mask = (uint32_t)(1 << flag_id);
-  if ((neorv32_cpu_csr_read(CSR_MZEXT) & mask) == 0) {
-    return 0;
-  }
-  else {
-    return 1;
-  }
 }
 

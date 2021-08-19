@@ -112,7 +112,7 @@
             <Options top_module="neorv32_upduino_v3_top"/>
             <Options lib="work"/>
         </Source>
-        <Source name="../../../rtl/templates/processor/neorv32_ProcessorTop_UP5KDemo.vhd" type="VHDL" type_short="VHDL">
+        <Source name="../../../rtl/processor_templates/neorv32_ProcessorTop_UP5KDemo.vhd" type="VHDL" type_short="VHDL">
             <Options lib="work"/>
         </Source>
         <Source name="system_pll/system_pll.ipx" type="IPX_Module" type_short="IPX">

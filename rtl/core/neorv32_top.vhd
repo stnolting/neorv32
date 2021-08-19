@@ -2,8 +2,8 @@
 -- # << NEORV32 - Processor Top Entity >>                                                          #
 -- # ********************************************************************************************* #
 -- # This is the top entity of the NEORV32 PROCESSOR. Instantiate this unit in your own project    #
--- # and define all the configuration generics according to your needs. Alternatively, you can use #
--- # one of the alternative top entities provided in the "rtl/templates" folder.                   #
+-- # and define all the configuration generics according to your needs or use one of the           #
+-- # pre-defined template wrappers.                                                                #
 -- #                                                                                               #
 -- # Check out the processor's documentation for more information.                                 #
 -- # ********************************************************************************************* #
@@ -49,7 +49,6 @@ entity neorv32_top is
   generic (
     -- General --
     CLOCK_FREQUENCY              : natural;           -- clock frequency of clk_i in Hz
-    USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
     INT_BOOTLOADER_EN            : boolean := false;  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
@@ -110,8 +109,8 @@ entity neorv32_top is
 
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  : natural := 0;      -- number of external IRQ channels (0..32)
-    XIRQ_TRIGGER_TYPE            : std_ulogic_vector(31 downto 0) := x"FFFFFFFF"; -- trigger type: 0=level, 1=edge
-    XIRQ_TRIGGER_POLARITY        : std_ulogic_vector(31 downto 0) := x"FFFFFFFF"; -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
+    XIRQ_TRIGGER_TYPE            : std_ulogic_vector(31 downto 0) := x"ffffffff"; -- trigger type: 0=level, 1=edge
+    XIRQ_TRIGGER_POLARITY        : std_ulogic_vector(31 downto 0) := x"ffffffff"; -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
 
     -- Processor peripherals --
     IO_GPIO_EN                   : boolean := false;  -- implement general purpose input/output port unit (GPIO)?
@@ -1358,39 +1357,50 @@ begin
   neorv32_sysinfo_inst: neorv32_sysinfo
   generic map (
     -- General --
-    CLOCK_FREQUENCY      => CLOCK_FREQUENCY,      -- clock frequency of clk_i in Hz
-    INT_BOOTLOADER_EN    => INT_BOOTLOADER_EN,    -- implement processor-internal bootloader?
-    USER_CODE            => USER_CODE,            -- custom user code
+    CLOCK_FREQUENCY              => CLOCK_FREQUENCY,      -- clock frequency of clk_i in Hz
+    INT_BOOTLOADER_EN            => INT_BOOTLOADER_EN,    -- implement processor-internal bootloader?
+    -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zmmul    => CPU_EXTENSION_RISCV_Zmmul,    -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_DEBUG    => ON_CHIP_DEBUGGER_EN,          -- implement CPU debug mode?
+    -- Extension Options --
+    CPU_CNT_WIDTH                => CPU_CNT_WIDTH,        -- total width of CPU cycle and instret counters (0..64)
+    -- Physical memory protection (PMP) --
+    PMP_NUM_REGIONS              => PMP_NUM_REGIONS,      -- number of regions (0..64)
+    -- Hardware Performance Monitors (HPM) --
+    HPM_NUM_CNTS                 => HPM_NUM_CNTS,         -- number of implemented HPM counters (0..29)
     -- internal Instruction memory --
-    MEM_INT_IMEM_EN      => MEM_INT_IMEM_EN,      -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE    => MEM_INT_IMEM_SIZE,    -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_EN              => MEM_INT_IMEM_EN,      -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE,    -- size of processor-internal instruction memory in bytes
     -- Internal Data memory --
-    MEM_INT_DMEM_EN      => MEM_INT_DMEM_EN,      -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE    => MEM_INT_DMEM_SIZE,    -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_EN              => MEM_INT_DMEM_EN,      -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE,    -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_EN            => ICACHE_EN,            -- implement instruction cache
-    ICACHE_NUM_BLOCKS    => ICACHE_NUM_BLOCKS,    -- i-cache: number of blocks (min 2), has to be a power of 2
-    ICACHE_BLOCK_SIZE    => ICACHE_BLOCK_SIZE,    -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY => ICACHE_ASSOCIATIVITY, -- i-cache: associativity (min 1), has to be a power 2
+    ICACHE_EN                    => ICACHE_EN,            -- implement instruction cache
+    ICACHE_NUM_BLOCKS            => ICACHE_NUM_BLOCKS,    -- i-cache: number of blocks (min 2), has to be a power of 2
+    ICACHE_BLOCK_SIZE            => ICACHE_BLOCK_SIZE,    -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_ASSOCIATIVITY         => ICACHE_ASSOCIATIVITY, -- i-cache: associativity (min 1), has to be a power 2
     -- External memory interface --
-    MEM_EXT_EN           => MEM_EXT_EN,           -- implement external memory bus interface?
-    MEM_EXT_BIG_ENDIAN   => MEM_EXT_BIG_ENDIAN,   -- byte order: true=big-endian, false=little-endian
+    MEM_EXT_EN                   => MEM_EXT_EN,           -- implement external memory bus interface?
+    MEM_EXT_BIG_ENDIAN           => MEM_EXT_BIG_ENDIAN,   -- byte order: true=big-endian, false=little-endian
     -- On-Chip Debugger --
-    ON_CHIP_DEBUGGER_EN  => ON_CHIP_DEBUGGER_EN,  -- implement OCD?
+    ON_CHIP_DEBUGGER_EN          => ON_CHIP_DEBUGGER_EN,  -- implement OCD?
     -- Processor peripherals --
-    IO_GPIO_EN           => IO_GPIO_EN,           -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_EN          => IO_MTIME_EN,          -- implement machine system timer (MTIME)?
-    IO_UART0_EN          => IO_UART0_EN,          -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART1_EN          => IO_UART1_EN,          -- implement secondary universal asynchronous receiver/transmitter (UART1)?
-    IO_SPI_EN            => IO_SPI_EN,            -- implement serial peripheral interface (SPI)?
-    IO_TWI_EN            => IO_TWI_EN,            -- implement two-wire interface (TWI)?
-    IO_PWM_NUM_CH        => IO_PWM_NUM_CH,        -- number of PWM channels to implement
-    IO_WDT_EN            => IO_WDT_EN,            -- implement watch dog timer (WDT)?
-    IO_TRNG_EN           => IO_TRNG_EN,           -- implement true random number generator (TRNG)?
-    IO_CFS_EN            => IO_CFS_EN,            -- implement custom functions subsystem (CFS)?
-    IO_SLINK_EN          => io_slink_en_c,        -- implement stream link interface?
-    IO_NEOLED_EN         => IO_NEOLED_EN,         -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_XIRQ_NUM_CH       => XIRQ_NUM_CH           -- number of external interrupt (XIRQ) channels to implement
+    IO_GPIO_EN                   => IO_GPIO_EN,           -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN                  => IO_MTIME_EN,          -- implement machine system timer (MTIME)?
+    IO_UART0_EN                  => IO_UART0_EN,          -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART1_EN                  => IO_UART1_EN,          -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_SPI_EN                    => IO_SPI_EN,            -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN                    => IO_TWI_EN,            -- implement two-wire interface (TWI)?
+    IO_PWM_NUM_CH                => IO_PWM_NUM_CH,        -- number of PWM channels to implement
+    IO_WDT_EN                    => IO_WDT_EN,            -- implement watch dog timer (WDT)?
+    IO_TRNG_EN                   => IO_TRNG_EN,           -- implement true random number generator (TRNG)?
+    IO_CFS_EN                    => IO_CFS_EN,            -- implement custom functions subsystem (CFS)?
+    IO_SLINK_EN                  => io_slink_en_c,        -- implement stream link interface?
+    IO_NEOLED_EN                 => IO_NEOLED_EN,         -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_XIRQ_NUM_CH               => XIRQ_NUM_CH           -- number of external interrupt (XIRQ) channels to implement
   )
   port map (
     -- host access --

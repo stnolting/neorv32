@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - Minimal setup without a bootloader >>                                            #
+-- # << NEORV32 - Minimal setup with the bootloader enabled >>                                     #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -38,17 +38,17 @@ use ieee.numeric_std.all;
 
 library neorv32;
 
-entity neorv32_ProcessorTop_Minimal is
+entity neorv32_ProcessorTop_MinimalBoot is
   generic (
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
-    USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000";  -- custom user code
+    INT_BOOTLOADER_EN            : boolean := true;   -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
 
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
-    CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
+    CPU_EXTENSION_RISCV_A        : boolean := true;   -- implement atomic extension?
+    CPU_EXTENSION_RISCV_C        : boolean := true;   -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_M        : boolean := true;   -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
@@ -61,7 +61,7 @@ entity neorv32_ProcessorTop_Minimal is
 
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              : natural := 0;       -- number of regions (0..64)
-    PMP_MIN_GRANULARITY          : natural := 8*1024;  -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
 
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 : natural := 0;       -- number of implemented HPM counters (0..29)
@@ -69,7 +69,7 @@ entity neorv32_ProcessorTop_Minimal is
 
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              : boolean := true;    -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE            : natural := 8*1024;  -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_SIZE            : natural := 64*1024; -- size of processor-internal instruction memory in bytes
 
     -- Internal Data memory --
     MEM_INT_DMEM_EN              : boolean := true;    -- implement processor-internal data memory
@@ -82,22 +82,42 @@ entity neorv32_ProcessorTop_Minimal is
     ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
     -- Processor peripherals --
-    IO_MTIME_EN                  : boolean := false;  -- implement machine system timer (MTIME)?
+    IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
+    IO_UART0_EN                  : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_PWM_NUM_CH                : natural := 3;      -- number of PWM channels to implement (0..60); 0 = disabled
-    IO_WDT_EN                    : boolean := false   -- implement watch dog timer (WDT)?
+    IO_WDT_EN                    : boolean := true    -- implement watch dog timer (WDT)?
   );
   port (
     clk_i      : in  std_logic;
     rstn_i     : in  std_logic;
+
+    -- GPIO (available if IO_GPIO_EN = true) --
+    gpio_o     : out std_ulogic_vector(3 downto 0);
+
+    -- primary UART0 (available if IO_UART0_EN = true) --
+    uart_txd_o : out std_ulogic; -- UART0 send data
+    uart_rxd_i : in  std_ulogic := '0'; -- UART0 receive data
+    uart_rts_o : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart_cts_i : in  std_ulogic := '0'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o      : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0)
   );
 end entity;
 
-architecture neorv32_ProcessorTop_Minimal_rtl of neorv32_ProcessorTop_Minimal is
+architecture neorv32_ProcessorTop_MinimalBoot_rtl of neorv32_ProcessorTop_MinimalBoot is
+
+  -- internal IO connection --
+  signal con_gpio_o : std_ulogic_vector(63 downto 0);
 
 begin
+
+  -- IO Connection --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+
+  -- GPIO --
+  gpio_o <= con_gpio_o(3 downto 0);
 
   -- The core of the problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -105,8 +125,7 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,  -- clock frequency of clk_i in Hz
-    INT_BOOTLOADER_EN            => false,            -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
-    USER_CODE                    => USER_CODE,        -- custom user code
+    INT_BOOTLOADER_EN            => INT_BOOTLOADER_EN,-- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     HW_THREAD_ID                 => HW_THREAD_ID,     -- hardware thread id (32-bit)
 
     -- On-Chip Debugger (OCD) --
@@ -154,9 +173,9 @@ begin
     MEM_EXT_TIMEOUT              => 0,           -- cycles after a pending bus access auto-terminates (0 = disabled)
 
     -- Processor peripherals --
-    IO_GPIO_EN                   => false,         -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_EN                   => IO_GPIO_EN,    -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  => IO_MTIME_EN,   -- implement machine system timer (MTIME)?
-    IO_UART0_EN                  => false,         -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART0_EN                  => IO_UART0_EN,   -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART1_EN                  => false,         -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN                    => false,         -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    => false,         -- implement two-wire interface (TWI)?
@@ -199,14 +218,14 @@ begin
     fencei_o    => open,                         -- indicates an executed FENCEI operation
 
     -- GPIO (available if IO_GPIO_EN = true) --
-    gpio_o      => open,                         -- parallel output
+    gpio_o      => con_gpio_o,                   -- parallel output
     gpio_i      => (others => '0'),              -- parallel input
 
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o => open,                         -- UART0 send data
-    uart0_rxd_i => '0',                          -- UART0 receive data
-    uart0_rts_o => open,                         -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i => '0',                          -- hw flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_txd_o => uart_txd_o,                   -- UART0 send data
+    uart0_rxd_i => uart_rxd_i,                   -- UART0 receive data
+    uart0_rts_o => uart_rts_o,                   -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i => uart_cts_i,                   -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o => open,                         -- UART1 send data

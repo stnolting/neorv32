@@ -416,7 +416,7 @@ int main() {
   PRINT_STANDARD("[%i] MRET in U-mode: ", cnt_test);
 
   // skip if U-mode is not implemented
-  if (neorv32_cpu_csr_read(CSR_MZEXT) & (1<<CSR_MZEXT_DEBUGMODE)) {
+  if (SYSINFO_CPU & (1<<SYSINFO_CPU_DEBUGMODE)) {
 
     cnt_test++;
 

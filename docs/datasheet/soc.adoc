@@ -134,9 +134,8 @@ used to control implementation of certain CPU extensions and peripheral modules 
 optimize the system for certain design goals like minimal area or maximum performance.
 
 [TIP]
-Privileged software can determine the actual CPU and processor configuration via the `misa` and
-`mzext` (see <<_machine_trap_setup>> and <<_neorv32_specific_custom_csrs>>) CSRs and via the memory-mapped _SYSINFO_ module (see <<_system_configuration_information_memory_sysinfo>>),
-respectively.
+Privileged software can determine the actual CPU and processor configuration via the `misa` and the 
+i_SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 
 [TIP]
 If optional modules (like CPU extensions or peripheral devices) are *not enabled* the according circuitry **will not be synthesized at all**.
@@ -186,17 +185,6 @@ See section <<_system_configuration_information_memory_sysinfo>> for more inform
 3+| Implement the processor-internal boot ROM, pre-initialized with the default bootloader image when _true_.
 This will also change the processor's boot address from the beginning of the instruction memory address space (default =
 0x00000000) to the base address of the boot ROM. See section <<_boot_configuration>> for more information.
-|======
-
-
-:sectnums!:
-===== _USER_CODE_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **USER_CODE** | _std_ulogic_vector(31 downto 0)_ | x"00000000"
-3+| Custom user code that can be read by software via the _SYSINFO_ module.
 |======
 
 
@@ -416,8 +404,8 @@ See section <<_pmp_physical_memory_protection>> for more information.
 |======
 | **PMP_NUM_REGIONS** | _natural_ | 0
 3+| Total number of implemented protections regions (0..64). If this generics is zero no physical memory
-protection logic will be implemented at all. Setting <<_pmp_num_regions>>_ > 0 will set the _CSR_MZEXT_PMP_ flag
-in the <<_mzext>> CSR.
+protection logic will be implemented at all. Setting <<_pmp_num_regions>>_ > 0 will set the _SYSINFO_CPU_PMP_ flag
+in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 |======
 
 
@@ -447,8 +435,8 @@ See section <<_hpm_hardware_performance_monitors>> for more information.
 |======
 | **HPM_NUM_CNTS** | _natural_ | 0
 3+| Total number of implemented hardware performance monitor counters (0..29). If this generics is zero no
-hardware performance monitor logic will be implemented at all. Setting <<_hpm_num_cnts>> > 0 will set the _CSR_MZEXT_HPM_ flag
-in the <<_mzext>> CSR.
+hardware performance monitor logic will be implemented at all. Setting <<_hpm_num_cnts>> > 0 will set the _SYSINFO_CPU_HPM_ flag
+in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 |======
 
 

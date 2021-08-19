@@ -31,17 +31,30 @@ COMPILE_TARGET ?= \
 	$$(<) -o $$@
 
 NEORV32_CPU_EXTENSION_RISCV_C ?= false
+NEORV32_CPU_EXTENSION_RISCV_E ?= false
 NEORV32_CPU_EXTENSION_RISCV_M ?= false
+NEORV32_CPU_EXTENSION_RISCV_ZIFENCEI ?= false
+NEORV32_MEM_INT_IMEM_SIZE ?= '2097152'
 
 NEORV32_SOFTWARE_EXAMPLE ?= $(NEORV32_LOCAL_COPY)/sw/example/blink_led
 
+
+ifeq ($(NEORV32_CPU_EXTENSION_RISCV_ZIFENCEI), true)
 RUN_TARGET ?= \
+	echo "copying/using SIM-only IMEM (pre-initialized RAM!)"; \
+	rm -f $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
+	cp -f $(NEORV32_LOCAL_COPY)/sim/neorv32_imem.iram.simple.vhd $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd;
+else
+RUN_TARGET ?= \
+	echo "copying/using SIM-only IMEM (pre-initialized ROM!)"; \
+	rm -f $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
+	cp -f $(NEORV32_LOCAL_COPY)/sim/neorv32_imem.simple.vhd $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd;
+endif
+
+RUN_TARGET += \
 	cd $(work_dir_isa); \
 	echo ">"; \
 	rm -f $(NEORV32_LOCAL_COPY)/*.out; \
-	echo "copying/using SIM-only IMEM (ROM!)"; \
-	rm -f $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
-	cp -f $(NEORV32_LOCAL_COPY)/sim/neorv32_imem.simple.vhd $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
 	make -C $(NEORV32_SOFTWARE_EXAMPLE) main.elf; \
 	cp -f $< $(NEORV32_SOFTWARE_EXAMPLE)/main.elf; \
 	make -C $(NEORV32_SOFTWARE_EXAMPLE) main.bin install; \
@@ -50,12 +63,12 @@ RUN_TARGET ?= \
 	  --stop-time=$(SIM_TIME) \
 	  -gCPU_EXTENSION_RISCV_A=false \
 	  -gCPU_EXTENSION_RISCV_C=$(NEORV32_CPU_EXTENSION_RISCV_C) \
-	  -gCPU_EXTENSION_RISCV_E=false \
+	  -gCPU_EXTENSION_RISCV_E=$(NEORV32_CPU_EXTENSION_RISCV_E) \
 	  -gCPU_EXTENSION_RISCV_M=$(NEORV32_CPU_EXTENSION_RISCV_M) \
 	  -gCPU_EXTENSION_RISCV_U=false \
 	  -gCPU_EXTENSION_RISCV_Zicsr=true \
-	  -gCPU_EXTENSION_RISCV_Zifencei=false \
+	  -gCPU_EXTENSION_RISCV_Zifencei=$(NEORV32_CPU_EXTENSION_RISCV_ZIFENCEI) \
 	  -gEXT_IMEM_C=false \
-	  -gMEM_INT_IMEM_SIZE='2097152'; \
+	  -gMEM_INT_IMEM_SIZE=$(NEORV32_MEM_INT_IMEM_SIZE); \
 	cp $(NEORV32_LOCAL_COPY)/sim/neorv32.uart0.sim_mode.data.out $(*).signature.output; \
 	echo "<";

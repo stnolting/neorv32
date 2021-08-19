@@ -17,6 +17,7 @@ jobs:
         - C
         - M
         - privilege
+        - Zifencei
     name: 'RISC-V Compatibility Check'
 
     steps:
