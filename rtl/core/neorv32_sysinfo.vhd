@@ -47,7 +47,6 @@ entity neorv32_sysinfo is
     -- General --
     CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
     INT_BOOTLOADER_EN    : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
-    USER_CODE            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN      : boolean; -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE    : natural; -- size of processor-internal instruction memory in bytes
@@ -121,8 +120,8 @@ begin
   -- SYSINFO(0): Processor (primary) clock frequency --
   sysinfo_mem(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
 
-  -- SYSINFO(1): Custom user code/ID --
-  sysinfo_mem(1) <= USER_CODE;
+  -- SYSINFO(1): reserved --
+  sysinfo_mem(1) <= (others => '0');
 
   -- SYSINFO(2): Implemented processor devices/features --
   -- Memory --

@@ -61,7 +61,7 @@ nop;                                                                          \
 // neorv32: initialize the complete RVTEST_DATA section in data RAM (DMEM) with 0xBABECAFE
 // neorv32: initialize the complete SIGNATURE section (that is a multiple of four 32-bit entries) in data RAM (DMEM) with 0xDEADBEEF
 // neorv32: this code also provides a dummy trap handler that just moves on to the next instruction
-// neorv32: -> this trap handler can be overriden by the compliance-suite by modifying mtval
+// neorv32: -> this trap handler can be overridden by the compliance-suite by modifying mtval
 // neorv32: -> the dummy trap handler is required to deal with the neorv32 X extension (-> all illegal/undefined instruction trigger an exception)
 #ifdef NEORV32_NO_DATA_INIT
 // ------------------------- WITHOUT DATA INIT -------------------------

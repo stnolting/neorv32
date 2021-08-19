@@ -1,8 +1,8 @@
 -- #################################################################################################
 -- # << NEORV32 - Processor-internal instruction memory (IMEM) >>                                  #
 -- # ********************************************************************************************* #
--- # This memory optionally includes the in-place executable image of the application. See the     #
--- # processor's documentary to get more information.                                              #
+-- # This version is intended for SIMULATION ONLY!                                                 #
+-- # It implements the IMEM as pre-initialized RAM.                                                #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -73,45 +73,28 @@ architecture neorv32_imem_rtl of neorv32_imem is
   signal rden   : std_ulogic;
   signal addr   : std_ulogic_vector(index_size_f(IMEM_SIZE/4)-1 downto 0);
 
-  -- --------------------------- --
-  -- IMEM as pre-initialized ROM --
-  -- --------------------------- --
+  -- ---------------------------------------------------- --
+  -- << SIMULATION ONLY!!! >> IMEM as pre-initialized RAM --
+  -- ---------------------------------------------------- --
 
   -- application (image) size in bytes --
   constant imem_app_size_c : natural := (application_init_image'length)*4;
 
-  -- ROM - initialized with executable code --
-  constant mem_rom : mem32_t(0 to IMEM_SIZE/4-1) := mem32_init_f(application_init_image, IMEM_SIZE/4);
+  -- RAM - initialized with executable code --
+  signal mem_ram : mem32_t(0 to IMEM_SIZE/4-1) := mem32_init_f(application_init_image, IMEM_SIZE/4);
 
   -- read data --
-  signal mem_rom_rd : std_ulogic_vector(31 downto 0);
-
-  -- -------------------------------------------------------------------------------------------------------------- --
-  -- The memory (RAM) is built from 4 individual byte-wide memories b0..b3, since some synthesis tools have         --
-  -- problems with 32-bit memories that provide dedicated byte-enable signals AND/OR with multi-dimensional arrays. --
-  -- -------------------------------------------------------------------------------------------------------------- --
-
-  -- RAM - not initialized at all --
-  signal mem_ram_b0 : mem8_t(0 to IMEM_SIZE/4-1);
-  signal mem_ram_b1 : mem8_t(0 to IMEM_SIZE/4-1);
-  signal mem_ram_b2 : mem8_t(0 to IMEM_SIZE/4-1);
-  signal mem_ram_b3 : mem8_t(0 to IMEM_SIZE/4-1);
-
-  -- read data --
-  signal mem_b0_rd, mem_b1_rd, mem_b2_rd, mem_b3_rd : std_ulogic_vector(7 downto 0);
+  signal mem_ram_rd : std_ulogic_vector(31 downto 0);
 
 begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (IMEM_AS_IROM = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as ROM (" & natural'image(IMEM_SIZE) &
+  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal [SIM-only!] IMEM as RAM (" & natural'image(IMEM_SIZE) &
   " bytes), pre-initialized with application (" & natural'image(imem_app_size_c) & " bytes)." severity note;
   --
-  assert not (IMEM_AS_IROM = false) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as blank RAM (" & natural'image(IMEM_SIZE) &
-  " bytes)." severity note;
-  --
-  assert not ((IMEM_AS_IROM = true) and (imem_app_size_c > IMEM_SIZE)) report "NEORV32 PROCESSOR CONFIG ERROR: Application (image = " & natural'image(imem_app_size_c) &
-  " bytes) does not fit into processor-internal IMEM (ROM = " & natural'image(IMEM_SIZE) & " bytes)!" severity error;
+  assert not (imem_app_size_c > IMEM_SIZE) report "NEORV32 PROCESSOR CONFIG ERROR: Application (image = " & natural'image(imem_app_size_c) &
+  " bytes) does not fit into processor-internal IMEM (" & natural'image(IMEM_SIZE) & " bytes)!" severity error;
 
 
   -- Access Control -------------------------------------------------------------------------
@@ -120,59 +103,38 @@ begin
   addr   <= addr_i(index_size_f(IMEM_SIZE/4)+1 downto 2); -- word aligned
 
 
-  -- Implement IMEM as pre-initialized ROM --------------------------------------------------
+  -- Implement IMEM as pre-initialized RAM --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  imem_rom:
-  if (IMEM_AS_IROM = true) generate
-    mem_access: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        if (acc_en = '1') then -- reduce switching activity when not accessed
-          mem_rom_rd <= mem_rom(to_integer(unsigned(addr)));
+  mem_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if (acc_en = '1') then
+        if (wren_i = '1') and (ben_i(0) = '1') then -- byte 0
+          mem_ram(to_integer(unsigned(addr)))(07 downto 00) <= data_i(07 downto 00);
+        else
+          mem_ram_rd(07 downto 00) <= mem_ram(to_integer(unsigned(addr)))(07 downto 00);
+        end if;
+        if (wren_i = '1') and (ben_i(1) = '1') then -- byte 1
+          mem_ram(to_integer(unsigned(addr)))(15 downto 08) <= data_i(15 downto 08);
+        else
+          mem_ram_rd(15 downto 08) <= mem_ram(to_integer(unsigned(addr)))(15 downto 08);
+        end if;
+        if (wren_i = '1') and (ben_i(2) = '1') then -- byte 2
+          mem_ram(to_integer(unsigned(addr)))(23 downto 16) <= data_i(23 downto 16);
+        else
+          mem_ram_rd(23 downto 16) <= mem_ram(to_integer(unsigned(addr)))(23 downto 16);
+        end if;
+        if (wren_i = '1') and (ben_i(3) = '1') then -- byte 3
+          mem_ram(to_integer(unsigned(addr)))(31 downto 24) <= data_i(31 downto 24);
+        else
+          mem_ram_rd(31 downto 24) <= mem_ram(to_integer(unsigned(addr)))(31 downto 24);
         end if;
       end if;
-    end process mem_access;
-    -- read data --
-    rdata <= mem_rom_rd;
-  end generate;
+    end if;
+  end process mem_access;
 
-
-  -- Implement IMEM as not-initialized RAM --------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  imem_ram:
-  if (IMEM_AS_IROM = false) generate
-    mem_access: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        -- this RAM style should not require "no_rw_check" attributes as the read-after-write behavior
-        -- is intended to be defined implicitly via the if-WRITE-else-READ construct
-        if (acc_en = '1') then -- reduce switching activity when not accessed
-          if (wren_i = '1') and (ben_i(0) = '1') then -- byte 0
-            mem_ram_b0(to_integer(unsigned(addr))) <= data_i(07 downto 00);
-          else
-            mem_b0_rd <= mem_ram_b0(to_integer(unsigned(addr)));
-          end if;
-          if (wren_i = '1') and (ben_i(1) = '1') then -- byte 1
-            mem_ram_b1(to_integer(unsigned(addr))) <= data_i(15 downto 08);
-          else
-            mem_b1_rd <= mem_ram_b1(to_integer(unsigned(addr)));
-          end if;
-          if (wren_i = '1') and (ben_i(2) = '1') then -- byte 2
-            mem_ram_b2(to_integer(unsigned(addr))) <= data_i(23 downto 16);
-          else
-            mem_b2_rd <= mem_ram_b2(to_integer(unsigned(addr)));
-          end if;
-          if (wren_i = '1') and (ben_i(3) = '1') then -- byte 3
-            mem_ram_b3(to_integer(unsigned(addr))) <= data_i(31 downto 24);
-          else
-            mem_b3_rd <= mem_ram_b3(to_integer(unsigned(addr)));
-          end if;
-        end if;
-      end if;
-    end process mem_access;
-    -- read data --
-    rdata <= mem_b3_rd & mem_b2_rd & mem_b1_rd & mem_b0_rd;
-  end generate;
+  -- read data --
+  rdata <= mem_ram_rd;
 
 
   -- Bus Feedback ---------------------------------------------------------------------------
@@ -180,12 +142,8 @@ begin
   bus_feedback: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      rden <= acc_en and rden_i;
-      if (IMEM_AS_IROM = true) then
-        ack_o <= acc_en and rden_i;
-      else
-        ack_o <= acc_en and (rden_i or wren_i);
-      end if;
+      rden  <= acc_en and rden_i;
+      ack_o <= acc_en and (rden_i or wren_i);
     end if;
   end process bus_feedback;
 

@@ -25,6 +25,8 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 19.08.2021 | 1.5.9.3 | :warning: removed top's `USER_CODE` generic |
+| 18.08.2021 | 1.5.9.2 | fixed `Zifencei` test of `riscv-arch-test` port |
 | 16.08.2021 | 1.5.9.2 | minor CPU control logic optimizations |
 | 15.08.2021 | 1.5.9.1 | :bug: fixed bug in `mret` instruction that caused an exception if user mode was not implemented (bug caused by modifications in v1.5.8.8) |
 | 14.08.2021 | 1.5.9.0 | Added new designated test setups: [`rtl/test_setups`](https://github.com/stnolting/neorv32/tree/master/rtl/test_setups), :books: [_UG: General Hardware Setup_](https://stnolting.github.io/neorv32/ug/#_general_hardware_setup) |

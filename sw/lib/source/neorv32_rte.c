@@ -277,8 +277,7 @@ void neorv32_rte_print_hw_config(void) {
 
   // Processor - general stuff
   neorv32_uart0_printf("\n=== << General >> ===\n"
-                       "Clock:         %u Hz\n"
-                       "User ID:       0x%x\n", SYSINFO_CLK, SYSINFO_USER_CODE);
+                       "Clock speed:   %u Hz\n");
   neorv32_uart0_printf("Full HW reset: "); __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_HW_RESET));
   neorv32_uart0_printf("Boot Config.:  Boot ");
   if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_BOOTLOADER)) {

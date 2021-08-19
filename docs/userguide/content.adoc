@@ -663,6 +663,7 @@ base ISA `rv32i` only to ensure it can work independently of the actual CPU conf
 | `AUTO_BOOT_OCD_EN`  | `0` | `0`, `1` | Set `1` to enable boot via on-chip debugger (OCD)
 | `AUTO_BOOT_TIMEOUT` | `8` | _any_ | Time in seconds after the auto-boot sequence starts (if there is no UART input by user); set to 0 to disabled auto-boot sequence
 4+^| SPI configuration
+| `SPI_EN`                | `1` | `0`, `1` | Set `1` to enable the usage of the SPI module (including load/store executables from/to SPI flash options)
 | `SPI_FLASH_CS`          | `0` | `0` ... `7` | SPI chip select output (`spi_csn_o`) for selecting flash
 | `SPI_FLASH_SECTOR_SIZE` | `65536` | _any_ | SPI flash sector size in bytes
 | `SPI_FLASH_CLK_PRSC`    | `CLK_PRSC_8`  | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | SPI clock pre-scaler (dividing main processor clock)

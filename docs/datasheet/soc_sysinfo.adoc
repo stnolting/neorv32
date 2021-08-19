@@ -27,7 +27,7 @@ and default clock speed) for correct operation.
 |=======================
 | Address | Name [C] | Function
 | `0xffffffe0` | _SYSINFO_CLK_         | clock speed in Hz (via top's _CLOCK_FREQUENCY_ generic)
-| `0xffffffe4` | _SYSINFO_USER_CODE_   | custom user code, assigned via top's _USER_CODE_ generic
+| `0xffffffe4` | _reserved_            | _reserved_, read as zero
 | `0xffffffe8` | _SYSINFO_FEATURES_    | specific hardware configuration (see next table)
 | `0xffffffec` | _SYSINFO_CACHE_       | cache configuration information (see next table)
 | `0xfffffff0` | _SYSINFO_ISPACE_BASE_ | instruction address space base (defined via `ispace_base_c` constant in the `neorv32_package.vhd` file)
