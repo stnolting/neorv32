@@ -25,6 +25,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 19.08.2021 | 1.5.9.4 | :warning: removed custom `mzext` CPU CSR, moved all information flags to new `SYSINFO_CPU` register in the system information memory module (`SYSINFO`) |
 | 19.08.2021 | 1.5.9.3 | :warning: removed top's `USER_CODE` generic |
 | 18.08.2021 | 1.5.9.2 | fixed `Zifencei` test of `riscv-arch-test` port |
 | 16.08.2021 | 1.5.9.2 | minor CPU control logic optimizations |

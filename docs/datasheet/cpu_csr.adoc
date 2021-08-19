@@ -107,8 +107,6 @@ CSRs with the following notes ...
 | 0xf13   | <<_mimpid>>     | _CSR_MIMPID_     | r/- | Machine implementation ID / version |
 | 0xf14   | <<_mhartid>>    | _CSR_MHARTID_    | r/- | Machine thread ID |
 | 0xf15   | <<_mconfigptr>> | _CSR_MCONFIGPTR_ | r/- | Machine configuration pointer register |
-6+^| **<<_neorv32_specific_custom_csrs>>**
-| 0xfc0   | <<_mzext>> | _CSR_MZEXT_ | r/- | Available `Z*` CPU extensions |
 |=======================
 
 
@@ -189,8 +187,7 @@ The following bits are implemented (all remaining bits are always zero and are r
 | 31    | _CSR_MSTATUS_SD_ | r/- | Read-only bit that is set if the FS field is not all-zero (state _OFF_)
 | 21    | _CSR_MSTATUS_TW_ | r/w | Timeout wait: raise illegal instruction exception if `WFI` instruction is executed outside of M-mode when set
 | 14:13 | _CSR_MSTATUS_FS_H_ : _CSR_MSTATUS_FS_L_ | r/w | Floating-point extension state; `00` = _OFF_, `11` = _DIRTY_; writing any other value will
-always set _DIRTY_; if `FS` is _off_ all FPU instructions and FPU CSR access will raise an illegal instruction exception; these status bits are hardwired
-to zero if no FPU is present (_CPU_MZEXT_ZFINX_ = false)
+always set _DIRTY_; if `FS` is _off_ all FPU instructions and FPU CSR access will raise an illegal instruction exception; these status bits are hardwired to zero if no FPU is present
 | 12:11 | _CSR_MSTATUS_MPP_H_ : _CSR_MSTATUS_MPP_L_ | r/w | Previous machine privilege level, 11 = machine (M) level, 00 = user (U) level
 | 7     | _CSR_MSTATUS_MPIE_ | r/w | Previous machine global interrupt enable flag state
 | 3     | _CSR_MSTATUS_MIE_  | r/w | Machine global interrupt enable flag
@@ -233,7 +230,8 @@ CSR is simply ignored and will NOT cause an illegal instruction exception.
 |=======================
 
 [TIP]
-Information regarding the implemented RISC-V `Z*` _sub-extensions_ (like `Zicsr` or `Zfinx`) can be found in the <<_mzext>> CSR.
+Information regarding the implemented RISC-V `Z*` _sub-extensions_ (like `Zicsr` or `Zfinx`) can be found
+in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 
 
 :sectnums!:
@@ -512,16 +510,16 @@ configuration with <<_cpu_cnt_width>> less than 64 is not RISC-V compliant.
 [IMPORTANT]
 If _CPU_CNT_WIDTH_ is less than 64 (the default value) and greater than or equal 32, the according
 MSBs of `[m]cycleh` and `[m]instreth` are read-only and always read as zero. This configuration
-will also set the _ZXSCNT_ flag in the <<_mzext>> CSR. +
+will also set the _SYSINFO_CPU_ZXSCNT_ flag in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register. +
  +
 If _CPU_CNT_WIDTH_ is less than 32 and greater than 0, the `[m]cycleh` and `[m]instreth` do not
 exist and any access will raise an illegal instruction exception. Furthermore, the according MSBs of
 `[m]cycle` and `[m]instret` are read-only and always read as zero. This configuration will also
-set the _ZXSCNT_ flag in the <<_mzext>> CSR. +
+set the _SYSINFO_CPU_ZXSCNT_ flag in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register. +
  +
 If _CPU_CNT_WIDTH_ is 0, <<_cycleh>> and <<_instreth>> / <<_mcycleh>> and <<_minstreth>> do not
 exist and any access will raise an illegal instruction exception. This configuration will also set the
-_ZXNOCNT_ flag in the <<_mzext>> CSR.
+_SYSINFO_CPU_ZXNOCNT_ flag in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 
 
 :sectnums!:
@@ -782,39 +780,3 @@ which is assigned via the CPU's _HW_THREAD_ID_ generic.
 Software can traverse this data structure to discover information about the harts, the platform, and their configuration.
 **NOTE: Not assigned yet.**
 |======
-
-
-
-<<<
-// ####################################################################################################################
-:sectnums:
-==== NEORV32-Specific Custom CSRs
-
-
-:sectnums!:
-===== **`mzext`**
-
-[cols="4,27,>7"]
-[frame="topbot",grid="none"]
-|======
-| 0xfc0 | **Available Z* extensions** | `mzext`
-3+| Reset value: _0x00000000_
-3+| The `mzext` CSR is a custom read-only CSR that shows the implemented Z* extensions. The following bits
-are implemented (all remaining bits are always zero). The entire CSR is read-only.
-|======
-
-.Machine counter-inhibit register
-[cols="^1,<3,^1,<5"]
-[options="header",grid="rows"]
-|=======================
-| Bit | Name [C] | R/W | Event
-| 0   | _CPU_MZEXT_ZICSR_ | r/- | `Zicsr` extensions available (enabled via <<_cpu_extension_riscv_zicsr>> generic)
-| 1   | _CPU_MZEXT_ZIFENCEI_ | r/- | `Zifencei` extensions available (enabled via <<_cpu_extension_riscv_zifencei>> generic)
-| 2   | _CPU_MZEXT_ZMMUL_ | r/- | `Zmmul` extensions available (enabled via <<_cpu_extension_riscv_zmmul>> generic)
-| 5   | _CPU_MZEXT_ZFINX_ | r/- | `Zfinx` extensions available (enabled via <<_cpu_extension_riscv_zfinx>> generic)
-| 6   | _CPU_MZEXT_ZXSCNT_ | r/- | custom extension: "Small CPU counters": `cycle[h]` & `instret[h]` CSRs have less than 64-bit when set (when <<_cpu_cnt_width>> generic is less than 64)
-| 7   | _CPU_MZEXT_ZXNOCNT_ | r/- | custom extension: "NO CPU counters": `cycle[h]` & `instret[h]` CSRs are not available at all when set (when <<_cpu_cnt_width>> generic is 0)
-| 8   | _CSR_MZEXT_PMP_ | r/- | PMP (physical memory protection) extension available (<<_pmp_num_regions>> generic > 0)
-| 9   | _CSR_MZEXT_HPM_ | r/- | HPM (hardware performance monitors) extension available (<<_hpm_num_cnts>> generic > 0)
-| 10  | _CSR_MZEXT_DEBUGMODE_ | r/- | RISC-V "CPU debug mode" extension available (enabled via <<_cpu_top_entity_generics,_CPU_EXTENSION_RISCV_DEBUG_>> generic)
-|=======================

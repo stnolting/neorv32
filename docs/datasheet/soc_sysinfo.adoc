@@ -27,13 +27,30 @@ and default clock speed) for correct operation.
 |=======================
 | Address | Name [C] | Function
 | `0xffffffe0` | _SYSINFO_CLK_         | clock speed in Hz (via top's _CLOCK_FREQUENCY_ generic)
-| `0xffffffe4` | _reserved_            | _reserved_, read as zero
-| `0xffffffe8` | _SYSINFO_FEATURES_    | specific hardware configuration (see next table)
+| `0xffffffe4` | _SYSINFO_CPU_         | specific CPU configuration (see next table)
+| `0xffffffe8` | _SYSINFO_FEATURES_    | specific SoC configuration (see next table)
 | `0xffffffec` | _SYSINFO_CACHE_       | cache configuration information (see next table)
 | `0xfffffff0` | _SYSINFO_ISPACE_BASE_ | instruction address space base (defined via `ispace_base_c` constant in the `neorv32_package.vhd` file)
 | `0xfffffff4` | _SYSINFO_IMEM_SIZE_   | internal IMEM size in bytes (defined via top's _MEM_INT_IMEM_SIZE_ generic)
 | `0xfffffff8` | _SYSINFO_DSPACE_BASE_ | data address space base (defined via `sdspace_base_c` constant in the `neorv32_package.vhd` file)
 | `0xfffffffc` | _SYSINFO_DMEM_SIZE_   | internal DMEM size in bytes (defined via top's _MEM_INT_DMEM_SIZE_ generic)
+|=======================
+
+
+._SYSINFO_CPU_ bits
+[cols="^1,<10,<11"]
+[options="header",grid="all"]
+|=======================
+| Bit | Name [C] | Function
+| `0`  | _SYSINFO_CPU_ZICSR_    | `Zicsr` extension (`I` sub-extension) available when set
+| `1`  | _SYSINFO_CPU_ZIFENCEI_ | `Zifencei` extension (`I` sub-extension) available when set
+| `2`  | _SYSINFO_CPU_ZMMUL_    | `Zmmul` extension (`M` sub-extension) available when set
+| `5`  | SYSINFO_CPU_ZFINX_     | `Zfinx` extension (`F` sub-/alternative-extension) available when set
+| `6`  | SYSINFO_CPU_ZXSCNT_    | Custom extension - Small CPU counters: `[m]cycle` & `[m]instret` CSRs have less than 64-bit when set
+| `7`  | SYSINFO_CPU_ZXNOCNT_   | Custom extension - NO CPU counters: `[m]cycle` & `[m]instret` CSRs are NOT available at all when set
+| `8`  | SYSINFO_CPU_PMP_       | `PMP` (physical memory protection) extension available when set
+| `9`  | SYSINFO_CPU_HPM_       | `HPM` (hardware performance monitors) extension available when set
+| `10` | SYSINFO_CPU_DEBUGMODE_ | RISC-V CPU `debug_mode` available when set
 |=======================
 
 

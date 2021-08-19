@@ -342,8 +342,9 @@ see the The _RISC-V Instruction Set Manual – Volume I: Unprivileged ISA_ and _
 Volume II: Privileged Architecture_, which are available in the projects `docs/references` folder.
 
 [TIP]
-The CPU can discover available ISA extensions via the <<_misa>> and <<_mzext>> CSRs or by executing an instruction
-and checking for an _illegal instruction exception_.
+The CPU can discover available ISA extensions via the <<_misa>> CSR and the
+_SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register
+or by executing an instruction and checking for an _illegal instruction exception_.
 
 
 ==== **`A`** - Atomic Memory Access
@@ -468,10 +469,6 @@ RISC-V specs). Also, custom trap codes for `mcause` are implemented.
 
 [NOTE]
 The CPU provides a single _non-maskable_ interrupt (`NMI)` that also provides a custom trap code for `mcause`.
-
-[NOTE]
-A custom CSR `mzext` is available that can be used to check for implemented `Z*` CPU extensions
-(for example `Zifencei`). This CSR is mapped to the official "custom CSR address region".
 
 [NOTE]
 All undefined/unimplemented/malformed/illegal instructions do raise an illegal instruction exception

@@ -457,8 +457,8 @@ This start-up screen also gives some brief information about the bootloader and 
 | `HWV`  | Processor hardware version (from the `mimpid` CSR) in BCD format (example: `0x01040606` = v1.4.6.6).
 | `CLK`  | Processor clock speed in Hz (via the SYSINFO module, from the _CLOCK_FREQUENCY_ generic).
 | `MISA` | CPU extensions (from the `misa` CSR).
-| `ZEXT` | CPU sub-extensions (from the `mzext` CSR)
-| `PROC` | Processor configuration (via the SYSINFO module, from the IO_* and MEM_* configuration generics).
+| `ZEXT` | CPU sub-extensions (via the _SYSINFO_CPU_ register in the SYSINFO module)
+| `PROC` | Processor configuration (via the _SYSINFO_FEATURES_ register in the SYSINFO module / from the IO_* and MEM_* configuration generics).
 | `IMEM` | IMEM memory base address and size in byte (from the _MEM_INT_IMEM_SIZE_ generic).
 | `DMEM` | DMEM memory base address and size in byte (from the _MEM_INT_DMEM_SIZE_ generic).
 |=======================
