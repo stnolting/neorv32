@@ -45,38 +45,50 @@ use neorv32.neorv32_package.all;
 entity neorv32_sysinfo is
   generic (
     -- General --
-    CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
-    INT_BOOTLOADER_EN    : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    CLOCK_FREQUENCY              : natural; -- clock frequency of clk_i in Hz
+    INT_BOOTLOADER_EN            : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
+    -- Extension Options --
+    CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
+    -- Physical memory protection (PMP) --
+    PMP_NUM_REGIONS              : natural; -- number of regions (0..64)
+    -- Hardware Performance Monitors (HPM) --
+    HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..29)
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN      : boolean; -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE    : natural; -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_EN              : boolean; -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE            : natural; -- size of processor-internal instruction memory in bytes
     -- Internal Data memory --
-    MEM_INT_DMEM_EN      : boolean; -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE    : natural; -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_EN              : boolean; -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE            : natural; -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_EN            : boolean; -- implement instruction cache
-    ICACHE_NUM_BLOCKS    : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
-    ICACHE_BLOCK_SIZE    : natural; -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY : natural; -- i-cache: associativity (min 1), has to be a power 2
+    ICACHE_EN                    : boolean; -- implement instruction cache
+    ICACHE_NUM_BLOCKS            : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
+    ICACHE_BLOCK_SIZE            : natural; -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_ASSOCIATIVITY         : natural; -- i-cache: associativity (min 1), has to be a power 2
     -- External memory interface --
-    MEM_EXT_EN           : boolean; -- implement external memory bus interface?
-    MEM_EXT_BIG_ENDIAN   : boolean; -- byte order: true=big-endian, false=little-endian
+    MEM_EXT_EN                   : boolean; -- implement external memory bus interface?
+    MEM_EXT_BIG_ENDIAN           : boolean; -- byte order: true=big-endian, false=little-endian
     -- On-Chip Debugger --
-    ON_CHIP_DEBUGGER_EN  : boolean; -- implement OCD?
+    ON_CHIP_DEBUGGER_EN          : boolean; -- implement OCD?
     -- Processor peripherals --
-    IO_GPIO_EN           : boolean; -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_EN          : boolean; -- implement machine system timer (MTIME)?
-    IO_UART0_EN          : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART1_EN          : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
-    IO_SPI_EN            : boolean; -- implement serial peripheral interface (SPI)?
-    IO_TWI_EN            : boolean; -- implement two-wire interface (TWI)?
-    IO_PWM_NUM_CH        : natural; -- number of PWM channels to implement
-    IO_WDT_EN            : boolean; -- implement watch dog timer (WDT)?
-    IO_TRNG_EN           : boolean; -- implement true random number generator (TRNG)?
-    IO_CFS_EN            : boolean; -- implement custom functions subsystem (CFS)?
-    IO_SLINK_EN          : boolean; -- implement stream link interface?
-    IO_NEOLED_EN         : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_XIRQ_NUM_CH       : natural  -- number of external interrupt (XIRQ) channels to implement
+    IO_GPIO_EN                   : boolean; -- implement general purpose input/output port unit (GPIO)?
+    IO_MTIME_EN                  : boolean; -- implement machine system timer (MTIME)?
+    IO_UART0_EN                  : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART1_EN                  : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_SPI_EN                    : boolean; -- implement serial peripheral interface (SPI)?
+    IO_TWI_EN                    : boolean; -- implement two-wire interface (TWI)?
+    IO_PWM_NUM_CH                : natural; -- number of PWM channels to implement
+    IO_WDT_EN                    : boolean; -- implement watch dog timer (WDT)?
+    IO_TRNG_EN                   : boolean; -- implement true random number generator (TRNG)?
+    IO_CFS_EN                    : boolean; -- implement custom functions subsystem (CFS)?
+    IO_SLINK_EN                  : boolean; -- implement stream link interface?
+    IO_NEOLED_EN                 : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_XIRQ_NUM_CH               : natural  -- number of external interrupt (XIRQ) channels to implement
   );
   port (
     -- host access --
@@ -120,9 +132,23 @@ begin
   -- SYSINFO(0): Processor (primary) clock frequency --
   sysinfo_mem(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
 
-  -- SYSINFO(1): reserved --
-  sysinfo_mem(1) <= (others => '0');
-
+  -- SYSINFO(1): CPU configuration --
+  sysinfo_mem(1)(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr
+  sysinfo_mem(1)(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei
+  sysinfo_mem(1)(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul
+  --
+  sysinfo_mem(1)(3) <= '0'; -- reserved
+  sysinfo_mem(1)(4) <= '0'; -- reserved
+  --
+  sysinfo_mem(1)(5) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- Zfinx ("F-alternative")
+  -- CPU counter size: Zxscnt | Zxnocnt --
+  sysinfo_mem(1)(7 downto 6) <= "00" when (CPU_CNT_WIDTH = 64) else "10" when (CPU_CNT_WIDTH = 0) else "01";
+  sysinfo_mem(1)(8) <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- PMP (physical memory protection)
+  sysinfo_mem(1)(9) <= bool_to_ulogic_f(boolean(HPM_NUM_CNTS > 0));    -- HPM (hardware performance monitors)
+  sysinfo_mem(1)(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG);   -- RISC-V debug mode
+  --
+  sysinfo_mem(1)(31 downto 11) <= (others => '0'); -- reserved
+  
   -- SYSINFO(2): Implemented processor devices/features --
   -- Memory --
   sysinfo_mem(2)(00) <= bool_to_ulogic_f(INT_BOOTLOADER_EN); -- processor-internal bootloader implemented?
