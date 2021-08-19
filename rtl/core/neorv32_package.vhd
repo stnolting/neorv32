@@ -888,7 +888,6 @@ package neorv32_package is
     generic (
       -- General --
       CLOCK_FREQUENCY              : natural;           -- clock frequency of clk_i in Hz
-      USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
       HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
       INT_BOOTLOADER_EN            : boolean := false;  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
       -- On-Chip Debugger (OCD) --
@@ -1874,7 +1873,6 @@ package neorv32_package is
       -- General --
       CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
       INT_BOOTLOADER_EN    : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
-      USER_CODE            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
       -- Internal Instruction memory --
       MEM_INT_IMEM_EN      : boolean; -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE    : natural; -- size of processor-internal instruction memory in bytes

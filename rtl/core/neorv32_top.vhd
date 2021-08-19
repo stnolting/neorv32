@@ -49,7 +49,6 @@ entity neorv32_top is
   generic (
     -- General --
     CLOCK_FREQUENCY              : natural;           -- clock frequency of clk_i in Hz
-    USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user code
     HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
     INT_BOOTLOADER_EN            : boolean := false;  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
@@ -1360,7 +1359,6 @@ begin
     -- General --
     CLOCK_FREQUENCY      => CLOCK_FREQUENCY,      -- clock frequency of clk_i in Hz
     INT_BOOTLOADER_EN    => INT_BOOTLOADER_EN,    -- implement processor-internal bootloader?
-    USER_CODE            => USER_CODE,            -- custom user code
     -- internal Instruction memory --
     MEM_INT_IMEM_EN      => MEM_INT_IMEM_EN,      -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE    => MEM_INT_IMEM_SIZE,    -- size of processor-internal instruction memory in bytes

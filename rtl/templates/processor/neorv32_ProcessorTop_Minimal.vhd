@@ -41,7 +41,6 @@ library neorv32;
 entity neorv32_ProcessorTop_Minimal is
   generic (
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
-    USER_CODE                    : std_ulogic_vector(31 downto 0) := x"00000000";  -- custom user code
     HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
 
     -- RISC-V CPU Extensions --
@@ -106,7 +105,6 @@ begin
     -- General --
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,  -- clock frequency of clk_i in Hz
     INT_BOOTLOADER_EN            => false,            -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
-    USER_CODE                    => USER_CODE,        -- custom user code
     HW_THREAD_ID                 => HW_THREAD_ID,     -- hardware thread id (32-bit)
 
     -- On-Chip Debugger (OCD) --
