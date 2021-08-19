@@ -1,10 +1,8 @@
 -- #################################################################################################
 -- # << NEORV32 - Processor-internal instruction memory (IMEM) >>                                  #
 -- # ********************************************************************************************* #
--- # This memory includes the in-place executable image of the application. See the                #
+-- # This memory optionally includes the in-place executable image of the application. See the     #
 -- # processor's documentary to get more information.                                              #
--- # Note: IMEM is split up into four 8-bit memories - some EDA tools have problems to synthesize  #
--- # a pre-initialized 32-bit memory with byte-enable signals.                                     #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #

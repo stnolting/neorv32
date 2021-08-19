@@ -2,8 +2,8 @@
 -- # << NEORV32 - Processor Top Entity >>                                                          #
 -- # ********************************************************************************************* #
 -- # This is the top entity of the NEORV32 PROCESSOR. Instantiate this unit in your own project    #
--- # and define all the configuration generics according to your needs. Alternatively, you can use #
--- # one of the alternative top entities provided in the "rtl/templates" folder.                   #
+-- # and define all the configuration generics according to your needs or use one of the           #
+-- # pre-defined template wrappers.                                                                #
 -- #                                                                                               #
 -- # Check out the processor's documentation for more information.                                 #
 -- # ********************************************************************************************* #
@@ -110,8 +110,8 @@ entity neorv32_top is
 
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  : natural := 0;      -- number of external IRQ channels (0..32)
-    XIRQ_TRIGGER_TYPE            : std_ulogic_vector(31 downto 0) := x"FFFFFFFF"; -- trigger type: 0=level, 1=edge
-    XIRQ_TRIGGER_POLARITY        : std_ulogic_vector(31 downto 0) := x"FFFFFFFF"; -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
+    XIRQ_TRIGGER_TYPE            : std_ulogic_vector(31 downto 0) := x"ffffffff"; -- trigger type: 0=level, 1=edge
+    XIRQ_TRIGGER_POLARITY        : std_ulogic_vector(31 downto 0) := x"ffffffff"; -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
 
     -- Processor peripherals --
     IO_GPIO_EN                   : boolean := false;  -- implement general purpose input/output port unit (GPIO)?
