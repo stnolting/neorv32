@@ -190,17 +190,6 @@ This will also change the processor's boot address from the beginning of the ins
 
 
 :sectnums!:
-===== _USER_CODE_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **USER_CODE** | _std_ulogic_vector(31 downto 0)_ | x"00000000"
-3+| Custom user code that can be read by software via the _SYSINFO_ module.
-|======
-
-
-:sectnums!:
 ===== _HW_THREAD_ID_
 
 [cols="4,4,2"]
