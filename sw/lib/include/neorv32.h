@@ -1119,8 +1119,8 @@ enum NEORV32_NEOLED_CT_enum {
 
 /** SYSINFO(0): Clock speed */
 #define SYSINFO_CLK         (*(IO_ROM32 (SYSINFO_BASE + 0)))
-/** SYSINFO(1): Custom user code (via "USER_CODE" generic) */
-#define SYSINFO_USER_CODE   (*(IO_ROM32 (SYSINFO_BASE + 4)))
+/** SYSINFO(1): reserved */
+#define SYSINFO_RESERVED    (*(IO_ROM32 (SYSINFO_BASE + 4)))
 /** SYSINFO(2): Clock speed */
 #define SYSINFO_FEATURES    (*(IO_ROM32 (SYSINFO_BASE + 8)))
 /** SYSINFO(3): Cache configuration */
