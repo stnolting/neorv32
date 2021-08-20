@@ -59,7 +59,7 @@ jobs:
         fetch-depth: 0
 
     - name: '🚧 Generate ${{ matrix.board }} ${{ matrix.design }} bitstream'
-      run: make -C setups/examples BOARD=${{ matrix.board }} ${{ matrix.design }}
+      run: make -C setups/osflow BOARD=${{ matrix.board }} ${{ matrix.design }}
 
 
   Processor:
