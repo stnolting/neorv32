@@ -232,7 +232,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_slink_en_c : boolean := boolean(SLINK_NUM_RX > 0) or boolean(SLINK_NUM_TX > 0); -- implement slink at all?
 
   -- reset generator --
-  signal rstn_gen : std_ulogic_vector(7 downto 0);
+  signal rstn_gen : std_ulogic_vector(7 downto 0) := (others => '0'); -- initialize (=reset) via  (for FPGAs only)
   signal ext_rstn : std_ulogic;
   signal sys_rstn : std_ulogic;
   signal wdt_rstn : std_ulogic;
