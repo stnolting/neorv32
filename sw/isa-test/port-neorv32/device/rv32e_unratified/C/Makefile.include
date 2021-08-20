@@ -1,0 +1,5 @@
+NEORV32_MARCH ?= rv32ec
+NEORV32_CPU_EXTENSION_RISCV_C ?= true
+NEORV32_CPU_EXTENSION_RISCV_E ?= true
+
+include $(NEORV32_ROOT)/sw/isa-test/common.mk
