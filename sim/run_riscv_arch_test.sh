@@ -63,9 +63,9 @@ for suite in $SUITES; do
     privilege) make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=privilege $makeTargets;;
     Zifencei) make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=Zifencei RISCV_TARGET_FLAGS=-DNEORV32_NO_DATA_INIT $makeTargets;;
 
-    rv32e_C) make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=../rv32e_unratified/C RISCV_TARGET_FLAGS=-DNEORV32_NO_DATA_INIT $makeTargets;;
-    rv32e_E) make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=../rv32e_unratified/E RISCV_TARGET_FLAGS=-DNEORV32_NO_DATA_INIT $makeTargets;;
-    rv32e_M) make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=../rv32e_unratified/M RISCV_TARGET_FLAGS=-DNEORV32_NO_DATA_INIT $makeTargets;;
+    rv32e_C) make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=../rv32e_unratified/C $makeTargets;;
+    rv32e_E) make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=../rv32e_unratified/E $makeTargets;;
+    rv32e_M) make --silent $makeArgs SIM_TIME=200us RISCV_DEVICE=../rv32e_unratified/M $makeTargets;;
   esac
 done
 
