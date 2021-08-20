@@ -12,13 +12,14 @@ ifeq ($(shell command -v $(TARGET_SIM) 2> /dev/null),)
 endif
 
 NEORV32_MARCH ?= rv32i
+NEORV32_MABI ?= ilp32
 
 RISCV_PREFIX   ?= riscv32-unknown-elf-
 RISCV_GCC      ?= $(RISCV_PREFIX)gcc
 RISCV_OBJDUMP  ?= $(RISCV_PREFIX)objdump
 RISCV_OBJCOPY  ?= $(RISCV_PREFIX)objcopy
 RISCV_READELF  ?= $(RISCV_PREFIX)readelf
-RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=$(NEORV32_MARCH) -mabi=ilp32
+RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=$(NEORV32_MARCH) -mabi=$(NEORV32_MABI)
 
 NEORV32_LINK ?= link.imem_rom.ld
 

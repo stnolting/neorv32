@@ -53,7 +53,7 @@ printf "\n\e[1;33mWARNING! 'rv32e/*' tests are work in progress! \e[0m\n\n"
 makeArgs="-C ../sw/isa-test/riscv-arch-test NEORV32_ROOT=$(pwd)/.. XLEN=32 RISCV_TARGET=neorv32"
 makeTargets='clean build run verify'
 
-[ -n "$1" ] && SUITES="$@" || SUITES='I C M privilege Zifencei rv32e_C rv32e_E rv32e_M'
+[ -n "$1" ] && SUITES="$@" || SUITES='I C M privilege Zifencei'
 
 for suite in $SUITES; do
   case "$suite" in
