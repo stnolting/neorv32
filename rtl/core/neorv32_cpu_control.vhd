@@ -1603,7 +1603,6 @@ begin
   begin
     if (rstn_i = '0') then
       trap_ctrl.exc_buf   <= (others => '0');
-      trap_ctrl.exc_buf(exception_db_break_c) <= '0'; -- enter debug mode
       trap_ctrl.irq_buf   <= (others => def_rst_val_c);
       trap_ctrl.irq_buf(interrupt_nm_irq_c)   <= '0'; -- NMI
       trap_ctrl.irq_buf(interrupt_db_halt_c)  <= '0'; -- enter debug mode
