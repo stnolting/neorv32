@@ -67,7 +67,6 @@ and default clock speed) for correct operation.
 | `5`  | _SYSINFO_FEATURES_ICACHE_           | set if processor-internal instruction cache is implemented (via _ICACHE_EN_ generic)
 | `14` | _SYSINFO_FEATURES_HW_RESET_         | set if on-chip debugger implemented (via _ON_CHIP_DEBUGGER_EN_ generic)
 | `15` | _SYSINFO_FEATURES_HW_RST_           | set if a dedicated hardware reset of all core registers is implemented (via package's _dedicated_reset_c_ constant)
-| `15` | _SYSINFO_FEATURES_HW_RST_           | set if a dedicated hardware reset of all core registers is implemented (via package's _dedicated_reset_c_ constant)
 | `16` | _SYSINFO_FEATURES_IO_GPIO_          | set if the GPIO is implemented (via top's _IO_GPIO_EN_ generic)
 | `17` | _SYSINFO_FEATURES_IO_MTIME_         | set if the MTIME is implemented (via top's _IO_MTIME_EN_ generic)
 | `18` | _SYSINFO_FEATURES_IO_UART0_         | set if the primary UART0 is implemented (via top's _IO_UART0_EN_ generic)
