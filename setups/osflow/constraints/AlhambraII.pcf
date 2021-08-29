@@ -7,8 +7,8 @@
 # -----------------------------------------------------------------------------
 
 # UART port (on-board FTDI)
-set_io AlhambraII_TX 62  # output (ser-tx)
-set_io AlhambraII_RX 61  # input (ser-rx)
+set_io AlhambraII_TX 61  # output (ser-tx)
+set_io AlhambraII_RX 62  # input (ser-rx)
 
 #> External clock (12 MHz)
 set_io AlhambraII_CLK 49

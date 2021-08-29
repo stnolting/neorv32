@@ -100,10 +100,8 @@ begin
   -- IO Connection --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   ULX3S_LED0 <= con_gpio_o(0);
---  ULX3S_LED1 <= con_gpio_o(1);
---  ULX3S_LED2 <= con_gpio_o(2);
-  ULX3S_LED1 <= ULX3S_RX;
-  ULX3S_LED2 <= ULX3S_TX;
+  ULX3S_LED1 <= con_gpio_o(1);
+  ULX3S_LED2 <= con_gpio_o(2);
   ULX3S_LED3 <= con_gpio_o(3);
   ULX3S_LED4 <= '0'; -- unused
   ULX3S_LED5 <= con_pwm(0);
