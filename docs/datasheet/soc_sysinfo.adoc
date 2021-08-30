@@ -42,15 +42,15 @@ and default clock speed) for correct operation.
 [options="header",grid="all"]
 |=======================
 | Bit | Name [C] | Function
-| `0`  | _SYSINFO_CPU_ZICSR_    | `Zicsr` extension (`I` sub-extension) available when set
-| `1`  | _SYSINFO_CPU_ZIFENCEI_ | `Zifencei` extension (`I` sub-extension) available when set
-| `2`  | _SYSINFO_CPU_ZMMUL_    | `Zmmul` extension (`M` sub-extension) available when set
-| `5`  | SYSINFO_CPU_ZFINX_     | `Zfinx` extension (`F` sub-/alternative-extension) available when set
-| `6`  | SYSINFO_CPU_ZXSCNT_    | Custom extension - Small CPU counters: `[m]cycle` & `[m]instret` CSRs have less than 64-bit when set
-| `7`  | SYSINFO_CPU_ZXNOCNT_   | Custom extension - NO CPU counters: `[m]cycle` & `[m]instret` CSRs are NOT available at all when set
-| `8`  | SYSINFO_CPU_PMP_       | `PMP` (physical memory protection) extension available when set
-| `9`  | SYSINFO_CPU_HPM_       | `HPM` (hardware performance monitors) extension available when set
-| `10` | SYSINFO_CPU_DEBUGMODE_ | RISC-V CPU `debug_mode` available when set
+| `0`  | _SYSINFO_CPU_ZICSR_     | `Zicsr` extension (`I` sub-extension) available when set
+| `1`  | _SYSINFO_CPU_ZIFENCEI_  | `Zifencei` extension (`I` sub-extension) available when set
+| `2`  | _SYSINFO_CPU_ZMMUL_     | `Zmmul` extension (`M` sub-extension) available when set
+| `5`  | _SYSINFO_CPU_ZFINX_     | `Zfinx` extension (`F` sub-/alternative-extension) available when set
+| `6`  | _SYSINFO_CPU_ZXSCNT_    | Custom extension - Small CPU counters: `[m]cycle` & `[m]instret` CSRs have less than 64-bit when set
+| `7`  | _SYSINFO_CPU_ZXNOCNT_   | Custom extension - NO CPU counters: `[m]cycle` & `[m]instret` CSRs are NOT available at all when set
+| `8`  | _SYSINFO_CPU_PMP_       | `PMP` (physical memory protection) extension available when set
+| `9`  | _SYSINFO_CPU_HPM_       | `HPM` (hardware performance monitors) extension available when set
+| `10` | _SYSINFO_CPU_DEBUGMODE_ | RISC-V CPU `debug_mode` available when set
 |=======================
 
 
@@ -66,7 +66,6 @@ and default clock speed) for correct operation.
 | `4`  | _SYSINFO_FEATURES_MEM_EXT_ENDIAN_   | set if external bus interface uses BIG-endian byte-order (via top's _MEM_EXT_BIG_ENDIAN_ generic)
 | `5`  | _SYSINFO_FEATURES_ICACHE_           | set if processor-internal instruction cache is implemented (via _ICACHE_EN_ generic)
 | `14` | _SYSINFO_FEATURES_HW_RESET_         | set if on-chip debugger implemented (via _ON_CHIP_DEBUGGER_EN_ generic)
-| `15` | _SYSINFO_FEATURES_HW_RST_           | set if a dedicated hardware reset of all core registers is implemented (via package's _dedicated_reset_c_ constant)
 | `15` | _SYSINFO_FEATURES_HW_RST_           | set if a dedicated hardware reset of all core registers is implemented (via package's _dedicated_reset_c_ constant)
 | `16` | _SYSINFO_FEATURES_IO_GPIO_          | set if the GPIO is implemented (via top's _IO_GPIO_EN_ generic)
 | `17` | _SYSINFO_FEATURES_IO_MTIME_         | set if the MTIME is implemented (via top's _IO_MTIME_EN_ generic)
