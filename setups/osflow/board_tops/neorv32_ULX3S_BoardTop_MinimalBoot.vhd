@@ -43,7 +43,7 @@ entity neorv32_ULX3S_BoardTop_MinimalBoot is
   port (
     -- Clock and Reset inputs
     ULX3S_CLK : in std_logic;
---    ULX3S_RST_N : in std_logic;
+    ULX3S_RST_N : in std_logic;
     -- LED outputs
     ULX3S_LED0 : out std_logic;
     ULX3S_LED1 : out std_logic;
@@ -81,9 +81,8 @@ begin
   port map (
     -- Global control --
     clk_i      => std_ulogic(ULX3S_CLK),
---    rstn_i     => std_ulogic(ULX3S_RST_N),
-	rstn_i     => '1',
-
+    rstn_i     => std_ulogic(ULX3S_RST_N),
+	
     -- GPIO --
     gpio_o     => con_gpio_o,
 
