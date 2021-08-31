@@ -1137,7 +1137,7 @@ enum NEORV32_SYSINFO_CPU_enum {
 /**********************************************************************//**
  * SYSINFO_FEATURES (r/-): Implemented processor devices/features
  **************************************************************************/
- enum NEORV32_SYSINFO_FEATURES_enum {
+enum NEORV32_SYSINFO_FEATURES_enum {
   SYSINFO_FEATURES_BOOTLOADER       =  0, /**< SYSINFO_FEATURES  (0) (r/-): Bootloader implemented when 1 (via INT_BOOTLOADER_EN generic) */
   SYSINFO_FEATURES_MEM_EXT          =  1, /**< SYSINFO_FEATURES  (1) (r/-): External bus interface implemented when 1 (via MEM_EXT_EN generic) */
   SYSINFO_FEATURES_MEM_INT_IMEM     =  2, /**< SYSINFO_FEATURES  (2) (r/-): Processor-internal instruction memory implemented when 1 (via MEM_INT_IMEM_EN generic) */
