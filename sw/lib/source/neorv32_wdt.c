@@ -112,7 +112,7 @@ int neorv32_wdt_disable(void) {
  **************************************************************************/
 void neorv32_wdt_reset(void) {
 
-  WDT_CT = (1 << WDT_CT_RESET);
+  WDT_CT = WDT_CT | (1 << WDT_CT_RESET);
 }
 
 
