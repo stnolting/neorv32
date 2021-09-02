@@ -16,7 +16,7 @@ Project maintainers may make pull requests against this repository to [add or li
 | :file_folder: [`nexys-a7-test-setup`](https://github.com/stnolting/neorv32/tree/master/setups/vivado/nexys-a7-test-setup)  | Xilinx Vivado       | [Digilent Nexys 4 DDR](https://reference.digilentinc.com/reference/programmable-logic/nexys-4-ddr/start)                          | Xilinx Artix-7 `XC7A100TCSG324-1`         | [AWenzel83](https://github.com/AWenzel83) |
 
 
-## Setups using Open-Source Toolchains (`osflow`)
+## Setups using Open-Source Toolchains
 
 | Setup | Toolchain | Board :books: | FPGA  | Author(s) |
 |:------|:----------|:--------------|:------|:----------|
@@ -26,6 +26,10 @@ Project maintainers may make pull requests against this repository to [add or li
 | :file_folder: [`AlhambraII`](https://github.com/stnolting/neorv32/tree/master/setups/osflow)  | GHDL, Yosys, nextPNR | [AlhambraII](https://alhambrabits.com/alhambra/)                                                             | Lattice iCE40HX4K                         | [zipotron](https://github.com/zipotron) |
 | :file_folder: [`Orange Crab`](https://github.com/stnolting/neorv32/tree/master/setups/osflow) | GHDL, Yosys, nextPNR | [Orange Crab](https://github.com/gregdavill/OrangeCrab)                                                      | Lattice ECP5-25F                          | [umarcor](https://github.com/umarcor), [jeremyherbert](https://github.com/jeremyherbert) |
 | :file_folder: [`ULX3S`](https://github.com/stnolting/neorv32/tree/master/setups/osflow)       | GHDL, Yosys, nextPNR | [ULX3S](https://radiona.org/ulx3s/)                                                                          | Lattice ECP5 `LFE5U-85F-6BG381C`          | [zipotron](https://github.com/zipotron) |
+
+:information_source: All setups using open-source toolchains are located in the
+[`osflow`](https://github.com/stnolting/neorv32/tree/master/setups/osflow) folder.
+See the README there for more information how to run a specific setup / configuration.
 
 
 ### Adding Your Project Setup
