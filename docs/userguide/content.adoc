@@ -690,7 +690,7 @@ by setting `CPU_CNT_WIDTH => 0` if they are not used at all (note, this is not R
 * Map CPU shift operations to a small and iterative shifter unit (`FAST_SHIFT_EN => false`).
 * If you have unused DSP block available, you can map multiplication operations to those slices instead of
 using LUTs to implement the multiplier (`FAST_MUL_EN => true`).
-* If there is no need to execute division in hardware, use the `Zmmul extension` instead of the full-scale
+* If there is no need to execute division in hardware, use the `Zmmul` extension instead of the full-scale
 `M` extension.
 * Disable CPU extension that are not explicitly used (`A`, `U`, `Zfinx`).
 * _To be continued..._
