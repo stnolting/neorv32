@@ -131,17 +131,20 @@ value printed in light gray.
 [TIP]
 The NEORV32 generics allow to configure the system according to your needs. The generics are
 used to control implementation of certain CPU extensions and peripheral modules and even allow to
-optimize the system for certain design goals like minimal area or maximum performance.
+optimize the system for certain design goals like minimal area or maximum performance. +
+**More information can be found in the user guides' section
+https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration[Application-Specific Processor Configuration]**.
 
 [TIP]
 Privileged software can determine the actual CPU and processor configuration via the `misa` and the 
 i_SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 
-[TIP]
-If optional modules (like CPU extensions or peripheral devices) are *not enabled* the according circuitry **will not be synthesized at all**.
-Hence, the disabled modules do not increase area and power requirements and do not impact the timing.
+[NOTE]
+If optional modules (like CPU extensions or peripheral devices) are *not enabled* the according circuitry
+**will not be synthesized at all**. Hence, the disabled modules do not increase area and power requirements
+and do not impact the timing.
 
-[TIP]
+[NOTE]
 Not all configuration combinations are valid. The processor RTL code provides sanity checks to inform the user
 during synthesis/simulation if an invalid combination has been detected.
 
@@ -171,7 +174,8 @@ See section <<_system_configuration_information_memory_sysinfo>> for more inform
 [frame="all",grid="none"]
 |======
 | **CLOCK_FREQUENCY** | _natural_ | _none_
-3+| The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
+3+| The clock frequency of the processor's `clk_i` input port in Hertz (Hz). This value can be retrieved by software
+from the <<_system_configuration_information_memory_sysinfo, SYSINFO>> module.
 |======
 
 
@@ -195,7 +199,8 @@ This will also change the processor's boot address from the beginning of the ins
 [frame="all",grid="none"]
 |======
 | **HW_THREAD_ID** | _natural_ | 0
-3+| The hart ID of the CPU. Can be read via the `mhartid` CSR. Hart IDs must be unique within a system.
+3+| The hart ID of the CPU. Software can retrieve this value from the `mhartid` CSR.
+Note that hart IDs must be unique within a system.
 |======
 
 
@@ -206,7 +211,8 @@ This will also change the processor's boot address from the beginning of the ins
 [frame="all",grid="none"]
 |======
 | **ON_CHIP_DEBUGGER_EN** | _boolean_ | false
-3+| Implement on-chip debugger (OCD). See chapter <<_on_chip_debugger_ocd>>.
+3+| Implement the on-chip debugger (OCD) and the CPU debug mode.
+See chapter <<_on_chip_debugger_ocd>> for more information.
 |======
 
 
@@ -236,8 +242,8 @@ See section <<_a_atomic_memory_access>>.
 [frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_C** | _boolean_ | false
-3+| Implement compressed instructions (16-bit) when _true_.
-See section <<_c_compressed_instructions>>.
+3+| Implement compressed instructions (16-bit) when _true_. Compressed instructions can reduce program code
+size by approx. 30%. See section <<_c_compressed_instructions>>.
 |======
 
 
@@ -248,8 +254,9 @@ See section <<_c_compressed_instructions>>.
 [frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_E** | _boolean_ | false
-3+| Implement the embedded CPU extension (only implement the first 16 data registers) when _true_.
-See section <<_e_embedded_cpu>>.
+3+| Implement the embedded CPU extension (only implement the first 16 data registers) when _true_. This reduces embedded memory
+requirements for the register file. See section <<_e_embedded_cpu>> for more information. Note that this RISC-V extensions
+requires a different application binary interface (ABI).
 |======
 
 
@@ -260,8 +267,11 @@ See section <<_e_embedded_cpu>>.
 [frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_M** | _boolean_ | false
-3+| Implement integer multiplication and division instructions when _true_.
-See section <<_m_integer_multiplication_and_division>>.
+3+| Implement hardware accelerators for integer multiplication and division instructions when _true_.
+If this extensions is not enabled, multiplication and division operations (_not_ instructions) will be computed entirely in software.
+If only a hardware multiplier is required use the <<_cpu_extension_riscv_zmmul>> extension. Multiplication can also be mapped
+to DSP slices via the <<_fast_mul_en>> generic.
+See section <<_m_integer_multiplication_and_division>> for more information.
 |======
 
 
@@ -273,7 +283,7 @@ See section <<_m_integer_multiplication_and_division>>.
 |======
 | **CPU_EXTENSION_RISCV_U** | _boolean_ | false
 3+| Implement less-privileged user mode when _true_.
-See section <<_u_less_privileged_user_mode>>.
+See section <<_u_less_privileged_user_mode>> for more information.
 |======
 
 
@@ -285,7 +295,7 @@ See section <<_u_less_privileged_user_mode>>.
 |======
 | **CPU_EXTENSION_RISCV_Zfinx** | _boolean_ | false
 3+| Implement the 32-bit single-precision floating-point extension (using integer registers) when _true_.
-See section <<_zfinx_single_precision_floating_point_operations>>.
+See section <<_zfinx_single_precision_floating_point_operations>> for more information.
 |======
 
 
@@ -299,7 +309,7 @@ See section <<_zfinx_single_precision_floating_point_operations>>.
 3+| Implement the control and status register (CSR) access instructions when true. Note: When this option is
 disabled, the complete privileged architecture / trap system will be excluded from synthesis. Hence, no interrupts, no exceptions and
 no machine information will be available.
-See section <<_zicsr_control_and_status_register_access_privileged_architecture>>.
+See section <<_zicsr_control_and_status_register_access_privileged_architecture>> for more information.
 |======
 
 
@@ -311,8 +321,8 @@ See section <<_zicsr_control_and_status_register_access_privileged_architecture>
 |======
 | **CPU_EXTENSION_RISCV_Zifencei** | _boolean_ | false
 3+| Implement the instruction fetch synchronization instruction `fence.i`. For example, this option is required
-for self-modifying code (and/or for i-cache flushes).
-See section <<_zifencei_instruction_stream_synchronization>>.
+for self-modifying code (and/or for instruction cache and CPU prefetch buffer flushes).
+See section <<_zifencei_instruction_stream_synchronization>> for more information.
 |======
 
 
@@ -323,8 +333,8 @@ See section <<_zifencei_instruction_stream_synchronization>>.
 [frame="all",grid="none"]
 |======
 | **CPU_EXTENSION_RISCV_Zmmul** | _boolean_ | false
-3+| Implement integer multiplication-only instructions when _true_. This is a sub-extensions of the `M` extension.
-See section <<_zmmul_integer_multiplication>>.
+3+| Implement integer multiplication-only instructions when _true_. This is a sub-extension of the `M` extension, which
+cannot be used together with the `M` extension. See section <<_zmmul_integer_multiplication>> for more information.
 |======
 
 
@@ -342,9 +352,10 @@ See section <<_instruction_sets_and_extensions>> for more information.
 [frame="all",grid="none"]
 |======
 | **FAST_MUL_EN** | _boolean_ | false
-3+| When this generic is enabled, the multiplier of the `M` extension is realized using DSPs blocks instead of an
-iterative bit-serial approach. This generic is only relevant when the multiplier and divider CPU extension is
-enabled (<<_cpu_extension_riscv_m>> is _true_).
+3+| When this generic is enabled, the multiplier of the `M` extension is implemented using DSPs blocks instead of an
+iterative bit-serial approach. Performance will be increased and LUT utilization will be reduced at the cost of DSP slice
+utilization. This generic is only relevant when a hardware multiplier CPU extension is
+enabled (<<_cpu_extension_riscv_m>> or <<_cpu_extension_riscv_zmmul>> is _true_).
 |======
 
 
@@ -355,9 +366,10 @@ enabled (<<_cpu_extension_riscv_m>> is _true_).
 [frame="all",grid="none"]
 |======
 | **FAST_SHIFT_EN** | _boolean_ | false
-3+| When this generic is set _true_ the shifter unit of the CPU's ALU is implemented as fast barrel shifter (requiring
-more hardware resources). If it is set _false_ the CPU uses a serial shifter that only performs a single bit shift per cycle
-(small but slow).
+3+| If this generic is set _true_ the shifter unit of the CPU's ALU is implemented as fast barrel shifter (requiring
+more hardware resources but completing within two clock cycles). If it is set _false_, the CPU uses a serial shifter
+that only performs a single bit shift per cycle (requiring less hardware resources, but requires up to 32 clock
+cycles to complete - depending on shift amount).
 |======
 
 
@@ -369,9 +381,8 @@ more hardware resources). If it is set _false_ the CPU uses a serial shifter tha
 |======
 | **CPU_CNT_WIDTH** | _natural_ | 64
 3+| This generic configures the total size of the CPU's `cycle` and `instret` CSRs (low word + high word).
-The maximum value is 64, the minimum value is 0. See
-section <<_machine_counters_and_timers>> for more information. Note: configurations with <<_cpu_cnt_width>>
-less than 64 bits do not comply to the RISC-V specs.
+The maximum value is 64, the minimum value is 0. See section <<_machine_counters_and_timers>> for more information.
+Note: configurations with <<_cpu_cnt_width>> less than 64 bits do not comply to the RISC-V specs.
 |======
 
 
@@ -384,8 +395,7 @@ less than 64 bits do not comply to the RISC-V specs.
 | **CPU_IPB_ENTRIES** | _natural_ | 2
 3+| This generic configures the number of entries in the CPU's instruction prefetch buffer (a FIFO).
 The value has to be a power of two and has to be greater than zero.
-Long linear sequences of code can benefit from an increased IPB size. For setups that use the instruction
-cache (<<_icache_en>>) this generic should be set to 1.
+Long linear sequences of code can benefit from an increased IPB size.
 |======
 
 
@@ -434,7 +444,7 @@ See section <<_hpm_hardware_performance_monitors>> for more information.
 [frame="all",grid="none"]
 |======
 | **HPM_NUM_CNTS** | _natural_ | 0
-3+| Total number of implemented hardware performance monitor counters (0..29). If this generics is zero no
+3+| Total number of implemented hardware performance monitor counters (0..29). If this generics is zero, no
 hardware performance monitor logic will be implemented at all. Setting <<_hpm_num_cnts>> > 0 will set the _SYSINFO_CPU_HPM_ flag
 in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 |======
@@ -447,8 +457,8 @@ in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO
 [frame="all",grid="none"]
 |======
 | **HPM_CNT_WIDTH** | _natural_ | 40
-3+| This generic defines the total LSB-aligned size of each HPM counter (size(`[m]hpmcounter*h`) +
-size(`[m]hpmcounter*`)). The maximum value is 64, the minimal is 0. If the size is less than 64-bit, the
+3+| This generic defines the total LSB-aligned size of each HPM counter (`size([m]hpmcounter*h)` +
+`size([m]hpmcounter*)`). The maximum value is 64, the minimal is 0. If the size is less than 64-bit, the
 unused MSB-aligned counter bits are hardwired to zero.
 |======
 
@@ -478,7 +488,7 @@ See sections <<_address_space>> and <<_instruction_memory_imem>> for more inform
 [frame="all",grid="none"]
 |======
 | **MEM_INT_IMEM_SIZE** | _natural_ | 16*1024
-3+| Size in bytes of the processor internal instruction memory (IMEM). Has no effect when _MEM_INT_IMEM_EN_ is _false_.
+3+| Size in bytes of the processor internal instruction memory (IMEM). Has no effect when <<_mem_int_imem_en>> is _false_.
 |======
 
 
@@ -507,7 +517,7 @@ See sections <<_address_space>> and <<_data_memory_dmem>> for more information.
 [frame="all",grid="none"]
 |======
 | **MEM_INT_DMEM_SIZE** | _natural_ | 8*1024
-3+| Size in bytes of the processor-internal data memory (DMEM). Has no effect when _MEM_INT_DMEM_EN_ is _false_.
+3+| Size in bytes of the processor-internal data memory (DMEM). Has no effect when <<_mem_int_dmem_en>> is _false_.
 |======
 
 
@@ -525,7 +535,8 @@ See section <<_processor_internal_instruction_cache_icache>> for more informatio
 [frame="all",grid="none"]
 |======
 | **ICACHE_EN** | _boolean_ | false
-3+| Implement processor internal instruction cache when _true_.
+3+| Implement processor internal instruction cache when _true_. Note: if the setup only uses processor-internal data
+and instruction memories there is not point of implementing the i-cache.
 |======
 
 
@@ -537,7 +548,7 @@ See section <<_processor_internal_instruction_cache_icache>> for more informatio
 |======
 | **ICACHE_NUM_BLOCKS** | _natural_ | 4
 3+| Number of blocks (cache "pages" or "lines") in the instruction cache. Has to be a power of two. Has no
-effect when _ICACHE_DMEM_EN_ is false.
+effect when <<_icache_dmem_en>> is false.
 |======
 
 
@@ -549,7 +560,7 @@ effect when _ICACHE_DMEM_EN_ is false.
 |======
 | **ICACHE_BLOCK_SIZE** | _natural_ | 64
 3+| Size in bytes of each block in the instruction cache. Has to be a power of two. Has no effect when
-_ICACHE_EN_ is _false_.
+<<_icache_dmem_en>> is _false_.
 |======
 
 
@@ -561,7 +572,7 @@ _ICACHE_EN_ is _false_.
 |======
 | **ICACHE_ASSOCIATIVITY** | _natural_ | 1
 3+| Associativity (= number of sets) of the instruction cache. Has to be a power of two. Allowed configurations:
-`1` = 1 set, direct mapped; `2` = 2-way set-associative. Has no effect when _ICACHE_EN_ is _false_.
+`1` = 1 set, direct mapped; `2` = 2-way set-associative. Has no effect when <<_icache_dmem_en>> is _false_.
 |======
 
 
@@ -590,7 +601,8 @@ See sections <<_address_space>> and <<_processor_external_memory_interface_wishb
 [frame="all",grid="none"]
 |======
 | **MEM_EXT_TIMEOUT** | _natural_ | 255
-3+| Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception. Set to 0 to disable auto-timeout.
+3+| Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception.
+If set to zero, there will be no auto-timeout and no bus fault exception (might permanently stall system!).
 |======
 
 
@@ -601,7 +613,8 @@ See sections <<_address_space>> and <<_processor_external_memory_interface_wishb
 [frame="all",grid="none"]
 |======
 | **MEM_EXT_PIPE_MODE** | _boolean_ | false
-3+| Use _standard_ ("classic") Wishbone protocol for external bus when _false_; use _pipelined_ Wishbone protocol when _true_.
+3+| Use _standard_ ("classic") Wishbone protocol for external bus when _false_.
+Use _pipelined_ Wishbone protocol when _true_.
 |======
 
 
@@ -612,7 +625,7 @@ See sections <<_address_space>> and <<_processor_external_memory_interface_wishb
 [frame="all",grid="none"]
 |======
 | **MEM_EXT_BIG_ENDIAN** | _boolean_ | false
-3+| Use BIG endian interface for external bus when _true_; use little endian interface when _false_.
+3+| Use BIG endian interface for external bus when _true_. Use little endian interface when _false_.
 |======
 
 
@@ -625,7 +638,7 @@ See sections <<_address_space>> and <<_processor_external_memory_interface_wishb
 | **MEM_EXT_ASYNC_RX** | _boolen_ | false
 3+| By default, _MEM_EXT_ASYNC_RX_ = _false_ implements a registered read-back path (RX) for incoming data in the bus interface
 in order to shorten the critical path. By setting _MEM_EXT_ASYNC_RX_ = _true_ an _asynchronous_ ("direct") read-back path is
-implemented reducing access latency by one cycle.
+implemented reducing access latency by one cycle but eventually increasing the critical path.
 |======
 
 
@@ -706,7 +719,7 @@ See section <<_external_interrupt_controller_xirq>> for more information.
 |======
 | **XIRQ_TRIGGER_TYPE** | _std_ulogic_vector(31 downto 0)_ | 0xFFFFFFFF
 3+| Interrupt trigger type configuration (one bit for each IRQ channel): `0` = level-triggered, '1' = edge triggered.
-_XIRQ_TRIGGER_POLARITY_ generic is used to specify the actual level (high/low) or edge (falling/rising).
+<<_xirq_trigger_polarity>> generic is used to specify the actual level (high/low) or edge (falling/rising).
 |======
 
 
@@ -718,7 +731,7 @@ _XIRQ_TRIGGER_POLARITY_ generic is used to specify the actual level (high/low) o
 |======
 | **XIRQ_TRIGGER_POLARITY** | _std_ulogic_vector(31 downto 0)_ | 0xFFFFFFFF
 3+| Interrupt trigger polarity configuration (one bit for each IRQ channel): `0` = low-level/falling-edge,
-'1' = high-level/rising-edge. _XIRQ_TRIGGER_TYPE_ generic is used to specify the actual type (level or edge).
+'1' = high-level/rising-edge. <<_xirq_trigger_type>> generic is used to specify the actual type (level or edge).
 |======
 
 
