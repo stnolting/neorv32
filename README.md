@@ -321,6 +321,7 @@ This overview provides some *quick links* to the most important sections of the
 * [General Software Setup](https://stnolting.github.io/neorv32/ug/#_general_software_framework_setup) - configure the software framework
 * [Application Compilation](https://stnolting.github.io/neorv32/ug/#_application_program_compilation) - compile an application using `make`
 * [Upload via Bootloader](https://stnolting.github.io/neorv32/ug/#_uploading_and_starting_of_a_binary_executable_image_via_uart) - upload and execute executables
+* [Application-Specific Processor Configuration](https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration) - tailor the processor to your needs
 * [Debugging via the On-Chip Debugger](https://stnolting.github.io/neorv32/ug/#_debugging_using_the_on_chip_debugger) - step through code *online* and *in-system*
 
 ### :copyright: Legal
