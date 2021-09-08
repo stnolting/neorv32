@@ -53,6 +53,7 @@ entity neorv32_tb_simple is
     CPU_EXTENSION_RISCV_E        : boolean := false;
     CPU_EXTENSION_RISCV_M        : boolean := true;
     CPU_EXTENSION_RISCV_U        : boolean := true;
+    CPU_EXTENSION_RISCV_Zbb      : boolean := false;
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;
     EXT_IMEM_C                   : boolean := false;   -- false: use and boot from proc-internal IMEM, true: use and boot from external (initialized) simulated IMEM (ext. mem A)
@@ -179,6 +180,7 @@ begin
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,  -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,  -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,  -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zbb      => CPU_EXTENSION_RISCV_Zbb,-- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zfinx    => true,          -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,     -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei,  -- implement instruction stream sync.?
