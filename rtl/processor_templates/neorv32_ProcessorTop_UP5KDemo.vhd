@@ -151,7 +151,8 @@ begin
   spi_sck_o   <= con_spi_sck;
   spi_sdo_o   <= con_spi_sdo;
   spi_csn_o   <= con_spi_csn(1);
-  con_spi_sdi <= spi_sdi_i;
+
+  con_spi_sdi <= flash_sdi_i when (con_spi_csn(0) = '0') else spi_sdi_i;
 
   -- GPIO --
   gpio_o <= con_gpio_o(3 downto 0);
