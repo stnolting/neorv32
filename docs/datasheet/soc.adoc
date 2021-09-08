@@ -288,6 +288,18 @@ See section <<_u_less_privileged_user_mode>> for more information.
 
 
 :sectnums!:
+===== _CPU_EXTENSION_RISCV_Zbb_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CPU_EXTENSION_RISCV_Zbb** | _boolean_ | false
+3+| Implement the `Zbb` _basic_ bit-manipulation sub-extension when _true_.
+See section <<_zbb_basic_bit_manipulation_operations>> for more information.
+|======
+
+
+:sectnums!:
 ===== _CPU_EXTENSION_RISCV_Zfinx_
 
 [cols="4,4,2"]

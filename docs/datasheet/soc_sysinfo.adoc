@@ -45,6 +45,7 @@ and default clock speed) for correct operation.
 | `0`  | _SYSINFO_CPU_ZICSR_     | `Zicsr` extension (`I` sub-extension) available when set
 | `1`  | _SYSINFO_CPU_ZIFENCEI_  | `Zifencei` extension (`I` sub-extension) available when set
 | `2`  | _SYSINFO_CPU_ZMMUL_     | `Zmmul` extension (`M` sub-extension) available when set
+| `3`  | _SYSINFO_CPU_ZBB_       | `Zbb` extension (`B` sub-extension) available when set
 | `5`  | _SYSINFO_CPU_ZFINX_     | `Zfinx` extension (`F` sub-/alternative-extension) available when set
 | `6`  | _SYSINFO_CPU_ZXSCNT_    | Custom extension - Small CPU counters: `[m]cycle` & `[m]instret` CSRs have less than 64-bit when set
 | `7`  | _SYSINFO_CPU_ZXNOCNT_   | Custom extension - NO CPU counters: `[m]cycle` & `[m]instret` CSRs are NOT available at all when set

@@ -13,6 +13,7 @@ image::riscv_logo.png[width=350,align=center]
 ** `E` - embedded CPU version (reduced register file size)
 ** `M` - integer multiplication and division hardware
 ** `U` - less-privileged _user_ mode
+** `Zbb` - basic bit-manipulation operations
 ** `Zfinx` - single-precision floating-point unit
 ** `Zicsr` - control and status register access (privileged architecture)
 ** `Zifencei` - instruction stream synchronization
@@ -516,6 +517,31 @@ code (see `sw/example/floating_point_test`).
 [IMPORTANT]
 Note that any FPU instruction including all FPU-related CSR accesses will raise an illegal instruction exception
 if the FPU is not enabled via the <<_mstatus>> CSR (`FS` bits).
+
+
+==== **`Zbb`** Basic Bit-manipulation Operations
+
+The `Zbb` extension implements the _basic_ sub-set of the RISC-V bit-manipulation extensions `B`.
+The official RISC-V specifications can be found here: https://github.com/riscv/riscv-bitmanip
+
+The `Zbb` extension is implemented when the `CPU_EXTENSION_RISCV_Zbb` configuration
+generic is _true_. In this case the following instructions are available:
+
+* `andn`, `orn`, `xnor`
+* `clz`, `ctz`, `cpop`
+* `max`, `maxu`, `min`, `minu`
+* `sext.b`, `sext.h`, `zext.h`
+* `rol`, `ror`, `rori`
+* `orc.b`, `rev8`
+
+[IMPORTANT]
+The `Zbb` extension is frozen but not officially ratified yet. There is no
+software support for this extension in the upstream GCC RISC-V port yet. However, an
+intrinsic library is provided to utilize the provided `Zbb` extension from C-language
+code (see `sw/example/bitmanip_test`).
+
+[WARNING]
+The NEORV32 `Zbb` extension is still _experimental_!
 
 
 ==== **`Zicsr`** Control and Status Register Access / Privileged Architecture

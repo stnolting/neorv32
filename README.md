@@ -187,15 +187,13 @@ documentation section). Note that the `X` extension is always enabled.
 [[`M`](https://stnolting.github.io/neorv32/#_m_integer_multiplication_and_division)]
 [[`U`](https://stnolting.github.io/neorv32/#_u_less_privileged_user_mode)]
 [[`X`](https://stnolting.github.io/neorv32/#_x_neorv32_specific_custom_extensions)]
+[[`Zbb`](https://stnolting.github.io/neorv32/#_zbb_basic_bit_manipulation_operations)]
 [[`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_single_precision_floating_point_operations)]
 [[`Zicsr`](https://stnolting.github.io/neorv32/#_zicsr_control_and_status_register_access_privileged_architecture)]
 [[`Zifencei`](https://stnolting.github.io/neorv32/#_zifencei_instruction_stream_synchronization)]
 [[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_integer_multiplication)]
 [[`PMP`](https://stnolting.github.io/neorv32/#_pmp_physical_memory_protection)]
 [[`HPM`](https://stnolting.github.io/neorv32/#_hpm_hardware_performance_monitors)]**
-
-:information_source: The `B` ISA extension has been temporarily removed from the processor.
-See [B ISA Extension](https://github.com/stnolting/neorv32/projects/7) project board.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
