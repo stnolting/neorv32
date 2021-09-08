@@ -222,6 +222,12 @@ begin
   -- Debug mode --
   assert not ((CPU_EXTENSION_RISCV_DEBUG = true) and (CPU_EXTENSION_RISCV_Zicsr = false)) report "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
+  -- fast multiplication option --
+  assert not (FAST_MUL_EN = true) report "NEORV32 CPU CONFIG NOTE: <FAST_MUL_EN> set. Trying to use DSP blocks for std. multiplications." severity note;
+
+  -- fast shift option --
+  assert not (FAST_SHIFT_EN = true) report "NEORV32 CPU CONFIG NOTE: <FAST_SHIFT_EN> set. Implementing barrel shifters." severity note;
+
 
   -- Control Unit ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
