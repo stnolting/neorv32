@@ -340,6 +340,9 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<SYSINFO_CPU_ZMMUL)) {
     neorv32_uart0_printf("Zmmul ");
   }
+  if (tmp & (1<<SYSINFO_CPU_ZBB)) {
+    neorv32_uart0_printf("Zbb ");
+  }
 
   if (tmp & (1<<SYSINFO_CPU_ZFINX)) {
     neorv32_uart0_printf("Zfinx ");
