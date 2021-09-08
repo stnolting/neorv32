@@ -257,7 +257,7 @@ begin
 
     -- Wait a bit more if some extra unexpected data is produced. If so,
     -- uart_rx will fail
-    wait for (20 * 1e9 / baud0_rate_c) * ns;
+    wait for (20 * (1e9 / baud0_rate_c)) * ns;
 
     test_runner_cleanup(runner);
   end process;
