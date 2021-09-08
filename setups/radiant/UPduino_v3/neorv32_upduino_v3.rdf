@@ -36,6 +36,9 @@
         <Source name="../../../rtl/core/neorv32_cpu_cp_fpu.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>
+        <Source name="../../../rtl/core/neorv32_cpu_cp_bitmanip.vhd" type="VHDL" type_short="VHDL">
+            <Options lib="neorv32"/>
+        </Source>
         <Source name="../../../rtl/core/neorv32_cpu_cp_muldiv.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>
