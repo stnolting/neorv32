@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<RadiantProject version="4.1" title="neorv32_upduino_v3" device="iCE40UP5K-SG48I" performance_grade="High-Performance_1.2V" default_implementation="impl_1">
+<RadiantProject version="4.2" title="neorv32_upduino_v3" device="iCE40UP5K-SG48I" performance_grade="High-Performance_1.2V" default_implementation="impl_1">
     <Options/>
     <Implementation title="impl_1" dir="impl_1" description="impl_1" synthesis="lse" default_strategy="Strategy1">
         <Options def_top="neorv32_upduino_v3_top" top="neorv32_upduino_v3_top"/>
@@ -109,11 +109,7 @@
             <Options lib="neorv32"/>
         </Source>
         <Source name="neorv32_upduino_v3_top.vhd" type="VHDL" type_short="VHDL">
-            <Options top_module="neorv32_upduino_v3_top"/>
-            <Options lib="work"/>
-        </Source>
-        <Source name="../../../rtl/processor_templates/neorv32_ProcessorTop_UP5KDemo.vhd" type="VHDL" type_short="VHDL">
-            <Options lib="work"/>
+            <Options lib="work" top_module="neorv32_upduino_v3_top"/>
         </Source>
         <Source name="system_pll/system_pll.ipx" type="IPX_Module" type_short="IPX">
             <Options/>

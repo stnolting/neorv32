@@ -98,7 +98,11 @@ architecture neorv32_upduino_v3_top_rtl of neorv32_upduino_v3_top is
   signal cpu_rstn : std_ulogic;
 
   -- internal IO connection --
-  signal con_pwm      : std_ulogic_vector(02 downto 0);
+  signal con_pwm     : std_ulogic_vector(02 downto 0);
+  signal con_spi_sck : std_ulogic;
+  signal con_spi_sdi : std_ulogic;
+  signal con_spi_sdo : std_ulogic;
+  signal con_spi_csn : std_ulogic_vector(07 downto 0);
 
   -- Misc --
   signal pwm_drive  : std_logic_vector(2 downto 0);
@@ -136,7 +140,7 @@ begin
 
   -- The core of the problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_inst: entity work.neorv32_ProcessorTop_UP5KDemo
+  neorv32_inst: neorv32_top
   generic map (
     -- General --
     CLOCK_FREQUENCY              => f_clock_c,   -- clock frequency of clk_i in Hz
@@ -201,22 +205,14 @@ begin
     gpio_i      => gpio_i,                       -- parallel input
 
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart_txd_o => uart_txd_o,                    -- UART0 send data
-    uart_rxd_i => uart_rxd_i,                    -- UART0 receive data
-    uart_rts_o => open,                          -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart_cts_i => '0',                           -- hw flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_txd_o => uart_txd_o,                    -- UART0 send data
+    uart0_rxd_i => uart_rxd_i,                    -- UART0 receive data
 
-    -- SPI to on-board flash --
-    flash_sck_o => flash_sck_o,
-    flash_sdo_o => flash_sdo_o,
-    flash_sdi_i => flash_sdi_i,
-    flash_csn_o => flash_csn_o,                  -- NEORV32.SPI_CS(0)
-
-    -- SPI to board header --
-    spi_sck_o   => spi_sck_o,
-    spi_sdo_o   => spi_sdo_o,
-    spi_sdi_i   => spi_sdi_i,
-    spi_csn_o   => spi_csn_o,                    -- NEORV32.SPI_CS(1)
+    -- SPI (available if IO_SPI_EN = true) --
+    spi_sck_o   => con_spi_sck,
+    spi_sdo_o   => con_spi_sdo,
+    spi_sdi_i   => con_spi_sdi,
+    spi_csn_o   => con_spi_csn,
 
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  => twi_sda_io,                   -- twi serial data line
@@ -226,6 +222,14 @@ begin
     pwm_o       => con_pwm                       -- pwm channels
   );
 
+  -- SPI --
+  flash_sck_o <= con_spi_sck;
+  flash_sdo_o <= con_spi_sdo;
+  flash_csn_o <= con_spi_csn(0);
+  spi_sck_o   <= con_spi_sck;
+  spi_sdo_o   <= con_spi_sdo;
+  spi_csn_o   <= con_spi_csn(1);
+  con_spi_sdi <= flash_sdi_i when (con_spi_csn(0) = '0') else spi_sdi_i;
 
   -- RGB --
   -- bit 0: red - pwm channel 0
