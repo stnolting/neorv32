@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01050904"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01050906"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -739,7 +739,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   constant cp_sel_shifter_c  : std_ulogic_vector(1 downto 0) := "00"; -- shift operation
   constant cp_sel_muldiv_c   : std_ulogic_vector(1 downto 0) := "01"; -- multiplication/division operations ('M' extension)
---constant cp_sel_bitmanip_c : std_ulogic_vector(1 downto 0) := "10"; -- bit manipulation ('B' extension)
+  constant cp_sel_bitmanip_c : std_ulogic_vector(1 downto 0) := "10"; -- bit manipulation ('B' extension)
   constant cp_sel_fpu_c      : std_ulogic_vector(1 downto 0) := "11"; -- floating-point unit ('Zfinx' extension)
 
   -- ALU Function Codes ---------------------------------------------------------------------
@@ -896,6 +896,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
+      CPU_EXTENSION_RISCV_Zbb      : boolean := false;  -- implement basic bit-manipulation sub-extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
@@ -1042,6 +1043,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
+      CPU_EXTENSION_RISCV_Zbb      : boolean; -- implement basic bit-manipulation sub-extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
@@ -1117,6 +1119,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
+      CPU_EXTENSION_RISCV_Zbb      : boolean; -- implement basic bit-manipulation sub-extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
@@ -1206,6 +1209,7 @@ package neorv32_package is
     generic (
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_M     : boolean; -- implement mul/div extension?
+      CPU_EXTENSION_RISCV_Zbb   : boolean; -- implement basic bit-manipulation sub-extension?
       CPU_EXTENSION_RISCV_Zmmul : boolean; -- implement multiply-only M sub-extension?
       CPU_EXTENSION_RISCV_Zfinx : boolean; -- implement 32-bit floating-point extension (using INT reg!)
       -- Extension Options --
@@ -1269,6 +1273,25 @@ package neorv32_package is
       ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
       start_i : in  std_ulogic; -- trigger operation
       -- data input --
+      rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
+      rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
+      -- result and status --
+      res_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
+      valid_o : out std_ulogic -- data output valid
+    );
+  end component;
+
+  -- Component: CPU Co-Processor Bit-Manipulation Unit ('B' extension) ----------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_cpu_cp_bitmanip is
+    port (
+      -- global control --
+      clk_i   : in  std_ulogic; -- global clock, rising edge
+      rstn_i  : in  std_ulogic; -- global reset, low-active, async
+      ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      start_i : in  std_ulogic; -- trigger operation
+      -- data input --
+      cmp_i   : in  std_ulogic_vector(1 downto 0); -- comparator status
       rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
       rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
       -- result and status --
@@ -1872,6 +1895,7 @@ package neorv32_package is
       CLOCK_FREQUENCY              : natural; -- clock frequency of clk_i in Hz
       INT_BOOTLOADER_EN            : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
       -- RISC-V CPU Extensions --
+      CPU_EXTENSION_RISCV_Zbb      : boolean; -- implement basic bit-manipulation sub-extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
       CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
