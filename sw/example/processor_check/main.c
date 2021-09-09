@@ -650,13 +650,14 @@ int main() {
 
   cnt_test++;
 
-  asm volatile ("csrrw zero, 0xfff, zero"); // = 0xfff01073 : CSR 0xfff not implemented -> illegal instruction
+  // invalid instruction: using x0=x0 OP x0 with invalid opcode
+  CUSTOM_INSTR_R2_TYPE(0b0000000, x0, x0, 0b000, x0, 0b1111111);
 
   // make sure this has cause an illegal exception
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
     // make sure this is really the instruction that caused the exception
     // for illegal instructions mtval contains the actual instruction word
-    if (neorv32_cpu_csr_read(CSR_MTVAL) == 0xfff01073) {
+    if (neorv32_cpu_csr_read(CSR_MTVAL) == 0x0000007f) {
       test_ok();
     }
     else {
