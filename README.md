@@ -194,6 +194,7 @@ documentation section). Note that the `X` extension is always enabled.
 [[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_integer_multiplication)]
 [[`PMP`](https://stnolting.github.io/neorv32/#_pmp_physical_memory_protection)]
 [[`HPM`](https://stnolting.github.io/neorv32/#_hpm_hardware_performance_monitors)]**
+[[`DEBUG`](https://stnolting.github.io/neorv32/#_cpu_debug_mode)]**
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -212,7 +213,7 @@ Results generated for hardware version [`1.5.7.10`](https://github.com/stnolting
 | `rv32i_Zicsr`                                     | 1729 |  813 |        1024 |            0 | 124 MHz |
 | `rv32imac_Zicsr`                                  | 2511 | 1074 |        1024 |            0 | 124 MHz |
 
-:information_source: An incrmental list of CPU exntension's hardware utilization can found in
+:information_source: An incremental list of CPU exntension's hardware utilization can found in
 [online documentation - _"FPGA Implementation Results - CPU"_](https://stnolting.github.io/neorv32/#_cpu).
 
 :information_source: The CPU provides options to further reduce the footprint (for example by constraining
