@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01050907"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01050908"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -1907,6 +1907,8 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
       CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
       -- Extension Options --
+      FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
+      FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
       CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
       -- Physical memory protection (PMP) --
       PMP_NUM_REGIONS              : natural; -- number of regions (0..64)

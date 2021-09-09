@@ -55,6 +55,8 @@ entity neorv32_sysinfo is
     CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
     -- Extension Options --
+    FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
     CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS              : natural; -- number of regions (0..64)
@@ -134,22 +136,24 @@ begin
   sysinfo_mem(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
 
   -- SYSINFO(1): CPU configuration --
-  sysinfo_mem(1)(0) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr
-  sysinfo_mem(1)(1) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei
-  sysinfo_mem(1)(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul
-  sysinfo_mem(1)(3) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zbb);      -- Zbb
+  sysinfo_mem(1)(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr
+  sysinfo_mem(1)(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei
+  sysinfo_mem(1)(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul
+  sysinfo_mem(1)(03) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zbb);      -- Zbb
   --
-  sysinfo_mem(1)(4) <= '0'; -- reserved
+  sysinfo_mem(1)(04) <= '0'; -- reserved
   --
-  sysinfo_mem(1)(5) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- Zfinx ("F-alternative")
-  -- CPU counter size: Zxscnt | Zxnocnt --
-  sysinfo_mem(1)(7 downto 6) <= "00" when (CPU_CNT_WIDTH = 64) else "10" when (CPU_CNT_WIDTH = 0) else "01";
-  sysinfo_mem(1)(8) <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- PMP (physical memory protection)
-  sysinfo_mem(1)(9) <= bool_to_ulogic_f(boolean(HPM_NUM_CNTS > 0));    -- HPM (hardware performance monitors)
-  sysinfo_mem(1)(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG);   -- RISC-V debug mode
+  sysinfo_mem(1)(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx ("F-alternative")
+  sysinfo_mem(1)(07 downto 06) <= "00" when (CPU_CNT_WIDTH = 64) else "10" when (CPU_CNT_WIDTH = 0) else "01"; -- CPU counter size: Zxscnt | Zxnocnt
+  sysinfo_mem(1)(08) <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- PMP (physical memory protection)
+  sysinfo_mem(1)(09) <= bool_to_ulogic_f(boolean(HPM_NUM_CNTS > 0));    -- HPM (hardware performance monitors)
+  sysinfo_mem(1)(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG);    -- RISC-V debug mode
   --
-  sysinfo_mem(1)(31 downto 11) <= (others => '0'); -- reserved
-  
+  sysinfo_mem(1)(29 downto 11) <= (others => '0'); -- reserved
+  -- misc --
+  sysinfo_mem(1)(30) <= bool_to_ulogic_f(FAST_MUL_EN);                  -- DSP-based multiplication (M extension only)
+  sysinfo_mem(1)(31) <= bool_to_ulogic_f(FAST_SHIFT_EN);                -- parallel logic for shifts (like barrel shifters)
+
   -- SYSINFO(2): Implemented processor devices/features --
   -- Memory --
   sysinfo_mem(2)(00) <= bool_to_ulogic_f(INT_BOOTLOADER_EN); -- processor-internal bootloader implemented?
