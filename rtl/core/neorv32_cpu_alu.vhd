@@ -279,11 +279,14 @@ begin
   end generate;
 
 
-  -- Co-Processor 2: reserved ---------------------------------------------------------------
+  -- Co-Processor 2: Bit-Manipulation Unit ('Zbb' Extension) --------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_bitmanip_inst_true:
   if (CPU_EXTENSION_RISCV_Zbb = true) generate
     neorv32_cpu_cp_bitmanip_inst: neorv32_cpu_cp_bitmanip
+    generic map (
+      FAST_SHIFT_EN => FAST_SHIFT_EN -- use barrel shifter for shift operations
+    )
     port map (
       -- global control --
       clk_i    => clk_i,        -- global clock, rising edge

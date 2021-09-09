@@ -1,9 +1,10 @@
 -- #################################################################################################
 -- # << NEORV32 - CPU Co-Processor: Bit-Manipulation Co-Processor Unit (RISC-V "B" Extension) >>   #
 -- # ********************************************************************************************* #
--- # The bit manipulation unit is implemted as co-processor that has a processing latency of 1     #
+-- # The bit manipulation unit is implemented as co-processor that has a processing latency of 1   #
 -- # cycle for logic/arithmetic operations and 3+shamt (=shift amount) cycles for shift(-related)  #
--- # operations.                                                                                   #
+-- # operations. Use the FAST_SHIFT_EN option to reduce shift-related instruction's latency to a   #
+-- # fixed value of 3 cycles latency (using barrel shifters).                                      #
 -- #                                                                                               #
 -- # Supported sub-extensions (Zb*):                                                               #
 -- # - Zbb: Basic bit-manipulation instructions                                                    #
@@ -47,6 +48,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_bitmanip is
+  generic (
+    FAST_SHIFT_EN : boolean -- use barrel shifter for shift operations
+  );
   port (
     -- global control --
     clk_i   : in  std_ulogic; -- global clock, rising edge
@@ -105,7 +109,7 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   -- shift amount (immediate or register) --
   signal shamt : std_ulogic_vector(index_size_f(data_width_c)-1 downto 0);
 
-  -- shifter --
+  -- serial shifter --
   type shifter_t is record
     start   : std_ulogic;
     run     : std_ulogic;
@@ -115,6 +119,10 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
     sreg    : std_ulogic_vector(data_width_c-1 downto 0);
   end record;
   signal shifter : shifter_t;
+
+  -- barrel shifter --
+  type bs_level_t is array (index_size_f(data_width_c) downto 0) of std_ulogic_vector(data_width_c-1 downto 0);
+  signal bs_level : bs_level_t;
 
   -- operation results --
   type res_t is array (0 to op_width_c-1) of std_ulogic_vector(data_width_c-1 downto 0);
@@ -176,8 +184,12 @@ begin
             rs1_reg <= rs1_i;
             rs2_reg <= rs2_i;
             if ((cmd(op_clz_c) or cmd(op_ctz_c) or cmd(op_cpop_c) or cmd(op_ror_c) or cmd(op_rol_c)) = '1') then -- multi-cycle shift operation
-              shifter.start <= '1';
-              ctrl_state <= S_START_SHIFT;
+              if (FAST_SHIFT_EN = false) then -- default: iterative computation
+                shifter.start <= '1';
+                ctrl_state <= S_START_SHIFT;
+              else -- full-parallel computation
+                ctrl_state <= S_BUSY_SHIFT;
+              end if;
             else
               valid      <= '1';
               ctrl_state <= S_IDLE;
@@ -211,60 +223,119 @@ begin
   shamt <= ctrl_i(ctrl_ir_funct12_0_c+shamt'left downto ctrl_ir_funct12_0_c) when (ctrl_i(ctrl_ir_opcode7_5_c) = '0') else rs2_reg(shamt'left downto 0);
 
 
-  -- Shifter Function Core ------------------------------------------------------------------
+  -- Shifter Function Core (iterative: small but slow) --------------------------------------
   -- -------------------------------------------------------------------------------------------
-  shifter_unit: process(rstn_i, clk_i)
-    variable new_bit_v : std_ulogic;
-  begin
-    if (rstn_i = '0') then
-      shifter.cnt     <= (others => def_rst_val_c);
-      shifter.sreg    <= (others => def_rst_val_c);
-      shifter.cnt_max <= (others => def_rst_val_c);
-      shifter.bcnt    <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
-      if (shifter.start = '1') then -- trigger new shift
-        shifter.cnt <= (others => '0');
-        -- shift operand --
-        if (cmd_buf(op_clz_c) = '1') or (cmd_buf(op_rol_c) = '1') then -- count LEADING zeros / rotate LEFT
-          shifter.sreg <= bit_rev_f(rs1_reg); -- reverse - we can only do right shifts here
-        else -- ctz, cpop, ror
-          shifter.sreg <= rs1_reg;
+  serial_shifter:
+  if (FAST_SHIFT_EN = false) generate
+    shifter_unit: process(rstn_i, clk_i)
+      variable new_bit_v : std_ulogic;
+    begin
+      if (rstn_i = '0') then
+        shifter.cnt     <= (others => def_rst_val_c);
+        shifter.sreg    <= (others => def_rst_val_c);
+        shifter.cnt_max <= (others => def_rst_val_c);
+        shifter.bcnt    <= (others => def_rst_val_c);
+      elsif rising_edge(clk_i) then
+        if (shifter.start = '1') then -- trigger new shift
+          shifter.cnt <= (others => '0');
+          -- shift operand --
+          if (cmd_buf(op_clz_c) = '1') or (cmd_buf(op_rol_c) = '1') then -- count LEADING zeros / rotate LEFT
+            shifter.sreg <= bit_rev_f(rs1_reg); -- reverse - we can only do right shifts here
+          else -- ctz, cpop, ror
+            shifter.sreg <= rs1_reg;
+          end if;
+          -- max shift amount --
+          if (cmd_buf(op_cpop_c) = '1') then -- population count
+            shifter.cnt_max <= (others => '0');
+            shifter.cnt_max(shifter.cnt_max'left) <= '1';
+          else
+            shifter.cnt_max <= '0' & shamt;
+          end if;
+          shifter.bcnt <= (others => '0');
+        elsif (shifter.run = '1') then -- right shifts only
+          new_bit_v := ((cmd_buf(op_ror_c) or cmd_buf(op_rol_c)) and shifter.sreg(0)) or (cmd_buf(op_clz_c) or cmd_buf(op_ctz_c));
+          shifter.sreg <= new_bit_v & shifter.sreg(shifter.sreg'left downto 1); -- ro[r/l]/lsr(for counting)
+          shifter.cnt  <= std_ulogic_vector(unsigned(shifter.cnt) + 1); -- iteration counter
+          if (shifter.sreg(0) = '1') then
+            shifter.bcnt <= std_ulogic_vector(unsigned(shifter.bcnt) + 1); -- bit counter
+          end if;
         end if;
-        -- max shift amount --
-        if (cmd_buf(op_cpop_c) = '1') then -- population count
-          shifter.cnt_max <= (others => '0');
-          shifter.cnt_max(shifter.cnt_max'left) <= '1';
+      end if;
+    end process shifter_unit;
+  end generate;
+
+  -- run control --
+  serial_shifter_ctrl:
+  if (FAST_SHIFT_EN = false) generate
+    shifter_unit_ctrl: process(cmd_buf, shifter)
+    begin
+      -- keep shifting until ... --
+      if (cmd_buf(op_clz_c) = '1') or (cmd_buf(op_ctz_c) = '1') then -- count leading/trailing zeros
+        shifter.run <= not shifter.sreg(0);
+      else -- population count / rotate
+        if (shifter.cnt = shifter.cnt_max) then
+          shifter.run <= '0';
         else
-          shifter.cnt_max <= '0' & shamt;
-        end if;
-        shifter.bcnt <= (others => '0');
-      elsif (shifter.run = '1') then -- right shifts only
-        new_bit_v := ((cmd_buf(op_ror_c) or cmd_buf(op_rol_c)) and shifter.sreg(0)) or (cmd_buf(op_clz_c) or cmd_buf(op_ctz_c));
-        shifter.sreg <= new_bit_v & shifter.sreg(shifter.sreg'left downto 1); -- ro[r/l]/lsr(for counting)
-        shifter.cnt  <= std_ulogic_vector(unsigned(shifter.cnt) + 1); -- iteration counter
-        if (shifter.sreg(0) = '1') then
-          shifter.bcnt <= std_ulogic_vector(unsigned(shifter.bcnt) + 1); -- bit counter
+          shifter.run <= '1';
         end if;
       end if;
-    end if;
-  end process shifter_unit;
+    end process shifter_unit_ctrl;
+  end generate;
 
-  shifter_unit_ctrl: process(cmd_buf, shifter)
-  begin
-    -- keep shifting until ... --
-    if (cmd_buf(op_clz_c) = '1') or (cmd_buf(op_ctz_c) = '1') then -- count leading/trailing zeros
-      shifter.run <= not shifter.sreg(0);
-    else -- population count / rotate
-      if (shifter.cnt = shifter.cnt_max) then
-        shifter.run <= '0';
+
+  -- Shifter Function Core (parallel: fast but large) ---------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  barrel_shifter_async_sync:
+  if (FAST_SHIFT_EN = true) generate
+    shifter_unit_fast: process(rstn_i, clk_i)
+      variable new_bit_v : std_ulogic;
+    begin
+      if (rstn_i = '0') then
+        shifter.cnt     <= (others => def_rst_val_c);
+        shifter.sreg    <= (others => def_rst_val_c);
+        shifter.bcnt    <= (others => def_rst_val_c);
+      elsif rising_edge(clk_i) then
+        -- population count --
+        shifter.bcnt <= std_ulogic_vector(to_unsigned(popcount_f(rs1_reg), shifter.bcnt'length));
+        -- count leading/trailing zeros --
+        if cmd_buf(op_clz_c) = '1' then -- leading
+          shifter.cnt <= std_ulogic_vector(to_unsigned(leading_zeros_f(rs1_reg), shifter.cnt'length));
+        else -- trailing
+          shifter.cnt <= std_ulogic_vector(to_unsigned(leading_zeros_f(bit_rev_f(rs1_reg)), shifter.cnt'length));
+        end if;
+        -- barrel shifter --
+        shifter.sreg <= bs_level(0); -- rol/ror[i]
+      end if;
+    end process shifter_unit_fast;
+    shifter.run <= '0'; -- we are done already!
+  end generate;
+
+  -- barrel shifter array --
+  barrel_shifter_async:
+  if (FAST_SHIFT_EN = true) generate
+    shifter_unit_async: process(rs1_reg, shamt, cmd_buf, bs_level)
+    begin
+      -- input level: convert left shifts to right shifts --
+      if (cmd_buf(op_rol_c) = '1') then -- is left shift?
+        bs_level(index_size_f(data_width_c)) <= bit_rev_f(rs1_reg); -- reverse bit order of input operand
       else
-        shifter.run <= '1';
+        bs_level(index_size_f(data_width_c)) <= rs1_reg;
       end if;
-    end if;
-  end process shifter_unit_ctrl;
+
+      -- shifter array --
+      for i in index_size_f(data_width_c)-1 downto 0 loop
+        if (shamt(i) = '1') then
+          bs_level(i)(data_width_c-1 downto data_width_c-(2**i)) <= bs_level(i+1)((2**i)-1 downto 0);
+          bs_level(i)((data_width_c-(2**i))-1 downto 0) <= bs_level(i+1)(data_width_c-1 downto 2**i);
+        else
+          bs_level(i) <= bs_level(i+1);
+        end if;
+      end loop;
+    end process shifter_unit_async;
+  end generate;
 
 
-  -- Base ('Zbb') Logic Function Core -------------------------------------------------------
+  -- Operation Results ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- logic with negate --
   res_int(op_andn_c) <= rs1_reg and (not rs2_reg); -- logical and-not
@@ -308,7 +379,6 @@ begin
 
   -- Output Selector ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- Zbb --
   res_out(op_andn_c)  <= res_int(op_andn_c)  when (cmd_buf(op_andn_c)  = '1') else (others => '0');
   res_out(op_orn_c)   <= res_int(op_orn_c)   when (cmd_buf(op_orn_c)   = '1') else (others => '0');
   res_out(op_xnor_c)  <= res_int(op_xnor_c)  when (cmd_buf(op_xnor_c)  = '1') else (others => '0');

@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01050906"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01050907"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -102,6 +102,8 @@ package neorv32_package is
   function bswap32_f(input : std_ulogic_vector) return std_ulogic_vector;
   function char_to_lower_f(ch : character) return character;
   function str_equal_f(str0 : string; str1 : string) return boolean;
+  function popcount_f(input : std_ulogic_vector) return natural;
+  function leading_zeros_f(input : std_ulogic_vector) return natural;
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
 
   -- Internal (auto-generated) Configurations -----------------------------------------------
@@ -1284,6 +1286,9 @@ package neorv32_package is
   -- Component: CPU Co-Processor Bit-Manipulation Unit ('B' extension) ----------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_bitmanip is
+    generic (
+      FAST_SHIFT_EN : boolean -- use barrel shifter for shift operations
+    );
     port (
       -- global control --
       clk_i   : in  std_ulogic; -- global clock, rising edge
@@ -2312,6 +2317,36 @@ package body neorv32_package is
       end if;
     end if;
   end function str_equal_f;
+
+  -- Function: Population count (number of set bits) ----------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function popcount_f(input : std_ulogic_vector) return natural is
+    variable cnt_v : natural range 0 to input'length;
+  begin
+    cnt_v := 0;
+    for i in input'length-1 downto 0 loop
+      if (input(i) = '1') then
+        cnt_v := cnt_v + 1;
+      end if;
+    end loop; -- i
+    return cnt_v;
+  end function popcount_f;
+
+  -- Function: Count leading zeros ----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function leading_zeros_f(input : std_ulogic_vector) return natural is
+    variable cnt_v : natural range 0 to input'length;
+  begin
+    cnt_v := 0;
+    for i in input'length-1 downto 0 loop
+      if (input(i) = '0') then
+        cnt_v := cnt_v + 1;
+      else
+        exit;
+      end if;
+    end loop; -- i
+    return cnt_v;
+  end function leading_zeros_f;
 
   -- Function: Initialize mem32_t array from another mem32_t array --------------------------
   -- -------------------------------------------------------------------------------------------
