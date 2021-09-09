@@ -132,7 +132,7 @@ begin
 
   -- Instruction Decoding (One-Hot) ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- a minimal decoding logic is used here -> just to distinguish between B.zbb instructions
+  -- a minimal decoding logic is used here -> just to distinguish between B.Zbb instructions
   -- a more specific decoding and instruction check is done by the CPU control unit
 
   -- Zbb - Basic bit-manipulation instructions --
@@ -365,7 +365,7 @@ begin
 
   -- rotate right/left --
   res_int(op_ror_c) <= shifter.sreg;
-  res_int(op_rol_c) <= bit_rev_f(shifter.sreg);
+  res_int(op_rol_c) <= bit_rev_f(shifter.sreg); -- reverse to compensate internal right-only shifts
 
   -- or-combine.byte --
   or_combine_gen:

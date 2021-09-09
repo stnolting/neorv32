@@ -4,16 +4,20 @@
 -- # NEORV32 CPU:                                                                                  #
 -- # * neorv32_cpu.vhd                   - CPU top entity                                          #
 -- #   * neorv32_cpu_alu.vhd             - Arithmetic/logic unit                                   #
+-- #     * neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor                           #
+-- #     * neorv32_cpu_cp_fpu.vhd        - Single-precision FPU co-processor                       #
+-- #     * neorv32_cpu_cp_muldiv.vhd     - Integer multiplier/divider co-processor                 #
+-- #     * neorv32_cpu_cp_shifter.vhd    - Base ISA shifter unit                                   #
 -- #   * neorv32_cpu_bus.vhd             - Instruction and data bus interface unit                 #
--- #   * neorv32_cpu_cp_bitmanip.vhd     - Bit-manipulation co-processor ('B')                     #
--- #   * neorv32_cpu_cp_fpu.vhd          - Single-precision FPU co-processor ('Zfinx')             #
--- #   * neorv32_cpu_cp_muldiv.vhd       - Integer multiplier/divider co-processor ('M')           #
--- #   * neorv32_cpu_ctrl.vhd            - CPU control and CSR system                              #
+-- #   * neorv32_cpu_control.vhd         - CPU control and CSR system                              #
 -- #     * neorv32_cpu_decompressor.vhd  - Compressed instructions decoder                         #
 -- #   * neorv32_cpu_regfile.vhd         - Data register file                                      #
 -- # * neorv32_package.vhd               - Main CPU & Processor package file                       #
 -- #                                                                                               #
--- # Check out the processor's data sheet for more information: docs/NEORV32.pdf                   #
+-- # Check out the CPU's online documentation for more information:                                #
+-- #  HQ:         https://github.com/stnolting/neorv32                                             #
+-- #  Data Sheet: https://stnolting.github.io/neorv32                                              #
+-- #  User Guide: https://stnolting.github.io/neorv32/ug                                           #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
