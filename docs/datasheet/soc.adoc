@@ -220,7 +220,10 @@ See chapter <<_on_chip_debugger_ocd>> for more information.
 :sectnums:
 ==== RISC-V CPU Extensions
 
-See section <<_instruction_sets_and_extensions>> for more information.
+[TIP]
+See section <<_instruction_sets_and_extensions>> for more information. The configuration of the RISC-V _main_ ISA extensions
+(like `M`) can be determined via the <<_misa>> CSR. The configuration of ISA _sub-extensions_ (like `Zicsr`) and _extension options_
+can be determined via memory-mapped registers of the <<_system_configuration_information_memory_sysinfo>> module.
 
 
 :sectnums!:

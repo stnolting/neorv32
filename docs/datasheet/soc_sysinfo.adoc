@@ -47,11 +47,13 @@ and default clock speed) for correct operation.
 | `2`  | _SYSINFO_CPU_ZMMUL_     | `Zmmul` extension (`M` sub-extension) available when set
 | `3`  | _SYSINFO_CPU_ZBB_       | `Zbb` extension (`B` sub-extension) available when set
 | `5`  | _SYSINFO_CPU_ZFINX_     | `Zfinx` extension (`F` sub-/alternative-extension) available when set
-| `6`  | _SYSINFO_CPU_ZXSCNT_    | Custom extension - Small CPU counters: `[m]cycle` & `[m]instret` CSRs have less than 64-bit when set
-| `7`  | _SYSINFO_CPU_ZXNOCNT_   | Custom extension - NO CPU counters: `[m]cycle` & `[m]instret` CSRs are NOT available at all when set
+| `6`  | _SYSINFO_CPU_ZXSCNT_    | Custom extension - _Small_ CPU counters: `[m]cycle` & `[m]instret` CSRs have less than 64-bit when set
+| `7`  | _SYSINFO_CPU_ZXNOCNT_   | Custom extension - _NO_ CPU counters: `[m]cycle` & `[m]instret` CSRs are NOT available at all when set
 | `8`  | _SYSINFO_CPU_PMP_       | `PMP` (physical memory protection) extension available when set
 | `9`  | _SYSINFO_CPU_HPM_       | `HPM` (hardware performance monitors) extension available when set
 | `10` | _SYSINFO_CPU_DEBUGMODE_ | RISC-V CPU `debug_mode` available when set
+| `30  | _SYSINFO_CPU_FASTMUL_   | fast multiplication available when set
+| `31` | _SYSINFO_CPU_FASTSHIFT_ | fast shifts available when set
 |=======================
 
 

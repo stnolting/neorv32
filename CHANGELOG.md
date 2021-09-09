@@ -25,6 +25,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 09.09.2021 | 1.5.9.8 | added flags to `SYSINFO` module to determine configuration of `FAST_MUL_EN` and `FAST_SHIFT_EN` generics by software |
 | 09.09.2021 | 1.5.9.7 | `FAST_SHIFT_EN` option will now also implement full-parallel computation logic (like barel shifters) for _all_ `Zbb` shift-related instructions (population count, count leading/trailing zeros, circular shifts) |
 | 08.09.2021 | 1.5.9.6 | :sparkles: added support for RISC-V `Zbb` CPU extension (**basic bit-manipulation operations**), enabled via new top generic `CPU_EXTENSION_RISCV_Zbb`; added example software project providing a `Zbb` "intrinsic" library |
 | 08.09.2021 | 1.5.9.5 | :bug: fixed missing `flash_sdi_i` in Radiant-related example setups and processor wrappers |
