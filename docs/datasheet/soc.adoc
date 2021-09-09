@@ -367,7 +367,8 @@ See section <<_instruction_sets_and_extensions>> for more information.
 3+| When this generic is enabled, the multiplier of the `M` extension is implemented using DSPs blocks instead of an
 iterative bit-serial approach. Performance will be increased and LUT utilization will be reduced at the cost of DSP slice
 utilization. This generic is only relevant when a hardware multiplier CPU extension is
-enabled (<<_cpu_extension_riscv_m>> or <<_cpu_extension_riscv_zmmul>> is _true_).
+enabled (<<_cpu_extension_riscv_m>> or <<_cpu_extension_riscv_zmmul>> is _true_). **Note that the multipliers of the
+<<_zfinx_single_precision_floating_point_operations>> extension are always mapped to DSP block (if available).**
 |======
 
 
@@ -381,7 +382,8 @@ enabled (<<_cpu_extension_riscv_m>> or <<_cpu_extension_riscv_zmmul>> is _true_)
 3+| If this generic is set _true_ the shifter unit of the CPU's ALU is implemented as fast barrel shifter (requiring
 more hardware resources but completing within two clock cycles). If it is set _false_, the CPU uses a serial shifter
 that only performs a single bit shift per cycle (requiring less hardware resources, but requires up to 32 clock
-cycles to complete - depending on shift amount).
+cycles to complete - depending on shift amount). **Note that this option also implements barrel shifters for _all_
+shift-related operations of the <<_zbb_basic_bit_manipulation_operations>> extension.**
 |======
 
 

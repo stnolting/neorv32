@@ -347,6 +347,10 @@ The CPU can discover available ISA extensions via the <<_misa>> CSR and the
 _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register
 or by executing an instruction and checking for an _illegal instruction exception_.
 
+[NOTE]
+Executing an instruction from an extension that is not implemented or not enabled (for example via the according
+top entity generic) will raise an _illegal instruction_ exception.
+
 
 ==== **`A`** - Atomic Memory Access
 
@@ -389,7 +393,8 @@ The embedded CPU extensions reduces the size of the general purpose register fil
 requirements. This extensions is enabled when the `CPU_EXTENSION_RISCV_E` configuration generic is _true_. Accesses to registers beyond
 `x15` will raise and _illegal instruction exception_.
 
-Due to the reduced register file an alternate ABI (**`ilp32e`**) is required for the toolchain.
+[IMPORTANT]
+Due to the reduced register file size an alternate toolchain ABI (**`ilp32e`**) is required.
 
 
 ==== **`I`** - Base Integer ISA
@@ -441,10 +446,10 @@ This extension requires only ~50% of the hardware utilization of the `M` extensi
 
 * multiplication: `mul`, `mulh`, `mulhsu`, `mulhu`
 
-If `Zmmul` is enabled, executing any division instruction from the `M` ISA (`div`, `divu`, `rem`, `remu`)
-will raise an illegal instruction exception.
+If `Zmmul` is enabled, executing any division instruction from the `M` ISA extension (`div`, `divu`, `rem`, `remu`)
+will raise an _illegal instruction exception_.
 
-Note that `M` and `Zmmul` extensions _cannot_ be enabled in parallel.
+Note that `M` and `Zmmul` extensions _cannot_ be enabled at the same time.
 
 [TIP]
 If your RISC-V GCC toolchain does not (yet) support the `_Zmmul` ISA extensions, it can be "emulated"
@@ -454,7 +459,7 @@ using a `rv32im` machine architecture and setting the `-mno-div` compiler flag
 
 ==== **`U`** - Less-Privileged User Mode
 
-Adds the less-privileged _user mode_ when the `CPU_EXTENSION_RISCV_U` configuration generic is _true_. For
+Adds the less-privileged _user mode_ if the `CPU_EXTENSION_RISCV_U` configuration generic is _true_. For
 instance, use-level code cannot access machine-mode CSRs. Furthermore, access to the address space (like
 peripheral/IO devices) can be limited via the physical memory protection (_PMP_) unit for code running in user mode.
 
@@ -463,20 +468,18 @@ peripheral/IO devices) can be limited via the physical memory protection (_PMP_)
 
 The NEORV32-specific extensions are always enabled and are indicated by the set `X` bit in the `misa` CSR.
 
-[NOTE]
-The CPU provides 16 _fast interrupt_ interrupts (`FIRQ)`, which are controlled via custom bits in the `mie`
+The most important points of the NEORV32-specific extensions are:
+* The CPU provides 16 _fast interrupt_ interrupts (`FIRQ)`, which are controlled via custom bits in the `mie`
 and `mip` CSR. This extension is mapped to bits, that are available for custom use (according to the
 RISC-V specs). Also, custom trap codes for `mcause` are implemented.
-
-[NOTE]
-The CPU provides a single _non-maskable_ interrupt (`NMI)` that also provides a custom trap code for `mcause`.
-
-[NOTE]
-All undefined/unimplemented/malformed/illegal instructions do raise an illegal instruction exception
-(see <<_full_virtualization>>).
+* The CPU provides a single _non-maskable_ interrupt (`NMI)` that also provides a custom trap code for `mcause`.
+* All undefined/unimplemented/malformed/illegal instructions do raise an illegal instruction exception (see <<_full_virtualization>>).
 
 
 ==== **`Zfinx`** Single-Precision Floating-Point Operations
+
+[WARNING]
+The NEORV32 `Zfinx` extension is specification-compliant and operational but still _experimental_.
 
 The `Zfinx` floating-point extension is an alternative of the `F` floating-point instruction that also uses the
 integer register file `x` to store and operate on floating-point data (hence, `F-in-x`). Since not dedicated floating-point `f`
@@ -519,7 +522,10 @@ Note that any FPU instruction including all FPU-related CSR accesses will raise 
 if the FPU is not enabled via the <<_mstatus>> CSR (`FS` bits).
 
 
-==== **`Zbb`** Basic Bit-manipulation Operations
+==== **`Zbb`** Basic Bit-Manipulation Operations
+
+[WARNING]
+The NEORV32 `Zbb` extension is specification-compliant and operational but still _experimental_.
 
 The `Zbb` extension implements the _basic_ sub-set of the RISC-V bit-manipulation extensions `B`.
 The official RISC-V specifications can be found here: https://github.com/riscv/riscv-bitmanip
@@ -534,14 +540,17 @@ generic is _true_. In this case the following instructions are available:
 * `rol`, `ror`, `rori`
 * `orc.b`, `rev8`
 
+[TIP]
+By default, the bit-manipulation unit uses an _iterative_ approach to compute shift-related operations
+like `clz` and `rol`. To increase performance (at the cost of additional hardware resources) the 
+<<_fast_shift_en>> generic can be enabled to implement full-parallel logic (like barrel shifters) for all
+shift-related `Zbb` instructions.
+
 [IMPORTANT]
 The `Zbb` extension is frozen but not officially ratified yet. There is no
 software support for this extension in the upstream GCC RISC-V port yet. However, an
 intrinsic library is provided to utilize the provided `Zbb` extension from C-language
 code (see `sw/example/bitmanip_test`).
-
-[WARNING]
-The NEORV32 `Zbb` extension is still _experimental_!
 
 
 ==== **`Zicsr`** Control and Status Register Access / Privileged Architecture
