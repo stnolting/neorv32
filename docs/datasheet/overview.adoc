@@ -203,6 +203,7 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 │
 ├neorv32_cpu.vhd                 - NEORV32 CPU top entity
 │├neorv32_cpu_alu.vhd            - Arithmetic/logic unit
+││├neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
 ││├neorv32_cpu_cp_fpu.vhd        - Floating-point co-processor (Zfinx ext.)
 ││├neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M extension)
 ││└neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor
