@@ -357,6 +357,13 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart0_printf("Debug-Mode ");
   }
 
+  if (tmp & (1<<SYSINFO_CPU_FASTMUL)) {
+    neorv32_uart0_printf("FAST_MUL ");
+  }
+  if (tmp & (1<<SYSINFO_CPU_FASTSHIFT)) {
+    neorv32_uart0_printf("FAST_SHIFT ");
+  }
+
   // check physical memory protection
   neorv32_uart0_printf("\nPMP:               ");
   uint32_t pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
