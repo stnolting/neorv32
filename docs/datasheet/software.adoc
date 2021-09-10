@@ -124,6 +124,7 @@ Targets:
  exe        - compile and generate <neorv32_exe.bin> executable for upload via bootloader
  hex        - compile and generate <neorv32_exe.hex> executable raw file
  install    - compile, generate and install VHDL IMEM boot image (for application)
+ sim        - in-console simulation using the default testbench and GHDL
  all        - exe + hex + install
  elf_info   - show ELF layout info
  clean      - clean up project
