@@ -1,5 +1,3 @@
-GHDL_PLUGIN_MODULE ?= ghdl.so
-
 PCF_PATH ?= constraints
 
 
