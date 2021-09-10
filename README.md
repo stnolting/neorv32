@@ -50,7 +50,8 @@ at [GitHub-pages](https://stnolting.github.io/neorv32/sw/files.html).
 To see the changes between *official* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
 :package: The [`setups`](https://github.com/stnolting/neorv32/tree/master/setups) folder provides exemplary setups targeting
-various FPGA boards and toolchains to get you started.
+various FPGA boards and toolchains to get you started. Several example programs to be run on your setup can be found in
+[`sw/example`](https://github.com/stnolting/neorv32/tree/master/sw/example).
 
 :spiral_notepad: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current **ideas**,
 **TODOs**, features being **planned** and **work-in-progress**.
@@ -193,7 +194,7 @@ documentation section). Note that the `X` extension is always enabled.
 [[`Zifencei`](https://stnolting.github.io/neorv32/#_zifencei_instruction_stream_synchronization)]
 [[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_integer_multiplication)]
 [[`PMP`](https://stnolting.github.io/neorv32/#_pmp_physical_memory_protection)]
-[[`HPM`](https://stnolting.github.io/neorv32/#_hpm_hardware_performance_monitors)]**
+[[`HPM`](https://stnolting.github.io/neorv32/#_hpm_hardware_performance_monitors)]
 [[`DEBUG`](https://stnolting.github.io/neorv32/#_cpu_debug_mode)]**
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
