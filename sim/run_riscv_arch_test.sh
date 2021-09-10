@@ -28,14 +28,15 @@ header "Copying neorv32 test-target into riscv-arch-test framework"
 )
 
 header "Making local copy of NEORV32 'rtl', 'sim' & 'sw' folders"
-rm -rf work
-mkdir -p work/sim
+
+export NEORV32_LOCAL_COPY=${NEORV32_LOCAL_COPY:-$(pwd)/work}
+
+rm -rf "$NEORV32_LOCAL_COPY"
+mkdir -p "$NEORV32_LOCAL_COPY"
 for item in 'rtl' 'sw'; do
-  cp -r ../"$item" work
+  cp -r ../"$item" "$NEORV32_LOCAL_COPY"
 done
-for item in *.simple.vhd ghdl*.sh; do
-  cp -r "$item" work/sim
-done
+cp -r simple "$NEORV32_LOCAL_COPY"/sim
 
 header "Making local backup of original IMEM rtl file (work/rtl/core/neorv32_imem.ORIGINAL)"
 (
@@ -50,7 +51,7 @@ header "Starting RISC-V architecture tests"
 # work in progress FIXME
 printf "\n\e[1;33mWARNING! 'rv32e/*' tests are work in progress! \e[0m\n\n"
 
-makeArgs="-C ../sw/isa-test/riscv-arch-test NEORV32_ROOT=$(pwd)/.. XLEN=32 RISCV_TARGET=neorv32"
+makeArgs="-C $NEORV32_LOCAL_COPY/sw/isa-test/riscv-arch-test NEORV32_ROOT=$(pwd)/.. XLEN=32 RISCV_TARGET=neorv32"
 makeTargets='clean build run verify'
 
 [ -n "$1" ] && SUITES="$@" || SUITES='I C M privilege Zifencei'
