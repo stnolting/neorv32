@@ -961,19 +961,13 @@ https://github.com/stnolting/neorv32/discussions/52#discussioncomment-819013
 :sectnums:
 == Simulating the Processor
 
-.WORK IN PROGRESS
-[WARNING]
-This Section Is Under Construction! +
- +
-FIXME!
-
 :sectnums:
 === Testbench
 
-The NEORV32 project features a simple default testbench (`sim/neorv32_tb.simple.vhd`) that can be used to simulate
-and test the processor setup. This testbench features a 100MHz clock and enables all optional peripheral and
-CPU extensions except for the `E` extension and the TRNG IO module (that CANNOT be simulated due to its
-combinatorial (looped) oscillator architecture).
+The NEORV32 project features a simple, plain-VHDL (no third-party libraries) default testbench (`sim/neorv32_tb.simple.vhd`)
+that can be used to simulate and test the processor setup. This testbench features a 100MHz clock and enables all optional
+peripheral and CPU extensions except for the `E` extension and the TRNG IO module (that CANNOT be simulated due to its
+combinatorial (looped) architecture).
 
 The simulation setup is configured via the "User Configuration" section located right at the beginning of
 the testbench's architecture. Each configuration constant provides comments to explain the functionality.
@@ -1001,26 +995,17 @@ half-word-accessible, `32` = word-accessible).
 | `0xff000000` |       4 bytes | `-/w/-,  a,  -/-/32` | memory-mapped register to trigger "machine external", "machine software" and "SoC Fast Interrupt" interrupts
 |=======================
 
-The simulated NEORV32 does not use the bootloader and directly boots the current application image (from
-the `rtl/core/neorv32_application_image.vhd` image file). Make sure to use the `all` target of the
-makefile to install your application as VHDL image after compilation:
-
-[source, bash]
-----
-sw/example/blink_led$ make clean_all all
-----
-
-.Simulation-Optimized CPU/Processors Modules
 [NOTE]
-The `sim/rtl_modules` folder provides simulation-optimized versions of certain CPU/processor modules.
-These alternatives can be used to replace the default CPU/processor HDL files to allow faster/easier/more
-efficient simulation. **These files are not intended for synthesis!**
+The simulated NEORV32 does not use the bootloader and _directly boots_ the current application image (from
+the `rtl/core/neorv32_application_image.vhd` image file).
 
-**Simulation Console Output**
-
+.UART output during simulation
+[NOTE]
 Data written to the NEORV32 UART0 / UART1 transmitter is send to a virtual UART receiver implemented
 as part of the testbench. Received chars are send to the simulator console and are also stored to a log file
-(`neorv32.testbench_uart0.out` for UART0, `neorv32.testbench_uart1.out` for UART1) inside the simulator home folder.
+(`neorv32.testbench_uart0.out` for UART0, `neorv32.testbench_uart1.out` for UART1) inside the simulation's home folder.
+**Please note that printing via the native UART receiver takes a lot of time.** For faster simulation console output
+see section <<_faster_simulation_console_output>>.
 
 
 :sectnums:
@@ -1059,6 +1044,19 @@ completed with a line feed (newline, ASCII `\n` = 10).
 
 
 :sectnums:
+=== Simulation using GHDL
+
+To simulate the processor using _GHDL_ navigate to the `sim` folder and run the provided shell script.
+Any arguments that are provided while executing this script are passed to GHDL.
+For example the simulation time can be set to 20ms using `--stop-time=20ms` as argument.
+
+[source, bash]
+----
+neorv32/sim$ sh ghdl_sim.sh --stop-time=20ms
+----
+
+
+:sectnums:
 === In-Console Application Simulation
 
 To directly compile and run a program in the console (using the default testbench and GHDL
@@ -1075,16 +1073,68 @@ Blinking LED demo program
 
 
 :sectnums:
-=== Simulation using GHDL
+=== Hello World!
 
-To simulate the processor using _GHDL_ navigate to the `sim` folder and run the provided shell script.
-Any arguments that are provided while executing this script are passed to GHDL.
-For example the simulation time can be set to 20ms using `--stop-time=20ms` as argument.
+To do a quick test of the NEORV32 make sure to have [GHDL](https://github.com/ghdl/ghdl) and a
+[RISC-V gcc toolchain](https://github.com/stnolting/riscv-gcc-prebuilt) installed, navigate to the project's
+`sw/example/hello_world` folder and run `make USER_FLAGS+=-DUART0_SIM_MODE MARCH=-march=rv32imac clean_all sim`:
 
 [source, bash]
 ----
-neorv32/sim$ sh ghdl_sim.sh --stop-time=20ms
+stnolting@Einstein:/mnt/n/Projects/neorv32/sw/example/hello_world$ make USER_FLAGS+=-DUART0_SIM_MODE MARCH=-march=rv32imac clean_all sim
+../../../sw/lib/source/neorv32_uart.c: In function 'neorv32_uart0_setup':
+../../../sw/lib/source/neorv32_uart.c:301:4: warning: #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only! [-Wcpp]
+  301 |   #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only!
+      |    ^~~~~~~
+Memory utilization:
+   text    data     bss     dec     hex filename
+   4612       0     120    4732    127c main.elf
+Compiling ../../../sw/image_gen/image_gen
+Installing application image to ../../../rtl/core/neorv32_application_image.vhd
+Simulating neorv32_application_image.vhd...
+Tip: Compile application with USER_FLAGS+=-DUART[0/1]_SIM_MODE to auto-enable UART[0/1]'s simulation mode (redirect UART output to simulator console).
+Using simulation runtime args: --stop-time=10ms
+../rtl/core/neorv32_top.vhd:347:3:@0ms:(assertion note): NEORV32 PROCESSOR IO Configuration: GPIO MTIME UART0 UART1 SPI TWI PWM WDT CFS SLINK NEOLED XIRQ
+../rtl/core/neorv32_top.vhd:370:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Direct boot from memory (processor-internal IMEM).
+../rtl/core/neorv32_top.vhd:394:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Implementing on-chip debugger (OCD).
+../rtl/core/neorv32_cpu.vhd:169:3:@0ms:(assertion note): NEORV32 CPU ISA Configuration (MARCH): RV32IMACU_Zbb_Zicsr_Zifencei_Zfinx_Debug
+../rtl/core/neorv32_cpu.vhd:189:3:@0ms:(assertion note): NEORV32 CPU CONFIG NOTE: Implementing NO dedicated hardware reset for uncritical registers (default, might reduce area). Set package constant <dedicated_reset_c> = TRUE to configure a DEFINED reset value for all CPU registers.
+../rtl/core/neorv32_imem.vhd:107:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as ROM (16384 bytes), pre-initialized with application (4612 bytes).
+../rtl/core/neorv32_dmem.vhd:89:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal DMEM (RAM, 8192 bytes).
+../rtl/core/neorv32_wishbone.vhd:136:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing STANDARD Wishbone protocol.
+../rtl/core/neorv32_wishbone.vhd:140:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing auto-timeout (255 cycles).
+../rtl/core/neorv32_wishbone.vhd:144:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing LITTLE-endian byte order.
+../rtl/core/neorv32_wishbone.vhd:148:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing registered RX path.
+../rtl/core/neorv32_slink.vhd:161:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Implementing 8 RX and 8 TX stream links.
+
+                                                                                       ##
+                                                                                       ##         ##   ##   ##
+ ##     ##   #########   ########    ########   ##      ##   ########    ########      ##       ################
+####    ##  ##          ##      ##  ##      ##  ##      ##  ##      ##  ##      ##     ##     ####            ####
+## ##   ##  ##          ##      ##  ##      ##  ##      ##          ##         ##      ##       ##   ######   ##
+##  ##  ##  #########   ##      ##  #########   ##      ##      #####        ##        ##     ####   ######   ####
+##   ## ##  ##          ##      ##  ##    ##     ##    ##           ##     ##          ##       ##   ######   ##
+##    ####  ##          ##      ##  ##     ##     ##  ##    ##      ##   ##            ##     ####            ####
+##     ##    #########   ########   ##      ##      ##       ########   ##########     ##       ################
+                                                                                       ##         ##   ##   ##
+                                                                                       ##
+Hello world! :)
 ----
+
+
+:sectnums:
+=== Advanced Simulation using VUNIT
+
+.WORK IN PROGRESS
+[WARNING]
+This Section Is Under Construction! +
+ +
+FIXME!
+
+The NEORV32 provides a more sophisticated simulation setup using https://vunit.github.io/[VUNIT].
+The according VUNIT-based testbench is `sim/neorv32_tb.vhd`.
+
+**WORK-IN-PROGRESS**
 
 
 
