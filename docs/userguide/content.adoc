@@ -1079,6 +1079,10 @@ To do a quick test of the NEORV32 make sure to have [GHDL](https://github.com/gh
 [RISC-V gcc toolchain](https://github.com/stnolting/riscv-gcc-prebuilt) installed, navigate to the project's
 `sw/example/hello_world` folder and run `make USER_FLAGS+=-DUART0_SIM_MODE MARCH=-march=rv32imac clean_all sim`:
 
+[TIP]
+The simulator will output some _sanity check_ notes (and warnings or even errors if something is ill-configured)
+right at the beginning of the simulation to give a brief overview of the actual NEORV32 SoC and CPU configurations.
+
 [source, bash]
 ----
 stnolting@Einstein:/mnt/n/Projects/neorv32/sw/example/hello_world$ make USER_FLAGS+=-DUART0_SIM_MODE MARCH=-march=rv32imac clean_all sim
