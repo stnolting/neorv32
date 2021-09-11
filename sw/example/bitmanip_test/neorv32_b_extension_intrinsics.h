@@ -61,18 +61,16 @@
 /**********************************************************************//**
  * Intrinsic: Bit manipulation CLZ (count leading zeros) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Number of leading zeros in source operand.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_clz(uint32_t rs1) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_clz(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // clz a0, a0
   CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00000, a0, 0b001, a0, 0b0010011);
@@ -84,18 +82,16 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_clz(uint32_t rs1) {
 /**********************************************************************//**
  * Intrinsic: Bit manipulation CTZ (count trailing zeros) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Number of trailing zeros in source operand.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_ctz(uint32_t rs1) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_ctz(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // ctz a0, a0
   CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00001, a0, 0b001, a0, 0b0010011);
@@ -107,18 +103,16 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_ctz(uint32_t rs1) {
 /**********************************************************************//**
  * Intrinsic: Bit manipulation CPOP (count set bits) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Number of set bits in source operand.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_cpop(uint32_t rs1) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_cpop(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // cpop a0, a0
   CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00010, a0, 0b001, a0, 0b0010011);
@@ -130,18 +124,16 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_cpop(uint32_t rs1) {
 /**********************************************************************//**
  * Intrinsic: Bit manipulation SEXT.B (sign-extend byte) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Sign extended byte (operand(7:0)).
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_sextb(uint32_t rs1) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sextb(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // sext.b a0, a0
   CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00100, a0, 0b001, a0, 0b0010011);
@@ -153,18 +145,16 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sextb(uint32_t rs1) {
 /**********************************************************************//**
  * Intrinsic: Bit manipulation SEXT.H (sign-extend half-word) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Sign-extended half-word (operand(15:0)).
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_sexth(uint32_t rs1) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sexth(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // sext.h a0, a0
   CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00101, a0, 0b001, a0, 0b0010011);
@@ -176,18 +166,16 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_sexth(uint32_t rs1) {
 /**********************************************************************//**
  * Intrinsic: Bit manipulation ZEXT.H (zero-extend half-word) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Zero-extended half-word (operand(15:0)).
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_zexth(uint32_t rs1) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_zexth(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // sext.h a0, a0
   CUSTOM_INSTR_R1_TYPE(0b0000100, 0b00000, a0, 0b100, a0, 0b0110011);
@@ -199,20 +187,18 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_zexth(uint32_t rs1) {
 /**********************************************************************//**
  * Intrinsic: Bit manipulation MIN (select signed minimum) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a0).
  * @return Signed minimum.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_min(uint32_t rs1, uint32_t rs2) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_min(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
   register uint32_t tmp_b  __asm__ ("a1") = rs2;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // min a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0000101, a1, a0, 0b100, a0, 0b0110011);
@@ -224,20 +210,18 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_min(uint32_t rs1, uint32_t r
 /**********************************************************************//**
  * Intrinsic: Bit manipulation MINU (select unsigned minimum) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a0).
  * @return Unsigned minimum.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_minu(uint32_t rs1, uint32_t rs2) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_minu(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
   register uint32_t tmp_b  __asm__ ("a1") = rs2;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // minu a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0000101, a1, a0, 0b101, a0, 0b0110011);
@@ -249,20 +233,18 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_minu(uint32_t rs1, uint32_t 
 /**********************************************************************//**
  * Intrinsic: Bit manipulation MAX (select signed maximum) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a0).
  * @return Signed maximum.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_max(uint32_t rs1, uint32_t rs2) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_max(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
   register uint32_t tmp_b  __asm__ ("a1") = rs2;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // max a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0000101, a1, a0, 0b110, a0, 0b0110011);
@@ -274,20 +256,18 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_max(uint32_t rs1, uint32_t r
 /**********************************************************************//**
  * Intrinsic: Bit manipulation MAXU (select unsigned maximum) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a0).
  * @return Unsigned maximum.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_maxu(uint32_t rs1, uint32_t rs2) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_maxu(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
   register uint32_t tmp_b  __asm__ ("a1") = rs2;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // maxu a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0000101, a1, a0, 0b111, a0, 0b0110011);
@@ -299,20 +279,18 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_maxu(uint32_t rs1, uint32_t 
 /**********************************************************************//**
  * Intrinsic: Bit manipulation ANDN (logical and-negate) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a0).
  * @return Operand 1 AND NOT operand 2.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_andn(uint32_t rs1, uint32_t rs2) {
+inline inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_andn(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
   register uint32_t tmp_b  __asm__ ("a1") = rs2;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // andn a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0100000, a1, a0, 0b111, a0, 0b0110011);
@@ -324,20 +302,18 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_andn(uint32_t rs1, uint32_t 
 /**********************************************************************//**
  * Intrinsic: Bit manipulation ORN (logical or-negate) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a0).
  * @return Operand 1 OR NOT operand 2.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_orn(uint32_t rs1, uint32_t rs2) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_orn(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
   register uint32_t tmp_b  __asm__ ("a1") = rs2;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // orn a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0100000, a1, a0, 0b110, a0, 0b0110011);
@@ -349,20 +325,18 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_orn(uint32_t rs1, uint32_t r
 /**********************************************************************//**
  * Intrinsic: Bit manipulation XNOR (logical xor-negate) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a0).
  * @return Operand 1 XOR NOT operand 2.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_xnor(uint32_t rs1, uint32_t rs2) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_xnor(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
   register uint32_t tmp_b  __asm__ ("a1") = rs2;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // xnor a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0100000, a1, a0, 0b100, a0, 0b0110011);
@@ -374,20 +348,18 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_xnor(uint32_t rs1, uint32_t 
 /**********************************************************************//**
  * Intrinsic: Bit manipulation ROL (rotate-left) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a0).
  * @return Operand 1 rotated left by operand_2(4:0) positions.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_rol(uint32_t rs1, uint32_t rs2) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_rol(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
   register uint32_t tmp_b  __asm__ ("a1") = rs2;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // rol a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0110000, a1, a0, 0b001, a0, 0b0110011);
@@ -399,20 +371,18 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_rol(uint32_t rs1, uint32_t r
 /**********************************************************************//**
  * Intrinsic: Bit manipulation ROR (rotate-right) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @param[in] rs2 Source operand 2 (a0).
  * @return Operand 1 rotated right by operand_2(4:0) positions.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_ror(uint32_t rs1, uint32_t rs2) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_ror(uint32_t rs1, uint32_t rs2) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
   register uint32_t tmp_b  __asm__ ("a1") = rs2;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // ror a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0110000, a1, a0, 0b101, a0, 0b0110011);
@@ -423,20 +393,18 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_ror(uint32_t rs1, uint32_t r
 
 /**********************************************************************//**
  * Intrinsic: Bit manipulation RORI (rotate-right) by 20 positions. [B.Zbb]
- *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
  * @warning Fixed shift amount (20) for now.
  *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Operand 1 rotated right by 20 positions.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_rori20(uint32_t rs1) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_rori20(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // rori a0, a0, 20
   CUSTOM_INSTR_R1_TYPE(0b0110000, 0b10100, a0, 0b101, a0, 0b0010011);
@@ -448,18 +416,16 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_rori20(uint32_t rs1) {
 /**********************************************************************//**
  * Intrinsic: Bit manipulation ORC.B (or-combine byte) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @return OR-combined bytes of operand 1.
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_orcb(uint32_t rs1) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_orcb(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // gorci a0, a0, 7 (pseudo-instruction: orc.b a0, a0)
   CUSTOM_INSTR_R1_TYPE(0b0010100, 0b00111, a0, 0b101, a0, 0b0010011);
@@ -471,18 +437,16 @@ uint32_t __attribute__ ((noinline)) riscv_intrinsic_orcb(uint32_t rs1) {
 /**********************************************************************//**
  * Intrinsic: Bit manipulation REV8 (byte-swap) [B.Zbb]
  *
- * @note "noinline" attributed to make sure arguments/return values are in a0 and a1.
- *
  * @param[in] rs1 Source operand 1 (a0).
  * @return Byte swap of operand 1
  **************************************************************************/
-uint32_t __attribute__ ((noinline)) riscv_intrinsic_rev8(uint32_t rs1) {
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_rev8(uint32_t rs1) {
 
   register uint32_t result __asm__ ("a0");
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // grevi a0, a0, -8 (pseudo-instruction: rev8 a0, a0)
   CUSTOM_INSTR_R1_TYPE(0b0110100, 0b11000, a0, 0b101, a0, 0b0010011);

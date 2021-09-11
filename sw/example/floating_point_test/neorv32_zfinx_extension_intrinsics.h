@@ -182,13 +182,10 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fadds(float rs1, fl
   register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // fadd.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0000000, a1, a0, 0b000, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   res.binary_value = result;
   return res.float_value;
@@ -213,13 +210,10 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fsubs(float rs1, fl
   register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // fsub.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0000100, a1, a0, 0b000, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   res.binary_value = result;
   return res.float_value;
@@ -244,13 +238,10 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fmuls(float rs1, fl
   register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // fmul.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0001000, a1, a0, 0b000, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   res.binary_value = result;
   return res.float_value;
@@ -275,13 +266,10 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fmins(float rs1, fl
   register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // fmin.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010100, a1, a0, 0b000, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   res.binary_value = result;
   return res.float_value;
@@ -306,13 +294,10 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fmaxs(float rs1, fl
   register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // fmax.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010100, a1, a0, 0b001, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   res.binary_value = result;
   return res.float_value;
@@ -334,13 +319,10 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fcvt_wus(float r
   register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // fcvt.wu.s a0, a0
   CUSTOM_INSTR_R2_TYPE(0b1100000, x1, a0, 0b000, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   return result;
 }
@@ -361,13 +343,10 @@ inline int32_t __attribute__ ((always_inline)) riscv_intrinsic_fcvt_ws(float rs1
   register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // fcvt.w.s a0, a0
   CUSTOM_INSTR_R2_TYPE(0b1100000, x0, a0, 0b000, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   return (int32_t)result;
 }
@@ -387,13 +366,10 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fcvt_swu(uint32_t r
   register uint32_t tmp_a  __asm__ ("a0") = rs1;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // fcvt.s.wu a0, a0
   CUSTOM_INSTR_R2_TYPE(0b1101000, x1, a0, 0b000, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   res.binary_value = result;
   return res.float_value;
@@ -414,13 +390,10 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fcvt_sw(int32_t rs1
   register uint32_t tmp_a  __asm__ ("a0") = (uint32_t)rs1;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // fcvt.s.w a0, a0
   CUSTOM_INSTR_R2_TYPE(0b1101000, x0, a0, 0b000, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   res.binary_value = result;
   return res.float_value;
@@ -445,13 +418,10 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_feqs(float rs1, 
   register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // feq.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b1010000, a1, a0, 0b010, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   return result;
 }
@@ -475,13 +445,10 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_flts(float rs1, 
   register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // flt.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b1010000, a1, a0, 0b001, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   return result;
 }
@@ -505,13 +472,10 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fles(float rs1, 
   register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // fle.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b1010000, a1, a0, 0b000, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   return result;
 }
@@ -535,13 +499,10 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjs(float rs1, f
   register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // fsgnj.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b000, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   res.binary_value = result;
   return res.float_value;
@@ -566,13 +527,10 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjns(float rs1, 
   register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // fsgnjn.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b001, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   res.binary_value = result;
   return res.float_value;
@@ -597,13 +555,10 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjxs(float rs1, 
   register uint32_t tmp_b  __asm__ ("a1") = opb.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], %[input_j]" : : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
 
   // fsgnjx.s a0, a0, a1
   CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b010, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   res.binary_value = result;
   return res.float_value;
@@ -625,13 +580,10 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fclasss(float rs
   register uint32_t tmp_a  __asm__ ("a0") = opa.binary_value;
 
   // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add x0, %[input_i], x0" : : [input_i] "r" (tmp_a));
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
 
   // fclass.s a0, a0
   CUSTOM_INSTR_R2_TYPE(0b1110000, x0, a0, 0b001, a0, 0b1010011);
-
-  // dummy instruction to prevent GCC "constprop" optimization
-  asm volatile ("add %[res], %[input], x0" : [res] "=r" (result) : [input] "r" (result) );
 
   return result;
 }
