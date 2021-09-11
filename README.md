@@ -197,6 +197,9 @@ documentation section). Note that the `X` extension is always enabled.
 [[`HPM`](https://stnolting.github.io/neorv32/#_hpm_hardware_performance_monitors)]
 [[`DEBUG`](https://stnolting.github.io/neorv32/#_cpu_debug_mode)]**
 
+:warning: The `Zbb`, `Zfinx` and `Zmmul` RISC-V extensions are frozen but not officially ratified yet. Hence, there is no
+upstream gcc support. To circumvence this, the NEORV32 software framework provides _intrinsic_ libraries for these extensions.
+
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
@@ -323,6 +326,8 @@ This overview provides some *quick links* to the most important sections of the
 * [Upload via Bootloader](https://stnolting.github.io/neorv32/ug/#_uploading_and_starting_of_a_binary_executable_image_via_uart) - upload and execute executables
 * [Application-Specific Processor Configuration](https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration) - tailor the processor to your needs
 * [Debugging via the On-Chip Debugger](https://stnolting.github.io/neorv32/ug/#_debugging_using_the_on_chip_debugger) - step through code *online* and *in-system*
+* [Simulation](https://stnolting.github.io/neorv32/ug/#_simulating_the_processor) - simulate the whole SoC
+  * [Hello World!](https://stnolting.github.io/neorv32/ug/index.html#_hello_world) - run a quick _"hello world"_ simulation
 
 ### :copyright: Legal
 
