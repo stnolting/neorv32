@@ -186,8 +186,6 @@ The following bits are implemented (all remaining bits are always zero and are r
 | Bit   | Name [C] | R/W | Function
 | 31    | _CSR_MSTATUS_SD_ | r/- | Read-only bit that is set if the FS field is not all-zero (state _OFF_)
 | 21    | _CSR_MSTATUS_TW_ | r/w | Timeout wait: raise illegal instruction exception if `WFI` instruction is executed outside of M-mode when set
-| 14:13 | _CSR_MSTATUS_FS_H_ : _CSR_MSTATUS_FS_L_ | r/w | Floating-point extension state; `00` = _OFF_, `11` = _DIRTY_; writing any other value will
-always set _DIRTY_; if `FS` is _off_ all FPU instructions and FPU CSR access will raise an illegal instruction exception; these status bits are hardwired to zero if no FPU is present
 | 12:11 | _CSR_MSTATUS_MPP_H_ : _CSR_MSTATUS_MPP_L_ | r/w | Previous machine privilege level, 11 = machine (M) level, 00 = user (U) level
 | 7     | _CSR_MSTATUS_MPIE_ | r/w | Previous machine global interrupt enable flag state
 | 3     | _CSR_MSTATUS_MIE_  | r/w | Machine global interrupt enable flag

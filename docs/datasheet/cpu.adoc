@@ -517,10 +517,6 @@ software support for the `Zfinx` extension in the upstream GCC RISC-V port yet. 
 intrinsic library is provided to utilize the provided `Zfinx` floating-point extension from C-language
 code (see `sw/example/floating_point_test`).
 
-[IMPORTANT]
-Note that any FPU instruction including all FPU-related CSR accesses will raise an illegal instruction exception
-if the FPU is not enabled via the <<_mstatus>> CSR (`FS` bits).
-
 
 ==== **`Zbb`** Basic Bit-Manipulation Operations
 
@@ -738,6 +734,10 @@ configurations are presented in <<_cpu_performance>>.
 | Floating-point - misc | `Zfinx` | `fsgnj.s` `fsgnjn.s` `fsgnjx.s` `fclass.s` | 12
 | Floating-point - conversion | `Zfinx` | `fcvt.w.s` `fcvt.wu.s` | 47
 | Floating-point - conversion | `Zfinx` | `fcvt.s.w` `fcvt.s.wu` | 48
+| Basic bit-manip - logic | `Zbb` | `andn` `orn` `xnor` | 3
+| Basic bit-manip - shift | `Zbb` | `clz` `ctz` `cpop` `rol` `ror` `rori` | 4+SA, FAST_SHIFT: 4
+| Basic bit-manip - arith | `Zbb` | `max` `maxu` `min` `minu` | 3
+| Basic bit-manip - misc  | `Zbb` | `sext.b` `sext.h` `zext.h` `orc.b` `rev8` | 3
 |=======================
 
 [NOTE]
