@@ -42,13 +42,13 @@ NEORV32_SOFTWARE_EXAMPLE ?= $(NEORV32_ROOT)/sw/example/blink_led
 ifeq ($(NEORV32_CPU_EXTENSION_RISCV_ZIFENCEI), true)
 RUN_TARGET ?= \
 	echo "copying/using SIM-only IMEM (pre-initialized RAM!)"; \
-	rm -f $(NEORV32_LOCAL_RTL)/core/neorv32_imem.vhd; \
-	cp -f $(NEORV32_ROOT)/sim/simple/neorv32_imem.iram.simple.vhd $(NEORV32_LOCAL_RTL)/core/neorv32_imem.vhd;
+	rm -f $(NEORV32_LOCAL_RTL)/core/mem/neorv32_imem.default.vhd; \
+	cp -f $(NEORV32_ROOT)/sim/simple/neorv32_imem.iram.simple.vhd $(NEORV32_LOCAL_RTL)/core/mem/neorv32_imem.default.vhd;
 else
 RUN_TARGET ?= \
 	echo "copying/using SIM-only IMEM (pre-initialized ROM!)"; \
-	rm -f $(NEORV32_LOCAL_RTL)/core/neorv32_imem.vhd; \
-	cp -f $(NEORV32_ROOT)/sim/simple/neorv32_imem.simple.vhd $(NEORV32_LOCAL_RTL)/core/neorv32_imem.vhd;
+	rm -f $(NEORV32_LOCAL_RTL)/core/mem/neorv32_imem.default.vhd; \
+	cp -f $(NEORV32_ROOT)/sim/simple/neorv32_imem.simple.vhd $(NEORV32_LOCAL_RTL)/core/mem/neorv32_imem.default.vhd;
 endif
 
 RUN_TARGET += \
