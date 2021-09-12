@@ -29,22 +29,20 @@ header "Copying neorv32 test-target into riscv-arch-test framework"
 
 header "Making local copy of NEORV32 'rtl' and 'sim' folders"
 
-export NEORV32_LOCAL_COPY=${NEORV32_LOCAL_COPY:-$(pwd)/work}
+export NEORV32_LOCAL_RTL=${NEORV32_LOCAL_RTL:-$(pwd)/work}
 
-rm -rf "$NEORV32_LOCAL_COPY"
-mkdir -p "$NEORV32_LOCAL_COPY"
-cp -r ../rtl "$NEORV32_LOCAL_COPY"
-cp -r simple "$NEORV32_LOCAL_COPY"/sim
+rm -rf "$NEORV32_LOCAL_RTL"
+cp -r ../rtl "$NEORV32_LOCAL_RTL"
 
-header "Making local backup of original IMEM rtl file (work/rtl/core/neorv32_imem.ORIGINAL)"
+header "Making local backup of original IMEM rtl file (work/core/neorv32_imem.ORIGINAL)"
 (
-  cd work/rtl/core/
+  cd work/core/
   cp neorv32_imem.vhd neorv32_imem.ORIGINAL
 )
 
 header "Starting RISC-V architecture tests"
 
-./work/sim/ghdl.setup.sh
+./simple/ghdl.setup.sh
 
 # work in progress FIXME
 printf "\n\e[1;33mWARNING! 'rv32e/*' tests are work in progress! \e[0m\n\n"
