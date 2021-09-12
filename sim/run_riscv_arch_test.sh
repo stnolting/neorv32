@@ -27,7 +27,7 @@ header "Copying neorv32 test-target into riscv-arch-test framework"
   cp -vr port-neorv32 "$target_device"
 )
 
-header "Making local copy of NEORV32 'rtl' and 'sim' folders"
+header "Making local copy of NEORV32 'rtl'"
 
 export NEORV32_LOCAL_RTL=${NEORV32_LOCAL_RTL:-$(pwd)/work}
 
