@@ -45,7 +45,7 @@ which does the following:
 * Make a local copy of the NEORV32 `rtl` folder in `work/`, to keep the project's core files clean.
 * Clone (as `git submodule`) the [riscv-arch-test repository](https://github.com/riscv/riscv-arch-test) into `sw/isa-test/riscv-arch-test`.
 * Install (copy) the custom `neorv32` test target from `sw/isa-test/port-neorv32` to the
-test suite's target folder `work/riscv-arch-test/riscv-target/neorv32`
+test suite's target folder `work/riscv-arch-test/riscv-target/neorv32`.
 * Run the actual tests.
 
 :warning: Simulating all the test cases takes quite some time. Some tests use an optimised description of IMEM
