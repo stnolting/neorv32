@@ -62,6 +62,8 @@ if {$make_assignments} {
   foreach core_src_file $core_src_dir {
     set_global_assignment -name VHDL_FILE $core_src_file -library neorv32
   }
+  set_global_assignment -name VHDL_FILE ./../../../rtl/core/mem/neorv32_dmem.default.vhd -library neorv32
+  set_global_assignment -name VHDL_FILE ./../../../rtl/core/mem/neorv32_imem.default.vhd -library neorv32
 
   # top entity: use local modified copy of the original test setup
   set_global_assignment -name VHDL_FILE "neorv32_test_setup_bootloader.vhd"

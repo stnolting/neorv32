@@ -105,6 +105,12 @@
         <Source name="../../../rtl/core/neorv32_xirq.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>
+        <Source name="../../rtl/core/neorv32_dmem.entity.vhd" type="VHDL" type_short="VHDL">
+            <Options lib="neorv32"/>
+        </Source>
+        <Source name="../../rtl/core/neorv32_imem.entity.vhd" type="VHDL" type_short="VHDL">
+            <Options lib="neorv32"/>
+        </Source>
         <Source name="neorv32_dmem.ice40up_spram.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>

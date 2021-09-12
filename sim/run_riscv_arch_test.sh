@@ -34,12 +34,6 @@ export NEORV32_LOCAL_RTL=${NEORV32_LOCAL_RTL:-$(pwd)/work}
 rm -rf "$NEORV32_LOCAL_RTL"
 cp -r ../rtl "$NEORV32_LOCAL_RTL"
 
-header "Making local backup of original IMEM rtl file (work/core/neorv32_imem.ORIGINAL)"
-(
-  cd work/core/
-  cp neorv32_imem.vhd neorv32_imem.ORIGINAL
-)
-
 header "Starting RISC-V architecture tests"
 
 ./simple/ghdl.setup.sh

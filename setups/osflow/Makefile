@@ -30,7 +30,7 @@ run:
 
 Fomu:
 ifeq ($(DESIGN),Minimal)
-	$(eval IMEM_SRC := ../../rtl/core/neorv32_imem.vhd)
+	$(eval IMEM_SRC := ../../rtl/core/mem/neorv32_imem.default.vhd)
 else
 	$(eval IMEM_SRC := devices/ice40/neorv32_imem.ice40up_spram.vhd)
 endif
@@ -52,19 +52,19 @@ UPduino:
 OrangeCrab:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(OrangeCrab_REV)_$(DESIGN).bit \
-	  NEORV32_MEM_SRC="../../rtl/core/neorv32_imem.vhd ../../rtl/core/neorv32_dmem.vhd" \
+	  NEORV32_MEM_SRC="../../rtl/core/mem/neorv32_imem.default.vhd ../../rtl/core/mem/neorv32_dmem.default.vhd" \
 	  run
-	  
+
 AlhambraII:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
-	  NEORV32_MEM_SRC="../../rtl/core/neorv32_imem.vhd ../../rtl/core/neorv32_dmem.vhd" \
+	  NEORV32_MEM_SRC="../../rtl/core/mem/neorv32_imem.default.vhd ../../rtl/core/mem/neorv32_dmem.default.vhd" \
 	  run
-	  
+
 ULX3S:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
-	  NEORV32_MEM_SRC="../../rtl/core/neorv32_imem.vhd ../../rtl/core/neorv32_dmem.vhd" \
+	  NEORV32_MEM_SRC="../../rtl/core/mem/neorv32_imem.default.vhd ../../rtl/core/mem/neorv32_dmem.default.vhd" \
 	  run
 
 # Designs

@@ -10,6 +10,7 @@ mkdir -p build
 
 ghdl -i --work=neorv32 --workdir=build \
   "$NEORV32_LOCAL_RTL"/core/*.vhd \
+  "$NEORV32_LOCAL_RTL"/core/mem/*.vhd \
   "$NEORV32_LOCAL_RTL"/processor_templates/*.vhd \
   "$NEORV32_LOCAL_RTL"/system_integration/*.vhd \
   "$NEORV32_LOCAL_RTL"/test_setups/*.vhd \
