@@ -265,11 +265,11 @@ info:
 
 
 # -----------------------------------------------------------------------------
-# In-console simulation using default testbench and GHDL
+# In-console simulation using default/simple testbench and GHDL
 # -----------------------------------------------------------------------------
 sim: $(APP_IMG)
 	@echo "Simulating $(APP_IMG)..."
-	@sh $(NEORV32_SIM_PATH)/ghdl.sh
+	@sh $(NEORV32_SIM_PATH)/simple/ghdl.sh
 
 # -----------------------------------------------------------------------------
 # Show final ELF details (just for debugging)
@@ -291,7 +291,7 @@ help:
 	@echo " exe        - compile and generate <neorv32_exe.bin> executable for upload via bootloader"
 	@echo " hex        - compile and generate <neorv32_exe.hex> executable raw file"
 	@echo " install    - compile, generate and install VHDL IMEM boot image (for application)"
-	@echo " sim        - in-console simulation using default testbench and GHDL"
+	@echo " sim        - in-console simulation using default/simple testbench and GHDL"
 	@echo " all        - exe + hex + install"
 	@echo " elf_info   - show ELF layout info"
 	@echo " clean      - clean up project"
