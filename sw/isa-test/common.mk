@@ -2,7 +2,7 @@ ifndef NEORV32_ROOT
     $(error NEORV32_ROOT is undefined)
 endif
 
-NEORV32_LOCAL_COPY ?= $(NEORV32_ROOT)/sim/work
+NEORV32_LOCAL_RTL ?= $(NEORV32_ROOT)/sim/work
 
 TARGET_SIM   ?= ghdl
 TARGET_FLAGS ?= $(RISCV_TARGET_FLAGS)
@@ -37,30 +37,29 @@ NEORV32_CPU_EXTENSION_RISCV_M ?= false
 NEORV32_CPU_EXTENSION_RISCV_ZIFENCEI ?= false
 NEORV32_MEM_INT_IMEM_SIZE ?= '2097152'
 
-NEORV32_SOFTWARE_EXAMPLE ?= $(NEORV32_LOCAL_COPY)/sw/example/blink_led
-
+NEORV32_SOFTWARE_EXAMPLE ?= $(NEORV32_ROOT)/sw/example/blink_led
 
 ifeq ($(NEORV32_CPU_EXTENSION_RISCV_ZIFENCEI), true)
 RUN_TARGET ?= \
 	echo "copying/using SIM-only IMEM (pre-initialized RAM!)"; \
-	rm -f $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
-	cp -f $(NEORV32_LOCAL_COPY)/sim/neorv32_imem.iram.simple.vhd $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd;
+	rm -f $(NEORV32_LOCAL_RTL)/core/neorv32_imem.vhd; \
+	cp -f $(NEORV32_ROOT)/sim/simple/neorv32_imem.iram.simple.vhd $(NEORV32_LOCAL_RTL)/core/neorv32_imem.vhd;
 else
 RUN_TARGET ?= \
 	echo "copying/using SIM-only IMEM (pre-initialized ROM!)"; \
-	rm -f $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd; \
-	cp -f $(NEORV32_LOCAL_COPY)/sim/neorv32_imem.simple.vhd $(NEORV32_LOCAL_COPY)/rtl/core/neorv32_imem.vhd;
+	rm -f $(NEORV32_LOCAL_RTL)/core/neorv32_imem.vhd; \
+	cp -f $(NEORV32_ROOT)/sim/simple/neorv32_imem.simple.vhd $(NEORV32_LOCAL_RTL)/core/neorv32_imem.vhd;
 endif
 
 RUN_TARGET += \
 	cd $(work_dir_isa); \
 	echo ">"; \
-	rm -f $(NEORV32_LOCAL_COPY)/*.out; \
+	rm -f $(NEORV32_ROOT)/sim/*.out; \
 	make -C $(NEORV32_SOFTWARE_EXAMPLE) main.elf; \
 	cp -f $< $(NEORV32_SOFTWARE_EXAMPLE)/main.elf; \
 	make -C $(NEORV32_SOFTWARE_EXAMPLE) main.bin install; \
-	touch $(NEORV32_LOCAL_COPY)/neorv32.uart0.sim_mode.data.out; \
-	GHDL_DEVNULL=true $(shell which time) -v $(NEORV32_LOCAL_COPY)/sim/ghdl.run.sh \
+	touch $(NEORV32_ROOT)/sim/simple/neorv32.uart0.sim_mode.data.out; \
+	GHDL_DEVNULL=true $(shell which time) -v $(NEORV32_ROOT)/sim/simple/ghdl.run.sh \
 	  --stop-time=$(SIM_TIME) \
 	  -gCPU_EXTENSION_RISCV_A=false \
 	  -gCPU_EXTENSION_RISCV_C=$(NEORV32_CPU_EXTENSION_RISCV_C) \
@@ -71,5 +70,5 @@ RUN_TARGET += \
 	  -gCPU_EXTENSION_RISCV_Zifencei=$(NEORV32_CPU_EXTENSION_RISCV_ZIFENCEI) \
 	  -gEXT_IMEM_C=false \
 	  -gMEM_INT_IMEM_SIZE=$(NEORV32_MEM_INT_IMEM_SIZE); \
-	cp $(NEORV32_LOCAL_COPY)/sim/neorv32.uart0.sim_mode.data.out $(*).signature.output; \
+	cp $(NEORV32_ROOT)/sim/simple/neorv32.uart0.sim_mode.data.out $(*).signature.output; \
 	echo "<";

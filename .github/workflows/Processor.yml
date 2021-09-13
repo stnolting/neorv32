@@ -39,7 +39,7 @@ jobs:
     - name: '🚧 Run Processor Hardware Tests with shell script'
       uses: docker://ghcr.io/stnolting/neorv32/sim
       with:
-        args: ./sim/ghdl.sh
+        args: ./sim/simple/ghdl.sh
 
 
   VUnit-Container:
