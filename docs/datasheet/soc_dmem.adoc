@@ -5,18 +5,21 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_dmem.vhd | 
-| Software driver file(s): | none             | _implicitly used_
-| Top entity port:         | none             | 
-| Configuration generics:  | _MEM_INT_DMEM_EN_ | implement processor-internal DMEM when _true_
-|                          | _MEM_INT_DMEM_SIZE_ | DMEM size in bytes
-| CPU interrupts:          | none             | 
+| Hardware source file(s): | neorv32_dmem.entity.vhd      | entity-only definition
+|                          | mem/neorv32_dmem.default.vhd | default _platform-agnostic_ memory architecture
+| Software driver file(s): | none                         | _implicitly used_
+| Top entity port:         | none                         | 
+| Configuration generics:  | _MEM_INT_DMEM_EN_            | implement processor-internal DMEM when _true_
+|                          | _MEM_INT_DMEM_SIZE_          | DMEM size in bytes
+| CPU interrupts:          | none                         | 
 |=======================
 
 [NOTE]
-The default `neorv32_dmem.vhd` HDL source file provides a _generic_ memory design that infers embedded
-memory for _larger_ memory configurations. You might need to replace/modify the source file in order to use
-platform-specific features (like advanced memory resources) or to improve technology mapping and/or timing.
+The actual DMEM is split into two design files: a plain entity definition (`neorv32_dmem.entity.vhd`) and the actual
+architecture definition (`mem/neorv32_dmem.default.vhd`). This **default architecture** provides a _generic_ and
+_platform independent_ memory design that (should) infers embedded memory block. You can replace/modify the architecture
+source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
+and/or timing.
 
 Implementation of the processor-internal data memory is enabled via the processor's _MEM_INT_DMEM_EN_
 generic. The size in bytes is defined via the _MEM_INT_DMEM_SIZE_ generic. If the DMEM is implemented,

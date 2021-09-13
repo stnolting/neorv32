@@ -5,19 +5,22 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_imem.vhd | 
-| Software driver file(s): | none             | _implicitly used_
-| Top entity port:         | none             | 
-| Configuration generics:  | _MEM_INT_IMEM_EN_ | implement processor-internal IMEM when _true_
-|                          | _MEM_INT_IMEM_SIZE_ | IMEM size in bytes
-|                          | _INT_BOOTLOADER_EN_ | use internal bootlodaer when _true_ (implements IMEM as ROM)
-| CPU interrupts:          | none             | 
+| Hardware source file(s): | neorv32_imem.entity.vhd      | entity-only definition
+|                          | mem/neorv32_imem.default.vhd | default _platform-agnostic_ memory architecture
+| Software driver file(s): | none                         | _implicitly used_
+| Top entity port:         | none                         | 
+| Configuration generics:  | _MEM_INT_IMEM_EN_            | implement processor-internal IMEM when _true_
+|                          | _MEM_INT_IMEM_SIZE_          | IMEM size in bytes
+|                          | _INT_BOOTLOADER_EN_          | use internal bootlodaer when _true_ (implements IMEM as _uninitialized_ RAM)
+| CPU interrupts:          | none                         | 
 |=======================
 
 [NOTE]
-The default `neorv32_imem.vhd` HDL source file provides a _generic_ memory design that infers embedded
-memory for _larger_ memory configurations. You might need to replace/modify the source file in order to use
-platform-specific features (like advanced memory resources) or to improve technology mapping and/or timing.
+The actual IMEM is split into two design files: a plain entity definition (`neorv32_imem.entity.vhd`) and the actual
+architecture definition (`mem/neorv32_imem.default.vhd`). This **default architecture** provides a _generic_ and
+_platform independent_ memory design that (should) infers embedded memory block. You can replace/modify the architecture
+source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
+and/or timing.
 
 Implementation of the processor-internal instruction memory is enabled via the processor's
 _MEM_INT_IMEM_EN_ generic. The size in bytes is defined via the _MEM_INT_IMEM_SIZE_ generic. If the

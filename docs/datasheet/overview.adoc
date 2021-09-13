@@ -26,10 +26,11 @@ in the root directory of the NEORV32 repository. Please also check out the <<_le
 
 **Structure**
 
-* <<_neorv32_processor_soc>>
-* <<_neorv32_central_processing_unit_cpu>>
-* <<_on_chip_debugger_ocd>>
-* <<_software_framework>>
+[start=1]
+. <<_neorv32_processor_soc>>
+. <<_neorv32_central_processing_unit_cpu>>
+. <<_on_chip_debugger_ocd>>
+. <<_software_framework>>
 
 [TIP]
 Links in this document are <<_overview,highlighted>>.
@@ -156,6 +157,7 @@ neorv32                - Project home folder
 │
 ├rtl                   - VHDL sources
 │├core                 - Core sources of the CPU & SoC
+││└mem                 - SoC-internal memories (default architectures)
 │├processor_templates  - Pre-configured SoC wrappers
 │├system_integration   - System wrappers for advanced connectivity
 │└test_setups          - Minimal test setup "SoCs" used in the User Guide
