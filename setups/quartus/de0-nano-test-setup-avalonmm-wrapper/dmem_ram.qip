@@ -1,0 +1,4 @@
+set_global_assignment -name IP_TOOL_NAME "RAM: 1-PORT"
+set_global_assignment -name IP_TOOL_VERSION "18.1"
+set_global_assignment -name IP_GENERATED_DEVICE_FAMILY "{Cyclone IV E}"
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "dmem_ram.vhd"]
