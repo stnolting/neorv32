@@ -45,23 +45,6 @@ use neorv32.neorv32_package.all;
 library iCE40;
 use iCE40.components.all;
 
-entity neorv32_dmem is
-  generic (
-    DMEM_BASE : std_ulogic_vector(31 downto 0) := x"80000000"; -- memory base address
-    DMEM_SIZE : natural := 64*1024 -- processor-internal instruction memory size in bytes
-  );
-  port (
-    clk_i  : in  std_ulogic; -- global clock line
-    rden_i : in  std_ulogic; -- read enable
-    wren_i : in  std_ulogic; -- write enable
-    ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
-    addr_i : in  std_ulogic_vector(31 downto 0); -- address
-    data_i : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o  : out std_ulogic -- transfer acknowledge
-  );
-end neorv32_dmem;
-
 architecture neorv32_dmem_rtl of neorv32_dmem is
 
   -- advanced configuration --------------------------------------------------------------------------------
