@@ -78,8 +78,9 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (IMEM_AS_IROM = true) report "ICE40 Ultra Plus SPRAM cannot be initialized by bitstream!" severity failure;
-  assert not (IMEM_SIZE > 64*1024) report "IMEM has a fixed physical size of 64kB. Logical size must be less or equal." severity error;
+  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Using iCE40up SPRAM-based IMEM." severity note;
+  assert not (IMEM_AS_IROM = true) report "NEORV32 PROCESSOR CONFIG ERROR: ICE40 Ultra Plus SPRAM cannot be initialized by bitstream!" severity failure;
+  assert not (IMEM_SIZE > 64*1024) report "NEORV32 PROCESSOR CONFIG ERROR: IMEM has a fixed physical size of 64kB. Logical size must be less or equal." severity error;
 
 
   -- Access Control -------------------------------------------------------------------------
