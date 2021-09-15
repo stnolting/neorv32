@@ -25,7 +25,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 14.09.2021 | 1.6.0.2 | :warning: **split** processor-internal memory VHDL sources (IMEM and DMEM) into separated files: entity-only (`rtl/core/neorv32_*mem.entity.vhd`) and _default_ architecture-only (`rtl/core/mem/neorv32_*mem.default.vhd`); allows easy replacement by optimized platform-specific architectures) |
+| 15.09.2021 | 1.6.0.2 | :warning: **split** processor-internal memory VHDL sources (IMEM and DMEM) into separated files (#151): entity-only (`rtl/core/neorv32_*mem.entity.vhd`) and _default_ architecture-only (`rtl/core/mem/neorv32_*mem.default.vhd`); allows easy replacement by optimized platform-specific architectures |
 | 13.09.2021 | 1.6.0.1 | :bug: fixed missing IRQ signal assignments (MSW and XIRQ) in AXI4-lite top wrapper |
 | 11.09.2021 | [**:rocket:1.6.0**](https://github.com/stnolting/neorv32/releases/tag/v1.6.0) | **New release** |
 | 11.09.2021 | 1.5.9.9 | removed `mstatus.SD` flag (is always 0 for `Zfinx` extension as the current state is already defined entirely by the `x` register file); tied `mstatus.fs` as it must not affect trapping of `Zfinx` instructions (according to RISC-V specs.) |
