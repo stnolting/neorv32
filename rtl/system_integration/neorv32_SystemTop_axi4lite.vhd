@@ -425,6 +425,7 @@ begin
 
   xirq_i_int      <= std_ulogic_vector(xirq_i);
 
+  nm_irq_i_int    <= std_ulogic(nm_irq_i);
   msw_irq_i_int   <= std_ulogic(msw_irq_i);
   mext_irq_i_int  <= std_ulogic(mext_irq_i);
 
