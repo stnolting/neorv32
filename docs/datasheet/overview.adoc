@@ -26,10 +26,11 @@ in the root directory of the NEORV32 repository. Please also check out the <<_le
 
 **Structure**
 
-* <<_neorv32_processor_soc>>
-* <<_neorv32_central_processing_unit_cpu>>
-* <<_on_chip_debugger_ocd>>
-* <<_software_framework>>
+[start=1]
+. <<_neorv32_processor_soc>>
+. <<_neorv32_central_processing_unit_cpu>>
+. <<_on_chip_debugger_ocd>>
+. <<_software_framework>>
 
 [TIP]
 Links in this document are <<_overview,highlighted>>.
@@ -156,6 +157,7 @@ neorv32                - Project home folder
 │
 ├rtl                   - VHDL sources
 │├core                 - Core sources of the CPU & SoC
+││└mem                 - SoC-internal memories (default architectures)
 │├processor_templates  - Pre-configured SoC wrappers
 │├system_integration   - System wrappers for advanced connectivity
 │└test_setups          - Minimal test setup "SoCs" used in the User Guide
@@ -219,10 +221,10 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 ├neorv32_cfs.vhd                 - Custom functions subsystem
 ├neorv32_debug_dm.vhd            - on-chip debugger: debug module
 ├neorv32_debug_dtm.vhd           - on-chip debugger: debug transfer module
-├neorv32_dmem.vhd                - Processor-internal data memory
+├neorv32_dmem.entity.vhd         - Processor-internal data memory (entity-only!)
 ├neorv32_gpio.vhd                - General purpose input/output port unit
 ├neorv32_icache.vhd              - Processor-internal instruction cache
-├neorv32_imem.vhd                - Processor-internal instruction memory
+├neorv32_imem.entity.vhd         - Processor-internal instruction memory (entity-only!)
 │└neor32_application_image.vhd   - IMEM application initialization image
 ├neorv32_mtime.vhd               - Machine system timer
 ├neorv32_neoled.vhd              - NeoPixel (TM) compatible smart LED interface
@@ -234,8 +236,18 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 ├neorv32_uart.vhd                - Universal async. receiver/transmitter
 ├neorv32_wdt.vhd                 - Watchdog timer
 ├neorv32_wishbone.vhd            - External (Wishbone) bus interface
-└neorv32_xirq.vhd                - External interrupt controller
+│
+├mem/neorv32_dmem.default.vhd    - _Default_ data memory (architecture-only!)
+└mem/neorv32_imem.default.vhd    - _Default_ instruction memory (architecture-only!)
 ...................................
+
+[NOTE]
+The processor-internal instruction and data memories (IMEM and DMEM) are split into two design files each:
+a plain entity definition (`neorv32_*mem.entity.vhd`) and the actual architecture definition
+(`mem/neorv32_*mem.default.vhd`). The **default** architecture definitions from `rtl/core/mem` provide a _generic_ and
+_platform independent_ memory design that (should) infers embedded memory blocks. You can replace/modify the architecture
+source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
+and/or timing.
 
 
 <<<

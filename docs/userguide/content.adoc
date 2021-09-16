@@ -145,6 +145,18 @@ if you instantiate one of the test setups.
 [start=1]
 . Create a new project with your FPGA EDA tool of choice.
 . Add all VHDL files from the project's `rtl/core` folder to your project.
+
+.Internal Memories
+[IMPORTANT]
+For a _general_ first setup (technology-independent) use the _default_ memory architectures for the internal memories
+(IMEM and DMEM). These are located in `rtl/core/mem`, so **make sure to add the files from `rtl/core/mem` to your project, too**. +
+ +
+If synthesis cannot efficiently map those default memory descriptions to the available memory resources, you can later replace the
+default memory architectures by optimized platform-specific memory architectures. **Example:** The `setups/radiant/UPduino_v3`
+example setup uses optimized memory primitives. Hence, it does not include the default memory architectures from
+`rtl/core/mem` as these are replaced by device-specific implementations. However, it still has to include the entity
+definitions from `rtl/core`.
+
 . Make sure to add all the rtl files to a new library called `neorv32`. If your FPGA tools does not
 provide a field to enter the library name, check out the "properties" menu of the added rtl files.
 . The `rtl/core/neorv32_top.vhd` VHDL file is the top entity of the NEORV32 processor, which can be
@@ -935,7 +947,8 @@ any user interaction.
 == Packaging the Processor as IP block for Xilinx Vivado Block Designer
 
 [start=1]
-. Import all the core files from `rtl/core` and assign them to a _new_ design library `neorv32`.
+. Import all the core files from `rtl/core` (including default internal memory architectures from `rtl/core/mem`)
+and assign them to a _new_ design library `neorv32`.
 . Instantiate the `rtl/wrappers/neorv32_top_axi4lite.vhd` module.
 . Then either directly use that module in a new block-design ("Create Block Design", right-click -> "Add Module",
 thats easier for a first try) or package it ("Tools", "Create and Package new IP") for the use in other projects.

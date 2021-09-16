@@ -39,23 +39,6 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_dmem is
-  generic (
-    DMEM_BASE : std_ulogic_vector(31 downto 0); -- memory base address
-    DMEM_SIZE : natural -- processor-internal instruction memory size in bytes
-  );
-  port (
-    clk_i  : in  std_ulogic; -- global clock line
-    rden_i : in  std_ulogic; -- read enable
-    wren_i : in  std_ulogic; -- write enable
-    ben_i  : in  std_ulogic_vector(03 downto 0); -- byte write enable
-    addr_i : in  std_ulogic_vector(31 downto 0); -- address
-    data_i : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o  : out std_ulogic -- transfer acknowledge
-  );
-end neorv32_dmem;
-
 architecture neorv32_dmem_rtl of neorv32_dmem is
 
   -- IO space: module base address --
@@ -86,6 +69,7 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Using default platform-agnostic DMEM." severity note;
   assert false report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal DMEM (RAM, " & natural'image(DMEM_SIZE) & " bytes)." severity note;
 
 

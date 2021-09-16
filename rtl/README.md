@@ -7,6 +7,10 @@ This folder contains the core VHDL files for the NEORV32 CPU and the NEORV32 Pro
 When creating a new synthesis/simulation project make sure that all `*.vhd` files from this folder are added to a
 *new design library* called `neorv32`.
 
+:warning: The sub-folder [`core/mem`](https://github.com/stnolting/neorv32/tree/master/rtl/core/mem)
+contains the _platform-agnostic_ VHDL architectures of the processor-internal memories.
+You can _replace_ inclusion of these files by platform-optimized memory architectures.
+
 
 ### [`processor_templates`](https://github.com/stnolting/neorv32/tree/master/rtl/processor_templates`)
 
