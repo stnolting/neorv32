@@ -1046,13 +1046,13 @@ completed with a line feed (newline, ASCII `\n` = 10).
 :sectnums:
 === Simulation using GHDL
 
-To simulate the processor using _GHDL_ navigate to the `sim` folder and run the provided shell script.
+To simulate the processor using _GHDL_ navigate to the `sim/simple/` folder and run the provided shell script.
 Any arguments that are provided while executing this script are passed to GHDL.
 For example the simulation time can be set to 20ms using `--stop-time=20ms` as argument.
 
 [source, bash]
 ----
-neorv32/sim$ sh ghdl_sim.sh --stop-time=20ms
+neorv32/sim/simple$ sh ghdl_sim.sh --stop-time=20ms
 ----
 
 
