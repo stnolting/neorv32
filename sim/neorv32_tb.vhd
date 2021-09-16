@@ -541,7 +541,7 @@ begin
 
         -- bus output register --
         wb_mem_a.err <= '0';
-        if (ext_mem_a.ack(ext_mem_a_latency_c-1) = '1') and (wb_mem_b.cyc = '1') and (wb_mem_a.ack = '0') then
+        if (ext_mem_a.ack(ext_mem_a_latency_c-1) = '1') and (wb_mem_a.cyc = '1') and (wb_mem_a.ack = '0') then
           wb_mem_a.rdata <= ext_mem_a.rdata(ext_mem_a_latency_c-1);
           wb_mem_a.ack   <= '1';
         else
