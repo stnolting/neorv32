@@ -52,7 +52,7 @@
  **************************************************************************/
 int neorv32_mtime_available(void) {
 
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_MTIME)) {
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
     return 1;
   }
   else {
@@ -77,9 +77,9 @@ void neorv32_mtime_set_time(uint64_t time) {
 
   cycles.uint64 = time;
 
-  MTIME_LO = 0;
-  MTIME_HI = cycles.uint32[1];
-  MTIME_LO = cycles.uint32[0];
+  NEORV32_MTIME.TIME_LO = 0;
+  NEORV32_MTIME.TIME_HI = cycles.uint32[1];
+  NEORV32_MTIME.TIME_LO = cycles.uint32[0];
 
 }
 
@@ -100,9 +100,9 @@ uint64_t neorv32_mtime_get_time(void) {
 
   uint32_t tmp1, tmp2, tmp3;
   while(1) {
-    tmp1 = MTIME_HI;
-    tmp2 = MTIME_LO;
-    tmp3 = MTIME_HI;
+    tmp1 = NEORV32_MTIME.TIME_HI;
+    tmp2 = NEORV32_MTIME.TIME_LO;
+    tmp3 = NEORV32_MTIME.TIME_HI;
     if (tmp1 == tmp3) {
       break;
     }
@@ -132,9 +132,9 @@ void neorv32_mtime_set_timecmp(uint64_t timecmp) {
 
   cycles.uint64 = timecmp;
 
-  MTIMECMP_LO = -1; // prevent MTIMECMP from temporarily becoming smaller than the lesser of the old and new values
-  MTIMECMP_HI = cycles.uint32[1];
-  MTIMECMP_LO = cycles.uint32[0];
+  NEORV32_MTIME.TIMECMP_LO = -1; // prevent MTIMECMP from temporarily becoming smaller than the lesser of the old and new values
+  NEORV32_MTIME.TIMECMP_HI = cycles.uint32[1];
+  NEORV32_MTIME.TIMECMP_LO = cycles.uint32[0];
 }
 
 
@@ -145,5 +145,13 @@ void neorv32_mtime_set_timecmp(uint64_t timecmp) {
  **************************************************************************/
 uint64_t neorv32_mtime_get_timecmp(void) {
 
-  return MTIMECMP;
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } cycles;
+
+  cycles.uint32[0] = NEORV32_MTIME.TIMECMP_LO;
+  cycles.uint32[1] = NEORV32_MTIME.TIMECMP_HI;
+
+  return cycles.uint64;
 }

@@ -60,7 +60,7 @@ static void __attribute__((unused)) __neorv32_xirq_dummy_handler(void);
  **************************************************************************/
 int neorv32_xirq_available(void) {
 
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_XIRQ)) {
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_XIRQ)) {
     return 1;
   }
   else {
@@ -78,8 +78,8 @@ int neorv32_xirq_available(void) {
  **************************************************************************/
 int neorv32_xirq_setup(void) {
 
-  XIRQ_IER = 0; // disable all input channels
-  XIRQ_IPR = 0xffffffff; // clear/ack all pending IRQs
+  NEORV32_XIRQ.IER = 0; // disable all input channels
+  NEORV32_XIRQ.IPR = 0xffffffff; // clear/ack all pending IRQs
 
   int i;
   for (i=0; i<32; i++) {
@@ -124,8 +124,8 @@ int neorv32_xirq_get_num(void) {
   if (neorv32_xirq_available()) {
 
     neorv32_cpu_irq_disable(XIRQ_FIRQ_ENABLE); // make sure XIRQ cannot fire
-    XIRQ_IER = 0xffffffff; // try to set all enable flags
-    enable = XIRQ_IER; // read back actually set flags
+    NEORV32_XIRQ.IER = 0xffffffff; // try to set all enable flags
+    enable = NEORV32_XIRQ.IER; // read back actually set flags
 
     // count set bits in enable
     cnt = 0;
@@ -158,8 +158,8 @@ int neorv32_xirq_install(uint8_t ch, void (*handler)(void)) {
   if (ch < 32) {
     __neorv32_xirq_vector_lut[ch] = (uint32_t)handler; // install handler
     uint32_t mask = 1 << ch;
-    XIRQ_IPR = mask; // clear if pending
-    XIRQ_IER |= mask; // enable channel
+    NEORV32_XIRQ.IPR = mask; // clear if pending
+    NEORV32_XIRQ.IER |= mask; // enable channel
     return 0;
   }
   return 1; 
@@ -180,8 +180,8 @@ int neorv32_xirq_uninstall(uint8_t ch) {
   if (ch < 32) {
     __neorv32_xirq_vector_lut[ch] = (uint32_t)(&__neorv32_xirq_dummy_handler); // override using dummy handler
     uint32_t mask = 1 << ch;
-    XIRQ_IER &= ~mask; // disable channel
-    XIRQ_IPR = mask; // clear if pending
+    NEORV32_XIRQ.IER &= ~mask; // disable channel
+    NEORV32_XIRQ.IPR = mask; // clear if pending
     return 0;
   }
   return 1; 
@@ -196,10 +196,10 @@ int neorv32_xirq_uninstall(uint8_t ch) {
  **************************************************************************/
 static void __attribute__((aligned(16))) __attribute__((unused)) __neorv32_xirq_core(void) {
 
-  register uint32_t src = XIRQ_SCR; // get IRQ source (with highest priority)
+  register uint32_t src = NEORV32_XIRQ.SCR; // get IRQ source (with highest priority)
   src &= 0x1f;
 
-  XIRQ_IPR = (uint32_t)(1 << src); // acknowledge pending interrupt
+  NEORV32_XIRQ.IPR = (uint32_t)(1 << src); // acknowledge pending interrupt
 
   // execute handler
   register uint32_t xirq_handler = __neorv32_xirq_vector_lut[src];

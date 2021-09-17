@@ -52,7 +52,7 @@
  **************************************************************************/
 int neorv32_trng_available(void) {
 
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_TRNG)) {
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
     return 1;
   }
   else {
@@ -62,19 +62,19 @@ int neorv32_trng_available(void) {
 
 
 /**********************************************************************//**
- * Enable true random number generator. The TRNG control register bits are listed in #NEORV32_TRNG_CT_enum.
+ * Enable true random number generator. The TRNG control register bits are listed in #NEORV32_TRNG_CTRL_enum.
  **************************************************************************/
 void neorv32_trng_enable(void) {
 
   int i;
 
-  TRNG_CT = 0; // reset
+  NEORV32_TRNG.CTRL = 0; // reset
 
   for (i=0; i<256; i++) {
     asm volatile ("nop");
   }
 
-  TRNG_CT = 1 << TRNG_CT_EN; // activate
+  NEORV32_TRNG.CTRL = 1 << TRNG_CTRL_EN; // activate
 
   for (i=0; i<256; i++) {
     asm volatile ("nop");
@@ -87,7 +87,7 @@ void neorv32_trng_enable(void) {
  **************************************************************************/
 void neorv32_trng_disable(void) {
 
-  TRNG_CT = 0;
+  NEORV32_TRNG.CTRL = 0;
 }
 
 
@@ -104,13 +104,13 @@ int neorv32_trng_get(uint8_t *data) {
   uint32_t ct_reg;
 
   for (i=0; i<retries; i++) {
-    ct_reg = TRNG_CT;
+    ct_reg = NEORV32_TRNG.CTRL;
 
-    if ((ct_reg & (1<<TRNG_CT_VALID)) == 0) { // output data valid?
+    if ((ct_reg & (1<<TRNG_CTRL_VALID)) == 0) { // output data valid?
       continue;
     }
 
-    *data = (uint8_t)(ct_reg >> TRNG_CT_DATA_LSB);
+    *data = (uint8_t)(ct_reg >> TRNG_CTRL_DATA_LSB);
     return 0; // valid data
   }
 

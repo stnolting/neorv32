@@ -226,7 +226,7 @@ int neorv32_uart_scan(char *buffer, int max_size, int echo) { return neorv32_uar
  **************************************************************************/
 int neorv32_uart0_available(void) {
 
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_UART0)) {
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_UART0)) {
     return 1;
   }
   else {
@@ -249,9 +249,9 @@ int neorv32_uart0_available(void) {
  **************************************************************************/
 void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
 
-  UART0_CT = 0; // reset
+  NEORV32_UART0.CTRL = 0; // reset
 
-  uint32_t clock = SYSINFO_CLK;
+  uint32_t clock = NEORV32_SYSINFO.CLK;
   uint16_t i = 0; // BAUD rate divisor
   uint8_t p = 0; // initial prsc = CLK/2
 
@@ -277,20 +277,20 @@ void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
   }
 
   uint32_t clk_prsc = (uint32_t)p;
-  clk_prsc = clk_prsc << UART_CT_PRSC0;
+  clk_prsc = clk_prsc << UART_CTRL_PRSC0;
 
   uint32_t baud_prsc = (uint32_t)i;
   baud_prsc = baud_prsc - 1;
-  baud_prsc = baud_prsc << UART_CT_BAUD00;
+  baud_prsc = baud_prsc << UART_CTRL_BAUD00;
 
   uint32_t uart_en = 1;
-  uart_en = uart_en << UART_CT_EN;
+  uart_en = uart_en << UART_CTRL_EN;
 
   uint32_t parity_config = (uint32_t)(parity & 3);
-  parity_config = parity_config << UART_CT_PMODE0;
+  parity_config = parity_config << UART_CTRL_PMODE0;
 
   uint32_t flow_control = (uint32_t)(flow_con & 3);
-  flow_control = flow_control << UART_CT_RTS_EN;
+  flow_control = flow_control << UART_CTRL_RTS_EN;
 
   /* Enable UART0 for SIM mode. */
   /* USE THIS ONLY FOR SIMULATION! */
@@ -299,12 +299,12 @@ void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
 #endif
 #if defined UART0_SIM_MODE || defined UART_SIM_MODE
   #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only!
-  uint32_t sim_mode = 1 << UART_CT_SIM_MODE;
+  uint32_t sim_mode = 1 << UART_CTRL_SIM_MODE;
 #else
   uint32_t sim_mode = 0;
 #endif
 
-  UART0_CT = clk_prsc | baud_prsc | uart_en | parity_config | sim_mode | flow_control;
+  NEORV32_UART0.CTRL = clk_prsc | baud_prsc | uart_en | parity_config | sim_mode | flow_control;
 }
 
 
@@ -313,7 +313,7 @@ void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
  **************************************************************************/
 void neorv32_uart0_disable(void) {
 
-  UART0_CT &= ~((uint32_t)(1 << UART_CT_EN));
+  NEORV32_UART0.CTRL &= ~((uint32_t)(1 << UART_CTRL_EN));
 }
 
 
@@ -322,7 +322,7 @@ void neorv32_uart0_disable(void) {
  **************************************************************************/
 void neorv32_uart0_enable(void) {
 
-  UART0_CT = ((uint32_t)(1 << UART_CT_EN));
+  NEORV32_UART0.CTRL = ((uint32_t)(1 << UART_CTRL_EN));
 }
 
 
@@ -336,8 +336,8 @@ void neorv32_uart0_enable(void) {
 void neorv32_uart0_putc(char c) {
 
   // wait for previous transfer to finish
-  while ((UART0_CT & (1<<UART_CT_TX_BUSY)) != 0);
-  UART0_DATA = ((uint32_t)c) << UART_DATA_LSB;
+  while ((NEORV32_UART0.CTRL & (1<<UART_CTRL_TX_BUSY)) != 0);
+  NEORV32_UART0.DATA = ((uint32_t)c) << UART_DATA_LSB;
 }
 
 
@@ -350,7 +350,7 @@ void neorv32_uart0_putc(char c) {
  **************************************************************************/
 int neorv32_uart0_tx_busy(void) {
 
-  if ((UART0_CT & (1<<UART_CT_TX_BUSY)) != 0) {
+  if ((NEORV32_UART0.CTRL & (1<<UART_CTRL_TX_BUSY)) != 0) {
     return 1;
   }
   return 0;
@@ -368,7 +368,7 @@ char neorv32_uart0_getc(void) {
 
   uint32_t d = 0;
   while (1) {
-    d = UART0_DATA;
+    d = NEORV32_UART0.DATA;
     if ((d & (1<<UART_DATA_AVAIL)) != 0) { // char received?
       return (char)d;
     }
@@ -386,7 +386,7 @@ char neorv32_uart0_getc(void) {
  **************************************************************************/
 int neorv32_uart0_getc_safe(char *data) {
 
-  uint32_t uart_rx = UART0_DATA;
+  uint32_t uart_rx = NEORV32_UART0.DATA;
   if (uart_rx & (1<<UART_DATA_AVAIL)) { // char available at all?
 
     int status = 0;
@@ -426,7 +426,7 @@ int neorv32_uart0_getc_safe(char *data) {
  **************************************************************************/
 int neorv32_uart0_char_received(void) {
 
-  if ((UART0_DATA & (1<<UART_DATA_AVAIL)) != 0) {
+  if ((NEORV32_UART0.DATA & (1<<UART_DATA_AVAIL)) != 0) {
     return 1;
   }
   else {
@@ -445,7 +445,7 @@ int neorv32_uart0_char_received(void) {
  **************************************************************************/
 char neorv32_uart0_char_received_get(void) {
 
-  return (char)UART0_DATA;
+  return (char)NEORV32_UART0.DATA;
 }
 
 
@@ -589,7 +589,7 @@ int neorv32_uart0_scan(char *buffer, int max_size, int echo) {
  **************************************************************************/
 int neorv32_uart1_available(void) {
 
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_UART1)) {
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_UART1)) {
     return 1;
   }
   else {
@@ -612,9 +612,9 @@ int neorv32_uart1_available(void) {
  **************************************************************************/
 void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
 
-  UART1_CT = 0; // reset
+  NEORV32_UART1.CTRL = 0; // reset
 
-  uint32_t clock = SYSINFO_CLK;
+  uint32_t clock = NEORV32_SYSINFO.CLK;
   uint16_t i = 0; // BAUD rate divisor
   uint8_t p = 0; // initial prsc = CLK/2
 
@@ -640,31 +640,31 @@ void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
   }
 
   uint32_t clk_prsc = (uint32_t)p;
-  clk_prsc = clk_prsc << UART_CT_PRSC0;
+  clk_prsc = clk_prsc << UART_CTRL_PRSC0;
 
   uint32_t baud_prsc = (uint32_t)i;
   baud_prsc = baud_prsc - 1;
-  baud_prsc = baud_prsc << UART_CT_BAUD00;
+  baud_prsc = baud_prsc << UART_CTRL_BAUD00;
 
   uint32_t uart_en = 1;
-  uart_en = uart_en << UART_CT_EN;
+  uart_en = uart_en << UART_CTRL_EN;
 
   uint32_t parity_config = (uint32_t)(parity & 3);
-  parity_config = parity_config << UART_CT_PMODE0;
+  parity_config = parity_config << UART_CTRL_PMODE0;
 
   uint32_t flow_control = (uint32_t)(flow_con & 3);
-  flow_control = flow_control << UART_CT_RTS_EN;
+  flow_control = flow_control << UART_CTRL_RTS_EN;
 
   /* Enable UART1 for SIM mode. */
   /* USE THIS ONLY FOR SIMULATION! */
 #ifdef UART1_SIM_MODE
   #warning UART1_SIM_MODE (secondary UART) enabled! Sending all UART1.TX data to text.io simulation output instead of real UART1 transmitter. Use this for simulations only!
-  uint32_t sim_mode = 1 << UART_CT_SIM_MODE;
+  uint32_t sim_mode = 1 << UART_CTRL_SIM_MODE;
 #else
   uint32_t sim_mode = 0;
 #endif
 
-  UART1_CT = clk_prsc | baud_prsc | uart_en | parity_config | sim_mode | flow_control;
+  NEORV32_UART1.CTRL = clk_prsc | baud_prsc | uart_en | parity_config | sim_mode | flow_control;
 }
 
 
@@ -673,7 +673,7 @@ void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
  **************************************************************************/
 void neorv32_uart1_disable(void) {
 
-  UART1_CT &= ~((uint32_t)(1 << UART_CT_EN));
+  NEORV32_UART1.CTRL &= ~((uint32_t)(1 << UART_CTRL_EN));
 }
 
 
@@ -682,7 +682,7 @@ void neorv32_uart1_disable(void) {
  **************************************************************************/
 void neorv32_uart1_enable(void) {
 
-  UART1_CT |= ((uint32_t)(1 << UART_CT_EN));
+  NEORV32_UART1.CTRL |= ((uint32_t)(1 << UART_CTRL_EN));
 }
 
 
@@ -696,8 +696,8 @@ void neorv32_uart1_enable(void) {
 void neorv32_uart1_putc(char c) {
 
   // wait for previous transfer to finish
-  while ((UART1_CT & (1<<UART_CT_TX_BUSY)) != 0);
-  UART1_DATA = ((uint32_t)c) << UART_DATA_LSB;
+  while ((NEORV32_UART1.CTRL & (1<<UART_CTRL_TX_BUSY)) != 0);
+  NEORV32_UART1.DATA = ((uint32_t)c) << UART_DATA_LSB;
 }
 
 
@@ -710,7 +710,7 @@ void neorv32_uart1_putc(char c) {
  **************************************************************************/
 int neorv32_uart1_tx_busy(void) {
 
-  if ((UART1_CT & (1<<UART_CT_TX_BUSY)) != 0) {
+  if ((NEORV32_UART1.CTRL & (1<<UART_CTRL_TX_BUSY)) != 0) {
     return 1;
   }
   return 0;
@@ -728,7 +728,7 @@ char neorv32_uart1_getc(void) {
 
   uint32_t d = 0;
   while (1) {
-    d = UART1_DATA;
+    d = NEORV32_UART1.DATA;
     if ((d & (1<<UART_DATA_AVAIL)) != 0) { // char received?
       return (char)d;
     }
@@ -746,7 +746,7 @@ char neorv32_uart1_getc(void) {
  **************************************************************************/
 int neorv32_uart1_getc_safe(char *data) {
 
-  uint32_t uart_rx = UART1_DATA;
+  uint32_t uart_rx = NEORV32_UART1.DATA;
   if (uart_rx & (1<<UART_DATA_AVAIL)) { // char available at all?
 
     int status = 0;
@@ -786,7 +786,7 @@ int neorv32_uart1_getc_safe(char *data) {
  **************************************************************************/
 int neorv32_uart1_char_received(void) {
 
-  if ((UART1_DATA & (1<<UART_DATA_AVAIL)) != 0) {
+  if ((NEORV32_UART1.DATA & (1<<UART_DATA_AVAIL)) != 0) {
     return 1;
   }
   else {
@@ -805,7 +805,7 @@ int neorv32_uart1_char_received(void) {
  **************************************************************************/
 char neorv32_uart1_char_received_get(void) {
 
-  return (char)UART1_DATA;
+  return (char)NEORV32_UART1.DATA;
 }
 
 

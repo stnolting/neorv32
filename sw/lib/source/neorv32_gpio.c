@@ -52,7 +52,7 @@
  **************************************************************************/
 int neorv32_gpio_available(void) {
 
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_GPIO)) {
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_GPIO)) {
     return 1;
   }
   else {
@@ -71,10 +71,10 @@ void neorv32_gpio_pin_set(int pin) {
   uint32_t mask = (uint32_t)(1 << (pin & 0x1f));
 
   if (pin < 32) {
-    GPIO_OUTPUT_LO |= mask;
+    NEORV32_GPIO.OUTPUT_LO |= mask;
   }
   else {
-    GPIO_OUTPUT_HI |= mask;
+    NEORV32_GPIO.OUTPUT_HI |= mask;
   }
 }
 
@@ -89,10 +89,10 @@ void neorv32_gpio_pin_clr(int pin) {
   uint32_t mask = (uint32_t)(1 << (pin & 0x1f));
 
   if (pin < 32) {
-    GPIO_OUTPUT_LO &= ~mask;
+    NEORV32_GPIO.OUTPUT_LO &= ~mask;
   }
   else {
-    GPIO_OUTPUT_HI &= ~mask;
+    NEORV32_GPIO.OUTPUT_HI &= ~mask;
   }
 }
 
@@ -107,10 +107,10 @@ void neorv32_gpio_pin_toggle(int pin) {
   uint32_t mask = (uint32_t)(1 << (pin & 0x1f));
 
   if (pin < 32) {
-    GPIO_OUTPUT_LO ^= mask;
+    NEORV32_GPIO.OUTPUT_LO ^= mask;
   }
   else {
-    GPIO_OUTPUT_HI ^= mask;
+    NEORV32_GPIO.OUTPUT_HI ^= mask;
   }
 }
 
@@ -126,10 +126,10 @@ uint32_t neorv32_gpio_pin_get(int pin) {
   uint32_t mask = (uint32_t)(1 << (pin & 0x1f));
 
   if (pin < 32) {
-    return GPIO_INPUT_LO & mask;
+    return NEORV32_GPIO.INPUT_LO & mask;
   }
   else {
-    return GPIO_INPUT_HI & mask;
+    return NEORV32_GPIO.INPUT_HI & mask;
   }
 }
 
@@ -141,7 +141,14 @@ uint32_t neorv32_gpio_pin_get(int pin) {
  **************************************************************************/
 void neorv32_gpio_port_set(uint64_t port_data) {
 
-  GPIO_OUTPUT = port_data;
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } data;
+
+  data.uint64 = port_data;
+  NEORV32_GPIO.OUTPUT_LO = data.uint32[0];
+  NEORV32_GPIO.OUTPUT_HI = data.uint32[1];
 }
 
 
@@ -152,6 +159,14 @@ void neorv32_gpio_port_set(uint64_t port_data) {
  **************************************************************************/
 uint64_t neorv32_gpio_port_get(void) {
 
-  return GPIO_INPUT;
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } data;
+
+  data.uint32[0] = NEORV32_GPIO.OUTPUT_LO;
+  data.uint32[1] = NEORV32_GPIO.OUTPUT_HI;
+
+  return data.uint64;
 }
 

@@ -80,7 +80,7 @@ int neorv32_slink_rx7_nonblocking(uint32_t *rx_data);
  * @param[in] tx_data Data to send to link.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_tx0_blocking(uint32_t tx_data) {  
-  SLINK_CH0 = tx_data;
+  NEORV32_SLINK.DATA[0] = tx_data;
 }
 
 
@@ -92,7 +92,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_tx0_blocking(uint32_t 
  * @param[in] tx_data Data to send to link.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_tx1_blocking(uint32_t tx_data) { 
-  SLINK_CH1 = tx_data;
+  NEORV32_SLINK.DATA[1] = tx_data;
 }
 
 
@@ -104,7 +104,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_tx1_blocking(uint32_t 
  * @param[in] tx_data Data to send to link.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_tx2_blocking(uint32_t tx_data) { 
-  SLINK_CH2 = tx_data;
+  NEORV32_SLINK.DATA[2] = tx_data;
 }
 
 
@@ -116,7 +116,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_tx2_blocking(uint32_t 
  * @param[in] tx_data Data to send to link.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_tx3_blocking(uint32_t tx_data) { 
-  SLINK_CH3 = tx_data;
+  NEORV32_SLINK.DATA[3] = tx_data;
 }
 
 
@@ -128,7 +128,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_tx3_blocking(uint32_t 
  * @param[in] tx_data Data to send to link.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_tx4_blocking(uint32_t tx_data) { 
-  SLINK_CH4 = tx_data;
+  NEORV32_SLINK.DATA[4] = tx_data;
 }
 
 
@@ -140,7 +140,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_tx4_blocking(uint32_t 
  * @param[in] tx_data Data to send to link.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_tx5_blocking(uint32_t tx_data) { 
-  SLINK_CH5 = tx_data;
+  NEORV32_SLINK.DATA[5] = tx_data;
 }
 
 
@@ -152,7 +152,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_tx5_blocking(uint32_t 
  * @param[in] tx_data Data to send to link.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_tx6_blocking(uint32_t tx_data) { 
-  SLINK_CH6 = tx_data;
+  NEORV32_SLINK.DATA[6] = tx_data;
 }
 
 
@@ -164,7 +164,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_tx6_blocking(uint32_t 
  * @param[in] tx_data Data to send to link.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_tx7_blocking(uint32_t tx_data) { 
-  SLINK_CH7 = tx_data;
+  NEORV32_SLINK.DATA[7] = tx_data;
 }
 
 
@@ -176,7 +176,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_tx7_blocking(uint32_t 
  * @param[in,out] rx_data Pointer to return read data.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_rx0_blocking(uint32_t *rx_data) { 
-  *rx_data = SLINK_CH0;
+  *rx_data = NEORV32_SLINK.DATA[0];
 }
 
 
@@ -188,7 +188,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_rx0_blocking(uint32_t 
  * @param[in,out] rx_data Pointer to return read data.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_rx1_blocking(uint32_t *rx_data) { 
-  *rx_data = SLINK_CH1;
+  *rx_data = NEORV32_SLINK.DATA[1];
 }
 
 
@@ -200,7 +200,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_rx1_blocking(uint32_t 
  * @param[in,out] rx_data Pointer to return read data.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_rx2_blocking(uint32_t *rx_data) { 
-  *rx_data = SLINK_CH2;
+  *rx_data = NEORV32_SLINK.DATA[2];
 }
 
 
@@ -212,7 +212,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_rx2_blocking(uint32_t 
  * @param[in,out] rx_data Pointer to return read data.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_rx3_blocking(uint32_t *rx_data) { 
-  *rx_data = SLINK_CH3;
+  *rx_data = NEORV32_SLINK.DATA[3];
 }
 
 
@@ -224,7 +224,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_rx3_blocking(uint32_t 
  * @param[in,out] rx_data Pointer to return read data.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_rx4_blocking(uint32_t *rx_data) { 
-  *rx_data = SLINK_CH4;
+  *rx_data = NEORV32_SLINK.DATA[4];
 }
 
 
@@ -236,7 +236,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_rx4_blocking(uint32_t 
  * @param[in,out] rx_data Pointer to return read data.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_rx5_blocking(uint32_t *rx_data) { 
-  *rx_data = SLINK_CH5;
+  *rx_data = NEORV32_SLINK.DATA[5];
 }
 
 
@@ -248,7 +248,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_rx5_blocking(uint32_t 
  * @param[in,out] rx_data Pointer to return read data.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_rx6_blocking(uint32_t *rx_data) { 
-  *rx_data = SLINK_CH6;
+  *rx_data = NEORV32_SLINK.DATA[6];
 }
 
 
@@ -260,7 +260,7 @@ inline void __attribute__ ((always_inline)) neorv32_slink_rx6_blocking(uint32_t 
  * @param[in,out] rx_data Pointer to return read data.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_slink_rx7_blocking(uint32_t *rx_data) { 
-  *rx_data = SLINK_CH7;
+  *rx_data = NEORV32_SLINK.DATA[7];
 }
 
 

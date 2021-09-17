@@ -277,16 +277,16 @@ void neorv32_rte_print_hw_config(void) {
 
   // Processor - general stuff
   neorv32_uart0_printf("\n=== << General >> ===\n"
-                       "Clock speed:   %u Hz\n", SYSINFO_CLK);
-  neorv32_uart0_printf("Full HW reset: "); __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_HW_RESET));
+                       "Clock speed:   %u Hz\n", NEORV32_SYSINFO.CLK);
+  neorv32_uart0_printf("Full HW reset: "); __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_HW_RESET));
   neorv32_uart0_printf("Boot Config.:  Boot ");
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_BOOTLOADER)) {
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_BOOTLOADER)) {
     neorv32_uart0_printf("via Bootloader\n");
   }
   else {
-    neorv32_uart0_printf("from memory (@ 0x%x)\n", SYSINFO_ISPACE_BASE);
+    neorv32_uart0_printf("from memory (@ 0x%x)\n", NEORV32_SYSINFO.ISPACE_BASE);
   }
-  neorv32_uart0_printf("On-chip debug: "); __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_OCD));
+  neorv32_uart0_printf("On-chip debug: "); __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_OCD));
 
 
   // CPU configuration
@@ -330,7 +330,7 @@ void neorv32_rte_print_hw_config(void) {
   }
   
   // Z* CPU extensions
-  tmp = SYSINFO_CPU;
+  tmp = NEORV32_SYSINFO.CPU;
   if (tmp & (1<<SYSINFO_CPU_ZICSR)) {
     neorv32_uart0_printf("Zicsr ");
   }
@@ -381,30 +381,30 @@ void neorv32_rte_print_hw_config(void) {
   // Memory configuration
   neorv32_uart0_printf("\n=== << Memory Configuration >> ===\n");
 
-  neorv32_uart0_printf("Instr. base address:  0x%x\n", SYSINFO_ISPACE_BASE);
+  neorv32_uart0_printf("Instr. base address:  0x%x\n", NEORV32_SYSINFO.ISPACE_BASE);
 
   // IMEM
   neorv32_uart0_printf("Internal IMEM:        ");
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_IMEM)) {
-    neorv32_uart0_printf("yes, %u bytes\n", SYSINFO_IMEM_SIZE);
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_INT_IMEM)) {
+    neorv32_uart0_printf("yes, %u bytes\n", NEORV32_SYSINFO.IMEM_SIZE);
   }
   else {
     neorv32_uart0_printf("no\n");
   }
 
   // DMEM
-  neorv32_uart0_printf("Data base address:    0x%x\n", SYSINFO_DSPACE_BASE);
+  neorv32_uart0_printf("Data base address:    0x%x\n", NEORV32_SYSINFO.DSPACE_BASE);
   neorv32_uart0_printf("Internal DMEM:        ");
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_INT_DMEM)) { neorv32_uart0_printf("yes, %u bytes\n", SYSINFO_DMEM_SIZE); }
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_INT_DMEM)) { neorv32_uart0_printf("yes, %u bytes\n", NEORV32_SYSINFO.DMEM_SIZE); }
   else {  neorv32_uart0_printf("no\n"); }
 
   // i-cache
   neorv32_uart0_printf("Internal i-cache:     ");
-  __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_ICACHE));
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_ICACHE)) {
+  __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_ICACHE));
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_ICACHE)) {
     neorv32_uart0_printf("- ");
 
-    uint32_t ic_block_size = (SYSINFO_CACHE >> SYSINFO_CACHE_IC_BLOCK_SIZE_0) & 0x0F;
+    uint32_t ic_block_size = (NEORV32_SYSINFO.CACHE >> SYSINFO_CACHE_IC_BLOCK_SIZE_0) & 0x0F;
     if (ic_block_size) {
       ic_block_size = 1 << ic_block_size;
     }
@@ -412,7 +412,7 @@ void neorv32_rte_print_hw_config(void) {
       ic_block_size = 0;
     }
 
-    uint32_t ic_num_blocks = (SYSINFO_CACHE >> SYSINFO_CACHE_IC_NUM_BLOCKS_0) & 0x0F;
+    uint32_t ic_num_blocks = (NEORV32_SYSINFO.CACHE >> SYSINFO_CACHE_IC_NUM_BLOCKS_0) & 0x0F;
     if (ic_num_blocks) {
       ic_num_blocks = 1 << ic_num_blocks;
     }
@@ -420,14 +420,14 @@ void neorv32_rte_print_hw_config(void) {
       ic_num_blocks = 0;
     }
 
-    uint32_t ic_associativity = (SYSINFO_CACHE >> SYSINFO_CACHE_IC_ASSOCIATIVITY_0) & 0x0F;
+    uint32_t ic_associativity = (NEORV32_SYSINFO.CACHE >> SYSINFO_CACHE_IC_ASSOCIATIVITY_0) & 0x0F;
     ic_associativity = 1 << ic_associativity;
 
     neorv32_uart0_printf("%u bytes: %u set(s), %u block(s) per set, %u bytes per block", ic_associativity*ic_num_blocks*ic_block_size, ic_associativity, ic_num_blocks, ic_block_size);
     if (ic_associativity == 1) {
       neorv32_uart0_printf(" (direct-mapped)\n");
     }
-    else if (((SYSINFO_CACHE >> SYSINFO_CACHE_IC_REPLACEMENT_0) & 0x0F) == 1) {
+    else if (((NEORV32_SYSINFO.CACHE >> SYSINFO_CACHE_IC_REPLACEMENT_0) & 0x0F) == 1) {
       neorv32_uart0_printf(" (LRU replacement policy)\n");
     }
     else {
@@ -436,9 +436,9 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   neorv32_uart0_printf("Ext. bus interface:   ");
-  __neorv32_rte_print_true_false(SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT));
+  __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_EXT));
   neorv32_uart0_printf("Ext. bus Endianness:  ");
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT_ENDIAN)) {
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_EXT_ENDIAN)) {
     neorv32_uart0_printf("big\n");
   }
   else {
@@ -448,20 +448,20 @@ void neorv32_rte_print_hw_config(void) {
   // peripherals
   neorv32_uart0_printf("\n=== << Peripherals >> ===\n");
 
-  tmp = SYSINFO_FEATURES;
-  neorv32_uart0_printf("GPIO   - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_GPIO));
-  neorv32_uart0_printf("MTIME  - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_MTIME));
-  neorv32_uart0_printf("UART0  - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_UART0));
-  neorv32_uart0_printf("UART1  - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_UART1));
-  neorv32_uart0_printf("SPI    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_SPI));
-  neorv32_uart0_printf("TWI    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_TWI));
-  neorv32_uart0_printf("PWM    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_PWM));
-  neorv32_uart0_printf("WDT    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_WDT));
-  neorv32_uart0_printf("TRNG   - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_TRNG));
-  neorv32_uart0_printf("CFS    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_CFS));
-  neorv32_uart0_printf("SLINK  - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_SLINK));
-  neorv32_uart0_printf("NEOLED - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_NEOLED));
-  neorv32_uart0_printf("XIRQ   - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_FEATURES_IO_XIRQ));
+  tmp = NEORV32_SYSINFO.SOC;
+  neorv32_uart0_printf("GPIO   - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_GPIO));
+  neorv32_uart0_printf("MTIME  - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_MTIME));
+  neorv32_uart0_printf("UART0  - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_UART0));
+  neorv32_uart0_printf("UART1  - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_UART1));
+  neorv32_uart0_printf("SPI    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_SPI));
+  neorv32_uart0_printf("TWI    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_TWI));
+  neorv32_uart0_printf("PWM    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_PWM));
+  neorv32_uart0_printf("WDT    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_WDT));
+  neorv32_uart0_printf("TRNG   - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_TRNG));
+  neorv32_uart0_printf("CFS    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_CFS));
+  neorv32_uart0_printf("SLINK  - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_SLINK));
+  neorv32_uart0_printf("NEOLED - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_NEOLED));
+  neorv32_uart0_printf("XIRQ   - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_XIRQ));
 }
 
 
