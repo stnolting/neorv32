@@ -24,7 +24,7 @@ The custom functions subsystem can be used to implement application-specific use
 custom hardware accelerators via the external memory interface, the CFS provide a convenient and low-latency
 extension and customization option.
 
-The CFS provides up to 32x 32-bit memory-mapped registers (see register map table below). The actual
+The CFS provides up to 32x 32-bit memory-mapped registers `REG` (see register map table below). The actual
 functionality of these register has to be defined by the hardware designer.
 
 [INFO]
@@ -39,8 +39,8 @@ register map table below). Note that all interface registers provide 32-bit acce
 [source,c]
 ----
 // C-code CFS usage example
-CFS_REG_0 = (uint32_t)some_data_array(i); // write to CFS register 0
-uint32_t temp = CFS_REG_20; // read from CFS register 20
+NEORV32_CFS.REG[0] = (uint32_t)some_data_array(i); // write to CFS register 0
+uint32_t temp = NEORV32_CFS.REG[20]; // read from CFS register 20
 ----
 
 **CFS Interrupt**
@@ -63,14 +63,14 @@ generic (default = 32-bit). The size of the output signal conduit `cfs_out_o` is
 _IO_CFS_OUT_SIZE_ configuration generic (default = 32-bit). If the custom function subsystem is not implemented
 (_IO_CFS_EN_ = false) the `cfs_out_o` signal is tied to all-zero.
 
-.CFS register map
+.CFS register map (`struct NEORV32_CFS`)
 [cols="^4,<5,^2,^3,<14"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Function
-| `0xfffffe00` | _CFS_REG_0_  |`31:0` | (r)/(w) | custom CFS interface register 0
-| `0xfffffe04` | _CFS_REG_1_  |`31:0` | (r)/(w) | custom CFS interface register 1
-| ...          | ...          |`31:0` | (r)/(w) | ...
-| `0xfffffe78` | _CFS_REG_30_ |`31:0` | (r)/(w) | custom CFS interface register 30
-| `0xfffffe7c` | _CFS_REG_31_ |`31:0` | (r)/(w) | custom CFS interface register 31
+| `0xfffffe00` | `NEORV32_CFS.REG[0]`  |`31:0` | (r)/(w) | custom CFS interface register 0
+| `0xfffffe04` | `NEORV32_CFS.REG[1]`  |`31:0` | (r)/(w) | custom CFS interface register 1
+| ...          | ...                   |`31:0` | (r)/(w) | ...
+| `0xfffffe78` | `NEORV32_CFS.REG[30]` |`31:0` | (r)/(w) | custom CFS interface register 30
+| `0xfffffe7c` | `NEORV32_CFS.REG[31]` |`31:0` | (r)/(w) | custom CFS interface register 31
 |=======================

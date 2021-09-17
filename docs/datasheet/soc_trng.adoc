@@ -55,10 +55,10 @@ mask of the LFSR can be customized using `lfsr_taps_c`.
 
 **Using the TRNG**
 
-The TRNG features a single register for status and data access. When the _TRNG_CT_EN_ control register bit is
-set, the TRNG is enabled and starts operation. As soon as the _TRNG_CT_VALID_ bit is set, the currently
-sampled 8-bit random data byte can be obtained from the lowest 8 bits of the TRNG_CT register
-(_TRNG_CT_DATA_MSB_ : _TRNG_CT_DATA_LSB_). The _TRNG_CT_VALID_ bit is automatically cleared
+The TRNG features a single register for status and data access. When the _TRNG_CTRL_EN_ control register (`CTRL`)
+bit is set, the TRNG is enabled and starts operation. As soon as the _TRNG_CTRL_VALID_ bit is set, the currently
+sampled 8-bit random data byte can be obtained from the lowest 8 bits of the `CTRL` register
+(_TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_LSB_). The _TRNG_CTRL_VALID_ bit is automatically cleared
 when reading the control register.
 
 [IMPORTANT]
@@ -73,12 +73,12 @@ However, generating larger histograms of the generated random number shows an eq
 average of the random numbers = 127). A simple evaluation test/demo program can be found in
 `sw/example/demo_trng`.
 
-.TRNG register map
+.TRNG register map (`struct NEORV32_TRNG`)
 [cols="<2,<2,<4,^1,<7"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.3+<| `0xffffffb8` .3+<| _TRNG_CT_ <|`7:0` _TRNG_CT_DATA_MSB_ : _TRNG_CT_DATA_MSB_ ^| r/- <| 8-bit random data output
-                                   <|`30` _TRNG_CT_EN_                             ^| r/w <| TRNG enable
-                                   <|`31` _TRNG_CT_VALID_                          ^| r/- <| random data output is valid when set
+.3+<| `0xffffffb8` .3+<| `NEORV32_TRNG.CTRL` <|`7:0` _TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_MSB_ ^| r/- <| 8-bit random data output
+                                             <|`30` _TRNG_CTRL_EN_                             ^| r/w <| TRNG enable
+                                             <|`31` _TRNG_CTRL_VALID_                          ^| r/- <| random data output is valid when set
 |=======================

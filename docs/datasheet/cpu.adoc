@@ -344,7 +344,7 @@ Volume II: Privileged Architecture_, which are available in the projects `docs/r
 
 [TIP]
 The CPU can discover available ISA extensions via the <<_misa>> CSR and the
-_SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register
+`CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register
 or by executing an instruction and checking for an _illegal instruction exception_.
 
 [NOTE]

@@ -128,8 +128,7 @@ Endianness (of the external memory interface) can be configured via the _MEM_EXT
 By default, the external memory interface uses little-endian byte-order (like the rest of the processor / CPU).
 
 Application software can check the Endianness configuration of the external bus interface via the
-_SYSINFO_FEATURES_MEM_EXT_ENDIAN_ flag in the processor's SYSINFO module (see section
-<<_system_configuration_information_memory_sysinfo>> for more information).
+SYSINFO module (see section <<_system_configuration_information_memory_sysinfo>> for more information).
 
 **AXI4-Lite Connectivity**
 

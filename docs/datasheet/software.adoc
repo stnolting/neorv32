@@ -61,6 +61,7 @@ files are currently part of the NEORV32 core library:
 |=======================
 | C source file | C header file | Description
 | -                  | `neorv32.h`            | main NEORV32 definitions and library file
+| -                  | `neorv32_legacy.h`     | legacy back-compatibility layer
 | `neorv32_cfs.c`    | `neorv32_cfs.h`        | HW driver (stub)footnote:[This driver file only represents a stub, since the real CFS drivers are defined by the actual CFS implementation.] functions for the custom functions subsystem
 | `neorv32_cpu.c`    | `neorv32_cpu.h`        | HW driver functions for the NEORV32 **CPU**
 | `neorv32_gpio.c`   | `neorv32_gpio.h`       | HW driver functions for the **GPIO**
@@ -441,8 +442,8 @@ BLDV: Mar 23 2021
 HWV:  0x01050208
 CLK:  0x05F5E100
 MISA: 0x40901105
-ZEXT: 0x00000023
-PROC: 0x0EFF0037
+CPU:  0x00000023
+SOC:  0x0EFF0037
 IMEM: 0x00004000 bytes @ 0x00000000
 DMEM: 0x00002000 bytes @ 0x80000000
 
@@ -458,8 +459,8 @@ This start-up screen also gives some brief information about the bootloader and 
 | `HWV`  | Processor hardware version (from the `mimpid` CSR) in BCD format (example: `0x01040606` = v1.4.6.6).
 | `CLK`  | Processor clock speed in Hz (via the SYSINFO module, from the _CLOCK_FREQUENCY_ generic).
 | `MISA` | CPU extensions (from the `misa` CSR).
-| `ZEXT` | CPU sub-extensions (via the _SYSINFO_CPU_ register in the SYSINFO module)
-| `PROC` | Processor configuration (via the _SYSINFO_FEATURES_ register in the SYSINFO module / from the IO_* and MEM_* configuration generics).
+| `CPU`  | CPU sub-extensions (via the `CPU` register in the SYSINFO module)
+| `SOC`  | Processor configuration (via the `SOC` register in the SYSINFO module / from the IO_* and MEM_* configuration generics).
 | `IMEM` | IMEM memory base address and size in byte (from the _MEM_INT_IMEM_SIZE_ generic).
 | `DMEM` | DMEM memory base address and size in byte (from the _MEM_INT_DMEM_SIZE_ generic).
 |=======================
@@ -476,8 +477,8 @@ HWV:  0x01050208
 CLK:  0x05F5E100
 USER: 0x10000DE0
 MISA: 0x40901105
-ZEXT: 0x00000023
-PROC: 0x0EFF0037
+CPU:  0x00000023
+SOC:  0x0EFF0037
 IMEM: 0x00004000 bytes @ 0x00000000
 DMEM: 0x00002000 bytes @ 0x80000000
 

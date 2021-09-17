@@ -229,7 +229,7 @@ CSR is simply ignored and will NOT cause an illegal instruction exception.
 
 [TIP]
 Information regarding the implemented RISC-V `Z*` _sub-extensions_ (like `Zicsr` or `Zfinx`) can be found
-in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
+in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 
 
 :sectnums!:
@@ -508,16 +508,16 @@ configuration with <<_cpu_cnt_width>> less than 64 is not RISC-V compliant.
 [IMPORTANT]
 If _CPU_CNT_WIDTH_ is less than 64 (the default value) and greater than or equal 32, the according
 MSBs of `[m]cycleh` and `[m]instreth` are read-only and always read as zero. This configuration
-will also set the _SYSINFO_CPU_ZXSCNT_ flag in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register. +
+will also set the _SYSINFO_CPU_ZXSCNT_ flag in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register. +
  +
 If _CPU_CNT_WIDTH_ is less than 32 and greater than 0, the `[m]cycleh` and `[m]instreth` do not
 exist and any access will raise an illegal instruction exception. Furthermore, the according MSBs of
 `[m]cycle` and `[m]instret` are read-only and always read as zero. This configuration will also
-set the _SYSINFO_CPU_ZXSCNT_ flag in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register. +
+set the _SYSINFO_CPU_ZXSCNT_ flag in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register. +
  +
 If _CPU_CNT_WIDTH_ is 0, <<_cycleh>> and <<_instreth>> / <<_mcycleh>> and <<_minstreth>> do not
 exist and any access will raise an illegal instruction exception. This configuration will also set the
-_SYSINFO_CPU_ZXNOCNT_ flag in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
+_SYSINFO_CPU_ZXNOCNT_ flag in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 
 
 :sectnums!:

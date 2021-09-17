@@ -137,7 +137,7 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 
 [TIP]
 Privileged software can determine the actual CPU and processor configuration via the `misa` and the 
-i_SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
+<<_system_configuration_information_memory_sysinfo, SYSINFO>> registers.
 
 [NOTE]
 If optional modules (like CPU extensions or peripheral devices) are *not enabled* the according circuitry
@@ -432,7 +432,7 @@ See section <<_pmp_physical_memory_protection>> for more information.
 | **PMP_NUM_REGIONS** | _natural_ | 0
 3+| Total number of implemented protections regions (0..64). If this generics is zero no physical memory
 protection logic will be implemented at all. Setting <<_pmp_num_regions>>_ > 0 will set the _SYSINFO_CPU_PMP_ flag
-in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
+in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 |======
 
 
@@ -463,7 +463,7 @@ See section <<_hpm_hardware_performance_monitors>> for more information.
 | **HPM_NUM_CNTS** | _natural_ | 0
 3+| Total number of implemented hardware performance monitor counters (0..29). If this generics is zero, no
 hardware performance monitor logic will be implemented at all. Setting <<_hpm_num_cnts>> > 0 will set the _SYSINFO_CPU_HPM_ flag
-in the _SYSINFO_CPU_ <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
+in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 |======
 
 
@@ -1313,6 +1313,11 @@ accessed using a memory-mapped scheme. A special linker script as well as the NE
 library abstract the specific memory layout for the user.
 
 [IMPORTANT]
+The base address of each component/module has to be aligned to the
+total size of the module's occupied address space! The occupied address space
+has to be a power of two (minimum 4 bytes)! Address spaces must not overlap!
+
+[IMPORTANT]
 When accessing an IO device that hast not been implemented (via the according _IO_x_EN_ generic), a
 load/store access fault exception is triggered.
 
@@ -1335,11 +1340,21 @@ application start-up code `crt0.S`.
 **Nomenclature for the Peripheral / IO Devices Listing**
 
 Each peripheral device chapter features a register map showing accessible control and data registers of the
-according device including the implemented control and status bits. You can directly interact with these
-registers/bits via the provided _C-code defines_. These defines are set in the main processor core library
-include file `sw/lib/include/neorv32.h`. The registers and/or register bits, which can be accessed
-directly using plain C-code, are marked with a "[C]".
+according device including the implemented control and status bits. C-language code can directly interact with these
+registers via pre-defined `struct`. Each IO/peripheral module provides a unique `struct`. All accessible
+interface registers of this module are defined as members of this `struct`. The pre-defined `struct` are defined int the
+main processor core library include file `sw/lib/include/neorv32.h`.
 
+The naming scheme of these low-level hardware access structs is `NEORV32_<module_name>.<register_name>`.
+
+.Low-level hardware access example in C using the pre-defined `struct`
+[source,c]
+----
+// Read from SYSINFO "CLK" register
+uint32_t temp = NEORV32_SYSINFO.CLK;
+----
+
+The registers and/or register bits, which can be accessed directly using plain C-code, are marked with a "[C]".
 Not all registers or register bits can be arbitrarily read/written. The following read/write access types are
 available:
 
