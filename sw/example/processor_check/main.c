@@ -118,7 +118,7 @@ int main() {
 
   // init UARTs at default baud rate, no parity bits, no hw flow control
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
-  UART1_CT = UART0_CT; // copy configuration to initialize UART1
+  NEORV32_UART1.CTRL = NEORV32_UART0.CTRL; // copy configuration to initialize UART1
 
 #ifdef SUPPRESS_OPTIONAL_UART_PRINT
   neorv32_uart0_disable(); // do not generate any UART0 output
@@ -416,7 +416,7 @@ int main() {
   PRINT_STANDARD("[%i] MRET in U-mode: ", cnt_test);
 
   // skip if U-mode is not implemented
-  if (SYSINFO_CPU & (1<<SYSINFO_CPU_DEBUGMODE)) {
+  if (NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_DEBUGMODE)) {
 
     cnt_test++;
 
@@ -445,7 +445,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   PRINT_STANDARD("[%i] External memory access (@ 0x%x): ", cnt_test, (uint32_t)EXT_MEM_BASE);
 
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_MEM_EXT)) {
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_EXT)) {
     cnt_test++;
 
     // create test program in RAM
@@ -954,7 +954,7 @@ int main() {
 
     // configure WDT
     neorv32_wdt_setup(CLK_PRSC_4096, 0, 1); // highest clock prescaler, trigger IRQ on timeout, lock access
-    WDT_CT = 0; // try to deactivate WDT (should fail as access is loced)
+    NEORV32_WDT.CTRL = 0; // try to deactivate WDT (should fail as access is loced)
     neorv32_wdt_force(); // force watchdog into action
 
     // wait some time for the IRQ to arrive the CPU
@@ -999,12 +999,12 @@ int main() {
     while(neorv32_uart0_tx_busy());
 
     // backup current UART0 configuration
-    tmp_a = UART0_CT;
+    tmp_a = NEORV32_UART0.CTRL;
 
     // make sure UART is enabled
-    UART0_CT |= (1 << UART_CT_EN);
+    NEORV32_UART0.CTRL |= (1 << UART_CTRL_EN);
     // make sure sim mode is disabled
-    UART0_CT &= ~(1 << UART_CT_SIM_MODE);
+    NEORV32_UART0.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
     // trigger UART0 RX IRQ
     neorv32_uart0_putc(0);
@@ -1017,7 +1017,7 @@ int main() {
     asm volatile("nop");
 
     // restore original configuration
-    UART0_CT = tmp_a;
+    NEORV32_UART0.CTRL = tmp_a;
 
     // disable fast interrupt
     neorv32_cpu_irq_disable(CSR_MIE_FIRQ2E);
@@ -1047,12 +1047,12 @@ int main() {
     while(neorv32_uart0_tx_busy());
 
     // backup current UART0 configuration
-    tmp_a = UART0_CT;
+    tmp_a = NEORV32_UART0.CTRL;
 
     // make sure UART is enabled
-    UART0_CT |= (1 << UART_CT_EN);
+    NEORV32_UART0.CTRL |= (1 << UART_CTRL_EN);
     // make sure sim mode is disabled
-    UART0_CT &= ~(1 << UART_CT_SIM_MODE);
+    NEORV32_UART0.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
     // trigger UART0 TX IRQ
     neorv32_uart0_putc(0);
@@ -1065,7 +1065,7 @@ int main() {
     asm volatile("nop");
 
     // restore original configuration
-    UART0_CT = tmp_a;
+    NEORV32_UART0.CTRL = tmp_a;
 
     neorv32_cpu_irq_disable(CSR_MIE_FIRQ3E);
 
@@ -1091,12 +1091,12 @@ int main() {
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ4E);
 
     // backup current UART1 configuration
-    tmp_a = UART1_CT;
+    tmp_a = NEORV32_UART1.CTRL;
 
     // make sure UART is enabled
-    UART1_CT |= (1 << UART_CT_EN);
+    NEORV32_UART1.CTRL |= (1 << UART_CTRL_EN);
     // make sure sim mode is disabled
-    UART1_CT &= ~(1 << UART_CT_SIM_MODE);
+    NEORV32_UART1.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
     // trigger UART1 RX IRQ
     neorv32_uart1_putc(0);
@@ -1109,7 +1109,7 @@ int main() {
     asm volatile("nop");
 
     // restore original configuration
-    UART1_CT = tmp_a;
+    NEORV32_UART1.CTRL = tmp_a;
 
     // disable fast interrupt
     neorv32_cpu_irq_disable(CSR_MIE_FIRQ4E);
@@ -1136,12 +1136,12 @@ int main() {
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ5E);
 
     // backup current UART1 configuration
-    tmp_a = UART1_CT;
+    tmp_a = NEORV32_UART1.CTRL;
 
     // make sure UART is enabled
-    UART1_CT |= (1 << UART_CT_EN);
+    NEORV32_UART1.CTRL |= (1 << UART_CTRL_EN);
     // make sure sim mode is disabled
-    UART1_CT &= ~(1 << UART_CT_SIM_MODE);
+    NEORV32_UART1.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
     // trigger UART1 TX IRQ
     neorv32_uart1_putc(0);
@@ -1154,7 +1154,7 @@ int main() {
     asm volatile("nop");
 
     // restore original configuration
-    UART1_CT = tmp_a;
+    NEORV32_UART1.CTRL = tmp_a;
 
     // disable fast interrupt
     neorv32_cpu_irq_disable(CSR_MIE_FIRQ5E);
@@ -1278,8 +1278,8 @@ int main() {
     }
 
     neorv32_xirq_global_disable();
-    XIRQ_IER = 0;
-    XIRQ_IPR = -1;
+    NEORV32_XIRQ.IER = 0;
+    NEORV32_XIRQ.IPR = -1;
   }
 
 
@@ -1456,7 +1456,7 @@ int main() {
     // find out minimal region size (granularity)
     tmp_b = neorv32_cpu_pmp_get_granularity();
 
-    tmp_a = SYSINFO_DSPACE_BASE; // base address of protected region
+    tmp_a = NEORV32_SYSINFO.DSPACE_BASE; // base address of protected region
     PRINT_STANDARD("Creating protected page (NAPOT, [!X,!W,!R], %u bytes) @ 0x%x: ", tmp_b, tmp_a);
 
     // configure
@@ -1792,9 +1792,9 @@ void test_fail(void) {
 int __neorv32_crt0_after_main(int32_t return_code) {
 
   // make sure sim mode is disabled and UARTs are actually enabled
-  UART0_CT |=  (1 << UART_CT_EN);
-  UART0_CT &= ~(1 << UART_CT_SIM_MODE);
-  UART1_CT = UART0_CT;
+  NEORV32_UART0.CTRL |=  (1 << UART_CTRL_EN);
+  NEORV32_UART0.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
+  NEORV32_UART1.CTRL = NEORV32_UART0.CTRL;
 
   // minimal result report
   PRINT_CRITICAL("%u/%u\n", (uint32_t)return_code, (uint32_t)cnt_test);

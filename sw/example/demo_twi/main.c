@@ -180,8 +180,8 @@ void set_speed(void) {
   uint8_t prsc = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
   if ((prsc >= 0) && (prsc < 8)) { // valid?
-    TWI_CT = 0; // reset
-    TWI_CT = (1 << TWI_CT_EN) | (prsc << TWI_CT_PRSC0);
+    NEORV32_TWI.CTRL = 0; // reset
+    NEORV32_TWI.CTRL = (1 << TWI_CTRL_EN) | (prsc << TWI_CTRL_PRSC0);
     neorv32_uart_printf("\nDone.\n");
   }
   else {
@@ -202,7 +202,7 @@ void set_speed(void) {
     case 7: div = 4 * 4096; break;
     default: div = 0; break;
   }
-  uint32_t clock = SYSINFO_CLK / div;
+  uint32_t clock = NEORV32_SYSINFO.CLK / div;
   neorv32_uart_printf("New I2C clock: %u Hz\n", clock);
 }
 

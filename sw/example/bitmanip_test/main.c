@@ -97,7 +97,7 @@ int main() {
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
   // check if Zbb extension is implemented at all
-  if ((SYSINFO_CPU & (1<<SYSINFO_CPU_ZBB)) == 0) {
+  if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_ZBB)) == 0) {
     neorv32_uart_print("Error! <Zbb> extension not synthesized!\n");
     return 1;
   }
