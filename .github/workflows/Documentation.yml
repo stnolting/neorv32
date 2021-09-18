@@ -93,14 +93,8 @@ jobs:
           NEORV32-SITE-nightly.tar.gz
           pdf/NEORV32*nightly.pdf
 
+    - name: '🐍 Install doit'
+      run: pip install doit
+
     - name: '🚀 Deploy to GitHub-Pages'
-      run: |
-        cd public
-        git init
-        cp ../.git/config ./.git/config
-        touch .nojekyll
-        git add .
-        git config --local user.email "push@gha"
-        git config --local user.name "GHA"
-        git commit -am "update ${{ github.sha }}"
-        git push -u origin +HEAD:gh-pages
+      run: doit DeployToGitHubPages "update ${{ github.sha }}"
