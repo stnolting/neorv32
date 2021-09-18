@@ -1,10 +1,14 @@
+#!/usr/bin/env python3
+
 # doit
 
-from sys import executable
+from sys import executable, argv as sys_argv, exit as sys_exit
 from os import environ
 from pathlib import Path
 
 from doit.action import CmdAction
+from doit.cmd_base import ModuleTaskLoader
+from doit.doit_cmd import DoitMain
 
 from tasks.examples import Example, GenerateExamplesJobMatrix, PRJ
 
@@ -212,3 +216,7 @@ def task_DeployToGitHubPages():
         "doc": "Create a clean branch in subdir 'public' and push to branch 'gh-pages'",
         "pos_arg": "posargs",
     }
+
+
+if __name__ == '__main__':
+    sys_exit(DoitMain(ModuleTaskLoader(globals())).run(sys_argv[1:]))

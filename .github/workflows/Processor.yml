@@ -34,12 +34,12 @@ jobs:
     - name: '⚙️ Build Software Framework Tests'
       uses: docker://ghcr.io/stnolting/neorv32/sim
       with:
-        args: doit BuildAndInstallSoftwareFrameworkTests
+        args: ./do.py BuildAndInstallSoftwareFrameworkTests
 
     - name: '🚧 Run Processor Hardware Tests with shell script'
       uses: docker://ghcr.io/stnolting/neorv32/sim
       with:
-        args: doit sim:Simple
+        args: ./do.py sim:Simple
 
 
   VUnit-Container:
@@ -54,7 +54,7 @@ jobs:
     - name: '⚙️ Build and install Processor Check software'
       uses: docker://ghcr.io/stnolting/neorv32/sim
       with:
-        args: doit BuildAndInstallCheckSoftware
+        args: ./do.py BuildAndInstallCheckSoftware
 
     - name: '📤 Archive Processor Check application image'
       uses: actions/upload-artifact@v2
@@ -65,4 +65,4 @@ jobs:
     - name: '🚧 Run Processor Hardware Tests with VUnit'
       uses: docker://ghcr.io/stnolting/neorv32/sim
       with:
-        args: doit sim:VUnit
+        args: ./do.py sim:VUnit

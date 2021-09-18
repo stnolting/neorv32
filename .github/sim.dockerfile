@@ -3,7 +3,7 @@
 FROM gcr.io/hdl-containers/debian/bullseye/sim/osvb
 
 RUN \
- --mount=type=bind,src=dodo.py,target=/opt/dodo.py,rw=true \
+ --mount=type=bind,src=do.py,target=/opt/do.py,rw=true \
  --mount=type=bind,src=tasks,target=/opt/tasks,rw=true \
  apt-get update -qq \
  && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
@@ -18,6 +18,6 @@ RUN \
  && pip3 install doit \
  && rm -rf ~/.cache \
  && cd /opt \
- && doit SetupRISCVGCC
+ && ./do.py SetupRISCVGCC
 
 ENV PATH $PATH:/opt/riscv/bin

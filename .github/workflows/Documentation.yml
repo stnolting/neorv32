@@ -50,7 +50,7 @@ jobs:
       run: pip install doit
 
     - name: '📚 Build Datasheet and User Guide (PDF and HTML)'
-      run: doit Documentation container
+      run: ./do.py Documentation container
 
     - name: '📤 Upload Artifact: HTML'
       uses: actions/upload-artifact@v2
@@ -100,4 +100,4 @@ jobs:
       run: pip install doit
 
     - name: '🚀 Deploy to GitHub-Pages'
-      run: doit DeployToGitHubPages "update ${{ github.sha }}"
+      run: ./do.py DeployToGitHubPages "update ${{ github.sha }}"

@@ -30,7 +30,7 @@ jobs:
         echo "$GITHUB_WORKSPACE/riscv/bin" >> $GITHUB_PATH
         echo $GITHUB_WORKSPACE
         pip install doit
-        doit SetupRISCVGCC
+        ./do.py SetupRISCVGCC
 
     - name: '🔧 Setup GHDL Simulator'
       uses: ghdl/setup-ghdl-ci@nightly
@@ -38,4 +38,4 @@ jobs:
         backend: gcc
 
     - name: '🚧 Run RISC-V Architecture Tests'
-      run: doit RunRISCVArchitectureTests -s ${{ matrix.suite }}
+      run: ./do.py RunRISCVArchitectureTests -s ${{ matrix.suite }}

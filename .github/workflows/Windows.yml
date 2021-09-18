@@ -23,7 +23,7 @@ jobs:
 
     - name: '🔧 Generate examples matrix'
       id: generate
-      run: doit GenerateExamplesJobMatrix
+      run: ./do.py GenerateExamplesJobMatrix
 
 
   Implementation:
@@ -63,7 +63,7 @@ jobs:
       run: pip install doit
 
     - name: '🚧 Generate ${{ matrix.board }} ${{ matrix.design }} bitstream'
-      run: doit ex:${{ matrix.board }} -d ${{ matrix.design }} clean bit
+      run: ./do.py ex:${{ matrix.board }} -d ${{ matrix.design }} clean bit
 
 
   Processor:
@@ -99,9 +99,9 @@ jobs:
       run: pip install doit vunit_hdl
 
     - name: '⚙️ Build and install Processor Check software'
-      run: doit BuildAndInstallCheckSoftware
+      run: ./do.py BuildAndInstallCheckSoftware
       env:
         RISCV_PREFIX: riscv64-unknown-elf-
 
     - name: '🚧 Run Processor Hardware Tests with VUnit'
-      run: doit sim:VUnit -a '--ci-mode -v'
+      run: ./do.py sim:VUnit -a '--ci-mode -v'
