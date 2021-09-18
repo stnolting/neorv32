@@ -25,26 +25,26 @@ use via the top's `mtime_o` signal.
 If the processor-internal **MTIME unit is NOT implemented**, the top's `mtime_i` input signal is used to update the `time[h]` CSRs
 and the `MTI` machine timer interrupt) CPU interrupt is directly connected to the top's `mtime_irq_i` input.
 
-The 64-bit system time can be accessed via the `MTIME_LO` and `MTIME_HI` memory-mapped registers (read/write) and also via
-the CPU's `time[h]` CSRs (read-only). A 64-bit time compare register – accessible via memory-mapped `MTIMECMP_LO` and `MTIMECMP_HI`
+The 64-bit system time can be accessed via the `TIME_LO` and `TIME_HI` memory-mapped registers (read/write) and also via
+the CPU's `time[h]` CSRs (read-only). A 64-bit time compare register – accessible via memory-mapped `TIMECMP_LO` and `TIMECMP_HI`
 registers – are used to configure an interrupt to the CPU. The interrupt is triggered
-whenever `MTIME` (high & low part) >= `MTIMECMP` (high & low part) and is directly forwarded to the CPU's `MTI` interrupt.
+whenever `TIME` (high & low part) >= `TIMECMP` (high & low part) and is directly forwarded to the CPU's `MTI` interrupt.
 
 [TIP]
 The interrupt request is a single-shot signal,
 so the CPU is triggered once if the system time is greater than or equal to the compare time. Hence,
-another MTIME IRQ is only possible when updating `MTIMECMP`.
+another MTIME IRQ is only possible when updating `TIMECMP`.
 
 The 64-bit counter and the 64-bit comparator are implemented as 2×32-bit counters and comparators with a
 registered carry to prevent a 64-bit carry chain and thus, to simplify timing closure.
 
-.MTIME register map
+.MTIME register map (`struct NEORV32_MTIME`)
 [cols="<3,<3,^1,^1,<6"]
 [options="header",grid="all"]
 |=======================
 | Address      | Name [C]      | Bits | R/W | Function
-| `0xffffff90` | _MTIME_LO_    | 31:0 | r/w | machine system time, low word
-| `0xffffff94` | _MTIME_HI_    | 31:0 | r/w | machine system time, high word
-| `0xffffff98` | _MTIMECMP_LO_ | 31:0 | r/w | time compare, low word
-| `0xffffff9c` | _MTIMECMP_HI_ | 31:0 | r/w | time compare, high word
+| `0xffffff90` | `NEORV32_MTIME.TIME_LO`    | 31:0 | r/w | machine system time, low word
+| `0xffffff94` | `NEORV32_MTIME.TIME_HI`    | 31:0 | r/w | machine system time, high word
+| `0xffffff98` | `NEORV32_MTIME.TIMECMP_LO` | 31:0 | r/w | time compare, low word
+| `0xffffff9c` | `NEORV32_MTIME.TIMECMP_HI` | 31:0 | r/w | time compare, high word
 |=======================

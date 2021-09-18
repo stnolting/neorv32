@@ -151,7 +151,7 @@ uint64_t neorv32_cpu_get_cycle(void) {
     uint32_t uint32[sizeof(uint64_t)/2];
   } cycles;
 
-  uint32_t tmp1, tmp2, tmp3;
+  register uint32_t tmp1, tmp2, tmp3;
   while(1) {
     tmp1 = neorv32_cpu_csr_read(CSR_CYCLEH);
     tmp2 = neorv32_cpu_csr_read(CSR_CYCLE);
@@ -202,7 +202,7 @@ uint64_t neorv32_cpu_get_instret(void) {
     uint32_t uint32[sizeof(uint64_t)/2];
   } cycles;
 
-  uint32_t tmp1, tmp2, tmp3;
+  register uint32_t tmp1, tmp2, tmp3;
   while(1) {
     tmp1 = neorv32_cpu_csr_read(CSR_INSTRETH);
     tmp2 = neorv32_cpu_csr_read(CSR_INSTRET);
@@ -253,7 +253,7 @@ uint64_t neorv32_cpu_get_systime(void) {
     uint32_t uint32[sizeof(uint64_t)/2];
   } cycles;
 
-  uint32_t tmp1, tmp2, tmp3;
+  register uint32_t tmp1, tmp2, tmp3;
   while(1) {
     tmp1 = neorv32_cpu_csr_read(CSR_TIMEH);
     tmp2 = neorv32_cpu_csr_read(CSR_TIME);
@@ -271,36 +271,51 @@ uint64_t neorv32_cpu_get_systime(void) {
 
 
 /**********************************************************************//**
- * Simple delay function using busy wait (simple loop).
+ * Delay function using busy wait.
  *
- * @warning This function is not really precise (especially if there is no M extension available)! Use a timer-based approach (using cycle or time CSRs) for precise timings.
+ * @note This function uses the time CSRs (from int./ext. MTIME). A simple ASM loop
+ * is used as fall back if system timer is not advancing (no MTIME available).
  *
- * @param[in] time_ms Time in ms to wait (max 32767ms).
+ * @warning Delay time might be less precise if M extensions is not available
+ * (especially if MTIME unit is not available).
+ *
+ * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
  **************************************************************************/
-void neorv32_cpu_delay_ms(int16_t time_ms) {
+void neorv32_cpu_delay_ms(uint32_t time_ms) {
 
-  const uint32_t loop_cycles_c = 16; // clock cycles per iteration of the ASM loop
-
-  // check input
-  if (time_ms < 0) {
-    time_ms = -time_ms;
-  }
-
-  uint32_t clock = SYSINFO_CLK; // clock ticks per second
+  uint32_t clock = NEORV32_SYSINFO.CLK; // clock ticks per second
   clock = clock / 1000; // clock ticks per ms
 
   uint64_t wait_cycles = ((uint64_t)clock) * ((uint64_t)time_ms);
-  uint32_t ticks = (uint32_t)(wait_cycles / loop_cycles_c);
 
-  asm volatile (" .balign 4                                        \n" // make sure this is 32-bit aligned
-                " __neorv32_cpu_delay_ms_start:                    \n"
-                " beq  %[cnt_r], zero, __neorv32_cpu_delay_ms_end  \n" // 3 cycles (not taken)
-                " beq  %[cnt_r], zero, __neorv32_cpu_delay_ms_end  \n" // 3 cycles (never taken)
-                " addi %[cnt_w], %[cnt_r], -1                      \n" // 2 cycles
-                " nop                                              \n" // 2 cycles
-                " j    __neorv32_cpu_delay_ms_start                \n" // 6 cycles
-                " __neorv32_cpu_delay_ms_end: "
-                : [cnt_w] "=r" (ticks) : [cnt_r] "r" (ticks));
+  register uint64_t tmp = neorv32_cpu_get_systime();
+  if (neorv32_cpu_get_systime() > tmp) { // system time advancing (MTIME available and running)?
+
+    // use MTIME machine timer
+    tmp += wait_cycles;
+    while(1) {
+      if (neorv32_cpu_get_systime() >= tmp) {
+        break;
+      }
+    }
+  }
+  else {
+    // use ASM loop
+    // warning! not really precise (especially if M extensions is not available)!
+
+    const uint32_t loop_cycles_c = 16; // clock cycles per iteration of the ASM loop
+    uint32_t iterations = (uint32_t)(wait_cycles / loop_cycles_c);
+
+    asm volatile (" .balign 4                                        \n" // make sure this is 32-bit aligned
+                  " __neorv32_cpu_delay_ms_start:                    \n"
+                  " beq  %[cnt_r], zero, __neorv32_cpu_delay_ms_end  \n" // 3 cycles (not taken)
+                  " beq  %[cnt_r], zero, __neorv32_cpu_delay_ms_end  \n" // 3 cycles (never taken)
+                  " addi %[cnt_w], %[cnt_r], -1                      \n" // 2 cycles
+                  " nop                                              \n" // 2 cycles
+                  " j    __neorv32_cpu_delay_ms_start                \n" // 6 cycles
+                  " __neorv32_cpu_delay_ms_end: "
+                  : [cnt_w] "=r" (iterations) : [cnt_r] "r" (iterations));
+  }
 }
 
 
@@ -332,7 +347,7 @@ void __attribute__((naked)) neorv32_cpu_goto_user_mode(void) {
 uint32_t neorv32_cpu_pmp_get_num_regions(void) {
 
   // PMP implemented at all?
-  if ((SYSINFO_CPU & (1<<SYSINFO_CPU_PMP)) == 0) {
+  if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_PMP)) == 0) {
     return 0;
   }
 
@@ -597,7 +612,7 @@ static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data) {
 uint32_t neorv32_cpu_hpm_get_counters(void) {
 
   // HPMs implemented at all?
-  if ((SYSINFO_CPU & (1<<SYSINFO_CPU_HPM)) == 0) {
+  if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_HPM)) == 0) {
     return 0;
   }
 
@@ -680,7 +695,7 @@ uint32_t neorv32_cpu_hpm_get_counters(void) {
 uint32_t neorv32_cpu_hpm_get_size(void) {
 
   // HPMs implemented at all?
-  if ((SYSINFO_CPU & (1<<SYSINFO_CPU_HPM)) == 0) {
+  if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_HPM)) == 0) {
     return 0;
   }
 

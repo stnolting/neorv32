@@ -55,7 +55,7 @@
  **************************************************************************/
 int neorv32_cfs_available(void) {
 
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_CFS)) {
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_CFS)) {
     return 1;
   }
   else {

@@ -102,7 +102,7 @@ int main() {
   // check NEOLED configuration
   neorv32_uart0_printf("Checking NEOLED configuration:\n"
                        " Hardware FIFO size: %u entries\n"
-                       " Control register:   0x%x\n\n", neorv32_neoled_get_buffer_size(), NEOLED_CT);
+                       " Control register:   0x%x\n\n", neorv32_neoled_get_buffer_size(), NEORV32_NEOLED.CTRL);
 
 
   // clear all LEDs

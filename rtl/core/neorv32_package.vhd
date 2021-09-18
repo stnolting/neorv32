@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060003"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060004"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -116,6 +116,10 @@ package neorv32_package is
   constant imem_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := ispace_base_c; -- internal instruction memory base address
   constant dmem_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := dspace_base_c; -- internal data memory base address
   --> internal data/instruction memory sizes are configured via top's generics
+
+  -- !!! IMPORTANT: The base address of each component/module has to be aligned to the !!!
+  -- !!! total size of the module's occupied address space. The occupied address space !!!
+  -- !!! has to be a power of two (minimum 4 bytes). Address spaces must not overlap.  !!!
 
   -- Internal Bootloader ROM --
   -- Actual bootloader size is determined during runtime via the length of the bootloader initialization image

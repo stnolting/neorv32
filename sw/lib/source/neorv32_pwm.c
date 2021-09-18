@@ -52,7 +52,7 @@
  **************************************************************************/
 int neorv32_pwm_available(void) {
 
-  if (SYSINFO_FEATURES & (1 << SYSINFO_FEATURES_IO_PWM)) {
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_PWM)) {
     return 1;
   }
   else {
@@ -62,21 +62,21 @@ int neorv32_pwm_available(void) {
 
 
 /**********************************************************************//**
- * Enable and configure pulse width modulation controller. The PWM control register bits are listed in #NEORV32_PWM_CT_enum.
+ * Enable and configure pulse width modulation controller. The PWM control register bits are listed in #NEORV32_PWM_CTRL_enum.
  *
  * @param[in] prsc Clock prescaler select (0..7). See #NEORV32_CLOCK_PRSC_enum.
  **************************************************************************/
 void neorv32_pwm_setup(uint8_t prsc) {
 
-  PWM_CT = 0; // reset
+  NEORV32_PWM.CTRL = 0; // reset
 
   uint32_t ct_enable = 1;
-  ct_enable = ct_enable << PWM_CT_EN;
+  ct_enable = ct_enable << PWM_CTRL_EN;
 
   uint32_t ct_prsc = (uint32_t)(prsc & 0x07);
-  ct_prsc = ct_prsc << PWM_CT_PRSC0;
+  ct_prsc = ct_prsc << PWM_CTRL_PRSC0;
 
-  PWM_CT = ct_enable | ct_prsc;
+  NEORV32_PWM.CTRL = ct_enable | ct_prsc;
 }
 
 
@@ -85,7 +85,7 @@ void neorv32_pwm_setup(uint8_t prsc) {
  **************************************************************************/
 void neorv32_pwm_disable(void) {
 
-  PWM_CT &= ~((uint32_t)(1 << PWM_CT_EN));
+  NEORV32_PWM.CTRL &= ~((uint32_t)(1 << PWM_CTRL_EN));
 }
 
 
@@ -94,7 +94,7 @@ void neorv32_pwm_disable(void) {
  **************************************************************************/
 void neorv32_pwm_enable(void) {
 
-  PWM_CT |= ((uint32_t)(1 << PWM_CT_EN));
+  NEORV32_PWM.CTRL |= ((uint32_t)(1 << PWM_CTRL_EN));
 }
 
 
@@ -132,23 +132,19 @@ void neorv32_pwm_set(uint8_t channel, uint8_t duty) {
     return; // out-of-range
   }
 
-  // compute duty-cycle offset
-  uint32_t reg_offset  = (uint32_t)(channel / 4);
-  uint8_t  byte_offset = channel % 4;
-
   // read-modify-write
   uint32_t duty_mask = 0xff;
   uint32_t duty_new  = (uint32_t)duty;
 
-  duty_mask = duty_mask << (byte_offset * 8);
-  duty_new  = duty_new  << (byte_offset * 8);
+  duty_mask = duty_mask << ((channel % 4) * 8);
+  duty_new  = duty_new  << ((channel % 4) * 8);
 
-  uint32_t duty_cycle = (*(IO_REG32 (&PWM_DUTY0 + reg_offset)));
+  uint32_t duty_cycle = NEORV32_PWM.DUTY[channel/4];
 
   duty_cycle &= ~duty_mask; // clear previous duty cycle
   duty_cycle |= duty_new; // set new duty cycle
 
-  (*(IO_REG32 (&PWM_DUTY0 + reg_offset))) = duty_cycle;
+  NEORV32_PWM.DUTY[channel/4] = duty_cycle;
 }
 
 
@@ -164,13 +160,7 @@ uint8_t neorv32_pwm_get(uint8_t channel) {
     return 0; // out-of-range
   }
 
-  // compute duty-cycle offset
-  uint32_t reg_offset  = (uint32_t)(channel / 4);
-  uint8_t  byte_offset = channel % 4;
+  uint32_t reg_data = NEORV32_PWM.DUTY[channel/4] >> (((channel % 4) * 8));
 
-  // read
-  uint32_t tmp = (*(IO_REG32 (&PWM_DUTY0 + reg_offset)));
-  tmp = tmp >> ((byte_offset * 8));
-
-  return (uint8_t)tmp;
+  return (uint8_t)reg_data;
 }

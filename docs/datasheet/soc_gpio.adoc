@@ -27,13 +27,13 @@ The GPIO modules uses two memory-mapped registers (each 32-bit) each for accessi
 output signals. Since the CPU can only process 32-bit "at once" updating the entire output cannot
 be performed within a single clock cycle.
 
-.GPIO unit register map
+.GPIO unit register map (`struct NEORV32_GPIO`)
 [cols="<2,<2,^1,^1,<6"]
 [options="header",grid="rows"]
 |=======================
 | Address      | Name [C]         | Bit(s) | R/W | Function
-| `0xffffffc0` | _GPIO_INPUT_LO_  | 31:0   | r/- | parallel input port pins 31:0 (write accesses are ignored)
-| `0xffffffc4` | _GPIO_INPUT_HI_  | 31:0   | r/- | parallel input port pins 63:32 (write accesses are ignored)
-| `0xffffffc8` | _GPIO_OUTPUT_LO_ | 31:0   | r/w | parallel output port pins 31:0
-| `0xffffffcc` | _GPIO_OUTPUT_HI_ | 31:0   | r/w | parallel output port pins 63:32
+| `0xffffffc0` | `NEORV32_GPIO.INPUT_LO`  | 31:0   | r/- | parallel input port pins 31:0 (write accesses are ignored)
+| `0xffffffc4` | `NEORV32_GPIO.INPUT_HI`  | 31:0   | r/- | parallel input port pins 63:32 (write accesses are ignored)
+| `0xffffffc8` | `NEORV32_GPIO.OUTPUT_LO` | 31:0   | r/w | parallel output port pins 31:0
+| `0xffffffcc` | `NEORV32_GPIO.OUTPUT_HI` | 31:0   | r/w | parallel output port pins 63:32
 |=======================
