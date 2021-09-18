@@ -1,4 +1,4 @@
-FROM gcr.io/hdl-containers/debian/buster/sim/osvb
+FROM gcr.io/hdl-containers/debian/bullseye/sim/osvb
 
 RUN apt-get update -qq \
  && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \

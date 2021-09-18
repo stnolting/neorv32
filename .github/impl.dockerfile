@@ -1,4 +1,4 @@
-FROM gcr.io/hdl-containers/debian/buster/impl
+FROM gcr.io/hdl-containers/debian/bullseye/impl
 
 RUN apt-get update -qq \
  && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
