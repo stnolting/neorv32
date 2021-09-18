@@ -25,6 +25,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 18.09.2021 | 1.6.0.4 | :warning: :warning: **major change** modified low-level hardware access (memory-mapped registers) [PR #158](https://github.com/stnolting/neorv32/pull/158): now using `struct`-based access concept (IO module = `struct`, interface registers = members of struct) instead of `#define` single-pointers (inspired by https://blog.feabhas.com/2019/01/peripheral-register-access-using-c-structs-part-1/), format: `NEORV32_<module_name>.<register_name>`; renamed all control registers and bits from `*CT*` to `*CTRL*`; added `sw/lib/include/neorv32_legacy.h` compatibility layer (maps deprecated "defines" to according struct registers, provides old control register/bit names, _do not use for new designs!_) |
 | 16.09.2021 | 1.6.0.3 | :bug: fixed another missing IRQ signal connection (NMI) in `system_integration` wrappers |
 | 15.09.2021 | 1.6.0.2 | :warning: **split** processor-internal memory VHDL sources (IMEM and DMEM) into separated files ([#151](https://github.com/stnolting/neorv32/pull/151)): entity-only (`rtl/core/neorv32_*mem.entity.vhd`) and _default_ architecture-only (`rtl/core/mem/neorv32_*mem.default.vhd`); allows easy replacement by optimized platform-specific architectures |
 | 13.09.2021 | 1.6.0.1 | :bug: fixed missing IRQ signal assignments (MSW and XIRQ) in AXI4-lite top wrapper |
