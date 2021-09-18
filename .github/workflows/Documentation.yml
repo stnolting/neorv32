@@ -97,4 +97,4 @@ jobs:
       run: pip install doit
 
     - name: '🚀 Deploy to GitHub-Pages'
-      run: doit DeployToGitHubPages "update ${{ github.sha }}"
+      run: ./do.py DeployToGitHubPages "update ${{ github.sha }}"
