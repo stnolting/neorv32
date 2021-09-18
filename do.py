@@ -15,6 +15,15 @@ DOIT_CONFIG = {"verbosity": 2, "action_string_formatting": "both"}
 ROOT = Path(__file__).parent
 
 
+def task_Documentation():
+    return {
+        "actions": ["make -C docs {posargs}"],
+        "doc": "Run a target in subdir 'doc'",
+        "uptodate": [False],
+        "pos_arg": "posargs",
+    }
+
+
 def task_DeployToGitHubPages():
     cwd = str(ROOT / "public")
     return {

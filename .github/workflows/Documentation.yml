@@ -46,8 +46,11 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: '🐍 Install doit'
+      run: pip install doit
+
     - name: '📚 Build Datasheet and User Guide (PDF and HTML)'
-      run: make -C docs container
+      run: ./do.py Documentation container
 
     - name: '📤 Upload Artifact: HTML'
       uses: actions/upload-artifact@v2
