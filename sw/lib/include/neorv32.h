@@ -509,7 +509,6 @@ enum NEORV32_CLOCK_PRSC_enum {
 // ############################################################################################################################
 
 
-/// @cond LEGACY_SYMBOLS
 /**********************************************************************//**
  * @name Helper macros for easy memory-mapped register access (DEPRECATED!)
  **************************************************************************/
@@ -531,7 +530,6 @@ enum NEORV32_CLOCK_PRSC_enum {
 /** memory-mapped double-word (64-bit) read-only register */
 #define IO_ROM64 (const volatile uint64_t*)
 /**@}*/
-/// @endcond
 
 
 /**********************************************************************//**
@@ -540,7 +538,7 @@ enum NEORV32_CLOCK_PRSC_enum {
 /**@{*/
 /** CFS module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t REG[32]; /**< offset 0..124: CFS register 0..31, user-defined */
+	uint32_t REG[32]; /**< offset 4*0..4*31: CFS register 0..31, user-defined */
 } neorv32_cfs_t;
 
 /** CFS module hardware access (#neorv32_cfs_t) */
@@ -953,7 +951,7 @@ enum NEORV32_NEOLED_CTRL_enum {
   NEOLED_CTRL_TX_EMPTY   = 28, /**< NEOLED control register(28) (r/-): TX FIFO is empty */
   NEOLED_CTRL_TX_HALF    = 29, /**< NEOLED control register(29) (r/-): TX FIFO is at least half-full */
   NEOLED_CTRL_TX_FULL    = 30, /**< NEOLED control register(30) (r/-): TX FIFO is full */
-  NEOLED_CTRL_TX_BUSY    = 31  /**< NEOLED control register(31) (r/-): busy / buffer status flag (configured via #NEOLED_CT_BSCON) */
+  NEOLED_CTRL_TX_BUSY    = 31  /**< NEOLED control register(31) (r/-): busy flag */
 };
 /**@}*/
 

@@ -48,7 +48,7 @@
 /// @cond LEGACY_SYMBOLS
 
 /**********************************************************************//**
- * @Custom Functions Subsystem (CFS)
+ * @Custom Functions Subsystem (CFS) - before version 1.6.0.4
  **************************************************************************/
 #define CFS_REG_0  (NEORV32_CFS.REG[00])
 #define CFS_REG_1  (NEORV32_CFS.REG[01])
@@ -84,7 +84,7 @@
 #define CFS_REG_31 (NEORV32_CFS.REG[31])
 
 /**********************************************************************//**
- * Pulse Width Modulation Controller (PWM)
+ * Pulse Width Modulation Controller (PWM) - before version 1.6.0.4
  **************************************************************************/
 #define PWM_CT     (NEORV32_PWM.CTRL)
 #define PWM_DUTY0  (NEORV32_PWM.DUTY[0])
@@ -104,7 +104,7 @@
 #define PWM_DUTY14 (NEORV32_PWM.DUTY[14])
 
 /**********************************************************************//**
- * Stream link interface (SLINK)
+ * Stream link interface (SLINK) - before version 1.6.0.4
  **************************************************************************/
 #define SLINK_CT     (NEORV32_SLINK.CTRL)
 #define SLINK_STATUS (NEORV32_SLINK.STATUS)
@@ -118,7 +118,7 @@
 #define SLINK_CH7    (NEORV32_SLINK.DATA[7])
 
 /**********************************************************************//**
- * External Interrupt Controller (XIRQ)
+ * External Interrupt Controller (XIRQ) - before version 1.6.0.4
  **************************************************************************/
 #define XIRQ_IER (NEORV32_XIRQ.IER)
 #define XIRQ_IPR (NEORV32_XIRQ.IPR)
@@ -126,7 +126,7 @@
 /**@}*/
 
 /**********************************************************************//**
- * Machine System Timer (MTIME)
+ * Machine System Timer (MTIME) - before version 1.6.0.4
  **************************************************************************/
 #define MTIME_LO    (NEORV32_MTIME.TIME_LO)
 #define MTIME_HI    (NEORV32_MTIME.TIME_HI)
@@ -136,7 +136,7 @@
 #define MTIMECMP    (*(IO_REG64 (&NEORV32_MTIME.TIMECMP_LO)))
 
 /**********************************************************************//**
- * Primary/Secondary Universal Asynchronous Receiver and Transmitter (UART0 / UART1)
+ * Primary/Secondary Universal Asynchronous Receiver and Transmitter (UART0 / UART1) - before version 1.6.0.4
  **************************************************************************/
 #define UART0_CT   (NEORV32_UART0.CTRL)
 #define UART0_DATA (NEORV32_UART0.DATA)
@@ -144,29 +144,29 @@
 #define UART1_DATA (NEORV32_UART1.DATA)
 
 /**********************************************************************//**
- * Serial Peripheral Interface Controller (SPI)
+ * Serial Peripheral Interface Controller (SPI) - before version 1.6.0.4
  **************************************************************************/
 #define SPI_CT   (NEORV32_SPI.CTRL)
 #define SPI_DATA (NEORV32_SPI.DATA)
 
 /**********************************************************************//**
- * Two-Wire Interface Controller (TWI)
+ * Two-Wire Interface Controller (TWI) - before version 1.6.0.4
  **************************************************************************/
 #define TWI_CT   (NEORV32_TWI.CTRL)
 #define TWI_DATA (NEORV32_TWI.DATA)
 
 /**********************************************************************//**
- * True Random Number Generator (TRNG)
+ * True Random Number Generator (TRNG) - before version 1.6.0.4
  **************************************************************************/
 #define TRNG_CT (NEORV32_TRNG.CTRL)
 
 /**********************************************************************//**
- * Watchdog Timer (WDT)
+ * Watchdog Timer (WDT) - before version 1.6.0.4
  **************************************************************************/
 #define WDT_CT (NEORV32_WDT.CTRL)
 
 /**********************************************************************//**
- * Device: General Purpose Input/Output Port Unit (GPIO)
+ * Device: General Purpose Input/Output Port Unit (GPIO) - before version 1.6.0.4
  **************************************************************************/
 #define GPIO_INPUT_LO  (NEORV32_GPIO.INPUT_LO)
 #define GPIO_INPUT_HI  (NEORV32_GPIO.INPUT_HI)
@@ -176,13 +176,13 @@
 #define GPIO_OUTPUT    (*(IO_REG64 (&NEORV32_GPIO.OUTPUT_LO)))
 
 /**********************************************************************//**
- * Smart LED Hardware Interface (NEOLED)
+ * Smart LED Hardware Interface (NEOLED) - before version 1.6.0.4
  **************************************************************************/
 #define NEOLED_CT   (NEORV32_NEOLED.CTRL)
 #define NEOLED_DATA (NEORV32_NEOLED.DATA)
 
 /**********************************************************************//**
- * System Configuration Information Memory (SYSINFO)
+ * System Configuration Information Memory (SYSINFO) - before version 1.6.0.4
  **************************************************************************/
 #define SYSINFO_CLK         (NEORV32_SYSINFO.CLK)
 #define SYSINFO_CPU         (NEORV32_SYSINFO.CPU)
@@ -193,7 +193,7 @@
 #define SYSINFO_IMEM_SIZE   (NEORV32_SYSINFO.IMEM_SIZE)
 #define SYSINFO_DMEM_SIZE   (NEORV32_SYSINFO.DMEM_SIZE)
 
-// SYSINFO_FEATURES bits (OBSOLETE!!! new version is #NEORV32_SOC_FEATURES_enum)
+/** SYSINFO_FEATURES bits (OBSOLETE!!! new version is #NEORV32_SOC_FEATURES_enum) - before version 1.6.0.4 */
 enum NEORV32_SYSINFO_FEATURES_enum {
   SYSINFO_FEATURES_BOOTLOADER     =  0,
   SYSINFO_FEATURES_MEM_EXT        =  1,
@@ -220,7 +220,7 @@ enum NEORV32_SYSINFO_FEATURES_enum {
   SYSINFO_FEATURES_IO_XIRQ        = 28 
 };
 
-/** PWM control register bits */
+/** PWM control register bits - before version 1.6.0.4 */
 enum NEORV32_PWM_CT_enum {
   PWM_CT_EN    =  0, /**< PWM control register(0) (r/w): PWM controller enable */
   PWM_CT_PRSC0 =  1, /**< PWM control register(1) (r/w): Clock prescaler select bit 0 */
@@ -228,7 +228,7 @@ enum NEORV32_PWM_CT_enum {
   PWM_CT_PRSC2 =  3  /**< PWM control register(3) (r/w): Clock prescaler select bit 2 */
 };
 
-/** SLINK control register bits */
+/** SLINK control register bits - before version 1.6.0.4 */
 enum NEORV32_SLINK_CT_enum {
   SLINK_CT_RX_NUM0    =  0, /**< SLINK control register(0) (r/-): number of implemented RX links bit 0 */
   SLINK_CT_RX_NUM1    =  1, /**< SLINK control register(1) (r/-): number of implemented RX links bit 1 */
@@ -253,7 +253,7 @@ enum NEORV32_SLINK_CT_enum {
   SLINK_CT_EN         = 31, /**< SLINK control register(0) (r/w): SLINK controller enable */
 };
 
-/** UART0/UART1 control register bits */
+/** UART0/UART1 control register bits - before version 1.6.0.4 */
 enum NEORV32_UART_CT_enum {
   UART_CT_BAUD00   =  0, /**< UART control register(0)  (r/w): BAUD rate config value lsb (12-bit, bit 0) */
   UART_CT_BAUD01   =  1, /**< UART control register(1)  (r/w): BAUD rate config value (12-bit, bit 1) */
@@ -282,7 +282,7 @@ enum NEORV32_UART_CT_enum {
   UART_CT_TX_BUSY  = 31  /**< UART control register(31) (r/-): Transmitter is busy when set */
 };
 
-/** SPI control register bits */
+/** SPI control register bits - before version 1.6.0.4 */
 enum NEORV32_SPI_CT_enum {
   SPI_CT_CS0    =  0, /**< UART control register(0)  (r/w): Direct chip select line 0 (output is low when set) */
   SPI_CT_CS1    =  1, /**< UART control register(1)  (r/w): Direct chip select line 1 (output is low when set) */
@@ -303,7 +303,7 @@ enum NEORV32_SPI_CT_enum {
   SPI_CT_BUSY   = 31  /**< UART control register(31) (r/-): SPI busy flag */
 };
 
-/** TWI control register bits */
+/** TWI control register bits - before version 1.6.0.4 */
 enum NEORV32_TWI_CT_enum {
   TWI_CT_EN     =  0, /**< TWI control register(0) (r/w): TWI enable */
   TWI_CT_START  =  1, /**< TWI control register(1) (-/w): Generate START condition, auto-clears */
@@ -318,7 +318,7 @@ enum NEORV32_TWI_CT_enum {
   TWI_CT_BUSY   = 31  /**< TWI control register(31) (r/-): Transfer in progress, busy flag */
 };
 
-/** TRNG control/data register bits */
+/** TRNG control/data register bits - before version 1.6.0.4 */
 enum NEORV32_TRNG_CT_enum {
   TRNG_CT_DATA_LSB =  0, /**< TRNG data/control register(0)  (r/-): Random data byte LSB */
   TRNG_CT_DATA_MSB =  7, /**< TRNG data/control register(7)  (r/-): Random data byte MSB */
@@ -327,7 +327,7 @@ enum NEORV32_TRNG_CT_enum {
   TRNG_CT_VALID    = 31  /**< TRNG data/control register(31) (r/-): Random data output valid */
 };
 
-/** WTD control register bits */
+/** WTD control register bits - before version 1.6.0.4 */
 enum NEORV32_WDT_CT_enum {
   WDT_CT_EN       = 0, /**< WDT control register(0) (r/w): Watchdog enable */
   WDT_CT_CLK_SEL0 = 1, /**< WDT control register(1) (r/w): Clock prescaler select bit 0 */
@@ -340,7 +340,7 @@ enum NEORV32_WDT_CT_enum {
   WDT_CT_LOCK     = 8  /**< WDT control register(8) (r/w): Lock write access to control register, clears on reset (HW or WDT) only */
 };
 
-/** NEOLED control register bits */
+/** NEOLED control register bits - before version 1.6.0.4*/
 enum NEORV32_NEOLED_CT_enum {
   NEOLED_CT_EN         =  0, /**< NEOLED control register(0) (r/w): NEOLED global enable */
   NEOLED_CT_MODE       =  1, /**< NEOLED control register(1) (r/w): TX mode (0=24-bit, 1=32-bit) */
@@ -377,8 +377,6 @@ enum NEORV32_NEOLED_CT_enum {
   NEOLED_CT_TX_FULL    = 30, /**< NEOLED control register(30) (r/-): TX FIFO is full */
   NEOLED_CT_TX_BUSY    = 31  /**< NEOLED control register(31) (r/-): busy / buffer status flag (configured via #NEOLED_CT_BSCON) */
 };
-
-
 
 /// @endcond
 
