@@ -68,6 +68,9 @@ CSRs with the following notes ...
 | 0x001   | <<_fflags>>     | _CSR_FFLAGS_     | r/w | Floating-point accrued exceptions | 
 | 0x002   | <<_frm>>        | _CSR_FRM_        | r/w | Floating-point dynamic rounding mode | 
 | 0x003   | <<_fcsr>>       | _CSR_FCSR_       | r/w | Floating-point control and status (`frm` + `fflags`) | 
+6+^| **<<_machine_configuration>>**
+| 0x30a   | <<_menvcfg>>    | _CSR_MENVCFG_    | r/- | Machine environment configuration register - low word | `R`
+| 0x31a   | <<_menvcfgh>>   | _CSR_MENVCFGH_   | r/- | Machine environment configuration register - low word | `R`
 6+^| **<<_machine_trap_setup>>**
 | 0x300   | <<_mstatus>>    | _CSR_MSTATUS_    | r/w | Machine status register - low word | `C`
 | 0x301   | <<_misa>>       | _CSR_MISA_       | r/- | Machine CPU ISA and extensions | `R`
@@ -159,6 +162,37 @@ ISA spec for more information.
 3+| The `fcsr` CSR is compatible to the RISC-V specifications. It provides combined read/write access to the
 `fflags` and `frm` CSRs. This CSR is only available if a floating-point CPU extension is enabled. See the
 RISC-V ISA spec for more information.
+|======
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+==== Machine Configuration
+
+:sectnums!:
+===== **`menvcfg`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x30a | **Machine environment configuration register** | `menvcfg`
+3+| Reset value: _0x00000000_
+3+| The features of this CSR are not implemented yet. The register is read-only. NOTE: This register
+only exists if the `U` ISA extensions is enabled.
+|======
+
+
+:sectnums!:
+===== **`menvcfgh`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x31a | **Machine environment configuration register - high word** | `menvcfgh`
+3+| Reset value: _0x00000000_
+3+| The features of this CSR are not implemented yet. The register is read-only. NOTE: This register
+only exists if the `U` ISA extensions is enabled.
 |======
 
 
@@ -293,7 +327,7 @@ source. The lowest two bits of this register are always zero and cannot be modif
 counter/timer CSR can be accessed (read) from code running in a less-privileged modes. For example,
 if user-level code tries to read from a counter/timer CSR without enabled access, an illegal instruction
 exception is raised. If user mode in not implemented (_CPU_EXTENSION_RISCV_U_ = _false_) all bits of the
-`mcounteren` CSR are tied to zero.
+`mcounteren` CSR are tied to zero. NOTE: If the `U` ISA extensions is not enabled this CSR does not exist.
 |======
 
 .Machine counter enable register

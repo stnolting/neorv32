@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060004"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060005"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -531,6 +531,10 @@ package neorv32_package is
   constant csr_mcounteren_c     : std_ulogic_vector(11 downto 0) := x"306";
   --
   constant csr_mstatush_c       : std_ulogic_vector(11 downto 0) := x"310";
+  -- machine configuration --
+  constant csr_class_envcfg_c   : std_ulogic_vector(06 downto 0) := x"3" & "000"; -- configuration
+  constant csr_menvcfg_c        : std_ulogic_vector(11 downto 0) := x"30a";
+  constant csr_menvcfgh_c       : std_ulogic_vector(11 downto 0) := x"31a";
   -- machine counter setup --
   constant csr_cnt_setup_c      : std_ulogic_vector(06 downto 0) := x"3" & "001"; -- counter setup
   constant csr_mcountinhibit_c  : std_ulogic_vector(11 downto 0) := x"320";
