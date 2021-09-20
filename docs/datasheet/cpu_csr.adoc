@@ -82,7 +82,7 @@ CSRs with the following notes ...
 | 0x340   | <<_mscratch>>   | _CSR_MSCRATCH_   | r/w | Machine scratch register | 
 | 0x341   | <<_mepc>>       | _CSR_MEPC_       | r/w | Machine exception program counter | 
 | 0x342   | <<_mcause>>     | _CSR_MCAUSE_     | r/w | Machine trap cause | `X`
-| 0x343   | <<_mtval>>      | _CSR_MTVAL_      | r/- | Machine bad address or instruction | `R`
+| 0x343   | <<_mtval>>      | _CSR_MTVAL_      | r/- | Machine bad address or instruction | `XR`
 | 0x344   | <<_mip>>        | _CSR_MIP_        | r/- | Machine interrupt pending register | `XR`
 6+^| **<<_machine_physical_memory_protection>>**
 | 0x3a0 .. 0x3af | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg15`>>     | _CSR_PMPCFG0_ .. _CSR_PMPCFG15_   | r/w | Physical memory protection config. for region 0..63 | `C`
@@ -244,7 +244,7 @@ CPU extensions. The following bits are implemented (all remaining bits are alway
 [IMPORTANT]
 The `misa` CSR is not fully RISC-V-compatible as it is read-only. Hence, implemented CPU
 extensions cannot be switch on/off during runtime. For compatibility reasons any write access to this
-CSR is simply ignored and will NOT cause an illegal instruction exception.
+CSR is simply ignored and will _NOT_ cause an illegal instruction exception.
 
 .Machine ISA and extension register
 [cols="^1,<3,^1,<5"]
@@ -438,7 +438,7 @@ instructions). For interrupts the CSR is set to zero.
 |=======================
 
 [IMPORTAN]
-The NEORV32 `mtval` CSR is read-only. A write access will raise an illegal instruction exception.
+The NEORV32 `mtval` CSR is read-only. However, a write access will _NOT_ raise an illegal instruction exception.
 
 :sectnums!:
 ===== **`mip`**
@@ -449,8 +449,8 @@ The NEORV32 `mtval` CSR is read-only. A write access will raise an illegal instr
 | 0x344 | **Machine interrupt Pending** | `mip`
 3+| Reset value: _0x00000000_
 3+| The `mip` CSR is _partly_ compatible to the RISC-V specifications and also provides custom extensions. It shows currently pending interrupts. Since this register is
-read-only, pending interrupt can only be cleared by disabling and re-enabling the according `mie` CSr bit. Writing to this CSR will
-raise an illegal instruction exception. The following CSR bits are implemented (all remaining bits are always zero and are read-only).
+read-only, pending interrupt can only be cleared by disabling and re-enabling the according `mie` CSR bit.
+The following CSR bits are implemented (all remaining bits are always zero and are read-only).
 |======
 
 .Machine interrupt pending register
@@ -463,6 +463,9 @@ raise an illegal instruction exception. The following CSR bits are implemented (
 | 7     | _CSR_MIP_MTIP_ | r/- | machine _timer_ interrupt pending
 | 3     | _CSR_MIP_MSIP_ | r/- | machine _software_ interrupt pending
 |=======================
+
+[IMPORTAN]
+The NEORV32 `mip` CSR is read-only. However, a write access will _NOT_ raise an illegal instruction exception.
 
 
 <<<

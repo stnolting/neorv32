@@ -226,7 +226,7 @@ CPU extensions are always active and cannot be enabled/disabled dynamically duri
 write access to it (in machine mode) is ignored and will not cause any exception or side-effects.
 
 [IMPORTANT]
-The `mip` CSR is read-only. Pending IRQs can be cleared using the `mie` CSR.
+The `mip` CSR is read-only. Pending IRQs (inside the CPU's interrupt queue) can be cleared using the `mie` CSR.
 
 [IMPORTANT]
 The `mtval` CSR is read-only.
