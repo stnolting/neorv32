@@ -1,15 +1,18 @@
+from typing import List, Dict
 from os import environ
 
 
 class Design:
-    def __init__(self, name: str, vhdl: list, verilog: list = None):
+    def __init__(self, name: str, vhdl: List[str], verilog: List[str] = None):
         self.Name = name
         self.VHDL = vhdl
         self.Verilog = verilog
 
 
 class Filesets:
-    def __init__(self, designs: list, imem: dict, dmem: dict):
+    def __init__(
+        self, designs: List[Design], imem: Dict[str, str], dmem: Dict[str, str]
+    ):
         self.Designs = designs
         self.InstructionMemory = imem
         self.DataMemory = dmem
@@ -78,7 +81,7 @@ class Project:
             },
         )
 
-    def GetMemorySources(self, board: str, design: str) -> list:
+    def GetMemorySources(self, board: str, design: str) -> List[str]:
         """
         Define which sources are used for Instruction and Data memories, depending on the target Board and/or Design
         """

@@ -1,3 +1,4 @@
+from typing import List
 from os import environ
 from pathlib import Path
 
@@ -14,12 +15,12 @@ def Run(
     design: str,
     top: str,
     id: str,
-    board_srcs: list,
-    design_srcs: list,
-    verilog_srcs: list,
-    mem_srcs: list,
-    posargs: list,
-) -> list:
+    board_srcs: List[str],
+    design_srcs: List[str],
+    verilog_srcs: List[str],
+    mem_srcs: List[str],
+    posargs: List[str],
+) -> List[str]:
     """
     Create command to call the make entrypoint 'setups/osflow/common.mk' for executing 'posargs' targets.
     """
