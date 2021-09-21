@@ -162,7 +162,6 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(16)))  __neorv
     case TRAP_CODE_S_ACCESS:     rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_S_ACCESS]; break;
     case TRAP_CODE_UENV_CALL:    rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_UENV_CALL]; break;
     case TRAP_CODE_MENV_CALL:    rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_MENV_CALL]; break;
-    case TRAP_CODE_NMI:          rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_NMI]; break;
     case TRAP_CODE_MSI:          rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_MSI]; break;
     case TRAP_CODE_MTI:          rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_MTI]; break;
     case TRAP_CODE_MEI:          rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_MEI]; break;
@@ -546,7 +545,7 @@ void neorv32_rte_print_credits(void) {
   }
 
   neorv32_uart0_print("The NEORV32 RISC-V Processor\n"
-                      "(c) Stephan Nolting\n"
+                      "(c) 2021, Stephan Nolting\n"
                       "BSD 3-Clause License\n"
                       "https://github.com/stnolting/neorv32\n\n");
 }
