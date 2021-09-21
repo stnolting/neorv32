@@ -216,7 +216,6 @@ entity neorv32_top is
     xirq_i         : in  std_ulogic_vector(XIRQ_NUM_CH-1 downto 0) := (others => 'L'); -- IRQ channels
 
     -- CPU interrupts --
-    nm_irq_i       : in  std_ulogic := 'L'; -- non-maskable interrupt
     mtime_irq_i    : in  std_ulogic := 'L'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i      : in  std_ulogic := 'L'; -- machine software interrupt
     mext_irq_i     : in  std_ulogic := 'L'  -- machine external interrupt
@@ -328,12 +327,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal slink_tx_irq  : std_ulogic;
   signal slink_rx_irq  : std_ulogic;
   signal xirq_irq      : std_ulogic;
-
-  -- machine (CPU) interrupts --
-  signal x_nm_irq,    nm_irq_ff    : std_ulogic;
-  signal x_mtime_irq, mtime_irq_ff : std_ulogic;
-  signal x_msw_irq,   msw_irq_ff   : std_ulogic;
-  signal x_mext_irq,  mext_irq_ff  : std_ulogic;
 
   -- misc --
   signal mtime_time     : std_ulogic_vector(63 downto 0); -- current system time from MTIME
@@ -514,9 +507,8 @@ begin
     -- system time input from MTIME --
     time_i         => mtime_time,   -- current system time
     -- non-maskable interrupt --
-    nm_irq_i       => x_nm_irq,     -- NMI
-    msw_irq_i      => x_msw_irq,    -- machine software interrupt
-    mext_irq_i     => x_mext_irq,   -- machine external interrupt request
+    msw_irq_i      => msw_irq_i,    -- machine software interrupt
+    mext_irq_i     => mext_irq_i,   -- machine external interrupt request
     mtime_irq_i    => mtime_irq,    -- machine timer interrupt
     -- fast interrupts (custom) --
     firq_i         => fast_irq,     -- fast interrupt trigger
@@ -531,17 +523,6 @@ begin
   -- advanced memory control --
   fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
-
-  -- external machine-level (CPU) interrupts --
-  nm_irq_ff    <= nm_irq_i    when rising_edge(clk_i);
-  mtime_irq_ff <= mtime_irq_i when rising_edge(clk_i);
-  msw_irq_ff   <= msw_irq_i   when rising_edge(clk_i);
-  mext_irq_ff  <= mext_irq_i  when rising_edge(clk_i);
-  -- rising-edge detector --
-  x_nm_irq     <= nm_irq_i    and (not nm_irq_ff);
-  x_mtime_irq  <= mtime_irq_i and (not mtime_irq_ff);
-  x_msw_irq    <= msw_irq_i   and (not msw_irq_ff);
-  x_mext_irq   <= mext_irq_i  and (not mext_irq_ff);
 
   -- fast interrupts --
   fast_irq(00) <= wdt_irq;       -- HIGHEST PRIORITY - watchdog timeout
@@ -995,7 +976,7 @@ begin
   if (IO_MTIME_EN = false) generate
     resp_bus(RESP_MTIME) <= resp_bus_entry_terminate_c;
     mtime_time <= mtime_i; -- use external machine timer time signal
-    mtime_irq  <= x_mtime_irq; -- use external machine timer interrupt
+    mtime_irq  <= mtime_irq_i; -- use external machine timer interrupt
   end generate;
 
 
