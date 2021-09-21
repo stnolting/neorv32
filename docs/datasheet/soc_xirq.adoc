@@ -27,17 +27,27 @@ interrupt enable register `IER`.
 
 If the configured trigger (see below) of an enabled channel fires, the request is stored into an internal buffer.
 This buffer is available via the interrupt pending register `IPR`. A `1` in this register indicates that the
-corresponding interrupt channel has fired but has not yet been serviced (so it is pending). Pending IRQs can be
-cleared by writing `1` to the according pending bit. As soon as there is a least one pending interrupt in the
-buffer, an interrupt request is send to the CPU.
+corresponding interrupt channel has fired but has not yet been serviced (so it is pending). An interrupt channel can
+become pending if the according `IER` bit is set. Pending IRQs can be cleared by writing `0` to the according `IPR`
+bit. As soon as there is a least one pending interrupt in the buffer, an interrupt request is send to the CPU.
+
+[NOTE]
+A disabled interrupt channel can still be pending if it has been triggered before clearing the according `IER` bit.
 
 The CPU can determine firing interrupt request either by checking the bits in the `IPR` register, which show all
-pending interrupt, or by reading the interrupt source register `SCR`.
+pending interrupt channels, or by reading the interrupt source register `SCR`.
 This register provides a 5-bit wide ID (0..31) that shows the interrupt request with _highest priority_.
 Interrupt channel `xirq_i(0)` has highest priority and `xirq_i(_XIRQ_NUM_CH_-1)` has lowest priority.
 This priority assignment is fixed and cannot be altered by software.
 The CPU can use the ID from `SCR` to service IRQ according to their priority. To acknowledge the according
 interrupt the CPU can write `1 << SCR` to `IPR`.
+
+In order to acknowledge the interrupt from the external interrupt controller, the CPU has to write _any_
+value to interrupt source register `SRC`.
+
+[NOTE]
+An interrupt handler should clear the interrupt pending bit that caused the interrupt first before
+acknowledging the interrupt by writing the `SCR` register.
 
 **IRQ Trigger Configuration**
 
@@ -46,9 +56,9 @@ generics are provided to configure the trigger of each interrupt channel before 
 and _XIRQ_TRIGGER_POLARITY_ generic. Both generics are 32 bit wide representing one bit per interrupt channel. If
 less than 32 interrupt channels are implemented the remaining configuration bits are ignored.
 
-_XIRQ_TRIGGER_TYPE_ is used to define the general trigger type. This can either be _level-triggered_ (`0`) or
+_XIRQ_TRIGGER_TYPE_ is used to define the general trigger type. This can be either _level-triggered_ (`0`) or
 _edge-triggered_ (`1`). _XIRQ_TRIGGER_POLARITY_ is used to configure the polarity of the trigger: a `0` defines
-low-level or falling-edge and a `1` defines high-level or a rising-edge.
+low-level or falling-edge and a `1` defines high-level or rising-edge.
 
 .Example trigger configuration: channel 0 for rising-edge, IRQ channels 1 to 31 for high-level
 [source, vhdl]
@@ -63,7 +73,7 @@ XIRQ_TRIGGER_POLARITY => x"ffffffff";
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Function
 | `0xffffff80` | `NEORV32_XIRQ.IER` | `31:0` | r/w | Interrupt enable register (one bit per channel, LSB-aligned)
-| `0xffffff84` | `NEORV32_XIRQ.IPR` | `31:0` | r/w | Interrupt pending register (one bit per channel, LSB-aligned); writing 1 to a bit clears according interrupt; writing _any_ value acknowledges the _current_ CPU interrupt
-| `0xffffff88` | `NEORV32_XIRQ.SCR` |  `4:0` | r/- | Channel id (0..31) of firing IRQ (prioritized!)
+| `0xffffff84` | `NEORV32_XIRQ.IPR` | `31:0` | r/w | Interrupt pending register (one bit per channel, LSB-aligned); writing 0 to a bit clears according pending interrupt
+| `0xffffff88` | `NEORV32_XIRQ.SCR` |  `4:0` | r/w | Channel id (0..31) of firing IRQ (prioritized!); writing _any_ value will acknowledge the current interrupt
 | `0xffffff8c` | -                  | `31:0` | r/- | _reserved_, read as zero
 |=======================

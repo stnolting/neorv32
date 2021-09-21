@@ -89,7 +89,7 @@ CSRs with the following notes ...
 | 0x3b0 .. 0x3ef | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr63`>> | _CSR_PMPADDR0_ .. _CSR_PMPADDR63_ | r/w | Physical memory protection addr. register region 0..63 | 
 6+^| **<<_machine_counters_and_timers>>**
 | 0xb00   | <<_mcycleh, `mcycle`>>      | _CSR_MCYCLE_     | r/w | Machine cycle counter low word | 
-| 0xb02   | <<_minstreth, `minstret`>> | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter low word | 
+| 0xb02   | <<_minstreth, `minstret`>> | _CSR_MINSTRET_    | r/w | Machine instruction-retired counter low word | 
 | 0xb80   | <<_mcycleh>>                | _CSR_MCYCLE_     | r/w | Machine cycle counter high word | 
 | 0xb82   | <<_minstreth>>              | _CSR_MINSTRET_   | r/w | Machine instruction-retired counter high word |
 | 0xc00   | <<_cycleh, `cycle`>>        | _CSR_CYCLE_      | r/- | Cycle counter low word | 
@@ -302,7 +302,7 @@ globally enabled via the `CSR_MSTATUS_MIE` flag of the `mstatus` CSR. The follow
 3+| Reset value: _UNDEFINED_
 3+| The `mtvec` CSR is compatible to the RISC-V specifications. It stores the base address for ALL machine
 traps. Thus, it defines the main entry point for exception/interrupt handling regardless of the actual trap
-source. The lowest two bits of this register are always zero and cannot be modified (= fixed address mode).
+source. The lowest two bits of this register are always zero and cannot be modified (= address mode only).
 |======
 
 .Machine trap-handler base address
@@ -326,8 +326,7 @@ source. The lowest two bits of this register are always zero and cannot be modif
 3+| The `mcounteren` CSR is compatible to the RISC-V specifications. The bits of this CSR define which
 counter/timer CSR can be accessed (read) from code running in a less-privileged modes. For example,
 if user-level code tries to read from a counter/timer CSR without enabled access, an illegal instruction
-exception is raised. If user mode in not implemented (_CPU_EXTENSION_RISCV_U_ = _false_) all bits of the
-`mcounteren` CSR are tied to zero. NOTE: If the `U` ISA extensions is not enabled this CSR does not exist.
+exception is raised. NOTE: If the `U` ISA extension is not enabled this CSR does not exist.
 |======
 
 .Machine counter enable register
@@ -335,7 +334,7 @@ exception is raised. If user mode in not implemented (_CPU_EXTENSION_RISCV_U_ = 
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 31:16 | `0`                 | r/- | Always zero: user-level code is **not** allowed to read HPM counters
+| 31:3  | `0`                 | r/- | Always zero: user-level code is **not** allowed to read HPM counters
 | 2     | _CSR_MCOUNTEREN_IR_ | r/w | User-level code is allowed to read `cycle[h]` CSRs when set
 | 1     | _CSR_MCOUNTEREN_TM_ | r/w | User-level code is allowed to read `time[h]` CSRs when set
 | 0     | _CSR_MCOUNTEREN_CY_ | r/w | User-level code is allowed to read `instret[h]` CSRs when set
@@ -449,7 +448,7 @@ The NEORV32 `mtval` CSR is read-only. However, a write access will _NOT_ raise a
 | 0x344 | **Machine interrupt Pending** | `mip`
 3+| Reset value: _0x00000000_
 3+| The `mip` CSR is _partly_ compatible to the RISC-V specifications and also provides custom extensions. It shows currently pending interrupts. Since this register is
-read-only, pending interrupt can only be cleared by disabling and re-enabling the according `mie` CSR bit.
+read-only, pending interrupts of processor-internal modules can only be cleared by disabling and re-enabling the according `mie` CSR bit.
 The following CSR bits are implemented (all remaining bits are always zero and are read-only).
 |======
 

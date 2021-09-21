@@ -168,8 +168,8 @@ Compatiility is checked by passing the [official RISC-V architecture tests](http
 (see [`sim/README`](sim/README.md)).
 
 The core implements a little-endian von-Neumann architecture using two pipeline stages. Each stage uses a multi-cycle processing
-scheme. The CPU supports three privilege levels (`machine` and optional `user` and `debug_mode`), three standard RISC-V machine
-interrupts (`MTI`, `MEI`, `MSI`), a single non-maskable interrupt plus 16 _fast interrupt requests_ as custom extensions.
+scheme. The CPU supports three privilege levels (`machine` and optional `user` and `debug_mode`), the three standard RISC-V machine
+interrupts (`MTI`, `MEI`, `MSI`) plus 16 _fast interrupt requests_ as custom extensions.
 It also supports **all** standard RISC-V exceptions (instruction/load/store misaligned address & bus access fault, illegal
 instruction, breakpoint, environment call)
 (see :books: [_"Full Virtualization"_](https://stnolting.github.io/neorv32/#_full_virtualization)).

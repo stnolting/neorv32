@@ -112,10 +112,9 @@ since all control signals have defined level.
 4+^| **<<_processor_interrupts, External Interrupts>>**
 | `xirq_i` | 32 | in | external interrupt requests (up to 32 channels)
 4+^| **<<_processor_interrupts, CPU Interrupts>>**
-| `nm_irq_i`    | 1 | in | non-maskable interrupt, rising-edge-triggered
-| `mtime_irq_i` | 1 | in | machine timer interrupt13 (RISC-V), rising-edge-triggered
-| `msw_irq_i`   | 1 | in | machine software interrupt (RISC-V), rising-edge-triggered
-| `mext_irq_i`  | 1 | in | machine external interrupt (RISC-V), rising-edge-triggered
+| `mtime_irq_i` | 1 | in | machine timer interrupt13 (RISC-V), high-active
+| `msw_irq_i`   | 1 | in | machine software interrupt (RISC-V), high-active
+| `mext_irq_i`  | 1 | in | machine external interrupt (RISC-V), high-active
 |=======================
 
 
@@ -963,26 +962,10 @@ specifications. However, bare-metal system can also repurpose these interrupts. 
 | `mext_irq_i`  | 1 | Machine external interrupt. This interrupt is used for any processor-external interrupt source (like a platform interrupt controller).
 |=======================
 
+.Trigger type
 [IMPORTANT]
-These IRQs trigger on a **rising-edge**.
-
-
-:sectnums:
-==== Non-Maskable Interrupt
-
-[cols="<3,^2,<11"]
-[options="header",grid="rows"]
-|=======================
-| Top signal | Width | Description
-| `nm_irq_i` | 1 | Non-maskable interrupt.
-|=======================
-
-The processor features a single non-maskable interrupt source via the `nm_irq_i` top
-entity signal that can be used to signal _critical system conditions_. This interrupt source _cannot_ be masked/disabled.
-See CPU section <<_traps_exceptions_and_interrupts>> for more information.
-
-[IMPORTANT]
-This IRQ triggers on a **rising-edge**.
+These IRQs trigger on **high-level** and must stay asserted until explicitly acknowledged by the CPU (for example
+by writing to a specific memory-mapped register).
 
 
 :sectnums:
@@ -999,9 +982,11 @@ The processor provides an optional interrupt controller for up to 32 user-define
 (see section <<_external_interrupt_controller_xirq>>). These external IRQs are mapped to a _single_ CPU
 fast interrupt request so a software handler is required to differentiate / prioritize these interrupts.
 
-[NOTE]
+.Trigger type
+[IMPORTANT]
 The trigger for these interrupt can be defined via generics. See section
-<<_external_interrupt_controller_xirq>> for more information.
+<<_external_interrupt_controller_xirq>> for more information. Depending on the trigger type, users can
+implement custom acknowledge mechanisms.
 
 
 :sectnums:
@@ -1033,6 +1018,11 @@ the according FIRQ priority; 0 = highest, 15 = lowest):
 | 11      | <<_stream_link_interface_slink,SLINK>> | TX data send
 | 12:15   | - | _reserved_, will never fire
 |=======================
+
+.Trigger type
+[IMPORTANT]
+The fast interrupt request channel trigger on a single **rising-edge** and do not require any kind of explicit
+acknowledgment at all.
 
 
 
@@ -1336,6 +1326,13 @@ register and register bit accesses.
 Most of the IO devices do not have a hardware reset. Instead, the devices are reset via software by
 writing zero to the unit's control register. A general software-based reset of all devices is done by the
 application start-up code `crt0.S`.
+
+**Interrupts of Processor-Internal Modules**
+
+Most peripheral/IO devices provide some kind of interrupt (for example to signal available incoming data). These
+interrupts are entirely mapped to the CPU's <<_custom_fast_interrupt_request_lines>>. Note that all these
+interrupt lines are triggered by a "one-shot" signal (hich for exactly one cycle) and _do not_ require any
+explicit acknowledgment.
 
 **Nomenclature for the Peripheral / IO Devices Listing**
 

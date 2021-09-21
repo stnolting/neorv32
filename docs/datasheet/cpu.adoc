@@ -31,8 +31,7 @@ image::riscv_logo.png[width=350,align=center]
 the NEORV32 processor)
 * little-endian byte order
 * Configurable hardware reset
-* No hardware support of unaligned data/instruction accesses – they will trigger an exception. If the C extension is enabled instructions
-can also be 16-bit aligned and a misaligned instruction address exception is not possible anymore
+* No hardware support of unaligned data/instruction accesses – they will trigger an exception.
 
 [NOTE]
 It is recommended to use the **NEORV32 Processor** as default top instance even if you only want to use the actual
@@ -217,27 +216,28 @@ OK: 1/1 RISCV_TARGET=neorv32 RISCV_DEVICE=Zifencei XLEN=32
 :sectnums:
 ==== RISC-V Incompatibility Issues and Limitations
 
-This list shows the currently known issues regarding full RISC-V-compatibility. More specific information
+This list shows the currently identified issues regarding full RISC-V-compatibility. More specific information
 can be found in section <<_instruction_sets_and_extensions>>.
 
+.Hardwired R/W CSRs
 [IMPORTANT]
-The `misa` CSR is read-only. It shows the synthesized CPU extensions. Hence, all implemented
-CPU extensions are always active and cannot be enabled/disabled dynamically during runtime. Any
-write access to it (in machine mode) is ignored and will not cause any exception or side-effects.
+The `misa`, `mip` and `mtval` CSRs in the NEORV32 are _read-only_.
+Any write access to it (in machine mode) to them are ignored and will _not_ cause any exceptions or side-effects.
 
-[IMPORTANT]
-The `mip` CSR is read-only. Pending IRQs (inside the CPU's interrupt queue) can be cleared using the `mie` CSR.
-
-[IMPORTANT]
-The `mtval` CSR is read-only.
-
+.Physical memory protection
 [IMPORTANT]
 The physical memory protection (see section <<_machine_physical_memory_protection>>)
 only supports the modes _OFF_ and _NAPOT_ yet and a minimal granularity of 8 bytes per region.
 
+.Atomic memory operations
 [IMPORTANT]
-The `A` CPU extension (atomic memory access) only implements the `lr.w` and `sc.w` instructions yet.
-However, these instructions are sufficient to emulate all further AMO operations.
+The `A` CPU extension only implements the `lr.w` and `sc.w` instructions yet.
+However, these instructions are sufficient to emulate all further atomic memory operations.
+
+.User-mode (`U` ISA extension)
+[IMPORTANT]
+The NEORV32 supports the minimal-privileged use mode, but currently no advanced U-mode features like trap
+delegation are implemented.
 
 
 <<<
@@ -284,15 +284,12 @@ direction seen from the CPU.
 | `d_bus_priv_o`   |     2 | out | current CPU privilege level
 4+^| **System Time (see <<_timeh>> CSR)**
 | `time_i`         |    64 | in  | system time input (from MTIME)
-4+^| **Non-Maskable Interrupt (<<_traps_exceptions_and_interrupts>>)**
-| `nm_irq_i`       |     1 | in  | non-maskable interrupt
 4+^| **Interrupts, RISC-V-compatible (<<_traps_exceptions_and_interrupts>>)**
 | `msw_irq_i`      |     1 | in  | RISC-V machine software interrupt
 | `mext_irq_i`     |     1 | in  | RISC-V machine external interrupt
 | `mtime_irq_i`    |     1 | in  | RISC-V machine timer interrupt
 4+^| **Fast Interrupts, NEORV32-specific (<<_traps_exceptions_and_interrupts>>)**
 | `firq_i`         |    16 | in  | fast interrupt request signals
-| `firq_ack_o`     |    16 | out | fast interrupt acknowledge signals
 4+^| **Enter Debug Mode Request (<<_on_chip_debugger_ocd>>)**
 | `db_halt_req_i`  |     1 | in  | request CPU to halt and enter debug mode
 |=======================
@@ -470,9 +467,8 @@ The NEORV32-specific extensions are always enabled and are indicated by the set 
 
 The most important points of the NEORV32-specific extensions are:
 * The CPU provides 16 _fast interrupt_ interrupts (`FIRQ)`, which are controlled via custom bits in the `mie`
-and `mip` CSR. This extension is mapped to bits, that are available for custom use (according to the
+and `mip` CSR. This extension is mapped to _reserved_ CSR bits, that are available for custom use (according to the
 RISC-V specs). Also, custom trap codes for `mcause` are implemented.
-* The CPU provides a single _non-maskable_ interrupt (`NMI)` that also provides a custom trap code for `mcause`.
 * All undefined/unimplemented/malformed/illegal instructions do raise an illegal instruction exception (see <<_full_virtualization>>).
 
 
@@ -783,7 +779,7 @@ accessed address does not respond or encounters an internal error during access.
 
 In this document the following nomenclature regarding traps is used:
 
-* _interrupt_ = asynchronous exceptions
+* _interrupts_ = asynchronous exceptions
 * _exceptions_ = synchronous exceptions
 * _traps_ = exceptions + interrupts (synchronous or asynchronous exceptions)
 
@@ -794,18 +790,19 @@ Additional information regarding the cause of the trap can be retrieved from `mt
 
 The traps are prioritized. If several _exceptions_ occur at once only the one with highest priority is triggered
 while all remaining exceptions are ignored. If several _interrupts_ trigger at once, the one with highest priority
-is serviced first while the remaining ones are queued. After completing the interrupt handler the interrupt with
+is serviced first while the remaining ones stay _pending_. After completing the interrupt handler the interrupt with
 the second highest priority will get serviced and so on until no further interrupt are pending.
 
-.Trigger Type
+.RISC-V interrupts
 [IMPORTANT]
-All CPU interrupt request signals are high-level triggered. So an interrupt request will be generated if the
-according signal is _high_ for exactly one cycle (being high for several cycles might cause multiple
-triggering of the same interrupt).
+All RISC-V defined machine level interrupts request signals are high-active. A request has to stay at high-level until
+it is acknowledged by the CPU (for example by writing to a specific memory-mapped register).
 
 .Instruction Atomicity
 [NOTE]
 All instructions execute as atomic operations – interrupts can only trigger between two instructions.
+So if there is a permanent interrupt request, exactly one instruction from the interrupt program will be executed before
+a new interrupt handler can start.
 
 
 :sectnums:
@@ -814,8 +811,7 @@ All instructions execute as atomic operations – interrupts can only trigger be
 If a load operation causes any exception, the instruction's destination register is
 _not written_ at all. Load exceptions caused by a misalignment or a physical memory protection fault do not
 trigger a bus read-operation at all. Exceptions caused by a store address misalignment or a store physical
-memory protection fault do not trigger
-a bus write-operation at all.
+memory protection fault do not trigger a bus write-operation at all.
 
 
 :sectnums:
@@ -823,18 +819,10 @@ a bus write-operation at all.
 
 As a custom extension, the NEORV32 CPU features 16 fast interrupt request (FIRQ) lines via the `firq_i` CPU top
 entity signals. These interrupts have custom configuration and status flags in the `mie` and `mip` CSRs and also
-provide custom trap codes in `mcause`. Thes FIRQs are reserved for processor-internal usage only.
+provide custom trap codes in `mcause`. These FIRQs are reserved for processor-internal usage only.
 
-
-:sectnums:
-==== Non-Maskable Interrupt
-
-The NEORV32 CPU features a single non-maskable interrupt source via the `nm_irq_i` CPU (/Processor) top
-entity signal. This interrupt can be used to signal _critical_ system conditions that need immediate handling.
-The non-maskable interrupt _cannot_ be masked/disabled at all (even not in interrupt service routines).
-Hence, it does _not_ provide configuration/status flags in the `mie` and `mip` CSRs. The RISC-V-compatible
-`mcause` value `0x80000000` is used to indicate the non-maskable interrupt.
-
+[NOTE]
+The fast interrupt request lines trigger on a **rising-edge**.
 
 
 <<<
@@ -846,37 +834,36 @@ Hence, it does _not_ provide configuration/status flags in the `mie` and `mip` C
 [cols="3,6,5,14,11,4,4"]
 [options="header",grid="rows"]
 |=======================
-| Prio. | `mcause`     | [RISC-V] | ID [C] | Cause | `mepc` | `mtval`
-| 1     | `0x80000000` | 1.0      | _TRAP_CODE_NMI_ | non-maskable interrupt | _I-PC_ | _0_
-| 2     | `0x8000000B` | 1.11     | _TRAP_CODE_MEI_ | machine external interrupt | _I-PC_ | _0_
-| 3     | `0x80000003` | 1.3      | _TRAP_CODE_MSI_ | machine software interrupt | _I-PC_ | _0_
-| 4     | `0x80000007` | 1.7      | _TRAP_CODE_MTI_ | machine timer interrupt | _I-PC_ | _0_
-| 5     | `0x80000010` | 1.16     | _TRAP_CODE_FIRQ_0_ | fast interrupt request channel 0 | _I-PC_ | _0_
-| 6     | `0x80000011` | 1.17     | _TRAP_CODE_FIRQ_1_ | fast interrupt request channel 1 | _I-PC_ | _0_
-| 7     | `0x80000012` | 1.18     | _TRAP_CODE_FIRQ_2_ | fast interrupt request channel 2 | _I-PC_ | _0_
-| 8     | `0x80000013` | 1.19     | _TRAP_CODE_FIRQ_3_ | fast interrupt request channel 3 | _I-PC_ | _0_
-| 9     | `0x80000014` | 1.20     | _TRAP_CODE_FIRQ_4_ | fast interrupt request channel 4 | _I-PC_ | _0_
-| 10    | `0x80000015` | 1.21     | _TRAP_CODE_FIRQ_5_ | fast interrupt request channel 5 | _I-PC_ | _0_
-| 11    | `0x80000016` | 1.22     | _TRAP_CODE_FIRQ_6_ | fast interrupt request channel 6 | _I-PC_ | _0_
-| 12    | `0x80000017` | 1.23     | _TRAP_CODE_FIRQ_7_ | fast interrupt request channel 7 | _I-PC_ | _0_
-| 13    | `0x80000018` | 1.24     | _TRAP_CODE_FIRQ_8_ | fast interrupt request channel 8 | _I-PC_ | _0_
-| 14    | `0x80000019` | 1.25     | _TRAP_CODE_FIRQ_9_ | fast interrupt request channel 9 | _I-PC_ | _0_
-| 15    | `0x8000001a` | 1.26     | _TRAP_CODE_FIRQ_10_ | fast interrupt request channel 10 | _I-PC_ | _0_
-| 16    | `0x8000001b` | 1.27     | _TRAP_CODE_FIRQ_11_ | fast interrupt request channel 11 | _I-PC_ | _0_
-| 17    | `0x8000001c` | 1.28     | _TRAP_CODE_FIRQ_12_ | fast interrupt request channel 12 | _I-PC_ | _0_
-| 18    | `0x8000001d` | 1.29     | _TRAP_CODE_FIRQ_13_ | fast interrupt request channel 13 | _I-PC_ | _0_
-| 19    | `0x8000001e` | 1.30     | _TRAP_CODE_FIRQ_14_ | fast interrupt request channel 14 | _I-PC_ | _0_
-| 20    | `0x8000001f` | 1.31     | _TRAP_CODE_FIRQ_15_ | fast interrupt request channel 15 | _I-PC_ | _0_
-| 21    | `0x00000001` | 0.1      | _TRAP_CODE_I_ACCESS_ | instruction access fault | _B-ADR_ | _PC_
-| 22    | `0x00000002` | 0.2      | _TRAP_CODE_I_ILLEGAL_ | illegal instruction | _PC_ | _Inst_
-| 23    | `0x00000000` | 0.0      | _TRAP_CODE_I_MISALIGNED_ | instruction address misaligned | _B-ADR_ | _PC_
-| 24    | `0x0000000B` | 0.11     | _TRAP_CODE_MENV_CALL_ | environment call from M-mode (ECALL in machine-mode) | _PC_ | _PC_
-| 25    | `0x00000008` | 0.8      | _TRAP_CODE_UENV_CALL_ | environment call from U-mode(ECALL in user-mode) | _PC_ | _PC_
-| 26    | `0x00000003` | 0.3      | _TRAP_CODE_BREAKPOINT_ | breakpoint (EBREAK) | _PC_ | _PC_
-| 27    | `0x00000006` | 0.6      | _TRAP_CODE_S_MISALIGNED_ | store address misaligned | _B-ADR_ | _B-ADR_
-| 28    | `0x00000004` | 0.4      | _TRAP_CODE_L_MISALIGNED_ | load address misaligned | _B-ADR_ | _B-ADR_
-| 29    | `0x00000007` | 0.7      | _TRAP_CODE_S_ACCESS_ | store access fault | _B-ADR_ | _B-ADR_
-| 30    | `0x00000005` | 0.5      | _TRAP_CODE_L_ACCESS_ | lad access fault | _B-ADR_ | _B-ADR_
+| Prio. | `mcause` | [RISC-V] | ID [C] | Cause | `mepc` | `mtval`
+| 1  | `0x00000000` | 0.0  | _TRAP_CODE_I_MISALIGNED_ | instruction address misaligned | _B-ADR_ | _PC_
+| 2  | `0x00000001` | 0.1  | _TRAP_CODE_I_ACCESS_     | instruction access fault | _B-ADR_ | _PC_
+| 3  | `0x00000002` | 0.2  | _TRAP_CODE_I_ILLEGAL_    | illegal instruction | _PC_ | _Inst_
+| 4  | `0x0000000B` | 0.11 | _TRAP_CODE_MENV_CALL_    | environment call from M-mode (`ecall` in machine-mode) | _PC_ | _PC_
+| 5  | `0x00000008` | 0.8  | _TRAP_CODE_UENV_CALL_    | environment call from U-mode (`ecall` in user-mode) | _PC_ | _PC_
+| 6  | `0x00000003` | 0.3  | _TRAP_CODE_BREAKPOINT_   | breakpoint (EBREAK) | _PC_ | _PC_
+| 7  | `0x00000006` | 0.6  | _TRAP_CODE_S_MISALIGNED_ | store address misaligned | _B-ADR_ | _B-ADR_
+| 8  | `0x00000004` | 0.4  | _TRAP_CODE_L_MISALIGNED_ | load address misaligned | _B-ADR_ | _B-ADR_
+| 9  | `0x00000007` | 0.7  | _TRAP_CODE_S_ACCESS_     | store access fault | _B-ADR_ | _B-ADR_
+| 10 | `0x00000005` | 0.5  | _TRAP_CODE_L_ACCESS_     | load access fault | _B-ADR_ | _B-ADR_
+| 11 | `0x80000010` | 1.16 | _TRAP_CODE_FIRQ_0_       | fast interrupt request channel 0 | _I-PC_ | _0_
+| 12 | `0x80000011` | 1.17 | _TRAP_CODE_FIRQ_1_       | fast interrupt request channel 1 | _I-PC_ | _0_
+| 13 | `0x80000012` | 1.18 | _TRAP_CODE_FIRQ_2_       | fast interrupt request channel 2 | _I-PC_ | _0_
+| 14 | `0x80000013` | 1.19 | _TRAP_CODE_FIRQ_3_       | fast interrupt request channel 3 | _I-PC_ | _0_
+| 15 | `0x80000014` | 1.20 | _TRAP_CODE_FIRQ_4_       | fast interrupt request channel 4 | _I-PC_ | _0_
+| 16 | `0x80000015` | 1.21 | _TRAP_CODE_FIRQ_5_       | fast interrupt request channel 5 | _I-PC_ | _0_
+| 17 | `0x80000016` | 1.22 | _TRAP_CODE_FIRQ_6_       | fast interrupt request channel 6 | _I-PC_ | _0_
+| 18 | `0x80000017` | 1.23 | _TRAP_CODE_FIRQ_7_       | fast interrupt request channel 7 | _I-PC_ | _0_
+| 19 | `0x80000018` | 1.24 | _TRAP_CODE_FIRQ_8_       | fast interrupt request channel 8 | _I-PC_ | _0_
+| 20 | `0x80000019` | 1.25 | _TRAP_CODE_FIRQ_9_       | fast interrupt request channel 9 | _I-PC_ | _0_
+| 21 | `0x8000001a` | 1.26 | _TRAP_CODE_FIRQ_10_      | fast interrupt request channel 10 | _I-PC_ | _0_
+| 22 | `0x8000001b` | 1.27 | _TRAP_CODE_FIRQ_11_      | fast interrupt request channel 11 | _I-PC_ | _0_
+| 23 | `0x8000001c` | 1.28 | _TRAP_CODE_FIRQ_12_      | fast interrupt request channel 12 | _I-PC_ | _0_
+| 24 | `0x8000001d` | 1.29 | _TRAP_CODE_FIRQ_13_      | fast interrupt request channel 13 | _I-PC_ | _0_
+| 25 | `0x8000001e` | 1.30 | _TRAP_CODE_FIRQ_14_      | fast interrupt request channel 14 | _I-PC_ | _0_
+| 26 | `0x8000001f` | 1.31 | _TRAP_CODE_FIRQ_15_      | fast interrupt request channel 15 | _I-PC_ | _0_
+| 27 | `0x8000000B` | 1.11 | _TRAP_CODE_MEI_          | machine external interrupt | _I-PC_ | _0_
+| 28 | `0x80000003` | 1.3  | _TRAP_CODE_MSI_          | machine software interrupt | _I-PC_ | _0_
+| 29 | `0x80000007` | 1.7  | _TRAP_CODE_MTI_          | machine timer interrupt | _I-PC_ | _0_
 |=======================
 
 **Notes**

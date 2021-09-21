@@ -519,7 +519,7 @@ When the CPU **is in debug mode** the following things are important:
     ( = _CPU_DEBUG_ADDR_) of the park loop again (for example when executing `ebreak` in debug mode)
   * for all other exception sources the CPU jumps to the _exception entry point_ ( = _CPU_DEBUG_ADDR_ + 4)
     to signal an exception to the DM and restarts the park loop again afterwards
-* interrupts _including_ non-maskable interrupts are disabled; however, they will be buffered and executed when the CPU has left debug mode
+* interrupts are disabled; however, they will be remain pending and will get executed after the CPU has left debug mode
 * if the DM makes a resume request, the park loop exits and the CPU leaves debug mode (executing `dret`)
 
 Debug mode is left either by executing the `dret` instruction footnote:[`dret` should only be executed _inside_ the debugger
@@ -569,13 +569,13 @@ The following bits are implemented. The reaming bits are read-only and always re
 | 14    | [line-through]#`ebereakh`# | r/- | `0` - hypervisor mode not supported
 | 13    | [line-through]#`ebereaks`# | r/- | `0` - supervisor mode not supported
 | 12    | `ebereaku`  | r/w | `ebreak` instructions in `user` mode will _enter_ debug mode when set
-| 11    | [line-through]#`stepie`# | r/- | `0` - IRQs are disabled during single-stepping
+| 11    | [line-through]#`stepie`#    | r/- | `0` - IRQs are disabled during single-stepping
 | 10    | [line-through]#`stopcount`# | r/- | `0` - counters increment as usual
 | 9     | [line-through]#`stoptime`#  | r/- | `0` - timers increment as usual
-| 8:6   | `cause`     | r/- | cause identifier - why was debug mode entered
+| 8:6   | `cause`     | r/- | cause identifier - why debug mode was entered
 | 5     | -           | r/- | _reserved_, read as zero
-| 4     | `mprven`    | r/- | `0` - `mstatus.mprv` is ignored when in debug mode
-| 3     | `nmip`      | r/- | set when the non-maskable CPU/processor interrupt is pending
+| 4     | [line-through]#`mprven`# | r/- | `0` - `mstatus.mprv` is ignored when in debug mode
+| 3     | [line-through]#`nmip`#   | r/- | `0` - non-maskable interrupt is pending
 | 2     | `step`      | r/w | enable single-stepping when set
 | 1:0   | `prv`       | r/w | CPU privilege level before/after debug mode
 |=======================
