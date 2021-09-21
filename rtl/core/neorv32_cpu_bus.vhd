@@ -175,7 +175,9 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (PMP_NUM_REGIONS > pmp_num_regions_critical_c) report "NEORV32 CPU CONFIG WARNING! Number of implemented PMP regions (PMP_NUM_REGIONS = " & integer'image(PMP_NUM_REGIONS) & ") beyond critical limit (pmp_num_regions_critical_c = " & integer'image(pmp_num_regions_critical_c) & "). Inserting another register stage (that will increase memory latency by +1 cycle)." severity warning;
+  assert not (PMP_NUM_REGIONS > pmp_num_regions_critical_c) report "NEORV32 CPU CONFIG WARNING! Number of implemented PMP regions (PMP_NUM_REGIONS = " &
+  integer'image(PMP_NUM_REGIONS) & ") beyond critical limit (pmp_num_regions_critical_c = " & integer'image(pmp_num_regions_critical_c) &
+  "). Inserting another register stage (that will increase memory latency by +1 cycle)." severity warning;
 
 
   -- Data Interface: Access Address ---------------------------------------------------------
@@ -387,7 +389,7 @@ begin
   excl_state_o <= exclusive_lock;
 
   -- output to memory system --
-  i_bus_lock_o <= '0'; -- instruction fetches cannot be lockes
+  i_bus_lock_o <= '0'; -- instruction fetches cannot be locked
   d_bus_lock_o <= exclusive_lock;
 
 
@@ -435,8 +437,15 @@ begin
   instr_o       <= i_bus_rdata_i;
 
   -- check instruction access --
-  i_misaligned <= '0' when (CPU_EXTENSION_RISCV_C = true) else -- no alignment exceptions possible when using C-extension
-                  '1' when (fetch_pc_i(1) = '1') else '0'; -- 32-bit accesses only
+  i_alignment_check: process(fetch_pc_i)
+  begin
+    i_misaligned <= '0'; -- default
+    if (CPU_EXTENSION_RISCV_C = false) then
+      i_misaligned <= or_reduce_f(fetch_pc_i(1 downto 0)); -- 32-bit aligned accesses only
+    else
+      i_misaligned <= fetch_pc_i(0); -- 32-bit and 16-bit aligned accesses only
+    end if;
+  end process i_alignment_check;
 
   -- additional register stage for control signals if using PMP_NUM_REGIONS > pmp_num_regions_critical_c --
   pmp_ibus_buffer: process(rstn_i, clk_i)
