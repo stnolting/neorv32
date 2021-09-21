@@ -427,7 +427,6 @@ begin
     elsif rising_edge(clk_i) then
 
       -- default --
-      dm_reg.halt_req    <= '0';
       dm_reg.resume_req  <= '0';
       dm_reg.reset_ack   <= '0';
       dm_reg.wr_acc_err  <= '0';
@@ -439,7 +438,7 @@ begin
 
         -- debug module control --
         if (dmi_req_addr_i = addr_dmcontrol_c) then
-          dm_reg.halt_req           <= dmi_req_data_i(31); -- haltreq (-/w): write 1 to request halt
+          dm_reg.halt_req           <= dmi_req_data_i(31); -- haltreq (-/w): write 1 to request halt; has to be cleared again by debugger
           dm_reg.resume_req         <= dmi_req_data_i(30); -- resumereq (-/w1): write 1 to request resume
           dm_reg.reset_ack          <= dmi_req_data_i(28); -- ackhavereset (-/w1)
           dm_reg.dmcontrol_ndmreset <= dmi_req_data_i(01); -- ndmreset (r/w): soc reset

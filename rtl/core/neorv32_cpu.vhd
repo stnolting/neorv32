@@ -118,8 +118,6 @@ entity neorv32_cpu is
     d_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
     -- system time input from MTIME --
     time_i         : in  std_ulogic_vector(63 downto 0); -- current system time
-    -- non-maskable interrupt --
-    nm_irq_i       : in  std_ulogic; -- NMI
     -- interrupts (risc-v compliant) --
     msw_irq_i      : in  std_ulogic;-- machine software interrupt
     mext_irq_i     : in  std_ulogic;-- machine external interrupt
@@ -291,8 +289,6 @@ begin
     msw_irq_i     => msw_irq_i,   -- machine software interrupt
     mext_irq_i    => mext_irq_i,  -- machine external interrupt
     mtime_irq_i   => mtime_irq_i, -- machine timer interrupt
-    -- non-maskable interrupt --
-    nm_irq_i      => nm_irq_i,    -- nmi
     -- fast interrupts (custom) --
     firq_i        => firq_i,      -- fast interrupt trigger
     -- system time input from MTIME --
