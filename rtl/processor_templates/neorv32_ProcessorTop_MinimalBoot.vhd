@@ -258,7 +258,6 @@ begin
     mtime_o     => open,                         -- current system time from int. MTIME (if IO_MTIME_EN = true)
 
     -- Interrupts --
-    nm_irq_i    => '0',                          -- non-maskable interrupt
     mtime_irq_i => '0',                          -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => '0',                          -- machine software interrupt
     mext_irq_i  => '0'                           -- machine external interrupt

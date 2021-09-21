@@ -176,7 +176,6 @@ entity neorv32_ProcessorTop_stdlogic is
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         : in  std_logic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0'); -- IRQ channels
     -- CPU Interrupts --
-    nm_irq_i       : in  std_logic := '0'; -- non-maskable interrupt
     mtime_irq_i    : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i      : in  std_logic := '0'; -- machine software interrupt
     mext_irq_i     : in  std_logic := '0'  -- machine external interrupt
@@ -251,7 +250,6 @@ architecture neorv32_ProcessorTop_stdlogic_rtl of neorv32_ProcessorTop_stdlogic 
   --
   signal xirq_i_int      : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
   --
-  signal nm_irq_i_int    : std_ulogic;
   signal mtime_irq_i_int : std_ulogic;
   signal msw_irq_i_int   : std_ulogic;
   signal mext_irq_i_int  : std_ulogic;
@@ -397,7 +395,6 @@ begin
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         => xirq_i_int,      -- IRQ channels
     -- CPU Interrupts --
-    nm_irq_i       => nm_irq_i_int,    -- non-maskable interrupt
     mtime_irq_i    => mtime_irq_i_int, -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i      => msw_irq_i_int,   -- machine software interrupt
     mext_irq_i     => mext_irq_i_int   -- machine external interrupt
@@ -464,7 +461,6 @@ begin
 
   xirq_i_int      <= std_ulogic_vector(xirq_i);
 
-  nm_irq_i_int    <= std_ulogic(nm_irq_i);
   msw_irq_i_int   <= std_ulogic(msw_irq_i);
   mext_irq_i_int  <= std_ulogic(mext_irq_i);
 
