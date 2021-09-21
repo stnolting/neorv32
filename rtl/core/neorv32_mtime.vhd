@@ -83,10 +83,9 @@ architecture neorv32_mtime_rtl of neorv32_mtime is
   signal mtime_hi      : std_ulogic_vector(31 downto 0);
 
   -- comparator and IRQ trigger --
-  signal cmp_lo       : std_ulogic;
-  signal cmp_lo_ff    : std_ulogic;
-  signal cmp_hi       : std_ulogic;
-  signal cmp_match_ff : std_ulogic;
+  signal cmp_lo    : std_ulogic;
+  signal cmp_lo_ff : std_ulogic;
+  signal cmp_hi    : std_ulogic;
 
 begin
 
@@ -169,9 +168,8 @@ begin
   cmp_sync: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      cmp_lo_ff    <= cmp_lo;
-      cmp_match_ff <= cmp_lo_ff and cmp_hi;
-      irq_o        <= cmp_lo_ff and cmp_hi and (not cmp_match_ff);
+      cmp_lo_ff <= cmp_lo;
+      irq_o     <= cmp_lo_ff and cmp_hi;
     end if;
   end process cmp_sync;
 
