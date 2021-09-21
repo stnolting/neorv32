@@ -116,7 +116,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   signal spi_data : std_ulogic;
 
   -- irq --
-  signal msi_ring, mei_ring, nmi_ring : std_ulogic;
+  signal msi_ring, mei_ring : std_ulogic;
 
   -- Wishbone bus --
   type wishbone_t is record
@@ -190,7 +190,7 @@ begin
     FAST_SHIFT_EN                => false,         -- use barrel shifter for shift operations
     CPU_CNT_WIDTH                => 64,            -- total width of CPU cycle and instret counters (0..64)
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS              => 5,             -- number of regions (0..64)
+    PMP_NUM_REGIONS              => 8,             -- number of regions (0..64)
     PMP_MIN_GRANULARITY          => 64*1024,       -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 => 12,            -- number of implemented HPM counters (0..29)
@@ -301,7 +301,6 @@ begin
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         => gpio(31 downto 0), -- IRQ channels
     -- CPU Interrupts --
-    nm_irq_i       => nmi_ring,        -- non-maskable interrupt
     mtime_irq_i    => '0',             -- machine software interrupt, available if IO_MTIME_EN = false
     msw_irq_i      => msi_ring,        -- machine software interrupt
     mext_irq_i     => mei_ring         -- machine external interrupt
@@ -522,19 +521,18 @@ begin
 
   -- Wishbone IRQ Triggers ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_trigger: process(clk_gen)
+  irq_trigger: process(rst_gen, clk_gen)
   begin
-    if rising_edge(clk_gen) then
+    if (rst_gen = '0') then
+      msi_ring <= '0';
+      mei_ring <= '0';
+    elsif rising_edge(clk_gen) then
       -- bus interface --
       wb_irq.rdata <= (others => '0');
       wb_irq.ack   <= wb_irq.cyc and wb_irq.stb and wb_irq.we and and_reduce_f(wb_irq.sel);
       wb_irq.err   <= '0';
-      -- trigger IRQ using CSR.MIE bit layout --
-      nmi_ring <= '0';
-      msi_ring <= '0';
-      mei_ring <= '0';
+      -- trigger RISC-V platform IRQs --
       if ((wb_irq.cyc and wb_irq.stb and wb_irq.we and and_reduce_f(wb_irq.sel)) = '1') then
-        nmi_ring <= wb_irq.wdata(00); -- non-maskable interrupt
         msi_ring <= wb_irq.wdata(03); -- machine software interrupt
         mei_ring <= wb_irq.wdata(11); -- machine software interrupt
       end if;
