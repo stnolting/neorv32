@@ -218,7 +218,6 @@ The following bits are implemented (all remaining bits are always zero and are r
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 31    | _CSR_MSTATUS_SD_ | r/- | Read-only bit that is set if the FS field is not all-zero (state _OFF_)
 | 21    | _CSR_MSTATUS_TW_ | r/w | Timeout wait: raise illegal instruction exception if `WFI` instruction is executed outside of M-mode when set
 | 12:11 | _CSR_MSTATUS_MPP_H_ : _CSR_MSTATUS_MPP_L_ | r/w | Previous machine privilege level, 11 = machine (M) level, 00 = user (U) level
 | 7     | _CSR_MSTATUS_MPIE_ | r/w | Previous machine global interrupt enable flag state
@@ -535,25 +534,27 @@ before modifying `pmpaddr*`.
 :sectnums:
 ==== (Machine) Counters and Timers
 
-[IMPORTANT]
+[NOTE]
 The <<_cpu_cnt_width>> generic defines the total size of the CPU's <<_cycleh>> and <<_instreth>>
 / <<_mcycleh>> and <<_minstreth>>
-counter CSRs (low and high words combined); the time CSRs are not affected by this generic. Any
+counter CSRs (low and high words combined); the time CSRs are not affected by this generic. Note that any
 configuration with <<_cpu_cnt_width>> less than 64 is not RISC-V compliant.
 
+.Effective CPU counter width (`[m]cycle` & `[m]instret`)
 [IMPORTANT]
 If _CPU_CNT_WIDTH_ is less than 64 (the default value) and greater than or equal 32, the according
 MSBs of `[m]cycleh` and `[m]instreth` are read-only and always read as zero. This configuration
-will also set the _SYSINFO_CPU_ZXSCNT_ flag in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register. +
+will also set the _SYSINFO_CPU_ZXSCNT_ flag ("small counters") in the `CPU`
+<<_system_configuration_information_memory_sysinfo, SYSINFO>> register. +
  +
-If _CPU_CNT_WIDTH_ is less than 32 and greater than 0, the `[m]cycleh` and `[m]instreth` do not
-exist and any access will raise an illegal instruction exception. Furthermore, the according MSBs of
-`[m]cycle` and `[m]instret` are read-only and always read as zero. This configuration will also
-set the _SYSINFO_CPU_ZXSCNT_ flag in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register. +
+If _CPU_CNT_WIDTH_ is less than 32 and greater than 0, the `[m]cycleh` and `[m]instreth` CSRs are hardwired to zero
+and any write access to them is ignored. Furthermore, the according MSBs of `[m]cycle` and `[m]instret` are read-only
+and always read as zero. This configuration will also set the _SYSINFO_CPU_ZXSCNT_ flag ("small counters") in
+the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register. +
  +
-If _CPU_CNT_WIDTH_ is 0, <<_cycleh>> and <<_instreth>> / <<_mcycleh>> and <<_minstreth>> do not
-exist and any access will raise an illegal instruction exception. This configuration will also set the
-_SYSINFO_CPU_ZXNOCNT_ flag in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
+If _CPU_CNT_WIDTH_ is 0, the <<_cycleh>> and <<_instreth>> / <<_mcycleh>> and <<_minstreth>> CSRs are hardwired to zero
+and any write access to them is ignored. This configuration will also set the _SYSINFO_CPU_ZXNOCNT_ flag ("no counters") in the
+`CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 
 
 :sectnums!:

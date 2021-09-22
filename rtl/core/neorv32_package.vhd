@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060008"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060009"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -769,8 +769,8 @@ package neorv32_package is
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- MSB   : 1 = async exception (IRQ); 0 = sync exception (e.g. ebreak)
-  -- MSB-1 : 1 = entry to debug mode; 0 = normal trapping
+  -- MSB:   1 = async exception (IRQ), 0 = sync exception (e.g. ebreak)
+  -- MSB-1: 1 = entry to debug mode, 0 = normal trapping
   -- RISC-V compliant sync. exceptions --
   constant trap_ima_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00000"; -- 0.0:  instruction misaligned
   constant trap_iba_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00001"; -- 0.1:  instruction access fault

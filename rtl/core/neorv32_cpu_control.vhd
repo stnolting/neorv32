@@ -1331,9 +1331,9 @@ begin
 
       -- machine trap setup & handling --
       when csr_mstatus_c | csr_mstatush_c | csr_misa_c | csr_mie_c | csr_mtvec_c | csr_mscratch_c | csr_mepc_c | csr_mcause_c | csr_mip_c | csr_mtval_c =>
-        -- NOTE: MISA, MIP and MTVAL are read-only in the NEORV32 but we do not cause an exception here for compatibility; machine-level code
-        -- should read back those CSRs after writing them to realize these are read-only
-        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+        -- NOTE: MISA, MIP and MTVAL are read-only in the NEORV32 but we do not cause an exception here for compatibility.
+        --       Machine-level code should read-back those CSRs after writing them to realize they are read-only.
+        csr_acc_valid <= csr.priv_m_mode; -- M-mode only 
 
       when csr_mcounteren_c | csr_menvcfg_c | csr_menvcfgh_c => -- only available if U mode is implemented
         csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);
@@ -1378,20 +1378,12 @@ begin
         end if;
 
       -- counters/timers --
-      when csr_mcycle_c | csr_minstret_c =>
-        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_lo_width_c > 0)); -- M-mode only, access valid if really implemented
-      when csr_mcycleh_c | csr_minstreth_c =>
-        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(cpu_cnt_hi_width_c > 0)); -- M-mode only, access valid if really implemented
-
-      when csr_cycle_c =>
-        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_cy) and bool_to_ulogic_f(boolean(cpu_cnt_lo_width_c > 0)); -- M-mode, U-mode if authorized, read-only, access if implemented
-      when csr_cycleh_c =>
-        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_cy) and bool_to_ulogic_f(boolean(cpu_cnt_hi_width_c > 0)); -- M-mode, U-mode if authorized, read-only, access if implemented
-      when csr_instret_c =>
-        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_ir) and bool_to_ulogic_f(boolean(cpu_cnt_lo_width_c > 0)); -- M-mode, U-mode if authorized, read-only, access if implemented
-      when csr_instreth_c =>
-        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_ir) and bool_to_ulogic_f(boolean(cpu_cnt_hi_width_c > 0)); -- M-mode, U-mode if authorized, read-only, access if implemented
-
+      when csr_mcycle_c | csr_mcycleh_c | csr_minstret_c | csr_minstreth_c =>
+        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
+      when csr_cycle_c | csr_cycleh_c =>
+        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_cy); -- M-mode, U-mode if authorized, read-only
+      when csr_instret_c | csr_instreth_c =>
+        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_ir); -- M-mode, U-mode if authorized, read-only
       when csr_time_c | csr_timeh_c =>
         csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_tm); -- M-mode, U-mode if authorized, read-only
 
@@ -2525,12 +2517,16 @@ begin
   -- Control and Status Registers - Read Access ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_read_access: process(rstn_i, clk_i)
+    variable csr_addr_v : std_ulogic_vector(11 downto 0);
   begin
     if rising_edge(clk_i) then
       csr.re    <= csr.re_nxt; -- read access?
       csr.rdata <= (others => '0'); -- default output
       if (CPU_EXTENSION_RISCV_Zicsr = true) and (csr.re = '1') then
-        case csr.addr is
+        csr_addr_v(11 downto 10) := csr.addr(11 downto 10);
+        csr_addr_v(09 downto 08) := (others => csr.addr(8)); -- !!! WARNING: MACHINE (11) and USER (00) registers ONLY !!!
+        csr_addr_v(07 downto 00) := csr.addr(07 downto 00);
+        case csr_addr_v is
 
           -- floating-point CSRs --
           -- --------------------------------------------------------------------
