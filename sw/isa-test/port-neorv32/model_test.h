@@ -69,6 +69,7 @@ nop;                                                                          \
       core_init:                                                              \
         la x1, core_dummy_trap_handler;                                       \
         csrw   mtvec, x1;                                                     \
+        csrw   mie, x0;                                                       \
         j      uart0_sim_mode_init;                                           \
 nop;                                                                          \
 nop;                                                                          \
@@ -115,6 +116,7 @@ nop;                                                                          \
       core_init:                                                              \
         la x1, core_dummy_trap_handler;                                       \
         csrw   mtvec, x1;                                                     \
+        csrw   mie, x0;                                                       \
 nop;                                                                          \
 nop;                                                                          \
       init_rvtest_data:                                                       \
