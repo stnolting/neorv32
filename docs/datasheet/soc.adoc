@@ -396,7 +396,7 @@ shift-related operations of the <<_zbb_basic_bit_manipulation_operations>> exten
 [frame="all",grid="none"]
 |======
 | **CPU_CNT_WIDTH** | _natural_ | 64
-3+| This generic configures the total size of the CPU's `cycle` and `instret` CSRs (low word + high word).
+3+| This generic configures the total size of the CPU's `[m]cycle` and `[m]instret` CSRs (low word + high word).
 The maximum value is 64, the minimum value is 0. See section <<_machine_counters_and_timers>> for more information.
 Note: configurations with <<_cpu_cnt_width>> less than 64 bits do not comply to the RISC-V specs.
 |======
@@ -964,7 +964,7 @@ specifications. However, bare-metal system can also repurpose these interrupts. 
 
 .Trigger type
 [IMPORTANT]
-These IRQs trigger on **high-level** and must stay asserted until explicitly acknowledged by the CPU (for example
+These IRQs trigger on **high-level** and must _stay asserted_ until explicitly acknowledged by the CPU (for example
 by writing to a specific memory-mapped register).
 
 
