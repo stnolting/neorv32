@@ -234,10 +234,13 @@ only supports the modes _OFF_ and _NAPOT_ yet and a minimal granularity of 8 byt
 The `A` CPU extension only implements the `lr.w` and `sc.w` instructions yet.
 However, these instructions are sufficient to emulate all further atomic memory operations.
 
-.User-mode (`U` ISA extension)
-[IMPORTANT]
-The NEORV32 supports the minimal-privileged use mode, but currently no advanced U-mode features like trap
-delegation are implemented.
+.Instruction Misalignment
+[NOTE]
+This is not a real RISC-V incompatibility, but something that might not be clear when studying the RISC-V privileged
+architecture specifications: for 32-bit only instructions (no `C` extension) the misaligned instruction exception
+is raised if bit 1 of the access address is set (i.e. not on 32-bit boundary). If the `C` extension is implemented
+there will be no misaligned instruction exceptions _at all_.
+In both cases bit 0 of the program counter and all related registers is hardwired to zero.
 
 
 <<<

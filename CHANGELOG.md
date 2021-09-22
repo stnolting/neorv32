@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 22.09.2021 | 1.6.0.8 | :bug: fixed bug introduced in previous version: misaligned instruction address - PC and all instruction address-related registers need to have bit 0 hardwired to zero, misaligned instructions can only appear if NOT using `C` ISA extension |
 | 21.09.2021 | 1.6.0.7 | :warning: **reworked CPU trap/exception system** (in order to comply with RISC-V specs.): removed non-maskable interrupt (`NMI`, top signal `nm_irq_i`); reworked CPU trap prioritization (sync before async); RISC-V interrupts (`MTI`, `MSI`, `MEI`) are now high-level-triggered and require to stay asserted until they are explicitly acknowledged; fixed minor bug in misaligned instruction check logic (PC(0) = '1' will always cause a misalignment exception); updated trap/interrupt-related documentation |
 | 20.09.2021 | 1.6.0.6 | the NEORV32's `misa`, `mip` and `mtval` CSRs are _read-only_; however, write accesses to these CSRs _do not raise an illegal instruction exception_ (anymore) to be compatibility to the RISC-V specs. |
 | 19.09.2021 | 1.6.0.5 | added `menvcfg[h]` CSRs (only available if `U` ISA extension is enabled; not used yet - hardwired to zero, but required by RISC-V spec.) |

@@ -50,7 +50,9 @@
 /** UART BAUD rate */
 #define BAUD_RATE           (19200)
 //** Reachable unaligned address */
-#define ADDR_UNALIGNED      (0x00000001)
+#define ADDR_UNALIGNED_1    (0x00000001)
+//** Reachable unaligned address */
+#define ADDR_UNALIGNED_2    (0x00000002)
 //** Unreachable word-aligned address */
 #define ADDR_UNREACHABLE    (IO_BASE_ADDRESS-4)
 //** external memory base address */
@@ -517,17 +519,25 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   PRINT_STANDARD("[%i] I_ALIGN (instr. alignment) EXC: ", cnt_test);
 
-  cnt_test++;
+  // skip if C-mode is implemented
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) == 0) {
 
-  // call unaligned address
-  ((void (*)(void))ADDR_UNALIGNED)();
-  asm volatile("nop");
+    cnt_test++;
 
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_MISALIGNED) {
-    test_ok();
+    // call unaligned address
+    ((void (*)(void))ADDR_UNALIGNED_2)();
+    asm volatile("nop");
+
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_MISALIGNED) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
   }
   else {
-    test_fail();
+    PRINT_STANDARD("skipped (n.a. with C-ext)\n");
   }
 
 
@@ -583,7 +593,7 @@ int main() {
   PRINT_STANDARD("[%i] CI_ILLEG (illegal compr. instr.) EXC: ", cnt_test);
 
   // skip if C-mode is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) != 0) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C))) {
 
     cnt_test++;
 
@@ -633,7 +643,7 @@ int main() {
   cnt_test++;
 
   // load from unaligned address
-  neorv32_cpu_load_unsigned_word(ADDR_UNALIGNED);
+  neorv32_cpu_load_unsigned_word(ADDR_UNALIGNED_1);
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_MISALIGNED) {
     test_ok();
@@ -669,7 +679,7 @@ int main() {
   cnt_test++;
 
   // store to unaligned address
-  neorv32_cpu_store_unsigned_word(ADDR_UNALIGNED, 0);
+  neorv32_cpu_store_unsigned_word(ADDR_UNALIGNED_2, 0);
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_MISALIGNED) {
     test_ok();
@@ -828,7 +838,7 @@ int main() {
     test_fail();
   }
 
-/*
+
   // ----------------------------------------------------------
   // Permanent IRQ (make sure interrupted program advances)
   // ----------------------------------------------------------
@@ -857,7 +867,7 @@ int main() {
   else {
     test_fail();
   }
-*/
+
 
   // ----------------------------------------------------------
   // Test pending interrupt

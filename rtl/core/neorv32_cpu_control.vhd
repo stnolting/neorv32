@@ -393,7 +393,7 @@ begin
       fetch_engine.state_prev <= fetch_engine.state;
       fetch_engine.restart    <= fetch_engine.restart_nxt;
       if (fetch_engine.restart = '1') then
-        fetch_engine.pc <= execute_engine.pc; -- initialize with "real" application PC
+        fetch_engine.pc <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- initialize with "real" application PC
       else
         fetch_engine.pc <= fetch_engine.pc_nxt;
       end if;
@@ -401,7 +401,7 @@ begin
   end process fetch_engine_fsm_sync;
 
   -- PC output --
-  fetch_pc_o <= fetch_engine.pc;
+  fetch_pc_o <= fetch_engine.pc(data_width_c-1 downto 1) & '0'; -- half-word aligned
 
 
   -- Fetch Engine FSM Comb ------------------------------------------------------------------
@@ -688,7 +688,7 @@ begin
   begin
     if (rstn_i = '0') then
       -- registers that DO require a specific reset state --
-      execute_engine.pc       <= CPU_BOOT_ADDR;
+      execute_engine.pc       <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00"; -- 32-bit aligned!
       execute_engine.state    <= SYS_WAIT;
       execute_engine.sleep    <= '0';
       execute_engine.branched <= '1'; -- reset is a branch from "somewhere"
@@ -707,9 +707,9 @@ begin
       -- PC update --
       if (execute_engine.pc_we = '1') then
         if (execute_engine.pc_mux_sel = '0') then
-          execute_engine.pc <= execute_engine.next_pc; -- normal (linear) increment OR trap enter/exit
+          execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment OR trap enter/exit
         else
-          execute_engine.pc <= alu_add_i; -- jump/taken_branch
+          execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/taken_branch
         end if;
       end if;
       --
@@ -731,19 +731,19 @@ begin
       case execute_engine.state is
         when TRAP_ENTER =>
           if (CPU_EXTENSION_RISCV_DEBUG = false) then -- normal trapping
-            execute_engine.next_pc <= csr.mtvec; -- trap enter
+            execute_engine.next_pc <= csr.mtvec(data_width_c-1 downto 1) & '0'; -- trap enter
           else -- DEBUG MODE enabled
             if (trap_ctrl.cause(5) = '1') then -- trap cause: debug mode (re-)entry
               execute_engine.next_pc <= CPU_DEBUG_ADDR; -- debug mode enter; start at "parking loop" <normal_entry>
             elsif (debug_ctrl.running = '1') then -- any other exception INSIDE debug mode
               execute_engine.next_pc <= std_ulogic_vector(unsigned(CPU_DEBUG_ADDR) + 4); -- execute at "parking loop" <exception_entry>
             else -- normal trapping
-              execute_engine.next_pc <= csr.mtvec; -- trap enter
+              execute_engine.next_pc <= csr.mtvec(data_width_c-1 downto 1) & '0'; -- trap enter
             end if;
           end if;
         when TRAP_EXIT =>
           if (CPU_EXTENSION_RISCV_DEBUG = false) or (debug_ctrl.running = '0') then -- normal end of trap
-            execute_engine.next_pc <= csr.mepc; -- trap exit
+            execute_engine.next_pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap exit
           else -- DEBUG MODE exiting
             execute_engine.next_pc <= csr.dpc; -- debug mode exit
           end if;
@@ -763,7 +763,7 @@ begin
   execute_engine.next_pc_inc <= x"00000004" when ((execute_engine.is_ci = '0') or (CPU_EXTENSION_RISCV_C = false)) else x"00000002";
 
   -- PC output --
-  curr_pc_o <= execute_engine.pc; -- PC for ALU ops
+  curr_pc_o <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- PC for ALU ops
 
   -- CSR access address --
   csr.addr <= execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c);
@@ -2156,7 +2156,7 @@ begin
               end if;
               -- R/W: dpc - debug mode program counter --
               if (csr.addr(1 downto 0) = csr_dpc_c(1 downto 0)) then
-                csr.dpc <= csr.wdata;
+                csr.dpc <= csr.wdata(data_width_c-1 downto 1) & '0';
               end if;
               -- R/W: dscratch0 - debug mode scratch register 0 --
               if (csr.addr(1 downto 0) = csr_dscratch0_c(1 downto 0)) then
@@ -2189,15 +2189,15 @@ begin
 
               -- trap PC --
               if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS (async source)
-                csr.mepc <= execute_engine.pc; -- this is the CURRENT pc = interrupted instruction
+                csr.mepc <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
               else -- for sync. EXCEPTIONS (sync source)
-                csr.mepc <= execute_engine.last_pc; -- this is the LAST pc = last executed instruction
+                csr.mepc <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
               end if;
 
               -- trap value --
               case trap_ctrl.cause is
                 when trap_ima_c | trap_iba_c => -- misaligned instruction address OR instruction access error
-                  csr.mtval <= execute_engine.pc; -- address of faulting instruction
+                  csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction
                 when trap_brk_c => -- breakpoint
                   csr.mtval <= execute_engine.last_pc; -- address of breakpoint instruction
                 when trap_lma_c | trap_lbe_c | trap_sma_c | trap_sbe_c => -- misaligned load/store address OR load/store access error
@@ -2221,9 +2221,9 @@ begin
 
               -- trap PC --
               if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS (async source)
-                csr.dpc <= execute_engine.pc; -- this is the CURRENT pc = interrupted instruction
+                csr.dpc <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
               else -- for sync. EXCEPTIONS (sync source)
-                csr.dpc <= execute_engine.last_pc; -- this is the LAST pc = last executed instruction
+                csr.dpc <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
               end if;
 
             end if;
@@ -2582,7 +2582,7 @@ begin
           when csr_mscratch_c => -- mscratch (r/w): machine scratch register
             csr.rdata <= csr.mscratch;
           when csr_mepc_c => -- mepc (r/w): machine exception program counter
-            csr.rdata <= csr.mepc;
+            csr.rdata <= csr.mepc(data_width_c-1 downto 1) & '0';
           when csr_mcause_c => -- mcause (r/w): machine trap cause
             csr.rdata(31) <= csr.mcause(csr.mcause'left);
             csr.rdata(csr.mcause'left-1 downto 0) <= csr.mcause(csr.mcause'left-1 downto 0);

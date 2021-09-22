@@ -436,16 +436,9 @@ begin
   i_bus_fence_o <= ctrl_i(ctrl_bus_fencei_c);
   instr_o       <= i_bus_rdata_i;
 
-  -- check instruction access --
-  i_alignment_check: process(fetch_pc_i)
-  begin
-    i_misaligned <= '0'; -- default
-    if (CPU_EXTENSION_RISCV_C = false) then
-      i_misaligned <= or_reduce_f(fetch_pc_i(1 downto 0)); -- 32-bit aligned accesses only
-    else
-      i_misaligned <= fetch_pc_i(0); -- 32-bit and 16-bit aligned accesses only
-    end if;
-  end process i_alignment_check;
+  -- check instruction access address alignment --
+  i_misaligned <= '0' when (CPU_EXTENSION_RISCV_C = true) else -- no alignment exceptions possible when using C-extension
+                  '1' when (fetch_pc_i(1) = '1') else '0'; -- 32-bit accesses only
 
   -- additional register stage for control signals if using PMP_NUM_REGIONS > pmp_num_regions_critical_c --
   pmp_ibus_buffer: process(rstn_i, clk_i)
