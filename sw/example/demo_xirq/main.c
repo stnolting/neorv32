@@ -99,7 +99,8 @@ int main() {
 
 
   // install handler functions for XIRQ channel 0,1,2,3. note that these functions are "normal" functions!
-  // (details: these are "third-level" interrupt handler)
+  // (details: these are "third-level" interrupt handlers)
+  // neorv32_xirq_install() also enables the specified XIRQ channel and clears any pending interrupts
   err_cnt = 0;
   err_cnt += neorv32_xirq_install(0, xirq_handler_ch0); // handler function for channel 0
   err_cnt += neorv32_xirq_install(1, xirq_handler_ch1); // handler function for channel 1
@@ -121,13 +122,12 @@ int main() {
   neorv32_cpu_eint();
 
 
-  // now we are ready to got!
   // the code below assumes the XIRQ inputs are connected to the processor's GPIO output port
   // so we can trigger the IRQs from software; if you have connected the XIRQs to buttons you
   // can remove the code below (note the trigger configuration using the XIRQ generics!)
   {
     // trigger XIRQs 3:0 at once
-    // assumes xirq_i <= gpio.output(31:0)
+    // assumes xirq_i(31:0) <= gpio.output(31:0)
 
     // due to the prioritization this will execute
     // -> xirq_handler_ch0
@@ -142,9 +142,9 @@ int main() {
   // --- wait for interrupts ---
   // All incoming XIRQ interrupt requests are "prioritized" in this example. The XIRQ FIRQ handler
   // reads the ID of the interrupt with the highest priority from the XIRQ controller ("source" register) and calls the according
-  // handler function.
+  // handler function (installed via neorv32_xirq_install();).
   // Non-prioritized handling of interrupts (or custom prioritization) can be implemented by manually reading the
-  // XIRQ controller's "pending" register. It is up to the software to define which pending IRQ should be served.
+  // XIRQ controller's "pending" register. Then it is up to the software to define which pending IRQ should be served first.
   while(1);
 
 
@@ -155,6 +155,17 @@ int main() {
   neorv32_xirq_uninstall(2); // disable XIRQ channel 2 and remove associated handler
   neorv32_xirq_uninstall(3); // disable XIRQ channel 3 and remove associated handler
 
+  // you can also manually clear pending interrupts
+  neorv32_xirq_clear_pending(0); // clear pending interrupt of channel 0
+
+  // manually enable and disable XIRQ channels
+  neorv32_xirq_channel_enable(0); // enable channel 0
+  neorv32_xirq_channel_disable(0); // disable channel 0
+
+  // globally enable/disable XIRQ CPU interrupt
+  // this will not affect the XIR configuration / pending interrupts
+  neorv32_xirq_global_enable();
+  neorv32_xirq_global_disable();
 
   return 0;
 }

@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 22.09.2021 | 1.6.0.10 | reworked CPU/software handshake of external interrupt controller `XIRQ` to avoid "external IRQ -> CPU IRQ" race conditions |
 | 22.09.2021 | 1.6.0.9 | if `CPU_CNT_WIDTH` generic (actual width of `[m]cycle` and `[m]instret` counters) is less than 64 the remaining bits are now just hardwired to zero ignoring any write access instead of causing an exception; minor CPU hardware optimizations |
 | 22.09.2021 | 1.6.0.8 | :bug: fixed bug introduced in previous version: misaligned instruction address - PC and all instruction address-related registers need to have bit 0 hardwired to zero, misaligned instructions can only appear if NOT using `C` ISA extension |
 | 21.09.2021 | 1.6.0.7 | :warning: **reworked CPU trap/exception system** (in order to comply with RISC-V specs.): removed non-maskable interrupt (`NMI`, top signal `nm_irq_i`); reworked CPU trap prioritization (sync before async); RISC-V interrupts (`MTI`, `MSI`, `MEI`) are now high-level-triggered and require to stay asserted until they are explicitly acknowledged; fixed minor bug in misaligned instruction check logic (PC(0) = '1' will always cause a misalignment exception); updated trap/interrupt-related documentation |

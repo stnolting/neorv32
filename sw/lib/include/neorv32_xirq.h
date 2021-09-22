@@ -62,6 +62,9 @@ int neorv32_xirq_setup(void);
 void neorv32_xirq_global_enable(void);
 void neorv32_xirq_global_disable(void);
 int neorv32_xirq_get_num(void);
+void neorv32_xirq_clear_pending(uint8_t ch);
+void neorv32_xirq_channel_enable(uint8_t ch);
+void neorv32_xirq_channel_disable(uint8_t ch);
 
 int neorv32_xirq_install(uint8_t ch, void (*handler)(void));
 int neorv32_xirq_uninstall(uint8_t ch);
