@@ -221,7 +221,6 @@ architecture neorv32_test_setup_avalonmm_rtl of neorv32_test_setup_avalonmm is
       xirq_i         : in  std_ulogic_vector(XIRQ_NUM_CH-1 downto 0) := (others => 'L'); -- IRQ channels
   
       -- CPU interrupts --
-      nm_irq_i       : in  std_ulogic := 'L'; -- non-maskable interrupt
       mtime_irq_i    : in  std_ulogic := 'L'; -- machine timer interrupt, available if IO_MTIME_EN = false
       msw_irq_i      : in  std_ulogic := 'L'; -- machine software interrupt
       mext_irq_i     : in  std_ulogic := 'L'  -- machine external interrupt

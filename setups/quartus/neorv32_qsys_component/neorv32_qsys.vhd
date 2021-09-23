@@ -254,7 +254,6 @@ begin
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i      => (others => '0'), -- IRQ channels
     -- Interrupts --
-    nm_irq_i    => '0',             -- non-maskable interrupt
     mtime_irq_i => '0',             -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i   => '0',             -- machine software interrupt
     mext_irq_i  => '0'              -- machine external interrupt
