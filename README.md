@@ -21,6 +21,7 @@
 [![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen)](https://stnolting.github.io/neorv32/sw/files.html)
 
 1. [Overview](#1-Overview)
+   1. [Key Features](#Project-Key-Features)
 2. [Processor/SoC Features](#2-NEORV32-Processor-Features)
    1. [FPGA Implementation Results](#FPGA-Implementation-Results---Processor)
 3. [CPU Features](#3-NEORV32-CPU-Features)
@@ -116,7 +117,7 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 * 32-bit external bus interface, Wishbone b4 compatible
 ([WISHBONE](https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite))
   * [wrapper](https://github.com/stnolting/neorv32/blob/master/rtl/system_integration/neorv32_SystemTop_axi4lite.vhd) for AXI4-Lite master interface
-* 32-bit stram link interface with up to 8 independent RX and TX links
+* 32-bit stream link interface with up to 8 independent RX and TX links
 ([SLINK](https://stnolting.github.io/neorv32/#_stream_link_interface_slink))
   * AXI4-Stream compatible
 * external interrupt controller with up to 32 channels
@@ -141,14 +142,14 @@ the default bootloader and software framework. From this base you can start buil
 
 ### FPGA Implementation Results - Processor
 
-The hardware resources used by a specifc processor setup is defined by the implemented CPU extensions
+The hardware resources used by a specific processor setup is defined by the implemented CPU extensions
 ([see below](#FPGA-Implementation-Results---CPU)), the configuration of the peripheral modules and some "glue logic".
 Section [_"FPGA Implementation Results - Processor Modules"_](https://stnolting.github.io/neorv32/#_processor_modules)
-of the online datasheet shows the ressource utilization of each optional processor module to allow an
+of the online datasheet shows the resource utilization of each optional processor module to allow an
 estimation of the actual setup's hardware requirements.
 
 :information_source: The [`setups`](https://github.com/stnolting/neorv32/tree/master/setups) folder provides exemplary FPGA
-setups targeting various FPGA boards and toolchains. These setups also provide ressource utilization reports for different
+setups targeting various FPGA boards and toolchains. These setups also provide resource utilization reports for different
 SoC configurations
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
@@ -161,18 +162,18 @@ SoC configurations
 [online documentation - _"NEORV32 Central Processing Unit"_](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu).
 
 The CPU (top entity: [`rtl/core/neorv32_cpu.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd))
-implements the RISC-V 32-bit `rv32` ISA with optional extensions (see below). It is compatible to a subset of the
+implements the RISC-V 32-bit `rv32` ISA with optional extensions (see below). It is compatible to subsets of the
 *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/references/riscv-spec.pdf)
-and a subset of the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/references/riscv-privileged.pdf).
-Compatiility is checked by passing the [official RISC-V architecture tests](https://github.com/riscv/riscv-arch-test)
+and the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/references/riscv-privileged.pdf).
+Compatibility is checked by passing the [official RISC-V architecture tests](https://github.com/riscv/riscv-arch-test)
 (see [`sim/README`](sim/README.md)).
 
-The core implements a little-endian von-Neumann architecture using two pipeline stages. Each stage uses a multi-cycle processing
+The core implements a little-endian Von-Neumann architecture using two pipeline stages, where each stage can operate in a multi-cycle processing
 scheme. The CPU supports three privilege levels (`machine` and optional `user` and `debug_mode`), the three standard RISC-V machine
 interrupts (`MTI`, `MEI`, `MSI`) plus 16 _fast interrupt requests_ as custom extensions.
 It also supports **all** standard RISC-V exceptions (instruction/load/store misaligned address & bus access fault, illegal
-instruction, breakpoint, environment call)
-(see :books: [_"Full Virtualization"_](https://stnolting.github.io/neorv32/#_full_virtualization)).
+instruction, breakpoint, environment calls). See :books: [_"Full Virtualization"_](https://stnolting.github.io/neorv32/#_full_virtualization)
+for more information.
 
 
 ### Available ISA Extensions
@@ -198,7 +199,7 @@ documentation section). Note that the `X` extension is always enabled.
 [[`DEBUG`](https://stnolting.github.io/neorv32/#_cpu_debug_mode)]**
 
 :warning: The `Zbb`, `Zfinx` and `Zmmul` RISC-V extensions are frozen but not officially ratified yet. Hence, there is no
-upstream gcc support. To circumvence this, the NEORV32 software framework provides _intrinsic_ libraries for these extensions.
+upstream gcc support. To circumvent this, the NEORV32 software framework provides _intrinsic_ libraries for these extensions.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -217,7 +218,7 @@ Results generated for hardware version [`1.5.7.10`](https://github.com/stnolting
 | `rv32i_Zicsr`                                     | 1729 |  813 |        1024 |            0 | 124 MHz |
 | `rv32imac_Zicsr`                                  | 2511 | 1074 |        1024 |            0 | 124 MHz |
 
-:information_source: An incremental list of CPU exntension's hardware utilization can found in
+:information_source: An incremental list of CPU extension's hardware utilization can found in
 [online documentation - _"FPGA Implementation Results - CPU"_](https://stnolting.github.io/neorv32/#_cpu).
 
 :information_source: The CPU provides options to further reduce the footprint (for example by constraining
@@ -228,7 +229,7 @@ the CPU-internal counters). See the [online data](https://stnolting.github.io/ne
 
 ### Performance
 
-The NEORV32 CPU is based on a two-stages pipelined architecutre. Since both stage use a multi-cycle processing scheme,
+The NEORV32 CPU is based on a two-stages pipelined architecture. Since both stage use a multi-cycle processing scheme,
 each instruction requires several clock cycles to execute (2 cycles for ALU operations, up to 40 cycles for divisions).
 The average CPI (cycles per instruction) depends on the instruction mix of a specific applications and also on the
 available CPU extensions.
@@ -350,4 +351,4 @@ Continous integration provided by [:octocat: GitHub Actions](https://github.com/
 
 --------
 
-Made with :coffee: in Hannover, Germany :eu:
+Made with :coffee: in Hanover, Germany :eu:

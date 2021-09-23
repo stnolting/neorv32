@@ -60,7 +60,7 @@ void xirq_handler_ch3(void);
 /**********************************************************************//**
  * Main function
  *
- * @note This program requires the WDT and the UART to be synthesized.
+ * @note This program requires the XIRQ and the UART to be synthesized.
  *
  * @return 0 if execution was successful
  **************************************************************************/
