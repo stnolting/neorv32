@@ -20,19 +20,19 @@
 [![userguide (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat-square)](https://stnolting.github.io/neorv32/ug)
 [![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen)](https://stnolting.github.io/neorv32/sw/files.html)
 
-* [Overview](#Overview)
-* [Processor/SoC Features](#NEORV32-Processor-Features)
-  * [FPGA Implementation Results](#FPGA-Implementation-Results---Processor)
-* [CPU Features](#NEORV32-CPU-Features)
-  * [Available ISA Extensions](#Available-ISA-Extensions)
-  * [FPGA Implementation Results](#FPGA-Implementation-Results---CPU)
-  * [Performance](#Performance)
-* [Software Framework & Tooling](#Software-Framework-and-Tooling)
-* [**Getting Started**](#Getting-Started) :rocket:
+1. [Overview](#1-Overview)
+2. [Processor/SoC Features](#2-NEORV32-Processor-Features)
+   1. [FPGA Implementation Results](#FPGA-Implementation-Results---Processor)
+3. [CPU Features](#3-NEORV32-CPU-Features)
+   1. [Available ISA Extensions](#Available-ISA-Extensions)
+   2. [FPGA Implementation Results](#FPGA-Implementation-Results---CPU)
+   3. [Performance](#Performance)
+4. [Software Framework & Tooling](#4-Software-Framework-and-Tooling)
+5. [**Getting Started**](#5-Getting-Started) :rocket:
 
 
 
-## Overview
+## 1. Overview
 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_processor.png)
 
@@ -68,19 +68,19 @@ setting up your NEORV32 setup!
 
 ### Project Key Features
 
-* [CPU](#NEORV32-CPU-Features) plus [Processor/SoC](#NEORV32-Processor-Features) plus [Software Framework & Tooling](#Software-Framework-and-Tooling)
-* completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
-* fully synchronous design, no latches, no gated clocks
-* be as small as possible (while being as RISC-V-compliant as possible) – but with a reasonable size-performance trade-off
+- [x] all-in-one: [CPU](#NEORV32-CPU-Features) plus [Processor/SoC](#NEORV32-Processor-Features) plus [Software Framework & Tooling](#Software-Framework-and-Tooling)
+- [x] completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
+- [x] fully synchronous design, no latches, no gated clocks
+- [x] be as small as possible (while being as RISC-V-compliant as possible) – but with a reasonable size-performance trade-off
 (the processor has to fit in a Lattice iCE40 UltraPlus 5k low-power FPGA running at 22+ MHz)
-* from zero to `printf("hello world!");` - completely open source and documented
-* easy to use even for FPGA/RISC-V starters – intended to work *out of the box*
+- [x] from zero to `printf("hello world!");` - completely open source and documented
+- [x] easy to use even for FPGA/RISC-V starters – intended to work *out of the box*
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 
-## NEORV32 Processor Features
+## 2. NEORV32 Processor Features
 
 The NEORV32 Processor (top entity: [`rtl/core/neorv32_top.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd))
 provides a full-featured SoC build around the NEORV32 CPU. It is highly configurable via generics
@@ -155,7 +155,7 @@ SoC configurations
 
 
 
-## NEORV32 CPU Features
+## 3. NEORV32 CPU Features
 
 :books: In-depth detailed information regarding the CPU can be found in the
 [online documentation - _"NEORV32 Central Processing Unit"_](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu).
@@ -263,7 +263,7 @@ Results generated for hardware version [`1.5.7.10`](https://github.com/stnolting
 
 
 
-## Software Framework and Tooling
+## 4. Software Framework and Tooling
 
 :books: In-depth detailed information regarding the software framework can be found in the
 [online documentation - _"Software Framework"_](https://stnolting.github.io/neorv32/#_software_framework).
@@ -287,7 +287,7 @@ developed and debugged with open source tooling
 
 
 
-## Getting Started
+## 5. Getting Started
 
 This overview provides some *quick links* to the most important sections of the
 [online Data Sheet](https://stnolting.github.io/neorv32) and the
@@ -325,6 +325,7 @@ This overview provides some *quick links* to the most important sections of the
 * [Application Compilation](https://stnolting.github.io/neorv32/ug/#_application_program_compilation) - compile an application using `make`
 * [Upload via Bootloader](https://stnolting.github.io/neorv32/ug/#_uploading_and_starting_of_a_binary_executable_image_via_uart) - upload and execute executables
 * [Application-Specific Processor Configuration](https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration) - tailor the processor to your needs
+* [Adding Custom Hardware Modules](https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules) - add _your_ custom hardware
 * [Debugging via the On-Chip Debugger](https://stnolting.github.io/neorv32/ug/#_debugging_using_the_on_chip_debugger) - step through code *online* and *in-system*
 * [Simulation](https://stnolting.github.io/neorv32/ug/#_simulating_the_processor) - simulate the whole SoC
   * [Hello World!](https://stnolting.github.io/neorv32/ug/index.html#_hello_world) - run a quick _"hello world"_ simulation
