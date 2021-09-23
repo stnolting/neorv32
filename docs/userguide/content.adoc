@@ -754,6 +754,71 @@ shut down reducing switching activity and thus, dynamic energy consumption.
 <<<
 // ####################################################################################################################
 :sectnums:
+== Adding Custom Hardware Modules
+
+In resemblance to the RISC-V ISA, the NEORV32 processor was designed to ease customization and _extensibility_.
+The processor provides several predefined options to add application-specific custom hardware modules and accelerators.
+
+
+=== Standard (_External_) Interfaces
+
+The processor already provides a set of standard interfaces that are intended to connect _chip-external_ devices.
+However, these interfaces can also be used chip-internally. The most suitable interfaces are
+https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio[GPIO],
+https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0[UART],
+https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi[SPI] and
+https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi[TWI].
+
+The SPI and (especially) the GPIO interfaces might be the most straightforward approaches since they
+have a minimal  protocol overhead. Device-specific interrupt capabilities can be added using the
+https://stnolting.github.io/neorv32/#_external_interrupt_controller_xirq[External Interrupt Controller (XIRQ)].
+Beyond simplicity, these interface only provide a very limited bandwidth and require more sophisticated
+software handling ("bit-banging" for the GPIO).
+
+
+=== External Bus Interface
+
+The https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite[External Bus Interface]
+provides the classic approach to connect to custom IP. By default, the bus interface implements the widely adopted
+Wishbone interface standard. However, this project also includes wrappers to bridge to other protocol standards like ARM's
+AXI4-Lite or Intel's Avalon. By using a full-featured bus protocol, complex SoC structures can be implemented (including
+several modules and even multi-core architectures). Many FPGA EDA tools provide graphical editors to build and customize
+whole SoC architectures and even include pre-defined IP libraries.
+
+.Example AXI SoC using Xilinx Vivado
+image::neorv32_axi_soc.png[]
+
+The bus interface uses a memory-mapped approach. All data transfers are handled by simple load/store operations since the
+external bus interface is mapped into the processor's https://stnolting.github.io/neorv32/#_address_space[address space].
+This allows a very simple still high-bandwidth communications.
+
+
+=== Stream Link Interface
+
+The NEORV32 https://stnolting.github.io/neorv32/#_stream_link_interface_slink[Stream Link Interface] provides
+point-to-point, unidirectional and parallel data channels that can be used to transfer streaming data. In
+contrast to the external bus interface, the streaming data does not provide any kind of "direction" control,
+so it can be seen as "constant address bursts". The stream link interface provides less protocol overhead
+and less latency than the bus interface. Furthermore, FIFOs can be be configured to each direction (RX/TX) to
+allow more CPU-independent operation.
+
+
+=== Custom Functions Subsystem
+
+The https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs[NEORV32 Custom Functions Subsystem]
+is as "empty" template for a processor-internal module. It provides 32 32-bit memory-mapped interface
+registers that can be used to communicate with any arbitrary custom design logic. The intentions of this
+subsystem is to provide a simple base, where the user can concentrate on implementing the actual design logic
+rather than taking care of the communication between the CPU/software and the design logic. The interface
+registers are already allocated within the processor's address space and are supported by the software framework
+via low-level hardware access mechanisms. Additionally, the CFS provides a direct pre-defined interrupt channel to
+the CPU, which is also supported by the _NEORV32 runtime environment_.
+
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
 == Customizing the Internal Bootloader
 
 The NEORV32 bootloader provides several options to configure and customize it for a certain application setup.
@@ -793,7 +858,7 @@ base ISA `rv32i` only to ensure it can work independently of the actual CPU conf
 
 Each configuration parameter is implemented as C-language `define` that can be manually overridden (_redefined_) when
 invoking the bootloader's makefile. The according parameter and its new value has to be _appended_
-(using `+=`) to the makefile's `USER_FLAGS` variable. Make sure to use the `-D` prefix here.
+(using `+=`) to the makefile `USER_FLAGS` variable. Make sure to use the `-D` prefix here.
 
 For example, to configure a UART Baud rate of 57600 and redirecting the status LED to output pin 20
 use the following command (_in_ the bootloader's source folder `sw/bootloader`):
@@ -1118,17 +1183,17 @@ right at the beginning of the simulation to give a brief overview of the actual 
 stnolting@Einstein:/mnt/n/Projects/neorv32/sw/example/hello_world$ make USER_FLAGS+=-DUART0_SIM_MODE MARCH=-march=rv32imac clean_all sim
 ../../../sw/lib/source/neorv32_uart.c: In function 'neorv32_uart0_setup':
 ../../../sw/lib/source/neorv32_uart.c:301:4: warning: #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only! [-Wcpp]
-  301 |   #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only!
+  301 |   #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only! <1>
       |    ^~~~~~~
 Memory utilization:
    text    data     bss     dec     hex filename
-   4612       0     120    4732    127c main.elf
+   4612       0     120    4732    127c main.elf <2>
 Compiling ../../../sw/image_gen/image_gen
-Installing application image to ../../../rtl/core/neorv32_application_image.vhd
+Installing application image to ../../../rtl/core/neorv32_application_image.vhd <3>
 Simulating neorv32_application_image.vhd...
-Tip: Compile application with USER_FLAGS+=-DUART[0/1]_SIM_MODE to auto-enable UART[0/1]'s simulation mode (redirect UART output to simulator console).
-Using simulation runtime args: --stop-time=10ms
-../rtl/core/neorv32_top.vhd:347:3:@0ms:(assertion note): NEORV32 PROCESSOR IO Configuration: GPIO MTIME UART0 UART1 SPI TWI PWM WDT CFS SLINK NEOLED XIRQ
+Tip: Compile application with USER_FLAGS+=-DUART[0/1]_SIM_MODE to auto-enable UART[0/1]'s simulation mode (redirect UART output to simulator console). <4>
+Using simulation runtime args: --stop-time=10ms <5>
+../rtl/core/neorv32_top.vhd:347:3:@0ms:(assertion note): NEORV32 PROCESSOR IO Configuration: GPIO MTIME UART0 UART1 SPI TWI PWM WDT CFS SLINK NEOLED XIRQ <6>
 ../rtl/core/neorv32_top.vhd:370:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Direct boot from memory (processor-internal IMEM).
 ../rtl/core/neorv32_top.vhd:394:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Implementing on-chip debugger (OCD).
 ../rtl/core/neorv32_cpu.vhd:169:3:@0ms:(assertion note): NEORV32 CPU ISA Configuration (MARCH): RV32IMACU_Zbb_Zicsr_Zifencei_Zfinx_Debug
@@ -1140,7 +1205,7 @@ Using simulation runtime args: --stop-time=10ms
 ../rtl/core/neorv32_wishbone.vhd:144:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing LITTLE-endian byte order.
 ../rtl/core/neorv32_wishbone.vhd:148:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing registered RX path.
 ../rtl/core/neorv32_slink.vhd:161:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Implementing 8 RX and 8 TX stream links.
-
+<7>
                                                                                        ##
                                                                                        ##         ##   ##   ##
  ##     ##   #########   ########    ########   ##      ##   ########    ########      ##       ################
@@ -1154,6 +1219,13 @@ Using simulation runtime args: --stop-time=10ms
                                                                                        ##
 Hello world! :)
 ----
+<1> Notifier that "simulation mode" of UART0 is enabled (by the `USER_FLAGS+=-DUART0_SIM_MODE` makefile flag). All UART0 output is send to the simulator console.
+<2> Final executable size (`text`) and _static_ data memory requirements (`data`, `bss`).
+<3> The application code is _installed_ as pre-initialized IMEM. This is the default approach for simulation.
+<4> A note regarding UART "simulation mode", but we have already enabled that.
+<5> List of (default) arguments that were send to the simulator. Here: maximum simulation time (10ms).
+<6> "Sanity checks" from the core's VHDL files. These reports give some brief information about the SoC/CPU configuration (-> generics). If there are problems with the current configuration, an ERROR will appear.
+<7> Execution of the actual program starts.
 
 
 :sectnums:
