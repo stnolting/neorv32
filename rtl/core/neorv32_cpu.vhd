@@ -223,6 +223,7 @@ begin
 
   -- Debug mode --
   assert not ((CPU_EXTENSION_RISCV_DEBUG = true) and (CPU_EXTENSION_RISCV_Zicsr = false)) report "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
+  assert not ((CPU_EXTENSION_RISCV_DEBUG = true) and (CPU_EXTENSION_RISCV_Zifencei = false)) report "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zifencei> extension to be enabled." severity error;
 
   -- fast multiplication option --
   assert not (FAST_MUL_EN = true) report "NEORV32 CPU CONFIG NOTE: <FAST_MUL_EN> set. Trying to use DSP blocks for base ISA multiplications." severity note;

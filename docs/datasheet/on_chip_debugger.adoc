@@ -490,7 +490,8 @@ When enabled, three additional CSRs are available (section <<_cpu_debug_mode_csr
 instruction `dret` is available when the CPU is "in" debug mode.
 
 [IMPORTANT]
-The CPU _debug mode_ requires the `Zicsr` CPU extension to be implemented (top generic _CPU_EXTENSION_RISCV_Zicsr_ = true).
+The CPU _debug mode_ requires the `Zicsr` and `Zifencei` CPU extension to be implemented (top generics _CPU_EXTENSION_RISCV_Zicsr_
+and _CPU_EXTENSION_RISCV_Zifencei_ = true).
 
 The CPU debug mode is entered when one of the following events appear:
 
