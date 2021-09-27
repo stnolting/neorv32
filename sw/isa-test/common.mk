@@ -67,7 +67,7 @@ RUN_TARGET += \
 	  -gCPU_EXTENSION_RISCV_M=$(NEORV32_CPU_EXTENSION_RISCV_M) \
 	  -gCPU_EXTENSION_RISCV_U=false \
 	  -gCPU_EXTENSION_RISCV_Zicsr=true \
-	  -gCPU_EXTENSION_RISCV_Zifencei=$(NEORV32_CPU_EXTENSION_RISCV_ZIFENCEI) \
+	  -gCPU_EXTENSION_RISCV_Zifencei=true \
 	  -gEXT_IMEM_C=false \
 	  -gMEM_INT_IMEM_SIZE=$(NEORV32_MEM_INT_IMEM_SIZE); \
 	cp $(NEORV32_ROOT)/sim/simple/neorv32.uart0.sim_mode.data.out $(*).signature.output; \
