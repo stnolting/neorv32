@@ -356,7 +356,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     -- leave debug mode --
     dret         : std_ulogic; -- executed DRET instruction
     -- misc --
-    ext_halt_req : std_ulogic; -- external halt request
+    ext_halt_req : std_ulogic;
   end record;
   signal debug_ctrl : debug_ctrl_t;
 
@@ -745,7 +745,7 @@ begin
           if (CPU_EXTENSION_RISCV_DEBUG = false) or (debug_ctrl.running = '0') then -- normal end of trap
             execute_engine.next_pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap exit
           else -- DEBUG MODE exiting
-            execute_engine.next_pc <= csr.dpc; -- debug mode exit
+            execute_engine.next_pc <= csr.dpc(data_width_c-1 downto 1) & '0'; -- debug mode exit
           end if;
         when EXECUTE =>
           execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc)); -- next linear PC
@@ -1549,7 +1549,7 @@ begin
 
         when opcode_fence_c => -- fence instructions
         -- ------------------------------------------------------------
-          if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) or -- FENCE.I -- NO trap if not implemented
+          if ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true)) or -- FENCE.I
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then -- FENCE
             illegal_instruction <= '0';
           else
@@ -1586,7 +1586,7 @@ begin
             if (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ecall_c)  or -- ECALL
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ebreak_c) or -- EBREAK 
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_mret_c) and (csr.priv_m_mode = '1')) or -- MRET (only allowed in M-mode)
-               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_dret_c) and (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) or -- DRET
+               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_dret_c) and (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) or -- DRET (only allowed in D-mode)
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_wfi_c) and ((csr.priv_m_mode = '1') or (csr.mstatus_tw = '0'))) then -- WFI allowed in M-mode or if mstatus.TW=0
               illegal_instruction <= '0';
             else
@@ -1652,17 +1652,17 @@ begin
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
 
-        -- exception buffer: misaligned load/store/instruction address
+        -- exception queue: misaligned load/store/instruction address
         trap_ctrl.exc_buf(exception_lalign_c) <= (trap_ctrl.exc_buf(exception_lalign_c) or ma_load_i)          and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_salign_c) <= (trap_ctrl.exc_buf(exception_salign_c) or ma_store_i)         and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_ialign_c) <= (trap_ctrl.exc_buf(exception_ialign_c) or trap_ctrl.instr_ma) and (not trap_ctrl.exc_ack);
 
-        -- exception buffer: load/store/instruction bus access error
+        -- exception queue: load/store/instruction bus access error
         trap_ctrl.exc_buf(exception_laccess_c) <= (trap_ctrl.exc_buf(exception_laccess_c) or be_load_i)          and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_saccess_c) <= (trap_ctrl.exc_buf(exception_saccess_c) or be_store_i)         and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_iaccess_c) <= (trap_ctrl.exc_buf(exception_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.exc_ack);
 
-        -- exception buffer: illegal instruction / environment call / break point
+        -- exception queue: illegal instruction / environment call / break point
         trap_ctrl.exc_buf(exception_m_envcall_c) <= (trap_ctrl.exc_buf(exception_m_envcall_c) or (trap_ctrl.env_call and csr.priv_m_mode)) and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_u_envcall_c) <= (trap_ctrl.exc_buf(exception_u_envcall_c) or (trap_ctrl.env_call and csr.priv_u_mode)) and (not trap_ctrl.exc_ack);
         trap_ctrl.exc_buf(exception_iillegal_c)  <= (trap_ctrl.exc_buf(exception_iillegal_c)  or trap_ctrl.instr_il)                       and (not trap_ctrl.exc_ack);
@@ -1692,7 +1692,7 @@ begin
         trap_ctrl.irq_buf(interrupt_msw_irq_c)   <= csr.mie_msie and msw_irq_i;
         trap_ctrl.irq_buf(interrupt_mext_irq_c)  <= csr.mie_meie and mext_irq_i;
         trap_ctrl.irq_buf(interrupt_mtime_irq_c) <= csr.mie_mtie and mtime_irq_i;
-        -- interrupt buffer: NEORV32-specific fast interrupts
+        -- interrupt queue: NEORV32-specific fast interrupts
         for i in 0 to 15 loop
           trap_ctrl.irq_buf(interrupt_firq_0_c+i) <= csr.mie_firqe(i) and (trap_ctrl.irq_buf(interrupt_firq_0_c+i) or firq_i(i)) and (not trap_ctrl.irq_ack(interrupt_firq_0_c+i));
         end loop;
@@ -1703,7 +1703,7 @@ begin
              ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP_ENTER))) then -- fire IRQs in EXECUTE or TRAP state only to continue execution even on permanent IRQ
             trap_ctrl.cause     <= trap_ctrl.cause_nxt;   -- capture source ID for program (for mcause csr)
             trap_ctrl.exc_ack   <= '1';                   -- clear exceptions (no ack mask: these have highest priority and are always evaluated first!)
-            trap_ctrl.irq_ack   <= trap_ctrl.irq_ack_nxt; -- clear interrupt with interrupt ACK mask
+            trap_ctrl.irq_ack   <= trap_ctrl.irq_ack_nxt; -- clear interrupt with ACK mask
             trap_ctrl.env_start <= '1';                   -- now execute engine can start trap handler
           end if;
         else -- trap waiting to get started
@@ -1719,7 +1719,7 @@ begin
 
   -- any exception/interrupt? --
   trap_ctrl.exc_fire <= or_reduce_f(trap_ctrl.exc_buf); -- exceptions/faults CANNOT be masked
-  trap_ctrl.irq_fire <= (or_reduce_f(trap_ctrl.irq_buf) and csr.mstatus_mie and trap_ctrl.db_irq_en) or trap_ctrl.db_irq_fire; -- interrupts CAN be masked
+  trap_ctrl.irq_fire <= (or_reduce_f(trap_ctrl.irq_buf) and csr.mstatus_mie and trap_ctrl.db_irq_en) or trap_ctrl.db_irq_fire; -- interrupts CAN be masked (but not the DEBUG halt IRQ)
 
   -- debug mode (entry) interrupts --
   trap_ctrl.db_irq_en   <= '0' when (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) else '1'; -- no interrupts when IN debug mode or IN single-step mode
@@ -1732,7 +1732,8 @@ begin
   begin
     -- defaults --
     trap_ctrl.cause_nxt   <= (others => '0');
-    trap_ctrl.irq_ack_nxt <= (others => '0'); -- used for FIRQs only
+    trap_ctrl.irq_ack_nxt <= (others => '0'); -- used for internal IRQ queue only
+
 
     -- NOTE: Synchronous exceptions (from trap_ctrl.exc_buf) have higher priority than asynchronous
     -- exceptions (from trap_ctrl.irq_buf).
@@ -1891,6 +1892,7 @@ begin
 
 
     -- standard RISC-V interrupts --
+    -- these will stay asserted until explicitly ACKed by the software - no irq_ack_nxt required
 
     -- interrupt: 1.11 machine external interrupt --
     elsif (trap_ctrl.irq_buf(interrupt_mext_irq_c) = '1') then
@@ -2140,8 +2142,8 @@ begin
                 csr.dcsr_step    <= csr.wdata(2);
                 if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
                   csr.dcsr_ebreaku <= csr.wdata(12);
-                  csr.dcsr_prv(0)  <= csr.wdata(1) or csr.wdata(0);
-                  csr.dcsr_prv(1)  <= csr.wdata(1) or csr.wdata(0);
+                  csr.dcsr_prv(0) <= csr.wdata(1) or csr.wdata(0);
+                  csr.dcsr_prv(1) <= csr.wdata(1) or csr.wdata(0);
                 else -- only machine mode is available
                   csr.dcsr_prv <= priv_mode_m_c;
                 end if;

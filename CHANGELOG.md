@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 27.09.2021 | 1.6.0.11 | :warning: `Zifencei` extension is _required_ for the on-chip debugger; executing `fence.i` without having the `Zifencei` extension enabled will now cause an illegal instruction exception |
 | 22.09.2021 | 1.6.0.10 | reworked CPU/software handshake of external interrupt controller `XIRQ` to avoid "external IRQ -> CPU IRQ" race conditions |
 | 22.09.2021 | 1.6.0.9 | if `CPU_CNT_WIDTH` generic (actual width of `[m]cycle` and `[m]instret` counters) is less than 64 the remaining bits are now just hardwired to zero ignoring any write access instead of causing an exception; minor CPU hardware optimizations |
 | 22.09.2021 | 1.6.0.8 | :bug: fixed bug introduced in previous version: misaligned instruction address - PC and all instruction address-related registers need to have bit 0 hardwired to zero, misaligned instructions can only appear if NOT using `C` ISA extension |
