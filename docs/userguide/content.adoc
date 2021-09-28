@@ -1431,8 +1431,14 @@ Navigate to `sw/example/blink_led` and compile the application:
 .Compile the test application
 [source, bash]
 --------------------------
-.../neorv32/sw/example/blink_led$ make MARCH=-march=rv32i clean_all all
+.../neorv32/sw/example/blink_led$ make MARCH=-march=rv32i USER_FLAGS+=-g clean_all all
 --------------------------
+
+.Adding debug symbols to the executable
+[NOTE]
+`USER_FLAGS+=-g` passes the `-g` flag to the compiler so it adds debug information/symbols
+to the generated ELF file. This is optional but will provide more sophisticated information for debugging
+(like source file line numbers).
 
 This will generate an ELF file `main.elf` that contains all the symbols required for debugging.
 Furthermore, an assembly listing file `main.asm` is generated that we will use to define breakpoints.
@@ -1462,9 +1468,9 @@ Type "apropos word" to search for commands related to "word".
 (gdb)
 --------------------------
 
-Now connect to OpenOCD using the default port 3333 on your local machine.
-Set the ELF file we want to debug to the recently generated `main.elf` from the `blink_led` example.
-Finally, upload the program to the processor.
+Now connect to OpenOCD using the default port 3333 on your machine.
+We will use the previously generated ELF file `main.elf` from the `blink_led` example.
+Finally, upload the program to the processor and start debugging.
 
 [NOTE]
 The executable that is uploaded to the processor is **not** the default NEORV32 executable (`neorv32_exe.bin`) that
@@ -1474,7 +1480,7 @@ by GDB and uploaded via the debugger's indirect memory access.
 .Running GDB
 [source, bash]
 --------------------------
-(gdb) target remote localhost:3333 <1>
+(gdb) target extended-remote localhost:3333 <1>
 Remote debugging using localhost:3333
 warning: No executable has been specified and target does not support
 determining executable automatically.  Try using the "file" command.
