@@ -82,10 +82,11 @@ architecture neorv32_mtime_rtl of neorv32_mtime is
   signal mtime_lo_ovfl : std_ulogic_vector(00 downto 0);
   signal mtime_hi      : std_ulogic_vector(31 downto 0);
 
-  -- comparator and IRQ trigger --
-  signal cmp_lo    : std_ulogic;
-  signal cmp_lo_ff : std_ulogic;
-  signal cmp_hi    : std_ulogic;
+  -- comparators --
+  signal cmp_lo_ge    : std_ulogic;
+  signal cmp_lo_ge_ff : std_ulogic;
+  signal cmp_hi_eq    : std_ulogic;
+  signal cmp_hi_gt    : std_ulogic;
 
 begin
 
@@ -112,7 +113,7 @@ begin
       end if;
 
       -- mtime access buffer --
---    wdata_buf   <= data_i; -- not required, CPU wdata is stable until transfer is acknowledged
+--    wdata_buf   <= data_i; -- not required, CPU wdata (=data_i) is stable until transfer is acknowledged
       mtime_lo_we <= wren and bool_to_ulogic_f(boolean(addr = mtime_time_lo_addr_c));
       mtime_hi_we <= wren and bool_to_ulogic_f(boolean(addr = mtime_time_hi_addr_c));
 
@@ -160,7 +161,7 @@ begin
   end process rd_access;
 
   -- system time output for cpu --
-  time_o <= mtime_hi & mtime_lo;
+  time_o <= mtime_hi & mtime_lo; -- NOTE: low and high words are not synchronized here!
 
 
   -- Comparator -----------------------------------------------------------------------------
@@ -168,14 +169,15 @@ begin
   cmp_sync: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      cmp_lo_ff <= cmp_lo;
-      irq_o     <= cmp_lo_ff and cmp_hi;
+      cmp_lo_ge_ff <= cmp_lo_ge;
+      irq_o        <= cmp_hi_gt or (cmp_hi_eq and cmp_lo_ge_ff);
     end if;
   end process cmp_sync;
 
-  -- test words --
-  cmp_lo <= '1' when (unsigned(mtime_lo) >= unsigned(mtimecmp_lo)) else '0';
-  cmp_hi <= '1' when (unsigned(mtime_hi) >= unsigned(mtimecmp_hi)) else '0';
+  -- sub-word comparators --
+  cmp_lo_ge <= '1' when (unsigned(mtime_lo) >= unsigned(mtimecmp_lo)) else '0'; -- low-word: greater than or equal
+  cmp_hi_eq <= '1' when (unsigned(mtime_hi) =  unsigned(mtimecmp_hi)) else '0'; -- high-word: equal
+  cmp_hi_gt <= '1' when (unsigned(mtime_hi) >  unsigned(mtimecmp_hi)) else '0'; -- high-word: greater than
 
 
 end neorv32_mtime_rtl;

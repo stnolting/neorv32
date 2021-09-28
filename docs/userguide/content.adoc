@@ -1351,6 +1351,11 @@ This tutorial uses `gdb` to **directly upload an executable** to the processor. 
 processor setup _with_ internal instruction memory (IMEM) make sure it is implemented as RAM
 (_INT_BOOTLOADER_EN_ generic = true).
 
+[IMPORTANT]
+The on-chip debugger is only implemented if the _ON_CHIP_DEBUGGER_EN_ generic is set _true_. Furthermore, it requires
+the `Zicsr` and `Zifencei` CPU extension to be implemented (top generics _CPU_EXTENSION_RISCV_Zicsr_
+and _CPU_EXTENSION_RISCV_Zifencei_ = true).
+
 
 :sectnums:
 === Hardware Requirements
