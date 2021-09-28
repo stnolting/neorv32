@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 28.09.2021 |[**:rocket:1.6.1**](https://github.com/stnolting/neorv32/releases/tag/v1.6.1) | **New release** |
 | 28.09.2021 | 1.6.0.13 | :bug: fixed _stupid_ bug in MTIME comparator logic (interrupt condition `mtime >= mtimecmp` was not always evaluated correctly) |
 | 28.09.2021 | 1.6.0.12 | fixed CPU's IRQ prioritization: (re-)enter debug mode interrupts have to be evaluated _before_ all other interrupts |
 | 27.09.2021 | 1.6.0.11 | :warning: `Zifencei` extension is _required_ for the on-chip debugger; executing `fence.i` without having the `Zifencei` extension enabled will now cause an illegal instruction exception |
