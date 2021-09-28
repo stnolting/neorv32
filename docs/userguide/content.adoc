@@ -1547,6 +1547,13 @@ if different ISA options are configured.
 Breakpoint 1 at 0x690
 --------------------------
 
+.How do breakpoints work?
+[TIP]
+The NEORV32 on-chip debugger does not provide any hardware breakpoints (RISC-V "trigger modules") that compare an address like the PC
+with a predefined value. Instead, gdb will modify the actual executable in IMEM: the actual instruction at the address
+of the specified breakpoint is replaced by a `break` / `c.break` instruction. Whenever execution reaches this instruction, debug mode is
+re-entered and the debugger restores the original instruction at this address to maintain original program behavior.
+
 Now execute `c` (= continue). The CPU will resume operation until it hits the break-point.
 By this we can "step" from increment to increment.
 
