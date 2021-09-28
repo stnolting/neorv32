@@ -106,7 +106,8 @@ Full names can be found in the repository's https://github.com/stnolting/neorv32
 
 .DOI
 [TIP]
-This project also provides a _digital object identifier_ provided by https://zenodo.org[zenodo]: https://zenodo.org/record/5121427
+This project also provides a _digital object identifier_ provided by https://zenodo.org[zenodo]:
+https://doi.org/10.5281/zenodo.5018888[image:https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg[title='zenodo']]
 
 
 :sectnums!:
