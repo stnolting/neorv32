@@ -1732,8 +1732,7 @@ begin
   begin
     -- defaults --
     trap_ctrl.cause_nxt   <= (others => '0');
-    trap_ctrl.irq_ack_nxt <= (others => '0'); -- used for internal IRQ queue only
-
+    trap_ctrl.irq_ack_nxt <= (others => '0'); -- used for internal IRQ queues only
 
     -- NOTE: Synchronous exceptions (from trap_ctrl.exc_buf) have higher priority than asynchronous
     -- exceptions (from trap_ctrl.irq_buf).
@@ -1788,10 +1787,9 @@ begin
 
 
     -- ----------------------------------------------------------------------------------------
-    -- enter debug mode requests; basically, these are standard traps that have some
-    -- special handling - they have the highest priority in order to go to debug when requested
-    -- even if other traps are pending right now; the <trap_ctrl.cause_nxt> value will be
-    -- written to csr.dcsr_cause instead of mcause
+    -- (re-)enter debug mode requests; basically, these are standard traps that have some
+    -- special handling - they have the highest INTERRUPT priority in order to go to debug when requested
+    -- even if other IRQs are pending right now
     -- ----------------------------------------------------------------------------------------
 
     -- break instruction --
@@ -1801,6 +1799,10 @@ begin
     -- external halt request --
     elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.irq_buf(interrupt_db_halt_c) = '1') then
       trap_ctrl.cause_nxt <= trap_db_halt_c;
+
+    -- single stepping --
+    elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.irq_buf(interrupt_db_step_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_db_step_c;
 
 
     -- ----------------------------------------------------------------------------------------
@@ -1905,16 +1907,6 @@ begin
     -- interrupt: 1.7 machine timer interrupt --
     elsif (trap_ctrl.irq_buf(interrupt_mtime_irq_c) = '1') then
       trap_ctrl.cause_nxt <= trap_mti_c;
-
-
-    -- ----------------------------------------------------------------------------------------
-    -- re-enter debug mode during single-stepping; this debug mode entry trap has the lowest
-    -- priority to let "normal" traps kick in during single stepping
-    -- ----------------------------------------------------------------------------------------
-
-    -- single stepping --
-    elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.irq_buf(interrupt_db_step_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_db_step_c;
 
     end if;
   end process trap_priority;
