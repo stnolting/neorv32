@@ -157,8 +157,17 @@ example setup uses optimized memory primitives. Hence, it does not include the d
 `rtl/core/mem` as these are replaced by device-specific implementations. However, it still has to include the entity
 definitions from `rtl/core`.
 
+[start=3]
 . Make sure to add all the rtl files to a new library called `neorv32`. If your FPGA tools does not
 provide a field to enter the library name, check out the "properties" menu of the added rtl files.
+
+.Compile order
+[NOTE]
+Some tools (like Lattice Radiant) might require a _manual compile order_ of the VHDL source files to identify the dependencies.
+The package file `neorv32_package.vhd` should be analyzed first followed by the memory image files (`neorv32_application_imagevhd`
+and `neorv32_bootloader_image.vhd`) and the entity-only files (`neorv32_*mem.entity.vhd`).
+
+[start=4]
 . The `rtl/core/neorv32_top.vhd` VHDL file is the top entity of the NEORV32 processor, which can be
 instantiated into the "real" project. However, in this tutorial we will use one of the pre-defined
 test setups from `rtl/test_setups` (see above).

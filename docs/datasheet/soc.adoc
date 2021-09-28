@@ -99,19 +99,19 @@ since all control signals have defined level.
 4+^| **Two-Wire Interface Controller (<<_two_wire_serial_interface_controller_twi,TWI>>)**
 | `twi_sda_io` | 1 | inout | TWI serial data line
 | `twi_scl_io` | 1 | inout | TWI serial clock line
+4+^| **Pulse-Width Modulation Channels (<<_pulse_width_modulation_controller_pwm,PWM>>)**
+| `pwm_o` | 0..60 | out | pulse-width modulated channels
 4+^| **Custom Functions Subsystem (<<_custom_functions_subsystem_cfs,CFS>>)**
 | `cfs_in_i`  | 32 | in | custom CFS input signal conduit
 | `cfs_out_o` | 32 | out | custom CFS output signal conduit
-4+^| **Pulse-Width Modulation Channels (<<_pulse_width_modulation_controller_pwm,PWM>>)**
-| `pwm_o` | 4 | out | pulse-width modulated channels
 4+^| **Smart LED Interface - NeoPixel(TM) compatible (<<_smart_led_interface_neoled,NEOLED>>)**
 | `neoled_o` | 1 | out | asynchronous serial data output
 4+^| **System time (<<_machine_system_timer_mtime,MTIME>>)**
 | `mtime_i` | 64 | in  | machine timer time (to `time[h]` CSRs) from _external MTIME_ unit if the processor-internal _MTIME_ unit is NOT implemented
 | `mtime_o` | 64 | out | machine timer time from _internal MTIME_ unit if processor-internal _MTIME_ unit IS implemented
-4+^| **<<_processor_interrupts, External Interrupts>>**
+4+^| **External Interrupts (<<_processor_interrupts, XIRQ>>)**
 | `xirq_i` | 32 | in | external interrupt requests (up to 32 channels)
-4+^| **<<_processor_interrupts, CPU Interrupts>>**
+4+^| **RISC-V Machine-Level <<_processor_interrupts, CPU Interrupts>>**
 | `mtime_irq_i` | 1 | in | machine timer interrupt13 (RISC-V), high-active
 | `msw_irq_i`   | 1 | in | machine software interrupt (RISC-V), high-active
 | `mext_irq_i`  | 1 | in | machine external interrupt (RISC-V), high-active
