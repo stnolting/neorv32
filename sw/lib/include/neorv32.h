@@ -508,6 +508,36 @@ enum NEORV32_CLOCK_PRSC_enum {
 
 
 // ############################################################################################################################
+// On-Chip Debugger (should NOT be used by application software)
+// ############################################################################################################################
+/**@{*/
+/** on-chip debugger - debug module prototype */
+typedef struct __attribute__((packed,aligned(4))) {
+  const uint32_t CODE[32];      /**< offset 0: park loop code ROM (r/-) */
+  const uint32_t PBUF[4];       /**< offset 128: program buffer (r/-) */
+  const uint32_t reserved1[28]; /**< offset 144..252: reserved */
+  uint32_t       DATA;          /**< offset 256: data exchange register (r/w) */
+  const uint32_t reserved2[31]; /**< offset 260..380: reserved */
+  uint32_t       SREG;          /**< offset 384: control and status register (r/w) (#NEORV32_OCD_DM_SREG_enum) */
+  const uint32_t reserved3[31]; /**< offset 388..508: reserved */
+} neorv32_dm_t;
+
+/** on-chip debugger debug module hardware access (#neorv32_dm_t) */
+#define NEORV32_DM (*((volatile neorv32_dm_t*) (0XFFFFF800UL)))
+
+/** on-chip debugger debug module control and status register bits */
+enum NEORV32_OCD_DM_SREG_enum {
+  OCD_DM_HALT_ACK      = 0, /**< OCD.DM control and status register(0) (-/w): CPU is halted in debug mode and waits in park loop */
+  OCD_DM_RESUME_REQ    = 1, /**< OCD.DM control and status register(1) (r/-): DM requests CPU to resume */
+  OCD_DM_RESUME_ACK    = 2, /**< OCD.DM control and status register(2) (-/w): CPU starts resuming */
+  OCD_DM_EXECUTE_REQ   = 3, /**< OCD.DM control and status register(3) (r/-): DM requests to execute program buffer */
+  OCD_DM_EXECUTE_ACK   = 4, /**< OCD.DM control and status register(4) (-/w): CPU starts to execute program buffer */
+  OCD_DM_EXCEPTION_ACK = 5  /**< OCD.DM control and status register(5) (-/w): CPU has detected an exception */
+};
+/**@}*/
+
+
+// ############################################################################################################################
 // Peripheral/IO Devices - IO Address Space
 // ############################################################################################################################
 
