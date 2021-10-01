@@ -26,11 +26,11 @@ in the root directory of the NEORV32 repository. Please also check out the <<_le
 
 **Structure**
 
-[start=1]
+[start=2]
 . <<_neorv32_processor_soc>>
 . <<_neorv32_central_processing_unit_cpu>>
-. <<_on_chip_debugger_ocd>>
 . <<_software_framework>>
+. <<_on_chip_debugger_ocd>>
 
 [TIP]
 Links in this document are <<_overview,highlighted>>.

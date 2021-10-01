@@ -337,9 +337,9 @@ of the debugger memory. See section <<_on_chip_debugger_ocd>> for more informati
 :sectnums:
 === Instruction Sets and Extensions
 
-The NEORV32 is an RISC-V `rv32i` architecture that provides several optional RISC-V CPU and ISA
+The basic NEORV32 is a RISC-V `rv32i` architecture that provides several _optional_ RISC-V CPU and ISA
 (instruction set architecture) extensions. For more information regarding the RISC-V ISA extensions please
-see the The _RISC-V Instruction Set Manual – Volume I: Unprivileged ISA_ and _The RISC-V Instruction Set Manual
+see the the _RISC-V Instruction Set Manual – Volume I: Unprivileged ISA_ and _The RISC-V Instruction Set Manual
 Volume II: Privileged Architecture_, which are available in the projects `docs/references` folder.
 
 [TIP]
@@ -348,15 +348,16 @@ The CPU can discover available ISA extensions via the <<_misa>> CSR and the
 or by executing an instruction and checking for an _illegal instruction exception_.
 
 [NOTE]
-Executing an instruction from an extension that is not implemented or not enabled (for example via the according
-top entity generic) will raise an _illegal instruction_ exception.
+Executing an instruction from an extension that is not supported yet or that is currently not enabled
+(via the according top entity generic) will raise an _illegal instruction_ exception.
 
 
 ==== **`A`** - Atomic Memory Access
 
-Atomic memory access instructions (for implementing semaphores and mutexes) are available when the
-`CPU_EXTENSION_RISCV_A` configuration generic is _true_. In this case the following additional instructions
-are available:
+Atomic memory access instructions allow more sophisticated memory operations like implementing semaphores and mutexes.
+The RICS-C specs. defines a specific _atomic_ extension that provides instructions for atomic memory accesses. The `A`
+ISA extension is enabled if the `CPU_EXTENSION_RISCV_A` configuration generic is _true_.
+In this case the following additional instructions are available:
 
 * `lr.w`: load-reservate
 * `sc.w`: store-conditional
@@ -364,8 +365,18 @@ are available:
 [NOTE]
 Even though only `lr.w` and `sc.w` instructions are implemented yet, all further atomic operations
 (load-modify-write instruction) can be emulated using these two instruction. Furthermore, the
-instruction’s ordering flags (`aq` and `lr`) are ignored by the CPU hardware. Using any other (not yet
-implemented) AMO (atomic memory operation) will trigger an illegal instruction exception.
+instruction's ordering flags (`aq` and `lr`) are ignored by the CPU hardware. Using any other (not yet
+implemented) AMO (atomic memory operation) will raise an illegal instruction exception.
+
+The *load-reservate* instruction behaves as a "normal" load-word instruction (`lw`) but will also set a CPU-internal
+_data memory access lock_. Executing a *store-conditional* behaves as "normal" store-word instruction (`sw`) that will
+only conduct an actual memory write operations if the lock is still intact. Additionally, the store-conditional instruction
+will also return the lock state (returns zero if the lock is still intact or non-zero if the lock has been broken).
+After the execution of the `sc` instruction, the lock is automatically removed.
+
+The lock is broken if at least one of the following conditions occur:
+. executing any data memory access instruction other than `lr.w`
+. rising _any_ exception (for example an interrupt)
 
 [NOTE]
 The atomic instructions have special requirements for memory system / bus interconnect. More
@@ -374,35 +385,38 @@ information can be found in sections <<_bus_interface>> and <<_processor_externa
 
 ==== **`C`** - Compressed Instructions
 
-Compressed 16-bit instructions are available when the `CPU_EXTENSION_RISCV_C` configuration generic is
-_true_. In this case the following instructions are available:
+The _compressed_ ISA extension provides 16-bit encodings of commonly used instructions to reduce code space size.
+The `C` extension is available when the `CPU_EXTENSION_RISCV_C` configuration generic is _true_.
+In this case the following instructions are available:
 
 * `c.addi4spn`, `c.lw`, `c.sw`, `c.nop`, `c.addi`, `c.jal`, `c.li`, `c.addi16sp`, `c.lui`, `c.srli`, `c.srai` `c.andi`, `c.sub`,
 `c.xor`, `c.or`, `c.and`, `c.j`, `c.beqz`, `c.bnez`, `c.slli`, `c.lwsp`, `c.jr`, `c.mv`, `c.ebreak`, `c.jalr`, `c.add`, `c.swsp`
 
 [NOTE]
-When the compressed instructions extension is enabled, branches to an _unaligned_ and _uncompressed_ address require
-an additional instruction fetch to load the required second half-word of that instruction. The performance can be increased
+When the compressed instructions extension is enabled, branches to an _unaligned_ and _uncompressed_ instruction require
+an additional instruction fetch to load the according second half-word of that instruction. The performance can be increased
 again by forcing a 32-bit alignment of branch target addresses. By default, this is enforced via the GCC `-falign-functions=4`,
 `-falign-labels=4`, `-falign-loops=4` and `-falign-jumps=4` compile flags (via the makefile).
 
 
 ==== **`E`** - Embedded CPU
 
-The embedded CPU extensions reduces the size of the general purpose register file from 32 entries to 16 entries to reduce hardware
-requirements. This extensions is enabled when the `CPU_EXTENSION_RISCV_E` configuration generic is _true_. Accesses to registers beyond
-`x15` will raise and _illegal instruction exception_.
+The embedded CPU extensions reduces the size of the general purpose register file from 32 entries to 16 entries to
+decrease physical hardware requirements (for example block RAM). This extensions is enabled when the `CPU_EXTENSION_RISCV_E`
+configuration generic is _true_. Accesses to registers beyond `x15` will raise and _illegal instruction exception_.
+This extension does not add any additional instructions or features.
 
 [IMPORTANT]
 Due to the reduced register file size an alternate toolchain ABI (**`ilp32e`**) is required.
 
 
 ==== **`I`** - Base Integer ISA
+
 The CPU always supports the complete `rv32i` base integer instruction set. This base set is always enabled
 regardless of the setting of the remaining exceptions. The base instruction set includes the following
 instructions:
 
-* immediates: `lui`, `auipc`
+* immediate: `lui`, `auipc`
 * jumps: `jal`, `jalr`
 * branches: `beq`, `bne`, `blt`, `bge`, `bltu`, `bgeu`
 * memory: `lb`, `lh`, `lw`, `lbu`, `lhu`, `sb`, `sh`, `sw`
@@ -423,7 +437,7 @@ executed. Any flags within the `fence` instruction word are ignore by the hardwa
 
 ==== **`M`** - Integer Multiplication and Division
 
-Hardware-accelerated integer multiplication and division instructions are available when the
+Hardware-accelerated integer multiplication and division operations are available when the
 `CPU_EXTENSION_RISCV_M` configuration generic is _true_. In this case the following instructions are
 available:
 
@@ -440,9 +454,9 @@ always require a fixed amount of cycles to complete - regardless of the input op
 ==== **`Zmmul`** - Integer Multiplication
 
 This is a _sub-extension_ of the `M` ISA extension. It implements the multiplication-only operations
-of the `M` extensions and is intended for small scale applications, that require hardware-based
+of the `M` extensions and is intended for size-constrained setups that require hardware-based
 integer multiplications but not hardware-based divisions, which will be computed entirely in software.
-This extension requires only ~50% of the hardware utilization of the `M` extension.
+This extension requires only ~50% of the hardware utilization of the "full" `M` extension.
 
 * multiplication: `mul`, `mulh`, `mulhsu`, `mulhu`
 
@@ -459,9 +473,11 @@ using a `rv32im` machine architecture and setting the `-mno-div` compiler flag
 
 ==== **`U`** - Less-Privileged User Mode
 
-Adds the less-privileged _user mode_ if the `CPU_EXTENSION_RISCV_U` configuration generic is _true_. For
-instance, use-level code cannot access machine-mode CSRs. Furthermore, access to the address space (like
-peripheral/IO devices) can be limited via the physical memory protection (_PMP_) unit for code running in user mode.
+In addition to the basic (and highest-privileged) machine-mode, the _user-mode_ ISA extensions adds a second less-privileged
+operation mode. It is implemented if the `CPU_EXTENSION_RISCV_U` configuration generic is _true_.
+Code executed in user-mode cannot access machine-mode CSRs. Furthermore, user-mode access to the address space (like
+peripheral/IO devices) can be constrained via the physical memory protection (_PMP_).
+Any kind of privilege rights violation will raise an exception to allow full virtualization.
 
 
 ==== **`X`** - NEORV32-Specific (Custom) Extensions
@@ -477,19 +493,18 @@ RISC-V specs). Also, custom trap codes for `mcause` are implemented.
 
 ==== **`Zfinx`** Single-Precision Floating-Point Operations
 
-[WARNING]
-The NEORV32 `Zfinx` extension is specification-compliant and operational but still _experimental_.
+The `Zfinx` floating-point extension is an _alternative_ of the standard `F` floating-point ISA extension.
+The `Zfinx` extensions also uses the integer register file `x` to store and operate on floating-point data
+instead of a dedicated floating-point register file (hence, `F-in-x`). Thus, the `Zfinx` extension requires
+less hardware resources and features faster context changes. This also implies that there are NO dedicated `f`
+register file-related load/store or move instructions.
+The official RISC-V specifications can be found here: https://github.com/riscv/riscv-zfinx
 
-The `Zfinx` floating-point extension is an alternative of the `F` floating-point instruction that also uses the
-integer register file `x` to store and operate on floating-point data (hence, `F-in-x`). Since not dedicated floating-point `f`
-register file exists, the `Zfinx` extension requires less hardware resources and features faster context changes.
-This also implies that there are NO dedicated `f` register file related load/store or move instructions. The
-official RISC-V specifications can be found here: https://github.com/riscv/riscv-zfinx
-
+[TIP]
 The NEORV32 floating-point unit used by the `Zfinx` extension is compatible to the _IEEE-754_ specifications.
 
-The `Zfinx` extensions only supports single-precision (`.s` suffix) yet (so it is a direct alternative to the `F`
-extension). The `Zfinx` extension is implemented when the `CPU_EXTENSION_RISCV_Zfinx` configuration
+The `Zfinx` extensions only supports single-precision (`.s` instruction suffix), so it is a direct alternative
+to the `F` extension. The `Zfinx` extension is implemented when the `CPU_EXTENSION_RISCV_Zfinx` configuration
 generic is _true_. In this case the following instructions and CSRs are available:
 
 * conversion: `fcvt.s.w`, `fcvt.s.wu`, `fcvt.w.s`, `fcvt.wu.s`
@@ -505,8 +520,8 @@ Fused multiply-add instructions `f[n]m[add/sub].s` are not supported!
 Division `fdiv.s` and square root `fsqrt.s` instructions are not supported yet!
 
 [WARNING]
-Subnormal numbers (also "de-normalized" numbers) are not supported by the NEORV32 FPU.
-Subnormal numbers (exponent = 0) are _flushed to zero_ (setting them to +/- 0) before entering the
+Subnormal numbers ("de-normalized" numbers) are not supported by the NEORV32 FPU.
+Subnormal numbers (exponent = 0) are _flushed to zero_ setting them to +/- 0 before entering the
 FPU's processing core. If a computational instruction (like `fmul.s`) generates a subnormal result, the
 result is also flushed to zero during normalization.
 
@@ -518,9 +533,6 @@ code (see `sw/example/floating_point_test`).
 
 
 ==== **`Zbb`** Basic Bit-Manipulation Operations
-
-[WARNING]
-The NEORV32 `Zbb` extension is specification-compliant and operational but still _experimental_.
 
 The `Zbb` extension implements the _basic_ sub-set of the RISC-V bit-manipulation extensions `B`.
 The official RISC-V specifications can be found here: https://github.com/riscv/riscv-bitmanip
@@ -541,7 +553,7 @@ like `clz` and `rol`. To increase performance (at the cost of additional hardwar
 <<_fast_shift_en>> generic can be enabled to implement full-parallel logic (like barrel shifters) for all
 shift-related `Zbb` instructions.
 
-[IMPORTANT]
+[WARNING]
 The `Zbb` extension is frozen but not officially ratified yet. There is no
 software support for this extension in the upstream GCC RISC-V port yet. However, an
 intrinsic library is provided to utilize the provided `Zbb` extension from C-language
@@ -550,24 +562,24 @@ code (see `sw/example/bitmanip_test`).
 
 ==== **`Zicsr`** Control and Status Register Access / Privileged Architecture
 
-The CSR access instructions as well as the exception and interrupt system (= the privileged architecture) is implemented when the
-`CPU_EXTENSION_RISCV_Zicsr` configuration generic is _true_. In this case the following instructions are
-available:
+The CSR access instructions as well as the exception and interrupt system (= the privileged architecture)
+is implemented when the `CPU_EXTENSION_RISCV_Zicsr` configuration generic is _true_.
+In this case the following instructions are available:
 
 * CSR access: `csrrw`, `csrrs`, `csrrc`, `csrrwi`, `csrrsi`, `csrrci`
 * environment: `mret`, `wfi`
 
 [WARNING]
-If the `Zicsr` extension is disabled the CPU does not provide any kind of interrupt or exception
-support at all. In order to provide the full spectrum of functions and to allow a secure executions
-environment, the `Zicsr` extension should always be enabled.
+If the `Zicsr` extension is disabled the CPU does not provide any _privileged architecture_ features at all!
+In order to provide the full set of functions and to allow a secure execution
+environment the `Zicsr` extension should always be enabled.
 
 [NOTE]
 The "wait for interrupt instruction" `wfi` works like a sleep command. When executed, the CPU is
 halted until a valid interrupt request occurs. To wake up again, the according interrupt source has to
 be enabled via the `mie` CSR and the global interrupt enable flag in `mstatus` has to be set.
 
-[IMPORTANT]
+[NOTE]
 The `wfi` instruction will raise an illegal instruction exception when executed outside of machine-mode
 and <<_mstatus>> bit `TW` (timeout wait) is set.
 
@@ -579,7 +591,6 @@ generic is _true_. It allows manual synchronization of the instruction stream vi
 
 * `fence.i`
 
-[NOTE]
 The `fence.i` instruction resets the CPU's internal instruction fetch engine and flushes the prefetch buffer.
 This allows a clean re-fetch of modified instructions from memory. Also, the top's `i_bus_fencei_o` signal is set
 high for one cycle to inform the memory system (like the i-cache to perform a flush/reload.
@@ -588,17 +599,19 @@ Any additional flags within the `fence.i` instruction word are ignore by the har
 
 ==== **`PMP`** Physical Memory Protection
 
-The NEORV32 physical memory protection (PMP) is compatible to the PMP specified by the RISC-V specs.
-The CPU PMP only supports _NAPOT_ mode yet and a minimal region size (granularity) of 8 bytes. Larger minimal sizes can be configured
-via the top `PMP_MIN_GRANULARITY` generic to reduce hardware requirements. The physical memory protection system is implemented when the
-`PMP_NUM_REGIONS` configuration generic is >0. In this case the following additional CSRs are available:
+The NEORV32 physical memory protection (PMP) is compatible to the RISC-V PMP specifications. It can be used
+to constrain memory read/write/execute rights for each available privilege level.
+
+The NEORV32 PMP only supports _NAPOT_ mode yet and a minimal region size (granularity) of 8 bytes. Larger
+minimal sizes can be configured via the top `PMP_MIN_GRANULARITY` generic to reduce hardware requirements.
+The physical memory protection system is implemented when the `PMP_NUM_REGIONS` configuration generic is >0.
+In this case the following additional CSRs are available:
 
 * `pmpcfg*` (0..15, depending on configuration): PMP configuration registers
 * `pmpaddr*` (0..63, depending on configuration): PMP address registers
 
+[TIP]
 See section <<_machine_physical_memory_protection>> for more information regarding the PMP CSRs.
-
-**Configuration**
 
 The actual number of regions and the minimal region granularity are defined via the top entity
 `PMP_MIN_GRANULARITY` and `PMP_NUM_REGIONS` generics. `PMP_MIN_GRANULARITY` defines the minimal available
@@ -620,20 +633,20 @@ constant pmp_num_regions_critical_c : natural := 8;
 
 **Operation**
 
-Any memory access address (from the CPU's instruction fetch or data access interface) is tested if it is accessing any
-of the specified (configured via `pmpaddr*` and enabled via `pmpcfg*`) PMP regions. If an
-address accesses one of these regions, the configured access rights (attributes in `pmpcfg*`) are checked:
+Any CPU memory access address (from the instruction fetch or data access interface) is tested if it is accessing _any_
+of the specified  PMP regions(configured via `pmpaddr*` and enabled via `pmpcfg*`). If an
+address matches one of these regions, the configured access rights (attributes in `pmpcfg*`) are enforced:
 
 * a write access (store) will fail if no write attribute is set
 * a read access (load) will fail if no read attribute is set
 * an instruction fetch access will fail if no execute attribute is set
 
-If an access to a protected region does not have the according access rights (attributes) it will raise the according
-_instruction/load/store access fault exception_.
+If an access to a protected region does not have the according access rights it will raise the according
+instruction/load/store _access fault_ exception.
 
 By default, all PMP checks are enforced for user-level programs only. If you wish to enforce the physical
-memory protection also for machine-level programs you need to active the _locked bit_ in the according
-`pmpcfg*` configuration.
+memory protection also for machine-level programs you need to set the _locked bit_ in the according
+`pmpcfg*` configuration CSR.
 
 [IMPORTANT]
 After updating the address configuration registers `pmpaddr*` the system requires up to 33 cycles for
@@ -646,37 +659,40 @@ Instruction Set Manual – Volume II: Privileged Architecture_ specifications.
 
 ==== **`HPM`** Hardware Performance Monitors
 
-In additions to the mandatory cycles (`[m]cycle[h]`) and instruction (`[m]instret[h]`) counters the NEORV32 CPU provides
+In additions to the mandatory cycle (`[m]cycle[h]`) and instruction (`[m]instret[h]`) counters the NEORV32 CPU provides
 up to 29 hardware performance monitors (HPM 3..31), which can be used to benchmark applications. Each HPM consists of an
 N-bit wide counter (split in a high-word 32-bit CSR and a low-word 32-bit CSR), where N is defined via the top's
-`HPM_CNT_WIDTH` generic (0..64-bit), and a corresponding event configuration CSR. The event configuration
+`HPM_CNT_WIDTH` generic (0..64-bit) and a corresponding event configuration CSR. The event configuration
 CSR defines the architectural events that lead to an increment of the associated HPM counter.
 
 The cycle, time and instructions-retired counters (`[m]cycle[h]`, `time[h]`, `[m]instret[h]`) are
 mandatory performance monitors on every RISC-V platform and have fixed increment events. For example,
 the instructions-retired counter increments with each executed instructions. The actual hardware performance
 monitors are optional and can be configured to increment on arbitrary hardware events. The number of
-available HPM is configured via the top's `HPM_NUM_CNTS` generic at synthesis time. Assigning a zero will exclude
+available HPM is configured via the top's `HPM_NUM_CNTS` generic at synthesis time. Assigning a zero will remove
 all HPM logic from the design.
-
-Depending on the configuration, the following additional CSR are available:
-
-* counters: `mhpmcounter*[h]` (3..31, depending on configuration)
-* event configuration: `mhpmevent*` (3..31, depending on configuration)
-
-[IMPORTANT]
-The HPM counter CSR can only be accessed in machine-mode. Hence, the according `mcounteren` CSR bits
-are always zero and read-only.
-
-Auto-increment of the HPMs can be individually deactivated via the `mcountinhibit` CSR.
 
 If `HPM_NUM_CNTS` is lower than the maximum value (=29) the remaining HPM CSRs are not implemented and the
 according `mcountinhibit` CSR bits are hardwired to zero.
 However, accessing their associated CSRs will not raise an illegal instruction exception (if in machine mode).
 The according CSRs are read-only and will always return 0.
 
-[NOTE]
-For a list of all allocated HPM-related CSRs and all provided event configurations see section <<_hardware_performance_monitors_hpm>>.
+Depending on the configuration the following additional CSR are available:
+
+* counters: `mhpmcounter*[h]` (3..31, depending on `HPM_NUM_CNTS`)
+* event configuration: `mhpmevent*` (3..31, depending on `HPM_NUM_CNTS`)
+
+[IMPORTANT]
+The HPM counter CSR can only be accessed in machine-mode. Hence, the according `mcounteren` CSR bits
+are always zero and read-only. Any access from less-privileged modes will raise an illegal instruction
+exception.
+
+[TIP]
+Auto-increment of the HPMs can be individually deactivated via the `mcountinhibit` CSR.
+
+[TIP]
+For a list of all HPM-related CSRs and all provided event configurations
+see section <<_hardware_performance_monitors_hpm>>.
 
 
 <<<
