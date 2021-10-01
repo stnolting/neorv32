@@ -279,7 +279,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mstatus_mie       : std_ulogic; -- mstatus.MIE: global IRQ enable (R/W)
     mstatus_mpie      : std_ulogic; -- mstatus.MPIE: previous global IRQ enable (R/W)
     mstatus_mpp       : std_ulogic_vector(1 downto 0); -- mstatus.MPP: machine previous privilege mode
-    mstatus_tw        : std_ulogic; -- mstatus:TW trigger illegal instruction exception if WFI is executed outside of M-mode
+    mstatus_tw        : std_ulogic; -- mstatus.TW trigger illegal instruction exception if WFI is executed outside of M-mode
     --
     mie_msie          : std_ulogic; -- mie.MSIE: machine software interrupt enable (R/W)
     mie_meie          : std_ulogic; -- mie.MEIE: machine external interrupt enable (R/W)
@@ -1160,21 +1160,27 @@ begin
         case decode_aux.sys_env_cmd is -- use a simplified input here (with permanent zeros)
           when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ECALL
           when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- EBREAK
-          when funct12_wfi_c    => execute_engine.sleep_nxt <= '1'; -- WFI
-          when funct12_mret_c =>  -- MRET
+          when funct12_wfi_c => -- WFI
+            if (CPU_EXTENSION_RISCV_DEBUG = true) and
+              ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) then -- act as NOP when in debug-mode or during single-stepping
+              NULL; -- executed as NOP
+            else
+              execute_engine.sleep_nxt <= '1'; -- go to sleep mode
+            end if;
+          when funct12_mret_c => -- MRET
             if (csr.priv_m_mode = '1') then -- only allowed in M-mode
               execute_engine.state_nxt <= TRAP_EXIT;
             else
-              NULL;
+              NULL; -- executed as NOP
             end if;
           when funct12_dret_c => -- DRET
             if (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') then -- only allowed in debug-mode
               execute_engine.state_nxt <= TRAP_EXIT;
               debug_ctrl.dret <= '1';
             else
-              NULL;
+              NULL; -- executed as NOP
             end if;
-          when others => NULL; -- undefined
+          when others => NULL; -- undefined / execute as NOP
         end case;
 
 

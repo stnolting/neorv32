@@ -19,7 +19,9 @@ The NEORV32 OCD provides the following key features:
 .OCD Security Note
 [IMPORTANT]
 Access via the OCD is _always authenticated_ (`dmstatus.authenticated` == `1`). Hence, the
-_whole system_ can always be accessed via the on-chip debugger.
+_whole system_ can always be accessed via the on-chip debugger. Currently, there is no option
+to disable the OCD via software. The OCD can only be disabled by disabling implementation
+(setting _ON_CHIP_DEBUGGER_EN_ generic to _false_).
 
 [NOTE]
 The OCD requires additional resources for implementation and _might_ also increase the critical path resulting in less
@@ -514,7 +516,8 @@ Whenever the CPU **enters debug mode** it performs the following operations:
 When the CPU **is in debug mode** the following things are important:
 
 * while in debug mode, the CPU executes the parking loop and the program buffer provided by the DM if requested
-* effective CPU privilege level is `machine` mode, PMP is not active
+* effective CPU privilege level is `machine` mode, any PMP configuration is bypassed
+* the `wfi` instruction acts as a `nop` (also during single-stepping)
 * if an exception occurs
   * if the exception was caused by any debug-mode entry action the CPU jumps to the _normal entry point_
     ( = _CPU_DEBUG_ADDR_) of the park loop again (for example when executing `ebreak` in debug mode)

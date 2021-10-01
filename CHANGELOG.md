@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 01.10.2021 | 1.6.1.1 | on-chip-debugger: `wfi` instruction acts as a simple `nop` when _in_ debug mode and during single-stepping |
 | 28.09.2021 |[**:rocket:1.6.1**](https://github.com/stnolting/neorv32/releases/tag/v1.6.1) | **New release** |
 | 28.09.2021 | 1.6.0.13 | :bug: fixed _stupid_ bug in MTIME comparator logic (interrupt condition `mtime >= mtimecmp` was not always evaluated correctly) |
 | 28.09.2021 | 1.6.0.12 | fixed CPU's IRQ prioritization: (re-)enter debug mode interrupts have to be evaluated _before_ all other interrupts |
