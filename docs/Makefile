@@ -20,7 +20,6 @@ html:
 	  -r asciidoctor-diagram \
 	  datasheet/index.adoc \
 	  --out-file public/index.html
-	cp meta/*.html public
 
 # Generate PDF user guide
 ug-pdf:
