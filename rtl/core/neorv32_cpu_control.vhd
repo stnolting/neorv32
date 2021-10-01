@@ -1158,8 +1158,8 @@ begin
       -- ------------------------------------------------------------
         execute_engine.state_nxt <= SYS_WAIT; -- default
         case decode_aux.sys_env_cmd is -- use a simplified input here (with permanent zeros)
-          when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ECALL
-          when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- EBREAK
+          when funct12_ecall_c  => trap_ctrl.env_call    <= '1'; -- ECALL
+          when funct12_ebreak_c => trap_ctrl.break_point <= '1'; -- EBREAK
           when funct12_wfi_c => -- WFI
             if (CPU_EXTENSION_RISCV_DEBUG = true) and
               ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) then -- act as NOP when in debug-mode or during single-stepping

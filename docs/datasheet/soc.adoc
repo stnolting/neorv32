@@ -1035,9 +1035,9 @@ The NEORV32 Processor provides a 32-bit / 4GB (physical) address space
 By default, this address space is divided into five main regions:
 
 1. **Instruction address space** – memory address space for instructions (=code) and constants.
-A configurable section of this address space is used by internal and/or external _instruction memory_ (IMEM).
+A configurable section of this address space is used by the internal/external _instruction memory_ (<<_mem_int_imem_size>> for the internal IMEM).
 2. **Data address space** – memory address space for application runtime data (heap, stack, etc.).
-A configurable section of this address space is used by internal and/or external _data memory_ (DMEM).
+A configurable section of this address space is used by the internal/external _data memory_ (<<_mem_int_dmem_size>> for the internal DMEM).
 3. **Bootloader address space**. A _fixed_ section of this address space is used by the
 internal _bootloader memory_ (BOOTLDROM).
 4. **On-Chip Debugger address space**. This _fixed_ section is entirely used by the processor's <<_on_chip_debugger_ocd>>.
