@@ -1604,12 +1604,13 @@ int main() {
 
     // atomic access
     tmp_a = neorv32_cpu_load_reservate_word((uint32_t)&atomic_access_addr); // make reservation
-    neorv32_cpu_store_unsigned_word((uint32_t)&atomic_access_addr, 0xDEADDEAD); // destroy reservation
+    // neorv32_cpu_store_unsigned_word((uint32_t)&atomic_access_addr, 0xDEADDEAD); // destroy reservation
+    neorv32_cpu_load_unsigned_word((uint32_t)&atomic_access_addr); // destroy reservation
     tmp_b = neorv32_cpu_store_conditional((uint32_t)&atomic_access_addr, 0x22446688);
 
     if ((tmp_b != 0) && // status: fail
         (tmp_a == 0xAABBCCDD) && // correct data read
-        (neorv32_cpu_load_unsigned_word((uint32_t)&atomic_access_addr) == 0xDEADDEAD)) { // correct data write
+        (neorv32_cpu_load_unsigned_word((uint32_t)&atomic_access_addr) == 0xAABBCCDD)) { // correct data write
       test_ok();
     }
     else {
