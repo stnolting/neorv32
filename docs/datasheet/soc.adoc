@@ -1110,8 +1110,8 @@ The processor setup defines fixed attributes for the four processor-internal add
 Accessing a memory region in a way that violates any of these attributes will raise an according
 access exception..
 
-* `r` – read access (from CPU data access interface, e.g. via "load")
-* `w` – write access (from CPU data access interface, e.g. via "store")
+* `r` – read access (from CPU data access interface, "loads")
+* `w` – write access (from CPU data access interface, "stores")
 * `x` – execute access (from CPU instruction fetch interface)
 * `a` – atomic access (from CPU data access interface)
 * `8` – byte (8-bit)-accessible (when writing)
@@ -1119,21 +1119,25 @@ access exception..
 * `32` – word (32-bit)-accessible (when writing)
 
 [NOTE]
-Read accesses (i.e. loads) can always access data in word, half-word and byte quantities (requiring an accordingly aligned address).
+Read accesses (loads and instruction fetches) can always access data in
+word, half-word (for instruction fetch only if `C` extension is enabled)
+and byte (not for instruction fetch) quantities (requiring an accordingly aligned address).
+
+[TIP]
+The following table shows the _default hardware-defined_ physical memory attributes of each main address space region.
+Additional user-defined attributes (for example certain read/write/execute rights for specific address space regions) can be
+provided using the RISC-V <<_machine_physical_memory_protection>>.
 
 [cols="^1,^2,^2,^3,^2"]
 [options="header",grid="rows"]
 |=======================
-| # | Region | Base address | Size | Attributes
-| 4 | IO/peripheral devices | 0xfffffe00 | 512 bytes | `r/w/a/32`
-| 3 | bootloader ROM        | 0xffff0000 | up to 32kB| `r/x/a`
-| 2 | DMEM                  | 0x80000000 | up to 2GB (-64kB) | `r/w/x/a/8/16/32`
-| 1 | IMEM                  | 0x00000000 | up to 2GB | `r/w/x/a/8/16/32`
+| # | Region                | Base address | Size        | Attributes
+| 5 | IO/peripheral devices | 0xfffffe00   | 512 bytes   | `r/w/a/32`
+| 4 | On-chip debugger      | 0xfffff800   | 512 bytes   | `r/w/x/32`
+| 3 | Bootloader ROM        | 0xffff0000   | up to 32kB  | `r/x/a`
+| 2 | DMEM                  | 0x80000000   | up to "2GB" | `r/w/x/a/8/16/32`
+| 1 | IMEM                  | 0x00000000   | up to 2GB   | `r/w/x/a/8/16/32`
 |=======================
-
-[TIP]
-The following table shows the provided physical memory attributes of each region. Additional attributes (for example
-controlling certain right for specific address space regions) can be provided using the RISC-V <<_machine_physical_memory_protection>> extension.
 
 
 :sectnums:
