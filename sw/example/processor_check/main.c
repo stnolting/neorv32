@@ -1334,23 +1334,14 @@ int main() {
 
   cnt_test++;
 
-  // clear timeout wait flag
-  tmp_a = neorv32_cpu_csr_read(CSR_MSTATUS);
-  tmp_a &= ~(1 << CSR_MSTATUS_TW);
-  neorv32_cpu_csr_write(CSR_MSTATUS, tmp_a);
-
   // program wake-up timer
   neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 500);
 
-  // enable interrupt
+  // enable mtime interrupt
   neorv32_cpu_irq_enable(CSR_MIE_MTIE);
 
-  // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-  neorv32_cpu_goto_user_mode();
-  {
-    // only when mstatus.TW = 0 executing WFI in user mode is allowed
-    asm volatile ("wfi"); // put CPU into sleep mode
-  }
+  // put CPU into sleep mode
+  asm volatile ("wfi");
 
   // no more mtime interrupts
   neorv32_cpu_irq_disable(CSR_MIE_MTIE);
