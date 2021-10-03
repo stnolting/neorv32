@@ -354,15 +354,15 @@ hart's GPRs (abstract command register index `0x1000` - `0x101f`).
 [cols="^1,^2,<8"]
 [options="header",grid="rows"]
 |=======================
-| Bit   | Name [RISC-V]      | Description / required value
-| 31:24 | `cmdtype`          | `00000000` to indicate "access register" command
-| 23    | _reserved_         | reserved, has to be `0` when writing
-| 22:20 | `aarsize`          | `010` to indicate 32-bit accesses
-| 21    | `aarpostincrement` | `0`, postincrement is not supported
-| 18    | `postexec`         | if set the program buffer is executed _after_ the command
-| 17    | `transfer`         | if set the operation in `write` is conducted
-| 16    | `write`            | `1`: copy `data0` to `[regno]`; `0` copy `[regno]` to `data0`
-| 15:0  | `regno`            | GPR-access only; has to be `0x1000` - `0x101f`
+| Bit   | Name [RISC-V]      | R/W | Description / required value
+| 31:24 | `cmdtype`          | -/w | `00000000` to indicate "access register" command
+| 23    | _reserved_         | -/w | reserved, has to be `0` when writing
+| 22:20 | `aarsize`          | -/w | `010` to indicate 32-bit accesses
+| 21    | `aarpostincrement` | -/w | `0`, postincrement is not supported
+| 18    | `postexec`         | -/w | if set the program buffer is executed _after_ the command
+| 17    | `transfer`         | -/w | if set the operation in `write` is conducted
+| 16    | `write`            | -/w | `1`: copy `data0` to `[regno]`; `0` copy `[regno]` to `data0`
+| 15:0  | `regno`            | -/w | GPR-access only; has to be `0x1000` - `0x101f`
 |=======================
 
 
@@ -495,7 +495,7 @@ instruction `dret` is available when the CPU is "in" debug mode.
 The CPU _debug mode_ requires the `Zicsr` and `Zifencei` CPU extension to be implemented (top generics _CPU_EXTENSION_RISCV_Zicsr_
 and _CPU_EXTENSION_RISCV_Zifencei_ = true).
 
-The CPU debug mode is entered when one of the following events appear:
+The CPU debug-mode is entered when one of the following events appear:
 
 [start=1]
 . executing `ebreak` instruction (when `dcsr.ebreakm` is set and in machine mode OR when `dcsr.ebreaku` is set and in user mode)
@@ -505,7 +505,7 @@ The CPU debug mode is entered when one of the following events appear:
 From a hardware point of view, these "entry conditions" are special synchronous (`ebreak` instruction) or asynchronous
 (single-stepping "interrupt"; halt request "interrupt") traps, that are handled invisibly by the control logic.
 
-Whenever the CPU **enters debug mode** it performs the following operations:
+Whenever the CPU **enters debug-mode** it performs the following operations:
 
 * move `pc` to `dpcs`
 * copy the hart's current privilege level to `dcsr.prv`
@@ -513,17 +513,17 @@ Whenever the CPU **enters debug mode** it performs the following operations:
 * **no update** of `mtval`, `mcause`, `mtval` and `mstatus` CSRs
 * load the address configured via the CPU _CPU_DEBUG_ADDR_ generic to the `pc` to jump to "debugger park loop" code in the debug module (DM)
 
-When the CPU **is in debug mode** the following things are important:
+When the CPU **is in debug-mode** the following things are important:
 
 * while in debug mode, the CPU executes the parking loop and the program buffer provided by the DM if requested
 * effective CPU privilege level is `machine` mode, any PMP configuration is bypassed
 * the `wfi` instruction acts as a `nop` (also during single-stepping)
-* if an exception occurs
-  * if the exception was caused by any debug-mode entry action the CPU jumps to the _normal entry point_
-    ( = _CPU_DEBUG_ADDR_) of the park loop again (for example when executing `ebreak` in debug mode)
-  * for all other exception sources the CPU jumps to the _exception entry point_ ( = _CPU_DEBUG_ADDR_ + 4)
-    to signal an exception to the DM and restarts the park loop again afterwards
-* interrupts are disabled; however, they will be remain pending and will get executed after the CPU has left debug mode
+* if an exception occurs:
+** if the exception was caused by any debug-mode entry action the CPU jumps to the _normal entry point_
+   (= _CPU_DEBUG_ADDR_) of the park loop again (for example when executing `ebreak` _in_ debug-mode)
+** for all other exception sources the CPU jumps to the _exception entry point_ ( = _CPU_DEBUG_ADDR_ + 4)
+   to signal an exception to the DM and restarts the park loop again afterwards
+* interrupts are disabled; however, they will remain pending and will get executed after the CPU has left debug mode
 * if the DM makes a resume request, the park loop exits and the CPU leaves debug mode (executing `dret`)
 
 Debug mode is left either by executing the `dret` instruction footnote:[`dret` should only be executed _inside_ the debugger
