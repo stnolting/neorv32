@@ -405,8 +405,12 @@ begin
 
   uart0_txd_o     <= std_logic(uart0_txd_o_int);
   uart0_rxd_i_int <= std_ulogic(uart0_rxd_i);
+  uart0_rts_o     <= std_logic(uart0_rts_o_int);
+  uart0_cts_i_int <= std_ulogic(uart0_cts_i);
   uart1_txd_o     <= std_logic(uart1_txd_o_int);
   uart1_rxd_i_int <= std_ulogic(uart1_rxd_i);
+  uart1_rts_o     <= std_logic(uart1_rts_o_int);
+  uart1_cts_i_int <= std_ulogic(uart1_cts_i);
 
   spi_sck_o       <= std_logic(spi_sck_o_int);
   spi_sdo_o       <= std_logic(spi_sdo_o_int);
