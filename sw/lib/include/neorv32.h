@@ -470,7 +470,7 @@ enum NEORV32_EXCEPTION_CODES_enum {
 
 
 /**********************************************************************//**
- * Processor clock prescalers select
+ * Processor clock prescaler select
  **************************************************************************/
 enum NEORV32_CLOCK_PRSC_enum {
   CLK_PRSC_2    = 0, /**< CPU_CLK (from clk_i top signal) / 2 */
@@ -501,7 +501,9 @@ enum NEORV32_CLOCK_PRSC_enum {
 // -> configured via dspace_base_c constant in neorv32_package.vhd and available to SW via SYSCONFIG entry
 /** bootloader memory base address (r/-/x) */
 #define BOOTLOADER_BASE_ADDRESS (0xFFFF0000UL)
-/** peripheral/IO devices memory base address (r/w/x) */
+/** on-chip debugger complex base address (r/w/x) */
+#define OCD_BASE_ADDRESS        (0XFFFFF800UL)
+/** peripheral/IO devices memory base address (r/w/-) */
 #define IO_BASE_ADDRESS         (0xFFFFFE00UL)
 /**@}*/
 
