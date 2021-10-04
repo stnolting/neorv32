@@ -62,8 +62,7 @@ entity neorv32_cpu_regfile is
     alu_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
     -- data output --
     rs1_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 1
-    rs2_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 2
-    cmp_o  : out std_ulogic_vector(1 downto 0) -- comparator status
+    rs2_o  : out std_ulogic_vector(data_width_c-1 downto 0)  -- operand 2
   );
 end neorv32_cpu_regfile;
 
@@ -80,10 +79,6 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   signal opa_addr     : std_ulogic_vector(4 downto 0); -- rs1/dst address
   signal opb_addr     : std_ulogic_vector(4 downto 0); -- rs2 address
   signal rs1, rs2     : std_ulogic_vector(data_width_c-1 downto 0); -- read data
-
-  -- comparator --
-  signal cmp_opx : std_ulogic_vector(data_width_c downto 0);
-  signal cmp_opy : std_ulogic_vector(data_width_c downto 0);
 
 begin
 
@@ -135,15 +130,6 @@ begin
   -- data output --
   rs1_o <= rs1;
   rs2_o <= rs2;
-
-
-  -- Comparator Unit (for conditional branches) ---------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  cmp_opx <= (rs1(rs1'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs1;
-  cmp_opy <= (rs2(rs2'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs2;
-
-  cmp_o(cmp_equal_c) <= '1' when (rs1 = rs2) else '0';
-  cmp_o(cmp_less_c)  <= '1' when (signed(cmp_opx) < signed(cmp_opy)) else '0';
 
 
 end neorv32_cpu_regfile_rtl;

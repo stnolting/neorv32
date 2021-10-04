@@ -326,8 +326,7 @@ begin
     alu_i  => alu_res,            -- ALU result
     -- data output --
     rs1_o  => rs1,                -- operand 1
-    rs2_o  => rs2,                -- operand 2
-    cmp_o  => comparator          -- comparator status
+    rs2_o  => rs2                 -- operand 2
   );
 
 
@@ -355,8 +354,8 @@ begin
     pc2_i       => curr_pc,       -- delayed PC
     imm_i       => imm,           -- immediate
     csr_i       => csr_rdata,     -- CSR read data
-    cmp_i       => comparator,    -- comparator status
     -- data output --
+    cmp_o       => comparator,    -- comparator status
     res_o       => alu_res,       -- ALU result
     add_o       => alu_add,       -- address computation result
     fpu_flags_o => fpu_flags,     -- FPU exception flags

@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060103"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060104"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -1200,8 +1200,7 @@ package neorv32_package is
       alu_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
       -- data output --
       rs1_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 1
-      rs2_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 2
-      cmp_o  : out std_ulogic_vector(1 downto 0) -- comparator status
+      rs2_o  : out std_ulogic_vector(data_width_c-1 downto 0)  -- operand 2
     );
   end component;
 
@@ -1229,8 +1228,8 @@ package neorv32_package is
       pc2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- delayed PC
       imm_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
       csr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
-      cmp_i       : in  std_ulogic_vector(1 downto 0); -- comparator status
       -- data output --
+      cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
       res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
       add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- address computation result
       fpu_flags_o : out std_ulogic_vector(4 downto 0); -- FPU exception flags
