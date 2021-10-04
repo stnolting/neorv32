@@ -169,7 +169,7 @@ begin
   cmp_sync: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      cmp_lo_ge_ff <= cmp_lo_ge;
+      cmp_lo_ge_ff <= cmp_lo_ge; -- there is one cycle delay between low (earlier) and high (later) word
       irq_o        <= cmp_hi_gt or (cmp_hi_eq and cmp_lo_ge_ff);
     end if;
   end process cmp_sync;
