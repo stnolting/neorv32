@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 05.10.2021 | 1.6.1.5 | :sparkles: :lock: the CPU now ensures that _all_ illegal instructions _do not commit_ any potential architecture state changes (like writing registers or triggering memory accesses); CPU logic optimization (smaller footprint) |
 | 04.10.2021 | 1.6.1.4 | moved CPU's comparator logic from register file unit to ALU unit (to allow easier replacement of register file design unit by technology-optimized one) |
 | 03.10.2021 | 1.6.1.3 | :bug: fixed UART signal connection in `rtl/system_integration` wrappers |
 | 01.10.2021 | 1.6.1.2 | :warning: removed `mstatus.TW` (timeout wait) bit, `wfi` instruction is now always allowed to be executed in less-privileged modes; minor CPU control unit logic optimizations |

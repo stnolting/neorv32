@@ -184,7 +184,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- instruction decoding helper logic --
   type decode_aux_t is record
     alu_immediate   : std_ulogic;
-    rs1_is_r0       : std_ulogic;
     is_atomic_lr    : std_ulogic;
     is_atomic_sc    : std_ulogic;
     is_float_op     : std_ulogic;
@@ -271,8 +270,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     addr              : std_ulogic_vector(11 downto 0); -- csr address
     we                : std_ulogic; -- csr write enable
     we_nxt            : std_ulogic;
-    re                : std_ulogic; -- csr read enable
-    re_nxt            : std_ulogic;
     wdata             : std_ulogic_vector(data_width_c-1 downto 0); -- csr write data
     rdata             : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
     --
@@ -774,6 +771,10 @@ begin
   begin
     -- signals from execute engine --
     ctrl_o <= ctrl;
+    -- prevent commits if illegal instruction --
+    ctrl_o(ctrl_rf_wb_en_c) <= ctrl(ctrl_rf_wb_en_c) and (not trap_ctrl.exc_buf(exception_iillegal_c));
+    ctrl_o(ctrl_bus_rd_c)   <= ctrl(ctrl_bus_rd_c)   and (not trap_ctrl.exc_buf(exception_iillegal_c));
+    ctrl_o(ctrl_bus_wr_c)   <= ctrl(ctrl_bus_wr_c)   and (not trap_ctrl.exc_buf(exception_iillegal_c));
     -- current privilege level --
     ctrl_o(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c) <= csr.privilege_rd;
     -- register addresses --
@@ -811,7 +812,6 @@ begin
   begin
     -- defaults --
     decode_aux.alu_immediate   <= '0';
-    decode_aux.rs1_is_r0       <= '0';
     decode_aux.is_atomic_lr    <= '0';
     decode_aux.is_atomic_sc    <= '0';
     decode_aux.is_float_op     <= '0';
@@ -822,9 +822,6 @@ begin
 
     -- is immediate ALU operation? --
     decode_aux.alu_immediate <= not execute_engine.i_reg(instr_opcode_msb_c-1);
-
-    -- is rs1 == r0? --
-    decode_aux.rs1_is_r0 <= not or_reduce_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c));
 
     -- is atomic load-reservate/store-conditional? --
     if (CPU_EXTENSION_RISCV_A = true) and (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "11") then -- valid atomic sub-opcode
@@ -891,7 +888,7 @@ begin
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   execute_engine_fsm_comb: process(execute_engine, debug_ctrl, trap_ctrl, decode_aux, fetch_engine, cmd_issue,
-                                   csr, ctrl, csr_acc_valid, alu_idone_i, bus_d_wait_i, excl_state_i)
+                                   csr, ctrl, alu_idone_i, bus_d_wait_i, excl_state_i)
     variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     -- arbiter defaults --
@@ -923,7 +920,6 @@ begin
 
     -- CSR access --
     csr.we_nxt                  <= '0';
-    csr.re_nxt                  <= '0';
 
     -- CONTROL DEFAULTS --
     ctrl_nxt <= (others => '0'); -- default: all off
@@ -1126,7 +1122,6 @@ begin
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zicsr = true) then
-              csr.re_nxt <= csr_acc_valid; -- always read CSR if valid access, only relevant for CSR-instructions
               if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system/environment
                 execute_engine.state_nxt <= SYS_ENV;
               else -- CSR access
@@ -1188,9 +1183,9 @@ begin
         -- CSR write access --
         case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
           when funct3_csrrw_c | funct3_csrrwi_c => -- CSRRW(I)
-            csr.we_nxt <= csr_acc_valid; -- always write CSR if valid access
+            csr.we_nxt <= '1'; -- always write CSR
           when funct3_csrrs_c | funct3_csrrsi_c | funct3_csrrc_c | funct3_csrrci_c => -- CSRRS(I) / CSRRC(I)
-            csr.we_nxt <= (not decode_aux.rs1_is_r0) and csr_acc_valid; -- write CSR if rs1/imm is not zero and if valid access
+            csr.we_nxt <= or_reduce_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c)); -- write CSR if rs1/imm is not zero
           when others => -- invalid
             csr.we_nxt <= '0';
         end case;
@@ -1279,8 +1274,7 @@ begin
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load (and SC.W) operations)
         ctrl_nxt(ctrl_rf_in_mux_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
         -- wait for memory response / exception --
-        if (trap_ctrl.env_start = '1') and -- only abort if BUS EXCEPTION
-           ((trap_ctrl.cause = trap_lma_c) or (trap_ctrl.cause = trap_lbe_c) or (trap_ctrl.cause = trap_sma_c) or (trap_ctrl.cause = trap_sbe_c)) then
+        if (trap_ctrl.env_start = '1') and (trap_ctrl.cause(6 downto 5) = "00") then -- only abort if SYNC EXCEPTION (from bus) and NOT DEBUG-MODE-related
           execute_engine.state_nxt <= SYS_WAIT;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           -- data write-back --
@@ -1323,22 +1317,22 @@ begin
     end if;
 
     -- check CSR access --
-    csr_acc_valid <= '0'; -- default = invalid access
     case csr.addr is
 
       -- floating-point CSRs --
       when csr_fflags_c | csr_frm_c | csr_fcsr_c =>
-        if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented?
-          csr_acc_valid <= '1'; -- full access for everyone
-        else
-          NULL;
-        end if;
+        csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- full access for everyone if FPU implemented
 
       -- machine trap setup & handling --
-      when csr_mstatus_c | csr_mstatush_c | csr_misa_c | csr_mie_c | csr_mtvec_c | csr_mscratch_c | csr_mepc_c | csr_mcause_c | csr_mip_c | csr_mtval_c =>
+      when csr_mstatus_c | csr_mstatush_c | csr_misa_c | csr_mie_c | csr_mtvec_c | csr_mscratch_c | csr_mepc_c | csr_mcause_c | csr_mip_c | csr_mtval_c |
+           csr_mcycle_c | csr_mcycleh_c | csr_minstret_c | csr_minstreth_c | csr_mcountinhibit_c =>
         -- NOTE: MISA, MIP and MTVAL are read-only in the NEORV32 but we do not cause an exception here for compatibility.
-        --       Machine-level code should read-back those CSRs after writing them to realize they are read-only.
+        -- Machine-level code should read-back those CSRs after writing them to realize they are read-only.
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only 
+
+      -- machine information registers, read-only --
+      when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mconfigptr_c =>
+        csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
 
       when csr_mcounteren_c | csr_menvcfg_c | csr_menvcfgh_c => -- only available if U mode is implemented
         csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);
@@ -1354,11 +1348,7 @@ begin
            csr_pmpaddr56_c | csr_pmpaddr57_c | csr_pmpaddr58_c | csr_pmpaddr59_c | csr_pmpaddr60_c | csr_pmpaddr61_c | csr_pmpaddr62_c | csr_pmpaddr63_c |
            csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c   | csr_pmpcfg4_c   | csr_pmpcfg5_c   | csr_pmpcfg6_c   | csr_pmpcfg7_c   | -- configuration
            csr_pmpcfg8_c   | csr_pmpcfg9_c   | csr_pmpcfg10_c  | csr_pmpcfg11_c  | csr_pmpcfg12_c  | csr_pmpcfg13_c  | csr_pmpcfg14_c  | csr_pmpcfg15_c =>
-        if (PMP_NUM_REGIONS > 0) then
-          csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-        else
-          NULL;
-        end if;
+        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- M-mode only
 
       -- hardware performance monitors (HPM) --
       when csr_mhpmcounter3_c   | csr_mhpmcounter4_c   | csr_mhpmcounter5_c   | csr_mhpmcounter6_c   | csr_mhpmcounter7_c   | csr_mhpmcounter8_c   | -- counter LOW
@@ -1376,40 +1366,24 @@ begin
            csr_mhpmevent15_c    | csr_mhpmevent16_c    | csr_mhpmevent17_c    | csr_mhpmevent18_c    | csr_mhpmevent19_c    | csr_mhpmevent20_c    |
            csr_mhpmevent21_c    | csr_mhpmevent22_c    | csr_mhpmevent23_c    | csr_mhpmevent24_c    | csr_mhpmevent25_c    | csr_mhpmevent26_c    |
            csr_mhpmevent27_c    | csr_mhpmevent28_c    | csr_mhpmevent29_c    | csr_mhpmevent30_c    | csr_mhpmevent31_c =>
-        if (HPM_NUM_CNTS > 0) then
-          csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-        else
-          NULL;
-        end if;
+        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(HPM_NUM_CNTS > 0)); -- M-mode only
 
-      -- counters/timers --
-      when csr_mcycle_c | csr_mcycleh_c | csr_minstret_c | csr_minstreth_c =>
-        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-      when csr_cycle_c | csr_cycleh_c =>
-        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_cy); -- M-mode, U-mode if authorized, read-only
-      when csr_instret_c | csr_instreth_c =>
-        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_ir); -- M-mode, U-mode if authorized, read-only
-      when csr_time_c | csr_timeh_c =>
-        csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_tm); -- M-mode, U-mode if authorized, read-only
-
-      when csr_mcountinhibit_c =>
-        csr_acc_valid <= csr.priv_m_mode; -- M-mode only
-
-      -- machine information registers, read-only --
-      when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mconfigptr_c =>
-        csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
+      -- user-level counters/timers --
+      when csr_cycle_c | csr_cycleh_c | csr_instret_c | csr_instreth_c | csr_time_c | csr_timeh_c =>
+        case csr.addr(1 downto 0) is
+          when "00"   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_cy); -- cyle[h]: M-mode, U-mode if authorized, read-only
+          when "01"   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_tm); -- time[h]: M-mode, U-mode if authorized, read-only
+          when "10"   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_ir); -- instret[h]: M-mode, U-mode if authorized, read-only
+          when others => csr_acc_valid <= '0';
+        end case;
 
       -- debug mode CSRs --
       when csr_dcsr_c | csr_dpc_c | csr_dscratch0_c =>
-        if (CPU_EXTENSION_RISCV_DEBUG = true) then
-          csr_acc_valid <= debug_ctrl.running; -- access only in debug-mode
-        else
-          NULL;
-        end if;
+        csr_acc_valid <= debug_ctrl.running and bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG); -- access only in debug-mode
 
       -- undefined / not implemented --
       when others =>
-        NULL; -- invalid access
+        csr_acc_valid <= '0'; -- invalid access
     end case;
   end process csr_access_check;
 
@@ -1419,7 +1393,7 @@ begin
   illegal_instruction_check: process(execute_engine, decode_aux, csr, csr_acc_valid, debug_ctrl)
     variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
-    -- illegal instructions are checked in the EXECUTE stage
+    -- illegal instructions are checked in the EXECUTE state
     -- the execute engine should not commit any illegal instruction
     if (execute_engine.state = EXECUTE) then
       -- defaults --
@@ -1653,7 +1627,7 @@ begin
       trap_ctrl.exc_ack   <= '0';
       trap_ctrl.irq_ack   <= (others => '0');
       trap_ctrl.env_start <= '0';
-      trap_ctrl.cause     <= (others => def_rst_val_c);
+      trap_ctrl.cause     <= (others => '0');
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
 
@@ -1993,7 +1967,7 @@ begin
 
     elsif rising_edge(clk_i) then
       -- write access? --
-      csr.we <= csr.we_nxt;
+      csr.we <= csr.we_nxt and (not trap_ctrl.exc_buf(exception_iillegal_c)); -- no write if illegal instruction
 
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
         -- --------------------------------------------------------------------------------
@@ -2519,9 +2493,8 @@ begin
     variable csr_addr_v : std_ulogic_vector(11 downto 0);
   begin
     if rising_edge(clk_i) then
-      csr.re    <= csr.re_nxt; -- read access?
       csr.rdata <= (others => '0'); -- default output
-      if (CPU_EXTENSION_RISCV_Zicsr = true) and (csr.re = '1') then
+      if (CPU_EXTENSION_RISCV_Zicsr = true) then
         csr_addr_v(11 downto 10) := csr.addr(11 downto 10);
         csr_addr_v(09 downto 08) := (others => csr.addr(8)); -- !!! WARNING: MACHINE (11) and USER (00) registers ONLY !!!
         csr_addr_v(07 downto 00) := csr.addr(07 downto 00);
@@ -2801,7 +2774,7 @@ begin
           when csr_marchid_c    => csr.rdata(4 downto 0) <= "10011"; -- marchid (r/-): arch ID - official RISC-V open-source arch ID
           when csr_mimpid_c     => csr.rdata <= hw_version_c; -- mimpid (r/-): implementation ID -- NEORV32 hardware version
           when csr_mhartid_c    => csr.rdata <= std_ulogic_vector(to_unsigned(HW_THREAD_ID, 32)); -- mhartid (r/-): hardware thread ID
---        when csr_mconfigptr_c => NULL; -- mconfigptr (r/-): machine configuration pointer register, implemented but not assigned yet
+--        when csr_mconfigptr_c => NULL; -- mconfigptr (r/-): machine configuration pointer register, implemented but always zero
 
           -- debug mode CSRs --
           -- --------------------------------------------------------------------
@@ -2812,7 +2785,7 @@ begin
           -- undefined/unavailable --
           -- --------------------------------------------------------------------
           when others =>
-            NULL; -- not implemented, read as zero if read access is granted
+            NULL; -- not implemented, read as zero
 
         end case;
       end if;

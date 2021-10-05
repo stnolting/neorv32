@@ -782,7 +782,9 @@ of the trap - at any time improving overall _execution safety_.
 (i.e. there is no speculative execution / no out-of-order states).
 * The CPU supports _all_ RISC-V bus exceptions including access exceptions that are triggered if an
 accessed address does not respond or encounters an internal error during access.
-* The CPU raises an illegal instruction trap for _all_ unimplemented/malformed/illegal instructions.
+* The RISC-V specs. state that executing an malformed instruction results in unpredictable behavior. As an additional security feature,
+the NEORV32 CPU ensures that _all_ unimplemented/malformed/illegal instructions _do raise an illegal instruction trap_ and
+_do not commit any operation_ (like writing registers or triggering memory operations).
 * To be continued...
 
 
