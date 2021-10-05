@@ -495,6 +495,12 @@ instruction `dret` is available when the CPU is "in" debug mode.
 The CPU _debug mode_ requires the `Zicsr` and `Zifencei` CPU extension to be implemented (top generics _CPU_EXTENSION_RISCV_Zicsr_
 and _CPU_EXTENSION_RISCV_Zifencei_ = true).
 
+.Hardware Watchpoints and Breakpoints
+[NOTE]
+The NEORV32 CPU _debug mode_ does not provide a hardware "trigger module" (which is optional in the RISC-V debug spec). However, gdb
+provides a native _emulation_ for code (breakpoints using `break` instruction) and data (polling data watchpoints in automated
+single-stepping) triggers.
+
 The CPU debug-mode is entered when one of the following events appear:
 
 [start=1]
