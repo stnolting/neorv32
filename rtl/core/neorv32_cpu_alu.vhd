@@ -243,24 +243,24 @@ begin
 
   -- Co-Processor 0: Shifter (CPU Core ISA) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-    neorv32_cpu_cp_shifter_inst: neorv32_cpu_cp_shifter
-    generic map (
-      FAST_SHIFT_EN => FAST_SHIFT_EN -- use barrel shifter for shift operations
-    )
-    port map (
-      -- global control --
-      clk_i   => clk_i,           -- global clock, rising edge
-      rstn_i  => rstn_i,          -- global reset, low-active, async
-      ctrl_i  => ctrl_i,          -- main control bus
-      start_i => cp_start(0),     -- trigger operation
-      -- data input --
-      rs1_i   => rs1_i,           -- rf source 1
-      rs2_i   => rs2_i,           -- rf source 2
-      imm_i   => imm_i,           -- immediate
-      -- result and status --
-      res_o   => cp_result(0),    -- operation result
-      valid_o => cp_valid(0)      -- data output valid
-    );
+  neorv32_cpu_cp_shifter_inst: neorv32_cpu_cp_shifter
+  generic map (
+    FAST_SHIFT_EN => FAST_SHIFT_EN -- use barrel shifter for shift operations
+  )
+  port map (
+    -- global control --
+    clk_i   => clk_i,           -- global clock, rising edge
+    rstn_i  => rstn_i,          -- global reset, low-active, async
+    ctrl_i  => ctrl_i,          -- main control bus
+    start_i => cp_start(0),     -- trigger operation
+    -- data input --
+    rs1_i   => rs1_i,           -- rf source 1
+    rs2_i   => rs2_i,           -- rf source 2
+    imm_i   => imm_i,           -- immediate
+    -- result and status --
+    res_o   => cp_result(0),    -- operation result
+    valid_o => cp_valid(0)      -- data output valid
+  );
 
 
   -- Co-Processor 1: Integer Multiplication/Division ('M' Extension) ------------------------

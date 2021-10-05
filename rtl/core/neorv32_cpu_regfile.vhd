@@ -4,12 +4,12 @@
 -- # General purpose data register file. 32 entries (= 1024 bit) for normal mode (RV32I),          #
 -- # 16 entries (= 512 bit) for embedded mode (RV32E) when RISC-V "E" extension is enabled.        #
 -- #                                                                                               #
--- # Register zero (r0/x0) is a "normal" physical reg that has to be initialized to zero by the    #
--- # CPU control system. For normal operations register zero cannot be written.                    #
+-- # Register zero (r0/x0) is a "normal" physical register that has to be initialized to zero by   #
+-- # the early boot code. Register zero is always set to zero when written.                        #
 -- #                                                                                               #
 -- # The register file uses synchronous read accesses and a *single* (multiplexed) address port    #
--- # for writing and reading rs1 and a single read-only port for rs2. Therefore, the whole         #
--- # register file can be mapped to a single true dual-port block RAM.                             #
+-- # for writing and reading rd/rs1 and a single read-only port for rs2. Therefore, the whole      #
+-- # register file can be mapped to a single true-dual-port block RAM.                             #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
