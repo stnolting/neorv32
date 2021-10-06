@@ -26,13 +26,14 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 06.10.2021 | 1.6.1.6 | :bug: fixed bugs in signal assignments and processor configuration of `setups/radiant/UPduino_v3` setup; minor CPU HPM counter fix (architecture condition for "multi-cycle ALU wait cycles" HPM event) |
 | 05.10.2021 | 1.6.1.5 | :sparkles: :lock: the CPU now ensures that _all_ illegal instructions _do not commit_ any potential architecture state changes (like writing registers or triggering memory accesses); CPU logic optimization (smaller footprint) |
 | 04.10.2021 | 1.6.1.4 | moved CPU's comparator logic from register file unit to ALU unit (to allow easier replacement of register file design unit by technology-optimized one) |
 | 03.10.2021 | 1.6.1.3 | :bug: fixed UART signal connection in `rtl/system_integration` wrappers |
 | 01.10.2021 | 1.6.1.2 | :warning: removed `mstatus.TW` (timeout wait) bit, `wfi` instruction is now always allowed to be executed in less-privileged modes; minor CPU control unit logic optimizations |
 | 01.10.2021 | 1.6.1.1 | on-chip-debugger: `wfi` instruction acts as a simple `nop` when _in_ debug mode or during single-stepping |
 | 28.09.2021 |[**:rocket:1.6.1**](https://github.com/stnolting/neorv32/releases/tag/v1.6.1) | **New release** |
-| 28.09.2021 | 1.6.0.13 | :bug: fixed _stupid_ bug in MTIME comparator logic (interrupt condition `mtime >= mtimecmp` was not always evaluated correctly) |
+| 28.09.2021 | 1.6.0.13 | :bug: fixed elementary bug in MTIME comparator logic (interrupt condition `mtime >= mtimecmp` was not always evaluated correctly) |
 | 28.09.2021 | 1.6.0.12 | fixed CPU's IRQ prioritization: (re-)enter debug mode interrupts have to be evaluated _before_ all other interrupts |
 | 27.09.2021 | 1.6.0.11 | :warning: `Zifencei` extension is _required_ for the on-chip debugger; executing `fence.i` without having the `Zifencei` extension enabled will now cause an illegal instruction exception |
 | 22.09.2021 | 1.6.0.10 | reworked CPU/software handshake of external interrupt controller `XIRQ` to avoid "external IRQ -> CPU IRQ" race conditions |
