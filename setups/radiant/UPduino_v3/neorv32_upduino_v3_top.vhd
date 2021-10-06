@@ -103,6 +103,8 @@ architecture neorv32_upduino_v3_top_rtl of neorv32_upduino_v3_top is
   signal con_spi_sdi : std_ulogic;
   signal con_spi_sdo : std_ulogic;
   signal con_spi_csn : std_ulogic_vector(07 downto 0);
+  signal con_gpio_i  : std_ulogic_vector(63 downto 0);
+  signal con_gpio_o  : std_ulogic_vector(63 downto 0);
 
   -- Misc --
   signal pwm_drive  : std_logic_vector(2 downto 0);
@@ -201,8 +203,8 @@ begin
     rstn_i      => cpu_rstn,                     -- global reset, low-active, async
 
     -- GPIO (available if IO_GPIO_EN = true) --
-    gpio_o      => gpio_o,                       -- parallel output
-    gpio_i      => gpio_i,                       -- parallel input
+    gpio_o      => con_gpio_o,                   -- parallel output
+    gpio_i      => con_gpio_i,                   -- parallel input
 
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart_txd_o,                    -- UART0 send data
@@ -221,6 +223,10 @@ begin
     -- PWM (available if IO_PWM_EN = true) --
     pwm_o       => con_pwm                       -- pwm channels
   );
+
+  -- GPIO --
+  con_gpio_i <= x"000000000000000" & gpio_i(3 downto 0);
+  gpio_o(3 downto 0) <= con_gpio_o(3 downto 0);
 
   -- SPI --
   flash_sck_o <= con_spi_sck;
