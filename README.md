@@ -72,8 +72,8 @@ setting up your NEORV32 setup!
 - [x] all-in-one: [CPU](#NEORV32-CPU-Features) plus [Processor/SoC](#NEORV32-Processor-Features) plus [Software Framework & Tooling](#Software-Framework-and-Tooling)
 - [x] completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
 - [x] fully synchronous design, no latches, no gated clocks
-- [x] be as small as possible (while being as RISC-V-compliant as possible) – but with a reasonable size-performance trade-off
-(the processor has to fit in a Lattice iCE40 UltraPlus 5k low-power FPGA running at 22+ MHz)
+- [x] be as small as possible (while being as RISC-V-compliant as possible) – but with a reasonable size-performance trade-off:
+the processor (CPU _including_ privileged architecture) fits innto a Lattice iCE40 UltraPlus 5k low-power FPGA running at 24 MHz
 - [x] from zero to `printf("hello world!");` - completely open source and documented
 - [x] easy to use even for FPGA/RISC-V starters – intended to work *out of the box*
 
