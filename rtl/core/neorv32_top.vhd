@@ -1156,8 +1156,8 @@ begin
   neorv32_twi_inst_false:
   if (IO_TWI_EN = false) generate
     resp_bus(RESP_TWI) <= resp_bus_entry_terminate_c;
---  twi_sda_io <= 'Z'; -- FIXME?
---  twi_scl_io <= 'Z'; -- FIXME?
+    twi_sda_io <= 'Z';
+    twi_scl_io <= 'Z';
     twi_cg_en  <= '0';
     twi_irq    <= '0';
   end generate;
