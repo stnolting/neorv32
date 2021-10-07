@@ -124,12 +124,14 @@ Targets:
  info       - show makefile/toolchain configuration
  exe        - compile and generate <neorv32_exe.bin> executable for upload via bootloader
  hex        - compile and generate <neorv32_exe.hex> executable raw file
+ image      - compile and generate VHDL IMEM boot image (for application) in local folder
  install    - compile, generate and install VHDL IMEM boot image (for application)
- sim        - in-console simulation using the default testbench and GHDL
+ sim        - in-console simulation using default/simple testbench and GHDL
  all        - exe + hex + install
  elf_info   - show ELF layout info
  clean      - clean up project
  clean_all  - clean up project, core libraries and image generator
+ bl_image   - compile and generate VHDL BOOTROM boot image (for bootloader only!) in local folder
  bootloader - compile, generate and install VHDL BOOTROM boot image (for bootloader only!)
 ----
 
