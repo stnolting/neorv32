@@ -104,7 +104,8 @@ CC_OPTS += $(USER_FLAGS)
 exe:     $(APP_ASM) $(APP_EXE)
 hex:     $(APP_ASM) $(APP_HEX)
 compile: $(APP_ASM) $(APP_EXE)
-install: $(APP_ASM) $(APP_IMG)
+image:   $(APP_ASM) $(APP_IMG)
+install: image install-$(APP_IMG)
 all:     $(APP_ASM) $(APP_EXE) $(APP_IMG) $(APP_HEX)
 
 # Check if making bootloader
@@ -174,6 +175,9 @@ $(APP_EXE): main.bin $(IMAGE_GEN)
 $(APP_IMG): main.bin $(IMAGE_GEN)
 	@set -e
 	@$(IMAGE_GEN) -app_img $< $@ $(shell basename $(CURDIR))
+
+install-$(APP_IMG): $(APP_IMG)	
+	@set -e
 	@echo "Installing application image to $(NEORV32_RTL_PATH)/$(APP_IMG)"
 	@cp $(APP_IMG) $(NEORV32_RTL_PATH)/.
 
@@ -190,11 +194,15 @@ $(APP_HEX): main.bin $(IMAGE_GEN)
 $(BOOT_IMG): main.bin $(IMAGE_GEN)
 	@set -e
 	@$(IMAGE_GEN) -bld_img $< $(BOOT_IMG) $(shell basename $(CURDIR))
+
+install-$(BOOT_IMG): $(BOOT_IMG)
+	@set -e
 	@echo "Installing bootloader image to $(NEORV32_RTL_PATH)/$(BOOT_IMG)"
 	@cp $(BOOT_IMG) $(NEORV32_RTL_PATH)/.
 
 # Just an alias that
-bootloader: $(BOOT_IMG)
+bl_image: $(BOOT_IMG)
+bootloader: bl_image install-$(BOOT_IMG)
 
 
 # -----------------------------------------------------------------------------
@@ -290,12 +298,14 @@ help:
 	@echo " info       - show makefile/toolchain configuration"
 	@echo " exe        - compile and generate <neorv32_exe.bin> executable for upload via bootloader"
 	@echo " hex        - compile and generate <neorv32_exe.hex> executable raw file"
+	@echo " image      - compile and generate VHDL IMEM boot image (for application) in local folder"
 	@echo " install    - compile, generate and install VHDL IMEM boot image (for application)"
 	@echo " sim        - in-console simulation using default/simple testbench and GHDL"
 	@echo " all        - exe + hex + install"
 	@echo " elf_info   - show ELF layout info"
 	@echo " clean      - clean up project"
 	@echo " clean_all  - clean up project, core libraries and image generator"
+	@echo " bl_image   - compile and generate VHDL BOOTROM boot image (for bootloader only!) in local folder"
 	@echo " bootloader - compile, generate and install VHDL BOOTROM boot image (for bootloader only!)"
 
 
