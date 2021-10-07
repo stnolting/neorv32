@@ -106,12 +106,13 @@ hex:     $(APP_ASM) $(APP_HEX)
 compile: $(APP_ASM) $(APP_EXE)
 image:   $(APP_ASM) $(APP_IMG)
 install: image install-$(APP_IMG)
-all:     $(APP_ASM) $(APP_EXE) $(APP_IMG) $(APP_HEX)
+all:     $(APP_ASM) $(APP_EXE) $(APP_IMG) $(APP_HEX) install
 
 # Check if making bootloader
-# Use different base address and legth for instruction memory/"rom" (BOOTMEM instead of IMEM)
-# Also define "make_bootloader" for crt0.S
+# Use different base address and length for instruction memory/"rom" (BOOTROM instead of IMEM)
+# Also define "make_bootloader" symbol for crt0.S
 target bootloader: CC_OPTS += -Wl,--defsym=make_bootloader=1 -Dmake_bootloader
+target bl_image:   CC_OPTS += -Wl,--defsym=make_bootloader=1 -Dmake_bootloader
 
 
 # -----------------------------------------------------------------------------
@@ -200,7 +201,7 @@ install-$(BOOT_IMG): $(BOOT_IMG)
 	@echo "Installing bootloader image to $(NEORV32_RTL_PATH)/$(BOOT_IMG)"
 	@cp $(BOOT_IMG) $(NEORV32_RTL_PATH)/.
 
-# Just an alias that
+# Just an alias
 bl_image: $(BOOT_IMG)
 bootloader: bl_image install-$(BOOT_IMG)
 
