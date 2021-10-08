@@ -242,7 +242,11 @@ begin
   irq_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      irq_o <= ctrl.enable and (not tx_buffer.half); -- fire IRQ if FIFO is less than half-full
+      if (FIFO_DEPTH = 1) then
+        irq_o <= ctrl.enable and tx_buffer.free; -- fire IRQ if FIFO is empty
+      else
+        irq_o <= ctrl.enable and (not tx_buffer.half); -- fire IRQ if FIFO is less than half-full
+      end if;
     end if;
   end process irq_generator;
 
