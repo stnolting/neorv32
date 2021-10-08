@@ -5,6 +5,8 @@
 The `create_project.tcl` TCL script in the board subdirectories can be used for creating a complete Vivado project and for running the implementation.
 If not already available, this script will create a `work` folder in those subdirectories.
 
+Note that you may need to install support for your particular development board through "XHub Stores" menu item within Vivado prior to sourcing the `create_project.tcl` script.
+
 ### Batch mode
 
 Execute `vivado -mode batch -nojournal -nolog -source create_project.tcl` from the board subdir.
