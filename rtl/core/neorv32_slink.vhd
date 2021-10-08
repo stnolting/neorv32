@@ -121,29 +121,17 @@ architecture neorv32_slink_rtl of neorv32_slink is
   type fifo_data_t is array (0 to 7) of std_ulogic_vector(31 downto 0);
   type fifo_rx_level_t is array (0 to 7) of std_ulogic_vector(index_size_f(SLINK_RX_FIFO) downto 0);
   type fifo_tx_level_t is array (0 to 7) of std_ulogic_vector(index_size_f(SLINK_TX_FIFO) downto 0);
-  signal rx_fifo_rdata                   : fifo_data_t;
-  signal rx_fifo_level                   : fifo_rx_level_t;
-  signal tx_fifo_level                   : fifo_tx_level_t;
-  signal fifo_clear                      : std_ulogic;
-  signal link_sel                        : std_ulogic_vector(7 downto 0);
-  signal tx_fifo_we,    rx_fifo_re       : std_ulogic_vector(7 downto 0);
-  signal rx_fifo_avail, rx_fifo_avail_ff : std_ulogic_vector(7 downto 0);
-  signal tx_fifo_free,  tx_fifo_free_ff  : std_ulogic_vector(7 downto 0);
-  signal rx_fifo_half,  rx_fifo_half_ff  : std_ulogic_vector(7 downto 0);
-  signal tx_fifo_half,  tx_fifo_half_ff  : std_ulogic_vector(7 downto 0);
-
-  -- interrupt controller --
-  type irq_t is record
-    rx_pending    : std_ulogic;
-    rx_pending_ff : std_ulogic;
-    rx_fire       : std_ulogic;
-    tx_pending    : std_ulogic;
-    tx_pending_ff : std_ulogic;
-    tx_fire       : std_ulogic;
-    wr_ack        : std_ulogic;
-    rd_ack        : std_ulogic;
-  end record;
-  signal irq : irq_t;
+  signal rx_fifo_rdata : fifo_data_t;
+  signal rx_fifo_level : fifo_rx_level_t;
+  signal tx_fifo_level : fifo_tx_level_t;
+  signal fifo_clear    : std_ulogic;
+  signal link_sel      : std_ulogic_vector(7 downto 0);
+  signal tx_fifo_we    : std_ulogic_vector(7 downto 0);
+  signal rx_fifo_re    : std_ulogic_vector(7 downto 0);
+  signal rx_fifo_avail : std_ulogic_vector(7 downto 0);
+  signal tx_fifo_free  : std_ulogic_vector(7 downto 0);
+  signal rx_fifo_half  : std_ulogic_vector(7 downto 0);
+  signal tx_fifo_half  : std_ulogic_vector(7 downto 0);
 
 begin
 
@@ -174,14 +162,11 @@ begin
   begin
     if rising_edge(clk_i) then
       -- write access --
-      irq.wr_ack <= '0';
       ack_write  <= '0';
       if (acc_en = '1') and (wren_i = '1') then
         if (addr(5) = '0') then -- control/status 
           if (addr(4) = '0') then -- control register
             enable <= data_i(ctrl_en_c);
-          else -- status register
-            irq.wr_ack <= '1';
           end if;
           ack_write <= '1';
         else -- TX links
@@ -190,7 +175,6 @@ begin
       end if;
 
       -- read access --
-      irq.rd_ack <= '0';
       data_o     <= (others => '0');
       ack_read   <= '0';
       if (acc_en = '1') and (rden_i = '1') then
@@ -207,7 +191,6 @@ begin
             data_o(status_tx_free_msb_c  downto status_tx_free_lsb_c)  <= tx_fifo_free;
             data_o(status_rx_half_msb_c  downto status_rx_half_lsb_c)  <= rx_fifo_half;
             data_o(status_tx_half_msb_c  downto status_tx_half_lsb_c)  <= tx_fifo_half;
-            irq.rd_ack <= '1';
           end if;
         else -- RX links
           data_o   <= rx_fifo_rdata(to_integer(unsigned(addr(4 downto 2))));
@@ -251,46 +234,24 @@ begin
   begin
     if rising_edge(clk_i) then
       if (enable = '0') then
-        irq.rx_pending <= '0';
-        irq.tx_pending <= '0';
+        irq_rx_o <= '0';
+        irq_tx_o <= '0';
       else
-        -- RX IRQ --
-        if (irq.rx_pending = '0') then
-          irq.rx_pending <= irq.rx_fire;
-        elsif (irq.rd_ack = '1') or (irq.wr_ack = '1') then
-          irq.rx_pending <= '0';
+        -- RX interrupt --
+        if (SLINK_RX_FIFO = 1) then
+          irq_rx_o <= or_reduce_f(rx_fifo_avail); -- fire if any RX_FIFO is full
+        else
+          irq_rx_o <= or_reduce_f(rx_fifo_half); -- fire if any RX_FIFO.level is at least half-full
         end if;
-        -- TX IRQ --
-        if (irq.tx_pending = '0') then
-          irq.tx_pending <= irq.tx_fire;
-        elsif (irq.rd_ack = '1') or (irq.wr_ack = '1') then
-          irq.tx_pending <= '0';
+        -- TX interrupt --
+        if (SLINK_TX_FIFO = 1) then
+          irq_tx_o <= or_reduce_f(tx_fifo_free); -- fire if any TX_FIFO is empty
+        else
+          irq_tx_o <= or_reduce_f(not tx_fifo_half); -- fire if any TX_FIFO.level is less than half-full
         end if;
       end if;
-      -- CPU IRQs --
-      irq.rx_pending_ff <= irq.rx_pending;
-      irq.tx_pending_ff <= irq.tx_pending;
-      irq_rx_o <= irq.rx_pending and (not irq.rx_pending_ff);
-      irq_tx_o <= irq.tx_pending and (not irq.tx_pending_ff);
     end if;
   end process irq_arbiter;
-
-  -- status buffer --
-  irq_generator_sync: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      rx_fifo_avail_ff <= rx_fifo_avail;
-      rx_fifo_half_ff  <= rx_fifo_half;
-      tx_fifo_free_ff  <= tx_fifo_free;
-      tx_fifo_half_ff  <= tx_fifo_half;
-    end if;
-  end process irq_generator_sync;
-
-  -- IRQ event detector --
-  -- RX interrupt: fire if any RX_FIFO gets full / fire if any RX_FIFO.level becomes half-full
-  irq.rx_fire <= or_reduce_f(rx_fifo_avail and (not rx_fifo_avail_ff)) when (SLINK_RX_FIFO = 1) else or_reduce_f(rx_fifo_half and (not rx_fifo_half_ff));
-  -- TX interrupt: fire if any TX_FIFO gets empty / fire if any TX_FIFO.level falls below half-full level
-  irq.tx_fire <= or_reduce_f(tx_fifo_free and (not tx_fifo_free_ff)) when (SLINK_TX_FIFO = 1) else or_reduce_f((not tx_fifo_half) and tx_fifo_half_ff);
 
 
   -- Link Select ----------------------------------------------------------------------------
