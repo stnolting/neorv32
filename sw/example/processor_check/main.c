@@ -351,15 +351,23 @@ int main() {
   tmp_a &= ~(1<<CSR_MCOUNTEREN_CY); // clear access right
   neorv32_cpu_csr_write(CSR_MCOUNTEREN, tmp_a);
 
+  neorv32_cpu_csr_write(CSR_CYCLE, 1); // make sure CSR is != 0 for this test
+
   // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
   neorv32_cpu_goto_user_mode();
   {
     // access to cycle CSR is no longer allowed
-    tmp_a = neorv32_cpu_csr_read(CSR_CYCLE);
+    asm volatile (" mv      %[result], zero  \n" // initialize with zero
+                  " rdcycle %[result]          " // read CSR_CYCLE, is not allowed and should not alter [result]
+                  : [result] "=r" (tmp_a) : );
+  }
+
+  if (tmp_a != 0) {
+    PRINT_CRITICAL("%c[1m<SECURITY FAILURE> %c[0m\n", 27, 27);
   }
 
   // make sure there was an illegal instruction trap
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+  if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) && (tmp_a == 0)) {
     test_ok();
   }
   else {
@@ -936,7 +944,7 @@ int main() {
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
-    asm volatile("nop");
+    neorv32_cpu_irq_disable(CSR_MIE_FIRQ0E);
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_0) {
       test_ok();
@@ -944,9 +952,6 @@ int main() {
     else {
       test_fail();
     }
-
-    // disable fast interrupt
-    neorv32_cpu_irq_disable(CSR_MIE_FIRQ0E);
 
     // no more WDT interrupts
     neorv32_wdt_disable();
@@ -985,19 +990,15 @@ int main() {
 
     // trigger UART0 RX IRQ
     neorv32_uart0_putc(0);
-
     // wait for UART0 to finish transmitting
     while(neorv32_uart0_tx_busy());
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
-    asm volatile("nop");
+    neorv32_cpu_irq_disable(CSR_MIE_FIRQ2E);
 
     // restore original configuration
     NEORV32_UART0.CTRL = tmp_a;
-
-    // disable fast interrupt
-    neorv32_cpu_irq_disable(CSR_MIE_FIRQ2E);
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_2) {
       test_ok();
@@ -1033,18 +1034,15 @@ int main() {
 
     // trigger UART0 TX IRQ
     neorv32_uart0_putc(0);
-
     // wait for UART to finish transmitting
     while(neorv32_uart0_tx_busy());
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
-    asm volatile("nop");
+    neorv32_cpu_irq_disable(CSR_MIE_FIRQ3E);
 
     // restore original configuration
     NEORV32_UART0.CTRL = tmp_a;
-
-    neorv32_cpu_irq_disable(CSR_MIE_FIRQ3E);
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_3) {
       test_ok();
@@ -1077,19 +1075,15 @@ int main() {
 
     // trigger UART1 RX IRQ
     neorv32_uart1_putc(0);
-
     // wait for UART1 to finish transmitting
     while(neorv32_uart1_tx_busy());
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
-    asm volatile("nop");
+    neorv32_cpu_irq_disable(CSR_MIE_FIRQ4E);
 
     // restore original configuration
     NEORV32_UART1.CTRL = tmp_a;
-
-    // disable fast interrupt
-    neorv32_cpu_irq_disable(CSR_MIE_FIRQ4E);
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_4) {
       test_ok();
@@ -1122,19 +1116,15 @@ int main() {
 
     // trigger UART1 TX IRQ
     neorv32_uart1_putc(0);
-
     // wait for UART1 to finish transmitting
     while(neorv32_uart1_tx_busy());
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
-    asm volatile("nop");
+    neorv32_cpu_irq_disable(CSR_MIE_FIRQ5E);
 
     // restore original configuration
     NEORV32_UART1.CTRL = tmp_a;
-
-    // disable fast interrupt
-    neorv32_cpu_irq_disable(CSR_MIE_FIRQ5E);
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_5) {
       test_ok();
@@ -1166,7 +1156,7 @@ int main() {
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
-    asm volatile("nop");
+    neorv32_cpu_irq_disable(CSR_MIE_FIRQ6E);
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_6) {
       test_ok();
@@ -1177,9 +1167,6 @@ int main() {
 
     // disable SPI
     neorv32_spi_disable();
-
-    // disable fast interrupt
-    neorv32_cpu_irq_disable(CSR_MIE_FIRQ6E);
   }
 
 
@@ -1204,7 +1191,7 @@ int main() {
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
-    asm volatile("nop");
+    neorv32_cpu_irq_disable(CSR_MIE_FIRQ7E);
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_7) {
       test_ok();
@@ -1215,7 +1202,6 @@ int main() {
 
     // disable TWI
     neorv32_twi_disable();
-    neorv32_cpu_irq_disable(CSR_MIE_FIRQ7E);
   }
 
 
@@ -1244,7 +1230,7 @@ int main() {
     // wait for IRQs to arrive CPU
     asm volatile("nop");
     asm volatile("nop");
-    asm volatile("nop");
+    neorv32_cpu_irq_disable(CSR_MIE_FIRQ8E);
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_8) && // FIRQ8 IRQ
         (xirq_err_cnt == 0) && // no errors during XIRQ configuration
@@ -1255,7 +1241,6 @@ int main() {
       test_fail();
     }
 
-    neorv32_cpu_irq_disable(CSR_MIE_FIRQ8E);
     NEORV32_XIRQ.IER = 0;
     NEORV32_XIRQ.IPR = -1;
   }
@@ -1300,7 +1285,8 @@ int main() {
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
-    asm volatile("nop");
+    neorv32_cpu_irq_disable(CSR_MIE_FIRQ10E);
+    neorv32_cpu_irq_disable(CSR_MIE_FIRQ11E);
 
     tmp_b = neorv32_cpu_csr_read(CSR_MCAUSE);
     if (((tmp_b == TRAP_CODE_FIRQ_10) || (tmp_b == TRAP_CODE_FIRQ_11)) && // right trap code
@@ -1314,8 +1300,6 @@ int main() {
 
     // shutdown SLINK
     neorv32_slink_disable();
-    neorv32_cpu_irq_disable(CSR_MIE_FIRQ10E);
-    neorv32_cpu_irq_disable(CSR_MIE_FIRQ11E);
   }
 
 
