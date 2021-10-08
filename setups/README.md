@@ -1,6 +1,11 @@
 # Exemplary FPGA Board Setups
 
-This folder provides exemplary NEORV32 SoC setups for different FPGA platforms/boards.
+* [Setups using Commercial Toolchains](#Setups-using-Commercial-Toolchains)
+* [Setups using Open-Source Toolchains](#Setups-using-Open-Source-Toolchains)
+* [Adding Your Project Setup](#Adding-Your-Project-Setup)
+* [Setup-Specific NEORV32 Software Framework Modification](#Setup-Specific-NEORV32-Software-Framework-Modification)
+
+This folder provides exemplary NEORV32 SoC setups and projects for different FPGA platforms/boards.
 You can directly use one of the provided setups or use them as starting point to build your own setup.
 Project maintainers may make pull requests against this repository to [add or link their setups](#Adding-Your-Project-Setup).
 
@@ -36,17 +41,19 @@ Project maintainers may make pull requests against this repository to [add or li
 See the README there for more information how to run a specific setup / configuration.
 
 
-### Adding Your Project Setup
+## Adding Your Project Setup
 
 Please respect the following guidelines if you'd like to add (or link) your setup to the list.
 
 * check out the project's [code of conduct](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md)
 * add a link if the board you are using provides online documentation (and/or can be purchased somewhere)
-* use the :file_folder: emoji (`:file_folder:`) if the setup is located *in this* folder; use the :earth_africa: emoji (`:earth_africa:`) if it is a link to your local project
-* please add a `README` to give some brief information about the setup and a `.gitignore` to keep things clean; take a look at [`arty-a7-35-test-setup`](https://github.com/stnolting/neorv32/setups/boards/arty-a7-35-test-setup) to get some ideas what a project setup might look like
+* use the :file_folder: emoji (`:file_folder:`) if the setup is located *in this* folder; use the :earth_africa:
+emoji (`:earth_africa:`) if it is a link to your local project
+* please add a `README` to give some brief information about the setup and a `.gitignore` to keep things clean;
+take a look at [`UPduino_v3`](https://github.com/stnolting/neorv32/tree/master/setups/radiant/UPduino_v3) to get some ideas what a project setup might look like
 
 
-### Setup-Specifc NEORV32 Software Framework Modification
+## Setup-Specific NEORV32 Software Framework Modification
 
 In order to use the features provided by the setups, minor *optional* changes can be made to the default NEORV32 setup.
 
