@@ -141,16 +141,15 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
 
   -- transmission buffer --
   type tx_buffer_t is record
-    we      : std_ulogic; -- write enable
-    re      : std_ulogic; -- read enable
-    clear   : std_ulogic; -- sync reset, high-active
-    level   : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0);
-    wdata   : std_ulogic_vector(31+2 downto 0); -- write data (excluding mode)
-    rdata   : std_ulogic_vector(31+2 downto 0); -- read data (including mode)
-    avail   : std_ulogic; -- data available?
-    free    : std_ulogic; -- free entry available?
-    half    : std_ulogic; -- half full
-    half_ff : std_ulogic;
+    we    : std_ulogic; -- write enable
+    re    : std_ulogic; -- read enable
+    clear : std_ulogic; -- sync reset, high-active
+    level : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0);
+    wdata : std_ulogic_vector(31+2 downto 0); -- write data (excluding mode)
+    rdata : std_ulogic_vector(31+2 downto 0); -- read data (including mode)
+    avail : std_ulogic; -- data available?
+    free  : std_ulogic; -- free entry available?
+    half  : std_ulogic; -- half full
   end record;
   signal tx_buffer : tx_buffer_t;
 
@@ -243,8 +242,7 @@ begin
   irq_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      tx_buffer.half_ff <= tx_buffer.half;
-      irq_o <= ctrl.enable and tx_buffer.half and (not tx_buffer.half_ff); -- FIFO _becomes_ half-full
+      irq_o <= ctrl.enable and (not tx_buffer.half); -- fire IRQ if FIFO is less than half-full
     end if;
   end process irq_generator;
 
