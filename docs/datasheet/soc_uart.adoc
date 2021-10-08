@@ -99,8 +99,13 @@ between devices.
 
 **Interrupts**
 
-The UART features two interrupts: the "TX done interrupt" is triggered when a transmit operation (sending) has finished. The "RX
-done interrupt" is triggered when a data byte has been received. If the UART0 is not implemented, the UART0 interrupts are permanently tied to zero.
+The UART features two interrupts:
+* The "TX done interrupt" is active as long as the transmitter unit is idle (=ready for new data to be send). The interrupt
+request is cleared by triggering a new transmission or by disabling the UART.
+*The "RX done interrupt" is active when a data byte has been received and has not been fetched by the CPU yet. The interrupt
+request is cleared by fetching the available data or by disabling the UART.
+
+If the UART0 is not implemented, the UART0 interrupts are permanently tied to zero.
 
 [NOTE]
 The UART's RX interrupt is always triggered when a new data word has arrived – regardless of the

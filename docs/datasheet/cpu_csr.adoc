@@ -445,8 +445,9 @@ The NEORV32 `mtval` CSR is read-only. However, a write access will _NOT_ raise a
 |======
 | 0x344 | **Machine interrupt Pending** | `mip`
 3+| Reset value: _0x00000000_
-3+| The `mip` CSR is _partly_ compatible to the RISC-V specifications and also provides custom extensions. It shows currently pending interrupts. Since this register is
-read-only, pending interrupts of processor-internal modules can only be cleared by disabling and re-enabling the according `mie` CSR bit.
+3+| The `mip` CSR is compatible to the RISC-V specifications and also provides custom extensions. It shows currently _pending_ interrupts.
+Since this register is read-only, pending interrupts of processor-internal modules can only be cleared by acknowledging the interrupt-causing
+device. However, pending interrupts can be ignored by clearing the accordind <<_mie>> register bits.
 The following CSR bits are implemented (all remaining bits are always zero and are read-only).
 |======
 
