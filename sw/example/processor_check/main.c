@@ -758,7 +758,7 @@ int main() {
   // Machine timer interrupt (MTIME)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] MTI (via MTIME): ", cnt_test);
+  PRINT_STANDARD("[%i] MTI (MTIME): ", cnt_test);
 
   cnt_test++;
 
@@ -793,7 +793,7 @@ int main() {
   // Machine software interrupt (MSI) via testbench
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] MSI (via testbench): ", cnt_test);
+  PRINT_STANDARD("[%i] MSI (testbench): ", cnt_test);
 
   cnt_test++;
 
@@ -822,7 +822,7 @@ int main() {
   // Machine external interrupt (MEI) via testbench
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] MEI (via testbench): ", cnt_test);
+  PRINT_STANDARD("[%i] MEI (testbench): ", cnt_test);
 
   cnt_test++;
 
@@ -881,7 +881,7 @@ int main() {
   // Test pending interrupt
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] Pending IRQ(MTIME): ", cnt_test);
+  PRINT_STANDARD("[%i] Pending IRQ (MTIME): ", cnt_test);
 
   cnt_test++;
 
@@ -930,7 +930,7 @@ int main() {
   // ----------------------------------------------------------
   if (neorv32_wdt_available()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-    PRINT_STANDARD("[%i] FIRQ0(via WDT): ", cnt_test);
+    PRINT_STANDARD("[%i] FIRQ0 (WDT): ", cnt_test);
 
     cnt_test++;
 
@@ -961,7 +961,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 1 (CFS)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ1(via CFS): ", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ1 (CFS): ", cnt_test);
   PRINT_STANDARD("skipped \n");
 
 
@@ -970,7 +970,7 @@ int main() {
   // ----------------------------------------------------------
   if (neorv32_uart1_available()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-    PRINT_STANDARD("[%i] FIRQ2(via UART0.RX): ", cnt_test);
+    PRINT_STANDARD("[%i] FIRQ2 (UART0.RX): ", cnt_test);
 
     cnt_test++;
 
@@ -1014,7 +1014,7 @@ int main() {
   // ----------------------------------------------------------
   if (neorv32_uart0_available()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-    PRINT_STANDARD("[%i] FIRQ3(via UART0.TX): ", cnt_test);
+    PRINT_STANDARD("[%i] FIRQ3 (UART0.TX): ", cnt_test);
 
     cnt_test++;
 
@@ -1058,7 +1058,7 @@ int main() {
   // ----------------------------------------------------------
   if (neorv32_uart1_available()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-    PRINT_STANDARD("[%i] FIRQ4(via UART1.RX): ", cnt_test);
+    PRINT_STANDARD("[%i] FIRQ4 (UART1.RX): ", cnt_test);
 
     cnt_test++;
 
@@ -1099,7 +1099,7 @@ int main() {
   // ----------------------------------------------------------
   if (neorv32_uart1_available()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-    PRINT_STANDARD("[%i] FIRQ5(via UART1.TX): ", cnt_test);
+    PRINT_STANDARD("[%i] FIRQ5 (UART1.TX): ", cnt_test);
 
     cnt_test++;
 
@@ -1140,7 +1140,7 @@ int main() {
   // ----------------------------------------------------------
   if (neorv32_spi_available()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-    PRINT_STANDARD("[%i] FIRQ6(via SPI): ", cnt_test);
+    PRINT_STANDARD("[%i] FIRQ6 (SPI): ", cnt_test);
 
     cnt_test++;
 
@@ -1175,7 +1175,7 @@ int main() {
   // ----------------------------------------------------------
   if (neorv32_twi_available()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-    PRINT_STANDARD("[%i] FIRQ7(via TWI): ", cnt_test);
+    PRINT_STANDARD("[%i] FIRQ7 (TWI): ", cnt_test);
 
     cnt_test++;
 
@@ -1209,7 +1209,7 @@ int main() {
   // Fast interrupt channel 8 (XIRQ)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] FIRQ8(via XIRQ): ", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ8 (XIRQ): ", cnt_test);
   if (neorv32_xirq_available()) {
 
     cnt_test++;
@@ -1415,6 +1415,9 @@ int main() {
       test_ok();
     }
     else {
+      if (neorv32_cpu_csr_read(CSR_PMPCFG0) & 0x80) {
+      PRINT_CRITICAL("%c[1m<Entry LOCKED!> %c[0m\n", 27, 27);
+      }
       test_fail();
     }
 

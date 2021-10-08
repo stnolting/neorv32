@@ -354,9 +354,9 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
   uint32_t i = 0;
 
   // try setting R bit in all PMPCFG CSRs
-  const uint32_t tmp = 0x01010101;
+  const uint32_t mask = 0x01010101;
   for (i=0; i<16; i++) {
-    __neorv32_cpu_pmp_cfg_write(i, tmp);
+    __neorv32_cpu_pmp_cfg_write(i, mask);
   }
 
   // sum up all written ones (only available PMPCFG* CSRs/entries will return =! 0)
@@ -367,7 +367,7 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
 
   cnt.uint32 = 0;
   for (i=0; i<16; i++) {
-    cnt.uint32 += __neorv32_cpu_pmp_cfg_read(i);
+    cnt.uint32 += __neorv32_cpu_pmp_cfg_read(i) & mask;
   }
 
   // sum up bytes
