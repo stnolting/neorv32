@@ -153,11 +153,12 @@ begin
         -- auto-clear WDT reset and WDT force flags --
         ctrl_reg.reset   <= '0';
         ctrl_reg.enforce <= '0';
+        -- acknowledge interrupt --
+        cpu_irq.clr      <= wren or rden; -- any access to control register
         -- actual write access --
         if (wren = '1') then
           ctrl_reg.reset   <= data_i(ctrl_reset_c);
           ctrl_reg.enforce <= data_i(ctrl_force_c);
-          cpu_irq.clr      <= '1'; -- acknowledge interrupt
           if (ctrl_reg.lock = '0') then -- update configuration only if unlocked
             ctrl_reg.enable  <= data_i(ctrl_enable_c);
             ctrl_reg.mode    <= data_i(ctrl_mode_c);
