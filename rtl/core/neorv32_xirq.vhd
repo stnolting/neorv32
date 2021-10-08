@@ -212,12 +212,10 @@ begin
   irq_arbiter: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      cpu_irq_o <= '0';
       if (irq_run = '0') then -- no active IRQ
         if (irq_fire = '1') then
-          cpu_irq_o <= '1';
-          irq_run   <= '1';
-          irq_src   <= irq_src_nxt;
+          irq_run <= '1';
+          irq_src <= irq_src_nxt;
         end if;
       else -- active IRQ, wait for CPU to acknowledge
         if (host_ack = '1') then
@@ -226,6 +224,9 @@ begin
       end if;
     end if;
   end process irq_arbiter;
+
+  -- interrupt request --
+  cpu_irq_o <= irq_run;
 
 
 end neorv32_xirq_rtl;
