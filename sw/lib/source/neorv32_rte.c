@@ -51,6 +51,7 @@ static uint32_t __neorv32_rte_vector_lut[NEORV32_RTE_NUM_TRAPS] __attribute__((u
 static void __attribute__((__interrupt__)) __neorv32_rte_core(void) __attribute__((aligned(16)));
 static void __neorv32_rte_debug_exc_handler(void);
 static void __neorv32_rte_print_true_false(int state);
+static void __neorv32_rte_print_checkbox(int state);
 static void __neorv32_rte_print_hex_word(uint32_t num);
 
 
@@ -274,23 +275,13 @@ void neorv32_rte_print_hw_config(void) {
 
   neorv32_uart_printf("\n\n<<< Processor Configuration Overview >>>\n");
 
-  // Processor - general stuff
-  neorv32_uart0_printf("\n=== << General >> ===\n"
-                       "Clock speed:   %u Hz\n", NEORV32_SYSINFO.CLK);
-  neorv32_uart0_printf("Full HW reset: "); __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_HW_RESET));
-  neorv32_uart0_printf("Boot Config.:  Boot ");
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_BOOTLOADER)) {
-    neorv32_uart0_printf("via Bootloader\n");
-  }
-  else {
-    neorv32_uart0_printf("from memory (@ 0x%x)\n", NEORV32_SYSINFO.ISPACE_BASE);
-  }
-  neorv32_uart0_printf("On-chip debug: "); __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_OCD));
-
-
   // CPU configuration
   neorv32_uart0_printf("\n=== << CPU >> ===\n");
 
+  // general
+  neorv32_uart0_printf("Clock speed:       %u Hz\n", NEORV32_SYSINFO.CLK);
+  neorv32_uart0_printf("Full HW reset:     "); __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_HW_RESET));
+  neorv32_uart0_printf("On-chip debugger:  "); __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_OCD));
   // ID
   neorv32_uart0_printf("Hart ID:           0x%x\n"
                        "Vendor ID:         0x%x\n", neorv32_cpu_csr_read(CSR_MHARTID), neorv32_cpu_csr_read(CSR_MVENDORID));
@@ -378,7 +369,15 @@ void neorv32_rte_print_hw_config(void) {
 
 
   // Memory configuration
-  neorv32_uart0_printf("\n=== << Memory Configuration >> ===\n");
+  neorv32_uart0_printf("\n=== << Memory System >> ===\n");
+
+  neorv32_uart0_printf("Boot Config.:         Boot ");
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_BOOTLOADER)) {
+    neorv32_uart0_printf("via Bootloader\n");
+  }
+  else {
+    neorv32_uart0_printf("from memory (@ 0x%x)\n", NEORV32_SYSINFO.ISPACE_BASE);
+  }
 
   neorv32_uart0_printf("Instr. base address:  0x%x\n", NEORV32_SYSINFO.ISPACE_BASE);
 
@@ -394,14 +393,17 @@ void neorv32_rte_print_hw_config(void) {
   // DMEM
   neorv32_uart0_printf("Data base address:    0x%x\n", NEORV32_SYSINFO.DSPACE_BASE);
   neorv32_uart0_printf("Internal DMEM:        ");
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_INT_DMEM)) { neorv32_uart0_printf("yes, %u bytes\n", NEORV32_SYSINFO.DMEM_SIZE); }
-  else {  neorv32_uart0_printf("no\n"); }
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_INT_DMEM)) {
+    neorv32_uart0_printf("yes, %u bytes\n", NEORV32_SYSINFO.DMEM_SIZE);
+  }
+  else {
+    neorv32_uart0_printf("no\n");
+  }
 
   // i-cache
   neorv32_uart0_printf("Internal i-cache:     ");
-  __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_ICACHE));
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_ICACHE)) {
-    neorv32_uart0_printf("- ");
+    neorv32_uart0_printf("yes, ");
 
     uint32_t ic_block_size = (NEORV32_SYSINFO.CACHE >> SYSINFO_CACHE_IC_BLOCK_SIZE_0) & 0x0F;
     if (ic_block_size) {
@@ -422,7 +424,7 @@ void neorv32_rte_print_hw_config(void) {
     uint32_t ic_associativity = (NEORV32_SYSINFO.CACHE >> SYSINFO_CACHE_IC_ASSOCIATIVITY_0) & 0x0F;
     ic_associativity = 1 << ic_associativity;
 
-    neorv32_uart0_printf("%u bytes: %u set(s), %u block(s) per set, %u bytes per block", ic_associativity*ic_num_blocks*ic_block_size, ic_associativity, ic_num_blocks, ic_block_size);
+    neorv32_uart0_printf("%u bytes, %u set(s), %u block(s) per set, %u bytes per block", ic_associativity*ic_num_blocks*ic_block_size, ic_associativity, ic_num_blocks, ic_block_size);
     if (ic_associativity == 1) {
       neorv32_uart0_printf(" (direct-mapped)\n");
     }
@@ -432,6 +434,9 @@ void neorv32_rte_print_hw_config(void) {
     else {
       neorv32_uart0_printf("\n");
     }
+  }
+  else {
+    neorv32_uart0_printf("no\n");
   }
 
   neorv32_uart0_printf("Ext. bus interface:   ");
@@ -448,19 +453,19 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\n=== << Peripherals >> ===\n");
 
   tmp = NEORV32_SYSINFO.SOC;
-  neorv32_uart0_printf("GPIO   - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_GPIO));
-  neorv32_uart0_printf("MTIME  - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_MTIME));
-  neorv32_uart0_printf("UART0  - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_UART0));
-  neorv32_uart0_printf("UART1  - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_UART1));
-  neorv32_uart0_printf("SPI    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_SPI));
-  neorv32_uart0_printf("TWI    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_TWI));
-  neorv32_uart0_printf("PWM    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_PWM));
-  neorv32_uart0_printf("WDT    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_WDT));
-  neorv32_uart0_printf("TRNG   - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_TRNG));
-  neorv32_uart0_printf("CFS    - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_CFS));
-  neorv32_uart0_printf("SLINK  - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_SLINK));
-  neorv32_uart0_printf("NEOLED - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_NEOLED));
-  neorv32_uart0_printf("XIRQ   - "); __neorv32_rte_print_true_false(tmp & (1 << SYSINFO_SOC_IO_XIRQ));
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_GPIO));   neorv32_uart0_printf(" GPIO\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_MTIME));  neorv32_uart0_printf(" MTIME\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_UART0));  neorv32_uart0_printf(" UART0\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_UART1));  neorv32_uart0_printf(" UART1\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_SPI));    neorv32_uart0_printf(" SPI\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_TWI));    neorv32_uart0_printf(" TWI\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_PWM));    neorv32_uart0_printf(" PWM\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_WDT));    neorv32_uart0_printf(" WDT\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_TRNG));   neorv32_uart0_printf(" TRNG\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_CFS));    neorv32_uart0_printf(" CFS\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_SLINK));  neorv32_uart0_printf(" SLINK\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_NEOLED)); neorv32_uart0_printf(" NEOLED\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_XIRQ));   neorv32_uart0_printf(" XIRQ\n");
 }
 
 
@@ -468,7 +473,7 @@ void neorv32_rte_print_hw_config(void) {
  * NEORV32 runtime environment: Private function to print yes or no.
  * @note This function is used by neorv32_rte_print_hw_config(void) only.
  *
- * @param[in] state Print 'yes' when !=0, print '0' when 0
+ * @param[in] state Print 'yes' when !=0, print 'no' when 0
  **************************************************************************/
 static void __neorv32_rte_print_true_false(int state) {
 
@@ -478,6 +483,25 @@ static void __neorv32_rte_print_true_false(int state) {
   else {
     neorv32_uart0_print("no\n");
   }
+}
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Private function to print [x] or [ ].
+ * @note This function is used by neorv32_rte_print_hw_config(void) only.
+ *
+ * @param[in] state Print '[x]' when !=0, print '[ ]' when 0
+ **************************************************************************/
+static void __neorv32_rte_print_checkbox(int state) {
+
+  neorv32_uart0_putc('[');
+  if (state) {
+    neorv32_uart0_putc('x');
+  }
+  else {
+    neorv32_uart0_putc(' ');
+  }
+  neorv32_uart0_putc(']');
 }
 
 

@@ -201,5 +201,13 @@ void generate_histogram(void) {
     average += (uint64_t)hist[i] * i;
   }
   average = average / ((uint64_t)cnt);
-  neorv32_uart_printf("Average value: %u\n", (uint32_t)average);
+  neorv32_uart_printf("Average value: %u ", (uint32_t)average);
+
+  if (((uint8_t)average) == ((uint8_t)(255/2))) {
+    neorv32_uart_printf("%c[1m[TEST OK]%c[0m\n", 27, 27);
+  }
+  else {
+    neorv32_uart_printf("%c[1m[TEST FAILED]%c[0m\n", 27, 27);
+  }
+
 }
