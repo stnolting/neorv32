@@ -395,10 +395,8 @@ begin
 
   -- Interrupts -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- UART RX data available
-  irq_rxd_o <= uart_rx.busy_ff and (not uart_rx.busy);
-  -- UART TX complete
-  irq_txd_o <= uart_tx.done;
+  irq_txd_o <= uart_tx.busy; -- fire TX IRQ if transmitter idle (tx done)
+  irq_rxd_o <= or_reduce_f(uart_rx.avail); -- fire RX IRQ if data available (receive done)
 
 
   -- SIMULATION Output ----------------------------------------------------------------------
