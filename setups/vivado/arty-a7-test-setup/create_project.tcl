@@ -39,13 +39,9 @@ set fileset_design ./../../../rtl/test_setups/neorv32_test_setup_bootloader.vhd
 set fileset_constraints [glob ./*.xdc]
 
 ## Simulation-only sources
-set fileset_sim [list ./../../../sim/neorv32_tb.simple.vhd ./../../../sim/uart_rx.simple.vhd]
+set fileset_sim [list ./../../../sim/simple/neorv32_tb.simple.vhd ./../../../sim/simple/uart_rx.simple.vhd]
 
 # Add source files
-
-## Core
-add_files $fileset_neorv32
-set_property library neorv32 [get_files $fileset_neorv32]
 
 ## Design
 add_files $fileset_design
