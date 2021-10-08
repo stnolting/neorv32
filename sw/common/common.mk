@@ -276,7 +276,7 @@ info:
 # -----------------------------------------------------------------------------
 # In-console simulation using default/simple testbench and GHDL
 # -----------------------------------------------------------------------------
-sim: $(APP_IMG)
+sim: $(APP_IMG) install
 	@echo "Simulating $(APP_IMG)..."
 	@sh $(NEORV32_SIM_PATH)/simple/ghdl.sh
 
