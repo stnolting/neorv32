@@ -142,6 +142,8 @@ begin
       ctrl_reg.lock    <= '0';
       cpu_irq.clr      <= '-';
     elsif rising_edge(clk_i) then
+      -- acknowledge interrupt when resetting WDT --
+      cpu_irq.clr <= ctrl_reg.reset;
       if (rstn_sync = '0') then -- internal reset
         ctrl_reg.reset   <= '0';
         ctrl_reg.enforce <= '0';
@@ -153,8 +155,6 @@ begin
         -- auto-clear WDT reset and WDT force flags --
         ctrl_reg.reset   <= '0';
         ctrl_reg.enforce <= '0';
-        -- acknowledge interrupt --
-        cpu_irq.clr      <= wren or rden; -- any access to control register
         -- actual write access --
         if (wren = '1') then
           ctrl_reg.reset   <= data_i(ctrl_reset_c);
