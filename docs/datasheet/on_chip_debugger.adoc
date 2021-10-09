@@ -511,6 +511,12 @@ The CPU debug-mode is entered when one of the following events appear:
 From a hardware point of view, these "entry conditions" are special synchronous (`ebreak` instruction) or asynchronous
 (single-stepping "interrupt"; halt request "interrupt") traps, that are handled invisibly by the control logic.
 
+.WFI instruction
+[WARNING]
+The wait-for-interrupt instruction `wfi` puts the CPU into sleep mode. The CPU will resume normale operation
+when at least one interrupt source becomes pending (= at least one bit in `mip` CSR is set).
+However, the CPU will _also resume_ from sleep mode if there is a halt request from the debug module (DM).
+
 Whenever the CPU **enters debug-mode** it performs the following operations:
 
 * move `pc` to `dpcs`

@@ -165,9 +165,13 @@ data word being written to the TX buffer making busy wait concepts obsolete and 
 
 **Interrupt**
 
-The NEOLED modules features a single interrupt that is triggered whenever the TX FIFO's fill level
-falls below _half-full_ level. In this case software can write up to _IO_NEOLED_TX_FIFO_/2 new data
-words to `DATA` without checking the FIFO status flags.
+The NEOLED modules features a single interrupt that becomes pending) whenever the TX FIFO's fill level
+is below _half-full_ level. In this case software can write up to _IO_NEOLED_TX_FIFO_/2 new data
+words to `DATA` without checking the FIFO status flags. The interrupt request is cleared whenever the FIFO
+fill level is above _half-full_ level or if the NEOLED module is disabled.
+If the FIFO is configured to contain only a single entry (__IO_NEOLED_TX_FIFO_ = 1) the interrupt
+will become pending if the FIFO is empty. In any case the NEOLED module has to be enabled
+to allow generation of interrupts.
 
 This highly relaxes time constraints for sending a continuous data stream to the LEDs
 (as an idle time beyond 50μs will trigger the LED's a RESET command).

@@ -232,8 +232,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     irq_buf       : std_ulogic_vector(interrupt_width_c-1 downto 0);
     irq_fire      : std_ulogic; -- set if there is a valid source in the interrupt buffer
     exc_ack       : std_ulogic; -- acknowledge all exceptions
-    irq_ack       : std_ulogic_vector(interrupt_width_c-1 downto 0); -- acknowledge specific interrupt
-    irq_ack_nxt   : std_ulogic_vector(interrupt_width_c-1 downto 0);
     cause         : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR
     cause_nxt     : std_ulogic_vector(6 downto 0);
     db_irq_fire   : std_ulogic; -- set if there is a valid IRQ source in the "enter debug mode" trap buffer
@@ -1274,7 +1272,7 @@ begin
         ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load (and SC.W) operations)
         ctrl_nxt(ctrl_rf_in_mux_c) <= '1'; -- RF input = memory input (only relevant for LOADs)
         -- wait for memory response / exception --
-        if (trap_ctrl.env_start = '1') and (trap_ctrl.cause(6 downto 5) = "00") then -- only abort if SYNC EXCEPTION (from bus) and NOT DEBUG-MODE-related
+        if (trap_ctrl.env_start = '1') and (trap_ctrl.cause(6 downto 5) = "00") then -- only abort if SYNC EXCEPTION (from bus) / no IRQs and NOT DEBUG-MODE-related
           execute_engine.state_nxt <= SYS_WAIT;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           -- data write-back --
@@ -1625,7 +1623,6 @@ begin
       trap_ctrl.exc_buf   <= (others => '0');
       trap_ctrl.irq_buf   <= (others => '0');
       trap_ctrl.exc_ack   <= '0';
-      trap_ctrl.irq_ack   <= (others => '0');
       trap_ctrl.env_start <= '0';
       trap_ctrl.cause     <= (others => '0');
     elsif rising_edge(clk_i) then
@@ -1673,22 +1670,20 @@ begin
         trap_ctrl.irq_buf(interrupt_mtime_irq_c) <= csr.mie_mtie and mtime_irq_i;
         -- interrupt queue: NEORV32-specific fast interrupts
         for i in 0 to 15 loop
-          trap_ctrl.irq_buf(interrupt_firq_0_c+i) <= csr.mie_firqe(i) and (trap_ctrl.irq_buf(interrupt_firq_0_c+i) or firq_i(i)) and (not trap_ctrl.irq_ack(interrupt_firq_0_c+i));
+          trap_ctrl.irq_buf(interrupt_firq_0_c+i) <= csr.mie_firqe(i) and firq_i(i);
         end loop;
 
         -- trap control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler
           if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and -- trap triggered!
              ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP_ENTER))) then -- fire IRQs in EXECUTE or TRAP state only to continue execution even on permanent IRQ
-            trap_ctrl.cause     <= trap_ctrl.cause_nxt;   -- capture source ID for program (for mcause csr)
-            trap_ctrl.exc_ack   <= '1';                   -- clear exceptions (no ack mask: these have highest priority and are always evaluated first!)
-            trap_ctrl.irq_ack   <= trap_ctrl.irq_ack_nxt; -- clear interrupt with ACK mask
-            trap_ctrl.env_start <= '1';                   -- now execute engine can start trap handler
+            trap_ctrl.cause     <= trap_ctrl.cause_nxt; -- capture source ID for program (for mcause csr)
+            trap_ctrl.exc_ack   <= '1';                 -- clear exceptions (no ack mask: these have highest priority and are always evaluated first!)
+            trap_ctrl.env_start <= '1';                 -- now execute engine can start trap handler
           end if;
         else -- trap waiting to get started
           if (trap_ctrl.env_start_ack = '1') then -- start of trap handler acknowledged by execution engine
             trap_ctrl.exc_ack   <= '0';
-            trap_ctrl.irq_ack   <= (others => '0');
             trap_ctrl.env_start <= '0';
           end if;
         end if;
@@ -1710,8 +1705,7 @@ begin
   trap_priority: process(trap_ctrl)
   begin
     -- defaults --
-    trap_ctrl.cause_nxt   <= (others => '0');
-    trap_ctrl.irq_ack_nxt <= (others => '0'); -- used for internal IRQ queues only
+    trap_ctrl.cause_nxt <= (others => '0');
 
     -- NOTE: Synchronous exceptions (from trap_ctrl.exc_buf) have higher priority than asynchronous
     -- exceptions (from trap_ctrl.irq_buf).
@@ -1789,91 +1783,73 @@ begin
     -- ----------------------------------------------------------------------------------------
 
     -- custom FAST interrupt requests --
-    -- here we do need a specific acknowledge mask for the FIRQs only since they are edge-triggered and internally buffered
 
     -- interrupt: 1.16 fast interrupt channel 0 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_0_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq0_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_0_c) <= '1';
 
     -- interrupt: 1.17 fast interrupt channel 1 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_1_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq1_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_1_c) <= '1';
 
     -- interrupt: 1.18 fast interrupt channel 2 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_2_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq2_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_2_c) <= '1';
 
     -- interrupt: 1.19 fast interrupt channel 3 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_3_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq3_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_3_c) <= '1';
 
     -- interrupt: 1.20 fast interrupt channel 4 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_4_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq4_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_4_c) <= '1';
 
     -- interrupt: 1.21 fast interrupt channel 5 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_5_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq5_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_5_c) <= '1';
 
     -- interrupt: 1.22 fast interrupt channel 6 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_6_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq6_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_6_c) <= '1';
 
     -- interrupt: 1.23 fast interrupt channel 7 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_7_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq7_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_7_c) <= '1';
 
     -- interrupt: 1.24 fast interrupt channel 8 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_8_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq8_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_8_c) <= '1';
 
     -- interrupt: 1.25 fast interrupt channel 9 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_9_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq9_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_9_c) <= '1';
 
     -- interrupt: 1.26 fast interrupt channel 10 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_10_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq10_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_10_c) <= '1';
 
     -- interrupt: 1.27 fast interrupt channel 11 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_11_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq11_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_11_c) <= '1';
 
     -- interrupt: 1.28 fast interrupt channel 12 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_12_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq12_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_12_c) <= '1';
 
     -- interrupt: 1.29 fast interrupt channel 13 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_13_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq13_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_13_c) <= '1';
 
     -- interrupt: 1.30 fast interrupt channel 14 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_14_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq14_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_14_c) <= '1';
 
     -- interrupt: 1.31 fast interrupt channel 15 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_15_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq15_c;
-      trap_ctrl.irq_ack_nxt(interrupt_firq_15_c) <= '1';
 
 
     -- standard RISC-V interrupts --
-    -- these will stay asserted until explicitly ACKed by the software - no irq_ack_nxt required
 
     -- interrupt: 1.11 machine external interrupt --
     elsif (trap_ctrl.irq_buf(interrupt_mext_irq_c) = '1') then
@@ -1967,13 +1943,13 @@ begin
 
     elsif rising_edge(clk_i) then
       -- write access? --
-      csr.we <= csr.we_nxt and (not trap_ctrl.exc_buf(exception_iillegal_c)); -- no write if illegal instruction
+      csr.we <= csr.we_nxt;
 
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
         -- --------------------------------------------------------------------------------
         -- CSR access by application software
         -- --------------------------------------------------------------------------------
-        if (csr.we = '1') then -- manual update
+        if (csr.we = '1') and (trap_ctrl.exc_buf(exception_iillegal_c) = '0') then -- manual update if not illegal instruction
 
           -- user floating-point CSRs --
           -- --------------------------------------------------------------------
@@ -2085,8 +2061,8 @@ begin
           if (csr.addr(11 downto 5) = csr_cnt_setup_c) then -- counter configuration CSR class
             -- R/W: mcountinhibit - machine counter-inhibit register --
             if (csr.addr(4 downto 0) = csr_mcountinhibit_c(4 downto 0)) then
-              csr.mcountinhibit_cy  <= csr.wdata(0); -- enable auto-increment of [m]cycle[h] counter
-              csr.mcountinhibit_ir  <= csr.wdata(2); -- enable auto-increment of [m]instret[h] counter
+              csr.mcountinhibit_cy <= csr.wdata(0); -- enable auto-increment of [m]cycle[h] counter
+              csr.mcountinhibit_ir <= csr.wdata(2); -- enable auto-increment of [m]instret[h] counter
               if (HPM_NUM_CNTS > 0) then -- any HPMs available?
                 csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- enable auto-increment of [m]hpmcounter*[h] counter
               end if;
@@ -2112,8 +2088,8 @@ begin
                 csr.dcsr_step    <= csr.wdata(2);
                 if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
                   csr.dcsr_ebreaku <= csr.wdata(12);
-                  csr.dcsr_prv(0) <= csr.wdata(1) or csr.wdata(0);
-                  csr.dcsr_prv(1) <= csr.wdata(1) or csr.wdata(0);
+                  csr.dcsr_prv(0)  <= csr.wdata(1) or csr.wdata(0);
+                  csr.dcsr_prv(1)  <= csr.wdata(1) or csr.wdata(0);
                 else -- only machine mode is available
                   csr.dcsr_prv <= priv_mode_m_c;
                 end if;
@@ -2165,7 +2141,7 @@ begin
                 when trap_ima_c | trap_iba_c => -- misaligned instruction address OR instruction access error
                   csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction
                 when trap_brk_c => -- breakpoint
-                  csr.mtval <= execute_engine.last_pc; -- address of breakpoint instruction
+                  csr.mtval <= execute_engine.last_pc(data_width_c-1 downto 1) & '0'; -- address of breakpoint instruction
                 when trap_lma_c | trap_lbe_c | trap_sma_c | trap_sbe_c => -- misaligned load/store address OR load/store access error
                   csr.mtval <= mar_i; -- faulting data access address
                 when trap_iil_c => -- illegal instruction

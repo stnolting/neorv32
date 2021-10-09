@@ -23,7 +23,7 @@ image::riscv_logo.png[width=350,align=center]
 ** `DB` - debug mode
 * Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications – passes the official RISC-V Architecture Tests (v2+)
 * Official RISC-V open-source architecture ID
-* Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 _fast_ interrupts and 1 non-maskable interrupt
+* Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 _fast_ interrupts
 * Supports most of the traps from the RISC-V specifications (including bus access exceptions) and traps on all unimplemented/illegal/malformed instructions
 * Optional physical memory configuration (PMP), compatible to the RISC-V specifications
 * Optional hardware performance monitors (HPM) for application benchmarking
@@ -223,6 +223,8 @@ can be found in section <<_instruction_sets_and_extensions>>.
 [IMPORTANT]
 The `misa`, `mip` and `mtval` CSRs in the NEORV32 are _read-only_.
 Any write access to it (in machine mode) to them are ignored and will _not_ cause any exceptions or side-effects.
+Pending interrupt can only be cleared by acknowledging the interrupt-causing device. However, pending interrupts
+can still be ignored by clearing the according `mie` register bits.
 
 .Physical memory protection
 [IMPORTANT]
@@ -376,7 +378,7 @@ After the execution of the `sc` instruction, the lock is automatically removed.
 
 The lock is broken if at least one of the following conditions occur:
 . executing any data memory access instruction other than `lr.w`
-. rising _any_ exception (for example an interrupt)
+. raising _any_ t (for example an interrupt or a memory access exception)
 
 [NOTE]
 The atomic instructions have special requirements for memory system / bus interconnect. More
@@ -809,10 +811,10 @@ while all remaining exceptions are ignored. If several _interrupts_ trigger at o
 is serviced first while the remaining ones stay _pending_. After completing the interrupt handler the interrupt with
 the second highest priority will get serviced and so on until no further interrupt are pending.
 
-.RISC-V interrupts
+.Interrupt Signal Requirements
 [IMPORTANT]
-All RISC-V defined machine level interrupts request signals are high-active. A request has to stay at high-level until
-it is acknowledged by the CPU (for example by writing to a specific memory-mapped register).
+All interrupts request signals (including FIRQs) are **high-active**. A request has to stay at high-level (=asserted)
+until it is explicitly acknowledged by the CPU software (for example by writing to a specific memory-mapped register).
 
 .Instruction Atomicity
 [NOTE]
@@ -835,10 +837,8 @@ memory protection fault do not trigger a bus write-operation at all.
 
 As a custom extension, the NEORV32 CPU features 16 fast interrupt request (FIRQ) lines via the `firq_i` CPU top
 entity signals. These interrupts have custom configuration and status flags in the `mie` and `mip` CSRs and also
-provide custom trap codes in `mcause`. These FIRQs are reserved for processor-internal usage only.
+provide custom trap codes in `mcause`. These FIRQs are reserved for NEORV32 processor-internal usage only.
 
-[NOTE]
-The fast interrupt request lines trigger on a **rising-edge**.
 
 
 <<<

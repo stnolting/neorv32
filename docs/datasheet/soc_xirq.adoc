@@ -34,7 +34,7 @@ bit. As soon as there is a least one pending interrupt in the buffer, an interru
 [NOTE]
 A disabled interrupt channel can still be pending if it has been triggered before clearing the according `IER` bit.
 
-The CPU can determine firing interrupt request either by checking the bits in the `IPR` register, which show all
+The CPU can determine active external interrupt request either by checking the bits in the `IPR` register, which show all
 pending interrupt channels, or by reading the interrupt source register `SCR`.
 This register provides a 5-bit wide ID (0..31) that shows the interrupt request with _highest priority_.
 Interrupt channel `xirq_i(0)` has highest priority and `xirq_i(_XIRQ_NUM_CH_-1)` has lowest priority.
@@ -42,8 +42,8 @@ This priority assignment is fixed and cannot be altered by software.
 The CPU can use the ID from `SCR` to service IRQ according to their priority. To acknowledge the according
 interrupt the CPU can write `1 << SCR` to `IPR`.
 
-In order to acknowledge the interrupt from the external interrupt controller, the CPU has to write _any_
-value to interrupt source register `SRC`.
+In order to clear a pending FIRQ interrupt from the external interrupt controller, the CPU has to write _any_
+value to the interrupt source register `SRC`.
 
 [NOTE]
 An interrupt handler should clear the interrupt pending bit that caused the interrupt first before

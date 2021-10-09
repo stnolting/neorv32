@@ -190,8 +190,14 @@ begin
       twi_scl_i_ff0 <= twi_scl_i;
       twi_scl_i_ff1 <= twi_scl_i_ff0;
 
+      -- interrupt --
+      if (arbiter = "100") then -- fire IRQ if enabled transceiver is idle
+        irq_o <= '1';
+      else
+        irq_o <= '0';
+      end if;
+
       -- defaults --
-      irq_o      <= '0';
       arbiter(2) <= ctrl(ctrl_twi_en_c); -- still activated?
 
       -- serial engine --
@@ -257,7 +263,6 @@ begin
 
           if (twi_bitcnt = "1010") then -- 8 data bits + 1 bit for ACK + 1 tick delay
             arbiter(1 downto 0) <= "00"; -- go back to IDLE
-            irq_o <= '1'; -- fire IRQ
           end if;
 
         when others => -- "0--" OFFLINE: TWI deactivated

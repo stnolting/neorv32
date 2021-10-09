@@ -197,7 +197,6 @@ begin
       spi_sdi_ff1 <= spi_sdi_ff0;
 
       -- serial engine --
-      irq_o <= '0';
       if (spi_state0 = '0') or (ctrl(ctrl_spi_en_c) = '0') then -- idle or disabled
       -- --------------------------------------------------------------
         spi_bitcnt <= (others => '0');
@@ -245,13 +244,17 @@ begin
             if (spi_bitcnt = spi_bitcnt_max) then
               spi_state0 <= '0';
               spi_busy   <= '0';
-              irq_o      <= '1';
             end if;
           end if;
         end if;
       end if;
     end if;
   end process spi_rtx_unit;
+
+
+  -- Interrupt ------------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  irq_o <= ctrl(ctrl_spi_en_c) and (not spi_busy); -- fire IRQ if transceiver idle
 
 
   -- RTX Data size ------------------------------------------------------------------------

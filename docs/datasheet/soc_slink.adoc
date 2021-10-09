@@ -96,21 +96,25 @@ to the actual link access, which will reduce performance for high-bandwidth data
 
 **Interrupts**
 
-The stream interface provides two interrupts that are _globally_ driven by the RX and TX link's
+The stream interface provides two independent interrupts that are _globally_ driven by the RX and TX link's
 FIFO fill level status. The behavior of these interrupts differs if the FIFO depth is exactly 1 (minimal)
 or if it is greater than 1.
 
-When _SLINK_*X_FIFO_ is 1 a TX interrupt will fire if **any** TX link _was full_ and _becomes empty_ again.
-Accordingly, if the FIFO of **any** RX link _was empty_ and a _new data word_ appears in it, the RX interrupt fires.
+[NOTE]
+If the according interrupt condition is fulfilled, the corresposnding IRQ will become _pending_ until
+the causing interrupt conditions is resolved (for example by reading the according RX FIFO).
 
-When _SLINK_*X_FIFO_ is greater than 1 the TX interrupt will fire if _any_ TX link's FIFO _falls below_ half-full fill level.
-Accordingly, the RX interrupt will fire if _any_ RX link's FIFO _exceeds_ half-full fill level.
+* When _SLINK_TX_FIFO_ is 1 a TX interrupt will become pending if **any** TX link is _idle_ ("ready to send new data").
+* When _SLINK_TX_FIFO_ is greater than 1 the TX interrupt will become pending if **any** TX link's FIFO
+is not at least _half_full_ ("still more room for new data to be send").
+
+* When _SLINK_RX_FIFO_ is 1 a RX interrupt will become pending if **any** RX link is has new data that has not
+been fetched by the CPU yet ("new incoming data available").
+* When _SLINK_RX_FIFO_ is greater than 1 the RX interrupt will become pending if the FIFO of **any** RX
+link is at least _half-full_ ("incoming data needs to be read to avoid FIFO overflow").
 
 The interrupt service handler has to evaluate the SLINK status register is order to detect which link(s) has caused the
-interrupt. No further interrupt can fire until the CPU acknowledges the last interrupt by _reading the SLINK status register_.
-However, further IRQ conditions are buffered and will trigger another interrupt after the current one has been acknowledged.
-
-Note that these interrupts can only fire if the SLINK module is actually enabled by setting the
+interrupt. Note that these interrupts can only fire if the SLINK module is actually enabled by setting the
 _SLINK_CTRL_EN_ bit in the unit's control register.
 
 **Stream Link Interface & Protocol**

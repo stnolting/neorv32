@@ -45,8 +45,9 @@ uint32_t temp = NEORV32_CFS.REG[20]; // read from CFS register 20
 
 **CFS Interrupt**
 
-The CFS provides a single one-shot interrupt request signal mapped to the CPU's fast interrupt channel 1.
-See section <<_processor_interrupts>> for more information.
+The CFS provides a single high-level-triggered interrupt request signal mapped to the CPU's fast interrupt channel 1.
+Once set, the interrupt has to stay asserted until explicitly acknowledged by the software (for example by
+writing to a specific CFS register). See section <<_processor_interrupts>> for more information.
 
 **CFS Configuration Generic**
 

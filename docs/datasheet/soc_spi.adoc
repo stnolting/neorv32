@@ -25,8 +25,7 @@ signal.
 The SPI unit is enabled via the _SPI_CTRL_EN_ bit in the `CTRL` control register. The idle clock polarity is configured via the _SPI_CTRL_CPHA_
 bit and can be low (`0`) or high (`1`) during idle. The data quantity to be transferred within a
 single transmission is defined via the _SPI_CTRL_SIZEx bits_. The unit supports 8-bit (`00`), 16-bit (`01`), 24-
-bit (`10`) and 32-bit (`11`) transfers. Whenever a transfer is completed, the "transmission done interrupt" is triggered.
-A transmission is still in progress as long as the _SPI_CTRL_BUSY_ flag is set.
+bit (`10`) and 32-bit (`11`) transfers.
 
 The SPI controller features 8 dedicated chip-select lines. These lines are controlled via the control register's _SPI_CTRL_CSx_ bits. When
 a specifc _SPI_CTRL_CSx_ bit is **set**, the according chip select line `spi_csn_o(x)` goes **low** (low-active chip select lines).
@@ -49,6 +48,14 @@ _**f~SPI~**_ = _f~main~[Hz]_ / (2 * `clock_prescaler`)
 A transmission is started when writing data to the `DATA` register. The data must be LSB-aligned. So if
 the SPI transceiver is configured for less than 32-bit transfers data quantity, the transmit data must be placed
 into the lowest 8/16/24 bit of `DATA`. Vice versa, the received data is also always LSB-aligned.
+
+
+**Interrupt**
+
+The SPI module provides a single interrupt to singal _idle state_ (= read for new transmission) to the CPU. Whenever the SPI module
+is currently idle (and enabled), the interrupt request is active. A pending interrupt request is cleared
+by triggering a new SPI transmission or by disabling the device.
+
 
 .SPI register map (`struct NEORV32_SPI`)
 [cols="<2,<2,<4,^1,<7"]

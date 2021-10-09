@@ -1,9 +1,9 @@
 -- #################################################################################################
 -- # << NEORV32 - Custom Functions Subsystem (CFS) >>                                              #
 -- # ********************************************************************************************* #
--- # For tightly-coupled custom co-processors. Provides 32x32-bit memory-mapped registers. This is #
--- # just an "example/illustration template". Modify this file to implement your own custom design #
--- # logic.                                                                                        #
+-- # For tightly-coupled custom co-processors. Provides 32x32-bit memory-mapped registers.         #
+-- # This is just an "example/illustration template". Modify this file to implement your own       #
+-- # custom design logic.                                                                          #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -176,10 +176,11 @@ begin
 
   -- Interrupt ------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- The CFS features a single interrupt signal. This interrupt is connected to the CPU's "fast interrupt" channel 1.
-  -- The interrupt is single-shot. Setting the irq_o signal high for one cycle will generate an interrupt request.
-  -- It is recommended to implement some CFS mechanisms (like a register that needs to be written) in order to allow
-  -- another generation on an interrupt request (simple acknowledgement).
+  -- The CFS features a single interrupt signal, which is connected to the CPU's "fast interrupt" channel 1.
+  -- The interrupt is high-level-active. When set, the interrupt appears as "pending" in the CPU's mie register
+  -- ready to trigger execution of the according interrupt handler.
+  -- Once set, the irq_o signal **has to stay set** until explicitly acknowledged by the CPU
+  -- (for example by reading/writing from/to a specific CFS interface register address).
 
   irq_o <= '0'; -- not used for this minimal example
 
