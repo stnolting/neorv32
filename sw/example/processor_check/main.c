@@ -974,9 +974,6 @@ int main() {
 
     cnt_test++;
 
-    // enable fast interrupt
-    neorv32_cpu_irq_enable(CSR_MIE_FIRQ2E);
-
     // wait for UART0 to finish transmitting
     while(neorv32_uart0_tx_busy());
 
@@ -992,6 +989,9 @@ int main() {
     neorv32_uart0_putc(0);
     // wait for UART0 to finish transmitting
     while(neorv32_uart0_tx_busy());
+
+    // enable fast interrupt
+    neorv32_cpu_irq_enable(CSR_MIE_FIRQ2E);
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
@@ -1018,9 +1018,6 @@ int main() {
 
     cnt_test++;
 
-    // UART0 TX interrupt enable
-    neorv32_cpu_irq_enable(CSR_MIE_FIRQ3E);
-
     // wait for UART0 to finish transmitting
     while(neorv32_uart0_tx_busy());
 
@@ -1034,6 +1031,8 @@ int main() {
 
     // trigger UART0 TX IRQ
     neorv32_uart0_putc(0);
+    // UART0 TX interrupt enable
+    neorv32_cpu_irq_enable(CSR_MIE_FIRQ3E);
     // wait for UART to finish transmitting
     while(neorv32_uart0_tx_busy());
 
@@ -1062,9 +1061,6 @@ int main() {
 
     cnt_test++;
 
-    // UART1 RX interrupt enable
-    neorv32_cpu_irq_enable(CSR_MIE_FIRQ4E);
-
     // backup current UART1 configuration
     tmp_a = NEORV32_UART1.CTRL;
 
@@ -1077,6 +1073,8 @@ int main() {
     neorv32_uart1_putc(0);
     // wait for UART1 to finish transmitting
     while(neorv32_uart1_tx_busy());
+    // UART1 RX interrupt enable
+    neorv32_cpu_irq_enable(CSR_MIE_FIRQ4E);
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
@@ -1103,9 +1101,6 @@ int main() {
 
     cnt_test++;
 
-    // UART1 RX interrupt enable
-    neorv32_cpu_irq_enable(CSR_MIE_FIRQ5E);
-
     // backup current UART1 configuration
     tmp_a = NEORV32_UART1.CTRL;
 
@@ -1116,6 +1111,8 @@ int main() {
 
     // trigger UART1 TX IRQ
     neorv32_uart1_putc(0);
+    // UART1 RX interrupt enable
+    neorv32_cpu_irq_enable(CSR_MIE_FIRQ5E);
     // wait for UART1 to finish transmitting
     while(neorv32_uart1_tx_busy());
 
@@ -1144,14 +1141,13 @@ int main() {
 
     cnt_test++;
 
-    // enable fast interrupt
-    neorv32_cpu_irq_enable(CSR_MIE_FIRQ6E);
-
     // configure SPI
     neorv32_spi_setup(CLK_PRSC_2, 0, 0);
 
     // trigger SPI IRQ
     neorv32_spi_trans(0);
+    // enable fast interrupt
+    neorv32_cpu_irq_enable(CSR_MIE_FIRQ6E);
     while(neorv32_spi_busy()); // wait for current transfer to finish
 
     // wait some time for the IRQ to arrive the CPU
@@ -1182,12 +1178,11 @@ int main() {
     // configure TWI, fastest clock, no peripheral clock stretching
     neorv32_twi_setup(CLK_PRSC_2, 0);
 
-    neorv32_cpu_irq_enable(CSR_MIE_FIRQ7E);
-
     // trigger TWI IRQ
     neorv32_twi_generate_start();
     neorv32_twi_trans(0);
     neorv32_twi_generate_stop();
+    neorv32_cpu_irq_enable(CSR_MIE_FIRQ7E);
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
