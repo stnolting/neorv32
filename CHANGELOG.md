@@ -26,7 +26,8 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 06.10.2021 | 1.6.1.6 | :bug: fixed bugs in signal assignments and processor configuration of `setups/radiant/UPduino_v3` setup; minor CPU HPM counter fix (architecture condition for "multi-cycle ALU wait cycles" HPM event) |
+| 09.10.2021 | 1.6.1.7 | :warning: reworked _fast interrupt requests_ (FIRQ) CPU interrupt system: fast interrupt requests are now also high-level-triggered (like the RISC-V standard interrupts) and stay asserted until explicitly acknowledged by software ([PR #176](https://github.com/stnolting/neorv32/pull/176)) |
+| 06.10.2021 | 1.6.1.6 | :bug: fixed bugs in signal assignments and processor configuration of `setups/radiant/UPduino_v3` setup; minor CPU HPM counter fix (architecture condition for "multi-cycle ALU wait cycle" HPM event) |
 | 05.10.2021 | 1.6.1.5 | :sparkles: :lock: the CPU now ensures that _all_ illegal instructions _do not commit_ any potential architecture state changes (like writing registers or triggering memory accesses); CPU logic optimization (smaller footprint) |
 | 04.10.2021 | 1.6.1.4 | moved CPU's comparator logic from register file unit to ALU unit (to allow easier replacement of register file design unit by technology-optimized one) |
 | 03.10.2021 | 1.6.1.3 | :bug: fixed UART signal connection in `rtl/system_integration` wrappers |
