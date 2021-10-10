@@ -183,30 +183,34 @@ This highly relaxes time constraints for sending a continuous data stream to the
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.25+<| `0xffffffd8` .25+<| `NEORV32_NEOLED.CTRL` <|`0` _NEOLED_CTRL_EN_         ^| r/w <| NEOLED enable
-                                                 <|`1` _NEOLED_CTRL_MODE_       ^| r/w <| data transfer size; `0`=24-bit; `1`=32-bit
-                                                 <|`2` _NEOLED_CTRL_STROBE_     ^| r/w <| `0`=send normal color data; `1`=send RESET command on data write access
-                                                 <|`3` _NEOLED_CTRL_PRSC0_      ^| r/w <| 3-bit clock prescaler, bit 0
-                                                 <|`4` _NEOLED_CTRL_PRSC1_      ^| r/w <| 3-bit clock prescaler, bit 1
-                                                 <|`5` _NEOLED_CTRL_PRSC2_      ^| r/w <| 3-bit clock prescaler, bit 2
-                                                 <|`6` _NEOLED_CTRL_BUFS0_      ^| r/- .4+<| 4-bit log2(_IO_NEOLED_TX_FIFO_)
-                                                 <|`7` _NEOLED_CTRL_BUFS1_      ^| r/- 
-                                                 <|`8` _NEOLED_CTRL_BUFS2_      ^| r/- 
-                                                 <|`9` _NEOLED_CTRL_BUFS3_      ^| r/- 
-                                                 <|`10` _NEOLED_CTRL_T_TOT_0_   ^| r/w .5+<| 5-bit pulse clock ticks per total single-bit period (T~total~)
-                                                 <|`11` _NEOLED_CTRL_T_TOT_1_   ^| r/w 
-                                                 <|`12` _NEOLED_CTRL_T_TOT_2_   ^| r/w 
-                                                 <|`13` _NEOLED_CTRL_T_TOT_3_   ^| r/w 
-                                                 <|`14` _NEOLED_CTRL_T_TOT_4_   ^| r/w 
-                                                 <|`20` _NEOLED_CTRL_ONE_H_0_   ^| r/w .5+<| 5-bit pulse clock ticks per high-time for sending a one-bit (T~H1~)
-                                                 <|`21` _NEOLED_CTRL_ONE_H_1_   ^| r/w 
-                                                 <|`22` _NEOLED_CTRL_ONE_H_2_   ^| r/w 
-                                                 <|`23` _NEOLED_CTRL_ONE_H_3_   ^| r/w 
-                                                 <|`24` _NEOLED_CTRL_ONE_H_4_   ^| r/w 
-                                                 <|`30` _NEOLED_CTRL_TX_STATUS_ ^| r/- <| transmit engine busy when `1`
-                                                 <|`31` _NEOLED_CTRL_TX_EMPTY_  ^| r/- <| TX FIFO is empty
-                                                 <|`31` _NEOLED_CTRL_TX_HALF_   ^| r/- <| TX FIFO is _at least_ half full
-                                                 <|`31` _NEOLED_CTRL_TX_FULL_   ^| r/- <| TX FIFO is full
-                                                 <|`31` _NEOLED_CTRL_TX_BUSY_   ^| r/- <| TX serial engine is busy when set
+.25+<| `0xffffffd8` .25+<| `NEORV32_NEOLED.CTRL` <|`0` _NEOLED_CTRL_EN_          ^| r/w <| NEOLED enable
+                                                 <|`1` _NEOLED_CTRL_MODE_        ^| r/w <| data transfer size; `0`=24-bit; `1`=32-bit
+                                                 <|`2` _NEOLED_CTRL_STROBE_      ^| r/w <| `0`=send normal color data; `1`=send RESET command on data write access
+                                                 <|`3` _NEOLED_CTRL_PRSC0_       ^| r/w <| 3-bit clock prescaler, bit 0
+                                                 <|`4` _NEOLED_CTRL_PRSC1_       ^| r/w <| 3-bit clock prescaler, bit 1
+                                                 <|`5` _NEOLED_CTRL_PRSC2_       ^| r/w <| 3-bit clock prescaler, bit 2
+                                                 <|`6` _NEOLED_CTRL_BUFS0_       ^| r/- .4+<| 4-bit log2(_IO_NEOLED_TX_FIFO_)
+                                                 <|`7` _NEOLED_CTRL_BUFS1_       ^| r/-
+                                                 <|`8` _NEOLED_CTRL_BUFS2_       ^| r/-
+                                                 <|`9` _NEOLED_CTRL_BUFS3_       ^| r/-
+                                                 <|`10` _NEOLED_CTRL_T_TOT_0_    ^| r/w .5+<| 5-bit pulse clock ticks per total single-bit period (T~total~)
+                                                 <|`11` _NEOLED_CTRL_T_TOT_1_    ^| r/w
+                                                 <|`12` _NEOLED_CTRL_T_TOT_2_    ^| r/w
+                                                 <|`13` _NEOLED_CTRL_T_TOT_3_    ^| r/w
+                                                 <|`14` _NEOLED_CTRL_T_TOT_4_    ^| r/w
+                                                 <|`15` _NEOLED_CTRL_T_ZERO_H_0_ ^| r/w .5+<| 5-bit pulse clock ticks per high-time for sending a zero-bit (T~0H~)
+                                                 <|`16` _NEOLED_CTRL_T_ZERO_H_1_ ^| r/w
+                                                 <|`17` _NEOLED_CTRL_T_ZERO_H_2_ ^| r/w
+                                                 <|`18` _NEOLED_CTRL_T_ZERO_H_3_ ^| r/w
+                                                 <|`19` _NEOLED_CTRL_T_ZERO_H_4_ ^| r/w
+                                                 <|`20` _NEOLED_CTRL_T_ONE_H_0_  ^| r/w .5+<| 5-bit pulse clock ticks per high-time for sending a one-bit (T~1H~)
+                                                 <|`21` _NEOLED_CTRL_T_ONE_H_1_  ^| r/w
+                                                 <|`22` _NEOLED_CTRL_T_ONE_H_2_  ^| r/w
+                                                 <|`23` _NEOLED_CTRL_T_ONE_H_3_  ^| r/w
+                                                 <|`24` _NEOLED_CTRL_T_ONE_H_4_  ^| r/w
+                                                 <|`28` _NEOLED_CTRL_TX_EMPTY_   ^| r/- <| TX FIFO is empty
+                                                 <|`29` _NEOLED_CTRL_TX_HALF_    ^| r/- <| TX FIFO is _at least_ half full
+                                                 <|`30` _NEOLED_CTRL_TX_FULL_    ^| r/- <| TX FIFO is full
+                                                 <|`31` _NEOLED_CTRL_TX_BUSY_    ^| r/- <| TX serial engine is busy when set
 | `0xffffffdc` | `NEORV32_NEOLED.DATA` <|`31:0` / `23:0` ^| -/w <| TX data (32-/24-bit)
 |=======================
