@@ -183,7 +183,7 @@ This highly relaxes time constraints for sending a continuous data stream to the
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.25+<| `0xffffffd8` .25+<| `NEORV32_NEOLED.CTRL` <|`0` _NEOLED_CTRL_EN_          ^| r/w <| NEOLED enable
+.29+<| `0xffffffd8` .29+<| `NEORV32_NEOLED.CTRL` <|`0` _NEOLED_CTRL_EN_          ^| r/w <| NEOLED enable
                                                  <|`1` _NEOLED_CTRL_MODE_        ^| r/w <| data transfer size; `0`=24-bit; `1`=32-bit
                                                  <|`2` _NEOLED_CTRL_STROBE_      ^| r/w <| `0`=send normal color data; `1`=send RESET command on data write access
                                                  <|`3` _NEOLED_CTRL_PRSC0_       ^| r/w <| 3-bit clock prescaler, bit 0
