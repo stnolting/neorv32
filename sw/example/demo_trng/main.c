@@ -66,7 +66,7 @@ void generate_histogram(void);
 int main(void) {
 
   // check if UART unit is implemented at all
-  if (neorv32_uart_available() == 0) {
+  if (neorv32_uart0_available() == 0) {
     return 1;
   }
 
@@ -76,17 +76,17 @@ int main(void) {
 
 
   // init UART at default baud rate, no parity bits, ho hw flow control
-  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
   // intro
-  neorv32_uart_printf("\n--- TRNG Demo ---\n\n");
+  neorv32_uart0_printf("\n--- TRNG Demo ---\n\n");
 
   // check if TRNG unit is implemented at all
   if (neorv32_trng_available() == 0) {
-    neorv32_uart_printf("No TRNG implemented.");
+    neorv32_uart0_printf("No TRNG implemented.");
     return 1;
   }
 
@@ -96,14 +96,14 @@ int main(void) {
   while(1) {
 
     // main menu
-    neorv32_uart_printf("\nCommands:\n"
+    neorv32_uart0_printf("\nCommands:\n"
                         " n: Print 8-bit random numbers (abort by pressing any key)\n"
                         " h: Generate and print histogram\n");
 
-    neorv32_uart_printf("CMD:> ");
-    char cmd = neorv32_uart_getc();
-    neorv32_uart_putc(cmd); // echo
-    neorv32_uart_printf("\n");
+    neorv32_uart0_printf("CMD:> ");
+    char cmd = neorv32_uart0_getc();
+    neorv32_uart0_putc(cmd); // echo
+    neorv32_uart0_printf("\n");
 
     if (cmd == 'n') {
       print_random_data();
@@ -112,7 +112,7 @@ int main(void) {
       generate_histogram();
     }
     else {
-      neorv32_uart_printf("Invalid command.\n");
+      neorv32_uart0_printf("Invalid command.\n");
     }
   }
 
@@ -132,16 +132,16 @@ void print_random_data(void) {
   while(1) {
     err = neorv32_trng_get(&trng_data);
     if (err) {
-      neorv32_uart_printf("\nTRNG error!\n");
+      neorv32_uart0_printf("\nTRNG error!\n");
       break;
     }
-    neorv32_uart_printf("%u ", (uint32_t)(trng_data));
+    neorv32_uart0_printf("%u ", (uint32_t)(trng_data));
     num_samples++;
-    if (neorv32_uart_char_received()) { // abort when key pressed
+    if (neorv32_uart0_char_received()) { // abort when key pressed
       break;
     }
   }
-  neorv32_uart_printf("\nPrinted samples: %u\n", num_samples);
+  neorv32_uart0_printf("\nPrinted samples: %u\n", num_samples);
 }
 
 
@@ -156,10 +156,10 @@ void generate_histogram(void) {
   int err = 0;
   uint8_t trng_data;
 
-  neorv32_uart_printf("Press any key to start.\n");
+  neorv32_uart0_printf("Press any key to start.\n");
 
-  while(neorv32_uart_char_received() == 0);
-  neorv32_uart_printf("Sampling... Press any key to stop.\n");
+  while(neorv32_uart0_char_received() == 0);
+  neorv32_uart0_printf("Sampling... Press any key to stop.\n");
 
   // clear histogram
   for (i=0; i<256; i++) {
@@ -174,11 +174,11 @@ void generate_histogram(void) {
     cnt++;
 
     if (err) {
-      neorv32_uart_printf("\nTRNG error!\n");
+      neorv32_uart0_printf("\nTRNG error!\n");
       break;
     }
 
-    if (neorv32_uart_char_received()) { // abort when key pressed
+    if (neorv32_uart0_char_received()) { // abort when key pressed
       break;
     }
 
@@ -188,12 +188,12 @@ void generate_histogram(void) {
   }
 
   // print histogram
-  neorv32_uart_printf("Histogram [random data value] : [# occurences]\n");
+  neorv32_uart0_printf("Histogram [random data value] : [# occurences]\n");
   for (i=0; i<256; i++) {
-    neorv32_uart_printf("%u: %u\n", (uint32_t)i, hist[i]);
+    neorv32_uart0_printf("%u: %u\n", (uint32_t)i, hist[i]);
   }
 
-  neorv32_uart_printf("\nSamples: %u\n", cnt);
+  neorv32_uart0_printf("\nSamples: %u\n", cnt);
 
   // average
   uint64_t average = 0;
@@ -201,13 +201,13 @@ void generate_histogram(void) {
     average += (uint64_t)hist[i] * i;
   }
   average = average / ((uint64_t)cnt);
-  neorv32_uart_printf("Average value: %u ", (uint32_t)average);
+  neorv32_uart0_printf("Average value: %u ", (uint32_t)average);
 
   if (((uint8_t)average) == ((uint8_t)(255/2))) {
-    neorv32_uart_printf("%c[1m[TEST OK]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[TEST OK]%c[0m\n", 27, 27);
   }
   else {
-    neorv32_uart_printf("%c[1m[TEST FAILED]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[TEST FAILED]%c[0m\n", 27, 27);
   }
 
 }

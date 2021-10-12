@@ -114,7 +114,7 @@ int main() {
 
 
   // init primary UART
-  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // capture all exceptions and give debug info via UART
   neorv32_rte_setup();
@@ -124,7 +124,7 @@ int main() {
 
   // check if Zfinx extension is implemented at all
   if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_ZFINX)) == 0) {
-    neorv32_uart_print("Error! <Zfinx> extension not synthesized!\n");
+    neorv32_uart0_print("Error! <Zfinx> extension not synthesized!\n");
     return 1;
   }
 
@@ -134,19 +134,19 @@ int main() {
   #warning Program HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.
 
   // inform the user if you are actually executing this
-  neorv32_uart_printf("ERROR! Program has not been compiled. Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.\n");
+  neorv32_uart0_printf("ERROR! Program has not been compiled. Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.\n");
 
   return 1;
 #endif
 
 
   // intro
-  neorv32_uart_printf("<<< Zfinx extension test >>>\n");
+  neorv32_uart0_printf("<<< Zfinx extension test >>>\n");
 #if (SILENT_MODE != 0)
-  neorv32_uart_printf("SILENT_MODE enabled (only showing actual errors)\n");
+  neorv32_uart0_printf("SILENT_MODE enabled (only showing actual errors)\n");
 #endif
-  neorv32_uart_printf("Test cases per instruction: %u\n", (uint32_t)NUM_TEST_CASES);
-  neorv32_uart_printf("NOTE: The NEORV32 FPU does not support subnormal numbers yet. Subnormal numbers are flushed to zero.\n\n");
+  neorv32_uart0_printf("Test cases per instruction: %u\n", (uint32_t)NUM_TEST_CASES);
+  neorv32_uart0_printf("NOTE: The NEORV32 FPU does not support subnormal numbers yet. Subnormal numbers are flushed to zero.\n\n");
 
   // clear exception status word
   neorv32_cpu_csr_write(CSR_FFLAGS, 0); // real hardware
@@ -158,7 +158,7 @@ int main() {
 // ----------------------------------------------------------------------------
 
 #if (RUN_CONV_TESTS != 0)
-  neorv32_uart_printf("\n#%u: FCVT.S.WU (unsigned integer to float)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FCVT.S.WU (unsigned integer to float)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -170,7 +170,7 @@ int main() {
   err_cnt_total += err_cnt;
   test_cnt++;
 
-  neorv32_uart_printf("\n#%u: FCVT.S.W (signed integer to float)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FCVT.S.W (signed integer to float)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -182,7 +182,7 @@ int main() {
   err_cnt_total += err_cnt;
   test_cnt++;
 
-  neorv32_uart_printf("\n#%u: FCVT.WU.S (float to unsigned integer)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FCVT.WU.S (float to unsigned integer)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -194,7 +194,7 @@ int main() {
   err_cnt_total += err_cnt;
   test_cnt++;
 
-  neorv32_uart_printf("\n#%u: FCVT.W.S (float to signed integer)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FCVT.W.S (float to signed integer)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -213,7 +213,7 @@ int main() {
 // ----------------------------------------------------------------------------
 
 #if (RUN_ADDSUB_TESTS != 0)
-  neorv32_uart_printf("\n#%u: FADD.S (addition)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FADD.S (addition)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -226,7 +226,7 @@ int main() {
   err_cnt_total += err_cnt;
   test_cnt++;
 
-  neorv32_uart_printf("\n#%u: FSUB.S (subtraction)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FSUB.S (subtraction)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -246,7 +246,7 @@ int main() {
 // ----------------------------------------------------------------------------
 
 #if (RUN_MUL_TESTS != 0)
-  neorv32_uart_printf("\n#%u: FMUL.S (multiplication)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FMUL.S (multiplication)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -266,7 +266,7 @@ int main() {
 // ----------------------------------------------------------------------------
 
 #if (RUN_MINMAX_TESTS != 0)
-  neorv32_uart_printf("\n#%u: FMIN.S (select minimum)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FMIN.S (select minimum)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -279,7 +279,7 @@ int main() {
   err_cnt_total += err_cnt;
   test_cnt++;
 
-  neorv32_uart_printf("\n#%u: FMAX.S (select maximum)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FMAX.S (select maximum)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -299,7 +299,7 @@ int main() {
 // ----------------------------------------------------------------------------
 
 #if (RUN_COMPARE_TESTS != 0)
-  neorv32_uart_printf("\n#%u: FEQ.S (compare if equal)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FEQ.S (compare if equal)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -312,7 +312,7 @@ int main() {
   err_cnt_total += err_cnt;
   test_cnt++;
 
-  neorv32_uart_printf("\n#%u: FLT.S (compare if less-than)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FLT.S (compare if less-than)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -325,7 +325,7 @@ int main() {
   err_cnt_total += err_cnt;
   test_cnt++;
 
-  neorv32_uart_printf("\n#%u: FLE.S (compare if less-than-or-equal)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FLE.S (compare if less-than-or-equal)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -345,7 +345,7 @@ int main() {
 // ----------------------------------------------------------------------------
 
 #if (RUN_SGNINJ_TESTS != 0)
-  neorv32_uart_printf("\n#%u: FSGNJ.S (sign-injection)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FSGNJ.S (sign-injection)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -358,7 +358,7 @@ int main() {
   err_cnt_total += err_cnt;
   test_cnt++;
 
-  neorv32_uart_printf("\n#%u: FSGNJN.S (sign-injection NOT)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FSGNJN.S (sign-injection NOT)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -371,7 +371,7 @@ int main() {
   err_cnt_total += err_cnt;
   test_cnt++;
 
-  neorv32_uart_printf("\n#%u: FSGNJX.S (sign-injection XOR)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FSGNJX.S (sign-injection XOR)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -391,7 +391,7 @@ int main() {
 // ----------------------------------------------------------------------------
 
 #if (RUN_CLASSIFY_TESTS != 0)
-  neorv32_uart_printf("\n#%u: FCLASS.S (classify)...\n", test_cnt);
+  neorv32_uart0_printf("\n#%u: FCLASS.S (classify)...\n", test_cnt);
   err_cnt = 0;
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
@@ -410,82 +410,82 @@ int main() {
 // ----------------------------------------------------------------------------
 
 #if (RUN_UNAVAIL_TESTS != 0)
-  neorv32_uart_printf("\n# unsupported FDIV.S (division) [illegal instruction]...\n");
+  neorv32_uart0_printf("\n# unsupported FDIV.S (division) [illegal instruction]...\n");
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   opa.binary_value = get_test_vector();
   opb.binary_value = get_test_vector();
   riscv_intrinsic_fdivs(opa.float_value, opb.float_value);
   if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_I_ILLEGAL) {
-    neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
   else {
-    neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
 
-  neorv32_uart_printf("\n# unsupported FSQRT.S (square root) [illegal instruction]...\n");
+  neorv32_uart0_printf("\n# unsupported FSQRT.S (square root) [illegal instruction]...\n");
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   opa.binary_value = get_test_vector();
   opb.binary_value = get_test_vector();
   riscv_intrinsic_fsqrts(opa.float_value);
   if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_I_ILLEGAL) {
-    neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
   else {
-    neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
 
-  neorv32_uart_printf("\n# unsupported FMADD.S (fused multiply-add) [illegal instruction]...\n");
+  neorv32_uart0_printf("\n# unsupported FMADD.S (fused multiply-add) [illegal instruction]...\n");
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   opa.binary_value = get_test_vector();
   opb.binary_value = get_test_vector();
   riscv_intrinsic_fmadds(opa.float_value, opb.float_value, -opa.float_value);
   if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_I_ILLEGAL) {
-    neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
   else {
-    neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
 
-  neorv32_uart_printf("\n# unsupported FMSUB.S (fused multiply-sub) [illegal instruction]...\n");
+  neorv32_uart0_printf("\n# unsupported FMSUB.S (fused multiply-sub) [illegal instruction]...\n");
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   opa.binary_value = get_test_vector();
   opb.binary_value = get_test_vector();
   riscv_intrinsic_fmsubs(opa.float_value, opb.float_value, -opa.float_value);
   if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_I_ILLEGAL) {
-    neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
   else {
-    neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
 
-  neorv32_uart_printf("\n# unsupported FNMSUB.S (fused negated multiply-sub) [illegal instruction]...\n");
+  neorv32_uart0_printf("\n# unsupported FNMSUB.S (fused negated multiply-sub) [illegal instruction]...\n");
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   opa.binary_value = get_test_vector();
   opb.binary_value = get_test_vector();
   riscv_intrinsic_fnmadds(opa.float_value, opb.float_value, -opa.float_value);
   if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_I_ILLEGAL) {
-    neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
   else {
-    neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
 
-  neorv32_uart_printf("\n# unsupported FNMADD.S (fused negated multiply-add) [illegal instruction]...\n");
+  neorv32_uart0_printf("\n# unsupported FNMADD.S (fused negated multiply-add) [illegal instruction]...\n");
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   opa.binary_value = get_test_vector();
   opb.binary_value = get_test_vector();
   riscv_intrinsic_fnmadds(opa.float_value, opb.float_value, -opa.float_value);
   if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_I_ILLEGAL) {
-    neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
   else {
-    neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
 #endif
 
@@ -499,11 +499,11 @@ int main() {
   uint32_t time_start, time_sw, time_hw;
   const uint32_t num_runs = 4096;
 
-  neorv32_uart_printf("\nAverage execution time tests (%u runs)\n", num_runs);
+  neorv32_uart0_printf("\nAverage execution time tests (%u runs)\n", num_runs);
 
 
   // signed integer to float
-  neorv32_uart_printf("FCVT.S.W: ");
+  neorv32_uart0_printf("FCVT.S.W: ");
   time_sw = 0;
   time_hw = 0;
   err_cnt = 0;
@@ -531,16 +531,16 @@ int main() {
   }
 
   if (err_cnt == 0) {
-    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+    neorv32_uart0_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
   }
   else {
-    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
 
 
   // float to signed integer
-  neorv32_uart_printf("FCVT.W.S: ");
+  neorv32_uart0_printf("FCVT.W.S: ");
   time_sw = 0;
   time_hw = 0;
   err_cnt = 0;
@@ -568,16 +568,16 @@ int main() {
   }
 
   if (err_cnt == 0) {
-    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+    neorv32_uart0_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
   }
   else {
-    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
 
 
   // addition
-  neorv32_uart_printf("FADD.S:   ");
+  neorv32_uart0_printf("FADD.S:   ");
   time_sw = 0;
   time_hw = 0;
   err_cnt = 0;
@@ -606,16 +606,16 @@ int main() {
   }
 
   if (err_cnt == 0) {
-    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+    neorv32_uart0_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
   }
   else {
-    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
 
 
   // subtraction
-  neorv32_uart_printf("FSUB.S:   ");
+  neorv32_uart0_printf("FSUB.S:   ");
   time_sw = 0;
   time_hw = 0;
   err_cnt = 0;
@@ -644,16 +644,16 @@ int main() {
   }
 
   if (err_cnt == 0) {
-    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+    neorv32_uart0_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
   }
   else {
-    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
 
 
   // multiplication
-  neorv32_uart_printf("FMUL.S:   ");
+  neorv32_uart0_printf("FMUL.S:   ");
   time_sw = 0;
   time_hw = 0;
   err_cnt = 0;
@@ -682,16 +682,16 @@ int main() {
   }
 
   if (err_cnt == 0) {
-    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+    neorv32_uart0_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
   }
   else {
-    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
 
 
   // Max
-  neorv32_uart_printf("FMAX.S:   ");
+  neorv32_uart0_printf("FMAX.S:   ");
   time_sw = 0;
   time_hw = 0;
   err_cnt = 0;
@@ -720,16 +720,16 @@ int main() {
   }
 
   if (err_cnt == 0) {
-    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+    neorv32_uart0_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
   }
   else {
-    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
 
 
   // Comparison
-  neorv32_uart_printf("FLE.S:    ");
+  neorv32_uart0_printf("FLE.S:    ");
   time_sw = 0;
   time_hw = 0;
   err_cnt = 0;
@@ -758,16 +758,16 @@ int main() {
   }
 
   if (err_cnt == 0) {
-    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+    neorv32_uart0_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
   }
   else {
-    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
 
 
   // Sign-injection
-  neorv32_uart_printf("FSGNJX.S: ");
+  neorv32_uart0_printf("FSGNJX.S: ");
   time_sw = 0;
   time_hw = 0;
   err_cnt = 0;
@@ -796,10 +796,10 @@ int main() {
   }
 
   if (err_cnt == 0) {
-    neorv32_uart_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
+    neorv32_uart0_printf("cycles[SW] = %u vs. cycles[HW] = %u\n", time_sw/num_runs, time_hw/num_runs);
   }
   else {
-    neorv32_uart_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[TEST FAILED!]%c[0m\n", 27, 27);
     err_cnt_total++;
   }
 #endif
@@ -810,12 +810,12 @@ int main() {
 // ----------------------------------------------------------------------------
 
   if (err_cnt_total != 0) {
-    neorv32_uart_printf("\n%c[1m[ZFINX EXTENSION VERIFICATION FAILED!]%c[0m\n", 27, 27);
-    neorv32_uart_printf("%u errors in %u test cases\n", err_cnt_total, test_cnt*(uint32_t)NUM_TEST_CASES);
+    neorv32_uart0_printf("\n%c[1m[ZFINX EXTENSION VERIFICATION FAILED!]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%u errors in %u test cases\n", err_cnt_total, test_cnt*(uint32_t)NUM_TEST_CASES);
     return 1;
   }
   else {
-    neorv32_uart_printf("\n%c[1m[Zfinx extension verification successful!]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("\n%c[1m[Zfinx extension verification successful!]%c[0m\n", 27, 27);
     return 0;
   }
 
@@ -884,19 +884,19 @@ uint32_t xorshift32(void) {
 uint32_t verify_result(uint32_t num, uint32_t opa, uint32_t opb, uint32_t ref, uint32_t res) {
 
 #if (SILENT_MODE == 0)
-  neorv32_uart_printf("%u: opa = 0x%x, opb = 0x%x : ref[SW] = 0x%x vs. res[HW] = 0x%x ", num, opa, opb, ref, res);
+  neorv32_uart0_printf("%u: opa = 0x%x, opb = 0x%x : ref[SW] = 0x%x vs. res[HW] = 0x%x ", num, opa, opb, ref, res);
 #endif
 
   if (ref != res) {
 #if (SILENT_MODE != 0)
-    neorv32_uart_printf("%u: opa = 0x%x, opb = 0x%x : ref[SW] = 0x%x vs. res[HW] = 0x%x ", num, opa, opb, ref, res);
+    neorv32_uart0_printf("%u: opa = 0x%x, opb = 0x%x : ref[SW] = 0x%x vs. res[HW] = 0x%x ", num, opa, opb, ref, res);
 #endif
-    neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     return 1;
   }
   else {
 #if (SILENT_MODE == 0)
-    neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[ok]%c[0m\n", 27, 27);
 #endif
     return 0;
   }
@@ -910,12 +910,12 @@ uint32_t verify_result(uint32_t num, uint32_t opa, uint32_t opb, uint32_t ref, u
  **************************************************************************/
 void print_report(uint32_t num_err) {
 
-  neorv32_uart_printf("Errors: %u/%u ", num_err, (uint32_t)NUM_TEST_CASES);
+  neorv32_uart0_printf("Errors: %u/%u ", num_err, (uint32_t)NUM_TEST_CASES);
 
   if (num_err == 0) {
-    neorv32_uart_printf("%c[1m[ok]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[ok]%c[0m\n", 27, 27);
   }
   else {
-    neorv32_uart_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
   }
 }

@@ -104,12 +104,12 @@ int main (void)
   { /* *****  NEORV32-SPECIFIC ***** */
     neorv32_cpu_dint(); // no interrupt, thanks
     neorv32_rte_setup(); // capture all exceptions and give debug information, ho hw flow control
-    neorv32_uart_setup(19200, PARITY_NONE, FLOW_CONTROL_NONE);
+    neorv32_uart0_setup(19200, PARITY_NONE, FLOW_CONTROL_NONE);
     // check available hardware extensions and compare with compiler flags
     neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
-    neorv32_uart_printf("NEORV32: Processor running at %u Hz\n", (uint32_t)NEORV32_SYSINFO.CLK);
-    neorv32_uart_printf("NEORV32: Executing Dhrystone (%u iterations). This may take some time...\n\n", (uint32_t)DHRY_ITERS);
+    neorv32_uart0_printf("NEORV32: Processor running at %u Hz\n", (uint32_t)NEORV32_SYSINFO.CLK);
+    neorv32_uart0_printf("NEORV32: Executing Dhrystone (%u iterations). This may take some time...\n\n", (uint32_t)DHRY_ITERS);
 
     // clear cycle counter
     neorv32_cpu_set_mcycle(0);
@@ -118,7 +118,7 @@ int main (void)
     #warning DHRYSTONE HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_DHRYSTONE clean_all exe<< to compile it.
 
     // inform the user if you are actually executing this
-    neorv32_uart_printf("ERROR! CoreMark has not been compiled. Use >>make USER_FLAGS+=-DRUN_COREMARK clean_all exe<< to compile it.\n");
+    neorv32_uart0_printf("ERROR! CoreMark has not been compiled. Use >>make USER_FLAGS+=-DRUN_COREMARK clean_all exe<< to compile it.\n");
 
     while(1);
 #endif
@@ -150,32 +150,32 @@ int main (void)
         /* Warning: With 16-Bit processors and Number_Of_Runs > 32000,  */
         /* overflow may occur for this array element.                   */
 
-  neorv32_uart_printf ("\n");
-  neorv32_uart_printf ("Dhrystone Benchmark, Version 2.1 (Language: C)\n");
-  neorv32_uart_printf ("\n");
+  neorv32_uart0_printf ("\n");
+  neorv32_uart0_printf ("Dhrystone Benchmark, Version 2.1 (Language: C)\n");
+  neorv32_uart0_printf ("\n");
   if (Reg)
   {
-    neorv32_uart_printf ("Program compiled with 'register' attribute\n");
-    neorv32_uart_printf ("\n");
+    neorv32_uart0_printf ("Program compiled with 'register' attribute\n");
+    neorv32_uart0_printf ("\n");
   }
   else
   {
-    neorv32_uart_printf ("Program compiled without 'register' attribute\n");
-    neorv32_uart_printf ("\n");
+    neorv32_uart0_printf ("Program compiled without 'register' attribute\n");
+    neorv32_uart0_printf ("\n");
   }
 #ifdef DHRY_ITERS
   Number_Of_Runs = DHRY_ITERS;
 #else
-  neorv32_uart_printf ("Please give the number of runs through the benchmark: ");
+  neorv32_uart0_printf ("Please give the number of runs through the benchmark: ");
   {
     int n;
     scanf ("%d", &n);
     Number_Of_Runs = n;
   }
-  neorv32_uart_printf ("\n");
+  neorv32_uart0_printf ("\n");
 #endif
 
-  neorv32_uart_printf ("Execution starts, %u runs through Dhrystone\n", (uint32_t)Number_Of_Runs);
+  neorv32_uart0_printf ("Execution starts, %u runs through Dhrystone\n", (uint32_t)Number_Of_Runs);
 
   /***************/
   /* Start timer */
@@ -266,66 +266,66 @@ int main (void)
   } /* ***** /NEORV32-SPECIFIC ***** */
   
 
-  neorv32_uart_printf ("Execution ends\n");
-  neorv32_uart_printf ("\n");
-  neorv32_uart_printf ("Final values of the variables used in the benchmark:\n");
-  neorv32_uart_printf ("\n");
-  neorv32_uart_printf ("Int_Glob:            %u\n", (uint32_t)Int_Glob);
-  neorv32_uart_printf ("        should be:   %u\n", 5);
-  neorv32_uart_printf ("Bool_Glob:           %u\n", (uint32_t)Bool_Glob);
-  neorv32_uart_printf ("        should be:   %u\n", 1);
-  neorv32_uart_printf ("Ch_1_Glob:           %c\n", (uint32_t)Ch_1_Glob);
-  neorv32_uart_printf ("        should be:   %c\n", 'A');
-  neorv32_uart_printf ("Ch_2_Glob:           %c\n", (uint32_t)Ch_2_Glob);
-  neorv32_uart_printf ("        should be:   %c\n", 'B');
-  neorv32_uart_printf ("Arr_1_Glob[8]:       %u\n", (uint32_t)Arr_1_Glob[8]);
-  neorv32_uart_printf ("        should be:   %u\n", 7);
-  neorv32_uart_printf ("Arr_2_Glob[8][7]:    %u\n", (uint32_t)Arr_2_Glob[8][7]);
-  neorv32_uart_printf ("        should be:   Number_Of_Runs + 10\n");
-  neorv32_uart_printf ("Ptr_Glob->\n");
-  neorv32_uart_printf ("  Ptr_Comp:          %u\n", (uint32_t) Ptr_Glob->Ptr_Comp);
-  neorv32_uart_printf ("        should be:   (implementation-dependent)\n");
-  neorv32_uart_printf ("  Discr:             %u\n", (uint32_t)Ptr_Glob->Discr);
-  neorv32_uart_printf ("        should be:   %u\n", 0);
-  neorv32_uart_printf ("  Enum_Comp:         %u\n", (uint32_t)Ptr_Glob->variant.var_1.Enum_Comp);
-  neorv32_uart_printf ("        should be:   %u\n", 2);
-  neorv32_uart_printf ("  Int_Comp:          %u\n", (uint32_t)Ptr_Glob->variant.var_1.Int_Comp);
-  neorv32_uart_printf ("        should be:   %u\n", 17);
-  neorv32_uart_printf ("  Str_Comp:          %s\n", Ptr_Glob->variant.var_1.Str_Comp);
-  neorv32_uart_printf ("        should be:   DHRYSTONE PROGRAM, SOME STRING\n");
-  neorv32_uart_printf ("Next_Ptr_Glob->\n");
-  neorv32_uart_printf ("  Ptr_Comp:          %u\n", (uint32_t) Next_Ptr_Glob->Ptr_Comp);
-  neorv32_uart_printf ("        should be:   (implementation-dependent), same as above\n");
-  neorv32_uart_printf ("  Discr:             %u\n", (uint32_t)Next_Ptr_Glob->Discr);
-  neorv32_uart_printf ("        should be:   %u\n", 0);
-  neorv32_uart_printf ("  Enum_Comp:         %u\n", (uint32_t)Next_Ptr_Glob->variant.var_1.Enum_Comp);
-  neorv32_uart_printf ("        should be:   %u\n", 1);
-  neorv32_uart_printf ("  Int_Comp:          %u\n", (uint32_t)Next_Ptr_Glob->variant.var_1.Int_Comp);
-  neorv32_uart_printf ("        should be:   %u\n", 18);
-  neorv32_uart_printf ("  Str_Comp:          %s\n",
+  neorv32_uart0_printf ("Execution ends\n");
+  neorv32_uart0_printf ("\n");
+  neorv32_uart0_printf ("Final values of the variables used in the benchmark:\n");
+  neorv32_uart0_printf ("\n");
+  neorv32_uart0_printf ("Int_Glob:            %u\n", (uint32_t)Int_Glob);
+  neorv32_uart0_printf ("        should be:   %u\n", 5);
+  neorv32_uart0_printf ("Bool_Glob:           %u\n", (uint32_t)Bool_Glob);
+  neorv32_uart0_printf ("        should be:   %u\n", 1);
+  neorv32_uart0_printf ("Ch_1_Glob:           %c\n", (uint32_t)Ch_1_Glob);
+  neorv32_uart0_printf ("        should be:   %c\n", 'A');
+  neorv32_uart0_printf ("Ch_2_Glob:           %c\n", (uint32_t)Ch_2_Glob);
+  neorv32_uart0_printf ("        should be:   %c\n", 'B');
+  neorv32_uart0_printf ("Arr_1_Glob[8]:       %u\n", (uint32_t)Arr_1_Glob[8]);
+  neorv32_uart0_printf ("        should be:   %u\n", 7);
+  neorv32_uart0_printf ("Arr_2_Glob[8][7]:    %u\n", (uint32_t)Arr_2_Glob[8][7]);
+  neorv32_uart0_printf ("        should be:   Number_Of_Runs + 10\n");
+  neorv32_uart0_printf ("Ptr_Glob->\n");
+  neorv32_uart0_printf ("  Ptr_Comp:          %u\n", (uint32_t) Ptr_Glob->Ptr_Comp);
+  neorv32_uart0_printf ("        should be:   (implementation-dependent)\n");
+  neorv32_uart0_printf ("  Discr:             %u\n", (uint32_t)Ptr_Glob->Discr);
+  neorv32_uart0_printf ("        should be:   %u\n", 0);
+  neorv32_uart0_printf ("  Enum_Comp:         %u\n", (uint32_t)Ptr_Glob->variant.var_1.Enum_Comp);
+  neorv32_uart0_printf ("        should be:   %u\n", 2);
+  neorv32_uart0_printf ("  Int_Comp:          %u\n", (uint32_t)Ptr_Glob->variant.var_1.Int_Comp);
+  neorv32_uart0_printf ("        should be:   %u\n", 17);
+  neorv32_uart0_printf ("  Str_Comp:          %s\n", Ptr_Glob->variant.var_1.Str_Comp);
+  neorv32_uart0_printf ("        should be:   DHRYSTONE PROGRAM, SOME STRING\n");
+  neorv32_uart0_printf ("Next_Ptr_Glob->\n");
+  neorv32_uart0_printf ("  Ptr_Comp:          %u\n", (uint32_t) Next_Ptr_Glob->Ptr_Comp);
+  neorv32_uart0_printf ("        should be:   (implementation-dependent), same as above\n");
+  neorv32_uart0_printf ("  Discr:             %u\n", (uint32_t)Next_Ptr_Glob->Discr);
+  neorv32_uart0_printf ("        should be:   %u\n", 0);
+  neorv32_uart0_printf ("  Enum_Comp:         %u\n", (uint32_t)Next_Ptr_Glob->variant.var_1.Enum_Comp);
+  neorv32_uart0_printf ("        should be:   %u\n", 1);
+  neorv32_uart0_printf ("  Int_Comp:          %u\n", (uint32_t)Next_Ptr_Glob->variant.var_1.Int_Comp);
+  neorv32_uart0_printf ("        should be:   %u\n", 18);
+  neorv32_uart0_printf ("  Str_Comp:          %s\n",
                                 Next_Ptr_Glob->variant.var_1.Str_Comp);
-  neorv32_uart_printf ("        should be:   DHRYSTONE PROGRAM, SOME STRING\n");
-  neorv32_uart_printf ("Int_1_Loc:           %u\n", (uint32_t)Int_1_Loc);
-  neorv32_uart_printf ("        should be:   %u\n", 5);
-  neorv32_uart_printf ("Int_2_Loc:           %u\n", (uint32_t)Int_2_Loc);
-  neorv32_uart_printf ("        should be:   %u\n", 13);
-  neorv32_uart_printf ("Int_3_Loc:           %u\n", (uint32_t)Int_3_Loc);
-  neorv32_uart_printf ("        should be:   %u\n", 7);
-  neorv32_uart_printf ("Enum_Loc:            %u\n", (uint32_t)Enum_Loc);
-  neorv32_uart_printf ("        should be:   %u\n", 1);
-  neorv32_uart_printf ("Str_1_Loc:           %s\n", Str_1_Loc);
-  neorv32_uart_printf ("        should be:   DHRYSTONE PROGRAM, 1'ST STRING\n");
-  neorv32_uart_printf ("Str_2_Loc:           %s\n", Str_2_Loc);
-  neorv32_uart_printf ("        should be:   DHRYSTONE PROGRAM, 2'ND STRING\n");
-  neorv32_uart_printf ("\n");
+  neorv32_uart0_printf ("        should be:   DHRYSTONE PROGRAM, SOME STRING\n");
+  neorv32_uart0_printf ("Int_1_Loc:           %u\n", (uint32_t)Int_1_Loc);
+  neorv32_uart0_printf ("        should be:   %u\n", 5);
+  neorv32_uart0_printf ("Int_2_Loc:           %u\n", (uint32_t)Int_2_Loc);
+  neorv32_uart0_printf ("        should be:   %u\n", 13);
+  neorv32_uart0_printf ("Int_3_Loc:           %u\n", (uint32_t)Int_3_Loc);
+  neorv32_uart0_printf ("        should be:   %u\n", 7);
+  neorv32_uart0_printf ("Enum_Loc:            %u\n", (uint32_t)Enum_Loc);
+  neorv32_uart0_printf ("        should be:   %u\n", 1);
+  neorv32_uart0_printf ("Str_1_Loc:           %s\n", Str_1_Loc);
+  neorv32_uart0_printf ("        should be:   DHRYSTONE PROGRAM, 1'ST STRING\n");
+  neorv32_uart0_printf ("Str_2_Loc:           %s\n", Str_2_Loc);
+  neorv32_uart0_printf ("        should be:   DHRYSTONE PROGRAM, 2'ND STRING\n");
+  neorv32_uart0_printf ("\n");
 
   User_Time = End_Time - Begin_Time;
 
 //  if (User_Time < Too_Small_Time)
 //  {
-//    neorv32_uart_printf ("Measured time too small to obtain meaningful results\n");
-//    neorv32_uart_printf ("Please increase number of runs\n");
-//    neorv32_uart_printf ("\n");
+//    neorv32_uart0_printf ("Measured time too small to obtain meaningful results\n");
+//    neorv32_uart0_printf ("Please increase number of runs\n");
+//    neorv32_uart0_printf ("\n");
 //  }
 //  else
   {
@@ -342,33 +342,33 @@ int main (void)
 #endif
 */
     { /* *****  NEORV32-SPECIFIC ***** */
-      neorv32_uart_printf ("Microseconds for one run through Dhrystone: %u \n", (uint32_t)((User_Time * (Mic_secs_Per_Second / Number_Of_Runs)) / NEORV32_SYSINFO.CLK));
+      neorv32_uart0_printf ("Microseconds for one run through Dhrystone: %u \n", (uint32_t)((User_Time * (Mic_secs_Per_Second / Number_Of_Runs)) / NEORV32_SYSINFO.CLK));
 
       uint32_t dhry_per_sec = (uint32_t)(NEORV32_SYSINFO.CLK / (User_Time / Number_Of_Runs));
 
-      neorv32_uart_printf ("Dhrystones per Second:                      %u \n\n", (uint32_t)dhry_per_sec);
+      neorv32_uart0_printf ("Dhrystones per Second:                      %u \n\n", (uint32_t)dhry_per_sec);
 
-      neorv32_uart_printf("NEORV32: << DETAILED RESULTS (integer parts only) >>\n");
-      neorv32_uart_printf("NEORV32: Total cycles:      %u\n", (uint32_t)User_Time);
-      neorv32_uart_printf("NEORV32: Cycles per second: %u\n", (uint32_t)NEORV32_SYSINFO.CLK);
-      neorv32_uart_printf("NEORV32: Total runs:        %u\n", (uint32_t)Number_Of_Runs);
+      neorv32_uart0_printf("NEORV32: << DETAILED RESULTS (integer parts only) >>\n");
+      neorv32_uart0_printf("NEORV32: Total cycles:      %u\n", (uint32_t)User_Time);
+      neorv32_uart0_printf("NEORV32: Cycles per second: %u\n", (uint32_t)NEORV32_SYSINFO.CLK);
+      neorv32_uart0_printf("NEORV32: Total runs:        %u\n", (uint32_t)Number_Of_Runs);
 
-      neorv32_uart_printf("\n");
-      neorv32_uart_printf("NEORV32: DMIPS/s:           %u\n", (uint32_t)dhry_per_sec);
-      neorv32_uart_printf("NEORV32: DMIPS/s/MHz:       %u\n", (uint32_t)(dhry_per_sec / (NEORV32_SYSINFO.CLK / 1000000)));
+      neorv32_uart0_printf("\n");
+      neorv32_uart0_printf("NEORV32: DMIPS/s:           %u\n", (uint32_t)dhry_per_sec);
+      neorv32_uart0_printf("NEORV32: DMIPS/s/MHz:       %u\n", (uint32_t)(dhry_per_sec / (NEORV32_SYSINFO.CLK / 1000000)));
 
-      neorv32_uart_printf("\n");
-      neorv32_uart_printf("NEORV32: VAX DMIPS/s:       %u\n", (uint32_t)dhry_per_sec/1757);
-      neorv32_uart_printf("NEORV32: VAX DMIPS/s/MHz:   %u/1757\n", (uint32_t)(dhry_per_sec / (NEORV32_SYSINFO.CLK / 1000000)));
+      neorv32_uart0_printf("\n");
+      neorv32_uart0_printf("NEORV32: VAX DMIPS/s:       %u\n", (uint32_t)dhry_per_sec/1757);
+      neorv32_uart0_printf("NEORV32: VAX DMIPS/s/MHz:   %u/1757\n", (uint32_t)(dhry_per_sec / (NEORV32_SYSINFO.CLK / 1000000)));
     } /* ***** /NEORV32-SPECIFIC ***** */
     /*
-      neorv32_uart_printf ("Microseconds for one run through Dhrystone: ");
-      //neorv32_uart_printf ("%6.1f \n", Microseconds);
-      neorv32_uart_printf ("%d \n", (int)Microseconds);
-      neorv32_uart_printf ("Dhrystones per Second:                      ");
-      //neorv32_uart_printf ("%6.1f \n", Dhrystones_Per_Second);
-      neorv32_uart_printf ("%d \n", (int)Dhrystones_Per_Second);
-      neorv32_uart_printf ("\n");
+      neorv32_uart0_printf ("Microseconds for one run through Dhrystone: ");
+      //neorv32_uart0_printf ("%6.1f \n", Microseconds);
+      neorv32_uart0_printf ("%d \n", (int)Microseconds);
+      neorv32_uart0_printf ("Dhrystones per Second:                      ");
+      //neorv32_uart0_printf ("%6.1f \n", Dhrystones_Per_Second);
+      neorv32_uart0_printf ("%d \n", (int)Dhrystones_Per_Second);
+      neorv32_uart0_printf ("\n");
     */
   }
 

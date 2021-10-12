@@ -73,7 +73,7 @@ int main() {
   int bus_claimed = 0;
 
   // check if UART unit is implemented at all
-  if (neorv32_uart_available() == 0) {
+  if (neorv32_uart0_available() == 0) {
     return 1;
   }
 
@@ -84,24 +84,24 @@ int main() {
 
 
   // init UART at default baud rate, no parity bits, ho hw flow control
-  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
   // intro
-  neorv32_uart_printf("\n--- TWI Bus Explorer ---\n\n");
+  neorv32_uart0_printf("\n--- TWI Bus Explorer ---\n\n");
 
 
   // check if TWI unit is implemented at all
   if (neorv32_twi_available() == 0) {
-    neorv32_uart_printf("No TWI unit implemented.");
+    neorv32_uart0_printf("No TWI unit implemented.");
     return 1;
   }
 
 
   // info
-  neorv32_uart_printf("This program allows to create TWI transfers by hand.\n"
+  neorv32_uart0_printf("This program allows to create TWI transfers by hand.\n"
                       "Type 'help' to see the help menu.\n\n");
 
   // configure TWI, second slowest clock, no clock-stretching
@@ -112,16 +112,16 @@ int main() {
 
   // Main menu
   for (;;) {
-    neorv32_uart_printf("TWI_EXPLORER:> ");
-    length = neorv32_uart_scan(buffer, 8, 1);
-    neorv32_uart_printf("\n");
+    neorv32_uart0_printf("TWI_EXPLORER:> ");
+    length = neorv32_uart0_scan(buffer, 8, 1);
+    neorv32_uart0_printf("\n");
 
     if (!length) // nothing to be done
      continue;
 
     // decode input and execute command
     if (!strcmp(buffer, "help")) {
-      neorv32_uart_printf("Available commands:\n"
+      neorv32_uart0_printf("Available commands:\n"
                           " help  - show this text\n"
                           " scan  - scan bus for devices\n"
                           " start - generate START condition\n"
@@ -138,7 +138,7 @@ int main() {
     }
     else if (!strcmp(buffer, "stop")) {
       if (bus_claimed == 0) {
-        neorv32_uart_printf("No active I2C transmission.\n");
+        neorv32_uart0_printf("No active I2C transmission.\n");
         continue;
       }
       neorv32_twi_generate_stop(); // generate STOP condition
@@ -152,7 +152,7 @@ int main() {
     }
     else if (!strcmp(buffer, "send")) {
       if (bus_claimed == 0) {
-        neorv32_uart_printf("No active I2C transmission. Generate a START condition first.\n");
+        neorv32_uart0_printf("No active I2C transmission. Generate a START condition first.\n");
         continue;
       }
       else {
@@ -160,7 +160,7 @@ int main() {
       }
     }
     else {
-      neorv32_uart_printf("Invalid command. Type 'help' to see all commands.\n");
+      neorv32_uart0_printf("Invalid command. Type 'help' to see all commands.\n");
     }
   }
 
@@ -175,17 +175,17 @@ void set_speed(void) {
 
   char terminal_buffer[2];
 
-  neorv32_uart_printf("Select new clock prescaler (0..7): ");
-  neorv32_uart_scan(terminal_buffer, 2, 1); // 1 hex char plus '\0'
+  neorv32_uart0_printf("Select new clock prescaler (0..7): ");
+  neorv32_uart0_scan(terminal_buffer, 2, 1); // 1 hex char plus '\0'
   uint8_t prsc = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
   if ((prsc >= 0) && (prsc < 8)) { // valid?
     NEORV32_TWI.CTRL = 0; // reset
     NEORV32_TWI.CTRL = (1 << TWI_CTRL_EN) | (prsc << TWI_CTRL_PRSC0);
-    neorv32_uart_printf("\nDone.\n");
+    neorv32_uart0_printf("\nDone.\n");
   }
   else {
-    neorv32_uart_printf("\nInvalid selection!\n");
+    neorv32_uart0_printf("\nInvalid selection!\n");
     return;
   }
 
@@ -203,7 +203,7 @@ void set_speed(void) {
     default: div = 0; break;
   }
   uint32_t clock = NEORV32_SYSINFO.CLK / div;
-  neorv32_uart_printf("New I2C clock: %u Hz\n", clock);
+  neorv32_uart0_printf("New I2C clock: %u Hz\n", clock);
 }
 
 
@@ -212,20 +212,20 @@ void set_speed(void) {
  **************************************************************************/
 void scan_twi(void) {
 
-  neorv32_uart_printf("Scanning TWI bus...\n");
+  neorv32_uart0_printf("Scanning TWI bus...\n");
   uint8_t i, num_devices = 0;
   for (i=0; i<128; i++) {
     uint8_t twi_ack = neorv32_twi_start_trans((uint8_t)(2*i+1));
     neorv32_twi_generate_stop();
 
     if (twi_ack == 0) {
-      neorv32_uart_printf("+ Found device at write-address 0x%x\n", (uint32_t)(2*i));
+      neorv32_uart0_printf("+ Found device at write-address 0x%x\n", (uint32_t)(2*i));
       num_devices++;
     }
   }
 
   if (!num_devices) {
-    neorv32_uart_printf("No devices found.\n");
+    neorv32_uart0_printf("No devices found.\n");
   }
 }
 
@@ -238,16 +238,16 @@ void send_twi(void) {
   char terminal_buffer[4];
 
   // enter data
-  neorv32_uart_printf("Enter TX data (2 hex chars): ");
-  neorv32_uart_scan(terminal_buffer, 3, 1); // 2 hex chars for address plus '\0'
+  neorv32_uart0_printf("Enter TX data (2 hex chars): ");
+  neorv32_uart0_scan(terminal_buffer, 3, 1); // 2 hex chars for address plus '\0'
   uint8_t tmp = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
   uint8_t res = neorv32_twi_trans(tmp);
-  neorv32_uart_printf("\nRX data:  0x%x\n", (uint32_t)neorv32_twi_get_data());
-  neorv32_uart_printf("Response: ");
+  neorv32_uart0_printf("\nRX data:  0x%x\n", (uint32_t)neorv32_twi_get_data());
+  neorv32_uart0_printf("Response: ");
   if (res == 0)
-    neorv32_uart_printf("ACK\n");
+    neorv32_uart0_printf("ACK\n");
   else
-    neorv32_uart_printf("NACK\n");
+    neorv32_uart0_printf("NACK\n");
 
 }
 

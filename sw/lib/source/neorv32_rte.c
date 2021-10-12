@@ -205,7 +205,7 @@ static void __neorv32_rte_debug_exc_handler(void) {
   char tmp;
 
   // intro
-  neorv32_uart_print("<RTE> ");
+  neorv32_uart0_print("<RTE> ");
 
   // cause
   register uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
@@ -217,19 +217,19 @@ static void __neorv32_rte_debug_exc_handler(void) {
     tmp = '0' + tmp;
   }
   switch (trap_cause) {
-    case TRAP_CODE_I_MISALIGNED: neorv32_uart_print("Instruction address misaligned"); break;
-    case TRAP_CODE_I_ACCESS:     neorv32_uart_print("Instruction access fault"); break;
-    case TRAP_CODE_I_ILLEGAL:    neorv32_uart_print("Illegal instruction"); break;
-    case TRAP_CODE_BREAKPOINT:   neorv32_uart_print("Breakpoint"); break;
-    case TRAP_CODE_L_MISALIGNED: neorv32_uart_print("Load address misaligned"); break;
-    case TRAP_CODE_L_ACCESS:     neorv32_uart_print("Load access fault"); break;
-    case TRAP_CODE_S_MISALIGNED: neorv32_uart_print("Store address misaligned"); break;
-    case TRAP_CODE_S_ACCESS:     neorv32_uart_print("Store access fault"); break;
-    case TRAP_CODE_UENV_CALL:    neorv32_uart_print("Environment call from U-mode"); break;
-    case TRAP_CODE_MENV_CALL:    neorv32_uart_print("Environment call from M-mode"); break;
-    case TRAP_CODE_MSI:          neorv32_uart_print("Machine software interrupt"); break;
-    case TRAP_CODE_MTI:          neorv32_uart_print("Machine timer interrupt"); break;
-    case TRAP_CODE_MEI:          neorv32_uart_print("Machine external interrupt"); break;
+    case TRAP_CODE_I_MISALIGNED: neorv32_uart0_print("Instruction address misaligned"); break;
+    case TRAP_CODE_I_ACCESS:     neorv32_uart0_print("Instruction access fault"); break;
+    case TRAP_CODE_I_ILLEGAL:    neorv32_uart0_print("Illegal instruction"); break;
+    case TRAP_CODE_BREAKPOINT:   neorv32_uart0_print("Breakpoint"); break;
+    case TRAP_CODE_L_MISALIGNED: neorv32_uart0_print("Load address misaligned"); break;
+    case TRAP_CODE_L_ACCESS:     neorv32_uart0_print("Load access fault"); break;
+    case TRAP_CODE_S_MISALIGNED: neorv32_uart0_print("Store address misaligned"); break;
+    case TRAP_CODE_S_ACCESS:     neorv32_uart0_print("Store access fault"); break;
+    case TRAP_CODE_UENV_CALL:    neorv32_uart0_print("Environment call from U-mode"); break;
+    case TRAP_CODE_MENV_CALL:    neorv32_uart0_print("Environment call from M-mode"); break;
+    case TRAP_CODE_MSI:          neorv32_uart0_print("Machine software interrupt"); break;
+    case TRAP_CODE_MTI:          neorv32_uart0_print("Machine timer interrupt"); break;
+    case TRAP_CODE_MEI:          neorv32_uart0_print("Machine external interrupt"); break;
     case TRAP_CODE_FIRQ_0:
     case TRAP_CODE_FIRQ_1:
     case TRAP_CODE_FIRQ_2:
@@ -245,18 +245,18 @@ static void __neorv32_rte_debug_exc_handler(void) {
     case TRAP_CODE_FIRQ_12:
     case TRAP_CODE_FIRQ_13:
     case TRAP_CODE_FIRQ_14:
-    case TRAP_CODE_FIRQ_15:      neorv32_uart_print("Fast interrupt "); neorv32_uart_putc(tmp); break;
-    default:                     neorv32_uart_print("Unknown trap cause: "); __neorv32_rte_print_hex_word(trap_cause); break;
+    case TRAP_CODE_FIRQ_15:      neorv32_uart0_print("Fast interrupt "); neorv32_uart0_putc(tmp); break;
+    default:                     neorv32_uart0_print("Unknown trap cause: "); __neorv32_rte_print_hex_word(trap_cause); break;
   }
 
   // instruction address
-  neorv32_uart_print(" @ PC=");
+  neorv32_uart0_print(" @ PC=");
   __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MSCRATCH)); // rte core stores actual mepc to mscratch
 
   // additional info
-  neorv32_uart_print(", MTVAL=");
+  neorv32_uart0_print(", MTVAL=");
   __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL));
-  neorv32_uart_print(" </RTE>");
+  neorv32_uart0_print(" </RTE>");
 }
 
 
@@ -273,7 +273,7 @@ void neorv32_rte_print_hw_config(void) {
   int i;
   char c;
 
-  neorv32_uart_printf("\n\n<<< Processor Configuration Overview >>>\n");
+  neorv32_uart0_printf("\n\n<<< Processor Configuration Overview >>>\n");
 
   // CPU configuration
   neorv32_uart0_printf("\n=== << CPU >> ===\n");
@@ -630,7 +630,7 @@ void neorv32_rte_print_license(void) {
     return; // cannot output anything if UART0 is not implemented
   }
 
-  neorv32_uart_print(
+  neorv32_uart0_print(
   "\n"
   "BSD 3-Clause License\n"
   "\n"
@@ -736,7 +736,7 @@ int neorv32_rte_check_isa(int silent) {
   }
   else {
     if ((silent == 0) || (neorv32_uart0_available() == 0)) {
-      neorv32_uart_printf("\nWARNING! SW_ISA (features required) vs HW_ISA (features available) mismatch!\n"
+      neorv32_uart0_printf("\nWARNING! SW_ISA (features required) vs HW_ISA (features available) mismatch!\n"
                           "SW_ISA = 0x%x (compiler flags)\n"
                           "HW_ISA = 0x%x (misa csr)\n\n", misa_sw, misa_hw);
     }

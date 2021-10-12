@@ -683,9 +683,9 @@ uart_send_char(char c)
 
   /* NEORV32-specific */
   if (c == '\n') {
-    neorv32_uart_putc('\r');
+    neorv32_uart0_putc('\r');
   }
-  neorv32_uart_putc(c);
+  neorv32_uart0_putc(c);
 }
 
 int

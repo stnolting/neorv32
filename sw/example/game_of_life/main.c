@@ -87,7 +87,7 @@ uint32_t xorshift32(void);
 int main(void) {
 
   // check if UART unit is implemented at all
-  if (neorv32_uart_available() == 0) {
+  if (neorv32_uart0_available() == 0) {
     return 1;
   }
 
@@ -98,7 +98,7 @@ int main(void) {
 
 
   // init UART at default baud rate, no parity bits, ho hw flow control
-  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
@@ -118,22 +118,22 @@ int main(void) {
     clear_universe(1);
 
     // intro
-    neorv32_uart_printf("\n\n<<< Conways's Game of Life >>>\n\n");
-    neorv32_uart_printf("This program requires a terminal resolution of at least %ux%u characters.\n", NUM_CELLS_X+2, NUM_CELLS_Y+3);
-    neorv32_uart_printf("Press any key to start a random-initialized torus-style universe of %ux%u cells.\n", NUM_CELLS_X, NUM_CELLS_Y);
-    neorv32_uart_printf("You can pause/restart the simulation by pressing any key.\n");
+    neorv32_uart0_printf("\n\n<<< Conways's Game of Life >>>\n\n");
+    neorv32_uart0_printf("This program requires a terminal resolution of at least %ux%u characters.\n", NUM_CELLS_X+2, NUM_CELLS_Y+3);
+    neorv32_uart0_printf("Press any key to start a random-initialized torus-style universe of %ux%u cells.\n", NUM_CELLS_X, NUM_CELLS_Y);
+    neorv32_uart0_printf("You can pause/restart the simulation by pressing any key.\n");
 
 
     // check if TRNG was synthesized
     if (neorv32_trng_available()) {
-      neorv32_uart_printf("\nTRNG detected. Using TRNG for universe initialization.\n");
+      neorv32_uart0_printf("\nTRNG detected. Using TRNG for universe initialization.\n");
       neorv32_trng_enable();
       trng_available = 1;
     }
 
 
     // randomize until key pressed
-    while (neorv32_uart_char_received() == 0) {
+    while (neorv32_uart0_char_received() == 0) {
       xorshift32();
     }
 
@@ -145,7 +145,7 @@ int main(void) {
           while (1) {
             int err = neorv32_trng_get(&trng_data);
             if (err) {
-              neorv32_uart_printf("TRNG error (%i)! Restarting TRNG...\n", err);
+              neorv32_uart0_printf("TRNG error (%i)! Restarting TRNG...\n", err);
               continue;
             }
             else {
@@ -164,15 +164,15 @@ int main(void) {
     while(1) {
 
       // user abort?
-      if (neorv32_uart_char_received()) {
-        neorv32_uart_printf("\nRestart (y/n)?");
-        if (neorv32_uart_getc() == 'y') {
+      if (neorv32_uart0_char_received()) {
+        neorv32_uart0_printf("\nRestart (y/n)?");
+        if (neorv32_uart0_getc() == 'y') {
           break;
         }
       }
 
       // print generation, population count and the current universe
-      neorv32_uart_printf("\n\nGeneration %u: %u/%u living cells\n", (uint32_t)generation, (uint32_t)pop_count(u), NUM_CELLS_X*NUM_CELLS_Y);
+      neorv32_uart0_printf("\n\nGeneration %u: %u/%u living cells\n", (uint32_t)generation, (uint32_t)pop_count(u), NUM_CELLS_X*NUM_CELLS_Y);
       print_universe(u);
 
       // compute next generation
@@ -216,35 +216,35 @@ void print_universe(int u){
 
   int16_t x, y;
 
-  neorv32_uart_putc('+');
+  neorv32_uart0_putc('+');
   for (x=0; x<NUM_CELLS_X; x++) {
-    neorv32_uart_putc('-');
+    neorv32_uart0_putc('-');
   }
-  neorv32_uart_putc('+');
-  neorv32_uart_putc('\r');
-  neorv32_uart_putc('\n');
+  neorv32_uart0_putc('+');
+  neorv32_uart0_putc('\r');
+  neorv32_uart0_putc('\n');
 
   for (y=0; y<NUM_CELLS_Y; y++) {
-    neorv32_uart_putc('|');
+    neorv32_uart0_putc('|');
    
     for (x=0; x<NUM_CELLS_X; x++) {
       if (get_cell(u, x, y))
-        neorv32_uart_putc((char)CELL_ALIVE);
+        neorv32_uart0_putc((char)CELL_ALIVE);
       else
-        neorv32_uart_putc((char)CELL_DEAD);
+        neorv32_uart0_putc((char)CELL_DEAD);
     }
 
     // end of line
-    neorv32_uart_putc('|');
-    neorv32_uart_putc('\r');
-    neorv32_uart_putc('\n');
+    neorv32_uart0_putc('|');
+    neorv32_uart0_putc('\r');
+    neorv32_uart0_putc('\n');
   }
 
-  neorv32_uart_putc('+');
+  neorv32_uart0_putc('+');
   for (x=0; x<NUM_CELLS_X; x++) {
-    neorv32_uart_putc('-');
+    neorv32_uart0_putc('-');
   }
-  neorv32_uart_putc('+');
+  neorv32_uart0_putc('+');
 }
 
 

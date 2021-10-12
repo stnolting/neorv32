@@ -106,7 +106,7 @@ int main( void )
 	prvSetupHardware();
 
   /* say hi */
-  neorv32_uart_printf("FreeRTOS %s on NEORV32 Demo\n\n", tskKERNEL_VERSION_NUMBER);
+  neorv32_uart0_printf("FreeRTOS %s on NEORV32 Demo\n\n", tskKERNEL_VERSION_NUMBER);
 
 	/* The mainCREATE_SIMPLE_BLINKY_DEMO_ONLY setting is described at the top
 	of this file. */
@@ -128,7 +128,7 @@ static void prvSetupHardware( void )
   neorv32_gpio_port_set(0);
 
   // init UART at default baud rate, no parity bits, ho hw flow control
-  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
@@ -145,7 +145,7 @@ void vToggleLED( void )
 
 void vSendString( const char * pcString )
 {
-	neorv32_uart_print( ( const char * ) pcString );
+	neorv32_uart0_print( ( const char * ) pcString );
 }
 
 /*-----------------------------------------------------------*/
@@ -163,7 +163,7 @@ void vApplicationMallocFailedHook( void )
 	to query the size of free heap space that remains (although it does not
 	provide information on how the remaining heap might be fragmented). */
 	taskDISABLE_INTERRUPTS();
-  neorv32_uart_print("FreeRTOS_FAULT: vApplicationMallocFailedHook (solution: increase 'configTOTAL_HEAP_SIZE' in FreeRTOSConfig.h)\n");
+  neorv32_uart0_print("FreeRTOS_FAULT: vApplicationMallocFailedHook (solution: increase 'configTOTAL_HEAP_SIZE' in FreeRTOSConfig.h)\n");
 	__asm volatile( "ebreak" );
 	for( ;; );
 }
@@ -194,7 +194,7 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
 	configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2.  This hook
 	function is called if a stack overflow is detected. */
 	taskDISABLE_INTERRUPTS();
-  neorv32_uart_print("FreeRTOS_FAULT: vApplicationStackOverflowHook\n");
+  neorv32_uart0_print("FreeRTOS_FAULT: vApplicationStackOverflowHook\n");
 	__asm volatile( "ebreak" );
 	for( ;; );
 }
@@ -217,7 +217,7 @@ void vApplicationTickHook( void )
 /* This handler is responsible for handling all interrupts. Only the machine timer interrupt is handled by the kernel. */
 void SystemIrqHandler( uint32_t mcause )
 {
-  neorv32_uart_printf("freeRTOS: Unknown interrupt (0x%x)\n", mcause);
+  neorv32_uart0_printf("freeRTOS: Unknown interrupt (0x%x)\n", mcause);
 }
 
 
@@ -232,8 +232,8 @@ void SystemIrqHandler( uint32_t mcause )
 int main() {
 
   // init UART at default baud rate, no parity bits, ho hw flow control
-  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
-  neorv32_uart_print("ERROR! FreeRTOS has not been compiled. Use >>make USER_FLAGS+=-DRUN_FREERTOS_DEMO clean_all exe<< to compile it.\n");
+  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  neorv32_uart0_print("ERROR! FreeRTOS has not been compiled. Use >>make USER_FLAGS+=-DRUN_FREERTOS_DEMO clean_all exe<< to compile it.\n");
   return 1;
 }
 #endif

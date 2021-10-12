@@ -49,7 +49,7 @@
 // Libs required by functions
 #include <stdarg.h>
 
-// compatibility wrappers (mapping to primary UART -> UART0)
+// compatibility wrappers (mapping to primary UART -> UART0) (OBSOLETE, do not use for new designs!)
 int  neorv32_uart_available(void);
 void neorv32_uart_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
 void neorv32_uart_disable(void);

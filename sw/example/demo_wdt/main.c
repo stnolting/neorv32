@@ -66,7 +66,7 @@ int main() {
   }
 
   // check if UART unit is implemented at all
-  if (neorv32_uart_available() == 0) {
+  if (neorv32_uart0_available() == 0) {
     return 1; // nope, no UART unit synthesized
   }
 
@@ -76,27 +76,27 @@ int main() {
   neorv32_rte_setup();
 
   // init UART at default baud rate, no parity bits, ho hw flow control
-  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
   // simple text output via UART (strings only)
-  neorv32_uart_print("\nWatchdog system reset demo program\n\n");
+  neorv32_uart0_print("\nWatchdog system reset demo program\n\n");
 
 
   // show the cause of the last processor reset
-  neorv32_uart_print("Cause of last processor reset: ");
+  neorv32_uart0_print("Cause of last processor reset: ");
   uint8_t wdt_cause = neorv32_wdt_get_cause();
 
   if (wdt_cause == 0) {
-    neorv32_uart_print("External reset\n");
+    neorv32_uart0_print("External reset\n");
   }
   else if (wdt_cause == 1) {
-    neorv32_uart_print("Watchdog\n");
+    neorv32_uart0_print("Watchdog\n");
   }
   else {
-    neorv32_uart_print("Undefined\n");
+    neorv32_uart0_print("Undefined\n");
   }
 
 
@@ -109,7 +109,7 @@ int main() {
 
 
 
-  neorv32_uart_print("\n\nWill reset WDT 64 times.\n"
+  neorv32_uart0_print("\n\nWill reset WDT 64 times.\n"
                      "A system reset will be executed in the following time out.\n"
                      "Press any key to trigger manual WDT hardware reset by WDT access with wrong password.\n"
                      "Restart this program after reset to check for the reset cause.\n\n"
@@ -117,18 +117,18 @@ int main() {
 
   uint8_t i;
   for (i=0; i<64; i++) {
-    neorv32_uart_putc('.');
+    neorv32_uart0_putc('.');
     neorv32_wdt_reset(); // reset watchdog
     neorv32_cpu_delay_ms(80); // wait some time
 
     // trigger manual reset if key pressed
-    if (neorv32_uart_char_received()) { // just check, if a char has been received
+    if (neorv32_uart0_char_received()) { // just check, if a char has been received
       neorv32_wdt_force(); // access wdt with wrong password
     }
   }
 
   while (1) { // wait for the watchdog time-out or trigger manual reset if key pressed
-    if (neorv32_uart_char_received()) { // just check, if a char has been received
+    if (neorv32_uart0_char_received()) { // just check, if a char has been received
       neorv32_wdt_force(); // access wdt with wrong password
     }
   }

@@ -74,11 +74,11 @@ void blink_led_c(void);
 int main() {
 
   // init UART (primary UART = UART0; if no id number is specified the primary UART is used) at default baud rate, no parity bits, ho hw flow control
-  neorv32_uart_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // check if GPIO unit is implemented at all
   if (neorv32_gpio_available() == 0) {
-    neorv32_uart_print("Error! No GPIO unit synthesized!\n");
+    neorv32_uart0_print("Error! No GPIO unit synthesized!\n");
     return 1; // nope, no GPIO unit synthesized
   }
 
@@ -87,7 +87,7 @@ int main() {
   neorv32_rte_setup();
 
   // say hello
-  neorv32_uart_print("Blinking LED demo program\n");
+  neorv32_uart0_print("Blinking LED demo program\n");
 
 
 // use ASM version of LED blinking (file: blink_led_in_asm.S)
