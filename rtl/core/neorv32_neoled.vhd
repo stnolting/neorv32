@@ -14,7 +14,7 @@
 -- # (for RGBW modules) and 24-bit transfers (for RGB modules) are supported via ctrl_mode__c.     #
 -- #                                                                                               #
 -- # The device features a TX buffer (FIFO) with <FIFO_DEPTH> entries. An IRQ is triggered if the  #
--- # FIFO falls below "half-full" fill level.                                                      #
+-- # FIFO fill level is below "half-full".                                                         #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -90,41 +90,41 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
   signal rden   : std_ulogic; -- read enable
 
   -- Control register bits --
-  constant ctrl_enable_c    : natural :=  0; -- r/w: module enable
-  constant ctrl_mode_c      : natural :=  1; -- r/w: 0 = 24-bit RGB mode, 1 = 32-bit RGBW mode
-  constant ctrl_strobe_c    : natural :=  2; -- r/w: 0 = send normal data, 1 = send LED strobe command (RESET) on data write
+  constant ctrl_enable_c   : natural :=  0; -- r/w: module enable
+  constant ctrl_mode_c     : natural :=  1; -- r/w: 0 = 24-bit RGB mode, 1 = 32-bit RGBW mode
+  constant ctrl_strobe_c   : natural :=  2; -- r/w: 0 = send normal data, 1 = send LED strobe command (RESET) on data write
   --
-  constant ctrl_clksel0_c   : natural :=  3; -- r/w: prescaler select bit 0
-  constant ctrl_clksel1_c   : natural :=  4; -- r/w: prescaler select bit 1
-  constant ctrl_clksel2_c   : natural :=  5; -- r/w: prescaler select bit 2
+  constant ctrl_clksel0_c  : natural :=  3; -- r/w: prescaler select bit 0
+  constant ctrl_clksel1_c  : natural :=  4; -- r/w: prescaler select bit 1
+  constant ctrl_clksel2_c  : natural :=  5; -- r/w: prescaler select bit 2
   --
-  constant ctrl_bufs_0_c    : natural :=  6; -- r/-: log2(FIFO_DEPTH) bit 0
-  constant ctrl_bufs_1_c    : natural :=  7; -- r/-: log2(FIFO_DEPTH) bit 1
-  constant ctrl_bufs_2_c    : natural :=  8; -- r/-: log2(FIFO_DEPTH) bit 2
-  constant ctrl_bufs_3_c    : natural :=  9; -- r/-: log2(FIFO_DEPTH) bit 3
+  constant ctrl_bufs_0_c   : natural :=  6; -- r/-: log2(FIFO_DEPTH) bit 0
+  constant ctrl_bufs_1_c   : natural :=  7; -- r/-: log2(FIFO_DEPTH) bit 1
+  constant ctrl_bufs_2_c   : natural :=  8; -- r/-: log2(FIFO_DEPTH) bit 2
+  constant ctrl_bufs_3_c   : natural :=  9; -- r/-: log2(FIFO_DEPTH) bit 3
   --
-  constant ctrl_t_tot_0_c   : natural := 10; -- r/w: pulse-clock ticks per total period bit 0
-  constant ctrl_t_tot_1_c   : natural := 11; -- r/w: pulse-clock ticks per total period bit 1
-  constant ctrl_t_tot_2_c   : natural := 12; -- r/w: pulse-clock ticks per total period bit 2
-  constant ctrl_t_tot_3_c   : natural := 13; -- r/w: pulse-clock ticks per total period bit 3
-  constant ctrl_t_tot_4_c   : natural := 14; -- r/w: pulse-clock ticks per total period bit 4
+  constant ctrl_t_tot_0_c  : natural := 10; -- r/w: pulse-clock ticks per total period bit 0
+  constant ctrl_t_tot_1_c  : natural := 11; -- r/w: pulse-clock ticks per total period bit 1
+  constant ctrl_t_tot_2_c  : natural := 12; -- r/w: pulse-clock ticks per total period bit 2
+  constant ctrl_t_tot_3_c  : natural := 13; -- r/w: pulse-clock ticks per total period bit 3
+  constant ctrl_t_tot_4_c  : natural := 14; -- r/w: pulse-clock ticks per total period bit 4
   --
-  constant ctrl_t_0h_0_c    : natural := 15; -- r/w: pulse-clock ticks per ZERO high-time bit 0
-  constant ctrl_t_0h_1_c    : natural := 16; -- r/w: pulse-clock ticks per ZERO high-time bit 1
-  constant ctrl_t_0h_2_c    : natural := 17; -- r/w: pulse-clock ticks per ZERO high-time bit 2
-  constant ctrl_t_0h_3_c    : natural := 18; -- r/w: pulse-clock ticks per ZERO high-time bit 3
-  constant ctrl_t_0h_4_c    : natural := 19; -- r/w: pulse-clock ticks per ZERO high-time bit 4
+  constant ctrl_t_0h_0_c   : natural := 15; -- r/w: pulse-clock ticks per ZERO high-time bit 0
+  constant ctrl_t_0h_1_c   : natural := 16; -- r/w: pulse-clock ticks per ZERO high-time bit 1
+  constant ctrl_t_0h_2_c   : natural := 17; -- r/w: pulse-clock ticks per ZERO high-time bit 2
+  constant ctrl_t_0h_3_c   : natural := 18; -- r/w: pulse-clock ticks per ZERO high-time bit 3
+  constant ctrl_t_0h_4_c   : natural := 19; -- r/w: pulse-clock ticks per ZERO high-time bit 4
   --
-  constant ctrl_t_1h_0_c    : natural := 20; -- r/w: pulse-clock ticks per ONE high-time bit 0
-  constant ctrl_t_1h_1_c    : natural := 21; -- r/w: pulse-clock ticks per ONE high-time bit 1
-  constant ctrl_t_1h_2_c    : natural := 22; -- r/w: pulse-clock ticks per ONE high-time bit 2
-  constant ctrl_t_1h_3_c    : natural := 23; -- r/w: pulse-clock ticks per ONE high-time bit 3
-  constant ctrl_t_1h_4_c    : natural := 24; -- r/w: pulse-clock ticks per ONE high-time bit 4
+  constant ctrl_t_1h_0_c   : natural := 20; -- r/w: pulse-clock ticks per ONE high-time bit 0
+  constant ctrl_t_1h_1_c   : natural := 21; -- r/w: pulse-clock ticks per ONE high-time bit 1
+  constant ctrl_t_1h_2_c   : natural := 22; -- r/w: pulse-clock ticks per ONE high-time bit 2
+  constant ctrl_t_1h_3_c   : natural := 23; -- r/w: pulse-clock ticks per ONE high-time bit 3
+  constant ctrl_t_1h_4_c   : natural := 24; -- r/w: pulse-clock ticks per ONE high-time bit 4
   --
-  constant ctrl_tx_empty_c  : natural := 28; -- r/-: TX FIFO is empty
-  constant ctrl_tx_half_c   : natural := 29; -- r/-: TX FIFO is at least half-full
-  constant ctrl_tx_full_c   : natural := 30; -- r/-: TX FIFO is full
-  constant ctrl_tx_busy_c   : natural := 31; -- r/-: serial TX engine busy when set
+  constant ctrl_tx_empty_c : natural := 28; -- r/-: TX FIFO is empty
+  constant ctrl_tx_half_c  : natural := 29; -- r/-: TX FIFO is at least half-full
+  constant ctrl_tx_full_c  : natural := 30; -- r/-: TX FIFO is full
+  constant ctrl_tx_busy_c  : natural := 31; -- r/-: serial TX engine busy when set
 
   -- control register --
   type ctrl_t is record
@@ -144,7 +144,6 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
     we    : std_ulogic; -- write enable
     re    : std_ulogic; -- read enable
     clear : std_ulogic; -- sync reset, high-active
-    level : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0);
     wdata : std_ulogic_vector(31+2 downto 0); -- write data (excluding mode)
     rdata : std_ulogic_vector(31+2 downto 0); -- read data (including mode)
     avail : std_ulogic; -- data available?
@@ -265,7 +264,8 @@ begin
     clk_i   => clk_i,           -- clock, rising edge
     rstn_i  => '1',             -- async reset, low-active
     clear_i => tx_buffer.clear, -- sync reset, high-active
-    level_o => tx_buffer.level, -- fill level
+    level_o => open,            -- fill level
+    half_o  => tx_buffer.half,  -- FIFO is at least half full
     -- write port --
     wdata_i => tx_buffer.wdata, -- write data
     we_i    => tx_buffer.we,    -- write enable
@@ -276,8 +276,8 @@ begin
     avail_o => tx_buffer.avail  -- data available when set
   );
 
-  -- FIFO half-full? --
-  tx_buffer.half <= '1' when (unsigned(tx_buffer.level) >= to_unsigned(cond_sel_natural_f(boolean(FIFO_DEPTH > 1), FIFO_DEPTH/2, 1), tx_buffer.level'length)) else '0';
+  -- try to get new TX data --
+  tx_buffer.re <= '1' when (serial.state = S_IDLE) else '0';
 
 
   -- Serial TX Engine -----------------------------------------------------------------------
@@ -324,16 +324,17 @@ begin
             serial.sreg      <= serial.sreg(serial.sreg'left-1 downto 0) & '0'; -- shift left by one position (MSB-first)
             serial.bit_cnt   <= std_ulogic_vector(unsigned(serial.bit_cnt) - 1);
             serial.pulse_cnt <= (others => '0');
+            if (serial.next_bit = '0') then -- send zero-bit
+              serial.t_high <= ctrl.t0_high;
+            else -- send one-bit
+              serial.t_high <= ctrl.t1_high;
+            end if;
             if (serial.bit_cnt = "000000") then -- all done?
-              serial.state <= S_IDLE;
-            else -- check current data MSB
-              if (serial.next_bit = '0') then -- send zero-bit
-                serial.t_high <= ctrl.t0_high;
-              else -- send one-bit
-                serial.t_high <= ctrl.t1_high;
-              end if;
-              serial.state  <= S_PULSE; -- transmit single pulse
+              serial.tx_out <= '0';
+              serial.state  <= S_IDLE;
+            else -- send current data MSB
               serial.tx_out <= '1';
+              serial.state  <= S_PULSE; -- transmit single pulse
             end if;
 
           when S_PULSE => -- send pulse with specific duty cycle
@@ -383,11 +384,8 @@ begin
   -- SREG's TX data: bit 23 for RGB mode (24-bit), bit 31 for RGBW mode (32-bit) --
   serial.next_bit <= serial.sreg(23) when (serial.mode = '0') else serial.sreg(31);
 
-  -- get new TX data --
-  tx_buffer.re <= '1' when (serial.state = S_IDLE) and (tx_buffer.avail = '1') else '0';
-
   -- TX engine status --
-  serial.busy <= '0' when (serial.state = S_IDLE) or (ctrl.enable = '0') else '1';
+  serial.busy <= '0' when (serial.state = S_IDLE) else '1';
 
 
 end neorv32_neoled_rtl;

@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 12.10.2021 | 1.6.1.8 | added dedicated `half_o` signal to FIFO component (FIFO _at least_ half-full), simplifies half-full test logic in FIFO-utilizing modules (area footprint and critical path); minor logic/hardware optimization of NEOLED module |
 | 09.10.2021 | 1.6.1.7 | :warning: reworked _fast interrupt requests_ (FIRQ) CPU interrupt system: fast interrupt requests are now also high-level-triggered (like the RISC-V standard interrupts) and stay asserted until explicitly acknowledged by software ([PR #176](https://github.com/stnolting/neorv32/pull/176)) |
 | 06.10.2021 | 1.6.1.6 | :bug: fixed bugs in signal assignments and processor configuration of `setups/radiant/UPduino_v3` setup; minor CPU HPM counter fix (architecture condition for "multi-cycle ALU wait cycle" HPM event) |
 | 05.10.2021 | 1.6.1.5 | :sparkles: :lock: the CPU now ensures that _all_ illegal instructions _do not commit_ any potential architecture state changes (like writing registers or triggering memory accesses); CPU logic optimization (smaller footprint) |

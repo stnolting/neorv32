@@ -119,11 +119,7 @@ architecture neorv32_slink_rtl of neorv32_slink is
 
   -- stream link fifo interface --
   type fifo_data_t is array (0 to 7) of std_ulogic_vector(31 downto 0);
-  type fifo_rx_level_t is array (0 to 7) of std_ulogic_vector(index_size_f(SLINK_RX_FIFO) downto 0);
-  type fifo_tx_level_t is array (0 to 7) of std_ulogic_vector(index_size_f(SLINK_TX_FIFO) downto 0);
   signal rx_fifo_rdata : fifo_data_t;
-  signal rx_fifo_level : fifo_rx_level_t;
-  signal tx_fifo_level : fifo_tx_level_t;
   signal fifo_clear    : std_ulogic;
   signal link_sel      : std_ulogic_vector(7 downto 0);
   signal tx_fifo_we    : std_ulogic_vector(7 downto 0);
@@ -207,27 +203,6 @@ begin
   fifo_clear <= not enable;
 
 
-  -- FIFO Level Monitoring ------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  level_monitor: process(rx_fifo_level, tx_fifo_level)
-  begin
-    -- RX FIFO --
-    rx_fifo_half <= (others => '0');
-    for i in 0 to SLINK_NUM_RX-1 loop
-      if (unsigned(rx_fifo_level(i)) >= to_unsigned(cond_sel_natural_f(boolean(SLINK_RX_FIFO > 1), SLINK_RX_FIFO/2, 1), rx_fifo_level(i)'length)) then
-        rx_fifo_half(i) <= '1';
-      end if;
-    end loop;
-    -- TX FIFO --
-    tx_fifo_half <= (others => '0');
-    for i in 0 to SLINK_NUM_TX-1 loop
-      if (unsigned(tx_fifo_level(i)) >= to_unsigned(cond_sel_natural_f(boolean(SLINK_TX_FIFO > 1), SLINK_TX_FIFO/2, 1), tx_fifo_level(i)'length)) then
-        tx_fifo_half(i) <= '1';
-      end if;
-    end loop;
-  end process level_monitor;
-
-
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   irq_arbiter: process(clk_i)
@@ -294,7 +269,8 @@ begin
       clk_i   => clk_i,             -- clock, rising edge
       rstn_i  => '1',               -- async reset, low-active
       clear_i => fifo_clear,        -- sync reset, high-active
-      level_o => tx_fifo_level(i),  -- fill level
+      level_o => open,              -- fill level
+      half_o  => tx_fifo_half(i),   -- FIFO is at least half full
       -- write port --
       wdata_i => data_i,            -- write data
       we_i    => tx_fifo_we(i),     -- write enable
@@ -312,7 +288,7 @@ begin
     tx_fifo_free(i)   <= '0';
     slink_tx_dat_o(i) <= (others => '0');
     slink_tx_val_o(i) <= '0';
-    tx_fifo_level(i)  <= (others => '0');
+    tx_fifo_half(i)   <= '0';
   end generate;
 
 
@@ -332,7 +308,8 @@ begin
       clk_i   => clk_i,             -- clock, rising edge
       rstn_i  => '1',               -- async reset, low-active
       clear_i => fifo_clear,        -- sync reset, high-active
-      level_o => rx_fifo_level(i),  -- fill level
+      level_o => open,              -- fill level
+      half_o  => rx_fifo_half(i),   -- FIFO is at least half full
       -- write port --
       wdata_i => slink_rx_dat_i(i), -- write data
       we_i    => slink_rx_val_i(i), -- write enable
@@ -350,7 +327,7 @@ begin
     rx_fifo_avail(i)  <= '0';
     slink_rx_rdy_o(i) <= '0';
     rx_fifo_rdata(i)  <= (others => '0');
-    rx_fifo_level(i)  <= (others => '0');
+    rx_fifo_half(i)   <= '0';
   end generate;
 
 
