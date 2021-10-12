@@ -232,7 +232,8 @@ begin
     IO_CFS_CONFIG                => (others => '0'), -- custom CFS configuration generic
     IO_CFS_IN_SIZE               => 32,            -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              => 32,            -- size of CFS output conduit in bits
-    IO_NEOLED_EN                 => true           -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_NEOLED_EN                 => true,          -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_NEOLED_TX_FIFO            => 8              -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
   )
   port map (
     -- Global control --
