@@ -376,7 +376,7 @@ A simple `printf` can be used to inform the user when the application main funct
 ----
 int __neorv32_crt0_after_main(int32_t return_code) {
 
-  neorv32_uart_printf("Main returned with code: %i\n", return_code);
+  neorv32_uart0_printf("Main returned with code: %i\n", return_code);
   return 0;
 }
 ----

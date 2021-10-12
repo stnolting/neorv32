@@ -17,12 +17,10 @@
 |                          | fast IRQ channel 3 | TX done interrupt (see <<_processor_interrupts>>)
 |=======================
 
-[IMPORTANT]
+[NOTE]
 Please note that ALL default example programs and software libraries of the NEORV32 software
 framework (including the bootloader and the runtime environment) use the primary UART
-(_UART0_) as default user console interface. For compatibility, all C-language function calls to
-`neorv32_uart_*` are mapped to the according primary UART (_UART0_) `neorv32_uart0_*`
-functions.
+(_UART0_) as default user console interface.
 
 **Theory of Operation**
 
