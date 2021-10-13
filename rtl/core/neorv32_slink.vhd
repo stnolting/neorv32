@@ -215,11 +215,11 @@ begin
             when "01" => -- IRQ configuration register
               for i in 0 to SLINK_NUM_RX-1 loop
                 data_o(irq_rx_en_lsb_c   + i) <= irq_rx_en(i);
-                data_o(irq_rx_mode_lsb_c + i) <= irq_rx_mode(i);
+                data_o(irq_rx_mode_lsb_c + i) <= irq_rx_mode(i) or bool_to_ulogic_f(boolean(SLINK_RX_FIFO = 1)); -- tie to one if SLINK_RX_FIFO is 1
               end loop;
               for i in 0 to SLINK_NUM_TX-1 loop
                 data_o(irq_tx_en_lsb_c   + i) <= irq_tx_en(i);
-                data_o(irq_tx_mode_lsb_c + i) <= irq_tx_mode(i);
+                data_o(irq_tx_mode_lsb_c + i) <= irq_tx_mode(i) or bool_to_ulogic_f(boolean(SLINK_TX_FIFO = 1)); -- tie to one if SLINK_TX_FIFO is 1
               end loop;
             when "10" | "11" => -- fifo status register
               data_o(status_rx_avail_msb_c downto status_rx_avail_lsb_c) <= rx_fifo_avail;
