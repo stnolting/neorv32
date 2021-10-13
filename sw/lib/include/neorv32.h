@@ -611,7 +611,7 @@ enum NEORV32_PWM_CTRL_enum {
 typedef struct __attribute__((packed,aligned(4))) {
 	uint32_t       CTRL;         /**< offset 0: control register (#NEORV32_SLINK_CTRL_enum) */
   const uint32_t reserved[3];  /**< offset 4..12: reserved */
-	uint32_t       STATUS;       /**< offset 16: status register (#NEORV32_SLINK_STATUS_enum) */
+	const uint32_t STATUS;       /**< offset 16: status register (#NEORV32_SLINK_STATUS_enum) */
   const uint32_t reserved2[3]; /**< offset 20..28: reserved */
   uint32_t       DATA[8];      /**< offset 32..60: stream link data channel 0..7 */
 } neorv32_slink_t;
@@ -646,23 +646,23 @@ enum NEORV32_SLINK_CTRL_enum {
 
 /** SLINK status register bits */
 enum NEORV32_SLINK_STATUS_enum {
-  SLINK_STATUS_RX0_AVAIL =  0, /**< SLINK status register(0) (r/-): RX link 0 data available */
-  SLINK_STATUS_RX1_AVAIL =  1, /**< SLINK status register(1) (r/-): RX link 1 data available */
-  SLINK_STATUS_RX2_AVAIL =  2, /**< SLINK status register(2) (r/-): RX link 2 data available */
-  SLINK_STATUS_RX3_AVAIL =  3, /**< SLINK status register(3) (r/-): RX link 3 data available */
-  SLINK_STATUS_RX4_AVAIL =  4, /**< SLINK status register(4) (r/-): RX link 4 data available */
-  SLINK_STATUS_RX5_AVAIL =  5, /**< SLINK status register(5) (r/-): RX link 5 data available */
-  SLINK_STATUS_RX6_AVAIL =  6, /**< SLINK status register(6) (r/-): RX link 6 data available */
-  SLINK_STATUS_RX7_AVAIL =  7, /**< SLINK status register(7) (r/-): RX link 7 data available */
+  SLINK_STATUS_RX0_AVAIL =  0, /**< SLINK status register(0) (r/-): RX link 0 FIFO is NOT empty (data available) */
+  SLINK_STATUS_RX1_AVAIL =  1, /**< SLINK status register(1) (r/-): RX link 1 FIFO is NOT empty (data available) */
+  SLINK_STATUS_RX2_AVAIL =  2, /**< SLINK status register(2) (r/-): RX link 2 FIFO is NOT empty (data available) */
+  SLINK_STATUS_RX3_AVAIL =  3, /**< SLINK status register(3) (r/-): RX link 3 FIFO is NOT empty (data available) */
+  SLINK_STATUS_RX4_AVAIL =  4, /**< SLINK status register(4) (r/-): RX link 4 FIFO is NOT empty (data available) */
+  SLINK_STATUS_RX5_AVAIL =  5, /**< SLINK status register(5) (r/-): RX link 5 FIFO is NOT empty (data available) */
+  SLINK_STATUS_RX6_AVAIL =  6, /**< SLINK status register(6) (r/-): RX link 6 FIFO is NOT empty (data available) */
+  SLINK_STATUS_RX7_AVAIL =  7, /**< SLINK status register(7) (r/-): RX link 7 FIFO is NOT empty (data available) */
 
-  SLINK_STATUS_TX0_FREE  =  8, /**< SLINK status register(8)  (r/-): TX link 0 ready to send */
-  SLINK_STATUS_TX1_FREE  =  9, /**< SLINK status register(9)  (r/-): TX link 1 ready to send */
-  SLINK_STATUS_TX2_FREE  = 10, /**< SLINK status register(10) (r/-): TX link 2 ready to send */
-  SLINK_STATUS_TX3_FREE  = 11, /**< SLINK status register(11) (r/-): TX link 3 ready to send */
-  SLINK_STATUS_TX4_FREE  = 12, /**< SLINK status register(12) (r/-): TX link 4 ready to send */
-  SLINK_STATUS_TX5_FREE  = 13, /**< SLINK status register(13) (r/-): TX link 5 ready to send */
-  SLINK_STATUS_TX6_FREE  = 14, /**< SLINK status register(14) (r/-): TX link 6 ready to send */
-  SLINK_STATUS_TX7_FREE  = 15, /**< SLINK status register(15) (r/-): TX link 7 ready to send */
+  SLINK_STATUS_TX0_FREE  =  8, /**< SLINK status register(8)  (r/-): TX link 0 FIFO is NOT full (ready to send) */
+  SLINK_STATUS_TX1_FREE  =  9, /**< SLINK status register(9)  (r/-): TX link 1 FIFO is NOT full (ready to send) */
+  SLINK_STATUS_TX2_FREE  = 10, /**< SLINK status register(10) (r/-): TX link 2 FIFO is NOT full (ready to send) */
+  SLINK_STATUS_TX3_FREE  = 11, /**< SLINK status register(11) (r/-): TX link 3 FIFO is NOT full (ready to send) */
+  SLINK_STATUS_TX4_FREE  = 12, /**< SLINK status register(12) (r/-): TX link 4 FIFO is NOT full (ready to send) */
+  SLINK_STATUS_TX5_FREE  = 13, /**< SLINK status register(13) (r/-): TX link 5 FIFO is NOT full (ready to send) */
+  SLINK_STATUS_TX6_FREE  = 14, /**< SLINK status register(14) (r/-): TX link 6 FIFO is NOT full (ready to send) */
+  SLINK_STATUS_TX7_FREE  = 15, /**< SLINK status register(15) (r/-): TX link 7 FIFO is NOT full (ready to send) */
 
   SLINK_STATUS_RX0_HALF  = 16, /**< SLINK status register(16) (r/-): RX link 0 FIFO fill level is >= half-full */
   SLINK_STATUS_RX1_HALF  = 17, /**< SLINK status register(17) (r/-): RX link 1 FIFO fill level is >= half-full */
@@ -982,6 +982,7 @@ enum NEORV32_NEOLED_CTRL_enum {
   NEOLED_CTRL_T_ONE_H_3  = 23, /**< NEOLED control register(23) (r/w): pulse-clock ticks per ONE high-time bit 3 */
   NEOLED_CTRL_T_ONE_H_4  = 24, /**< NEOLED control register(24) (r/w): pulse-clock ticks per ONE high-time bit 4 */
   //
+  NEOLED_CTRL_IRQ_CONF   = 27, /**< NEOLED control register(27) (r/w): TX FIFO interrupt: 0=IRQ if FIFO is less than half-full, 1=IRQ if FIFO is empty */
   NEOLED_CTRL_TX_EMPTY   = 28, /**< NEOLED control register(28) (r/-): TX FIFO is empty */
   NEOLED_CTRL_TX_HALF    = 29, /**< NEOLED control register(29) (r/-): TX FIFO is at least half-full */
   NEOLED_CTRL_TX_FULL    = 30, /**< NEOLED control register(30) (r/-): TX FIFO is full */
