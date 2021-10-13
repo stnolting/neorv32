@@ -16,9 +16,9 @@
 
 **Theory of Operation**
 
-The two wire interface – also called "I²C" – is a quite famous interface for connecting several on-board
+The two wire interface - also called "I²C" - is a quite famous interface for connecting several on-board
 components. Since this interface only needs two signals (the serial data line `twi_sda_io` and the serial
-clock line `twi_scl_io`) – despite of the number of connected devices – it allows easy interconnections of
+clock line `twi_scl_io`) - despite of the number of connected devices - it allows easy interconnections of
 several peripheral nodes.
 
 The NEORV32 TWI implements a **TWI controller**. It features "clock stretching" (if enabled via the control

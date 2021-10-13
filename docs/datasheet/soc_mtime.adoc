@@ -26,8 +26,8 @@ If the processor-internal **MTIME unit is NOT implemented**, the top's `mtime_i`
 and the `MTI` machine timer CPU interrupt (`MTI`) is directly connected to the top's `mtime_irq_i` input.
 
 The 64-bit system time can be accessed via the `TIME_LO` and `TIME_HI` memory-mapped registers (read/write) and also via
-the CPU's `time[h]` CSRs (read-only). A 64-bit time compare register – accessible via memory-mapped `TIMECMP_LO` and `TIMECMP_HI`
-registers – is used to configure an interrupt to the CPU. The interrupt is triggered
+the CPU's `time[h]` CSRs (read-only). A 64-bit time compare register - accessible via memory-mapped `TIMECMP_LO` and `TIMECMP_HI`
+registers - is used to configure an interrupt to the CPU. The interrupt is triggered
 whenever `TIME` (high & low part) >= `TIMECMP` (high & low part) and is directly forwarded to the CPU's `MTI` interrupt.
 The interrupt remain active (=pending) until `TIME` < `TIMECMP` (either by modifying `TIME` or `TIMECMP`).
 

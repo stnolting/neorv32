@@ -64,7 +64,7 @@ received data are indicated via the _UART_DATA_PERR_ flag in the _UART_DATA_ reg
 received character. A frame error in the received data (i.e. stop bit is not set) is indicated via the
 _UART_DATA_FERR_ flag in the `DATA`. This flag is also updated with each new received character
 
-**Hardware Flow Control – RTS/CTS**
+**Hardware Flow Control - RTS/CTS**
 
 The UART supports hardware flow control using the standard CTS (clear to send) and/or RTS (ready to send
 / ready to receive "RTR") signals. Both hardware control flow mechanisms can be individually enabled.
@@ -92,7 +92,7 @@ Signal changes on `uart0_cts_i` during an active transmission are ignored. Appli
 the current state of the `uart0_cts_o` input signal via the _UART_CTRL_CTS_ control register flag.
 
 [TIP]
-Please note that – just like the RXD and TXD signals – the RTS and CTS signals have to be **cross**-coupled
+Please note that - just like the RXD and TXD signals - the RTS and CTS signals have to be **cross**-coupled
 between devices.
 
 **Interrupts**
@@ -106,7 +106,7 @@ request is cleared by fetching the available data or by disabling the UART.
 If the UART0 is not implemented, the UART0 interrupts are permanently tied to zero.
 
 [NOTE]
-The UART's RX interrupt is always triggered when a new data word has arrived – regardless of the
+The UART's RX interrupt is always triggered when a new data word has arrived - regardless of the
 state of the RX double-buffer.
 
 **Simulation Mode**
@@ -183,7 +183,7 @@ section https://stnolting.github.io/neorv32/ug/#_simulating_the_processor[Simula
 
 The secondary UART (UART1) is functional identical to the primary UART (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>).
 Obviously, UART1 has different addresses for
-the control register (`CTRL`) and the data register (`DATA`) – see the register map below. However, the
+the control register (`CTRL`) and the data register (`DATA`) - see the register map below. However, the
 register bits/flags use the same bit positions and naming. Furthermore, the "RX done" and "TX done" interrupts are
 mapped to different CPU fast interrupt channels.
 

@@ -502,7 +502,7 @@ first PMP configuration entry) are implemented (all remaining bits are always ze
 [options="header",grid="rows"]
 |=======================
 | Bit | RISC-V name | R/W | Function
-| 7   | _L_ | r/w | lock bit, can be set – but not be cleared again (only via CPU reset)
+| 7   | _L_ | r/w | lock bit, can be set - but not be cleared again (only via CPU reset)
 | 6:5 | -   | r/- | reserved, read as zero
 | 4:3 | _A_ | r/w | mode configuration; only OFF (`00`) and NAPOT (`11`) are supported
 | 2   | _X_ | r/w | execute permission

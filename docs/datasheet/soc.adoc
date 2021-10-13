@@ -995,7 +995,7 @@ _fast interrupt request_ (see below).
 ==== NEORV32-Specific Fast Interrupt Requests
 
 As part of the custom/NEORV32-specific CPU extensions, the CPU features 16 fast interrupt request signals
-(`FIRQ0` – `FIRQ15`). These are reserved for _processor-internal_ modules only (for example for the communication
+(`FIRQ0` - `FIRQ15`). These are reserved for _processor-internal_ modules only (for example for the communication
 interfaces to signal "available incoming data" or "ready to send new data").
 
 The mapping of the 16 FIRQ channels is shown in the following table (the channel number also corresponds to
@@ -1015,9 +1015,9 @@ the according FIRQ priority; 0 = highest, 15 = lowest):
 | 6       | <<_serial_peripheral_interface_controller_spi,SPI>> | SPI transmission done interrupt
 | 7       | <<_two_wire_serial_interface_controller_twi,TWI>> | TWI transmission done interrupt
 | 8       | <<_external_interrupt_controller_xirq,XIRQ>> | External interrupt controller interrupt
-| 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED buffer TX empty / not full interrupt
-| 10      | <<_stream_link_interface_slink,SLINK>> | RX data received
-| 11      | <<_stream_link_interface_slink,SLINK>> | TX data send
+| 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED TX buffer interrupt
+| 10      | <<_stream_link_interface_slink,SLINK>> | RX data buffer interrupt
+| 11      | <<_stream_link_interface_slink,SLINK>> | TX data buffer interrupt
 | 12:15   | - | _reserved_, will never fire
 |=======================
 
@@ -1037,9 +1037,9 @@ as long as the interrupt-causing device's state fulfills it's interrupt conditio
 The NEORV32 Processor provides a 32-bit / 4GB (physical) address space
 By default, this address space is divided into five main regions:
 
-1. **Instruction address space** – memory address space for instructions (=code) and constants.
+1. **Instruction address space** - memory address space for instructions (=code) and constants.
 A configurable section of this address space is used by the internal/external _instruction memory_ (<<_mem_int_imem_size>> for the internal IMEM).
-2. **Data address space** – memory address space for application runtime data (heap, stack, etc.).
+2. **Data address space** - memory address space for application runtime data (heap, stack, etc.).
 A configurable section of this address space is used by the internal/external _data memory_ (<<_mem_int_dmem_size>> for the internal DMEM).
 3. **Bootloader address space**. A _fixed_ section of this address space is used by the
 internal _bootloader memory_ (BOOTLDROM).
@@ -1102,7 +1102,7 @@ are _aligned_ to a 4-byte boundary.
 [NOTE]
 The base address of the internal bootloader (at _0xFFFF0000_) and the internal IO region (at _0xFFFFFE00_) for
 peripheral devices are also defined in the package and are fixed. These address regions cannot not be used for other
-applications – even if the bootloader or all IO devices are not implemented - without modifying the core's
+applications - even if the bootloader or all IO devices are not implemented - without modifying the core's
 hardware sources.
 
 
@@ -1113,13 +1113,13 @@ The processor setup defines fixed attributes for the four processor-internal add
 Accessing a memory region in a way that violates any of these attributes will raise an according
 access exception..
 
-* `r` – read access (from CPU data access interface, "loads")
-* `w` – write access (from CPU data access interface, "stores")
-* `x` – execute access (from CPU instruction fetch interface)
-* `a` – atomic access (from CPU data access interface)
-* `8` – byte (8-bit)-accessible (when writing)
-* `16` – half-word (16-bit)-accessible (when writing)
-* `32` – word (32-bit)-accessible (when writing)
+* `r` - read access (from CPU data access interface, "loads")
+* `w` - write access (from CPU data access interface, "stores")
+* `x` - execute access (from CPU instruction fetch interface)
+* `a` - atomic access (from CPU data access interface)
+* `8` - byte (8-bit)-accessible (when writing)
+* `16` - half-word (16-bit)-accessible (when writing)
+* `32` - word (32-bit)-accessible (when writing)
 
 [NOTE]
 Read accesses (loads and instruction fetches) can always access data in
@@ -1267,7 +1267,7 @@ system implements an internal reset generator and a global clock generator/divid
 
 **Internal Reset Generator**
 
-Most processor-internal modules – except for the CPU and the watchdog timer – do not have a dedicated
+Most processor-internal modules - except for the CPU and the watchdog timer - do not have a dedicated
 reset signal. However, all devices can be reset by software by clearing the corresponding unit's control
 register. The automatically included application start-up code (`crt0.S`) will perform a software-reset of all
 modules to ensure a clean system reset state.

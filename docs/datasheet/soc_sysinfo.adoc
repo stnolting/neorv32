@@ -17,7 +17,7 @@
 The SYSINFO allows the application software to determine the setting of most of the processor's top entity
 generics that are related to processor/SoC configuration. All registers of this unit are read-only.
 
-This device is always implemented – regardless of the actual hardware configuration. The bootloader as well
+This device is always implemented - regardless of the actual hardware configuration. The bootloader as well
 as the NEORV32 software runtime environment require information from this device (like memory layout
 and default clock speed) for correct operation.
 

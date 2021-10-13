@@ -64,7 +64,7 @@ a| image::wishbone_pipelined_write.png[700,300]
 
 [TOP]
 A detailed description of the implemented Wishbone bus protocol and the according interface signals
-can be found in the data sheet "Wishbone B4 – WISHBONE System-on-Chip (SoC) Interconnection
+can be found in the data sheet "Wishbone B4 - WISHBONE System-on-Chip (SoC) Interconnection
 Architecture for Portable IP Cores". A copy of this document can be found in the docs folder of this
 project.
 

@@ -21,7 +21,7 @@ image::riscv_logo.png[width=350,align=center]
 ** `PMP` - physical memory protection
 ** `HPM` - hardware performance monitors
 ** `DB` - debug mode
-* Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications – passes the official RISC-V Architecture Tests (v2+)
+* Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications - passes the official RISC-V Architecture Tests (v2+)
 * Official RISC-V open-source architecture ID
 * Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 _fast_ interrupts
 * Supports most of the traps from the RISC-V specifications (including bus access exceptions) and traps on all unimplemented/illegal/malformed instructions
@@ -31,7 +31,7 @@ image::riscv_logo.png[width=350,align=center]
 the NEORV32 processor)
 * little-endian byte order
 * Configurable hardware reset
-* No hardware support of unaligned data/instruction accesses – they will trigger an exception.
+* No hardware support of unaligned data/instruction accesses - they will trigger an exception.
 
 [NOTE]
 It is recommended to use the **NEORV32 Processor** as default top instance even if you only want to use the actual
@@ -53,11 +53,11 @@ specifications. The following figure shows the simplified architecture of the CP
 
 image::neorv32_cpu.png[align=center]
 
-The CPU uses a pipelined architecture with basically two main stages. The first stage (IF – instruction fetch)
+The CPU uses a pipelined architecture with basically two main stages. The first stage (IF - instruction fetch)
 is responsible for fetching new instruction data from memory via the fetch engine. The instruction data is
-stored to a FIFO – the instruction prefetch buffer. The issue engine takes this data and assembles 32-bit
-instruction words for the next pipeline stage. Compressed instructions – if enabled – are also decompressed
-in this stage. The second stage (EX – execution) is responsible for actually executing the fetched instructions
+stored to a FIFO - the instruction prefetch buffer. The issue engine takes this data and assembles 32-bit
+instruction words for the next pipeline stage. Compressed instructions - if enabled - are also decompressed
+in this stage. The second stage (EX - execution) is responsible for actually executing the fetched instructions
 via the execute engine.
 
 These two pipeline stages are based on a multi-cycle processing engine. So the processing of each stage for a
@@ -341,7 +341,7 @@ of the debugger memory. See section <<_on_chip_debugger_ocd>> for more informati
 
 The basic NEORV32 is a RISC-V `rv32i` architecture that provides several _optional_ RISC-V CPU and ISA
 (instruction set architecture) extensions. For more information regarding the RISC-V ISA extensions please
-see the the _RISC-V Instruction Set Manual – Volume I: Unprivileged ISA_ and _The RISC-V Instruction Set Manual
+see the the _RISC-V Instruction Set Manual - Volume I: Unprivileged ISA_ and _The RISC-V Instruction Set Manual
 Volume II: Privileged Architecture_, which are available in the projects `docs/references` folder.
 
 [TIP]
@@ -656,7 +656,7 @@ internal (iterative) computations before the configuration becomes valid.
 
 [NOTE]
 For more information regarding RISC-V physical memory protection see the official _The RISC-V
-Instruction Set Manual – Volume II: Privileged Architecture_ specifications.
+Instruction Set Manual - Volume II: Privileged Architecture_ specifications.
 
 
 ==== **`HPM`** Hardware Performance Monitors
@@ -753,7 +753,7 @@ configurations are presented in <<_cpu_performance>>.
 |=======================
 
 [NOTE]
-The presented values of the *floating-point execution cycles* are average values – obtained from
+The presented values of the *floating-point execution cycles* are average values - obtained from
 4096 instruction executions using pseudo-random input values. The execution time for emulating the
 instructions (using pure-software libraries) is ~17..140 times higher.
 
@@ -818,7 +818,7 @@ until it is explicitly acknowledged by the CPU software (for example by writing 
 
 .Instruction Atomicity
 [NOTE]
-All instructions execute as atomic operations – interrupts can only trigger between two instructions.
+All instructions execute as atomic operations - interrupts can only trigger between two instructions.
 So if there is a permanent interrupt request, exactly one instruction from the interrupt program will be executed before
 a new interrupt handler can start.
 
@@ -912,7 +912,7 @@ accessing data (`d_bus_*`) via load and store operations. Both interfaces use th
 The CPU is a 32-bit architecture with separated instruction and data interfaces making it a Harvard
 Architecture. Each of this interfaces can access an address space of up to 2^32^ bytes (4GB). The memory
 system is based on 32-bit words with a minimal granularity of 1 byte. Please note, that the NEORV32 CPU
-does not support unaligned memory accesses _in hardware_ – however, a software-based handling can be
+does not support unaligned memory accesses _in hardware_ - however, a software-based handling can be
 implemented as any unaligned memory access will trigger an according exception.
 
 :sectnums:

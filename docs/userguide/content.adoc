@@ -38,12 +38,12 @@ toolchains for several target ISAs.
 .Configuring GCC build for `rv32i` (minimal ISA)
 [source,bash]
 ----
-riscv-gnu-toolchain$ ./configure --prefix=/opt/riscv --with-arch=rv32i –-with-abi=ilp32
+riscv-gnu-toolchain$ ./configure --prefix=/opt/riscv --with-arch=rv32i --with-abi=ilp32
 riscv-gnu-toolchain$ make
 ----
 
 [IMPORTANT]
-Keep in mind that – for instance – a toolchain build with `--with-arch=rv32imc` only provides library code compiled with
+Keep in mind that - for instance - a toolchain build with `--with-arch=rv32imc` only provides library code compiled with
 compressed (`C`) and `mul`/`div` instructions (`M`)! Hence, this code cannot be executed (without
 emulation) on an architecture without these extensions!
 
@@ -196,8 +196,8 @@ provide a minimal set of configuration generics, that might have to be adapted t
 <3> Default size of internal data memory: 8kB
 
 [start=7]
-. If you feel like it – or if your FPGA does not provide sufficient resources – you can modify the
-_memory sizes_ (`MEM_INT_IMEM_SIZE` and `MEM_INT_DMEM_SIZE` – marked with notes "2" and "3"). But as mentioned
+. If you feel like it - or if your FPGA does not provide sufficient resources - you can modify the
+_memory sizes_ (`MEM_INT_IMEM_SIZE` and `MEM_INT_DMEM_SIZE` - marked with notes "2" and "3"). But as mentioned
 above, let's keep things simple at first and use the standard configuration for now.
 . There is one generic that _has to be set according to your FPGA board_ setup: the actual clock frequency
 of the top's clock input signal (`clk_i`). Use the `CLOCK_FREQUENCY` generic to specify your clock source's
@@ -205,7 +205,7 @@ frequency in Hertz (Hz).
 
 [NOTE]
 If you have changed the default memory configuration (`MEM_INT_IMEM_SIZE` and `MEM_INT_DMEM_SIZE` generics)
-keep those new sizes in mind – these values are required for setting
+keep those new sizes in mind - these values are required for setting
 up the software framework in the next section <<_general_software_framework_setup>>.
 
 [start=9]
@@ -249,7 +249,7 @@ or _inside_ the test setup if this is your top entity (low-active LEDs example: 
 
 [start=10]
 . Attach the clock input `clk_i` to your clock source and connect the reset line `rstn_i` to a button of
-your FPGA board. Check whether it is low-active or high-active – the reset signal of the processor is
+your FPGA board. Check whether it is low-active or high-active - the reset signal of the processor is
 **low-active**, so maybe you need to invert the input signal.
 . If possible, connected _at least_ bit `0` of the GPIO output port `gpio_o` to a LED (see "Signal Polarity" note above).
 . Finally, if your are using the UART-based test setup (`neorv32_testsetup_bootloader.vhd`)

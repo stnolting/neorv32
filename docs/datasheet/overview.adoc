@@ -11,7 +11,7 @@ memories, NoCs and other peripherals. On-line and in-system debugging is support
 compatible on-chip debugger accessible via JTAG.
 
 The software framework of the processor comes with application makefiles, software libraries for all CPU
-and processor features, a bootloader, a runtime environment and several example programs – including a port
+and processor features, a bootloader, a runtime environment and several example programs - including a port
 of the CoreMark MCU benchmark and the official RISC-V architecture test suite. RISC-V GCC is used as
 default toolchain (https://github.com/stnolting/riscv-gcc-prebuilt[prebuilt toolchains are also provided]).
 
