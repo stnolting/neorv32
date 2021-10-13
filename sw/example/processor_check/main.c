@@ -1254,12 +1254,14 @@ int main() {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
     PRINT_STANDARD("[%i] FIRQ10 & 11 (SLINK): ", cnt_test);
 
-    // NOTE: this test requires FIFO sizes = 1
-
     cnt_test++;
 
     // enable SLINK
     neorv32_slink_enable();
+
+    // configure SLINK IRQs
+    neorv32_slink_tx_irq_config(0, SLINK_IRQ_ENABLE, SLINK_IRQ_TX_NOT_FULL);
+    neorv32_slink_rx_irq_config(0, SLINK_IRQ_ENABLE, SLINK_IRQ_RX_NOT_EMPTY);
 
     // enable SLINK FIRQs
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ10E);
@@ -1267,25 +1269,39 @@ int main() {
 
     tmp_a = 0; // error counter
 
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+
+    // check if TX FIFO fires IRQ
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_FIRQ_11) {
+      tmp_a += 1;
+    }
+    neorv32_slink_tx_irq_config(0, SLINK_IRQ_DISABLE, SLINK_IRQ_TX_NOT_FULL);
+
     // send single data word via link 0
     if (neorv32_slink_tx0_nonblocking(0xA1B2C3D4)) {
-      tmp_a++; // sending failed
-    }
-
-    // get single data word from link 0
-    uint32_t slink_rx_data;
-    if (neorv32_slink_rx0_nonblocking(&slink_rx_data)) {
-      tmp_a++; // receiving failed
+      tmp_a += 2; // sending failed
     }
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
+
+    // check if RX FIFO fires IRQ
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_FIRQ_10) {
+      tmp_a += 4;
+    }
+    neorv32_slink_rx_irq_config(0, SLINK_IRQ_DISABLE, SLINK_IRQ_RX_NOT_EMPTY);
+
+    // get single data word from link 0
+    uint32_t slink_rx_data;
+    if (neorv32_slink_rx0_nonblocking(&slink_rx_data)) {
+      tmp_a += 8; // receiving failed
+    }
+
     neorv32_cpu_irq_disable(CSR_MIE_FIRQ10E);
     neorv32_cpu_irq_disable(CSR_MIE_FIRQ11E);
 
-    tmp_b = neorv32_cpu_csr_read(CSR_MCAUSE);
-    if (((tmp_b == TRAP_CODE_FIRQ_10) || (tmp_b == TRAP_CODE_FIRQ_11)) && // right trap code
-        (tmp_a == 0) && // local error counter = 0
+    if ((tmp_a == 0) && // local error counter = 0
         (slink_rx_data == 0xA1B2C3D4)) { // correct data read-back
       test_ok();
     }
