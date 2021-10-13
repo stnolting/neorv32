@@ -95,17 +95,30 @@ architecture neorv32_slink_rtl of neorv32_slink is
   --
   constant ctrl_en_c          : natural := 31; -- r/w: global enable
 
+  -- interrupt configuration register bits --
+  constant irq_rx_en_lsb_c   : natural :=  0; -- r/w: enable RX interrupt for link 0..7
+  constant irq_rx_en_msb_c   : natural :=  7;
+  --
+  constant irq_rx_mode_lsb_c : natural :=  8; -- r/w: RX IRQ mode: 0=FIFO at least half-full; 1=FIFO not empty
+  constant irq_rx_mode_msb_c : natural := 15;
+  --
+  constant irq_tx_en_lsb_c   : natural := 16; -- r/w: enable TX interrupt for link 0..7
+  constant irq_tx_en_msb_c   : natural := 23;
+  --
+  constant irq_tx_mode_lsb_c : natural := 24; -- r/w: TX IRQ mode: 0=FIFO less than half-full; 1=FIFO not full
+  constant irq_tx_mode_msb_c : natural := 31;
+
   -- status register bits --
-  constant status_rx_avail_lsb_c : natural :=  0; -- r/-: set if TX link 0..7 is ready to send
+  constant status_rx_avail_lsb_c : natural :=  0; -- r/-: set if RX link 0..7 FIFO is NOT empty
   constant status_rx_avail_msb_c : natural :=  7;
   --
-  constant status_tx_free_lsb_c  : natural :=  8; -- r/-: set if RX link 0..7 data available
+  constant status_tx_free_lsb_c  : natural :=  8; -- r/-: set if TX link 0..7 FIFO is NOT full
   constant status_tx_free_msb_c  : natural := 15;
   --
-  constant status_rx_half_lsb_c  : natural := 16; -- r/-: set if TX link 0..7 FIFO fill-level is >= half-full
+  constant status_rx_half_lsb_c  : natural := 16; -- r/-: set if RX link 0..7 FIFO fill-level is >= half-full
   constant status_rx_half_msb_c  : natural := 23;
   --
-  constant status_tx_half_lsb_c  : natural := 24; -- r/-: set if RX link 0..7 FIFO fill-level is > half-full
+  constant status_tx_half_lsb_c  : natural := 24; -- r/-: set if TX link 0..7 FIFO fill-level is > half-full
   constant status_tx_half_msb_c  : natural := 31;
 
   -- bus access control --
@@ -116,6 +129,12 @@ architecture neorv32_slink_rtl of neorv32_slink is
 
   -- control register --
   signal enable : std_ulogic; -- global enable
+
+  -- IRQ configuration register --
+  signal irq_rx_en   : std_ulogic_vector(7 downto 0);
+  signal irq_rx_mode : std_ulogic_vector(7 downto 0);
+  signal irq_tx_en   : std_ulogic_vector(7 downto 0);
+  signal irq_tx_mode : std_ulogic_vector(7 downto 0);
 
   -- stream link fifo interface --
   type fifo_data_t is array (0 to 7) of std_ulogic_vector(31 downto 0);
@@ -158,11 +177,21 @@ begin
   begin
     if rising_edge(clk_i) then
       -- write access --
-      ack_write  <= '0';
+      ack_write <= '0';
       if (acc_en = '1') and (wren_i = '1') then
-        if (addr(5) = '0') then -- control/status 
-          if (addr(4) = '0') then -- control register
+        if (addr(5) = '0') then -- control/status/irq
+          if (addr(4 downto 3) = "00") then -- control register
             enable <= data_i(ctrl_en_c);
+          end if;
+          if (addr(4 downto 3) = "01") then -- IRQ configuration register
+            for i in 0 to SLINK_NUM_RX-1 loop
+              irq_rx_en(i)   <= data_i(i + irq_rx_en_lsb_c);
+              irq_rx_mode(i) <= data_i(i + irq_rx_mode_lsb_c);
+            end loop;
+            for i in 0 to SLINK_NUM_TX-1 loop
+              irq_tx_en(i)   <= data_i(i + irq_tx_en_lsb_c);
+              irq_tx_mode(i) <= data_i(i + irq_tx_mode_lsb_c);
+            end loop;
           end if;
           ack_write <= '1';
         else -- TX links
@@ -171,23 +200,35 @@ begin
       end if;
 
       -- read access --
-      data_o     <= (others => '0');
-      ack_read   <= '0';
+      data_o   <= (others => '0');
+      ack_read <= '0';
       if (acc_en = '1') and (rden_i = '1') then
         if (addr(5) = '0') then -- control/status registers
           ack_read <= '1';
-          if (addr(4) = '0') then -- control register
-            data_o(ctrl_rx_num_msb_c  downto ctrl_rx_num_lsb_c)  <= std_ulogic_vector(to_unsigned(SLINK_NUM_RX, 4));
-            data_o(ctrl_tx_num_msb_c  downto ctrl_tx_num_lsb_c)  <= std_ulogic_vector(to_unsigned(SLINK_NUM_TX, 4));
-            data_o(ctrl_rx_size_msb_c downto ctrl_rx_size_lsb_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_RX_FIFO), 4));
-            data_o(ctrl_tx_size_msb_c downto ctrl_tx_size_lsb_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_TX_FIFO), 4));
-            data_o(ctrl_en_c)                                    <= enable;
-          else -- fifo status register
-            data_o(status_rx_avail_msb_c downto status_rx_avail_lsb_c) <= rx_fifo_avail;
-            data_o(status_tx_free_msb_c  downto status_tx_free_lsb_c)  <= tx_fifo_free;
-            data_o(status_rx_half_msb_c  downto status_rx_half_lsb_c)  <= rx_fifo_half;
-            data_o(status_tx_half_msb_c  downto status_tx_half_lsb_c)  <= tx_fifo_half;
-          end if;
+          case addr(4 downto 3) is
+            when "00" => -- control register
+              data_o(ctrl_rx_num_msb_c  downto ctrl_rx_num_lsb_c)  <= std_ulogic_vector(to_unsigned(SLINK_NUM_RX, 4));
+              data_o(ctrl_tx_num_msb_c  downto ctrl_tx_num_lsb_c)  <= std_ulogic_vector(to_unsigned(SLINK_NUM_TX, 4));
+              data_o(ctrl_rx_size_msb_c downto ctrl_rx_size_lsb_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_RX_FIFO), 4));
+              data_o(ctrl_tx_size_msb_c downto ctrl_tx_size_lsb_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_TX_FIFO), 4));
+              data_o(ctrl_en_c)                                    <= enable;
+            when "01" => -- IRQ configuration register
+              for i in 0 to SLINK_NUM_RX-1 loop
+                data_o(irq_rx_en_lsb_c   + i) <= irq_rx_en(i);
+                data_o(irq_rx_mode_lsb_c + i) <= irq_rx_mode(i);
+              end loop;
+              for i in 0 to SLINK_NUM_TX-1 loop
+                data_o(irq_tx_en_lsb_c   + i) <= irq_tx_en(i);
+                data_o(irq_tx_mode_lsb_c + i) <= irq_tx_mode(i);
+              end loop;
+            when "10" | "11" => -- fifo status register
+              data_o(status_rx_avail_msb_c downto status_rx_avail_lsb_c) <= rx_fifo_avail;
+              data_o(status_tx_free_msb_c  downto status_tx_free_lsb_c)  <= tx_fifo_free;
+              data_o(status_rx_half_msb_c  downto status_rx_half_lsb_c)  <= rx_fifo_half;
+              data_o(status_tx_half_msb_c  downto status_tx_half_lsb_c)  <= tx_fifo_half;
+            when others =>
+              data_o <= (others => '0');
+          end case;
         else -- RX links
           data_o   <= rx_fifo_rdata(to_integer(unsigned(addr(4 downto 2))));
           ack_read <= or_reduce_f(link_sel and rx_fifo_avail);
@@ -206,23 +247,43 @@ begin
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   irq_arbiter: process(clk_i)
+    variable rx_tmp_v : std_ulogic_vector(SLINK_NUM_RX-1 downto 0);
+    variable tx_tmp_v : std_ulogic_vector(SLINK_NUM_TX-1 downto 0);
   begin
     if rising_edge(clk_i) then
-      if (enable = '0') then
+      if (enable = '0') then -- no interrupts if unit is disabled
         irq_rx_o <= '0';
         irq_tx_o <= '0';
       else
+
         -- RX interrupt --
         if (SLINK_RX_FIFO = 1) then
-          irq_rx_o <= or_reduce_f(rx_fifo_avail); -- fire if any RX_FIFO is full
+          irq_rx_o <= or_reduce_f(irq_rx_en and rx_fifo_avail); -- fire if any RX_FIFO is not empty
         else
-          irq_rx_o <= or_reduce_f(rx_fifo_half); -- fire if any RX_FIFO.level is at least half-full
+          rx_tmp_v := (others => '0');
+          for i in 0 to SLINK_NUM_RX-1 loop
+            if (irq_rx_mode(i) = '0') then -- fire if any RX_FIFO is at least half-full
+              rx_tmp_v(i) := rx_fifo_half(i);
+            else -- fire if any RX_FIFO is not empty (= data available)
+              rx_tmp_v(i) := rx_fifo_avail(i);
+            end if;
+          end loop;
+          irq_rx_o <= or_reduce_f(irq_rx_en and rx_tmp_v);
         end if;
+
         -- TX interrupt --
         if (SLINK_TX_FIFO = 1) then
-          irq_tx_o <= or_reduce_f(tx_fifo_free); -- fire if any TX_FIFO is empty
+          irq_tx_o <= or_reduce_f(irq_tx_en and tx_fifo_free); -- fire if any TX_FIFO is not full
         else
-          irq_tx_o <= or_reduce_f(not tx_fifo_half); -- fire if any TX_FIFO.level is less than half-full
+          tx_tmp_v := (others => '0');
+          for i in 0 to SLINK_NUM_TX-1 loop
+            if (irq_tx_mode(i) = '0') then -- fire if any RX_FIFO is less than half-full
+              tx_tmp_v(i) := not rx_fifo_half(i);
+            else -- fire if any RX_FIFO is not full (= free buffer space available)
+              tx_tmp_v(i) := tx_fifo_free(i);
+            end if;
+          end loop;
+          irq_tx_o <= or_reduce_f(irq_tx_en and tx_tmp_v);
         end if;
       end if;
     end if;
