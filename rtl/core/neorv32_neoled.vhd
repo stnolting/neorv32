@@ -13,8 +13,7 @@
 -- # configured using the ctrl_t_0h_*_c and ctrl_t_1h_*_c bits, respectively. 32-bit transfers     #
 -- # (for RGBW modules) and 24-bit transfers (for RGB modules) are supported via ctrl_mode__c.     #
 -- #                                                                                               #
--- # The device features a TX buffer (FIFO) with <FIFO_DEPTH> entries. An IRQ is triggered if the  #
--- # FIFO fill level is below "half-full".                                                         #
+-- # The device features a TX buffer (FIFO) with <FIFO_DEPTH> entries with configurable interrupt. #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -121,6 +120,7 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
   constant ctrl_t_1h_3_c   : natural := 23; -- r/w: pulse-clock ticks per ONE high-time bit 3
   constant ctrl_t_1h_4_c   : natural := 24; -- r/w: pulse-clock ticks per ONE high-time bit 4
   --
+  constant ctrl_irq_conf_c : natural := 27; -- r/w: interrupt config: 1=IRQ when buffer is empty, 0=IRQ when buffer is half-empty
   constant ctrl_tx_empty_c : natural := 28; -- r/-: TX FIFO is empty
   constant ctrl_tx_half_c  : natural := 29; -- r/-: TX FIFO is at least half-full
   constant ctrl_tx_full_c  : natural := 30; -- r/-: TX FIFO is full
@@ -132,6 +132,7 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
     mode     : std_ulogic;
     strobe   : std_ulogic;
     clk_prsc : std_ulogic_vector(2 downto 0);
+    irq_conf : std_ulogic;
     -- pulse config --
     t_total  : std_ulogic_vector(4 downto 0);
     t0_high  : std_ulogic_vector(4 downto 0);
@@ -202,6 +203,7 @@ begin
         ctrl.mode     <= data_i(ctrl_mode_c);
         ctrl.strobe   <= data_i(ctrl_strobe_c);
         ctrl.clk_prsc <= data_i(ctrl_clksel2_c downto ctrl_clksel0_c);
+        ctrl.irq_conf <= data_i(ctrl_irq_conf_c);
         ctrl.t_total  <= data_i(ctrl_t_tot_4_c downto ctrl_t_tot_0_c);
         ctrl.t0_high  <= data_i(ctrl_t_0h_4_c  downto ctrl_t_0h_0_c);
         ctrl.t1_high  <= data_i(ctrl_t_1h_4_c  downto ctrl_t_1h_0_c);
@@ -214,6 +216,7 @@ begin
         data_o(ctrl_mode_c)                          <= ctrl.mode;
         data_o(ctrl_strobe_c)                        <= ctrl.strobe;
         data_o(ctrl_clksel2_c downto ctrl_clksel0_c) <= ctrl.clk_prsc;
+        data_o(ctrl_irq_conf_c)                      <= ctrl.irq_conf or bool_to_ulogic_f(boolean(FIFO_DEPTH = 1)); -- tie to one if FIFO_DEPTH is 1
         data_o(ctrl_bufs_3_c  downto ctrl_bufs_0_c)  <= std_ulogic_vector(to_unsigned(index_size_f(FIFO_DEPTH), 4));
         data_o(ctrl_t_tot_4_c downto ctrl_t_tot_0_c) <= ctrl.t_total;
         data_o(ctrl_t_0h_4_c  downto ctrl_t_0h_0_c)  <= ctrl.t0_high;
@@ -241,10 +244,18 @@ begin
   irq_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (FIFO_DEPTH = 1) then
-        irq_o <= ctrl.enable and tx_buffer.free; -- fire IRQ if FIFO is empty
+      if (ctrl.enable = '0') then
+        irq_o <= '0'; -- no interrupt if unit is disabled
       else
-        irq_o <= ctrl.enable and (not tx_buffer.half); -- fire IRQ if FIFO is less than half-full
+        if (FIFO_DEPTH = 1) then
+          irq_o <= tx_buffer.free; -- fire IRQ if FIFO is empty
+        else
+          if (ctrl.irq_conf = '0') then -- fire IRQ if FIFO is less than half-full
+            irq_o <= not tx_buffer.half;
+          else -- fire IRQ if FIFO is empty
+            irq_o <= tx_buffer.free;
+          end if;
+        end if;
       end if;
     end if;
   end process irq_generator;
