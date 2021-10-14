@@ -50,8 +50,8 @@
 
 /// \cond
 // Private functions
-static void __neorv32_uart_itoa(uint32_t x, char *res) __attribute__((unused)); // GCC: do not ouput a warning when this variable is unused
-static void __neorv32_uart_tohex(uint32_t x, char *res) __attribute__((unused)); // GCC: do not ouput a warning when this variable is unused
+static void __neorv32_uart_itoa(uint32_t x, char *res) __attribute__((unused)); // GCC: do not output a warning when this variable is unused
+static void __neorv32_uart_tohex(uint32_t x, char *res) __attribute__((unused)); // GCC: do not output a warning when this variable is unused
 /// \endcond
 
 
@@ -336,13 +336,13 @@ void neorv32_uart0_enable(void) {
 void neorv32_uart0_putc(char c) {
 
   // wait for previous transfer to finish
-  while ((NEORV32_UART0.CTRL & (1<<UART_CTRL_TX_BUSY)) != 0);
+  while ((NEORV32_UART0.CTRL & (1<<UART_CTRL_TX_FULL)) != 0); // wait for space in TX FIFO
   NEORV32_UART0.DATA = ((uint32_t)c) << UART_DATA_LSB;
 }
 
 
 /**********************************************************************//**
- * Check if UART0 TX is busy.
+ * Check if UART0 TX is busy (transmitter busy and data left in TX buffer).
  *
  * @note This function is blocking.
  *
@@ -350,7 +350,10 @@ void neorv32_uart0_putc(char c) {
  **************************************************************************/
 int neorv32_uart0_tx_busy(void) {
 
-  if ((NEORV32_UART0.CTRL & (1<<UART_CTRL_TX_BUSY)) != 0) {
+  uint32_t ctrl = NEORV32_UART0.CTRL;
+
+  if (((ctrl & (1<<UART_CTRL_TX_BUSY)) != 0) ||  // TX engine busy
+      ((ctrl & (1<<UART_CTRL_TX_EMPTY)) == 0)) { // TX buffer not empty
     return 1;
   }
   return 0;
@@ -382,37 +385,41 @@ char neorv32_uart0_getc(void) {
  * @note This function is non-blocking and checks for frame and parity errors.
  *
  * @param[in,out] data Received char.
- * @return Status code (0=nothing received, 1: char received without errors; -1: char received with frame error; -2: char received with parity error; -3 char received with frame & parity error).
+ * @return Status code:
+ *  0 = char received without errors
+ * -1 = nothing received
+ * -2 = char received with frame error
+ * -3 = char received with parity error
+ * -4 = char received with overrun error.
  **************************************************************************/
 int neorv32_uart0_getc_safe(char *data) {
 
   uint32_t uart_rx = NEORV32_UART0.DATA;
-  if (uart_rx & (1<<UART_DATA_AVAIL)) { // char available at all?
 
-    int status = 0;
+  // get received byte (if there is any)
+  *data = (char)uart_rx;
 
-    // check for frame error
-    if (uart_rx & (1<<UART_DATA_FERR)) {
-      status -= 1;
-    }
-
-    // check for parity error
-    if (uart_rx & (1<<UART_DATA_PERR)) {
-      status -= 2;
-    }
-
-    if (status == 0) {
-      status = 1;
-    }
-
-    // get received byte
-    *data =  (char)uart_rx;
-
-    return status;
+  // check if no data available at all
+  if ((uart_rx & (1<<UART_DATA_AVAIL)) == 0) {
+   return -1;
   }
-  else {
-    return 0;
+
+  // check for frame error
+  if (uart_rx & (1<<UART_DATA_FERR)) {
+    return -2;
   }
+
+  // check for parity error
+  if (uart_rx & (1<<UART_DATA_PERR)) {
+    return -3;
+  }
+
+  // check for overrun error
+  if (uart_rx & (1<<UART_DATA_OVERR)) {
+    return -4;
+  }
+
+  return 0; // all fine
 }
 
 
@@ -696,13 +703,13 @@ void neorv32_uart1_enable(void) {
 void neorv32_uart1_putc(char c) {
 
   // wait for previous transfer to finish
-  while ((NEORV32_UART1.CTRL & (1<<UART_CTRL_TX_BUSY)) != 0);
+  while ((NEORV32_UART1.CTRL & (1<<UART_CTRL_TX_FULL)) != 0); // wait for space in TX FIFO
   NEORV32_UART1.DATA = ((uint32_t)c) << UART_DATA_LSB;
 }
 
 
 /**********************************************************************//**
- * Check if UART1 TX is busy.
+ * Check if UART1 TX is busy (transmitter busy and data left in TX buffer).
  *
  * @note This function is blocking.
  *
@@ -710,7 +717,10 @@ void neorv32_uart1_putc(char c) {
  **************************************************************************/
 int neorv32_uart1_tx_busy(void) {
 
-  if ((NEORV32_UART1.CTRL & (1<<UART_CTRL_TX_BUSY)) != 0) {
+  uint32_t ctrl = NEORV32_UART1.CTRL;
+
+  if (((ctrl & (1<<UART_CTRL_TX_BUSY)) != 0) ||  // TX engine busy
+      ((ctrl & (1<<UART_CTRL_TX_EMPTY)) == 0)) { // TX buffer not empty
     return 1;
   }
   return 0;
@@ -742,37 +752,41 @@ char neorv32_uart1_getc(void) {
  * @note This function is non-blocking and checks for frame and parity errors.
  *
  * @param[in,out] data Received char.
- * @return Status code (0=nothing received, 1: char received without errors; -1: char received with frame error; -2: char received with parity error; -3 char received with frame & parity error).
+ * @return Status code:
+ *  0 = char received without errors
+ * -1 = nothing received
+ * -2 = char received with frame error
+ * -3 = char received with parity error
+ * -4 = char received with overrun error.
  **************************************************************************/
 int neorv32_uart1_getc_safe(char *data) {
 
   uint32_t uart_rx = NEORV32_UART1.DATA;
-  if (uart_rx & (1<<UART_DATA_AVAIL)) { // char available at all?
 
-    int status = 0;
+  // get received byte (if there is any)
+  *data = (char)uart_rx;
 
-    // check for frame error
-    if (uart_rx & (1<<UART_DATA_FERR)) {
-      status -= 1;
-    }
-
-    // check for parity error
-    if (uart_rx & (1<<UART_DATA_PERR)) {
-      status -= 2;
-    }
-
-    if (status == 0) {
-      status = 1;
-    }
-
-    // get received byte
-    *data =  (char)uart_rx;
-
-    return status;
+  // check if no data available at all
+  if ((uart_rx & (1<<UART_DATA_AVAIL)) == 0) {
+   return -1;
   }
-  else {
-    return 0;
+
+  // check for frame error
+  if (uart_rx & (1<<UART_DATA_FERR)) {
+    return -2;
   }
+
+  // check for parity error
+  if (uart_rx & (1<<UART_DATA_PERR)) {
+    return -3;
+  }
+
+  // check for overrun error
+  if (uart_rx & (1<<UART_DATA_OVERR)) {
+    return -4;
+  }
+
+  return 0; // all fine
 }
 
 
