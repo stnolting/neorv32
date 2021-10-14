@@ -286,8 +286,8 @@ begin
           data_o(ctrl_tx_half_c)                     <= tx_buffer.half;
           data_o(ctrl_tx_full_c)                     <= not tx_buffer.free;
           data_o(ctrl_en_c)                          <= ctrl(ctrl_en_c);
-          data_o(ctrl_rx_irq_c)                      <= ctrl(ctrl_rx_irq_c);
-          data_o(ctrl_tx_irq_c)                      <= ctrl(ctrl_tx_irq_c);
+          data_o(ctrl_rx_irq_c)                      <= ctrl(ctrl_rx_irq_c) and bool_to_ulogic_f(boolean(UART_RX_FIFO > 1)); -- tie to zero if UART_RX_FIFO = 1
+          data_o(ctrl_tx_irq_c)                      <= ctrl(ctrl_tx_irq_c) and bool_to_ulogic_f(boolean(UART_TX_FIFO > 1)); -- tie to zero if UART_TX_FIFO = 1
           data_o(ctrl_tx_busy_c)                     <= tx_engine.busy;
           data_o(ctrl_cts_c)                         <= uart_cts_ff(1);
         else -- uart_id_rtx_addr_c
