@@ -67,7 +67,9 @@ use std.textio.all;
 
 entity neorv32_uart is
   generic (
-    UART_PRIMARY : boolean -- true = primary UART (UART0), false = secondary UART (UART1)
+    UART_PRIMARY : boolean; -- true = primary UART (UART0), false = secondary UART (UART1)
+    UART_RX_FIFO : natural; -- RX fifo depth, has to be a power of two, min 1
+    UART_TX_FIFO : natural  -- TX fifo depth, has to be a power of two, min 1
   );
   port (
     -- host access --
@@ -94,10 +96,6 @@ entity neorv32_uart is
 end neorv32_uart;
 
 architecture neorv32_uart_rtl of neorv32_uart is
-
--- WORK IN PROGRESS - FIXME - TODO --
-constant rx_engine_FIFO : natural := 4; -- RX fifo depth, has to be a power of two, min 1
-constant tx_engine_FIFO : natural := 4; -- TX fifo depth, has to be a power of two, min 1
 
   -- interface configuration for UART0 / UART1 --
   constant uart_id_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := cond_sel_stdulogicvector_f(UART_PRIMARY, uart0_base_c,      uart1_base_c);
@@ -233,10 +231,10 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (is_power_of_two_f(rx_engine_FIFO) = false) report "NEORV32 PROCESSOR CONFIG ERROR: UART" &
-  cond_sel_string_f(UART_PRIMARY, "0", "1") & " <rx_engine_FIFO> has to be a power of two." severity error;
-  assert not (is_power_of_two_f(tx_engine_FIFO) = false) report "NEORV32 PROCESSOR CONFIG ERROR: UART" &
-  cond_sel_string_f(UART_PRIMARY, "0", "1") & " <tx_engine_FIFO> has to be a power of two." severity error;
+  assert not (is_power_of_two_f(UART_RX_FIFO) = false) report "NEORV32 PROCESSOR CONFIG ERROR: UART" &
+  cond_sel_string_f(UART_PRIMARY, "0", "1") & " <UART_RX_FIFO> has to be a power of two." severity error;
+  assert not (is_power_of_two_f(UART_TX_FIFO) = false) report "NEORV32 PROCESSOR CONFIG ERROR: UART" &
+  cond_sel_string_f(UART_PRIMARY, "0", "1") & " <UART_TX_FIFO> has to be a power of two." severity error;
 
 
   -- Access Control -------------------------------------------------------------------------
@@ -322,7 +320,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   tx_engine_fifo_inst: neorv32_fifo
   generic map (
-    FIFO_DEPTH => tx_engine_FIFO, -- number of fifo entries; has to be a power of two; min 1
+    FIFO_DEPTH => UART_TX_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 32,           -- size of data elements in fifo (32-bit only for simulation)
     FIFO_RSYNC => false,        -- async read
     FIFO_SAFE  => true          -- safe access
@@ -492,7 +490,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   rx_engine_fifo_inst: neorv32_fifo
   generic map (
-    FIFO_DEPTH => rx_engine_FIFO, -- number of fifo entries; has to be a power of two; min 1
+    FIFO_DEPTH => UART_RX_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 10,           -- size of data elements in fifo
     FIFO_RSYNC => false,        -- async read
     FIFO_SAFE  => true          -- safe access
@@ -550,7 +548,7 @@ begin
         irq_rxd_o <= '0';
       else
         -- TX interrupt --
-        if (tx_engine_FIFO = 1) then
+        if (UART_TX_FIFO = 1) then
           irq_txd_o <= tx_buffer.free; -- fire IRQ if FIFO is not full
         else
           if (ctrl(ctrl_tx_irq_c) = '1') then
@@ -561,7 +559,7 @@ begin
         end if;
 
         -- RX interrupt --
-        if (rx_engine_FIFO = 1) then
+        if (UART_RX_FIFO = 1) then
           irq_rxd_o <= rx_buffer.avail; -- fire IRQ if FIFO is not empty
         else
           if (ctrl(ctrl_rx_irq_c) = '1') then

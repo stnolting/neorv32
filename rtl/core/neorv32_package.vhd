@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060110"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060111"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -949,7 +949,11 @@ package neorv32_package is
       IO_GPIO_EN                   : boolean := false;  -- implement general purpose input/output port unit (GPIO)?
       IO_MTIME_EN                  : boolean := false;  -- implement machine system timer (MTIME)?
       IO_UART0_EN                  : boolean := false;  -- implement primary universal asynchronous receiver/transmitter (UART0)?
+      IO_UART0_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
+      IO_UART0_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
       IO_UART1_EN                  : boolean := false;  -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+      IO_UART1_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
+      IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
       IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
       IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
       IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..60); 0 = disabled
@@ -1620,7 +1624,9 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_uart
     generic (
-      UART_PRIMARY : boolean -- true = primary UART (UART0), false = secondary UART (UART1)
+      UART_PRIMARY : boolean; -- true = primary UART (UART0), false = secondary UART (UART1)
+      UART_RX_FIFO : natural; -- RX fifo depth, has to be a power of two, min 1
+      UART_TX_FIFO : natural  -- TX fifo depth, has to be a power of two, min 1
     );
     port (
       -- host access --
