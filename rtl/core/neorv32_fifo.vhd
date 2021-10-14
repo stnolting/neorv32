@@ -175,12 +175,10 @@ begin
     fifo_memory_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        if (fifo.re = '1') then
-          if (FIFO_DEPTH = 1) then
-            rdata_o <= fifo.datas;
-          else
-            rdata_o <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
-          end if;
+        if (FIFO_DEPTH = 1) then
+          rdata_o <= fifo.datas;
+        else
+          rdata_o <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
         end if;
       end if;
     end process fifo_memory_read;

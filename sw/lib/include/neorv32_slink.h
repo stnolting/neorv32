@@ -46,6 +46,8 @@
 int neorv32_slink_available(void);
 void neorv32_slink_enable(void);
 void neorv32_slink_disable(void);
+void neorv32_slink_rx_irq_config(int link_id, int irq_en, int irq_type);
+void neorv32_slink_tx_irq_config(int link_id, int irq_en, int irq_type);
 int neorv32_slink_get_rx_num(void);
 int neorv32_slink_get_tx_num(void);
 int neorv32_slink_get_rx_depth(void);

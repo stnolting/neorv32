@@ -80,6 +80,72 @@ void neorv32_slink_disable(void) {
 
 
 /**********************************************************************//**
+ * Configure SLINK RX interrupt.
+ *
+ * @param[in] link_id Link id (0..7).
+ * @param[in] irq_en Link's IRQ enable (#NEORV32_SLINK_IRQ_EN_enum)
+ * @param[in] irq_type Link's IRQ type (#NEORV32_SLINK_IRQ_RX_TYPE_enum)
+ **************************************************************************/
+void neorv32_slink_rx_irq_config(int link_id, int irq_en, int irq_type) {
+
+  link_id = link_id & 7;
+
+  uint32_t slink_irq_conf = NEORV32_SLINK.IRQ;
+
+  // enable IRQ
+  if (irq_en) {
+    slink_irq_conf |=  (1 << (SLINK_IRQ_RX_EN_LSB + link_id));
+  }
+  else {
+    slink_irq_conf &= ~(1 << (SLINK_IRQ_RX_EN_LSB + link_id));
+  }
+
+  // configure type
+  if (irq_type) {
+    slink_irq_conf |=  (1 << (SLINK_IRQ_RX_MODE_LSB + link_id));
+  }
+  else {
+    slink_irq_conf &= ~(1 << (SLINK_IRQ_RX_MODE_LSB + link_id));
+  }
+
+  NEORV32_SLINK.IRQ = slink_irq_conf;
+}
+
+
+/**********************************************************************//**
+ * Configure SLINK TX interrupt.
+ *
+ * @param[in] link_id Link id (0..7).
+ * @param[in] irq_en Link's IRQ enable (#NEORV32_SLINK_IRQ_EN_enum)
+ * @param[in] irq_type Link's IRQ type (#NEORV32_SLINK_IRQ_TX_TYPE_enum)
+ **************************************************************************/
+void neorv32_slink_tx_irq_config(int link_id, int irq_en, int irq_type) {
+
+  link_id = link_id & 7;
+
+  uint32_t slink_irq_conf = NEORV32_SLINK.IRQ;
+
+  // enable IRQ
+  if (irq_en) {
+    slink_irq_conf |=  (1 << (SLINK_IRQ_TX_EN_LSB + link_id));
+  }
+  else {
+    slink_irq_conf &= ~(1 << (SLINK_IRQ_TX_EN_LSB + link_id));
+  }
+
+  // configure type
+  if (irq_type) {
+    slink_irq_conf |=  (1 << (SLINK_IRQ_TX_MODE_LSB + link_id));
+  }
+  else {
+    slink_irq_conf &= ~(1 << (SLINK_IRQ_TX_MODE_LSB + link_id));
+  }
+
+  NEORV32_SLINK.IRQ = slink_irq_conf;
+}
+
+
+/**********************************************************************//**
  * Get number of implemented RX links
  *
  * @return Number of implemented RX link (0..8).
