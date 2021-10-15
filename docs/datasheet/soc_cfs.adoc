@@ -19,17 +19,26 @@
 
 **Theory of Operation**
 
-The custom functions subsystem can be used to implement application-specific user-defined co-processors
-(like encryption or arithmetic accelerators) or peripheral/communication interfaces. In contrast to connecting
-custom hardware accelerators via the external memory interface, the CFS provide a convenient and low-latency
-extension and customization option.
+The custom functions subsystem is meant for implementing application-specific user-defined co-processors
+IP footnote:[Intellectual IP; proprietary circuit blocks.] blocks. The CFS provides up to 32x 32-bit memory-mapped
+registers (`REG`, see register map table below) that can be accessed by the CPU via normal load/store operations.
+The actual functionality of these register has to be defined by the hardware designer. Furthermore, the CFS
+provides two IO conduits to implement custom module- or chip-external interfaces.
 
-The CFS provides up to 32x 32-bit memory-mapped registers `REG` (see register map table below). The actual
-functionality of these register has to be defined by the hardware designer.
+In contrast to connecting custom hardware accelerators via external memory interfaces (like SPI or the processor's
+external bus interface), the CFS provide a convenient, low-latency and tightly-coupled extension and
+customization option.
+
+Just like any other externally-connected IP, logic implemented within the custom functions subsystem can operate
+_independently_ of the CPU providing true parallel processing capabilities. Potential use cases might include
+dedicated hardware accelerators for en-/decryption (AES), signal processing (FFT) or AI applications
+(CNNs) as well as custom IO systems like fast memory interfaces (DDR) and mass storage (SDIO), networking (CAN)
+or real-time data transport (I2S).
 
 [INFO]
 Take a look at the template CFS VHDL source file (`rtl/core/neorv32_cfs.vhd`). The file is highly
 commented to illustrate all aspects that are relevant for implementing custom CFS-based co-processor designs.
+
 
 **CFS Software Access**
 
@@ -43,26 +52,34 @@ NEORV32_CFS.REG[0] = (uint32_t)some_data_array(i); // write to CFS register 0
 uint32_t temp = NEORV32_CFS.REG[20]; // read from CFS register 20
 ----
 
+
 **CFS Interrupt**
 
 The CFS provides a single high-level-triggered interrupt request signal mapped to the CPU's fast interrupt channel 1.
 Once set, the interrupt has to stay asserted until explicitly acknowledged by the software (for example by
 writing to a specific CFS register). See section <<_processor_interrupts>> for more information.
 
+
 **CFS Configuration Generic**
 
 By default, the CFS provides a single 32-bit `std_(u)logic_vector` configuration generic _IO_CFS_CONFIG_
 that is available in the processor's top entity. This generic can be used to pass custom configuration options
-from the top entity down to the CFS entity.
+from the top entity directly down to the CFS. The actual definition of the generics and it'S usage inside the
+CFS is left to the hardware designer.
+
 
 **CFS Custom IOs**
 
 By default, the CFS also provides two unidirectional input and output conduits `cfs_in_i` and `cfs_out_o`.
-These signals are propagated to the processor's top entity. The actual use of these signals has to be defined
-by the hardware designer. The size of the input signal conduit `cfs_in_i` is defined via the (top's) _IO_CFS_IN_SIZE_ configuration
-generic (default = 32-bit). The size of the output signal conduit `cfs_out_o` is defined via the (top's)
+These signals are directly propagated to the processor's top entity. These conduits can be used to implement
+application-specific interfaces like memory or network connections. The actual use case of these signals
+has to be defined by the hardware designer.
+
+The size of the input signal conduit `cfs_in_i` is defined via the top's _IO_CFS_IN_SIZE_ configuration
+generic (default = 32-bit). The size of the output signal conduit `cfs_out_o` is defined via the top's
 _IO_CFS_OUT_SIZE_ configuration generic (default = 32-bit). If the custom function subsystem is not implemented
 (_IO_CFS_EN_ = false) the `cfs_out_o` signal is tied to all-zero.
+
 
 .CFS register map (`struct NEORV32_CFS`)
 [cols="^4,<5,^2,^3,<14"]
