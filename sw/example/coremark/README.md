@@ -17,7 +17,7 @@ Make sure to define `RUN_COREMARK` *when invoking* `make` (via `USER_FLAGS+=-DRU
 
 To build the executable for a certain CPU configuration and a certain optimization level of the benchmark, type (`rv32imc` and `O3` in this example):
 
-`> make USER_FLAGS+=-DRUN_COREMARK MARCH=-march=rv32imc EFFORT=-O3 clean_all exe`
+`> make USER_FLAGS+=-DRUN_COREMARK MARCH=rv32imc EFFORT=-O3 clean_all exe`
 
 
 # Running

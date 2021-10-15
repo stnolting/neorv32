@@ -287,7 +287,7 @@ beginning of this script you will find the `MEMORY` configuration listing the di
 ----
 MEMORY
 {
-  ram  (rwx) : ORIGIN = 0x80000000, LENGTH = DEFINED(make_bootloader) ? 512 : 8*1024 # <1>
+  ram  (rwx) : ORIGIN = 0x80000000, LENGTH = DEFINED(make_bootloader) ? 512 : 8*1024 <1>
 ...
 ----
 <1> Size of the data memory address space (right-most value) (internal/external DMEM); here 8kB
@@ -615,8 +615,8 @@ the `MABI` variable according to your CPU hardware configuration.
 [source,makefile]
 ----
 # CPU architecture and ABI
-MARCH = -march=rv32i # <1>
-MABI = -mabi=ilp32 # <2>
+MARCH ?= rv32i <1>
+MABI  ?= ilp32 <2>
 ----
 <1> MARCH = Machine architecture ("ISA string")
 <2> MABI = Machine binary interface
@@ -641,7 +641,7 @@ You can also override the default `MARCH` and `MABI` configurations from the mak
 
 [source,bash]
 ----
-$ make MARCH=-march=rv32ic clean_all all
+$ make MARCH=rv32ic clean_all all
 ----
 
 [NOTE]
@@ -1180,7 +1180,7 @@ Blinking LED demo program
 
 To do a quick test of the NEORV32 make sure to have https://github.com/ghdl/ghdl[GHDL] and a
 [RISC-V gcc toolchain](https://github.com/stnolting/riscv-gcc-prebuilt) installed.
-Navigate to the project's `sw/example/hello_world` folder and run `make USER_FLAGS+=-DUART0_SIM_MODE MARCH=-march=rv32imac clean_all sim`:
+Navigate to the project's `sw/example/hello_world` folder and run `make USER_FLAGS+=-DUART0_SIM_MODE MARCH=rv32imac clean_all sim`:
 
 [TIP]
 The simulator will output some _sanity check_ notes (and warnings or even errors if something is ill-configured)
@@ -1188,7 +1188,7 @@ right at the beginning of the simulation to give a brief overview of the actual 
 
 [source, bash]
 ----
-stnolting@Einstein:/mnt/n/Projects/neorv32/sw/example/hello_world$ make USER_FLAGS+=-DUART0_SIM_MODE MARCH=-march=rv32imac clean_all sim
+stnolting@Einstein:/mnt/n/Projects/neorv32/sw/example/hello_world$ make USER_FLAGS+=-DUART0_SIM_MODE MARCH=rv32imac clean_all sim
 ../../../sw/lib/source/neorv32_uart.c: In function 'neorv32_uart0_setup':
 ../../../sw/lib/source/neorv32_uart.c:301:4: warning: #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only! [-Wcpp]
   301 |   #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only! <1>
@@ -1435,7 +1435,7 @@ Navigate to `sw/example/blink_led` and compile the application:
 .Compile the test application
 [source, bash]
 --------------------------
-.../neorv32/sw/example/blink_led$ make MARCH=-march=rv32i USER_FLAGS+=-g clean_all all
+.../neorv32/sw/example/blink_led$ make MARCH=rv32i USER_FLAGS+=-g clean_all all
 --------------------------
 
 .Adding debug symbols to the executable

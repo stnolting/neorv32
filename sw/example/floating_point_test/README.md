@@ -8,11 +8,11 @@ defined by the RISC-V `F` single-precision floating-point extension). Hence, the
 * floating-point load/store operations (`FLW`, `FSW`) and their compressed versions
 * integer register file `x` <-> floating point register file `f` move operations (`FMV.W.X`, `FMV.X.W`)
 
-:information_source: More information regarding the RISC-V `Zfinx` single-precision floating-point extension can be found in the officail GitHub repo:
+:information_source: More information regarding the RISC-V `Zfinx` single-precision floating-point extension can be found in the official GitHub repo:
 [`github.com/riscv/riscv-zfinx`](https://github.com/riscv/riscv-zfinx).
 
 :warning: The RISC-V `Zfinx` extension is not officially ratified yet, but it is assumed to remain unchanged. Hence, it is not supported by the upstream RISC-V GCC port.
-Make sure you **do not** use the `f` ISA attribute when compiling applications that use floating-point arithmetic (`-march=rv32i*f*` is **NOT ALLOWED!**).
+Make sure you **do not** use the `f` ISA attribute when compiling applications that use floating-point arithmetic (`MARCH=rv32i*f*` is **NOT ALLOWED!**).
 
 
 ### :warning: FPU Limitations
@@ -32,7 +32,7 @@ For example, the floating-point addition instruction `FADD.S` can be invoked usi
 float riscv_intrinsic_fadds(float rs1, float rs2)
 ```
 
-The pure-software emulation instruction, which uses the standard builtin functions to execute all floating-point operations, is available via wrapper function. The
+The pure-software emulation instruction, which uses the standard built-in functions to execute all floating-point operations, is available via wrapper function. The
 emulation function for the `FADD.S` instruction is:
 
 ```c
@@ -47,6 +47,6 @@ The provided test program `main.c` verifies all currently implemented `Zfinx` in
 
 ## Resources
 
-* Great page with online calculators for floating-point artihmetic: [http://www.ecs.umass.edu/ece/koren/arith/simulator/](http://www.ecs.umass.edu/ece/koren/arith/simulator/)
+* Great page with online calculators for floating-point arithmetic: [http://www.ecs.umass.edu/ece/koren/arith/simulator/](http://www.ecs.umass.edu/ece/koren/arith/simulator/)
 * A handy tool for visualizing floating-point numbers in their binary representation: [https://www.h-schmidt.net/FloatConverter/IEEE754.html](https://www.h-schmidt.net/FloatConverter/IEEE754.html)
 * This helped me to understand what results the different FPU operation generate when having "special" inputs like NaN: [https://techdocs.altium.com/display/FPGA/IEEE+754+Standard+-+Overview](https://techdocs.altium.com/display/FPGA/IEEE+754+Standard+-+Overview)

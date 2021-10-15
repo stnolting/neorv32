@@ -144,7 +144,7 @@ makefile (`sw/common/common.mk`):
 
 [TIP]
 The makefile configuration variables can be (re-)defined directly when invoking the makefile. For
-example via `$ make MARCH=-march=rv32ic clean_all exe`. You can also make project-specific definitions
+example via `$ make MARCH=rv32ic clean_all exe`. You can also make project-specific definitions
 of all variables inside the project's actual makefile (e.g., `sw/example/blink_led/makefile`).
 
 [source,makefile]
@@ -164,8 +164,8 @@ EFFORT ?= -Os
 # Compiler toolchain
 RISCV_PREFIX ?= riscv32-unknown-elf-
 # CPU architecture and ABI
-MARCH ?= -march=rv32i
-MABI  ?= -mabi=ilp32
+MARCH ?= rv32i
+MABI  ?= ilp32
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?=
 # Relative or absolute path to the NEORV32 home folder
@@ -181,7 +181,7 @@ NEORV32_HOME ?= ../../..
 | _ASM_INC_         | Include file folders that are used only for the assembly source files (`*.S`/`*.s`).
 | _EFFORT_          | Optimization level, optimize for size (`-Os`) is default; legal values: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`
 | _RISCV_PREFIX_    | The toolchain prefix to be used; follows the naming convention "architecture-vendor-output-"
-| _MARCH_           | The targetd RISC-V architecture/ISA. Only `rv32` is supported by the NEORV32. Enable compiler support of optional CPU extension by adding the according extension letter (e.g. `rv32im` for _M_ CPU extension). See https://stnolting.github.io/neorv32/ug/#_enabling_risc_v_cpu_extensions[User Guide: Enabling RISC-V CPU Extensions] for more information.
+| _MARCH_           | The targeted RISC-V architecture/ISA. Only `rv32` is supported by the NEORV32. Enable compiler support of optional CPU extension by adding the according extension letter (e.g. `rv32im` for _M_ CPU extension). See https://stnolting.github.io/neorv32/ug/#_enabling_risc_v_cpu_extensions[User Guide: Enabling RISC-V CPU Extensions] for more information.
 | _MABI_            | The default 32-bit integer ABI.
 | _USER_FLAGS_      | Additional flags that will be forwarded to the compiler tools
 | _NEORV32_HOME_    | Relative or absolute path to the NEORV32 project home folder. Adapt this if the makefile/project is not in the project's `sw/example folder`.

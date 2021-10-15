@@ -16,8 +16,8 @@ EFFORT ?= -Os
 RISCV_PREFIX ?= riscv32-unknown-elf-
 
 # CPU architecture and ABI
-MARCH ?= -march=rv32i
-MABI  ?= -mabi=ilp32
+MARCH ?= rv32i
+MABI  ?= ilp32
 
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?=
@@ -87,7 +87,7 @@ CC_X86 = g++ -Wall -O -g
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
 
 # Compiler & linker flags
-CC_OPTS  = $(MARCH) $(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
+CC_OPTS  = -march=$(MARCH) -mabi=$(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
 CC_OPTS += -Wl,--gc-sections -lm -lc -lgcc -lc
 # This accelerates instruction fetch after branches when C extension is enabled (irrelevant when C extension is disabled)
 CC_OPTS += -falign-functions=4 -falign-labels=4 -falign-loops=4 -falign-jumps=4
