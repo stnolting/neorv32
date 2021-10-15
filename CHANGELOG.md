@@ -26,7 +26,8 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 14.10.2021 | 1.6.1.10 | :sparkles: SLINK: added fine-grained, per-link interrupt configuration ([PR #182](https://github.com/stnolting/neorv32/pull/182)) |
+| 15.10.2012 | 1.6.1.11 | :sparkles: UARTs: added optional configurable RX and TX FIFOs, added fine-grained RX/TX IRQ configuration options (see [PR #183](https://github.com/stnolting/neorv32/pull/183)) |
+| 14.10.2021 | 1.6.1.10 | :sparkles: SLINK: added fine-grained, per-link interrupt configuration (see [PR #182](https://github.com/stnolting/neorv32/pull/182)) |
 | 13.10.2021 | 1.6.1.9 | :sparkles: NEOLED: added new control register bit _NEOLED_CTRL_IRQ_CONF_ to configure IRQ condition: `0` = IRQ if FIFO is less than half-full, `1` = IRQ if FIFO is empty; :information_source: IRQ behavior is fully backwards compatible if _NEOLED_CTRL_IRQ_CONF_ is ignored (kept zero) |
 | 12.10.2021 | 1.6.1.8 | added dedicated `half_o` signal to FIFO component (FIFO _at least_ half-full), simplifies half-full test logic in FIFO-utilizing modules (area footprint and critical path); minor logic/hardware optimization of NEOLED module |
 | 09.10.2021 | 1.6.1.7 | :warning: reworked _fast interrupt requests_ (FIRQ) CPU interrupt system: fast interrupt requests are now also high-level-triggered (like the RISC-V standard interrupts) and stay asserted until explicitly acknowledged by software ([PR #176](https://github.com/stnolting/neorv32/pull/176)) |

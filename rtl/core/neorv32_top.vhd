@@ -120,7 +120,11 @@ entity neorv32_top is
     IO_GPIO_EN                   : boolean := false;  -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  : boolean := false;  -- implement machine system timer (MTIME)?
     IO_UART0_EN                  : boolean := false;  -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART0_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
+    IO_UART0_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
     IO_UART1_EN                  : boolean := false;  -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_UART1_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
+    IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
     IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..60); 0 = disabled
@@ -1006,7 +1010,9 @@ begin
   if (IO_UART0_EN = true) generate
     neorv32_uart0_inst: neorv32_uart
     generic map (
-      UART_PRIMARY => true -- true = primary UART (UART0), false = secondary UART (UART1)
+      UART_PRIMARY => true,             -- true = primary UART (UART0), false = secondary UART (UART1)
+      UART_RX_FIFO => IO_UART0_RX_FIFO, -- RX fifo depth, has to be a power of two, min 1
+      UART_TX_FIFO => IO_UART0_TX_FIFO  -- TX fifo depth, has to be a power of two, min 1
     )
     port map (
       -- host access --
@@ -1050,7 +1056,9 @@ begin
   if (IO_UART1_EN = true) generate
     neorv32_uart1_inst: neorv32_uart
     generic map (
-      UART_PRIMARY => false -- true = primary UART (UART0), false = secondary UART (UART1)
+      UART_PRIMARY => false,            -- true = primary UART (UART0), false = secondary UART (UART1)
+      UART_RX_FIFO => IO_UART1_RX_FIFO, -- RX fifo depth, has to be a power of two, min 1
+      UART_TX_FIFO => IO_UART1_TX_FIFO  -- TX fifo depth, has to be a power of two, min 1
     )
     port map (
       -- host access --

@@ -97,7 +97,11 @@ entity neorv32_ProcessorTop_stdlogic is
     IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
     IO_UART0_EN                  : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART0_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
+    IO_UART0_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
     IO_UART1_EN                  : boolean := true;   -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_UART1_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
+    IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
     IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                : natural := 4;      -- number of PWM channels to implement (0..60); 0 = disabled
@@ -316,7 +320,11 @@ begin
     IO_GPIO_EN                   => IO_GPIO_EN,         -- implement general purpose input/output port unit (GPIO)?
     IO_MTIME_EN                  => IO_MTIME_EN,        -- implement machine system timer (MTIME)?
     IO_UART0_EN                  => IO_UART0_EN,        -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART0_RX_FIFO             => IO_UART0_RX_FIFO,   -- RX fifo depth, has to be a power of two, min 1
+    IO_UART0_TX_FIFO             => IO_UART0_TX_FIFO,   -- TX fifo depth, has to be a power of two, min 1
     IO_UART1_EN                  => IO_UART1_EN,        -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_UART1_RX_FIFO             => IO_UART1_RX_FIFO,   -- RX fifo depth, has to be a power of two, min 1
+    IO_UART1_TX_FIFO             => IO_UART1_TX_FIFO,   -- TX fifo depth, has to be a power of two, min 1
     IO_SPI_EN                    => IO_SPI_EN,          -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    => IO_TWI_EN,          -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                => IO_PWM_NUM_CH,      -- number of PWM channels to implement (0..60); 0 = disabled
