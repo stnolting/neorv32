@@ -710,7 +710,7 @@ begin
       end if;
       --
       execute_engine.state    <= execute_engine.state_nxt;
-      execute_engine.sleep    <= execute_engine.sleep_nxt and (not debug_ctrl.running); -- do not execute when in debug mode
+      execute_engine.sleep    <= execute_engine.sleep_nxt;
       execute_engine.branched <= execute_engine.branched_nxt;
       --
       execute_engine.state_prev <= execute_engine.state;
