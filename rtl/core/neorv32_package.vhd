@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060111"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060112"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -1806,8 +1806,6 @@ package neorv32_package is
       -- clock generator --
       clkgen_en_o : out std_ulogic; -- enable clock generator
       clkgen_i    : in  std_ulogic_vector(07 downto 0); -- "clock" inputs
-      -- CPU state --
-      sleep_i     : in  std_ulogic; -- set if cpu is in sleep mode
       -- interrupt --
       irq_o       : out std_ulogic; -- interrupt request
       -- custom io (conduit) --

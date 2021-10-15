@@ -334,7 +334,6 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- misc --
   signal mtime_time     : std_ulogic_vector(63 downto 0); -- current system time from MTIME
-  signal cpu_sleep      : std_ulogic; -- CPU is in sleep mode when set
   signal bus_keeper_err : std_ulogic; -- bus keeper: bus access timeout
 
 begin
@@ -483,7 +482,7 @@ begin
     -- global control --
     clk_i          => clk_i,        -- global clock, rising edge
     rstn_i         => sys_rstn,     -- global reset, low-active, async
-    sleep_o        => cpu_sleep,    -- cpu is in sleep mode when set
+    sleep_o        => open,         -- cpu is in sleep mode when set
     -- instruction bus interface --
     i_bus_addr_o   => cpu_i.addr,   -- bus access address
     i_bus_rdata_i  => cpu_i.rdata,  -- bus read data
@@ -872,8 +871,6 @@ begin
       -- clock generator --
       clkgen_en_o => cfs_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,                  -- "clock" inputs
-      -- CPU state --
-      sleep_i     => cpu_sleep,                -- set if cpu is in sleep mode
       -- interrupt --
       irq_o       => cfs_irq,                  -- interrupt request
       -- custom io (conduit) --

@@ -62,8 +62,6 @@ entity neorv32_cfs is
     -- clock generator --
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(07 downto 0); -- "clock" inputs
-    -- CPU state --
-    sleep_i     : in  std_ulogic; -- set if cpu is in sleep mode
     -- interrupt --
     irq_o       : out std_ulogic; -- interrupt request
     -- custom io (conduits) --
@@ -163,15 +161,6 @@ begin
   -- Make sure to deactivate the CFS's clkgen_en_o if no clocks are required in here to reduce dynamic power consumption.
 
   clkgen_en_o <= '0'; -- not used for this minimal example
-
-
-  -- Further Power Optimization -------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- The CFS can decide to go into low-power mode (by disabling all switching activity) when the CPU enters sleep mode.
-  -- The sleep_i signal is high when the CPU is in sleep mode. Any interrupt including the CFS's irq_o interrupt request signal
-  -- will wake up the CPU again.
-
-  -- sleep_i
 
 
   -- Interrupt ------------------------------------------------------------------------------
