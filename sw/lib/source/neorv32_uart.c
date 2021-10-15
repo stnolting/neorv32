@@ -342,7 +342,7 @@ void neorv32_uart0_putc(char c) {
 
 
 /**********************************************************************//**
- * Check if UART0 TX is busy (transmitter busy and data left in TX buffer).
+ * Check if UART0 TX is busy (transmitter busy or data left in TX buffer).
  *
  * @note This function is blocking.
  *
@@ -709,7 +709,7 @@ void neorv32_uart1_putc(char c) {
 
 
 /**********************************************************************//**
- * Check if UART1 TX is busy (transmitter busy and data left in TX buffer).
+ * Check if UART1 TX is busy (transmitter busy or data left in TX buffer).
  *
  * @note This function is blocking.
  *
