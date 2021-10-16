@@ -117,6 +117,7 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 * 32-bit external bus interface, Wishbone b4 compatible
 ([WISHBONE](https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite))
   * [wrapper](https://github.com/stnolting/neorv32/blob/master/rtl/system_integration/neorv32_SystemTop_axi4lite.vhd) for AXI4-Lite master interface
+  * [wrapper](https://github.com/stnolting/neorv32/blob/master/rtl/system_integration/neorv32_SystemTop_AvalonMM.vhd) for Avalon-MM master interface
 * 32-bit stream link interface with up to 8 independent RX and TX links
 ([SLINK](https://stnolting.github.io/neorv32/#_stream_link_interface_slink))
   * AXI4-Stream compatible
