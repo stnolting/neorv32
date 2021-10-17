@@ -853,23 +853,23 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 /** SPI control register bits */
 enum NEORV32_SPI_CTRL_enum {
-  SPI_CTRL_CS0    =  0, /**< UART control register(0)  (r/w): Direct chip select line 0 (output is low when set) */
-  SPI_CTRL_CS1    =  1, /**< UART control register(1)  (r/w): Direct chip select line 1 (output is low when set) */
-  SPI_CTRL_CS2    =  2, /**< UART control register(2)  (r/w): Direct chip select line 2 (output is low when set) */
-  SPI_CTRL_CS3    =  3, /**< UART control register(3)  (r/w): Direct chip select line 3 (output is low when set) */
-  SPI_CTRL_CS4    =  4, /**< UART control register(4)  (r/w): Direct chip select line 4 (output is low when set) */
-  SPI_CTRL_CS5    =  5, /**< UART control register(5)  (r/w): Direct chip select line 5 (output is low when set) */
-  SPI_CTRL_CS6    =  6, /**< UART control register(6)  (r/w): Direct chip select line 6 (output is low when set) */
-  SPI_CTRL_CS7    =  7, /**< UART control register(7)  (r/w): Direct chip select line 7 (output is low when set) */
-  SPI_CTRL_EN     =  8, /**< UART control register(8)  (r/w): SPI unit enable */
-  SPI_CTRL_CPHA   =  9, /**< UART control register(9)  (r/w): Clock polarity (idle polarity) */
-  SPI_CTRL_PRSC0  = 10, /**< UART control register(10) (r/w): Clock prescaler select bit 0 */
-  SPI_CTRL_PRSC1  = 11, /**< UART control register(11) (r/w): Clock prescaler select bit 1 */
-  SPI_CTRL_PRSC2  = 12, /**< UART control register(12) (r/w): Clock prescaler select bit 2 */
-  SPI_CTRL_SIZE0  = 13, /**< UART control register(13) (r/w): Transfer data size lsb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
-  SPI_CTRL_SIZE1  = 14, /**< UART control register(14) (r/w): Transfer data size msb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
+  SPI_CTRL_CS0    =  0, /**< SPI control register(0)  (r/w): Direct chip select line 0 (output is low when set) */
+  SPI_CTRL_CS1    =  1, /**< SPI control register(1)  (r/w): Direct chip select line 1 (output is low when set) */
+  SPI_CTRL_CS2    =  2, /**< SPI control register(2)  (r/w): Direct chip select line 2 (output is low when set) */
+  SPI_CTRL_CS3    =  3, /**< SPI control register(3)  (r/w): Direct chip select line 3 (output is low when set) */
+  SPI_CTRL_CS4    =  4, /**< SPI control register(4)  (r/w): Direct chip select line 4 (output is low when set) */
+  SPI_CTRL_CS5    =  5, /**< SPI control register(5)  (r/w): Direct chip select line 5 (output is low when set) */
+  SPI_CTRL_CS6    =  6, /**< SPI control register(6)  (r/w): Direct chip select line 6 (output is low when set) */
+  SPI_CTRL_CS7    =  7, /**< SPI control register(7)  (r/w): Direct chip select line 7 (output is low when set) */
+  SPI_CTRL_EN     =  8, /**< SPI control register(8)  (r/w): SPI unit enable */
+  SPI_CTRL_CPHA   =  9, /**< SPI control register(9)  (r/w): Clock phase */
+  SPI_CTRL_PRSC0  = 10, /**< SPI control register(10) (r/w): Clock prescaler select bit 0 */
+  SPI_CTRL_PRSC1  = 11, /**< SPI control register(11) (r/w): Clock prescaler select bit 1 */
+  SPI_CTRL_PRSC2  = 12, /**< SPI control register(12) (r/w): Clock prescaler select bit 2 */
+  SPI_CTRL_SIZE0  = 13, /**< SPI control register(13) (r/w): Transfer data size lsb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
+  SPI_CTRL_SIZE1  = 14, /**< SPI control register(14) (r/w): Transfer data size msb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
 
-  SPI_CTRL_BUSY   = 31  /**< UART control register(31) (r/-): SPI busy flag */
+  SPI_CTRL_BUSY   = 31  /**< SPI control register(31) (r/-): SPI busy flag */
 };
 /**@}*/
 
