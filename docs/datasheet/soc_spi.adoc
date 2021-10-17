@@ -122,10 +122,10 @@ by triggering a new SPI transmission or by disabling the SPI module.
                                               <|`10` _SPI_CTRL_PRSC0_ ^| r/w .3+| 3-bit clock prescaler select
                                               <|`11` _SPI_CTRL_PRSC1_ ^| r/w
                                               <|`12` _SPI_CTRL_PRSC2_ ^| r/w
-                                              <|`14` _SPI_CTRL_SIZE0_ ^| r/w .2+<| transfer size (`00`=8-bit, `01`=16-bit, `10`=24-bit, `11`=32-bit)
-                                              <|`15` _SPI_CTRL_SIZE1_ ^| r/w
-                                              <|`16` _SPI_CTRL_CPOL_  ^| r/w <| clock polarity
-                                              <|`17` .. `18`          ^| r/- <| _reserved, read as zero
+                                              <|`13` _SPI_CTRL_SIZE0_ ^| r/w .2+<| transfer size (`00`=8-bit, `01`=16-bit, `10`=24-bit, `11`=32-bit)
+                                              <|`14` _SPI_CTRL_SIZE1_ ^| r/w
+                                              <|`15` _SPI_CTRL_CPOL_  ^| r/w <| clock polarity
+                                              <|`16` .. `30`          ^| r/- <| _reserved, read as zero
                                               <|`31` _SPI_CTRL_BUSY_  ^| r/- <| transmission in progress when set
 | `0xffffffac` | `NEORV32_SPI.DATA` |`31:0` | r/w | receive/transmit data, LSB-aligned
 |=======================
