@@ -868,6 +868,7 @@ enum NEORV32_SPI_CTRL_enum {
   SPI_CTRL_PRSC2  = 12, /**< SPI control register(12) (r/w): Clock prescaler select bit 2 */
   SPI_CTRL_SIZE0  = 13, /**< SPI control register(13) (r/w): Transfer data size lsb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
   SPI_CTRL_SIZE1  = 14, /**< SPI control register(14) (r/w): Transfer data size msb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
+  SPI_CTRL_CPOL   = 15, /**< SPI control register(15) (r/w): Clock polarity */
 
   SPI_CTRL_BUSY   = 31  /**< SPI control register(31) (r/-): SPI busy flag */
 };
