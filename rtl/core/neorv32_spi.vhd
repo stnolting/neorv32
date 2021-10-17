@@ -73,25 +73,25 @@ architecture neorv32_spi_rtl of neorv32_spi is
   constant lo_abb_c : natural := index_size_f(spi_size_c); -- low address boundary bit
 
   -- control register --
-  constant ctrl_spi_cs0_c    : natural :=  0; -- r/w: spi CS 0
-  constant ctrl_spi_cs1_c    : natural :=  1; -- r/w: spi CS 1
-  constant ctrl_spi_cs2_c    : natural :=  2; -- r/w: spi CS 2
-  constant ctrl_spi_cs3_c    : natural :=  3; -- r/w: spi CS 3
-  constant ctrl_spi_cs4_c    : natural :=  4; -- r/w: spi CS 4
-  constant ctrl_spi_cs5_c    : natural :=  5; -- r/w: spi CS 5
-  constant ctrl_spi_cs6_c    : natural :=  6; -- r/w: spi CS 6
-  constant ctrl_spi_cs7_c    : natural :=  7; -- r/w: spi CS 7
+  constant ctrl_spi_cs0_c   : natural :=  0; -- r/w: spi CS 0
+  constant ctrl_spi_cs1_c   : natural :=  1; -- r/w: spi CS 1
+  constant ctrl_spi_cs2_c   : natural :=  2; -- r/w: spi CS 2
+  constant ctrl_spi_cs3_c   : natural :=  3; -- r/w: spi CS 3
+  constant ctrl_spi_cs4_c   : natural :=  4; -- r/w: spi CS 4
+  constant ctrl_spi_cs5_c   : natural :=  5; -- r/w: spi CS 5
+  constant ctrl_spi_cs6_c   : natural :=  6; -- r/w: spi CS 6
+  constant ctrl_spi_cs7_c   : natural :=  7; -- r/w: spi CS 7
   --
-  constant ctrl_spi_en_c     : natural :=  8; -- r/w: spi enable
-  constant ctrl_spi_cpha_c   : natural :=  9; -- r/w: spi clock phase
-  constant ctrl_spi_prsc0_c  : natural := 10; -- r/w: spi prescaler select bit 0
-  constant ctrl_spi_prsc1_c  : natural := 11; -- r/w: spi prescaler select bit 1
-  constant ctrl_spi_prsc2_c  : natural := 12; -- r/w: spi prescaler select bit 2
-  constant ctrl_spi_size0_c  : natural := 13; -- r/w: data size (00:  8-bit, 01: 16-bit)
-  constant ctrl_spi_size1_c  : natural := 14; -- r/w: data size (10: 24-bit, 11: 32-bit)
-  constant ctrl_spi_cpol_c   : natural := 15; -- r/w: spi clock polarity
+  constant ctrl_spi_en_c    : natural :=  8; -- r/w: spi enable
+  constant ctrl_spi_cpha_c  : natural :=  9; -- r/w: spi clock phase
+  constant ctrl_spi_prsc0_c : natural := 10; -- r/w: spi prescaler select bit 0
+  constant ctrl_spi_prsc1_c : natural := 11; -- r/w: spi prescaler select bit 1
+  constant ctrl_spi_prsc2_c : natural := 12; -- r/w: spi prescaler select bit 2
+  constant ctrl_spi_size0_c : natural := 13; -- r/w: data size (00:  8-bit, 01: 16-bit)
+  constant ctrl_spi_size1_c : natural := 14; -- r/w: data size (10: 24-bit, 11: 32-bit)
+  constant ctrl_spi_cpol_c  : natural := 15; -- r/w: spi clock polarity
   --
-  constant ctrl_spi_busy_c   : natural := 31; -- r/-: spi transceiver is busy
+  constant ctrl_spi_busy_c  : natural := 31; -- r/-: spi transceiver is busy
   --
   signal ctrl : std_ulogic_vector(15 downto 0);
 
