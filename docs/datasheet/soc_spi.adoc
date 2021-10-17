@@ -9,8 +9,8 @@
 | Software driver file(s): | neorv32_spi.c |
 |                          | neorv32_spi.h |
 | Top entity port:         | `spi_sck_o` | 1-bit serial clock output
-|                          | `spi_sdo_i` | 1-bit serial data output
-|                          | `spi_sdi_o` | 1-bit serial data input
+|                          | `spi_sdo_o` | 1-bit serial data output
+|                          | `spi_sdi_i` | 1-bit serial data input
 |                          | `spi_csn_i` | 8-bit dedicated chip select (low-active)
 | Configuration generics:  | _IO_SPI_EN_ | implement SPI controller when _true_
 | CPU interrupts:          | fast IRQ channel 6 | transmission done interrupt (see <<_processor_interrupts>>)
@@ -22,13 +22,14 @@ SPI is a synchronous serial transmission interface. The NEORV32 SPI transceiver 
 bit long transmissions. The unit provides 8 dedicated chip select signals via the top entity's `spi_csn_o`
 signal.
 
-The SPI unit is enabled via the _SPI_CTRL_EN_ bit in the `CTRL` control register. The idle clock polarity is configured via the _SPI_CTRL_CPHA_
-bit and can be low (`0`) or high (`1`) during idle. The data quantity to be transferred within a
+The SPI unit is enabled via the _SPI_CTRL_EN_ bit in the `CTRL` control register. The SPI clock phase is configured via the _SPI_CTRL_CPHA_
+bit (`0` = sample `spi_sdi_i` on rising edge & update `spi_sdo_o` on falling edge; `1` = sample `spi_sdi_i` on falling edge & update
+`spi_sdo_o` on rising edge). The data quantity to be transferred within a
 single transmission is defined via the _SPI_CTRL_SIZEx bits_. The unit supports 8-bit (`00`), 16-bit (`01`), 24-
 bit (`10`) and 32-bit (`11`) transfers.
 
 The SPI controller features 8 dedicated chip-select lines. These lines are controlled via the control register's _SPI_CTRL_CSx_ bits. When
-a specifc _SPI_CTRL_CSx_ bit is **set**, the according chip select line `spi_csn_o(x)` goes **low** (low-active chip select lines).
+a specific _SPI_CTRL_CSx_ bit is **set**, the according chip select line `spi_csn_o(x)` goes **low** (low-active chip select lines).
 
 The SPI clock frequency is defined via the 3-bit _SPI_CTRL_PRSCx_ clock prescaler. The following prescalers
 are available:
@@ -52,7 +53,7 @@ into the lowest 8/16/24 bit of `DATA`. Vice versa, the received data is also alw
 
 **Interrupt**
 
-The SPI module provides a single interrupt to singal _idle state_ (= read for new transmission) to the CPU. Whenever the SPI module
+The SPI module provides a single interrupt to signal _idle state_ (= read for new transmission) to the CPU. Whenever the SPI module
 is currently idle (and enabled), the interrupt request is active. A pending interrupt request is cleared
 by triggering a new SPI transmission or by disabling the device.
 
@@ -71,7 +72,7 @@ by triggering a new SPI transmission or by disabling the device.
                                               <|`6` _SPI_CTRL_CS6_     ^| r/w 
                                               <|`7` _SPI_CTRL_CS7_     ^| r/w 
                                               <|`8` _SPI_CTRL_EN_      ^| r/w <| SPI enable
-                                              <|`9` _SPI_CTRL_CPHA_    ^| r/w <| polarity of `spi_sck_o` when idle
+                                              <|`9` _SPI_CTRL_CPHA_    ^| r/w <| clock phase (`0`=sample RX on rising edge & update TX on falling edge; `1`=sample RX on falling edge & update TX on rising edge)
                                               <|`10` _SPI_CTRL_PRSC0_  ^| r/w .3+| 3-bit clock prescaler select
                                               <|`11` _SPI_CTRL_PRSC1_  ^| r/w
                                               <|`12` _SPI_CTRL_PRSC2_  ^| r/w
