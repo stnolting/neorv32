@@ -72,8 +72,8 @@ setting up your NEORV32 setup!
 - [x] all-in-one: [CPU](#NEORV32-CPU-Features) plus [Processor/SoC](#NEORV32-Processor-Features) plus [Software Framework & Tooling](#Software-Framework-and-Tooling)
 - [x] completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
 - [x] fully synchronous design, no latches, no gated clocks
-- [x] be as small as possible (while being as RISC-V-compliant as possible) – but with a reasonable size-performance trade-off:
-the processor (CPU _including_ privileged architecture) fits innto a Lattice iCE40 UltraPlus 5k low-power FPGA running at 24 MHz
+- [x] be as small as possible while being as RISC-V-compliant as possible – but with a reasonable size-performance trade-off:
+the processor (CPU _including_ privileged architecture) fits into a Lattice iCE40 UltraPlus 5k low-power FPGA running at 24 MHz
 - [x] from zero to `printf("hello world!");` - completely open source and documented
 - [x] easy to use even for FPGA/RISC-V starters – intended to work *out of the box*
 
@@ -275,11 +275,14 @@ Results generated for hardware version [`1.5.7.10`](https://github.com/stnolting
 * gcc-based toolchain ([pre-compiled toolchains available](https://github.com/stnolting/riscv-gcc-prebuilt))
 * bootloader with UART interface console
 * runtime environment for handling traps
-* several [example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) to get started including CoreMark, FreeRTOS and *Conway's Game of Life*
-* `doxygen`-based documentation, available on [GitHub pages](https://stnolting.github.io/neorv32/sw/files.html)
+* several [example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) to get started including
+[CoreMark](https://github.com/stnolting/neorv32/tree/master/sw/example/coremark),
+[FreeRTOS](https://github.com/stnolting/neorv32/tree/master/sw/example/demo_freeRTOS) and
+[Conway's Game of Life](https://github.com/stnolting/neorv32/tree/master/sw/example/game_of_life)
+* `doxygen`-based documentation, available on :books: [GitHub pages](https://stnolting.github.io/neorv32/sw/files.html)
 * supports implementation using open source tooling (GHDL, Yosys and nextpnr; in the future Verilog-to-Routing); both, software and hardware can be
 developed and debugged with open source tooling
-* continuous Integration is available for:
+* [continuous integration](https://github.com/stnolting/neorv32/actions) :octocat: is available for:
   * allowing users to see the expected execution/output of the tools
   * ensuring specification compliance
   * catching regressions
