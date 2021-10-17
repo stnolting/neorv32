@@ -470,7 +470,7 @@ Note that `M` and `Zmmul` extensions _cannot_ be enabled at the same time.
 [TIP]
 If your RISC-V GCC toolchain does not (yet) support the `_Zmmul` ISA extensions, it can be "emulated"
 using a `rv32im` machine architecture and setting the `-mno-div` compiler flag
-(example `$ make MARCH=-march=rv32im USER_FLAGS+=-mno-div clean_all exe`).
+(example `$ make MARCH=rv32im USER_FLAGS+=-mno-div clean_all exe`).
 
 
 ==== **`U`** - Less-Privileged User Mode

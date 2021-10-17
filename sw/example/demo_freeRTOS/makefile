@@ -53,8 +53,8 @@ EFFORT ?= -Os
 RISCV_PREFIX ?= riscv32-unknown-elf-
 
 # CPU architecture and ABI
-MARCH ?= -march=rv32i
-MABI  ?= -mabi=ilp32
+MARCH ?= rv32i
+MABI  ?= ilp32
 
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?=
