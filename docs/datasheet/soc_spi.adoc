@@ -42,6 +42,10 @@ The SPI controller features 8 dedicated chip-select lines. These lines are contr
 _SPI_CTRL_CSx_ bits. When a specific _SPI_CTRL_CSx_ bit is **set**, the according chip-select line `spi_csn_o(x)`
 goes **low** (low-active chip-select lines).
 
+[IMPORTANT]
+Changes to the `CTRL` control register should be made only when the SPI module is idle as they directly effect
+transmissions being in-progress.
+
 [TIP]
 The actual transmission length is left to the user: after asserting chip-select an arbitrary amount of
 transmission with arbitrary data quantity (_SPI_CTRL_SIZEx_) can be made before de-asserting chip-select again.
@@ -57,7 +61,7 @@ reading `DATA` (for RX) to provide LSB-first transmissions.
 
 **SPI Clock Configuration**
 
-The SPI module supports all standard SPI clock modes (0, 1, 2, 3), which is via the two control register bits
+The SPI module supports all _standard SPI clock modes_ (0, 1, 2, 3), which is via the two control register bits
 _SPI_CTRL_CPHA_ and _SPI_CTRL_CPOL_. The _SPI_CTRL_CPHA_ bit defines the _clock phase (`0` = sample `spi_sdi_i`
 on a rising clock edge and update `spi_sdo_o` on a falling clock edge; `1` = sample `spi_sdi_i` on a falling clock
 edge and update `spi_sdo_o` on a rising clock edge). The _SPI_CTRL_CPOL_ bit defines the _clock polarity_.
@@ -65,8 +69,17 @@ edge and update `spi_sdo_o` on a rising clock edge). The _SPI_CTRL_CPOL_ bit def
 .SPI clock modes; image from https://en.wikipedia.org/wiki/File:SPI_timing_diagram2.svg (license: (Wikimedia) https://en.wikipedia.org/wiki/Creative_Commons[Creative Commons] https://creativecommons.org/licenses/by-sa/3.0/deed.en[Attribution-Share Alike 3.0 Unported])
 image::SPI_timing_diagram2.wikimedia.png[]
 
-The SPI clock frequency is defined via the 3-bit _SPI_CTRL_PRSCx_ clock prescaler. The following prescalers
-are available:
+.SPI clock modes
+[cols="<2,^1,^1,^1,^1"]
+[options="header",grid="rows"]
+|=======================
+|                 | Mode 0 | Mode 1 | Mode 2 | Mode 4
+| _SPI_CTRL_CPOL_ |    `0` |    `0` |    `1` |    `1` 
+| _SPI_CTRL_CPHA_ |    `0` |    `1` |    `0` |    `1` 
+|=======================
+
+The SPI clock frequency (`spi_sck_o`) is programmed by the 3-bit _SPI_CTRL_PRSCx_ clock prescaler.
+The following prescalers are available:
 
 .SPI prescaler configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
