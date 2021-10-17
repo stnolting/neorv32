@@ -16,20 +16,54 @@
 | CPU interrupts:          | fast IRQ channel 6 | transmission done interrupt (see <<_processor_interrupts>>)
 |=======================
 
+
 **Theory of Operation**
 
-SPI is a synchronous serial transmission interface. The NEORV32 SPI transceiver allows 8-, 16-, 24- and 32-
-bit long transmissions. The unit provides 8 dedicated chip select signals via the top entity's `spi_csn_o`
-signal.
+SPI is a synchronous serial transmission interface for fast on-board communications.
+The NEORV32 SPI transceiver supports 8-, 16-, 24- and 32-bit wide transmissions.
+The unit provides 8 dedicated chip select signals via the top entity's `spi_csn_o` signal, which are
+directly controlled by the SPI module (no additional GPIO required).
 
-The SPI unit is enabled via the _SPI_CTRL_EN_ bit in the `CTRL` control register. The SPI clock phase is configured via the _SPI_CTRL_CPHA_
-bit (`0` = sample `spi_sdi_i` on rising edge & update `spi_sdo_o` on falling edge; `1` = sample `spi_sdi_i` on falling edge & update
-`spi_sdo_o` on rising edge). The data quantity to be transferred within a
-single transmission is defined via the _SPI_CTRL_SIZEx bits_. The unit supports 8-bit (`00`), 16-bit (`01`), 24-
+The SPI unit is enabled by setting the _SPI_CTRL_EN_ bit in the `CTRL` control register. No transfer can be initiated
+and no interrupt request will be triggered if this bit is cleared. Furthermore, a transfer being in process
+can be terminated at any time by clearing this bit.
+
+The data quantity to be transferred within a single transmission is defined via the _SPI_CTRL_SIZEx_ bits.
+The SPI module supports 8-bit (`00`), 16-bit (`01`), 24-
 bit (`10`) and 32-bit (`11`) transfers.
 
-The SPI controller features 8 dedicated chip-select lines. These lines are controlled via the control register's _SPI_CTRL_CSx_ bits. When
-a specific _SPI_CTRL_CSx_ bit is **set**, the according chip select line `spi_csn_o(x)` goes **low** (low-active chip select lines).
+A transmission is started when writing data to the `DATA` register. The data must be LSB-aligned. So if
+the SPI transceiver is configured for less than 32-bit transfers data quantity, the transmit data must be placed
+into the lowest 8/16/24 bit of `DATA`. Vice versa, the received data is also always LSB-aligned. Application
+software should only actually process the amount of bits that were configured using _SPI_CTRL_SIZEx_ when
+reading `DATA`.
+
+The SPI controller features 8 dedicated chip-select lines. These lines are controlled via the control register's
+_SPI_CTRL_CSx_ bits. When a specific _SPI_CTRL_CSx_ bit is **set**, the according chip-select line `spi_csn_o(x)`
+goes **low** (low-active chip-select lines).
+
+[TIP]
+The actual transmission length is left to the user: after asserting chip-select an arbitrary amount of
+transmission with arbitrary data quantity (_SPI_CTRL_SIZEx_) can be made before de-asserting chip-select again.
+
+[NOTE]
+The NEORV32 SPI module only supports _host mode_. Transmission are initiated only by the processor's SPI module
+(and not by an external SPI module).
+
+[NOTE]
+The NEORV32 SPI module only support MSB-first mode. Data can be reversed before writing `DATA` (for TX) / after
+reading `DATA` (for RX) to provide LSB-first transmissions.
+
+
+**SPI Clock Configuration**
+
+The SPI module supports all standard SPI clock modes (0, 1, 2, 3), which is via the two control register bits
+_SPI_CTRL_CPHA_ and _SPI_CTRL_CPOL_. The _SPI_CTRL_CPHA_ bit defines the _clock phase (`0` = sample `spi_sdi_i`
+on a rising clock edge and update `spi_sdo_o` on a falling clock edge; `1` = sample `spi_sdi_i` on a falling clock
+edge and update `spi_sdo_o` on a rising clock edge). The _SPI_CTRL_CPOL_ bit defines the _clock polarity_.
+
+.SPI clock modes; image from https://en.wikipedia.org/wiki/File:SPI_timing_diagram2.svg (license: (Wikimedia) https://en.wikipedia.org/wiki/Creative_Commons[Creative Commons] https://creativecommons.org/licenses/by-sa/3.0/deed.en[Attribution-Share Alike 3.0 Unported])
+image::SPI_timing_diagram2.wikimedia.png[]
 
 The SPI clock frequency is defined via the 3-bit _SPI_CTRL_PRSCx_ clock prescaler. The following prescalers
 are available:
@@ -42,20 +76,19 @@ are available:
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
-Based on the _SPI_CTRL_PRSCx_ configuration, the actual SPI clock frequency f~SPI~ is derived from the processor's main clock f~main~ and is determined by:
+Based on the _SPI_CTRL_PRSCx_ configuration, the actual SPI clock frequency f~SPI~ is derived from the processor's
+main clock f~main~ and is determined by:
 
 _**f~SPI~**_ = _f~main~[Hz]_ / (2 * `clock_prescaler`)
 
-A transmission is started when writing data to the `DATA` register. The data must be LSB-aligned. So if
-the SPI transceiver is configured for less than 32-bit transfers data quantity, the transmit data must be placed
-into the lowest 8/16/24 bit of `DATA`. Vice versa, the received data is also always LSB-aligned.
+Hence, the maximum SPI clock is f~main~ / 4.
 
 
-**Interrupt**
+**SPI Interrupt**
 
-The SPI module provides a single interrupt to signal _idle state_ (= read for new transmission) to the CPU. Whenever the SPI module
-is currently idle (and enabled), the interrupt request is active. A pending interrupt request is cleared
-by triggering a new SPI transmission or by disabling the device.
+The SPI module provides a single interrupt to signal "ready for new transmission" to the CPU. Whenever the SPI
+module is currently idle (and enabled), the interrupt request is active. A pending interrupt request is cleared
+by triggering a new SPI transmission or by disabling the SPI module.
 
 
 .SPI register map (`struct NEORV32_SPI`)
@@ -63,21 +96,23 @@ by triggering a new SPI transmission or by disabling the device.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.16+<| `0xffffffa8` .16+<| `NEORV32_SPI.CTRL` <|`0` _SPI_CTRL_CS0_     ^| r/w .8+<| Direct chip-select 0..7; setting `spi_csn_o(x)` low when set
-                                              <|`1` _SPI_CTRL_CS1_     ^| r/w 
-                                              <|`2` _SPI_CTRL_CS2_     ^| r/w 
-                                              <|`3` _SPI_CTRL_CS3_     ^| r/w 
-                                              <|`4` _SPI_CTRL_CS4_     ^| r/w 
-                                              <|`5` _SPI_CTRL_CS5_     ^| r/w 
-                                              <|`6` _SPI_CTRL_CS6_     ^| r/w 
-                                              <|`7` _SPI_CTRL_CS7_     ^| r/w 
-                                              <|`8` _SPI_CTRL_EN_      ^| r/w <| SPI enable
-                                              <|`9` _SPI_CTRL_CPHA_    ^| r/w <| clock phase (`0`=sample RX on rising edge & update TX on falling edge; `1`=sample RX on falling edge & update TX on rising edge)
-                                              <|`10` _SPI_CTRL_PRSC0_  ^| r/w .3+| 3-bit clock prescaler select
-                                              <|`11` _SPI_CTRL_PRSC1_  ^| r/w
-                                              <|`12` _SPI_CTRL_PRSC2_  ^| r/w
-                                              <|`14` _SPI_CTRL_SIZE0_  ^| r/w .2+<| transfer size (`00`=8-bit, `01`=16-bit, `10`=24-bit, `11`=32-bit)
-                                              <|`15` _SPI_CTRL_SIZE1_  ^| r/w
-                                              <|`31` _SPI_CTRL_BUSY_   ^| r/- <| transmission in progress when set
+.18+<| `0xffffffa8` .18+<| `NEORV32_SPI.CTRL` <|`0` _SPI_CTRL_CS0_    ^| r/w .8+<| Direct chip-select 0..7; setting `spi_csn_o(x)` low when set
+                                              <|`1` _SPI_CTRL_CS1_    ^| r/w 
+                                              <|`2` _SPI_CTRL_CS2_    ^| r/w 
+                                              <|`3` _SPI_CTRL_CS3_    ^| r/w 
+                                              <|`4` _SPI_CTRL_CS4_    ^| r/w 
+                                              <|`5` _SPI_CTRL_CS5_    ^| r/w 
+                                              <|`6` _SPI_CTRL_CS6_    ^| r/w 
+                                              <|`7` _SPI_CTRL_CS7_    ^| r/w 
+                                              <|`8` _SPI_CTRL_EN_     ^| r/w <| SPI enable
+                                              <|`9` _SPI_CTRL_CPHA_   ^| r/w <| clock phase (`0`=sample RX on rising edge & update TX on falling edge; `1`=sample RX on falling edge & update TX on rising edge)
+                                              <|`10` _SPI_CTRL_PRSC0_ ^| r/w .3+| 3-bit clock prescaler select
+                                              <|`11` _SPI_CTRL_PRSC1_ ^| r/w
+                                              <|`12` _SPI_CTRL_PRSC2_ ^| r/w
+                                              <|`14` _SPI_CTRL_SIZE0_ ^| r/w .2+<| transfer size (`00`=8-bit, `01`=16-bit, `10`=24-bit, `11`=32-bit)
+                                              <|`15` _SPI_CTRL_SIZE1_ ^| r/w
+                                              <|`16` _SPI_CTRL_CPOL_  ^| r/w <| clock polarity
+                                              <|`17` .. `18`          ^| r/- <| _reserved, read as zero
+                                              <|`31` _SPI_CTRL_BUSY_  ^| r/- <| transmission in progress when set
 | `0xffffffac` | `NEORV32_SPI.DATA` |`31:0` | r/w | receive/transmit data, LSB-aligned
 |=======================
