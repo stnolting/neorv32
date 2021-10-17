@@ -46,7 +46,7 @@
 
 // prototypes
 int neorv32_spi_available(void);
-void neorv32_spi_setup(uint8_t prsc, uint8_t clk_phase, uint8_t data_size);
+void neorv32_spi_setup(uint8_t prsc, uint8_t clk_phase, uint8_t clk_polarity, uint8_t data_size);
 void neorv32_spi_disable(void);
 void neorv32_spi_enable(void);
 void neorv32_spi_cs_en(uint8_t cs);
