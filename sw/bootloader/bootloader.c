@@ -288,7 +288,7 @@ int main(void) {
   // setup UART0 (primary UART, no parity bit, no hardware flow control)
   neorv32_uart0_setup(UART_BAUD, PARITY_NONE, FLOW_CONTROL_NONE);
   // SPI setup
-  neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0);
+  neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0);
 
   PRINT_TEXT("\nNEORV32 bootloader\nLoading from SPI flash at ");
   PRINT_XNUM((uint32_t)SPI_BOOT_BASE_ADDR);
@@ -316,7 +316,7 @@ int main(void) {
 
 #if (SPI_EN != 0)
   // setup SPI for 8-bit, clock-mode 0
-  neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0);
+  neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0);
 #endif
 
 #if (STATUS_LED_EN != 0)

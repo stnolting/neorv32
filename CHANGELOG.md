@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 18.10.2021 | 1.6.2.1 | :sparkles: SPI: added option to configure _clock polarity_ - the SPI module now supports all standard clock modes (0,1,2,3) (see [PR #185](https://github.com/stnolting/neorv32/pull/185)); logic optimization of SPI module |
 | 17.10.2021 |[**:rocket:1.6.2**](https://github.com/stnolting/neorv32/releases/tag/v1.6.2) | **New release** |
 | 17.10.2021 | 1.6.1.13 | :warning: :warning: main software makefile: modified behavior of `MARCH` and `MABI` variables - the `-march` and `-mabi` flags are no longer required/allowed (example: overriding makefile's default `MARCH` is now done using `make MARCH=rv32imac ...`) ([see PR #184](https://github.com/stnolting/neorv32/pull/184)) |
 | 15.10.2021 | 1.6.1.12 | :warning: Custom Functions Subsystem (CFS): removed `sleep` input (indicating CPU is in sleep mode); minor CPU control logic optimization |

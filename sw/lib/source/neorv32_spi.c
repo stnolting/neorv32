@@ -65,10 +65,11 @@ int neorv32_spi_available(void) {
  * Enable and configure SPI controller. The SPI control register bits are listed in #NEORV32_SPI_CTRL_enum.
  *
  * @param[in] prsc Clock prescaler select (0..7).  See #NEORV32_CLOCK_PRSC_enum.
- * @param[in] clk_phase Clock pahse (0=sample on rising edge, 1=sample on falling edge)
+ * @param[in] clk_phase Clock phase (0=sample on rising edge, 1=sample on falling edge).
+ * @param[in] clk_polarity Clock polarity (when idle).
  * @param[in] data_size Data transfer size (0: 8-bit, 1: 16-bit, 2: 24-bit, 3: 32-bit).
  **************************************************************************/
-void neorv32_spi_setup(uint8_t prsc, uint8_t clk_phase, uint8_t data_size) {
+void neorv32_spi_setup(uint8_t prsc, uint8_t clk_phase, uint8_t clk_polarity, uint8_t data_size) {
 
   NEORV32_SPI.CTRL = 0; // reset
 
@@ -81,10 +82,13 @@ void neorv32_spi_setup(uint8_t prsc, uint8_t clk_phase, uint8_t data_size) {
   uint32_t ct_phase = (uint32_t)(clk_phase & 0x01);
   ct_phase = ct_phase << SPI_CTRL_CPHA;
 
+  uint32_t ct_polarity = (uint32_t)(clk_polarity & 0x01);
+  ct_polarity = ct_polarity << SPI_CTRL_CPOL;
+
   uint32_t ct_size = (uint32_t)(data_size & 0x03);
   ct_size = ct_size << SPI_CTRL_SIZE0;
 
-  NEORV32_SPI.CTRL = ct_enable | ct_prsc | ct_phase | ct_size;
+  NEORV32_SPI.CTRL = ct_enable | ct_prsc | ct_phase | ct_polarity | ct_size;
 }
 
 
@@ -158,8 +162,6 @@ uint32_t neorv32_spi_trans(uint32_t tx_data) {
 /**********************************************************************//**
  * Check if SPI transceiver is busy.
  *
- * @note This function is blocking.
- *
  * @return 0 if idle, 1 if busy
  **************************************************************************/
 int neorv32_spi_busy(void) {
@@ -167,5 +169,7 @@ int neorv32_spi_busy(void) {
   if ((NEORV32_SPI.CTRL & (1<<SPI_CTRL_BUSY)) != 0) {
     return 1;
   }
-  return 0;
+  else {
+    return 0;
+  }
 }

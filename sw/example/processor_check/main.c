@@ -1142,7 +1142,7 @@ int main() {
     cnt_test++;
 
     // configure SPI
-    neorv32_spi_setup(CLK_PRSC_2, 0, 0);
+    neorv32_spi_setup(CLK_PRSC_2, 0, 0, 0);
 
     // trigger SPI IRQ
     neorv32_spi_trans(0);
