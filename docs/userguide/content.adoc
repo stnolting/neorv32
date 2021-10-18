@@ -1041,8 +1041,8 @@ according to your needs).
 Set the synthesis option "global" when generating the block design to maintain the internal TWI tri-state drivers.
 
 [NOTE]
-Guide provided by GitHub user https://github.com/AWenzel83[`AWenzel83`] from
-https://github.com/stnolting/neorv32/discussions/52#discussioncomment-819013
+Guide provided by GitHub user https://github.com/AWenzel83[`AWenzel83`] (see
+https://github.com/stnolting/neorv32/discussions/52#discussioncomment-819013). ❤️
 
 
 
@@ -1307,6 +1307,23 @@ neorv32/docs$ make html
 [TIP]
 If you don't have `asciidoctor` / `asciidoctor-pdf` installed, you can still generate all the documentation using
 a _docker container_ via `make container`.
+
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+== Zephyr RTOS Support 🪁
+
+The NEORV32 processor is supported by upstream Zephyr RTOS: https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html
+
+[IMPORTANT]
+The absolute path to the NEORV32 executable image generator binary (`.../neorv32/sw/image_gen`) has to be added to the `PATH` variable
+so the Zephyr build system can generate executables and memory-initialization images.
+
+[NOTE]
+Zephyr OS port provided by GitHub user https://github.com/henrikbrixandersen[henrikbrixandersen]
+(see https://github.com/stnolting/neorv32/discussions/172). ❤️
 
 
 

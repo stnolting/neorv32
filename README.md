@@ -51,8 +51,10 @@ at [GitHub-pages](https://stnolting.github.io/neorv32/sw/files.html).
 To see the changes between *official* releases visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
 :package: The [`setups`](https://github.com/stnolting/neorv32/tree/master/setups) folder provides exemplary setups targeting
-various FPGA boards and toolchains to get you started. Several example programs to be run on your setup can be found in
-[`sw/example`](https://github.com/stnolting/neorv32/tree/master/sw/example).
+various FPGA boards and toolchains to get you started. Several example programs (including a FreeRTOS port) to be run on your setup
+can be found in [`sw/example`](https://github.com/stnolting/neorv32/tree/master/sw/example).
+
+:kite: Upstream [**Zephyr RTOS**](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) support.
 
 :spiral_notepad: Check out the [project boards](https://github.com/stnolting/neorv32/projects) for a list of current **ideas**,
 **TODOs**, features being **planned** and **work-in-progress**.
