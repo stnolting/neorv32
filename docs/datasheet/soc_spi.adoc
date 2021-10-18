@@ -62,14 +62,13 @@ reading `DATA` (for RX) to provide LSB-first transmissions.
 **SPI Clock Configuration**
 
 The SPI module supports all _standard SPI clock modes_ (0, 1, 2, 3), which is via the two control register bits
-_SPI_CTRL_CPHA_ and _SPI_CTRL_CPOL_. The _SPI_CTRL_CPHA_ bit defines the _clock phase (`0` = sample `spi_sdi_i`
-on a rising clock edge and update `spi_sdo_o` on a falling clock edge; `1` = sample `spi_sdi_i` on a falling clock
-edge and update `spi_sdo_o` on a rising clock edge). The _SPI_CTRL_CPOL_ bit defines the _clock polarity_.
+_SPI_CTRL_CPHA_ and _SPI_CTRL_CPOL_. The _SPI_CTRL_CPHA_ bit defines the _clock phase_ and the _SPI_CTRL_CPOL_
+bit defines the _clock polarity_.
 
 .SPI clock modes; image from https://en.wikipedia.org/wiki/File:SPI_timing_diagram2.svg (license: (Wikimedia) https://en.wikipedia.org/wiki/Creative_Commons[Creative Commons] https://creativecommons.org/licenses/by-sa/3.0/deed.en[Attribution-Share Alike 3.0 Unported])
 image::SPI_timing_diagram2.wikimedia.png[]
 
-.SPI clock modes
+.SPI standard clock modes
 [cols="<2,^1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
