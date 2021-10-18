@@ -1036,6 +1036,10 @@ according to your needs).
 . Save everything, let VIVADO create a HDL-Wrapper for the block-design and choose this as your _Top Level Design_.
 . Define your constraints and generate your bitstream.
 
+.TWI Tri-State Drivers
+[IMPORTANT]
+Set the synthesis option "global" when generating the block design to maintain the internal TWI tri-state drivers.
+
 [NOTE]
 Guide provided by GitHub user https://github.com/AWenzel83[`AWenzel83`] from
 https://github.com/stnolting/neorv32/discussions/52#discussioncomment-819013
