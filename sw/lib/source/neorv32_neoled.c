@@ -96,7 +96,7 @@ void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero,
 
 /**********************************************************************//**
  * Configure NEOLED controller for using WS2812 LEDs (NeoPixel-compatible). This function computes
- * all the required timings and finally calls #neorv32_neoled_setup_raw.
+ * all the required timings and finally calls #neorv32_neoled_setup.
  *
  * @note WS2812 timing: T_period = 1.2us, T_high_zero = 0.4us, T_high_one = 0.8us. Change the constants if required.
  * @note This function uses the SYSINFO_CLK value (from the SYSINFO HW module) to do the timing computations.
