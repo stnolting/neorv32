@@ -100,7 +100,7 @@ execute the following command:
 neorv32/sw/example/blink_led$ make check
 ----
 
-This will test all the tools required for the generating NEORV32 executables.
+This will test all the tools required for generating NEORV32 executables.
 Everything is working fine if `Toolchain check OK` appears at the end.
 
 
@@ -813,14 +813,14 @@ allow more CPU-independent operation.
 
 === Custom Functions Subsystem
 
-The https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs[NEORV32 Custom Functions Subsystem]
-is as "empty" template for a processor-internal module. It provides 32 32-bit memory-mapped interface
+The NEORV32 https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs[Custom Functions Subsystem] is
+an "empty" template for a processor-internal module. It provides 32 32-bit memory-mapped interface
 registers that can be used to communicate with any arbitrary custom design logic. The intentions of this
 subsystem is to provide a simple base, where the user can concentrate on implementing the actual design logic
 rather than taking care of the communication between the CPU/software and the design logic. The interface
 registers are already allocated within the processor's address space and are supported by the software framework
 via low-level hardware access mechanisms. Additionally, the CFS provides a direct pre-defined interrupt channel to
-the CPU, which is also supported by the _NEORV32 runtime environment_.
+the CPU, which is also supported by the NEORV32 runtime environment.
 
 
 
