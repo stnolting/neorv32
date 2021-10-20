@@ -51,13 +51,17 @@
 #define BAUD_RATE 19200
 /**@}*/
 
+// Global variables
+char access_size;
 
 // Prototypes
 void read_memory(void);
+void setup_access(void);
 void write_memory(void);
 void atomic_cas(void);
 void dump_memory(void);
 uint32_t hexstr_to_uint(char *buffer, uint8_t length);
+void aux_print_hex_byte(uint8_t byte);
 
 
 /**********************************************************************//**
@@ -71,6 +75,8 @@ int main() {
 
   char buffer[8];
   int length = 0;
+
+  access_size = 0;
 
   // check if UART unit is implemented at all
   if (neorv32_uart0_available() == 0) {
@@ -110,10 +116,15 @@ int main() {
     if (!strcmp(buffer, "help")) {
       neorv32_uart0_printf("Available commands:\n"
                           " help   - show this text\n"
-                          " read   - read single word from address\n"
-                          " write  - write single word to address\n"
-                          " atomic - perform atomic LR/SC access\n"
-                          " dump   - dumpe several words from base address\n");
+                          " setup  - configure memory access width (byte,half,word)\n"
+                          " read   - read from address (byte,half,word)\n"
+                          " write  - write to address (byte,half,word)\n"
+                          " atomic - perform atomic LR/SC access (word-only)\n"
+                          " dump   - dump several bytes/halfs/words from base address\n");
+    }
+
+    else if (!strcmp(buffer, "setup")) {
+      setup_access();
     }
 
     else if (!strcmp(buffer, "read")) {
@@ -142,11 +153,46 @@ int main() {
 
 
 /**********************************************************************//**
- * Read word from memory address
+ * Configure memory access size
+ **************************************************************************/
+void setup_access(void) {
+
+  neorv32_uart0_printf("Select data size (press 'x' to abort):\n"
+                       " 'b' - byte, 8-bit, unsigned\n"
+                       " 'h' - half-word, 16-bit, unsigned\n"
+                       " 'w' - word, 32-bit, unsigned\n");
+
+  while(1) {
+    neorv32_uart0_printf("selection: ");
+    char tmp = neorv32_uart0_getc();
+    neorv32_uart0_putc(tmp);
+    if ((tmp == 'b') || (tmp == 'h') || (tmp == 'w')) {
+      access_size = tmp;
+      neorv32_uart0_printf("\n");
+      return;
+    }
+    else if (tmp == 'x') {
+      neorv32_uart0_printf("\n");
+      return;
+    }
+    else {
+      neorv32_uart0_printf("Invalid selection!\n");
+    }
+  }
+}
+
+
+/**********************************************************************//**
+ * Read from memory address
  **************************************************************************/
 void read_memory(void) {
 
   char terminal_buffer[16];
+
+  if (access_size == 0) {
+    neorv32_uart0_printf("Configure data size using 'setup' first.\n");
+    return;
+  }
 
   // enter address
   neorv32_uart0_printf("Enter address (8 hex chars): 0x");
@@ -158,11 +204,29 @@ void read_memory(void) {
 
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
-  uint32_t mem_data = neorv32_cpu_load_unsigned_word(mem_address);
+  uint8_t mem_data_b = 0;
+  uint16_t mem_data_h = 0;
+  uint32_t mem_data_w = 0;
+  if (access_size == 'b') { mem_data_b = (uint32_t)neorv32_cpu_load_unsigned_byte(mem_address); }
+  if (access_size == 'h') { mem_data_h = (uint32_t)neorv32_cpu_load_unsigned_half(mem_address); }
+  if (access_size == 'w') { mem_data_w = (uint32_t)neorv32_cpu_load_unsigned_word(mem_address); }
 
   // show memory content if there was no exception
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
-    neorv32_uart0_printf("0x%x", mem_data);
+    neorv32_uart0_printf("0x");
+    if (access_size == 'b') {
+      aux_print_hex_byte(mem_data_b);
+    }
+    if (access_size == 'h') {
+      aux_print_hex_byte((uint8_t)(mem_data_h >>  8));
+      aux_print_hex_byte((uint8_t)(mem_data_h >>  0));
+    }
+    if (access_size == 'w') {
+      aux_print_hex_byte((uint8_t)(mem_data_w >> 24));
+      aux_print_hex_byte((uint8_t)(mem_data_w >> 16));
+      aux_print_hex_byte((uint8_t)(mem_data_w >>  8));
+      aux_print_hex_byte((uint8_t)(mem_data_w >>  0));
+    }
   }
 
   neorv32_uart0_printf("\n");
@@ -170,11 +234,16 @@ void read_memory(void) {
 
 
 /**********************************************************************//**
- * Write word tp memory address
+ * Write to memory address
  **************************************************************************/
 void write_memory(void) {
 
   char terminal_buffer[16];
+
+  if (access_size == 0) {
+    neorv32_uart0_printf("Configure data size using 'setup' first.\n");
+    return;
+  }
 
   // enter address
   neorv32_uart0_printf("Enter address (8 hex chars): 0x");
@@ -182,28 +251,36 @@ void write_memory(void) {
   uint32_t mem_address = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
   // enter data
-  neorv32_uart0_printf("\nEnter data (8 hex chars): 0x");
-  neorv32_uart0_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
-  uint32_t mem_data = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+  uint8_t mem_data_b = 0;
+  uint16_t mem_data_h = 0;
+  uint32_t mem_data_w = 0;
+  if (access_size == 'b') {
+    neorv32_uart0_printf("\nEnter data (2 hex chars): 0x");
+    neorv32_uart0_scan(terminal_buffer, 2+1, 1); // 2 hex chars for address plus '\0'
+    mem_data_b = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+  }
+  if (access_size == 'h') {
+    neorv32_uart0_printf("\nEnter data (4 hex chars): 0x");
+    neorv32_uart0_scan(terminal_buffer, 4+1, 1); // 4 hex chars for address plus '\0'
+    mem_data_h = (uint16_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+  }
+  if (access_size == 'w') {
+    neorv32_uart0_printf("\nEnter data (8 hex chars): 0x");
+    neorv32_uart0_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
+    mem_data_w = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+  }
 
   // perform write access
-  neorv32_uart0_printf("\n[0x%x] = ", mem_address);
-
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-
-  neorv32_cpu_store_unsigned_word(mem_address, mem_data);
-
-  // show memory content if there was no exception
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
-    neorv32_uart0_printf("0x%x", mem_data);
-  }
+  if (access_size == 'b') { neorv32_cpu_store_unsigned_byte(mem_address, mem_data_b); }
+  if (access_size == 'h') { neorv32_cpu_store_unsigned_half(mem_address, mem_data_h); }
+  if (access_size == 'w') { neorv32_cpu_store_unsigned_word(mem_address, mem_data_w); }
 
   neorv32_uart0_printf("\n");
 }
 
 
 /**********************************************************************//**
- * Perform atomic compare-and-swap operation
+ * Perform atomic compare-and-swap operation, always 32-bit
  **************************************************************************/
 void atomic_cas(void) {
 
@@ -242,11 +319,16 @@ void atomic_cas(void) {
 
 
 /**********************************************************************//**
- * Read several words from memory base address
+ * Read several bytes/halfs/word from memory base address
  **************************************************************************/
 void dump_memory(void) {
 
   char terminal_buffer[16];
+
+  if (access_size == 0) {
+    neorv32_uart0_printf("Configure data size using 'setup' first.\n");
+    return;
+  }
 
   // enter base address
   neorv32_uart0_printf("Enter base address (8 hex chars): 0x");
@@ -258,24 +340,50 @@ void dump_memory(void) {
   neorv32_uart0_getc(); // wait for key
 
   // perform read accesses
-  uint32_t mem_data = 0;
   while(neorv32_uart0_char_received() == 0) {
 
     neorv32_uart0_printf("[0x%x] = ", mem_address);
 
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
-    mem_data = neorv32_cpu_load_unsigned_word(mem_address);
+    uint8_t mem_data_b = 0;
+    uint16_t mem_data_h = 0;
+    uint32_t mem_data_w = 0;
+    if (access_size == 'b') { mem_data_b = (uint32_t)neorv32_cpu_load_unsigned_byte(mem_address); }
+    if (access_size == 'h') { mem_data_h = (uint32_t)neorv32_cpu_load_unsigned_half(mem_address); }
+    if (access_size == 'w') { mem_data_w = (uint32_t)neorv32_cpu_load_unsigned_word(mem_address); }
 
     // show memory content if there was no exception
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
-      neorv32_uart0_printf("0x%x\n", mem_data);
+      neorv32_uart0_printf("0x");
+      if (access_size == 'b') {
+        aux_print_hex_byte(mem_data_b);
+      }
+      if (access_size == 'h') {
+        aux_print_hex_byte((uint8_t)(mem_data_h >>  8));
+        aux_print_hex_byte((uint8_t)(mem_data_h >>  0));
+      }
+      if (access_size == 'w') {
+        aux_print_hex_byte((uint8_t)(mem_data_w >> 24));
+        aux_print_hex_byte((uint8_t)(mem_data_w >> 16));
+        aux_print_hex_byte((uint8_t)(mem_data_w >>  8));
+        aux_print_hex_byte((uint8_t)(mem_data_w >>  0));
+      }
+      neorv32_uart0_printf("\n");
     }
     else {
      break;
     }
 
-    mem_address = mem_address + 4;
+    if (access_size == 'b') {
+      mem_address += 1;
+    }
+    else if (access_size == 'h') {
+      mem_address += 2;
+    }
+    else if (access_size == 'w') {
+      mem_address += 4;
+    }
 
   }
   neorv32_uart0_char_received_get(); // clear UART rx buffer
@@ -311,4 +419,18 @@ uint32_t hexstr_to_uint(char *buffer, uint8_t length) {
   }
 
   return res;
+}
+
+
+/**********************************************************************//**
+ * Print HEX byte.
+ *
+ * @param[in] byte Byte to be printed as 2-cahr hex value.
+ **************************************************************************/
+void aux_print_hex_byte(uint8_t byte) {
+
+  static const char symbols[] = "0123456789abcdef";
+
+  neorv32_uart0_putc(symbols[(byte >> 4) & 0x0f]);
+  neorv32_uart0_putc(symbols[(byte >> 0) & 0x0f]);
 }
