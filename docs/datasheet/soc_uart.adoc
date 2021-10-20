@@ -58,6 +58,10 @@ is available when the _UART_DATA_AVAIL_ flag of the `DATA` register is set. A "f
 (invalid stop bit) is indicated via the _UART_DATA_FERR_ flag in the `DATA` register. The flag is cleared by
 reading the `DATA` register.
 
+[TIP]
+A transmission (RX or TX) can be terminated at any time by disabling the UART module
+by clearing the _UART_CTRL_EN_ control register bit.
+
 
 **RX and TX FIFOs**
 
@@ -72,7 +76,6 @@ The state of both FIFO (_empty_, _at lest half-full_, _full_) is available via t
 
 If the RX FIFO is already full and new data is received by the receiver unit, the _UART_DATA_OVERR_ flag
 in the `DATA` register is set indicating an "overrun". This flag is cleared by reading the `DATA` register.
-
 
 
 **Hardware Flow Control - RTS/CTS**

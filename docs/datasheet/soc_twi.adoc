@@ -46,6 +46,10 @@ In summary, the following independent TWI operations can be triggered by the app
 * send STOP condition
 * send (at least) one byte while also sampling one byte from the bus
 
+[TIP]
+A transmission can be terminated at any time by disabling the TWI module
+by clearing the _TWI_CTRL_EN_ control register bit.
+
 [IMPORTANT]
 The serial clock (SCL) and the serial data (SDA) lines can only be actively driven low by the
 controller. Hence, external pull-up resistors are required for these lines.

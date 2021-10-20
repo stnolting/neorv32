@@ -50,6 +50,10 @@ transmissions being in-progress.
 The actual transmission length is left to the user: after asserting chip-select an arbitrary amount of
 transmission with arbitrary data quantity (_SPI_CTRL_SIZEx_) can be made before de-asserting chip-select again.
 
+[TIP]
+A transmission can be terminated at any time by disabling the SPI module
+by clearing the _SPI_CTRL_EN_ control register bit.
+
 [NOTE]
 The NEORV32 SPI module only supports _host mode_. Transmission are initiated only by the processor's SPI module
 (and not by an external SPI module).
