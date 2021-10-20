@@ -52,6 +52,8 @@ void neorv32_spi_enable(void);
 void neorv32_spi_cs_en(uint8_t cs);
 void neorv32_spi_cs_dis(uint8_t cs);
 uint32_t neorv32_spi_trans(uint32_t tx_data);
+void neorv32_spi_put_nonblocking(uint32_t tx_data);
+uint32_t neorv32_spi_get_nonblocking(void);
 int neorv32_spi_busy(void);
 
 #endif // neorv32_spi_h

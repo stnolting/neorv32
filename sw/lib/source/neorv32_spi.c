@@ -143,8 +143,6 @@ void neorv32_spi_cs_dis(uint8_t cs) {
 /**********************************************************************//**
  * Initiate SPI transfer.
  *
- * @warning The SPI always sends MSB first.
- *
  * @note This function is blocking.
  *
  * @param tx_data Transmit data (8/16/24/32-bit, LSB-aligned).
@@ -154,6 +152,28 @@ uint32_t neorv32_spi_trans(uint32_t tx_data) {
 
   NEORV32_SPI.DATA = tx_data; // trigger transfer
   while((NEORV32_SPI.CTRL & (1<<SPI_CTRL_BUSY)) != 0); // wait for current transfer to finish
+
+  return NEORV32_SPI.DATA;
+}
+
+
+/**********************************************************************//**
+ * Initiate SPI TX transfer (non-blocking).
+ *
+ * @param tx_data Transmit data (8/16/24/32-bit, LSB-aligned).
+ **************************************************************************/
+void neorv32_spi_put_nonblocking(uint32_t tx_data) {
+
+  NEORV32_SPI.DATA = tx_data; // trigger transfer
+}
+
+
+/**********************************************************************//**
+ * Get SPI RX data (non-blocking).
+ *
+ * @return Receive data (8/16/24/32-bit, LSB-aligned).
+ **************************************************************************/
+uint32_t neorv32_spi_get_nonblocking(void) {
 
   return NEORV32_SPI.DATA;
 }
