@@ -45,8 +45,8 @@ package neorv32_package is
   constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
 
   -- CPU core --
-  constant cp_timeout_en_c   : boolean := false; -- auto-terminate pending co-processor operations after 256 cycles (for debugging only), default = false
   constant dedicated_reset_c : boolean := false; -- use dedicated hardware reset value for UNCRITICAL registers (FALSE=reset value is irrelevant (might simplify HW), default; TRUE=defined LOW reset value)
+  constant cp_timeout_en_c   : boolean := false; -- auto-terminate pending co-processor operations after 256 cycles (for debugging only), default = false
 
   -- "critical" number of implemented PMP regions --
   -- if more PMP regions (> pmp_num_regions_critical_c) are defined, another register stage is automatically inserted into the memory interfaces
@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060202"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060203"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------

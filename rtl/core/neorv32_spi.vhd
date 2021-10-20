@@ -106,14 +106,12 @@ architecture neorv32_spi_rtl of neorv32_spi is
 
   -- spi transceiver --
   type rtx_engine_t is record
+    state    : std_ulogic_vector(02 downto 0);
     busy     : std_ulogic;
-    state0   : std_ulogic;
-    state1   : std_ulogic;
-    rtx_sreg : std_ulogic_vector(31 downto 0);
+    sreg     : std_ulogic_vector(31 downto 0);
     bitcnt   : std_ulogic_vector(05 downto 0);
     bytecnt  : std_ulogic_vector(02 downto 0);
-    sdi_ff0  : std_ulogic;
-    sdi_ff1  : std_ulogic;
+    sdi_sync : std_ulogic_vector(01 downto 0);
   end record;
   signal rtx_engine : rtx_engine_t;
 
@@ -182,7 +180,7 @@ begin
           --
           data_o(ctrl_spi_busy_c)  <= rtx_engine.busy;
         else -- data register (spi_rtx_addr_c)
-          data_o <= rtx_engine.rtx_sreg;
+          data_o <= rtx_engine.sreg;
         end if;
       end if;
     end if;
@@ -217,69 +215,72 @@ begin
   begin
     if rising_edge(clk_i) then
       -- input (sdi) synchronizer --
-      rtx_engine.sdi_ff0 <= spi_sdi_i;
-      rtx_engine.sdi_ff1 <= rtx_engine.sdi_ff0;
+      rtx_engine.sdi_sync <= rtx_engine.sdi_sync(0) & spi_sdi_i;
+
+      -- output (sdo) buffer --
+      case ctrl(ctrl_spi_size1_c downto ctrl_spi_size0_c) is
+        when "00"   => spi_sdo_o <= rtx_engine.sreg(07); -- 8-bit mode
+        when "01"   => spi_sdo_o <= rtx_engine.sreg(15); -- 16-bit mode
+        when "10"   => spi_sdo_o <= rtx_engine.sreg(23); -- 24-bit mode
+        when others => spi_sdo_o <= rtx_engine.sreg(31); -- 32-bit mode
+      end case;
+
+      -- defaults --
+      spi_sck_o <= ctrl(ctrl_spi_cpol_c);
 
       -- serial engine --
-      if (rtx_engine.state0 = '0') or (ctrl(ctrl_spi_en_c) = '0') then -- idle or disabled
-      -- --------------------------------------------------------------
-        spi_sck_o         <= ctrl(ctrl_spi_cpol_c);
-        rtx_engine.bitcnt <= (others => '0');
-        rtx_engine.state1 <= '0';
-        if (ctrl(ctrl_spi_en_c) = '0') then -- disabled
-          rtx_engine.busy <= '0';
-        elsif (wren = '1') and (addr = spi_rtx_addr_c) then -- start new transmission
-          rtx_engine.rtx_sreg <= data_i;
-          rtx_engine.busy     <= '1';
-        end if;
-        rtx_engine.state0 <= rtx_engine.busy and spi_clk_en; -- start with next new clock pulse
+      rtx_engine.state(2) <= ctrl(ctrl_spi_en_c);
+      case rtx_engine.state is
 
-      else -- transmission in progress
-      -- --------------------------------------------------------------
+        when "100" => -- enabled but idle, waiting for new transmission trigger
+        -- ------------------------------------------------------------
+          rtx_engine.bitcnt <= (others => '0');
+          if (wren = '1') and (addr = spi_rtx_addr_c) then -- trigger new transmission
+            rtx_engine.sreg <= data_i;
+            rtx_engine.state(1 downto 0) <= "01";
+          end if;
 
-        if (rtx_engine.state1 = '0') then -- first half of bit transmission
-        -- --------------------------------------------------------------
+        when "101" => -- start with next new clock pulse
+        -- ------------------------------------------------------------
+          if (spi_clk_en = '1') then
+            rtx_engine.state(1 downto 0) <= "10";
+          end if;
+
+        when "110" => -- first half of bit transmission
+        -- ------------------------------------------------------------
           spi_sck_o <= ctrl(ctrl_spi_cpha_c) xor ctrl(ctrl_spi_cpol_c);
-          --
-          case ctrl(ctrl_spi_size1_c downto ctrl_spi_size0_c) is
-            when "00"   => spi_sdo_o <= rtx_engine.rtx_sreg(07); -- 8-bit mode
-            when "01"   => spi_sdo_o <= rtx_engine.rtx_sreg(15); -- 16-bit mode
-            when "10"   => spi_sdo_o <= rtx_engine.rtx_sreg(23); -- 24-bit mode
-            when others => spi_sdo_o <= rtx_engine.rtx_sreg(31); -- 32-bit mode
-          end case;
-          --
           if (spi_clk_en = '1') then
-            if (ctrl(ctrl_spi_cpha_c) = '0') then
-              rtx_engine.rtx_sreg <= rtx_engine.rtx_sreg(30 downto 0) & rtx_engine.sdi_ff1;
-            end if;
             rtx_engine.bitcnt <= std_ulogic_vector(unsigned(rtx_engine.bitcnt) + 1);
-            rtx_engine.state1 <= '1';
+            rtx_engine.state(1 downto 0) <= "11";
           end if;
 
-        else -- second half of bit transmission
-        -- --------------------------------------------------------------
+        when "111" => -- second half of bit transmission
+        -- ------------------------------------------------------------
           spi_sck_o <= ctrl(ctrl_spi_cpha_c) xnor ctrl(ctrl_spi_cpol_c);
-          --
           if (spi_clk_en = '1') then
-            if (ctrl(ctrl_spi_cpha_c) = '1') then
-              rtx_engine.rtx_sreg <= rtx_engine.rtx_sreg(30 downto 0) & rtx_engine.sdi_ff1;
+            rtx_engine.sreg <= rtx_engine.sreg(30 downto 0) & rtx_engine.sdi_sync(1);
+            if (rtx_engine.bitcnt(5 downto 3) = rtx_engine.bytecnt) then -- all bits transferred?
+              rtx_engine.state(1 downto 0) <= "00";
+            else
+              rtx_engine.state(1 downto 0) <= "10";
             end if;
-            if (rtx_engine.bitcnt(5 downto 3) = rtx_engine.bytecnt) then
-              rtx_engine.state0 <= '0';
-              rtx_engine.busy   <= '0';
-            end if;
-            rtx_engine.state1 <= '0';
           end if;
 
-        end if;
-      end if;
+        when others => -- "0--": SPI deactivated
+        -- ------------------------------------------------------------
+          rtx_engine.state <= ctrl(ctrl_spi_en_c) & "00";
+
+      end case;
     end if;
   end process spi_rtx_unit;
+
+  -- busy flag --
+  rtx_engine.busy <= '0' when (rtx_engine.state = "100") else '1'; -- not busy when idle
 
 
   -- Interrupt ------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_o <= ctrl(ctrl_spi_en_c) and (not rtx_engine.busy); -- fire IRQ if transceiver idle
+  irq_o <= not rtx_engine.busy; -- fire IRQ if transceiver idle
 
 
 end neorv32_spi_rtl;
