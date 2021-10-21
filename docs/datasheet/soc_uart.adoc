@@ -77,6 +77,10 @@ The state of both FIFO (_empty_, _at lest half-full_, _full_) is available via t
 If the RX FIFO is already full and new data is received by the receiver unit, the _UART_DATA_OVERR_ flag
 in the `DATA` register is set indicating an "overrun". This flag is cleared by reading the `DATA` register.
 
+[NOTE]
+In contrast to other FIFO-equipped peripherals, software **cannot** determine the UART's FIFO size configuration
+by reading specific control register bits (simply because there are no bits left in the control register).
+
 
 **Hardware Flow Control - RTS/CTS**
 

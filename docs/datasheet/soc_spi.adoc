@@ -24,13 +24,24 @@ The NEORV32 SPI transceiver supports 8-, 16-, 24- and 32-bit wide transmissions.
 The unit provides 8 dedicated chip select signals via the top entity's `spi_csn_o` signal, which are
 directly controlled by the SPI module (no additional GPIO required).
 
+[NOTE]
+The NEORV32 SPI module only supports _host mode_. Transmission are initiated only by the processor's SPI module
+(and not by an external SPI module).
+
 The SPI unit is enabled by setting the _SPI_CTRL_EN_ bit in the `CTRL` control register. No transfer can be initiated
 and no interrupt request will be triggered if this bit is cleared. Furthermore, a transfer being in process
 can be terminated at any time by clearing this bit.
 
+[IMPORTANT]
+Changes to the `CTRL` control register should be made only when the SPI module is idle as they directly effect
+transmissions being in-progress.
+
+[TIP]
+A transmission can be terminated at any time by disabling the SPI module
+by clearing the _SPI_CTRL_EN_ control register bit.
+
 The data quantity to be transferred within a single transmission is defined via the _SPI_CTRL_SIZEx_ bits.
-The SPI module supports 8-bit (`00`), 16-bit (`01`), 24-
-bit (`10`) and 32-bit (`11`) transfers.
+The SPI module supports 8-bit (`00`), 16-bit (`01`), 24-bit (`10`) and 32-bit (`11`) transfers.
 
 A transmission is started when writing data to the `DATA` register. The data must be LSB-aligned. So if
 the SPI transceiver is configured for less than 32-bit transfers data quantity, the transmit data must be placed
@@ -38,29 +49,23 @@ into the lowest 8/16/24 bit of `DATA`. Vice versa, the received data is also alw
 software should only actually process the amount of bits that were configured using _SPI_CTRL_SIZEx_ when
 reading `DATA`.
 
-The SPI controller features 8 dedicated chip-select lines. These lines are controlled via the control register's
-_SPI_CTRL_CSx_ bits. When a specific _SPI_CTRL_CSx_ bit is **set**, the according chip-select line `spi_csn_o(x)`
-goes **low** (low-active chip-select lines).
-
-[IMPORTANT]
-Changes to the `CTRL` control register should be made only when the SPI module is idle as they directly effect
-transmissions being in-progress.
+[NOTE]
+The NEORV32 SPI module only support MSB-first mode. Data can be reversed before writing `DATA` (for TX) / after
+reading `DATA` (for RX) to implement LSB-first transmissions. Note that in both cases data in ` DATA` still
+needs to be LSB-aligned.
 
 [TIP]
 The actual transmission length is left to the user: after asserting chip-select an arbitrary amount of
 transmission with arbitrary data quantity (_SPI_CTRL_SIZEx_) can be made before de-asserting chip-select again.
 
+The SPI controller features 8 dedicated chip-select lines. These lines are controlled via the control register's
+_SPI_CTRL_CSx_ bits. When a specific _SPI_CTRL_CSx_ bit is **set**, the according chip-select line `spi_csn_o(x)`
+goes **low** (low-active chip-select lines).
+
 [TIP]
-A transmission can be terminated at any time by disabling the SPI module
-by clearing the _SPI_CTRL_EN_ control register bit.
-
-[NOTE]
-The NEORV32 SPI module only supports _host mode_. Transmission are initiated only by the processor's SPI module
-(and not by an external SPI module).
-
-[NOTE]
-The NEORV32 SPI module only support MSB-first mode. Data can be reversed before writing `DATA` (for TX) / after
-reading `DATA` (for RX) to provide LSB-first transmissions.
+The dedicated SPI chip-select signals can be seen as _general purpose_ outputs. These are intended to control
+the accessed device's chip-select signal but can also be use for controlling other shift register signals
+(like data strobe or output-enables).
 
 
 **SPI Clock Configuration**
