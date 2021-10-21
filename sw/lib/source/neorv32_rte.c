@@ -371,7 +371,7 @@ void neorv32_rte_print_hw_config(void) {
   // Memory configuration
   neorv32_uart0_printf("\n=== << Memory System >> ===\n");
 
-  neorv32_uart0_printf("Boot Config.:         Boot ");
+  neorv32_uart0_printf("Boot Config.:        Boot ");
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_BOOTLOADER)) {
     neorv32_uart0_printf("via Bootloader\n");
   }
@@ -379,10 +379,10 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart0_printf("from memory (@ 0x%x)\n", NEORV32_SYSINFO.ISPACE_BASE);
   }
 
-  neorv32_uart0_printf("Instr. base address:  0x%x\n", NEORV32_SYSINFO.ISPACE_BASE);
+  neorv32_uart0_printf("Instr. base address: 0x%x\n", NEORV32_SYSINFO.ISPACE_BASE);
 
   // IMEM
-  neorv32_uart0_printf("Internal IMEM:        ");
+  neorv32_uart0_printf("Internal IMEM:       ");
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_INT_IMEM)) {
     neorv32_uart0_printf("yes, %u bytes\n", NEORV32_SYSINFO.IMEM_SIZE);
   }
@@ -391,8 +391,8 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   // DMEM
-  neorv32_uart0_printf("Data base address:    0x%x\n", NEORV32_SYSINFO.DSPACE_BASE);
-  neorv32_uart0_printf("Internal DMEM:        ");
+  neorv32_uart0_printf("Data base address:   0x%x\n", NEORV32_SYSINFO.DSPACE_BASE);
+  neorv32_uart0_printf("Internal DMEM:       ");
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_INT_DMEM)) {
     neorv32_uart0_printf("yes, %u bytes\n", NEORV32_SYSINFO.DMEM_SIZE);
   }
@@ -401,7 +401,7 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   // i-cache
-  neorv32_uart0_printf("Internal i-cache:     ");
+  neorv32_uart0_printf("Internal i-cache:    ");
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_ICACHE)) {
     neorv32_uart0_printf("yes, ");
 
@@ -439,9 +439,9 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart0_printf("no\n");
   }
 
-  neorv32_uart0_printf("Ext. bus interface:   ");
+  neorv32_uart0_printf("Ext. bus interface:  ");
   __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_EXT));
-  neorv32_uart0_printf("Ext. bus Endianness:  ");
+  neorv32_uart0_printf("Ext. bus Endianness: ");
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_EXT_ENDIAN)) {
     neorv32_uart0_printf("big\n");
   }
