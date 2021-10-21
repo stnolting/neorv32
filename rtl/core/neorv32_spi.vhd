@@ -268,19 +268,19 @@ begin
 
         when others => -- "0--": SPI deactivated
         -- ------------------------------------------------------------
-          rtx_engine.state <= ctrl(ctrl_spi_en_c) & "00";
+          rtx_engine.state(1 downto 0) <= "00";
 
       end case;
     end if;
   end process spi_rtx_unit;
 
   -- busy flag --
-  rtx_engine.busy <= '0' when (rtx_engine.state = "100") else '1'; -- not busy when idle
+  rtx_engine.busy <= '0' when (rtx_engine.state(1 downto 0) = "00") else '1';
 
 
   -- Interrupt ------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_o <= not rtx_engine.busy; -- fire IRQ if transceiver idle
+  irq_o <= ctrl(ctrl_spi_en_c) and (not rtx_engine.busy); -- fire IRQ if transceiver idle and enabled
 
 
 end neorv32_spi_rtl;

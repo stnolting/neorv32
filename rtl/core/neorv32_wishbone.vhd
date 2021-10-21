@@ -241,7 +241,7 @@ begin
   err_o  <= ctrl.err;
 
   -- wishbone interface --
-  wb_tag_o(0) <= '1' when (ctrl.priv = priv_mode_m_c) else '0'; -- privileged access when in machine mode
+  wb_tag_o(0) <= '0' when (ctrl.priv = priv_mode_u_c) else '1'; -- unprivileged access when in user mode
   wb_tag_o(1) <= '0'; -- 0 = secure, 1 = non-secure
   wb_tag_o(2) <= ctrl.src; -- 0 = data access, 1 = instruction access
 

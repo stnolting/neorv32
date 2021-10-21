@@ -69,6 +69,7 @@ architecture neorv32_mtime_rtl of neorv32_mtime is
   signal acc_en : std_ulogic; -- module access enable
   signal addr   : std_ulogic_vector(31 downto 0); -- access address
   signal wren   : std_ulogic; -- module access enable
+  signal rden   : std_ulogic; -- read enable
 
   -- time write access buffer --
   signal mtime_lo_we : std_ulogic;
@@ -95,6 +96,7 @@ begin
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = mtime_base_c(hi_abb_c downto lo_abb_c)) else '0';
   addr   <= mtime_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
+  rden   <= acc_en and rden_i;
 
 
   -- Write Access ---------------------------------------------------------------------------
@@ -143,18 +145,14 @@ begin
   rd_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o  <= acc_en and (rden_i or wren_i);
+      ack_o  <= rden or wren;
       data_o <= (others => '0'); -- default
-      if (rden_i = '1') and (acc_en = '1') then
-        case addr is
-          when mtime_time_lo_addr_c => -- mtime LOW
-            data_o <= mtime_lo;
-          when mtime_time_hi_addr_c => -- mtime HIGH
-            data_o <= mtime_hi;
-          when mtime_cmp_lo_addr_c => -- mtimecmp LOW
-            data_o <= mtimecmp_lo;
-          when others => -- mtime_cmp_hi_addr_c -- mtimecmp HIGH
-            data_o <= mtimecmp_hi;
+      if (rden = '1') then
+        case addr(3 downto 2) is
+          when "00"   => data_o <= mtime_lo; -- mtime LOW
+          when "01"   => data_o <= mtime_hi; -- mtime HIGH
+          when "10"   => data_o <= mtimecmp_lo; -- mtimecmp LOW
+          when others => data_o <= mtimecmp_hi; -- mtimecmp HIGH
         end case;
       end if;
     end if;

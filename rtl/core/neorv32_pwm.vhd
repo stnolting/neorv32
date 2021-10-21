@@ -116,7 +116,7 @@ begin
   wr_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o <= acc_en and (rden_i or wren_i);
+      ack_o <= rden or wren;
 
       -- write access --
       if (wren = '1') then
@@ -187,11 +187,6 @@ begin
 
       -- channels --
       for i in 0 to NUM_CHANNELS-1 loop
---if (pwm_cnt = pwm_ch(i)) or (pwm_ch(i) = x"00") or (enable = '0') then
---  pwm_o(i) <= '0';
---elsif (pwm_cnt = x"00") then
---  pwm_o(i) <= '1';
---end if;
         if (unsigned(pwm_cnt) >= unsigned(pwm_ch(i))) or (enable = '0') then
           pwm_o(i) <= '0';
         else

@@ -2,8 +2,8 @@
 -- # << NEORV32 - Two-Wire Interface Controller (TWI) >>                                           #
 -- # ********************************************************************************************* #
 -- # Supports START and STOP conditions, 8 bit data + ACK/NACK transfers and clock stretching.     #
--- # Supports ACKs by the constroller. No multi-controller support and no peripheral mode support  #
--- # yet. Interrupt: TWI_transfer_done                                                             #
+-- # Supports ACKs by the controller. No multi-controller support and no peripheral mode support   #
+-- # yet. Interrupt: TWI_idle                                                                      #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -158,7 +158,7 @@ begin
   -- clock generator enable --
   clkgen_en_o <= ctrl(ctrl_twi_en_c);
 
-  -- main twi clock select --
+  -- twi clock select --
   twi_clk <= clkgen_i(to_integer(unsigned(ctrl(ctrl_twi_prsc2_c downto ctrl_twi_prsc0_c))));
 
   -- generate four non-overlapping clock ticks at twi_clk/4 --
@@ -168,11 +168,12 @@ begin
       if (arbiter(2) = '0') or (arbiter = "100") then -- offline or idle
         twi_phase_gen <= "0001"; -- make sure to start with a new phase, 0,1,2,3 stepping
       elsif (twi_clk = '1') and (twi_clk_halt = '0') then -- enabled and no clock stretching detected
-        twi_phase_gen <= twi_phase_gen(2 downto 0) & twi_phase_gen(3); -- shift left
+        twi_phase_gen <= twi_phase_gen(2 downto 0) & twi_phase_gen(3); -- rotate left
       end if;
     end if;
   end process clock_phase_gen;
 
+  -- TWI bus signals are set/sampled using 4 clock phases --
   twi_clk_phase(0) <= twi_phase_gen(0) and twi_clk; -- first step
   twi_clk_phase(1) <= twi_phase_gen(1) and twi_clk;
   twi_clk_phase(2) <= twi_phase_gen(2) and twi_clk;
@@ -197,11 +198,8 @@ begin
         irq_o <= '0';
       end if;
 
-      -- defaults --
-      arbiter(2) <= ctrl(ctrl_twi_en_c); -- still activated?
-
       -- serial engine --
-      -- TWI bus signals are set/sampled using 4 clock phases
+      arbiter(2) <= ctrl(ctrl_twi_en_c); -- still activated?
       case arbiter is
 
         when "100" => -- IDLE: waiting for requests, bus might be still claimed by this controller if no STOP condition was generated
@@ -268,7 +266,7 @@ begin
         when others => -- "0--" OFFLINE: TWI deactivated
           twi_sda_o <= '1';
           twi_scl_o <= '1';
-          arbiter   <= ctrl(ctrl_twi_en_c) & "00"; -- stay here, go to idle when activated
+          arbiter(1 downto 0) <= "00"; -- stay here, go to idle when activated
 
       end case;
     end if;

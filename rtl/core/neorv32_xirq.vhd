@@ -4,7 +4,7 @@
 -- # Simple interrupt controller for platform (processor-external) interrupts. Up to 32 channels   #
 -- # are supported that get (optionally) prioritized into a single CPU interrupt.                  #
 -- #                                                                                               #
--- # The actual trigger configuration has to be done before synthesis using the XIRQ_TRIGGER_TYPE  #
+-- # The actual trigger configuration has to be done BEFORE synthesis using the XIRQ_TRIGGER_TYPE  #
 -- # and XIRQ_TRIGGER_POLARITY generics. These allow to configure channel-independent low-level,   #
 -- # high-level, falling-edge and rising-edge triggers.                                            #
 -- # ********************************************************************************************* #
@@ -77,6 +77,8 @@ architecture neorv32_xirq_rtl of neorv32_xirq is
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
   signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal wren   : std_ulogic; -- word write enable
+  signal rden   : std_ulogic; -- read enable
 
   -- control registers --
   signal irq_enable  : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0); -- r/w: interrupt enable
@@ -96,8 +98,7 @@ architecture neorv32_xirq_rtl of neorv32_xirq is
   signal irq_src_nxt : std_ulogic_vector(4 downto 0);
 
   -- arbiter --
-  signal irq_run  : std_ulogic;
-  signal host_ack : std_ulogic;
+  signal irq_run : std_ulogic;
 
 begin
 
@@ -110,6 +111,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = xirq_base_c(hi_abb_c downto lo_abb_c)) else '0';
   addr   <= xirq_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  wren   <= acc_en and wren_i;
+  rden   <= acc_en and rden_i;
 
 
   -- Read/Write Access ----------------------------------------------------------------------
@@ -118,12 +121,11 @@ begin
   begin
     if rising_edge(clk_i) then
       -- bus handshake --
-      ack_o <= acc_en and (rden_i or wren_i);
+      ack_o <= rden or wren;
 
       -- write access --
-      host_ack    <= '0';
       clr_pending <= (others => '1');
-      if ((acc_en and wren_i) = '1') then
+      if (wren = '1') then
         -- channel-enable --
         if (addr = xirq_enable_addr_c) then
           irq_enable <= data_i(XIRQ_NUM_CH-1 downto 0);
@@ -132,15 +134,11 @@ begin
         if (addr = xirq_pending_addr_c) then
           clr_pending <= data_i(XIRQ_NUM_CH-1 downto 0); -- set zero to clear pending IRQ
         end if;
-        -- acknowledge IRQ --
-        if (addr = xirq_source_addr_c) then -- write _any_ value to ACK
-          host_ack <= '1';
-        end if;
       end if;
 
       -- read access --
       data_o <= (others => '0');
-      if ((acc_en and rden_i) = '1') then
+      if (rden = '1') then
         case addr is
           when xirq_enable_addr_c  => data_o(XIRQ_NUM_CH-1 downto 0) <= irq_enable; -- channel-enable
           when xirq_pending_addr_c => data_o(XIRQ_NUM_CH-1 downto 0) <= irq_buf; -- pending IRQs
@@ -218,7 +216,7 @@ begin
           irq_src <= irq_src_nxt;
         end if;
       else -- active IRQ, wait for CPU to acknowledge
-        if (host_ack = '1') then
+        if (wren = '1') and (addr = xirq_source_addr_c) then -- write _any_ value to acknowledge
           irq_run <= '0';
         end if;
       end if;
