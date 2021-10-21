@@ -87,8 +87,8 @@ architecture neorv32_spi_rtl of neorv32_spi is
   constant ctrl_spi_prsc0_c : natural := 10; -- r/w: spi prescaler select bit 0
   constant ctrl_spi_prsc1_c : natural := 11; -- r/w: spi prescaler select bit 1
   constant ctrl_spi_prsc2_c : natural := 12; -- r/w: spi prescaler select bit 2
-  constant ctrl_spi_size0_c : natural := 13; -- r/w: data size (00:  8-bit, 01: 16-bit)
-  constant ctrl_spi_size1_c : natural := 14; -- r/w: data size (10: 24-bit, 11: 32-bit)
+  constant ctrl_spi_size0_c : natural := 13; -- r/w: data size lsb (00:  8-bit, 01: 16-bit)
+  constant ctrl_spi_size1_c : natural := 14; -- r/w: data size msb (10: 24-bit, 11: 32-bit)
   constant ctrl_spi_cpol_c  : natural := 15; -- r/w: spi clock polarity
   --
   constant ctrl_spi_busy_c  : natural := 31; -- r/-: spi transceiver is busy
@@ -258,7 +258,7 @@ begin
         -- ------------------------------------------------------------
           spi_sck_o <= ctrl(ctrl_spi_cpha_c) xnor ctrl(ctrl_spi_cpol_c);
           if (spi_clk_en = '1') then
-            rtx_engine.sreg <= rtx_engine.sreg(30 downto 0) & rtx_engine.sdi_sync(1);
+            rtx_engine.sreg <= rtx_engine.sreg(30 downto 0) & rtx_engine.sdi_sync(rtx_engine.sdi_sync'left);
             if (rtx_engine.bitcnt(5 downto 3) = rtx_engine.bytecnt) then -- all bits transferred?
               rtx_engine.state(1 downto 0) <= "00";
             else
