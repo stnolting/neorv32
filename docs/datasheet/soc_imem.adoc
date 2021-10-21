@@ -11,7 +11,7 @@
 | Top entity port:         | none                         | 
 | Configuration generics:  | _MEM_INT_IMEM_EN_            | implement processor-internal IMEM when _true_
 |                          | _MEM_INT_IMEM_SIZE_          | IMEM size in bytes
-|                          | _INT_BOOTLOADER_EN_          | use internal bootlodaer when _true_ (implements IMEM as _uninitialized_ RAM)
+|                          | _INT_BOOTLOADER_EN_          | use internal bootloader when _true_ (implements IMEM as _uninitialized_ RAM)
 | CPU interrupts:          | none                         | 
 |=======================
 

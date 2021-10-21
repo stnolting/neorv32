@@ -254,11 +254,11 @@ Compiler flags: default, see makefile; optimization -O3
 
 Results generated for hardware version [`1.5.7.10`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
-| CPU Configuration                              | CoreMark Score | CoreMarks/MHz | Average CPI |
-|:-----------------------------------------------|:--------------:|:-------------:|:-----------:|
-| _small_ (`rv32i_Zicsr`)                        |          33.89 | **0.3389**    | **4.04**    |
-| _medium_ (`rv32imc_Zicsr`)                     |          62.50 | **0.6250**    | **5.34**    |
-| _performance_(`rv32imc_Zicsr` + perf. options) |          95.23 | **0.9523**    | **3.54**    |
+| CPU Configuration                               | CoreMark Score | CoreMarks/MHz | Average CPI |
+|:------------------------------------------------|:--------------:|:-------------:|:-----------:|
+| _small_ (`rv32i_Zicsr`)                         |          33.89 | **0.3389**    | **4.04**    |
+| _medium_ (`rv32imc_Zicsr`)                      |          62.50 | **0.6250**    | **5.34**    |
+| _performance_ (`rv32imc_Zicsr` + perf. options) |          95.23 | **0.9523**    | **3.54**    |
 
 :information_source: More information regarding the CPU performance can be found in the
 [online documentation - _"CPU Performance"_](https://stnolting.github.io/neorv32/#_cpu_performance).

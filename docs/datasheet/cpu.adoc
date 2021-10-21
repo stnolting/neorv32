@@ -1049,7 +1049,7 @@ after power-up is not relevant for a defined CPU boot process.
 
 A good example to illustrate the concept of uncritical registers is a pipelined processing engine. Each stage
 of the engine features an N-bit _data register_ and a 1-bit _status register_. The status register is set when the
-data in the according data register is valid. At the end of the pipeline the status register might trigger a writeback
+data in the according data register is valid. At the end of the pipeline the status register might trigger a write-back
 of the processing result to some kind of memory. The initial status of the data registers after power-up is
 irrelevant as long as the status registers are all reset to a defined value that indicates there is no valid data in
 the pipeline’s data register. Therefore, the pipeline data register do no require a dedicated reset as they do not

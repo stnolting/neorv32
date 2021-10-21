@@ -272,7 +272,7 @@ you can advance to one of these chapters to learn how to get a software executab
 
 To allow executables to be _actually executed_ on the NEORV32 Processor the configuration of the software framework
 has to be aware to the hardware configuration. This guide focuses on the memory configuration. To enabled
-certain CPU ISA festures refer to the <<_enabling_risc_v_cpu_extensions>> section.
+certain CPU ISA features refer to the <<_enabling_risc_v_cpu_extensions>> section.
 
 [TIP]
 If you have **not** changed the _default_ memory configuration in section <<_general_hardware_setup>>
@@ -335,7 +335,7 @@ neorv32/sw/example/blink_led$ make clean_all exe
 ----
 
 [start=3]
-. We are using the `clean_all` taret to make sure everything is re-build.
+. We are using the `clean_all` target to make sure everything is re-build.
 . This will compile and link the application sources together with all the included libraries. At the end,
 your application is transformed into an ELF file (`main.elf`). The _NEORV32 image generator_ (in `sw/image_gen`)
 takes this file and creates a final executable. The makefile will show the resulting memory utilization and
@@ -569,7 +569,7 @@ NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as ROM (3176
 . The easiest way of creating a _new_ software application project is to copy an _existing_ one. This will keep all
 file dependencies. For example you can copy `sw/example/blink_led` to `sw/example/flux_capacitor`.
 . If you want to place you application somewhere outside `sw/example` you need to adapt the application's makefile.
-In the makefile you will find a variable that keeps the relative or absolute path to the NEORV32 repo home
+In the makefile you will find a variable that keeps the relative or absolute path to the NEORV32 repository home
 folder. Just modify this variable according to your new project's home location:
 
 [source,makefile]
@@ -1258,7 +1258,7 @@ for abstracting away bit-toggling when verifying standard interfaces such as Wis
 
 Testbench sources in `sim` (such as `sim/neorv32_tb.vhd` and `sim/uart_rx*.vhd`) use VUnit's VHDL libraries for testing
 NEORV32 and peripherals.
-The entrypoint for executing the tests is `sim/run.py`.
+The entry-point for executing the tests is `sim/run.py`.
 
 [source, bash]
 ----

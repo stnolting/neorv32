@@ -358,7 +358,7 @@ hart's GPRs (abstract command register index `0x1000` - `0x101f`).
 | 31:24 | `cmdtype`          | -/w | `00000000` to indicate "access register" command
 | 23    | _reserved_         | -/w | reserved, has to be `0` when writing
 | 22:20 | `aarsize`          | -/w | `010` to indicate 32-bit accesses
-| 21    | `aarpostincrement` | -/w | `0`, postincrement is not supported
+| 21    | `aarpostincrement` | -/w | `0`, post-increment is not supported
 | 18    | `postexec`         | -/w | if set the program buffer is executed _after_ the command
 | 17    | `transfer`         | -/w | if set the operation in `write` is conducted
 | 16    | `write`            | -/w | `1`: copy `data0` to `[regno]`; `0` copy `[regno]` to `data0`

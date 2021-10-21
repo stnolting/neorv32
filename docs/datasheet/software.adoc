@@ -204,7 +204,7 @@ The following default compiler flags are used for compiling an application. Thes
 | `-lm` | Include/link with `math.h`.
 | `-lc` | Search for the standard C library when linking.
 | `-lgcc` | Make sure we have no unresolved references to internal GCC library subroutines.
-| `-mno-fdiv` | Use builtin software functions for floating-point divisions and square roots (since the according instructions are not supported yet).
+| `-mno-fdiv` | Use built-in software functions for floating-point divisions and square roots (since the according instructions are not supported yet).
 | `-falign-functions=4` .4+| Force a 32-bit alignment of functions and labels (branch/jump/call targets). This increases performance as it simplifies instruction fetch when using the C extension. As a drawback this will also slightly increase the program code.
 | `-falign-labels=4`
 | `-falign-loops=4`
@@ -580,7 +580,7 @@ handlers.
 After the initial setup of the RTE, each entry in the trap handler's look-up table is initialized with a debug
 handler, that outputs detailed hardware information via the **primary UART (UART0)** when triggered. This
 is intended as a fall-back for debugging or for accidentally-triggered exceptions/interrupts.
-For instance, an illegal instruction exception catched by the RTE debug handler might look like this in the UART0 output:
+For instance, an illegal instruction exception caught by the RTE debug handler might look like this in the UART0 output:
 
 [source]
 ----

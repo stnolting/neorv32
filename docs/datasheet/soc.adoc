@@ -1017,7 +1017,7 @@ specifications. However, bare-metal system can also repurpose these interrupts. 
 .Trigger type
 [IMPORTANT]
 The fast interrupt request channel trigger on **high-level** and have to stay asserted until explicitly acknowledged
-by the software (for example by writing to a specifc memory-mapped register). Hence, pending interrupts remain pending
+by the software (for example by writing to a specific memory-mapped register). Hence, pending interrupts remain pending
 as long as the interrupt-causing device's state fulfills it's interrupt condition(s).
 
 
@@ -1076,7 +1076,7 @@ the according FIRQ priority; 0 = highest, 15 = lowest):
 .Trigger type
 [IMPORTANT]
 The fast interrupt request channel trigger on **high-level** and have to stay asserted until explicitly acknowledged
-by the software (for example by writing to a specifc memory-mapped register). Hence, pending interrupts remain pending
+by the software (for example by writing to a specific memory-mapped register). Hence, pending interrupts remain pending
 as long as the interrupt-causing device's state fulfills it's interrupt condition(s).
 
 
@@ -1387,8 +1387,7 @@ application start-up code `crt0.S`.
 
 Most peripheral/IO devices provide some kind of interrupt (for example to signal available incoming data). These
 interrupts are entirely mapped to the CPU's <<_custom_fast_interrupt_request_lines>>. Note that all these
-interrupt lines are triggered by a "one-shot" signal (hich for exactly one cycle) and _do not_ require any
-explicit acknowledgment.
+interrupt lines are high-active and are permanently triggered until the IRQ-causing condition is resolved.
 
 **Nomenclature for the Peripheral / IO Devices Listing**
 

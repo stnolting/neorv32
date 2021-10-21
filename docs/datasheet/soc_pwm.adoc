@@ -43,7 +43,7 @@ _**Intensity~x~**_ = `DUTY[y](i*8+7 downto i*8)` / (2^8^)
 
 The base frequency of the generated PWM signals is defined by the PWM core clock. This clock is derived
 from the main processor clock and divided by a prescaler via the 3-bit PWM_CTRL_PRSCx in the unit's control
-register. The following prescalers are available:
+register. The following pre-scalers are available:
 
 .PWM prescaler configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]

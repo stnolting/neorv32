@@ -39,7 +39,7 @@ _WDT_CTRL_CLK_SELx_ prescaler:
 
 Whenever the internal timer overflows the watchdog executes one of two possible actions: Either a hard
 processor reset is triggered or an interrupt is requested at CPU's fast interrupt channel #0. The
-WDT_CTRL_MODE bit definess the action to be taken on an overflow: When cleared, the Watchdog will assert an
+WDT_CTRL_MODE bit defines the action to be taken on an overflow: When cleared, the Watchdog will assert an
 IRQ, when set the WDT will cause a system reset. The configured action can also be triggered manually at
 any time by setting the _WDT_CTRL_FORCE_ bit. The watchdog is reset by setting the _WDT_CTRL_RESET_ bit.
 

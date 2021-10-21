@@ -38,7 +38,7 @@ framework (including the bootloader and the runtime environment) use the primary
 
 **Theory of Operation**
 
-UART0 is enabled by setting the _UART_CTRL_EN_ bit in the UART0 control register `CTRL`. The Baudrate
+UART0 is enabled by setting the _UART_CTRL_EN_ bit in the UART0 control register `CTRL`. The Baud rate
 is configured via a 12-bit _UART_CTRL_BAUDxx_ baud prescaler (`baud_prsc`) and a 3-bit _UART_CTRL_PRSCx_
 clock prescaler (`clock_prescaler`) that scales the processor's primary clock (_f~main~_).
 
@@ -50,7 +50,7 @@ clock prescaler (`clock_prescaler`) that scales the processor's primary clock (_
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
-_**Baudrate**_ = (_f~main~[Hz]_ / `clock_prescaler`) / (`baud_prsc` + 1)
+_**Baud rate**_ = (_f~main~[Hz]_ / `clock_prescaler`) / (`baud_prsc` + 1)
 
 A new transmission is started by writing the data byte to be send to the lowest byte of the `DATA` register. The
 transfer is completed when the _UART_CTRL_TX_BUSY_ control register flag returns to zero. A new received byte
