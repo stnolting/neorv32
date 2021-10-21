@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060203"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060204"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -423,7 +423,7 @@ package neorv32_package is
   -- atomic memory access (A) --
   constant opcode_atomic_c : std_ulogic_vector(6 downto 0) := "0101111"; -- atomic operations (A extension)
   -- floating point operations (Zfinx-only) (F/D/H/Q) --
-  constant opcode_fop_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single opearand instruction
+  constant opcode_fop_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single operand instruction
 
   -- RISC-V Funct3 --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -462,7 +462,7 @@ package neorv32_package is
   constant funct3_csrrci_c : std_ulogic_vector(2 downto 0) := "111"; -- atomic read & clear bit immediate
   -- fence --
   constant funct3_fence_c  : std_ulogic_vector(2 downto 0) := "000"; -- fence - order IO/memory access (->NOP)
-  constant funct3_fencei_c : std_ulogic_vector(2 downto 0) := "001"; -- fencei - instructon stream sync
+  constant funct3_fencei_c : std_ulogic_vector(2 downto 0) := "001"; -- fencei - instruction stream sync
 
   -- RISC-V Funct12 -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

@@ -1,10 +1,6 @@
 -- #################################################################################################
--- # << NEORV32 - Processor Top Entity >>                                                          #
+-- # << The NEORV32 RISC-V Processor - Top Entity >>                                               #
 -- # ********************************************************************************************* #
--- # This is the top entity of the NEORV32 PROCESSOR. Instantiate this unit in your own project    #
--- # and define all the configuration generics according to your needs or use one of the           #
--- # pre-defined template wrappers.                                                                #
--- #                                                                                               #
 -- # Check out the processor's online documentation for more information:                          #
 -- #  HQ:         https://github.com/stnolting/neorv32                                             #
 -- #  Data Sheet: https://stnolting.github.io/neorv32                                              #
@@ -530,21 +526,21 @@ begin
   -- fast interrupts --
   fast_irq(00) <= wdt_irq;       -- HIGHEST PRIORITY - watchdog timeout
   fast_irq(01) <= cfs_irq;       -- custom functions subsystem
-  fast_irq(02) <= uart0_rxd_irq; -- primary UART (UART0) data received
-  fast_irq(03) <= uart0_txd_irq; -- primary UART (UART0) sending done
-  fast_irq(04) <= uart1_rxd_irq; -- secondary UART (UART1) data received
-  fast_irq(05) <= uart1_txd_irq; -- secondary UART (UART1) sending done
-  fast_irq(06) <= spi_irq;       -- SPI transmission done
-  fast_irq(07) <= twi_irq;       -- TWI transmission done
+  fast_irq(02) <= uart0_rxd_irq; -- primary UART (UART0) RX interrupt
+  fast_irq(03) <= uart0_txd_irq; -- primary UART (UART0) TX interrupt
+  fast_irq(04) <= uart1_rxd_irq; -- secondary UART (UART1) RX interrupt
+  fast_irq(05) <= uart1_txd_irq; -- secondary UART (UART1) TX interrupt
+  fast_irq(06) <= spi_irq;       -- SPI idle
+  fast_irq(07) <= twi_irq;       -- TWI idle
   fast_irq(08) <= xirq_irq;      -- external interrupt controller
   fast_irq(09) <= neoled_irq;    -- NEOLED buffer free
-  fast_irq(10) <= slink_rx_irq;  -- SLINK data received
-  fast_irq(11) <= slink_tx_irq;  -- SLINK data send
+  fast_irq(10) <= slink_rx_irq;  -- SLINK RX interrupt
+  fast_irq(11) <= slink_tx_irq;  -- SLINK TX interrupt
   --
   fast_irq(12) <= '0'; -- reserved
   fast_irq(13) <= '0'; -- reserved
   fast_irq(14) <= '0'; -- reserved
-  fast_irq(15) <= '0'; -- reserved
+  fast_irq(15) <= '0'; -- LOWEST PRIORITY - reserved
 
 
   -- CPU Instruction Cache ------------------------------------------------------------------

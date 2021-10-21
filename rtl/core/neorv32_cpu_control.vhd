@@ -1995,7 +1995,7 @@ begin
             if (csr.addr(2 downto 0) = csr_mtvec_c(2 downto 0)) then
               csr.mtvec <= csr.wdata(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
             end if;
-            -- R/W: machine counter enable register --
+            -- R/W: mcounteren - machine counter enable register --
             if (CPU_EXTENSION_RISCV_U = true) then -- this CSR is hardwired to zero if user mode is not implemented
               if (csr.addr(2 downto 0) = csr_mcounteren_c(2 downto 0)) then
                 csr.mcounteren_cy <= csr.wdata(0); -- enable user-level access to cycle[h]
@@ -2069,7 +2069,7 @@ begin
                 csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- enable auto-increment of [m]hpmcounter*[h] counter
               end if;
             end if;
-            -- machine performance-monitors event selector --
+            -- R/W: mhpmevent - machine performance-monitors event selector --
             if (HPM_NUM_CNTS > 0) then
               for i in 0 to HPM_NUM_CNTS-1 loop
                 if (csr.addr(4 downto 0) = std_ulogic_vector(to_unsigned(i+3, 5))) then

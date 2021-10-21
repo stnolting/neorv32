@@ -125,7 +125,7 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert not (num_roscs_c = 0) report "NEORV32 PROCESSOR CONFIG ERROR: TRNG - Total number of ring-oscillators has to be >0." severity error;
-  assert not ((num_inv_start_c mod 2)  = 0) report "NEORV32 PROCESSOR CONFIG ERROR: TRNG - Number of inverters in fisrt ring has to be odd." severity error;
+  assert not ((num_inv_start_c mod 2)  = 0) report "NEORV32 PROCESSOR CONFIG ERROR: TRNG - Number of inverters in first ring has to be odd." severity error;
   assert not ((num_inv_inc_c   mod 2) /= 0) report "NEORV32 PROCESSOR CONFIG ERROR: TRNG - Number of inverters increment for each next ring has to be even." severity error;
 
 
@@ -261,8 +261,7 @@ end neorv32_trng_rtl;
 -- # The inverter chain is constructed as an "asynchronous" LFSR. The single inverters are         #
 -- # connected via latches that are used to enable/disable the TRNG. Also, these latches are used  #
 -- # as additional delay element. By using unique enable signals for each latch, the synthesis     #
--- # tool cannot "optimize" (=remove) any of the inverters out of the design. Furthermore, the     #
--- # latches prevent the synthesis tool from detecting combinatorial loops.                        #
+-- # tool cannot "optimize" (=remove) any of the inverters out of the design.                      #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
