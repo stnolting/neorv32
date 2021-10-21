@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 21.10.2021 | 1.6.2.5 | minor code edits; improved stability of UART receiver's start-bit detection (more "spike"-resistant) |
 | 21.10.2021 | 1.6.2.4 | minor VHDL code fixes, clean-ups, optimizations and comment typo fixes (:lipstick:) |
 | 20.10.2021 | 1.6.2.3 | SPI: minor VHDL code optimization and clean-up; NOTE: all serial interfaces (SPI, TWI, UARTs) allow to terminate a running transmission by clearing the enable flag in the module's control register |
 | 18.10.2021 | 1.6.2.2 | :bug: `*_reduce_f` VHDL functions did not work for single-bit operands (see [PR #186](https://github.com/stnolting/neorv32/pull/186)) |

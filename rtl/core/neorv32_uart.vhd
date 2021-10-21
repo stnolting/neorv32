@@ -110,7 +110,7 @@ architecture neorv32_uart_rtl of neorv32_uart is
   -- simulation output configuration --
   constant sim_screen_output_en_c : boolean := true; -- output lowest byte as char to simulator console when enabled
   constant sim_text_output_en_c   : boolean := true; -- output lowest byte as char to text file when enabled
-  constant sim_data_output_en_c   : boolean := true; -- dump 32-word to file when enabled
+  constant sim_data_output_en_c   : boolean := true; -- dump 32-bit TX word to file when enabled
   constant sim_uart_text_file_c   : string  := cond_sel_string_f(UART_PRIMARY, "neorv32.uart0.sim_mode.text.out", "neorv32.uart1.sim_mode.text.out");
   constant sim_uart_data_file_c   : string  := cond_sel_string_f(UART_PRIMARY, "neorv32.uart0.sim_mode.data.out", "neorv32.uart1.sim_mode.data.out");
 
@@ -170,7 +170,7 @@ architecture neorv32_uart_rtl of neorv32_uart is
   signal uart_clk : std_ulogic;
 
   -- numbers of bits in transmission frame --
-  signal num_bits : std_ulogic_vector(03 downto 0);
+  signal num_bits : std_ulogic_vector(3 downto 0);
 
   -- hardware flow-control IO buffer --
   signal uart_cts_ff : std_ulogic_vector(1 downto 0);
@@ -434,7 +434,7 @@ begin
   begin
     if rising_edge(clk_i) then
       -- input synchronizer --
-      rx_engine.sync <= uart_rxd_i & rx_engine.sync(4 downto 1);
+      rx_engine.sync <= uart_rxd_i & rx_engine.sync(rx_engine.sync'left downto 1);
 
       -- FSM --
       if (ctrl(ctrl_en_c) = '0') then -- disabled
@@ -447,7 +447,7 @@ begin
           -- ------------------------------------------------------------
             rx_engine.baud_cnt <= '0' & ctrl(ctrl_baud11_c downto ctrl_baud01_c); -- half baud delay at the beginning to sample in the middle of each bit
             rx_engine.bitcnt   <= num_bits;
-            if (rx_engine.sync(2 downto 0) = "001") then -- start bit? (falling edge)
+            if (rx_engine.sync(3 downto 0) = "0011") then -- start bit? (falling edge)
               rx_engine.state <= S_RX_RECEIVE;
             end if;
 
@@ -457,7 +457,7 @@ begin
               if (rx_engine.baud_cnt = x"000") then
                 rx_engine.baud_cnt <= ctrl(ctrl_baud11_c downto ctrl_baud00_c);
                 rx_engine.bitcnt   <= std_ulogic_vector(unsigned(rx_engine.bitcnt) - 1);
-                rx_engine.sreg     <= rx_engine.sync(0) & rx_engine.sreg(rx_engine.sreg'left downto 1);
+                rx_engine.sreg     <= rx_engine.sync(2) & rx_engine.sreg(rx_engine.sreg'left downto 1);
               else
                 rx_engine.baud_cnt <= std_ulogic_vector(unsigned(rx_engine.baud_cnt) - 1);
               end if;
