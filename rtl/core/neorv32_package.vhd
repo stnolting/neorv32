@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060206"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060207"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -1256,8 +1256,7 @@ package neorv32_package is
       start_i : in  std_ulogic; -- trigger operation
       -- data input --
       rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
-      rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
-      imm_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
+      shamt_i : in  std_ulogic_vector(index_size_f(data_width_c)-1 downto 0); -- shift amount
       -- result and status --
       res_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
       valid_o : out std_ulogic -- data output valid

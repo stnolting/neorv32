@@ -255,8 +255,7 @@ begin
     start_i => cp_start(0),     -- trigger operation
     -- data input --
     rs1_i   => rs1_i,           -- rf source 1
-    rs2_i   => rs2_i,           -- rf source 2
-    imm_i   => imm_i,           -- immediate
+    shamt_i => opb(index_size_f(data_width_c)-1 downto 0), -- shift amount
     -- result and status --
     res_o   => cp_result(0),    -- operation result
     valid_o => cp_valid(0)      -- data output valid
@@ -274,16 +273,16 @@ begin
     )
     port map (
       -- global control --
-      clk_i   => clk_i,           -- global clock, rising edge
-      rstn_i  => rstn_i,          -- global reset, low-active, async
-      ctrl_i  => ctrl_i,          -- main control bus
-      start_i => cp_start(1),     -- trigger operation
+      clk_i   => clk_i,         -- global clock, rising edge
+      rstn_i  => rstn_i,        -- global reset, low-active, async
+      ctrl_i  => ctrl_i,        -- main control bus
+      start_i => cp_start(1),   -- trigger operation
       -- data input --
-      rs1_i   => rs1_i,           -- rf source 1
-      rs2_i   => rs2_i,           -- rf source 2
+      rs1_i   => rs1_i,         -- rf source 1
+      rs2_i   => rs2_i,         -- rf source 2
       -- result and status --
-      res_o   => cp_result(1),    -- operation result
-      valid_o => cp_valid(1)      -- data output valid
+      res_o   => cp_result(1),  -- operation result
+      valid_o => cp_valid(1)    -- data output valid
     );
   end generate;
 
@@ -332,7 +331,7 @@ begin
     neorv32_cpu_cp_fpu_inst: neorv32_cpu_cp_fpu
     port map (
       -- global control --
-      clk_i    => clk_i,        -- global clock, rising edge
+      clk_i    => clk_i,        -- global clock, rising edge  
       rstn_i   => rstn_i,       -- global reset, low-active, async
       ctrl_i   => ctrl_i,       -- main control bus
       start_i  => cp_start(3),  -- trigger operation

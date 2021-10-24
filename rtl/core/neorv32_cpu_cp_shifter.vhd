@@ -55,8 +55,7 @@ entity neorv32_cpu_cp_shifter is
     start_i : in  std_ulogic; -- trigger operation
     -- data input --
     rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
-    rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
-    imm_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
+    shamt_i : in  std_ulogic_vector(index_size_f(data_width_c)-1 downto 0); -- shift amount
     -- result and status --
     res_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
     valid_o : out std_ulogic -- data output valid
@@ -65,9 +64,6 @@ end neorv32_cpu_cp_shifter;
 
 architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
 
-  -- operands --
-  signal shift_amount : std_ulogic_vector(index_size_f(data_width_c)-1 downto 0);
-
   -- serial shifter --
   type shifter_t is record
     busy    : std_ulogic;
@@ -75,6 +71,7 @@ architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
     done    : std_ulogic;
     cnt     : std_ulogic_vector(index_size_f(data_width_c)-1 downto 0);
     sreg    : std_ulogic_vector(data_width_c-1 downto 0);
+    res     : std_ulogic_vector(data_width_c-1 downto 0);
   end record;
   signal shifter : shifter_t;
 
@@ -84,12 +81,6 @@ architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
   signal bs_result : std_ulogic_vector(data_width_c-1 downto 0);
 
 begin
-
-  -- Shift Amount ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  shift_amount <= imm_i(index_size_f(data_width_c)-1 downto 0) when (ctrl_i(ctrl_alu_opb_mux_c) = '1') else -- immediate source
-                  rs2_i(index_size_f(data_width_c)-1 downto 0); -- register source
-
 
   -- Iterative Shifter Core (small but slow) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -112,7 +103,7 @@ begin
         --
         if (start_i = '1') then -- trigger new shift
           shifter.sreg <= rs1_i; -- shift operand
-          shifter.cnt  <= shift_amount; -- shift amount
+          shifter.cnt  <= shamt_i; -- shift amount
         elsif (or_reduce_f(shifter.cnt) = '1') then -- running shift (cnt != 0)
           shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 1);
           if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- SLL: shift left logical
@@ -125,7 +116,7 @@ begin
     end process shifter_unit_sync;
   end generate;
 
-  -- shift control --
+  -- shift control/output --
   serial_shifter_ctrl:
   if (FAST_SHIFT_EN = false) generate
     shifter.done <= not or_reduce_f(shifter.cnt(shifter.cnt'left downto 1));
@@ -138,7 +129,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   barrel_shifter_async:
   if (FAST_SHIFT_EN = true) generate
-    shifter_unit_async: process(rs1_i, shift_amount, ctrl_i, bs_level)
+    shifter_unit_async: process(rs1_i, shamt_i, ctrl_i, bs_level)
     begin
       -- input level: convert left shifts to right shifts --
       if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- is left shift?
@@ -149,7 +140,7 @@ begin
 
       -- shifter array --
       for i in index_size_f(data_width_c)-1 downto 0 loop
-        if (shift_amount(i) = '1') then
+        if (shamt_i(i) = '1') then
           bs_level(i)(data_width_c-1 downto data_width_c-(2**i)) <= (others => (bs_level(i+1)(data_width_c-1) and ctrl_i(ctrl_alu_shift_ar_c)));
           bs_level(i)((data_width_c-(2**i))-1 downto 0) <= bs_level(i+1)(data_width_c-1 downto 2**i);
         else
@@ -180,7 +171,7 @@ begin
     end process shifter_unit_sync;
   end generate;
 
-  -- shift control --
+  -- shift control/output --
   barrel_shifter_ctrl:
   if (FAST_SHIFT_EN = true) generate
     valid_o <= start_i;
