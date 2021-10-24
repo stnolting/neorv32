@@ -250,8 +250,7 @@ begin
                     ca_bus_wdata_i  when (arbiter.bus_sel = '0')    else cb_bus_wdata_i;
   p_bus_ben_o    <= cb_bus_ben_i    when (PORT_CA_READ_ONLY = true) else ca_bus_ben_i   when (PORT_CB_READ_ONLY = true) else
                     ca_bus_ben_i    when (arbiter.bus_sel = '0')    else cb_bus_ben_i;
-  p_bus_we       <= cb_bus_we_i     when (PORT_CA_READ_ONLY = true) else ca_bus_we_i    when (PORT_CB_READ_ONLY = true) else
-                    ca_bus_we_i     when (arbiter.bus_sel = '0')    else cb_bus_we_i;
+  p_bus_we       <= ca_bus_we_i     when (arbiter.bus_sel = '0')    else cb_bus_we_i;
   p_bus_re       <= ca_bus_re_i     when (arbiter.bus_sel = '0')    else cb_bus_re_i;
   p_bus_we_o     <= (p_bus_we or arbiter.we_trig);
   p_bus_re_o     <= (p_bus_re or arbiter.re_trig);
