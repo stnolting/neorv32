@@ -256,11 +256,10 @@ void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
   uint8_t p = 0; // initial prsc = CLK/2
 
   // raw clock prescaler
-#ifdef __riscv_div
-  // use div instructions
+#ifndef make_bootloader
   i = (uint16_t)(clock / (2*baudrate));
 #else
-  // division via repeated subtraction
+  // division via repeated subtraction (minimal size, only for bootloader)
   while (clock >= 2*baudrate) {
     clock -= 2*baudrate;
     i++;
@@ -626,11 +625,11 @@ void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
   uint8_t p = 0; // initial prsc = CLK/2
 
   // raw clock prescaler
-#ifdef __riscv_div
+#ifdef make_bootloader
   // use div instructions
   i = (uint16_t)(clock / (2*baudrate));
 #else
-  // division via repeated subtraction
+  // division via repeated subtraction (minimal size, only for bootloader)
   while (clock >= 2*baudrate) {
     clock -= 2*baudrate;
     i++;
