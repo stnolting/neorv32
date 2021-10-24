@@ -57,8 +57,21 @@ __crt0_pointer_init:
   .option push
   .option norelax
 
-  la sp, __crt0_stack_begin  // stack pointer
-  la gp, __global_pointer$   // global pointer
+  // stack pointer
+#ifdef make_bootloader
+  // use HW-defined end of DMEM when compiling bootloader
+  // -> make bootloader independent of platform configuration
+  lw  x10, 0xFFFFFFE0 + 20(zero) // NEORV32_SYSINFO.DSPACE_BASE
+  lw  x11, 0xFFFFFFE0 + 28(zero) // NEORV32_SYSINFO.DMEM_SIZE
+  add sp,  x10, x11
+  add sp,  sp, -4
+#else
+  // use stack pointer definition from application code
+  la  sp,  __crt0_stack_begin
+#endif
+
+  // global pointer
+  la  gp,  __global_pointer$
 
   .option pop
 
@@ -95,17 +108,17 @@ __crt0_reg_file_clear:
 //addi  x0, x0, 0 // hardwired to zero
   addi  x1, x0, 0
 //addi  x2, x0, 0 // stack pointer sp
-//addi  x3, x0, 0 // gloabl pointer gp
+//addi  x3, x0, 0 // global pointer gp
   addi  x4, x0, 0
   addi  x5, x0, 0
   addi  x6, x0, 0
   addi  x7, x0, 0
-//addi  x8, x0, 0 // initialized within crt0
-//addi  x9, x0, 0 // initialized within crt0
-//addi x10, x0, 0 // initialized within crt0
-//addi x11, x0, 0 // initialized within crt0
-//addi x12, x0, 0 // initialized within crt0
-//addi x13, x0, 0 // initialized within crt0
+//addi  x8, x0, 0 // implicitly initialized within crt0
+//addi  x9, x0, 0 // implicitly initialized within crt0
+//addi x10, x0, 0 // implicitly initialized within crt0
+//addi x11, x0, 0 // implicitly initialized within crt0
+//addi x12, x0, 0 // implicitly initialized within crt0
+//addi x13, x0, 0 // implicitly initialized within crt0
   addi x14, x0, 0
   addi x15, x0, 0
 
@@ -213,7 +226,7 @@ __crt0_main_aftermath:
 // go to endless sleep mode
 // ************************************************************************************************
 __crt0_main_aftermath_end:
-  csrci mstatus,  8                  // mstatus: disable global IRQs (mstatus.mie)
+  csrci mstatus, 8                   // mstatus: disable global IRQs (mstatus.mie)
 __crt0_main_aftermath_end_loop:
   wfi                                // try to go to sleep mode
   j __crt0_main_aftermath_end_loop   // endless loop
