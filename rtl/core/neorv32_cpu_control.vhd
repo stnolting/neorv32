@@ -489,7 +489,7 @@ begin
     if (rstn_i = '0') then
       issue_engine.state <= ISSUE_ACTIVE;
       issue_engine.align <= CPU_BOOT_ADDR(1); -- 32- or 16-bit boundary
-      issue_engine.buf   <= (others => def_rst_val_c);
+      issue_engine.buf   <= (others => '0');
     elsif rising_edge(clk_i) then
       if (ipb.clear = '1') then
         if (CPU_EXTENSION_RISCV_C = true) then
@@ -557,7 +557,7 @@ begin
               issue_engine.buf_nxt <= ipb.rdata(33 downto 32) & ipb.rdata(31 downto 16); -- store high half-word - we might need it for an unaligned uncompressed instruction
               if (issue_engine.buf(1 downto 0) = "11") then -- uncompressed and "unaligned"
                 ipb.re <= '1';
-                cmd_issue.data <= '0' & issue_engine.buf(17 downto 16) & '0' & (ipb.rdata(15 downto 0) & issue_engine.buf(15 downto 0));
+                cmd_issue.data <= '0' & (ipb.rdata(33 downto 32) or issue_engine.buf(17 downto 16)) & '0' & (ipb.rdata(15 downto 0) & issue_engine.buf(15 downto 0));
               else -- compressed
                 -- do not read from ipb here!
                 cmd_issue.data <= ci_illegal & ipb.rdata(33 downto 32) & '1' & ci_instr32;
@@ -1566,7 +1566,7 @@ begin
                (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ebreak_c) or -- EBREAK 
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_mret_c) and (csr.priv_m_mode = '1')) or -- MRET (only allowed in M-mode)
                ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_dret_c) and (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) or -- DRET (only allowed in D-mode)
-               (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_wfi_c) then -- WFI (always allowed to execute)
+               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_wfi_c) then -- WFI (always allowed to execute)
               illegal_instruction <= '0';
             else
               illegal_instruction <= '1';
