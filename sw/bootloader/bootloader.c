@@ -512,21 +512,20 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
     system_error(ERROR_SIZE); // -> seems like executable is too large
   }
 
-  // Anything else (that was not expected); output exception notifier and try to resume
+  // Anything else (that was not expected): FREEZE
   else {
-    uint32_t epc = neorv32_cpu_csr_read(CSR_MEPC);
 #if (UART_EN != 0)
     if (neorv32_uart0_available()) {
       PRINT_TEXT("\n[EXC ");
       PRINT_XNUM(cause); // MCAUSE
       PRINT_PUTC(' ');
-      PRINT_XNUM(epc); // MEPC
+      PRINT_XNUM(neorv32_cpu_csr_read(CSR_MEPC)); // MEPC
       PRINT_PUTC(' ');
       PRINT_XNUM(neorv32_cpu_csr_read(CSR_MTVAL)); // MTVAL
       PRINT_TEXT("]\n");
     }
 #endif
-    neorv32_cpu_csr_write(CSR_MEPC, epc + 4); // advance to next instruction
+    while(1); // stall
   }
 }
 
