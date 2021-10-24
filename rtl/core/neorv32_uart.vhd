@@ -398,7 +398,7 @@ begin
           when S_TX_TRANSMIT => -- transmit data
           -- ------------------------------------------------------------
             if (uart_clk = '1') then
-              if (tx_engine.baud_cnt = x"000") then
+              if (or_reduce_f(tx_engine.baud_cnt) = '0') then -- bit done?
                 tx_engine.baud_cnt <= ctrl(ctrl_baud11_c downto ctrl_baud00_c);
                 tx_engine.bitcnt   <= std_ulogic_vector(unsigned(tx_engine.bitcnt) - 1);
                 tx_engine.sreg     <= '1' & tx_engine.sreg(tx_engine.sreg'left downto 1);
@@ -407,7 +407,7 @@ begin
               end if;
             end if;
             uart_txd_o <= tx_engine.sreg(0);
-            if (tx_engine.bitcnt = "0000") then -- all bits send?
+            if (or_reduce_f(tx_engine.bitcnt) = '0') then -- all bits send?
               tx_engine.state <= S_TX_IDLE;
             end if;
 
@@ -454,7 +454,7 @@ begin
           when S_RX_RECEIVE => -- receive data
           -- ------------------------------------------------------------
             if (uart_clk = '1') then
-              if (rx_engine.baud_cnt = x"000") then
+              if (or_reduce_f(rx_engine.baud_cnt) = '0') then -- bit done
                 rx_engine.baud_cnt <= ctrl(ctrl_baud11_c downto ctrl_baud00_c);
                 rx_engine.bitcnt   <= std_ulogic_vector(unsigned(rx_engine.bitcnt) - 1);
                 rx_engine.sreg     <= rx_engine.sync(2) & rx_engine.sreg(rx_engine.sreg'left downto 1);
@@ -462,7 +462,7 @@ begin
                 rx_engine.baud_cnt <= std_ulogic_vector(unsigned(rx_engine.baud_cnt) - 1);
               end if;
             end if;
-            if (rx_engine.bitcnt = "0000") then -- all bits received?
+            if (or_reduce_f(rx_engine.bitcnt) = '0') then -- all bits received?
               rx_engine.state <= S_RX_IDLE;
             end if;
 
