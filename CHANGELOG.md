@@ -26,8 +26,8 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 24.10.2021 | 1.6.2.7 | minor control unit fixes (add logic to check both half-words of a unaligned 32-bit instruction did not cause any bus exceptions); minor ALU logic optimization; optimized `ctr0.S`: bootloader stack pointer initialization is now done based on the actual physical memory configuration - bootloader is now even more independent of the actual platform configuration |
-| 24.10.2021 | 1.6.2.6 | :bug: **fixed HW bug** introduced in version `1.6.2.4` |
+| 24.10.2021 | 1.6.2.7 | minor control unit fixes (add logic to check both half-words of a unaligned 32-bit instruction did not cause any bus exceptions); minor ALU logic optimization; optimized `ctr0.S`: bootloader stack pointer initialization (is now done based on the actual physical memory configuration) - bootloader is now even more independent of the actual platform configuration |
+| 24.10.2021 | 1.6.2.6 | :bug: **fixed HW bug** introduced in version `1.6.2.4` (write access arbitration in BUSMUX) |
 | 21.10.2021 | 1.6.2.5 | minor code edits; improved stability of UART receiver's start-bit detection (more "spike"-resistant) |
 | 21.10.2021 | 1.6.2.4 | minor VHDL code fixes, clean-ups, optimizations and comment typo fixes (:lipstick:) |
 | 20.10.2021 | 1.6.2.3 | SPI: minor VHDL code optimization and clean-up; NOTE: all serial interfaces (SPI, TWI, UARTs) allow to terminate a running transmission by clearing the enable flag in the module's control register |
