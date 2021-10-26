@@ -57,21 +57,8 @@ __crt0_pointer_init:
   .option push
   .option norelax
 
-  // stack pointer
-#ifdef make_bootloader
-  // use HW-defined end of DMEM when compiling bootloader
-  // -> make bootloader independent of platform configuration
-  lw  x10, 0xFFFFFFE0 + 20(zero) // NEORV32_SYSINFO.DSPACE_BASE
-  lw  x11, 0xFFFFFFE0 + 28(zero) // NEORV32_SYSINFO.DMEM_SIZE
-  add sp,  x10, x11
-  add sp,  sp, -4
-#else
-  // use stack pointer definition from application code
-  la  sp,  __crt0_stack_begin
-#endif
-
-  // global pointer
-  la  gp,  __global_pointer$
+  la sp, __crt0_stack_begin // stack pointer
+  la gp, __global_pointer$  // global pointer
 
   .option pop
 
