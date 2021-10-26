@@ -411,6 +411,7 @@ int main(void) {
     char c = PRINT_GETC();
     PRINT_PUTC(c); // echo
     PRINT_TEXT("\n");
+    while (neorv32_uart0_tx_busy());
 
     if (c == 'r') { // restart bootloader
       asm volatile ("li t0, %[input_i]; jr t0" :  : [input_i] "i" (BOOTLOADER_BASE_ADDRESS)); // jump to beginning of boot ROM
@@ -492,7 +493,7 @@ void start_app(void) {
  **************************************************************************/
 void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
 
-  uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
+  register uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
 
   // Machine timer interrupt
   if (cause == TRAP_CODE_MTI) { // raw exception code for MTI
@@ -512,20 +513,21 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
     system_error(ERROR_SIZE); // -> seems like executable is too large
   }
 
-  // Anything else (that was not expected): FREEZE
+  // Anything else (that was not expected); output exception notifier and try to resume
   else {
+    register uint32_t epc = neorv32_cpu_csr_read(CSR_MEPC);
 #if (UART_EN != 0)
     if (neorv32_uart0_available()) {
       PRINT_TEXT("\n[EXC ");
       PRINT_XNUM(cause); // MCAUSE
       PRINT_PUTC(' ');
-      PRINT_XNUM(neorv32_cpu_csr_read(CSR_MEPC)); // MEPC
+      PRINT_XNUM(epc); // MEPC
       PRINT_PUTC(' ');
       PRINT_XNUM(neorv32_cpu_csr_read(CSR_MTVAL)); // MTVAL
       PRINT_TEXT("]\n");
     }
 #endif
-    while(1); // stall
+    neorv32_cpu_csr_write(CSR_MEPC, epc + 4); // advance to next instruction
   }
 }
 
@@ -551,8 +553,7 @@ void get_exe(int src) {
     PRINT_TEXT("Loading... ");
 
     // flash checks
-    if ((neorv32_spi_available() == 0) ||    // check if SPI is available at all
-        (spi_flash_read_1st_id() == 0x00)) { // check if flash ready (or available at all)
+    if (spi_flash_read_1st_id() == 0x00) { // check if flash ready (or available at all)
       system_error(ERROR_FLASH);
     }
   }
@@ -612,7 +613,7 @@ void save_exe(void) {
   // info and prompt
   PRINT_TEXT("Write ");
   PRINT_XNUM(size);
-  PRINT_TEXT(" bytes to SPI flash @ ");
+  PRINT_TEXT(" bytes to SPI flash @0x");
   PRINT_XNUM(addr);
   PRINT_TEXT("? (y/n) ");
 
