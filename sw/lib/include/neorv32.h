@@ -888,8 +888,8 @@ enum NEORV32_UART_CTRL_enum {
   UART_CTRL_PRSC2    = 26, /**< UART control register(26) (r/w): BAUD rate clock prescaler select bit 2 */
   UART_CTRL_CTS      = 27, /**< UART control register(27) (r/-): current state of CTS input */
   UART_CTRL_EN       = 28, /**< UART control register(28) (r/w): UART global enable */
-  UART_CTRL_RX_IRQ   = 29, /**< UART control register(29) (r/w: RX IRQ mode: 1=FIFO at least half-full; 0=FIFO not empty */
-  UART_CTRL_TX_IRQ   = 30, /**< UART control register(30) (r/w: TX IRQ mode: 1=FIFO less than half-full; 0=FIFO not full */
+  UART_CTRL_RX_IRQ   = 29, /**< UART control register(29) (r/w): RX IRQ mode: 1=FIFO at least half-full; 0=FIFO not empty */
+  UART_CTRL_TX_IRQ   = 30, /**< UART control register(30) (r/w): TX IRQ mode: 1=FIFO less than half-full; 0=FIFO not full */
   UART_CTRL_TX_BUSY  = 31  /**< UART control register(31) (r/-): Transmitter is busy when set */
 };
 
