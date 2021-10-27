@@ -209,6 +209,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     --
     is_ci        : std_ulogic; -- current instruction is de-compressed instruction
     is_ci_nxt    : std_ulogic;
+    is_ici       : std_ulogic; -- current instruction is illegal de-compressed instruction
+    is_ici_nxt   : std_ulogic;
     --
     branch_taken : std_ulogic; -- branch condition fulfilled
     pc           : std_ulogic_vector(data_width_c-1 downto 0); -- actual PC, corresponding to current executed instruction
@@ -359,10 +361,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal hpmcnt_trigger           : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0);
 
   -- illegal instruction check --
-  signal illegal_opcode_lsbs : std_ulogic; -- if opcode != rv32
+  signal illegal_opcode_lsbs : std_ulogic; -- opcode != rv32
   signal illegal_instruction : std_ulogic;
-  signal illegal_register    : std_ulogic; -- only for E-extension
-  signal illegal_compressed  : std_ulogic; -- only fir C-extension
+  signal illegal_register    : std_ulogic; -- illegal register (>x15) - E-extension
+  signal illegal_compressed  : std_ulogic; -- illegal compressed instruction - C-extension
 
   -- access (privilege) check --
   signal csr_acc_valid : std_ulogic; -- valid CSR access (implemented and valid access rights)
@@ -692,6 +694,7 @@ begin
       execute_engine.state_prev <= SYS_WAIT; -- actual reset value is not relevant
       execute_engine.i_reg      <= (others => def_rst_val_c);
       execute_engine.is_ci      <= def_rst_val_c;
+      execute_engine.is_ici     <= def_rst_val_c;
       execute_engine.last_pc    <= (others => def_rst_val_c);
       execute_engine.i_reg_last <= (others => def_rst_val_c);
       execute_engine.next_pc    <= (others => def_rst_val_c);
@@ -716,8 +719,9 @@ begin
       execute_engine.state_prev <= execute_engine.state;
       execute_engine.i_reg      <= execute_engine.i_reg_nxt;
       execute_engine.is_ci      <= execute_engine.is_ci_nxt;
+      execute_engine.is_ici     <= execute_engine.is_ici_nxt;
 
-      -- PC & IR of "last executed" instruction --
+      -- PC & IR of "last executed" instruction for trap handling --
       if (execute_engine.state = EXECUTE) then
         execute_engine.last_pc    <= execute_engine.pc;
         execute_engine.i_reg_last <= execute_engine.i_reg;
@@ -895,6 +899,7 @@ begin
     execute_engine.state_nxt    <= execute_engine.state;
     execute_engine.i_reg_nxt    <= execute_engine.i_reg;
     execute_engine.is_ci_nxt    <= execute_engine.is_ci;
+    execute_engine.is_ici_nxt   <= '0';
     execute_engine.sleep_nxt    <= execute_engine.sleep;
     execute_engine.branched_nxt <= execute_engine.branched;
     --
@@ -916,7 +921,6 @@ begin
     trap_ctrl.instr_ma          <= '0';
     trap_ctrl.env_call          <= '0';
     trap_ctrl.break_point       <= '0';
-    illegal_compressed          <= '0';
 
     -- CSR access --
     csr.we_nxt                  <= '0';
@@ -962,13 +966,14 @@ begin
           execute_engine.branched_nxt <= '0';
           execute_engine.pc_we        <= not execute_engine.branched; -- update PC with linear next_pc if there was no actual branch
           -- IR update - exceptions --
-          trap_ctrl.instr_ma <= cmd_issue.data(33); -- misaligned instruction fetch address
-          trap_ctrl.instr_be <= cmd_issue.data(34); -- bus access fault during instruction fetch
-          illegal_compressed <= cmd_issue.data(35); -- invalid decompressed instruction
+          trap_ctrl.instr_ma        <= cmd_issue.data(33); -- misaligned instruction fetch address
+          trap_ctrl.instr_be        <= cmd_issue.data(34); -- bus access fault during instruction fetch
+          execute_engine.is_ici_nxt <= cmd_issue.data(35); -- invalid decompressed instruction
           -- any reason to go to trap state? --
           if (execute_engine.sleep = '1') or -- WFI instruction - this will enter sleep state
+             (trap_ctrl.exc_fire = '1') or -- exception during LAST instruction (illegal instruction)
              (trap_ctrl.env_start = '1') or -- pending trap (IRQ or exception)
-             ((cmd_issue.data(33) or cmd_issue.data(34)) = '1') then -- exception during instruction fetch of the CURRENT instruction
+             ((cmd_issue.data(33) or cmd_issue.data(34)) = '1') then -- exception during instruction fetch of the NEW instruction
             execute_engine.state_nxt <= TRAP_ENTER;
           else
             execute_engine.state_nxt <= EXECUTE;
@@ -1399,6 +1404,13 @@ begin
         illegal_opcode_lsbs <= '1';
       end if;
 
+      -- check for illegal compressed instruction --
+      if (CPU_EXTENSION_RISCV_C = true) then
+        illegal_compressed <= execute_engine.is_ici;
+      else
+        illegal_compressed <= '0';
+      end if;
+
       -- check instructions --
       opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11"; -- save some bits here, LSBs are always 11 for rv32
       case opcode_v is
@@ -1594,14 +1606,14 @@ begin
       end case;
     else
       illegal_opcode_lsbs <= '0';
+      illegal_compressed  <= '0';
       illegal_instruction <= '0';
       illegal_register    <= '0';
     end if;
   end process illegal_instruction_check;
 
   -- any illegal condition? --
-  -- ignore illegal register condition in debug mode
-  trap_ctrl.instr_il <= illegal_instruction or illegal_opcode_lsbs or (illegal_register and (not debug_ctrl.running)) or illegal_compressed;
+  trap_ctrl.instr_il <= illegal_instruction or illegal_opcode_lsbs or illegal_register or illegal_compressed;
 
 
 -- ****************************************************************************************************************************
@@ -2114,6 +2126,7 @@ begin
           -- mcause, mepc, mtval: write machine trap cause, PC and trap value register --
           -- --------------------------------------------------------------------
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
+
             if (CPU_EXTENSION_RISCV_DEBUG = false) or ((trap_ctrl.cause(5) = '0') and -- update mtval/mepc/mcause only when NOT ENTRY debug mode exception
                                                        (debug_ctrl.running = '0')) then -- and NOT IN debug mode
 
@@ -2169,7 +2182,8 @@ begin
           -- mstatus: context switch --
           -- --------------------------------------------------------------------
           -- ENTER: trap handling starting?
-          if (trap_ctrl.env_start_ack = '1') then
+          if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
+
             if (CPU_EXTENSION_RISCV_DEBUG = false) or -- normal trapping (debug mode NOT implemented)
                ((debug_ctrl.running = '0') and (trap_ctrl.cause(5) = '0')) then -- not IN debug mode and not ENTERING debug mode
               csr.mstatus_mie  <= '0'; -- disable interrupts

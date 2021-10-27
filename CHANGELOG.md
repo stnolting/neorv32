@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 27.10.2021 | 1.6.2.10 | :bug: CPU control unit: fixed _imprecise_ illegal instruction exceptions - `MEPC` and `MTAVL` did not reflect the correct exception-causing data for illegal ALU-class (non-multi-cycle like `SUB`) operations; optimized critical path of exception logic (illegal compressed instruction detection) |
 | 27.10.2021 | 1.6.2.9 | CPU control unit: minor logic optimization - `fence.i` instruction needs 1 cycle less to execute, reduced HW footprint of control engine, shortened CPU's critical path (PC update logic) |
 | 26.10.2021 | 1.6.2.8 | :bug: bootloader: fixed bug in stack pointer initialization (introduced in version `1.6.2.7`); minor SPI unit VHDL code clean-up |
 | 24.10.2021 | 1.6.2.7 | minor control unit fixes (add logic to check both half-words of a unaligned 32-bit instruction did not cause any bus exceptions); minor ALU logic optimization; optimized `ctr0.S`: bootloader stack pointer initialization (is now done based on the actual physical memory configuration) - bootloader is now even more independent of the actual platform configuration |
