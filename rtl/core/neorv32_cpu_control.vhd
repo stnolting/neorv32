@@ -196,8 +196,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal decode_aux : decode_aux_t;
 
   -- instruction execution engine --
-  type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, EXECUTE, ALU_WAIT, BRANCH,
-                                  FENCE_OP, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, SYS_ENV, CSR_ACCESS);
+  type execute_engine_state_t is (SYS_WAIT, DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, EXECUTE, ALU_WAIT,
+                                  BRANCH, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, SYS_ENV, CSR_ACCESS);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
@@ -1088,9 +1088,9 @@ begin
 
           when opcode_load_c | opcode_store_c | opcode_atomic_c => -- load/store / atomic memory access
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_alu_opa_mux_c)<= '0'; -- use RS1 as ALU.OPA
-            ctrl_nxt(ctrl_alu_opb_mux_c)<= '1'; -- use IMM as ALU.OPB
-            ctrl_nxt(ctrl_bus_mo_we_c)  <= '1'; -- write to MAR and MDO (MDO only relevant for store)
+            ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
+            ctrl_nxt(ctrl_bus_mo_we_c)   <= '1'; -- write to MAR and MDO (MDO only relevant for store)
             --
             if (CPU_EXTENSION_RISCV_A = false) or -- atomic extension disabled
                (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = "00") then  -- normal integer load/store
@@ -1117,7 +1117,18 @@ begin
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
-            execute_engine.state_nxt <= FENCE_OP;
+            if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fence_c(0)) then -- FENCE
+              ctrl_nxt(ctrl_bus_fence_c) <= '1';
+              execute_engine.state_nxt   <= SYS_WAIT;
+            else -- FENCE.I
+              if (CPU_EXTENSION_RISCV_Zifencei = true) then
+                ctrl_nxt(ctrl_bus_fencei_c) <= '1';
+                execute_engine.branched_nxt <= '1'; -- this is an actual branch
+                execute_engine.state_nxt    <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (PC <= PC)
+              else -- fence.i not implemented
+                execute_engine.state_nxt <= SYS_WAIT;
+              end if;
+            end if;
 
           when opcode_syscsr_c => -- system/csr access
           -- ------------------------------------------------------------
@@ -1224,25 +1235,6 @@ begin
           execute_engine.state_nxt    <= SYS_WAIT;
         else
           execute_engine.state_nxt <= DISPATCH;
-        end if;
-
-
-      when FENCE_OP => -- fence operations - execution
-      -- ------------------------------------------------------------
-        execute_engine.state_nxt <= SYS_WAIT;
-        -- FENCE.I --
-        if (CPU_EXTENSION_RISCV_Zifencei = true) then
-          execute_engine.pc_mux_sel <= '0'; -- linear next PC = start *new* instruction fetch with next instruction
-          if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fencei_c(0)) then
-            execute_engine.pc_we        <= '1'; -- update PC
-            execute_engine.branched_nxt <= '1'; -- this is an actual branch
-            fetch_engine.reset          <= '1'; -- trigger new instruction fetch from modified PC
-            ctrl_nxt(ctrl_bus_fencei_c) <= '1';
-          end if;
-        end if;
-        -- FENCE --
-        if (execute_engine.i_reg(instr_funct3_lsb_c) = funct3_fence_c(0)) then
-          ctrl_nxt(ctrl_bus_fence_c) <= '1';
         end if;
 
 
