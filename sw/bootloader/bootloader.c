@@ -518,7 +518,7 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
     register uint32_t epc = neorv32_cpu_csr_read(CSR_MEPC);
 #if (UART_EN != 0)
     if (neorv32_uart0_available()) {
-      PRINT_TEXT("\n[EXC ");
+      PRINT_TEXT("\n[ERR ");
       PRINT_XNUM(cause); // MCAUSE
       PRINT_PUTC(' ');
       PRINT_XNUM(epc); // MEPC

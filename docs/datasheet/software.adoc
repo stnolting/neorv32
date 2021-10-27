@@ -544,6 +544,7 @@ LED is permanently activated and the system must be manually reset.
 | **`ERROR_1`** | Your program is way too big for the internal processor’s instructions memory. Increase the memory size or reduce your application code.
 | **`ERROR_2`** | This indicates a checksum error. Something went wrong during the transfer of the program image (upload via UART or loading from the external SPI flash). If the error was caused by a UART upload, just try it again. When the error was generated during a flash access, the stored image might be corrupted.
 | **`ERROR_3`** | This error occurs if the attached SPI flash cannot be accessed. Make sure you have the right type of flash and that it is properly connected to the NEORV32 SPI port using chip select #0.
+| **`ERR 0x???????? 0x???????? 0x????????`** | The bootloader encountered an exception during operation. This might be caused when it tries to access peripherals that were not implemented during synthesis. Example: executing `l` or `s` (SPI flash operations) without the SPI module beeing implemented.
 |=======================
 
 
