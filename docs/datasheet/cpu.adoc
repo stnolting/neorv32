@@ -5,7 +5,7 @@ image::riscv_logo.png[width=350,align=center]
 
 **Key Features**
 
-* 32-bit pipelined/multi-cycle in-order `rv32` RISC-V CPU
+* 32-bit multi-cycle in-order `rv32` RISC-V CPU
 * Optional RISC-V extensions:
 ** `A` - atomic memory access operations
 ** `C` - 16-bit compressed instructions
@@ -27,8 +27,7 @@ image::riscv_logo.png[width=350,align=center]
 * Supports most of the traps from the RISC-V specifications (including bus access exceptions) and traps on all unimplemented/illegal/malformed instructions
 * Optional physical memory configuration (PMP), compatible to the RISC-V specifications
 * Optional hardware performance monitors (HPM) for application benchmarking
-* Separated interfaces for instruction fetch and data access (merged into single bus via a bus switch for
-the NEORV32 processor)
+* Separated interfaces for instruction fetch and data access (merged into a single processor bus))
 * little-endian byte order
 * Configurable hardware reset
 * No hardware support of unaligned data/instruction accesses - they will trigger an exception.
@@ -53,30 +52,35 @@ specifications. The following figure shows the simplified architecture of the CP
 
 image::neorv32_cpu.png[align=center]
 
-The CPU uses a pipelined architecture with basically two main stages. The first stage (IF - instruction fetch)
-is responsible for fetching new instruction data from memory via the fetch engine. The instruction data is
-stored to a FIFO - the instruction prefetch buffer. The issue engine takes this data and assembles 32-bit
-instruction words for the next pipeline stage. Compressed instructions - if enabled - are also decompressed
-in this stage. The second stage (EX - execution) is responsible for actually executing the fetched instructions
-via the execute engine.
+The CPU implements a _multi-cycle_ architecture. Hence, each instruction is executed as a series of consecutive
+micro-operations. In order to increase performance, the CPU's **front-end** (instruction fetch) and **back-end**
+(instruction execution) are de-couples via a FIFO (the "instruction prefetch buffer"). Therefore, the
+front-end can already fetch new instructions while the back-end is still processing previously-fetched instructions.
 
-These two pipeline stages are based on a multi-cycle processing engine. So the processing of each stage for a
-certain operations can take several cycles. Since the IF and EX stages are decoupled via the instruction
-prefetch buffer, both stages can operate in parallel and with overlapping operations. Hence, the optimal CPI
-(cycles per instructions) is 2, but it can be significantly higher: For instance when executing loads/stores
-multi-cycle operations like divisions or when the instruction fetch engine has to reload the prefetch buffers
-due to a taken branch.
+The front-end is responsible for fetching 32-bit chunks of instruction words (one aligned 32-bit instruction,
+two 16-bit instructions or a mixture if 32-bit instructions are not aligned to 32-bit boundaries). The instruction
+data is stored to a FIFO queue - the instruction prefetch buffer.
+
+The back-end is responsible for the actual execution of the instruction. It includes an "issue engine",
+which takes data from the instruction prefetch buffer and assembles 32-bit instruction words (plain 32-bit
+instruction or decompressed 16-bit instructions) for execution.
+
+Front-end and back-end operate in parallel and with overlapping operations. Hence, the optimal CPI
+(cycles per instructions) is 2, but it can be significantly higher: for instance when executing loads/stores
+(accessing memory-mapped devices with high latency), executing multi-cycle ALU operations (like divisions) or
+when the CPU front-end has to reload the prefetch buffer due to a taken branch.
 
 Basically, the NEORV32 CPU is somewhere between a classical pipelined architecture, where each stage
 requires exactly one processing cycle (if not stalled) and a classical multi-cycle architecture, which executes
-every single instruction in a series of consecutive micro-operations. The combination of these two classical
-design paradigms allows an increased instruction execution in contrast to a pure multi-cycle approach (due to
-the pipelined approach) at a reduced hardware footprint (due to the multi-cycle approach).
+every single instruction (_including_ fetch) in a series of consecutive micro-operations. The combination of
+these two classical design paradigms allows an increased instruction execution in contrast to a pure multi-cycle
+approach (due to overlapping operation of fetch and execute) at a reduced hardware footprint (due to the
+multi-cycle concept).
 
-The CPU provides independent interfaces for instruction fetch and data access. These two bus interfaces are
-merged into a single processor-internal bus via a bus switch. Hence, memory locations including peripheral
-devices are mapped to a single 32-bit address space making the architecture a modified Von-Neumann
-Architecture.
+As a Von-Neumann machine, the CPU provides independent interfaces for instruction fetch and data access.
+These two bus interfaces are merged into a single processor-internal bus via a prioritizing bus switch (data accesses
+have higher priority). Hence, ALL memory locations including peripheral devices are mapped to a single unified 32-bit
+address space.
 
 
 // ####################################################################################################################
@@ -593,7 +597,7 @@ generic is _true_. It allows manual synchronization of the instruction stream vi
 
 * `fence.i`
 
-The `fence.i` instruction resets the CPU's internal instruction fetch engine and flushes the prefetch buffer.
+The `fence.i` instruction resets the CPU's front-end (instruction fetch) and flushes the prefetch buffer.
 This allows a clean re-fetch of modified instructions from memory. Also, the top's `i_bus_fencei_o` signal is set
 high for one cycle to inform the memory system (like the i-cache to perform a flush/reload.
 Any additional flags within the `fence.i` instruction word are ignore by the hardware.

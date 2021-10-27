@@ -171,8 +171,9 @@ and the *Privileged Architecture Specification* [(Version 1.12-draft)](https://g
 Compatibility is checked by passing the [official RISC-V architecture tests](https://github.com/riscv/riscv-arch-test)
 (see [`sim/README`](sim/README.md)).
 
-The core implements a little-endian Von-Neumann architecture using two pipeline stages, where each stage can operate in a multi-cycle processing
-scheme. The CPU supports three privilege levels (`machine` and optional `user` and `debug_mode`), the three standard RISC-V machine
+The core is a little-endian Von-Neumann machine implemented as multi-cycle architecture.
+However, the CPU's _front end_ (instruction fetch) and _back end_ (instruction execution) can work independently to increase performance.
+Currently, three privilege levels (`machine` and optional `user` and `debug_mode`) are supported. The CPU implements all three standard RISC-V machine
 interrupts (`MTI`, `MEI`, `MSI`) plus 16 _fast interrupt requests_ as custom extensions.
 It also supports **all** standard RISC-V exceptions (instruction/load/store misaligned address & bus access fault, illegal
 instruction, breakpoint, environment calls). See :books: [_"Full Virtualization"_](https://stnolting.github.io/neorv32/#_full_virtualization)
