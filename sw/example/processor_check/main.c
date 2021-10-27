@@ -575,14 +575,15 @@ int main() {
 
   cnt_test++;
 
-  // not allowed outside of debug mode
-  asm volatile ("dret");
+  // illegal 32-bit instruction (malformed SUB)
+  asm volatile (".align 4 \n"
+                ".word 0x80000033");
 
   // make sure this has cause an illegal exception
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
     // make sure this is really the instruction that caused the exception
-    // -> for illegal instructions mtval contains the failing instruction word
-    if (neorv32_cpu_csr_read(CSR_MTVAL) == 0x7b200073) {
+    // -> for illegal instructions MTVAL contains the faulting instruction word
+    if (neorv32_cpu_csr_read(CSR_MTVAL) == 0x80000033) {
       test_ok();
     }
     else {
@@ -605,14 +606,10 @@ int main() {
 
     cnt_test++;
 
-    // create test program in RAM
-    static const uint32_t dummy_sub_program_ci[2] __attribute__((aligned(8))) = {
-      0x00000001, // 2nd: official_illegal_op | 1st: NOP -> illegal instruction exception
-      0x00008067  // ret (32-bit)
-    };
-
-    tmp_a = (uint32_t)&dummy_sub_program_ci; // call the dummy sub program
-    asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
+    // illegal 16-bit instruction (official UNIMP instruction)
+    asm volatile (".align 2     \n"
+                  ".half 0x0001 \n" // NOP
+                  ".half 0x0000");  // UNIMP
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
       test_ok();
@@ -653,7 +650,8 @@ int main() {
   // load from unaligned address
   neorv32_cpu_load_unsigned_word(ADDR_UNALIGNED_1);
 
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_MISALIGNED) {
+  if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_MISALIGNED) &&
+      (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNALIGNED_1)) {
     test_ok();
   }
   else {
