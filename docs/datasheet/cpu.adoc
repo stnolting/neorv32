@@ -738,7 +738,7 @@ configurations are presented in <<_cpu_performance>>.
 | System | `I/E` | `fence` | 3
 | System | `C`+`Zicsr` | `c.break` | 4
 | System | `Zicsr` | `mret` `wfi` | 5
-| System | `Zifencei` | `fence.i` | 5
+| System | `Zifencei` | `fence.i` | 3 + ML
 | Floating-point - artihmetic | `Zfinx` | `fadd.s` | 110
 | Floating-point - artihmetic | `Zfinx` | `fsub.s` | 112
 | Floating-point - artihmetic | `Zfinx` | `fmul.s` | 22
