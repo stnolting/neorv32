@@ -41,6 +41,10 @@ The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC
 The project is intended as auxiliary processor in larger SoC designs or as *ready-to-go* stand-alone
 custom / customizable microcontroller.
 
+Special focus is paid on **execution safety** to provide defined and predictable behavior at any time.
+Therefore, the CPU ensures that all memory access are acknowledged and no invalid/malformed instructions
+are executed. Whenever an unexpected situation occurs, the application code is informed via hardware exceptions.
+
 :information_source: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
 
 :books: For detailed information take a look at the [NEORV32 documentation (online at GitHub-pages)](https://stnolting.github.io/neorv32/).
@@ -176,8 +180,7 @@ However, the CPU's _front end_ (instruction fetch) and _back end_ (instruction e
 Currently, three privilege levels (`machine` and optional `user` and `debug_mode`) are supported. The CPU implements all three standard RISC-V machine
 interrupts (`MTI`, `MEI`, `MSI`) plus 16 _fast interrupt requests_ as custom extensions.
 It also supports **all** standard RISC-V exceptions (instruction/load/store misaligned address & bus access fault, illegal
-instruction, breakpoint, environment calls). See :books: [_"Full Virtualization"_](https://stnolting.github.io/neorv32/#_full_virtualization)
-for more information.
+instruction, breakpoint, environment calls).
 
 
 ### Available ISA Extensions
@@ -314,6 +317,7 @@ This overview provides some *quick links* to the most important sections of the
 
 * [NEORV32 CPU](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu) - the CPU
   * [RISC-V compatibility](https://stnolting.github.io/neorv32/#_risc_v_compatibility) - what is compatible to the specs. and what is not
+  * [Full Virtualization](https://stnolting.github.io/neorv32/#_full_virtualization) - hardware execution safety
   * [ISA and Extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions) - available RISC-V ISA extensions
   * [CSRs](https://stnolting.github.io/neorv32/#_control_and_status_registers_csrs) - control and status registers
   * [Traps](https://stnolting.github.io/neorv32/#_traps_exceptions_and_interrupts) - interrupts and exceptions

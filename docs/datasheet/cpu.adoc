@@ -24,7 +24,8 @@ image::riscv_logo.png[width=350,align=center]
 * Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications - passes the official RISC-V Architecture Tests (v2+)
 * Official RISC-V open-source architecture ID
 * Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 _fast_ interrupts
-* Supports most of the traps from the RISC-V specifications (including bus access exceptions) and traps on all unimplemented/illegal/malformed instructions
+* Supports _all_ of the machine-level traps from the RISC-V specifications (including bus access exceptions and all unimplemented/illegal/malformed instructions)
+** This is a special aspect on _execution safety_ by <<_full_virtualization>>
 * Optional physical memory configuration (PMP), compatible to the RISC-V specifications
 * Optional hardware performance monitors (HPM) for application benchmarking
 * Separated interfaces for instruction fetch and data access (merged into a single processor bus))
@@ -81,6 +82,33 @@ As a Von-Neumann machine, the CPU provides independent interfaces for instructio
 These two bus interfaces are merged into a single processor-internal bus via a prioritizing bus switch (data accesses
 have higher priority). Hence, ALL memory locations including peripheral devices are mapped to a single unified 32-bit
 address space.
+
+
+// ####################################################################################################################
+:sectnums:
+=== Full Virtualization
+
+Just like the RISC-V ISA the NEORV32 aims to provide _maximum virtualization_ capabilities on CPU _and_ SoC level to
+allow a high standard of **execution safety**. The CPU supports **all** traps specified by the official RISC-V specifications.
+footnote:[If the `Zicsr` CPU extension is enabled (implementing the full set of the privileged architecture).]
+Thus, the CPU provides defined hardware fall-backs via traps for any expected and unexpected situation (e.g. executing an
+malformed instruction word or accessing a not-allocated memory address). For any kind of trap the core is always in a
+defined and fully synchronized state throughout the whole architecture (i.e. there are no out-of-order operations that
+might have to reverted). This allows predictable execution behavior at any time improving overall _execution safety_.
+
+**Execution Safety - NEORV32 Virtualization Features**
+
+* Due to the acknowledged memory accesses the CPU is _always_ sync with the memory system
+(i.e. there is no speculative execution / no out-of-order states).
+* The CPU supports _all_ RISC-V compatible bus exceptions including access exceptions, which are triggered if an
+accessed address does not respond or encounters an internal error during access.
+* Accessed memory addresses (plain memory, but also memory-mapped devices) need to respond within a fixed time
+window. Otherwise a bus access exception is raised.
+* The RISC-V specs. state that executing an malformed instruction results in unpredictable behavior. As an additional
+execution safety feature the NEORV32 CPU ensures that _all_ unimplemented/malformed/illegal instructions do raise an
+illegal instruction exceptions and do not commit any state-changing operation (like writing registers or triggering
+memory operations).
+* To be continued...
 
 
 // ####################################################################################################################
@@ -762,36 +790,9 @@ The presented values of the *floating-point execution cycles* are average values
 instructions (using pure-software libraries) is ~17..140 times higher.
 
 
-
-// ####################################################################################################################
-include::cpu_csr.adoc[]
-
-
-
 <<<
 // ####################################################################################################################
-:sectnums:
-==== Full Virtualization
-
-Just like the RISC-V ISA the NEORV32 aims to support _ maximum virtualization_ capabilities
-on CPU _and_ SoC level. The CPU supports **all** traps specified by the official RISC-V specifications.footnote:[If the `Zicsr` CPU
-extension is enabled (implementing the full set of the privileged architecture).]
-Thus, the CPU provides defined hardware fall-backs for any expected and unexpected situation (e.g. executing an
-malformed instruction word or accessing a not-allocated address). For any kind of trap the core is always in a
-defined and fully synchronized state throughout the whole architecture (i.e. there are no out-of-order operations that
-have to be made undone). This allows predictable execution behavior - and thus, defined operations to resolve the cause
-of the trap - at any time improving overall _execution safety_.
-
-**NEORV32-Specific Virtualization Features**
-
-* Due to the acknowledged memory accesses the CPU is _always_ sync with the memory system
-(i.e. there is no speculative execution / no out-of-order states).
-* The CPU supports _all_ RISC-V bus exceptions including access exceptions that are triggered if an
-accessed address does not respond or encounters an internal error during access.
-* The RISC-V specs. state that executing an malformed instruction results in unpredictable behavior. As an additional security feature,
-the NEORV32 CPU ensures that _all_ unimplemented/malformed/illegal instructions _do raise an illegal instruction trap_ and
-_do not commit any operation_ (like writing registers or triggering memory operations).
-* To be continued...
+include::cpu_csr.adoc[]
 
 
 <<<
