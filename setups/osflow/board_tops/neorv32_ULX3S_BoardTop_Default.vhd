@@ -42,7 +42,7 @@ use ECP5.components.all; -- for device primitives and macros
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_ULX3S_BoardTop is
+entity neorv32_ULX3S_BoardTop_Default is
   port (
     -- Clock and Reset inputs
     ULX3S_CLK   : in  std_logic;
@@ -62,7 +62,7 @@ entity neorv32_ULX3S_BoardTop is
   );
 end entity;
 
-architecture neorv32_ULX3S_BoardTop_rtl of neorv32_ULX3S_BoardTop is
+architecture neorv32_ULX3S_BoardTop_Default_rtl of neorv32_ULX3S_BoardTop_Default is
 
   -- configuration --
   constant f_clock_c : natural := 25000000; -- clock frequency in Hz
