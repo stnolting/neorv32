@@ -43,6 +43,6 @@ print('::set-output name=matrix::' + str([
   'bitstream': 'neorv32_AlhambraII_MinimalBoot.bit'
 }, {
   'board': 'ULX3S',
-  'design': 'MinimalBoot',
-  'bitstream': 'neorv32_ULX3S_MinimalBoot.bit'
+  'design': 'Default',
+  'bitstream': 'neorv32_ULX3S.bit'
 }]))

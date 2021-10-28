@@ -83,6 +83,12 @@ MinimalBoot:
 	  DESIGN_SRC=$(TEMPLATES)/neorv32_ProcessorTop_MinimalBoot.vhd \
 	  $(BOARD)
 
+None:
+	$(MAKE) \
+	  DESIGN=$@ \
+	  DESIGN_SRC= \
+	  $(BOARD)
+
 UP5KDemo:
 	$(MAKE) \
 	  DESIGN=$@ \
