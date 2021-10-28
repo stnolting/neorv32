@@ -83,12 +83,6 @@ MinimalBoot:
 	  DESIGN_SRC=$(TEMPLATES)/neorv32_ProcessorTop_MinimalBoot.vhd \
 	  $(BOARD)
 
-None:
-	$(MAKE) \
-	  DESIGN=$@ \
-	  DESIGN_SRC= \
-	  $(BOARD)
-
 UP5KDemo:
 	$(MAKE) \
 	  DESIGN=$@ \
@@ -100,6 +94,12 @@ MixedLanguage:
 	  DESIGN=$@ \
 	  DESIGN_SRC=$(TEMPLATES)/neorv32_ProcessorTop_Minimal*.vhd \
 	  NEORV32_VERILOG_SRC='devices/ice40/sb_ice40_components.v board_tops/neorv32_Fomu_MixedLanguage_ClkGen.v' \
+	  $(BOARD)
+
+Default:
+	$(MAKE) \
+	  DESIGN=$@ \
+	  DESIGN_SRC= \
 	  $(BOARD)
 
 # Help
