@@ -55,7 +55,7 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_A        : boolean; -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean; -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zbb      : boolean; -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
@@ -109,7 +109,7 @@ entity neorv32_cpu_control is
     pmp_addr_o    : out pmp_addr_if_t; -- addresses
     pmp_ctrl_o    : out pmp_ctrl_if_t; -- configs
     -- bus access exceptions --
-    mar_i         : in  std_ulogic_vector(data_width_c-1 downto 0);  -- memory address register
+    mar_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory address register
     ma_instr_i    : in  std_ulogic; -- misaligned instruction address
     ma_load_i     : in  std_ulogic; -- misaligned load data address
     ma_store_i    : in  std_ulogic; -- misaligned store data address
@@ -674,7 +674,7 @@ begin
         execute_engine.branch_taken <= cmp_i(cmp_less_c);
       when funct3_bge_c | funct3_bgeu_c => -- branch if greater or equal (signed/unsigned)
         execute_engine.branch_taken <= not cmp_i(cmp_less_c);
-      when others => -- undefined
+      when others => -- invalid
         execute_engine.branch_taken <= '0';
     end case;
   end process branch_check;
@@ -1234,6 +1234,7 @@ begin
         -- destination address --
         execute_engine.pc_mux_sel <= '1'; -- alu.add = branch/jump destination
         if (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') or (execute_engine.branch_taken = '1') then -- JAL/JALR or taken branch
+          -- no need to check for illegal instructions here; the branch condition evaluation circuit will not set "branch_taken" if funct3 is invalid
           execute_engine.pc_we        <= '1'; -- update PC
           execute_engine.branched_nxt <= '1'; -- this is an actual branch
           fetch_engine.reset          <= '1'; -- trigger new instruction fetch from modified PC
@@ -1247,7 +1248,7 @@ begin
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_bus_lock_c) <= decode_aux.is_atomic_lr; -- atomic.LR: set lock
         if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') then -- normal load or atomic load-reservate
-          ctrl_nxt(ctrl_bus_rd_c)  <= '1'; -- read request
+          ctrl_nxt(ctrl_bus_rd_c) <= '1'; -- read request
         else -- store
           if (decode_aux.is_atomic_sc = '1') then -- evaluate lock state
             if (excl_state_i = '1') then -- lock is still ok - perform write access
