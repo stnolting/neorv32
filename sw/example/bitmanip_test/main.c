@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32 - RISC-V Bit-Manipulation 'Zbb' Extension Test Program >>                          #
+// # << NEORV32 - RISC-V Bit-Manipulation 'B' Extension Test Program >>                            #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file bitmanip_test/main.c
  * @author Stephan Nolting
- * @brief Test program for the NEORV32 'Zbb' extension using pseudo-random
+ * @brief Test program for the NEORV32 'B` extension using pseudo-random
  * data as input; compares results from hardware against pure-sw reference functions.
  **************************************************************************/
 
@@ -64,7 +64,7 @@ void print_report(int num_err, int num_tests);
  * Main function; test all available operations of the NEORV32 'Zbb' extensions
  * using bit manipulation intrinsics and software-only reference functions (emulation).
  *
- * @note This program requires the Zbb CPU extension.
+ * @note This program requires the bit-manipulation CPU extension.
  *
  * @return Irrelevant.
  **************************************************************************/
@@ -91,18 +91,22 @@ int main() {
 #endif
 
   // intro
-  neorv32_uart0_printf("NEORV32 'Zbb' Bit-Manipulation Extension Test\n\n");
+  neorv32_uart0_printf("NEORV32 Bit-Manipulation Extension Test (Zba, Zbb)\n\n");
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
   // check if Zbb extension is implemented at all
-  if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_ZBB)) == 0) {
-    neorv32_uart0_print("Error! <Zbb> extension not synthesized!\n");
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_B)) == 0) {
+    neorv32_uart0_print("Error! <B> extension not synthesized!\n");
     return 1;
   }
 
-  neorv32_uart0_printf("Starting Zbb bit-manipulation extension tests (%i test cases per instruction)...\n", num_tests);
+  neorv32_uart0_printf("Starting bit-manipulation extension tests (%i test cases per instruction)...\n\n", num_tests);
+
+  neorv32_uart0_printf("-----------------------------------------\n");
+  neorv32_uart0_printf("Zbb - Basic bit-manipulation instructions\n");
+  neorv32_uart0_printf("-----------------------------------------\n");
 
   // ANDN
   neorv32_uart0_printf("\nANDN:\n");
@@ -322,6 +326,48 @@ int main() {
     res_sw = riscv_emulate_rev8(opa);
     res_hw = riscv_intrinsic_rev8(opa);
     err_cnt += check_result(i, opa, 0, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+
+
+
+  neorv32_uart0_printf("\n\n");
+  neorv32_uart0_printf("-----------------------------------------\n");
+  neorv32_uart0_printf("Zba - Address generation instructions\n");
+  neorv32_uart0_printf("-----------------------------------------\n");
+
+  // SH1ADD
+  neorv32_uart0_printf("\nSH1ADD:\n");
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    opb = xorshift32();
+    res_sw = riscv_emulate_sh1add(opa, opb);
+    res_hw = riscv_intrinsic_sh1add(opa, opb);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+
+  // SH2ADD
+  neorv32_uart0_printf("\nSH2ADD:\n");
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    opb = xorshift32();
+    res_sw = riscv_emulate_sh2add(opa, opb);
+    res_hw = riscv_intrinsic_sh2add(opa, opb);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
+  }
+  print_report(err_cnt, num_tests);
+
+  // SH2ADD
+  neorv32_uart0_printf("\nSH3ADD:\n");
+  err_cnt = 0;
+  for (i=0;i<num_tests; i++) {
+    opa = xorshift32();
+    res_sw = riscv_emulate_sh3add(opa, opb);
+    res_hw = riscv_intrinsic_sh3add(opa, opb);
+    err_cnt += check_result(i, opa, opb, res_sw, res_hw);
   }
   print_report(err_cnt, num_tests);
 
