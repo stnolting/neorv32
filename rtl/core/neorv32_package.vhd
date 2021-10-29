@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060211"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060212"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -217,7 +217,11 @@ package neorv32_package is
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff78"; -- base address
---constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
+--constant reserved_size_c      : natural := 1*4; -- module's address space size in bytes
+
+  -- Bus Access Keeper (BUSKEEPER) --
+  constant buskeeper_base_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff7c"; -- base address
+  constant buskeeper_size_c     : natural := 1*4; -- module's address space size in bytes
 
   -- External Interrupt Controller (XIRQ) --
   constant xirq_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff80"; -- base address
@@ -1405,14 +1409,21 @@ package neorv32_package is
     );
     port (
       -- host access --
-      clk_i  : in  std_ulogic; -- global clock line
-      rstn_i : in  std_ulogic; -- global reset line, low-active
-      addr_i : in  std_ulogic_vector(31 downto 0); -- address
-      rden_i : in  std_ulogic; -- read enable
-      wren_i : in  std_ulogic; -- write enable
-      ack_i  : in  std_ulogic; -- transfer acknowledge from bus system
-      err_i  : in  std_ulogic; -- transfer error from bus system
-      err_o  : out std_ulogic  -- bus error
+      clk_i      : in  std_ulogic; -- global clock line
+      rstn_i     : in  std_ulogic; -- global reset, low-active, async
+      addr_i     : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i     : in  std_ulogic; -- read enable
+      wren_i     : in  std_ulogic; -- write enable
+      data_i     : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o     : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o      : out std_ulogic; -- transfer acknowledge
+      err_o      : out std_ulogic; -- transfer error
+      -- bus monitoring --
+      bus_addr_i : in  std_ulogic_vector(31 downto 0); -- address
+      bus_rden_i : in  std_ulogic; -- read enable
+      bus_wren_i : in  std_ulogic; -- write enable
+      bus_ack_i  : in  std_ulogic; -- transfer acknowledge from bus system
+      bus_err_i  : in  std_ulogic  -- transfer error from bus system
     );
   end component;
 
