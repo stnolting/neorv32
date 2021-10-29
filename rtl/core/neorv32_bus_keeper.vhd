@@ -67,7 +67,6 @@ entity neorv32_bus_keeper is
     addr_i     : in  std_ulogic_vector(31 downto 0); -- address
     rden_i     : in  std_ulogic; -- read enable
     wren_i     : in  std_ulogic; -- write enable
-    data_i     : in  std_ulogic_vector(31 downto 0); -- data in
     data_o     : out std_ulogic_vector(31 downto 0); -- data out
     ack_o      : out std_ulogic; -- transfer acknowledge
     err_o      : out std_ulogic; -- transfer error
@@ -151,19 +150,18 @@ begin
       -- bus handshake --
       ack_o <= wren or rden;
 
-      -- write access --
-      if (control.bus_err = '1') then
-        err_flag <= '1'; -- sticky error flag
-      elsif (wren = '1') and (data_i(ctrl_err_flag_c) = '0') then -- clear when writing zero
-        err_flag <= '0';
-      end if;
-
       -- read access --
       data_o <= (others => '0');
       if (rden = '1') then
         data_o(ctrl_err_type_c) <= control.err_type;
         data_o(ctrl_err_src_c)  <= control.int_ext;
         data_o(ctrl_err_flag_c) <= err_flag;
+      end if;
+      --
+      if (control.bus_err = '1') then
+        err_flag <= '1'; -- sticky error flag
+      elsif (rden = '1') then -- clear on read
+        err_flag <= '0';
       end if;
     end if;
   end process rw_access;
@@ -179,9 +177,13 @@ begin
       control.err_type <= def_rst_val_c;
       control.int_ext  <= def_rst_val_c;
       control.timeout  <= (others => def_rst_val_c);
+      err_o            <= '0';
     elsif rising_edge(clk_i) then
+      -- defaults --
       control.bus_err <= '0';
-      if (control.pending = '0') then -- idle
+
+      -- access monitor: IDLE --
+      if (control.pending = '0') then
         control.timeout <= std_ulogic_vector(to_unsigned(max_proc_int_response_time_c, index_size_f(max_proc_int_response_time_c)));
         if (bus_rden_i = '1') or (bus_wren_i = '1') then
           if (access_check.valid = '1') or (MEM_EXT_EN = false) then
@@ -191,27 +193,29 @@ begin
           end if;
           control.pending <= '1';
         end if;
-      else -- pending access
+
+      -- access monitor: PENDING --
+      else
         control.timeout <= std_ulogic_vector(unsigned(control.timeout) - 1); -- countdown timer
         if (bus_ack_i = '1') then -- normal termination by bus system
           control.err_type <= '0'; -- don't care
           control.bus_err  <= '0';
           control.pending  <= '0';
         elsif (bus_err_i = '1') then -- error termination by bus system
-          control.err_type <= '0';
+          control.err_type <= '0'; -- device error
           control.bus_err  <= '1';
           control.pending  <= '0';
         elsif (or_reduce_f(control.timeout) = '0') and (control.int_ext = '1') then -- timeout! terminate bus transfer (internal accesses only!)
-          control.err_type <= '1';
+          control.err_type <= '1'; -- timeout error
           control.bus_err  <= '1';
           control.pending  <= '0';
         end if;
       end if;
+
+    -- only output timeout errors here - device errors are already propagated by the bus system --
+    err_o <= control.bus_err and control.err_type;
     end if;
   end process keeper_control;
-
-  -- only output timeout errors here - device errors are already propagated by the bus system --
-  err_o <= control.bus_err and control.err_type;
 
 
 end neorv32_bus_keeper_rtl;

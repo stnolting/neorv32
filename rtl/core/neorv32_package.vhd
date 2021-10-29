@@ -1414,7 +1414,6 @@ package neorv32_package is
       addr_i     : in  std_ulogic_vector(31 downto 0); -- address
       rden_i     : in  std_ulogic; -- read enable
       wren_i     : in  std_ulogic; -- write enable
-      data_i     : in  std_ulogic_vector(31 downto 0); -- data in
       data_o     : out std_ulogic_vector(31 downto 0); -- data out
       ack_o      : out std_ulogic; -- transfer acknowledge
       err_o      : out std_ulogic; -- transfer error

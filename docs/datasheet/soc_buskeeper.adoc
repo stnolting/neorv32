@@ -30,8 +30,8 @@ constant from the processor's VHDL package file (`rtl/neorv32_package.vhd`). The
 
 In case of a bus access fault exception application software can evaluate the Bus Keeper's control register
 `NEORV32_BUSKEEPER.CTRL` to retrieve further details of the bus exception. The _BUSKEEPER_ERR_FLAG_ bit indicates
-that an actual bus access fault has occurred. The bit is sticky once set and has to be explicitly cleared by writing
-zero to it. The _BUSKEEPER_ERR_TYPE_ indicated the tape or bus fault:
+that an actual bus access fault has occurred. The bit is sticky once set is automatically cleared when reading the
+`NEORV32_BUSKEEPER.CTRL` register. The _BUSKEEPER_ERR_TYPE_ indicated the tape or bus fault:
 
 * _BUSKEEPER_ERR_TYPE_ = `0` - "Device Error": The bus access exception was cause by the memory-mapped device that
 has been accessed (the device asserted it's `err_o`).
@@ -60,5 +60,5 @@ However, the external memory bus interface also provides an _optional_ and indep
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
 .3+<| `0xffffff7C` .3+<| `NEORV32_BUSKEEPER.CTRL` <|`0`  _BUSKEEPER_ERR_TYPE_ ^| r/- <| Bus error type, valid if _BUSKEEPER_ERR_FLAG_ is set: `0`=device error, `1`=access timeout
                                                   <|`1`  _BUSKEEPER_ERR_SRC_  ^| r/- <| Error source: `0`=processor-internal, `1`=processor-external (via Wishbone bus interface)
-                                                  <|`31` _BUSKEEPER_ERR_FLAG_ ^| r/c <| Sticky error flag, cleared by writing zero
+                                                  <|`31` _BUSKEEPER_ERR_FLAG_ ^| r/- <| Sticky error flag, clears after read
 |=======================

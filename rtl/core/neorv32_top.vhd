@@ -684,7 +684,6 @@ begin
     addr_i     => p_bus.addr,                     -- address
     rden_i     => io_rden,                        -- read enable
     wren_i     => io_wren,                        -- byte write enable
-    data_i     => p_bus.wdata,                    -- data in
     data_o     => resp_bus(RESP_BUSKEEPER).rdata, -- data out
     ack_o      => resp_bus(RESP_BUSKEEPER).ack,   -- transfer acknowledge
     err_o      => resp_bus(RESP_BUSKEEPER).err,   -- transfer error

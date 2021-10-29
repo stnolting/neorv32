@@ -261,7 +261,6 @@ static void __neorv32_rte_debug_exc_handler(void) {
     else { // exception was not caused by bus system -> has to be caused by PMP rule violation
       neorv32_uart0_print(" [PMP_ERR]");
     }
-    NEORV32_BUSKEEPER.CTRL = 0; // clear bus error flag
   }
 
   // instruction address

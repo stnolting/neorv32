@@ -817,7 +817,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 enum NEORV32_BUSKEEPER_CTRL_enum {
   BUSKEEPER_ERR_TYPE =  0, /**< BUSKEEPER control register(0)  (r/-): Bus error type: 0=device error, 1=access timeout */
   BUSKEEPER_ERR_SRC  =  1, /**< BUSKEEPER control register(1)  (r/-): Bus error source: 0=processor-external, 1=processor-internal */
-  BUSKEEPER_ERR_FLAG = 31  /**< BUSKEEPER control register(31) (r/c): Sticky error flag, cleared by writing zero */
+  BUSKEEPER_ERR_FLAG = 31  /**< BUSKEEPER control register(31) (r/c): Sticky error flag, clears after read */
 };
 /**@}*/
 
