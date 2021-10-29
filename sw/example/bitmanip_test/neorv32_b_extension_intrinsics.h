@@ -1,8 +1,8 @@
 // #################################################################################################
-// # << NEORV32 - Intrinsics + Emulation Functions for the B CPU extensions >>                     #
+// # << NEORV32 - Intrinsics + Emulation Functions for the CPU B extension >>                      #
 // # ********************************************************************************************* #
 // # The intrinsics provided by this library allow to use the hardware bit manipulation unit of    #
-// # the RISC-V B CPU extension without the need for B support by the compiler.                    #
+// # the RISC-V B CPU extension without the need for support by the compiler.                      #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -39,10 +39,10 @@
 /**********************************************************************//**
  * @file bitmanip_test/neorv32_b_extension_intrinsics.h
  * @author Stephan Nolting
- * @brief "Intrinsic" library for the NEORV32 bit manipulation Zbb extension.
+ * @brief "Intrinsic" library for the NEORV32 bit manipulation B extension.
  * Also provides emulation functions for all intrinsics (functionality re-built in pure software).
  *
- * @warning This library is just a temporary fall-back until the Zbb extensions are supported by the upstream RISC-V GCC port.
+ * @warning This library is just a temporary fall-back until the B extension is supported by the upstream RISC-V GCC port.
  **************************************************************************/
  
 #ifndef neorv32_b_extension_intrinsics_h
@@ -54,9 +54,9 @@
 // ################################################################################################
 
 
-// ---------------------------------------------
+// ================================================================================================
 // Zbb - Base instructions
-// ---------------------------------------------
+// ================================================================================================
 
 /**********************************************************************//**
  * Intrinsic: Bit manipulation CLZ (count leading zeros) [B.Zbb]
@@ -455,14 +455,87 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_rev8(uint32_t rs
 }
 
 
+// ================================================================================================
+// Zbb - Base instructions
+// ================================================================================================
+
+/**********************************************************************//**
+ * Intrinsic: Address generation instructions SH1ADD (add with logical-1-shift) [B.Zba]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Operand 2 + (Operand 1 << 1)
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sh1add(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
+  // sh1add a0, a0, a1
+  CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b010, a0, 0b0110011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Address generation instructions SH2ADD (add with logical-2-shift) [B.Zba]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Operand 2 + (Operand 1 << 2)
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sh2add(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
+  // sh2add a0, a0, a1
+  CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b100, a0, 0b0110011);
+
+  return result;
+}
+
+/**********************************************************************//**
+ * Intrinsic: Address generation instructions SH1ADD (add with logical-3-shift) [B.Zba]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Operand 2 + (Operand 1 << 3)
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sh3add(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
+  // sh3add a0, a0, a1
+  CUSTOM_INSTR_R2_TYPE(0b0010000, a1, a0, 0b110, a0, 0b0110011);
+
+  return result;
+}
+
+
+
 // ################################################################################################
 // Emulation functions
 // ################################################################################################
 
 
-// ---------------------------------------------
+// ================================================================================================
 // Zbb - Base instructions
-// ---------------------------------------------
+// ================================================================================================
 
 
 /**********************************************************************//**
@@ -783,5 +856,48 @@ uint32_t riscv_emulate_orcb(uint32_t rs1) {
 }
 
 
+// ================================================================================================
+// Zba - Address generation instructions
+// ================================================================================================
+
+
+/**********************************************************************//**
+ * Intrinsic: Address generation instructions SH1ADD (add with logical-1-shift) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 1 (a0).
+ * @return Operand 2 + (Operand 1 << 1)
+ **************************************************************************/
+uint32_t riscv_emulate_sh1add(uint32_t rs1, uint32_t rs2) {
+
+  return rs2 + (rs1 << 1);
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Address generation instructions SH2ADD (add with logical-2-shift) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 1 (a0).
+ * @return Operand 2 + (Operand 1 << 2)
+ **************************************************************************/
+uint32_t riscv_emulate_sh2add(uint32_t rs1, uint32_t rs2) {
+
+  return rs2 + (rs1 << 2);
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Address generation instructions SH3ADD (add with logical-3-shift) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 1 (a0).
+ * @return Operand 2 + (Operand 1 << 3)
+ **************************************************************************/
+uint32_t riscv_emulate_sh3add(uint32_t rs1, uint32_t rs2) {
+
+  return rs2 + (rs1 << 3);
+}
+
+
 #endif // neorv32_b_extension_intrinsics_h
- 

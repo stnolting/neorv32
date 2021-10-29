@@ -53,11 +53,11 @@ entity neorv32_cpu_control is
     CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean; -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zbb      : boolean; -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
@@ -860,6 +860,13 @@ begin
          (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "110") or -- ORN
          (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")    -- XORN
         )
+       ) or
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010000") and
+        (
+         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") or -- SH1ADD
+         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100") or -- SH2ADD
+         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "110")    -- SH3ADD
+        )
        ) then
       decode_aux.is_bitmanip_reg <= '1';
     end if;
@@ -1043,7 +1050,7 @@ begin
               ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- use MULDIV CP
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
             -- co-processor bit manipulation operation? --
-            elsif (CPU_EXTENSION_RISCV_Zbb = true) and
+            elsif (CPU_EXTENSION_RISCV_B = true) and
               (((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_bitmanip_reg = '1')) or -- register operation
                ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_bitmanip_imm = '1'))) then -- immediate operation
               ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_bitmanip_c; -- use BITMANIP CP
@@ -1066,7 +1073,7 @@ begin
                (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) or -- SR shift operation?
                ((CPU_EXTENSION_RISCV_M = true) and ((decode_aux.is_m_mul = '1') or (decode_aux.is_m_div = '1'))) or -- MUL/DIV
                ((CPU_EXTENSION_RISCV_Zmmul = true) and (decode_aux.is_m_mul = '1')) or -- MUL
-               ((CPU_EXTENSION_RISCV_Zbb = true) and (
+               ((CPU_EXTENSION_RISCV_B = true) and (
                 ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_bitmanip_reg = '1')) or -- BITMANIP CP register operation?
                 ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_bitmanip_imm = '1'))) -- BITMANIP CP immediate operation?
                ) then
@@ -1435,7 +1442,7 @@ begin
               illegal_instruction <= '1';
             end if;
           elsif (decode_aux.is_bitmanip_reg = '1') then -- bit manipulation
-            if (CPU_EXTENSION_RISCV_Zbb = false) then -- not implemented
+            if (CPU_EXTENSION_RISCV_B = false) then -- not implemented
               illegal_instruction <= '1';
             end if;
           elsif ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) or
@@ -1455,7 +1462,7 @@ begin
         when opcode_alui_c => -- check ALUI.funct7
         -- ------------------------------------------------------------
           if (decode_aux.is_bitmanip_imm = '1') then -- bit manipulation
-            if (CPU_EXTENSION_RISCV_Zbb = false) then -- not implemented
+            if (CPU_EXTENSION_RISCV_B = false) then -- not implemented
               illegal_instruction <= '1';
             end if;
           elsif ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) and
@@ -2503,6 +2510,7 @@ begin
             csr.rdata(12) <= csr.mstatus_mpp(1); -- MPP: machine previous privilege mode high
           when csr_misa_c => -- misa (r/-): ISA and extensions
             csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
+            csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);     -- B CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
             csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
             csr.rdata(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)

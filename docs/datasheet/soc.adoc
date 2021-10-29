@@ -238,6 +238,18 @@ See section <<_a_atomic_memory_access>>.
 
 
 :sectnums!:
+===== _CPU_EXTENSION_RISCV_B_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CPU_EXTENSION_RISCV_B** | _boolean_ | false
+3+| Implement the `B` bit-manipulation sub-extension when _true_.
+See section <<_b_bit_manipulation_operations>> for more information.
+|======
+
+
+:sectnums!:
 ===== _CPU_EXTENSION_RISCV_C_
 
 [cols="4,4,2"]
@@ -286,18 +298,6 @@ See section <<_m_integer_multiplication_and_division>> for more information.
 | **CPU_EXTENSION_RISCV_U** | _boolean_ | false
 3+| Implement less-privileged user mode when _true_.
 See section <<_u_less_privileged_user_mode>> for more information.
-|======
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_Zbb_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_Zbb** | _boolean_ | false
-3+| Implement the `Zbb` _basic_ bit-manipulation sub-extension when _true_.
-See section <<_zbb_basic_bit_manipulation_operations>> for more information.
 |======
 
 
@@ -385,7 +385,7 @@ enabled (<<_cpu_extension_riscv_m>> or <<_cpu_extension_riscv_zmmul>> is _true_)
 more hardware resources but completing within two clock cycles). If it is set _false_, the CPU uses a serial shifter
 that only performs a single bit shift per cycle (requiring less hardware resources, but requires up to 32 clock
 cycles to complete - depending on shift amount). **Note that this option also implements barrel shifters for _all_
-shift-related operations of the <<_zbb_basic_bit_manipulation_operations>> extension.**
+shift-related operations of the <<_b_bit_manipulation_operations>> extension.**
 |======
 
 
