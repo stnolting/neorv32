@@ -978,7 +978,7 @@ Processor-internal peripherals or memories do not have to respond within one cyc
 However, the bus transaction has to be completed (= acknowledged) within a certain **response time window**. This time window is defined
 by the global `max_proc_int_response_time_c` constant (default = 15 cycles) from the processor's VHDL package file (`rtl/neorv32_package.vhd`).
 It defines the maximum number of cycles after which an _unacknowledged_ processor-internal bus transfer will timeout and raise a **bus fault exception**.
-The _BUSKEEPER_ hardware module (`rtl/core/neorv32_bus_keeper.vhd`) keeps track of all _internal_ bus transactions. If any bus operations times out
+The _BUSKEEPER_ hardware module (see section <<_internal_bus_monitor_buskeeper>>) keeps track of all _internal_ bus transactions. If any bus operations times out
 (for example when accessing "address space holes") this unit will issue a bus error to the CPU that will raise the according instruction fetch or data access bus exception.
 Note that **the bus keeper does not track external accesses via the external memory bus interface**. However, the external memory bus interface also provides
 an _optional_ bus timeout (see section <<_processor_external_memory_interface_wishbone_axi4_lite>>).

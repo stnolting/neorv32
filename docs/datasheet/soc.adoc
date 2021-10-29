@@ -26,6 +26,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (<<_smart_led_interface_neoled,**NEOLED**>>)
 * _optional_ external interrupt controller with up to 32 channels (<<_external_interrupt_controller_xirq,**XIRQ**>>)
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>)
+* bus keeper to monitor processor-internal bus transactions (<<_internal_bus_monitor_buskeeper,**BUSKEEPER**>>)
 * system configuration information memory to check HW configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
 
@@ -1433,6 +1434,8 @@ include::soc_bootrom.adoc[]
 include::soc_icache.adoc[]
 
 include::soc_wishbone.adoc[]
+
+include::soc_buskeeper.adoc[]
 
 include::soc_slink.adoc[]
 
