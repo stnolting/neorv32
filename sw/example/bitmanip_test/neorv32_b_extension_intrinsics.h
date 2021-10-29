@@ -901,4 +901,3 @@ uint32_t riscv_emulate_sh3add(uint32_t rs1, uint32_t rs2) {
 
 
 #endif // neorv32_b_extension_intrinsics_h
- 
