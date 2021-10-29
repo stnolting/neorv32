@@ -192,11 +192,11 @@ documentation section). Note that the `X` extension is always enabled.
 [[`I`](https://stnolting.github.io/neorv32/#_i_base_integer_isa)/
 [`E`](https://stnolting.github.io/neorv32/#_e_embedded_cpu)]
 [[`A`](https://stnolting.github.io/neorv32/#_a_atomic_memory_access)]
+[[`B`](https://stnolting.github.io/neorv32/#_b_bit_manipulation_operations)]
 [[`C`](https://stnolting.github.io/neorv32/#_c_compressed_instructions)]
 [[`M`](https://stnolting.github.io/neorv32/#_m_integer_multiplication_and_division)]
 [[`U`](https://stnolting.github.io/neorv32/#_u_less_privileged_user_mode)]
 [[`X`](https://stnolting.github.io/neorv32/#_x_neorv32_specific_custom_extensions)]
-[[`Zbb`](https://stnolting.github.io/neorv32/#_zbb_basic_bit_manipulation_operations)]
 [[`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_single_precision_floating_point_operations)]
 [[`Zicsr`](https://stnolting.github.io/neorv32/#_zicsr_control_and_status_register_access_privileged_architecture)]
 [[`Zifencei`](https://stnolting.github.io/neorv32/#_zifencei_instruction_stream_synchronization)]
@@ -205,7 +205,7 @@ documentation section). Note that the `X` extension is always enabled.
 [[`HPM`](https://stnolting.github.io/neorv32/#_hpm_hardware_performance_monitors)]
 [[`DEBUG`](https://stnolting.github.io/neorv32/#_cpu_debug_mode)]**
 
-:warning: The `Zbb`, `Zfinx` and `Zmmul` RISC-V extensions are frozen but not officially ratified yet. Hence, there is no
+:warning: The `B`, `Zfinx` and `Zmmul` RISC-V extensions are frozen but not officially ratified yet. Hence, there is no
 upstream gcc support. To circumvent this, the NEORV32 software framework provides _intrinsic_ libraries for these extensions.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]

@@ -8,12 +8,12 @@ image::riscv_logo.png[width=350,align=center]
 * 32-bit multi-cycle in-order `rv32` RISC-V CPU
 * Optional RISC-V extensions:
 ** `A` - atomic memory access operations
+** `B` - bit-manipulation instructions
 ** `C` - 16-bit compressed instructions
 ** `I` - integer base ISA (always enabled)
 ** `E` - embedded CPU version (reduced register file size)
 ** `M` - integer multiplication and division hardware
 ** `U` - less-privileged _user_ mode
-** `Zbb` - basic bit-manipulation operations
 ** `Zfinx` - single-precision floating-point unit
 ** `Zicsr` - control and status register access (privileged architecture)
 ** `Zifencei` - instruction stream synchronization
@@ -268,6 +268,11 @@ only supports the modes _OFF_ and _NAPOT_ yet and a minimal granularity of 8 byt
 The `A` CPU extension only implements the `lr.w` and `sc.w` instructions yet.
 However, these instructions are sufficient to emulate all further atomic memory operations.
 
+.Bit-manipulation operations
+[IMPORTANT]
+The NEORV32 `B` extension only implements the _basic bit-manipulation instructions_ (`Zbb`) subset
+and the _address generation instructions_ (`Zba`) subset yet.
+
 .Instruction Misalignment
 [NOTE]
 This is not a real RISC-V incompatibility, but something that might not be clear when studying the RISC-V privileged
@@ -275,7 +280,6 @@ architecture specifications: for 32-bit only instructions (no `C` extension) the
 is raised if bit 1 of the access address is set (i.e. not on 32-bit boundary). If the `C` extension is implemented
 there will be no misaligned instruction exceptions _at all_.
 In both cases bit 0 of the program counter and all related registers is hardwired to zero.
-
 
 <<<
 // ####################################################################################################################
@@ -415,6 +419,42 @@ The lock is broken if at least one of the following conditions occur:
 [NOTE]
 The atomic instructions have special requirements for memory system / bus interconnect. More
 information can be found in sections <<_bus_interface>> and <<_processor_external_memory_interface_wishbone_axi4_lite>>, respectively.
+
+
+==== **`B`** - Bit-Manipulation Operations
+
+The `B` ISA extension adds instructions for bit-manipulation operations. This extension is enabled if the
+`CPU_EXTENSION_RISCV_B` configuration generic is _true_.
+The official RISC-V specifications can be found here: https://github.com/riscv/riscv-bitmanip
+
+[IMPORTANT]
+The NEORV32 `B` extension only implements the _basic bit-manipulation instructions_ (`Zbb`) subset
+and the _address generation instructions_ (`Zba`) subset yet.
+
+The `Zbb` sub-extension adds the following instruction:
+
+* `andn`, `orn`, `xnor`
+* `clz`, `ctz`, `cpop`
+* `max`, `maxu`, `min`, `minu`
+* `sext.b`, `sext.h`, `zext.h`
+* `rol`, `ror`, `rori`
+* `orc.b`, `rev8`
+
+The `Zba` sub-extension adds the following instruction:
+
+* `sh1add`, `sh2add`, `sh3add`
+
+[TIP]
+By default, the bit-manipulation unit uses an _iterative_ approach to compute shift-related operations
+like `clz` and `rol`. To increase performance (at the cost of additional hardware resources) the 
+<<_fast_shift_en>> generic can be enabled to implement full-parallel logic (like barrel shifters) for all
+shift-related `B` instructions.
+
+[WARNING]
+The `B` extension is frozen but not officially ratified yet. There is no
+software support for this extension in the upstream GCC RISC-V port yet. However, an
+intrinsic library is provided to utilize the provided `B` extension features from C-language
+code (see `sw/example/bitmanip_test`).
 
 
 ==== **`C`** - Compressed Instructions
@@ -564,34 +604,6 @@ The `Zfinx` extension is not yet officially ratified, but is expected to stay un
 software support for the `Zfinx` extension in the upstream GCC RISC-V port yet. However, an
 intrinsic library is provided to utilize the provided `Zfinx` floating-point extension from C-language
 code (see `sw/example/floating_point_test`).
-
-
-==== **`Zbb`** Basic Bit-Manipulation Operations
-
-The `Zbb` extension implements the _basic_ sub-set of the RISC-V bit-manipulation extensions `B`.
-The official RISC-V specifications can be found here: https://github.com/riscv/riscv-bitmanip
-
-The `Zbb` extension is implemented when the `CPU_EXTENSION_RISCV_Zbb` configuration
-generic is _true_. In this case the following instructions are available:
-
-* `andn`, `orn`, `xnor`
-* `clz`, `ctz`, `cpop`
-* `max`, `maxu`, `min`, `minu`
-* `sext.b`, `sext.h`, `zext.h`
-* `rol`, `ror`, `rori`
-* `orc.b`, `rev8`
-
-[TIP]
-By default, the bit-manipulation unit uses an _iterative_ approach to compute shift-related operations
-like `clz` and `rol`. To increase performance (at the cost of additional hardware resources) the 
-<<_fast_shift_en>> generic can be enabled to implement full-parallel logic (like barrel shifters) for all
-shift-related `Zbb` instructions.
-
-[WARNING]
-The `Zbb` extension is frozen but not officially ratified yet. There is no
-software support for this extension in the upstream GCC RISC-V port yet. However, an
-intrinsic library is provided to utilize the provided `Zbb` extension from C-language
-code (see `sw/example/bitmanip_test`).
 
 
 ==== **`Zicsr`** Control and Status Register Access / Privileged Architecture
@@ -759,12 +771,6 @@ configurations are presented in <<_cpu_performance>>.
 | Memory access | `A`   | `lr.w` `sc.w`                             | 4 + ML
 | Multiplication | `M`  | `mul` `mulh` `mulhsu` `mulhu` | 2+31+3; FAST_MULfootnote:[DSP-based multiplication; enabled via `FAST_MUL_EN`.]: 5
 | Division       | `M`  | `div` `divu` `rem` `remu`     | 22+32+4
-| Bit-manipulation - arithmetic/logic | `B(Zbb)` | `sext.b` `sext.h` `min` `minu` `max` `maxu` `andn` `orn` `xnor` `zext`(pack) `rev8`(grevi) `orc.b`(gorci) | 3
-| Bit-manipulation - shifts | `B(Zbb)` | `clz` `ctz` | 3 + 0..32
-| Bit-manipulation - shifts | `B(Zbb)` | `cpop` | 3 + 32
-| Bit-manipulation - shifts | `B(Zbb)` | `rol` `ror` `rori` | 3 + SA
-| Bit-manipulation - single-bit | `B(Zbs)` | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]` | 3
-| Bit-manipulation - shifted-add | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 3
 | CSR access | `Zicsr` | `csrrw` `csrrs` `csrrc` `csrrwi` `csrrsi` `csrrci` | 4
 | System | `I/E`+`Zicsr` | `ecall` `ebreak` | 4
 | System | `I/E` | `fence` | 3
@@ -778,10 +784,13 @@ configurations are presented in <<_cpu_performance>>.
 | Floating-point - misc | `Zfinx` | `fsgnj.s` `fsgnjn.s` `fsgnjx.s` `fclass.s` | 12
 | Floating-point - conversion | `Zfinx` | `fcvt.w.s` `fcvt.wu.s` | 47
 | Floating-point - conversion | `Zfinx` | `fcvt.s.w` `fcvt.s.wu` | 48
-| Basic bit-manip - logic | `Zbb` | `andn` `orn` `xnor` | 3
-| Basic bit-manip - shift | `Zbb` | `clz` `ctz` `cpop` `rol` `ror` `rori` | 4+SA, FAST_SHIFT: 4
-| Basic bit-manip - arith | `Zbb` | `max` `maxu` `min` `minu` | 3
-| Basic bit-manip - misc  | `Zbb` | `sext.b` `sext.h` `zext.h` `orc.b` `rev8` | 3
+| Bit-manipulation - arithmetic/logic | `B(Zbb)` | `sext.b` `sext.h` `min` `minu` `max` `maxu` `andn` `orn` `xnor` `zext`(pack) `rev8`(grevi) `orc.b`(gorci) | 3
+| Bit-manipulation - arithmetic/logic | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 3
+| Bit-manipulation - shifts | `B(Zbb)` | `clz` `ctz` | 3 + 0..32
+| Bit-manipulation - shifts | `B(Zbb)` | `cpop` | 3 + 32
+| Bit-manipulation - shifts | `B(Zbb)` | `rol` `ror` `rori` | 3 + SA
+| Bit-manipulation - single-bit | `B(Zbs)` | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]` | 3
+| Bit-manipulation - shifted-add | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 3
 |=======================
 
 [NOTE]
