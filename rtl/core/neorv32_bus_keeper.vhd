@@ -210,8 +210,8 @@ begin
     end if;
   end process keeper_control;
 
-  -- inform CPU --
-  err_o <= control.bus_err;
+  -- only output timeout errors here - device errors are already propagated by the bus system --
+  err_o <= control.bus_err and control.err_type;
 
 
 end neorv32_bus_keeper_rtl;
