@@ -65,11 +65,11 @@ entity neorv32_cpu is
     CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean; -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean; -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zbb      : boolean; -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
@@ -170,8 +170,8 @@ begin
   cond_sel_string_f(CPU_EXTENSION_RISCV_M, "M", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_A, "A", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_C, "C", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_B, "B", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_U, "U", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_Zbb, "_Zbb", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zicsr, "_Zicsr", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zifencei, "_Zifencei", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx, "_Zfinx", "") &
@@ -242,11 +242,11 @@ begin
     CPU_DEBUG_ADDR               => CPU_DEBUG_ADDR,               -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zbb      => CPU_EXTENSION_RISCV_Zbb,      -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
@@ -335,8 +335,8 @@ begin
   neorv32_cpu_alu_inst: neorv32_cpu_alu
   generic map (
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_B     => CPU_EXTENSION_RISCV_B,     -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_M     => CPU_EXTENSION_RISCV_M,     -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zbb   => CPU_EXTENSION_RISCV_Zbb,   -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zmmul => CPU_EXTENSION_RISCV_Zmmul, -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zfinx => CPU_EXTENSION_RISCV_Zfinx, -- implement 32-bit floating-point extension (using INT reg!)
     -- Extension Options --

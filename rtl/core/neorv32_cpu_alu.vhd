@@ -44,8 +44,8 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_alu is
   generic (
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_B     : boolean; -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_M     : boolean; -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zbb   : boolean; -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zmmul : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zfinx : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     -- Extension Options --
@@ -293,32 +293,33 @@ begin
   end generate;
 
 
-  -- Co-Processor 2: Bit-Manipulation Unit ('B'/'Zbb' Extension) ----------------------------
+  -- Co-Processor 2: Bit-Manipulation Unit ('B' Extension) ----------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_bitmanip_inst_true:
-  if (CPU_EXTENSION_RISCV_Zbb = true) generate
+  if (CPU_EXTENSION_RISCV_B = true) generate
     neorv32_cpu_cp_bitmanip_inst: neorv32_cpu_cp_bitmanip
     generic map (
       FAST_SHIFT_EN => FAST_SHIFT_EN -- use barrel shifter for shift operations
     )
     port map (
       -- global control --
-      clk_i    => clk_i,        -- global clock, rising edge
-      rstn_i   => rstn_i,       -- global reset, low-active, async
-      ctrl_i   => ctrl_i,       -- main control bus
-      start_i  => cp_start(2),  -- trigger operation
+      clk_i   => clk_i,        -- global clock, rising edge
+      rstn_i  => rstn_i,       -- global reset, low-active, async
+      ctrl_i  => ctrl_i,       -- main control bus
+      start_i => cp_start(2),  -- trigger operation
       -- data input --
-      cmp_i    => cmp,          -- comparator status
-      rs1_i    => rs1_i,        -- rf source 1
-      rs2_i    => rs2_i,        -- rf source 2
+      cmp_i   => cmp,          -- comparator status
+      rs1_i   => rs1_i,        -- rf source 1
+      rs2_i   => rs2_i,        -- rf source 2
+      shamt_i => opb(index_size_f(data_width_c)-1 downto 0), -- shift amount
       -- result and status --
-      res_o    => cp_result(2), -- operation result
-      valid_o  => cp_valid(2)   -- data output valid
+      res_o   => cp_result(2), -- operation result
+      valid_o => cp_valid(2)   -- data output valid
     );
   end generate;
 
   neorv32_cpu_cp_bitmanip_inst_false:
-  if (CPU_EXTENSION_RISCV_Zbb = false) generate
+  if (CPU_EXTENSION_RISCV_B = false) generate
     cp_result(2) <= (others => '0');
     cp_valid(2)  <= cp_start(2); -- to make sure CPU does not get stalled if there is an accidental access
   end generate;

@@ -98,10 +98,10 @@ architecture neorv32_twi_rtl of neorv32_twi is
   signal twi_clk_halt : std_ulogic;
 
   -- twi transceiver core --
-  signal ctrl         : std_ulogic_vector(7 downto 0); -- unit's control register
-  signal arbiter      : std_ulogic_vector(2 downto 0);
-  signal twi_bitcnt   : std_ulogic_vector(3 downto 0);
-  signal twi_rtx_sreg : std_ulogic_vector(8 downto 0); -- main rx/tx shift reg
+  signal ctrl     : std_ulogic_vector(7 downto 0); -- unit's control register
+  signal arbiter  : std_ulogic_vector(2 downto 0);
+  signal bitcnt   : std_ulogic_vector(3 downto 0);
+  signal rtx_sreg : std_ulogic_vector(8 downto 0); -- main rx/tx shift reg
 
   -- tri-state I/O --
   signal twi_sda_i_ff0, twi_sda_i_ff1 : std_ulogic; -- sda input sync
@@ -142,10 +142,10 @@ begin
           data_o(ctrl_twi_mack_c)   <= ctrl(ctrl_twi_mack_c);
           data_o(ctrl_twi_cksten_c) <= ctrl(ctrl_twi_cksten_c);
           --
-          data_o(ctrl_twi_ack_c)    <= not twi_rtx_sreg(0);
+          data_o(ctrl_twi_ack_c)    <= not rtx_sreg(0);
           data_o(ctrl_twi_busy_c)   <= arbiter(1) or arbiter(0);
         else -- twi_rtx_addr_c =>
-          data_o(7 downto 0)        <= twi_rtx_sreg(8 downto 1);
+          data_o(7 downto 0)        <= rtx_sreg(8 downto 1);
           
         end if;
       end if;
@@ -166,7 +166,7 @@ begin
   begin
     if rising_edge(clk_i) then
       if (arbiter(2) = '0') or (arbiter = "100") then -- offline or idle
-        twi_phase_gen <= "0001"; -- make sure to start with a new phase, 0,1,2,3 stepping
+        twi_phase_gen <= "0001"; -- make sure to start with a new phase, bit 0,1,2,3 stepping
       elsif (twi_clk = '1') and (twi_clk_halt = '0') then -- enabled and no clock stretching detected
         twi_phase_gen <= twi_phase_gen(2 downto 0) & twi_phase_gen(3); -- rotate left
       end if;
@@ -203,7 +203,7 @@ begin
       case arbiter is
 
         when "100" => -- IDLE: waiting for requests, bus might be still claimed by this controller if no STOP condition was generated
-          twi_bitcnt <= (others => '0');
+          bitcnt <= (others => '0');
           if (wr_en = '1') then
             if (addr = twi_ctrl_addr_c) then
               if (data_i(ctrl_twi_start_c) = '1') then -- issue START condition
@@ -214,7 +214,7 @@ begin
             elsif (addr = twi_rtx_addr_c) then -- start a data transmission
               -- one bit extra for ack, issued by controller if ctrl_twi_mack_c is set,
               -- sampled from peripheral if ctrl_twi_mack_c is cleared
-              twi_rtx_sreg <= data_i(7 downto 0) & (not ctrl(ctrl_twi_mack_c));
+              rtx_sreg <= data_i(7 downto 0) & (not ctrl(ctrl_twi_mack_c));
               arbiter(1 downto 0) <= "11";
             end if;
           end if;
@@ -225,7 +225,7 @@ begin
           elsif (twi_clk_phase(1) = '1') then
             twi_sda_o <= '0';
           end if;
-
+          --
           if (twi_clk_phase(0) = '1') then
             twi_scl_o <= '1';
           elsif (twi_clk_phase(3) = '1') then
@@ -240,7 +240,7 @@ begin
             twi_sda_o <= '1';
             arbiter(1 downto 0) <= "00"; -- go back to IDLE
           end if;
-          
+          --
           if (twi_clk_phase(0) = '1') then
             twi_scl_o <= '0';
           elsif (twi_clk_phase(1) = '1') then
@@ -249,17 +249,17 @@ begin
 
         when "111" => -- TRANSMISSION: transmission in progress
           if (twi_clk_phase(0) = '1') then
-            twi_bitcnt   <= std_ulogic_vector(unsigned(twi_bitcnt) + 1);
-            twi_scl_o    <= '0';
-            twi_sda_o    <= twi_rtx_sreg(8); -- MSB first
+            bitcnt    <= std_ulogic_vector(unsigned(bitcnt) + 1);
+            twi_scl_o <= '0';
+            twi_sda_o <= rtx_sreg(8); -- MSB first
           elsif (twi_clk_phase(1) = '1') then -- first half + second half of valid data strobe
-            twi_scl_o    <= '1';
+            twi_scl_o <= '1';
           elsif (twi_clk_phase(3) = '1') then
-            twi_rtx_sreg <= twi_rtx_sreg(7 downto 0) & twi_sda_i_ff1; -- sample and shift left
-            twi_scl_o    <= '0';
+            rtx_sreg  <= rtx_sreg(7 downto 0) & twi_sda_i_ff1; -- sample and shift left
+            twi_scl_o <= '0';
           end if;
-
-          if (twi_bitcnt = "1010") then -- 8 data bits + 1 bit for ACK + 1 tick delay
+          --
+          if (bitcnt = "1010") then -- 8 data bits + 1 bit for ACK + 1 tick delay
             arbiter(1 downto 0) <= "00"; -- go back to IDLE
           end if;
 
