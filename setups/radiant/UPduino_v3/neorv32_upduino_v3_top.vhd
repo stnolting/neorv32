@@ -160,6 +160,7 @@ begin
     CPU_EXTENSION_RISCV_U        => false,       -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    => false,       -- implement 32-bit floating-point extension (using INT regs!)
     CPU_EXTENSION_RISCV_Zicsr    => true,        -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zicntr   => true,        -- implement base counters?
     CPU_EXTENSION_RISCV_Zifencei => false,       -- implement instruction stream sync.?
 
     -- Extension Options --
