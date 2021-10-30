@@ -202,14 +202,12 @@ static void __neorv32_rte_debug_exc_handler(void) {
     return; // handler cannot output anything if UART0 is not implemented
   }
 
-  char tmp;
-
   // intro
   neorv32_uart0_print("<RTE> ");
 
   // cause
   register uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
-  tmp = (char)(trap_cause & 0xf);
+  register char tmp = (char)(trap_cause & 0xf);
   if (tmp >= 10) {
     tmp = 'a' + (tmp - 10);
   }
@@ -249,9 +247,25 @@ static void __neorv32_rte_debug_exc_handler(void) {
     default:                     neorv32_uart0_print("Unknown trap cause: "); __neorv32_rte_print_hex_word(trap_cause); break;
   }
 
+  // check cause if bus access fault exception
+  if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_L_ACCESS) || (trap_cause == TRAP_CODE_S_ACCESS)) {
+    register uint32_t bus_err = NEORV32_BUSKEEPER.CTRL;
+    if (bus_err & (1<<BUSKEEPER_ERR_FLAG)) { // exception caused by bus system?
+      if (bus_err & (1<<BUSKEEPER_ERR_TYPE)) {
+        neorv32_uart0_print(" [TIMEOUT_ERR]");
+      }
+      else {
+        neorv32_uart0_print(" [DEVICE_ERR]");
+      }
+    }
+    else { // exception was not caused by bus system -> has to be caused by PMP rule violation
+      neorv32_uart0_print(" [PMP_ERR]");
+    }
+  }
+
   // instruction address
   neorv32_uart0_print(" @ PC=");
-  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MSCRATCH)); // rte core stores actual mepc to mscratch
+  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MSCRATCH)); // rte core stores original mepc to mscratch
 
   // additional info
   neorv32_uart0_print(", MTVAL=");

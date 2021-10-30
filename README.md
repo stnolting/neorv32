@@ -138,6 +138,7 @@ for tightly-coupled custom co-processor extensions
 * on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) via JTGA - implementing
 the [*Minimal RISC-V Debug Specification Version 0.13.2*](https://github.com/riscv/riscv-debug-spec)
 and compatible with *OpenOCD* and *gdb*
+* bus keeper to monitor processor-internal bus transactions ([BUSKEEPER](https://stnolting.github.io/neorv32/#_internal_bus_monitor_buskeeper))
 
 :information_source: It is recommended to use the processor setup even if you want to **use the CPU in stand-alone mode**.
 Just disable all optional processor-internal modules via the according generics and you will get a "CPU wrapper" that
