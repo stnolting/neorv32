@@ -1,0 +1,64 @@
+<<<
+:sectnums:
+==== Internal Bus Monitor (BUSKEEPER)
+
+[cols="<3,<3,<4"]
+[frame="topbot",grid="none"]
+|=======================
+| Hardware source file(s): | neorv32_buskeeper.vhd | 
+| Software driver file(s): | none | explicitly used
+| Top entity port:         | none | 
+| Configuration generics:  | none | 
+| Package constants:       | `max_proc_int_response_time_c` | Access time window (#cycles)
+| CPU interrupts:          | none | 
+|=======================
+
+**Theory of Operation**
+
+The Bus Keeper is a fundamental component of the processor's internal bus system that ensures correct bus operations
+to maintain execution safety. The Bus Keeper monitors every single bus transactions that is intimated by the CPU.
+If an accessed device responds with an error condition or do not respond within a specific _access time window_,
+the according bus access fault exception is raised. The following exceptions can be raised by the Bus Keeper
+(see section <<_neorv32_trap_listing>> for all CPU exceptions):
+
+* `TRAP_CODE_I_ACCESS`: error during instruction fetch bus access
+* `TRAP_CODE_S_ACCESS`: error during data store bus access
+* `TRAP_CODE_L_ACCESS`: error during data load bus access
+
+The **access time window**, in which an accessed device has to respond, is defined by the `max_proc_int_response_time_c`
+constant from the processor's VHDL package file (`rtl/neorv32_package.vhd`). The default value is **15 clock cycles**.
+
+In case of a bus access fault exception application software can evaluate the Bus Keeper's control register
+`NEORV32_BUSKEEPER.CTRL` to retrieve further details of the bus exception. The _BUSKEEPER_ERR_FLAG_ bit indicates
+that an actual bus access fault has occurred. The bit is sticky once set is automatically cleared when reading the
+`NEORV32_BUSKEEPER.CTRL` register. The _BUSKEEPER_ERR_TYPE_ indicated the tape or bus fault:
+
+* _BUSKEEPER_ERR_TYPE_ = `0` - "Device Error": The bus access exception was cause by the memory-mapped device that
+has been accessed (the device asserted it's `err_o`).
+* _BUSKEEPER_ERR_TYPE_ = `1` - "Timeout Error": The bus access exception was caused by the Bus Keeper because the
+accessed memory-mapped device did not respond within the access time window.
+
+[NOTE]
+Bus access fault exceptions are also raised if a physical memory protection rule is violated. In this case
+the _BUSKEEPER_ERR_FLAG_ bit remains zero.
+
+Furthermore, application software can determine the source of the bus access fault via the _BUSKEEPER_ERR_SRC_ bit:
+
+* _BUSKEEPER_ERR_SRC_ = `0`: The error was cause during access via the <<_processor_external_memory_interface_wishbone_axi4_lite>>).
+* _BUSKEEPER_ERR_SRC_ = `1`: The error was cause during access to an processor-internal module.
+
+[NOTE]
+The Bus Keeper does not track **timeout errors** of processor-external accesses via the external memory bus interface.
+However, the external memory bus interface also provides an _optional_ and independent bus timeout feature
+(see section <<_processor_external_memory_interface_wishbone_axi4_lite>>).
+
+
+.BUSKEEPER register map (`struct NEORV32_BUSKEEPER`)
+[cols="<2,<2,<4,^1,<4"]
+[options="header",grid="all"]
+|=======================
+| Address | Name [C] | Bit(s), Name [C] | R/W | Function
+.3+<| `0xffffff7C` .3+<| `NEORV32_BUSKEEPER.CTRL` <|`0`  _BUSKEEPER_ERR_TYPE_ ^| r/- <| Bus error type, valid if _BUSKEEPER_ERR_FLAG_ is set: `0`=device error, `1`=access timeout
+                                                  <|`1`  _BUSKEEPER_ERR_SRC_  ^| r/- <| Error source: `0`=processor-internal, `1`=processor-external (via Wishbone bus interface)
+                                                  <|`31` _BUSKEEPER_ERR_FLAG_ ^| r/- <| Sticky error flag, clears after read
+|=======================

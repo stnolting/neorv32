@@ -802,6 +802,27 @@ enum NEORV32_SLINK_STATUS_enum {
 
 
 /**********************************************************************//**
+ * @name IO Device: Bus Monitor (BUSKEEPER)
+ **************************************************************************/
+/**@{*/
+/** BUSKEEPER module prototype */
+typedef struct __attribute__((packed,aligned(4))) {
+	uint32_t CTRL; /**< offset 0: control register (#NEORV32_BUSKEEPER_CTRL_enum) */
+} neorv32_buskeeper_t;
+
+/** BUSKEEPER module hardware access (#neorv32_buskeeper_t) */
+#define NEORV32_BUSKEEPER (*((volatile neorv32_buskeeper_t*) (0xFFFFFF7CUL)))
+
+/** BUSKEEPER control/data register bits */
+enum NEORV32_BUSKEEPER_CTRL_enum {
+  BUSKEEPER_ERR_TYPE =  0, /**< BUSKEEPER control register(0)  (r/-): Bus error type: 0=device error, 1=access timeout */
+  BUSKEEPER_ERR_SRC  =  1, /**< BUSKEEPER control register(1)  (r/-): Bus error source: 0=processor-external, 1=processor-internal */
+  BUSKEEPER_ERR_FLAG = 31  /**< BUSKEEPER control register(31) (r/c): Sticky error flag, clears after read */
+};
+/**@}*/
+
+
+/**********************************************************************//**
  * @name IO Device: External Interrupt Controller (XIRQ)
  **************************************************************************/
 /**@{*/
