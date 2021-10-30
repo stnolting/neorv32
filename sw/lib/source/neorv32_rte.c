@@ -338,26 +338,28 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<SYSINFO_CPU_ZICSR)) {
     neorv32_uart0_printf("Zicsr ");
   }
+  if (tmp & (1<<SYSINFO_CPU_ZICNTR)) {
+    neorv32_uart0_printf("Zicntr ");
+  }
+  if (tmp & (1<<SYSINFO_CPU_ZIHPM)) {
+    neorv32_uart0_printf("Zihpm ");
+  }
   if (tmp & (1<<SYSINFO_CPU_ZIFENCEI)) {
     neorv32_uart0_printf("Zifencei ");
   }
   if (tmp & (1<<SYSINFO_CPU_ZMMUL)) {
     neorv32_uart0_printf("Zmmul ");
   }
-
   if (tmp & (1<<SYSINFO_CPU_ZFINX)) {
     neorv32_uart0_printf("Zfinx ");
-  }
-  if (tmp & (1<<SYSINFO_CPU_ZXNOCNT)) {
-    neorv32_uart0_printf("Zxnocnt(!) ");
   }
   if (tmp & (1<<SYSINFO_CPU_ZXSCNT)) {
     neorv32_uart0_printf("Zxscnt(!) ");
   }
-  if (tmp & (1<<SYSINFO_CPU_DEBUGMODE)) {
-    neorv32_uart0_printf("Debug-Mode ");
-  }
 
+  if (tmp & (1<<SYSINFO_CPU_DEBUGMODE)) {
+    neorv32_uart0_printf("Debug ");
+  }
   if (tmp & (1<<SYSINFO_CPU_FASTMUL)) {
     neorv32_uart0_printf("FAST_MUL ");
   }
@@ -374,9 +376,6 @@ void neorv32_rte_print_hw_config(void) {
   else {
     neorv32_uart0_printf("not implemented\n");
   }
-
-  // check hardware performance monitors
-  neorv32_uart0_printf("HPM Counters:      %u counters, %u-bit wide\n", neorv32_cpu_hpm_get_counters(), neorv32_cpu_hpm_get_size());
 
 
   // Memory configuration
