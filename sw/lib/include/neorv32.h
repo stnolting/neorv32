@@ -1163,9 +1163,9 @@ enum NEORV32_SYSINFO_CPU_enum {
 
   SYSINFO_CPU_ZFINX     =  5, /**< SYSINFO_CPU (5): Zfinx extension (F sub-/alternative-extension) available when set (r/-) */
   SYSINFO_CPU_ZXSCNT    =  6, /**< SYSINFO_CPU (6): Custom extension - Small CPU counters: "cycle" & "instret" CSRs have less than 64-bit when set (r/-) */
-  SYSINFO_CPU_ZXNOCNT   =  7, /**< SYSINFO_CPU (7): Custom extension - NO CPU counters: "cycle" & "instret" CSRs are NOT available at all when set (r/-) */
+  SYSINFO_CPU_ZICNTR    =  7, /**< SYSINFO_CPU (7): Basie CPU counters available when set (r/-) */
   SYSINFO_CPU_PMP       =  8, /**< SYSINFO_CPU (8): PMP (physical memory protection) extension available when set (r/-) */
-  SYSINFO_CPU_HPM       =  9, /**< SYSINFO_CPU (9): HPM (hardware performance monitors) extension available when set (r/-) */
+  SYSINFO_CPU_ZIHPM     =  9, /**< SYSINFO_CPU (9): HPM (hardware performance monitors) extension available when set (r/-) */
   SYSINFO_CPU_DEBUGMODE = 10, /**< SYSINFO_CPU (10): RISC-V CPU debug mode available when set (r/-) */
 
   SYSINFO_CPU_FASTMUL   = 30, /**< SYSINFO_CPU (30): fast multiplications (via FAST_MUL_EN generic) available when set (r/-) */
