@@ -24,7 +24,7 @@ Several example programs for testing and for getting started.
 ## [image_gen](image_gen)
 
 This folder contains a simple program that is used to create NEORV32 executables (for upload via bootloader) and VHDL
-memory initializiation files (for memory-persistent applications and for the bootloader).
+memory initialization files (for memory-persistent applications and for the bootloader).
 This program is automatically compiled using the native GCC when invoking one of the application compilation makefiles.
 
 
