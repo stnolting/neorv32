@@ -26,7 +26,8 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 30.10.2021 | 1.6.2.12 | :sparkles: :lock: added memory-mapped register to BUSKEEPER module - software can now retrieve the actual cause of an instruction / data-load / data-store bus access fault exception (access timeout or device error); see [PR #192](https://github.com/stnolting/neorv32/pull/191) |
+| 01.11.2021 | 1.6.2.13 | added new top generics to explicitly control implementation of `Zicntr` (CPU base counters) and `Zihpm` (hardware performance monitors, see [PR #192](https://github.com/stnolting/neorv32/pull/192) |
+| 30.10.2021 | 1.6.2.12 | :sparkles: :lock: added memory-mapped register to BUSKEEPER module - software can now retrieve the actual cause of an instruction / data-load / data-store bus access fault exception (access timeout or device error); see [PR #191](https://github.com/stnolting/neorv32/pull/191) |
 | 28.10.2021 | 1.6.2.11 | :sparkles: added `Zba` bit-manipulation sub-extension; :warning: removed configuration option for `B` sub-extensions: removed `CPU_EXTENSION_RISCV_Zbb` generic and according SYSINFO flag, added new `CPU_EXTENSION_RISCV_B` generic (to implement bit-manipulation `B` ISA extension with _all_ currently supported subsets), see [PR #190](https://github.com/stnolting/neorv32/pull/190) |
 | 27.10.2021 | 1.6.2.10 | :bug: CPU control unit: fixed _imprecise_ illegal instruction exceptions - `MEPC` and `MTAVL` did not reflect the correct exception-causing data for illegal ALU-class (non-multi-cycle like `SUB`) operations; optimized critical path of exception logic (illegal compressed instruction detection) |
 | 27.10.2021 | 1.6.2.9 | CPU control unit: minor logic optimization - `fence.i` instruction needs 1 cycle less to execute, reduced HW footprint of control engine, shortened CPU's critical path (PC update logic) |

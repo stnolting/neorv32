@@ -200,10 +200,11 @@ documentation section). Note that the `X` extension is always enabled.
 [[`X`](https://stnolting.github.io/neorv32/#_x_neorv32_specific_custom_extensions)]
 [[`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_single_precision_floating_point_operations)]
 [[`Zicsr`](https://stnolting.github.io/neorv32/#_zicsr_control_and_status_register_access_privileged_architecture)]
+[[`Zicntr`](https://stnolting.github.io/neorv32/#_zicntr_cpu_base_counters)]
+[[`Zihpm`](https://stnolting.github.io/neorv32/#_zihpm_hardware_performance_monitors)]
 [[`Zifencei`](https://stnolting.github.io/neorv32/#_zifencei_instruction_stream_synchronization)]
 [[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_integer_multiplication)]
 [[`PMP`](https://stnolting.github.io/neorv32/#_pmp_physical_memory_protection)]
-[[`HPM`](https://stnolting.github.io/neorv32/#_hpm_hardware_performance_monitors)]
 [[`DEBUG`](https://stnolting.github.io/neorv32/#_cpu_debug_mode)]**
 
 :warning: The `B`, `Zfinx` and `Zmmul` RISC-V extensions are frozen but not officially ratified yet. Hence, there is no
@@ -223,8 +224,8 @@ Results generated for hardware version [`1.5.7.10`](https://github.com/stnolting
 | CPU Configuration                                 | LEs  | FFs  | Memory bits | DSPs (9-bit) | f_max   |
 |:--------------------------------------------------|:----:|:----:|:-----------:|:------------:|:-------:|
 | `rv32i`                                           |  806 |  359 |        1024 |            0 | 125 MHz |
-| `rv32i_Zicsr`                                     | 1729 |  813 |        1024 |            0 | 124 MHz |
-| `rv32imac_Zicsr`                                  | 2511 | 1074 |        1024 |            0 | 124 MHz |
+| `rv32i_Zicsr_Zicntr`                              | 1729 |  813 |        1024 |            0 | 124 MHz |
+| `rv32imac_Zicsr_Zicntr`                           | 2511 | 1074 |        1024 |            0 | 124 MHz |
 
 :information_source: An incremental list of CPU extension's hardware utilization can found in
 [online documentation - _"FPGA Implementation Results - CPU"_](https://stnolting.github.io/neorv32/#_cpu).

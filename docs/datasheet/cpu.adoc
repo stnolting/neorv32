@@ -16,11 +16,12 @@ image::riscv_logo.png[width=350,align=center]
 ** `U` - less-privileged _user_ mode
 ** `Zfinx` - single-precision floating-point unit
 ** `Zicsr` - control and status register access (privileged architecture)
+** `Zicntr` - CPU base counters
+** `Zihpm` - hardware performance monitors
 ** `Zifencei` - instruction stream synchronization
 ** `Zmmul` - integer multiplication hardware
 ** `PMP` - physical memory protection
-** `HPM` - hardware performance monitors
-** `DB` - debug mode
+** `Debug` - debug mode
 * Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications - passes the official RISC-V Architecture Tests (v2+)
 * Official RISC-V open-source architecture ID
 * Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 _fast_ interrupts
@@ -630,6 +631,50 @@ The `wfi` instruction may also be executed in user-mode without causing an excep
 `TW` (timeout wait) is hardwired to zero.
 
 
+
+
+==== **`Zicntr`** CPU Base Counters
+
+The `Zicntr` ISA extension adds the basic cycle `[m]cycle[h]`), instruction-retired (`[m]instret[h]`) and time (`time[h]`)
+counters. This extensions is stated is _mandatory_ by the RISC-V spec. However, size-constrained setups may remove support for
+these counters. Section <<_machine_counter_and_timer_csrs>> shows a list of all `Zicntr`-related CSRs.
+These are available if the `Zicntr` ISA extensions is enabled via the <<_cpu_extension_riscv_zicntr>> generic.
+
+[NOTE]
+Disabling the `Zicntr` extension does not remove the `time[h]`-driving MTIME unit.
+
+If `Zicntr` is disabled, all accesses to the according counter CSRs will raise an illegal instruction exception.
+
+
+
+==== **`Zihpm`** Hardware Performance Monitors
+
+In additions to the base cycle, instructions-retired and time counters the NEORV32 CPU provides
+up to 29 hardware performance monitors (HPM 3..31), which can be used to benchmark applications. Each HPM consists of an
+N-bit wide counter (split in a high-word 32-bit CSR and a low-word 32-bit CSR), where N is defined via the top's
+`HPM_CNT_WIDTH` generic (0..64-bit) and a corresponding event configuration CSR. The event configuration
+CSR defines the architectural events that lead to an increment of the associated HPM counter.
+
+The HPM counters are available if the `Zihpm` ISA extensions is enabled via the <<_cpu_extension_riscv_zihpm>> generic.
+
+Depending on the configuration the following additional CSR are available:
+
+* counters: `mhpmcounter*[h]` (3..31, depending on `HPM_NUM_CNTS`)
+* event configuration: `mhpmevent*` (3..31, depending on `HPM_NUM_CNTS`)
+
+[IMPORTANT]
+The HPM counter CSR can only be accessed in machine-mode. Hence, the according `mcounteren` CSR bits
+are always zero and read-only. Any access from less-privileged modes will raise an illegal instruction
+exception.
+
+[TIP]
+Auto-increment of the HPMs can be individually deactivated via the `mcountinhibit` CSR.
+
+[TIP]
+For a list of all HPM-related CSRs and all provided event configurations
+see section <<_hardware_performance_monitors_hpm>>.
+
+
 ==== **`Zifencei`** Instruction Stream Synchronization
 
 The `Zifencei` CPU extension is implemented if the `CPU_EXTENSION_RISCV_Zifencei` configuration
@@ -702,43 +747,6 @@ internal (iterative) computations before the configuration becomes valid.
 For more information regarding RISC-V physical memory protection see the official _The RISC-V
 Instruction Set Manual - Volume II: Privileged Architecture_ specifications.
 
-
-==== **`HPM`** Hardware Performance Monitors
-
-In additions to the mandatory cycle (`[m]cycle[h]`) and instruction (`[m]instret[h]`) counters the NEORV32 CPU provides
-up to 29 hardware performance monitors (HPM 3..31), which can be used to benchmark applications. Each HPM consists of an
-N-bit wide counter (split in a high-word 32-bit CSR and a low-word 32-bit CSR), where N is defined via the top's
-`HPM_CNT_WIDTH` generic (0..64-bit) and a corresponding event configuration CSR. The event configuration
-CSR defines the architectural events that lead to an increment of the associated HPM counter.
-
-The cycle, time and instructions-retired counters (`[m]cycle[h]`, `time[h]`, `[m]instret[h]`) are
-mandatory performance monitors on every RISC-V platform and have fixed increment events. For example,
-the instructions-retired counter increments with each executed instructions. The actual hardware performance
-monitors are optional and can be configured to increment on arbitrary hardware events. The number of
-available HPM is configured via the top's `HPM_NUM_CNTS` generic at synthesis time. Assigning a zero will remove
-all HPM logic from the design.
-
-If `HPM_NUM_CNTS` is lower than the maximum value (=29) the remaining HPM CSRs are not implemented and the
-according `mcountinhibit` CSR bits are hardwired to zero.
-However, accessing their associated CSRs will not raise an illegal instruction exception (if in machine mode).
-The according CSRs are read-only and will always return 0.
-
-Depending on the configuration the following additional CSR are available:
-
-* counters: `mhpmcounter*[h]` (3..31, depending on `HPM_NUM_CNTS`)
-* event configuration: `mhpmevent*` (3..31, depending on `HPM_NUM_CNTS`)
-
-[IMPORTANT]
-The HPM counter CSR can only be accessed in machine-mode. Hence, the according `mcounteren` CSR bits
-are always zero and read-only. Any access from less-privileged modes will raise an illegal instruction
-exception.
-
-[TIP]
-Auto-increment of the HPMs can be individually deactivated via the `mcountinhibit` CSR.
-
-[TIP]
-For a list of all HPM-related CSRs and all provided event configurations
-see section <<_hardware_performance_monitors_hpm>>.
 
 
 <<<

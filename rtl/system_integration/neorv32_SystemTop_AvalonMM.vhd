@@ -61,6 +61,8 @@ entity neorv32_top_avalonmm is
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zicntr   : boolean := true;   -- implement base counters?
+    CPU_EXTENSION_RISCV_Zihpm    : boolean := false;  -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean := false;  -- implement multiply-only M sub-extension?
 
@@ -245,6 +247,8 @@ begin
     CPU_EXTENSION_RISCV_U => CPU_EXTENSION_RISCV_U,
     CPU_EXTENSION_RISCV_Zfinx => CPU_EXTENSION_RISCV_Zfinx,
     CPU_EXTENSION_RISCV_Zicsr => CPU_EXTENSION_RISCV_Zicsr,
+    CPU_EXTENSION_RISCV_Zicntr => CPU_EXTENSION_RISCV_Zicntr,
+    CPU_EXTENSION_RISCV_Zihpm => CPU_EXTENSION_RISCV_Zihpm,
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei,
     CPU_EXTENSION_RISCV_Zmmul => CPU_EXTENSION_RISCV_Zmmul,
 

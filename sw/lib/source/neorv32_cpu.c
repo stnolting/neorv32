@@ -612,7 +612,7 @@ static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data) {
 uint32_t neorv32_cpu_hpm_get_counters(void) {
 
   // HPMs implemented at all?
-  if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_HPM)) == 0) {
+  if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_ZIHPM)) == 0) {
     return 0;
   }
 
@@ -695,7 +695,7 @@ uint32_t neorv32_cpu_hpm_get_counters(void) {
 uint32_t neorv32_cpu_hpm_get_size(void) {
 
   // HPMs implemented at all?
-  if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_HPM)) == 0) {
+  if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_ZIHPM)) == 0) {
     return 0;
   }
 

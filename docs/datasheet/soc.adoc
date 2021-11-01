@@ -329,6 +329,32 @@ See section <<_zicsr_control_and_status_register_access_privileged_architecture>
 
 
 :sectnums!:
+===== _CPU_EXTENSION_RISCV_Zicntr_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CPU_EXTENSION_RISCV_Zicntr** | _boolean_ | true
+3+| Implement the basic CPU counter CSRs (`time[h]`, `[m]cycle[h]`, `[m]instret[h]`) when true.
+Enabling this extension will set the  _SYSINFO_CPU_ZICNTR_ flag in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
+See section <<_zicntr_cpu_base_counters>> for more information.
+|======
+
+
+:sectnums!:
+===== _CPU_EXTENSION_RISCV_Zihpm_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CPU_EXTENSION_RISCV_Zihpm** | _boolean_ | false
+3+| Implement hardware performance monitor CSRs when true.
+Enabling this extension will set the  _SYSINFO_CPU_ZIHPM_ flag in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
+See section <<_zihpm_hardware_performance_monitors>> for more information.
+|======
+
+
+:sectnums!:
 ===== _CPU_EXTENSION_RISCV_Zifencei_
 
 [cols="4,4,2"]
@@ -399,6 +425,7 @@ shift-related operations of the <<_b_bit_manipulation_operations>> extension.**
 | **CPU_CNT_WIDTH** | _natural_ | 64
 3+| This generic configures the total size of the CPU's `[m]cycle` and `[m]instret` CSRs (low word + high word).
 The maximum value is 64, the minimum value is 0. See section <<_machine_counters_and_timers>> for more information.
+This generic is only relevant if the `Zicntr` ISa extension is enabled (<<_cpu_extension_riscv_zicntr>>).
 Note: configurations with <<_cpu_cnt_width>> less than 64 bits do not comply to the RISC-V specs.
 |======
 
@@ -451,7 +478,8 @@ in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> regis
 :sectnums:
 ==== Hardware Performance Monitors (HPM)
 
-See section <<_hpm_hardware_performance_monitors>> for more information.
+These generics allow to customize the `Zihpm` ISA extension. Note that the following generics are ignored if the
+<<_cpu_extension_riscv_zihpm>> generic is _false_. See section <<_zihpm_hardware_performance_monitors>> for more information.
 
 
 :sectnums!:
@@ -462,8 +490,7 @@ See section <<_hpm_hardware_performance_monitors>> for more information.
 |======
 | **HPM_NUM_CNTS** | _natural_ | 0
 3+| Total number of implemented hardware performance monitor counters (0..29). If this generics is zero, no
-hardware performance monitor logic will be implemented at all. Setting <<_hpm_num_cnts>> > 0 will set the _SYSINFO_CPU_HPM_ flag
-in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
+hardware performance monitor logic will be implemented at all.
 |======
 
 

@@ -273,16 +273,16 @@ This chapter shows _exemplary_ implementation results of the NEORV32 CPU and NEO
 [cols="<5,>1,>1,>1,>1,>1"]
 [options="header",grid="rows"]
 |=======================
-| CPU                                        | LEs  | FFs  | MEM bits | DSPs | _f~max~_
-| `rv32i`                                    |  806 |  359 |     1024 |    0 | 125 MHz
-| `rv32i_Zicsr`                              | 1729 |  813 |     1024 |    0 | 124 MHz
-| `rv32im_Zicsr`                             | 2269 | 1055 |     1024 |    0 | 124 MHz
-| `rv32imc_Zicsr`                            | 2501 | 1070 |     1024 |    0 | 124 MHz
-| `rv32imac_Zicsr`                           | 2511 | 1074 |     1024 |    0 | 124 MHz
-| `rv32imacu_Zicsr`                          | 2521 | 1079 |     1024 |    0 | 124 MHz
-| `rv32imacu_Zicsr_Zifencei`                 | 2522 | 1079 |     1024 |    0 | 122 MHz
-| `rv32imacu_Zicsr_Zifencei_Zfinx`           | 3807 | 1731 |     1024 |    7 | 116 MHz
-| `rv32imacu_Zicsr_Zifencei_Zfinx_DebugMode` | 3974 | 1815 |     1024 |    7 | 116 MHz
+| CPU                                               | LEs  | FFs  | MEM bits | DSPs | _f~max~_
+| `rv32i`                                           |  806 |  359 |     1024 |    0 | 125 MHz
+| `rv32i_Zicsr_Zicntr`                              | 1729 |  813 |     1024 |    0 | 124 MHz
+| `rv32im_Zicsr_Zicntr`                             | 2269 | 1055 |     1024 |    0 | 124 MHz
+| `rv32imc_Zicsr_Zicntr`                            | 2501 | 1070 |     1024 |    0 | 124 MHz
+| `rv32imac_Zicsr_Zicntr`                           | 2511 | 1074 |     1024 |    0 | 124 MHz
+| `rv32imacu_Zicsr_Zicntr`                          | 2521 | 1079 |     1024 |    0 | 124 MHz
+| `rv32imacu_Zicsr_Zicntr_Zifencei`                 | 2522 | 1079 |     1024 |    0 | 122 MHz
+| `rv32imacu_Zicsr_Zicntr_Zifencei_Zfinx`           | 3807 | 1731 |     1024 |    7 | 116 MHz
+| `rv32imacu_Zicsr_Zicntr_Zifencei_Zfinx_DebugMode` | 3974 | 1815 |     1024 |    7 | 116 MHz
 |=======================
 
 [NOTE]
