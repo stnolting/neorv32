@@ -53,13 +53,15 @@ entity neorv32_cpu_control is
     CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean; -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean; -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zbb      : boolean; -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
+    CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
@@ -109,7 +111,7 @@ entity neorv32_cpu_control is
     pmp_addr_o    : out pmp_addr_if_t; -- addresses
     pmp_ctrl_o    : out pmp_ctrl_if_t; -- configs
     -- bus access exceptions --
-    mar_i         : in  std_ulogic_vector(data_width_c-1 downto 0);  -- memory address register
+    mar_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory address register
     ma_instr_i    : in  std_ulogic; -- misaligned instruction address
     ma_load_i     : in  std_ulogic; -- misaligned load data address
     ma_store_i    : in  std_ulogic; -- misaligned store data address
@@ -674,7 +676,7 @@ begin
         execute_engine.branch_taken <= cmp_i(cmp_less_c);
       when funct3_bge_c | funct3_bgeu_c => -- branch if greater or equal (signed/unsigned)
         execute_engine.branch_taken <= not cmp_i(cmp_less_c);
-      when others => -- undefined
+      when others => -- invalid
         execute_engine.branch_taken <= '0';
     end case;
   end process branch_check;
@@ -860,6 +862,13 @@ begin
          (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "110") or -- ORN
          (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")    -- XORN
         )
+       ) or
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010000") and
+        (
+         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") or -- SH1ADD
+         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100") or -- SH2ADD
+         (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "110")    -- SH3ADD
+        )
        ) then
       decode_aux.is_bitmanip_reg <= '1';
     end if;
@@ -1043,7 +1052,7 @@ begin
               ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- use MULDIV CP
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_cmd_copro_c;
             -- co-processor bit manipulation operation? --
-            elsif (CPU_EXTENSION_RISCV_Zbb = true) and
+            elsif (CPU_EXTENSION_RISCV_B = true) and
               (((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_bitmanip_reg = '1')) or -- register operation
                ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_bitmanip_imm = '1'))) then -- immediate operation
               ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_bitmanip_c; -- use BITMANIP CP
@@ -1066,7 +1075,7 @@ begin
                (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) or -- SR shift operation?
                ((CPU_EXTENSION_RISCV_M = true) and ((decode_aux.is_m_mul = '1') or (decode_aux.is_m_div = '1'))) or -- MUL/DIV
                ((CPU_EXTENSION_RISCV_Zmmul = true) and (decode_aux.is_m_mul = '1')) or -- MUL
-               ((CPU_EXTENSION_RISCV_Zbb = true) and (
+               ((CPU_EXTENSION_RISCV_B = true) and (
                 ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_bitmanip_reg = '1')) or -- BITMANIP CP register operation?
                 ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_bitmanip_imm = '1'))) -- BITMANIP CP immediate operation?
                ) then
@@ -1234,6 +1243,7 @@ begin
         -- destination address --
         execute_engine.pc_mux_sel <= '1'; -- alu.add = branch/jump destination
         if (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') or (execute_engine.branch_taken = '1') then -- JAL/JALR or taken branch
+          -- no need to check for illegal instructions here; the branch condition evaluation circuit will not set "branch_taken" if funct3 is invalid
           execute_engine.pc_we        <= '1'; -- update PC
           execute_engine.branched_nxt <= '1'; -- this is an actual branch
           fetch_engine.reset          <= '1'; -- trigger new instruction fetch from modified PC
@@ -1247,7 +1257,7 @@ begin
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_bus_lock_c) <= decode_aux.is_atomic_lr; -- atomic.LR: set lock
         if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') then -- normal load or atomic load-reservate
-          ctrl_nxt(ctrl_bus_rd_c)  <= '1'; -- read request
+          ctrl_nxt(ctrl_bus_rd_c) <= '1'; -- read request
         else -- store
           if (decode_aux.is_atomic_sc = '1') then -- evaluate lock state
             if (excl_state_i = '1') then -- lock is still ok - perform write access
@@ -1363,14 +1373,14 @@ begin
            csr_mhpmevent15_c    | csr_mhpmevent16_c    | csr_mhpmevent17_c    | csr_mhpmevent18_c    | csr_mhpmevent19_c    | csr_mhpmevent20_c    |
            csr_mhpmevent21_c    | csr_mhpmevent22_c    | csr_mhpmevent23_c    | csr_mhpmevent24_c    | csr_mhpmevent25_c    | csr_mhpmevent26_c    |
            csr_mhpmevent27_c    | csr_mhpmevent28_c    | csr_mhpmevent29_c    | csr_mhpmevent30_c    | csr_mhpmevent31_c =>
-        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(HPM_NUM_CNTS > 0)); -- M-mode only
+        csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm); -- M-mode only
 
       -- user-level counters/timers --
       when csr_cycle_c | csr_cycleh_c | csr_instret_c | csr_instreth_c | csr_time_c | csr_timeh_c =>
         case csr.addr(1 downto 0) is
-          when "00"   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_cy); -- cyle[h]: M-mode, U-mode if authorized, read-only
-          when "01"   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_tm); -- time[h]: M-mode, U-mode if authorized, read-only
-          when "10"   => csr_acc_valid <= (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_ir); -- instret[h]: M-mode, U-mode if authorized, read-only
+          when "00"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_cy); -- cyle[h]: M-mode, U-mode if authorized, implemented at all, read-only
+          when "01"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_tm); -- time[h]: M-mode, U-mode if authorized, implemented at all, read-only
+          when "10"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.priv_m_mode or csr.mcounteren_ir); -- instret[h]: M-mode, U-mode if authorized, implemented at all read-only
           when others => csr_acc_valid <= '0';
         end case;
 
@@ -1434,7 +1444,7 @@ begin
               illegal_instruction <= '1';
             end if;
           elsif (decode_aux.is_bitmanip_reg = '1') then -- bit manipulation
-            if (CPU_EXTENSION_RISCV_Zbb = false) then -- not implemented
+            if (CPU_EXTENSION_RISCV_B = false) then -- not implemented
               illegal_instruction <= '1';
             end if;
           elsif ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) or
@@ -1454,7 +1464,7 @@ begin
         when opcode_alui_c => -- check ALUI.funct7
         -- ------------------------------------------------------------
           if (decode_aux.is_bitmanip_imm = '1') then -- bit manipulation
-            if (CPU_EXTENSION_RISCV_Zbb = false) then -- not implemented
+            if (CPU_EXTENSION_RISCV_B = false) then -- not implemented
               illegal_instruction <= '1';
             end if;
           elsif ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) and
@@ -2074,7 +2084,7 @@ begin
               end if;
             end if;
             -- R/W: mhpmevent - machine performance-monitors event selector --
-            if (HPM_NUM_CNTS > 0) then
+            if (HPM_NUM_CNTS > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then
               for i in 0 to HPM_NUM_CNTS-1 loop
                 if (csr.addr(4 downto 0) = std_ulogic_vector(to_unsigned(i+3, 5))) then
                   csr.mhpmevent(i) <= csr.wdata(csr.mhpmevent(i)'left downto 0);
@@ -2316,7 +2326,7 @@ begin
     elsif rising_edge(clk_i) then
 
       -- [m]cycle --
-      if (cpu_cnt_lo_width_c > 0) then
+      if (cpu_cnt_lo_width_c > 0) and (CPU_EXTENSION_RISCV_Zicntr = true) then
         csr.mcycle_ovfl(0) <= csr.mcycle_nxt(csr.mcycle_nxt'left);
         if (csr.we = '1') and (csr.addr = csr_mcycle_c) then -- write access
           csr.mcycle(cpu_cnt_lo_width_c-1 downto 0) <= csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
@@ -2329,7 +2339,7 @@ begin
       end if;
 
       -- [m]cycleh --
-      if (cpu_cnt_hi_width_c > 0) then
+      if (cpu_cnt_hi_width_c > 0) and (CPU_EXTENSION_RISCV_Zicntr = true) then
         if (csr.we = '1') and (csr.addr = csr_mcycleh_c) then -- write access
           csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0) <= csr.wdata(cpu_cnt_hi_width_c-1 downto 0);
         elsif (csr.mcountinhibit_cy = '0') and (cnt_event(hpmcnt_event_cy_c) = '1') then -- non-inhibited automatic update
@@ -2341,7 +2351,7 @@ begin
 
 
       -- [m]instret --
-      if (cpu_cnt_lo_width_c > 0) then
+      if (cpu_cnt_lo_width_c > 0) and (CPU_EXTENSION_RISCV_Zicntr = true) then
         csr.minstret_ovfl(0) <= csr.minstret_nxt(csr.minstret_nxt'left);
         if (csr.we = '1') and (csr.addr = csr_minstret_c) then -- write access
           csr.minstret(cpu_cnt_lo_width_c-1 downto 0) <= csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
@@ -2354,7 +2364,7 @@ begin
       end if;
 
       -- [m]instreth --
-      if (cpu_cnt_hi_width_c > 0) then
+      if (cpu_cnt_hi_width_c > 0) and (CPU_EXTENSION_RISCV_Zicntr = true) then
         if (csr.we = '1') and (csr.addr = csr_minstreth_c) then -- write access
           csr.minstreth(cpu_cnt_hi_width_c-1 downto 0) <= csr.wdata(cpu_cnt_hi_width_c-1 downto 0);
         elsif (csr.mcountinhibit_ir = '0') and (cnt_event(hpmcnt_event_ir_c) = '1') then -- non-inhibited automatic update
@@ -2369,7 +2379,7 @@ begin
       for i in 0 to HPM_NUM_CNTS-1 loop
 
         -- [m]hpmcounter* --
-        if (hpm_cnt_lo_width_c > 0) then
+        if (hpm_cnt_lo_width_c > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then
           csr.mhpmcounter_ovfl(i)(0) <= csr.mhpmcounter_nxt(i)(csr.mhpmcounter_nxt(i)'left);
           if (csr.we = '1') and (csr.addr = std_ulogic_vector(unsigned(csr_mhpmcounter3_c) + i)) then -- write access
             csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0) <= csr.wdata(hpm_cnt_lo_width_c-1 downto 0);
@@ -2382,7 +2392,7 @@ begin
         end if;
 
         -- [m]hpmcounter*h --
-        if (hpm_cnt_hi_width_c > 0) then
+        if (hpm_cnt_hi_width_c > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then
           if (csr.we = '1') and (csr.addr = std_ulogic_vector(unsigned(csr_mhpmcounter3h_c) + i)) then -- write access
             csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0) <= csr.wdata(hpm_cnt_hi_width_c-1 downto 0);
           elsif (csr.mcountinhibit_hpm(i) = '0') and (hpmcnt_trigger(i) = '1') then -- non-inhibited automatic update
@@ -2414,7 +2424,7 @@ begin
   begin
     csr.mhpmcounter_rd  <= (others => (others => '0'));
     csr.mhpmcounterh_rd <= (others => (others => '0'));
-    if (HPM_NUM_CNTS /= 0) then
+    if (HPM_NUM_CNTS /= 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then
       for i in 0 to HPM_NUM_CNTS-1 loop
         if (hpm_cnt_lo_width_c > 0) then
           csr.mhpmcounter_rd(i)(hpm_cnt_lo_width_c-1 downto 0) <= csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0);
@@ -2502,6 +2512,7 @@ begin
             csr.rdata(12) <= csr.mstatus_mpp(1); -- MPP: machine previous privilege mode high
           when csr_misa_c => -- misa (r/-): ISA and extensions
             csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
+            csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);     -- B CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
             csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
             csr.rdata(08) <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
@@ -2644,113 +2655,115 @@ begin
 
           -- machine performance-monitoring event selector (r/w) --
           -- --------------------------------------------------------------------
-          when csr_mhpmevent3_c  => if (HPM_NUM_CNTS > 00) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(00); else NULL; end if;
-          when csr_mhpmevent4_c  => if (HPM_NUM_CNTS > 01) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(01); else NULL; end if;
-          when csr_mhpmevent5_c  => if (HPM_NUM_CNTS > 02) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(02); else NULL; end if;
-          when csr_mhpmevent6_c  => if (HPM_NUM_CNTS > 03) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(03); else NULL; end if;
-          when csr_mhpmevent7_c  => if (HPM_NUM_CNTS > 04) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(04); else NULL; end if;
-          when csr_mhpmevent8_c  => if (HPM_NUM_CNTS > 05) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(05); else NULL; end if;
-          when csr_mhpmevent9_c  => if (HPM_NUM_CNTS > 06) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(06); else NULL; end if;
-          when csr_mhpmevent10_c => if (HPM_NUM_CNTS > 07) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(07); else NULL; end if;
-          when csr_mhpmevent11_c => if (HPM_NUM_CNTS > 08) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(08); else NULL; end if;
-          when csr_mhpmevent12_c => if (HPM_NUM_CNTS > 09) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(09); else NULL; end if;
-          when csr_mhpmevent13_c => if (HPM_NUM_CNTS > 10) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(10); else NULL; end if;
-          when csr_mhpmevent14_c => if (HPM_NUM_CNTS > 11) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(11); else NULL; end if;
-          when csr_mhpmevent15_c => if (HPM_NUM_CNTS > 12) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(12); else NULL; end if;
-          when csr_mhpmevent16_c => if (HPM_NUM_CNTS > 13) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(13); else NULL; end if;
-          when csr_mhpmevent17_c => if (HPM_NUM_CNTS > 14) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(14); else NULL; end if;
-          when csr_mhpmevent18_c => if (HPM_NUM_CNTS > 15) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(15); else NULL; end if;
-          when csr_mhpmevent19_c => if (HPM_NUM_CNTS > 16) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(16); else NULL; end if;
-          when csr_mhpmevent20_c => if (HPM_NUM_CNTS > 17) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(17); else NULL; end if;
-          when csr_mhpmevent21_c => if (HPM_NUM_CNTS > 18) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(18); else NULL; end if;
-          when csr_mhpmevent22_c => if (HPM_NUM_CNTS > 19) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(19); else NULL; end if;
-          when csr_mhpmevent23_c => if (HPM_NUM_CNTS > 20) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(20); else NULL; end if;
-          when csr_mhpmevent24_c => if (HPM_NUM_CNTS > 21) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(21); else NULL; end if;
-          when csr_mhpmevent25_c => if (HPM_NUM_CNTS > 22) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(22); else NULL; end if;
-          when csr_mhpmevent26_c => if (HPM_NUM_CNTS > 23) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(23); else NULL; end if;
-          when csr_mhpmevent27_c => if (HPM_NUM_CNTS > 24) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(24); else NULL; end if;
-          when csr_mhpmevent28_c => if (HPM_NUM_CNTS > 25) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(25); else NULL; end if;
-          when csr_mhpmevent29_c => if (HPM_NUM_CNTS > 26) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(26); else NULL; end if;
-          when csr_mhpmevent30_c => if (HPM_NUM_CNTS > 27) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(27); else NULL; end if;
-          when csr_mhpmevent31_c => if (HPM_NUM_CNTS > 28) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(28); else NULL; end if;
+          when csr_mhpmevent3_c  => if (HPM_NUM_CNTS > 00) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(00); else NULL; end if;
+          when csr_mhpmevent4_c  => if (HPM_NUM_CNTS > 01) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(01); else NULL; end if;
+          when csr_mhpmevent5_c  => if (HPM_NUM_CNTS > 02) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(02); else NULL; end if;
+          when csr_mhpmevent6_c  => if (HPM_NUM_CNTS > 03) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(03); else NULL; end if;
+          when csr_mhpmevent7_c  => if (HPM_NUM_CNTS > 04) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(04); else NULL; end if;
+          when csr_mhpmevent8_c  => if (HPM_NUM_CNTS > 05) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(05); else NULL; end if;
+          when csr_mhpmevent9_c  => if (HPM_NUM_CNTS > 06) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(06); else NULL; end if;
+          when csr_mhpmevent10_c => if (HPM_NUM_CNTS > 07) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(07); else NULL; end if;
+          when csr_mhpmevent11_c => if (HPM_NUM_CNTS > 08) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(08); else NULL; end if;
+          when csr_mhpmevent12_c => if (HPM_NUM_CNTS > 09) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(09); else NULL; end if;
+          when csr_mhpmevent13_c => if (HPM_NUM_CNTS > 10) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(10); else NULL; end if;
+          when csr_mhpmevent14_c => if (HPM_NUM_CNTS > 11) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(11); else NULL; end if;
+          when csr_mhpmevent15_c => if (HPM_NUM_CNTS > 12) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(12); else NULL; end if;
+          when csr_mhpmevent16_c => if (HPM_NUM_CNTS > 13) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(13); else NULL; end if;
+          when csr_mhpmevent17_c => if (HPM_NUM_CNTS > 14) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(14); else NULL; end if;
+          when csr_mhpmevent18_c => if (HPM_NUM_CNTS > 15) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(15); else NULL; end if;
+          when csr_mhpmevent19_c => if (HPM_NUM_CNTS > 16) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(16); else NULL; end if;
+          when csr_mhpmevent20_c => if (HPM_NUM_CNTS > 17) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(17); else NULL; end if;
+          when csr_mhpmevent21_c => if (HPM_NUM_CNTS > 18) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(18); else NULL; end if;
+          when csr_mhpmevent22_c => if (HPM_NUM_CNTS > 19) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(19); else NULL; end if;
+          when csr_mhpmevent23_c => if (HPM_NUM_CNTS > 20) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(20); else NULL; end if;
+          when csr_mhpmevent24_c => if (HPM_NUM_CNTS > 21) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(21); else NULL; end if;
+          when csr_mhpmevent25_c => if (HPM_NUM_CNTS > 22) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(22); else NULL; end if;
+          when csr_mhpmevent26_c => if (HPM_NUM_CNTS > 23) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(23); else NULL; end if;
+          when csr_mhpmevent27_c => if (HPM_NUM_CNTS > 24) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(24); else NULL; end if;
+          when csr_mhpmevent28_c => if (HPM_NUM_CNTS > 25) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(25); else NULL; end if;
+          when csr_mhpmevent29_c => if (HPM_NUM_CNTS > 26) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(26); else NULL; end if;
+          when csr_mhpmevent30_c => if (HPM_NUM_CNTS > 27) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(27); else NULL; end if;
+          when csr_mhpmevent31_c => if (HPM_NUM_CNTS > 28) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata(hpmcnt_event_size_c-1 downto 0) <= csr.mhpmevent(28); else NULL; end if;
 
           -- counters and timers --
           -- --------------------------------------------------------------------
           when csr_cycle_c | csr_mcycle_c => -- [m]cycle (r/w): Cycle counter LOW
-            if (cpu_cnt_lo_width_c > 0) then csr.rdata(cpu_cnt_lo_width_c-1 downto 0) <= csr.mcycle(cpu_cnt_lo_width_c-1 downto 0); else NULL; end if;
+            if (cpu_cnt_lo_width_c > 0) and (CPU_EXTENSION_RISCV_Zicntr = true) then csr.rdata(cpu_cnt_lo_width_c-1 downto 0) <= csr.mcycle(cpu_cnt_lo_width_c-1 downto 0); else NULL; end if;
           when csr_cycleh_c | csr_mcycleh_c => -- [m]cycleh (r/w): Cycle counter HIGH
-            if (cpu_cnt_hi_width_c > 0) then csr.rdata(cpu_cnt_hi_width_c-1 downto 0) <= csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0); else NULL; end if;
+            if (cpu_cnt_hi_width_c > 0) and (CPU_EXTENSION_RISCV_Zicntr = true) then csr.rdata(cpu_cnt_hi_width_c-1 downto 0) <= csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0); else NULL; end if;
 
           when csr_instret_c | csr_minstret_c => -- [m]instret (r/w): Instructions-retired counter LOW
-            if (cpu_cnt_lo_width_c > 0) then csr.rdata(cpu_cnt_lo_width_c-1 downto 0) <= csr.minstret(cpu_cnt_lo_width_c-1 downto 0); else NULL; end if;
+            if (cpu_cnt_lo_width_c > 0) and (CPU_EXTENSION_RISCV_Zicntr = true) then csr.rdata(cpu_cnt_lo_width_c-1 downto 0) <= csr.minstret(cpu_cnt_lo_width_c-1 downto 0); else NULL; end if;
           when csr_instreth_c | csr_minstreth_c => -- [m]instreth (r/w): Instructions-retired counter HIGH
-            if (cpu_cnt_hi_width_c > 0) then csr.rdata(cpu_cnt_hi_width_c-1 downto 0) <= csr.minstreth(cpu_cnt_hi_width_c-1 downto 0); else NULL; end if;
+            if (cpu_cnt_hi_width_c > 0) and (CPU_EXTENSION_RISCV_Zicntr = true) then csr.rdata(cpu_cnt_hi_width_c-1 downto 0) <= csr.minstreth(cpu_cnt_hi_width_c-1 downto 0); else NULL; end if;
 
-          when csr_time_c  => csr.rdata <= time_i(31 downto 0);  -- time (r/-): System time LOW (from MTIME unit)
-          when csr_timeh_c => csr.rdata <= time_i(63 downto 32); -- timeh (r/-): System time HIGH (from MTIME unit)
+          when csr_time_c => -- time (r/-): System time LOW (from MTIME unit)
+            if (CPU_EXTENSION_RISCV_Zicntr = true) then csr.rdata <= time_i(31 downto 00); else NULL; end if; 
+          when csr_timeh_c => -- timeh (r/-): System time HIGH (from MTIME unit)
+            if (CPU_EXTENSION_RISCV_Zicntr = true) then csr.rdata <= time_i(63 downto 32); else NULL; end if; 
 
           -- hardware performance counters --
           -- --------------------------------------------------------------------
           -- low word (r/w) --
-          when csr_mhpmcounter3_c   => if (HPM_NUM_CNTS > 00) then csr.rdata <= csr.mhpmcounter_rd(00); else NULL; end if;
-          when csr_mhpmcounter4_c   => if (HPM_NUM_CNTS > 01) then csr.rdata <= csr.mhpmcounter_rd(01); else NULL; end if;
-          when csr_mhpmcounter5_c   => if (HPM_NUM_CNTS > 02) then csr.rdata <= csr.mhpmcounter_rd(02); else NULL; end if;
-          when csr_mhpmcounter6_c   => if (HPM_NUM_CNTS > 03) then csr.rdata <= csr.mhpmcounter_rd(03); else NULL; end if;
-          when csr_mhpmcounter7_c   => if (HPM_NUM_CNTS > 04) then csr.rdata <= csr.mhpmcounter_rd(04); else NULL; end if;
-          when csr_mhpmcounter8_c   => if (HPM_NUM_CNTS > 05) then csr.rdata <= csr.mhpmcounter_rd(05); else NULL; end if;
-          when csr_mhpmcounter9_c   => if (HPM_NUM_CNTS > 06) then csr.rdata <= csr.mhpmcounter_rd(06); else NULL; end if;
-          when csr_mhpmcounter10_c  => if (HPM_NUM_CNTS > 07) then csr.rdata <= csr.mhpmcounter_rd(07); else NULL; end if;
-          when csr_mhpmcounter11_c  => if (HPM_NUM_CNTS > 08) then csr.rdata <= csr.mhpmcounter_rd(08); else NULL; end if;
-          when csr_mhpmcounter12_c  => if (HPM_NUM_CNTS > 09) then csr.rdata <= csr.mhpmcounter_rd(09); else NULL; end if;
-          when csr_mhpmcounter13_c  => if (HPM_NUM_CNTS > 10) then csr.rdata <= csr.mhpmcounter_rd(10); else NULL; end if;
-          when csr_mhpmcounter14_c  => if (HPM_NUM_CNTS > 11) then csr.rdata <= csr.mhpmcounter_rd(11); else NULL; end if;
-          when csr_mhpmcounter15_c  => if (HPM_NUM_CNTS > 12) then csr.rdata <= csr.mhpmcounter_rd(12); else NULL; end if;
-          when csr_mhpmcounter16_c  => if (HPM_NUM_CNTS > 13) then csr.rdata <= csr.mhpmcounter_rd(13); else NULL; end if;
-          when csr_mhpmcounter17_c  => if (HPM_NUM_CNTS > 14) then csr.rdata <= csr.mhpmcounter_rd(14); else NULL; end if;
-          when csr_mhpmcounter18_c  => if (HPM_NUM_CNTS > 15) then csr.rdata <= csr.mhpmcounter_rd(15); else NULL; end if;
-          when csr_mhpmcounter19_c  => if (HPM_NUM_CNTS > 16) then csr.rdata <= csr.mhpmcounter_rd(16); else NULL; end if;
-          when csr_mhpmcounter20_c  => if (HPM_NUM_CNTS > 17) then csr.rdata <= csr.mhpmcounter_rd(17); else NULL; end if;
-          when csr_mhpmcounter21_c  => if (HPM_NUM_CNTS > 18) then csr.rdata <= csr.mhpmcounter_rd(18); else NULL; end if;
-          when csr_mhpmcounter22_c  => if (HPM_NUM_CNTS > 19) then csr.rdata <= csr.mhpmcounter_rd(19); else NULL; end if;
-          when csr_mhpmcounter23_c  => if (HPM_NUM_CNTS > 20) then csr.rdata <= csr.mhpmcounter_rd(20); else NULL; end if;
-          when csr_mhpmcounter24_c  => if (HPM_NUM_CNTS > 21) then csr.rdata <= csr.mhpmcounter_rd(21); else NULL; end if;
-          when csr_mhpmcounter25_c  => if (HPM_NUM_CNTS > 22) then csr.rdata <= csr.mhpmcounter_rd(22); else NULL; end if;
-          when csr_mhpmcounter26_c  => if (HPM_NUM_CNTS > 23) then csr.rdata <= csr.mhpmcounter_rd(23); else NULL; end if;
-          when csr_mhpmcounter27_c  => if (HPM_NUM_CNTS > 24) then csr.rdata <= csr.mhpmcounter_rd(24); else NULL; end if;
-          when csr_mhpmcounter28_c  => if (HPM_NUM_CNTS > 25) then csr.rdata <= csr.mhpmcounter_rd(25); else NULL; end if;
-          when csr_mhpmcounter29_c  => if (HPM_NUM_CNTS > 26) then csr.rdata <= csr.mhpmcounter_rd(26); else NULL; end if;
-          when csr_mhpmcounter30_c  => if (HPM_NUM_CNTS > 27) then csr.rdata <= csr.mhpmcounter_rd(27); else NULL; end if;
-          when csr_mhpmcounter31_c  => if (HPM_NUM_CNTS > 28) then csr.rdata <= csr.mhpmcounter_rd(28); else NULL; end if;
+          when csr_mhpmcounter3_c   => if (HPM_NUM_CNTS > 00) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(00); else NULL; end if;
+          when csr_mhpmcounter4_c   => if (HPM_NUM_CNTS > 01) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(01); else NULL; end if;
+          when csr_mhpmcounter5_c   => if (HPM_NUM_CNTS > 02) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(02); else NULL; end if;
+          when csr_mhpmcounter6_c   => if (HPM_NUM_CNTS > 03) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(03); else NULL; end if;
+          when csr_mhpmcounter7_c   => if (HPM_NUM_CNTS > 04) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(04); else NULL; end if;
+          when csr_mhpmcounter8_c   => if (HPM_NUM_CNTS > 05) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(05); else NULL; end if;
+          when csr_mhpmcounter9_c   => if (HPM_NUM_CNTS > 06) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(06); else NULL; end if;
+          when csr_mhpmcounter10_c  => if (HPM_NUM_CNTS > 07) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(07); else NULL; end if;
+          when csr_mhpmcounter11_c  => if (HPM_NUM_CNTS > 08) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(08); else NULL; end if;
+          when csr_mhpmcounter12_c  => if (HPM_NUM_CNTS > 09) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(09); else NULL; end if;
+          when csr_mhpmcounter13_c  => if (HPM_NUM_CNTS > 10) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(10); else NULL; end if;
+          when csr_mhpmcounter14_c  => if (HPM_NUM_CNTS > 11) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(11); else NULL; end if;
+          when csr_mhpmcounter15_c  => if (HPM_NUM_CNTS > 12) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(12); else NULL; end if;
+          when csr_mhpmcounter16_c  => if (HPM_NUM_CNTS > 13) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(13); else NULL; end if;
+          when csr_mhpmcounter17_c  => if (HPM_NUM_CNTS > 14) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(14); else NULL; end if;
+          when csr_mhpmcounter18_c  => if (HPM_NUM_CNTS > 15) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(15); else NULL; end if;
+          when csr_mhpmcounter19_c  => if (HPM_NUM_CNTS > 16) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(16); else NULL; end if;
+          when csr_mhpmcounter20_c  => if (HPM_NUM_CNTS > 17) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(17); else NULL; end if;
+          when csr_mhpmcounter21_c  => if (HPM_NUM_CNTS > 18) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(18); else NULL; end if;
+          when csr_mhpmcounter22_c  => if (HPM_NUM_CNTS > 19) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(19); else NULL; end if;
+          when csr_mhpmcounter23_c  => if (HPM_NUM_CNTS > 20) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(20); else NULL; end if;
+          when csr_mhpmcounter24_c  => if (HPM_NUM_CNTS > 21) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(21); else NULL; end if;
+          when csr_mhpmcounter25_c  => if (HPM_NUM_CNTS > 22) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(22); else NULL; end if;
+          when csr_mhpmcounter26_c  => if (HPM_NUM_CNTS > 23) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(23); else NULL; end if;
+          when csr_mhpmcounter27_c  => if (HPM_NUM_CNTS > 24) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(24); else NULL; end if;
+          when csr_mhpmcounter28_c  => if (HPM_NUM_CNTS > 25) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(25); else NULL; end if;
+          when csr_mhpmcounter29_c  => if (HPM_NUM_CNTS > 26) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(26); else NULL; end if;
+          when csr_mhpmcounter30_c  => if (HPM_NUM_CNTS > 27) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(27); else NULL; end if;
+          when csr_mhpmcounter31_c  => if (HPM_NUM_CNTS > 28) and (CPU_EXTENSION_RISCV_Zihpm = true) then csr.rdata <= csr.mhpmcounter_rd(28); else NULL; end if;
           -- high word (r/w) --
-          when csr_mhpmcounter3h_c  => if (HPM_NUM_CNTS > 00) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(00); else NULL; end if;
-          when csr_mhpmcounter4h_c  => if (HPM_NUM_CNTS > 01) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(01); else NULL; end if;
-          when csr_mhpmcounter5h_c  => if (HPM_NUM_CNTS > 02) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(02); else NULL; end if;
-          when csr_mhpmcounter6h_c  => if (HPM_NUM_CNTS > 03) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(03); else NULL; end if;
-          when csr_mhpmcounter7h_c  => if (HPM_NUM_CNTS > 04) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(04); else NULL; end if;
-          when csr_mhpmcounter8h_c  => if (HPM_NUM_CNTS > 05) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(05); else NULL; end if;
-          when csr_mhpmcounter9h_c  => if (HPM_NUM_CNTS > 06) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(06); else NULL; end if;
-          when csr_mhpmcounter10h_c => if (HPM_NUM_CNTS > 07) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(07); else NULL; end if;
-          when csr_mhpmcounter11h_c => if (HPM_NUM_CNTS > 08) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(08); else NULL; end if;
-          when csr_mhpmcounter12h_c => if (HPM_NUM_CNTS > 09) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(09); else NULL; end if;
-          when csr_mhpmcounter13h_c => if (HPM_NUM_CNTS > 10) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(10); else NULL; end if;
-          when csr_mhpmcounter14h_c => if (HPM_NUM_CNTS > 11) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(11); else NULL; end if;
-          when csr_mhpmcounter15h_c => if (HPM_NUM_CNTS > 12) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(12); else NULL; end if;
-          when csr_mhpmcounter16h_c => if (HPM_NUM_CNTS > 13) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(13); else NULL; end if;
-          when csr_mhpmcounter17h_c => if (HPM_NUM_CNTS > 14) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(14); else NULL; end if;
-          when csr_mhpmcounter18h_c => if (HPM_NUM_CNTS > 15) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(15); else NULL; end if;
-          when csr_mhpmcounter19h_c => if (HPM_NUM_CNTS > 16) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(16); else NULL; end if;
-          when csr_mhpmcounter20h_c => if (HPM_NUM_CNTS > 17) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(17); else NULL; end if;
-          when csr_mhpmcounter21h_c => if (HPM_NUM_CNTS > 18) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(18); else NULL; end if;
-          when csr_mhpmcounter22h_c => if (HPM_NUM_CNTS > 19) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(19); else NULL; end if;
-          when csr_mhpmcounter23h_c => if (HPM_NUM_CNTS > 20) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(20); else NULL; end if;
-          when csr_mhpmcounter24h_c => if (HPM_NUM_CNTS > 21) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(21); else NULL; end if;
-          when csr_mhpmcounter25h_c => if (HPM_NUM_CNTS > 22) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(22); else NULL; end if;
-          when csr_mhpmcounter26h_c => if (HPM_NUM_CNTS > 23) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(23); else NULL; end if;
-          when csr_mhpmcounter27h_c => if (HPM_NUM_CNTS > 24) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(24); else NULL; end if;
-          when csr_mhpmcounter28h_c => if (HPM_NUM_CNTS > 25) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(25); else NULL; end if;
-          when csr_mhpmcounter29h_c => if (HPM_NUM_CNTS > 26) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(26); else NULL; end if;
-          when csr_mhpmcounter30h_c => if (HPM_NUM_CNTS > 27) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(27); else NULL; end if;
-          when csr_mhpmcounter31h_c => if (HPM_NUM_CNTS > 28) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(28); else NULL; end if;
+          when csr_mhpmcounter3h_c  => if (HPM_NUM_CNTS > 00) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(00); else NULL; end if;
+          when csr_mhpmcounter4h_c  => if (HPM_NUM_CNTS > 01) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(01); else NULL; end if;
+          when csr_mhpmcounter5h_c  => if (HPM_NUM_CNTS > 02) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(02); else NULL; end if;
+          when csr_mhpmcounter6h_c  => if (HPM_NUM_CNTS > 03) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(03); else NULL; end if;
+          when csr_mhpmcounter7h_c  => if (HPM_NUM_CNTS > 04) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(04); else NULL; end if;
+          when csr_mhpmcounter8h_c  => if (HPM_NUM_CNTS > 05) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(05); else NULL; end if;
+          when csr_mhpmcounter9h_c  => if (HPM_NUM_CNTS > 06) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(06); else NULL; end if;
+          when csr_mhpmcounter10h_c => if (HPM_NUM_CNTS > 07) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(07); else NULL; end if;
+          when csr_mhpmcounter11h_c => if (HPM_NUM_CNTS > 08) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(08); else NULL; end if;
+          when csr_mhpmcounter12h_c => if (HPM_NUM_CNTS > 09) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(09); else NULL; end if;
+          when csr_mhpmcounter13h_c => if (HPM_NUM_CNTS > 10) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(10); else NULL; end if;
+          when csr_mhpmcounter14h_c => if (HPM_NUM_CNTS > 11) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(11); else NULL; end if;
+          when csr_mhpmcounter15h_c => if (HPM_NUM_CNTS > 12) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(12); else NULL; end if;
+          when csr_mhpmcounter16h_c => if (HPM_NUM_CNTS > 13) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(13); else NULL; end if;
+          when csr_mhpmcounter17h_c => if (HPM_NUM_CNTS > 14) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(14); else NULL; end if;
+          when csr_mhpmcounter18h_c => if (HPM_NUM_CNTS > 15) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(15); else NULL; end if;
+          when csr_mhpmcounter19h_c => if (HPM_NUM_CNTS > 16) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(16); else NULL; end if;
+          when csr_mhpmcounter20h_c => if (HPM_NUM_CNTS > 17) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(17); else NULL; end if;
+          when csr_mhpmcounter21h_c => if (HPM_NUM_CNTS > 18) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(18); else NULL; end if;
+          when csr_mhpmcounter22h_c => if (HPM_NUM_CNTS > 19) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(19); else NULL; end if;
+          when csr_mhpmcounter23h_c => if (HPM_NUM_CNTS > 20) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(20); else NULL; end if;
+          when csr_mhpmcounter24h_c => if (HPM_NUM_CNTS > 21) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(21); else NULL; end if;
+          when csr_mhpmcounter25h_c => if (HPM_NUM_CNTS > 22) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(22); else NULL; end if;
+          when csr_mhpmcounter26h_c => if (HPM_NUM_CNTS > 23) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(23); else NULL; end if;
+          when csr_mhpmcounter27h_c => if (HPM_NUM_CNTS > 24) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(24); else NULL; end if;
+          when csr_mhpmcounter28h_c => if (HPM_NUM_CNTS > 25) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(25); else NULL; end if;
+          when csr_mhpmcounter29h_c => if (HPM_NUM_CNTS > 26) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(26); else NULL; end if;
+          when csr_mhpmcounter30h_c => if (HPM_NUM_CNTS > 27) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(27); else NULL; end if;
+          when csr_mhpmcounter31h_c => if (HPM_NUM_CNTS > 28) and (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_cnt_hi_width_c > 0) then csr.rdata <= csr.mhpmcounterh_rd(28); else NULL; end if;
 
           -- machine information registers --
           -- --------------------------------------------------------------------

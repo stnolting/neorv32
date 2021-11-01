@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060210"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060213"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -217,7 +217,11 @@ package neorv32_package is
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff78"; -- base address
---constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
+--constant reserved_size_c      : natural := 1*4; -- module's address space size in bytes
+
+  -- Bus Access Keeper (BUSKEEPER) --
+  constant buskeeper_base_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff7c"; -- base address
+  constant buskeeper_size_c     : natural := 1*4; -- module's address space size in bytes
 
   -- External Interrupt Controller (XIRQ) --
   constant xirq_base_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff80"; -- base address
@@ -899,13 +903,15 @@ package neorv32_package is
       ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
+      CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit-manipulation extension?
       CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
-      CPU_EXTENSION_RISCV_Zbb      : boolean := false;  -- implement basic bit-manipulation sub-extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
+      CPU_EXTENSION_RISCV_Zicntr   : boolean := true;   -- implement base counters?
+      CPU_EXTENSION_RISCV_Zihpm    : boolean := false;  -- implement hardware performance monitors?
       CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean := false;  -- implement multiply-only M sub-extension?
       -- Extension Options --
@@ -1049,13 +1055,15 @@ package neorv32_package is
       CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean; -- implement atomic extension?
+      CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
       CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
-      CPU_EXTENSION_RISCV_Zbb      : boolean; -- implement basic bit-manipulation sub-extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
+      CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
+      CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
       CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
       CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
@@ -1123,13 +1131,15 @@ package neorv32_package is
       CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_A        : boolean; -- implement atomic extension?
+      CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
       CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
       CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
-      CPU_EXTENSION_RISCV_Zbb      : boolean; -- implement basic bit-manipulation sub-extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
+      CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
+      CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
       CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
       CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
@@ -1213,8 +1223,8 @@ package neorv32_package is
   component neorv32_cpu_alu
     generic (
       -- RISC-V CPU Extensions --
+      CPU_EXTENSION_RISCV_B     : boolean; -- implement bit-manipulation extension?
       CPU_EXTENSION_RISCV_M     : boolean; -- implement mul/div extension?
-      CPU_EXTENSION_RISCV_Zbb   : boolean; -- implement basic bit-manipulation sub-extension?
       CPU_EXTENSION_RISCV_Zmmul : boolean; -- implement multiply-only M sub-extension?
       CPU_EXTENSION_RISCV_Zfinx : boolean; -- implement 32-bit floating-point extension (using INT reg!)
       -- Extension Options --
@@ -1289,7 +1299,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_bitmanip is
     generic (
-      FAST_SHIFT_EN : boolean -- use barrel shifter for shift operations
+      FAST_SHIFT_EN : boolean  -- use barrel shifter for shift operations
     );
     port (
       -- global control --
@@ -1301,6 +1311,7 @@ package neorv32_package is
       cmp_i   : in  std_ulogic_vector(1 downto 0); -- comparator status
       rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
       rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
+      shamt_i : in  std_ulogic_vector(index_size_f(data_width_c)-1 downto 0); -- shift amount
       -- result and status --
       res_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
       valid_o : out std_ulogic -- data output valid
@@ -1404,14 +1415,20 @@ package neorv32_package is
     );
     port (
       -- host access --
-      clk_i  : in  std_ulogic; -- global clock line
-      rstn_i : in  std_ulogic; -- global reset line, low-active
-      addr_i : in  std_ulogic_vector(31 downto 0); -- address
-      rden_i : in  std_ulogic; -- read enable
-      wren_i : in  std_ulogic; -- write enable
-      ack_i  : in  std_ulogic; -- transfer acknowledge from bus system
-      err_i  : in  std_ulogic; -- transfer error from bus system
-      err_o  : out std_ulogic  -- bus error
+      clk_i      : in  std_ulogic; -- global clock line
+      rstn_i     : in  std_ulogic; -- global reset, low-active, async
+      addr_i     : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i     : in  std_ulogic; -- read enable
+      wren_i     : in  std_ulogic; -- write enable
+      data_o     : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o      : out std_ulogic; -- transfer acknowledge
+      err_o      : out std_ulogic; -- transfer error
+      -- bus monitoring --
+      bus_addr_i : in  std_ulogic_vector(31 downto 0); -- address
+      bus_rden_i : in  std_ulogic; -- read enable
+      bus_wren_i : in  std_ulogic; -- write enable
+      bus_ack_i  : in  std_ulogic; -- transfer acknowledge from bus system
+      bus_err_i  : in  std_ulogic  -- transfer error from bus system
     );
   end component;
 
@@ -1902,9 +1919,10 @@ package neorv32_package is
       CLOCK_FREQUENCY              : natural; -- clock frequency of clk_i in Hz
       INT_BOOTLOADER_EN            : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
       -- RISC-V CPU Extensions --
-      CPU_EXTENSION_RISCV_Zbb      : boolean; -- implement basic bit-manipulation sub-extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
+      CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
+      CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
       CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
       CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
@@ -1914,8 +1932,6 @@ package neorv32_package is
       CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
       -- Physical memory protection (PMP) --
       PMP_NUM_REGIONS              : natural; -- number of regions (0..64)
-      -- Hardware Performance Monitors (HPM) --
-      HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..29)
       -- Internal Instruction memory --
       MEM_INT_IMEM_EN              : boolean; -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE            : natural; -- size of processor-internal instruction memory in bytes

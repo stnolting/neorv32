@@ -41,6 +41,10 @@ The NEORV32 Processor is a customizable microcontroller-like system on chip (SoC
 The project is intended as auxiliary processor in larger SoC designs or as *ready-to-go* stand-alone
 custom / customizable microcontroller.
 
+Special focus is paid on **execution safety** to provide defined and predictable behavior at any time.
+Therefore, the CPU ensures that all memory access are acknowledged and no invalid/malformed instructions
+are executed. Whenever an unexpected situation occurs, the application code is informed via hardware exceptions.
+
 :information_source: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
 
 :books: For detailed information take a look at the [NEORV32 documentation (online at GitHub-pages)](https://stnolting.github.io/neorv32/).
@@ -134,6 +138,7 @@ for tightly-coupled custom co-processor extensions
 * on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) via JTGA - implementing
 the [*Minimal RISC-V Debug Specification Version 0.13.2*](https://github.com/riscv/riscv-debug-spec)
 and compatible with *OpenOCD* and *gdb*
+* bus keeper to monitor processor-internal bus transactions ([BUSKEEPER](https://stnolting.github.io/neorv32/#_internal_bus_monitor_buskeeper))
 
 :information_source: It is recommended to use the processor setup even if you want to **use the CPU in stand-alone mode**.
 Just disable all optional processor-internal modules via the according generics and you will get a "CPU wrapper" that
@@ -176,8 +181,7 @@ However, the CPU's _front end_ (instruction fetch) and _back end_ (instruction e
 Currently, three privilege levels (`machine` and optional `user` and `debug_mode`) are supported. The CPU implements all three standard RISC-V machine
 interrupts (`MTI`, `MEI`, `MSI`) plus 16 _fast interrupt requests_ as custom extensions.
 It also supports **all** standard RISC-V exceptions (instruction/load/store misaligned address & bus access fault, illegal
-instruction, breakpoint, environment calls). See :books: [_"Full Virtualization"_](https://stnolting.github.io/neorv32/#_full_virtualization)
-for more information.
+instruction, breakpoint, environment calls).
 
 
 ### Available ISA Extensions
@@ -189,20 +193,21 @@ documentation section). Note that the `X` extension is always enabled.
 [[`I`](https://stnolting.github.io/neorv32/#_i_base_integer_isa)/
 [`E`](https://stnolting.github.io/neorv32/#_e_embedded_cpu)]
 [[`A`](https://stnolting.github.io/neorv32/#_a_atomic_memory_access)]
+[[`B`](https://stnolting.github.io/neorv32/#_b_bit_manipulation_operations)]
 [[`C`](https://stnolting.github.io/neorv32/#_c_compressed_instructions)]
 [[`M`](https://stnolting.github.io/neorv32/#_m_integer_multiplication_and_division)]
 [[`U`](https://stnolting.github.io/neorv32/#_u_less_privileged_user_mode)]
 [[`X`](https://stnolting.github.io/neorv32/#_x_neorv32_specific_custom_extensions)]
-[[`Zbb`](https://stnolting.github.io/neorv32/#_zbb_basic_bit_manipulation_operations)]
 [[`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_single_precision_floating_point_operations)]
 [[`Zicsr`](https://stnolting.github.io/neorv32/#_zicsr_control_and_status_register_access_privileged_architecture)]
+[[`Zicntr`](https://stnolting.github.io/neorv32/#_zicntr_cpu_base_counters)]
+[[`Zihpm`](https://stnolting.github.io/neorv32/#_zihpm_hardware_performance_monitors)]
 [[`Zifencei`](https://stnolting.github.io/neorv32/#_zifencei_instruction_stream_synchronization)]
 [[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_integer_multiplication)]
 [[`PMP`](https://stnolting.github.io/neorv32/#_pmp_physical_memory_protection)]
-[[`HPM`](https://stnolting.github.io/neorv32/#_hpm_hardware_performance_monitors)]
 [[`DEBUG`](https://stnolting.github.io/neorv32/#_cpu_debug_mode)]**
 
-:warning: The `Zbb`, `Zfinx` and `Zmmul` RISC-V extensions are frozen but not officially ratified yet. Hence, there is no
+:warning: The `B`, `Zfinx` and `Zmmul` RISC-V extensions are frozen but not officially ratified yet. Hence, there is no
 upstream gcc support. To circumvent this, the NEORV32 software framework provides _intrinsic_ libraries for these extensions.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
@@ -219,8 +224,8 @@ Results generated for hardware version [`1.5.7.10`](https://github.com/stnolting
 | CPU Configuration                                 | LEs  | FFs  | Memory bits | DSPs (9-bit) | f_max   |
 |:--------------------------------------------------|:----:|:----:|:-----------:|:------------:|:-------:|
 | `rv32i`                                           |  806 |  359 |        1024 |            0 | 125 MHz |
-| `rv32i_Zicsr`                                     | 1729 |  813 |        1024 |            0 | 124 MHz |
-| `rv32imac_Zicsr`                                  | 2511 | 1074 |        1024 |            0 | 124 MHz |
+| `rv32i_Zicsr_Zicntr`                              | 1729 |  813 |        1024 |            0 | 124 MHz |
+| `rv32imac_Zicsr_Zicntr`                           | 2511 | 1074 |        1024 |            0 | 124 MHz |
 
 :information_source: An incremental list of CPU extension's hardware utilization can found in
 [online documentation - _"FPGA Implementation Results - CPU"_](https://stnolting.github.io/neorv32/#_cpu).
@@ -314,6 +319,7 @@ This overview provides some *quick links* to the most important sections of the
 
 * [NEORV32 CPU](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu) - the CPU
   * [RISC-V compatibility](https://stnolting.github.io/neorv32/#_risc_v_compatibility) - what is compatible to the specs. and what is not
+  * [Full Virtualization](https://stnolting.github.io/neorv32/#_full_virtualization) - hardware execution safety
   * [ISA and Extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions) - available RISC-V ISA extensions
   * [CSRs](https://stnolting.github.io/neorv32/#_control_and_status_registers_csrs) - control and status registers
   * [Traps](https://stnolting.github.io/neorv32/#_traps_exceptions_and_interrupts) - interrupts and exceptions

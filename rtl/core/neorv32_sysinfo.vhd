@@ -48,9 +48,10 @@ entity neorv32_sysinfo is
     CLOCK_FREQUENCY              : natural; -- clock frequency of clk_i in Hz
     INT_BOOTLOADER_EN            : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_Zbb      : boolean; -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
+    CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
@@ -60,8 +61,6 @@ entity neorv32_sysinfo is
     CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS              : natural; -- number of regions (0..64)
-    -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..29)
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              : boolean; -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural; -- size of processor-internal instruction memory in bytes
@@ -139,14 +138,14 @@ begin
   sysinfo_mem(1)(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr
   sysinfo_mem(1)(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei
   sysinfo_mem(1)(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul
-  sysinfo_mem(1)(03) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zbb);      -- Zbb
   --
-  sysinfo_mem(1)(04) <= '0'; -- reserved
+  sysinfo_mem(1)(04 downto 03) <= (others => '0'); -- reserved
   --
   sysinfo_mem(1)(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx ("F-alternative")
-  sysinfo_mem(1)(07 downto 06) <= "00" when (CPU_CNT_WIDTH = 64) else "10" when (CPU_CNT_WIDTH = 0) else "01"; -- CPU counter size: Zxscnt | Zxnocnt
+  sysinfo_mem(1)(06) <= bool_to_ulogic_f(boolean(CPU_CNT_WIDTH /= 64)); -- reduced-size CPU counters (Zxscnt)
+  sysinfo_mem(1)(07) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr);   -- base CPU counter
   sysinfo_mem(1)(08) <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- PMP (physical memory protection)
-  sysinfo_mem(1)(09) <= bool_to_ulogic_f(boolean(HPM_NUM_CNTS > 0));    -- HPM (hardware performance monitors)
+  sysinfo_mem(1)(09) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm);    -- HPM (hardware performance monitors)
   sysinfo_mem(1)(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG);    -- RISC-V debug mode
   --
   sysinfo_mem(1)(29 downto 11) <= (others => '0'); -- reserved

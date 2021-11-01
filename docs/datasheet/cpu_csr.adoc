@@ -68,26 +68,26 @@ CSRs with the following notes ...
 | 0x001   | <<_fflags>>     | _CSR_FFLAGS_     | r/w | Floating-point accrued exceptions | 
 | 0x002   | <<_frm>>        | _CSR_FRM_        | r/w | Floating-point dynamic rounding mode | 
 | 0x003   | <<_fcsr>>       | _CSR_FCSR_       | r/w | Floating-point control and status (`frm` + `fflags`) | 
-6+^| **<<_machine_configuration>>**
+6+^| **<<_machine_configuration_csrs>>**
 | 0x30a   | <<_menvcfg>>    | _CSR_MENVCFG_    | r/- | Machine environment configuration register - low word | `R`
 | 0x31a   | <<_menvcfgh>>   | _CSR_MENVCFGH_   | r/- | Machine environment configuration register - low word | `R`
-6+^| **<<_machine_trap_setup>>**
+6+^| **<<_machine_trap_setup_csrs>>**
 | 0x300   | <<_mstatus>>    | _CSR_MSTATUS_    | r/w | Machine status register - low word | `C`
 | 0x301   | <<_misa>>       | _CSR_MISA_       | r/- | Machine CPU ISA and extensions | `R`
 | 0x304   | <<_mie>>        | _CSR_MIE_        | r/w | Machine interrupt enable register | `X`
 | 0x305   | <<_mtvec>>      | _CSR_MTVEC_      | r/w | Machine trap-handler base address (for ALL traps) | 
 | 0x306   | <<_mcounteren>> | _CSR_MCOUNTEREN_ | r/w | Machine counter-enable register | `C`
 | 0x310   | <<_mstatush>>   | _CSR_MSTATUSH_   | r/- | Machine status register - high word | `C`
-6+^| **<<_machine_trap_handling>>**
+6+^| **<<_machine_trap_handling_csrs>>**
 | 0x340   | <<_mscratch>>   | _CSR_MSCRATCH_   | r/w | Machine scratch register | 
 | 0x341   | <<_mepc>>       | _CSR_MEPC_       | r/w | Machine exception program counter | 
 | 0x342   | <<_mcause>>     | _CSR_MCAUSE_     | r/w | Machine trap cause | `X`
 | 0x343   | <<_mtval>>      | _CSR_MTVAL_      | r/- | Machine bad address or instruction | `XR`
 | 0x344   | <<_mip>>        | _CSR_MIP_        | r/- | Machine interrupt pending register | `XR`
-6+^| **<<_machine_physical_memory_protection>>**
+6+^| **<<_machine_physical_memory_protection_csrs>>**
 | 0x3a0 .. 0x3af | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg15`>>     | _CSR_PMPCFG0_ .. _CSR_PMPCFG15_   | r/w | Physical memory protection config. for region 0..63 | `C`
 | 0x3b0 .. 0x3ef | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr63`>> | _CSR_PMPADDR0_ .. _CSR_PMPADDR63_ | r/w | Physical memory protection addr. register region 0..63 | 
-6+^| **<<_machine_counters_and_timers>>**
+6+^| **<<_machine_counter_and_timer_csrs>>**
 | 0xb00   | <<_mcycleh, `mcycle`>>      | _CSR_MCYCLE_     | r/w | Machine cycle counter low word | 
 | 0xb02   | <<_minstreth, `minstret`>> | _CSR_MINSTRET_    | r/w | Machine instruction-retired counter low word | 
 | 0xb80   | <<_mcycleh>>                | _CSR_MCYCLE_     | r/w | Machine cycle counter high word | 
@@ -98,13 +98,13 @@ CSRs with the following notes ...
 | 0xc80   | <<_cycleh>>                 | _CSR_CYCLEH_     | r/- | Cycle counter high word | 
 | 0xc81   | <<_timeh>>                  | _CSR_TIMEH_      | r/- | System time (from MTIME) high word | 
 | 0xc82   | <<_instreth>>               | _CSR_INSTRETH_   | r/- | Instruction-retired counter high word | 
-6+^| **<<_hardware_performance_monitors_hpm>>**
+6+^| **<<_hardware_performance_monitors_hpm_csrs>>**
 | 0x323 .. 0x33f | <<_mhpmevent, `mhpmevent3`>> .. <<_mhpmevent, `mhpmevent31`>>             | _CSR_MHPMEVENT3_ .. _CSR_MHPMEVENT31_       | r/w | Machine performance-monitoring event selector 3..31 | `X`
 | 0xb03 .. 0xb1f | <<_mhpmcounterh, `mhpmcounter3`>> .. <<_mhpmcounterh, `mhpmcounter31`>>   | _CSR_MHPMCOUNTER3_ .. _CSR_MHPMCOUNTER31_   | r/w | Machine performance-monitoring counter 3..31 low word | 
 | 0xb83 .. 0xb9f | <<_mhpmcounterh, `mhpmcounter3h`>> .. <<_mhpmcounterh, `mhpmcounter31h`>> | _CSR_MHPMCOUNTER3H_ .. _CSR_MHPMCOUNTER31H_ | r/w | Machine performance-monitoring counter 3..31 high word | 
-6+^| **<<_machine_counter_setup>>**
+6+^| **<<_machine_counter_setup_csrs>>**
 | 0x320   | <<_mcountinhibit>> | _CSR_MCOUNTINHIBIT_ | r/w | Machine counter-enable register |
-6+^| **<<_machine_information_registers>>**
+6+^| **<<_machine_information_csrs>>**
 | 0xf11   | <<_mvendorid>>  | _CSR_MVENDORID_  | r/- | Vendor ID |
 | 0xf12   | <<_marchid>>    | _CSR_MARCHID_    | r/- | Architecture ID |
 | 0xf13   | <<_mimpid>>     | _CSR_MIMPID_     | r/- | Machine implementation ID / version |
@@ -168,7 +168,7 @@ RISC-V ISA spec for more information.
 <<<
 // ####################################################################################################################
 :sectnums:
-==== Machine Configuration
+==== Machine Configuration CSRs
 
 :sectnums!:
 ===== **`menvcfg`**
@@ -199,7 +199,7 @@ only exists if the `U` ISA extensions is enabled.
 <<<
 // ####################################################################################################################
 :sectnums:
-==== Machine Trap Setup
+==== Machine Trap Setup CSRs
 
 :sectnums!:
 ===== **`mstatus`**
@@ -361,7 +361,7 @@ in order to comply with the RISC-V privilege architecture specs.
 <<<
 // ####################################################################################################################
 :sectnums:
-==== Machine Trap Handling
+==== Machine Trap Handling CSRs
 
 :sectnums!:
 ===== **`mscratch`**
@@ -469,7 +469,7 @@ The NEORV32 `mip` CSR is read-only. However, a write access will _NOT_ raise an 
 <<<
 // ####################################################################################################################
 :sectnums:
-==== Machine Physical Memory Protection
+==== Machine Physical Memory Protection CSRs
 
 The available physical memory protection logic is configured via the _PMP_NUM_REGIONS_ and
 _PMP_MIN_GRANULARITY_ top entity generics. _PMP_NUM_REGIONS_ defines the number of implemented
@@ -532,7 +532,10 @@ before modifying `pmpaddr*`.
 <<<
 // ####################################################################################################################
 :sectnums:
-==== (Machine) Counters and Timers
+==== (Machine) Counter and Timer CSRs
+
+The (machine) counters and timers are implemented when the `Zicntr` ISA extensions is enabled (default)
+via the <<_cpu_extension_riscv_zicntr>> generic.
 
 [NOTE]
 The <<_cpu_cnt_width>> generic defines the total size of the CPU's <<_cycleh>> and <<_instreth>>
@@ -553,8 +556,7 @@ and always read as zero. This configuration will also set the _SYSINFO_CPU_ZXSCN
 the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register. +
  +
 If _CPU_CNT_WIDTH_ is 0, the <<_cycleh>> and <<_instreth>> / <<_mcycleh>> and <<_minstreth>> CSRs are hardwired to zero
-and any write access to them is ignored. This configuration will also set the _SYSINFO_CPU_ZXNOCNT_ flag ("no counters") in the
-`CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
+and any write access to them is ignored.
 
 
 :sectnums!:
@@ -633,22 +635,26 @@ instructions counter. The `minstret[h]` CSR also be written when in machine mode
 <<<
 // ####################################################################################################################
 :sectnums:
-==== Hardware Performance Monitors (HPM)
+==== Hardware Performance Monitors (HPM) CSRs
 
-The available hardware performance logic is configured via the <<_hpm_num_cnts>> top entity generic,
-which defines the number of implemented performance monitors and thus, the availability of the
-according `mhpmcounter*[h]` and `mhpmevent*` CSRs.
+The hardware performance monitor CSRs are implemented when the `Zihpm` ISA extension is enabled via the
+<<_cpu_extension_riscv_zihpm>> generic.
 
-[IMPORTANT]
-The HPM system only implements machine-mode access. Hence, `hpmcounter*[h]` CSR are not implemented
-and any access (even) from machine mode will raise an exception. Furthermore, the according bits of <<_mcounteren>>
-used to configure user-mode access to `hpmcounter*[h]` are hard-wired to zero.
-
-The total counter size of the HPMs can be configured before synthesis via the <<_hpm_cnt_width>> generic (0..64-bit).
+The actually implemented hardware performance logic is configured via the <<_hpm_num_cnts>> top entity generic,
+which defines the number of implemented performance monitors. Note that always all 28 HPM counter and configuration registers
+(`mhpmcounter*[h]` and `mhpmevent*`) are implemented, but only the actually configured ones are real registers and
+not hardwired to zero.
 
 [TIP]
 If trying to access an HPM-related CSR beyond <<_hpm_num_cnts>> **no illegal instruction exception is
 triggered**. The according CSRs are read-only (writes are ignored) and always return zero.
+
+[IMPORTANT]
+The HPM system only allows machine-mode access. Hence, `hpmcounter*[h]` CSR are not implemented
+and any access (even) from machine mode will raise an exception. Furthermore, the according bits of <<_mcounteren>>
+used to configure user-mode access to `hpmcounter*[h]` are hard-wired to zero.
+
+The total counter width of the HPMs can be configured before synthesis via the <<_hpm_cnt_width>> generic (0..64-bit).
 
 [NOTE]
 The total LSB-aligned HPM counter size (low word CSR + high word CSR) is defined via the
@@ -717,7 +723,7 @@ bit of arbitrary event counters. The event(s) that trigger an increment of these
 <<<
 // ####################################################################################################################
 :sectnums:
-==== Machine Counter Setup
+==== Machine Counter Setup CSRs
 
 :sectnums!:
 ===== **`mcountinhibit`**
@@ -747,7 +753,7 @@ always zero and are read-only).
 <<<
 // ####################################################################################################################
 :sectnums:
-==== Machine Information Registers
+==== Machine Information CSRs
 
 [NOTE]
 All machine information registers can only be accessed in machine mode and are read-only.

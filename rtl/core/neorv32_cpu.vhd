@@ -65,13 +65,15 @@ entity neorv32_cpu is
     CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean; -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean; -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zbb      : boolean; -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
+    CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
@@ -170,9 +172,11 @@ begin
   cond_sel_string_f(CPU_EXTENSION_RISCV_M, "M", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_A, "A", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_C, "C", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_B, "B", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_U, "U", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_Zbb, "_Zbb", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zicsr, "_Zicsr", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr, "_Zicntr", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm, "_Zihpm", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zifencei, "_Zifencei", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx, "_Zfinx", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul, "_Zmmul", "") &
@@ -192,8 +196,8 @@ begin
   assert not (CPU_EXTENSION_RISCV_Zicsr = false) report "NEORV32 CPU CONFIG WARNING! No exception/interrupt/trap/privileged features available when <CPU_EXTENSION_RISCV_Zicsr> = false." severity warning;
 
   -- CPU counters (cycle and instret) --
-  assert not ((CPU_CNT_WIDTH < 0) or (CPU_CNT_WIDTH > 64)) report "NEORV32 CPU CONFIG ERROR! Invalid <CPU_CNT_WIDTH> configuration. Has to be 0..64." severity error;
-  assert not (CPU_CNT_WIDTH < 64) report "NEORV32 CPU CONFIG WARNING! Implementing CPU <cycle> and <instret> CSRs with reduced size (" & integer'image(CPU_CNT_WIDTH) & "-bit instead of 64-bit). This is not RISC-V compliant and might have unintended SW side effects." severity warning;
+  assert not ((CPU_EXTENSION_RISCV_Zicntr = true) and ((CPU_CNT_WIDTH < 0) or (CPU_CNT_WIDTH > 64))) report "NEORV32 CPU CONFIG ERROR! Invalid <CPU_CNT_WIDTH> configuration. Has to be 0..64." severity error;
+  assert not ((CPU_EXTENSION_RISCV_Zicntr = true) and (CPU_CNT_WIDTH < 64)) report "NEORV32 CPU CONFIG WARNING! Implementing CPU <cycle> and <instret> CSRs with reduced size (" & integer'image(CPU_CNT_WIDTH) & "-bit instead of 64-bit). This is not RISC-V compliant and might have unintended SW side effects." severity warning;
 
   -- U-extension requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report "NEORV32 CPU CONFIG ERROR! User mode requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
@@ -209,14 +213,12 @@ begin
   -- PMP granularity --
   assert not ((is_power_of_two_f(PMP_MIN_GRANULARITY) = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be a power of two." severity error;
   assert not ((PMP_MIN_GRANULARITY < 8) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be >= 8 bytes." severity error;
-  -- PMP requires Zicsr extension --
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
   -- HPM counters check --
-  assert not (HPM_NUM_CNTS > 29) report "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..29)." severity error;
-  assert not ((HPM_CNT_WIDTH < 0) or (HPM_CNT_WIDTH > 64)) report "NEORV32 CPU CONFIG ERROR! HPM counter width <HPM_CNT_WIDTH> has to be 0..64 bit." severity error; 
-  -- HPM CNT requires Zicsr extension --
-  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (HPM_NUM_CNTS > 0)) report "NEORV32 CPU CONFIG ERROR! Hardware performance monitors (HPM) require <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
+  assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and (HPM_NUM_CNTS > 29)) report "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..29)." severity error;
+  assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and ((HPM_CNT_WIDTH < 0) or (HPM_CNT_WIDTH > 64))) report "NEORV32 CPU CONFIG ERROR! HPM counter width <HPM_CNT_WIDTH> has to be 0..64 bit." severity error; 
+  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_Zihpm = true)) report "NEORV32 CPU CONFIG ERROR! Hardware performance monitors extension <CPU_EXTENSION_RISCV_Zihpm> requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
   -- Mul-extension --
   assert not ((CPU_EXTENSION_RISCV_Zmmul = true) and (CPU_EXTENSION_RISCV_M = true)) report "NEORV32 CPU CONFIG ERROR! <M> and <Zmmul> extensions cannot co-exist!" severity error;
@@ -242,13 +244,15 @@ begin
     CPU_DEBUG_ADDR               => CPU_DEBUG_ADDR,               -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zbb      => CPU_EXTENSION_RISCV_Zbb,      -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zicntr   => CPU_EXTENSION_RISCV_Zicntr,   -- implement base counters?
+    CPU_EXTENSION_RISCV_Zihpm    => CPU_EXTENSION_RISCV_Zihpm,    -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    => CPU_EXTENSION_RISCV_Zmmul,    -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_DEBUG    => CPU_EXTENSION_RISCV_DEBUG,    -- implement CPU debug mode?
@@ -335,8 +339,8 @@ begin
   neorv32_cpu_alu_inst: neorv32_cpu_alu
   generic map (
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_B     => CPU_EXTENSION_RISCV_B,     -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_M     => CPU_EXTENSION_RISCV_M,     -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zbb   => CPU_EXTENSION_RISCV_Zbb,   -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zmmul => CPU_EXTENSION_RISCV_Zmmul, -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zfinx => CPU_EXTENSION_RISCV_Zfinx, -- implement 32-bit floating-point extension (using INT reg!)
     -- Extension Options --

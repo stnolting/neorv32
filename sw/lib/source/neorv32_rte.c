@@ -202,14 +202,12 @@ static void __neorv32_rte_debug_exc_handler(void) {
     return; // handler cannot output anything if UART0 is not implemented
   }
 
-  char tmp;
-
   // intro
   neorv32_uart0_print("<RTE> ");
 
   // cause
   register uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
-  tmp = (char)(trap_cause & 0xf);
+  register char tmp = (char)(trap_cause & 0xf);
   if (tmp >= 10) {
     tmp = 'a' + (tmp - 10);
   }
@@ -249,9 +247,25 @@ static void __neorv32_rte_debug_exc_handler(void) {
     default:                     neorv32_uart0_print("Unknown trap cause: "); __neorv32_rte_print_hex_word(trap_cause); break;
   }
 
+  // check cause if bus access fault exception
+  if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_L_ACCESS) || (trap_cause == TRAP_CODE_S_ACCESS)) {
+    register uint32_t bus_err = NEORV32_BUSKEEPER.CTRL;
+    if (bus_err & (1<<BUSKEEPER_ERR_FLAG)) { // exception caused by bus system?
+      if (bus_err & (1<<BUSKEEPER_ERR_TYPE)) {
+        neorv32_uart0_print(" [TIMEOUT_ERR]");
+      }
+      else {
+        neorv32_uart0_print(" [DEVICE_ERR]");
+      }
+    }
+    else { // exception was not caused by bus system -> has to be caused by PMP rule violation
+      neorv32_uart0_print(" [PMP_ERR]");
+    }
+  }
+
   // instruction address
   neorv32_uart0_print(" @ PC=");
-  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MSCRATCH)); // rte core stores actual mepc to mscratch
+  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MSCRATCH)); // rte core stores original mepc to mscratch
 
   // additional info
   neorv32_uart0_print(", MTVAL=");
@@ -324,29 +338,28 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<SYSINFO_CPU_ZICSR)) {
     neorv32_uart0_printf("Zicsr ");
   }
+  if (tmp & (1<<SYSINFO_CPU_ZICNTR)) {
+    neorv32_uart0_printf("Zicntr ");
+  }
+  if (tmp & (1<<SYSINFO_CPU_ZIHPM)) {
+    neorv32_uart0_printf("Zihpm ");
+  }
   if (tmp & (1<<SYSINFO_CPU_ZIFENCEI)) {
     neorv32_uart0_printf("Zifencei ");
   }
   if (tmp & (1<<SYSINFO_CPU_ZMMUL)) {
     neorv32_uart0_printf("Zmmul ");
   }
-  if (tmp & (1<<SYSINFO_CPU_ZBB)) {
-    neorv32_uart0_printf("Zbb ");
-  }
-
   if (tmp & (1<<SYSINFO_CPU_ZFINX)) {
     neorv32_uart0_printf("Zfinx ");
-  }
-  if (tmp & (1<<SYSINFO_CPU_ZXNOCNT)) {
-    neorv32_uart0_printf("Zxnocnt(!) ");
   }
   if (tmp & (1<<SYSINFO_CPU_ZXSCNT)) {
     neorv32_uart0_printf("Zxscnt(!) ");
   }
-  if (tmp & (1<<SYSINFO_CPU_DEBUGMODE)) {
-    neorv32_uart0_printf("Debug-Mode ");
-  }
 
+  if (tmp & (1<<SYSINFO_CPU_DEBUGMODE)) {
+    neorv32_uart0_printf("Debug ");
+  }
   if (tmp & (1<<SYSINFO_CPU_FASTMUL)) {
     neorv32_uart0_printf("FAST_MUL ");
   }
@@ -363,9 +376,6 @@ void neorv32_rte_print_hw_config(void) {
   else {
     neorv32_uart0_printf("not implemented\n");
   }
-
-  // check hardware performance monitors
-  neorv32_uart0_printf("HPM Counters:      %u counters, %u-bit wide\n", neorv32_cpu_hpm_get_counters(), neorv32_cpu_hpm_get_size());
 
 
   // Memory configuration

@@ -284,13 +284,15 @@ begin
     ON_CHIP_DEBUGGER_EN          => true,          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => true,          -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        => true,          -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        => true,          -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => false,         -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => true,          -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        => true,          -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zbb      => true,          -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zfinx    => true,          -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => true,          -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zicntr   => true,          -- implement base counters?
+    CPU_EXTENSION_RISCV_Zihpm    => true,          -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei => true,          -- implement instruction stream sync.?
     -- Extension Options --
     FAST_MUL_EN                  => false,         -- use DSPs for M extension's multiplier

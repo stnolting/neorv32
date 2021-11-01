@@ -154,10 +154,10 @@ int main() {
 
 
   // reset performance counter
-  neorv32_cpu_csr_write(CSR_MCYCLEH, 0);
-  neorv32_cpu_csr_write(CSR_MCYCLE, 0);
-  neorv32_cpu_csr_write(CSR_MINSTRETH, 0);
-  neorv32_cpu_csr_write(CSR_MINSTRET, 0);
+  // neorv32_cpu_csr_write(CSR_MCYCLEH, 0);   -> done in crt0.S
+  // neorv32_cpu_csr_write(CSR_MCYCLE, 0);    -> done in crt0.S
+  // neorv32_cpu_csr_write(CSR_MINSTRETH, 0); -> done in crt0.S
+  // neorv32_cpu_csr_write(CSR_MINSTRET, 0);  -> done in crt0.S
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable performance counter auto increment (ALL counters)
   neorv32_cpu_csr_write(CSR_MCOUNTEREN, 7); // allow access from user-mode code to standard counters only
 
@@ -180,16 +180,15 @@ int main() {
 
   // configure RTE
   // -----------------------------------------------
-  PRINT_STANDARD("\n\nConfiguring NEORV32 RTE... ");
+  PRINT_STANDARD("\n\nRTE setup... ");
 
   int install_err = 0;
   // initialize ALL provided trap handler (overriding the default debug handlers)
   for (id=0; id<NEORV32_RTE_NUM_TRAPS; id++) {
     install_err += neorv32_rte_exception_install(id, global_trap_handler);
   }
-
   if (install_err) {
-    PRINT_CRITICAL("RTE install error (%i)!\n", install_err);
+    PRINT_CRITICAL("ERROR!\n");
     return 1;
   }
 
@@ -200,7 +199,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
   // test intro
-  PRINT_STANDARD("\nStarting tests...\n\n");
+  PRINT_STANDARD("\nStarting tests.\n\n");
 
   // enable global interrupts
   neorv32_cpu_eint();
@@ -215,7 +214,7 @@ int main() {
   // Test performance counter: setup as many events and counter as feasible
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] Configuring HPM events: ", cnt_test);
+  PRINT_STANDARD("[%i] Setup HPM events: ", cnt_test);
 
   num_hpm_cnts_global = neorv32_cpu_hpm_get_counters();
 
@@ -254,7 +253,7 @@ int main() {
   // Test standard RISC-V performance counter [m]cycle[h]
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] [m]cycle[h] counter: ", cnt_test);
+  PRINT_STANDARD("[%i] cycle counter: ", cnt_test);
 
   cnt_test++;
 
@@ -280,7 +279,7 @@ int main() {
   // Test standard RISC-V performance counter [m]instret[h]
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] [m]instret[h] counter: ", cnt_test);
+  PRINT_STANDARD("[%i] instret counter: ", cnt_test);
 
   cnt_test++;
 

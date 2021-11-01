@@ -10,6 +10,10 @@ timers, serial interfaces, general purpose IO ports and an external bus interfac
 memories, NoCs and other peripherals. On-line and in-system debugging is supported by an OpenOCD/gdb
 compatible on-chip debugger accessible via JTAG.
 
+Special focus is paid on **execution safety** to provide defined and predictable behavior at any time.
+Therefore, the CPU ensures that all memory access are acknowledged and no invalid/malformed instructions
+are executed. Whenever an unexpected situation occurs, the application code is informed via hardware exceptions.
+
 The software framework of the processor comes with application makefiles, software libraries for all CPU
 and processor features, a bootloader, a runtime environment and several example programs - including a port
 of the CoreMark MCU benchmark and the official RISC-V architecture test suite. RISC-V GCC is used as
@@ -269,16 +273,16 @@ This chapter shows _exemplary_ implementation results of the NEORV32 CPU and NEO
 [cols="<5,>1,>1,>1,>1,>1"]
 [options="header",grid="rows"]
 |=======================
-| CPU                                        | LEs  | FFs  | MEM bits | DSPs | _f~max~_
-| `rv32i`                                    |  806 |  359 |     1024 |    0 | 125 MHz
-| `rv32i_Zicsr`                              | 1729 |  813 |     1024 |    0 | 124 MHz
-| `rv32im_Zicsr`                             | 2269 | 1055 |     1024 |    0 | 124 MHz
-| `rv32imc_Zicsr`                            | 2501 | 1070 |     1024 |    0 | 124 MHz
-| `rv32imac_Zicsr`                           | 2511 | 1074 |     1024 |    0 | 124 MHz
-| `rv32imacu_Zicsr`                          | 2521 | 1079 |     1024 |    0 | 124 MHz
-| `rv32imacu_Zicsr_Zifencei`                 | 2522 | 1079 |     1024 |    0 | 122 MHz
-| `rv32imacu_Zicsr_Zifencei_Zfinx`           | 3807 | 1731 |     1024 |    7 | 116 MHz
-| `rv32imacu_Zicsr_Zifencei_Zfinx_DebugMode` | 3974 | 1815 |     1024 |    7 | 116 MHz
+| CPU                                               | LEs  | FFs  | MEM bits | DSPs | _f~max~_
+| `rv32i`                                           |  806 |  359 |     1024 |    0 | 125 MHz
+| `rv32i_Zicsr_Zicntr`                              | 1729 |  813 |     1024 |    0 | 124 MHz
+| `rv32im_Zicsr_Zicntr`                             | 2269 | 1055 |     1024 |    0 | 124 MHz
+| `rv32imc_Zicsr_Zicntr`                            | 2501 | 1070 |     1024 |    0 | 124 MHz
+| `rv32imac_Zicsr_Zicntr`                           | 2511 | 1074 |     1024 |    0 | 124 MHz
+| `rv32imacu_Zicsr_Zicntr`                          | 2521 | 1079 |     1024 |    0 | 124 MHz
+| `rv32imacu_Zicsr_Zicntr_Zifencei`                 | 2522 | 1079 |     1024 |    0 | 122 MHz
+| `rv32imacu_Zicsr_Zicntr_Zifencei_Zfinx`           | 3807 | 1731 |     1024 |    7 | 116 MHz
+| `rv32imacu_Zicsr_Zicntr_Zifencei_Zfinx_DebugMode` | 3974 | 1815 |     1024 |    7 | 116 MHz
 |=======================
 
 [NOTE]

@@ -56,13 +56,15 @@ entity neorv32_top is
 
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zbb      : boolean := false;  -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zicntr   : boolean := true;   -- implement base counters?
+    CPU_EXTENSION_RISCV_Zihpm    : boolean := false;  -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean := false;  -- implement multiply-only M sub-extension?
 
@@ -305,7 +307,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant resp_bus_entry_terminate_c : resp_bus_entry_t := (rdata => (others => '0'), ack => '0', err => '0');
 
   -- module response bus - device ID --
-  type resp_bus_id_t is (RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO, RESP_MTIME, RESP_UART0, RESP_UART1, RESP_SPI,
+  type resp_bus_id_t is (RESP_BUSKEEPER, RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO, RESP_MTIME, RESP_UART0, RESP_UART1, RESP_SPI,
                          RESP_TWI, RESP_PWM, RESP_WDT, RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_SLINK, RESP_XIRQ);
 
   -- module response bus --
@@ -329,8 +331,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal xirq_irq      : std_ulogic;
 
   -- misc --
-  signal mtime_time     : std_ulogic_vector(63 downto 0); -- current system time from MTIME
-  signal bus_keeper_err : std_ulogic; -- bus keeper: bus access timeout
+  signal mtime_time : std_ulogic_vector(63 downto 0); -- current system time from MTIME
 
 begin
 
@@ -452,13 +453,15 @@ begin
     CPU_DEBUG_ADDR               => dm_base_c,           -- cpu debug mode start address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
+    CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement muld/div extension?
     CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zbb      => CPU_EXTENSION_RISCV_Zbb,      -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zicntr   => CPU_EXTENSION_RISCV_Zicntr,   -- implement base counters?
+    CPU_EXTENSION_RISCV_Zihpm    => CPU_EXTENSION_RISCV_Zihpm,    -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    => CPU_EXTENSION_RISCV_Zmmul,    -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_DEBUG    => ON_CHIP_DEBUGGER_EN,          -- implement CPU debug mode?
@@ -646,7 +649,7 @@ begin
   p_bus.fence <= cpu_d.fence or cpu_i.fence;
 
   -- bus response --
-  bus_response: process(resp_bus, bus_keeper_err)
+  bus_response: process(resp_bus)
     variable rdata_v : std_ulogic_vector(data_width_c-1 downto 0);
     variable ack_v   : std_ulogic;
     variable err_v   : std_ulogic;
@@ -661,11 +664,11 @@ begin
     end loop; -- i
     p_bus.rdata <= rdata_v; -- processor bus: CPU transfer data input
     p_bus.ack   <= ack_v;   -- processor bus: CPU transfer ACK input
-    p_bus.err   <= err_v or bus_keeper_err; -- processor bus: CPU transfer data bus error input
+    p_bus.err   <= err_v;   -- processor bus: CPU transfer data bus error input
   end process;
 
 
-  -- Processor-Internal Bus Keeper (BUS_KEEPER) ---------------------------------------------
+  -- Bus Keeper (BUSKEEPER) -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_bus_keeper_inst: neorv32_bus_keeper
   generic map (
@@ -680,14 +683,20 @@ begin
   )
   port map (
     -- host access --
-    clk_i  => clk_i,         -- global clock line
-    rstn_i => sys_rstn,      -- global reset line, low-active
-    addr_i => p_bus.addr,    -- address
-    rden_i => p_bus.re,      -- read enable
-    wren_i => p_bus.we,      -- write enable
-    ack_i  => p_bus.ack,     -- transfer acknowledge from bus system
-    err_i  => p_bus.err,     -- transfer error from bus system
-    err_o  => bus_keeper_err -- bus error
+    clk_i      => clk_i,                          -- global clock line
+    rstn_i     => sys_rstn,                       -- global reset line, low-active, use as async
+    addr_i     => p_bus.addr,                     -- address
+    rden_i     => io_rden,                        -- read enable
+    wren_i     => io_wren,                        -- byte write enable
+    data_o     => resp_bus(RESP_BUSKEEPER).rdata, -- data out
+    ack_o      => resp_bus(RESP_BUSKEEPER).ack,   -- transfer acknowledge
+    err_o      => resp_bus(RESP_BUSKEEPER).err,   -- transfer error
+    -- bus monitoring --
+    bus_addr_i => p_bus.addr,                     -- address
+    bus_rden_i => p_bus.re,                       -- read enable
+    bus_wren_i => p_bus.we,                       -- write enable
+    bus_ack_i  => p_bus.ack,                      -- transfer acknowledge from bus system
+    bus_err_i  => p_bus.err                       -- transfer error from bus system
   );
 
 
@@ -1347,9 +1356,10 @@ begin
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,      -- clock frequency of clk_i in Hz
     INT_BOOTLOADER_EN            => INT_BOOTLOADER_EN,    -- implement processor-internal bootloader?
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_Zbb      => CPU_EXTENSION_RISCV_Zbb,      -- implement basic bit-manipulation sub-extension?
     CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zicntr   => CPU_EXTENSION_RISCV_Zicntr,   -- implement base counters?
+    CPU_EXTENSION_RISCV_Zihpm    => CPU_EXTENSION_RISCV_Zihpm,    -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    => CPU_EXTENSION_RISCV_Zmmul,    -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_DEBUG    => ON_CHIP_DEBUGGER_EN,          -- implement CPU debug mode?
@@ -1359,8 +1369,6 @@ begin
     CPU_CNT_WIDTH                => CPU_CNT_WIDTH,        -- total width of CPU cycle and instret counters (0..64)
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS              => PMP_NUM_REGIONS,      -- number of regions (0..64)
-    -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 => HPM_NUM_CNTS,         -- number of implemented HPM counters (0..29)
     -- internal Instruction memory --
     MEM_INT_IMEM_EN              => MEM_INT_IMEM_EN,      -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE,    -- size of processor-internal instruction memory in bytes
