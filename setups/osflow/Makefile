@@ -67,6 +67,7 @@ ULX3S:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
 	  NEORV32_MEM_SRC="../../rtl/core/mem/neorv32_imem.default.vhd ../../rtl/core/mem/neorv32_dmem.default.vhd" \
+	  NEORV32_VERILOG_SRC="devices/ecp5/ecp5pll.sv" \
 	  run
 
 # Designs
