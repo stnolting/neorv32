@@ -105,7 +105,8 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 
 **Timers**
 
-* machine system timer ([MTIME](https://stnolting.github.io/neorv32/#_machine_system_timer_mtime)), RISC-V spec. compatible
+* machine system timer, 64-bit ([MTIME](https://stnolting.github.io/neorv32/#_machine_system_timer_mtime)), RISC-V spec. compatible
+* general purpose 32-bit timer ([GPTMR](https://stnolting.github.io/neorv32/#_general_purpose_timer_gptmr))
 * watchdog timer ([WDT](https://stnolting.github.io/neorv32/#_watchdog_timer_wdt))
 
 **IO**
