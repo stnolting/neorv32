@@ -226,12 +226,14 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 ├neorv32_debug_dtm.vhd           - on-chip debugger: debug transfer module
 ├neorv32_dmem.entity.vhd         - Processor-internal data memory (entity-only!)
 ├neorv32_gpio.vhd                - General purpose input/output port unit
+├neorv32_gptmr.vhd               - General purpose 32-bit timer
 ├neorv32_icache.vhd              - Processor-internal instruction cache
 ├neorv32_imem.entity.vhd         - Processor-internal instruction memory (entity-only!)
 │└neor32_application_image.vhd   - IMEM application initialization image
 ├neorv32_mtime.vhd               - Machine system timer
 ├neorv32_neoled.vhd              - NeoPixel (TM) compatible smart LED interface
 ├neorv32_pwm.vhd                 - Pulse-width modulation controller
+├neorv32_slink.vhd               - Stream link controller
 ├neorv32_spi.vhd                 - Serial peripheral interface controller
 ├neorv32_sysinfo.vhd             - System configuration information memory
 ├neorv32_trng.vhd                - True random number generator
@@ -239,6 +241,7 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 ├neorv32_uart.vhd                - Universal async. receiver/transmitter
 ├neorv32_wdt.vhd                 - Watchdog timer
 ├neorv32_wishbone.vhd            - External (Wishbone) bus interface
+├neorv32_xirq.vhd                - External interrupt controller
 │
 ├mem/neorv32_dmem.default.vhd    - _Default_ data memory (architecture-only!)
 └mem/neorv32_imem.default.vhd    - _Default_ instruction memory (architecture-only!)
@@ -332,6 +335,7 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 | WDT           | Watchdog timer                                        |  53 |  43 |        0 |    0
 | WISHBONE      | External memory interface                             | 114 | 110 |        0 |    0
 | XIRQ          | External interrupt controller (32 channels)           | 241 | 201 |        0 |    0
+| GPTMR         | General Purpose Timer                                 | 153 | 107 |        0 |    0
 |=======================
 
 
