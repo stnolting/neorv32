@@ -53,8 +53,7 @@ ICE40_SRC := \
   devices/ice40/sb_ice40_components.vhd
 
 ECP5_SRC := \
-  devices/ecp5/ecp5_components.vhd \
-  ../../rtl/hardware_dependent/ulx3s/ulx3s_sdram.vhd
+  devices/ecp5/ecp5_components.vhd
 
 ifeq ($(DEVICE_SERIES),ecp5)
 DEVICE_SRC := ${ECP5_SRC}
