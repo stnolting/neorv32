@@ -201,6 +201,9 @@ int main() {
   // test intro
   PRINT_STANDARD("\nStarting tests.\n\n");
 
+  // sync (test)
+  asm volatile ("fence.i");
+
   // enable global interrupts
   neorv32_cpu_eint();
 
@@ -441,26 +444,6 @@ int main() {
   }
   else {
     PRINT_STANDARD("skipped (n.a.)\n");
-  }
-
-
-  // ----------------------------------------------------------
-  // Test FENCE.I instruction (instruction buffer / i-cache clear & reload)
-  // if Zifencei is not implemented FENCE.I should execute as NOP
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] FENCE.I: ", cnt_test);
-
-  cnt_test++;
-
-  asm volatile ("fence.i");
-
-  // make sure there was no exception (and that the cpu did not crash...)
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
-    test_ok();
-  }
-  else {
-    test_fail();
   }
 
 
@@ -1311,10 +1294,45 @@ int main() {
   }
 
 
+  // ----------------------------------------------------------
+  // Fast interrupt channel 12 (GPTMR)
+  // ----------------------------------------------------------
+  if (neorv32_slink_available()) {
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    PRINT_STANDARD("[%i] FIRQ12 (GPTMR): ", cnt_test);
+
+    cnt_test++;
+
+    // enable GPTMR FIRQ
+    neorv32_cpu_irq_enable(CSR_MIE_FIRQ12E);
+
+    // configure timer IRQ for one-shot mode after 2*4 clock cycles
+    neorv32_gptmr_setup(CLK_PRSC_2, 0, 4);
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    asm volatile("nop");
+
+    // disable GPTMR interrupt
+    neorv32_cpu_irq_disable(CSR_MIE_FIRQ12E);
+
+    // check if RX FIFO fires IRQ
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_12) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+    // disable GPTMR
+    neorv32_gptmr_disable();
+  }
+
+
 //// ----------------------------------------------------------
-//// Fast interrupt channel 12..15 (reserved)
+//// Fast interrupt channel 13..15 (reserved)
 //// ----------------------------------------------------------
-//PRINT_STANDARD("[%i] FIRQ12..15: ", cnt_test);
+//PRINT_STANDARD("[%i] FIRQ13..15: ", cnt_test);
 //PRINT_STANDARD("skipped (n.a.)\n");
 
 
