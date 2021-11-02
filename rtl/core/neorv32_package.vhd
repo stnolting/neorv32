@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060213"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060300"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -219,7 +219,7 @@ package neorv32_package is
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff78"; -- base address
 --constant reserved_size_c      : natural := 1*4; -- module's address space size in bytes
 
-  -- Bus Access Keeper (BUSKEEPER) --
+  -- Bus Access Monitor (BUSKEEPER) --
   constant buskeeper_base_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff7c"; -- base address
   constant buskeeper_size_c     : natural := 1*4; -- module's address space size in bytes
 

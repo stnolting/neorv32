@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 02.11.2021 |[**:rocket:1.6.3**](https://github.com/stnolting/neorv32/releases/tag/v1.6.3) | **New release** |
 | 01.11.2021 | 1.6.2.13 | added new top generics to explicitly control implementation of `Zicntr` (CPU base counters) and `Zihpm` (hardware performance monitors, see [PR #192](https://github.com/stnolting/neorv32/pull/192) |
 | 30.10.2021 | 1.6.2.12 | :sparkles: :lock: added memory-mapped register to BUSKEEPER module - software can now retrieve the actual cause of an instruction / data-load / data-store bus access fault exception (access timeout or device error); see [PR #191](https://github.com/stnolting/neorv32/pull/191) |
 | 28.10.2021 | 1.6.2.11 | :sparkles: added `Zba` bit-manipulation sub-extension; :warning: removed configuration option for `B` sub-extensions: removed `CPU_EXTENSION_RISCV_Zbb` generic and according SYSINFO flag, added new `CPU_EXTENSION_RISCV_B` generic (to implement bit-manipulation `B` ISA extension with _all_ currently supported subsets), see [PR #190](https://github.com/stnolting/neorv32/pull/190) |
