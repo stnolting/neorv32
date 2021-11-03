@@ -29,6 +29,7 @@ NEORV32_CORE_SRC := \
   $(RTL_CORE_SRC)/neorv32_debug_dtm.vhd \
   $(RTL_CORE_SRC)/neorv32_fifo.vhd \
   $(RTL_CORE_SRC)/neorv32_gpio.vhd \
+  $(RTL_CORE_SRC)/neorv32_gptmr.vhd \
   $(RTL_CORE_SRC)/neorv32_icache.vhd \
   $(RTL_CORE_SRC)/neorv32_mtime.vhd \
   $(RTL_CORE_SRC)/neorv32_neoled.vhd \

@@ -63,6 +63,9 @@
         <Source name="../../../rtl/core/neorv32_gpio.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>
+        <Source name="../../../rtl/core/neorv32_gptmr.vhd" type="VHDL" type_short="VHDL">
+            <Options lib="neorv32"/>
+        </Source>
         <Source name="../../../rtl/core/neorv32_icache.vhd" type="VHDL" type_short="VHDL">
             <Options lib="neorv32"/>
         </Source>

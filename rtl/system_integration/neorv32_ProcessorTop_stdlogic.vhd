@@ -113,7 +113,8 @@ entity neorv32_ProcessorTop_stdlogic is
     IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0); -- custom CFS configuration generic
     IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
-    IO_NEOLED_EN                 : boolean := true    -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_NEOLED_EN                 : boolean := true;   -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_GPTMR_EN                  : boolean := false   -- implement general purpose timer (GPTMR)?
   );
   port (
     -- Global control --
@@ -338,7 +339,8 @@ begin
     IO_CFS_CONFIG                => IO_CFS_CONFIG_INT,  -- custom CFS configuration generic
     IO_CFS_IN_SIZE               => IO_CFS_IN_SIZE,     -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              => IO_CFS_OUT_SIZE,    -- size of CFS output conduit in bits
-    IO_NEOLED_EN                 => IO_NEOLED_EN        -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_NEOLED_EN                 => IO_NEOLED_EN,       -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_GPTMR_EN                  => IO_GPTMR_EN         -- implement general purpose timer (GPTMR)?
   )
   port map (
     -- Global control --
