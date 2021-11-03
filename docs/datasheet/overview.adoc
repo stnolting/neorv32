@@ -193,7 +193,7 @@ neorv32                - Project home folder
 :sectnums:
 === VHDL File Hierarchy
 
-All necessary VHDL hardware description files are located in the project's `rtl/core folder`. The top entity
+All necessary VHDL hardware description files are located in the project's `rtl/core` folder. The top entity
 of the entire processor including all the required configuration generics is **`neorv32_top.vhd`**.
 
 [IMPORTANT]
@@ -243,14 +243,14 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 ├neorv32_wishbone.vhd            - External (Wishbone) bus interface
 ├neorv32_xirq.vhd                - External interrupt controller
 │
-├mem/neorv32_dmem.default.vhd    - _Default_ data memory (architecture-only!)
-└mem/neorv32_imem.default.vhd    - _Default_ instruction memory (architecture-only!)
+├mem/neorv32_dmem.default.vhd    - _Default_ data memory (architecture-only)
+└mem/neorv32_imem.default.vhd    - _Default_ instruction memory (architecture-only)
 ...................................
 
 [NOTE]
 The processor-internal instruction and data memories (IMEM and DMEM) are split into two design files each:
 a plain entity definition (`neorv32_*mem.entity.vhd`) and the actual architecture definition
-(`mem/neorv32_*mem.default.vhd`). The **default** architecture definitions from `rtl/core/mem` provide a _generic_ and
+(`mem/neorv32_*mem.default.vhd`). The `*.default.vhd` architecture definitions from `rtl/core/mem` provide a _generic_ and
 _platform independent_ memory design that (should) infers embedded memory blocks. You can replace/modify the architecture
 source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
 and/or timing.

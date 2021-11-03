@@ -147,8 +147,8 @@ if you instantiate one of the test setups.
 
 .Internal Memories
 [IMPORTANT]
-For a _general_ first setup (technology-independent) use the _default_ memory architectures for the internal memories
-(IMEM and DMEM). These are located in `rtl/core/mem`, so **make sure to add the files from `rtl/core/mem` to your project, too**. +
+For a _general_ first setup (technology-independent) use the `*.default.vhd` memory architectures for the internal memories
+(IMEM and DMEM). These are located in `rtl/core/mem` so make sure to add the files to your project, too. +
  +
 If synthesis cannot efficiently map those default memory descriptions to the available memory resources, you can later replace the
 default memory architectures by optimized platform-specific memory architectures. **Example:** The `setups/radiant/UPduino_v3`
