@@ -69,7 +69,7 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Using default platform-agnostic DMEM." severity note;
+  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Using DEFAULT platform-agnostic DMEM." severity note;
   assert false report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal DMEM (RAM, " & natural'image(DMEM_SIZE) & " bytes)." severity note;
 
 
