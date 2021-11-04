@@ -93,7 +93,7 @@ int main() {
 // use ASM version of LED blinking (file: blink_led_in_asm.S)
 #ifdef USE_ASM_VERSION
 
-  blink_led_asm((uint32_t)(&GPIO_OUTPUT));
+  blink_led_asm((uint32_t)(&NEORV32_GPIO.OUTPUT_LO));
 
 // use C version of LED blinking
 #else
