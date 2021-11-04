@@ -86,7 +86,7 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Using default platform-agnostic IMEM." severity note;
+  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Using DEFAULT platform-agnostic IMEM." severity note;
   assert not (IMEM_AS_IROM = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as ROM (" & natural'image(IMEM_SIZE) &
   " bytes), pre-initialized with application (" & natural'image(imem_app_size_c) & " bytes)." severity note;
   --
