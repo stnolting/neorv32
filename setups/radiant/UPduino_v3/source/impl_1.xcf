@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <!DOCTYPE		ispXCF	SYSTEM	"IspXCF.dtd" >
-<ispXCF version="R2.1">
+<ispXCF version="R3.0">
 	<Comment></Comment>
 	<Chain>
 		<Comm>SPI</Comm>
@@ -18,11 +18,12 @@
 				<BScanVal>0</BScanVal>
 			</Bypass>
 			<File>../../impl_1/neorv32_upduino_v3_impl_1.bin</File>
-			<FileTime>05/12/21 23:45:06</FileTime>
+			<FileTime>11/04/21 21:44:40</FileTime>
 			<MemoryType>External SPI Flash Memory (SPI FLASH)</MemoryType>
 			<Operation>Erase,Program,Verify</Operation>
 			<Option>
 				<SVFVendor>JTAG STANDARD</SVFVendor>
+				<SVFProcessor>SVF Processor</SVFProcessor>
 				<AccessMode>Direct Programming</AccessMode>
 			</Option>
 			<FPGALoader>
@@ -47,6 +48,7 @@
 						<SVFVendor>JTAG STANDARD</SVFVendor>
 						<IOState>HighZ</IOState>
 						<IOVectorData></IOVectorData>
+						<SVFProcessor>SVF Processor</SVFProcessor>
 						<AccessMode>Direct Programming</AccessMode>
 					</Option>
 				</Device>
@@ -81,6 +83,7 @@
 					</LocalChainList>
 					<Option>
 						<SVFVendor>JTAG STANDARD</SVFVendor>
+						<SVFProcessor>SVF Processor</SVFProcessor>
 					</Option>
 				</Device>
 			</FPGADevice>
@@ -99,7 +102,7 @@
 	</ProjectOptions>
 	<CableOptions>
 		<CableName>USB2</CableName>
-		<PortAdd>FTUSB-0</PortAdd>
-		<USBID>UPduino v3.0 Location 0001 Serial </USBID>
+		<PortAdd>FTUSB-1</PortAdd>
+		<USBID>UPduino v3.0 Location 0002 Serial </USBID>
 	</CableOptions>
 </ispXCF>
