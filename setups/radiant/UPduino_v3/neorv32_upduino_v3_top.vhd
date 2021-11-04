@@ -149,32 +149,17 @@ begin
     HW_THREAD_ID                 => 0,           -- hardware thread id (32-bit)
     INT_BOOTLOADER_EN            => true,        -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
-    -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN          => false,       -- implement on-chip debugger?
-
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => true,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        => true,        -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        => false,       -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => true,        -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U        => false,       -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zfinx    => false,       -- implement 32-bit floating-point extension (using INT regs!)
+    CPU_EXTENSION_RISCV_U        => true,        -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicsr    => true,        -- implement CSR system?
     CPU_EXTENSION_RISCV_Zicntr   => true,        -- implement base counters?
     CPU_EXTENSION_RISCV_Zifencei => true,        -- implement instruction stream sync.?
 
     -- Extension Options --
-    FAST_MUL_EN                  => false,       -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN                => false,       -- use barrel shifter for shift operations
     CPU_CNT_WIDTH                => 34,          -- total width of CPU cycle and instret counters (0..64)
-
-    -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS              => 0,           -- number of regions (0..64)
-    PMP_MIN_GRANULARITY          => 64*1024,     -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
-
-    -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 => 0,           -- number of implemented HPM counters (0..29)
-    HPM_CNT_WIDTH                => 40,          -- total size of HPM counters (1..64)
 
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              => true,        -- implement processor-internal instruction memory

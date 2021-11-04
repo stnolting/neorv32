@@ -571,6 +571,13 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define SLINK_TX_RTE_ID        RTE_TRAP_FIRQ_11  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
 #define SLINK_TX_TRAP_CODE     TRAP_CODE_FIRQ_11 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
+/** @name General Purpose Timer (GPTMR) */
+/**@{*/
+#define GPTMR_FIRQ_ENABLE      CSR_MIE_FIRQ12E   /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
+#define GPTMR_FIRQ_PENDING     CSR_MIP_FIRQ12P   /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
+#define GPTMR_RTE_ID           RTE_TRAP_FIRQ_12  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
+#define GPTMR_TRAP_CODE        TRAP_CODE_FIRQ_12 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
+/**@}*/
 /**@}*/
 
 
@@ -797,6 +804,33 @@ enum NEORV32_SLINK_STATUS_enum {
   SLINK_STATUS_TX5_HALF  = 29, /**< SLINK status register(29) (r/-): TX link 5 FIFO fill level is > half-full */
   SLINK_STATUS_TX6_HALF  = 30, /**< SLINK status register(30) (r/-): TX link 6 FIFO fill level is > half-full */
   SLINK_STATUS_TX7_HALF  = 31  /**< SLINK status register(31) (r/-): TX link 7 FIFO fill level is > half-full */
+};
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: General Purpose Timer (GPTMR)
+ **************************************************************************/
+/**@{*/
+/** GPTMR module prototype */
+typedef struct __attribute__((packed,aligned(4))) {
+	uint32_t CTRL;           /**< offset  0: control register (#NEORV32_GPTMR_CTRL_enum) */
+	uint32_t THRES;          /**< offset  4: threshold register */
+	uint32_t COUNT;          /**< offset  8: counter register */
+  const uint32_t reserved; /**< offset 12: reserved */
+} neorv32_gptmr_t;
+
+/** GPTMR module hardware access (#neorv32_gptmr_t) */
+#define NEORV32_GPTMR (*((volatile neorv32_gptmr_t*) (0xFFFFFF60UL)))
+
+/** GPTMR control/data register bits */
+enum NEORV32_GPTMR_CTRL_enum {
+  GPTMR_CTRL_EN     = 0, /**< GPTIMR control register(0) (r/w): Timer unit enable */
+  GPTMR_CTRL_PRSC0  = 1, /**< GPTIMR control register(1) (r/w): Clock prescaler select bit 0 */
+  GPTMR_CTRL_PRSC1  = 2, /**< GPTIMR control register(2) (r/w): Clock prescaler select bit 1 */
+  GPTMR_CTRL_PRSC2  = 3, /**< GPTIMR control register(3) (r/w): Clock prescaler select bit 2 */
+  GPTMR_CTRL_MODE   = 4, /**< GPTIMR control register(4) (r/w): Timer mode: 0=single-shot mode, 1=continuous mode */
+  GPTMR_CTRL_ALARM  = 5  /**< GPTIMR control register(5) (r/c): Interrupt/alarm pending, cleared by setting bit to zero */
 };
 /**@}*/
 
@@ -1196,7 +1230,8 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_IO_SLINK       = 25, /**< SYSINFO_FEATURES (25) (r/-): Stream link interface implemented when 1 (via SLINK_NUM_RX & SLINK_NUM_TX generics) */
   SYSINFO_SOC_IO_UART1       = 26, /**< SYSINFO_FEATURES (26) (r/-): Secondary universal asynchronous receiver/transmitter 1 implemented when 1 (via IO_UART1_EN generic) */
   SYSINFO_SOC_IO_NEOLED      = 27, /**< SYSINFO_FEATURES (27) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
-  SYSINFO_SOC_IO_XIRQ        = 28  /**< SYSINFO_FEATURES (28) (r/-): External interrupt controller implemented when 1 (via XIRQ_NUM_IO generic) */
+  SYSINFO_SOC_IO_XIRQ        = 28, /**< SYSINFO_FEATURES (28) (r/-): External interrupt controller implemented when 1 (via XIRQ_NUM_IO generic) */
+  SYSINFO_SOC_IO_GPTMR       = 29  /**< SYSINFO_FEATURES (29) (r/-): General purpose timer implemented when 1 (via IO_GPTMR_EN generic) */
 };
 
 /** NEORV32_SYSINFO.CACHE (r/-): Cache configuration */
@@ -1242,6 +1277,7 @@ enum NEORV32_SYSINFO_SOC_enum {
 // io/peripheral devices
 #include "neorv32_cfs.h"
 #include "neorv32_gpio.h"
+#include "neorv32_gptmr.h"
 #include "neorv32_mtime.h"
 #include "neorv32_neoled.h"
 #include "neorv32_pwm.h"

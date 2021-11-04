@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060213"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060302"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -207,9 +207,13 @@ package neorv32_package is
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff40"; -- base address
 --constant reserved_size_c      : natural := 8*4; -- module's address space size in bytes
 
-  -- reserved --
---constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff60"; -- base address
---constant reserved_size_c      : natural := 4*4; -- module's address space size in bytes
+  -- General Purpose Timer (GPTMR) --
+  constant gptmr_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff60"; -- base address
+  constant gptmr_size_c         : natural := 4*4; -- module's address space size in bytes
+  constant gptmr_ctrl_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff60";
+  constant gptmr_thres_addr_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff64";
+  constant gptmr_count_addr_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff68";
+--constant gptmr_reserve_addr_c : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff6c";
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff70"; -- base address
@@ -219,7 +223,7 @@ package neorv32_package is
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff78"; -- base address
 --constant reserved_size_c      : natural := 1*4; -- module's address space size in bytes
 
-  -- Bus Access Keeper (BUSKEEPER) --
+  -- Bus Access Monitor (BUSKEEPER) --
   constant buskeeper_base_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff7c"; -- base address
   constant buskeeper_size_c     : natural := 1*4; -- module's address space size in bytes
 
@@ -970,7 +974,8 @@ package neorv32_package is
       IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
       IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
       IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-      IO_NEOLED_TX_FIFO            : natural := 1       -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
+      IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
+      IO_GPTMR_EN                  : boolean := false   -- implement general purpose timer (GPTMR)?
     );
     port (
       -- Global control --
@@ -1911,6 +1916,26 @@ package neorv32_package is
     );
   end component;
 
+  -- Component: General Purpose Timer (GPTMR) -----------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_gptmr
+    port (
+      -- host access --
+      clk_i       : in  std_ulogic; -- global clock line
+      addr_i      : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i      : in  std_ulogic; -- read enable
+      wren_i      : in  std_ulogic; -- write enable
+      data_i      : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o      : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o       : out std_ulogic; -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o : out std_ulogic; -- enable clock generator
+      clkgen_i    : in  std_ulogic_vector(07 downto 0);
+      -- interrupt --
+      irq_o       : out std_ulogic -- transmission done interrupt
+    );
+  end component;
+
   -- Component: System Configuration Information Memory (SYSINFO) ---------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_sysinfo
@@ -1961,7 +1986,8 @@ package neorv32_package is
       IO_CFS_EN                    : boolean; -- implement custom functions subsystem (CFS)?
       IO_SLINK_EN                  : boolean; -- implement stream link interface?
       IO_NEOLED_EN                 : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-      IO_XIRQ_NUM_CH               : natural  -- number of external interrupt (XIRQ) channels to implement
+      IO_XIRQ_NUM_CH               : natural; -- number of external interrupt (XIRQ) channels to implement
+      IO_GPTMR_EN                  : boolean  -- implement general purpose timer (GPTMR)?
     );
     port (
       -- host access --

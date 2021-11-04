@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32 - Blinking LED Demo Program >>                                                     #
+// # << NEORV32 - General Purpose Timer (GPTMR) Demo Program >>                                    #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -34,9 +34,9 @@
 
 
 /**********************************************************************//**
- * @file blink_led/main.c
+ * @file demo_gptmr/main.c
  * @author Stephan Nolting
- * @brief Simple blinking LED demo program using the lowest 8 bits of the GPIO.output port.
+ * @brief Simple GPTMR usage example.
  **************************************************************************/
 
 #include <neorv32.h>
@@ -48,74 +48,73 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE 19200
-/** Use the custom ASM version for blinking the LEDs defined (= uncommented) */
-//#define USE_ASM_VERSION
 /**@}*/
 
 
-/**********************************************************************//**
- * ASM function to blink LEDs
- **************************************************************************/
-extern void blink_led_asm(uint32_t gpio_out_addr);
-
-/**********************************************************************//**
- * C function to blink LEDs
- **************************************************************************/
-void blink_led_c(void);
+// Prototypes
+void gptmr_firq_handler(void);
 
 
 /**********************************************************************//**
- * Main function; shows an incrementing 8-bit counter on GPIO.output(7:0).
+ * This program blinks an LED at GPIO.output(0) at 1Hz using the general purpose timer interrupt.
  *
- * @note This program requires the GPIO controller to be synthesized (the UART is optional).
+ * @note This program requires the GPTMR unit to be synthesized.
  *
- * @return 0 if execution was successful
+ * @return Should not return;
  **************************************************************************/
 int main() {
-
-  // init UART (primary UART = UART0; if no id number is specified the primary UART is used) at default baud rate, no parity bits, ho hw flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
-
-  // check if GPIO unit is implemented at all
-  if (neorv32_gpio_available() == 0) {
-    neorv32_uart0_print("Error! No GPIO unit synthesized!\n");
-    return 1; // nope, no GPIO unit synthesized
-  }
-
+  
   // capture all exceptions and give debug info via UART
-  // this is not required, but keeps us safe
   neorv32_rte_setup();
 
-  // say hello
-  neorv32_uart0_print("Blinking LED demo program\n");
+  // init UART at default baud rate, no parity bits, ho hw flow control
+  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
 
-// use ASM version of LED blinking (file: blink_led_in_asm.S)
-#ifdef USE_ASM_VERSION
+  // check if GPTMR unit is implemented at all
+  if (neorv32_gptmr_available() == 0) {
+    neorv32_uart0_print("General purpose timer not implemented!\n");
+    return 1;
+  }
 
-  blink_led_asm((uint32_t)(&NEORV32_GPIO.OUTPUT_LO));
+  // Intro
+  neorv32_uart0_print("General purpose timer (GPTMR) demo Program.\n"
+                      "Toggles GPIO.output(0) at 1Hz using the GPTMR interrupt.\n\n");
 
-// use C version of LED blinking
-#else
 
-  blink_led_c();
+  // clear GPIO output port
+  neorv32_gpio_port_set(0);
 
-#endif
+
+  // install GPTMR interrupt handler
+  neorv32_rte_exception_install(GPTMR_RTE_ID, gptmr_firq_handler);
+
+  // configure timer for 1Hz in continuous mode
+  uint32_t soc_clock = NEORV32_SYSINFO.CLK;
+  soc_clock = soc_clock / 2; // divide by two as we are using the 1/2 clock prescaler
+  neorv32_gptmr_setup(CLK_PRSC_2, 1, soc_clock);
+
+  // enable interrupt
+  neorv32_cpu_irq_enable(GPTMR_FIRQ_ENABLE); // enable GPTRM FIRQ channel
+  neorv32_cpu_eint(); // enable global interrupt flag
+
+
+  // do nothing, wait for interrupt
+  while(1);
+
   return 0;
 }
 
 
 /**********************************************************************//**
- * C-version of blinky LED counter
+ * GPTMR FIRQ handler.
+ *
+ * @warning This function has to be of type "void xyz(void)" and must not use any interrupt attributes!
  **************************************************************************/
-void blink_led_c(void) {
+void gptmr_firq_handler(void) {
 
-  neorv32_gpio_port_set(0); // clear gpio output
+  neorv32_gptmr_ack_irq(); // IRQ acknowledge / clear pending alarm interrupt
 
-  int cnt = 0;
-
-  while (1) {
-    neorv32_gpio_port_set(cnt++ & 0xFF); // increment counter and mask for lowest 8 bit
-    neorv32_cpu_delay_ms(200); // wait 200ms using busy wait
-  }
+  neorv32_uart0_putc('.'); // send tick symbol via UART
+  neorv32_gpio_pin_toggle(0); // toggle output port bit 0
 }
