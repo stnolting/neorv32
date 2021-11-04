@@ -107,6 +107,12 @@ The project aims to provide _another option_ in the RISC-V / soft-core design sp
 vs. size trade-off and a different focus: _embrace_ concepts like documentation, platform-independence / portability,
 RISC-V compatibility, _customization_ and _ease of use_. See the <<_project_key_features>> below.
 
+Furthermore, the NEORV32 pays special focus on _execution safety_ using <<_full_virtualization>>. The CPU aims to
+provide fall-backs for _everything that could go wrong_. This includes malformed instruction words, privilege escalations
+and even memory accesses that are checked for address space holes and deterministic response times from memory-mapped
+devices. Precise exceptions allow a defined and fully-synchronized state of the CPU at every time.
+
+
 
 // ####################################################################################################################
 :sectnums:
