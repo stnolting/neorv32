@@ -46,10 +46,11 @@ architecture neorv32_dmem_rtl of neorv32_dmem is
   constant lo_abb_c : natural := index_size_f(DMEM_SIZE); -- low address boundary bit
 
   -- local signals --
-  signal acc_en : std_ulogic;
-  signal rdata  : std_ulogic_vector(31 downto 0);
-  signal rden   : std_ulogic;
-  signal addr   : std_ulogic_vector(index_size_f(DMEM_SIZE/4)-1 downto 0);
+  signal acc_en  : std_ulogic;
+  signal rdata   : std_ulogic_vector(31 downto 0);
+  signal rden    : std_ulogic;
+  signal addr    : std_ulogic_vector(index_size_f(DMEM_SIZE/4)-1 downto 0);
+  signal addr_ff : std_ulogic_vector(index_size_f(DMEM_SIZE/4)-1 downto 0);
 
   -- -------------------------------------------------------------------------------------------------------------- --
   -- The memory (RAM) is built from 4 individual byte-wide memories b0..b3, since some synthesis tools have         --
@@ -69,7 +70,7 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Using DEFAULT platform-agnostic DMEM." severity note;
+  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Using CYCLONE-2-optimized HDL style DMEM." severity note;
   assert false report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal DMEM (RAM, " & natural'image(DMEM_SIZE) & " bytes)." severity note;
 
 
@@ -84,32 +85,29 @@ begin
   mem_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- this RAM style should not require "no_rw_check" attributes as the read-after-write behavior
-      -- is intended to be defined implicitly via the if-WRITE-else-READ construct
+      addr_ff <= addr;
       if (acc_en = '1') then -- reduce switching activity when not accessed
         if (wren_i = '1') and (ben_i(0) = '1') then -- byte 0
           mem_ram_b0(to_integer(unsigned(addr))) <= data_i(07 downto 00);
-        else
-          mem_ram_b0_rd <= mem_ram_b0(to_integer(unsigned(addr)));
         end if;
         if (wren_i = '1') and (ben_i(1) = '1') then -- byte 1
           mem_ram_b1(to_integer(unsigned(addr))) <= data_i(15 downto 08);
-        else
-          mem_ram_b1_rd <= mem_ram_b1(to_integer(unsigned(addr)));
         end if;
         if (wren_i = '1') and (ben_i(2) = '1') then -- byte 2
           mem_ram_b2(to_integer(unsigned(addr))) <= data_i(23 downto 16);
-        else
-          mem_ram_b2_rd <= mem_ram_b2(to_integer(unsigned(addr)));
         end if;
         if (wren_i = '1') and (ben_i(3) = '1') then -- byte 3
           mem_ram_b3(to_integer(unsigned(addr))) <= data_i(31 downto 24);
-        else
-          mem_ram_b3_rd <= mem_ram_b3(to_integer(unsigned(addr)));
         end if;
       end if;
     end if;
   end process mem_access;
+
+  -- sync(!) read - alternative HDL style --
+  mem_ram_b0_rd <= mem_ram_b0(to_integer(unsigned(addr_ff)));
+  mem_ram_b1_rd <= mem_ram_b1(to_integer(unsigned(addr_ff)));
+  mem_ram_b2_rd <= mem_ram_b2(to_integer(unsigned(addr_ff)));
+  mem_ram_b3_rd <= mem_ram_b3(to_integer(unsigned(addr_ff)));
 
 
   -- Bus Feedback ---------------------------------------------------------------------------
