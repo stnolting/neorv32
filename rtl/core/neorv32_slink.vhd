@@ -247,8 +247,8 @@ begin
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   irq_arbiter: process(clk_i)
-    variable rx_tmp_v : std_ulogic_vector(SLINK_NUM_RX-1 downto 0);
-    variable tx_tmp_v : std_ulogic_vector(SLINK_NUM_TX-1 downto 0);
+    variable rx_tmp_v : std_ulogic_vector(7 downto 0);
+    variable tx_tmp_v : std_ulogic_vector(7 downto 0);
   begin
     if rising_edge(clk_i) then
       if (enable = '0') then -- no interrupts if unit is disabled
@@ -258,32 +258,30 @@ begin
 
         -- RX interrupt --
         if (SLINK_RX_FIFO = 1) then
-          irq_rx_o <= or_reduce_f(irq_rx_en and rx_fifo_avail); -- fire if any RX_FIFO is not empty
+          irq_rx_o <= or_reduce_f(irq_rx_en(SLINK_NUM_RX-1 downto 0) and rx_fifo_avail(SLINK_NUM_RX-1 downto 0)); -- fire if any RX_FIFO is not empty
         else
-          rx_tmp_v := (others => '0');
-          for i in 0 to SLINK_NUM_RX-1 loop
+          for i in 0 to 7 loop
             if (irq_rx_mode(i) = '0') then -- fire if any RX_FIFO is at least half-full
               rx_tmp_v(i) := rx_fifo_half(i);
             else -- fire if any RX_FIFO is not empty (= data available)
               rx_tmp_v(i) := rx_fifo_avail(i);
             end if;
           end loop;
-          irq_rx_o <= or_reduce_f(irq_rx_en and rx_tmp_v);
+          irq_rx_o <= or_reduce_f(irq_rx_en(SLINK_NUM_RX-1 downto 0) and rx_tmp_v(SLINK_NUM_RX-1 downto 0));
         end if;
 
         -- TX interrupt --
         if (SLINK_TX_FIFO = 1) then
-          irq_tx_o <= or_reduce_f(irq_tx_en and tx_fifo_free); -- fire if any TX_FIFO is not full
+          irq_tx_o <= or_reduce_f(irq_tx_en(SLINK_NUM_TX-1 downto 0) and tx_fifo_free(SLINK_NUM_TX-1 downto 0)); -- fire if any TX_FIFO is not full
         else
-          tx_tmp_v := (others => '0');
-          for i in 0 to SLINK_NUM_TX-1 loop
+          for i in 0 to 7 loop
             if (irq_tx_mode(i) = '0') then -- fire if any RX_FIFO is less than half-full
               tx_tmp_v(i) := not rx_fifo_half(i);
             else -- fire if any RX_FIFO is not full (= free buffer space available)
               tx_tmp_v(i) := tx_fifo_free(i);
             end if;
           end loop;
-          irq_tx_o <= or_reduce_f(irq_tx_en and tx_tmp_v);
+          irq_tx_o <= or_reduce_f(irq_tx_en(SLINK_NUM_TX-1 downto 0) and tx_tmp_v(SLINK_NUM_TX-1 downto 0));
         end if;
       end if;
     end if;
