@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 04.11.2021 | 1.6.3.3 | :bug: fixed bug in SLINK interrupt logic (see [#199](https://github.com/stnolting/neorv32/issues/199)) |
 | 04.11.2021 | 1.6.3.2 | added optional _alternative_ IMEM and DMEM architecture-only design files (in `rtl/core/mem`); these are not device-specific ("cyclone 2") as they do not use any FPGA-specific primitives or macros - just a different HDL style for describing memories is used (see [PR #192](https://github.com/stnolting/neorv32/pull/198) and [Issue #197](https://github.com/stnolting/neorv32/issues/197)) |
 | 03.11.2021 | 1.6.3.1 | :sparkles: added new peripheral module - general purpose 32-bit timer `GPTMR` ([see PR #195](https://github.com/stnolting/neorv32/pull/195)) |
 | 02.11.2021 |[**:rocket:1.6.3**](https://github.com/stnolting/neorv32/releases/tag/v1.6.3) | **New release** |
