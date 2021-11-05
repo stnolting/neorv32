@@ -41,12 +41,12 @@ jobs:
       with:
         msystem: MINGW64
         update: true
-        install: >
-          make
-          mingw-w64-x86_64-yosys
-          mingw-w64-x86_64-nextpnr
-          mingw-w64-x86_64-icestorm
-          mingw-w64-x86_64-prjtrellis
+        install: make
+        pacboy: >
+          yosys:p
+          nextpnr:p
+          icestorm:p
+          prjtrellis:p
 
     - name: '⚙️ git config'
       run: git config --global core.autocrlf input
@@ -68,8 +68,8 @@ jobs:
       fail-fast: false
       matrix:
         include: [
-          {icon: '⬛', installs: 'MINGW32', arch: i686,   pkg: 'mcode' },
-          {icon: '🟦', installs: 'MINGW64', arch: x86_64, pkg: 'llvm'  },
+          {icon: '⬛', installs: 'MINGW32' },
+          {icon: '🟦', installs: 'MINGW64' },
         ]
     name: '${{ matrix.icon }} ${{ matrix.installs }} | VUnit'
     defaults:
@@ -92,11 +92,11 @@ jobs:
       with:
         msystem: ${{ matrix.installs }}
         update: true
-        install: >
-          make
-          mingw-w64-${{ matrix.arch }}-ghdl-${{ matrix.pkg }}
-          mingw-w64-${{ matrix.arch }}-python-pip
-          mingw-w64-${{ matrix.arch }}-riscv64-unknown-elf-gcc
+        install: make
+        pacboy: >
+          ghdl:p
+          python-pip:p
+          riscv64-unknown-elf-gcc:p
 
     - name: '⚙️ Build and install Processor Check software'
       run: |
