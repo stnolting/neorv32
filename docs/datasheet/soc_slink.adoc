@@ -79,9 +79,12 @@ at least one free entry in the link's FIFO.
 The NEORV32 processor ensures that _any_ CPU access to memory-mapped devices (including the SLINK module)
 will **time out** after a certain number of cycles (see section <<_bus_interface>>).
 Hence, blocking access to a stream link that does not complete within a certain amount of cycles will
-raise a _store bus access exception_ when writing a _full_ TX link or a _load bus access exception_ when reading
-from an _empty_ RX link. Hence, this concept should only be used when evaluating the half-full FIFO condition
-(for example via the SLINK interrupts) before actual accessing links.
+raise a _store bus access exception_ when writing to a _full_ TX link's FIFO or a _load bus access exception_
+when reading from an _empty_ RX 's FIFO. Hence, this concept should only be used when evaluating the half-full
+FIFO condition (for example via the SLINK interrupts) before actual accessing links.
+
+[NOTE]
+There is no RX FIFO overflow mechanism available yet.
 
 
 **Non-Blocking Link Access**
@@ -118,41 +121,50 @@ image::stream_link_interface.png[width=560,align=center]
 The SLINK handshake protocol is compatible with the https://developer.arm.com/documentation/ihi0051/a/Introduction/About-the-AXI4-Stream-protocol[AXI4-Stream] base protocol.
 
 
-**Interrupts**
+**SLINK Interrupts**
 
 The stream interface provides two independent interrupts that are _globally_ driven by the RX and TX link's
 FIFO fill level status. Each RX and TX link provides an individual interrupt enable flag and an individual
 interrupt type flag that allows to configure interrupts only for certain (or all) links and for application-
-specific interrupt conditions. The interrupt configuration is done using the `NEORV32_SLINK.IRQ` register.
+specific FIFO conditions. The interrupt configuration is done using the `NEORV32_SLINK.IRQ` register.
 Any interrupt can only become pending if the SLINK module is enabled at all.
+
+[NOTE]
+There is no RX FIFO overflow mechanism available yet.
 
 The current FIFO fill-level of a specific **RX link** can only raise an interrupt request if it's interrupt enable flag
 _SLINK_IRQ_RX_EN_ is set. Vice versa, the current FIFO fill-level of a specific **TX link** can only raise an interrupt
 request if it's interrupt enable flag _SLINK_IRQ_TX_EN_ is set.
 
 The **RX link's** _SLINK_IRQ_RX_MODE_ flags define the FIFO fill-level condition for raising an RX interrupt request:
-* If a link's interrupt mode flag is `1` an IRQ is generated when the link's FIFO is _not empty_ ("RX data available").
-* If a link's interrupt mode flag is `0` an IRQ is generated when the link's FIFO is _at least half-full_ ("time to get data from RX FIFO to prevent overflow").
+* If a link's interrupt mode flag is `1` an IRQ is generated when the link's FIFO _becomes_ not empty ("RX data available").
+* If a link's interrupt mode flag is `0` an IRQ is generated when the link's FIFO _becomes_ at least half-full ("time to get data from RX FIFO to prevent overflow").
 
 The **TX link's** _SLINK_IRQ_TX_MODE_ flags define the FIFO fill-level condition for raising an TX interrupt request:
-* If a link's interrupt mode flag is `1` an IRQ is generated when the link's FIFO is _not full_ ("space left in FIFO for new TX data").
-* If a link's interrupt mode flag is `0` an IRQ is generated when the link's FIFO is _less than half-full_ ("SW can send _SLINK_TX_FIFO_/2 data words without checking any flags"). 
+* If a link's interrupt mode flag is `1` an IRQ is generated when the link's FIFO _becomes_ not full ("space left in FIFO for new TX data").
+* If a link's interrupt mode flag is `0` an IRQ is generated when the link's FIFO _becomes_ less than half-full ("SW can send _SLINK_TX_FIFO_/2 data words without checking any flags"). 
+
+[IMPORTANT]
+The interrupt configuration register `NEORV32_SLINK.IRQ` should we written _before_ the SLINK
+module is actually enabled.
 
 [NOTE]
-If _SLINK_RX_FIFO_ is 1 the _SLINK_IRQ_RX_MODE_ bits are hardwired to one.
-If _SLINK_TX_FIFO_ is 1 the _SLINK_IRQ_TX_MODE_ bits are hardwired to one.
+If _SLINK_RX_FIFO_ is 1 all _SLINK_IRQ_RX_MODE_ bits are hardwired to one.
+If _SLINK_TX_FIFO_ is 1 all _SLINK_IRQ_TX_MODE_ bits are hardwired to one.
 
-[NOTE]
-There is no RX FIFO overflow mechanism available yet.
+A **pending RX interrupt** request is cleared by any of the following operations:
+* read access to any `NEORV32_SLINK.DATA` (for example to read incoming data)
+* write access to `NEORV32_SLINK.CTRL`
+* disabling the SLINK module
 
-If _any_ configured interrupt condition is fulfilled, the according global SLINK RX / SLINK TX CPU
-interrupt becomes pending.
-If the interrupt enable flags of several links are set, the interrupt service handler has to evaluate the SLINK
-status register is order to detect which link(s) caused the interrupt.
+A **pending TX interrupt** request is cleared by any of the following operations:
+* write access any `NEORV32_SLINK.DATA` (for example to send more data)
+* write access to `NEORV32_SLINK.CTRL`
+* disabling the SLINK module
 
-[NOTE]
-If the programmed interrupt condition is fulfilled, the corresponding IRQ will become _pending_ until
-the causing interrupt conditions is resolved (for example by reading data from the according RX FIFO).
+[TIP]
+A dummy write to to the control register (i.e. `NEORV32_SLINK.DATA = NEORV32_SLINK.DATA`)
+can be executed to acknowledge any interrupt.
 
 
 .SLINK register map (`struct NEORV32_SLINK`)
@@ -168,9 +180,9 @@ the causing interrupt conditions is resolved (for example by reading data from t
                                               <| `3:0` _SLINK_CTRL_RX_NUM3_ : _SLINK_CTRL_RX_NUM0_ ^| r/- <| Number of implemented RX links
 | `0xfffffec4` | - |`31:0` | r/- | _reserved_
 .4+<| `0xfffffec8` .4+<| `NEORV32_SLINK.IRQ` <|`31:24` _SLINK_IRQ_RX_EN_MSB_ : _SLINK_IRQ_RX_EN_LSB_     ^| r/w <| RX interrupt enable for link 7..0
-                                             <|`23:16` _SLINK_IRQ_RX_MODE_MSB_ : _SLINK_IRQ_RX_MODE_LSB_ ^| r/w <| RX IRQ mode for link 7..0: `0` = FIFO at least half-full; `1` = FIFO not empty
+                                             <|`23:16` _SLINK_IRQ_RX_MODE_MSB_ : _SLINK_IRQ_RX_MODE_LSB_ ^| r/w <| RX IRQ mode for link 7..0: `0` = FIFO rises above half-full; `1` = FIFO not empty
                                              <|`15:8`  _SLINK_IRQ_TX_EN_MSB_ : _SLINK_IRQ_TX_EN_LSB_     ^| r/w <| TX interrupt enable for link 7..0
-                                             <|`7:0`   _SLINK_IRQ_TX_MODE_MSB_ : _SLINK_IRQ_TX_MODE_LSB_ ^| r/w <| TX IRQ mode for link 7..0: `0` = FIFO less than half-full; `1` = FIFO not full
+                                             <|`7:0`   _SLINK_IRQ_TX_MODE_MSB_ : _SLINK_IRQ_TX_MODE_LSB_ ^| r/w <| TX IRQ mode for link 7..0: `0` = FIFO falls below half-full; `1` = FIFO not full
 | `0xfffffeec` | - |`31:0` | r/- | _reserved_
 .4+<| `0xfffffed0` .4+<| `NEORV32_SLINK.STATUS` <| `31:24` _SLINK_STATUS_TX7_HALF_ : _SLINK_STATUS_TX0_HALF_ ^| r/- <| TX link 7..0 FIFO fill level is >= half-full
                                                 <| `23:16` _SLINK_STATUS_RX7_HALF_ : _SLINK_STATUS_RX0_HALF_ ^| r/- <| RX link 7..0 FIFO fill level is >= half-full

@@ -740,13 +740,13 @@ enum NEORV32_SLINK_CTRL_enum {
 enum NEORV32_SLINK_IRQ_enum {
   SLINK_IRQ_RX_EN_LSB   =  0, /**< SLINK IRQ configuration register( 0) (r/w): RX IRQ enable LSB (link 0) (#NEORV32_SLINK_IRQ_EN_enum) */
   SLINK_IRQ_RX_EN_MSB   =  7, /**< SLINK IRQ configuration register( 7) (r/w): RX IRQ enable MSB (link 7) (#NEORV32_SLINK_IRQ_EN_enum) */
-  SLINK_IRQ_RX_MODE_LSB =  8, /**< SLINK IRQ configuration register( 8) (r/w): RX IRQ mode LSB (link 0) */
-  SLINK_IRQ_RX_MODE_MSB = 15, /**< SLINK IRQ configuration register(15) (r/w): RX IRQ mode MSB (link 7) */
+  SLINK_IRQ_RX_MODE_LSB =  8, /**< SLINK IRQ configuration register( 8) (r/w): RX IRQ mode LSB (link 0) (#NEORV32_SLINK_IRQ_RX_TYPE_enum) */
+  SLINK_IRQ_RX_MODE_MSB = 15, /**< SLINK IRQ configuration register(15) (r/w): RX IRQ mode MSB (link 7) (#NEORV32_SLINK_IRQ_RX_TYPE_enum) */
 
   SLINK_IRQ_TX_EN_LSB   = 16, /**< SLINK IRQ configuration register(16) (r/w): TX IRQ enable LSB (link 0) (#NEORV32_SLINK_IRQ_EN_enum) */
   SLINK_IRQ_TX_EN_MSB   = 23, /**< SLINK IRQ configuration register(23) (r/w): TX IRQ enable MSB (link 7) (#NEORV32_SLINK_IRQ_EN_enum) */
-  SLINK_IRQ_TX_MODE_LSB = 24, /**< SLINK IRQ configuration register(24) (r/w): TX IRQ mode LSB (link 0) */
-  SLINK_IRQ_TX_MODE_MSB = 31  /**< SLINK IRQ configuration register(31) (r/w): TX IRQ mode MSB (link 7) */
+  SLINK_IRQ_TX_MODE_LSB = 24, /**< SLINK IRQ configuration register(24) (r/w): TX IRQ mode LSB (link 0) (#NEORV32_SLINK_IRQ_TX_TYPE_enum) */
+  SLINK_IRQ_TX_MODE_MSB = 31  /**< SLINK IRQ configuration register(31) (r/w): TX IRQ mode MSB (link 7) (#NEORV32_SLINK_IRQ_TX_TYPE_enum) */
 };
 
 /** SLINK interrupt configuration enable (per link) */
@@ -757,13 +757,13 @@ enum NEORV32_SLINK_IRQ_EN_enum {
 
 /** SLINK RX interrupt configuration type (per link) */
 enum NEORV32_SLINK_IRQ_RX_TYPE_enum {
-  SLINK_IRQ_RX_FIFO_HALF = 0, /**< '0': RX FIFO is at least half-full */
+  SLINK_IRQ_RX_FIFO_HALF = 0, /**< '0': RX FIFO fill-level rises above half-full */
   SLINK_IRQ_RX_NOT_EMPTY = 1  /**< '1': RX FIFO is not empty */
 };
 
 /** SLINK TX interrupt configuration type (per link) */
 enum NEORV32_SLINK_IRQ_TX_TYPE_enum {
-  SLINK_IRQ_TX_FIFO_HALF = 0, /**< '0': TX FIFO is less than half-full */
+  SLINK_IRQ_TX_FIFO_HALF = 0, /**< '0': TX FIFO fill-level falls below half-full */
   SLINK_IRQ_TX_NOT_FULL  = 1  /**< '1': TX FIFO is not FULL */
 };
 
