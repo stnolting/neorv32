@@ -70,11 +70,19 @@ Based on the _TWI_CTRL_PRSCx_ configuration, the actual TWI clock frequency f~SC
 _**f~SCL~**_ = _f~main~[Hz]_ / (4 * `clock_prescaler`)
 
 
-**Interrupt**
+**TWI Interrupt**
 
-The TWI module provides a single interrupt to signal _idle state_ (= read for new transmission) to the CPU. Whenever TWI SPI module
-is currently idle (and enabled), the interrupt request is active. A pending interrupt request is cleared
-by triggering a new TWI transmission or by disabling the device.
+The SPI module provides a single interrupt to signal "operation done" to the CPU. Whenever the TWI
+module completes the current operation (generate stop condition, generate start conditions or transfer byte),
+the interrupt request is set. A pending interrupt request is cleared is cleared by any of
+the following operations:
+* read or write access to `NEORV32_TWI.DATA` (for example to trigger a new transmission)
+* write access to `NEORV32_TWI.CTRL`
+* disabling the TWI module
+
+[TIP]
+A dummy read from `NEORV32_TWI.DATA` can be executed to acknowledge the interrupt without affecting data
+or the state of the TWI module.
 
 
 .TWI register map (`struct NEORV32_TWI`)
