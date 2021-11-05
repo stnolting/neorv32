@@ -108,27 +108,38 @@ Parity errors in received data are indicated via the _UART_DATA_PERR_ flag in th
 received character and is cleared by reading the `DATA` register.
 
 
-**Interrupts**
+**UART Interrupts**
 
-UART0 features two independent interrupt for signaling certain RX and TX conditions. The behavior of these interrupts differ
-based on the configured FIFO size. If the according FIFO size is greater than 1, the _UART_CTRL_RX_IRQ_ and _UART_CTRL_TX_IRQ_
-`CTRL` flags allow a more fine-grained IRQ configuration.
+UART0 features two independent interrupt for signaling certain RX and TX conditions. The behavior of these conditions differs
+based on the configured FIFO sizes. If the according FIFO size is greater than 1, the _UART_CTRL_RX_IRQ_ and _UART_CTRL_TX_IRQ_
+`CTRL` flags allow a more fine-grained IRQ configuration. An interrupt can only become pending if the according interrupt
+condition is fulfilled and the UART is enabled at all.
 
-* If _UART0_RX_FIFO_ is exactly 1, the RX interrupt becomes pending as soon as there is data available in the RX FIFO
-(-> _UART_CTRL_RX_EMPTY_ clears). This flag is hardwired to `0` if _UART0_RX_FIFO_ = 1.
-* If _UART0_TX_FIFO_ is exactly 1, the TX interrupt becomes pending as soon as there is a free entry left in the TX FIFO
-(-> _UART_CTRL_TX_FULL_ clears). This flag is hardwired to `0` if _UART0_RX_FIFO_ = 1.
+* If _UART0_RX_FIFO_ is exactly 1, the RX interrupt goes pending when data _becomes_ available in the RX FIFO
+(-> _UART_CTRL_RX_EMPTY_ clears). _UART_CTRL_RX_IRQ_ is hardwired to `0` in this case.
+* If _UART0_TX_FIFO_ is exactly 1, the TX interrupt goes pending when at least one entry in the TX FIFO _becomes_ free
+(-> _UART_CTRL_TX_FULL_ clears). _UART_CTRL_TX_IRQ_ is hardwired to `0` in this case.
 
-* If _UART0_RX_FIFO_ is greater than 1: If _UART_CTRL_RX_IRQ_ is `0` the RX interrupt becomes pending as soon as there is data
-available in the RX FIFO (-> _UART_CTRL_RX_EMPTY_ clears). If _UART_CTRL_RX_IRQ_ is `1` the RX interrupt becomes pending as soon as
-the RX FIFO is at least half-full (-> _UART_CTRL_RX_HALF_ sets).
-* If _UART0_TX_FIFO_ is greater than 1: If _UART_CTRL_TX_IRQ_ is `0` the TX interrupt becomes pending as soon as there is a free
-entry left in the TX FIFO (-> _UART_CTRL_TX_FULL_ clears). If _UART_CTRL_TX_IRQ_ is `1` the TX interrupt becomes pending as soon as
-the RX FIFO is less than half-full (-> _UART_CTRL_TX_HALF_ clears).
+* If _UART0_RX_FIFO_ is greater than 1: If _UART_CTRL_RX_IRQ_ is `0` the RX interrupt goes pending when data _becomes_
+available in the RX FIFO (-> _UART_CTRL_RX_EMPTY_ clears). If _UART_CTRL_RX_IRQ_ is `1` the RX interrupt becomes pending
+the RX FIFO _becomes_ at least half-full (-> _UART_CTRL_RX_HALF_ sets).
+* If _UART0_TX_FIFO_ is greater than 1: If _UART_CTRL_TX_IRQ_ is `0` the TX interrupt goes pending when at least one entry
+in the TX FIFO _becomes_ free (-> _UART_CTRL_TX_FULL_ clears). If _UART_CTRL_TX_IRQ_ is `1` the TX interrupt goes pending
+when the RX FIFO _becomes_ less than half-full (-> _UART_CTRL_TX_HALF_ clears).
 
-An interrupt can only become pending if the according interrupt condition is fulfilled and the UART is enabled at all.
-A pending interrupt is removed by resolving the interrupt-triggering conditions (for example by reading data from the
-more-than-half-full RX FIFO).
+A **pending RX interrupt** request is cleared by any of the following operations:
+* read access to `NEORV32_UART0.DATA` (for example to read incoming data)
+* write access to `NEORV32_UART0.CTRL`
+* disabling the UART module
+
+A **pending TX interrupt** request is cleared by any of the following operations:
+* write access to `NEORV32_UART0.DATA` (for example to send more data)
+* write access to `NEORV32_UART0.CTRL`
+* disabling the UART module
+
+[TIP]
+A dummy write to to the control register (i.e. `NEORV32_UART0.DATA = NEORV32_UART0.DATA`)
+can be executed to acknowledge any interrupt.
 
 
 **Simulation Mode**
