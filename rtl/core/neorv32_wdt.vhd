@@ -140,10 +140,8 @@ begin
       ctrl_reg.mode    <= '0'; -- trigger interrupt on WDT overflow
       ctrl_reg.clk_sel <= (others => '1'); -- slowest clock source
       ctrl_reg.lock    <= '0';
-      cpu_irq.clr      <= '-';
     elsif rising_edge(clk_i) then
       -- acknowledge interrupt when resetting WDT --
-      cpu_irq.clr <= ctrl_reg.reset;
       if (rstn_sync = '0') then -- internal reset
         ctrl_reg.reset   <= '0';
         ctrl_reg.enforce <= '0';
@@ -190,6 +188,7 @@ begin
 
   -- action trigger --
   cpu_irq.set <= ctrl_reg.enable and (wdt_cnt(wdt_cnt'left) or ctrl_reg.enforce) and (not ctrl_reg.mode); -- mode 0: IRQ
+  cpu_irq.clr <= ctrl_reg.reset; -- ack IRQ on WDT reset
   hw_rst      <= ctrl_reg.enable and (wdt_cnt(wdt_cnt'left) or ctrl_reg.enforce) and (    ctrl_reg.mode); -- mode 1: RESET
 
 
