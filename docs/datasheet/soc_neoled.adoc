@@ -163,19 +163,20 @@ Since the _NEOLED_CTRL_STROBE_ flag is also buffered in the TX buffer, the RESET
 data word being written to the TX buffer making busy wait concepts obsolete and allowing maximum refresh rates.
 
 
-**Interrupt**
+**NEOLED Interrupt**
 
 The NEOLED modules features a single interrupt that becomes pending based on the current TX buffer fill level.
 The interrupt can only become pending if the NEOLED module is enabled. The specific interrupt condition
-is configured via the _NEOLED_CTRL_IRQ_CONF_ in the control register `NEORV32_NEOLED.CTRL`.
+is configured via the _NEOLED_CTRL_IRQ_CONF_ bit in the unit's control register.
 
-If _NEOLED_CTRL_IRQ_CONF_ is cleared, an interrupt is generated whenever the TX FIFO is _less than half-full_.
+If _NEOLED_CTRL_IRQ_CONF_ is cleared, an interrupt is generated whenever the TX FIFO _becomes_ less than half-full.
 In this case software can write up to _IO_NEOLED_TX_FIFO_/2 new data words to `DATA` without checking the FIFO
-status flags. The interrupt request is cleared whenever the FIFO fill level is above _half-full_ level or if
-the NEOLED module is disabled.
+status flags. If _NEOLED_CTRL_IRQ_CONF_ is set, an interrupt is generated whenever the TX FIFO _becomes_ empty.
 
-If _NEOLED_CTRL_IRQ_CONF_ is set, an interrupt is generated whenever the TX FIFO is _empty_. The interrupt
-request is cleared again when the FIFO contains at least one data word.
+A pending interrupt request is cleared is cleared by any of the following operations:
+* write access to `NEORV32_NEOLED.DATA` (for example to send more LED data)
+* write access to `NEORV32_NEOLED.CTRL`
+* disabling the NEOLED module
 
 [NOTE]
 The _NEOLED_CTRL_IRQ_CONF_ is hardwired to one if _IO_NEOLED_TX_FIFO_ = 1 (-> IRQ if FIFO is empty).
