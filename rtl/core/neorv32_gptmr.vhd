@@ -176,7 +176,7 @@ begin
     if rising_edge(clk_i) then
       if (timer.cnt_we = '1') then -- write access
         timer.count <= data_i;
-      elsif (ctrl(ctrl_en_c) = '1') then -- enabled
+      elsif (ctrl(ctrl_en_c) = '1') and (gptmr_clk_en = '1') then -- enabled and clock tick
         if (timer.match = '1') then
           if (ctrl(ctrl_mode_c) = '1') then -- reset counter if continuous mode
             timer.count <= (others => '0');
