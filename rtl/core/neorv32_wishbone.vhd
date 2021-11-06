@@ -106,18 +106,19 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
   -- bus arbiter
   type ctrl_state_t is (IDLE, BUSY);
   type ctrl_t is record
-    state   : ctrl_state_t;
-    we      : std_ulogic;
-    adr     : std_ulogic_vector(31 downto 0);
-    wdat    : std_ulogic_vector(31 downto 0);
-    rdat    : std_ulogic_vector(31 downto 0);
-    sel     : std_ulogic_vector(03 downto 0);
-    ack     : std_ulogic;
-    err     : std_ulogic;
-    timeout : std_ulogic_vector(index_size_f(BUS_TIMEOUT)-1 downto 0);
-    src     : std_ulogic;
-    lock    : std_ulogic;
-    priv    : std_ulogic_vector(01 downto 0);
+    state    : ctrl_state_t;
+    state_ff : ctrl_state_t;
+    we       : std_ulogic;
+    adr      : std_ulogic_vector(31 downto 0);
+    wdat     : std_ulogic_vector(31 downto 0);
+    rdat     : std_ulogic_vector(31 downto 0);
+    sel      : std_ulogic_vector(03 downto 0);
+    ack      : std_ulogic;
+    err      : std_ulogic;
+    timeout  : std_ulogic_vector(index_size_f(BUS_TIMEOUT)-1 downto 0);
+    src      : std_ulogic;
+    lock     : std_ulogic;
+    priv     : std_ulogic_vector(01 downto 0);
   end record;
   signal ctrl    : ctrl_t;
   signal stb_int : std_ulogic;
@@ -165,24 +166,26 @@ begin
   bus_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl.state   <= IDLE;
-      ctrl.we      <= def_rst_val_c;
-      ctrl.adr     <= (others => def_rst_val_c);
-      ctrl.wdat    <= (others => def_rst_val_c);
-      ctrl.rdat    <= (others => def_rst_val_c);
-      ctrl.sel     <= (others => def_rst_val_c);
-      ctrl.timeout <= (others => def_rst_val_c);
-      ctrl.ack     <= def_rst_val_c;
-      ctrl.err     <= def_rst_val_c;
-      ctrl.src     <= def_rst_val_c;
-      ctrl.lock    <= def_rst_val_c;
-      ctrl.priv    <= (others => def_rst_val_c);
+      ctrl.state    <= IDLE;
+      ctrl.state_ff <= IDLE;
+      ctrl.we       <= def_rst_val_c;
+      ctrl.adr      <= (others => def_rst_val_c);
+      ctrl.wdat     <= (others => def_rst_val_c);
+      ctrl.rdat     <= (others => def_rst_val_c);
+      ctrl.sel      <= (others => def_rst_val_c);
+      ctrl.timeout  <= (others => def_rst_val_c);
+      ctrl.ack      <= def_rst_val_c;
+      ctrl.err      <= def_rst_val_c;
+      ctrl.src      <= def_rst_val_c;
+      ctrl.lock     <= def_rst_val_c;
+      ctrl.priv     <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       -- defaults --
-      ctrl.rdat    <= (others => '0'); -- required for internal output gating
-      ctrl.ack     <= '0';
-      ctrl.err     <= '0';
-      ctrl.timeout <= std_ulogic_vector(to_unsigned(BUS_TIMEOUT, index_size_f(BUS_TIMEOUT)));
+      ctrl.state_ff <= ctrl.state;
+      ctrl.rdat     <= (others => '0'); -- required for internal output gating
+      ctrl.ack      <= '0';
+      ctrl.err      <= '0';
+      ctrl.timeout  <= std_ulogic_vector(to_unsigned(BUS_TIMEOUT, index_size_f(BUS_TIMEOUT)));
 
       -- state machine --
       case ctrl.state is
@@ -254,7 +257,7 @@ begin
   wb_stb_o <= stb_int when (PIPE_MODE = true) else cyc_int;
   wb_cyc_o <= cyc_int;
 
-  stb_int <= '1' when (ctrl.state = BUSY) else '0';
+  stb_int <= '1' when (ctrl.state = BUSY) and (ctrl.state_ff /= BUSY) else '0';
   cyc_int <= '1' when (ctrl.state = BUSY) else '0';
 
 
