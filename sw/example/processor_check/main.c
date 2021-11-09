@@ -483,24 +483,24 @@ int main() {
   }
 
 
-  // ----------------------------------------------------------
-  // No "real" CSR write access (because rs1 = r0)
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] Read-only CSR 'no-write' (rs1=0) access: ", cnt_test);
-
-  cnt_test++;
-
-  // time CSR is read-only, but no actual write is performed because rs1=r0
-  // -> should cause no exception
-  asm volatile("csrrs zero, time, zero");
-
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
-    test_ok();
-  }
-  else {
-    test_fail();
-  }
+//// ----------------------------------------------------------
+//// No "real" CSR write access (because rs1 = r0)
+//// ----------------------------------------------------------
+//neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+//PRINT_STANDARD("[%i] Read-only CSR 'no-write' (rs1=0) access: ", cnt_test);
+//
+//cnt_test++;
+//
+//// time CSR is read-only, but no actual write is performed because rs1=r0
+//// -> should cause no exception
+//asm volatile("csrrs zero, time, zero");
+//
+//if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+//  test_ok();
+//}
+//else {
+//  test_fail();
+//}
 
 
   // ----------------------------------------------------------
@@ -1124,10 +1124,11 @@ int main() {
     // configure SPI
     neorv32_spi_setup(CLK_PRSC_2, 0, 0, 0);
 
-    // trigger SPI IRQ
-    neorv32_spi_trans(0);
     // enable fast interrupt
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ6E);
+
+    // trigger SPI IRQ
+    neorv32_spi_trans(0);
     while(neorv32_spi_busy()); // wait for current transfer to finish
 
     // wait some time for the IRQ to arrive the CPU
@@ -1158,11 +1159,11 @@ int main() {
     // configure TWI, fastest clock, no peripheral clock stretching
     neorv32_twi_setup(CLK_PRSC_2, 0);
 
+    // enable TWI FIRQ
+    neorv32_cpu_irq_enable(CSR_MIE_FIRQ7E);
+
     // trigger TWI IRQ
     neorv32_twi_generate_start();
-    neorv32_twi_trans(0);
-    neorv32_twi_generate_stop();
-    neorv32_cpu_irq_enable(CSR_MIE_FIRQ7E);
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
@@ -1224,7 +1225,35 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 9 (NEOLED)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ9 (NEOLED): skipped\n", cnt_test);
+  if (neorv32_neoled_available()) {
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    PRINT_STANDARD("[%i] FIRQ9 (NEOLED): ", cnt_test);
+
+    cnt_test++;
+
+    // enable fast interrupt
+    neorv32_cpu_irq_enable(CSR_MIE_FIRQ9E);
+
+    // configure NEOLED
+    neorv32_neoled_setup(CLK_PRSC_2, 0, 0, 0);
+
+    // send dummy data
+    neorv32_neoled_write_nonblocking(0);
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile("nop");
+    neorv32_cpu_irq_disable(CSR_MIE_FIRQ9E);
+
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_9) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+    // no more NEOLED interrupts
+    neorv32_neoled_disable();
+  }
 
 
   // ----------------------------------------------------------
@@ -1236,12 +1265,12 @@ int main() {
 
     cnt_test++;
 
-    // enable SLINK
-    neorv32_slink_enable();
-
     // configure SLINK IRQs
     neorv32_slink_tx_irq_config(0, SLINK_IRQ_ENABLE, SLINK_IRQ_TX_NOT_FULL);
     neorv32_slink_rx_irq_config(0, SLINK_IRQ_ENABLE, SLINK_IRQ_RX_NOT_EMPTY);
+
+    // enable SLINK
+    neorv32_slink_enable();
 
     // enable SLINK FIRQs
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ10E);
@@ -1306,8 +1335,8 @@ int main() {
     // enable GPTMR FIRQ
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ12E);
 
-    // configure timer IRQ for one-shot mode after 2*4 clock cycles
-    neorv32_gptmr_setup(CLK_PRSC_2, 0, 4);
+    // configure timer IRQ for one-shot mode after 2*3 clock cycles
+    neorv32_gptmr_setup(CLK_PRSC_2, 0, 3);
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");

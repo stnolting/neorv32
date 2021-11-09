@@ -531,19 +531,20 @@ begin
   fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
 
-  -- fast interrupts --
-  fast_irq(00) <= wdt_irq;       -- HIGHEST PRIORITY - watchdog timeout
+  -- fast interrupt requests (FIRQs) --
+  -- these stay asserted until explicitly acknowledged --
+  fast_irq(00) <= wdt_irq;       -- HIGHEST PRIORITY - watchdog
   fast_irq(01) <= cfs_irq;       -- custom functions subsystem
-  fast_irq(02) <= uart0_rxd_irq; -- primary UART (UART0) RX interrupt
-  fast_irq(03) <= uart0_txd_irq; -- primary UART (UART0) TX interrupt
-  fast_irq(04) <= uart1_rxd_irq; -- secondary UART (UART1) RX interrupt
-  fast_irq(05) <= uart1_txd_irq; -- secondary UART (UART1) TX interrupt
-  fast_irq(06) <= spi_irq;       -- SPI idle
-  fast_irq(07) <= twi_irq;       -- TWI idle
+  fast_irq(02) <= uart0_rxd_irq; -- primary UART (UART0) RX
+  fast_irq(03) <= uart0_txd_irq; -- primary UART (UART0) TX
+  fast_irq(04) <= uart1_rxd_irq; -- secondary UART (UART1) RX
+  fast_irq(05) <= uart1_txd_irq; -- secondary UART (UART1) TX
+  fast_irq(06) <= spi_irq;       -- SPI
+  fast_irq(07) <= twi_irq;       -- TWI
   fast_irq(08) <= xirq_irq;      -- external interrupt controller
   fast_irq(09) <= neoled_irq;    -- NEOLED buffer free
-  fast_irq(10) <= slink_rx_irq;  -- SLINK RX interrupt
-  fast_irq(11) <= slink_tx_irq;  -- SLINK TX interrupt
+  fast_irq(10) <= slink_rx_irq;  -- SLINK RX
+  fast_irq(11) <= slink_tx_irq;  -- SLINK TX
   fast_irq(12) <= gptmr_irq;     -- general purpose timer
   --
   fast_irq(13) <= '0'; -- reserved
