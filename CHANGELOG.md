@@ -26,7 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 06.11.2021 | 1.6.3.5 | reworked IRQ trigger logic of SPI, TWI, UART0, UART1, NELOED and SLINK; FIRQs now only trigger **once** when the programmed interrupt condition is met instead of triggering **all the time** (see [PR #202](https://github.com/stnolting/neorv32/pull/202)) |
+| 09.11.2021 | 1.6.3.5 | :warning: reworked IRQ trigger logic of SPI, TWI, UART0, UART1, NELOED and SLINK; FIRQs now only trigger **once** when the programmed interrupt condition is met instead of triggering **all the time** (see [PR #202](https://github.com/stnolting/neorv32/pull/202)) |
 | 06.11.2021 | 1.6.3.4 | :bug: fixed bug in **WISHBONE** interface: _pipelined_ Wishbone mode did not clear STB after first transfer cycle |
 | 05.11.2021 | 1.6.3.3 | :bug: fixed bug in general purpose timer **GPTMR** - clock prescaler had no effect, the timer was always counting at full processor clock speed; minor watchdog (WDT) code edits |
 | 04.11.2021 | 1.6.3.2 | added optional _alternative_ IMEM and DMEM architecture-only design files (in `rtl/core/mem`); these are not device-specific ("cyclone 2") as they do not use any FPGA-specific primitives or macros - just a different HDL style for describing memories is used (see [PR #192](https://github.com/stnolting/neorv32/pull/198) and [Issue #197](https://github.com/stnolting/neorv32/issues/197)) |
