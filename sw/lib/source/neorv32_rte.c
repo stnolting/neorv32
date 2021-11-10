@@ -48,7 +48,7 @@
 static uint32_t __neorv32_rte_vector_lut[NEORV32_RTE_NUM_TRAPS] __attribute__((unused)); // trap handler vector table
 
 // private functions
-static void __attribute__((__interrupt__)) __neorv32_rte_core(void) __attribute__((aligned(16)));
+static void __attribute__((__interrupt__)) __neorv32_rte_core(void) __attribute__((aligned(4)));
 static void __neorv32_rte_debug_exc_handler(void);
 static void __neorv32_rte_print_true_false(int state);
 static void __neorv32_rte_print_checkbox(int state);
@@ -65,14 +65,16 @@ static void __neorv32_rte_print_hex_word(uint32_t num);
 void neorv32_rte_setup(void) {
 
   // configure trap handler base address
-  uint32_t mtvec_base = (uint32_t)(&__neorv32_rte_core);
-  neorv32_cpu_csr_write(CSR_MTVEC, mtvec_base);
+  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&__neorv32_rte_core));
 
   // install debug handler for all sources
   uint8_t id;
   for (id = 0; id < (sizeof(__neorv32_rte_vector_lut)/sizeof(__neorv32_rte_vector_lut[0])); id++) {
     neorv32_rte_exception_uninstall(id); // this will configure the debug handler
   }
+
+  // clear BUSKEEPER error flags
+  NEORV32_BUSKEEPER.CTRL = 0;
 }
 
 
@@ -111,7 +113,7 @@ int neorv32_rte_exception_uninstall(uint8_t id) {
 
   // id valid?
   if ((id >= RTE_TRAP_I_MISALIGNED) && (id <= CSR_MIE_FIRQ15E)) {
-    __neorv32_rte_vector_lut[id] = (uint32_t)(&__neorv32_rte_debug_exc_handler); // use dummy handler in case the exception is accidently triggered
+    __neorv32_rte_vector_lut[id] = (uint32_t)(&__neorv32_rte_debug_exc_handler); // use dummy handler in case the exception is accidentally triggered
     return 0;
   }
   return 1; 
@@ -126,14 +128,14 @@ int neorv32_rte_exception_uninstall(uint8_t id) {
  *
  * @warning When using the the RTE, this function is the ONLY function that can use the 'interrupt' attribute!
  **************************************************************************/
-static void __attribute__((__interrupt__)) __attribute__((aligned(16)))  __neorv32_rte_core(void) {
+static void __attribute__((__interrupt__)) __attribute__((aligned(4)))  __neorv32_rte_core(void) {
 
   register uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
   neorv32_cpu_csr_write(CSR_MSCRATCH, rte_mepc); // store for later
   register uint32_t rte_mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
 
   // compute return address
-  if (((int32_t)rte_mcause) >= 0) { // modify pc only if exception (MSB cleared)
+  if (((int32_t)rte_mcause) >= 0) { // modify pc only if not interrupt (MSB cleared)
 
     // get low half word of faulting instruction
     register uint32_t rte_trap_inst;
@@ -151,7 +153,7 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(16)))  __neorv
   }
 
   // find according trap handler
-  register uint32_t rte_handler = (uint32_t)(&__neorv32_rte_debug_exc_handler);
+  register uint32_t rte_handler;
   switch (rte_mcause) {
     case TRAP_CODE_I_MISALIGNED: rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_I_MISALIGNED]; break;
     case TRAP_CODE_I_ACCESS:     rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_I_ACCESS]; break;
@@ -182,7 +184,7 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(16)))  __neorv
     case TRAP_CODE_FIRQ_13:      rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_13]; break;
     case TRAP_CODE_FIRQ_14:      rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_14]; break;
     case TRAP_CODE_FIRQ_15:      rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_15]; break;
-    default: break;
+    default:                     rte_handler = (uint32_t)(&__neorv32_rte_debug_exc_handler); break;
   }
 
   // execute handler
@@ -730,7 +732,7 @@ uint32_t neorv32_rte_get_compiler_isa(void) {
 /**********************************************************************//**
  * NEORV32 runtime environment: Check required ISA extensions (via compiler flags) against available ISA extensions (via MISA csr).
  *
- * @param[in] silent Show error message (via neorv32.uart) if isa_sw > isa_hw when != 0.
+ * @param[in] silent Show error message (via neorv32.uart) if isa_sw > isa_hw when = 0.
  * @return MISA content according to compiler configuration.
  **************************************************************************/
 int neorv32_rte_check_isa(int silent) {
@@ -746,7 +748,7 @@ int neorv32_rte_check_isa(int silent) {
     return 0;
   }
   else {
-    if ((silent == 0) || (neorv32_uart0_available() == 0)) {
+    if ((silent == 0) && (neorv32_uart0_available() != 0)) {
       neorv32_uart0_printf("\nWARNING! SW_ISA (features required) vs HW_ISA (features available) mismatch!\n"
                           "SW_ISA = 0x%x (compiler flags)\n"
                           "HW_ISA = 0x%x (misa csr)\n\n", misa_sw, misa_hw);

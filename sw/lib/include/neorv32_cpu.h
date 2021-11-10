@@ -273,8 +273,6 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_sleep(void) {
 inline void __attribute__ ((always_inline)) neorv32_cpu_eint(void) {
 
   asm volatile ("csrrsi zero, mstatus, %0" : : "i" (1 << CSR_MSTATUS_MIE));
-  asm volatile ("nop");
-  asm volatile ("nop");
 }
 
 
@@ -284,8 +282,6 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_eint(void) {
 inline void __attribute__ ((always_inline)) neorv32_cpu_dint(void) {
 
   asm volatile ("csrrci zero, mstatus, %0" : : "i" (1 << CSR_MSTATUS_MIE));
-  asm volatile ("nop");
-  asm volatile ("nop");
 }
 
 
