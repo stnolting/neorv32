@@ -351,6 +351,7 @@ begin
   wb_mem_a.sel   <= wb_cpu.sel;
   wb_mem_a.tag   <= wb_cpu.tag;
   wb_mem_a.cyc   <= wb_cpu.cyc;
+  wb_mem_a.lock  <= wb_cpu.lock;
 
   wb_mem_b.addr  <= wb_cpu.addr;
   wb_mem_b.wdata <= wb_cpu.wdata;
@@ -358,6 +359,7 @@ begin
   wb_mem_b.sel   <= wb_cpu.sel;
   wb_mem_b.tag   <= wb_cpu.tag;
   wb_mem_b.cyc   <= wb_cpu.cyc;
+  wb_mem_b.lock  <= wb_cpu.lock;
 
   wb_mem_c.addr  <= wb_cpu.addr;
   wb_mem_c.wdata <= wb_cpu.wdata;
@@ -365,6 +367,7 @@ begin
   wb_mem_c.sel   <= wb_cpu.sel;
   wb_mem_c.tag   <= wb_cpu.tag;
   wb_mem_c.cyc   <= wb_cpu.cyc;
+  wb_mem_c.lock  <= wb_cpu.lock;
 
   wb_irq.addr    <= wb_cpu.addr;
   wb_irq.wdata   <= wb_cpu.wdata;
