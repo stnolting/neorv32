@@ -588,7 +588,16 @@ For instance, an illegal instruction exception caught by the RTE debug handler m
 
 [source]
 ----
-<RTE> Illegal instruction @0x000002d6, MTVAL=0x00001537 </RTE>
+<RTE> Illegal instruction @ PC=0x000002d6, MTVAL=0x00001537 </RTE>
+----
+
+For bus access faults the RTE also outputs the error code from the <<_internal_bus_monitor_buskeeper>>
+to show the cause of the access fault. Two example are shown below.
+
+[source]
+----
+<RTE> Load access fault [TIMEOUT_ERR] @ PC=0x00000150, MTVAL=0xFFFFFF70 </RTE>
+<RTE> Store access fault [DEVICE_ERR] @ PC=0x00000162, MTVAL=0xF0000000 </RTE>
 ----
 
 To install the **actual application's trap handlers** the NEORV32 RTE provides functions for installing and
