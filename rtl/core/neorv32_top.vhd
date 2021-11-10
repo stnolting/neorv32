@@ -276,6 +276,9 @@ architecture neorv32_top_rtl of neorv32_top is
   end record;
   signal cpu_i, i_cache, cpu_d, p_bus : bus_interface_t;
 
+  -- bus access error (from BUSKEEPER) --
+  signal bus_error : std_ulogic;
+
   -- debug core interface (DCI) --
   signal dci_ndmrstn  : std_ulogic;
   signal dci_halt_req : std_ulogic;
@@ -334,7 +337,9 @@ architecture neorv32_top_rtl of neorv32_top is
   signal gptmr_irq     : std_ulogic;
 
   -- misc --
-  signal mtime_time : std_ulogic_vector(63 downto 0); -- current system time from MTIME
+  signal mtime_time  : std_ulogic_vector(63 downto 0); -- current system time from MTIME
+  signal ext_timeout : std_ulogic;
+  signal ext_access  : std_ulogic;
 
 begin
 
@@ -645,7 +650,7 @@ begin
     p_bus_re_o      => p_bus.re,       -- read enable
     p_bus_lock_o    => p_bus.lock,     -- exclusive access request
     p_bus_ack_i     => p_bus.ack,      -- bus transfer acknowledge
-    p_bus_err_i     => p_bus.err       -- bus transfer error
+    p_bus_err_i     => bus_error       -- bus transfer error
   );
 
   -- current CPU privilege level --
@@ -677,16 +682,6 @@ begin
   -- Bus Keeper (BUSKEEPER) -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_bus_keeper_inst: neorv32_bus_keeper
-  generic map (
-    -- External memory interface --
-    MEM_EXT_EN        => MEM_EXT_EN,        -- implement external memory bus interface?
-    -- Internal instruction memory --
-    MEM_INT_IMEM_EN   => MEM_INT_IMEM_EN,   -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
-    -- Internal data memory --
-    MEM_INT_DMEM_EN   => MEM_INT_DMEM_EN,   -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE  -- size of processor-internal data memory in bytes
-  )
   port map (
     -- host access --
     clk_i      => clk_i,                          -- global clock line
@@ -696,14 +691,19 @@ begin
     wren_i     => io_wren,                        -- byte write enable
     data_o     => resp_bus(RESP_BUSKEEPER).rdata, -- data out
     ack_o      => resp_bus(RESP_BUSKEEPER).ack,   -- transfer acknowledge
-    err_o      => resp_bus(RESP_BUSKEEPER).err,   -- transfer error
+    err_o      => bus_error,                      -- transfer error
     -- bus monitoring --
     bus_addr_i => p_bus.addr,                     -- address
     bus_rden_i => p_bus.re,                       -- read enable
     bus_wren_i => p_bus.we,                       -- write enable
     bus_ack_i  => p_bus.ack,                      -- transfer acknowledge from bus system
-    bus_err_i  => p_bus.err                       -- transfer error from bus system
+    bus_err_i  => p_bus.err,                      -- transfer error from bus system
+    bus_tmo_i  => ext_timeout,                    -- transfer timeout (external interface)
+    bus_ext_i  => ext_access                      -- external bus access
   );
+
+  -- unused, BUSKEEPER **directly** issues error to the CPU --
+  resp_bus(RESP_BUSKEEPER).err <= '0';
 
 
   -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
@@ -820,7 +820,9 @@ begin
       lock_i    => p_bus.lock,                    -- exclusive access request
       ack_o     => resp_bus(RESP_WISHBONE).ack,   -- transfer acknowledge
       err_o     => resp_bus(RESP_WISHBONE).err,   -- transfer error
+      tmo_o     => ext_timeout,                   -- transfer timeout
       priv_i    => p_bus.priv,                    -- current CPU privilege level
+      ext_o     => ext_access,                    -- active external access
       -- wishbone interface --
       wb_tag_o  => wb_tag_o,                      -- request tag
       wb_adr_o  => wb_adr_o,                      -- address
@@ -839,6 +841,8 @@ begin
   neorv32_wishbone_inst_false:
   if (MEM_EXT_EN = false) generate
     resp_bus(RESP_WISHBONE) <= resp_bus_entry_terminate_c;
+    ext_timeout <= '0';
+    ext_access  <= '0';
     --
     wb_adr_o  <= (others => '0');
     wb_dat_o  <= (others => '0');
@@ -879,6 +883,7 @@ begin
       data_i      => p_bus.wdata,              -- data in
       data_o      => resp_bus(RESP_CFS).rdata, -- data out
       ack_o       => resp_bus(RESP_CFS).ack,   -- transfer acknowledge
+      err_o       => resp_bus(RESP_CFS).err,   -- access error
       -- clock generator --
       clkgen_en_o => cfs_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,                  -- "clock" inputs
@@ -888,7 +893,6 @@ begin
       cfs_in_i    => cfs_in_i,                 -- custom inputs
       cfs_out_o   => cfs_out_o                 -- custom outputs
     );
-    resp_bus(RESP_CFS).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_cfs_inst_false:

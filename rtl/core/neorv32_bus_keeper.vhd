@@ -1,15 +1,9 @@
 -- #################################################################################################
 -- # << NEORV32 - Bus Keeper (BUSKEEPER) >>                                                        #
 -- # ********************************************************************************************* #
--- # This unit monitors the processor-internal bus. If the accessed INTERNAL (IMEM if enabled,     #
--- # DMEM if enabled, BOOTROM + IO region) module does not respond within the defined number of    #
--- # cycles (VHDL package: max_proc_int_response_time_c) the BUS KEEPER asserts the error signal   #
--- # to inform the CPU / bus driver.                                                               #
--- #                                                                                               #
--- # WARNING: The bus keeper timeout does not track accesses via the processor-external bus        #
--- #          interface! If the timeout-function of the Wishbone interface is not used, the CPU    #
--- #          might be permanently stalled by an an unacknowledged transfer! If the external bus   #
--- #          interface is disabled, ALL accesses by the CPU are internal.                         #
+-- # This unit monitors the processor-internal bus. If the accessed module does not respond within #
+-- # the defined number of  cycles (VHDL package: max_proc_int_response_time_c) or issues an ERROR #
+-- # conditions the BUS KEEPER asserts the error signal to inform the CPU.                         #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -50,16 +44,6 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_bus_keeper is
-  generic (
-    -- External memory interface --
-    MEM_EXT_EN        : boolean; -- implement external memory bus interface?
-    -- Internal instruction memory --
-    MEM_INT_IMEM_EN   : boolean; -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE : natural; -- size of processor-internal instruction memory in bytes
-    -- Internal data memory --
-    MEM_INT_DMEM_EN   : boolean; -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE : natural  -- size of processor-internal data memory in bytes
-  );
   port (
     -- host access --
     clk_i      : in  std_ulogic; -- global clock line
@@ -75,7 +59,9 @@ entity neorv32_bus_keeper is
     bus_rden_i : in  std_ulogic; -- read enable
     bus_wren_i : in  std_ulogic; -- write enable
     bus_ack_i  : in  std_ulogic; -- transfer acknowledge from bus system
-    bus_err_i  : in  std_ulogic  -- transfer error from bus system
+    bus_err_i  : in  std_ulogic; -- transfer error from bus system
+    bus_tmo_i  : in  std_ulogic; -- transfer timeout (external interface)
+    bus_ext_i  : in  std_ulogic  -- external bus access
   );
 end neorv32_bus_keeper;
 
@@ -87,32 +73,22 @@ architecture neorv32_bus_keeper_rtl of neorv32_bus_keeper is
 
   -- Control register --
   constant ctrl_err_type_c : natural :=  0; -- r/-: error type: 0=device error, 1=access timeout
-  constant ctrl_err_src_c  : natural :=  1; -- r/-: error source: 0=processor-external, 1=processor-internal
   constant ctrl_err_flag_c : natural := 31; -- r/c: bus error encountered, sticky; cleared by writing zero
 
-  -- sticky error flag --
+  -- sticky error flags --
   signal err_flag : std_ulogic;
+  signal err_type : std_ulogic;
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
 
-  -- bus access check --
-  type access_check_t is record
-    int_imem       : std_ulogic;
-    int_dmem       : std_ulogic;
-    int_bootrom_io : std_ulogic;
-    valid          : std_ulogic;
-  end record;
-  signal access_check : access_check_t;
-
   -- controller --
   type control_t is record
     pending  : std_ulogic;
     timeout  : std_ulogic_vector(index_size_f(max_proc_int_response_time_c)-1 downto 0);
     err_type : std_ulogic;
-    int_ext  : std_ulogic;
     bus_err  : std_ulogic;
   end record;
   signal control : control_t;
@@ -131,17 +107,6 @@ begin
   rden   <= acc_en and rden_i;
 
 
-  -- Bus Access Check -----------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- access to processor-internal IMEM or DMEM? --
-  access_check.int_imem <= '1' when (bus_addr_i(31 downto index_size_f(MEM_INT_IMEM_SIZE)) = imem_base_c(31 downto index_size_f(MEM_INT_IMEM_SIZE))) and (MEM_INT_IMEM_EN = true) else '0';
-  access_check.int_dmem <= '1' when (bus_addr_i(31 downto index_size_f(MEM_INT_DMEM_SIZE)) = dmem_base_c(31 downto index_size_f(MEM_INT_DMEM_SIZE))) and (MEM_INT_DMEM_EN = true) else '0';
-  -- access to processor-internal BOOTROM or IO devices? --
-  access_check.int_bootrom_io <= '1' when (bus_addr_i(31 downto 16) = boot_rom_base_c(31 downto 16)) else '0'; -- hacky!
-  -- actual internal bus access? --
-  access_check.valid <= access_check.int_imem or access_check.int_dmem or access_check.int_bootrom_io;
-
-
   -- Read/Write Access ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   rw_access: process(clk_i)
@@ -153,15 +118,16 @@ begin
       -- read access --
       data_o <= (others => '0');
       if (rden = '1') then
-        data_o(ctrl_err_type_c) <= control.err_type;
-        data_o(ctrl_err_src_c)  <= control.int_ext;
+        data_o(ctrl_err_type_c) <= err_type;
         data_o(ctrl_err_flag_c) <= err_flag;
       end if;
       --
-      if (control.bus_err = '1') then
-        err_flag <= '1'; -- sticky error flag
-      elsif (rden = '1') then -- clear on read
+      if (control.bus_err = '1') then -- sticky error flag
+        err_flag <= '1';
+        err_type <= control.err_type;
+      elsif ((wren or rden) = '1') then -- clear on or read or write
         err_flag <= '0';
+        err_type <= '0';
       end if;
     end if;
   end process rw_access;
@@ -175,9 +141,7 @@ begin
       control.pending  <= '0';
       control.bus_err  <= '0';
       control.err_type <= def_rst_val_c;
-      control.int_ext  <= def_rst_val_c;
       control.timeout  <= (others => def_rst_val_c);
-      err_o            <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
       control.bus_err <= '0';
@@ -186,36 +150,31 @@ begin
       if (control.pending = '0') then
         control.timeout <= std_ulogic_vector(to_unsigned(max_proc_int_response_time_c, index_size_f(max_proc_int_response_time_c)));
         if (bus_rden_i = '1') or (bus_wren_i = '1') then
-          if (access_check.valid = '1') or (MEM_EXT_EN = false) then
-            control.int_ext <= '1'; -- processor-internal access
-          else
-            control.int_ext <= '0'; -- processor-external access
-          end if;
           control.pending <= '1';
         end if;
-
       -- access monitor: PENDING --
       else
         control.timeout <= std_ulogic_vector(unsigned(control.timeout) - 1); -- countdown timer
-        if (bus_ack_i = '1') then -- normal termination by bus system
-          control.err_type <= '0'; -- don't care
-          control.bus_err  <= '0';
-          control.pending  <= '0';
-        elsif (bus_err_i = '1') then -- error termination by bus system
+        if (bus_err_i = '1') then -- error termination by bus system
           control.err_type <= '0'; -- device error
           control.bus_err  <= '1';
           control.pending  <= '0';
-        elsif (or_reduce_f(control.timeout) = '0') and (control.int_ext = '1') then -- timeout! terminate bus transfer (internal accesses only!)
+        elsif ((or_reduce_f(control.timeout) = '0') and (bus_ext_i = '0')) or -- internal access timeout
+              (bus_tmo_i = '1') then -- external access timeout
           control.err_type <= '1'; -- timeout error
           control.bus_err  <= '1';
           control.pending  <= '0';
+        elsif (bus_ack_i = '1') then -- normal termination by bus system
+          control.err_type <= '0'; -- don't care
+          control.bus_err  <= '0';
+          control.pending  <= '0';
         end if;
       end if;
-
-    -- only output timeout errors here - device errors are already propagated by the bus system --
-    err_o <= control.bus_err and control.err_type;
     end if;
   end process keeper_control;
+
+  -- signal bus error to CPU --
+  err_o <= control.bus_err;
 
 
 end neorv32_bus_keeper_rtl;

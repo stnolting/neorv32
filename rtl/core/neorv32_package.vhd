@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060305"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060306"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -1408,16 +1408,6 @@ package neorv32_package is
   -- Component: Bus Keeper ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_bus_keeper is
-    generic (
-       -- External memory interface --
-      MEM_EXT_EN        : boolean;  -- implement external memory bus interface?
-      -- Internal instruction memory --
-      MEM_INT_IMEM_EN   : boolean; -- implement processor-internal instruction memory
-      MEM_INT_IMEM_SIZE : natural; -- size of processor-internal instruction memory in bytes
-      -- Internal data memory --
-      MEM_INT_DMEM_EN   : boolean; -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE : natural  -- size of processor-internal data memory in bytes
-    );
     port (
       -- host access --
       clk_i      : in  std_ulogic; -- global clock line
@@ -1433,7 +1423,9 @@ package neorv32_package is
       bus_rden_i : in  std_ulogic; -- read enable
       bus_wren_i : in  std_ulogic; -- write enable
       bus_ack_i  : in  std_ulogic; -- transfer acknowledge from bus system
-      bus_err_i  : in  std_ulogic  -- transfer error from bus system
+      bus_err_i  : in  std_ulogic; -- transfer error from bus system
+      bus_tmo_i  : in  std_ulogic; -- transfer timeout (external interface)
+      bus_ext_i  : in  std_ulogic  -- external bus access
     );
   end component;
 
@@ -1790,7 +1782,9 @@ package neorv32_package is
       lock_i    : in  std_ulogic; -- exclusive access request
       ack_o     : out std_ulogic; -- transfer acknowledge
       err_o     : out std_ulogic; -- transfer error
+      tmo_o     : out std_ulogic; -- transfer timeout
       priv_i    : in  std_ulogic_vector(01 downto 0); -- current CPU privilege level
+      ext_o     : out std_ulogic; -- active external access
       -- wishbone interface --
       wb_tag_o  : out std_ulogic_vector(02 downto 0); -- request tag
       wb_adr_o  : out std_ulogic_vector(31 downto 0); -- address
@@ -1824,6 +1818,7 @@ package neorv32_package is
       data_i      : in  std_ulogic_vector(31 downto 0); -- data in
       data_o      : out std_ulogic_vector(31 downto 0); -- data out
       ack_o       : out std_ulogic; -- transfer acknowledge
+      err_o       : out std_ulogic; -- transfer error
       -- clock generator --
       clkgen_en_o : out std_ulogic; -- enable clock generator
       clkgen_i    : in  std_ulogic_vector(07 downto 0); -- "clock" inputs
