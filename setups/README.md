@@ -23,6 +23,7 @@ Project maintainers may make pull requests against this repository to [add or li
 | :file_folder: [`nexys-a7-test-setup`](https://github.com/stnolting/neorv32/tree/master/setups/vivado/nexys-a7-test-setup)  | Xilinx Vivado       | [Digilent Nexys A7](https://reference.digilentinc.com/reference/programmable-logic/nexys-a7/start)                                | Xilinx Artix-7 `XC7A50TCSG324-1`          | [AWenzel83](https://github.com/AWenzel83) |
 | :file_folder: [`nexys-a7-test-setup`](https://github.com/stnolting/neorv32/tree/master/setups/vivado/nexys-a7-test-setup)  | Xilinx Vivado       | [Digilent Nexys 4 DDR](https://reference.digilentinc.com/reference/programmable-logic/nexys-4-ddr/start)                          | Xilinx Artix-7 `XC7A100TCSG324-1`         | [AWenzel83](https://github.com/AWenzel83) |
 | :earth_africa: [custom CRC32 processor module for the nexys-a7 boards (**tutorial**)](https://github.com/motius/neorv32/tree/add-custom-crc32-module) | Xilinx Vivado | [Digilent Nexys A7](https://reference.digilentinc.com/reference/programmable-logic/nexys-a7/start)                    | Xilinx Artix-7 `XC7A50TCSG324-1`          | [motius](https://github.com/motius) ([ikstvn](https://github.com/ikstvn), [turbinenreiter](https://github.com/turbinenreiter)) |
+| :earth_africa: [neorv32-examples](https://github.com/emb4fun/neorv32-examples) | Intel Quartus Prime | Different Terasic boards  | Different Intel FPGAs | [emb4fun](https://github.com/emb4fun) |
 
 
 ## Setups using Open-Source Toolchains
