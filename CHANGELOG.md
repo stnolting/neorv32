@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 13.11.2021 | 1.6.3.7 | major control unit and ALU logic optimizations, reduced hardware footprint; closed further illegal instruction encoding holes (system environment instructions, ALU and ALU-immediate instructions, FENCE instructions) |
 | 10.11.2021 | 1.6.3.6 | optimized BUSKEEPER: removed redundant logic - bus keeper now also shows an external interface access timeout (if implemented) as "timeout error"; removed _BUSKEEPER_ERR_SRC_ status flag; :warning: added `err_o` (fault access operation) to the custom functions subsystem (CFS) |
 | 09.11.2021 | 1.6.3.5 | :warning: reworked IRQ trigger logic of SPI, TWI, UART0, UART1, NELOED and SLINK; FIRQs now only trigger **once** when the programmed interrupt condition is met instead of triggering **all the time** (see [PR #202](https://github.com/stnolting/neorv32/pull/202)) |
 | 06.11.2021 | 1.6.3.4 | :bug: fixed bug in **WISHBONE** interface: _pipelined_ Wishbone mode did not clear STB after first transfer cycle |
