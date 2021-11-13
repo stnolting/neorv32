@@ -60,7 +60,8 @@ entity neorv32_cpu_alu is
     -- data input --
     rs1_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
     rs2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
-    pc2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- delayed PC
+    pc_i        : in  std_ulogic_vector(data_width_c-1 downto 0); -- current PC
+    pc2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- next PC
     imm_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
     csr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
     -- data output --
@@ -85,10 +86,8 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
 
   -- results --
   signal addsub_res : std_ulogic_vector(data_width_c downto 0);
-  --
+  signal alu_res    : std_ulogic_vector(data_width_c-1 downto 0);
   signal cp_res     : std_ulogic_vector(data_width_c-1 downto 0);
-  signal arith_res  : std_ulogic_vector(data_width_c-1 downto 0);
-  signal logic_res  : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- co-processor arbiter and interface --
   type cp_ctrl_t is record
@@ -119,7 +118,7 @@ begin
 
   -- ALU Input Operand Mux ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  opa <= pc2_i when (ctrl_i(ctrl_alu_opa_mux_c) = '1') else rs1_i; -- operand a (first ALU input operand), only required for arithmetic ops
+  opa <= pc_i  when (ctrl_i(ctrl_alu_opa_mux_c) = '1') else rs1_i; -- operand a (first ALU input operand), only required for arithmetic ops
   opb <= imm_i when (ctrl_i(ctrl_alu_opb_mux_c) = '1') else rs2_i; -- operand b (second ALU input operand)
 
 
@@ -136,31 +135,55 @@ begin
     op_a_v := (opa(opa'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opa;
     op_b_v := (opb(opb'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opb;
     -- add/sub(slt) select --
-    if (ctrl_i(ctrl_alu_addsub_c) = '1') then -- subtraction
+    if (ctrl_i(ctrl_alu_op0_c) = '1') then -- subtraction
       op_y_v   := not op_b_v;
       cin_v(0) := '1';
     else -- addition
       op_y_v   := op_b_v;
       cin_v(0) := '0';
     end if;
-    -- adder core (result + carry/borrow) --
+    -- adder core --
     addsub_res <= std_ulogic_vector(unsigned(op_a_v) + unsigned(op_y_v) + unsigned(cin_v(0 downto 0)));
   end process binary_arithmetic_core;
 
-  -- direct output of address result --
+  -- direct output of adder result --
   add_o <= addsub_res(data_width_c-1 downto 0);
 
-  -- ALU arithmetic logic core --
-  arithmetic_core: process(ctrl_i, addsub_res)
-  begin
-    if (ctrl_i(ctrl_alu_arith_c) = alu_arith_cmd_addsub_c) then -- ADD/SUB
-      arith_res <= addsub_res(data_width_c-1 downto 0);
-    else -- SLT
-      arith_res <= (others => '0');
-      arith_res(0) <= addsub_res(addsub_res'left); -- => carry/borrow
-    end if;
-  end process arithmetic_core;
 
+  -- ALU Operation Select -------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  alu_core: process(ctrl_i, addsub_res, rs1_i, opb)
+  begin
+    case ctrl_i(ctrl_alu_op2_c downto ctrl_alu_op0_c) is
+      when alu_op_add_c  => alu_res <= addsub_res(data_width_c-1 downto 0); -- (default)
+      when alu_op_sub_c  => alu_res <= addsub_res(data_width_c-1 downto 0);
+--    when alu_op_mova_c => alu_res <= rs1_i; -- FIXME
+      when alu_op_slt_c  => alu_res <= (others => '0'); alu_res(0) <= addsub_res(addsub_res'left); -- => carry/borrow
+      when alu_op_movb_c => alu_res <= opb;
+      when alu_op_xor_c  => alu_res <= rs1_i xor opb; -- only rs1 required for logic ops (opa would also contain pc)
+      when alu_op_or_c   => alu_res <= rs1_i or  opb;
+      when alu_op_and_c  => alu_res <= rs1_i and opb;
+      when others        => alu_res <= addsub_res(data_width_c-1 downto 0);
+    end case;
+  end process alu_core;
+
+  -- ALU Function Select --------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  alu_function_mux: process(ctrl_i, alu_res, pc2_i, csr_i, cp_res)
+  begin
+    case ctrl_i(ctrl_alu_func1_c downto ctrl_alu_func0_c) is
+      when alu_func_core_c  => res_o <= alu_res; -- (default)
+      when alu_func_nxpc_c  => res_o <= pc2_i;
+      when alu_func_csrr_c  => res_o <= csr_i;
+      when alu_func_copro_c => res_o <= cp_res;
+      when others           => res_o <= alu_res; -- undefined
+    end case;
+  end process alu_function_mux;
+
+
+  -- **************************************************************************************************************************
+  -- Co-Processors
+  -- **************************************************************************************************************************
 
   -- Co-Processor Arbiter -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -193,7 +216,7 @@ begin
   end process cp_arbiter;
 
   -- is co-processor operation? --
-  cp_ctrl.cmd   <= '1' when (ctrl_i(ctrl_alu_func1_c downto ctrl_alu_func0_c) = alu_func_cmd_copro_c) else '0';
+  cp_ctrl.cmd   <= '1' when (ctrl_i(ctrl_alu_func1_c downto ctrl_alu_func0_c) = alu_func_copro_c) else '0';
   cp_ctrl.start <= '1' when (cp_ctrl.cmd = '1') and (cp_ctrl.cmd_ff = '0') else '0';
 
   -- co-processor select / star trigger --
@@ -208,38 +231,6 @@ begin
   -- co-processor result - only the *actually selected* co-processor may output data != 0 --
   cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3);
 
-
-  -- ALU Logic Core -------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  alu_logic_core: process(ctrl_i, rs1_i, opb)
-  begin
-    case ctrl_i(ctrl_alu_logic1_c downto ctrl_alu_logic0_c) is
-      when alu_logic_cmd_movb_c => logic_res <= opb; -- (default)
-      when alu_logic_cmd_xor_c  => logic_res <= rs1_i xor opb; -- only rs1 required for logic ops (opa would also contain pc)
-      when alu_logic_cmd_or_c   => logic_res <= rs1_i or  opb;
-      when alu_logic_cmd_and_c  => logic_res <= rs1_i and opb;
-      when others               => logic_res <= opb; -- undefined
-    end case;
-  end process alu_logic_core;
-
-
-  -- ALU Function Select --------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  alu_function_mux: process(ctrl_i, arith_res, logic_res, csr_i, cp_res)
-  begin
-    case ctrl_i(ctrl_alu_func1_c downto ctrl_alu_func0_c) is
-      when alu_func_cmd_arith_c => res_o <= arith_res; -- (default)
-      when alu_func_cmd_logic_c => res_o <= logic_res;
-      when alu_func_cmd_csrr_c  => res_o <= csr_i;
-      when alu_func_cmd_copro_c => res_o <= cp_res;
-      when others               => res_o <= arith_res; -- undefined
-    end case;
-  end process alu_function_mux;
-
-
-  -- **************************************************************************************************************************
-  -- Co-Processors
-  -- **************************************************************************************************************************
 
   -- Co-Processor 0: Shifter (CPU Core ISA) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
