@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060306"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060307"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -316,70 +316,69 @@ package neorv32_package is
   constant ctrl_rf_rd_adr4_c    : natural := 15; -- destination register address bit 4
   constant ctrl_rf_wb_en_c      : natural := 16; -- write back enable
   -- alu --
-  constant ctrl_alu_arith_c     : natural := 17; -- ALU arithmetic command
-  constant ctrl_alu_logic0_c    : natural := 18; -- ALU logic command bit 0
-  constant ctrl_alu_logic1_c    : natural := 19; -- ALU logic command bit 1
+  constant ctrl_alu_op0_c       : natural := 17; -- ALU operation select bit 0
+  constant ctrl_alu_op1_c       : natural := 18; -- ALU operation select bit 1
+  constant ctrl_alu_op2_c       : natural := 19; -- ALU operation select bit 2
   constant ctrl_alu_func0_c     : natural := 20; -- ALU function select command bit 0
   constant ctrl_alu_func1_c     : natural := 21; -- ALU function select command bit 1
-  constant ctrl_alu_addsub_c    : natural := 22; -- 0=ADD, 1=SUB
-  constant ctrl_alu_opa_mux_c   : natural := 23; -- operand A select (0=rs1, 1=PC)
-  constant ctrl_alu_opb_mux_c   : natural := 24; -- operand B select (0=rs2, 1=IMM)
-  constant ctrl_alu_unsigned_c  : natural := 25; -- is unsigned ALU operation
-  constant ctrl_alu_shift_dir_c : natural := 26; -- shift direction (0=left, 1=right)
-  constant ctrl_alu_shift_ar_c  : natural := 27; -- is arithmetic shift
-  constant ctrl_alu_frm0_c      : natural := 28; -- FPU rounding mode bit 0
-  constant ctrl_alu_frm1_c      : natural := 29; -- FPU rounding mode bit 1
-  constant ctrl_alu_frm2_c      : natural := 30; -- FPU rounding mode bit 2
+  constant ctrl_alu_opa_mux_c   : natural := 22; -- operand A select (0=rs1, 1=PC)
+  constant ctrl_alu_opb_mux_c   : natural := 23; -- operand B select (0=rs2, 1=IMM)
+  constant ctrl_alu_unsigned_c  : natural := 24; -- is unsigned ALU operation
+  constant ctrl_alu_shift_dir_c : natural := 25; -- shift direction (0=left, 1=right)
+  constant ctrl_alu_shift_ar_c  : natural := 26; -- is arithmetic shift
+  constant ctrl_alu_frm0_c      : natural := 27; -- FPU rounding mode bit 0
+  constant ctrl_alu_frm1_c      : natural := 28; -- FPU rounding mode bit 1
+  constant ctrl_alu_frm2_c      : natural := 29; -- FPU rounding mode bit 2
   -- bus interface --
-  constant ctrl_bus_size_lsb_c  : natural := 31; -- transfer size lsb (00=byte, 01=half-word)
-  constant ctrl_bus_size_msb_c  : natural := 32; -- transfer size msb (10=word, 11=?)
-  constant ctrl_bus_rd_c        : natural := 33; -- read data request
-  constant ctrl_bus_wr_c        : natural := 34; -- write data request
-  constant ctrl_bus_if_c        : natural := 35; -- instruction fetch request
-  constant ctrl_bus_mo_we_c     : natural := 36; -- memory address and data output register write enable
-  constant ctrl_bus_mi_we_c     : natural := 37; -- memory data input register write enable
-  constant ctrl_bus_unsigned_c  : natural := 38; -- is unsigned load
-  constant ctrl_bus_ierr_ack_c  : natural := 39; -- acknowledge instruction fetch bus exceptions
-  constant ctrl_bus_derr_ack_c  : natural := 40; -- acknowledge data access bus exceptions
-  constant ctrl_bus_fence_c     : natural := 41; -- executed fence operation
-  constant ctrl_bus_fencei_c    : natural := 42; -- executed fencei operation
-  constant ctrl_bus_lock_c      : natural := 43; -- make atomic/exclusive access lock
-  constant ctrl_bus_de_lock_c   : natural := 44; -- remove atomic/exclusive access 
-  constant ctrl_bus_ch_lock_c   : natural := 45; -- evaluate atomic/exclusive lock (SC operation)
+  constant ctrl_bus_size_lsb_c  : natural := 30; -- transfer size lsb (00=byte, 01=half-word)
+  constant ctrl_bus_size_msb_c  : natural := 31; -- transfer size msb (10=word, 11=?)
+  constant ctrl_bus_rd_c        : natural := 32; -- read data request
+  constant ctrl_bus_wr_c        : natural := 33; -- write data request
+  constant ctrl_bus_if_c        : natural := 34; -- instruction fetch request
+  constant ctrl_bus_mo_we_c     : natural := 35; -- memory address and data output register write enable
+  constant ctrl_bus_mi_we_c     : natural := 36; -- memory data input register write enable
+  constant ctrl_bus_unsigned_c  : natural := 37; -- is unsigned load
+  constant ctrl_bus_ierr_ack_c  : natural := 38; -- acknowledge instruction fetch bus exceptions
+  constant ctrl_bus_derr_ack_c  : natural := 39; -- acknowledge data access bus exceptions
+  constant ctrl_bus_fence_c     : natural := 40; -- executed fence operation
+  constant ctrl_bus_fencei_c    : natural := 41; -- executed fencei operation
+  constant ctrl_bus_lock_c      : natural := 42; -- make atomic/exclusive access lock
+  constant ctrl_bus_de_lock_c   : natural := 43; -- remove atomic/exclusive access 
+  constant ctrl_bus_ch_lock_c   : natural := 44; -- evaluate atomic/exclusive lock (SC operation)
   -- co-processors --
-  constant ctrl_cp_id_lsb_c     : natural := 46; -- cp select ID lsb
-  constant ctrl_cp_id_msb_c     : natural := 47; -- cp select ID msb
+  constant ctrl_cp_id_lsb_c     : natural := 45; -- cp select ID lsb
+  constant ctrl_cp_id_msb_c     : natural := 46; -- cp select ID msb
   -- instruction's control blocks (used by cpu co-processors) --
-  constant ctrl_ir_funct3_0_c   : natural := 48; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 49; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 50; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 51; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 52; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 53; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 54; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 55; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 56; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 57; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 58; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 59; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 60; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 61; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 62; -- funct12 bit 11
-  constant ctrl_ir_opcode7_0_c  : natural := 63; -- opcode7 bit 0
-  constant ctrl_ir_opcode7_1_c  : natural := 64; -- opcode7 bit 1
-  constant ctrl_ir_opcode7_2_c  : natural := 65; -- opcode7 bit 2
-  constant ctrl_ir_opcode7_3_c  : natural := 66; -- opcode7 bit 3
-  constant ctrl_ir_opcode7_4_c  : natural := 67; -- opcode7 bit 4
-  constant ctrl_ir_opcode7_5_c  : natural := 68; -- opcode7 bit 5
-  constant ctrl_ir_opcode7_6_c  : natural := 69; -- opcode7 bit 6
+  constant ctrl_ir_funct3_0_c   : natural := 47; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 48; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 49; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 50; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 51; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 52; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 53; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 54; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 55; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 56; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 57; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 58; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 59; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 60; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 61; -- funct12 bit 11
+  constant ctrl_ir_opcode7_0_c  : natural := 62; -- opcode7 bit 0
+  constant ctrl_ir_opcode7_1_c  : natural := 63; -- opcode7 bit 1
+  constant ctrl_ir_opcode7_2_c  : natural := 64; -- opcode7 bit 2
+  constant ctrl_ir_opcode7_3_c  : natural := 65; -- opcode7 bit 3
+  constant ctrl_ir_opcode7_4_c  : natural := 66; -- opcode7 bit 4
+  constant ctrl_ir_opcode7_5_c  : natural := 67; -- opcode7 bit 5
+  constant ctrl_ir_opcode7_6_c  : natural := 68; -- opcode7 bit 6
   -- CPU status --
-  constant ctrl_priv_lvl_lsb_c  : natural := 70; -- privilege level lsb
-  constant ctrl_priv_lvl_msb_c  : natural := 71; -- privilege level msb
-  constant ctrl_sleep_c         : natural := 72; -- set when CPU is in sleep mode
-  constant ctrl_trap_c          : natural := 73; -- set when CPU is entering trap execution
-  constant ctrl_debug_running_c : natural := 74; -- CPU is in debug mode when set
+  constant ctrl_priv_lvl_lsb_c  : natural := 69; -- privilege level lsb
+  constant ctrl_priv_lvl_msb_c  : natural := 70; -- privilege level msb
+  constant ctrl_sleep_c         : natural := 71; -- set when CPU is in sleep mode
+  constant ctrl_trap_c          : natural := 72; -- set when CPU is entering trap execution
+  constant ctrl_debug_running_c : natural := 73; -- CPU is in debug mode when set
   -- control bus size --
-  constant ctrl_width_c         : natural := 75; -- control bus size
+  constant ctrl_width_c         : natural := 74; -- control bus size
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -526,7 +525,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- <<< standard read/write CSRs >>> --
   -- user floating-point CSRs --
-  constant csr_class_float_c    : std_ulogic_vector(07 downto 0) := x"00"; -- floating point
+  constant csr_class_float_c    : std_ulogic_vector(09 downto 0) := x"00" & "00"; -- floating point
   constant csr_fflags_c         : std_ulogic_vector(11 downto 0) := x"001";
   constant csr_frm_c            : std_ulogic_vector(11 downto 0) := x"002";
   constant csr_fcsr_c           : std_ulogic_vector(11 downto 0) := x"003";
@@ -576,7 +575,7 @@ package neorv32_package is
   constant csr_mhpmevent30_c    : std_ulogic_vector(11 downto 0) := x"33e";
   constant csr_mhpmevent31_c    : std_ulogic_vector(11 downto 0) := x"33f";
   -- machine trap handling --
-  constant csr_class_trap_c     : std_ulogic_vector(07 downto 0) := x"34"; -- machine trap handling
+  constant csr_class_trap_c     : std_ulogic_vector(08 downto 0) := x"34" & '0'; -- machine trap handling
   constant csr_mscratch_c       : std_ulogic_vector(11 downto 0) := x"340";
   constant csr_mepc_c           : std_ulogic_vector(11 downto 0) := x"341";
   constant csr_mcause_c         : std_ulogic_vector(11 downto 0) := x"342";
@@ -761,19 +760,20 @@ package neorv32_package is
 
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- arithmetic core --
-  constant alu_arith_cmd_addsub_c : std_ulogic := '0'; -- r.arith <= A +/- B
-  constant alu_arith_cmd_slt_c    : std_ulogic := '1'; -- r.arith <= A < B
-  -- logic core --
-  constant alu_logic_cmd_movb_c   : std_ulogic_vector(1 downto 0) := "00"; -- r.logic <= B
-  constant alu_logic_cmd_xor_c    : std_ulogic_vector(1 downto 0) := "01"; -- r.logic <= A xor B
-  constant alu_logic_cmd_or_c     : std_ulogic_vector(1 downto 0) := "10"; -- r.logic <= A or B
-  constant alu_logic_cmd_and_c    : std_ulogic_vector(1 downto 0) := "11"; -- r.logic <= A and B
-  -- function select (actual alu result) --
-  constant alu_func_cmd_arith_c   : std_ulogic_vector(1 downto 0) := "00"; -- r <= r.arith
-  constant alu_func_cmd_logic_c   : std_ulogic_vector(1 downto 0) := "01"; -- r <= r.logic
-  constant alu_func_cmd_csrr_c    : std_ulogic_vector(1 downto 0) := "10"; -- r <= CSR read
-  constant alu_func_cmd_copro_c   : std_ulogic_vector(1 downto 0) := "11"; -- r <= CP result (multi-cycle)
+  -- ALU core [DO NOT CHANGE ENCODING!] --
+  constant alu_op_add_c     : std_ulogic_vector(2 downto 0) := "000"; -- alu_result <= A + B
+  constant alu_op_sub_c     : std_ulogic_vector(2 downto 0) := "001"; -- alu_result <= A - B
+--constant alu_op_mova_c    : std_ulogic_vector(2 downto 0) := "010"; -- alu_result <= A (rs1)
+  constant alu_op_slt_c     : std_ulogic_vector(2 downto 0) := "011"; -- alu_result <= A < B
+  constant alu_op_movb_c    : std_ulogic_vector(2 downto 0) := "100"; -- alu_result <= B
+  constant alu_op_xor_c     : std_ulogic_vector(2 downto 0) := "101"; -- alu_result <= A xor B
+  constant alu_op_or_c      : std_ulogic_vector(2 downto 0) := "110"; -- alu_result <= A or B
+  constant alu_op_and_c     : std_ulogic_vector(2 downto 0) := "111"; -- alu_result <= A and B
+  -- function select (actual ALU result) --
+  constant alu_func_core_c  : std_ulogic_vector(1 downto 0) := "00"; -- r <= alu_result
+  constant alu_func_nxpc_c  : std_ulogic_vector(1 downto 0) := "01"; -- r <= next_PC
+  constant alu_func_csrr_c  : std_ulogic_vector(1 downto 0) := "10"; -- r <= CSR read
+  constant alu_func_copro_c : std_ulogic_vector(1 downto 0) := "11"; -- r <= CP result (multi-cycle)
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1177,6 +1177,7 @@ package neorv32_package is
       imm_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- immediate
       fetch_pc_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
       curr_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- current PC (corresponding to current instruction)
+      next_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- next PC (corresponding to next instruction)
       csr_rdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
       -- FPU interface --
       fpu_flags_i   : in  std_ulogic_vector(04 downto 0); -- exception flags
@@ -1244,7 +1245,8 @@ package neorv32_package is
       -- data input --
       rs1_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
       rs2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
-      pc2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- delayed PC
+      pc_i        : in  std_ulogic_vector(data_width_c-1 downto 0); -- current PC
+      pc2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- next PC
       imm_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
       csr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
       -- data output --

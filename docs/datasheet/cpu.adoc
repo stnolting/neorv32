@@ -611,25 +611,28 @@ code (see `sw/example/floating_point_test`).
 
 The CSR access instructions as well as the exception and interrupt system (= the privileged architecture)
 is implemented when the `CPU_EXTENSION_RISCV_Zicsr` configuration generic is _true_.
+
+[IMPORTANT]
+If the `Zicsr` extension is disabled the CPU does not provide any _privileged architecture_ features at all!
+In order to provide the full set of privileged functions that are required to run more complex tasks like
+operating system and to allow a secure execution environment the `Zicsr` extension should always be enabled.
+
 In this case the following instructions are available:
 
 * CSR access: `csrrw`, `csrrs`, `csrrc`, `csrrwi`, `csrrsi`, `csrrci`
 * environment: `mret`, `wfi`
 
-[WARNING]
-If the `Zicsr` extension is disabled the CPU does not provide any _privileged architecture_ features at all!
-In order to provide the full set of functions and to allow a secure execution
-environment the `Zicsr` extension should always be enabled.
+[NOTE]
+If `rd=x0` for the `csrrw[i]` instructions there will be no actual read access to the according CSR.
+However, access privileges are still enforced so these instruction variants _do_ cause side-effects
+(the RISC-V spec. state that these combinations "_shall_ not cause any side-effects").
 
 [NOTE]
-The "wait for interrupt instruction" `wfi` works like a sleep command. When executed, the CPU is
+The "wait for interrupt instruction" `wfi` acts like a sleep command. When executed, the CPU is
 halted until a valid interrupt request occurs. To wake up again, the according interrupt source has to
 be enabled via the `mie` CSR and the global interrupt enable flag in `mstatus` has to be set.
-
-[NOTE]
 The `wfi` instruction may also be executed in user-mode without causing an exception as <<_mstatus>> bit
-`TW` (timeout wait) is hardwired to zero.
-
+`TW` (timeout wait) is _hardwired_ to zero.
 
 
 
