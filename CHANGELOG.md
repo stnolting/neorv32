@@ -26,13 +26,13 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 14.11.2021 | 1.6.3.7 | major control unit and ALU logic optimizations, reduced hardware footprint; closed further illegal instruction encoding holes (system environment instructions, ALU and ALU-immediate instructions, FENCE instructions); [PR #204](https://github.com/stnolting/neorv32/pull/204) |
+| 14.11.2021 | 1.6.3.7 | major control unit and ALU logic optimizations, reduced hardware footprint; :lock: closed further illegal instruction encoding holes (system environment instructions, ALU and ALU-immediate instructions, FENCE instructions); [PR #204](https://github.com/stnolting/neorv32/pull/204) |
 | 10.11.2021 | 1.6.3.6 | optimized BUSKEEPER: removed redundant logic - bus keeper now also shows an external interface access timeout (if implemented) as "timeout error"; removed _BUSKEEPER_ERR_SRC_ status flag; :warning: added `err_o` (fault access operation) to the custom functions subsystem (CFS) |
 | 09.11.2021 | 1.6.3.5 | :warning: reworked IRQ trigger logic of SPI, TWI, UART0, UART1, NELOED and SLINK; FIRQs now only trigger **once** when the programmed interrupt condition is met instead of triggering **all the time** (see [PR #202](https://github.com/stnolting/neorv32/pull/202)) |
 | 06.11.2021 | 1.6.3.4 | :bug: fixed bug in **WISHBONE** interface: _pipelined_ Wishbone mode did not clear STB after first transfer cycle |
 | 05.11.2021 | 1.6.3.3 | :bug: fixed bug in general purpose timer **GPTMR** - clock prescaler had no effect, the timer was always counting at full processor clock speed; minor watchdog (WDT) code edits |
 | 04.11.2021 | 1.6.3.2 | added optional _alternative_ IMEM and DMEM architecture-only design files (in `rtl/core/mem`); these are not device-specific ("cyclone 2") as they do not use any FPGA-specific primitives or macros - just a different HDL style for describing memories is used (see [PR #192](https://github.com/stnolting/neorv32/pull/198) and [Issue #197](https://github.com/stnolting/neorv32/issues/197)) |
-| 03.11.2021 | 1.6.3.1 | :sparkles: added new peripheral module - general purpose 32-bit timer `GPTMR` ([see PR #195](https://github.com/stnolting/neorv32/pull/195)) |
+| 03.11.2021 | 1.6.3.1 | :sparkles: added new peripheral module - **General Purpose 32-bit Timer `GPTMR`** ([see PR #195](https://github.com/stnolting/neorv32/pull/195)) |
 | 02.11.2021 |[**:rocket:1.6.3**](https://github.com/stnolting/neorv32/releases/tag/v1.6.3) | **New release** |
 | 01.11.2021 | 1.6.2.13 | added new top generics to explicitly control implementation of `Zicntr` (CPU base counters) and `Zihpm` (hardware performance monitors, see [PR #192](https://github.com/stnolting/neorv32/pull/192) |
 | 30.10.2021 | 1.6.2.12 | :sparkles: :lock: added memory-mapped register to BUSKEEPER module - software can now retrieve the actual cause of an instruction / data-load / data-store bus access fault exception (access timeout or device error); see [PR #191](https://github.com/stnolting/neorv32/pull/191) |
