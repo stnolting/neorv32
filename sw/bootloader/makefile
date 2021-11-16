@@ -34,7 +34,7 @@
 # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
 #################################################################################################
 
-# Relative or absolute path to the NEORV32 home folder
+# Modify this variable to fit your NEORV32 setup (neorv32 home folder)
 NEORV32_HOME ?= ../..
 
-include ../common/common.mk
+include $(NEORV32_HOME)/sw/common/common.mk

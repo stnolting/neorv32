@@ -138,7 +138,7 @@ endif
 
 
 
+# Modify this variable to fit your NEORV32 setup (neorv32 home folder)
 NEORV32_HOME ?= ../../..
 
-# Include central makefile
-include ../../common/common.mk
+include $(NEORV32_HOME)/sw/common/common.mk
