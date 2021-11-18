@@ -1027,17 +1027,16 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 /** TWI control register bits */
 enum NEORV32_TWI_CTRL_enum {
-  TWI_CTRL_EN     =  0, /**< TWI control register(0) (r/w): TWI enable */
-  TWI_CTRL_START  =  1, /**< TWI control register(1) (-/w): Generate START condition, auto-clears */
-  TWI_CTRL_STOP   =  2, /**< TWI control register(2) (-/w): Generate STOP condition, auto-clears */
-  TWI_CTRL_PRSC0  =  3, /**< TWI control register(3) (r/w): Clock prescaler select bit 0 */
-  TWI_CTRL_PRSC1  =  4, /**< TWI control register(4) (r/w): Clock prescaler select bit 1 */
-  TWI_CTRL_PRSC2  =  5, /**< TWI control register(5) (r/w): Clock prescaler select bit 2 */
-  TWI_CTRL_MACK   =  6, /**< TWI control register(6) (r/w): Generate controller ACK for each transmission */
-  TWI_CTRL_CKSTEN =  7, /**< TWI control register(7) (r/w): Enable clock stretching (by peripheral) */
+  TWI_CTRL_EN    =  0, /**< TWI control register(0) (r/w): TWI enable */
+  TWI_CTRL_START =  1, /**< TWI control register(1) (-/w): Generate START condition, auto-clears */
+  TWI_CTRL_STOP  =  2, /**< TWI control register(2) (-/w): Generate STOP condition, auto-clears */
+  TWI_CTRL_PRSC0 =  3, /**< TWI control register(3) (r/w): Clock prescaler select bit 0 */
+  TWI_CTRL_PRSC1 =  4, /**< TWI control register(4) (r/w): Clock prescaler select bit 1 */
+  TWI_CTRL_PRSC2 =  5, /**< TWI control register(5) (r/w): Clock prescaler select bit 2 */
+  TWI_CTRL_MACK  =  6, /**< TWI control register(6) (r/w): Generate ACK by controller for each transmission */
 
-  TWI_CTRL_ACK    = 30, /**< TWI control register(30) (r/-): ACK received when set */
-  TWI_CTRL_BUSY   = 31  /**< TWI control register(31) (r/-): Transfer in progress, busy flag */
+  TWI_CTRL_ACK   = 30, /**< TWI control register(30) (r/-): ACK received when set */
+  TWI_CTRL_BUSY  = 31  /**< TWI control register(31) (r/-): Transfer in progress, busy flag */
 };
 
 /** WTD receive/transmit data register bits */

@@ -65,9 +65,8 @@ int neorv32_twi_available(void) {
  * Enable and configure TWI controller. The TWI control register bits are listed in #NEORV32_TWI_CTRL_enum.
  *
  * @param[in] prsc Clock prescaler select (0..7). See #NEORV32_CLOCK_PRSC_enum.
- * @param[in] ckst_en Enable clock-stretching by peripherals when 1.
  **************************************************************************/
-void neorv32_twi_setup(uint8_t prsc, uint8_t ckst_en) {
+void neorv32_twi_setup(uint8_t prsc) {
 
   NEORV32_TWI.CTRL = 0; // reset
 
@@ -77,10 +76,7 @@ void neorv32_twi_setup(uint8_t prsc, uint8_t ckst_en) {
   uint32_t ct_prsc = (uint32_t)(prsc & 0x07);
   ct_prsc = ct_prsc << TWI_CTRL_PRSC0;
 
-  uint32_t ct_cksten = (uint32_t)(ckst_en & 0x01);
-  ct_cksten = ct_cksten << TWI_CTRL_CKSTEN;
-
-  NEORV32_TWI.CTRL = ct_enable | ct_prsc | ct_cksten;
+  NEORV32_TWI.CTRL = ct_enable | ct_prsc;
 }
 
 
