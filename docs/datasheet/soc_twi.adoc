@@ -21,8 +21,8 @@ components. Since this interface only needs two signals (the serial data line `t
 clock line `twi_scl_io`) - despite of the number of connected devices - it allows easy interconnections of
 several peripheral nodes.
 
-The NEORV32 TWI implements a **TWI controller**. It features "clock stretching" (if enabled via the control
-register), so a slow peripheral can halt the transmission by pulling the SCL line low. Currently, **no multi-controller
+The NEORV32 TWI implements a **TWI controller**. It supports "clock so a slow peripheral can halt
+the transmission by pulling the SCL line low. Currently, **no multi-controller
 support** is available. Also, the NEORV32 TWI unit cannot operate in peripheral mode.
 
 The TWI is enabled via the _TWI_CTRL_EN_ bit in the `CTRL` control register. The user program can start / stop a
@@ -90,15 +90,14 @@ or the state of the TWI module.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.10+<| `0xffffffb0` .10+<| `NEORV32_TWI.CTRL` <|`0` _TWI_CTRL_EN_     ^| r/w <| TWI enable
-                                              <|`1` _TWI_CTRL_START_  ^| r/w <| generate START condition
-                                              <|`2` _TWI_CTRL_STOP_   ^| r/w <| generate STOP condition
-                                              <|`3` _TWI_CTRL_PRSC0_  ^| r/w .3+<| 3-bit clock prescaler select
-                                              <|`4` _TWI_CTRL_PRSC1_  ^| r/w
-                                              <|`5` _TWI_CTRL_PRSC2_  ^| r/w
-                                              <|`6` _TWI_CTRL_MACK_   ^| r/w <| generate controller ACK for each transmission ("MACK")
-                                              <|`7` _TWI_CTRL_CKSTEN_ ^| r/w <| allow clock-stretching by peripherals when set
-                                              <|`30` _TWI_CTRL_ACK_   ^| r/- <| ACK received when set
-                                              <|`31` _TWI_CTRL_BUSY_  ^| r/- <| transfer/START/STOP in progress when set
+.9+<| `0xffffffb0` .9+<| `NEORV32_TWI.CTRL` <|`0` _TWI_CTRL_EN_     ^| r/w <| TWI enable
+                                            <|`1` _TWI_CTRL_START_  ^| r/w <| generate START condition
+                                            <|`2` _TWI_CTRL_STOP_   ^| r/w <| generate STOP condition
+                                            <|`3` _TWI_CTRL_PRSC0_  ^| r/w .3+<| 3-bit clock prescaler select
+                                            <|`4` _TWI_CTRL_PRSC1_  ^| r/w
+                                            <|`5` _TWI_CTRL_PRSC2_  ^| r/w
+                                            <|`6` _TWI_CTRL_MACK_   ^| r/w <| generate controller ACK for each transmission ("MACK")
+                                            <|`30` _TWI_CTRL_ACK_   ^| r/- <| ACK received when set
+                                            <|`31` _TWI_CTRL_BUSY_  ^| r/- <| transfer/START/STOP in progress when set
 | `0xffffffb4` | `NEORV32_TWI.DATA` |`7:0` _TWI_DATA_MSB_ : TWI_DATA_LSB_ | r/w | receive/transmit data
 |=======================

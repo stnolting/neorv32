@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 18.11.2021 | 1.6.3.8 | TWI: removed TWI_CTRL_CKSTEN flag (enable clock stretching) from control registers, clock-stretching is now _always_ enabled |
 | 14.11.2021 | 1.6.3.7 | major control unit and ALU logic optimizations, reduced hardware footprint; :lock: closed further illegal instruction encoding holes (system environment instructions, ALU and ALU-immediate instructions, FENCE instructions); [PR #204](https://github.com/stnolting/neorv32/pull/204) |
 | 10.11.2021 | 1.6.3.6 | optimized BUSKEEPER: removed redundant logic - bus keeper now also shows an external interface access timeout (if implemented) as "timeout error"; removed _BUSKEEPER_ERR_SRC_ status flag; :warning: added `err_o` (fault access operation) to the custom functions subsystem (CFS) |
 | 09.11.2021 | 1.6.3.5 | :warning: reworked IRQ trigger logic of SPI, TWI, UART0, UART1, NELOED and SLINK; FIRQs now only trigger **once** when the programmed interrupt condition is met instead of triggering **all the time** (see [PR #202](https://github.com/stnolting/neorv32/pull/202)) |

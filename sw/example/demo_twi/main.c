@@ -57,6 +57,7 @@ void scan_twi(void);
 void set_speed(void);
 void send_twi(void);
 uint32_t hexstr_to_uint(char *buffer, uint8_t length);
+void print_hex_byte(uint8_t data);
 
 
 /**********************************************************************//**
@@ -104,8 +105,8 @@ int main() {
   neorv32_uart0_printf("This program allows to create TWI transfers by hand.\n"
                       "Type 'help' to see the help menu.\n\n");
 
-  // configure TWI, second slowest clock, no clock-stretching
-  neorv32_twi_setup(CLK_PRSC_2048, 0);
+  // configure TWI, second slowest clock
+  neorv32_twi_setup(CLK_PRSC_2048);
 
   // no active bus session yet
   bus_claimed = 0;
@@ -219,7 +220,9 @@ void scan_twi(void) {
     neorv32_twi_generate_stop();
 
     if (twi_ack == 0) {
-      neorv32_uart0_printf("+ Found device at write-address 0x%x\n", (uint32_t)(2*i));
+      neorv32_uart0_printf(" + Found device at write-address 0x");
+      print_hex_byte(2*i);
+      neorv32_uart0_printf("\n");
       num_devices++;
     }
   }
@@ -242,8 +245,9 @@ void send_twi(void) {
   neorv32_uart0_scan(terminal_buffer, 3, 1); // 2 hex chars for address plus '\0'
   uint8_t tmp = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
   uint8_t res = neorv32_twi_trans(tmp);
-  neorv32_uart0_printf("\nRX data:  0x%x\n", (uint32_t)neorv32_twi_get_data());
-  neorv32_uart0_printf("Response: ");
+  neorv32_uart0_printf("\n RX data:  0x");
+  print_hex_byte((uint8_t)neorv32_twi_get_data());
+  neorv32_uart0_printf("\n Response: ");
   if (res == 0)
     neorv32_uart0_printf("ACK\n");
   else
@@ -253,7 +257,7 @@ void send_twi(void) {
 
 
 /**********************************************************************//**
- * Helper function to convert N hex chars string into uint32_T
+ * Helper function to convert N hex chars string into uint32_t
  *
  * @param[in,out] buffer Pointer to array of chars to convert into number.
  * @param[in,out] length Length of the conversion string.
@@ -281,3 +285,18 @@ uint32_t hexstr_to_uint(char *buffer, uint8_t length) {
 
   return res;
 }
+
+
+/**********************************************************************//**
+ * Print byte as hex chars via UART0.
+ *
+ * @param data 8-bit data to be printed as two hex chars.
+ **************************************************************************/
+void print_hex_byte(uint8_t data) {
+
+  static const char symbols[] = "0123456789abcdef";
+
+  neorv32_uart0_putc(symbols[(data >> 4) & 15]);
+  neorv32_uart0_putc(symbols[(data >> 0) & 15]);
+}
+
