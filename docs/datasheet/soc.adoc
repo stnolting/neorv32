@@ -25,6 +25,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ custom functions subsystem for custom co-processor extensions (<<_custom_functions_subsystem_cfs,**CFS**>>)
 * _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (<<_smart_led_interface_neoled,**NEOLED**>>)
 * _optional_ external interrupt controller with up to 32 channels (<<_external_interrupt_controller_xirq,**XIRQ**>>)
+* _optional_ general purpose 32-bit timer (<<_general_purpose_timer_gptmr,**GPTMR**>>)
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>)
 * bus keeper to monitor processor-internal bus transactions (<<_internal_bus_monitor_buskeeper,**BUSKEEPER**>>)
 * system configuration information memory to check HW configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
@@ -1016,6 +1017,18 @@ See section <<_smart_led_interface_neoled>> for more information.
 |======
 
 
+:sectnums!:
+===== _IO_GPTMR_EN_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **IO_GPTMR_EN** | _boolean_ | false
+3+| Implement general purpose 32-bit timer (GPTMR) when _true_.
+See section <<_general_purpose_timer_gptmr>> for more information.
+|======
+
+
 
 <<<
 // ####################################################################################################################
@@ -1098,7 +1111,8 @@ the according FIRQ priority; 0 = highest, 15 = lowest):
 | 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED TX buffer interrupt
 | 10      | <<_stream_link_interface_slink,SLINK>> | RX data buffer interrupt
 | 11      | <<_stream_link_interface_slink,SLINK>> | TX data buffer interrupt
-| 12:15   | - | _reserved_, will never fire
+| 12      | <<_general_purpose_timer_gptmr,GPTMR>> | General purpose timer interrupt
+| 13:15   | - | _reserved_, will never fire
 |=======================
 
 .Trigger type
@@ -1488,6 +1502,6 @@ include::soc_neoled.adoc[]
 
 include::soc_xirq.adoc[]
 
+include::soc_gptmr.adoc[]
+
 include::soc_sysinfo.adoc[]
-
-

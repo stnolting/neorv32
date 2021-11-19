@@ -15,7 +15,7 @@ and a set of standard peripherals like UART, TWI and SPI.
 
 ### Processor Configuration
 
-- [x] CPU: `rv32imac_Zicsr` (reduced CPU `[m]instret` & `[m]cycle` counter width!)
+- [x] CPU: `rv32imacu_Zicsr_Zicntr` (reduced CPU `[m]instret` & `[m]cycle` counter width!)
 - [x] Memory: 64 kB instruction memory (internal IMEM), 64 kB data memory (internal DMEM), 4 kB bootloader ROM
 - [x] Peripherals: `GPIO`, `MTIME`, `UART0`, `SPI`, `TWI`, `PWM`, `WDT`, `TRNG`
 - [x] Clock: 24 MHz from on-chip HF oscillator (via PLL)
@@ -70,22 +70,21 @@ GPIO output 0 (`gpio_o(0)`, also connected to the RGB drive) is used as output f
 ### FPGA Utilization
 
 ```
-Number of slice registers: 1768 out of 5280 (33%)
-Number of I/O registers:      7 out of  117 (6%)
-Number of LUT4s:           4850 out of 5280 (92%)
-Number of IO sites used:     23 out of   39 (59%)
-Number of DSPs:               0 out of    8 (0%)
-Number of I2Cs:               0 out of    2 (0%)
+Number of slice registers: 1754 out of 5280  (33%)
+Number of I/O registers:     11 out of  117   (9%)
+Number of LUT4s:           4882 out of 5280  (92%)
+Number of DSPs:               0 out of    8   (0%)
+Number of I2Cs:               0 out of    2   (0%)
 Number of High Speed OSCs:    1 out of    1 (100%)
-Number of Low Speed OSCs:     0 out of    1 (0%)
-Number of RGB PWM:            0 out of    1 (0%)
+Number of Low Speed OSCs:     0 out of    1   (0%)
+Number of RGB PWM:            0 out of    1   (0%)
 Number of RGB Drivers:        1 out of    1 (100%)
-Number of SCL FILTERs:        0 out of    2 (0%)
+Number of SCL FILTERs:        0 out of    2   (0%)
 Number of SRAMs:              4 out of    4 (100%)
-Number of WARMBOOTs:          0 out of    1 (0%)
-Number of SPIs:               0 out of    2 (0%)
-Number of EBRs:              15 out of   30 (50%)
-Number of PLLs:               1 out of    1 (100%
+Number of WARMBOOTs:          0 out of    1   (0%)
+Number of SPIs:               0 out of    2   (0%)
+Number of EBRs:              15 out of   30  (50%)
+Number of PLLs:               1 out of    1 (100%)
 ```
 
 ### FPGA Setup

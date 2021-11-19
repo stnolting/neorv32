@@ -133,7 +133,8 @@ entity neorv32_top is
     IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
     IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_NEOLED_TX_FIFO            : natural := 1       -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
+    IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
+    IO_GPTMR_EN                  : boolean := false   -- implement general purpose timer (GPTMR)?
   );
   port (
     -- Global control --
@@ -246,7 +247,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal clk_div    : std_ulogic_vector(11 downto 0);
   signal clk_div_ff : std_ulogic_vector(11 downto 0);
   signal clk_gen    : std_ulogic_vector(07 downto 0);
-  signal clk_gen_en : std_ulogic_vector(07 downto 0);
+  signal clk_gen_en : std_ulogic_vector(08 downto 0);
   --
   signal wdt_cg_en    : std_ulogic;
   signal uart0_cg_en  : std_ulogic;
@@ -256,6 +257,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal pwm_cg_en    : std_ulogic;
   signal cfs_cg_en    : std_ulogic;
   signal neoled_cg_en : std_ulogic;
+  signal gptmr_cg_en  : std_ulogic;
 
   -- bus interface --
   type bus_interface_t is record
@@ -308,7 +310,7 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- module response bus - device ID --
   type resp_bus_id_t is (RESP_BUSKEEPER, RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO, RESP_MTIME, RESP_UART0, RESP_UART1, RESP_SPI,
-                         RESP_TWI, RESP_PWM, RESP_WDT, RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_SLINK, RESP_XIRQ);
+                         RESP_TWI, RESP_PWM, RESP_WDT, RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_SLINK, RESP_XIRQ, RESP_GPTMR);
 
   -- module response bus --
   type resp_bus_t is array (resp_bus_id_t) of resp_bus_entry_t;
@@ -329,6 +331,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal slink_tx_irq  : std_ulogic;
   signal slink_rx_irq  : std_ulogic;
   signal xirq_irq      : std_ulogic;
+  signal gptmr_irq     : std_ulogic;
 
   -- misc --
   signal mtime_time : std_ulogic_vector(63 downto 0); -- current system time from MTIME
@@ -352,6 +355,7 @@ begin
   cond_sel_string_f(io_slink_en_c, "SLINK ", "") &
   cond_sel_string_f(IO_NEOLED_EN, "NEOLED ", "") &
   cond_sel_string_f(boolean(XIRQ_NUM_CH > 0), "XIRQ ", "") &
+  cond_sel_string_f(IO_GPTMR_EN, "GPTMR ", "") &
   ""
   severity note;
 
@@ -425,6 +429,7 @@ begin
       clk_gen_en(5) <= pwm_cg_en;
       clk_gen_en(6) <= cfs_cg_en;
       clk_gen_en(7) <= neoled_cg_en;
+      clk_gen_en(8) <= gptmr_cg_en;
       -- actual clock generator --
       if (or_reduce_f(clk_gen_en) = '1') then
         clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
@@ -539,8 +544,8 @@ begin
   fast_irq(09) <= neoled_irq;    -- NEOLED buffer free
   fast_irq(10) <= slink_rx_irq;  -- SLINK RX interrupt
   fast_irq(11) <= slink_tx_irq;  -- SLINK TX interrupt
+  fast_irq(12) <= gptmr_irq;     -- general purpose timer
   --
-  fast_irq(12) <= '0'; -- reserved
   fast_irq(13) <= '0'; -- reserved
   fast_irq(14) <= '0'; -- reserved
   fast_irq(15) <= '0'; -- LOWEST PRIORITY - reserved
@@ -1348,6 +1353,37 @@ begin
   end generate;
 
 
+  -- General Purpose Timer (GPTMR) ----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_gptmr_inst_true:
+  if (IO_GPTMR_EN = true) generate
+    neorv32_gptmr_inst: neorv32_gptmr
+    port map (
+      -- host access --
+      clk_i     => clk_i,                      -- global clock line
+      addr_i    => p_bus.addr,                 -- address
+      rden_i    => io_rden,                    -- read enable
+      wren_i    => io_wren,                    -- write enable
+      data_i    => p_bus.wdata,                -- data in
+      data_o    => resp_bus(RESP_GPTMR).rdata, -- data out
+      ack_o     => resp_bus(RESP_GPTMR).ack,   -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o => gptmr_cg_en,              -- enable clock generator
+      clkgen_i    => clk_gen,
+      -- interrupt --
+      irq_o       => gptmr_irq                 -- transmission done interrupt
+    );
+    resp_bus(RESP_GPTMR).err <= '0'; -- no access error possible
+  end generate;
+
+  neorv32_gptmr_inst_false:
+  if (IO_GPTMR_EN = false) generate
+    resp_bus(RESP_GPTMR) <= resp_bus_entry_terminate_c;
+    gptmr_cg_en          <= '0';
+    gptmr_irq            <= '0';
+  end generate;
+
+
   -- System Configuration Information Memory (SYSINFO) --------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_sysinfo_inst: neorv32_sysinfo
@@ -1398,7 +1434,8 @@ begin
     IO_CFS_EN                    => IO_CFS_EN,            -- implement custom functions subsystem (CFS)?
     IO_SLINK_EN                  => io_slink_en_c,        -- implement stream link interface?
     IO_NEOLED_EN                 => IO_NEOLED_EN,         -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_XIRQ_NUM_CH               => XIRQ_NUM_CH           -- number of external interrupt (XIRQ) channels to implement
+    IO_XIRQ_NUM_CH               => XIRQ_NUM_CH,          -- number of external interrupt (XIRQ) channels to implement
+    IO_GPTMR_EN                  => IO_GPTMR_EN           -- implement general purpose timer (GPTMR)?
   )
   port map (
     -- host access --

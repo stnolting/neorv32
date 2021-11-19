@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32 - Blinking LED Demo Program >>                                                     #
+// # << NEORV32: neorv32_gptmr.h - General Purpose Timer (GPTMR) HW Driver >>                      #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -34,88 +34,22 @@
 
 
 /**********************************************************************//**
- * @file blink_led/main.c
+ * @file neorv32_gptmr.h
  * @author Stephan Nolting
- * @brief Simple blinking LED demo program using the lowest 8 bits of the GPIO.output port.
- **************************************************************************/
-
-#include <neorv32.h>
-
-
-/**********************************************************************//**
- * @name User configuration
- **************************************************************************/
-/**@{*/
-/** UART BAUD rate */
-#define BAUD_RATE 19200
-/** Use the custom ASM version for blinking the LEDs defined (= uncommented) */
-//#define USE_ASM_VERSION
-/**@}*/
-
-
-/**********************************************************************//**
- * ASM function to blink LEDs
- **************************************************************************/
-extern void blink_led_asm(uint32_t gpio_out_addr);
-
-/**********************************************************************//**
- * C function to blink LEDs
- **************************************************************************/
-void blink_led_c(void);
-
-
-/**********************************************************************//**
- * Main function; shows an incrementing 8-bit counter on GPIO.output(7:0).
+ * @brief General purpose timer (GPTMR) HW driver header file.
  *
- * @note This program requires the GPIO controller to be synthesized (the UART is optional).
- *
- * @return 0 if execution was successful
+ * @note These functions should only be used if the GPTMR unit was synthesized (IO_GPTMR_EN = true).
  **************************************************************************/
-int main() {
 
-  // init UART (primary UART = UART0; if no id number is specified the primary UART is used) at default baud rate, no parity bits, ho hw flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+#ifndef neorv32_gptmr_h
+#define neorv32_gptmr_h
 
-  // check if GPIO unit is implemented at all
-  if (neorv32_gpio_available() == 0) {
-    neorv32_uart0_print("Error! No GPIO unit synthesized!\n");
-    return 1; // nope, no GPIO unit synthesized
-  }
+// prototypes
+int neorv32_gptmr_available(void);
+void neorv32_gptmr_setup(uint8_t prsc, uint8_t mode, uint32_t threshold);
+void neorv32_gptmr_disable(void);
+void neorv32_gptmr_enable(void);
+void neorv32_gptmr_restart(void);
+void neorv32_gptmr_ack_irq(void);
 
-  // capture all exceptions and give debug info via UART
-  // this is not required, but keeps us safe
-  neorv32_rte_setup();
-
-  // say hello
-  neorv32_uart0_print("Blinking LED demo program\n");
-
-
-// use ASM version of LED blinking (file: blink_led_in_asm.S)
-#ifdef USE_ASM_VERSION
-
-  blink_led_asm((uint32_t)(&NEORV32_GPIO.OUTPUT_LO));
-
-// use C version of LED blinking
-#else
-
-  blink_led_c();
-
-#endif
-  return 0;
-}
-
-
-/**********************************************************************//**
- * C-version of blinky LED counter
- **************************************************************************/
-void blink_led_c(void) {
-
-  neorv32_gpio_port_set(0); // clear gpio output
-
-  int cnt = 0;
-
-  while (1) {
-    neorv32_gpio_port_set(cnt++ & 0xFF); // increment counter and mask for lowest 8 bit
-    neorv32_cpu_delay_ms(200); // wait 200ms using busy wait
-  }
-}
+#endif // neorv32_gptmr_h

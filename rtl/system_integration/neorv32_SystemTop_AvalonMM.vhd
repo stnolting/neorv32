@@ -124,7 +124,8 @@ entity neorv32_top_avalonmm is
     IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
     IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_NEOLED_TX_FIFO            : natural := 1       -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
+    IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
+    IO_GPTMR_EN                  : boolean := false   -- implement general purpose timer (GPTMR)?
   );
   port (
     -- Global control --
@@ -317,7 +318,9 @@ begin
     IO_CFS_IN_SIZE => IO_CFS_IN_SIZE,
     IO_CFS_OUT_SIZE => IO_CFS_OUT_SIZE,
     IO_NEOLED_EN => IO_NEOLED_EN,
-    IO_NEOLED_TX_FIFO => IO_NEOLED_TX_FIFO)
+    IO_NEOLED_TX_FIFO => IO_NEOLED_TX_FIFO,
+    IO_GPTMR_EN => IO_GPTMR_EN
+    )
   port map (
     -- Global control --
     clk_i => clk_i,
