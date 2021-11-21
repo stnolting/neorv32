@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 21.11.2021 | 1.6.3.9 | minor rtl edits: configuring an IMEM or DMEM size (`MEM_INT_IMEM_SIZE` / `MEM_INT_DMEM_SIZE` generic) of 0 will now exclude the according memory from synthesis (and also clears the according `NEORV32_SYSINFO.SOC` flags) |
 | 18.11.2021 | 1.6.3.8 | TWI: removed TWI_CTRL_CKSTEN flag (enable clock stretching) from control registers, clock-stretching is now _always_ enabled |
 | 14.11.2021 | 1.6.3.7 | major control unit and ALU logic optimizations, reduced hardware footprint; :lock: closed further illegal instruction encoding holes (system environment instructions, ALU and ALU-immediate instructions, FENCE instructions); [PR #204](https://github.com/stnolting/neorv32/pull/204) |
 | 10.11.2021 | 1.6.3.6 | optimized BUSKEEPER: removed redundant logic - bus keeper now also shows an external interface access timeout (if implemented) as "timeout error"; removed _BUSKEEPER_ERR_SRC_ status flag; :warning: added `err_o` (fault access operation) to the custom functions subsystem (CFS) |

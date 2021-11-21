@@ -158,8 +158,8 @@ begin
   -- Memory --
   sysinfo_mem(2)(00) <= bool_to_ulogic_f(INT_BOOTLOADER_EN); -- processor-internal bootloader implemented?
   sysinfo_mem(2)(01) <= bool_to_ulogic_f(MEM_EXT_EN);        -- external memory bus interface implemented?
-  sysinfo_mem(2)(02) <= bool_to_ulogic_f(MEM_INT_IMEM_EN);   -- processor-internal instruction memory implemented?
-  sysinfo_mem(2)(03) <= bool_to_ulogic_f(MEM_INT_DMEM_EN);   -- processor-internal data memory implemented?
+  sysinfo_mem(2)(02) <= bool_to_ulogic_f(MEM_INT_IMEM_EN) and bool_to_ulogic_f(boolean(MEM_INT_IMEM_SIZE > 0)); -- processor-internal instruction memory implemented?
+  sysinfo_mem(2)(03) <= bool_to_ulogic_f(MEM_INT_DMEM_EN) and bool_to_ulogic_f(boolean(MEM_INT_DMEM_SIZE > 0)); -- processor-internal data memory implemented?
   sysinfo_mem(2)(04) <= bool_to_ulogic_f(MEM_EXT_BIG_ENDIAN); -- is external memory bus interface using BIG-endian byte-order?
   sysinfo_mem(2)(05) <= bool_to_ulogic_f(ICACHE_EN);         -- processor-internal instruction cache implemented?
   --
