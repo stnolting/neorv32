@@ -709,7 +709,7 @@ begin
   -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_int_imem_inst_true:
-  if (MEM_INT_IMEM_EN = true) generate
+  if (MEM_INT_IMEM_EN = true) and (MEM_INT_IMEM_SIZE > 0) generate
     neorv32_int_imem_inst: neorv32_imem
     generic map (
       IMEM_BASE    => imem_base_c,          -- memory base address
@@ -730,7 +730,7 @@ begin
   end generate;
 
   neorv32_int_imem_inst_false:
-  if (MEM_INT_IMEM_EN = false) generate
+  if (MEM_INT_IMEM_EN = false) or (MEM_INT_IMEM_SIZE = 0) generate
     resp_bus(RESP_IMEM) <= resp_bus_entry_terminate_c;
   end generate;
 
@@ -738,7 +738,7 @@ begin
   -- Processor-Internal Data Memory (DMEM) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_int_dmem_inst_true:
-  if (MEM_INT_DMEM_EN = true) generate
+  if (MEM_INT_DMEM_EN = true) and (MEM_INT_DMEM_SIZE > 0) generate
     neorv32_int_dmem_inst: neorv32_dmem
     generic map (
       DMEM_BASE => dmem_base_c,      -- memory base address
@@ -758,7 +758,7 @@ begin
   end generate;
 
   neorv32_int_dmem_inst_false:
-  if (MEM_INT_DMEM_EN = false) generate
+  if (MEM_INT_DMEM_EN = false) or (MEM_INT_DMEM_SIZE = 0) generate
     resp_bus(RESP_DMEM) <= resp_bus_entry_terminate_c;
   end generate;
 
