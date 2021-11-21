@@ -66,7 +66,8 @@ AlhambraII:
 ULX3S:
 	$(MAKE) \
 	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
-	  NEORV32_MEM_SRC="../../rtl/core/mem/neorv32_imem.default.vhd ../../rtl/core/mem/neorv32_dmem.default.vhd" \
+	  NEORV32_MEM_SRC="../../rtl/core/mem/neorv32_imem.default.vhd ../../rtl/core/mem/neorv32_dmem.default.vhd $(ULX3S_VHDL)" \
+	  NEORV32_VERILOG_SRC="$(ULX3S_VERILOG)" \
 	  run
 
 # Designs
