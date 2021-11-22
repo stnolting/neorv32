@@ -78,10 +78,10 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
   -- tap JTAG signal synchronizer --
   type tap_sync_t is record
     -- internal --
-    trst_ff     : std_ulogic_vector(4 downto 0);
-    tck_ff      : std_ulogic_vector(4 downto 0);
-    tdi_ff      : std_ulogic_vector(3 downto 0);
-    tms_ff      : std_ulogic_vector(3 downto 0);
+    trst_ff     : std_ulogic_vector(2 downto 0);
+    tck_ff      : std_ulogic_vector(2 downto 0);
+    tdi_ff      : std_ulogic_vector(2 downto 0);
+    tms_ff      : std_ulogic_vector(2 downto 0);
     -- external --
     trst        : std_ulogic;
     tck_rising  : std_ulogic;
@@ -134,10 +134,10 @@ begin
   tap_synchronizer: process(rstn_i, clk_i)
   begin
     if rising_edge(clk_i) then
-      tap_sync.trst_ff <= tap_sync.trst_ff(3 downto 0) & jtag_trst_i;
-      tap_sync.tck_ff  <= tap_sync.tck_ff( 3 downto 0) & jtag_tck_i;
-      tap_sync.tdi_ff  <= tap_sync.tdi_ff( 2 downto 0) & jtag_tdi_i;
-      tap_sync.tms_ff  <= tap_sync.tms_ff( 2 downto 0) & jtag_tms_i;
+      tap_sync.trst_ff <= tap_sync.trst_ff(1 downto 0) & jtag_trst_i;
+      tap_sync.tck_ff  <= tap_sync.tck_ff( 1 downto 0) & jtag_tck_i;
+      tap_sync.tdi_ff  <= tap_sync.tdi_ff( 1 downto 0) & jtag_tdi_i;
+      tap_sync.tms_ff  <= tap_sync.tms_ff( 1 downto 0) & jtag_tms_i;
       if (tap_sync.tck_falling = '1') then -- update output data TDO on falling edge of TCK
         jtag_tdo_o <= tap_sync.tdo;
       end if;
@@ -145,17 +145,17 @@ begin
   end process tap_synchronizer;
 
   -- JTAG reset --
-  tap_sync.trst <= '0' when (tap_sync.trst_ff(4 downto 1) = "0000") else '1';
+  tap_sync.trst <= '0' when (tap_sync.trst_ff(2 downto 1) = "00") else '1';
 
   -- JTAG clock edge --
-  tap_sync.tck_rising  <= '1' when (tap_sync.tck_ff(4 downto 1) = "0011") else '0';
-  tap_sync.tck_falling <= '1' when (tap_sync.tck_ff(4 downto 1) = "1100") else '0';
+  tap_sync.tck_rising  <= '1' when (tap_sync.tck_ff(2 downto 1) = "01") else '0';
+  tap_sync.tck_falling <= '1' when (tap_sync.tck_ff(2 downto 1) = "10") else '0';
 
   -- JTAG test mode select --
-  tap_sync.tms <= tap_sync.tms_ff(3);
+  tap_sync.tms <= tap_sync.tms_ff(2);
 
   -- JTAG serial data input --
-  tap_sync.tdi <= tap_sync.tdi_ff(3);
+  tap_sync.tdi <= tap_sync.tdi_ff(2);
 
 
   -- Tap Control FSM ------------------------------------------------------------------------
