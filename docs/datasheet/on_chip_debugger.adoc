@@ -87,13 +87,11 @@ External JTAG access is provided by the following top-level ports.
 | `jtag_tms_i`  | 1     | in        | mode select
 |=======================
 
-.JTAG Clock
+.Maximum JTAG Clock
 [IMPORTANT]
-The actual JTAG clock signal is **not** used as primary clock. Instead it is used to synchronize
-JTGA accesses, while all internal operations trigger on the system clock. Hence, no additional clock domain is required
-for integration of this module.
-However, this constraints the maximal JTAG clock (`jtag_tck_i`) frequency to be less than or equal to
-1/4 of the system clock (`clk_i`) frequency.
+All JTAG signals are synchronized to the processor clock domain by oversampling them in DTM. Hence, no additional
+clock domain is required for the DTM. However, this constraints the maximal JTAG clock frequency (`jtag_tck_i`) to be less
+than or equal to **1/5** of the processor clock frequency (`clk_i`).
 
 [NOTE]
 If the on-chip debugger is disabled (_ON_CHIP_DEBUGGER_EN_ = false) the JTAG serial input `jtag_tdi_i` is directly
@@ -127,10 +125,24 @@ The following table shows the available data registers:
 | others             | `BYPASS` | 1           | default JTAG bypass register
 |=======================
 
+.`DTMCS` - DTM Control and Status Register
+[cols="^2,^3,^1,<8"]
+[options="header",grid="rows"]
+|=======================
+| Bit(s) | Name           | r/w | Description
+| 31:18  | -              | r/- | _reserved_, hardwired to zero
+| 17     | `dmihardreset` | r/w | setting this bit will reset the DM interface; this bit auto-clears
+| 16     | `dmireset`     | r/w | setting this bit will clear ste sticky error state; this bit auto-clears
+| 15     | -              | r/- | _reserved_, hardwired to zero
+| 14:12  | `idle`         | r/- | recommended idle states (= 0, no idle states required)
+| 11:10  | `dmistat`      | r/- | DMI statu: `00` = no error, `01` = reserved, `10` = operation failed, `11` = failed operation during pending DMI operation
+| 9:4    | `abits`        | r/- | number of DMI address bits (= 7)
+| 3:0    | `version`      | r/- | `0001` = spec version 0.13
+|=======================
+
 [INFO]
 See the https://github.com/riscv/riscv-debug-spec[RISC-V debug specification] for more information regarding the data
-registers and operations.
-A local copy can be found in `docs/references`.
+registers and operations. A local copy can be found in `docs/references`.
 
 
 
