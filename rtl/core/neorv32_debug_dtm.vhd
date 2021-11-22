@@ -37,7 +37,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 entity neorv32_debug_dtm is
   generic (
@@ -72,9 +71,26 @@ end neorv32_debug_dtm;
 architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
 
   -- DMI Configuration (fixed!) --
-  constant dmi_idle_c    : std_ulogic_vector(02 downto 0) := "010"; -- minimum number if idle cycles
+  constant dmi_idle_c    : std_ulogic_vector(02 downto 0) := "000"; -- no idle cycles required
   constant dmi_version_c : std_ulogic_vector(03 downto 0) := "0001"; -- version (0.13)
   constant dmi_abits_c   : std_ulogic_vector(05 downto 0) := "000111"; -- number of DMI address bits (7)
+
+  -- tap JTAG signal synchronizer --
+  type tap_sync_t is record
+    -- internal --
+    trst_ff     : std_ulogic_vector(4 downto 0);
+    tck_ff      : std_ulogic_vector(4 downto 0);
+    tdi_ff      : std_ulogic_vector(3 downto 0);
+    tms_ff      : std_ulogic_vector(3 downto 0);
+    -- external --
+    trst        : std_ulogic;
+    tck_rising  : std_ulogic;
+    tck_falling : std_ulogic;
+    tdi         : std_ulogic;
+    tdo         : std_ulogic;
+    tms         : std_ulogic;
+  end record;
+  signal tap_sync : tap_sync_t;
 
   -- tap controller - fsm --
   type tap_ctrl_state_t is (LOGIC_RESET, DR_SCAN, DR_CAPTURE, DR_SHIFT, DR_EXIT1, DR_PAUSE, DR_EXIT2, DR_UPDATE,
@@ -82,11 +98,6 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
   type tap_ctrl_t is record
     state      : tap_ctrl_state_t;
     state_prev : tap_ctrl_state_t;
-    trst_sync  : std_ulogic_vector(01 downto 0);
-    tck_sync   : std_ulogic_vector(02 downto 0);
-    tdi_sync   : std_ulogic_vector(01 downto 0);
-    tdo_sync   : std_ulogic;
-    tms_sync   : std_ulogic_vector(01 downto 0);
   end record;
   signal tap_ctrl : tap_ctrl_t;
 
@@ -118,49 +129,64 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
 
 begin
 
+  -- JTAG Signal Synchronizer ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  tap_synchronizer: process(rstn_i, clk_i)
+  begin
+    if rising_edge(clk_i) then
+      tap_sync.trst_ff <= tap_sync.trst_ff(3 downto 0) & jtag_trst_i;
+      tap_sync.tck_ff  <= tap_sync.tck_ff( 3 downto 0) & jtag_tck_i;
+      tap_sync.tdi_ff  <= tap_sync.tdi_ff( 2 downto 0) & jtag_tdi_i;
+      tap_sync.tms_ff  <= tap_sync.tms_ff( 2 downto 0) & jtag_tms_i;
+      if (tap_sync.tck_falling = '1') then -- update output data TDO on falling edge of TCK
+        jtag_tdo_o <= tap_sync.tdo;
+      end if;
+    end if;
+  end process tap_synchronizer;
+
+  -- JTAG reset --
+  tap_sync.trst <= '0' when (tap_sync.trst_ff(4 downto 1) = "0000") else '1';
+
+  -- JTAG clock edge --
+  tap_sync.tck_rising  <= '1' when (tap_sync.tck_ff(4 downto 1) = "0011") else '0';
+  tap_sync.tck_falling <= '1' when (tap_sync.tck_ff(4 downto 1) = "1100") else '0';
+
+  -- JTAG test mode select --
+  tap_sync.tms <= tap_sync.tms_ff(3);
+
+  -- JTAG serial data input --
+  tap_sync.tdi <= tap_sync.tdi_ff(3);
+
+
   -- Tap Control FSM ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   tap_control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      tap_ctrl.trst_sync <= (others => '0');
-      tap_ctrl.tck_sync  <= (others => '0');
-      tap_ctrl.tdi_sync  <= (others => '0');
-      tap_ctrl.tms_sync  <= (others => '0');
-      jtag_tdo_o         <= '0';
-      --
       tap_ctrl.state      <= LOGIC_RESET;
       tap_ctrl.state_prev <= LOGIC_RESET;
     elsif rising_edge(clk_i) then
-      -- synchronizer --
-      tap_ctrl.trst_sync <= tap_ctrl.trst_sync(0) & jtag_trst_i;
-      tap_ctrl.tck_sync  <= tap_ctrl.tck_sync(1 downto 0) & jtag_tck_i;
-      tap_ctrl.tdi_sync  <= tap_ctrl.tdi_sync(0) & jtag_tdi_i;
-      tap_ctrl.tms_sync  <= tap_ctrl.tms_sync(0) & jtag_tms_i;
-      jtag_tdo_o         <= tap_ctrl.tdo_sync;
-
-      -- state machine --
       tap_ctrl.state_prev <= tap_ctrl.state;
-      if (tap_ctrl.trst_sync(1) = '0') then -- reset
+      if (tap_sync.trst = '0') then -- reset
         tap_ctrl.state <= LOGIC_RESET;
-      elsif (tap_ctrl.tck_sync(2) = '0') and (tap_ctrl.tck_sync(1) = '1') then -- clock pulse (trigger on rising edge)
+      elsif (tap_sync.tck_rising = '1') then -- clock pulse (evaluate TMS on the rising edge of TCK)
         case tap_ctrl.state is -- JTAG state machine
-          when LOGIC_RESET => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= RUN_IDLE;   else tap_ctrl.state <= LOGIC_RESET; end if;
-          when RUN_IDLE    => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= RUN_IDLE;   else tap_ctrl.state <= DR_SCAN;     end if;
-          when DR_SCAN     => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= DR_CAPTURE; else tap_ctrl.state <= IR_SCAN;     end if;
-          when DR_CAPTURE  => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= DR_SHIFT;   else tap_ctrl.state <= DR_EXIT1;    end if;
-          when DR_SHIFT    => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= DR_SHIFT;   else tap_ctrl.state <= DR_EXIT1;    end if;
-          when DR_EXIT1    => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= DR_PAUSE;   else tap_ctrl.state <= DR_UPDATE;   end if;
-          when DR_PAUSE    => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= DR_PAUSE;   else tap_ctrl.state <= DR_EXIT2;    end if;
-          when DR_EXIT2    => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= DR_SHIFT;   else tap_ctrl.state <= DR_UPDATE;   end if;
-          when DR_UPDATE   => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= RUN_IDLE;   else tap_ctrl.state <= DR_SCAN;     end if;
-          when IR_SCAN     => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= IR_CAPTURE; else tap_ctrl.state <= LOGIC_RESET; end if;
-          when IR_CAPTURE  => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= IR_SHIFT;   else tap_ctrl.state <= IR_EXIT1;    end if;
-          when IR_SHIFT    => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= IR_SHIFT;   else tap_ctrl.state <= IR_EXIT1;    end if;
-          when IR_EXIT1    => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= IR_PAUSE;   else tap_ctrl.state <= IR_UPDATE;   end if;
-          when IR_PAUSE    => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= IR_PAUSE;   else tap_ctrl.state <= IR_EXIT2;    end if;
-          when IR_EXIT2    => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= IR_SHIFT;   else tap_ctrl.state <= IR_UPDATE;   end if;
-          when IR_UPDATE   => if (tap_ctrl.tms_sync(1) = '0') then tap_ctrl.state <= RUN_IDLE;   else tap_ctrl.state <= DR_SCAN;     end if;
+          when LOGIC_RESET => if (tap_sync.tms = '0') then tap_ctrl.state <= RUN_IDLE;   else tap_ctrl.state <= LOGIC_RESET; end if;
+          when RUN_IDLE    => if (tap_sync.tms = '0') then tap_ctrl.state <= RUN_IDLE;   else tap_ctrl.state <= DR_SCAN;     end if;
+          when DR_SCAN     => if (tap_sync.tms = '0') then tap_ctrl.state <= DR_CAPTURE; else tap_ctrl.state <= IR_SCAN;     end if;
+          when DR_CAPTURE  => if (tap_sync.tms = '0') then tap_ctrl.state <= DR_SHIFT;   else tap_ctrl.state <= DR_EXIT1;    end if;
+          when DR_SHIFT    => if (tap_sync.tms = '0') then tap_ctrl.state <= DR_SHIFT;   else tap_ctrl.state <= DR_EXIT1;    end if;
+          when DR_EXIT1    => if (tap_sync.tms = '0') then tap_ctrl.state <= DR_PAUSE;   else tap_ctrl.state <= DR_UPDATE;   end if;
+          when DR_PAUSE    => if (tap_sync.tms = '0') then tap_ctrl.state <= DR_PAUSE;   else tap_ctrl.state <= DR_EXIT2;    end if;
+          when DR_EXIT2    => if (tap_sync.tms = '0') then tap_ctrl.state <= DR_SHIFT;   else tap_ctrl.state <= DR_UPDATE;   end if;
+          when DR_UPDATE   => if (tap_sync.tms = '0') then tap_ctrl.state <= RUN_IDLE;   else tap_ctrl.state <= DR_SCAN;     end if;
+          when IR_SCAN     => if (tap_sync.tms = '0') then tap_ctrl.state <= IR_CAPTURE; else tap_ctrl.state <= LOGIC_RESET; end if;
+          when IR_CAPTURE  => if (tap_sync.tms = '0') then tap_ctrl.state <= IR_SHIFT;   else tap_ctrl.state <= IR_EXIT1;    end if;
+          when IR_SHIFT    => if (tap_sync.tms = '0') then tap_ctrl.state <= IR_SHIFT;   else tap_ctrl.state <= IR_EXIT1;    end if;
+          when IR_EXIT1    => if (tap_sync.tms = '0') then tap_ctrl.state <= IR_PAUSE;   else tap_ctrl.state <= IR_UPDATE;   end if;
+          when IR_PAUSE    => if (tap_sync.tms = '0') then tap_ctrl.state <= IR_PAUSE;   else tap_ctrl.state <= IR_EXIT2;    end if;
+          when IR_EXIT2    => if (tap_sync.tms = '0') then tap_ctrl.state <= IR_SHIFT;   else tap_ctrl.state <= IR_UPDATE;   end if;
+          when IR_UPDATE   => if (tap_sync.tms = '0') then tap_ctrl.state <= RUN_IDLE;   else tap_ctrl.state <= DR_SCAN;     end if;
           when others      => tap_ctrl.state <= LOGIC_RESET;
         end case;
       end if;
@@ -173,46 +199,43 @@ begin
   reg_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (tap_ctrl.trst_sync(1) = '0') then -- reset
-        tap_reg.ireg <= "00001"; -- IDCODE
-      elsif (tap_ctrl.tck_sync(2) = '0') and (tap_ctrl.tck_sync(1) = '1') then -- clock pulse (trigger on rising edge)
+      -- serial data input --
+      if (tap_sync.tck_rising = '1') then -- clock pulse (evaluate TDI on rising edge of TCK)
 
         -- instruction register --
-        if (tap_ctrl.state = LOGIC_RESET) then -- reset
-          tap_reg.ireg <= "00001"; -- IDCODE
-        elsif (tap_ctrl.state = IR_CAPTURE) then -- preload phase
+        if (tap_ctrl.state = LOGIC_RESET) or (tap_ctrl.state = IR_CAPTURE) then -- reset or preload phase
           tap_reg.ireg <= "00001"; -- IDCODE
         elsif (tap_ctrl.state = IR_SHIFT) then -- access phase
-          tap_reg.ireg <= tap_ctrl.tdi_sync(1) & tap_reg.ireg(tap_reg.ireg'left downto 1);
+          tap_reg.ireg <= tap_sync.tdi & tap_reg.ireg(tap_reg.ireg'left downto 1);
         end if;
 
         -- data register --
         if (tap_ctrl.state = DR_CAPTURE) then -- preload phase
           case tap_reg.ireg is
-            when "00001" => tap_reg.idcode <= IDCODE_VERSION & IDCODE_PARTID & IDCODE_MANID & '1'; -- IDCODE (LBS has to be always set!)
+            when "00001" => tap_reg.idcode <= IDCODE_VERSION & IDCODE_PARTID & IDCODE_MANID & '1'; -- IDCODE (LSB has to be always set!)
             when "10000" => tap_reg.dtmcs  <= tap_reg.dtmcs_nxt;-- dtmcs
             when "10001" => tap_reg.dmi    <= tap_reg.dmi_nxt; -- dmi
             when others  => tap_reg.bypass <= '0'; -- BYPASS
           end case;
         elsif (tap_ctrl.state = DR_SHIFT) then -- access phase
           case tap_reg.ireg is
-            when "00001" => tap_reg.idcode <= tap_ctrl.tdi_sync(1) & tap_reg.idcode(tap_reg.idcode'left downto 1); -- IDCODE
-            when "10000" => tap_reg.dtmcs  <= tap_ctrl.tdi_sync(1) & tap_reg.dtmcs(tap_reg.dtmcs'left downto 1); -- dtmcs
-            when "10001" => tap_reg.dmi    <= tap_ctrl.tdi_sync(1) & tap_reg.dmi(tap_reg.dmi'left downto 1); -- dmi
-            when others  => tap_reg.bypass <= tap_ctrl.tdi_sync(1); -- BYPASS
+            when "00001" => tap_reg.idcode <= tap_sync.tdi & tap_reg.idcode(tap_reg.idcode'left downto 1); -- IDCODE
+            when "10000" => tap_reg.dtmcs  <= tap_sync.tdi & tap_reg.dtmcs(tap_reg.dtmcs'left downto 1); -- dtmcs
+            when "10001" => tap_reg.dmi    <= tap_sync.tdi & tap_reg.dmi(tap_reg.dmi'left downto 1); -- dmi
+            when others  => tap_reg.bypass <= tap_sync.tdi; -- BYPASS
           end case;
         end if;
       end if;
 
       -- serial data output --
       if (tap_ctrl.state = IR_SHIFT) then
-        tap_ctrl.tdo_sync <= tap_reg.ireg(0);
+        tap_sync.tdo <= tap_reg.ireg(0);
       else
         case tap_reg.ireg is
-          when "00001" => tap_ctrl.tdo_sync <= tap_reg.idcode(0); -- IDCODE
-          when "10000" => tap_ctrl.tdo_sync <= tap_reg.dtmcs(0); -- dtmcs
-          when "10001" => tap_ctrl.tdo_sync <= tap_reg.dmi(0); -- dmi
-          when others  => tap_ctrl.tdo_sync <= tap_reg.bypass; -- BYPASS
+          when "00001" => tap_sync.tdo <= tap_reg.idcode(0); -- IDCODE
+          when "10000" => tap_sync.tdo <= tap_reg.dtmcs(0); -- dtmcs
+          when "10001" => tap_sync.tdo <= tap_reg.dmi(0); -- dmi
+          when others  => tap_sync.tdo <= tap_reg.bypass; -- BYPASS
         end case;
       end if;
     end if;
@@ -221,19 +244,6 @@ begin
 
   -- Debug Module Interface -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- DTM Control and Status Register (dtmcs) --
-  tap_reg.dtmcs_nxt(31 downto 18) <= (others => '0'); -- unused
-  tap_reg.dtmcs_nxt(17)           <= '0'; -- dmihardreset, always reads as zero
-  tap_reg.dtmcs_nxt(16)           <= '0'; -- dmireset, always reads as zero
-  tap_reg.dtmcs_nxt(15)           <= '0'; -- unused
-  tap_reg.dtmcs_nxt(14 downto 12) <= dmi_idle_c; -- minimum number if idle cycles
-  tap_reg.dtmcs_nxt(11 downto 10) <= tap_reg.dmi_nxt(1 downto 0); -- dmistat
-  tap_reg.dtmcs_nxt(09 downto 04) <= dmi_abits_c; -- number of DMI address bits
-  tap_reg.dtmcs_nxt(03 downto 00) <= dmi_version_c; -- version
-
-
-  -- Debug Module Interface Access Register (dmi) --
   dmi_controller: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -263,14 +273,15 @@ begin
 
           when DMI_IDLE => -- waiting for new request
             if (tap_ctrl.state = DR_UPDATE) and (tap_ctrl.state_prev /= DR_UPDATE) and (tap_reg.ireg = "10001") then -- update <dmi>
-              case tap_reg.dmi(1 downto 0) is -- op field
-                when "01"   => dmi_ctrl.state <= DMI_READ_WAIT; -- read
-                when "10"   => dmi_ctrl.state <= DMI_WRITE_WAIT; -- write
-                when others => NULL;
-              end case;
-              dmi_ctrl.addr   <= tap_reg.dmi(40 downto 34);
-              dmi_ctrl.wdata  <= tap_reg.dmi(33 downto 02);
+              if (tap_reg.dmi(1 downto 0) = "01") then -- read
+                dmi_ctrl.state <= DMI_READ_WAIT;
+              elsif (tap_reg.dmi(1 downto 0) = "10") then -- write
+                dmi_ctrl.state <= DMI_WRITE_WAIT;
+              end if;
+              dmi_ctrl.addr  <= tap_reg.dmi(40 downto 34);
+              dmi_ctrl.wdata <= tap_reg.dmi(33 downto 02);
             end if;
+
 
           when DMI_READ_WAIT => -- wait for DMI to become ready
             if (dmi_req_ready_i = '1') then
@@ -287,6 +298,7 @@ begin
               dmi_ctrl.state <= DMI_IDLE;
             end if;
 
+
           when DMI_WRITE_WAIT => -- wait for DMI to become ready
             if (dmi_req_ready_i = '1') then
               dmi_ctrl.state <= DMI_WRITE;
@@ -301,17 +313,28 @@ begin
               dmi_ctrl.state <= DMI_IDLE;
             end if;
 
+
           when others => -- undefined
             dmi_ctrl.state <= DMI_IDLE;
 
         end case;
-        -- override sticky error flag --
+        -- clear sticky error flag --
         if (dmi_ctrl.dmireset = '1') then
           dmi_ctrl.err <= '0';
         end if;
       end if;
     end if;
   end process dmi_controller;
+
+  -- DTM Control and Status Register (dtmcs) --
+  tap_reg.dtmcs_nxt(31 downto 18) <= (others => '0'); -- unused
+  tap_reg.dtmcs_nxt(17)           <= '0'; -- dmihardreset, always reads as zero
+  tap_reg.dtmcs_nxt(16)           <= '0'; -- dmireset, always reads as zero
+  tap_reg.dtmcs_nxt(15)           <= '0'; -- unused
+  tap_reg.dtmcs_nxt(14 downto 12) <= dmi_idle_c; -- minimum number of idle cycles
+  tap_reg.dtmcs_nxt(11 downto 10) <= tap_reg.dmi_nxt(1 downto 0); -- dmistat
+  tap_reg.dtmcs_nxt(09 downto 04) <= dmi_abits_c; -- number of DMI address bits
+  tap_reg.dtmcs_nxt(03 downto 00) <= dmi_version_c; -- version
 
   -- DMI register read access --
   tap_reg.dmi_nxt(40 downto 34) <= dmi_ctrl.addr; -- address
