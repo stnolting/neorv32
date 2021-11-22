@@ -99,20 +99,15 @@ void neorv32_trng_disable(void) {
  **************************************************************************/
 int neorv32_trng_get(uint8_t *data) {
 
-  const int retries = 3;
-  int i;
   uint32_t ct_reg;
 
-  for (i=0; i<retries; i++) {
-    ct_reg = NEORV32_TRNG.CTRL;
+  ct_reg = NEORV32_TRNG.CTRL;
 
-    if ((ct_reg & (1<<TRNG_CTRL_VALID)) == 0) { // output data valid?
-      continue;
-    }
-
+  if (ct_reg & (1<<TRNG_CTRL_VALID)) { // output data valid?
     *data = (uint8_t)(ct_reg >> TRNG_CTRL_DATA_LSB);
     return 0; // valid data
   }
-
-  return -1; // no valid data available
+  else {
+    return -1;
+  }
 }

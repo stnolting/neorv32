@@ -82,7 +82,7 @@ int main(void) {
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
   // intro
-  neorv32_uart0_printf("\n--- TRNG Demo ---\n\n");
+  neorv32_uart0_printf("\n<<< NEORV32 TRNG Demo >>>\n");
 
   // check if TRNG unit is implemented at all
   if (neorv32_trng_available() == 0) {
@@ -92,13 +92,14 @@ int main(void) {
 
   // enable TRNG
   neorv32_trng_enable();
+  neorv32_cpu_delay_ms(100); // TRNG "warm up"
 
   while(1) {
 
     // main menu
     neorv32_uart0_printf("\nCommands:\n"
-                        " n: Print 8-bit random numbers (abort by pressing any key)\n"
-                        " h: Generate and print histogram\n");
+                         " n: Print 8-bit random numbers (abort by pressing any key)\n"
+                         " h: Generate and print histogram\n");
 
     neorv32_uart0_printf("CMD:> ");
     char cmd = neorv32_uart0_getc();
