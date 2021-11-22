@@ -380,8 +380,10 @@ run custom programs on your FPGA setup without having a UART.
 
 [start=1]
 . Connect the primary UART (UART0) interface of your FPGA board to a serial port of your host computer.
-. Start a terminal program. In this tutorial, I am using TeraTerm for Windows. You can download it fore free
-from https://ttssh2.osdn.jp/index.html.en
+. Start a terminal program. In this tutorial, I am using TeraTerm for Windows. You can download it for free
+from https://ttssh2.osdn.jp/index.html.en . On Linux you could use GTKTerm, which you can get here
+https://github.com/Jeija/gtkterm.git (or install via your package manager).
+
 
 [NOTE]
 _Any_ terminal program that can connect to a serial port should work. However, make sure the program
