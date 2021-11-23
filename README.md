@@ -311,7 +311,7 @@ This overview provides some *quick links* to the most important sections of the
 * [Application Makefiles](https://stnolting.github.io/neorv32/#_application_makefile) - turning your application into an executable
 * [Bootloader](https://stnolting.github.io/neorv32/#_bootloader) - the build-in NEORV32 bootloader
 
-### :rocket: User Guides
+### :rocket: User Guide
 
 * [Toolchain Setup](https://stnolting.github.io/neorv32/ug/#_toolchain_setup) - install and setup RISC-V gcc
 * [General Hardware Setup](https://stnolting.github.io/neorv32/ug/#_general_hardware_setup) - setup a new NEORV32 EDA project
