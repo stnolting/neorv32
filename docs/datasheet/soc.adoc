@@ -1321,32 +1321,35 @@ store it to external _data_ memory and transfers CPU control to that.
 :sectnums!:
 ===== Indirect Boot
 
-The _indirect_ boot scenarios **1a** and **1b** use the processor-internal <<_bootloader>>. This general setup is enabled
-by setting the <<_int_bootloader_en>> generic to true, which will implement the processor-internal <<_bootloader_rom_bootrom>>.
+The _indirect_ boot scenarios **1a** and **1b** use the processor-internal <<_bootloader>>. This boot setup is enabled
+by setting the <<_int_bootloader_en>> generic to _true_, which will implement the processor-internal <<_bootloader_rom_bootrom>>.
 This read-only memory is pre-initialized during synthesis with the default bootloader firmware.
+The bootloader provides several options to upload an executable (via UART or from external SPI flash) and copies it to
+the beginning of the _instruction address space_ so the CPU can execute it.
 
-The bootloader provides several options to upload an executable (via UART or from external SPI flash) and store it to
-the _instruction address space_ so the CPU can execute it. Boot scenario **1a** uses the processor-internal IMEM
+Boot scenario **1a** uses the processor-internal IMEM
 (<<_mem_int_imem_en>> = _true_). This scenario implements the internal <<_instruction_memory_imem>> as non-initialized
-RAM so the bootloader can write the actual executable to it.
+RAM so the bootloader can copy the actual executable to it.
 
 Boot scenario **1b** uses a processor-external IMEM (<<_mem_int_imem_en>> = _false_) that is connected via the processor's
 bus interface. In this scenario the internal <<_instruction_memory_imem>> is not implemented at all and the bootloader will
-write the executable to the processor-external memory.
+copy the executable to the processor-external memory. Hence, the external memory has to be implemented as RAM.
 
 :sectnums!:
 ===== Direct Boot
 
-The _direct_ boot scenarios **2a** and **2b** do not use the processor-internal bootloader. Hence, the <<_int_bootloader_en>>
+The _direct_ boot scenarios **2a** and **2b** do not use the processor-internal bootloader since the <<_int_bootloader_en>>
 generic is set _false_. In this configuration the <<_bootloader_rom_bootrom>> is not implemented at all and the CPU will
-directly begin executing code from the instruction address space after reset. A "pre-initialization mechanism is required
-in order to provide an executable _in_ memory.
+directly begin executing code from the beginning of the instruction address space after reset. An application-specific
+"pre-initialization" mechanism is required in order to provide an executable _in_ memory.
 
 Boot scenario **2a** uses the processor-internal IMEM (<<_mem_int_imem_en>> = _true_) that is implemented as _read-only memory_
-in this scenario. It is pre-initialized (by the bitstream) with the actual application executable.
+in this scenario. It is pre-initialized (by the bitstream) with the actual application executable during synthesis.
 
 In contrast, boot scenario **2b** uses a processor-external IMEM (<<_mem_int_imem_en>> = _false_). In this scenario the
-system designer is responsible for providing a initialized external memory that contains the actual application to be executed.
+system designer is responsible for providing an initialized external memory that contains the actual application to be executed.
+If the external is not already initialized after reset, a simple ROM containing a "polling loop" can be implemented that is
+exited as soon as the application logic has finished initializing the memory with the acutal application code.
 
 
 
