@@ -78,8 +78,7 @@ ULX3S:
 	$(eval NEORV32_MEM_SRC ?= ../../rtl/core/mem/neorv32_imem.default.vhd ../../rtl/core/mem/neorv32_dmem.default.vhd)
 	$(MAKE) \
 	  BITSTREAM="$(BITSTREAM)" \
-	  NEORV32_MEM_SRC="$(NEORV32_MEM_SRC) $(ULX3S_VHDL)" \
-	  NEORV32_VERILOG_SRC="$(ULX3S_VERILOG)" \
+	  NEORV32_MEM_SRC="$(NEORV32_MEM_SRC)" \
 	  run
 
 # Designs
@@ -111,11 +110,11 @@ UP5KDemo:
 MixedLanguage:
 	$(eval DESIGN ?= $@)
 	$(eval DESIGN_SRC ?= $(TEMPLATES)/neorv32_ProcessorTop_Minimal*.vhd)
-	$(eval NEORV32_VERILOG_SRC ?= devices/ice40/sb_ice40_components.v board_tops/neorv32_Fomu_MixedLanguage_ClkGen.v)
+	$(eval NEORV32_VERILOG_ALL ?= devices/ice40/sb_ice40_components.v board_tops/neorv32_Fomu_MixedLanguage_ClkGen.v)
 	$(MAKE) \
 	  DESIGN="$(DESIGN)" \
 	  DESIGN_SRC="$(DESIGN_SRC)" \
-	  NEORV32_VERILOG_SRC="$(NEORV32_VERILOG_SRC)" \
+	  NEORV32_VERILOG_ALL="$(NEORV32_VERILOG_ALL)" \
 	  $(BOARD)
 
 # Help
