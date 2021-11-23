@@ -61,6 +61,16 @@ IMPL        ?= neorv32_$(BOARD)_$(UPduino_REV)_$(ID)
 
 endif
 
+ifeq ($(BOARD),iCEBreaker)
+$(info Setting constraints and implementation args for BOARD iCEBreaker)
+
+CONSTRAINTS ?= $(PCF_PATH)/$(BOARD).pcf
+PNRFLAGS    ?= --up5k --package sg48 --ignore-loops --timing-allow-fail
+IMPL        ?= neorv32_$(BOARD)_$(ID)
+
+endif
+
+
 
 ifeq ($(BOARD),OrangeCrab)
 $(info Setting constraints and implementation args for BOARD OrangeCrab)

@@ -10,7 +10,7 @@ OrangeCrab_REV ?= r02-25F
 UPduino_REV ?= v3
 
 #ifndef BOARD
-#$(error BOARD needs to be set to 'Fomu', 'iCESugar', 'UPDuino' or 'OrangeCrab' !)
+#$(error BOARD needs to be set to 'Fomu', 'iCESugar', 'UPDuino', 'iCEBreaker' or 'OrangeCrab' !)
 #endif
 
 run:
@@ -80,6 +80,13 @@ ULX3S:
 	  BITSTREAM="$(BITSTREAM)" \
 	  NEORV32_MEM_SRC="$(NEORV32_MEM_SRC)" \
 	  run
+	  
+iCEBreaker:
+	$(MAKE) \
+	  BITSTREAM=neorv32_$(BOARD)_$(DESIGN).bit \
+	  NEORV32_MEM_SRC="devices/ice40/neorv32_imem.ice40up_spram.vhd devices/ice40/neorv32_dmem.ice40up_spram.vhd" \
+	  run
+
 
 # Designs
 
@@ -123,3 +130,4 @@ help:
 	@echo "Open-Source Synthesis, P&R, Routing and Bitstream Generation"
 	@echo "Usage:   make BOARD=<fpga board> <board top>"
 	@echo "Example: make BOARD=Fomu Minimal"
+
