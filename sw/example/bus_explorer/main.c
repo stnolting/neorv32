@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32 - Hex Viewer - Memory Inspector >>                                                 #
+// # << NEORV32 - Bus Explorer - Processor Memory Space Inspector >>                               #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -34,7 +34,7 @@
 
 
 /**********************************************************************//**
- * @file hex_viewer/main.c
+ * @file bus_explorer/main.c
  * @author Stephan Nolting
  * @brief Interactive memory inspector.
  **************************************************************************/
@@ -97,15 +97,15 @@ int main() {
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
   // intro
-  neorv32_uart0_printf("\n--- Hex Viewer ---\n\n");
+  neorv32_uart0_printf("\n<<< NEORV32 Bus Explorer >>>\n\n");
 
   // info
-  neorv32_uart0_printf("This program allows to read/write/dump memory locations by hand.\n"
-                      "Type 'help' to see the help menu.\n\n");
+  neorv32_uart0_printf("This program allows to read/write/dump memory space by hand.\n"
+                       "Type 'help' to see the help menu.\n\n");
 
   // Main menu
   for (;;) {
-    neorv32_uart0_printf("HEX_VIEWER:> ");
+    neorv32_uart0_printf("BUS_EXPLORER:> ");
     length = neorv32_uart0_scan(buffer, 8, 1);
     neorv32_uart0_printf("\n");
 
