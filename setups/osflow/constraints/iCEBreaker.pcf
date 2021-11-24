@@ -1,0 +1,39 @@
+## UART (uart0)
+set_io uart_txd_o 9
+set_io uart_rxd_i 6
+
+## SPI - on-board flash
+set_io flash_sdo_o 14
+set_io flash_sck_o 15
+set_io flash_csn_o 16
+set_io flash_sdi_i 17
+
+## SPI - user port
+set_io spi_sdo_o 43
+set_io spi_sck_o 38
+set_io spi_csn_o 34
+set_io spi_sdi_i 31
+
+## TWI
+set_io twi_sda_io 2
+set_io twi_scl_io 4
+
+## GPIO - input
+set_io gpio_i[0] 18
+set_io gpio_i[1] 19
+set_io gpio_i[2] 20
+set_io gpio_i[3] 28
+
+## GPIO - output
+set_io gpio_o[0] 25
+set_io gpio_o[1] 26
+set_io gpio_o[2] 27
+set_io gpio_o[3] 23
+
+## RGB power LED
+set_io pwm_o[0] 39
+set_io pwm_o[1] 40
+set_io pwm_o[2] 41
+
+#User Reset Btn
+set_io user_reset_btn 10
