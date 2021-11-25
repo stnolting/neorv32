@@ -118,7 +118,7 @@ UP5KDemo:
 MixedLanguage:
 	$(eval DESIGN ?= $@)
 	$(eval DESIGN_SRC ?= $(TEMPLATES)/neorv32_ProcessorTop_Minimal*.vhd)
-	$(eval NEORV32_VERILOG_SRC ?= devices/ice40/sb_ice40_components.v board_tops/neorv32_Fomu_MixedLanguage_ClkGen.v)
+	$(eval NEORV32_VERILOG_ALL ?= devices/ice40/sb_ice40_components.v board_tops/neorv32_Fomu_MixedLanguage_ClkGen.v)
 	$(MAKE) \
 	  DESIGN="$(DESIGN)" \
 	  DESIGN_SRC="$(DESIGN_SRC)" \
