@@ -36,6 +36,7 @@ Project maintainers may make pull requests against this repository to [add or li
 | :file_folder: [`AlhambraII`](https://github.com/stnolting/neorv32/tree/master/setups/osflow)  | GHDL, Yosys, nextPNR | [AlhambraII](https://alhambrabits.com/alhambra/)                                                             | Lattice iCE40HX4K                         | [zipotron](https://github.com/zipotron) |
 | :file_folder: [`Orange Crab`](https://github.com/stnolting/neorv32/tree/master/setups/osflow) | GHDL, Yosys, nextPNR | [Orange Crab](https://github.com/gregdavill/OrangeCrab)                                                      | Lattice ECP5-25F                          | [umarcor](https://github.com/umarcor), [jeremyherbert](https://github.com/jeremyherbert) |
 | :file_folder: [`ULX3S`](https://github.com/stnolting/neorv32/tree/master/setups/osflow)       | GHDL, Yosys, nextPNR | [ULX3S](https://radiona.org/ulx3s/)                                                                          | Lattice ECP5 `LFE5U-85F-6BG381C`          | [zipotron](https://github.com/zipotron) |
+| :earth_africa: [`ULX3S-SDRAM`](https://github.com/zipotron/neorv32-complex-setups)            | GHDL, Yosys, nextPNR | [ULX3S](https://radiona.org/ulx3s/)                                                                          | Lattice ECP5 `LFE5U-85F-6BG381C`          | [zipotron](https://github.com/zipotron) |
 
 :information_source: All setups using open-source toolchains are located in the
 [`osflow`](https://github.com/stnolting/neorv32/tree/master/setups/osflow) folder.
