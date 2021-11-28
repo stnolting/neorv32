@@ -203,7 +203,7 @@ void spi_trans(void) {
     return;
   }
 
-  neorv32_uart0_printf("Enter TX data (%u hex chars): 0x", spi_size);
+  neorv32_uart0_printf("Enter TX data (%u hex chars): 0x", spi_size*2);
   neorv32_uart0_scan(terminal_buffer, spi_size*2+1, 1);
   uint32_t tx_data = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
