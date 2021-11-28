@@ -321,7 +321,7 @@ void neorv32_uart0_disable(void) {
  **************************************************************************/
 void neorv32_uart0_enable(void) {
 
-  NEORV32_UART0.CTRL = ((uint32_t)(1 << UART_CTRL_EN));
+  NEORV32_UART0.CTRL |= ((uint32_t)(1 << UART_CTRL_EN));
 }
 
 
