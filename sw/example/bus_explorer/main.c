@@ -176,7 +176,7 @@ void setup_access(void) {
       return;
     }
     else {
-      neorv32_uart0_printf("Invalid selection!\n");
+      neorv32_uart0_printf("\nInvalid selection!\n");
     }
   }
 }
@@ -200,7 +200,7 @@ void read_memory(void) {
   register uint32_t mem_address = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
   // perform read access
-  neorv32_uart0_printf("\n[0x%x] = ", mem_address);
+  neorv32_uart0_printf("\n[0x%x] => ", mem_address);
 
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
@@ -258,16 +258,26 @@ void write_memory(void) {
     neorv32_uart0_printf("\nEnter data (2 hex chars): 0x");
     neorv32_uart0_scan(terminal_buffer, 2+1, 1); // 2 hex chars for address plus '\0'
     mem_data_b = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+    neorv32_uart0_printf("\n[0x%x] <= 0x", mem_address);
+    aux_print_hex_byte(mem_data_b);
   }
   if (access_size == 'h') {
     neorv32_uart0_printf("\nEnter data (4 hex chars): 0x");
     neorv32_uart0_scan(terminal_buffer, 4+1, 1); // 4 hex chars for address plus '\0'
     mem_data_h = (uint16_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+    neorv32_uart0_printf("\n[0x%x] <= 0x", mem_address);
+    aux_print_hex_byte((uint8_t)(mem_data_h >> 8));
+    aux_print_hex_byte((uint8_t)(mem_data_h >> 0));
   }
   if (access_size == 'w') {
     neorv32_uart0_printf("\nEnter data (8 hex chars): 0x");
     neorv32_uart0_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
     mem_data_w = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+    neorv32_uart0_printf("\n[0x%x] <= 0x", mem_address);
+    aux_print_hex_byte((uint8_t)(mem_data_w >> 24));
+    aux_print_hex_byte((uint8_t)(mem_data_w >> 16));
+    aux_print_hex_byte((uint8_t)(mem_data_w >> 8));
+    aux_print_hex_byte((uint8_t)(mem_data_w >> 0));
   }
 
   // perform write access
