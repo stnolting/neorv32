@@ -490,9 +490,9 @@ begin
 
         -- overrun flag --
         if (rden = '1') and (addr = uart_id_rtx_addr_c) then -- clear when reading data register
-          rx_engine.overr <= '1';
-        elsif (rx_buffer.we = '1') and (rx_buffer.free = '0') then -- write to full FIFO
           rx_engine.overr <= '0';
+        elsif (rx_buffer.we = '1') and (rx_buffer.free = '0') then -- write to full FIFO
+          rx_engine.overr <= '1';
         end if;
       end if;
     end if;
