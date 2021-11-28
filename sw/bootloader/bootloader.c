@@ -202,13 +202,13 @@ enum NEORV32_EXECUTABLE {
  * This global variable keeps the size of the available executable in bytes.
  * If =0 no executable is available (yet).
  **************************************************************************/
-volatile uint32_t exe_available = 0;
+volatile uint32_t exe_available;
 
 
 /**********************************************************************//**
  * Only set during executable fetch (required for capturing STORE BUS-TIMOUT exception).
  **************************************************************************/
-volatile uint32_t getting_exe = 0;
+volatile uint32_t getting_exe;
 
 
 // Function prototypes
@@ -687,7 +687,7 @@ uint32_t get_exe_word(int src, uint32_t addr) {
     }
 #if (SPI_EN != 0)
     else {
-      data.uint8[i] = spi_flash_read_byte(addr + i);
+      data.uint8[i] = spi_flash_read_byte(addr + (3-i));
     }
 #endif
   }
@@ -809,7 +809,7 @@ void spi_flash_write_word(uint32_t addr, uint32_t wdata) {
 
   int i;
   for (i=0; i<4; i++) {
-    spi_flash_write_byte(addr + i, data.uint8[i]);
+    spi_flash_write_byte(addr + (3-i), data.uint8[i]);
   }
 #endif
 }

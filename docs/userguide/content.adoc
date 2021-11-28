@@ -503,7 +503,6 @@ the application requires to re-program the FPGA via the bitstream.
 See datasheet section https://stnolting.github.io/neorv32/#_direct_boot[Direct Boot] for more information.
 
 
-
 Using the IMEM as ROM:
 
 * for this boot concept the bootloader is no longer required
@@ -1008,6 +1007,9 @@ Write 0x000013FC bytes to SPI flash @ 0x08000000? (y/n) y
 Flashing... OK
 CMD:>
 ----
+
+[NOTE]
+The bootloader stores the executable in **little-endian** byte-order to the flash.
 
 [start=6]
 . If "OK" appears in the terminal line, the programming process was successful. Now you can use the
