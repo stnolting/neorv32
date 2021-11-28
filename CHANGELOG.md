@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 28.11.2021 | 1.6.4.2 | :bug: fixed bug in **UART[0/1]** overrun flag (was not set/cleared correctly); fixed bug in UART0 enable function `neorv32_uart0_enable()` |
 | 28.11.2021 | 1.6.4.1 | (:warning:) bootloader now stores executable in _little-endian_ byte-order to SPI flash |
 | 26.11.2021 |[**:rocket:1.6.4**](https://github.com/stnolting/neorv32/releases/tag/v1.6.4) | **New release** |
 | 22.11.2021 | 1.6.3.11 | on-chip debugger: reworked JTAG signal input/output synchronization logic (see [PR #216](https://github.com/stnolting/neorv32/pull/216)) |
