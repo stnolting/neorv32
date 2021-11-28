@@ -142,7 +142,7 @@ begin
 
   -- bus timeout --
   assert not (BUS_TIMEOUT /= 0) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing auto-timeout (" & integer'image(BUS_TIMEOUT) & " cycles)." severity note;
-  assert not (BUS_TIMEOUT  = 0) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing no auto-timeout (can cause permanent CPU stall!)." severity note;
+  assert not (BUS_TIMEOUT  = 0) report "NEORV32 PROCESSOR CONFIG WARNING: External Bus Interface - Implementing NO auto-timeout (can cause permanent CPU stall!)." severity warning;
 
   -- endianness --
   assert not (BIG_ENDIAN = false) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing LITTLE-endian byte order." severity note;
