@@ -164,8 +164,8 @@ uint64_t neorv32_gpio_port_get(void) {
     uint32_t uint32[sizeof(uint64_t)/2];
   } data;
 
-  data.uint32[0] = NEORV32_GPIO.OUTPUT_LO;
-  data.uint32[1] = NEORV32_GPIO.OUTPUT_HI;
+  data.uint32[0] = NEORV32_GPIO.INPUT_LO;
+  data.uint32[1] = NEORV32_GPIO.INPUT_HI;
 
   return data.uint64;
 }
