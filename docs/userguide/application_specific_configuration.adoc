@@ -1,0 +1,105 @@
+<<<
+:sectnums:
+== Application-Specific Processor Configuration
+
+Due to the processor's configuration options, which are mainly defined via the top entity VHDL generics, the SoC
+can be tailored to the application-specific requirements. Note that this chapter does not focus on optional
+_SoC features_ like IO/peripheral modules. It rather gives ideas on how to optimize for _overall goals_
+like performance and area.
+
+[NOTE]
+Please keep in mind that optimizing the design in one direction (like performance) will also effect other potential
+optimization goals (like area and energy).
+
+=== Optimize for Performance
+
+The following points show some concepts to optimize the processor for performance regardless of the costs
+(i.e. increasing area and energy requirements):
+
+* Enable all performance-related RISC-V CPU extensions that implement dedicated hardware accelerators instead
+of emulating operations entirely in software:  `M`, `C`, `Zfinx`
+* Enable mapping of compleX CPU operations to dedicated hardware: `FAST_MUL_EN => true` to use DSP slices for
+multiplications, `FAST_SHIFT_EN => true` use a fast barrel shifter for shift operations.
+* Implement the instruction cache: `ICACHE_EN => true`
+* Use as many _internal_ memory as possible to reduce memory access latency: `MEM_INT_IMEM_EN => true` and
+`MEM_INT_DMEM_EN => true`, maximize `MEM_INT_IMEM_SIZE` and `MEM_INT_DMEM_SIZE`
+* Increase the CPU's instruction prefetch buffer size: `CPU_IPB_ENTRIES`
+* _To be continued..._
+
+
+=== Optimize for Size
+
+The NEORV32 is a size-optimized processor system that is intended to fit into tiny niches within large SoC
+designs or to be used a customized microcontroller in really tiny / low-power FPGAs (like Lattice iCE40).
+Here are some ideas how to make the processor even smaller while maintaining it's _general purpose system_
+concept and maximum RISC-V compatibility.
+
+**SoC**
+
+* This is obvious, but exclude all unused optional IO/peripheral modules from synthesis via the processor
+configuration generics.
+* If an IO module provides an option to configure the number of "channels", constrain this number to the
+actually required value (e.g. the PWM module `IO_PWM_NUM_CH` or the external interrupt controller `XIRQ_NUM_CH`).
+* Reduce the FIFO sizes of implemented modules (e.g. `SLINK_TX_FIFO`).
+* Disable the instruction cache (`ICACHE_EN => false`) if the design only uses processor-internal IMEM
+and DMEM memories.
+* _To be continued..._
+
+**CPU**
+
+* Use the _embedded_ RISC-V CPU architecture extension (`CPU_EXTENSION_RISCV_E`) to reduce block RAM utilization.
+* The compressed instructions extension (`CPU_EXTENSION_RISCV_C`) requires additional logic for the decoder but
+also reduces program code size by approximately 30%.
+* If not explicitly used/required, constrain the CPU's counter sizes: `CPU_CNT_WIDTH` for `[m]instret[h]`
+(number of instruction) and `[m]cycle[h]` (number of cycles) counters. You can even remove these counters
+by setting `CPU_CNT_WIDTH => 0` if they are not used at all (note, this is not RISC-V compliant).
+* Reduce the CPU's prefetch buffer size (`CPU_IPB_ENTRIES`).
+* Map CPU shift operations to a small and iterative shifter unit (`FAST_SHIFT_EN => false`).
+* If you have unused DSP block available, you can map multiplication operations to those slices instead of
+using LUTs to implement the multiplier (`FAST_MUL_EN => true`).
+* If there is no need to execute division in hardware, use the `Zmmul` extension instead of the full-scale
+`M` extension.
+* Disable CPU extension that are not explicitly used (`A`, `U`, `Zfinx`).
+* _To be continued..._
+
+=== Optimize for Clock Speed
+
+The NEORV32 Processor and CPU are designed to provide minimal logic between register stages to keep the
+critical path as short as possible. When enabling additional extension or modules the impact on the existing
+logic is also kept at a minimum to prevent timing degrading. If there is a major impact on existing
+logic (example: many physical memory protection address configuration registers) the VHDL code automatically
+adds additional register stages to maintain critical path length. Obviously, this increases operation latency.
+
+In order to optimize for a minimal critical path (= maximum clock speed) the following points should be considered:
+
+* Complex CPU extensions (in terms of hardware requirements) should be avoided (examples: floating-point unit, physical memory protection).
+* Large carry chains (>32-bit) should be avoided (constrain CPU counter sizes: e.g. `CPU_CNT_WIDTH => 32` and `HPM_NUM_CNTS => 32`).
+* If the target FPGA provides sufficient DSP resources, CPU multiplication operations can be mapped to DSP slices (`FAST_MUL_EN => true`)
+reducing LUT usage and critical path impact while also increasing overall performance.
+* Use the synchronous (registered) RX path configuration of the external memory interface (`MEM_EXT_ASYNC_RX => false`).
+* _To be continued..._
+
+[NOTE]
+The short and fixed-length critical path allows to integrate the core into existing clock domains.
+So no clock domain-crossing and no sub-clock generation is required. However, for very high clock
+frequencies (this is technology / platform dependent) clock domain crossing becomes crucial for chip-internal
+connections.
+
+
+=== Optimize for Energy
+
+There are no _dedicated_ configuration options to optimize the processor for energy (minimal consumption;
+energy/instruction ratio) yet. However, a reduced processor area (<<_optimize_for_size>>) will also reduce
+static energy consumption.
+
+To optimize your setup for low-power applications, you can make use of the CPU sleep mode (`wfi` instruction).
+Put the CPU to sleep mode whenever possible. Disable all processor modules that are not actually used (exclude them
+from synthesis if the will be _never_ used; disable the module via it's control register if the module is not
+_currently_ used). When is sleep mode, you can keep a timer module running (MTIME or the watch dog) to wake up
+the CPU again. Since the wake up is triggered by _any_ interrupt, the external interrupt controller can also
+be used to wake up the CPU again. By this, all timers (and all other modules) can be deactivated as well.
+
+.Processor-internal clock generator shutdown
+[TIP]
+If _no_ IO/peripheral module is currently enabled, the processor's internal clock generator circuit will be
+shut down reducing switching activity and thus, dynamic energy consumption.

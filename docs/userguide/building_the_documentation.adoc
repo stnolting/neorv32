@@ -1,0 +1,30 @@
+<<<
+:sectnums:
+== Building the Documentation
+
+The documentation (datasheet + user guide) is written using `asciidoc`. The according source files
+can be found in `docs/...`. The documentation of the software framework is written _in-code_ using `doxygen`.
+
+A makefiles in the project's `docs` directory is provided to build all of the documentation as HTML pages
+or as PDF documents.
+
+[TIP]
+Pre-rendered PDFs are available online as _nightly pre-releases_: https://github.com/stnolting/neorv32/releases.
+The HTML-based documentation is also available online at the project's https://stnolting.github.io/neorv32/[GitHub Pages].
+
+The makefile provides a help target to show all available build options and their according outputs.
+
+[source,bash]
+----
+neorv32/docs$ make help
+----
+
+.Example: Generate HTML documentation (data sheet) using `asciidoctor`
+[source,bash]
+----
+neorv32/docs$ make html
+----
+
+[TIP]
+If you don't have `asciidoctor` / `asciidoctor-pdf` installed, you can still generate all the documentation using
+a _docker container_ via `make container`.

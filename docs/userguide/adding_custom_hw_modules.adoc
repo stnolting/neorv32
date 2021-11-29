@@ -1,0 +1,61 @@
+<<<
+:sectnums:
+== Adding Custom Hardware Modules
+
+In resemblance to the RISC-V ISA, the NEORV32 processor was designed to ease customization and _extensibility_.
+The processor provides several predefined options to add application-specific custom hardware modules and accelerators.
+
+
+=== Standard (_External_) Interfaces
+
+The processor already provides a set of standard interfaces that are intended to connect _chip-external_ devices.
+However, these interfaces can also be used chip-internally. The most suitable interfaces are
+https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio[GPIO],
+https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0[UART],
+https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi[SPI] and
+https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi[TWI].
+
+The SPI and (especially) the GPIO interfaces might be the most straightforward approaches since they
+have a minimal  protocol overhead. Device-specific interrupt capabilities can be added using the
+https://stnolting.github.io/neorv32/#_external_interrupt_controller_xirq[External Interrupt Controller (XIRQ)].
+Beyond simplicity, these interface only provide a very limited bandwidth and require more sophisticated
+software handling ("bit-banging" for the GPIO).
+
+
+=== External Bus Interface
+
+The https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite[External Bus Interface]
+provides the classic approach to connect to custom IP. By default, the bus interface implements the widely adopted
+Wishbone interface standard. However, this project also includes wrappers to bridge to other protocol standards like ARM's
+AXI4-Lite or Intel's Avalon. By using a full-featured bus protocol, complex SoC structures can be implemented (including
+several modules and even multi-core architectures). Many FPGA EDA tools provide graphical editors to build and customize
+whole SoC architectures and even include pre-defined IP libraries.
+
+.Example AXI SoC using Xilinx Vivado
+image::neorv32_axi_soc.png[]
+
+The bus interface uses a memory-mapped approach. All data transfers are handled by simple load/store operations since the
+external bus interface is mapped into the processor's https://stnolting.github.io/neorv32/#_address_space[address space].
+This allows a very simple still high-bandwidth communications.
+
+
+=== Stream Link Interface
+
+The NEORV32 https://stnolting.github.io/neorv32/#_stream_link_interface_slink[Stream Link Interface] provides
+point-to-point, unidirectional and parallel data channels that can be used to transfer streaming data. In
+contrast to the external bus interface, the streaming data does not provide any kind of "direction" control,
+so it can be seen as "constant address bursts". The stream link interface provides less protocol overhead
+and less latency than the bus interface. Furthermore, FIFOs can be be configured to each direction (RX/TX) to
+allow more CPU-independent operation.
+
+
+=== Custom Functions Subsystem
+
+The NEORV32 https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs[Custom Functions Subsystem] is
+an "empty" template for a processor-internal module. It provides 32 32-bit memory-mapped interface
+registers that can be used to communicate with any arbitrary custom design logic. The intentions of this
+subsystem is to provide a simple base, where the user can concentrate on implementing the actual design logic
+rather than taking care of the communication between the CPU/software and the design logic. The interface
+registers are already allocated within the processor's address space and are supported by the software framework
+via low-level hardware access mechanisms. Additionally, the CFS provides a direct pre-defined interrupt channel to
+the CPU, which is also supported by the NEORV32 runtime environment.

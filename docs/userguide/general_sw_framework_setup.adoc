@@ -1,0 +1,41 @@
+<<<
+:sectnums:
+== General Software Framework Setup
+
+To allow executables to be _actually executed_ on the NEORV32 Processor the configuration of the software framework
+has to be aware to the hardware configuration. This guide focuses on the memory configuration. To enabled
+certain CPU ISA features refer to the <<_enabling_risc_v_cpu_extensions>> section.
+
+[TIP]
+If you have **not** changed the _default_ memory configuration in section <<_general_hardware_setup>>
+you are already done and you can skip the rest of this guide.
+
+[start=1]
+. Open the NEORV32 linker script `sw/common/neorv32.ld` with a text editor. Right at the
+beginning of this script you will find the `MEMORY` configuration listing the different memory section:
+
+.Cut-out of the linker script `neorv32.ld`: `ram` memory section configuration
+[source,c]
+----
+MEMORY
+{
+  ram  (rwx) : ORIGIN = 0x80000000, LENGTH = DEFINED(make_bootloader) ? 512 : 8*1024 <1>
+...
+----
+<1> Size of the data memory address space (right-most value) (internal/external DMEM); here 8kB
+
+[start=2]
+. We only need to change the `ram` section, which presents the available data address space.
+If you have changed the DMEM (_MEM_INT_DMEM_SIZE_ generic) size adapt the `LENGTH` parameter of the `ram`
+section (here: `8*1024`) so it is equal to your DMEM hardware configuration.
+
+[IMPORTANT]
+Make sure you only modify the _right-most_ value (here: 8*1024)! +
+The "`512`" are not relevant for the application.
+
+[start=3]
+. Done! Save your changes and close the linker script.
+
+.Advanced: Section base address and size
+[IMPORTANT]
+More information can be found in the datasheet section https://stnolting.github.io/neorv32/#_address_space[Address Space].

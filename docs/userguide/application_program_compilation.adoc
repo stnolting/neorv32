@@ -1,0 +1,48 @@
+<<<
+:sectnums:
+== Application Program Compilation
+
+This guide shows how to compile an example C-code application into a NEORV32 executable that
+can be uploaded via the bootloader or the on-chip debugger.
+
+[IMPORTANT]
+If your FPGA board does not provide such an interface - don't worry!
+Section <<_installing_an_executable_directly_into_memory>> shows how to
+run custom programs on your FPGA setup without having a UART.
+
+[start=1]
+. Open a terminal console and navigate to one of the project's example programs. For instance, navigate to the
+simple `sw/example_blink_led` example program. This program uses the NEORV32 GPIO module to display
+an 8-bit counter on the lowest eight bit of the `gpio_o` output port.
+. To compile the project and generate an executable simply execute:
+
+[source,bash]
+----
+neorv32/sw/example/blink_led$ make clean_all exe
+----
+
+[start=3]
+. We are using the `clean_all` target to make sure everything is re-build.
+. This will compile and link the application sources together with all the included libraries. At the end,
+your application is transformed into an ELF file (`main.elf`). The _NEORV32 image generator_ (in `sw/image_gen`)
+takes this file and creates a final executable. The makefile will show the resulting memory utilization and
+the executable size:
+
+[source,bash]
+----
+neorv32/sw/example/blink_led$ make clean_all exe
+Memory utilization:
+   text    data     bss     dec     hex filename
+   3176       0     120    3296     ce0 main.elf
+Compiling ../../../sw/image_gen/image_gen
+Executable (neorv32_exe.bin) size in bytes:
+3188
+----
+
+[start=5]
+. That's it. The `exe` target has created the actual executable `neorv32_exe.bin` in the current folder
+that is ready to be uploaded to the processor.
+
+[TIP]
+The compilation process will also create a `main.asm` assembly listing file in the current folder, which
+shows the actual assembly code of the application.

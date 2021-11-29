@@ -1,0 +1,71 @@
+<<<
+:sectnums:
+== Installing an Executable Directly Into Memory
+
+If you do not want to use the bootloader (or the on-chip debugger) for executable upload or if your setup does not provide
+a serial interface for that, you can also directly install an application into embedded memory.
+
+This concept uses the "Direct Boot" scenario that implements the processor-internal IMEM as ROM, which is
+pre-initialized with the application's executable during synthesis. Hence, it provides _non-volatile_ storage of the
+executable inside the processor. This storage cannot be altered during runtime and any source code modification of
+the application requires to re-program the FPGA via the bitstream.
+
+[TIP]
+See datasheet section https://stnolting.github.io/neorv32/#_direct_boot[Direct Boot] for more information.
+
+
+Using the IMEM as ROM:
+
+* for this boot concept the bootloader is no longer required
+* this concept only works for the internal IMEM (but can be extended to work with external memories coupled via the processor's bus interface)
+* make sure that the memory components (like block RAM) the IMEM is mapped to support an initialization via the bitstream
+
+[start=1]
+. At first, make sure your processor setup actually implements the internal IMEM: the `MEM_INT_IMEM_EN` generics has to be set to `true`:
+
+.Processor top entity configuration - enable internal IMEM
+[source,vhdl]
+----
+  -- Internal Instruction memory --
+  MEM_INT_IMEM_EN => true, -- implement processor-internal instruction memory
+----
+
+[start=2]
+. For this setup we do not want the bootloader to be implemented at all. Disable implementation of the bootloader by setting the
+`INT_BOOTLOADER_EN` generic to `false`. This will also modify the processor-internal IMEM so it is initialized with the executable during synthesis.
+
+.Processor top entity configuration - disable internal bootloader
+[source,vhdl]
+----
+  -- General --
+  INT_BOOTLOADER_EN => false, -- boot configuration: false = boot from int/ext (I)MEM
+----
+
+[start=3]
+. To generate an "initialization image" for the IMEM that contains the actual application, run the `install` target when compiling your application:
+
+[source,bash]
+----
+neorv32/sw/example/blink_led$ make clean_all install
+Memory utilization:
+   text    data     bss     dec     hex filename
+   3176       0     120    3296     ce0 main.elf
+Compiling ../../../sw/image_gen/image_gen
+Installing application image to ../../../rtl/core/neorv32_application_image.vhd
+----
+
+[start=4]
+. The `install` target has compiled all the application sources but instead of creating an executable (`neorv32_exe.bit`) that can be uploaded via the
+bootloader, it has created a VHDL memory initialization image `core/neorv32_application_image.vhd`.
+. This VHDL file is automatically copied to the core's rtl folder (`rtl/core`) so it will be included for the next synthesis.
+. Perform a new synthesis. The IMEM will be build as pre-initialized ROM (inferring embedded memories if possible).
+. Upload your bitstream. Your application code now resides unchangeable in the processor's IMEM and is directly executed after reset.
+
+
+The synthesis tool / simulator will print asserts to inform about the (IMEM) memory / boot configuration:
+
+[source]
+----
+NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Direct boot from memory (processor-internal IMEM).
+NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as ROM (3176 bytes), pre-initialized with application.
+----
