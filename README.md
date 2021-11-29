@@ -147,9 +147,10 @@ Section [_FPGA Implementation Results - Processor Modules_](https://stnolting.gi
 of the online datasheet shows the resource utilization of each optional processor module to allow an
 estimation of the actual setup's hardware requirements.
 
-:information_source: The [`setups`](https://github.com/stnolting/neorv32/tree/master/setups) folder provides exemplary FPGA
+The [`setups`](https://github.com/stnolting/neorv32/tree/master/setups) folder provides exemplary FPGA
 setups targeting various FPGA boards and toolchains. These setups also provide resource utilization reports for different
-SoC configurations
+SoC configurations. The latest utilization reports for those setups can be found in the report of the
+[Implementation Workflow](https://github.com/stnolting/neorv32/actions/workflows/Implementation.yml).
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -326,7 +327,7 @@ This overview provides some *quick links* to the most important sections of the
 
 ### :copyright: Legal
 
-* [Overview](https://stnolting.github.io/neorv32/#_legal) - license, disclaimer, proprietary notice, ...
+* [Overview](https://stnolting.github.io/neorv32/#_legal) - license, disclaimer, limitation of liability for external links, proprietary notice, ...
 * [Citing](https://stnolting.github.io/neorv32/#_citing) - citing information (DOI)
 * [Impressum](https://github.com/stnolting/neorv32/blob/master/docs/impressum.md) - imprint (:de:)
 
