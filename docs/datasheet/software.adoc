@@ -51,6 +51,10 @@ Just include the main NEORV32 library file in your application's source file(s):
 #include <neorv32.h>
 ----
 
+[NOTE]
+A CMSIS-SVD compatible *System View Description* file including all peripherals is
+available in `sw/svd`.
+
 Together with the makefile, this will automatically include all the processor's header files located in
 `sw/lib/include` into your application. The actual source files of the core libraries are located in
 `sw/lib/source` and are automatically included into the source list of your software project. The following
