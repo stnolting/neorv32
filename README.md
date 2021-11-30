@@ -315,7 +315,7 @@ This overview provides some *quick links* to the most important sections of the
 
 ### :rocket: User Guide
 
-* [Toolchain Setup](https://stnolting.github.io/neorv32/ug/#_toolchain_setup) - install and setup RISC-V gcc
+* [Toolchain Setup](https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup) - install and setup RISC-V gcc
 * [General Hardware Setup](https://stnolting.github.io/neorv32/ug/#_general_hardware_setup) - setup a new NEORV32 EDA project
 * [General Software Setup](https://stnolting.github.io/neorv32/ug/#_general_software_framework_setup) - configure the software framework
 * [Application Compilation](https://stnolting.github.io/neorv32/ug/#_application_program_compilation) - compile an application using `make`
