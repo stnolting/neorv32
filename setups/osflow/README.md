@@ -84,16 +84,62 @@ You can add _all_ of the FPGA's physical pins even though just a subset is used 
 
 #### 3. Adding a board-specific makefile
 
-:construction: TODO :construction:
+1. Add a board-specific makefile to the `setups/osflow/boards` folder. Name the new constraints file according to the board `[board-name].mk`.
+2. The makefile contains (at least) one target to build the final bitstream:
+```makefile
+.PHONY: all
+
+all: bit
+	echo "! Built $(IMPL) for $(BOARD)"
+```
+3. Take a look at the iCEBreaker pin mapping as a reference:
+[` setups/osflow/boards/iCEBreaker.mk`](https://github.com/stnolting/neorv32/blob/master/setups/osflow/boards/iCEBreaker.mk)
 
 #### 4. Adding a new target to `index.mk`
 
-:construction: TODO :construction:
+1. Add a new conditional section to the boards management makefile `setups/osflow/boards/index.mk`.
+2. This board-specific section sets variables that are required to run synthesis, mapping, place & route and bitstream generation:
+   * `CONSTRAINTS` defines the physical pin mapping file
+   * `PNRFLAGS` defines the FPGA-specific flags for mapping and place & route
+   * `IMPL` defines the setup's implementation name
+```makefile
+ifeq ($(BOARD),iCEBreaker)
+$(info Setting constraints and implementation args for BOARD iCEBreaker)
+
+CONSTRAINTS ?= $(PCF_PATH)/$(BOARD).pcf
+PNRFLAGS    ?= --up5k --package sg48 --ignore-loops --timing-allow-fail
+IMPL        ?= neorv32_$(BOARD)_$(ID)
+
+endif
+```
 
 #### 5. Adding a new target to the main makefile
 
-:construction: TODO :construction:
+1. As final step add the new setup to the main osflow makefile `setups/osflow/Makefile`.
+2. Use the board's name to create a new makefile target.
+   * The new target should set the final bitstream's name using the `BITSTREAM` variable.
+   * Alternative _memory_ HDL sources like FPGA-optimized module can be set using the `NEORV32_MEM_SRC` variable.
+```makefile
+iCEBreaker:
+	$(eval BITSTREAM ?= neorv32_$(BOARD)_$(DESIGN).bit)
+	$(eval NEORV32_MEM_SRC ?= devices/ice40/neorv32_imem.ice40up_spram.vhd devices/ice40/neorv32_dmem.ice40up_spram.vhd)
+	$(MAKE) \
+	  BITSTREAM="$(BITSTREAM)" \
+	  NEORV32_MEM_SRC="$(NEORV32_MEM_SRC)" \
+	  run
+```
 
 #### 6. _Optional:_ Add the new setup to the automatic "Implementation" github workflow
 
-:construction: TODO :construction:
+If you like you can add the new setup to the automatic build environment of the project. The project's "Implementation"
+workflow will generate bitstreams for all configured osflow setups on every repository push. This is used to check for
+regressions and also to provide up-to-date bitstreams that can be used right away.
+
+1. Add the new setup to the job matrix file `.github/generate-job-matrix.py`.
+```python
+{
+  'board': 'iCEBreaker',
+  'design': 'MinimalBoot',
+  'bitstream': 'neorv32_iCEBreaker_MinimalBoot.bit'
+},
+```
