@@ -1,0 +1,13 @@
+<<<
+:sectnums:
+== Zephyr RTOS Support 🪁
+
+The NEORV32 processor is supported by upstream Zephyr RTOS: https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html
+
+[IMPORTANT]
+The absolute path to the NEORV32 executable image generator binary (`.../neorv32/sw/image_gen`) has to be added to the `PATH` variable
+so the Zephyr build system can generate executables and memory-initialization images.
+
+[NOTE]
+Zephyr OS port provided by GitHub user https://github.com/henrikbrixandersen[henrikbrixandersen]
+(see https://github.com/stnolting/neorv32/discussions/172). ❤️

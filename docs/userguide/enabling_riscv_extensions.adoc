@@ -1,0 +1,46 @@
+<<<
+:sectnums:
+== Enabling RISC-V CPU Extensions
+
+Whenever you enable/disable a RISC-V CPU extensions via the according `CPU_EXTENSION_RISCV_x` generic, you need to
+adapt the toolchain configuration so the compiler can actually generate according code for it.
+
+To do so, open the makefile of your project (for example `sw/example/blink_led/makefile`) and scroll to the
+"USER CONFIGURATION" section right at the beginning of the file. You need to modify the `MARCH` variable and eventually
+the `MABI` variable according to your CPU hardware configuration.
+
+[source,makefile]
+----
+# CPU architecture and ABI
+MARCH ?= rv32i <1>
+MABI  ?= ilp32 <2>
+----
+<1> MARCH = Machine architecture ("ISA string")
+<2> MABI = Machine binary interface
+
+For example, if you enable the RISC-V `C` extension (16-bit compressed instructions) via the `CPU_EXTENSION_RISCV_C`
+generic (set `true`) you need to add the `c` extension also to the `MARCH` ISA string in order to make the compiler
+emit compressed instructions.
+
+.Privileged Architecture Extensions
+[IMPORTANT]
+Privileged architecture extensions like `Zicsr` or `Zifencei` are "used" _implicitly_ by the compiler. Hence, according
+instruction will only be generated when "encoded" via inline assembly or when linking according libraries. In this case,
+these instruction will _always_ be emitted (even if the according extension is not specified in `MARCH`). +
+**I recommend to _not_ specify any privileged architecture extensions in `MARCH`.**
+
+[WARNING]
+ISA extension enabled in hardware can be a superset of the extensions enabled in software, but not the other way
+around. For example generating compressed instructions for a CPU configuration that has the `c` extension disabled
+will cause _illegal instruction exceptions_ at runtime.
+
+You can also override the default `MARCH` and `MABI` configurations from the makefile when invoking the makefile:
+
+[source,bash]
+----
+$ make MARCH=rv32ic clean_all all
+----
+
+[NOTE]
+The RISC-V ISA string for `MARCH` follows a certain _canonical_ structure:
+`rev32[i/e][m][a][f][d][g][q][c][b][v][n]...` For example `rv32imac` is valid while `rv32icma` is not.
