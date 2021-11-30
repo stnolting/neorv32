@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<device schemaVersion="1.1" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd" >
+  <vendor>NEORV32</vendor>
+  <name>NEORV32_generic</name>
+  <version>1.6.4</version>
+  <description>The NEORV32 RISC-V Processor</description>
+
+  <!-- CPU core -->
+  <cpu>
+    <name>NEORV32</name>
+    <endian>little</endian>
+  </cpu>
+
+  <!-- defaults for all peripherals -->
+  <addressUnitBits>8</addressUnitBits>
+  <width>32</width>
+  <size>32</size>
+  <access>read-write</access>
+  <resetValue>0x00000000</resetValue>
+  <resetMask>0x00000000</resetMask>
+
+  <!-- Peripherals -->
+  <peripherals>
+
+    <!-- CFS -->
+    <peripheral>
+      <name>CFS</name>
+      <description>Custom functions subsystem</description>
+      <groupName>CFS</groupName>
+      <baseAddress>0xFFFFFE00</baseAddress>
+
+      <interrupt>
+        <name>FIRQ1</name>
+      </interrupt>
+
+      <registers>
+        <register><name>REG[0]</name><addressOffset>0x00</addressOffset></register>
+        <register><name>REG[1]</name><addressOffset>0x04</addressOffset></register>
+        <register><name>REG[2]</name><addressOffset>0x08</addressOffset></register>
+        <register><name>REG[3]</name><addressOffset>0x0C</addressOffset></register>
+        <register><name>REG[4]</name><addressOffset>0x10</addressOffset></register>
+        <register><name>REG[5]</name><addressOffset>0x14</addressOffset></register>
+        <register><name>REG[6]</name><addressOffset>0x18</addressOffset></register>
+        <register><name>REG[7]</name><addressOffset>0x1C</addressOffset></register>
+        <register><name>REG[8]</name><addressOffset>0x20</addressOffset></register>
+        <register><name>REG[9]</name><addressOffset>0x24</addressOffset></register>
+        <register><name>REG[10]</name><addressOffset>0x28</addressOffset></register>
+        <register><name>REG[11]</name><addressOffset>0x2C</addressOffset></register>
+        <register><name>REG[12]</name><addressOffset>0x30</addressOffset></register>
+        <register><name>REG[13]</name><addressOffset>0x34</addressOffset></register>
+        <register><name>REG[14]</name><addressOffset>0x38</addressOffset></register>
+        <register><name>REG[15]</name><addressOffset>0x3C</addressOffset></register>
+        <register><name>REG[16]</name><addressOffset>0x40</addressOffset></register>
+        <register><name>REG[17]</name><addressOffset>0x44</addressOffset></register>
+        <register><name>REG[18]</name><addressOffset>0x48</addressOffset></register>
+        <register><name>REG[19]</name><addressOffset>0x4C</addressOffset></register>
+        <register><name>REG[20]</name><addressOffset>0x50</addressOffset></register>
+        <register><name>REG[21]</name><addressOffset>0x54</addressOffset></register>
+        <register><name>REG[22]</name><addressOffset>0x58</addressOffset></register>
+        <register><name>REG[23]</name><addressOffset>0x5C</addressOffset></register>
+        <register><name>REG[24]</name><addressOffset>0x60</addressOffset></register>
+        <register><name>REG[25]</name><addressOffset>0x64</addressOffset></register>
+        <register><name>REG[26]</name><addressOffset>0x68</addressOffset></register>
+        <register><name>REG[27]</name><addressOffset>0x6C</addressOffset></register>
+        <register><name>REG[28]</name><addressOffset>0x70</addressOffset></register>
+        <register><name>REG[29]</name><addressOffset>0x74</addressOffset></register>
+        <register><name>REG[30]</name><addressOffset>0x78</addressOffset></register>
+        <register><name>REG[21]</name><addressOffset>0x7C</addressOffset></register>
+      </registers>
+    </peripheral>
+
+    <!-- PWM -->
+    <peripheral>
+      <name>PWM</name>
+      <description>Pulse-width modulation controller</description>
+      <groupName>PWM</groupName>
+      <baseAddress>0xFFFFFE80</baseAddress>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field><name>PWM_CTRL_EN</name><msb>0</msb><lsb>0</lsb></field>
+            <field><name>PWM_CTRL_PRSC0</name><msb>1</msb><lsb>1</lsb></field>
+            <field><name>PWM_CTRL_PRSC1</name><msb>2</msb><lsb>2</lsb></field>
+            <field><name>PWM_CTRL_PRSC2</name><msb>3</msb><lsb>3</lsb></field>
+          </fields>
+        </register>
+        <register>
+          <name>DUTY[0]</name>
+          <description>Duty cycle register 0</description>
+          <addressOffset>0x04</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[1]</name>
+          <description>Duty cycle register 1</description>
+          <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[2]</name>
+          <description>Duty cycle register 2</description>
+          <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[3]</name>
+          <description>Duty cycle register 3</description>
+          <addressOffset>0x0C</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[4]</name>
+          <description>Duty cycle register 4</description>
+          <addressOffset>0x10</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[5]</name>
+          <description>Duty cycle register 5</description>
+          <addressOffset>0x14</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[6]</name>
+          <description>Duty cycle register 6</description>
+          <addressOffset>0x18</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[7]</name>
+          <description>Duty cycle register 7</description>
+          <addressOffset>0x1C</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[8]</name>
+          <description>Duty cycle register 8</description>
+          <addressOffset>0x20</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[9]</name>
+          <description>Duty cycle register 9</description>
+          <addressOffset>0x24</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[10]</name>
+          <description>Duty cycle register 10</description>
+          <addressOffset>0x28</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[11]</name>
+          <description>Duty cycle register 11</description>
+          <addressOffset>0x2C</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[12]</name>
+          <description>Duty cycle register 12</description>
+          <addressOffset>0x30</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[13]</name>
+          <description>Duty cycle register 13</description>
+          <addressOffset>0x34</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[14]</name>
+          <description>Duty cycle register 14</description>
+          <addressOffset>0x38</addressOffset>
+        </register>
+        <register>
+          <name>DUTY[15]</name>
+          <description>Duty cycle register 15</description>
+          <addressOffset>0x3C</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
+  </peripherals>
+</device>
