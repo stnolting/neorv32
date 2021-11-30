@@ -970,7 +970,7 @@ enum NEORV32_UART_DATA_enum {
   UART_DATA_PERR  = 28, /**< UART receive/transmit data register(18) (r/-): RX parity error detected when set */
   UART_DATA_FERR  = 29, /**< UART receive/transmit data register(29) (r/-): RX frame error (no valid stop bit) detected when set */
   UART_DATA_OVERR = 30, /**< UART receive/transmit data register(30) (r/-): RX data overrun when set */
-  UART_DATA_AVAIL = 31  /**< UART receive/transmit data register(31) (r/-): RX data available when set  */
+  UART_DATA_AVAIL = 31  /**< UART receive/transmit data register(31) (r/-): RX data available when set */
 };
 /**@}*/
 
@@ -1180,7 +1180,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 	const uint32_t CACHE;       /**< offset 12: cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
 	const uint32_t ISPACE_BASE; /**< offset 16: instruction memory address space base */
 	const uint32_t DSPACE_BASE; /**< offset 20: data memory address space base */
-	const uint32_t IMEM_SIZE;   /**< offset 24: internal instruction memory (IMEM) size in bytes  */
+	const uint32_t IMEM_SIZE;   /**< offset 24: internal instruction memory (IMEM) size in bytes */
 	const uint32_t DMEM_SIZE;   /**< offset 28: internal data memory (DMEM) size in bytes */
 } neorv32_sysinfo_t;
 
@@ -1195,7 +1195,7 @@ enum NEORV32_SYSINFO_CPU_enum {
 
   SYSINFO_CPU_ZFINX     =  5, /**< SYSINFO_CPU (5): Zfinx extension (F sub-/alternative-extension) available when set (r/-) */
   SYSINFO_CPU_ZXSCNT    =  6, /**< SYSINFO_CPU (6): Custom extension - Small CPU counters: "cycle" & "instret" CSRs have less than 64-bit when set (r/-) */
-  SYSINFO_CPU_ZICNTR    =  7, /**< SYSINFO_CPU (7): Basie CPU counters available when set (r/-) */
+  SYSINFO_CPU_ZICNTR    =  7, /**< SYSINFO_CPU (7): Basic CPU counters available when set (r/-) */
   SYSINFO_CPU_PMP       =  8, /**< SYSINFO_CPU (8): PMP (physical memory protection) extension available when set (r/-) */
   SYSINFO_CPU_ZIHPM     =  9, /**< SYSINFO_CPU (9): HPM (hardware performance monitors) extension available when set (r/-) */
   SYSINFO_CPU_DEBUGMODE = 10, /**< SYSINFO_CPU (10): RISC-V CPU debug mode available when set (r/-) */
