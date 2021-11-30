@@ -48,3 +48,8 @@ Modifying the sources is not recommended as this could break the on-chip debugge
 ## [openocd](openocd)
 
 Configuration file for openOCD to connect to the NEORV32 on-chip debugger via JTAG.
+
+
+## [svd](svd)
+
+Contains a CMSIS-SVD compatible system view description file including _all_ peripherals.
