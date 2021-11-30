@@ -99,7 +99,7 @@ int main(void) {
     // main menu
     neorv32_uart0_printf("\nCommands:\n"
                          " n: Print 8-bit random numbers (abort by pressing any key)\n"
-                         " h: Generate and print histogram\n");
+                         " h: Generate histogram and analyze data\n");
 
     neorv32_uart0_printf("CMD:> ");
     char cmd = neorv32_uart0_getc();
@@ -154,8 +154,8 @@ void generate_histogram(void) {
   uint32_t hist[256];
   uint32_t i;
   uint32_t cnt = 0;
-  int err = 0;
   uint8_t trng_data;
+  uint64_t average = 0;
 
   neorv32_uart0_printf("Press any key to start.\n");
 
@@ -167,48 +167,72 @@ void generate_histogram(void) {
     hist[i] = 0;
   }
 
+
   // sample random data
   while(1) {
 
-    err = neorv32_trng_get(&trng_data);
+    // get raw TRNG data
+    if (neorv32_trng_get(&trng_data)) {
+      continue;
+    }
+
+    // add to histogram
     hist[trng_data & 0xff]++;
     cnt++;
 
-    if (err) {
-      neorv32_uart0_printf("\nTRNG error!\n");
-      break;
-    }
+    // average
+    average += (uint64_t)trng_data;
 
-    if (neorv32_uart0_char_received()) { // abort when key pressed
-      break;
-    }
-
-    if (cnt & 0x80000000UL) { // to prevent overflow
+    // abort conditions
+    if ((neorv32_uart0_char_received()) || // abort when key pressed
+        (cnt & 0x80000000UL)) { // to prevent overflow
       break;
     }
   }
 
+  average = average / cnt;
+
+
+  // deviation (histogram samples)
+  uint32_t avg_occurence = cnt / 256;
+  int32_t tmp_int;
+  int32_t dev_int;
+  int32_t dev_int_max = 0x80000000UL; uint32_t bin_max = 0;
+  int32_t dev_int_min = 0x7fffffffUL; uint32_t bin_min = 0;
+  int32_t dev_int_avg = 0;
+  for (i=0; i<256; i++) {
+    tmp_int = (int32_t)hist[i];
+    dev_int = tmp_int - avg_occurence;
+
+    dev_int_avg += (uint64_t)dev_int;
+
+    if (dev_int < dev_int_min) {
+      dev_int_min = dev_int;
+      bin_min = i;
+    }
+    if (dev_int > dev_int_max) {
+      dev_int_max = dev_int;
+      bin_max = i;
+    }
+  }
+
+  dev_int_avg = dev_int_avg / 256;
+
   // print histogram
-  neorv32_uart0_printf("Histogram [random data value] : [# occurences]\n");
+  neorv32_uart0_printf("Histogram [random data value] : [# occurrences]\n");
   for (i=0; i<256; i++) {
     neorv32_uart0_printf("%u: %u\n", (uint32_t)i, hist[i]);
   }
+  neorv32_uart0_printf("\n");
 
-  neorv32_uart0_printf("\nSamples: %u\n", cnt);
 
-  // average
-  uint64_t average = 0;
-  for (i=0; i<256; i++) {
-    average += (uint64_t)hist[i] * i;
-  }
-  average = average / ((uint64_t)cnt);
-  neorv32_uart0_printf("Average value: %u ", (uint32_t)average);
-
-  if (((uint8_t)average) == ((uint8_t)(255/2))) {
-    neorv32_uart0_printf("%c[1m[TEST OK]%c[0m\n", 27, 27);
-  }
-  else {
-    neorv32_uart0_printf("%c[1m[TEST FAILED]%c[0m\n", 27, 27);
-  }
-
+  // print results
+  neorv32_uart0_printf("Analysis results (integer only)\n\n");
+  neorv32_uart0_printf("Number of samples: %u\n", cnt);
+  neorv32_uart0_printf("Arithmetic mean:   %u\n", (uint32_t)average);
+  neorv32_uart0_printf("\nArithmetic deviation\n");
+  neorv32_uart0_printf("Avg. occurrence: %u\n", avg_occurence);
+  neorv32_uart0_printf("Avg. deviation:  %i\n", dev_int_avg);
+  neorv32_uart0_printf("Minimum:         %i (histogram bin %u)\n", dev_int_min, bin_min);
+  neorv32_uart0_printf("Maximum:         %i (histogram bin %u)\n", dev_int_max, bin_max);
 }
