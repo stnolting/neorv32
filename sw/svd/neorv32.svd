@@ -1,15 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <device schemaVersion="1.1" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd" >
-  <vendor>NEORV32</vendor>
-  <name>NEORV32_generic</name>
+  <vendor>stnolting</vendor>
+  <name>neorv32</name>
   <version>1.6.4</version>
   <description>The NEORV32 RISC-V Processor</description>
 
   <!-- CPU core -->
   <cpu>
     <name>NEORV32</name>
+    <revision>r2p0</revision>
     <endian>little</endian>
+    <mpuPresent>false</mpuPresent>
+    <fpuPresent>true</fpuPresent>
+    <nvicPrioBits>0</nvicPrioBits>
+    <vendorSystickConfig>false</vendorSystickConfig>
   </cpu>
 
   <!-- defaults for all peripherals -->
@@ -30,43 +35,47 @@
       <groupName>CFS</groupName>
       <baseAddress>0xFFFFFE00</baseAddress>
 
-      <interrupt>
-        <name>FIRQ1</name>
-      </interrupt>
+      <interrupt><name>CFS_FIRQ</name><value>1</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x80</size>
+        <usage>registers</usage>
+      </addressBlock>
 
       <registers>
-        <register><name>REG[0]</name><addressOffset>0x00</addressOffset></register>
-        <register><name>REG[1]</name><addressOffset>0x04</addressOffset></register>
-        <register><name>REG[2]</name><addressOffset>0x08</addressOffset></register>
-        <register><name>REG[3]</name><addressOffset>0x0C</addressOffset></register>
-        <register><name>REG[4]</name><addressOffset>0x10</addressOffset></register>
-        <register><name>REG[5]</name><addressOffset>0x14</addressOffset></register>
-        <register><name>REG[6]</name><addressOffset>0x18</addressOffset></register>
-        <register><name>REG[7]</name><addressOffset>0x1C</addressOffset></register>
-        <register><name>REG[8]</name><addressOffset>0x20</addressOffset></register>
-        <register><name>REG[9]</name><addressOffset>0x24</addressOffset></register>
-        <register><name>REG[10]</name><addressOffset>0x28</addressOffset></register>
-        <register><name>REG[11]</name><addressOffset>0x2C</addressOffset></register>
-        <register><name>REG[12]</name><addressOffset>0x30</addressOffset></register>
-        <register><name>REG[13]</name><addressOffset>0x34</addressOffset></register>
-        <register><name>REG[14]</name><addressOffset>0x38</addressOffset></register>
-        <register><name>REG[15]</name><addressOffset>0x3C</addressOffset></register>
-        <register><name>REG[16]</name><addressOffset>0x40</addressOffset></register>
-        <register><name>REG[17]</name><addressOffset>0x44</addressOffset></register>
-        <register><name>REG[18]</name><addressOffset>0x48</addressOffset></register>
-        <register><name>REG[19]</name><addressOffset>0x4C</addressOffset></register>
-        <register><name>REG[20]</name><addressOffset>0x50</addressOffset></register>
-        <register><name>REG[21]</name><addressOffset>0x54</addressOffset></register>
-        <register><name>REG[22]</name><addressOffset>0x58</addressOffset></register>
-        <register><name>REG[23]</name><addressOffset>0x5C</addressOffset></register>
-        <register><name>REG[24]</name><addressOffset>0x60</addressOffset></register>
-        <register><name>REG[25]</name><addressOffset>0x64</addressOffset></register>
-        <register><name>REG[26]</name><addressOffset>0x68</addressOffset></register>
-        <register><name>REG[27]</name><addressOffset>0x6C</addressOffset></register>
-        <register><name>REG[28]</name><addressOffset>0x70</addressOffset></register>
-        <register><name>REG[29]</name><addressOffset>0x74</addressOffset></register>
-        <register><name>REG[30]</name><addressOffset>0x78</addressOffset></register>
-        <register><name>REG[21]</name><addressOffset>0x7C</addressOffset></register>
+        <register><name>REG0</name><description>Application-defined</description><addressOffset>0x00</addressOffset></register>
+        <register><name>REG1</name><description>Application-defined</description><addressOffset>0x04</addressOffset></register>
+        <register><name>REG2</name><description>Application-defined</description><addressOffset>0x08</addressOffset></register>
+        <register><name>REG3</name><description>Application-defined</description><addressOffset>0x0C</addressOffset></register>
+        <register><name>REG4</name><description>Application-defined</description><addressOffset>0x10</addressOffset></register>
+        <register><name>REG5</name><description>Application-defined</description><addressOffset>0x14</addressOffset></register>
+        <register><name>REG6</name><description>Application-defined</description><addressOffset>0x18</addressOffset></register>
+        <register><name>REG7</name><description>Application-defined</description><addressOffset>0x1C</addressOffset></register>
+        <register><name>REG8</name><description>Application-defined</description><addressOffset>0x20</addressOffset></register>
+        <register><name>REG9</name><description>Application-defined</description><addressOffset>0x24</addressOffset></register>
+        <register><name>REG10</name><description>Application-defined</description><addressOffset>0x28</addressOffset></register>
+        <register><name>REG11</name><description>Application-defined</description><addressOffset>0x2C</addressOffset></register>
+        <register><name>REG12</name><description>Application-defined</description><addressOffset>0x30</addressOffset></register>
+        <register><name>REG13</name><description>Application-defined</description><addressOffset>0x34</addressOffset></register>
+        <register><name>REG14</name><description>Application-defined</description><addressOffset>0x38</addressOffset></register>
+        <register><name>REG15</name><description>Application-defined</description><addressOffset>0x3C</addressOffset></register>
+        <register><name>REG16</name><description>Application-defined</description><addressOffset>0x40</addressOffset></register>
+        <register><name>REG17</name><description>Application-defined</description><addressOffset>0x44</addressOffset></register>
+        <register><name>REG18</name><description>Application-defined</description><addressOffset>0x48</addressOffset></register>
+        <register><name>REG19</name><description>Application-defined</description><addressOffset>0x4C</addressOffset></register>
+        <register><name>REG20</name><description>Application-defined</description><addressOffset>0x50</addressOffset></register>
+        <register><name>REG21</name><description>Application-defined</description><addressOffset>0x54</addressOffset></register>
+        <register><name>REG22</name><description>Application-defined</description><addressOffset>0x58</addressOffset></register>
+        <register><name>REG23</name><description>Application-defined</description><addressOffset>0x5C</addressOffset></register>
+        <register><name>REG24</name><description>Application-defined</description><addressOffset>0x60</addressOffset></register>
+        <register><name>REG25</name><description>Application-defined</description><addressOffset>0x64</addressOffset></register>
+        <register><name>REG26</name><description>Application-defined</description><addressOffset>0x68</addressOffset></register>
+        <register><name>REG27</name><description>Application-defined</description><addressOffset>0x6C</addressOffset></register>
+        <register><name>REG28</name><description>Application-defined</description><addressOffset>0x70</addressOffset></register>
+        <register><name>REG29</name><description>Application-defined</description><addressOffset>0x74</addressOffset></register>
+        <register><name>REG30</name><description>Application-defined</description><addressOffset>0x78</addressOffset></register>
+        <register><name>REG31</name><description>Application-defined</description><addressOffset>0x7C</addressOffset></register>
       </registers>
     </peripheral>
 
@@ -77,97 +86,1171 @@
       <groupName>PWM</groupName>
       <baseAddress>0xFFFFFE80</baseAddress>
 
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x40</size>
+        <usage>registers</usage>
+      </addressBlock>
+
       <registers>
         <register>
           <name>CTRL</name>
           <description>Control register</description>
           <addressOffset>0x00</addressOffset>
           <fields>
-            <field><name>PWM_CTRL_EN</name><msb>0</msb><lsb>0</lsb></field>
-            <field><name>PWM_CTRL_PRSC0</name><msb>1</msb><lsb>1</lsb></field>
-            <field><name>PWM_CTRL_PRSC1</name><msb>2</msb><lsb>2</lsb></field>
-            <field><name>PWM_CTRL_PRSC2</name><msb>3</msb><lsb>3</lsb></field>
+            <field>
+              <name>PWM_CTRL_EN</name>
+              <msb>0</msb>
+              <lsb>0</lsb>
+              <description>PWM controller enable flag</description>
+            </field>
+            <field>
+              <name>PWM_CTRL_PRSCx</name>
+              <msb>3</msb>
+              <lsb>1</lsb>
+              <description>Clock prescaler select</description>
+            </field>
           </fields>
         </register>
         <register>
-          <name>DUTY[0]</name>
+          <name>DUTY0</name>
           <description>Duty cycle register 0</description>
           <addressOffset>0x04</addressOffset>
         </register>
         <register>
-          <name>DUTY[1]</name>
+          <name>DUTY1</name>
           <description>Duty cycle register 1</description>
           <addressOffset>0x08</addressOffset>
         </register>
         <register>
-          <name>DUTY[2]</name>
+          <name>DUTY2</name>
           <description>Duty cycle register 2</description>
-          <addressOffset>0x08</addressOffset>
-        </register>
-        <register>
-          <name>DUTY[3]</name>
-          <description>Duty cycle register 3</description>
           <addressOffset>0x0C</addressOffset>
         </register>
         <register>
-          <name>DUTY[4]</name>
-          <description>Duty cycle register 4</description>
+          <name>DUTY3</name>
+          <description>Duty cycle register 3</description>
           <addressOffset>0x10</addressOffset>
         </register>
         <register>
-          <name>DUTY[5]</name>
-          <description>Duty cycle register 5</description>
+          <name>DUTY4</name>
+          <description>Duty cycle register 4</description>
           <addressOffset>0x14</addressOffset>
         </register>
         <register>
-          <name>DUTY[6]</name>
-          <description>Duty cycle register 6</description>
+          <name>DUTY5</name>
+          <description>Duty cycle register 5</description>
           <addressOffset>0x18</addressOffset>
         </register>
         <register>
-          <name>DUTY[7]</name>
-          <description>Duty cycle register 7</description>
+          <name>DUTY6</name>
+          <description>Duty cycle register 6</description>
           <addressOffset>0x1C</addressOffset>
         </register>
         <register>
-          <name>DUTY[8]</name>
-          <description>Duty cycle register 8</description>
+          <name>DUTY7</name>
+          <description>Duty cycle register 7</description>
           <addressOffset>0x20</addressOffset>
         </register>
         <register>
-          <name>DUTY[9]</name>
-          <description>Duty cycle register 9</description>
+          <name>DUTY8</name>
+          <description>Duty cycle register 8</description>
           <addressOffset>0x24</addressOffset>
         </register>
         <register>
-          <name>DUTY[10]</name>
-          <description>Duty cycle register 10</description>
+          <name>DUTY9</name>
+          <description>Duty cycle register 9</description>
           <addressOffset>0x28</addressOffset>
         </register>
         <register>
-          <name>DUTY[11]</name>
-          <description>Duty cycle register 11</description>
+          <name>DUTY10</name>
+          <description>Duty cycle register 10</description>
           <addressOffset>0x2C</addressOffset>
         </register>
         <register>
-          <name>DUTY[12]</name>
-          <description>Duty cycle register 12</description>
+          <name>DUTY11</name>
+          <description>Duty cycle register 11</description>
           <addressOffset>0x30</addressOffset>
         </register>
         <register>
-          <name>DUTY[13]</name>
-          <description>Duty cycle register 13</description>
+          <name>DUTY12</name>
+          <description>Duty cycle register 12</description>
           <addressOffset>0x34</addressOffset>
         </register>
         <register>
-          <name>DUTY[14]</name>
-          <description>Duty cycle register 14</description>
+          <name>DUTY13</name>
+          <description>Duty cycle register 13</description>
           <addressOffset>0x38</addressOffset>
         </register>
         <register>
-          <name>DUTY[15]</name>
-          <description>Duty cycle register 15</description>
+          <name>DUTY14</name>
+          <description>Duty cycle register 14</description>
           <addressOffset>0x3C</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- SLINK -->
+    <peripheral>
+      <name>SLINK</name>
+      <description>Stream link interface</description>
+      <groupName>SLINK</groupName>
+      <baseAddress>0xFFFFFEC0</baseAddress>
+
+      <interrupt><name>SLINK_RX_FIRQ</name><value>10</value></interrupt>
+      <interrupt><name>SLINK_TX_FIRQ</name><value>11</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x40</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>SLINK_CTRL_RX_NUMx</name>
+              <access>read</access>
+              <msb>3</msb>
+              <lsb>0</lsb>
+              <description>Number of implemented RX links</description>
+            </field>
+            <field>
+              <name>SLINK_CTRL_TX_NUMx</name>
+              <access>read</access>
+              <msb>5</msb>
+              <lsb>4</lsb>
+              <description>Number of implemented TX links</description>
+            </field>
+            <field>
+              <name>SLINK_CTRL_RX_FIFO_Sx</name>
+              <access>read</access>
+              <msb>11</msb>
+              <lsb>8</lsb>
+              <description>log2(RX FIFO size)</description>
+            </field>
+            <field>
+              <name>SLINK_CTRL_TX_FIFO_Sx</name>
+              <access>read</access>
+              <msb>15</msb>
+              <lsb>12</lsb>
+              <description>log2(TX FIFO size)</description>
+            </field>
+            <field>
+              <name>SLINK_CTRL_EN</name>
+              <access>read-write</access>
+              <msb>31</msb>
+              <lsb>31</lsb>
+              <description>SLINK enable flag</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>IRQ</name>
+          <description>Link interrupt configuration register</description>
+          <addressOffset>0x08</addressOffset>
+          <fields>
+            <field>
+              <name>SLINK_IRQ_RX_EN</name>
+              <msb>7</msb>
+              <lsb>0</lsb>
+              <description>RX link interrupt enable</description>
+            </field>
+            <field>
+              <name>SLINK_IRQ_RX_MODE</name>
+              <msb>15</msb>
+              <lsb>8</lsb>
+              <description>RX link interrupt mode</description>
+            </field>
+            <field>
+              <name>SLINK_IRQ_TX_EN</name>
+              <msb>23</msb>
+              <lsb>16</lsb>
+              <description>TX link interrupt enable</description>
+            </field>
+            <field>
+              <name>SLINK_IRQ_TX_MODE</name>
+              <msb>31</msb>
+              <lsb>24</lsb>
+              <description>TX link interrupt mode</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>STATUS</name>
+          <description>Link status register</description>
+          <addressOffset>0x10</addressOffset>
+          <fields>
+            <field>
+              <name>SLINK_STATUS_RX_AVAIL</name>
+              <msb>7</msb>
+              <lsb>0</lsb>
+              <description>RX link n FIFO is NOT empty (data available)</description>
+            </field>
+            <field>
+              <name>SLINK_STATUS_TX_FREE</name>
+              <msb>15</msb>
+              <lsb>8</lsb>
+              <description>TX link n FIFO is NOT full (ready to send)</description>
+            </field>
+            <field>
+              <name>SLINK_STATUS_RX_HALF</name>
+              <msb>23</msb>
+              <lsb>16</lsb>
+              <description>RX link n FIFO fill level is >= half-full</description>
+            </field>
+            <field>
+              <name>SLINK_STATUS_TX_HALF</name>
+              <msb>31</msb>
+              <lsb>24</lsb>
+              <description>TX link 0 FIFO fill level is > half-full</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>DATA0</name>
+          <description>Link 0 RTX data register</description>
+          <addressOffset>0x20</addressOffset>
+        </register>
+        <register>
+          <name>DATA1</name>
+          <description>Link 1 RTX data register</description>
+          <addressOffset>0x24</addressOffset>
+        </register>
+        <register>
+          <name>DATA2</name>
+          <description>Link 2 RTX data register</description>
+          <addressOffset>0x28</addressOffset>
+        </register>
+        <register>
+          <name>DATA3</name>
+          <description>Link 3 RTX data register</description>
+          <addressOffset>0x2C</addressOffset>
+        </register>
+        <register>
+          <name>DATA4</name>
+          <description>Link 4 RTX data register</description>
+          <addressOffset>0x30</addressOffset>
+        </register>
+        <register>
+          <name>DATA5</name>
+          <description>Link 5 RTX data register</description>
+          <addressOffset>0x34</addressOffset>
+        </register>
+        <register>
+          <name>DATA6</name>
+          <description>Link 6 RTX data register</description>
+          <addressOffset>0x38</addressOffset>
+        </register>
+        <register>
+          <name>DATA7</name>
+          <description>Link 7 RTX data register</description>
+          <addressOffset>0x3C</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- GPTMR -->
+    <peripheral>
+      <name>GPTMR</name>
+      <description>General purpose timer</description>
+      <groupName>GPTMR</groupName>
+      <baseAddress>0xFFFFFF60</baseAddress>
+
+      <interrupt><name>GPTMR_FIRQ</name><value>12</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x10</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>GPTMR_CTRL_EN</name>
+              <msb>0</msb>
+              <lsb>0</lsb>
+              <description>Timer enable flag</description>
+            </field>
+            <field>
+              <name>GPTMR_CTRL_PRSC</name>
+              <msb>3</msb>
+              <lsb>1</lsb>
+              <description>Clock prescaler select</description>
+            </field>
+            <field>
+              <name>GPTMR_CTRL_MODE</name>
+              <msb>4</msb>
+              <lsb>4</lsb>
+              <description>Timer mode: 0=single-shot mode, 1=continuous mode</description>
+            </field>
+            <field>
+              <name>GPTMR_CTRL_ALARM</name>
+              <msb>5</msb>
+              <lsb>5</lsb>
+              <description>Interrupt/alarm pending, cleared by setting bit to zero</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>THRES</name>
+          <description>Threshold register</description>
+          <addressOffset>0x04</addressOffset>
+        </register>
+        <register>
+          <name>COUNT</name>
+          <description>Counter register</description>
+          <addressOffset>0x08</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- BUSKEEPER -->
+    <peripheral>
+      <name>BUSKEEPER</name>
+      <description>Bus keeper</description>
+      <groupName>BUSKEEPER</groupName>
+      <baseAddress>0xFFFFFF7C</baseAddress>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x04</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>BUSKEEPER_ERR_TYPE</name>
+              <msb>0</msb>
+              <lsb>0</lsb>
+              <access>read</access>
+              <description>Bus error type: 0=device error, 1=access timeout</description>
+            </field>
+            <field>
+              <name>BUSKEEPER_ERR_FLAG</name>
+              <msb>31</msb>
+              <lsb>31</lsb>
+              <description>Sticky error flag, clears after read or write access</description>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- XIRQ -->
+    <peripheral>
+      <name>XIRQ</name>
+      <description>External interrupts controller</description>
+      <groupName>XIRQ</groupName>
+      <baseAddress>0xFFFFFF80</baseAddress>
+
+      <interrupt><name>XIRQ_FIRQ</name><value>8</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x10</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>IER</name>
+          <description>IRQ input enable register</description>
+          <addressOffset>0x00</addressOffset>
+        </register>
+        <register>
+          <name>IPR</name>
+          <description>IRQ pending/ack/clear register</description>
+          <addressOffset>0x04</addressOffset>
+        </register>
+        <register>
+          <name>SCR</name>
+          <description>IRQ source register</description>
+          <addressOffset>0x08</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- MTIME -->
+    <peripheral>
+      <name>MTIME</name>
+      <description>Machine timer</description>
+      <groupName>MTIME</groupName>
+      <baseAddress>0xFFFFFF90</baseAddress>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x10</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>TIME_LO</name>
+          <description>System time register - low</description>
+          <addressOffset>0x00</addressOffset>
+        </register>
+        <register>
+          <name>TIME_HI</name>
+          <description>System time register - high</description>
+          <addressOffset>0x04</addressOffset>
+        </register>
+        <register>
+          <name>TIMECMP_LO</name>
+          <description>Time compare register - low</description>
+          <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
+          <name>TIMECMP_HI</name>
+          <description>Time compare register - high</description>
+          <addressOffset>0x0C</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- UART0 -->
+    <peripheral>
+      <name>UART0</name>
+      <description>Primary universal asynchronous receiver and transmitter</description>
+      <groupName>UART0</groupName>
+      <baseAddress>0xFFFFFFA0</baseAddress>
+
+      <interrupt><name>UART0_RX_FIRQ</name><value>2</value></interrupt>
+      <interrupt><name>UART0_TX_FIRQ</name><value>3</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x08</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>UART_CTRL_BAUD</name>
+              <msb>11</msb>
+              <lsb>0</lsb>
+              <description>Baud rate divisor</description>
+            </field>
+            <field>
+              <name>UART_CTRL_SIM_MODE</name>
+              <msb>12</msb>
+              <lsb>12</lsb>
+              <description>Simulation output override enable, for use in simulation only</description>
+            </field>
+            <field>
+              <name>UART_CTRL_RX_EMPTY</name>
+              <msb>13</msb>
+              <lsb>13</lsb>
+              <access>read</access>
+              <description>RX FIFO is empty</description>
+            </field>
+            <field>
+              <name>UART_CTRL_RX_HALF</name>
+              <msb>14</msb>
+              <lsb>14</lsb>
+              <access>read</access>
+              <description>RX FIFO is at least half-full</description>
+            </field>
+            <field>
+              <name>UART_CTRL_RX_FULL</name>
+              <msb>15</msb>
+              <lsb>15</lsb>
+              <access>read</access>
+              <description>RX FIFO is full</description>
+            </field>
+            <field>
+              <name>UART_CTRL_TX_EMPTY</name>
+              <msb>16</msb>
+              <lsb>16</lsb>
+              <access>read</access>
+              <description>TX FIFO is empty</description>
+            </field>
+            <field>
+              <name>UART_CTRL_TX_HALF</name>
+              <msb>17</msb>
+              <lsb>17</lsb>
+              <access>read</access>
+              <description>TX FIFO is at least half-full</description>
+            </field>
+            <field>
+              <name>UART_CTRL_TX_FULL</name>
+              <msb>18</msb>
+              <lsb>18</lsb>
+              <access>read</access>
+              <description>TX FIFO is full</description>
+            </field>
+            <field>
+              <name>UART_CTRL_RTS_EN</name>
+              <msb>20</msb>
+              <lsb>20</lsb>
+              <description>Enable hardware flow control: Assert RTS output if UART.RX is ready to receive</description>
+            </field>
+            <field>
+              <name>UART_CTRL_CTS_EN</name>
+              <msb>21</msb>
+              <lsb>21</lsb>
+              <description>Enable hardware flow control: UART.TX starts sending only if CTS input is asserted</description>
+            </field>
+            <field>
+              <name>UART_CTRL_PMODE0</name>
+              <msb>22</msb>
+              <lsb>22</lsb>
+              <description>Parity configuration (0=even; 1=odd)</description>
+            </field>
+            <field>
+              <name>UART_CTRL_PMODE1</name>
+              <msb>23</msb>
+              <lsb>23</lsb>
+              <description>Parity bit enabled when set</description>
+            </field>
+            <field>
+              <name>UART_CTRL_PRSC</name>
+              <msb>26</msb>
+              <lsb>24</lsb>
+              <description>Clock prescaler select</description>
+            </field>
+            <field>
+              <name>UART_CTRL_CTS</name>
+              <msb>27</msb>
+              <lsb>27</lsb>
+              <access>read</access>
+              <description>current state of CTS input</description>
+            </field>
+            <field>
+              <name>UART_CTRL_EN</name>
+              <msb>28</msb>
+              <lsb>28</lsb>
+              <description>UART enable flag</description>
+            </field>
+            <field>
+              <name>UART_CTRL_RX_IRQ</name>
+              <msb>29</msb>
+              <lsb>29</lsb>
+              <description>RX IRQ mode: 1=FIFO at least half-full; 0=FIFO not empty</description>
+            </field>
+            <field>
+              <name>UART_CTRL_TX_IRQ</name>
+              <msb>30</msb>
+              <lsb>30</lsb>
+              <description>TX IRQ mode: 1=FIFO less than half-full; 0=FIFO not full</description>
+            </field>
+            <field>
+              <name>UART_CTRL_TX_BUSY</name>
+              <msb>31</msb>
+              <lsb>31</lsb>
+              <access>read</access>
+              <description>Transmitter is busy when set</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>DATA</name>
+          <description>RX/TX data register</description>
+          <addressOffset>0x04</addressOffset>
+          <fields>
+            <field>
+              <name>UART_DATA</name>
+              <msb>7</msb>
+              <lsb>0</lsb>
+              <description>Receive/transmit data</description>
+            </field>
+            <field>
+              <name>UART_DATA_PERR</name>
+              <msb>28</msb>
+              <lsb>28</lsb>
+              <access>read</access>
+              <description>RX parity error detected when set</description>
+            </field>
+            <field>
+              <name>UART_DATA_FERR</name>
+              <msb>29</msb>
+              <lsb>29</lsb>
+              <access>read</access>
+              <description>RX frame error (no valid stop bit) detected when set</description>
+            </field>
+            <field>
+              <name>UART_DATA_OVERR</name>
+              <msb>30</msb>
+              <lsb>30</lsb>
+              <access>read</access>
+              <description>RX parity error detected when set</description>
+            </field>
+            <field>
+              <name>UART_DATA_AVAIL</name>
+              <msb>31</msb>
+              <lsb>31</lsb>
+              <access>read</access>
+              <description>RX data available when set</description>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- UART1 -->
+    <peripheral derivedFrom="UART0">
+      <name>UART1</name>
+      <description>Secondary universal asynchronous receiver and transmitter</description>
+      <groupName>UART1</groupName>
+      <baseAddress>0xFFFFFFD0</baseAddress>
+
+      <interrupt><name>UART1_RX_FIRQ</name><value>4</value></interrupt>
+      <interrupt><name>UART1_TX_FIRQ</name><value>5</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x08</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+    </peripheral>
+
+    <!-- SPI -->
+    <peripheral>
+      <name>SPI</name>
+      <description>Serial peripheral interface controller</description>
+      <groupName>SPI</groupName>
+      <baseAddress>0xFFFFFFA8</baseAddress>
+
+      <interrupt><name>SPI_FIRQ</name><value>6</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x08</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>SPI_CTRL_CS</name>
+              <msb>7</msb>
+              <lsb>0</lsb>
+              <description>Direct chip select line</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_EN</name>
+              <msb>8</msb>
+              <lsb>8</lsb>
+              <description>SPI enable flag</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_CPHA</name>
+              <msb>9</msb>
+              <lsb>9</lsb>
+              <description>Clock phase</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_PRSC</name>
+              <msb>12</msb>
+              <lsb>10</lsb>
+              <description>Clock prescaler select</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_SIZE</name>
+              <msb>14</msb>
+              <lsb>13</lsb>
+              <description>Data transfer size</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_CPOL</name>
+              <msb>15</msb>
+              <lsb>15</lsb>
+              <description>Clock polarity</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_BUSY</name>
+              <msb>31</msb>
+              <lsb>31</lsb>
+              <access>read</access>
+              <description>SPI busy flag</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>DATA</name>
+          <description>RX/TX data register</description>
+          <addressOffset>0x04</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- TWI -->
+    <peripheral>
+      <name>TWI</name>
+      <description>Two-wire interface controller</description>
+      <groupName>SPI</groupName>
+      <baseAddress>0xFFFFFFB0</baseAddress>
+
+      <interrupt><name>TWI_FIRQ</name><value>7</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x08</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>TWI_CTRL_EN</name>
+              <msb>0</msb>
+              <lsb>0</lsb>
+              <description>TWI enable flag</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_START</name>
+              <msb>1</msb>
+              <lsb>1</lsb>
+              <description>Generate START condition, auto-clears</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_STOP</name>
+              <msb>2</msb>
+              <lsb>2</lsb>
+              <description>Generate STOP condition, auto-clears</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_PRSC</name>
+              <msb>5</msb>
+              <lsb>3</lsb>
+              <description>Clock prescaler select</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_MACK</name>
+              <msb>6</msb>
+              <lsb>6</lsb>
+              <description>Generate ACK by controller for each transmission</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_ACK</name>
+              <msb>30</msb>
+              <lsb>30</lsb>
+              <access>read</access>
+              <description>ACK received when set</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_BUSY</name>
+              <msb>31</msb>
+              <lsb>31</lsb>
+              <access>read</access>
+              <description>Transfer in progress, busy flag</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>DATA</name>
+          <description>RX/TX data register</description>
+          <addressOffset>0x04</addressOffset>
+          <fields>
+            <field>
+              <name>TWI_DATA</name>
+              <msb>7</msb>
+              <lsb>0</lsb>
+              <description>RX/TX data</description>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- TRNG -->
+    <peripheral>
+      <name>TRNG</name>
+      <description>True random number generator</description>
+      <groupName>TRNG</groupName>
+      <baseAddress>0xFFFFFFB8</baseAddress>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x04</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control and data register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>TRNG_CTRL_DATA</name>
+              <msb>7</msb>
+              <lsb>0</lsb>
+              <access>read</access>
+              <description>Random data</description>
+            </field>
+            <field>
+              <name>TRNG_CTRL_EN</name>
+              <msb>30</msb>
+              <lsb>30</lsb>
+              <description>TRNG enable flag</description>
+            </field>
+            <field>
+              <name>TRNG_CTRL_VALID</name>
+              <msb>31</msb>
+              <lsb>31</lsb>
+              <access>read</access>
+              <description>Random data output valid</description>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- WDT -->
+    <peripheral>
+      <name>WDT</name>
+      <description>Watchdog timer</description>
+      <groupName>WDT</groupName>
+      <baseAddress>0xFFFFFFBC</baseAddress>
+
+      <interrupt><name>WDT_FIRQ</name><value>0</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x04</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>WDT_CTRL_EN</name>
+              <msb>0</msb>
+              <lsb>0</lsb>
+              <description>WDT enable flag</description>
+            </field>
+            <field>
+              <name>WDT_CTRL_CLK_SEL</name>
+              <msb>3</msb>
+              <lsb>1</lsb>
+              <description>Clock prescaler select</description>
+            </field>
+            <field>
+              <name>WDT_CTRL_MODE</name>
+              <msb>4</msb>
+              <lsb>4</lsb>
+              <description>Watchdog mode: 0=timeout causes interrupt, 1=timeout causes processor reset</description>
+            </field>
+            <field>
+              <name>WDT_CTRL_RCAUSE</name>
+              <msb>5</msb>
+              <lsb>5</lsb>
+              <access>read</access>
+              <description>Cause of last system reset: 0=external reset, 1=watchdog</description>
+            </field>
+            <field>
+              <name>WDT_CTRL_RESET</name>
+              <msb>6</msb>
+              <lsb>6</lsb>
+              <description>Reset WDT counter when set, auto-clears</description>
+            </field>
+            <field>
+              <name>WDT_CTRL_FORCE</name>
+              <msb>7</msb>
+              <lsb>7</lsb>
+              <description>Force WDT action, auto-clears</description>
+            </field>
+            <field>
+              <name>WDT_CTRL_LOCK</name>
+              <msb>8</msb>
+              <lsb>8</lsb>
+              <description>Lock write access to control register, clears on reset (HW or WDT) only</description>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- GPIO -->
+    <peripheral>
+      <name>GPIO</name>
+      <description>General purpose input/output port</description>
+      <groupName>GPIO</groupName>
+      <baseAddress>0xFFFFFFc0</baseAddress>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x10</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>INPUT_LO</name>
+          <description>Parallel input register - low</description>
+          <addressOffset>0x00</addressOffset>
+          <access>read</access>
+        </register>
+        <register>
+          <name>INPUT_HI</name>
+          <description>Parallel input register - high</description>
+          <addressOffset>0x04</addressOffset>
+          <access>read</access>
+        </register>
+        <register>
+          <name>OUTPUT_LO</name>
+          <description>Parallel output register - low</description>
+          <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
+          <name>OUTPUT_HI</name>
+          <description>Parallel output register - high</description>
+          <addressOffset>0x0C</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- NEOLED -->
+    <peripheral>
+      <name>NEOLED</name>
+      <description>Smart LED hardware interface</description>
+      <groupName>NEOLED</groupName>
+      <baseAddress>0xFFFFFFD8</baseAddress>
+
+      <interrupt><name>NEOLED_FIRQ</name><value>9</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x08</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>NEOLED_CTRL_EN</name>
+              <msb>0</msb>
+              <lsb>0</lsb>
+              <description>NEOLED enable flag</description>
+            </field>
+            <field>
+              <name>NEOLED_CTRL_MODE</name>
+              <msb>1</msb>
+              <lsb>1</lsb>
+              <description>TX mode (0=24-bit, 1=32-bit)</description>
+            </field>
+            <field>
+              <name>NEOLED_CTRL_STROBE</name>
+              <msb>2</msb>
+              <lsb>2</lsb>
+              <description>Strobe (0=send normal data, 1=send RESET command on data write)</description>
+            </field>
+            <field>
+              <name>NEOLED_CTRL_PRSC</name>
+              <msb>4</msb>
+              <lsb>3</lsb>
+              <description>Clock prescaler select</description>
+            </field>
+            <field>
+              <name>NEOLED_CTRL_BUFS</name>
+              <msb>9</msb>
+              <lsb>6</lsb>
+              <access>read</access>
+              <description>log2(tx buffer size)</description>
+            </field>
+            <field>
+              <name>NEOLED_CTRL_T_TOT</name>
+              <msb>14</msb>
+              <lsb>10</lsb>
+              <description>pulse-clock ticks per total period bit</description>
+            </field>
+            <field>
+              <name>NEOLED_CTRL_T_ZERO_H</name>
+              <msb>19</msb>
+              <lsb>15</lsb>
+              <description>pulse-clock ticks per ZERO high-time</description>
+            </field>
+            <field>
+              <name>NEOLED_CTRL_T_ONE_H</name>
+              <msb>24</msb>
+              <lsb>20</lsb>
+              <description>pulse-clock ticks per ONE high-time</description>
+            </field>
+            <field>
+              <name>NEOLED_CTRL_IRQ_CONF</name>
+              <msb>27</msb>
+              <lsb>27</lsb>
+              <description>TX FIFO interrupt: 0=IRQ if FIFO is less than half-full, 1=IRQ if FIFO is empty</description>
+            </field>
+            <field>
+              <name>NEOLED_CTRL_TX_EMPTY</name>
+              <msb>28</msb>
+              <lsb>28</lsb>
+              <access>read</access>
+              <description>TX FIFO is empty</description>
+            </field>
+            <field>
+              <name>NEOLED_CTRL_TX_HALF</name>
+              <msb>29</msb>
+              <lsb>29</lsb>
+              <access>read</access>
+              <description>TX FIFO is at least half-full</description>
+            </field>
+            <field>
+              <name>NEOLED_CTRL_TX_FULL</name>
+              <msb>30</msb>
+              <lsb>30</lsb>
+              <access>read</access>
+              <description>TX FIFO is full</description>
+            </field>
+            <field>
+              <name>NEOLED_CTRL_TX_BUSY</name>
+              <msb>31</msb>
+              <lsb>31</lsb>
+              <access>read</access>
+              <description>busy flag</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>DATA</name>
+          <description>Data register</description>
+          <addressOffset>0x04</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- SYSINFO -->
+    <peripheral>
+      <name>SYSINFO</name>
+      <description>System configuration information memory</description>
+      <groupName>SYSINFO</groupName>
+      <baseAddress>0xFFFFFFE0</baseAddress>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x1F</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CLK</name>
+          <description>Clock speed in Hz</description>
+          <addressOffset>0x00</addressOffset>
+          <access>read</access>
+        </register>
+        <register>
+          <name>CPU</name>
+          <description>CPU core features</description>
+          <addressOffset>0x04</addressOffset>
+          <access>read</access>
+          <fields>
+            <field><name>SYSINFO_CPU_ZICSR</name><msb>0</msb><lsb>0</lsb><description>Zicsr extension (I sub-extension) available when set</description></field>
+            <field><name>SYSINFO_CPU_ZIFENCEI</name><msb>1</msb><lsb>1</lsb><description>Zifencei extension (I sub-extension) available when set</description></field>
+            <field><name>SYSINFO_CPU_ZMMUL</name><msb>2</msb><lsb>2</lsb><description>Zmmul extension (M sub-extension) available when set</description></field>
+            <field><name>SYSINFO_CPU_ZFINX</name><msb>5</msb><lsb>5</lsb><description>Zfinx extension (F sub-/alternative-extension) available when set</description></field>
+            <field><name>SYSINFO_CPU_ZXSCNT</name><msb>6</msb><lsb>6</lsb><description>Custom extension - Small CPU counters</description></field>
+            <field><name>SYSINFO_CPU_ZICNTR</name><msb>7</msb><lsb>7</lsb><description>Basic CPU counters available when set</description></field>
+            <field><name>SYSINFO_CPU_PMP</name><msb>8</msb><lsb>8</lsb><description>PMP (physical memory protection) extension available when set</description></field>
+            <field><name>SYSINFO_CPU_ZIHPM</name><msb>9</msb><lsb>9</lsb><description>HPM (hardware performance monitors) extension available when set</description></field>
+            <field><name>SYSINFO_CPU_DEBUGMODE</name><msb>10</msb><lsb>10</lsb><description>RISC-V CPU debug mode available when set</description></field>
+            <field><name>SYSINFO_CPU_FASTMUL</name><msb>30</msb><lsb>30</lsb><description>fast multiplications (via FAST_MUL_EN generic) available when set</description></field>
+            <field><name>SYSINFO_CPU_FASTSHIFT</name><msb>31</msb><lsb>31</lsb><description>fast shifts (via FAST_SHIFT_EN generic) available when set</description></field>
+          </fields>
+        </register>
+        <register>
+          <name>SOC</name>
+          <description>SoC features</description>
+          <addressOffset>0x08</addressOffset>
+          <access>read</access>
+          <fields>
+            <field><name>SYSINFO_SOC_BOOTLOADER</name><msb>0</msb><lsb>0</lsb><description>Bootloader implemented</description></field>
+            <field><name>SYSINFO_SOC_MEM_EXT</name><msb>1</msb><lsb>1</lsb><description>External bus interface implemented</description></field>
+            <field><name>SYSINFO_SOC_MEM_INT_IMEM</name><msb>2</msb><lsb>2</lsb><description>Processor-internal instruction memory implemented</description></field>
+            <field><name>SYSINFO_SOC_MEM_INT_DMEM</name><msb>3</msb><lsb>3</lsb><description>Processor-internal data memory implemented</description></field>
+            <field><name>SYSINFO_SOC_MEM_EXT_ENDIAN</name><msb>4</msb><lsb>4</lsb><description>External bus interface uses BIG-endian byte-order</description></field>
+            <field><name>SYSINFO_SOC_ICACHE</name><msb>5</msb><lsb>5</lsb><description>Processor-internal instruction cache implemented</description></field>
+            <field><name>SYSINFO_SOC_OCD</name><msb>14</msb><lsb>14</lsb><description>On-chip debugger implemented</description></field>
+            <field><name>SYSINFO_SOC_HW_RESET</name><msb>15</msb><lsb>15</lsb><description>Dedicated hardware reset of core registers implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_GPIO</name><msb>16</msb><lsb>16</lsb><description>General purpose input/output port unit implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_MTIME</name><msb>17</msb><lsb>17</lsb><description>Machine system timer implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_UART0</name><msb>18</msb><lsb>18</lsb><description>Primary universal asynchronous receiver/transmitter 0 implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_SPI</name><msb>19</msb><lsb>19</lsb><description>Serial peripheral interface implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_TWI</name><msb>20</msb><lsb>20</lsb><description>Two-wire interface implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_PWM</name><msb>21</msb><lsb>21</lsb><description>Pulse-width modulation unit implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_WDT</name><msb>22</msb><lsb>22</lsb><description>Watchdog timer implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_CFS</name><msb>23</msb><lsb>23</lsb><description>Custom functions subsystem implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_TRNG</name><msb>24</msb><lsb>24</lsb><description>True random number generator implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_SLINK</name><msb>25</msb><lsb>25</lsb><description>Stream link interface implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_UART1</name><msb>26</msb><lsb>26</lsb><description>Secondary universal asynchronous receiver/transmitter 1 implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_NEOLED</name><msb>27</msb><lsb>27</lsb><description>NeoPixel-compatible smart LED interface implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_XIRQ</name><msb>28</msb><lsb>28</lsb><description>External interrupt controller implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_GPTMR</name><msb>29</msb><lsb>29</lsb><description>General purpose timer implemented</description></field>
+          </fields>
+        </register>
+        <register>
+          <name>CACHE</name>
+          <description>Cache configuration</description>
+          <addressOffset>0x0C</addressOffset>
+          <access>read</access>
+          <fields>
+            <field><name>SYSINFO_CACHE_IC_BLOCK_SIZE</name><msb>3</msb><lsb>0</lsb><description>i-cache: log2(Block size in bytes)</description></field>
+            <field><name>SYSINFO_CACHE_IC_NUM_BLOCKS</name><msb>7</msb><lsb>4</lsb><description>i-cache: log2(Number of cache blocks/pages/lines)</description></field>
+            <field><name>SYSINFO_CACHE_IC_ASSOCIATIVITY</name><msb>11</msb><lsb>8</lsb><description>i-cache: log2(associativity)</description></field>
+            <field><name>SYSINFO_CACHE_IC_REPLACEMENT</name><msb>15</msb><lsb>12</lsb><description>i-cache: replacement policy (0001 = LRU if associativity > 0)</description></field>
+          </fields>
+        </register>
+        <register>
+          <name>ISPACE_BASE</name>
+          <description>Instruction memory address space base address</description>
+          <addressOffset>0x10</addressOffset>
+          <access>read</access>
+        </register>
+        <register>
+          <name>DSPACE_BASE</name>
+          <description>Data memory address space base address</description>
+          <addressOffset>0x14</addressOffset>
+          <access>read</access>
+        </register>
+        <register>
+          <name>IMEM_SIZE</name>
+          <description>Internal instruction memory (IMEM) size in bytes</description>
+          <addressOffset>0x18</addressOffset>
+          <access>read</access>
+        </register>
+        <register>
+          <name>DMEM_SIZE</name>
+          <description>Internal data memory (DMEM) size in bytes</description>
+          <addressOffset>0x1C</addressOffset>
+          <access>read</access>
         </register>
       </registers>
     </peripheral>
