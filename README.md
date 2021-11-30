@@ -64,7 +64,7 @@ can be found in [`sw/example`](https://github.com/stnolting/neorv32/tree/master/
 :bulb: Feel free to open a [new issue](https://github.com/stnolting/neorv32/issues) or start a
 [new discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas or if something is
 not working as expected. Or have a chat on our [gitter channel](https://gitter.im/neorv32/community).
-Learn how to [contribute](https://github.com/stnolting/neorv32/blob/master/CONTRIBUTING.md).
+See how to [contribute](https://github.com/stnolting/neorv32/blob/master/CONTRIBUTING.md).
 
 :rocket: Check out the [quick links below](#5-Getting-Started) or directly jump to the
 [*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started

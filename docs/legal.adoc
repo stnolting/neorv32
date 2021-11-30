@@ -87,15 +87,14 @@ If you are using the NEORV32 or parts of the project in some kind of publication
 
 .Contributors ❤️
 [NOTE]
-Please add as many https://github.com/stnolting/neorv32/graphs/contributors[contributors] as possible to the `authors` field 😉. +
-This project would not be where it is without them. +
-Full names can be found in the repository's https://github.com/stnolting/neorv32/blob/master/.mailmap[`.mailmap`].
+Please add as many https://github.com/stnolting/neorv32/graphs/contributors[contributors] as possible to the `authors` field. +
+This project would not be where it is without them.
 
 .BibTeX
 [source]
 ----
 @misc{nolting20,
-  author       = {Nolting, S.},
+  author       = {Nolting, S. and ...},
   title        = {The NEORV32 RISC-V Processor},
   year         = {2020},
   publisher    = {GitHub},
@@ -113,7 +112,7 @@ https://doi.org/10.5281/zenodo.5018888[image:https://zenodo.org/badge/DOI/10.528
 :sectnums!:
 === Acknowledgments
 
-**A big shoutout to all https://github.com/stnolting/neorv32/graphs/contributors[contributors],
+**A big shout-out to the community and all https://github.com/stnolting/neorv32/graphs/contributors[contributors],
 who helped improving this project! ❤️**
 
 https://riscv.org[RISC-V] - instruction sets want to be free!
