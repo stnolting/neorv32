@@ -100,14 +100,12 @@
           <fields>
             <field>
               <name>PWM_CTRL_EN</name>
-              <msb>0</msb>
-              <lsb>0</lsb>
+              <bitRange>[0:0]</bitRange>
               <description>PWM controller enable flag</description>
             </field>
             <field>
               <name>PWM_CTRL_PRSCx</name>
-              <msb>3</msb>
-              <lsb>1</lsb>
+              <bitRange>[3:1]</bitRange>
               <description>Clock prescaler select</description>
             </field>
           </fields>
@@ -215,36 +213,31 @@
             <field>
               <name>SLINK_CTRL_RX_NUMx</name>
               <access>read</access>
-              <msb>3</msb>
-              <lsb>0</lsb>
+              <bitRange>[3:0]</bitRange>
               <description>Number of implemented RX links</description>
             </field>
             <field>
               <name>SLINK_CTRL_TX_NUMx</name>
               <access>read</access>
-              <msb>5</msb>
-              <lsb>4</lsb>
+              <bitRange>[7:4]</bitRange>
               <description>Number of implemented TX links</description>
             </field>
             <field>
               <name>SLINK_CTRL_RX_FIFO_Sx</name>
               <access>read</access>
-              <msb>11</msb>
-              <lsb>8</lsb>
+              <bitRange>[11:8]</bitRange>
               <description>log2(RX FIFO size)</description>
             </field>
             <field>
               <name>SLINK_CTRL_TX_FIFO_Sx</name>
               <access>read</access>
-              <msb>15</msb>
-              <lsb>12</lsb>
+              <bitRange>[15:12]</bitRange>
               <description>log2(TX FIFO size)</description>
             </field>
             <field>
               <name>SLINK_CTRL_EN</name>
               <access>read-write</access>
-              <msb>31</msb>
-              <lsb>31</lsb>
+              <bitRange>[31:31]</bitRange>
               <description>SLINK enable flag</description>
             </field>
           </fields>
@@ -256,26 +249,22 @@
           <fields>
             <field>
               <name>SLINK_IRQ_RX_EN</name>
-              <msb>7</msb>
-              <lsb>0</lsb>
+              <bitRange>[7:0]</bitRange>
               <description>RX link interrupt enable</description>
             </field>
             <field>
               <name>SLINK_IRQ_RX_MODE</name>
-              <msb>15</msb>
-              <lsb>8</lsb>
+              <bitRange>[15:8]</bitRange>
               <description>RX link interrupt mode</description>
             </field>
             <field>
               <name>SLINK_IRQ_TX_EN</name>
-              <msb>23</msb>
-              <lsb>16</lsb>
+              <bitRange>[23:16]</bitRange>
               <description>TX link interrupt enable</description>
             </field>
             <field>
               <name>SLINK_IRQ_TX_MODE</name>
-              <msb>31</msb>
-              <lsb>24</lsb>
+              <bitRange>[31:24]</bitRange>
               <description>TX link interrupt mode</description>
             </field>
           </fields>
@@ -287,26 +276,22 @@
           <fields>
             <field>
               <name>SLINK_STATUS_RX_AVAIL</name>
-              <msb>7</msb>
-              <lsb>0</lsb>
+              <bitRange>[7:0]</bitRange>
               <description>RX link n FIFO is NOT empty (data available)</description>
             </field>
             <field>
               <name>SLINK_STATUS_TX_FREE</name>
-              <msb>15</msb>
-              <lsb>8</lsb>
+              <bitRange>[15:8]</bitRange>
               <description>TX link n FIFO is NOT full (ready to send)</description>
             </field>
             <field>
               <name>SLINK_STATUS_RX_HALF</name>
-              <msb>23</msb>
-              <lsb>16</lsb>
+              <bitRange>[23:16]</bitRange>
               <description>RX link n FIFO fill level is >= half-full</description>
             </field>
             <field>
               <name>SLINK_STATUS_TX_HALF</name>
-              <msb>31</msb>
-              <lsb>24</lsb>
+              <bitRange>[31:24]</bitRange>
               <description>TX link 0 FIFO fill level is > half-full</description>
             </field>
           </fields>
@@ -377,26 +362,22 @@
           <fields>
             <field>
               <name>GPTMR_CTRL_EN</name>
-              <msb>0</msb>
-              <lsb>0</lsb>
+              <bitRange>[0:0]</bitRange>
               <description>Timer enable flag</description>
             </field>
             <field>
               <name>GPTMR_CTRL_PRSC</name>
-              <msb>3</msb>
-              <lsb>1</lsb>
+              <bitRange>[3:1]</bitRange>
               <description>Clock prescaler select</description>
             </field>
             <field>
               <name>GPTMR_CTRL_MODE</name>
-              <msb>4</msb>
-              <lsb>4</lsb>
+              <bitRange>[4:4]</bitRange>
               <description>Timer mode: 0=single-shot mode, 1=continuous mode</description>
             </field>
             <field>
               <name>GPTMR_CTRL_ALARM</name>
-              <msb>5</msb>
-              <lsb>5</lsb>
+              <bitRange>[5:5]</bitRange>
               <description>Interrupt/alarm pending, cleared by setting bit to zero</description>
             </field>
           </fields>
@@ -435,15 +416,13 @@
           <fields>
             <field>
               <name>BUSKEEPER_ERR_TYPE</name>
-              <msb>0</msb>
-              <lsb>0</lsb>
+              <bitRange>[0:0]</bitRange>
               <access>read</access>
               <description>Bus error type: 0=device error, 1=access timeout</description>
             </field>
             <field>
               <name>BUSKEEPER_ERR_FLAG</name>
-              <msb>31</msb>
-              <lsb>31</lsb>
+              <bitRange>[31:31]</bitRange>
               <description>Sticky error flag, clears after read or write access</description>
             </field>
           </fields>
@@ -546,117 +525,99 @@
           <fields>
             <field>
               <name>UART_CTRL_BAUD</name>
-              <msb>11</msb>
-              <lsb>0</lsb>
+              <bitRange>[11:0]</bitRange>
               <description>Baud rate divisor</description>
             </field>
             <field>
               <name>UART_CTRL_SIM_MODE</name>
-              <msb>12</msb>
-              <lsb>12</lsb>
+              <bitRange>[12:12]</bitRange>
               <description>Simulation output override enable, for use in simulation only</description>
             </field>
             <field>
               <name>UART_CTRL_RX_EMPTY</name>
-              <msb>13</msb>
-              <lsb>13</lsb>
+              <bitRange>[13:13]</bitRange>
               <access>read</access>
               <description>RX FIFO is empty</description>
             </field>
             <field>
               <name>UART_CTRL_RX_HALF</name>
-              <msb>14</msb>
-              <lsb>14</lsb>
+              <bitRange>[14:14]</bitRange>
               <access>read</access>
               <description>RX FIFO is at least half-full</description>
             </field>
             <field>
               <name>UART_CTRL_RX_FULL</name>
-              <msb>15</msb>
-              <lsb>15</lsb>
+              <bitRange>[15:15]</bitRange>
               <access>read</access>
               <description>RX FIFO is full</description>
             </field>
             <field>
               <name>UART_CTRL_TX_EMPTY</name>
-              <msb>16</msb>
-              <lsb>16</lsb>
+              <bitRange>[16:16]</bitRange>
               <access>read</access>
               <description>TX FIFO is empty</description>
             </field>
             <field>
               <name>UART_CTRL_TX_HALF</name>
-              <msb>17</msb>
-              <lsb>17</lsb>
+              <bitRange>[17:17]</bitRange>
               <access>read</access>
               <description>TX FIFO is at least half-full</description>
             </field>
             <field>
               <name>UART_CTRL_TX_FULL</name>
-              <msb>18</msb>
-              <lsb>18</lsb>
+              <bitRange>[18:18]</bitRange>
               <access>read</access>
               <description>TX FIFO is full</description>
             </field>
             <field>
               <name>UART_CTRL_RTS_EN</name>
-              <msb>20</msb>
-              <lsb>20</lsb>
+              <bitRange>[20:20]</bitRange>
               <description>Enable hardware flow control: Assert RTS output if UART.RX is ready to receive</description>
             </field>
             <field>
               <name>UART_CTRL_CTS_EN</name>
-              <msb>21</msb>
-              <lsb>21</lsb>
+              <bitRange>[21:21]</bitRange>
               <description>Enable hardware flow control: UART.TX starts sending only if CTS input is asserted</description>
             </field>
             <field>
               <name>UART_CTRL_PMODE0</name>
-              <msb>22</msb>
-              <lsb>22</lsb>
+              <bitRange>[22:22]</bitRange>
               <description>Parity configuration (0=even; 1=odd)</description>
             </field>
             <field>
               <name>UART_CTRL_PMODE1</name>
-              <msb>23</msb>
-              <lsb>23</lsb>
+              <bitRange>[23:23]</bitRange>
               <description>Parity bit enabled when set</description>
             </field>
             <field>
               <name>UART_CTRL_PRSC</name>
-              <msb>26</msb>
-              <lsb>24</lsb>
+              <bitRange>[26:24]</bitRange>
               <description>Clock prescaler select</description>
             </field>
             <field>
               <name>UART_CTRL_CTS</name>
-              <msb>27</msb>
-              <lsb>27</lsb>
+              <bitRange>[27:27]</bitRange>
               <access>read</access>
               <description>current state of CTS input</description>
             </field>
             <field>
               <name>UART_CTRL_EN</name>
-              <msb>28</msb>
-              <lsb>28</lsb>
+              <bitRange>[28:28]</bitRange>
               <description>UART enable flag</description>
             </field>
             <field>
               <name>UART_CTRL_RX_IRQ</name>
-              <msb>29</msb>
-              <lsb>29</lsb>
+              <bitRange>[29:29]</bitRange>
               <description>RX IRQ mode: 1=FIFO at least half-full; 0=FIFO not empty</description>
             </field>
             <field>
               <name>UART_CTRL_TX_IRQ</name>
-              <msb>30</msb>
-              <lsb>30</lsb>
+              <bitRange>[30:30]</bitRange>
               <description>TX IRQ mode: 1=FIFO less than half-full; 0=FIFO not full</description>
             </field>
             <field>
               <name>UART_CTRL_TX_BUSY</name>
-              <msb>31</msb>
-              <lsb>31</lsb>
+              <bitRange>[31:31]</bitRange>
               <access>read</access>
               <description>Transmitter is busy when set</description>
             </field>
@@ -669,35 +630,30 @@
           <fields>
             <field>
               <name>UART_DATA</name>
-              <msb>7</msb>
-              <lsb>0</lsb>
+              <bitRange>[7:0]</bitRange>
               <description>Receive/transmit data</description>
             </field>
             <field>
               <name>UART_DATA_PERR</name>
-              <msb>28</msb>
-              <lsb>28</lsb>
+              <bitRange>[28:28]</bitRange>
               <access>read</access>
               <description>RX parity error detected when set</description>
             </field>
             <field>
               <name>UART_DATA_FERR</name>
-              <msb>29</msb>
-              <lsb>29</lsb>
+              <bitRange>[29:29]</bitRange>
               <access>read</access>
               <description>RX frame error (no valid stop bit) detected when set</description>
             </field>
             <field>
               <name>UART_DATA_OVERR</name>
-              <msb>30</msb>
-              <lsb>30</lsb>
+              <bitRange>[30:30]</bitRange>
               <access>read</access>
               <description>RX parity error detected when set</description>
             </field>
             <field>
               <name>UART_DATA_AVAIL</name>
-              <msb>31</msb>
-              <lsb>31</lsb>
+              <bitRange>[31:31]</bitRange>
               <access>read</access>
               <description>RX data available when set</description>
             </field>
@@ -747,44 +703,37 @@
           <fields>
             <field>
               <name>SPI_CTRL_CS</name>
-              <msb>7</msb>
-              <lsb>0</lsb>
+              <bitRange>[7:0]</bitRange>
               <description>Direct chip select line</description>
             </field>
             <field>
               <name>SPI_CTRL_EN</name>
-              <msb>8</msb>
-              <lsb>8</lsb>
+              <bitRange>[8:8]</bitRange>
               <description>SPI enable flag</description>
             </field>
             <field>
               <name>SPI_CTRL_CPHA</name>
-              <msb>9</msb>
-              <lsb>9</lsb>
+              <bitRange>[9:9]</bitRange>
               <description>Clock phase</description>
             </field>
             <field>
               <name>SPI_CTRL_PRSC</name>
-              <msb>12</msb>
-              <lsb>10</lsb>
+              <bitRange>[12:10]</bitRange>
               <description>Clock prescaler select</description>
             </field>
             <field>
               <name>SPI_CTRL_SIZE</name>
-              <msb>14</msb>
-              <lsb>13</lsb>
+              <bitRange>[14:13]</bitRange>
               <description>Data transfer size</description>
             </field>
             <field>
               <name>SPI_CTRL_CPOL</name>
-              <msb>15</msb>
-              <lsb>15</lsb>
+              <bitRange>[15:15]</bitRange>
               <description>Clock polarity</description>
             </field>
             <field>
               <name>SPI_CTRL_BUSY</name>
-              <msb>31</msb>
-              <lsb>31</lsb>
+              <bitRange>[31:31]</bitRange>
               <access>read</access>
               <description>SPI busy flag</description>
             </field>
@@ -821,45 +770,38 @@
           <fields>
             <field>
               <name>TWI_CTRL_EN</name>
-              <msb>0</msb>
-              <lsb>0</lsb>
+              <bitRange>[0:0]</bitRange>
               <description>TWI enable flag</description>
             </field>
             <field>
               <name>TWI_CTRL_START</name>
-              <msb>1</msb>
-              <lsb>1</lsb>
+              <bitRange>[1:1]</bitRange>
               <description>Generate START condition, auto-clears</description>
             </field>
             <field>
               <name>TWI_CTRL_STOP</name>
-              <msb>2</msb>
-              <lsb>2</lsb>
+              <bitRange>[2:2]</bitRange>
               <description>Generate STOP condition, auto-clears</description>
             </field>
             <field>
               <name>TWI_CTRL_PRSC</name>
-              <msb>5</msb>
-              <lsb>3</lsb>
+              <bitRange>[5:3]</bitRange>
               <description>Clock prescaler select</description>
             </field>
             <field>
               <name>TWI_CTRL_MACK</name>
-              <msb>6</msb>
-              <lsb>6</lsb>
+              <bitRange>[6:6]</bitRange>
               <description>Generate ACK by controller for each transmission</description>
             </field>
             <field>
               <name>TWI_CTRL_ACK</name>
-              <msb>30</msb>
-              <lsb>30</lsb>
+              <bitRange>[30:30]</bitRange>
               <access>read</access>
               <description>ACK received when set</description>
             </field>
             <field>
               <name>TWI_CTRL_BUSY</name>
-              <msb>31</msb>
-              <lsb>31</lsb>
+              <bitRange>[31:31]</bitRange>
               <access>read</access>
               <description>Transfer in progress, busy flag</description>
             </field>
@@ -872,8 +814,7 @@
           <fields>
             <field>
               <name>TWI_DATA</name>
-              <msb>7</msb>
-              <lsb>0</lsb>
+              <bitRange>[7:0]</bitRange>
               <description>RX/TX data</description>
             </field>
           </fields>
@@ -902,21 +843,18 @@
           <fields>
             <field>
               <name>TRNG_CTRL_DATA</name>
-              <msb>7</msb>
-              <lsb>0</lsb>
+              <bitRange>[7:0]</bitRange>
               <access>read</access>
               <description>Random data</description>
             </field>
             <field>
               <name>TRNG_CTRL_EN</name>
-              <msb>30</msb>
-              <lsb>30</lsb>
+              <bitRange>[30:30]</bitRange>
               <description>TRNG enable flag</description>
             </field>
             <field>
               <name>TRNG_CTRL_VALID</name>
-              <msb>31</msb>
-              <lsb>31</lsb>
+              <bitRange>[31:31]</bitRange>
               <access>read</access>
               <description>Random data output valid</description>
             </field>
@@ -948,45 +886,38 @@
           <fields>
             <field>
               <name>WDT_CTRL_EN</name>
-              <msb>0</msb>
-              <lsb>0</lsb>
+              <bitRange>[0:0]</bitRange>
               <description>WDT enable flag</description>
             </field>
             <field>
               <name>WDT_CTRL_CLK_SEL</name>
-              <msb>3</msb>
-              <lsb>1</lsb>
+              <bitRange>[3:1]</bitRange>
               <description>Clock prescaler select</description>
             </field>
             <field>
               <name>WDT_CTRL_MODE</name>
-              <msb>4</msb>
-              <lsb>4</lsb>
+              <bitRange>[4:4]</bitRange>
               <description>Watchdog mode: 0=timeout causes interrupt, 1=timeout causes processor reset</description>
             </field>
             <field>
               <name>WDT_CTRL_RCAUSE</name>
-              <msb>5</msb>
-              <lsb>5</lsb>
+              <bitRange>[5:5]</bitRange>
               <access>read</access>
               <description>Cause of last system reset: 0=external reset, 1=watchdog</description>
             </field>
             <field>
               <name>WDT_CTRL_RESET</name>
-              <msb>6</msb>
-              <lsb>6</lsb>
+              <bitRange>[6:6]</bitRange>
               <description>Reset WDT counter when set, auto-clears</description>
             </field>
             <field>
               <name>WDT_CTRL_FORCE</name>
-              <msb>7</msb>
-              <lsb>7</lsb>
+              <bitRange>[7:7]</bitRange>
               <description>Force WDT action, auto-clears</description>
             </field>
             <field>
               <name>WDT_CTRL_LOCK</name>
-              <msb>8</msb>
-              <lsb>8</lsb>
+              <bitRange>[8:8]</bitRange>
               <description>Lock write access to control register, clears on reset (HW or WDT) only</description>
             </field>
           </fields>
@@ -1056,84 +987,71 @@
           <fields>
             <field>
               <name>NEOLED_CTRL_EN</name>
-              <msb>0</msb>
-              <lsb>0</lsb>
+              <bitRange>[0:0]</bitRange>
               <description>NEOLED enable flag</description>
             </field>
             <field>
               <name>NEOLED_CTRL_MODE</name>
-              <msb>1</msb>
-              <lsb>1</lsb>
+              <bitRange>[1:1]</bitRange>
               <description>TX mode (0=24-bit, 1=32-bit)</description>
             </field>
             <field>
               <name>NEOLED_CTRL_STROBE</name>
-              <msb>2</msb>
-              <lsb>2</lsb>
+              <bitRange>[2:2]</bitRange>
               <description>Strobe (0=send normal data, 1=send RESET command on data write)</description>
             </field>
             <field>
               <name>NEOLED_CTRL_PRSC</name>
-              <msb>4</msb>
-              <lsb>3</lsb>
+              <bitRange>[5:3]</bitRange>
               <description>Clock prescaler select</description>
             </field>
             <field>
               <name>NEOLED_CTRL_BUFS</name>
-              <msb>9</msb>
-              <lsb>6</lsb>
+              <bitRange>[9:6]</bitRange>
               <access>read</access>
               <description>log2(tx buffer size)</description>
             </field>
             <field>
               <name>NEOLED_CTRL_T_TOT</name>
-              <msb>14</msb>
-              <lsb>10</lsb>
+              <bitRange>[14:10]</bitRange>
               <description>pulse-clock ticks per total period bit</description>
             </field>
             <field>
               <name>NEOLED_CTRL_T_ZERO_H</name>
-              <msb>19</msb>
-              <lsb>15</lsb>
+              <bitRange>[19:15]</bitRange>
               <description>pulse-clock ticks per ZERO high-time</description>
             </field>
             <field>
               <name>NEOLED_CTRL_T_ONE_H</name>
-              <msb>24</msb>
-              <lsb>20</lsb>
+              <bitRange>[24:20]</bitRange>
               <description>pulse-clock ticks per ONE high-time</description>
             </field>
             <field>
               <name>NEOLED_CTRL_IRQ_CONF</name>
-              <msb>27</msb>
-              <lsb>27</lsb>
+              <bitRange>[27:27]</bitRange>
               <description>TX FIFO interrupt: 0=IRQ if FIFO is less than half-full, 1=IRQ if FIFO is empty</description>
             </field>
             <field>
               <name>NEOLED_CTRL_TX_EMPTY</name>
-              <msb>28</msb>
-              <lsb>28</lsb>
+              <bitRange>[28:28]</bitRange>
               <access>read</access>
               <description>TX FIFO is empty</description>
             </field>
             <field>
               <name>NEOLED_CTRL_TX_HALF</name>
-              <msb>29</msb>
-              <lsb>29</lsb>
+              <bitRange>[29:29]</bitRange>
               <access>read</access>
               <description>TX FIFO is at least half-full</description>
             </field>
             <field>
               <name>NEOLED_CTRL_TX_FULL</name>
-              <msb>30</msb>
-              <lsb>30</lsb>
+              <bitRange>[30:30]</bitRange>
               <access>read</access>
               <description>TX FIFO is full</description>
             </field>
             <field>
               <name>NEOLED_CTRL_TX_BUSY</name>
-              <msb>31</msb>
-              <lsb>31</lsb>
+              <bitRange>[31:31]</bitRange>
               <access>read</access>
               <description>busy flag</description>
             </field>
@@ -1173,17 +1091,17 @@
           <addressOffset>0x04</addressOffset>
           <access>read</access>
           <fields>
-            <field><name>SYSINFO_CPU_ZICSR</name><msb>0</msb><lsb>0</lsb><description>Zicsr extension (I sub-extension) available when set</description></field>
-            <field><name>SYSINFO_CPU_ZIFENCEI</name><msb>1</msb><lsb>1</lsb><description>Zifencei extension (I sub-extension) available when set</description></field>
-            <field><name>SYSINFO_CPU_ZMMUL</name><msb>2</msb><lsb>2</lsb><description>Zmmul extension (M sub-extension) available when set</description></field>
-            <field><name>SYSINFO_CPU_ZFINX</name><msb>5</msb><lsb>5</lsb><description>Zfinx extension (F sub-/alternative-extension) available when set</description></field>
-            <field><name>SYSINFO_CPU_ZXSCNT</name><msb>6</msb><lsb>6</lsb><description>Custom extension - Small CPU counters</description></field>
-            <field><name>SYSINFO_CPU_ZICNTR</name><msb>7</msb><lsb>7</lsb><description>Basic CPU counters available when set</description></field>
-            <field><name>SYSINFO_CPU_PMP</name><msb>8</msb><lsb>8</lsb><description>PMP (physical memory protection) extension available when set</description></field>
-            <field><name>SYSINFO_CPU_ZIHPM</name><msb>9</msb><lsb>9</lsb><description>HPM (hardware performance monitors) extension available when set</description></field>
-            <field><name>SYSINFO_CPU_DEBUGMODE</name><msb>10</msb><lsb>10</lsb><description>RISC-V CPU debug mode available when set</description></field>
-            <field><name>SYSINFO_CPU_FASTMUL</name><msb>30</msb><lsb>30</lsb><description>fast multiplications (via FAST_MUL_EN generic) available when set</description></field>
-            <field><name>SYSINFO_CPU_FASTSHIFT</name><msb>31</msb><lsb>31</lsb><description>fast shifts (via FAST_SHIFT_EN generic) available when set</description></field>
+            <field><name>SYSINFO_CPU_ZICSR</name><bitRange>[0:0]</bitRange><description>Zicsr extension (I sub-extension) available when set</description></field>
+            <field><name>SYSINFO_CPU_ZIFENCEI</name><bitRange>[1:1]</bitRange><description>Zifencei extension (I sub-extension) available when set</description></field>
+            <field><name>SYSINFO_CPU_ZMMUL</name><bitRange>[2:2]</bitRange><description>Zmmul extension (M sub-extension) available when set</description></field>
+            <field><name>SYSINFO_CPU_ZFINX</name><bitRange>[5:5]</bitRange><description>Zfinx extension (F sub-/alternative-extension) available when set</description></field>
+            <field><name>SYSINFO_CPU_ZXSCNT</name><bitRange>[6:6]</bitRange><description>Custom extension - Small CPU counters</description></field>
+            <field><name>SYSINFO_CPU_ZICNTR</name><bitRange>[7:7]</bitRange><description>Basic CPU counters available when set</description></field>
+            <field><name>SYSINFO_CPU_PMP</name><bitRange>[8:8]</bitRange><description>PMP (physical memory protection) extension available when set</description></field>
+            <field><name>SYSINFO_CPU_ZIHPM</name><bitRange>[9:9]</bitRange><description>HPM (hardware performance monitors) extension available when set</description></field>
+            <field><name>SYSINFO_CPU_DEBUGMODE</name><bitRange>[10:10]</bitRange><description>RISC-V CPU debug mode available when set</description></field>
+            <field><name>SYSINFO_CPU_FASTMUL</name><bitRange>[30:30]</bitRange><description>fast multiplications (via FAST_MUL_EN generic) available when set</description></field>
+            <field><name>SYSINFO_CPU_FASTSHIFT</name><bitRange>[31:31]</bitRange><description>fast shifts (via FAST_SHIFT_EN generic) available when set</description></field>
           </fields>
         </register>
         <register>
@@ -1192,28 +1110,28 @@
           <addressOffset>0x08</addressOffset>
           <access>read</access>
           <fields>
-            <field><name>SYSINFO_SOC_BOOTLOADER</name><msb>0</msb><lsb>0</lsb><description>Bootloader implemented</description></field>
-            <field><name>SYSINFO_SOC_MEM_EXT</name><msb>1</msb><lsb>1</lsb><description>External bus interface implemented</description></field>
-            <field><name>SYSINFO_SOC_MEM_INT_IMEM</name><msb>2</msb><lsb>2</lsb><description>Processor-internal instruction memory implemented</description></field>
-            <field><name>SYSINFO_SOC_MEM_INT_DMEM</name><msb>3</msb><lsb>3</lsb><description>Processor-internal data memory implemented</description></field>
-            <field><name>SYSINFO_SOC_MEM_EXT_ENDIAN</name><msb>4</msb><lsb>4</lsb><description>External bus interface uses BIG-endian byte-order</description></field>
-            <field><name>SYSINFO_SOC_ICACHE</name><msb>5</msb><lsb>5</lsb><description>Processor-internal instruction cache implemented</description></field>
-            <field><name>SYSINFO_SOC_OCD</name><msb>14</msb><lsb>14</lsb><description>On-chip debugger implemented</description></field>
-            <field><name>SYSINFO_SOC_HW_RESET</name><msb>15</msb><lsb>15</lsb><description>Dedicated hardware reset of core registers implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_GPIO</name><msb>16</msb><lsb>16</lsb><description>General purpose input/output port unit implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_MTIME</name><msb>17</msb><lsb>17</lsb><description>Machine system timer implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_UART0</name><msb>18</msb><lsb>18</lsb><description>Primary universal asynchronous receiver/transmitter 0 implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_SPI</name><msb>19</msb><lsb>19</lsb><description>Serial peripheral interface implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_TWI</name><msb>20</msb><lsb>20</lsb><description>Two-wire interface implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_PWM</name><msb>21</msb><lsb>21</lsb><description>Pulse-width modulation unit implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_WDT</name><msb>22</msb><lsb>22</lsb><description>Watchdog timer implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_CFS</name><msb>23</msb><lsb>23</lsb><description>Custom functions subsystem implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_TRNG</name><msb>24</msb><lsb>24</lsb><description>True random number generator implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_SLINK</name><msb>25</msb><lsb>25</lsb><description>Stream link interface implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_UART1</name><msb>26</msb><lsb>26</lsb><description>Secondary universal asynchronous receiver/transmitter 1 implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_NEOLED</name><msb>27</msb><lsb>27</lsb><description>NeoPixel-compatible smart LED interface implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_XIRQ</name><msb>28</msb><lsb>28</lsb><description>External interrupt controller implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_GPTMR</name><msb>29</msb><lsb>29</lsb><description>General purpose timer implemented</description></field>
+            <field><name>SYSINFO_SOC_BOOTLOADER</name><bitRange>[0:0]</bitRange><description>Bootloader implemented</description></field>
+            <field><name>SYSINFO_SOC_MEM_EXT</name><bitRange>[1:1]</bitRange><description>External bus interface implemented</description></field>
+            <field><name>SYSINFO_SOC_MEM_INT_IMEM</name><bitRange>[2:2]</bitRange><description>Processor-internal instruction memory implemented</description></field>
+            <field><name>SYSINFO_SOC_MEM_INT_DMEM</name><bitRange>[3:3]</bitRange><description>Processor-internal data memory implemented</description></field>
+            <field><name>SYSINFO_SOC_MEM_EXT_ENDIAN</name><bitRange>[4:4]</bitRange><description>External bus interface uses BIG-endian byte-order</description></field>
+            <field><name>SYSINFO_SOC_ICACHE</name><bitRange>[5:5]</bitRange><description>Processor-internal instruction cache implemented</description></field>
+            <field><name>SYSINFO_SOC_OCD</name><bitRange>[14:14]</bitRange><description>On-chip debugger implemented</description></field>
+            <field><name>SYSINFO_SOC_HW_RESET</name><bitRange>[15:15]</bitRange><description>Dedicated hardware reset of core registers implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_GPIO</name><bitRange>[16:16]</bitRange><description>General purpose input/output port unit implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_MTIME</name><bitRange>[17:17]</bitRange><description>Machine system timer implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_UART0</name><bitRange>[18:18]</bitRange><description>Primary universal asynchronous receiver/transmitter 0 implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_SPI</name><bitRange>[19:19]</bitRange><description>Serial peripheral interface implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_TWI</name><bitRange>[20:20]</bitRange><description>Two-wire interface implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_PWM</name><bitRange>[21:21]</bitRange><description>Pulse-width modulation unit implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_WDT</name><bitRange>[22:22]</bitRange><description>Watchdog timer implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_CFS</name><bitRange>[23:23]</bitRange><description>Custom functions subsystem implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_TRNG</name><bitRange>[24:24]</bitRange><description>True random number generator implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_SLINK</name><bitRange>[25:25]</bitRange><description>Stream link interface implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_UART1</name><bitRange>[26:26]</bitRange><description>Secondary universal asynchronous receiver/transmitter 1 implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_NEOLED</name><bitRange>[27:27]</bitRange><description>NeoPixel-compatible smart LED interface implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_XIRQ</name><bitRange>[28:28]</bitRange><description>External interrupt controller implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_GPTMR</name><bitRange>[29:29]</bitRange><description>General purpose timer implemented</description></field>
           </fields>
         </register>
         <register>
@@ -1222,10 +1140,10 @@
           <addressOffset>0x0C</addressOffset>
           <access>read</access>
           <fields>
-            <field><name>SYSINFO_CACHE_IC_BLOCK_SIZE</name><msb>3</msb><lsb>0</lsb><description>i-cache: log2(Block size in bytes)</description></field>
-            <field><name>SYSINFO_CACHE_IC_NUM_BLOCKS</name><msb>7</msb><lsb>4</lsb><description>i-cache: log2(Number of cache blocks/pages/lines)</description></field>
-            <field><name>SYSINFO_CACHE_IC_ASSOCIATIVITY</name><msb>11</msb><lsb>8</lsb><description>i-cache: log2(associativity)</description></field>
-            <field><name>SYSINFO_CACHE_IC_REPLACEMENT</name><msb>15</msb><lsb>12</lsb><description>i-cache: replacement policy (0001 = LRU if associativity > 0)</description></field>
+            <field><name>SYSINFO_CACHE_IC_BLOCK_SIZE</name><bitRange>[3:0]</bitRange><description>i-cache: log2(Block size in bytes)</description></field>
+            <field><name>SYSINFO_CACHE_IC_NUM_BLOCKS</name><bitRange>[7:4]</bitRange><description>i-cache: log2(Number of cache blocks/pages/lines)</description></field>
+            <field><name>SYSINFO_CACHE_IC_ASSOCIATIVITY</name><bitRange>[11:8]</bitRange><description>i-cache: log2(associativity)</description></field>
+            <field><name>SYSINFO_CACHE_IC_REPLACEMENT</name><bitRange>[15:12]</bitRange><description>i-cache: replacement policy (0001 = LRU if associativity > 0)</description></field>
           </fields>
         </register>
         <register>
