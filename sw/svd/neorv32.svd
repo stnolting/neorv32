@@ -23,7 +23,7 @@
   <size>32</size>
   <access>read-write</access>
   <resetValue>0x00000000</resetValue>
-  <resetMask>0x00000000</resetMask>
+  <resetMask>0x00000000</resetMask> <!-- default IO devices do not have a dedicated reset -->
 
   <!-- Peripherals -->
   <peripherals>
