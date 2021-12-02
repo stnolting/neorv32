@@ -49,21 +49,6 @@
 // Libs required by functions
 #include <stdarg.h>
 
-// compatibility wrappers (mapping to primary UART -> UART0) (OBSOLETE, do not use for new designs!)
-int  neorv32_uart_available(void);
-void neorv32_uart_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
-void neorv32_uart_disable(void);
-void neorv32_uart_enable(void);
-void neorv32_uart_putc(char c);
-int  neorv32_uart_tx_busy(void);
-char neorv32_uart_getc(void);
-int  neorv32_uart_char_received(void);
-int  neorv32_uart_getc_safe(char *data);
-char neorv32_uart_char_received_get(void);
-void neorv32_uart_print(const char *s);
-void neorv32_uart_printf(const char *format, ...);
-int  neorv32_uart_scan(char *buffer, int max_size, int echo);
-
 // prototypes for UART0 (primary UART)
 int  neorv32_uart0_available(void);
 void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
