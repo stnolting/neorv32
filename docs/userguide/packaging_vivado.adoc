@@ -5,7 +5,7 @@
 [start=1]
 . Import all the core files from `rtl/core` (including default internal memory architectures from `rtl/core/mem`)
 and assign them to a _new_ design library `neorv32`.
-. Instantiate the `rtl/wrappers/neorv32_top_axi4lite.vhd` module.
+. Instantiate the `rtl/system_integration/neorv32_top_axi4lite.vhd` module.
 . Then either directly use that module in a new block-design ("Create Block Design", right-click -> "Add Module",
 thats easier for a first try) or package it ("Tools", "Create and Package new IP") for the use in other projects.
 . Connect your AXI-peripheral directly to the core's AXI4-Interface if you only have one, or to an AXI-Interconnect
@@ -18,6 +18,14 @@ according to your needs).
 (right-click on the signal/pin -> "Make External").
 . Save everything, let VIVADO create a HDL-Wrapper for the block-design and choose this as your _Top Level Design_.
 . Define your constraints and generate your bitstream.
+
+.True Random Number Generator
+[IMPORTANT]
+The NEORV32 TRNG peripheral is enabled by default in the `neorv32_top_axi4lite` AXI wrapper. Otherwise, Vivado
+cannot insert the wrapper into a block design (see https://github.com/stnolting/neorv32/issues/227.).
+footnote:[Seems like Vivado has problem evaluating design source files that have more than two in-file sub-entities.]
+If the TRNG is not needed, you can disable it by double-clicking on the module's block and de-selecting
+"Io Trng En" after inserting the module.
 
 .TWI Tri-State Drivers
 [IMPORTANT]
