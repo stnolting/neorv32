@@ -65,8 +65,7 @@ files are currently part of the NEORV32 core library:
 | `neorv32_cpu.c`    | `neorv32_cpu.h`        | HW driver functions for the NEORV32 **CPU**
 | `neorv32_gpio.c`   | `neorv32_gpio.h`       | HW driver functions for the **GPIO**
 | `neorv32_gptmr.c`  | `neorv32_gptmr.h`      | HW driver functions for the **GPTRM**
-| -                  | `neorv32_intrinsics.h` | macros for custom intrinsics/instructions
-| -                  | `neorv32_legacy.h`     | legacy back-compatibility layer
+| -                  | `neorv32_intrinsics.h` | macros for (custom) intrinsics/instructions
 | `neorv32_mtime.c`  | `neorv32_mtime.h`      | HW driver functions for the **MTIME**
 | `neorv32_neoled.c` | `neorv32_neoled.h`     | HW driver functions for the **NEOLED**
 | `neorv32_pwm.c`    | `neorv32_pwm.h`        | HW driver functions for the **PWM**
