@@ -212,25 +212,25 @@
           <fields>
             <field>
               <name>SLINK_CTRL_RX_NUMx</name>
-              <access>read</access>
+              <access>read-only</access>
               <bitRange>[3:0]</bitRange>
               <description>Number of implemented RX links</description>
             </field>
             <field>
               <name>SLINK_CTRL_TX_NUMx</name>
-              <access>read</access>
+              <access>read-only</access>
               <bitRange>[7:4]</bitRange>
               <description>Number of implemented TX links</description>
             </field>
             <field>
               <name>SLINK_CTRL_RX_FIFO_Sx</name>
-              <access>read</access>
+              <access>read-only</access>
               <bitRange>[11:8]</bitRange>
               <description>log2(RX FIFO size)</description>
             </field>
             <field>
               <name>SLINK_CTRL_TX_FIFO_Sx</name>
-              <access>read</access>
+              <access>read-only</access>
               <bitRange>[15:12]</bitRange>
               <description>log2(TX FIFO size)</description>
             </field>
@@ -417,7 +417,7 @@
             <field>
               <name>BUSKEEPER_ERR_TYPE</name>
               <bitRange>[0:0]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>Bus error type: 0=device error, 1=access timeout</description>
             </field>
             <field>
@@ -536,37 +536,37 @@
             <field>
               <name>UART_CTRL_RX_EMPTY</name>
               <bitRange>[13:13]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>RX FIFO is empty</description>
             </field>
             <field>
               <name>UART_CTRL_RX_HALF</name>
               <bitRange>[14:14]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>RX FIFO is at least half-full</description>
             </field>
             <field>
               <name>UART_CTRL_RX_FULL</name>
               <bitRange>[15:15]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>RX FIFO is full</description>
             </field>
             <field>
               <name>UART_CTRL_TX_EMPTY</name>
               <bitRange>[16:16]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>TX FIFO is empty</description>
             </field>
             <field>
               <name>UART_CTRL_TX_HALF</name>
               <bitRange>[17:17]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>TX FIFO is at least half-full</description>
             </field>
             <field>
               <name>UART_CTRL_TX_FULL</name>
               <bitRange>[18:18]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>TX FIFO is full</description>
             </field>
             <field>
@@ -597,7 +597,7 @@
             <field>
               <name>UART_CTRL_CTS</name>
               <bitRange>[27:27]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>current state of CTS input</description>
             </field>
             <field>
@@ -618,7 +618,7 @@
             <field>
               <name>UART_CTRL_TX_BUSY</name>
               <bitRange>[31:31]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>Transmitter is busy when set</description>
             </field>
           </fields>
@@ -636,25 +636,25 @@
             <field>
               <name>UART_DATA_PERR</name>
               <bitRange>[28:28]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>RX parity error detected when set</description>
             </field>
             <field>
               <name>UART_DATA_FERR</name>
               <bitRange>[29:29]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>RX frame error (no valid stop bit) detected when set</description>
             </field>
             <field>
               <name>UART_DATA_OVERR</name>
               <bitRange>[30:30]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>RX parity error detected when set</description>
             </field>
             <field>
               <name>UART_DATA_AVAIL</name>
               <bitRange>[31:31]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>RX data available when set</description>
             </field>
           </fields>
@@ -734,7 +734,7 @@
             <field>
               <name>SPI_CTRL_BUSY</name>
               <bitRange>[31:31]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>SPI busy flag</description>
             </field>
           </fields>
@@ -796,13 +796,13 @@
             <field>
               <name>TWI_CTRL_ACK</name>
               <bitRange>[30:30]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>ACK received when set</description>
             </field>
             <field>
               <name>TWI_CTRL_BUSY</name>
               <bitRange>[31:31]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>Transfer in progress, busy flag</description>
             </field>
           </fields>
@@ -844,7 +844,7 @@
             <field>
               <name>TRNG_CTRL_DATA</name>
               <bitRange>[7:0]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>Random data</description>
             </field>
             <field>
@@ -855,7 +855,7 @@
             <field>
               <name>TRNG_CTRL_VALID</name>
               <bitRange>[31:31]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>Random data output valid</description>
             </field>
           </fields>
@@ -902,7 +902,7 @@
             <field>
               <name>WDT_CTRL_RCAUSE</name>
               <bitRange>[5:5]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>Cause of last system reset: 0=external reset, 1=watchdog</description>
             </field>
             <field>
@@ -943,13 +943,13 @@
           <name>INPUT_LO</name>
           <description>Parallel input register - low</description>
           <addressOffset>0x00</addressOffset>
-          <access>read</access>
+          <access>read-only</access>
         </register>
         <register>
           <name>INPUT_HI</name>
           <description>Parallel input register - high</description>
           <addressOffset>0x04</addressOffset>
-          <access>read</access>
+          <access>read-only</access>
         </register>
         <register>
           <name>OUTPUT_LO</name>
@@ -1008,7 +1008,7 @@
             <field>
               <name>NEOLED_CTRL_BUFS</name>
               <bitRange>[9:6]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>log2(tx buffer size)</description>
             </field>
             <field>
@@ -1034,25 +1034,25 @@
             <field>
               <name>NEOLED_CTRL_TX_EMPTY</name>
               <bitRange>[28:28]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>TX FIFO is empty</description>
             </field>
             <field>
               <name>NEOLED_CTRL_TX_HALF</name>
               <bitRange>[29:29]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>TX FIFO is at least half-full</description>
             </field>
             <field>
               <name>NEOLED_CTRL_TX_FULL</name>
               <bitRange>[30:30]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>TX FIFO is full</description>
             </field>
             <field>
               <name>NEOLED_CTRL_TX_BUSY</name>
               <bitRange>[31:31]</bitRange>
-              <access>read</access>
+              <access>read-only</access>
               <description>busy flag</description>
             </field>
           </fields>
@@ -1083,13 +1083,13 @@
           <name>CLK</name>
           <description>Clock speed in Hz</description>
           <addressOffset>0x00</addressOffset>
-          <access>read</access>
+          <access>read-only</access>
         </register>
         <register>
           <name>CPU</name>
           <description>CPU core features</description>
           <addressOffset>0x04</addressOffset>
-          <access>read</access>
+          <access>read-only</access>
           <fields>
             <field><name>SYSINFO_CPU_ZICSR</name><bitRange>[0:0]</bitRange><description>Zicsr extension (I sub-extension) available when set</description></field>
             <field><name>SYSINFO_CPU_ZIFENCEI</name><bitRange>[1:1]</bitRange><description>Zifencei extension (I sub-extension) available when set</description></field>
@@ -1108,7 +1108,7 @@
           <name>SOC</name>
           <description>SoC features</description>
           <addressOffset>0x08</addressOffset>
-          <access>read</access>
+          <access>read-only</access>
           <fields>
             <field><name>SYSINFO_SOC_BOOTLOADER</name><bitRange>[0:0]</bitRange><description>Bootloader implemented</description></field>
             <field><name>SYSINFO_SOC_MEM_EXT</name><bitRange>[1:1]</bitRange><description>External bus interface implemented</description></field>
@@ -1138,7 +1138,7 @@
           <name>CACHE</name>
           <description>Cache configuration</description>
           <addressOffset>0x0C</addressOffset>
-          <access>read</access>
+          <access>read-only</access>
           <fields>
             <field><name>SYSINFO_CACHE_IC_BLOCK_SIZE</name><bitRange>[3:0]</bitRange><description>i-cache: log2(Block size in bytes)</description></field>
             <field><name>SYSINFO_CACHE_IC_NUM_BLOCKS</name><bitRange>[7:4]</bitRange><description>i-cache: log2(Number of cache blocks/pages/lines)</description></field>
@@ -1150,25 +1150,25 @@
           <name>ISPACE_BASE</name>
           <description>Instruction memory address space base address</description>
           <addressOffset>0x10</addressOffset>
-          <access>read</access>
+          <access>read-only</access>
         </register>
         <register>
           <name>DSPACE_BASE</name>
           <description>Data memory address space base address</description>
           <addressOffset>0x14</addressOffset>
-          <access>read</access>
+          <access>read-only</access>
         </register>
         <register>
           <name>IMEM_SIZE</name>
           <description>Internal instruction memory (IMEM) size in bytes</description>
           <addressOffset>0x18</addressOffset>
-          <access>read</access>
+          <access>read-only</access>
         </register>
         <register>
           <name>DMEM_SIZE</name>
           <description>Internal data memory (DMEM) size in bytes</description>
           <addressOffset>0x1C</addressOffset>
-          <access>read</access>
+          <access>read-only</access>
         </register>
       </registers>
     </peripheral>
