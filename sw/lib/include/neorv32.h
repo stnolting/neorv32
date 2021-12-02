@@ -1260,9 +1260,6 @@ enum NEORV32_SYSINFO_SOC_enum {
 // ----------------------------------------------------------------------------
 // Include all IO driver headers
 // ----------------------------------------------------------------------------
-// legacy compatibility layer
-#include "neorv32_legacy.h"
-
 // cpu core
 #include "neorv32_cpu.h"
 
