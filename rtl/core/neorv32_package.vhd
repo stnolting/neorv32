@@ -64,8 +64,22 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060404"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060405"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
+
+  -- Check if we're inside the Matrix -------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  constant is_simulation_c : boolean := false -- seems like we're on real hardware
+-- pragma translate_off
+-- synthesis translate_off
+-- synthesis synthesis_off
+-- RTL_SYNTHESIS OFF
+  or true -- this MIGHT be a simulation
+-- RTL_SYNTHESIS ON
+-- synthesis synthesis_on
+-- synthesis translate_on
+-- pragma translate_on
+  ;
 
   -- External Interface Types ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
