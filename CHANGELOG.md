@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 03.12.2021 | 1.6.4.4 | :bug: fixed bug in **Wishbone** bus interface: timeout configurations (via `MEM_EXT_TIMEOUT` generic) that are a power of two (e.g. 256) caused _immediate_ timeouts; timeout counter was one bit short; same problem for processor-internal bus monitor (BUSKEEPER); see [PR #230](https://github.com/stnolting/neorv32/pull/230) |
 | 02.12.2021 | 1.6.4.3 | :warning: removed legacy software compatibility wrappers (`sw/lib/include/neorv32_legacy.h` and `neorv32_uart_*` functions) |
 | 28.11.2021 | 1.6.4.2 | :bug: fixed bug in **UART[0/1]** overrun flag (was not set/cleared correctly); fixed bug in UART0 enable function `neorv32_uart0_enable()` |
 | 28.11.2021 | 1.6.4.1 | (:warning:) bootloader now stores executable in _little-endian_ byte-order to SPI flash |
