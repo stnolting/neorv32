@@ -87,7 +87,7 @@ architecture neorv32_bus_keeper_rtl of neorv32_bus_keeper is
   -- controller --
   type control_t is record
     pending  : std_ulogic;
-    timeout  : std_ulogic_vector(index_size_f(max_proc_int_response_time_c)-1 downto 0);
+    timeout  : std_ulogic_vector(index_size_f(max_proc_int_response_time_c) downto 0);
     err_type : std_ulogic;
     bus_err  : std_ulogic;
   end record;
@@ -148,7 +148,7 @@ begin
 
       -- access monitor: IDLE --
       if (control.pending = '0') then
-        control.timeout <= std_ulogic_vector(to_unsigned(max_proc_int_response_time_c, index_size_f(max_proc_int_response_time_c)));
+        control.timeout <= std_ulogic_vector(to_unsigned(max_proc_int_response_time_c, index_size_f(max_proc_int_response_time_c)+1));
         if (bus_rden_i = '1') or (bus_wren_i = '1') then
           control.pending <= '1';
         end if;

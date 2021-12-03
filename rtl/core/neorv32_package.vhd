@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060403"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060404"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- External Interface Types ---------------------------------------------------------------
@@ -2090,7 +2090,7 @@ end neorv32_package;
 
 package body neorv32_package is
 
-  -- Function: Minimal required number of bits to represent input number --------------------
+  -- Function: Minimal required number of bits to represent <input> numbers -----------------
   -- -------------------------------------------------------------------------------------------
   function index_size_f(input : natural) return natural is
   begin

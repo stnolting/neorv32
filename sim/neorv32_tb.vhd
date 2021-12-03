@@ -317,7 +317,7 @@ begin
     ICACHE_ASSOCIATIVITY         => 2,             -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
     -- External memory interface --
     MEM_EXT_EN                   => true,          -- implement external memory bus interface?
-    MEM_EXT_TIMEOUT              => 255,           -- cycles after a pending bus access auto-terminates (0 = disabled)
+    MEM_EXT_TIMEOUT              => 256,           -- cycles after a pending bus access auto-terminates (0 = disabled)
     -- Stream link interface --
     SLINK_NUM_TX                 => 8,             -- number of TX links (0..8)
     SLINK_NUM_RX                 => 8,             -- number of TX links (0..8)
