@@ -1116,6 +1116,7 @@
             <field><name>SYSINFO_SOC_MEM_INT_DMEM</name><bitRange>[3:3]</bitRange><description>Processor-internal data memory implemented</description></field>
             <field><name>SYSINFO_SOC_MEM_EXT_ENDIAN</name><bitRange>[4:4]</bitRange><description>External bus interface uses BIG-endian byte-order</description></field>
             <field><name>SYSINFO_SOC_ICACHE</name><bitRange>[5:5]</bitRange><description>Processor-internal instruction cache implemented</description></field>
+            <field><name>SYSINFO_SOC_IS_SIM</name><bitRange>[13:13]</bitRange><description>Set if processor is being simulated</description></field>
             <field><name>SYSINFO_SOC_OCD</name><bitRange>[14:14]</bitRange><description>On-chip debugger implemented</description></field>
             <field><name>SYSINFO_SOC_HW_RESET</name><bitRange>[15:15]</bitRange><description>Dedicated hardware reset of core registers implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPIO</name><bitRange>[16:16]</bitRange><description>General purpose input/output port unit implemented</description></field>
