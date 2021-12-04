@@ -9,7 +9,13 @@ Therefore, there is a wide range of possible testing and verification strategies
 On the one hand, a simple smoke testbench allows ensuring that functionality is correct from a software point of view.
 That is used for running the RISC-V architecture tests, in order to guarantee compliance with the ISA specification(s).
 
-On the other hand, http://vunit.github.io/[VUnit] and http://vunit.github.io/verification_components/user_guide.html[Verification Components] are used for verifying the functionality of the various peripherals from a hardware point of view.
+On the other hand, http://vunit.github.io/[VUnit] and http://vunit.github.io/verification_components/user_guide.html[Verification Components]
+are used for verifying the functionality of the various peripherals from a hardware point of view.
+
+[TIP]
+The processor can check if it is being simulated by checking the SYSINFO _SYSINFO_SOC_IS_SIM_ flag
+(see https://stnolting.github.io/neorv32/#_system_configuration_information_memory_sysinfo).
+Note that this flag is not guaranteed to be set correctly (depending on the HDL toolchain's pragma support).
 
 :sectnums:
 === Testbench
@@ -134,7 +140,7 @@ Blinking LED demo program
 ==== Hello World!
 
 To do a quick test of the NEORV32 make sure to have https://github.com/ghdl/ghdl[GHDL] and a
-[RISC-V gcc toolchain](https://github.com/stnolting/riscv-gcc-prebuilt) installed.
+https://github.com/stnolting/riscv-gcc-prebuilt[RISC-V gcc toolchain] installed.
 Navigate to the project's `sw/example/hello_world` folder and run `make USER_FLAGS+=-DUART0_SIM_MODE MARCH=rv32imac clean_all sim`:
 
 [TIP]
