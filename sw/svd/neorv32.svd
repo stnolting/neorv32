@@ -3,6 +3,7 @@
 <device schemaVersion="1.1" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd" >
   <vendor>stnolting</vendor>
   <name>neorv32</name>
+  <series>RISC-V</series>
   <version>1.6.4</version>
   <description>The NEORV32 RISC-V Processor</description>
 
@@ -11,8 +12,12 @@
     <name>NEORV32</name>
     <revision>r2p0</revision>
     <endian>little</endian>
-    <mpuPresent>false</mpuPresent>
+    <mpuPresent>true</mpuPresent>
     <fpuPresent>true</fpuPresent>
+    <fpuDP>false</fpuDP>
+    <dspPresent>false</dspPresent>
+    <icachePresent>true</icachePresent>
+    <dcachePresent>true</dcachePresent>
     <nvicPrioBits>0</nvicPrioBits>
     <vendorSystickConfig>false</vendorSystickConfig>
   </cpu>
@@ -1074,7 +1079,7 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x1F</size>
+        <size>0x20</size>
         <usage>registers</usage>
       </addressBlock>
 
