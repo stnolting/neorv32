@@ -54,12 +54,14 @@
 
 // Global variables
 uint32_t slink_configured; // 0 = not configured, 1 = blocking mode, 2 = non-blocking mode
+uint32_t slink_irq_en;
 
 // Prototypes
 void slink_read(void);
 void slink_write(void);
 void slink_status(void);
 void slink_setup(void);
+void slink_irq(void);
 uint32_t hexstr_to_uint(char *buffer, uint8_t length);
 void slink_rx_firq_handler(void);
 void slink_tx_firq_handler(void);
@@ -108,6 +110,7 @@ int main() {
   // enable SLINK module
   neorv32_slink_enable();
   slink_configured = 0; // SLINK not configured yet
+  slink_irq_en = 0; // interrupts disabled
 
 
   // configure SLINK interrupts
@@ -121,8 +124,6 @@ int main() {
 
   neorv32_rte_exception_install(SLINK_RX_RTE_ID, slink_rx_firq_handler);
   neorv32_rte_exception_install(SLINK_TX_RTE_ID, slink_tx_firq_handler);
-  neorv32_cpu_irq_enable(SLINK_RX_FIRQ_ENABLE);
-  neorv32_cpu_irq_enable(SLINK_TX_FIRQ_ENABLE);
   neorv32_cpu_eint(); // enable global interrupt flag
 
 
@@ -138,11 +139,12 @@ int main() {
     // decode input and execute command
     if (!strcmp(buffer, "help")) {
       neorv32_uart0_printf("Available commands:\n"
-                          " help    - show this text\n"
-                          " status  - show SLINK HW status\n"
-                          " setup   - configure SLINK module\n"
-                          " read    - read from SLINK channel\n"
-                          " write   - write to SLINK channel\n"
+                          " help   - show this text\n"
+                          " status - show SLINK HW status\n"
+                          " setup  - configure SLINK module\n"
+                          " read   - read from SLINK channel\n"
+                          " write  - write to SLINK channel\n"
+                          " irq    - toggle SLINK IRQ enable\n"
                           "\n"
                           "Configure the SLINK module using 'setup'. Then transfer data using 'read' or 'write'.\n\n");
     }
@@ -157,6 +159,9 @@ int main() {
     }
     else if (!strcmp(buffer, "write")) {
       slink_write();
+    }
+    else if (!strcmp(buffer, "irq")) {
+      slink_irq();
     }
     else {
       neorv32_uart0_printf("Invalid command. Type 'help' to see all commands.\n");
@@ -178,7 +183,8 @@ void slink_status(void) {
   neorv32_uart0_printf(" TX FIFO:  %u entries \n", neorv32_slink_get_rx_depth());
   neorv32_uart0_printf(" RX FIFO:  %u entries \n\n", neorv32_slink_get_tx_depth());
 
-  neorv32_uart0_printf("Link status: 0x%x \n\n", NEORV32_SLINK.STATUS);
+  neorv32_uart0_printf("Link status: 0x%x \n", NEORV32_SLINK.STATUS);
+  neorv32_uart0_printf("IRQ config.: 0x%x \n\n", NEORV32_SLINK.IRQ);
 }
 
 
@@ -192,7 +198,7 @@ void slink_setup(void) {
   while (1) {
     neorv32_uart0_printf("Select SLINK access mode:\n"
                          " n: non-blocking access - check SLINK status flags before access\n"
-                         " b: blocking access - trigger exception on invalid access request\n"
+                         " b: blocking access     - raise an exception on invalid access request\n"
                          "Select: ");
     tmp_c = neorv32_uart0_getc();
     neorv32_uart0_putc(tmp_c);
@@ -214,6 +220,25 @@ void slink_setup(void) {
 
 
 /**********************************************************************//**
+ * Toggle SLINK interrupt enable
+ **************************************************************************/
+void slink_irq(void) {
+
+  if (slink_irq_en == 0) {
+    neorv32_cpu_irq_enable(SLINK_RX_FIRQ_ENABLE);
+    neorv32_cpu_irq_enable(SLINK_TX_FIRQ_ENABLE);
+    neorv32_uart0_printf("SLINK interrupts are now ENABLED.\n\n");
+  }
+  else {
+    neorv32_cpu_irq_disable(SLINK_RX_FIRQ_ENABLE);
+    neorv32_cpu_irq_disable(SLINK_TX_FIRQ_ENABLE);
+    neorv32_uart0_printf("SLINK interrupts are now DISABLED.\n\n");
+  }
+  slink_irq_en = ~slink_irq_en;
+}
+
+
+/**********************************************************************//**
  * Read from SLINK channel
  **************************************************************************/
 void slink_read(void) {
@@ -228,7 +253,6 @@ void slink_read(void) {
     neorv32_uart0_printf("SLINK module not configured yet! Use 'setup' to configure SLINK module.\n");
     return;
   }
-
 
   num_ch = (uint32_t)neorv32_slink_get_rx_num();
   if (num_ch == 0) {
@@ -249,10 +273,9 @@ void slink_read(void) {
       break;
     }
   }
-
   channel &= 0x7;
 
-  // read access
+  // actual read access
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart0_printf("\nReading from RX channel %u...\n", channel);
 
@@ -330,13 +353,12 @@ void slink_write(void) {
   }
   channel &= 0x7;
 
-  // tx data
+  // get TX data
   neorv32_uart0_printf("\nEnter TX data (8 hex chars): 0x");
   neorv32_uart0_scan(terminal_buffer, 9, 1); // 8 hex char plus '\0'
   txdata = hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
-
-  // write access
+  // actual write access
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   neorv32_uart0_printf("\nWriting '0x%x' to TX channel %u...\n", txdata, channel);
 
@@ -382,9 +404,8 @@ void slink_write(void) {
  **************************************************************************/
 void slink_rx_firq_handler(void) {
 
-  NEORV32_SLINK.CTRL = NEORV32_SLINK.CTRL;
-  neorv32_uart0_printf(" [RX_IRQ] ");
-
+  NEORV32_SLINK.CTRL = NEORV32_SLINK.CTRL; // dummy ACK
+  neorv32_uart0_printf(" [SLINK_RX_IRQ] ");
 }
 
 
@@ -393,9 +414,8 @@ void slink_rx_firq_handler(void) {
  **************************************************************************/
 void slink_tx_firq_handler(void) {
 
-  NEORV32_SLINK.CTRL = NEORV32_SLINK.CTRL;
-  neorv32_uart0_printf(" [TX_IRQ] ");
-
+  NEORV32_SLINK.CTRL = NEORV32_SLINK.CTRL; // dummy ACK
+  neorv32_uart0_printf(" [SLINK_TX_IRQ] ");
 }
 
 
