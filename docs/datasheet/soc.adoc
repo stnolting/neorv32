@@ -1424,6 +1424,9 @@ prevents incompatibilities with future versions, since the hardware driver funct
 register and register bit accesses.
 
 [TIP]
+A CMSIS-SVD-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
+
+[TIP]
 Most of the IO devices do not have a hardware reset. Instead, the devices are reset via software by
 writing zero to the unit's control register. A general software-based reset of all devices is done by the
 application start-up code `crt0.S`.
