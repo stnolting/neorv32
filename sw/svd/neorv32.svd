@@ -380,11 +380,6 @@
               <bitRange>[4:4]</bitRange>
               <description>Timer mode: 0=single-shot mode, 1=continuous mode</description>
             </field>
-            <field>
-              <name>GPTMR_CTRL_ALARM</name>
-              <bitRange>[5:5]</bitRange>
-              <description>Interrupt/alarm pending, cleared by setting bit to zero</description>
-            </field>
           </fields>
         </register>
         <register>
