@@ -137,12 +137,12 @@ _SLINK_IRQ_RX_EN_ is set. Vice versa, the current FIFO fill-level of a specific 
 request if it's interrupt enable flag _SLINK_IRQ_TX_EN_ is set.
 
 The **RX link's** _SLINK_IRQ_RX_MODE_ flags define the FIFO fill-level condition for raising an RX interrupt request:
-* If a link's interrupt mode flag is `1` an IRQ is generated when the link's FIFO _becomes_ not empty ("RX data available").
-* If a link's interrupt mode flag is `0` an IRQ is generated when the link's FIFO _becomes_ at least half-full ("time to get data from RX FIFO to prevent overflow").
+* If a link's interrupt mode flag is `0` an IRQ is generated when the link's FIFO _becomes_ not empty ("RX data available").
+* If a link's interrupt mode flag is `1` an IRQ is generated when the link's FIFO _becomes_ at least half-full ("time to get data from RX FIFO to prevent overflow").
 
 The **TX link's** _SLINK_IRQ_TX_MODE_ flags define the FIFO fill-level condition for raising an TX interrupt request:
-* If a link's interrupt mode flag is `1` an IRQ is generated when the link's FIFO _becomes_ not full ("space left in FIFO for new TX data").
-* If a link's interrupt mode flag is `0` an IRQ is generated when the link's FIFO _becomes_ less than half-full ("SW can send _SLINK_TX_FIFO_/2 data words without checking any flags"). 
+* If a link's interrupt mode flag is `0` an IRQ is generated when the link's FIFO _becomes_ not full ("space left in FIFO for new TX data").
+* If a link's interrupt mode flag is `1` an IRQ is generated when the link's FIFO _becomes_ less than half-full ("SW can send _SLINK_TX_FIFO_/2 data words without checking any flags"). 
 
 Once the SLINK's RX or TX interrupt has become pending, it has to be explicitly cleared again by setting the according
 `mip` CSR bit.
