@@ -174,10 +174,10 @@ begin
   -- Interrupt ------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- The CFS features a single interrupt signal, which is connected to the CPU's "fast interrupt" channel 1.
-  -- The interrupt is high-level-active. When set, the interrupt appears as "pending" in the CPU's mie register
-  -- ready to trigger execution of the according interrupt handler.
-  -- Once set, the irq_o signal **has to stay set** until explicitly acknowledged by the CPU
-  -- (for example by reading/writing from/to a specific CFS interface register address).
+  -- The interrupt is triggered by a one-shot rising edge. After triggering, the interrupt appears as "pending" in the CPU's mie register
+  -- ready to trigger execution of the according interrupt handler. The interrupt request signal should be triggered
+  -- whenever an interrupt condition is fulfilled. It is the task of the application to programmer to enable/clear the CFS interrupt
+  -- using the CPU's mie and mip registers when reuqired.
 
   irq_o <= '0'; -- not used for this minimal example
 
