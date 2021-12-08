@@ -266,7 +266,7 @@ Results generated for hardware version [`1.5.7.10`](https://github.com/stnolting
 * [core libraries](https://github.com/stnolting/neorv32/tree/master/sw/lib) for high-level usage of the provided functions and peripherals
 * application compilation based on GNU makefiles
 * gcc-based toolchain ([pre-compiled toolchains available](https://github.com/stnolting/riscv-gcc-prebuilt))
-* SVD file for advanced debugging and IDE integration ([`sw/svd`](https://github.com/stnolting/neorv32/tree/master/sw/svd))
+* [SVD file](https://github.com/stnolting/neorv32/tree/master/sw/svd) for advanced debugging and IDE integration
 * bootloader with UART interface console
 * runtime environment for handling traps
 * several [example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) to get started including CoreMark, FreeRTOS and Conway's Game of Life
