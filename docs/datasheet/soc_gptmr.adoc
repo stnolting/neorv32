@@ -46,10 +46,8 @@ writing zero to it.
 
 **Timer Interrupt**
 
-The timer interrupt gets pending when the timer is enabled and `COUNT` matches `THRES`. The interrupt
-request is indicated via the _GPTMR_CTRL_ALARM_ control register bit. This bit as well as the actual
-interrupt keeps pending until the bit is explicitly cleared by application software or if the
-timer is disabled.
+The timer interrupt is triggered when the timer is enabled and `COUNT` matches `THRES`. The interrupt
+remains pending until explicitly cleared by writing the according `mip` CSR bit.
 
 
 .GPTMR register map (`struct NEORV32_GPTMR`)
@@ -57,12 +55,11 @@ timer is disabled.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.6+<| `0xffffff60` .6+<| `NEORV32_GPTMR.CTRL` <|`0` _GPTMR_CTRL_EN_    ^| r/w <| Timer enable flag
+.5+<| `0xffffff60` .5+<| `NEORV32_GPTMR.CTRL` <|`0` _GPTMR_CTRL_EN_    ^| r/w <| Timer enable flag
                                               <|`1` _GPTMR_CTRL_PRSC0_ ^| r/w .3+| 3-bit clock prescaler select
                                               <|`2` _GPTMR_CTRL_PRSC1_ ^| r/w 
                                               <|`3` _GPTMR_CTRL_PRSC2_ ^| r/w 
                                               <|`4` _GPTMR_CTRL_MODE_  ^| r/w <| Counter mode: `0`=single-shot, `1`=continuous
-                                              <|`5` _GPTMR_CTRL_ALARM_ ^| r/c <| Pending interrupt/alarm, cleared by setting bit to zero
 | `0xffffff64` | `NEORV32_GPTMR.THRES` |`31:0` | r/w | Threshold value register
 | `0xffffff68` | `NEORV32_GPTMR.COUNT` |`31:0` | r/w | Counter register
 |=======================
