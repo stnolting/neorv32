@@ -153,11 +153,9 @@ architecture neorv32_slink_rtl of neorv32_slink is
   -- interrupt generator --
   type detect_t is array (0 to 7) of std_ulogic_vector(1 downto 0);
   type irq_t is record
-    pending : std_ulogic; -- pending interrupt request
     detect  : detect_t; -- rising-edge detector
     trigger : std_ulogic_vector(7 downto 0);
     set     : std_ulogic_vector(7 downto 0);
-    clr     : std_ulogic;
   end record;
   signal rx_irq, tx_irq : irq_t;
 
@@ -261,108 +259,79 @@ begin
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_type: process(irq_rx_mode, rx_fifo_avail, rx_fifo_half,
-                    irq_tx_mode, tx_fifo_free,  tx_fifo_half)
+  -- interrupt trigger type / condition --
+  irq_type: process(irq_rx_mode, rx_fifo_avail, rx_fifo_half, irq_tx_mode, tx_fifo_free, tx_fifo_half, tx_fifo_we)
   begin
     -- RX interrupt --
     rx_irq.trigger <= (others => '0');
     for i in 0 to SLINK_NUM_RX-1 loop
-      if (SLINK_RX_FIFO = 1) then
-        rx_irq.trigger(i) <= rx_fifo_avail(i); -- fire if any RX_FIFO is not empty
+      if (SLINK_RX_FIFO = 1) or (irq_rx_mode(i) = '0') then
+        rx_irq.trigger(i) <= rx_fifo_avail(i); -- fire if any RX_FIFO is not empty (= data available)
       else
-        if (irq_rx_mode(i) = '0') then -- fire if any RX_FIFO is at least half-full
-          rx_irq.trigger(i) <= rx_fifo_half(i);
-        else -- fire if any RX_FIFO is not empty (= data available)
-          rx_irq.trigger(i) <= rx_fifo_avail(i);
-        end if;
+        rx_irq.trigger(i) <= rx_fifo_half(i);
       end if;
     end loop;
     -- TX interrupt --
     tx_irq.trigger <= (others => '0');
     for i in 0 to SLINK_NUM_TX-1 loop
-      if (SLINK_TX_FIFO = 1) then
-        tx_irq.trigger(i) <= tx_fifo_free(i); -- fire if any TX_FIFO is not full
+      if (SLINK_TX_FIFO = 1) or (irq_tx_mode(i) = '0') then
+        tx_irq.trigger(i) <= tx_fifo_free(i) and tx_fifo_we(i); -- fire if any TX_FIFO is not full (= free buffer space available)
       else
-        if (irq_tx_mode(i) = '0') then -- fire if any TX_FIFO is less than half-full
-          tx_irq.trigger(i) <= not tx_fifo_half(i);
-        else -- fire if any TX_FIFO is not full (= free buffer space available)
-          tx_irq.trigger(i) <= tx_fifo_free(i);
-        end if;
+        tx_irq.trigger(i) <= not tx_fifo_half(i);
       end if;
     end loop;
   end process irq_type;
 
-  -- interrupt trigger --
-  irq_trigger_sync: process(clk_i)
+  -- edge detector - sync --
+  irq_edge_detect_sync: process(clk_i)
   begin
     if rising_edge(clk_i) then
       -- RX --
-      rx_irq.detect <= (others => (others => '0')); -- default
-      if (enable = '1') then
-        for i in 0 to SLINK_NUM_RX-1 loop
+      for i in 0 to SLINK_NUM_RX-1 loop
+        if (enable = '1') and (irq_rx_en(i) = '1') then
           rx_irq.detect(i) <= rx_irq.detect(i)(0) & rx_irq.trigger(i);
-        end loop;
-      end if;
+        else
+          rx_irq.detect(i) <= "00";
+        end if;
+      end loop;
       -- TX --
-      tx_irq.detect <= (others => (others => '0')); -- default
-      if (enable = '1') then
-        for i in 0 to SLINK_NUM_TX-1 loop
+      for i in 0 to SLINK_NUM_TX-1 loop
+        if (enable = '1') and (irq_tx_en(i) = '1') then
           tx_irq.detect(i) <= tx_irq.detect(i)(0) & tx_irq.trigger(i);
-        end loop;
-      end if;
+        else
+          tx_irq.detect(i) <= "00";
+        end if;
+      end loop;
     end if;
-  end process irq_trigger_sync;
+  end process irq_edge_detect_sync;
 
-  -- interrupt trigger --
-  irq_trigger_comb: process(rx_irq, irq_rx_en, tx_irq, irq_tx_en)
+  -- edge detector - sync --
+  irq_edge_detect_comb: process(rx_irq, irq_rx_en, tx_irq, irq_tx_en)
   begin
     -- RX --
     rx_irq.set <= (others => '0');
     for i in 0 to SLINK_NUM_RX-1 loop
-      if (rx_irq.detect(i) = "01") and (irq_rx_en(i) = '1') then -- rising-edge
+      if (rx_irq.detect(i) = "01") then -- rising-edge
         rx_irq.set(i) <= '1';
       end if;
     end loop;
     -- TX --
     tx_irq.set <= (others => '0');
     for i in 0 to SLINK_NUM_TX-1 loop
-      if (tx_irq.detect(i) = "01") and (irq_tx_en(i) = '1') then -- rising-edge
+      if (tx_irq.detect(i) = "01") then -- rising-edge
         tx_irq.set(i) <= '1';
       end if;
     end loop;
-  end process irq_trigger_comb;
+  end process irq_edge_detect_comb;
 
   -- interrupt arbiter --
   irq_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (enable = '0') then
-        rx_irq.pending <= '0';
-        tx_irq.pending <= '0';
-      else
-        -- RX --
-        if (or_reduce_f(rx_irq.set) = '1') then
-          rx_irq.pending <= '1';
-        elsif (rx_irq.clr = '1') then
-          rx_irq.pending <= '0';
-        end if;
-        -- TX --
-        if (or_reduce_f(tx_irq.set) = '1') then
-          tx_irq.pending <= '1';
-        elsif (tx_irq.clr = '1') then
-          tx_irq.pending <= '0';
-        end if;
-      end if;
+      irq_rx_o <= or_reduce_f(rx_irq.set);
+      irq_tx_o <= or_reduce_f(tx_irq.set);
     end if;
   end process irq_generator;
-
-  -- IRQ requests to CPU --
-  irq_rx_o <= rx_irq.pending;
-  irq_tx_o <= tx_irq.pending;
-
-  -- IRQ acknowledge --
-  rx_irq.clr <= '1' when ((rden = '1') and (addr(5) = '1')) or ((wren = '1') and (addr(5 downto 3) = "000")) else '0'; -- read from data FIFO OR write to control register
-  tx_irq.clr <= '1' when ((wren = '1') and (addr(5) = '1')) or ((wren = '1') and (addr(5 downto 3) = "000")) else '0'; -- write to data FIFO  OR write to control register
 
 
   -- Link Select ----------------------------------------------------------------------------

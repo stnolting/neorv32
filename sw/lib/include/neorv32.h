@@ -757,14 +757,14 @@ enum NEORV32_SLINK_IRQ_EN_enum {
 
 /** SLINK RX interrupt configuration type (per link) */
 enum NEORV32_SLINK_IRQ_RX_TYPE_enum {
-  SLINK_IRQ_RX_FIFO_HALF = 0, /**< '0': RX FIFO fill-level rises above half-full */
-  SLINK_IRQ_RX_NOT_EMPTY = 1  /**< '1': RX FIFO is not empty */
+  SLINK_IRQ_RX_NOT_EMPTY = 0, /**< '1': RX FIFO is not empty */
+  SLINK_IRQ_RX_FIFO_HALF = 1  /**< '0': RX FIFO fill-level rises above half-full */
 };
 
 /** SLINK TX interrupt configuration type (per link) */
 enum NEORV32_SLINK_IRQ_TX_TYPE_enum {
-  SLINK_IRQ_TX_FIFO_HALF = 0, /**< '0': TX FIFO fill-level falls below half-full */
-  SLINK_IRQ_TX_NOT_FULL  = 1  /**< '1': TX FIFO is not FULL */
+  SLINK_IRQ_TX_NOT_FULL  = 0, /**< '1': TX FIFO is not FULL */
+  SLINK_IRQ_TX_FIFO_HALF = 1  /**< '0': TX FIFO fill-level falls below half-full */
 };
 
 /** SLINK status register bits */
@@ -825,12 +825,11 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 /** GPTMR control/data register bits */
 enum NEORV32_GPTMR_CTRL_enum {
-  GPTMR_CTRL_EN     = 0, /**< GPTIMR control register(0) (r/w): Timer unit enable */
-  GPTMR_CTRL_PRSC0  = 1, /**< GPTIMR control register(1) (r/w): Clock prescaler select bit 0 */
-  GPTMR_CTRL_PRSC1  = 2, /**< GPTIMR control register(2) (r/w): Clock prescaler select bit 1 */
-  GPTMR_CTRL_PRSC2  = 3, /**< GPTIMR control register(3) (r/w): Clock prescaler select bit 2 */
-  GPTMR_CTRL_MODE   = 4, /**< GPTIMR control register(4) (r/w): Timer mode: 0=single-shot mode, 1=continuous mode */
-  GPTMR_CTRL_ALARM  = 5  /**< GPTIMR control register(5) (r/c): Interrupt/alarm pending, cleared by setting bit to zero */
+  GPTMR_CTRL_EN    = 0, /**< GPTIMR control register(0) (r/w): Timer unit enable */
+  GPTMR_CTRL_PRSC0 = 1, /**< GPTIMR control register(1) (r/w): Clock prescaler select bit 0 */
+  GPTMR_CTRL_PRSC1 = 2, /**< GPTIMR control register(2) (r/w): Clock prescaler select bit 1 */
+  GPTMR_CTRL_PRSC2 = 3, /**< GPTIMR control register(3) (r/w): Clock prescaler select bit 2 */
+  GPTMR_CTRL_MODE  = 4  /**< GPTIMR control register(4) (r/w): Timer mode: 0=single-shot mode, 1=continuous mode */
 };
 /**@}*/
 
