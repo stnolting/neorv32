@@ -146,7 +146,7 @@ int main() {
                           " write  - write to SLINK channel\n"
                           " irq    - toggle SLINK IRQ enable\n"
                           "\n"
-                          "Configure the SLINK module using 'setup'. Then transfer data using 'read' or 'write'.\n\n");
+                          "Configure the SLINK module using 'setup'. Then transfer data using 'read' and 'write'.\n\n");
     }
     else if (!strcmp(buffer, "setup")) {
       slink_setup();
@@ -177,14 +177,15 @@ int main() {
  **************************************************************************/
 void slink_status(void) {
 
-  neorv32_uart0_printf("\nHardware configuration\n");
+  neorv32_uart0_printf("Hardware configuration\n");
   neorv32_uart0_printf(" TX links: %u\n", neorv32_slink_get_rx_num());
   neorv32_uart0_printf(" RX links: %u\n", neorv32_slink_get_tx_num());
   neorv32_uart0_printf(" TX FIFO:  %u entries \n", neorv32_slink_get_rx_depth());
   neorv32_uart0_printf(" RX FIFO:  %u entries \n\n", neorv32_slink_get_tx_depth());
 
-  neorv32_uart0_printf("Link status: 0x%x \n", NEORV32_SLINK.STATUS);
-  neorv32_uart0_printf("IRQ config.: 0x%x \n\n", NEORV32_SLINK.IRQ);
+  neorv32_uart0_printf("SLINK status:\n");
+  neorv32_uart0_printf(" Link status: 0x%x \n", NEORV32_SLINK.STATUS);
+  neorv32_uart0_printf(" IRQ config.: 0x%x \n\n", NEORV32_SLINK.IRQ);
 }
 
 
@@ -215,7 +216,7 @@ void slink_setup(void) {
     }
   }
 
-  neorv32_uart0_printf("\n");
+  neorv32_uart0_printf("\n\n");
 }
 
 
@@ -308,7 +309,7 @@ void slink_read(void) {
   }
 
   if ((status == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_L_ACCESS)) {
-    neorv32_uart0_printf("RX_data: 0x%x\n\n", rxdata);
+    neorv32_uart0_printf("RX data: 0x%x\n\n", rxdata);
   }
   else {
     neorv32_uart0_printf("No data available.\n\n");
@@ -405,7 +406,7 @@ void slink_write(void) {
 void slink_rx_firq_handler(void) {
 
   NEORV32_SLINK.CTRL = NEORV32_SLINK.CTRL; // dummy ACK
-  neorv32_uart0_printf(" [SLINK_RX_IRQ] ");
+  neorv32_uart0_printf("\n<SLINK_RX_IRQ>\n");
 }
 
 
@@ -415,7 +416,7 @@ void slink_rx_firq_handler(void) {
 void slink_tx_firq_handler(void) {
 
   NEORV32_SLINK.CTRL = NEORV32_SLINK.CTRL; // dummy ACK
-  neorv32_uart0_printf(" [SLINK_TX_IRQ] ");
+  neorv32_uart0_printf("\n<SLINK_TX_IRQ>\n");
 }
 
 
