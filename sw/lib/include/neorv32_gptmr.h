@@ -50,6 +50,5 @@ void neorv32_gptmr_setup(uint8_t prsc, uint8_t mode, uint32_t threshold);
 void neorv32_gptmr_disable(void);
 void neorv32_gptmr_enable(void);
 void neorv32_gptmr_restart(void);
-void neorv32_gptmr_ack_irq(void);
 
 #endif // neorv32_gptmr_h
