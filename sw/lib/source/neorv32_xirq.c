@@ -237,7 +237,10 @@ static void __attribute__((aligned(16))) __neorv32_xirq_core(void) {
 
   uint32_t mask = 1 << src;
   NEORV32_XIRQ.IPR = ~mask; // clear current pending interrupt
-  NEORV32_XIRQ.SCR = 0; // acknowledge current interrupt (CPU FIRQ)
+
+  neorv32_cpu_csr_write(CSR_MIP, 1 << XIRQ_FIRQ_PENDING); // acknowledge XIRQ FIRQ
+
+  NEORV32_XIRQ.SCR = 0; // acknowledge current XIRQ interrupt source
 
   // execute handler
   register uint32_t xirq_handler = __neorv32_xirq_vector_lut[src];
