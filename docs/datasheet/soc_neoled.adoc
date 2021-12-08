@@ -173,14 +173,11 @@ If _NEOLED_CTRL_IRQ_CONF_ is cleared, an interrupt is generated whenever the TX 
 In this case software can write up to _IO_NEOLED_TX_FIFO_/2 new data words to `DATA` without checking the FIFO
 status flags. If _NEOLED_CTRL_IRQ_CONF_ is set, an interrupt is generated whenever the TX FIFO _becomes_ empty.
 
-A pending interrupt request is cleared is cleared by any of the following operations:
-* write access to `NEORV32_NEOLED.DATA` (for example to send more LED data)
-* write access to `NEORV32_NEOLED.CTRL`
-* disabling the NEOLED module
+One the NEOLED interrupt has been triggered and became pending, it has to explicitly cleared again by setting the
+according `mip` CSR bit.
 
 [NOTE]
 The _NEOLED_CTRL_IRQ_CONF_ is hardwired to one if _IO_NEOLED_TX_FIFO_ = 1 (-> IRQ if FIFO is empty).
-
 If the FIFO is configured to contain only a single entry (_IO_NEOLED_TX_FIFO_ = 1) the interrupt
 will become pending if the FIFO (which is just a single register providing simple _double-buffering_) is empty.
 
