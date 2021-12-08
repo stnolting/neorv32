@@ -254,7 +254,7 @@ can be found in section <<_instruction_sets_and_extensions>>.
 
 .Hardwired R/W CSRs
 [IMPORTANT]
-The `misa`, `mip` and `mtval` CSRs in the NEORV32 are _read-only_.
+The `misa` and `mtval` CSRs in the NEORV32 are _read-only_.
 Any write access to it (in machine mode) to them are ignored and will _not_ cause any exceptions or side-effects.
 Pending interrupt can only be cleared by acknowledging the interrupt-causing device. However, pending interrupts
 can still be ignored by clearing the according `mie` register bits.
@@ -836,10 +836,16 @@ while all remaining exceptions are ignored. If several _interrupts_ trigger at o
 is serviced first while the remaining ones stay _pending_. After completing the interrupt handler the interrupt with
 the second highest priority will get serviced and so on until no further interrupt are pending.
 
-.Interrupt Signal Requirements
+.Interrupt Signal Requirements - Standard RISC-V Interrupts
 [IMPORTANT]
-All interrupts request signals (including FIRQs) are **high-active**. A request has to stay at high-level (=asserted)
+All standard RISC-V interrupts request signals are **high-active**. A request has to stay at high-level (=asserted)
 until it is explicitly acknowledged by the CPU software (for example by writing to a specific memory-mapped register).
+
+.Interrupt Signal Requirements - Fast Interrupt Requests
+[IMPORTANT]
+The NEORV32-specific FIRQ request lines are triggered by a rising edge. Each request is buffered in the CPU control
+unit until the channel is either disabled (by clearing the according `mie` CSR bit) or the request is explicitly cleared (by setting
+the according `mip` CSR bit).
 
 .Instruction Atomicity
 [NOTE]
