@@ -127,19 +127,8 @@ the RX FIFO _becomes_ at least half-full (-> _UART_CTRL_RX_HALF_ sets).
 in the TX FIFO _becomes_ free (-> _UART_CTRL_TX_FULL_ clears). If _UART_CTRL_TX_IRQ_ is `1` the TX interrupt goes pending
 when the RX FIFO _becomes_ less than half-full (-> _UART_CTRL_TX_HALF_ clears).
 
-A **pending RX interrupt** request is cleared by any of the following operations:
-* read access to `NEORV32_UART0.DATA` (for example to read incoming data)
-* write access to `NEORV32_UART0.CTRL`
-* disabling the UART module
-
-A **pending TX interrupt** request is cleared by any of the following operations:
-* write access to `NEORV32_UART0.DATA` (for example to send more data)
-* write access to `NEORV32_UART0.CTRL`
-* disabling the UART module
-
-[TIP]
-A dummy write to to the control register (i.e. `NEORV32_UART0.DATA = NEORV32_UART0.DATA`)
-can be executed to acknowledge any interrupt.
+Once the RX or TX interrupt has become pending, it has to be explicitly cleared again by setting the
+according `mip` CSR bit.
 
 
 **Simulation Mode**
