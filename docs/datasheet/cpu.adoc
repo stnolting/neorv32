@@ -561,7 +561,7 @@ The NEORV32-specific extensions are always enabled and are indicated by the set 
 
 The most important points of the NEORV32-specific extensions are:
 * The CPU provides 16 _fast interrupt_ interrupts (`FIRQ)`, which are controlled via custom bits in the `mie`
-and `mip` CSR. This extension is mapped to _reserved_ CSR bits, that are available for custom use (according to the
+and `mip` CSR. This extension is mapped to CSR bits, that are available for custom use (according to the
 RISC-V specs). Also, custom trap codes for `mcause` are implemented.
 * All undefined/unimplemented/malformed/illegal instructions do raise an illegal instruction exception (see <<_full_virtualization>>).
 
