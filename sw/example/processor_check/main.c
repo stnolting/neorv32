@@ -1498,7 +1498,7 @@ int main() {
     PRINT_STANDARD("Creating protected page (NAPOT, [!X,!W,!R], %u bytes) @ 0x%x: ", tmp_b, tmp_a);
 
     // configure
-    int pmp_return = neorv32_cpu_pmp_configure_region(0, tmp_a, tmp_b, 0b00011000); // NAPOT, NO read permission, NO write permission, and NO execute permissions
+    int pmp_return = neorv32_cpu_pmp_configure_region(0, tmp_a, tmp_b, PMPCFG_MODE_NAPOT << PMPCFG_A_LSB); // NAPOT, NO read/write/execute permissions
 
     if ((pmp_return == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
       test_ok();

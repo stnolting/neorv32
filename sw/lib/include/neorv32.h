@@ -434,6 +434,24 @@ enum NEORV32_HPMCNT_EVENT_enum {
 
 
 /**********************************************************************//**
+ * CPU <b>pmpcfg</b> PMP configuration attributed
+ **************************************************************************/
+enum NEORV32_PMPCFG_ATTRIBUTES_enum {
+  PMPCFG_R     = 0, /**< CPU pmpcfg attribute (0): Read */
+  PMPCFG_W     = 1, /**< CPU pmpcfg attribute (1): Write */
+  PMPCFG_X     = 2, /**< CPU pmpcfg attribute (2): Execute */
+  PMPCFG_A_LSB = 3, /**< CPU pmpcfg attribute (3): Mode LSB */
+  PMPCFG_A_MSB = 4, /**< CPU pmpcfg attribute (4): Mode MSB */
+  PMPCFG_L     = 7  /**< CPU pmpcfg attribute (7): Locked */
+};
+
+/**********************************************************************//**
+ * PMP modes
+ **************************************************************************/
+#define PMPCFG_MODE_NAPOT 3
+
+
+/**********************************************************************//**
  * Trap codes from mcause CSR.
  **************************************************************************/
 enum NEORV32_EXCEPTION_CODES_enum {
