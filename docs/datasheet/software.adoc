@@ -121,23 +121,34 @@ Just executing `make` (or executing `make help`) will show the help menu listing
 [source,makefile]
 ----
 $ make
-<<< NEORV32 Application Makefile >>>
+<<< NEORV32 SW Application Makefile >>>
 Make sure to add the bin folder of RISC-V GCC to your PATH variable.
-Targets:
- help       - show this text
- check      - check toolchain
- info       - show makefile/toolchain configuration
- exe        - compile and generate <neorv32_exe.bin> executable for upload via bootloader
- hex        - compile and generate <neorv32_exe.hex> executable raw file
- image      - compile and generate VHDL IMEM boot image (for application) in local folder
- install    - compile, generate and install VHDL IMEM boot image (for application)
- sim        - in-console simulation using default/simple testbench and GHDL
- all        - exe + hex + install
- elf_info   - show ELF layout info
- clean      - clean up project
- clean_all  - clean up project, core libraries and image generator
- bl_image   - compile and generate VHDL BOOTROM boot image (for bootloader only!) in local folder
- bootloader - compile, generate and install VHDL BOOTROM boot image (for bootloader only!)
+
+== Targets ==
+ help         - show this text
+ check        - check toolchain
+ info         - show makefile/toolchain configuration
+ exe          - compile and generate <neorv32_exe.bin> executable for upload via bootloader
+ hex          - compile and generate <neorv32_exe.hex> executable raw file
+ image        - compile and generate VHDL IMEM boot image (for application) in local folder
+ install      - compile, generate and install VHDL IMEM boot image (for application)
+ sim          - in-console simulation using default/simple testbench and GHDL
+ all          - exe + hex + install
+ elf_info     - show ELF layout info
+ clean        - clean up project
+ clean_all    - clean up project, core libraries and image generator
+ bl_image     - compile and generate VHDL BOOTROM boot image (for bootloader only!) in local folder
+ bootloader   - compile, generate and install VHDL BOOTROM boot image (for bootloader only!)
+
+== Variables ==
+ USER_FLAGS   - Custom toolchain flags [append only], default ""
+ EFFORT       - Optimization level, default "-Os"
+ MARCH        - Machine architecture, default "rv32i"
+ MABI         - Machine binary interface, default "ilp32"
+ APP_INC      - C include folder(s) [append only], default "-I ."
+ ASM_INC      - ASM include folder(s) [append only], default "-I ."
+ RISCV_PREFIX - Toolchain prefix, default "riscv32-unknown-elf-"
+ NEORV32_HOME - NEORV32 home folder, default "../../.."
 ----
 
 
