@@ -231,9 +231,8 @@ architecture neorv32_uart_rtl of neorv32_uart is
 
   -- interrupt generator --
   type irq_t is record
-    pending : std_ulogic; -- pending interrupt request
-    set     : std_ulogic;
-    clr     : std_ulogic;
+    set : std_ulogic;
+    buf : std_ulogic_vector(1 downto 0);
   end record;
   signal rx_irq, tx_irq : irq_t;
 
@@ -556,62 +555,39 @@ begin
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_type: process(ctrl, tx_buffer, rx_buffer)
+  irq_type: process(ctrl, tx_buffer, rx_buffer, tx_engine.done)
   begin
     -- TX interrupt --
-    if (UART_TX_FIFO = 1) then
-      tx_irq.set <= tx_buffer.free; -- fire IRQ if FIFO is not full
+    if (UART_TX_FIFO = 1) or (ctrl(ctrl_tx_irq_c) = '0') then
+      tx_irq.set <= tx_buffer.free and tx_engine.done; -- fire IRQ if FIFO is not full
     else
-      if (ctrl(ctrl_tx_irq_c) = '1') then
-        tx_irq.set <= not tx_buffer.half; -- fire IRQ if FIFO is less than half-full
-      else
-        tx_irq.set <= tx_buffer.free; -- fire IRQ if FIFO is not full
-      end if;
+      tx_irq.set <= (not tx_buffer.half) and tx_engine.done; -- fire IRQ if FIFO is less than half-full
     end if;
-
     -- RX interrupt --
-    if (UART_RX_FIFO = 1) then
+    if (UART_RX_FIFO = 1) or (ctrl(ctrl_rx_irq_c) = '0') then
       rx_irq.set <= rx_buffer.avail; -- fire IRQ if FIFO is not empty
     else
-      if (ctrl(ctrl_rx_irq_c) = '1') then
-        rx_irq.set <= rx_buffer.half; -- fire IRQ if FIFO is at least half-full
-      else
-        rx_irq.set <= rx_buffer.avail; -- fire IRQ is FIFO is not empty
-      end if;
+      rx_irq.set <= rx_buffer.half; -- fire IRQ if FIFO is at least half-full
     end if;
   end process irq_type;
 
-  -- interrupt arbiter --
-  irq_generator: process(clk_i)
+  -- interrupt edge detector --
+  irq_detect: process(clk_i)
   begin
     if rising_edge(clk_i) then
       if (ctrl(ctrl_en_c) = '0') then
-        rx_irq.pending <= '0';
-        tx_irq.pending <= '0';
+        tx_irq.buf <= "00";
+        rx_irq.buf <= "00";
       else
-        -- TX --
-        if (tx_irq.set = '1') and (tx_engine.done = '1') then -- evaluate IRQ condition when TX is done with current sending
-          tx_irq.pending <= '1';
-        elsif (tx_irq.clr = '1') then
-          tx_irq.pending <= '0';
-        end if;
-        -- RX --
-        if (rx_irq.set = '1') and (rx_engine.done = '1') then -- evaluate IRQ condition when RX is done with current receiving
-          rx_irq.pending <= '1';
-        elsif (rx_irq.clr = '1') then
-          rx_irq.pending <= '0';
-        end if;
+        tx_irq.buf <= tx_irq.buf(0) & tx_irq.set;
+        rx_irq.buf <= rx_irq.buf(0) & rx_irq.set;
       end if;
     end if;
-  end process irq_generator;
+  end process irq_detect;
 
   -- IRQ requests to CPU --
-  irq_txd_o <= tx_irq.pending;
-  irq_rxd_o <= rx_irq.pending;
-
-  -- IRQ acknowledge --
-  tx_irq.clr <= '1' when (tx_buffer.we = '1') or ((wren = '1') and (addr = uart_id_ctrl_addr_c)) else '0'; -- write to data reg OR write to control reg
-  rx_irq.clr <= '1' when (rx_buffer.re = '1') or ((wren = '1') and (addr = uart_id_ctrl_addr_c)) else '0'; -- read from data reg OR write to control reg
+  irq_txd_o <= '1' when (tx_irq.buf = "01") else '0';
+  irq_rxd_o <= '1' when (rx_irq.buf = "01") else '0';
 
 
   -- SIMULATION Transmitter -----------------------------------------------------------------

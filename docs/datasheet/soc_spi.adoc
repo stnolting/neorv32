@@ -108,15 +108,8 @@ Hence, the maximum SPI clock is f~main~ / 4.
 **SPI Interrupt**
 
 The SPI module provides a single interrupt to signal "transmission done" to the CPU. Whenever the SPI
-module completes the current transfer operation, the interrupt request is set. A pending interrupt request
-is cleared by any of the following operations:
-* read or write access to `NEORV32_SPI.DATA` (for example to trigger a new transmission)
-* write access to `NEORV32_SPI.CTRL`
-* disabling the SPI module
-
-[TIP]
-A dummy read from `NEORV32_SPI.DATA` can be executed to acknowledge the interrupt without affecting data
-or the state of the SPI module.
+module completes the current transfer operation, the interrupt is triggered and has to be explicitly cleared again
+by setting the according `mip` CSR bit.
 
 
 .SPI register map (`struct NEORV32_SPI`)

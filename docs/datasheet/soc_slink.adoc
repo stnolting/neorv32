@@ -137,12 +137,15 @@ _SLINK_IRQ_RX_EN_ is set. Vice versa, the current FIFO fill-level of a specific 
 request if it's interrupt enable flag _SLINK_IRQ_TX_EN_ is set.
 
 The **RX link's** _SLINK_IRQ_RX_MODE_ flags define the FIFO fill-level condition for raising an RX interrupt request:
-* If a link's interrupt mode flag is `1` an IRQ is generated when the link's FIFO _becomes_ not empty ("RX data available").
-* If a link's interrupt mode flag is `0` an IRQ is generated when the link's FIFO _becomes_ at least half-full ("time to get data from RX FIFO to prevent overflow").
+* If a link's interrupt mode flag is `0` an IRQ is generated when the link's FIFO _becomes_ not empty ("RX data available").
+* If a link's interrupt mode flag is `1` an IRQ is generated when the link's FIFO _becomes_ at least half-full ("time to get data from RX FIFO to prevent overflow").
 
 The **TX link's** _SLINK_IRQ_TX_MODE_ flags define the FIFO fill-level condition for raising an TX interrupt request:
-* If a link's interrupt mode flag is `1` an IRQ is generated when the link's FIFO _becomes_ not full ("space left in FIFO for new TX data").
-* If a link's interrupt mode flag is `0` an IRQ is generated when the link's FIFO _becomes_ less than half-full ("SW can send _SLINK_TX_FIFO_/2 data words without checking any flags"). 
+* If a link's interrupt mode flag is `0` an IRQ is generated when the link's FIFO _becomes_ not full ("space left in FIFO for new TX data").
+* If a link's interrupt mode flag is `1` an IRQ is generated when the link's FIFO _becomes_ less than half-full ("SW can send _SLINK_TX_FIFO_/2 data words without checking any flags"). 
+
+Once the SLINK's RX or TX interrupt has become pending, it has to be explicitly cleared again by setting the according
+`mip` CSR bit.
 
 [IMPORTANT]
 The interrupt configuration register `NEORV32_SLINK.IRQ` should we written _before_ the SLINK
@@ -151,20 +154,6 @@ module is actually enabled.
 [NOTE]
 If _SLINK_RX_FIFO_ is 1 all _SLINK_IRQ_RX_MODE_ bits are hardwired to one.
 If _SLINK_TX_FIFO_ is 1 all _SLINK_IRQ_TX_MODE_ bits are hardwired to one.
-
-A **pending RX interrupt** request is cleared by any of the following operations:
-* read access to any `NEORV32_SLINK.DATA` (for example to read incoming data)
-* write access to `NEORV32_SLINK.CTRL`
-* disabling the SLINK module
-
-A **pending TX interrupt** request is cleared by any of the following operations:
-* write access any `NEORV32_SLINK.DATA` (for example to send more data)
-* write access to `NEORV32_SLINK.CTRL`
-* disabling the SLINK module
-
-[TIP]
-A dummy write to to the control register (i.e. `NEORV32_SLINK.DATA = NEORV32_SLINK.DATA`)
-can be executed to acknowledge any interrupt.
 
 
 .SLINK register map (`struct NEORV32_SLINK`)

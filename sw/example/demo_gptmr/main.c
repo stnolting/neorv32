@@ -113,7 +113,7 @@ int main() {
  **************************************************************************/
 void gptmr_firq_handler(void) {
 
-  neorv32_gptmr_ack_irq(); // IRQ acknowledge / clear pending alarm interrupt
+  neorv32_cpu_csr_write(CSR_MIP, 1<<GPTMR_FIRQ_PENDING); // clear/ack pending FIRQ
 
   neorv32_uart0_putc('.'); // send tick symbol via UART
   neorv32_gpio_pin_toggle(0); // toggle output port bit 0

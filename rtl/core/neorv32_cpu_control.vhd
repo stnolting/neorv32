@@ -287,6 +287,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mie_mtie          : std_ulogic; -- mie.MEIE: machine timer interrupt enable (R/W)
     mie_firqe         : std_ulogic_vector(15 downto 0); -- mie.firq*e: fast interrupt enabled (R/W)
     --
+    mip_clr           : std_ulogic_vector(15 downto 0); -- clear pending FIRQ
+    --
     mcounteren_cy     : std_ulogic; -- mcounteren.cy: allow cycle[h] access from user-mode
     mcounteren_tm     : std_ulogic; -- mcounteren.tm: allow time[h] access from user-mode
     mcounteren_ir     : std_ulogic; -- mcounteren.ir: allow instret[h] access from user-mode
@@ -1294,7 +1296,7 @@ begin
       -- machine trap setup/handling & counters --
       when csr_mstatus_c | csr_mstatush_c | csr_misa_c | csr_mie_c | csr_mtvec_c | csr_mscratch_c | csr_mepc_c | csr_mcause_c | csr_mip_c | csr_mtval_c |
            csr_mcycle_c | csr_mcycleh_c | csr_minstret_c | csr_minstreth_c | csr_mcountinhibit_c =>
-        -- NOTE: MISA, MIP and MTVAL are read-only in the NEORV32 but we do not cause an exception here for compatibility.
+        -- NOTE: MISA and MTVAL are read-only in the NEORV32 but we do not cause an exception here for compatibility.
         -- Machine-level code should read-back those CSRs after writing them to realize they are read-only.
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only 
 
@@ -1632,8 +1634,8 @@ begin
         trap_ctrl.irq_buf(interrupt_mext_irq_c)  <= csr.mie_meie and mext_irq_i;
         trap_ctrl.irq_buf(interrupt_mtime_irq_c) <= csr.mie_mtie and mtime_irq_i;
 
-        -- interrupt buffer: NEORV32-specific fast interrupts (FIRQ) --
-        trap_ctrl.irq_buf(interrupt_firq_15_c downto interrupt_firq_0_c) <= csr.mie_firqe(15 downto 0) and firq_i(15 downto 0);
+        -- interrupt queue: NEORV32-specific fast interrupts (FIRQ) --
+        trap_ctrl.irq_buf(interrupt_firq_15_c downto interrupt_firq_0_c) <= (trap_ctrl.irq_buf(interrupt_firq_15_c downto interrupt_firq_0_c) or (csr.mie_firqe and firq_i)) and (not csr.mip_clr);
 
         -- trap environment control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler
@@ -1878,6 +1880,7 @@ begin
       csr.mepc              <= (others => def_rst_val_c);
       csr.mcause            <= (others => def_rst_val_c);
       csr.mtval             <= (others => def_rst_val_c);
+      csr.mip_clr           <= (others => def_rst_val_c);
       --
       csr.pmpcfg            <= (others => (others => '0'));
       csr.pmpaddr           <= (others => (others => def_rst_val_c));
@@ -1906,6 +1909,9 @@ begin
     elsif rising_edge(clk_i) then
       -- write access? --
       csr.we <= csr.we_nxt;
+
+      -- defaults --
+      csr.mip_clr <= (others => '0');
 
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
         -- --------------------------------------------------------------------------------
@@ -1965,19 +1971,23 @@ begin
 
           -- machine trap handling --
           -- --------------------------------------------------------------------
-          if (csr.addr(11 downto 3) = csr_class_trap_c) then -- machine trap handling CSR class
+          if (csr.addr(11 downto 4) = csr_class_trap_c) then -- machine trap handling CSR class
             -- R/W: mscratch - machine scratch register --
-            if (csr.addr(2 downto 0) = csr_mscratch_c(2 downto 0)) then
+            if (csr.addr(3 downto 0) = csr_mscratch_c(3 downto 0)) then
               csr.mscratch <= csr.wdata;
             end if;
             -- R/W: mepc - machine exception program counter --
-            if (csr.addr(2 downto 0) = csr_mepc_c(2 downto 0)) then
+            if (csr.addr(3 downto 0) = csr_mepc_c(3 downto 0)) then
               csr.mepc <= csr.wdata;
             end if;
             -- R/W: mcause - machine trap cause --
-            if (csr.addr(2 downto 0) = csr_mcause_c(2 downto 0)) then
+            if (csr.addr(3 downto 0) = csr_mcause_c(3 downto 0)) then
               csr.mcause(csr.mcause'left) <= csr.wdata(31); -- 1: async/interrupt, 0: sync/exception
               csr.mcause(4 downto 0)      <= csr.wdata(4 downto 0); -- identifier
+            end if;
+            -- R/W: mip - machine interrupt pending --
+            if (csr.addr(3 downto 0) =  csr_mip_c(3 downto 0)) then
+              csr.mip_clr <= csr.wdata(31 downto 16);
             end if;
           end if;
 
@@ -2491,7 +2501,7 @@ begin
             csr.rdata(csr.mcause'left-1 downto 0) <= csr.mcause(csr.mcause'left-1 downto 0);
           when csr_mtval_c => -- mtval (r/-): machine bad address or instruction
             csr.rdata <= csr.mtval;
-          when csr_mip_c => -- mip (r/-): machine interrupt pending
+          when csr_mip_c => -- mip (r/w): machine interrupt pending
             csr.rdata(03) <= trap_ctrl.irq_buf(interrupt_msw_irq_c);
             csr.rdata(07) <= trap_ctrl.irq_buf(interrupt_mtime_irq_c);
             csr.rdata(11) <= trap_ctrl.irq_buf(interrupt_mext_irq_c);

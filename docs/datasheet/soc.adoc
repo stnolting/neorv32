@@ -1057,9 +1057,8 @@ specifications. However, bare-metal system can also repurpose these interrupts. 
 
 .Trigger type
 [IMPORTANT]
-The fast interrupt request channel trigger on **high-level** and have to stay asserted until explicitly acknowledged
-by the software (for example by writing to a specific memory-mapped register). Hence, pending interrupts remain pending
-as long as the interrupt-causing device's state fulfills it's interrupt condition(s).
+The fast interrupt request channels become pending after being triggering by **a rising edge**. A pending FIRQ has to
+be explicitly cleared by setting the according `mip` CSR bit.
 
 
 :sectnums:
@@ -1117,9 +1116,8 @@ the according FIRQ priority; 0 = highest, 15 = lowest):
 
 .Trigger type
 [IMPORTANT]
-The fast interrupt request channel trigger on **high-level** and have to stay asserted until explicitly acknowledged
-by the software (for example by writing to a specific memory-mapped register). Hence, pending interrupts remain pending
-as long as the interrupt-causing device's state fulfills it's interrupt condition(s).
+The fast interrupt request channels become pending after being triggering by **a rising edge**. A pending FIRQ has to
+be explicitly cleared by setting the according `mip` CSR bit.
 
 
 

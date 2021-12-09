@@ -82,8 +82,8 @@ CSRs with the following notes ...
 | 0x340   | <<_mscratch>>   | _CSR_MSCRATCH_   | r/w | Machine scratch register | 
 | 0x341   | <<_mepc>>       | _CSR_MEPC_       | r/w | Machine exception program counter | 
 | 0x342   | <<_mcause>>     | _CSR_MCAUSE_     | r/w | Machine trap cause | `X`
-| 0x343   | <<_mtval>>      | _CSR_MTVAL_      | r/- | Machine bad address or instruction | `XR`
-| 0x344   | <<_mip>>        | _CSR_MIP_        | r/- | Machine interrupt pending register | `XR`
+| 0x343   | <<_mtval>>      | _CSR_MTVAL_      | r/- | Machine bad address or instruction | `R`
+| 0x344   | <<_mip>>        | _CSR_MIP_        | r/w | Machine interrupt pending register | `X`
 6+^| **<<_machine_physical_memory_protection_csrs>>**
 | 0x3a0 .. 0x3af | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg15`>>     | _CSR_PMPCFG0_ .. _CSR_PMPCFG15_   | r/w | Physical memory protection config. for region 0..63 | `C`
 | 0x3b0 .. 0x3ef | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr63`>> | _CSR_PMPADDR0_ .. _CSR_PMPADDR63_ | r/w | Physical memory protection addr. register region 0..63 | 
@@ -446,9 +446,10 @@ The NEORV32 `mtval` CSR is read-only. However, a write access will _NOT_ raise a
 | 0x344 | **Machine interrupt Pending** | `mip`
 3+| Reset value: _0x00000000_
 3+| The `mip` CSR is compatible to the RISC-V specifications and also provides custom extensions. It shows currently _pending_ interrupts.
-Since this register is read-only, pending interrupts of processor-internal modules can only be cleared by acknowledging the interrupt-causing
-device. However, pending interrupts can be ignored by clearing the according <<_mie>> register bits.
-The following CSR bits are implemented (all remaining bits are always zero and are read-only).
+The bits for the standard RISC-V interrupts are read-only. Hence, these interrupts cannot be cleared using the `mip` register and must
+be cleared/acknowledged within the according interrupt-generating device.
+The upper 16 bits represent the status of the CPU's fast interrupt request lines (FIRQ). Once triggered, these _have to be cleared_ again by setting
+the according `mip` bit in the interrupt handler routine to clear the current interrupt request.
 |======
 
 .Machine interrupt pending register
@@ -456,14 +457,11 @@ The following CSR bits are implemented (all remaining bits are always zero and a
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 31:16 | _CSR_MIP_FIRQ15P_ : _CSR_MIP_FIRQ0P_ | r/- | fast interrupt channel 15..0 pending
-| 11    | _CSR_MIP_MEIP_ | r/- | machine _external_ interrupt pending
-| 7     | _CSR_MIP_MTIP_ | r/- | machine _timer_ interrupt pending
-| 3     | _CSR_MIP_MSIP_ | r/- | machine _software_ interrupt pending
+| 31:16 | _CSR_MIP_FIRQ15P_ : _CSR_MIP_FIRQ0P_ | r/w | fast interrupt channel 15..0 pending; cleared request by writing 1
+| 11    | _CSR_MIP_MEIP_                       | r/- | machine _external_ interrupt pending; _cleared by user-defined mechanism_
+| 7     | _CSR_MIP_MTIP_                       | r/- | machine _timer_ interrupt pending; cleared by incrementing MTIME's time compare register
+| 3     | _CSR_MIP_MSIP_                       | r/- | machine _software_ interrupt pending; _cleared by user-defined mechanism_
 |=======================
-
-[IMPORTAN]
-The NEORV32 `mip` CSR is read-only. However, a write access will _NOT_ raise an illegal instruction exception.
 
 
 <<<

@@ -537,7 +537,7 @@ begin
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
 
   -- fast interrupt requests (FIRQs) --
-  -- these stay asserted until explicitly acknowledged --
+  -- these signals are single-shot --
   fast_irq(00) <= wdt_irq;       -- HIGHEST PRIORITY - watchdog
   fast_irq(01) <= cfs_irq;       -- custom functions subsystem
   fast_irq(02) <= uart0_rxd_irq; -- primary UART (UART0) RX

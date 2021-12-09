@@ -44,7 +44,7 @@ IRQ, when set the WDT will cause a system reset. The configured action can also 
 any time by setting the _WDT_CTRL_FORCE_ bit. The watchdog is reset by setting the _WDT_CTRL_RESET_ bit.
 
 A watchdog interrupt can only occur if the watchdog is enabled and interrupt mode is enabled.
-A pending interrupt is cleared by either disabling the watchdog or by resetting the watchdog.
+A triggered interrupt has to be cleared again by setting the according `mip` CSR bit.
 
 The cause of the last action of the watchdog can be determined via the _WDT_CTRL_RCAUSE_ flag. If this flag is
 zero, the processor has been reset via the external reset signal. If this flag is set the last system reset was
@@ -54,6 +54,7 @@ The Watchdog control register can be locked in order to protect the current conf
 activated by setting bit _WDT_CTRL_LOCK_. In the locked state any write access to the configuration flags is
 ignored (see table below, "accessible if locked"). Read accesses to the control register are not effected. The
 lock can only be removed by a system reset (via external reset signal or via a watchdog reset action).
+
 
 .WDT register map (`struct NEORV32_WDT`)
 [cols="<2,<2,<4,^1,^2,<4"]

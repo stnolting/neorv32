@@ -74,7 +74,6 @@ architecture neorv32_gptmr_rtl of neorv32_gptmr is
   constant ctrl_prsc1_c : natural := 2; -- r/w: clock prescaler select bit 1
   constant ctrl_prsc2_c : natural := 3; -- r/w: clock prescaler select bit 2
   constant ctrl_mode_c  : natural := 4; -- r/w: mode (0=single-shot, 1=continuous)
-  constant ctrl_alarm_c : natural := 5; -- r/c: alarm flag (interrupt), cleared by writing zero
   --
   signal ctrl : std_ulogic_vector(4 downto 0);
 
@@ -96,13 +95,8 @@ architecture neorv32_gptmr_rtl of neorv32_gptmr is
   end record;
   signal timer : timer_t;
 
-  -- interrupt generator --
-  type irq_t is record
-    pending : std_ulogic; -- pending interrupt request
-    detect  : std_ulogic_vector(1 downto 0); -- rising-edge detector
-    clearn  : std_ulogic; -- clear/ack IRQ request, active-low
-  end record;
-  signal irq : irq_t;
+  -- interrupt detector --
+  signal irq_detect : std_ulogic_vector(1 downto 0);
 
 begin
 
@@ -123,7 +117,6 @@ begin
       ack_o <= rden or wren;
 
       -- write access --
-      irq.clearn   <= '1';
       timer.cnt_we <= '0';
       if (wren = '1') then
         if (addr = gptmr_ctrl_addr_c) then -- control register
@@ -132,7 +125,6 @@ begin
           ctrl(ctrl_prsc1_c) <= data_i(ctrl_prsc1_c);
           ctrl(ctrl_prsc2_c) <= data_i(ctrl_prsc2_c);
           ctrl(ctrl_mode_c)  <= data_i(ctrl_mode_c);
-          irq.clearn         <= data_i(ctrl_alarm_c);
         end if;
         if (addr = gptmr_thres_addr_c) then -- threshold register
           timer.thres <= data_i;
@@ -152,7 +144,6 @@ begin
             data_o(ctrl_prsc1_c) <= ctrl(ctrl_prsc1_c);
             data_o(ctrl_prsc2_c) <= ctrl(ctrl_prsc2_c);
             data_o(ctrl_mode_c)  <= ctrl(ctrl_mode_c);
-            data_o(ctrl_alarm_c) <= irq.pending;
           when "01" => -- threshold register
             data_o <= timer.thres;
           when others => -- counter register
@@ -198,21 +189,15 @@ begin
   begin
     if rising_edge(clk_i) then
       if (ctrl(ctrl_en_c) = '0') then
-        irq.detect  <= "00";
-        irq.pending <= '0';
+        irq_detect <= "00";
       else
-        irq.detect <= irq.detect(0) & timer.match;
-        if (irq.detect = "01") then -- rising edge
-          irq.pending <= '1';
-        elsif (irq.clearn = '0') then
-          irq.pending <= '0';
-        end if;
+        irq_detect <= irq_detect(0) & timer.match;
       end if;
     end if;
   end process irq_generator;
 
   -- IRQ request to CPU --
-  irq_o <= irq.pending;
+  irq_o <= '1' when (irq_detect = "01") else '0';
 
 
 end neorv32_gptmr_rtl;

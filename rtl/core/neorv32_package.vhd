@@ -53,7 +53,7 @@ package neorv32_package is
   -- increasing instruction fetch & data access latency by +1 cycle but also reducing critical path length
   constant pmp_num_regions_critical_c : natural := 8; -- default=8
 
-  -- "response time window" for processor-internal memories and IO devices
+  -- "response time window" for processor-internal modules --
   constant max_proc_int_response_time_c : natural := 15; -- cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception (min 2)
 
   -- jtag tap - identifier --
@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060405"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060406"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -589,7 +589,7 @@ package neorv32_package is
   constant csr_mhpmevent30_c    : std_ulogic_vector(11 downto 0) := x"33e";
   constant csr_mhpmevent31_c    : std_ulogic_vector(11 downto 0) := x"33f";
   -- machine trap handling --
-  constant csr_class_trap_c     : std_ulogic_vector(08 downto 0) := x"34" & '0'; -- machine trap handling
+  constant csr_class_trap_c     : std_ulogic_vector(07 downto 0) := x"34"; -- machine trap handling
   constant csr_mscratch_c       : std_ulogic_vector(11 downto 0) := x"340";
   constant csr_mepc_c           : std_ulogic_vector(11 downto 0) := x"341";
   constant csr_mcause_c         : std_ulogic_vector(11 downto 0) := x"342";

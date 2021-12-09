@@ -155,9 +155,8 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
 
   -- interrupt generator --
   type irq_t is record
-    pending : std_ulogic; -- pending interrupt request
-    set     : std_ulogic;
-    clr     : std_ulogic;
+    set : std_ulogic;
+    buf : std_ulogic_vector(1 downto 0);
   end record;
   signal irq : irq_t;
 
@@ -250,40 +249,29 @@ begin
 
   -- IRQ Generator --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_select: process(ctrl, tx_buffer)
+  irq_select: process(ctrl, tx_buffer, serial.done)
   begin
-    if (FIFO_DEPTH = 1) then
-      irq.set <= tx_buffer.free; -- fire IRQ if FIFO is empty
+    if (FIFO_DEPTH = 1) or (ctrl.irq_conf = '1') then
+      irq.set <= tx_buffer.free and serial.done; -- fire IRQ if FIFO is empty
     else
-      if (ctrl.irq_conf = '0') then -- fire IRQ if FIFO is less than half-full
-        irq.set <= not tx_buffer.half;
-      else -- fire IRQ if FIFO is empty
-        irq.set <= tx_buffer.free;
-      end if;
+      irq.set <= not tx_buffer.half; -- fire IRQ if FIFO is less than half-full
     end if;
   end process irq_select;
 
-  -- Interrupt Arbiter --
-  irq_generator: process(clk_i)
+  -- Interrupt Edge Detector --
+  irq_detect: process(clk_i)
   begin
     if rising_edge(clk_i) then
       if (ctrl.enable = '0') then
-        irq.pending <= '0';
+        irq.buf <= "00";
       else
-        if (irq.set = '1') and (serial.done = '1') then -- evaluate IRQ condition when transmitter is done again
-          irq.pending <= '1';
-        elsif (irq.clr = '1') then
-          irq.pending <= '0';
-        end if;
+        irq.buf <= irq.buf(0) & irq.set;
       end if;
     end if;
-  end process irq_generator;
+  end process irq_detect;
 
   -- IRQ request to CPU --
-  irq_o <= irq.pending;
-
-  -- IRQ acknowledge --
-  irq.clr <= '1' when (wren = '1') else '0'; -- write data or control register
+  irq_o <= '1' when (irq.buf = "01") else '0';
 
 
   -- TX Buffer (FIFO) -----------------------------------------------------------------------

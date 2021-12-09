@@ -434,6 +434,24 @@ enum NEORV32_HPMCNT_EVENT_enum {
 
 
 /**********************************************************************//**
+ * CPU <b>pmpcfg</b> PMP configuration attributed
+ **************************************************************************/
+enum NEORV32_PMPCFG_ATTRIBUTES_enum {
+  PMPCFG_R     = 0, /**< CPU pmpcfg attribute (0): Read */
+  PMPCFG_W     = 1, /**< CPU pmpcfg attribute (1): Write */
+  PMPCFG_X     = 2, /**< CPU pmpcfg attribute (2): Execute */
+  PMPCFG_A_LSB = 3, /**< CPU pmpcfg attribute (3): Mode LSB */
+  PMPCFG_A_MSB = 4, /**< CPU pmpcfg attribute (4): Mode MSB */
+  PMPCFG_L     = 7  /**< CPU pmpcfg attribute (7): Locked */
+};
+
+/**********************************************************************//**
+ * PMP modes
+ **************************************************************************/
+#define PMPCFG_MODE_NAPOT 3
+
+
+/**********************************************************************//**
  * Trap codes from mcause CSR.
  **************************************************************************/
 enum NEORV32_EXCEPTION_CODES_enum {
@@ -757,14 +775,14 @@ enum NEORV32_SLINK_IRQ_EN_enum {
 
 /** SLINK RX interrupt configuration type (per link) */
 enum NEORV32_SLINK_IRQ_RX_TYPE_enum {
-  SLINK_IRQ_RX_FIFO_HALF = 0, /**< '0': RX FIFO fill-level rises above half-full */
-  SLINK_IRQ_RX_NOT_EMPTY = 1  /**< '1': RX FIFO is not empty */
+  SLINK_IRQ_RX_NOT_EMPTY = 0, /**< '1': RX FIFO is not empty */
+  SLINK_IRQ_RX_FIFO_HALF = 1  /**< '0': RX FIFO fill-level rises above half-full */
 };
 
 /** SLINK TX interrupt configuration type (per link) */
 enum NEORV32_SLINK_IRQ_TX_TYPE_enum {
-  SLINK_IRQ_TX_FIFO_HALF = 0, /**< '0': TX FIFO fill-level falls below half-full */
-  SLINK_IRQ_TX_NOT_FULL  = 1  /**< '1': TX FIFO is not FULL */
+  SLINK_IRQ_TX_NOT_FULL  = 0, /**< '1': TX FIFO is not FULL */
+  SLINK_IRQ_TX_FIFO_HALF = 1  /**< '0': TX FIFO fill-level falls below half-full */
 };
 
 /** SLINK status register bits */
@@ -825,12 +843,11 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 /** GPTMR control/data register bits */
 enum NEORV32_GPTMR_CTRL_enum {
-  GPTMR_CTRL_EN     = 0, /**< GPTIMR control register(0) (r/w): Timer unit enable */
-  GPTMR_CTRL_PRSC0  = 1, /**< GPTIMR control register(1) (r/w): Clock prescaler select bit 0 */
-  GPTMR_CTRL_PRSC1  = 2, /**< GPTIMR control register(2) (r/w): Clock prescaler select bit 1 */
-  GPTMR_CTRL_PRSC2  = 3, /**< GPTIMR control register(3) (r/w): Clock prescaler select bit 2 */
-  GPTMR_CTRL_MODE   = 4, /**< GPTIMR control register(4) (r/w): Timer mode: 0=single-shot mode, 1=continuous mode */
-  GPTMR_CTRL_ALARM  = 5  /**< GPTIMR control register(5) (r/c): Interrupt/alarm pending, cleared by setting bit to zero */
+  GPTMR_CTRL_EN    = 0, /**< GPTIMR control register(0) (r/w): Timer unit enable */
+  GPTMR_CTRL_PRSC0 = 1, /**< GPTIMR control register(1) (r/w): Clock prescaler select bit 0 */
+  GPTMR_CTRL_PRSC1 = 2, /**< GPTIMR control register(2) (r/w): Clock prescaler select bit 1 */
+  GPTMR_CTRL_PRSC2 = 3, /**< GPTIMR control register(3) (r/w): Clock prescaler select bit 2 */
+  GPTMR_CTRL_MODE  = 4  /**< GPTIMR control register(4) (r/w): Timer mode: 0=single-shot mode, 1=continuous mode */
 };
 /**@}*/
 

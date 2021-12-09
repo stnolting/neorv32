@@ -112,14 +112,6 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   -- internal reset (sync, low-active) --
   signal rstn_sync : std_ulogic;
 
-  -- cpu interrupt --
-  type cpu_irq_t is record
-    pending : std_ulogic;
-    set     : std_ulogic;
-    clr     : std_ulogic;
-  end record;
-  signal cpu_irq : cpu_irq_t;
-
 begin
 
   -- Access Control -------------------------------------------------------------------------
@@ -181,38 +173,14 @@ begin
       if (ctrl_reg.reset = '1') then -- watchdog reset
         wdt_cnt <= (others => '0');
       elsif (ctrl_reg.enable = '1') and (prsc_tick = '1') then
-        wdt_cnt <= std_ulogic_vector(unsigned(wdt_cnt) + 1);
+        wdt_cnt <= std_ulogic_vector(unsigned('0' & wdt_cnt(wdt_cnt'left-1 downto 0)) + 1);
       end if;
     end if;
   end process wdt_counter;
 
   -- action trigger --
-  cpu_irq.set <= ctrl_reg.enable and (wdt_cnt(wdt_cnt'left) or ctrl_reg.enforce) and (not ctrl_reg.mode); -- mode 0: IRQ
-  cpu_irq.clr <= ctrl_reg.reset; -- ack IRQ on WDT reset
-  hw_rst      <= ctrl_reg.enable and (wdt_cnt(wdt_cnt'left) or ctrl_reg.enforce) and (    ctrl_reg.mode); -- mode 1: RESET
-
-
-  -- Interrupt ------------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  irq_gen: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (ctrl_reg.enable = '0') then
-        cpu_irq.pending <= '0';
-      else
-        if (cpu_irq.set = '1') then
-          cpu_irq.pending <= '1';
-        elsif(cpu_irq.clr = '1') then
-          cpu_irq.pending <= '0';
-        else
-          cpu_irq.pending <= cpu_irq.pending;
-        end if;
-      end if;
-    end if;
-  end process irq_gen;
-
-  -- CPU IRQ --
-  irq_o <= cpu_irq.pending;
+  irq_o  <= ctrl_reg.enable and (wdt_cnt(wdt_cnt'left) or ctrl_reg.enforce) and (not ctrl_reg.mode); -- mode 0: IRQ
+  hw_rst <= ctrl_reg.enable and (wdt_cnt(wdt_cnt'left) or ctrl_reg.enforce) and (    ctrl_reg.mode); -- mode 1: RESET
 
 
   -- Reset Generator & Action Cause Indicator -----------------------------------------------

@@ -111,14 +111,6 @@ architecture neorv32_twi_rtl of neorv32_twi is
   signal twi_sda_out   : std_ulogic;
   signal twi_scl_out   : std_ulogic;
 
-  -- interrupt generator --
-  type irq_t is record
-    pending : std_ulogic; -- pending interrupt request
-    set     : std_ulogic;
-    clr     : std_ulogic;
-  end record;
-  signal irq : irq_t;
-
 begin
 
   -- Access Control -------------------------------------------------------------------------
@@ -198,7 +190,7 @@ begin
       twi_scl_in_ff <= twi_scl_in_ff(0) & twi_scl_in;
 
       -- defaults --
-      irq.set <= '0';
+      irq_o <= '0';
 
       -- serial engine --
       arbiter(2) <= ctrl(ctrl_en_c); -- still activated?
@@ -232,7 +224,7 @@ begin
             twi_scl_out <= '1';
           elsif (twi_clk_phase(3) = '1') then
             twi_scl_out <= '0';
-            irq.set   <= '1'; -- Interrupt!
+            irq_o       <= '1'; -- Interrupt!
             arbiter(1 downto 0) <= "00"; -- go back to IDLE
           end if;
 
@@ -241,7 +233,7 @@ begin
             twi_sda_out <= '0';
           elsif (twi_clk_phase(3) = '1') then
             twi_sda_out <= '1';
-            irq.set   <= '1'; -- Interrupt!
+            irq_o       <= '1'; -- Interrupt!
             arbiter(1 downto 0) <= "00"; -- go back to IDLE
           end if;
           --
@@ -264,7 +256,7 @@ begin
           end if;
           --
           if (bitcnt = "1010") then -- 8 data bits + 1 bit for ACK + 1 tick delay
-            irq.set <= '1'; -- Interrupt!
+            irq_o <= '1'; -- Interrupt!
             arbiter(1 downto 0) <= "00"; -- go back to IDLE
           end if;
 
@@ -293,30 +285,6 @@ begin
   -- read-back --
   twi_sda_in <= std_ulogic(twi_sda_io);
   twi_scl_in <= std_ulogic(twi_scl_io);
-
-
-  -- Interrupt Generator --------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  irq_generator: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (ctrl(ctrl_en_c) = '0') then
-        irq.pending <= '0';
-      else
-        if (irq.set = '1') then
-          irq.pending <= '1';
-        elsif (irq.clr = '1') then
-          irq.pending <= '0';
-        end if;
-      end if;
-    end if;
-  end process irq_generator;
-
-  -- IRQ request to CPU --
-  irq_o <= irq.pending;
-
-  -- IRQ acknowledge --
-  irq.clr <= '1' when ((rden = '1') and (addr = twi_rtx_addr_c)) or (wren = '1') else '0'; -- read data register OR write data/control register
 
 
 end neorv32_twi_rtl;
