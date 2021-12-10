@@ -79,7 +79,7 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   constant cp_op_remu_c   : std_ulogic_vector(2 downto 0) := "111"; -- remu
 
   -- controller --
-  type state_t is (IDLE, DIV_PREPROCESS, PROCESSING, FINALIZE, COMPLETED);
+  type state_t is (IDLE, DIV_PREPROCESS, PROCESSING, FINALIZE);
   signal state         : state_t;
   signal cnt           : std_ulogic_vector(4 downto 0);
   signal cp_op         : std_ulogic_vector(2 downto 0); -- operation to execute
@@ -93,7 +93,7 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   signal rs2_is_signed : std_ulogic;
   signal opy_is_zero   : std_ulogic;
   signal div_res_corr  : std_ulogic;
-  signal valid         : std_ulogic;
+  signal out_en        : std_ulogic;
 
   -- divider core --
   signal remainder        : std_ulogic_vector(data_width_c-1 downto 0);
@@ -125,16 +125,19 @@ begin
       cnt          <= (others => def_rst_val_c);
       cp_op_ff     <= (others => def_rst_val_c);
       start_div    <= '0';
-      valid        <= '0';
+      out_en       <= '0';
+      valid_o      <= '0';
       div_res_corr <= def_rst_val_c;
       opy_is_zero  <= def_rst_val_c;
     elsif rising_edge(clk_i) then
       -- defaults --
       start_div <= '0';
-      valid     <= '0';
+      out_en    <= '0';
+      valid_o   <= '0';
 
       -- FSM --
       case state is
+
         when IDLE =>
           cp_op_ff <= cp_op;
           if (start_i = '1') then
@@ -143,17 +146,13 @@ begin
               state <= DIV_PREPROCESS;
             else
               cnt <= "11110";
-              if (FAST_MUL_EN = true) then
-                state <= FINALIZE;
-              else
-                state <= PROCESSING;
-              end if;
+              state <= PROCESSING;
             end if;
           end if;
 
         when DIV_PREPROCESS =>
           if (DIVISION_EN = true) then
-            -- check rlevatn input signs --
+            -- check relevant input signs --
             if (cp_op = cp_op_div_c) then -- result sign compensation for div?
               div_res_corr <= rs1_i(rs1_i'left) xor rs2_i(rs2_i'left);
             elsif (cp_op = cp_op_rem_c) then -- result sign compensation for rem?
@@ -184,15 +183,16 @@ begin
 
         when PROCESSING =>
           cnt <= std_ulogic_vector(unsigned(cnt) - 1);
-          if (cnt = "00000") then
-            state <= FINALIZE;
+          if (cnt = "00000") or ((FAST_MUL_EN = true) and (operation = '0')) then
+            valid_o <= '1';
+            state   <= FINALIZE;
           end if;
 
         when FINALIZE =>
-          state <= COMPLETED;
+          out_en <= '1';
+          state  <= IDLE;
 
-        when COMPLETED =>
-          valid <= '1';
+        when others =>
           state <= IDLE;
       end case;
     end if;
@@ -307,9 +307,9 @@ begin
   -- no divider --
   divider_core_serial_none:
   if (DIVISION_EN = false) generate
-    remainder <= (others => '-');
-    quotient  <= (others => '-');
-    div_res   <= (others => '-');
+    remainder <= (others => '0');
+    quotient  <= (others => '0');
+    div_res   <= (others => '0');
   end generate;
 
 
@@ -317,39 +317,29 @@ begin
   -- -------------------------------------------------------------------------------------------
   operation_result: process(rstn_i, clk_i)
   begin
-    if (rstn_i = '0') then
-      res_o <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
+    if (out_en = '1') then
+      case cp_op_ff is
+        when cp_op_mul_c =>
+          res_o <= mul_product(31 downto 00);
+        when cp_op_mulh_c | cp_op_mulhsu_c | cp_op_mulhu_c =>
+          res_o <= mul_product(63 downto 32);
+        when cp_op_div_c =>
+          res_o <= div_res;
+        when cp_op_divu_c =>
+          res_o <= quotient;
+        when cp_op_rem_c =>
+          if (opy_is_zero = '0') then
+            res_o <= div_res;
+          else
+            res_o <= rs1_i;
+          end if;
+        when others => -- cp_op_remu_c
+          res_o <= remainder;
+      end case;
+    else
       res_o <= (others => '0');
-      if (valid = '1') then
-        case cp_op_ff is
-          when cp_op_mul_c =>
-            res_o <= mul_product(31 downto 00);
-          when cp_op_mulh_c | cp_op_mulhsu_c | cp_op_mulhu_c =>
-            res_o <= mul_product(63 downto 32);
-          when cp_op_div_c =>
-            if (DIVISION_EN = true) then res_o <= div_res; else NULL; end if;
-          when cp_op_divu_c =>
-            if (DIVISION_EN = true) then res_o <= quotient; else NULL; end if;
-          when cp_op_rem_c =>
-            if (DIVISION_EN = true) then 
-              if (opy_is_zero = '0') then
-                res_o <= div_res;
-              else
-                res_o <= rs1_i;
-              end if;
-            else
-              NULL;
-            end if;
-          when others => -- cp_op_remu_c
-            if (DIVISION_EN = true) then res_o <= remainder; else NULL; end if;
-        end case;
-      end if;
     end if;
   end process operation_result;
-
-  -- status output --
-  valid_o <= valid;
 
 
 end neorv32_cpu_cp_muldiv_rtl;
