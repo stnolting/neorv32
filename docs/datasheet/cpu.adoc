@@ -780,8 +780,8 @@ configurations are presented in <<_cpu_performance>>.
 | Memory access | `I/E` | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw` | 4 + ML
 | Memory access | `C`   | `c.lw` `c.sw` `c.lwsp` `c.swsp`           | 4 + ML
 | Memory access | `A`   | `lr.w` `sc.w`                             | 4 + ML
-| Multiplication | `M`  | `mul` `mulh` `mulhsu` `mulhu` | 2+31+3; FAST_MULfootnote:[DSP-based multiplication; enabled via `FAST_MUL_EN`.]: 5
-| Division       | `M`  | `div` `divu` `rem` `remu`     | 22+32+4
+| Multiplication | `M`  | `mul` `mulh` `mulhsu` `mulhu` | 3+32+2; FAST_MULfootnote:[DSP-based multiplication; enabled via `FAST_MUL_EN`.]: 6
+| Division       | `M`  | `div` `divu` `rem` `remu`     | 3+32+2
 | CSR access | `Zicsr` | `csrrw` `csrrs` `csrrc` `csrrwi` `csrrsi` `csrrci` | 4
 | System | `I/E`+`Zicsr` | `ecall` `ebreak` | 4
 | System | `I/E` | `fence` | 3
