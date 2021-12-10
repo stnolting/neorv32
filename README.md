@@ -232,16 +232,12 @@ for more information.
 
 ### Performance
 
-The NEORV32 CPU is based on a two-stages pipelined architecture. Since both stage use a multi-cycle processing scheme,
-each instruction requires several clock cycles to execute (2 cycles for ALU operations, up to 40 cycles for divisions).
+The NEORV32 CPU is based on a two-stages pipelined architecture. 
 The average CPI (cycles per instruction) depends on the instruction mix of a specific applications and also on the
 available CPU extensions.
 
-The following table shows the performance results (relative CoreMark score and average cycles per instruction) for
-_exemplary_ CPU configuration running 2000 iterations of the CoreMark CPU benchmark.
-The source files are available in [`sw/example/coremark`](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark).
-A simple(!) port of the **Dhrystone** benchmark is also available in
-[`sw/example/dhrystone`](https://github.com/stnolting/neorv32/blob/master/sw/example/dhrystone).
+The following table shows the performance results (scores and average CPI) for _exemplary_ CPU configurations executing
+2000 iterations of the [CoreMark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) CPU benchmark.
 
 Results generated for hardware version [`1.5.7.10`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 
