@@ -340,6 +340,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal mtime_time  : std_ulogic_vector(63 downto 0); -- current system time from MTIME
   signal ext_timeout : std_ulogic;
   signal ext_access  : std_ulogic;
+  signal debug_mode  : std_ulogic;
 
 begin
 
@@ -492,6 +493,7 @@ begin
     clk_i          => clk_i,        -- global clock, rising edge
     rstn_i         => sys_rstn,     -- global reset, low-active, async
     sleep_o        => open,         -- cpu is in sleep mode when set
+    debug_o        => debug_mode,   -- cpu is in debug mode when set
     -- instruction bus interface --
     i_bus_addr_o   => cpu_i.addr,   -- bus access address
     i_bus_rdata_i  => cpu_i.rdata,  -- bus read data
@@ -947,6 +949,8 @@ begin
       data_i      => p_bus.wdata,              -- data in
       data_o      => resp_bus(RESP_WDT).rdata, -- data out
       ack_o       => resp_bus(RESP_WDT).ack,   -- transfer acknowledge
+      -- CPU in debug mode? --
+      cpu_debug_i => debug_mode,
       -- clock generator --
       clkgen_en_o => wdt_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
