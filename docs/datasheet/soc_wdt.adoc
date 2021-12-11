@@ -66,7 +66,7 @@ mode by setting the control register's _WDT_CTRL_DBEN_ bit.
 
 
 .WDT register map (`struct NEORV32_WDT`)
-[cols="<2,<2,<4,^1,^2,<4"]
+[cols="<2,<2,<4,^1,^1,^2,<4"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Reset value | Writable if locked | Function
