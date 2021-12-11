@@ -300,6 +300,7 @@ direction seen from the CPU.
 | `clk_i`          |     1 | in  | global clock line, all registers triggering on rising edge
 | `rstn_i`         |     1 | in  | global reset, low-active
 | `sleep_o`        |     1 | out | CPU is in sleep mode when set
+| `debug_o`        |     1 | out | CPU is in debug mode when set
 4+^| **Instruction Bus Interface (<<_bus_interface>>)**
 | `i_bus_addr_o`   |    32 | out | destination address
 | `i_bus_rdata_i`  |    32 | in  | read data
