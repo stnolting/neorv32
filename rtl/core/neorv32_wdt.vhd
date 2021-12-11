@@ -48,6 +48,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_wdt is
+  generic (
+    DEBUG_EN : boolean -- CPU debug mode implemented?
+  );
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
@@ -161,7 +164,7 @@ begin
             ctrl.mode    <= data_i(ctrl_mode_c);
             ctrl.clk_sel <= data_i(ctrl_clksel2_c downto ctrl_clksel0_c);
             ctrl.lock    <= data_i(ctrl_lock_c);
-            ctrl.dben    <= data_i(ctrl_dben_c);
+            ctrl.dben    <= data_i(ctrl_dben_c) and bool_to_ulogic_f(DEBUG_EN);
           end if;
         end if;
       end if;

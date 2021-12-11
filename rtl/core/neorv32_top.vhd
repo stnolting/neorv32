@@ -939,6 +939,9 @@ begin
   neorv32_wdt_inst_true:
   if (IO_WDT_EN = true) generate
     neorv32_wdt_inst: neorv32_wdt
+    generic map(
+      DEBUG_EN => ON_CHIP_DEBUGGER_EN -- CPU debug mode implemented?
+    )
     port map (
       -- host access --
       clk_i       => clk_i,                    -- global clock line

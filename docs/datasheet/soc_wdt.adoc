@@ -62,7 +62,8 @@ lock can only be removed by a system reset (via external reset signal or via a w
 By default the watchdog pauses operation when the CPU enters debug mode and will resume normal operation after
 the CPU has left debug mode. This will prevent an unintended watchdog timeout (and a hardware reset if configured)
 during a debug session. However, the watchdog can be configured to keep operating even when the CPU is in debug
-mode by setting the control register's _WDT_CTRL_DBEN_ bit.
+mode by setting the control register's _WDT_CTRL_DBEN_ bit. If the CPU's debug mode is not implemented this flag
+is hardwired to zero.
 
 
 .WDT register map (`struct NEORV32_WDT`)

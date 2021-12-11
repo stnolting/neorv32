@@ -1631,6 +1631,9 @@ package neorv32_package is
   -- Component: Watchdog Timer (WDT) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_wdt
+    generic (
+      DEBUG_EN : boolean -- CPU debug mode implemented?
+    );
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
