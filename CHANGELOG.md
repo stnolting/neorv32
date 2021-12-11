@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 11.12.2021 | 1.6.4.8 | watchdog: added new _DBEN_ and _HALF_ flags to control register (enable WDT during debugging, check timeout counter level), see [PR #239](https://github.com/stnolting/neorv32/pull/239) |
 | 10.12.2021 | 1.6.4.7 | optimized CPU's multiplication/division co-processor: all mul/div operations are 1 cycle faster + slightly less resource utilization, see [PR #238](https://github.com/stnolting/neorv32/pull/238) |
 | 08.12.2021 | 1.6.4.6 | :warning: reworked **Fast Interrupt Requests (FIRQ)** system, see [PR #236](https://github.com/stnolting/neorv32/pull/236) |
 | 03.12.2021 | 1.6.4.5 | added _SYSINFO_SOC_IS_SIM_ flag to SYSINFO to check if processor is being simulated (not guaranteed, depends on the toolchain's 'pragma' support), see [PR #231](https://github.com/stnolting/neorv32/pull/231) |

@@ -94,6 +94,7 @@ entity neorv32_cpu is
     clk_i          : in  std_ulogic; -- global clock, rising edge
     rstn_i         : in  std_ulogic; -- global reset, low-active, async
     sleep_o        : out std_ulogic; -- cpu is in sleep mode when set
+    debug_o        : out std_ulogic; -- cpu is in debug mode when set
     -- instruction bus interface --
     i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -315,6 +316,9 @@ begin
 
   -- CPU is sleeping? --
   sleep_o <= ctrl(ctrl_sleep_c); -- set when CPU is sleeping (after WFI)
+
+  -- CPU is in debug mode? --
+  debug_o <= ctrl(ctrl_debug_running_c);
 
 
   -- Register File --------------------------------------------------------------------------

@@ -1101,15 +1101,17 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 /** WTD control register bits */
 enum NEORV32_WDT_CTRL_enum {
-  WDT_CTRL_EN       = 0, /**< WDT control register(0) (r/w): Watchdog enable */
-  WDT_CTRL_CLK_SEL0 = 1, /**< WDT control register(1) (r/w): Clock prescaler select bit 0 */
-  WDT_CTRL_CLK_SEL1 = 2, /**< WDT control register(2) (r/w): Clock prescaler select bit 1 */
-  WDT_CTRL_CLK_SEL2 = 3, /**< WDT control register(3) (r/w): Clock prescaler select bit 2 */
-  WDT_CTRL_MODE     = 4, /**< WDT control register(4) (r/w): Watchdog mode: 0=timeout causes interrupt, 1=timeout causes processor reset */
-  WDT_CTRL_RCAUSE   = 5, /**< WDT control register(5) (r/-): Cause of last system reset: 0=external reset, 1=watchdog */
-  WDT_CTRL_RESET    = 6, /**< WDT control register(6) (-/w): Reset WDT counter when set, auto-clears */
-  WDT_CTRL_FORCE    = 7, /**< WDT control register(7) (-/w): Force WDT action, auto-clears */
-  WDT_CTRL_LOCK     = 8  /**< WDT control register(8) (r/w): Lock write access to control register, clears on reset (HW or WDT) only */
+  WDT_CTRL_EN       =  0, /**< WDT control register(0) (r/w): Watchdog enable */
+  WDT_CTRL_CLK_SEL0 =  1, /**< WDT control register(1) (r/w): Clock prescaler select bit 0 */
+  WDT_CTRL_CLK_SEL1 =  2, /**< WDT control register(2) (r/w): Clock prescaler select bit 1 */
+  WDT_CTRL_CLK_SEL2 =  3, /**< WDT control register(3) (r/w): Clock prescaler select bit 2 */
+  WDT_CTRL_MODE     =  4, /**< WDT control register(4) (r/w): Watchdog mode: 0=timeout causes interrupt, 1=timeout causes processor reset */
+  WDT_CTRL_RCAUSE   =  5, /**< WDT control register(5) (r/-): Cause of last system reset: 0=external reset, 1=watchdog */
+  WDT_CTRL_RESET    =  6, /**< WDT control register(6) (-/w): Reset WDT counter when set, auto-clears */
+  WDT_CTRL_FORCE    =  7, /**< WDT control register(7) (-/w): Force WDT action, auto-clears */
+  WDT_CTRL_LOCK     =  8, /**< WDT control register(8) (r/w): Lock write access to control register, clears on reset (HW or WDT) only */
+  WDT_CTRL_DBEN     =  9, /**< WDT control register(9) (r/w): Allow WDT to continue operation even when in debug mode */
+  WDT_CTRL_HALF     = 10  /**< WDT control register(10) (r/-): Set if at least half of the max. timeout counter value has been reached */
 };
 /**@}*/
 
