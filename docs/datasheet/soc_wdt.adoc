@@ -13,15 +13,17 @@
 | CPU interrupts:          | fast IRQ channel 0 | watchdog timer overflow (see <<_processor_interrupts>>)
 |=======================
 
+
 **Theory of Operation**
 
 The watchdog (WDT) provides a last resort for safety-critical applications. The WDT has an internal 20-bit
 wide counter that needs to be reset every now and then by the user program. If the counter overflows, either
 a system reset or an interrupt is generated (depending on the configured operation mode).
+The _WDT_CTRL_HALF_ flag of the control register `CTRL` indicates that at least half of the maximum timeout
+value has been reached.
 
-Configuration of the watchdog is done by a single control register `CTRL`. The watchdog is enabled by
-setting the _WDT_CTRL_EN_ bit. The clock used to increment the internal counter is selected via the 3-bit
-_WDT_CTRL_CLK_SELx_ prescaler:
+The watchdog is enabled by setting the _WDT_CTRL_EN_ bit. The clock used to increment the internal counter
+is selected via the 3-bit _WDT_CTRL_CLK_SELx_ prescaler:
 
 [cols="^3,^3,>4"]
 [options="header",grid="rows"]
@@ -52,22 +54,31 @@ initiated by the watchdog.
 
 The Watchdog control register can be locked in order to protect the current configuration. The lock is
 activated by setting bit _WDT_CTRL_LOCK_. In the locked state any write access to the configuration flags is
-ignored (see table below, "accessible if locked"). Read accesses to the control register are not effected. The
+ignored (see table below, "writable if locked"). Read accesses to the control register are not effected. The
 lock can only be removed by a system reset (via external reset signal or via a watchdog reset action).
+
+.Watchdog Operation during Debugging
+[IMPORTANT]
+By default the watchdog pauses operation when the CPU enters debug mode and will resume normal operation after
+the CPU has left debug mode. This will prevent an unintended watchdog timeout (and a hardware reset if configured)
+during a debug session. However, the watchdog can be configured to keep operating even when the CPU is in debug
+mode by setting the control register's _WDT_CTRL_DBEN_ bit.
 
 
 .WDT register map (`struct NEORV32_WDT`)
 [cols="<2,<2,<4,^1,^2,<4"]
 [options="header",grid="all"]
 |=======================
-| Address | Name [C] | Bit(s), Name [C] | R/W | Writable if locked | Function
-.9+<| `0xffffffbc` .9+<| `NEORV32_WDT.CTRL` <|`0` _WDT_CTRL_EN_       ^| r/w ^| no  <| watchdog enable
-                                            <|`1` _WDT_CTRL_CLK_SEL0_ ^| r/w ^| no  .3+<| 3-bit clock prescaler select
-                                            <|`2` _WDT_CTRL_CLK_SEL1_ ^| r/w ^| no 
-                                            <|`3` _WDT_CTRL_CLK_SEL2_ ^| r/w ^| no 
-                                            <|`4` _WDT_CTRL_MODE_     ^| r/w ^| no  <| overflow action: `1`=reset, `0`=IRQ
-                                            <|`5` _WDT_CTRL_RCAUSE_   ^| r/- ^| -   <| cause of last system reset: `0`=caused by external reset signal, `1`=caused by watchdog
-                                            <|`6` _WDT_CTRL_RESET_    ^| -/w ^| yes <| watchdog reset when set, auto-clears
-                                            <|`7` _WDT_CTRL_FORCE_    ^| -/w ^| yes <| force configured watchdog action when set, auto-clears
-                                            <|`8` _WDT_CTRL_LOCK_     ^| r/w ^| no  <| lock access to configuration when set, clears only on system reset (via external reset signal OR watchdog reset action = reset)
+| Address | Name [C] | Bit(s), Name [C] | R/W | Reset value | Writable if locked | Function
+.11+<| `0xffffffbc` .11+<| `NEORV32_WDT.CTRL` <|`0` _WDT_CTRL_EN_       ^| r/w ^| `0` ^| no  <| watchdog enable
+                                              <|`1` _WDT_CTRL_CLK_SEL0_ ^| r/w ^| `0` ^| no  .3+<| 3-bit clock prescaler select
+                                              <|`2` _WDT_CTRL_CLK_SEL1_ ^| r/w ^| `0` ^| no 
+                                              <|`3` _WDT_CTRL_CLK_SEL2_ ^| r/w ^| `0` ^| no 
+                                              <|`4` _WDT_CTRL_MODE_     ^| r/w ^| `0` ^| no  <| overflow action: `1`=reset, `0`=IRQ
+                                              <|`5` _WDT_CTRL_RCAUSE_   ^| r/- ^| `0` ^| -   <| cause of last system reset: `0`=caused by external reset signal, `1`=caused by watchdog
+                                              <|`6` _WDT_CTRL_RESET_    ^| -/w ^| -   ^| yes <| watchdog reset when set, auto-clears
+                                              <|`7` _WDT_CTRL_FORCE_    ^| -/w ^| -   ^| yes <| force configured watchdog action when set, auto-clears
+                                              <|`8` _WDT_CTRL_LOCK_     ^| r/w ^| `0` ^| no  <| lock access to configuration when set, clears only on system reset (via external reset signal OR watchdog reset action = reset)
+                                              <|`9` _WDT_CTRL_DBEN_     ^| r/w ^| `0` ^| no  <| allow WDT to continue operation even when in debug mode
+                                              <|`10` _WDT_CTRL_HALF_    ^| r/- ^| `0` ^| -   <| set if at least half of the max. timeout counter value has been reached
 |=======================

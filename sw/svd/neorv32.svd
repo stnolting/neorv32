@@ -920,6 +920,17 @@
               <bitRange>[8:8]</bitRange>
               <description>Lock write access to control register, clears on reset (HW or WDT) only</description>
             </field>
+            <field>
+              <name>WDT_CTRL_DBEN</name>
+              <bitRange>[9:9]</bitRange>
+              <description>Allow WDT to continue operation even when in debug mode</description>
+            </field>
+            <field>
+              <name>WDT_CTRL_HALF</name>
+              <bitRange>[10:10]</bitRange>
+              <access>read-only</access>
+              <description>Set if at least half of the max. timeout counter value has been reached</description>
+            </field>
           </fields>
         </register>
       </registers>
