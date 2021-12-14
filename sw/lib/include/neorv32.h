@@ -751,7 +751,7 @@ enum NEORV32_SLINK_CTRL_enum {
   SLINK_CTRL_TX_FIFO_S2 = 14, /**< SLINK control register(14) (r/-): log2(TX FIFO size) bit 2 */
   SLINK_CTRL_TX_FIFO_S3 = 15, /**< SLINK control register(15) (r/-): log2(TX FIFO size) bit 3 */
 
-  SLINK_CTRL_EN         = 31, /**< SLINK control register(0) (r/w): SLINK controller enable */
+  SLINK_CTRL_EN         = 31  /**< SLINK control register(0) (r/w): SLINK controller enable */
 };
 
 /** SLINK interrupt control register bits */
