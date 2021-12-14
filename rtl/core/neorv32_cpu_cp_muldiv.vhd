@@ -87,7 +87,6 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   signal start_div     : std_ulogic;
   signal start_mul     : std_ulogic;
   signal operation     : std_ulogic;
-  signal div_opx       : std_ulogic_vector(data_width_c-1 downto 0);
   signal div_opy       : std_ulogic_vector(data_width_c-1 downto 0);
   signal rs1_is_signed : std_ulogic;
   signal rs2_is_signed : std_ulogic;
@@ -110,7 +109,6 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   signal mul_p_sext     : std_ulogic;
   signal mul_op_x       : signed(32 downto 0); -- for using DSPs
   signal mul_op_y       : signed(32 downto 0); -- for using DSPs
-  signal mul_buf_ff     : signed(65 downto 0); -- for using DSPs
 
 begin
 
@@ -120,7 +118,6 @@ begin
   begin
     if (rstn_i = '0') then
       state        <= IDLE;
-      div_opx      <= (others => def_rst_val_c);
       div_opy      <= (others => def_rst_val_c);
       cnt          <= (others => def_rst_val_c);
       cp_op_ff     <= (others => def_rst_val_c);
@@ -140,50 +137,44 @@ begin
 
         when IDLE =>
           cp_op_ff <= cp_op;
+          cnt      <= "11110";
           if (start_i = '1') then
             if (operation = '1') and (DIVISION_EN = true) then -- division
-              cnt <= "11111";
-              state <= DIV_PREPROCESS;
-            else
-              cnt <= "11110";
-              state <= PROCESSING;
+              start_div <= '1';
+              state     <= DIV_PREPROCESS;
+            else -- multiplication
+              if (FAST_MUL_EN = true) then
+                valid_o <= '1';
+                state   <= FINALIZE;
+              else
+                state <= PROCESSING;
+              end if;
             end if;
           end if;
 
         when DIV_PREPROCESS =>
-          if (DIVISION_EN = true) then
-            -- check relevant input signs --
-            if (cp_op = cp_op_div_c) then -- result sign compensation for div?
-              div_res_corr <= rs1_i(rs1_i'left) xor rs2_i(rs2_i'left);
-            elsif (cp_op = cp_op_rem_c) then -- result sign compensation for rem?
-              div_res_corr <= rs1_i(rs1_i'left);
-            else
-              div_res_corr <= '0';
-            end if;
-            -- divide by zero? --
-            opy_is_zero <= not or_reduce_f(rs2_i); -- set if rs2 = 0
-            -- abs(rs1) --
-            if ((rs1_i(rs1_i'left) and rs1_is_signed) = '1') then -- signed division?
-              div_opx <= std_ulogic_vector(0 - unsigned(rs1_i)); -- make positive
-            else
-              div_opx <= rs1_i;
-            end if;
-            -- abs(rs2) --
-            if ((rs2_i(rs2_i'left) and rs2_is_signed) = '1') then -- signed division?
-              div_opy <= std_ulogic_vector(0 - unsigned(rs2_i)); -- make positive
-            else
-              div_opy <= rs2_i;
-            end if;
-            --
-            start_div <= '1';
-            state     <= PROCESSING;
+          -- check relevant input signs --
+          if (cp_op = cp_op_div_c) then -- result sign compensation for div?
+            div_res_corr <= rs1_i(rs1_i'left) xor rs2_i(rs2_i'left);
+          elsif (cp_op = cp_op_rem_c) then -- result sign compensation for rem?
+            div_res_corr <= rs1_i(rs1_i'left);
           else
-            state <= IDLE;
+            div_res_corr <= '0';
           end if;
+          -- divide by zero? --
+          opy_is_zero <= not or_reduce_f(rs2_i); -- set if rs2 = 0
+          -- abs(rs2) --
+          if ((rs2_i(rs2_i'left) and rs2_is_signed) = '1') then -- signed division?
+            div_opy <= std_ulogic_vector(0 - unsigned(rs2_i)); -- make positive
+          else
+            div_opy <= rs2_i;
+          end if;
+          --
+          state <= PROCESSING;
 
         when PROCESSING =>
           cnt <= std_ulogic_vector(unsigned(cnt) - 1);
-          if (cnt = "00000") or ((FAST_MUL_EN = true) and (operation = '0')) then
+          if (cnt = "00000") then
             valid_o <= '1';
             state   <= FINALIZE;
           end if;
@@ -235,18 +226,21 @@ begin
     end process multiplier_core;
   end generate;
 
-  -- parallel multiplication --
+  -- parallel multiplication (using DSP blocks) --
   multiplier_core_dsp:
   if (FAST_MUL_EN = true) generate
     multiplier_core: process(clk_i)
+      variable tmp_v : signed(65 downto 0);
     begin
       if rising_edge(clk_i) then
         if (start_mul = '1') then
           mul_op_x <= signed((rs1_i(rs1_i'left) and rs1_is_signed) & rs1_i);
           mul_op_y <= signed((rs2_i(rs2_i'left) and rs2_is_signed) & rs2_i);
         end if;
-        mul_buf_ff  <= mul_op_x * mul_op_y;
-        mul_product <= std_ulogic_vector(mul_buf_ff(63 downto 0)); -- let the register balancing do the magic here
+        tmp_v := mul_op_x * mul_op_y;
+        mul_product <= std_ulogic_vector(tmp_v(63 downto 0));
+        --mul_buf_ff  <= mul_op_x * mul_op_y;
+        --mul_product <= std_ulogic_vector(mul_buf_ff(63 downto 0)); -- let the register balancing do the magic here
       end if;
     end process multiplier_core;
   end generate;
@@ -282,7 +276,11 @@ begin
         remainder <= (others => def_rst_val_c);
       elsif rising_edge(clk_i) then
         if (start_div = '1') then -- start new division
-          quotient  <= div_opx;
+          if ((rs1_i(rs1_i'left) and rs1_is_signed) = '1') then -- signed division?
+            quotient <= std_ulogic_vector(0 - unsigned(rs1_i)); -- make positive
+          else
+            quotient <= rs1_i;
+          end if;
           remainder <= (others => '0');
         elsif (state = PROCESSING) or (state = FINALIZE) then -- running?
           quotient <= quotient(30 downto 0) & (not div_sub(32));
@@ -315,7 +313,7 @@ begin
 
   -- Data Output ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  operation_result: process(rstn_i, clk_i)
+  operation_result: process(out_en, cp_op_ff, mul_product, div_res, quotient, opy_is_zero, rs1_i, remainder)
   begin
     if (out_en = '1') then
       case cp_op_ff is
