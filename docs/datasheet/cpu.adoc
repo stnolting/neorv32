@@ -252,35 +252,28 @@ OK: 1/1 RISCV_TARGET=neorv32 RISCV_DEVICE=Zifencei XLEN=32
 This list shows the currently identified issues regarding full RISC-V-compatibility. More specific information
 can be found in section <<_instruction_sets_and_extensions>>.
 
-.Hardwired R/W CSRs
+.Read-Only "Read-Write" CSRs
 [IMPORTANT]
 The `misa` and `mtval` CSRs in the NEORV32 are _read-only_.
-Any write access to it (in machine mode) to them are ignored and will _not_ cause any exceptions or side-effects.
-Pending interrupt can only be cleared by acknowledging the interrupt-causing device. However, pending interrupts
-can still be ignored by clearing the according `mie` register bits.
+Any machine-mode write access to them is ignored and will _not_ cause any exceptions or side-effects to maintain
+RISC-V compatibility.
 
-.Physical memory protection
+.Physical Memory Protection
 [IMPORTANT]
 The physical memory protection (see section <<_machine_physical_memory_protection>>)
 only supports the modes _OFF_ and _NAPOT_ yet and a minimal granularity of 8 bytes per region.
 
-.Atomic memory operations
+.Atomic Memory Operations
 [IMPORTANT]
 The `A` CPU extension only implements the `lr.w` and `sc.w` instructions yet.
 However, these instructions are sufficient to emulate all further atomic memory operations.
 
-.Bit-manipulation operations
+.Bit-Manipulation ISA Extension
 [IMPORTANT]
 The NEORV32 `B` extension only implements the _basic bit-manipulation instructions_ (`Zbb`) subset
 and the _address generation instructions_ (`Zba`) subset yet.
 
-.Instruction Misalignment
-[NOTE]
-This is not a real RISC-V incompatibility, but something that might not be clear when studying the RISC-V privileged
-architecture specifications: for 32-bit only instructions (no `C` extension) the misaligned instruction exception
-is raised if bit 1 of the access address is set (i.e. not on 32-bit boundary). If the `C` extension is implemented
-there will be no misaligned instruction exceptions _at all_.
-In both cases bit 0 of the program counter and all related registers is hardwired to zero.
+
 
 <<<
 // ####################################################################################################################
@@ -875,10 +868,31 @@ provide custom trap codes in `mcause`. These FIRQs are reserved for NEORV32 proc
 
 <<<
 // ####################################################################################################################
-:sectnums!:
-===== NEORV32 Trap Listing
+:sectnums:
+==== NEORV32 Trap Listing
 
-.NEORV32 trap listing
+The following table shows all traps that are currently supported by the NEORV32 CPU. It also shows the prioritization
+and the CSR side-effects. A more detailed description of the actual trap triggering events is provided in a further table.
+
+[NOTE]
+_Asynchronous exceptions_ (= interrupts) set the MSB of `mcause` while _synchronous exception_ (= "software exception")
+clear the MSB.
+
+**Table Annotations**
+
+The "Prio." column shows the priority of each trap. The highest priority is 1. The "`mcause`" column shows the
+cause ID of the according trap that is written to `mcause` CSR. The "[RISC-V]" columns show the interrupt/exception code value from the
+official RISC-V privileged architecture manual. The "[C]" names are defined by the NEORV32 core library (`sw/lib/include/neorv32.h`) and can
+be used in plain C code. The "`mepc`" and "`mtval`" columns show the value written to
+`mepc` and `mtval` CSRs when a trap is triggered:
+
+* _I-PC_ - address of interrupted instruction (instruction has not been execute/completed yet)
+* _B-ADR_- bad memory access address that cause the trap
+* _PC_ - address of instruction that caused the trap
+* _0_ - zero
+* _Inst_ - the faulting instruction itself
+
+.NEORV32 Trap Listing
 [cols="3,6,5,14,11,4,4"]
 [options="header",grid="rows"]
 |=======================
@@ -888,7 +902,7 @@ provide custom trap codes in `mcause`. These FIRQs are reserved for NEORV32 proc
 | 3  | `0x00000002` | 0.2  | _TRAP_CODE_I_ILLEGAL_    | illegal instruction | _PC_ | _Inst_
 | 4  | `0x0000000B` | 0.11 | _TRAP_CODE_MENV_CALL_    | environment call from M-mode (`ecall` in machine-mode) | _PC_ | _PC_
 | 5  | `0x00000008` | 0.8  | _TRAP_CODE_UENV_CALL_    | environment call from U-mode (`ecall` in user-mode) | _PC_ | _PC_
-| 6  | `0x00000003` | 0.3  | _TRAP_CODE_BREAKPOINT_   | breakpoint (EBREAK) | _PC_ | _PC_
+| 6  | `0x00000003` | 0.3  | _TRAP_CODE_BREAKPOINT_   | breakpoint (`ebreak`) | _PC_ | _PC_
 | 7  | `0x00000006` | 0.6  | _TRAP_CODE_S_MISALIGNED_ | store address misaligned | _B-ADR_ | _B-ADR_
 | 8  | `0x00000004` | 0.4  | _TRAP_CODE_L_MISALIGNED_ | load address misaligned | _B-ADR_ | _B-ADR_
 | 9  | `0x00000007` | 0.7  | _TRAP_CODE_S_ACCESS_     | store access fault | _B-ADR_ | _B-ADR_
@@ -914,20 +928,36 @@ provide custom trap codes in `mcause`. These FIRQs are reserved for NEORV32 proc
 | 29 | `0x80000007` | 1.7  | _TRAP_CODE_MTI_          | machine timer interrupt | _I-PC_ | _0_
 |=======================
 
-**Notes**
 
-The "Prio." column shows the priority of each trap. The highest priority is 1. The "`mcause`" column shows the
-cause ID of the according trap that is written to `mcause` CSR. The "[RISC-V]" columns show the interrupt/exception code value from the
-official RISC-V privileged architecture manual. The "[C]" names are defined by the NEORV32 core library (`sw/lib/include/neorv32.h`) and can
-be used in plain C code. The "`mepc`" and "`mtval`" columns show the value written to
-`mepc` and `mtval` CSRs when a trap is triggered:
+The following table provides a summarized description of the actual events for triggering a specific trap.
 
-* _I-PC_ - address of interrupted instruction (instruction has not been execute/completed yet)
-* _B-ADR_- bad memory access address that cause the trap
-* _PC_ - address of instruction that caused the trap
-* _0_ - zero
-* _Inst_ - the faulting instruction itself
+.NEORV32 Trap Description
+[cols="<3,<7"]
+[options="header",grid="rows"]
+|=======================
+| Trap ID | Triggered when ...
+| _TRAP_CODE_I_MISALIGNED_ | fetching an 32-bit instruction word that is not 32-bit-aligned (_see note below!_)
+| _TRAP_CODE_I_ACCESS_     | bus timeout or bus error during instruction word fetch
+| _TRAP_CODE_I_ILLEGAL_    | trying to execute an invalid instruction word (malformed or not supported) or on a privilege violation
+| _TRAP_CODE_MENV_CALL_    | executing `ecall` instruction in machine-mode
+| _TRAP_CODE_UENV_CALL_    | executing `ecall` instruction in user-mode
+| _TRAP_CODE_BREAKPOINT_   | executing `ebreak` instruction (or triggered by on-chip debugger)
+| _TRAP_CODE_S_MISALIGNED_ | storing data to an address that is not naturally aligned to the data size (byte, half, word) being stored
+| _TRAP_CODE_L_MISALIGNED_ | loading data from an address that is not naturally aligned to the data size  (byte, half, word) being loaded
+| _TRAP_CODE_S_ACCESS_     | bus timeout or bus error during load data operation
+| _TRAP_CODE_L_ACCESS_     | bus timeout or bus error during store data operation
+| _TRAP_CODE_FIRQ_0_ ... _TRAP_CODE_FIRQ_15_| caused by interrupt-condition of processor-internal modules, see <<_neorv32_specific_fast_interrupt_requests>>
+| _TRAP_CODE_MEI_          | user-defined processor-external source (via dedicated top-entity signal)
+| _TRAP_CODE_MSI_          | user-defined processor-external source (via dedicated top-entity signal)
+| _TRAP_CODE_MTI_          | processor-internal machine timer overflow OR user-defined processor-external source (via dedicated top-entity signal)
+|=======================
 
+.Instruction Address Misaligned Exception
+[NOTE]
+For 32-bit-only instructions (= no `C` extension) the misaligned instruction exception
+is raised if bit 1 of the fetch address is set (i.e. not on a 32-bit boundary). If the `C` extension is implemented
+there will never be a misaligned instruction exception _at all_.
+In both cases bit 0 of the program counter (and all related registers) is hardwired to zero.
 
 
 <<<
