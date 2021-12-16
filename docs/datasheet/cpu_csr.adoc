@@ -60,7 +60,7 @@ CSRs with the following notes ...
 * `C`: _constrained_ - have a constrained compatibility, not all specified bits are implemented
 
 .NEORV32 Control and Status Registers (CSRs)
-[cols="<4,<7,<10,^3,<11,^3"]
+[cols="<6,<11,<16,^3,<25,^3"]
 [options="header"]
 |=======================
 | Address | Name [ASM] | Name [C] | R/W | Function | Note
