@@ -88,13 +88,10 @@ jobs:
     # Tagged: create a pre-release or a release (semver)
     # Untagged: update the assets of pre-release 'nightly'
     - name: '📦 Deploy to GitHub-Releases'
-      uses: eine/tip@master
-      with:
-        token: ${{ github.token }}
-        tag: 'nightly'
-        files: |
-          NEORV32-SITE-nightly.tar.gz
-          pdf/NEORV32*nightly.pdf
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        gh release upload nightly NEORV32-SITE-nightly.tar.gz pdf/NEORV32*nightly.pdf --clobber
 
     - name: '🐍 Install doit'
       run: pip install doit
