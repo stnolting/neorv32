@@ -19,10 +19,11 @@ run custom programs on your FPGA setup without having a UART.
 from https://ttssh2.osdn.jp/index.html.en . On Linux you could use GTKTerm, which you can get here
 https://github.com/Jeija/gtkterm.git (or install via your package manager).
 
-
-[NOTE]
+[IMPORTANT]
 _Any_ terminal program that can connect to a serial port should work. However, make sure the program
-can transfer data in _raw_ byte mode without any protocol overhead around it.
+can transfer data in _raw_ byte mode without any protocol overhead around it. Some terminal programs struggle with
+transmitting files larger than 4kB (see https://github.com/stnolting/neorv32/pull/215). Try a different program
+if uploading a binary does not work (terminal stall).
 
 [start=3]
 . Open a connection to the the serial port your UART is connected to. Configure the terminal setting according to the

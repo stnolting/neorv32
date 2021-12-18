@@ -448,6 +448,12 @@ Terminal console settings (`19200-8-N-1`):
 * newline on `\r\n` (carriage return, newline)
 * no transfer protocol / control flow protocol - just the raw byte stuff
 
+[IMPORTANT]
+_Any_ terminal program that can connect to a serial port should work. However, make sure the program
+can transfer data in _raw_ byte mode without any protocol overhead around it. Some terminal programs struggle with
+transmitting files larger than 4kB (see https://github.com/stnolting/neorv32/pull/215). Try a different program
+if uploading a binary does not work (terminal stall).
+
 The bootloader uses the LSB of the top entity's `gpio_o` output port as high-active status LED (all other
 output pin are set to low level by the bootloader). After reset, this LED will start blinking at ~2Hz and the
 following intro screen should show up in your terminal:
