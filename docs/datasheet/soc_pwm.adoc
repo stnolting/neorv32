@@ -17,6 +17,10 @@ The PWM controller implements a pulse-width modulation controller with up to 60 
 bit resolution per channel. The actual number of implemented channels is defined by the _IO_PWM_NUM_CH_ generic.
 Setting this generic to zero will completely remove the PWM controller from the design.
 
+[NOTE]
+The `pwm_o` has a static size of 60-bit. Is less than 60 PWM channels are configured, only the LSB-aligned channels
+(bits) are used while the remaining bits are hardwired to zero.
+
 The PWM controller is based on an 8-bit base counter with a programmable threshold comparators for each channel
 that defines the actual duty cycle. The controller can be used to drive fancy RGB-LEDs with 24-
 bit true color, to dim LCD back-lights or even for "analog" control. An external integrator (RC low-pass filter)
