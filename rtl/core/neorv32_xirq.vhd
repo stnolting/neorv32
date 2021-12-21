@@ -62,7 +62,7 @@ entity neorv32_xirq is
     data_o    : out std_ulogic_vector(31 downto 0); -- data out
     ack_o     : out std_ulogic; -- transfer acknowledge
     -- external interrupt lines --
-    xirq_i    : in  std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
+    xirq_i    : in  std_ulogic_vector(31 downto 0);
     -- CPU interrupt --
     cpu_irq_o : out std_ulogic
   );
@@ -155,7 +155,7 @@ begin
   irq_trigger: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      irq_sync  <= xirq_i;
+      irq_sync  <= xirq_i(XIRQ_NUM_CH-1 downto 0);
       irq_sync2 <= irq_sync;
     end if;
   end process irq_trigger;

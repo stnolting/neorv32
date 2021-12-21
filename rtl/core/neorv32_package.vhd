@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060500"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060501"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -200,6 +200,7 @@ package neorv32_package is
   constant pwm_duty4_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe94";
   constant pwm_duty5_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe98";
   constant pwm_duty6_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe9c";
+  
   constant pwm_duty7_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea0";
   constant pwm_duty8_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea4";
   constant pwm_duty9_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea8";
@@ -1046,7 +1047,7 @@ package neorv32_package is
       twi_sda_io     : inout std_logic := 'U'; -- twi serial data line
       twi_scl_io     : inout std_logic := 'U'; -- twi serial clock line
       -- PWM (available if IO_PWM_NUM_CH > 0) --
-      pwm_o          : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0); -- pwm channels
+      pwm_o          : out std_ulogic_vector(59 downto 0); -- pwm channels
       -- Custom Functions Subsystem IO --
       cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0) := (others => 'U'); -- custom CFS inputs conduit
       cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
@@ -1056,7 +1057,7 @@ package neorv32_package is
       mtime_i        : in  std_ulogic_vector(63 downto 0) := (others => 'U'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
       mtime_o        : out std_ulogic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
       -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-      xirq_i         : in  std_ulogic_vector(XIRQ_NUM_CH-1 downto 0) := (others => 'L'); -- IRQ channels
+      xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- IRQ channels
       -- CPU Interrupts --
       mtime_irq_i    : in  std_ulogic := 'L'; -- machine timer interrupt, available if IO_MTIME_EN = false
       msw_irq_i      : in  std_ulogic := 'L'; -- machine software interrupt
@@ -1754,7 +1755,7 @@ package neorv32_package is
       clkgen_en_o : out std_ulogic; -- enable clock generator
       clkgen_i    : in  std_ulogic_vector(07 downto 0);
       -- pwm output channels --
-      pwm_o       : out std_ulogic_vector(NUM_CHANNELS-1 downto 0)
+      pwm_o       : out std_ulogic_vector(59 downto 0)
     );
   end component;
 
@@ -1927,7 +1928,7 @@ package neorv32_package is
       data_o    : out std_ulogic_vector(31 downto 0); -- data out
       ack_o     : out std_ulogic; -- transfer acknowledge
       -- external interrupt lines --
-      xirq_i    : in  std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
+      xirq_i    : in  std_ulogic_vector(31 downto 0);
       -- CPU interrupt --
       cpu_irq_o : out std_ulogic
     );
