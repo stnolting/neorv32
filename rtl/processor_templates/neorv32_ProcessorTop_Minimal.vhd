@@ -96,7 +96,17 @@ end entity;
 
 architecture neorv32_ProcessorTop_Minimal_rtl of neorv32_ProcessorTop_Minimal is
 
+  -- internal IO connection --
+  signal con_pwm_o  : std_ulogic_vector(59 downto 0);
+
 begin
+
+  -- IO Connection --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+
+  -- PWM --
+  pwm_o <= con_pwm_o(IO_PWM_NUM_CH-1 downto 0);
+
 
   -- The core of the problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -224,7 +234,7 @@ begin
     twi_scl_io  => open,                         -- twi serial clock line
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o       => pwm_o,                        -- pwm channels
+    pwm_o       => con_pwm_o,                    -- pwm channels
 
     -- Custom Functions Subsystem IO --
     cfs_in_i    => (others => '0'),              -- custom CFS inputs conduit
