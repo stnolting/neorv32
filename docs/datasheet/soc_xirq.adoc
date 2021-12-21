@@ -8,7 +8,7 @@
 | Hardware source file(s): | neorv32_xirq.vhd |
 | Software driver file(s): | neorv32_xirq.c |
 |                          | neorv32_xirq.h |
-| Top entity port:         | `xirq_i` | IRQ input (up to 32-bit)
+| Top entity port:         | `xirq_i` | IRQ input (32-bit, fixed)
 | Configuration generics:  | _XIRQ_NUM_CH_           | Number of IRQs to implement (0..32)
 |                          | _XIRQ_TRIGGER_TYPE_     | IRQ trigger type configuration
 |                          | _XIRQ_TRIGGER_POLARITY_ | IRQ trigger polarity configuration

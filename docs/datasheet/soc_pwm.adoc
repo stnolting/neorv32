@@ -8,7 +8,7 @@
 | Hardware source file(s): | neorv32_pwm.vhd | 
 | Software driver file(s): | neorv32_pwm.c |
 |                          | neorv32_pwm.h |
-| Top entity port:         | `pwm_o` | up to 60 PWM output channels (1-bit per channel)
+| Top entity port:         | `pwm_o` | up to 60 PWM output channels (60-bit, fixed)
 | Configuration generics:  | _IO_PWM_NUM_CH_ | number of PWM channels to implement (0..60)
 | CPU interrupts:          | none | 
 |=======================
