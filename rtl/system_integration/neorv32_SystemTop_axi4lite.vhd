@@ -176,14 +176,14 @@ entity neorv32_SystemTop_axi4lite is
     twi_sda_io    : inout std_logic; -- twi serial data line
     twi_scl_io    : inout std_logic; -- twi serial clock line
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o         : out std_logic_vector(IO_PWM_NUM_CH-1 downto 0);  -- pwm channels
+    pwm_o         : out std_logic_vector(59 downto 0);  -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i      : in  std_logic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom inputs
     cfs_out_o     : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom outputs
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o      : out std_logic; -- async serial data line
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i        : in  std_logic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0'); -- IRQ channels
+    xirq_i        : in  std_logic_vector(31 downto 0) := (others => '0'); -- IRQ channels
     -- CPU Interrupts --
     msw_irq_i     : in  std_logic := '0'; -- machine software interrupt
     mext_irq_i    : in  std_logic := '0'  -- machine external interrupt
@@ -224,14 +224,14 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
   signal spi_sdi_i_int   : std_ulogic;
   signal spi_csn_o_int   : std_ulogic_vector(07 downto 0);
   --
-  signal pwm_o_int       : std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0);
+  signal pwm_o_int       : std_ulogic_vector(59 downto 0);
   --
   signal cfs_in_i_int    : std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0);
   signal cfs_out_o_int   : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
   --
   signal neoled_o_int    : std_ulogic;
   --
-  signal xirq_i_int      : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
+  signal xirq_i_int      : std_ulogic_vector(31 downto 0);
   --
   signal msw_irq_i_int   : std_ulogic;
   signal mext_irq_i_int  : std_ulogic;
