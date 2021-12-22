@@ -122,7 +122,8 @@ package neorv32_package is
 
   -- Internal (auto-generated) Configurations -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant def_rst_val_c : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
+  constant def_rst_val_c : std_ulogic;  -- Use a deferred constant, prevents compile error with Questa
+                                        -- See IEEE 1076-2008 14.4.2.1
 
   -- Processor-Internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -2421,6 +2422,10 @@ package body neorv32_package is
     end loop; -- idx_v
     return mem_v;
   end function mem32_init_f;
+
+
+  -- Finally set deferred constant, see IEEE 1076-2008 14.4.2.1
+  constant def_rst_val_c : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
 
 
 end neorv32_package;
