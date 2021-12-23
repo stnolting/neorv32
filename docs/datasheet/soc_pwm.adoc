@@ -8,7 +8,7 @@
 | Hardware source file(s): | neorv32_pwm.vhd | 
 | Software driver file(s): | neorv32_pwm.c |
 |                          | neorv32_pwm.h |
-| Top entity port:         | `pwm_o` | up to 60 PWM output channels (1-bit per channel)
+| Top entity port:         | `pwm_o` | up to 60 PWM output channels (60-bit, fixed)
 | Configuration generics:  | _IO_PWM_NUM_CH_ | number of PWM channels to implement (0..60)
 | CPU interrupts:          | none | 
 |=======================
@@ -16,6 +16,10 @@
 The PWM controller implements a pulse-width modulation controller with up to 60 independent channels and 8-
 bit resolution per channel. The actual number of implemented channels is defined by the _IO_PWM_NUM_CH_ generic.
 Setting this generic to zero will completely remove the PWM controller from the design.
+
+[NOTE]
+The `pwm_o` has a static size of 60-bit. Is less than 60 PWM channels are configured, only the LSB-aligned channels
+(bits) are used while the remaining bits are hardwired to zero.
 
 The PWM controller is based on an 8-bit base counter with a programmable threshold comparators for each channel
 that defines the actual duty cycle. The controller can be used to drive fancy RGB-LEDs with 24-

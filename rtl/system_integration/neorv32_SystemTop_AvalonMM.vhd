@@ -189,7 +189,7 @@ entity neorv32_top_avalonmm is
     twi_scl_io     : inout std_logic := 'U'; -- twi serial clock line
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o          : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0); -- pwm channels
+    pwm_o          : out std_ulogic_vector(59 downto 0); -- pwm channels
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0) := (others => 'U'); -- custom CFS inputs conduit
@@ -203,7 +203,7 @@ entity neorv32_top_avalonmm is
     mtime_o        : out std_ulogic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
 
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i         : in  std_ulogic_vector(XIRQ_NUM_CH-1 downto 0) := (others => 'L'); -- IRQ channels
+    xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- IRQ channels
 
     -- CPU interrupts --
     mtime_irq_i    : in  std_ulogic := 'L'; -- machine timer interrupt, available if IO_MTIME_EN = false

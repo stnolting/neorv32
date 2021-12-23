@@ -171,7 +171,7 @@ entity neorv32_ProcessorTop_stdlogic is
     twi_sda_io     : inout std_logic; -- twi serial data line
     twi_scl_io     : inout std_logic; -- twi serial clock line
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o          : out std_logic_vector(IO_PWM_NUM_CH-1 downto 0); -- pwm channels
+    pwm_o          : out std_logic_vector(59 downto 0); -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_logic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom inputs
     cfs_out_o      : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom outputs
@@ -181,7 +181,7 @@ entity neorv32_ProcessorTop_stdlogic is
     mtime_i        : in  std_logic_vector(63 downto 0) := (others => '0'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
     mtime_o        : out std_logic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i         : in  std_logic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0'); -- IRQ channels
+    xirq_i         : in  std_logic_vector(31 downto 0) := (others => '0'); -- IRQ channels
     -- CPU Interrupts --
     mtime_irq_i    : in  std_logic := '0'; -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i      : in  std_logic := '0'; -- machine software interrupt
@@ -245,7 +245,7 @@ architecture neorv32_ProcessorTop_stdlogic_rtl of neorv32_ProcessorTop_stdlogic 
   signal spi_sdi_i_int   : std_ulogic;
   signal spi_csn_o_int   : std_ulogic_vector(07 downto 0);
   --
-  signal pwm_o_int       : std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0);
+  signal pwm_o_int       : std_ulogic_vector(59 downto 0);
   --
   signal cfs_in_i_int    : std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0);
   signal cfs_out_o_int   : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
@@ -255,7 +255,7 @@ architecture neorv32_ProcessorTop_stdlogic_rtl of neorv32_ProcessorTop_stdlogic 
   signal mtime_i_int     : std_ulogic_vector(63 downto 0);
   signal mtime_o_int     : std_ulogic_vector(63 downto 0);
   --
-  signal xirq_i_int      : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
+  signal xirq_i_int      : std_ulogic_vector(31 downto 0);
   --
   signal mtime_irq_i_int : std_ulogic;
   signal msw_irq_i_int   : std_ulogic;

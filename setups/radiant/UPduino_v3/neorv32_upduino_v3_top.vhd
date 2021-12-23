@@ -98,7 +98,7 @@ architecture neorv32_upduino_v3_top_rtl of neorv32_upduino_v3_top is
   signal cpu_rstn : std_ulogic;
 
   -- internal IO connection --
-  signal con_pwm     : std_ulogic_vector(02 downto 0);
+  signal con_pwm     : std_ulogic_vector(59 downto 0);
   signal con_spi_sck : std_ulogic;
   signal con_spi_sdi : std_ulogic;
   signal con_spi_sdo : std_ulogic;

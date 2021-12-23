@@ -59,7 +59,7 @@ entity neorv32_pwm is
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(07 downto 0);
     -- pwm output channels --
-    pwm_o       : out std_ulogic_vector(NUM_CHANNELS-1 downto 0)
+    pwm_o       : out std_ulogic_vector(59 downto 0)
   );
 end neorv32_pwm;
 
@@ -186,6 +186,7 @@ begin
       end if;
 
       -- channels --
+      pwm_o <= (others => '0');
       for i in 0 to NUM_CHANNELS-1 loop
         if (unsigned(pwm_cnt) >= unsigned(pwm_ch(i))) or (enable = '0') then
           pwm_o(i) <= '0';

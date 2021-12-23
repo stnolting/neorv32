@@ -132,6 +132,7 @@ architecture neorv32_ProcessorTop_UP5KDemo_rtl of neorv32_ProcessorTop_UP5KDemo 
   -- internal IO connection --
   signal con_gpio_o   : std_ulogic_vector(63 downto 0);
   signal con_gpio_i   : std_ulogic_vector(63 downto 0);
+  signal con_pwm_o    : std_ulogic_vector(59 downto 0);
   signal con_spi_sck  : std_ulogic;
   signal con_spi_sdi  : std_ulogic;
   signal con_spi_sdo  : std_ulogic;
@@ -158,6 +159,10 @@ begin
   gpio_o <= con_gpio_o(3 downto 0);
   con_gpio_i(03 downto 0) <= gpio_i;
   con_gpio_i(63 downto 4) <= (others => '0');
+
+  -- PWM --
+  pwm_o <= con_pwm_o(IO_PWM_NUM_CH-1 downto 0);
+
 
   -- The core of the problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -285,7 +290,7 @@ begin
     twi_scl_io  => twi_scl_io,                   -- twi serial clock line
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o       => pwm_o,                        -- pwm channels
+    pwm_o       => con_pwm_o,                    -- pwm channels
 
     -- Custom Functions Subsystem IO --
     cfs_in_i    => (others => '0'),              -- custom CFS inputs conduit

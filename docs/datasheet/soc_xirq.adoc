@@ -8,7 +8,7 @@
 | Hardware source file(s): | neorv32_xirq.vhd |
 | Software driver file(s): | neorv32_xirq.c |
 |                          | neorv32_xirq.h |
-| Top entity port:         | `xirq_i` | IRQ input (up to 32-bit)
+| Top entity port:         | `xirq_i` | IRQ input (32-bit, fixed)
 | Configuration generics:  | _XIRQ_NUM_CH_           | Number of IRQs to implement (0..32)
 |                          | _XIRQ_TRIGGER_TYPE_     | IRQ trigger type configuration
 |                          | _XIRQ_TRIGGER_POLARITY_ | IRQ trigger polarity configuration
@@ -22,7 +22,8 @@ single _CPU fast interrupt request_.
 **Theory of Operation**
 
 The XIRQ provides up to 32 interrupt _channels_ (configured via the _XIRQ_NUM_CH_ generic). Each bit in the `xirq_i`
-input signal vector represents one interrupt channel. An interrupt channel is enabled by setting the according bit in the
+input signal vector represents one interrupt channel. If less than 32 channels are configure, only the LSB-aligned channels
+are used while the remaining bits are left unconnected. An interrupt channel is enabled by setting the according bit in the
 interrupt enable register `IER`.
 
 If the configured trigger (see below) of an enabled channel fires, the request is stored into an internal buffer.

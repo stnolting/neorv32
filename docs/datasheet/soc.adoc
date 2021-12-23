@@ -39,11 +39,20 @@ image::neorv32_processor.png[align=center]
 The following table shows signals of the processor top entity (`rtl/core/neorv32_top.vhd`).
 The type of all signals is `std_ulogic` or `std_ulogic_vector`, respectively.
 
-[IMPORTAN]
+.Default Values of Ports
+[IMPORTANT]
 All _input signals_ provide default values in case they are not explicitly assigned during instantiation.
 For control signals the value `L` (weak pull-down) is used. For serial and parallel data signals
 the value `U` (unknown) is used. Pulled-down signals will not cause "accidental" system crashes
 since all control signals have defined level.
+
+.Configurable Amount of Channels
+[IMPORTANT]
+Some peripherals allow to configure the number of channels to-be-implemented by a generic (for example the number
+of PWM or SLINK channels). The according input/output signals have a fixed sized regardless of the actually configured
+amount of channels. If less than the maximum number of channels is configured, only the LSB-aligned channels are used:
+in case of an _input port_ the remaining bits/channels are left unconnected; in case of an _output port_ the remaining
+bits/channels are hardwired to zero.
 
 [cols="<3,^2,^2,<11"]
 [options="header",grid="rows"]
@@ -102,7 +111,7 @@ since all control signals have defined level.
 | `twi_sda_io` | 1 | inout | TWI serial data line
 | `twi_scl_io` | 1 | inout | TWI serial clock line
 4+^| **Pulse-Width Modulation Channels (<<_pulse_width_modulation_controller_pwm,PWM>>)**
-| `pwm_o` | 0..60 | out | pulse-width modulated channels
+| `pwm_o` | 60 | out | pulse-width modulated channels
 4+^| **Custom Functions Subsystem (<<_custom_functions_subsystem_cfs,CFS>>)**
 | `cfs_in_i`  | 32 | in | custom CFS input signal conduit
 | `cfs_out_o` | 32 | out | custom CFS output signal conduit

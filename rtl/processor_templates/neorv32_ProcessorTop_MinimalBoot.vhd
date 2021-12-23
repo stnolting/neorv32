@@ -110,6 +110,7 @@ architecture neorv32_ProcessorTop_MinimalBoot_rtl of neorv32_ProcessorTop_Minima
 
   -- internal IO connection --
   signal con_gpio_o : std_ulogic_vector(63 downto 0);
+  signal con_pwm_o  : std_ulogic_vector(59 downto 0);
 
 begin
 
@@ -118,6 +119,10 @@ begin
 
   -- GPIO --
   gpio_o <= con_gpio_o(3 downto 0);
+
+  -- PWM --
+  pwm_o <= con_pwm_o(IO_PWM_NUM_CH-1 downto 0);
+
 
   -- The core of the problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -245,7 +250,7 @@ begin
     twi_scl_io  => open,                         -- twi serial clock line
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o       => pwm_o,                        -- pwm channels
+    pwm_o       => con_pwm_o,                    -- pwm channels
 
     -- Custom Functions Subsystem IO --
     cfs_in_i    => (others => '0'),              -- custom CFS inputs conduit
