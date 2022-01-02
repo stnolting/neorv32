@@ -86,6 +86,9 @@ and default clock speed) for correct operation.
 | `25` | _SYSINFO_SOC_IO_SLINK_         | set if the SLINK is implemented (via top's <<_slink_num_tx>> and/or <<_slink_num_rx>> generics)
 | `26` | _SYSINFO_SOC_IO_UART1_         | set if the secondary UART1 is implemented (via top's <<_io_uart1_en>> generic)
 | `27` | _SYSINFO_SOC_IO_NEOLED_        | set if the NEOLED is implemented (via top's <<_io_neoled_en>> generic)
+| `28` | _SYSINFO_SOC_IO_XIRQ_          | set if the XIRQ is implemented (via top's <<_io_xirq_en>> generic)
+| `29` | _SYSINFO_SOC_IO_GPTMR_         | set if the GPTMR is implemented (via top's <<_io_gptmr_en>> generic)
+| `30` | _SYSINFO_SOC_IO_XIP_           | set if the XIP module is implemented (via top's <<_io_xip_en>> generic)
 |=======================
 
 
