@@ -285,30 +285,30 @@ int main() {
 //}
 
 
-  // ----------------------------------------------------------
-  // Test standard RISC-V performance counter [m]instret[h]
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] instret counter: ", cnt_test);
-
-  cnt_test++;
-
-  // make sure counter is enabled
-  asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTINHIBIT_IR));
-
-  // prepare overflow
-  neorv32_cpu_set_minstret(0x00000000FFFFFFFFULL);
-
-  // get instruction counter HIGH
-  tmp_a = neorv32_cpu_csr_read(CSR_INSTRETH);
-
-  // make sure instruction counter high has incremented and there was no exception during access
-  if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
-    test_ok();
-  }
-  else {
-    test_fail();
-  }
+//// ----------------------------------------------------------
+//// Test standard RISC-V performance counter [m]instret[h]
+//// ----------------------------------------------------------
+//neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+//PRINT_STANDARD("[%i] instret counter: ", cnt_test);
+//
+//cnt_test++;
+//
+//// make sure counter is enabled
+//asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTINHIBIT_IR));
+//
+//// prepare overflow
+//neorv32_cpu_set_minstret(0x00000000FFFFFFFFULL);
+//
+//// get instruction counter HIGH
+//tmp_a = neorv32_cpu_csr_read(CSR_INSTRETH);
+//
+//// make sure instruction counter high has incremented and there was no exception during access
+//if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+//  test_ok();
+//}
+//else {
+//  test_fail();
+//}
 
 
   // ----------------------------------------------------------
