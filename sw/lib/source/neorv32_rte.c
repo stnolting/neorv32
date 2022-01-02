@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -253,11 +253,12 @@ static void __neorv32_rte_debug_exc_handler(void) {
   if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_L_ACCESS) || (trap_cause == TRAP_CODE_S_ACCESS)) {
     register uint32_t bus_err = NEORV32_BUSKEEPER.CTRL;
     if (bus_err & (1<<BUSKEEPER_ERR_FLAG)) { // exception caused by bus system?
-      if (bus_err & (1<<BUSKEEPER_ERR_TYPE)) {
-        neorv32_uart0_print(" [TIMEOUT_ERR]");
-      }
-      else {
-        neorv32_uart0_print(" [DEVICE_ERR]");
+      switch ((bus_err & (3<<BUSKEEPER_ERR_TYPE_LSB)) & 0x03) {
+        case 0: neorv32_uart0_print(" [TIMEOUT_ERR]"); break;
+        case 1: neorv32_uart0_print(" [DEVICE_ERR]"); break;
+        case 2: neorv32_uart0_print(" [UNEXPECTED_ACK]"); break;
+        case 3: neorv32_uart0_print(" [UNEXPECTED_ERR]"); break;
+        default: break;
       }
     }
     else { // exception was not caused by bus system -> has to be caused by PMP rule violation
@@ -272,7 +273,7 @@ static void __neorv32_rte_debug_exc_handler(void) {
   // additional info
   neorv32_uart0_print(", MTVAL=");
   __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL));
-  neorv32_uart0_print(" </RTE>");
+  neorv32_uart0_print(" </RTE>\n");
 }
 
 
@@ -479,6 +480,7 @@ void neorv32_rte_print_hw_config(void) {
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_NEOLED)); neorv32_uart0_printf(" NEOLED\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_XIRQ));   neorv32_uart0_printf(" XIRQ\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_GPTMR));  neorv32_uart0_printf(" GPTMR\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_XIP));    neorv32_uart0_printf(" XIP\n");
 }
 
 
