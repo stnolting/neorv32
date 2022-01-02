@@ -8,7 +8,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -134,7 +134,8 @@ entity neorv32_top is
     IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
     IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
-    IO_GPTMR_EN                  : boolean := false   -- implement general purpose timer (GPTMR)?
+    IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
+    IO_XIP_EN                    : boolean := false   -- implement execute in place module (XIP)?
   );
   port (
     -- Global control --
@@ -164,6 +165,12 @@ entity neorv32_top is
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o        : out std_ulogic; -- indicates an executed FENCE operation
     fencei_o       : out std_ulogic; -- indicates an executed FENCEI operation
+
+    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
+    xip_csn_o      : out std_ulogic; -- chip-select, low-active
+    xip_clk_o      : out std_ulogic; -- serial clock
+    xip_sdi_i      : in  std_ulogic := 'L'; -- device data input
+    xip_sdo_o      : out std_ulogic; -- controller data output
 
     -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
     slink_tx_dat_o : out sdata_8x32_t; -- output data
@@ -247,7 +254,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal clk_div    : std_ulogic_vector(11 downto 0);
   signal clk_div_ff : std_ulogic_vector(11 downto 0);
   signal clk_gen    : std_ulogic_vector(07 downto 0);
-  signal clk_gen_en : std_ulogic_vector(08 downto 0);
+  signal clk_gen_en : std_ulogic_vector(09 downto 0);
   --
   signal wdt_cg_en    : std_ulogic;
   signal uart0_cg_en  : std_ulogic;
@@ -258,6 +265,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cfs_cg_en    : std_ulogic;
   signal neoled_cg_en : std_ulogic;
   signal gptmr_cg_en  : std_ulogic;
+  signal xip_cg_en    : std_ulogic;
 
   -- bus interface --
   type bus_interface_t is record
@@ -312,8 +320,9 @@ architecture neorv32_top_rtl of neorv32_top is
   constant resp_bus_entry_terminate_c : resp_bus_entry_t := (rdata => (others => '0'), ack => '0', err => '0');
 
   -- module response bus - device ID --
-  type resp_bus_id_t is (RESP_BUSKEEPER, RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO, RESP_MTIME, RESP_UART0, RESP_UART1, RESP_SPI,
-                         RESP_TWI, RESP_PWM, RESP_WDT, RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_SLINK, RESP_XIRQ, RESP_GPTMR);
+  type resp_bus_id_t is (RESP_BUSKEEPER, RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO, RESP_MTIME,
+                         RESP_UART0, RESP_UART1, RESP_SPI, RESP_TWI, RESP_PWM, RESP_WDT, RESP_TRNG, RESP_CFS,
+                         RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_SLINK, RESP_XIRQ, RESP_GPTMR, RESP_XIP_CT, RESP_XIP_IF);
 
   -- module response bus --
   type resp_bus_t is array (resp_bus_id_t) of resp_bus_entry_t;
@@ -340,6 +349,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal mtime_time  : std_ulogic_vector(63 downto 0); -- current system time from MTIME
   signal ext_timeout : std_ulogic;
   signal ext_access  : std_ulogic;
+  signal xip_access  : std_ulogic;
+  signal xip_page    : std_ulogic_vector(3 downto 0);
   signal debug_mode  : std_ulogic;
 
 begin
@@ -362,6 +373,7 @@ begin
   cond_sel_string_f(IO_NEOLED_EN, "NEOLED ", "") &
   cond_sel_string_f(boolean(XIRQ_NUM_CH > 0), "XIRQ ", "") &
   cond_sel_string_f(IO_GPTMR_EN, "GPTMR ", "") &
+  cond_sel_string_f(IO_XIP_EN, "XIP ", "") &
   ""
   severity note;
 
@@ -436,6 +448,7 @@ begin
       clk_gen_en(6) <= cfs_cg_en;
       clk_gen_en(7) <= neoled_cg_en;
       clk_gen_en(8) <= gptmr_cg_en;
+      clk_gen_en(9) <= xip_cg_en;
       -- actual clock generator --
       if (or_reduce_f(clk_gen_en) = '1') then
         clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
@@ -701,7 +714,8 @@ begin
     bus_ack_i  => p_bus.ack,                      -- transfer acknowledge from bus system
     bus_err_i  => p_bus.err,                      -- transfer error from bus system
     bus_tmo_i  => ext_timeout,                    -- transfer timeout (external interface)
-    bus_ext_i  => ext_access                      -- external bus access
+    bus_ext_i  => ext_access,                     -- external bus access
+    bus_xip_i  => xip_access                      -- pending XIP access
   );
 
   -- unused, BUSKEEPER **directly** issues error to the CPU --
@@ -801,6 +815,8 @@ begin
       -- Internal data memory --
       MEM_INT_DMEM_EN   => MEM_INT_DMEM_EN,    -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE,  -- size of processor-internal data memory in bytes
+      -- XIP Module --
+      XIP_ENABLE        => IO_XIP_EN,          -- XIP module implemented
       -- Interface Configuration --
       BUS_TIMEOUT       => MEM_EXT_TIMEOUT,    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
       PIPE_MODE         => MEM_EXT_PIPE_MODE,  -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
@@ -809,34 +825,36 @@ begin
     )
     port map (
       -- global control --
-      clk_i     => clk_i,                         -- global clock line
-      rstn_i    => sys_rstn,                      -- global reset line, low-active
+      clk_i      => clk_i,                         -- global clock line
+      rstn_i     => sys_rstn,                      -- global reset line, low-active
       -- host access --
-      src_i     => p_bus.src,                     -- access type (0: data, 1:instruction)
-      addr_i    => p_bus.addr,                    -- address
-      rden_i    => p_bus.re,                      -- read enable
-      wren_i    => p_bus.we,                      -- write enable
-      ben_i     => p_bus.ben,                     -- byte write enable
-      data_i    => p_bus.wdata,                   -- data in
-      data_o    => resp_bus(RESP_WISHBONE).rdata, -- data out
-      lock_i    => p_bus.lock,                    -- exclusive access request
-      ack_o     => resp_bus(RESP_WISHBONE).ack,   -- transfer acknowledge
-      err_o     => resp_bus(RESP_WISHBONE).err,   -- transfer error
-      tmo_o     => ext_timeout,                   -- transfer timeout
-      priv_i    => p_bus.priv,                    -- current CPU privilege level
-      ext_o     => ext_access,                    -- active external access
+      src_i      => p_bus.src,                     -- access type (0: data, 1:instruction)
+      addr_i     => p_bus.addr,                    -- address
+      rden_i     => p_bus.re,                      -- read enable
+      wren_i     => p_bus.we,                      -- write enable
+      ben_i      => p_bus.ben,                     -- byte write enable
+      data_i     => p_bus.wdata,                   -- data in
+      data_o     => resp_bus(RESP_WISHBONE).rdata, -- data out
+      lock_i     => p_bus.lock,                    -- exclusive access request
+      ack_o      => resp_bus(RESP_WISHBONE).ack,   -- transfer acknowledge
+      err_o      => resp_bus(RESP_WISHBONE).err,   -- transfer error
+      tmo_o      => ext_timeout,                   -- transfer timeout
+      priv_i     => p_bus.priv,                    -- current CPU privilege level
+      ext_o      => ext_access,                    -- active external access
+      -- xip page --
+      xip_page_i => xip_page,
       -- wishbone interface --
-      wb_tag_o  => wb_tag_o,                      -- request tag
-      wb_adr_o  => wb_adr_o,                      -- address
-      wb_dat_i  => wb_dat_i,                      -- read data
-      wb_dat_o  => wb_dat_o,                      -- write data
-      wb_we_o   => wb_we_o,                       -- read/write
-      wb_sel_o  => wb_sel_o,                      -- byte enable
-      wb_stb_o  => wb_stb_o,                      -- strobe
-      wb_cyc_o  => wb_cyc_o,                      -- valid cycle
-      wb_lock_o => wb_lock_o,                     -- exclusive access request
-      wb_ack_i  => wb_ack_i,                      -- transfer acknowledge
-      wb_err_i  => wb_err_i                       -- transfer error
+      wb_tag_o   => wb_tag_o,                      -- request tag
+      wb_adr_o   => wb_adr_o,                      -- address
+      wb_dat_i   => wb_dat_i,                      -- read data
+      wb_dat_o   => wb_dat_o,                      -- write data
+      wb_we_o    => wb_we_o,                       -- read/write
+      wb_sel_o   => wb_sel_o,                      -- byte enable
+      wb_stb_o   => wb_stb_o,                      -- strobe
+      wb_cyc_o   => wb_cyc_o,                      -- valid cycle
+      wb_lock_o  => wb_lock_o,                     -- exclusive access request
+      wb_ack_i   => wb_ack_i,                      -- transfer acknowledge
+      wb_err_i   => wb_err_i                       -- transfer error
     );
   end generate;
 
@@ -855,6 +873,62 @@ begin
     wb_lock_o <= '0';
     wb_tag_o  <= (others => '0');
   end generate;
+
+
+  -- Execute In Place Module (XIP) ----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_xip_inst_true:
+  if (IO_XIP_EN = true) generate
+    neorv32_xip_inst: neorv32_xip
+    port map (
+      -- global control --
+      clk_i       => clk_i,                       -- global clock line
+      rstn_i      => sys_rstn,                    -- global reset line, low-active
+      -- host access: control register access port --
+      ct_addr_i   => p_bus.addr,                  -- address
+      ct_rden_i   => io_rden,                     -- read enable
+      ct_wren_i   => io_wren,                     -- write enable
+      ct_data_i   => p_bus.wdata,                 -- data in
+      ct_data_o   => resp_bus(RESP_XIP_CT).rdata, -- data out
+      ct_ack_o    => resp_bus(RESP_XIP_CT).ack,   -- transfer acknowledge
+      -- host access: instruction fetch access port (read-only) --
+      if_addr_i   => p_bus.addr,                  -- address
+      if_rden_i   => p_bus.re,                    -- read enable
+      if_data_o   => resp_bus(RESP_XIP_IF).rdata, -- data out
+      if_ack_o    => resp_bus(RESP_XIP_IF).ack,   -- transfer acknowledge
+      -- status --
+      xip_acc_o   => xip_access,                  -- pending XIP access
+      xip_page_o  => xip_page,                    -- XIP page
+      -- clock generator --
+      clkgen_en_o => xip_cg_en,                   -- enable clock generator
+      clkgen_i    => clk_gen,
+      -- SPI device interface --
+      spi_csn_o   => xip_csn_o,                   -- chip-select, low-active
+      spi_clk_o   => xip_clk_o,                   -- serial clock
+      spi_data_i  => xip_sdi_i,                   -- device data output
+      spi_data_o  => xip_sdo_o                    -- controller data output
+    );
+    resp_bus(RESP_XIP_CT).err <= '0'; -- no access error possible
+    resp_bus(RESP_XIP_IF).err <= '0'; -- no access error possible
+  end generate;
+
+  neorv32_xip_inst_false:
+  if (IO_XIP_EN = false) generate
+    resp_bus(RESP_XIP_CT) <= resp_bus_entry_terminate_c;
+    resp_bus(RESP_XIP_IF) <= resp_bus_entry_terminate_c;
+    --
+    xip_access <= '0';
+    xip_page   <= (others => '0');
+    xip_cg_en  <= '0';
+    xip_csn_o  <= '1';
+    xip_clk_o  <= '0';
+    xip_sdo_o  <= '0';
+  end generate;
+
+
+-- ****************************************************************************************************************************
+-- IO/Peripheral Modules
+-- ****************************************************************************************************************************
 
 
   -- IO Access? -----------------------------------------------------------------------------
@@ -900,6 +974,7 @@ begin
   neorv32_cfs_inst_false:
   if (IO_CFS_EN = false) generate
     resp_bus(RESP_CFS) <= resp_bus_entry_terminate_c;
+    --
     cfs_cg_en <= '0';
     cfs_irq   <= '0';
     cfs_out_o <= (others => '0');
@@ -930,6 +1005,7 @@ begin
   neorv32_gpio_inst_false:
   if (IO_GPIO_EN = false) generate
     resp_bus(RESP_GPIO) <= resp_bus_entry_terminate_c;
+    --
     gpio_o <= (others => '0');
   end generate;
 
@@ -967,6 +1043,7 @@ begin
   neorv32_wdt_inst_false:
   if (IO_WDT_EN = false) generate
     resp_bus(RESP_WDT) <= resp_bus_entry_terminate_c;
+    --
     wdt_irq   <= '0';
     wdt_rstn  <= '1';
     wdt_cg_en <= '0';
@@ -998,6 +1075,7 @@ begin
   neorv32_mtime_inst_false:
   if (IO_MTIME_EN = false) generate
     resp_bus(RESP_MTIME) <= resp_bus_entry_terminate_c;
+    --
     mtime_time <= mtime_i; -- use external machine timer time signal
     mtime_irq  <= mtime_irq_i; -- use external machine timer interrupt
   end generate;
@@ -1061,6 +1139,7 @@ begin
   neorv32_uart0_inst_false:
   if (IO_UART0_EN = false) generate
     resp_bus(RESP_UART0) <= resp_bus_entry_terminate_c;
+    --
     uart0_txd_o   <= '0';
     uart0_rts_o   <= '0';
     uart0_cg_en   <= '0';
@@ -1107,6 +1186,7 @@ begin
   neorv32_uart1_inst_false:
   if (IO_UART1_EN = false) generate
     resp_bus(RESP_UART1) <= resp_bus_entry_terminate_c;
+    --
     uart1_txd_o   <= '0';
     uart1_rts_o   <= '0';
     uart1_cg_en   <= '0';
@@ -1146,6 +1226,7 @@ begin
   neorv32_spi_inst_false:
   if (IO_SPI_EN = false) generate
     resp_bus(RESP_SPI) <= resp_bus_entry_terminate_c;
+    --
     spi_sck_o <= '0';
     spi_sdo_o <= '0';
     spi_csn_o <= (others => '1'); -- CSn lines are low-active
@@ -1183,6 +1264,7 @@ begin
   neorv32_twi_inst_false:
   if (IO_TWI_EN = false) generate
     resp_bus(RESP_TWI) <= resp_bus_entry_terminate_c;
+    --
     twi_sda_io <= 'Z';
     twi_scl_io <= 'Z';
     twi_cg_en  <= '0';
@@ -1219,6 +1301,7 @@ begin
   neorv32_pwm_inst_false:
   if (IO_PWM_NUM_CH = 0) generate
     resp_bus(RESP_PWM) <= resp_bus_entry_terminate_c;
+    --
     pwm_cg_en <= '0';
     pwm_o     <= (others => '0');
   end generate;
@@ -1279,6 +1362,7 @@ begin
   neorv32_neoled_inst_false:
   if (IO_NEOLED_EN = false) generate
     resp_bus(RESP_NEOLED) <= resp_bus_entry_terminate_c;
+    --
     neoled_cg_en <= '0';
     neoled_irq   <= '0';
     neoled_o     <= '0';
@@ -1323,6 +1407,7 @@ begin
   neorv32_slink_inst_false:
   if (io_slink_en_c = false) generate
     resp_bus(RESP_SLINK) <= resp_bus_entry_terminate_c;
+    --
     slink_tx_irq   <= '0';
     slink_rx_irq   <= '0';
     slink_tx_dat_o <= (others => (others => '0'));
@@ -1361,6 +1446,7 @@ begin
   neorv32_xirq_inst_false:
   if (XIRQ_NUM_CH = 0) generate
     resp_bus(RESP_XIRQ) <= resp_bus_entry_terminate_c;
+    --
     xirq_irq <= '0';
   end generate;
 
@@ -1391,6 +1477,7 @@ begin
   neorv32_gptmr_inst_false:
   if (IO_GPTMR_EN = false) generate
     resp_bus(RESP_GPTMR) <= resp_bus_entry_terminate_c;
+    --
     gptmr_cg_en          <= '0';
     gptmr_irq            <= '0';
   end generate;
@@ -1447,7 +1534,8 @@ begin
     IO_SLINK_EN                  => io_slink_en_c,        -- implement stream link interface?
     IO_NEOLED_EN                 => IO_NEOLED_EN,         -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_XIRQ_NUM_CH               => XIRQ_NUM_CH,          -- number of external interrupt (XIRQ) channels to implement
-    IO_GPTMR_EN                  => IO_GPTMR_EN           -- implement general purpose timer (GPTMR)?
+    IO_GPTMR_EN                  => IO_GPTMR_EN,          -- implement general purpose timer (GPTMR)?
+    IO_XIP_EN                    => IO_XIP_EN             -- implement execute in place module (XIP)?
   )
   port map (
     -- host access --
@@ -1502,6 +1590,7 @@ begin
 
   neorv32_debug_dm_false:
   if (ON_CHIP_DEBUGGER_EN = false) generate
+    --
     dmi.req_ready  <= '0';
     dmi.resp_valid <= '0';
     dmi.resp_data  <= (others => '0');
