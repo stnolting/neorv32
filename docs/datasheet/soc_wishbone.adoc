@@ -42,6 +42,10 @@ access is delegated to the external bus interface if...
 . **and** it does not target the internal bootloader ROM or any of the IO devices - regardless if one or more of these components are
 actually implemented or not.
 
+[NOTE]
+If the Execute In Place module (XIP) is implemented accesses map to this module are not forwarded to the
+external memory interface. See section <<_execute_in_place_module_xip>> for more information.
+
 [TIP]
 See section <<_address_space>> for more information.
 
