@@ -344,6 +344,120 @@
       </registers>
     </peripheral>
 
+    <!-- XIP -->
+    <peripheral>
+      <name>XIP</name>
+      <description>Execute In Place Module</description>
+      <groupName>CIP</groupName>
+      <baseAddress>0xFFFFFF40</baseAddress>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x10</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>XIP_CTRL_EN</name>
+              <bitRange>[0:0]</bitRange>
+              <description>XIP module enable flag</description>
+            </field>
+            <field>
+              <name>XIP_CTRL_PRSC</name>
+              <bitRange>[3:1]</bitRange>
+              <description>SPI clock prescaler select</description>
+            </field>
+            <field>
+              <name>XIP_CTRL_CPOL</name>
+              <bitRange>[4:4]</bitRange>
+              <description>SPI clock (idle) polarity</description>
+            </field>
+            <field>
+              <name>XIP_CTRL_CPHA</name>
+              <bitRange>[5:5]</bitRange>
+              <description>SPI clock phase</description>
+            </field>
+            <field>
+              <name>XIP_CTRL_SPI_NBYTES</name>
+              <bitRange>[9:6]</bitRange>
+              <description>Number of bytes in SPI transmission</description>
+            </field>
+            <field>
+              <name>XIP_CTRL_XIP_EN</name>
+              <bitRange>[10:10]</bitRange>
+              <description>XIP mode enable</description>
+            </field>
+            <field>
+              <name>XIP_CTRL_XIP_ABYTES</name>
+              <bitRange>[12:11]</bitRange>
+              <description>Number of XIP address bytes (minus 1)</description>
+            </field>
+            <field>
+              <name>XIP_CTRL_QSPI_EN</name>
+              <bitRange>[13:13]</bitRange>
+              <description>QSPI mode enable</description>
+            </field>
+            <field>
+              <name>XIP_CTRL_RD_CMD</name>
+              <bitRange>[21:14]</bitRange>
+              <description>SPI flash read command</description>
+            </field>
+            <field>
+              <name>XIP_CTRL_PHY_BUSY</name>
+              <bitRange>[29:29]</bitRange>
+              <access>read-only</access>
+              <description>SPI PHY busy</description>
+            </field>
+            <field>
+              <name>XIP_CTRL_XIP_READY</name>
+              <bitRange>[30:30]</bitRange>
+              <access>read-only</access>
+              <description>XIP access ready (setup done)</description>
+            </field>
+            <field>
+              <name>XIP_CTRL_XIP_BUSY</name>
+              <bitRange>[31:31]</bitRange>
+              <access>read-only</access>
+              <description>XIP access in progress</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>MAP</name>
+          <description>Address mapping resgiters</description>
+          <addressOffset>0x04</addressOffset>
+          <fields>
+            <field>
+              <name>XIP_MAP_ADDR_MASK</name>
+              <bitRange>[27:8]</bitRange>
+              <description>XIP access address mask bits</description>
+            </field>
+            <field>
+              <name>XIP_MAP_PAGE</name>
+              <bitRange>[31:28]</bitRange>
+              <description>XIP access page select</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>DATA_LO</name>
+          <description>Direct SPI access - data register low</description>
+          <addressOffset>0x0C</addressOffset>
+        </register>
+        <register>
+          <name>DATA_HI</name>
+          <description>Direct SPI access - data register high</description>
+          <addressOffset>0x10</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
     <!-- GPTMR -->
     <peripheral>
       <name>GPTMR</name>
@@ -416,9 +530,9 @@
           <fields>
             <field>
               <name>BUSKEEPER_ERR_TYPE</name>
-              <bitRange>[0:0]</bitRange>
+              <bitRange>[1:0]</bitRange>
               <access>read-only</access>
-              <description>Bus error type: 0=device error, 1=access timeout</description>
+              <description>Bus error type: 0=device error, 1=access timeout, 2=unexpected ACK, 3=unexpected ERR</description>
             </field>
             <field>
               <name>BUSKEEPER_ERR_FLAG</name>
@@ -1144,6 +1258,7 @@
             <field><name>SYSINFO_SOC_IO_NEOLED</name><bitRange>[27:27]</bitRange><description>NeoPixel-compatible smart LED interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_XIRQ</name><bitRange>[28:28]</bitRange><description>External interrupt controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPTMR</name><bitRange>[29:29]</bitRange><description>General purpose timer implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_XIP</name><bitRange>[30:30]</bitRange><description>Execute in place module implemented</description></field>
           </fields>
         </register>
         <register>
