@@ -32,13 +32,15 @@ constant from the processor's VHDL package file (`rtl/neorv32_package.vhd`). The
 In case of a bus access fault exception application software can evaluate the Bus Keeper's control register
 `NEORV32_BUSKEEPER.CTRL` to retrieve further details of the bus exception. The _BUSKEEPER_ERR_FLAG_ bit indicates
 that an actual bus access fault has occurred. The bit is sticky once set and is automatically cleared when reading or
-writing the `NEORV32_BUSKEEPER.CTRL` register. The _BUSKEEPER_ERR_TYPE_ indicated the tape of the bus fault:
+writing the `NEORV32_BUSKEEPER.CTRL` register. The _BUSKEEPER_ERR_TYPE_ bits indicate the tape of the bus fault:
 
-* _BUSKEEPER_ERR_TYPE_ = `0` - "Device Error": The bus access exception was cause by the memory-mapped device that
+* _BUSKEEPER_ERR_TYPE_ = 0 - "Device Error": The bus access exception was cause by the memory-mapped device that
 has been accessed (the device asserted it's `err_o`).
-* _BUSKEEPER_ERR_TYPE_ = `1` - "Timeout Error": The bus access exception was caused by the Bus Keeper because the
+* _BUSKEEPER_ERR_TYPE_ = 1 - "Timeout Error": The bus access exception was caused by the Bus Keeper because the
 accessed memory-mapped device did not respond within the access time window. Note that this error type can also be raised
 by the optional timeout feature of the <<_processor_external_memory_interface_wishbone_axi4_lite>>).
+* _BUSKEEPER_ERR_TYPE_ = 2 - "Unexpected ACK": There was an ACK signal received while there was no pending transfer.
+* _BUSKEEPER_ERR_TYPE_ = 3 - "Unexpected ERR": There was an ERR signal received while there was no pending transfer.
 
 [NOTE]
 Bus access fault exceptions are also raised if a physical memory protection rule is violated. In this case
@@ -50,6 +52,7 @@ the _BUSKEEPER_ERR_FLAG_ bit remains zero.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.2+<| `0xffffff7C` .2+<| `NEORV32_BUSKEEPER.CTRL` <|`0`  _BUSKEEPER_ERR_TYPE_ ^| r/- <| Bus error type, valid if _BUSKEEPER_ERR_FLAG_ is set: `0`=device error, `1`=access timeout
-                                                  <|`31` _BUSKEEPER_ERR_FLAG_ ^| r/- <| Sticky error flag, clears after read or write access
+.3+<| `0xffffff7C` .3+<| `NEORV32_BUSKEEPER.CTRL` <|`0`  _BUSKEEPER_ERR_TYPE_LSB_ ^| r/- .8+<| Bus error type, valid if _BUSKEEPER_ERR_FLAG_ is set: 0=device error, 1=access timeout, 2=unexpected ACK, 3=unexpected ERR
+                                                  <|`1`  _BUSKEEPER_ERR_TYPE_MSB_ ^| r/- 
+                                                  <|`31` _BUSKEEPER_ERR_FLAG_     ^| r/- <| Sticky error flag, clears after read or write access
 |=======================
