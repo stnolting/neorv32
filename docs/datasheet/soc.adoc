@@ -601,14 +601,14 @@ and instruction memories there is not point of implementing the i-cache.
 
 
 :sectnums!:
-===== _ICACHE_NUM_BLOCK_
+===== _ICACHE_NUM_BLOCKS_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
 | **ICACHE_NUM_BLOCKS** | _natural_ | 4
 3+| Number of blocks (cache "pages" or "lines") in the instruction cache. Has to be a power of two. Has no
-effect when <<_icache_dmem_en>> is false.
+effect when <<_icache_en>> is false.
 |======
 
 
@@ -620,7 +620,7 @@ effect when <<_icache_dmem_en>> is false.
 |======
 | **ICACHE_BLOCK_SIZE** | _natural_ | 64
 3+| Size in bytes of each block in the instruction cache. Has to be a power of two. Has no effect when
-<<_icache_dmem_en>> is _false_.
+<<_icache_en>> is _false_.
 |======
 
 
@@ -632,7 +632,7 @@ effect when <<_icache_dmem_en>> is false.
 |======
 | **ICACHE_ASSOCIATIVITY** | _natural_ | 1
 3+| Associativity (= number of sets) of the instruction cache. Has to be a power of two. Allowed configurations:
-`1` = 1 set, direct mapped; `2` = 2-way set-associative. Has no effect when <<_icache_dmem_en>> is _false_.
+`1` = 1 set, direct mapped; `2` = 2-way set-associative. Has no effect when <<_icache_en>> is _false_.
 |======
 
 
@@ -1248,7 +1248,7 @@ and byte (not for instruction fetch) quantities (requiring an accordingly aligne
 [TIP]
 The following table shows the _default hardware-defined_ physical memory attributes of each main address space region.
 Additional user-defined attributes (for example certain read/write/execute rights for specific address space regions) can be
-provided using the RISC-V <<_machine_physical_memory_protection>>.
+provided using the RISC-V <<_machine_physical_memory_protection_csrs>>.
 
 [cols="^1,^2,^2,^3,^2"]
 [options="header",grid="rows"]

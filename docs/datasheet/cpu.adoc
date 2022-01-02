@@ -260,7 +260,7 @@ RISC-V compatibility.
 
 .Physical Memory Protection
 [IMPORTANT]
-The physical memory protection (see section <<_machine_physical_memory_protection>>)
+The physical memory protection (see section <<_machine_physical_memory_protection_csrs>>)
 only supports the modes _OFF_ and _NAPOT_ yet and a minimal granularity of 8 bytes per region.
 
 .Atomic Memory Operations
@@ -699,7 +699,7 @@ In this case the following additional CSRs are available:
 * `pmpaddr*` (0..63, depending on configuration): PMP address registers
 
 [TIP]
-See section <<_machine_physical_memory_protection>> for more information regarding the PMP CSRs.
+See section <<_machine_physical_memory_protection_csrs>> for more information regarding the PMP CSRs.
 
 The actual number of regions and the minimal region granularity are defined via the top entity
 `PMP_MIN_GRANULARITY` and `PMP_NUM_REGIONS` generics. `PMP_MIN_GRANULARITY` defines the minimal available
