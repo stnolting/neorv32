@@ -869,7 +869,7 @@ enum NEORV32_XIP_MAP_enum {
   XIP_MAP_ADDR_MASK_MSB = 27, /**< XIP address mapping register(27) (r/w): Address mask bit 27, MSB */
 
   XIP_MAP_PAGE_LSB      = 28, /**< XIP address mapping register(28) (r/w): 4-bit page select LSB */
-  XIP_MAP_PAGE_MSB      = 31, /**< XIP address mapping register(31) (r/w): 4-bit page select MSB */
+  XIP_MAP_PAGE_MSB      = 31  /**< XIP address mapping register(31) (r/w): 4-bit page select MSB */
 };
 /**@}*/
 

@@ -127,7 +127,7 @@ begin
       if (control.bus_err = '1') then -- sticky error flag
         err_flag <= '1';
         err_type <= control.err_type;
-      elsif ((wren or rden) = '1') then -- clear on or read or write
+      elsif ((wren or rden) = '1') then -- clear on read or write
         err_flag <= '0';
         err_type <= "00"; -- don't care
       end if;
