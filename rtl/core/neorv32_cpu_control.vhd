@@ -9,7 +9,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -395,7 +395,7 @@ begin
       fetch_engine.state      <= fetch_engine.state_nxt;
       fetch_engine.state_prev <= fetch_engine.state;
       fetch_engine.restart    <= fetch_engine.restart_nxt or fetch_engine.reset;
-      if (fetch_engine.restart = '1') then
+      if (fetch_engine.restart = '1') and (fetch_engine.state = IFETCH_REQUEST) then -- only update PC if no fetch request is pending
         fetch_engine.pc <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- initialize with "real" application PC
       else
         fetch_engine.pc <= fetch_engine.pc_nxt;
@@ -421,7 +421,7 @@ begin
     -- instruction prefetch buffer defaults --
     ipb.we    <= '0';
     ipb.wdata <= be_instr_i & ma_instr_i & instr_i(31 downto 0); -- store exception info and instruction word
-    ipb.clear <= fetch_engine.restart;
+    ipb.clear <= fetch_engine.restart; -- clear instruction buffer while being reset
 
     -- state machine --
     case fetch_engine.state is
@@ -438,10 +438,9 @@ begin
       -- ------------------------------------------------------------
         fetch_engine.bus_err_ack <= be_instr_i or ma_instr_i; -- ACK bus/alignment errors
         if (bus_i_wait_i = '0') or (be_instr_i = '1') or (ma_instr_i = '1') then -- wait for bus response
-          fetch_engine.pc_nxt      <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
-          ipb.we                   <= not fetch_engine.restart; -- write to IPB if not being reset
-          fetch_engine.restart_nxt <= '0';
-          fetch_engine.state_nxt   <= IFETCH_REQUEST;
+          fetch_engine.pc_nxt    <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
+          ipb.we                 <= not fetch_engine.restart; -- write to IPB if not being reset
+          fetch_engine.state_nxt <= IFETCH_REQUEST;
         end if;
 
       when others => -- undefined

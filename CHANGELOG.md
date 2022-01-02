@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 02.01.2022 | 1.6.5.2 | :bug: fixed minor bug in CPU's instruction fetch unit (only issue new instruction fetch request when the previous one has been completed) |
 | 16.12.2021 |[**:rocket:1.6.5**](https://github.com/stnolting/neorv32/releases/tag/v1.6.5) | **New release** |
 | 15.12.2021 | 1.6.4.10 | minor logic optimization of CPU's pipeline front-end (instruction fetch and instruction issue) |
 | 14.12.2021 | 1.6.4.9 | optimized CPU's multiplication/division co-processor: divisions are 1 cycle faster, fast-multiplications (when using DSPs) are 1 cycle faster, slightly less resource utilization, see [PR #240](https://github.com/stnolting/neorv32/pull/240) |
