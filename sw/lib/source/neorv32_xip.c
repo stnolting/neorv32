@@ -103,6 +103,8 @@ int neorv32_xip_set_mapping(uint8_t page, uint32_t addr_mask) {
     return 1;
   }
 
+  addr_mask >>= 8; // remove the always-set bits
+
   uint32_t map = 0;
   map |= ((uint32_t)(page & 0x0F)) << XIP_MAP_PAGE_LSB;
   map |= (addr_mask & 0x000FFFFF) << XIP_MAP_ADDR_MASK_LSB;
