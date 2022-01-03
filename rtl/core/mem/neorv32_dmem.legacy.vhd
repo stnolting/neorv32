@@ -70,7 +70,7 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Using CYCLONE-2-optimized HDL style DMEM." severity note;
+  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Using legacy HDL style DMEM." severity note;
   assert false report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal DMEM (RAM, " & natural'image(DMEM_SIZE) & " bytes)." severity note;
 
 
