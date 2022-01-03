@@ -676,7 +676,7 @@ begin
   p_bus.fence <= cpu_d.fence or cpu_i.fence;
 
   -- bus response --
-  bus_response: process(resp_bus)
+  bus_response: process(resp_bus, bus_error)
     variable rdata_v : std_ulogic_vector(data_width_c-1 downto 0);
     variable ack_v   : std_ulogic;
     variable err_v   : std_ulogic;
@@ -690,8 +690,8 @@ begin
       err_v   := err_v   or resp_bus(i).err;   -- error
     end loop; -- i
     p_bus.rdata <= rdata_v; -- processor bus: CPU transfer data input
-    p_bus.ack   <= ack_v;   -- processor bus: CPU transfer ACK input
-    p_bus.err   <= err_v;   -- processor bus: CPU transfer data bus error input
+    p_bus.ack   <= ack_v and (not bus_error); -- processor bus: CPU transfer ACK input (can be overridden by BUSKEEPER)
+    p_bus.err   <= err_v; -- processor bus: CPU transfer data bus error input
   end process;
 
 
@@ -705,6 +705,7 @@ begin
     addr_i     => p_bus.addr,                     -- address
     rden_i     => io_rden,                        -- read enable
     wren_i     => io_wren,                        -- byte write enable
+    data_i     => p_bus.wdata,                    -- data in
     data_o     => resp_bus(RESP_BUSKEEPER).rdata, -- data out
     ack_o      => resp_bus(RESP_BUSKEEPER).ack,   -- transfer acknowledge
     err_o      => bus_error,                      -- transfer error
