@@ -5,7 +5,7 @@
 -- # flash memory. Two host ports are implemented: once for accessing the control and status       #
 -- # registers (mapped to the processor's IO space) and one for the actual instruction/data fetch. #
 -- # The actual address mapping of the "fetch interface" is done by programming special control    #
--- # register providing very high flexibility.                                                     #
+-- # register bits.                                                                                #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -468,6 +468,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library neorv32;
+use neorv32.neorv32_package.all;
+
 entity neorv32_xip_phy is
   port (
     -- global control --
@@ -567,7 +570,7 @@ begin
             spi_clk_o <= cf_cpha_i xnor cf_cpol_i;
             if (spi_clk_en_i = '1') then
               ctrl.sreg <= ctrl.sreg(ctrl.sreg'left-1 downto 0) & ctrl.di_sync(1);
-              if (ctrl.bitcnt = "0000000") then -- all bits transferred?
+              if (or_reduce_f(ctrl.bitcnt) = '0') then -- all bits transferred?
                 ctrl.state <= S_DONE; -- transmission done
               else
                 ctrl.state <= S_RTX_A; -- next bit
