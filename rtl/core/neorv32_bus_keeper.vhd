@@ -2,12 +2,12 @@
 -- # << NEORV32 - Bus Keeper (BUSKEEPER) >>                                                        #
 -- # ********************************************************************************************* #
 -- # This unit monitors the processor-internal bus. If the accessed module does not respond within #
--- # the defined number of  cycles (VHDL package: max_proc_int_response_time_c) or issues an ERROR #
--- # conditions the BUS KEEPER asserts the error signal to inform the CPU.                         #
+-- # the defined number of cycles (VHDL package: max_proc_int_response_time_c) or issues an ERROR  #
+-- # condition, the BUS KEEPER asserts the error signal to inform the CPU.                         #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -61,7 +61,8 @@ entity neorv32_bus_keeper is
     bus_ack_i  : in  std_ulogic; -- transfer acknowledge from bus system
     bus_err_i  : in  std_ulogic; -- transfer error from bus system
     bus_tmo_i  : in  std_ulogic; -- transfer timeout (external interface)
-    bus_ext_i  : in  std_ulogic  -- external bus access
+    bus_ext_i  : in  std_ulogic; -- external bus access
+    bus_xip_i  : in  std_ulogic  -- pending XIP access
   );
 end neorv32_bus_keeper;
 
@@ -72,12 +73,19 @@ architecture neorv32_bus_keeper_rtl of neorv32_bus_keeper is
   constant lo_abb_c : natural := index_size_f(buskeeper_size_c); -- low address boundary bit
 
   -- Control register --
-  constant ctrl_err_type_c : natural :=  0; -- r/-: error type: 0=device error, 1=access timeout
-  constant ctrl_err_flag_c : natural := 31; -- r/c: bus error encountered, sticky; cleared by writing zero
+  constant ctrl_err_type_lsb_c : natural :=  0; -- r/-: error type LSB: 0=device error, 1=access timeout
+  constant ctrl_err_type_msb_c : natural :=  1; -- r/-: error type MSB: 2=unexpected ACK, 3=unexpected ERR
+  constant ctrl_err_flag_c     : natural := 31; -- r/c: bus error encountered, sticky; cleared by writing zero
+
+  -- error codes --
+  constant err_device_c    : std_ulogic_vector(1 downto 0) := "00"; -- device access error
+  constant err_timeout_c   : std_ulogic_vector(1 downto 0) := "01"; -- timeout error
+  constant err_unexp_ack_c : std_ulogic_vector(1 downto 0) := "10"; -- unexpected ACK signal error
+  constant err_unexp_err_c : std_ulogic_vector(1 downto 0) := "11"; -- unexpected ERR signal error
 
   -- sticky error flags --
   signal err_flag : std_ulogic;
-  signal err_type : std_ulogic;
+  signal err_type : std_ulogic_vector(1 downto 0);
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
@@ -88,7 +96,7 @@ architecture neorv32_bus_keeper_rtl of neorv32_bus_keeper is
   type control_t is record
     pending  : std_ulogic;
     timeout  : std_ulogic_vector(index_size_f(max_proc_int_response_time_c) downto 0);
-    err_type : std_ulogic;
+    err_type : std_ulogic_vector(1 downto 0);
     bus_err  : std_ulogic;
   end record;
   signal control : control_t;
@@ -109,25 +117,30 @@ begin
 
   -- Read/Write Access ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(clk_i)
+  rw_access: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      ack_o    <= '-';
+      data_o   <= (others => '-');
+      err_flag <= '0';
+      err_type <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- bus handshake --
       ack_o <= wren or rden;
 
       -- read access --
       data_o <= (others => '0');
       if (rden = '1') then
-        data_o(ctrl_err_type_c) <= err_type;
+        data_o(ctrl_err_type_msb_c downto ctrl_err_type_lsb_c) <= err_type;
         data_o(ctrl_err_flag_c) <= err_flag;
       end if;
       --
       if (control.bus_err = '1') then -- sticky error flag
         err_flag <= '1';
         err_type <= control.err_type;
-      elsif ((wren or rden) = '1') then -- clear on or read or write
+      elsif ((wren or rden) = '1') then -- clear on read or write
         err_flag <= '0';
-        err_type <= '0';
+        err_type <= (others => '0');
       end if;
     end if;
   end process rw_access;
@@ -140,8 +153,8 @@ begin
     if (rstn_i = '0') then
       control.pending  <= '0';
       control.bus_err  <= '0';
-      control.err_type <= def_rst_val_c;
-      control.timeout  <= (others => def_rst_val_c);
+      control.err_type <= (others => '-');
+      control.timeout  <= (others => '-');
     elsif rising_edge(clk_i) then
       -- defaults --
       control.bus_err <= '0';
@@ -152,20 +165,28 @@ begin
         if (bus_rden_i = '1') or (bus_wren_i = '1') then
           control.pending <= '1';
         end if;
+        -- unexpected bus response --
+        if (bus_ack_i = '1') then
+          control.err_type <= err_unexp_ack_c; -- unexpected ACK
+          control.bus_err  <= '1';
+        elsif (bus_err_i = '1') then
+          control.err_type <= err_unexp_err_c; -- unexpected ERR
+          control.bus_err  <= '1';
+        end if;
       -- access monitor: PENDING --
       else
         control.timeout <= std_ulogic_vector(unsigned(control.timeout) - 1); -- countdown timer
         if (bus_err_i = '1') then -- error termination by bus system
-          control.err_type <= '0'; -- device error
+          control.err_type <= err_device_c; -- device error
           control.bus_err  <= '1';
           control.pending  <= '0';
-        elsif ((or_reduce_f(control.timeout) = '0') and (bus_ext_i = '0')) or -- internal access timeout
+        elsif ((or_reduce_f(control.timeout) = '0') and (bus_ext_i = '0') and (bus_xip_i = '0')) or -- valid internal access timeout
               (bus_tmo_i = '1') then -- external access timeout
-          control.err_type <= '1'; -- timeout error
+          control.err_type <= err_timeout_c; -- timeout error
           control.bus_err  <= '1';
           control.pending  <= '0';
         elsif (bus_ack_i = '1') then -- normal termination by bus system
-          control.err_type <= '0'; -- don't care
+          control.err_type <= (others => '0'); -- don't care
           control.bus_err  <= '0';
           control.pending  <= '0';
         end if;

@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -125,7 +125,8 @@ entity neorv32_top_avalonmm is
     IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
     IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
-    IO_GPTMR_EN                  : boolean := false   -- implement general purpose timer (GPTMR)?
+    IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
+    IO_XIP_EN                    : boolean := false   -- implement execute in place module (XIP)?
   );
   port (
     -- Global control --
@@ -142,15 +143,21 @@ entity neorv32_top_avalonmm is
     -- AvalonMM interface
     read_o         : out std_logic;
     write_o        : out std_logic;
-    waitrequest_i  : in std_logic := '0';
+    waitrequest_i  : in  std_logic := '0';
     byteenable_o   : out std_logic_vector(3 downto 0);
     address_o      : out std_logic_vector(31 downto 0);
     writedata_o    : out std_logic_vector(31 downto 0);
-    readdata_i     : in std_logic_vector(31 downto 0) := (others => '0');
+    readdata_i     : in  std_logic_vector(31 downto 0) := (others => '0');
 
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o        : out std_ulogic; -- indicates an executed FENCE operation
     fencei_o       : out std_ulogic; -- indicates an executed FENCEI operation
+
+    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
+    xip_csn_o      : out std_ulogic; -- chip-select, low-active
+    xip_clk_o      : out std_ulogic; -- serial clock
+    xip_sdi_i      : in  std_ulogic := 'L'; -- device data input
+    xip_sdo_o      : out std_ulogic; -- controller data output
 
     -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
     slink_tx_dat_o : out sdata_8x32_t; -- output data
@@ -319,7 +326,8 @@ begin
     IO_CFS_OUT_SIZE => IO_CFS_OUT_SIZE,
     IO_NEOLED_EN => IO_NEOLED_EN,
     IO_NEOLED_TX_FIFO => IO_NEOLED_TX_FIFO,
-    IO_GPTMR_EN => IO_GPTMR_EN
+    IO_GPTMR_EN => IO_GPTMR_EN,
+    IO_XIP_EN => IO_XIP_EN
     )
   port map (
     -- Global control --
@@ -349,6 +357,12 @@ begin
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o => fence_o,
     fencei_o => fencei_o,
+
+    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
+    xip_csn_o => xip_csn_o,
+    xip_clk_o => xip_clk_o,
+    xip_sdi_i => xip_sdi_i,
+    xip_sdo_o => xip_sdo_o,
 
     -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
     slink_tx_dat_o => slink_tx_dat_o,

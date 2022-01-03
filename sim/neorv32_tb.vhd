@@ -7,7 +7,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -219,7 +219,7 @@ begin
     if ci_mode then
       -- No need to send the full expectation in one big chunk
       check_uart(net, uart1_rx_handle, nul & nul);
-      check_uart(net, uart1_rx_handle, "0/46" & cr & lf);
+      check_uart(net, uart1_rx_handle, "0/45" & cr & lf);
     end if;
 
     -- Apply some random data on each SLINK inputs and expect it to
@@ -347,7 +347,8 @@ begin
     IO_CFS_OUT_SIZE              => 32,            -- size of CFS output conduit in bits
     IO_NEOLED_EN                 => true,          -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            => 8,             -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
-    IO_GPTMR_EN                  => true           -- implement general purpose timer (GPTMR)?
+    IO_GPTMR_EN                  => true,          -- implement general purpose timer (GPTMR)?
+    IO_XIP_EN                    => true           -- implement execute in place module (XIP)?
   )
   port map (
     -- Global control --
@@ -374,6 +375,11 @@ begin
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o        => open,            -- indicates an executed FENCE operation
     fencei_o       => open,            -- indicates an executed FENCEI operation
+    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
+    xip_csn_o      => open,            -- chip-select, low-active
+    xip_clk_o      => open,            -- serial clock
+    xip_sdi_i      => '1',             -- device data input
+    xip_sdo_o      => open,            -- controller data output
     -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
     slink_tx_dat_o => slink_dat,       -- output data
     slink_tx_val_o => slink_val,       -- valid output

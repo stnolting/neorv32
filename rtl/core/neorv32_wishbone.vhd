@@ -11,7 +11,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -63,34 +63,37 @@ entity neorv32_wishbone is
   );
   port (
     -- global control --
-    clk_i     : in  std_ulogic; -- global clock line
-    rstn_i    : in  std_ulogic; -- global reset line, low-active
+    clk_i      : in  std_ulogic; -- global clock line
+    rstn_i     : in  std_ulogic; -- global reset line, low-active
     -- host access --
-    src_i     : in  std_ulogic; -- access type (0: data, 1:instruction)
-    addr_i    : in  std_ulogic_vector(31 downto 0); -- address
-    rden_i    : in  std_ulogic; -- read enable
-    wren_i    : in  std_ulogic; -- write enable
-    ben_i     : in  std_ulogic_vector(03 downto 0); -- byte write enable
-    data_i    : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o    : out std_ulogic_vector(31 downto 0); -- data out
-    lock_i    : in  std_ulogic; -- exclusive access request
-    ack_o     : out std_ulogic; -- transfer acknowledge
-    err_o     : out std_ulogic; -- transfer error
-    tmo_o     : out std_ulogic; -- transfer timeout
-    priv_i    : in  std_ulogic_vector(01 downto 0); -- current CPU privilege level
-    ext_o     : out std_ulogic; -- active external access
+    src_i      : in  std_ulogic; -- access type (0: data, 1:instruction)
+    addr_i     : in  std_ulogic_vector(31 downto 0); -- address
+    rden_i     : in  std_ulogic; -- read enable
+    wren_i     : in  std_ulogic; -- write enable
+    ben_i      : in  std_ulogic_vector(03 downto 0); -- byte write enable
+    data_i     : in  std_ulogic_vector(31 downto 0); -- data in
+    data_o     : out std_ulogic_vector(31 downto 0); -- data out
+    lock_i     : in  std_ulogic; -- exclusive access request
+    ack_o      : out std_ulogic; -- transfer acknowledge
+    err_o      : out std_ulogic; -- transfer error
+    tmo_o      : out std_ulogic; -- transfer timeout
+    priv_i     : in  std_ulogic_vector(01 downto 0); -- current CPU privilege level
+    ext_o      : out std_ulogic; -- active external access
+    -- xip configuration --
+    xip_en_i   : in  std_ulogic; -- XIP module enabled
+    xip_page_i : in  std_ulogic_vector(03 downto 0); -- XIP memory page
     -- wishbone interface --
-    wb_tag_o  : out std_ulogic_vector(02 downto 0); -- request tag
-    wb_adr_o  : out std_ulogic_vector(31 downto 0); -- address
-    wb_dat_i  : in  std_ulogic_vector(31 downto 0); -- read data
-    wb_dat_o  : out std_ulogic_vector(31 downto 0); -- write data
-    wb_we_o   : out std_ulogic; -- read/write
-    wb_sel_o  : out std_ulogic_vector(03 downto 0); -- byte enable
-    wb_stb_o  : out std_ulogic; -- strobe
-    wb_cyc_o  : out std_ulogic; -- valid cycle
-    wb_lock_o : out std_ulogic; -- exclusive access request
-    wb_ack_i  : in  std_ulogic; -- transfer acknowledge
-    wb_err_i  : in  std_ulogic  -- transfer error
+    wb_tag_o   : out std_ulogic_vector(02 downto 0); -- request tag
+    wb_adr_o   : out std_ulogic_vector(31 downto 0); -- address
+    wb_dat_i   : in  std_ulogic_vector(31 downto 0); -- read data
+    wb_dat_o   : out std_ulogic_vector(31 downto 0); -- write data
+    wb_we_o    : out std_ulogic; -- read/write
+    wb_sel_o   : out std_ulogic_vector(03 downto 0); -- byte enable
+    wb_stb_o   : out std_ulogic; -- strobe
+    wb_cyc_o   : out std_ulogic; -- valid cycle
+    wb_lock_o  : out std_ulogic; -- exclusive access request
+    wb_ack_i   : in  std_ulogic; -- transfer acknowledge
+    wb_err_i   : in  std_ulogic  -- transfer error
   );
 end neorv32_wishbone;
 
@@ -103,6 +106,7 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
   signal int_imem_acc : std_ulogic;
   signal int_dmem_acc : std_ulogic;
   signal int_boot_acc : std_ulogic;
+  signal xip_acc      : std_ulogic;
   signal xbus_access  : std_ulogic;
 
   -- bus arbiter
@@ -160,8 +164,10 @@ begin
   int_dmem_acc <= '1' when (addr_i(31 downto index_size_f(MEM_INT_DMEM_SIZE)) = dmem_base_c(31 downto index_size_f(MEM_INT_DMEM_SIZE))) and (MEM_INT_DMEM_EN = true) else '0';
   -- access to processor-internal BOOTROM or IO devices? --
   int_boot_acc <= '1' when (addr_i(31 downto 16) = boot_rom_base_c(31 downto 16)) else '0'; -- hacky!
+  -- XIP access? --
+  xip_acc      <= '1' when (xip_en_i = '1') and (addr_i(31 downto 28) = xip_page_i) else '0';
   -- actual external bus access? --
-  xbus_access <= (not int_imem_acc) and (not int_dmem_acc) and (not int_boot_acc);
+  xbus_access  <= (not int_imem_acc) and (not int_dmem_acc) and (not int_boot_acc) and (not xip_acc);
 
 
   -- Bus Arbiter -----------------------------------------------------------------------------

@@ -50,9 +50,9 @@ and default clock speed) for correct operation.
 | `5`  | _SYSINFO_CPU_ZFINX_     | `Zfinx` extension (`F` sub-/alternative-extension) available when set (via top's <<_cpu_extension_riscv_zfinx>> generic)
 | `6`  | _SYSINFO_CPU_ZXSCNT_    | Custom extension - _Small_ CPU counters: `[m]cycle` & `[m]instret` CSRs have less than 64-bit when set (via top's <<_cpu_cnt_width>> generic)
 | `7`  | _SYSINFO_CPU_ZXNOCNT_   | Custom extension - _NO_ CPU counters: `[m]cycle` & `[m]instret` CSRs are NOT available at all when set (via top's <<_cpu_cnt_width>> generic)
-| `8`  | _SYSINFO_CPU_PMP_       | `PMP` (physical memory protection) extension available when set (via top's <<_>> generic)
-| `9`  | _SYSINFO_CPU_HPM_       | `HPM` (hardware performance monitors) extension available when set (via top's <<_>> generic)
-| `10` | _SYSINFO_CPU_DEBUGMODE_ | RISC-V CPU `debug_mode` available when set (via top's <<_>> generic)
+| `8`  | _SYSINFO_CPU_PMP_       | `PMP` (physical memory protection) extension available when set (via top's <<_pmp_num_regions>> generic)
+| `9`  | _SYSINFO_CPU_HPM_       | `HPM` (hardware performance monitors) extension available when set (via top's <<_cpu_extension_riscv_zihpm>> generic)
+| `10` | _SYSINFO_CPU_DEBUGMODE_ | RISC-V CPU `debug_mode` available when set (via top's <<_on_chip_debugger_en>> generic)
 | `30  | _SYSINFO_CPU_FASTMUL_   | fast multiplication available when set (via top's <<_fast_mul_en>> generic)
 | `31` | _SYSINFO_CPU_FASTSHIFT_ | fast shifts available when set (via top's <<_fast_shift_en>> generic)
 |=======================
@@ -79,13 +79,16 @@ and default clock speed) for correct operation.
 | `18` | _SYSINFO_SOC_IO_UART0_         | set if the primary UART0 is implemented (via top's <<_io_uart0_en>> generic)
 | `19` | _SYSINFO_SOC_IO_SPI_           | set if the SPI is implemented (via top's <<_io_spi_en>> generic)
 | `20` | _SYSINFO_SOC_IO_TWI_           | set if the TWI is implemented (via top's <<_io_twi_en>> generic)
-| `21` | _SYSINFO_SOC_IO_PWM_           | set if the PWM is implemented (via top's <<_io_pwm_en>> generic)
+| `21` | _SYSINFO_SOC_IO_PWM_           | set if the PWM is implemented (via top's <<_io_pwm_num_ch>> generic)
 | `22` | _SYSINFO_SOC_IO_WDT_           | set if the WDT is implemented (via top's <<_io_wdt_en>> generic)
 | `23` | _SYSINFO_SOC_IO_CFS_           | set if the custom functions subsystem is implemented (via top's <<_io_cfs_en>> generic)
 | `24` | _SYSINFO_SOC_IO_TRNG_          | set if the TRNG is implemented (via top's _IO_TRNG_EN_ generic)
 | `25` | _SYSINFO_SOC_IO_SLINK_         | set if the SLINK is implemented (via top's <<_slink_num_tx>> and/or <<_slink_num_rx>> generics)
 | `26` | _SYSINFO_SOC_IO_UART1_         | set if the secondary UART1 is implemented (via top's <<_io_uart1_en>> generic)
 | `27` | _SYSINFO_SOC_IO_NEOLED_        | set if the NEOLED is implemented (via top's <<_io_neoled_en>> generic)
+| `28` | _SYSINFO_SOC_IO_XIRQ_          | set if the XIRQ is implemented (via top's <<_xirq_num_ch>> generic)
+| `29` | _SYSINFO_SOC_IO_GPTMR_         | set if the GPTMR is implemented (via top's <<_io_gptmr_en>> generic)
+| `30` | _SYSINFO_SOC_IO_XIP_           | set if the XIP module is implemented (via top's <<_io_xip_en>> generic)
 |=======================
 
 

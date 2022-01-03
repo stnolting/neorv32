@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060502"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060503"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -122,8 +122,7 @@ package neorv32_package is
 
   -- Internal (auto-generated) Configurations -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant def_rst_val_c : std_ulogic;  -- Use a deferred constant, prevents compile error with Questa
-                                        -- See IEEE 1076-2008 14.4.2.1
+  constant def_rst_val_c : std_ulogic; -- Use a deferred constant, prevents compile error with Questa, see IEEE 1076-2008 14.4.2.1
 
   -- Processor-Internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -201,7 +200,6 @@ package neorv32_package is
   constant pwm_duty4_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe94";
   constant pwm_duty5_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe98";
   constant pwm_duty6_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe9c";
-  
   constant pwm_duty7_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea0";
   constant pwm_duty8_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea4";
   constant pwm_duty9_addr_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffea8";
@@ -219,9 +217,17 @@ package neorv32_package is
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff00"; -- base address
 --constant reserved_size_c      : natural := 16*4; -- module's address space size in bytes
 
+  -- Execute In Place Module (XIP) --
+  constant xip_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff40"; -- base address
+  constant xip_size_c           : natural := 4*4; -- module's address space size in bytes
+  constant xip_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff40";
+  constant xip_map_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff44";
+  constant xip_data_lo_addr_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff48";
+  constant xip_data_hi_addr_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff4C";
+
   -- reserved --
---constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff40"; -- base address
---constant reserved_size_c      : natural := 8*4; -- module's address space size in bytes
+--constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff50"; -- base address
+--constant reserved_size_c      : natural := 4*4; -- module's address space size in bytes
 
   -- General Purpose Timer (GPTMR) --
   constant gptmr_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff60"; -- base address
@@ -991,7 +997,8 @@ package neorv32_package is
       IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
       IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
       IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
-      IO_GPTMR_EN                  : boolean := false   -- implement general purpose timer (GPTMR)?
+      IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
+      IO_XIP_EN                    : boolean := false   -- implement execute in place module (XIP)?
     );
     port (
       -- Global control --
@@ -1018,6 +1025,11 @@ package neorv32_package is
       -- Advanced memory control signals (available if MEM_EXT_EN = true) --
       fence_o        : out std_ulogic; -- indicates an executed FENCE operation
       fencei_o       : out std_ulogic; -- indicates an executed FENCEI operation
+      -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
+      xip_csn_o      : out std_ulogic; -- chip-select, low-active
+      xip_clk_o      : out std_ulogic; -- serial clock
+      xip_sdi_i      : in  std_ulogic := 'L'; -- device data input
+      xip_sdo_o      : out std_ulogic; -- controller data output
       -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
       slink_tx_dat_o : out sdata_8x32_t; -- output data
       slink_tx_val_o : out std_ulogic_vector(7 downto 0); -- valid output
@@ -1148,7 +1160,7 @@ package neorv32_package is
   component neorv32_cpu_control
     generic (
       -- General --
-      HW_THREAD_ID                 : natural;     -- hardware thread id (32-bit)
+      HW_THREAD_ID                 : natural; -- hardware thread id (32-bit)
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
       CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
       -- RISC-V CPU Extensions --
@@ -1444,7 +1456,8 @@ package neorv32_package is
       bus_ack_i  : in  std_ulogic; -- transfer acknowledge from bus system
       bus_err_i  : in  std_ulogic; -- transfer error from bus system
       bus_tmo_i  : in  std_ulogic; -- transfer timeout (external interface)
-      bus_ext_i  : in  std_ulogic  -- external bus access
+      bus_ext_i  : in  std_ulogic; -- external bus access
+      bus_xip_i  : in  std_ulogic  -- pending XIP access
     );
   end component;
 
@@ -1793,34 +1806,37 @@ package neorv32_package is
     );
     port (
       -- global control --
-      clk_i     : in  std_ulogic; -- global clock line
-      rstn_i    : in  std_ulogic; -- global reset line, low-active
+      clk_i      : in  std_ulogic; -- global clock line
+      rstn_i     : in  std_ulogic; -- global reset line, low-active
       -- host access --
-      src_i     : in  std_ulogic; -- access type (0: data, 1:instruction)
-      addr_i    : in  std_ulogic_vector(31 downto 0); -- address
-      rden_i    : in  std_ulogic; -- read enable
-      wren_i    : in  std_ulogic; -- write enable
-      ben_i     : in  std_ulogic_vector(03 downto 0); -- byte write enable
-      data_i    : in  std_ulogic_vector(31 downto 0); -- data in
-      data_o    : out std_ulogic_vector(31 downto 0); -- data out
-      lock_i    : in  std_ulogic; -- exclusive access request
-      ack_o     : out std_ulogic; -- transfer acknowledge
-      err_o     : out std_ulogic; -- transfer error
-      tmo_o     : out std_ulogic; -- transfer timeout
-      priv_i    : in  std_ulogic_vector(01 downto 0); -- current CPU privilege level
-      ext_o     : out std_ulogic; -- active external access
+      src_i      : in  std_ulogic; -- access type (0: data, 1:instruction)
+      addr_i     : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i     : in  std_ulogic; -- read enable
+      wren_i     : in  std_ulogic; -- write enable
+      ben_i      : in  std_ulogic_vector(03 downto 0); -- byte write enable
+      data_i     : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o     : out std_ulogic_vector(31 downto 0); -- data out
+      lock_i     : in  std_ulogic; -- exclusive access request
+      ack_o      : out std_ulogic; -- transfer acknowledge
+      err_o      : out std_ulogic; -- transfer error
+      tmo_o      : out std_ulogic; -- transfer timeout
+      priv_i     : in  std_ulogic_vector(01 downto 0); -- current CPU privilege level
+      ext_o      : out std_ulogic; -- active external access
+      -- xip configuration --
+      xip_en_i   : in  std_ulogic; -- XIP module enabled
+      xip_page_i : in  std_ulogic_vector(03 downto 0); -- XIP memory page
       -- wishbone interface --
-      wb_tag_o  : out std_ulogic_vector(02 downto 0); -- request tag
-      wb_adr_o  : out std_ulogic_vector(31 downto 0); -- address
-      wb_dat_i  : in  std_ulogic_vector(31 downto 0); -- read data
-      wb_dat_o  : out std_ulogic_vector(31 downto 0); -- write data
-      wb_we_o   : out std_ulogic; -- read/write
-      wb_sel_o  : out std_ulogic_vector(03 downto 0); -- byte enable
-      wb_stb_o  : out std_ulogic; -- strobe
-      wb_cyc_o  : out std_ulogic; -- valid cycle
-      wb_lock_o : out std_ulogic; -- exclusive access request
-      wb_ack_i  : in  std_ulogic; -- transfer acknowledge
-      wb_err_i  : in  std_ulogic  -- transfer error
+      wb_tag_o   : out std_ulogic_vector(02 downto 0); -- request tag
+      wb_adr_o   : out std_ulogic_vector(31 downto 0); -- address
+      wb_dat_i   : in  std_ulogic_vector(31 downto 0); -- read data
+      wb_dat_o   : out std_ulogic_vector(31 downto 0); -- write data
+      wb_we_o    : out std_ulogic; -- read/write
+      wb_sel_o   : out std_ulogic_vector(03 downto 0); -- byte enable
+      wb_stb_o   : out std_ulogic; -- strobe
+      wb_cyc_o   : out std_ulogic; -- valid cycle
+      wb_lock_o  : out std_ulogic; -- exclusive access request
+      wb_ack_i   : in  std_ulogic; -- transfer acknowledge
+      wb_err_i   : in  std_ulogic  -- transfer error
     );
   end component;
 
@@ -1955,6 +1971,40 @@ package neorv32_package is
     );
   end component;
 
+  -- Component: Execute In Place Module (XIP) -----------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_xip
+    port (
+      -- globals --
+      clk_i       : in  std_ulogic; -- global clock line
+      rstn_i      : in  std_ulogic; -- global reset line, low-active
+      -- host access: control register access port --
+      ct_addr_i   : in  std_ulogic_vector(31 downto 0); -- address
+      ct_rden_i   : in  std_ulogic; -- read enable
+      ct_wren_i   : in  std_ulogic; -- write enable
+      ct_data_i   : in  std_ulogic_vector(31 downto 0); -- data in
+      ct_data_o   : out std_ulogic_vector(31 downto 0); -- data out
+      ct_ack_o    : out std_ulogic; -- transfer acknowledge
+      -- host access: instruction fetch access port (read-only) --
+      if_addr_i   : in  std_ulogic_vector(31 downto 0); -- address
+      if_rden_i   : in  std_ulogic; -- read enable
+      if_data_o   : out std_ulogic_vector(31 downto 0); -- data out
+      if_ack_o    : out std_ulogic; -- transfer acknowledge
+      -- status --
+      xip_en_o    : out std_ulogic; -- XIP enable
+      xip_acc_o   : out std_ulogic; -- pending XIP access
+      xip_page_o  : out std_ulogic_vector(03 downto 0); -- XIP page
+      -- clock generator --
+      clkgen_en_o : out std_ulogic; -- enable clock generator
+      clkgen_i    : in  std_ulogic_vector(07 downto 0);
+      -- SPI device interface --
+      spi_csn_o   : out std_ulogic; -- chip-select, low-active
+      spi_clk_o   : out std_ulogic; -- serial clock
+      spi_data_i  : in  std_ulogic; -- device data output
+      spi_data_o  : out std_ulogic  -- controller data output
+    );
+  end component;
+
   -- Component: System Configuration Information Memory (SYSINFO) ---------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_sysinfo
@@ -2006,7 +2056,8 @@ package neorv32_package is
       IO_SLINK_EN                  : boolean; -- implement stream link interface?
       IO_NEOLED_EN                 : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
       IO_XIRQ_NUM_CH               : natural; -- number of external interrupt (XIRQ) channels to implement
-      IO_GPTMR_EN                  : boolean  -- implement general purpose timer (GPTMR)?
+      IO_GPTMR_EN                  : boolean; -- implement general purpose timer (GPTMR)?
+      IO_XIP_EN                    : boolean  -- implement execute in place module (XIP)?
     );
     port (
       -- host access --
@@ -2425,7 +2476,8 @@ package body neorv32_package is
   end function mem32_init_f;
 
 
-  -- Finally set deferred constant, see IEEE 1076-2008 14.4.2.1
+  -- Finally set deferred constant, see IEEE 1076-2008 14.4.2.1 (NEORV32 Issue #242) --------
+  -- -------------------------------------------------------------------------------------------
   constant def_rst_val_c : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
 
 

@@ -26,6 +26,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (<<_smart_led_interface_neoled,**NEOLED**>>)
 * _optional_ external interrupt controller with up to 32 channels (<<_external_interrupt_controller_xirq,**XIRQ**>>)
 * _optional_ general purpose 32-bit timer (<<_general_purpose_timer_gptmr,**GPTMR**>>)
+* _optional_ execute in place module (<<_execute_in_place_module_xip,**XIP**>>)
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>)
 * bus keeper to monitor processor-internal bus transactions (<<_internal_bus_monitor_buskeeper,**BUSKEEPER**>>)
 * system configuration information memory to check HW configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
@@ -82,6 +83,11 @@ bits/channels are hardwired to zero.
 4+^| **Advanced Memory Control Signals**
 | `fence_o`  | 1 | out | indicates an executed _fence_ instruction
 | `fencei_o` | 1 | out | indicates an executed _fencei_ instruction
+4+^| **Execute In Place Interface (<<_execute_in_place_module_xip,**XIP**>>)**
+| `xip_csn_o` | 1 | out | chi select, low-active
+| `xip_clk_o` | 1 | out | serial clock
+| `xip_sdi_i` | 1 | in  | serial data input
+| `xip_sdo_o` | 1 | out | serial data output
 4+^| **Stream Link Interface (<<_stream_link_interface_slink,SLINK>>)**
 | `slink_tx_dat_o` | 8x32 | out | TX link _n_ data
 | `slink_tx_val_o` |    8 | out | TX link _n_ data valid
@@ -434,7 +440,7 @@ shift-related operations of the <<_b_bit_manipulation_operations>> extension.**
 |======
 | **CPU_CNT_WIDTH** | _natural_ | 64
 3+| This generic configures the total size of the CPU's `[m]cycle` and `[m]instret` CSRs (low word + high word).
-The maximum value is 64, the minimum value is 0. See section <<_machine_counters_and_timers>> for more information.
+The maximum value is 64, the minimum value is 0. See section <<_machine_counter_and_timer_csrs>> for more information.
 This generic is only relevant if the `Zicntr` ISa extension is enabled (<<_cpu_extension_riscv_zicntr>>).
 Note: configurations with <<_cpu_cnt_width>> less than 64 bits do not comply to the RISC-V specs.
 |======
@@ -595,14 +601,14 @@ and instruction memories there is not point of implementing the i-cache.
 
 
 :sectnums!:
-===== _ICACHE_NUM_BLOCK_
+===== _ICACHE_NUM_BLOCKS_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
 | **ICACHE_NUM_BLOCKS** | _natural_ | 4
 3+| Number of blocks (cache "pages" or "lines") in the instruction cache. Has to be a power of two. Has no
-effect when <<_icache_dmem_en>> is false.
+effect when <<_icache_en>> is false.
 |======
 
 
@@ -614,7 +620,7 @@ effect when <<_icache_dmem_en>> is false.
 |======
 | **ICACHE_BLOCK_SIZE** | _natural_ | 64
 3+| Size in bytes of each block in the instruction cache. Has to be a power of two. Has no effect when
-<<_icache_dmem_en>> is _false_.
+<<_icache_en>> is _false_.
 |======
 
 
@@ -626,7 +632,7 @@ effect when <<_icache_dmem_en>> is false.
 |======
 | **ICACHE_ASSOCIATIVITY** | _natural_ | 1
 3+| Associativity (= number of sets) of the instruction cache. Has to be a power of two. Allowed configurations:
-`1` = 1 set, direct mapped; `2` = 2-way set-associative. Has no effect when <<_icache_dmem_en>> is _false_.
+`1` = 1 set, direct mapped; `2` = 2-way set-associative. Has no effect when <<_icache_en>> is _false_.
 |======
 
 
@@ -1038,6 +1044,18 @@ See section <<_general_purpose_timer_gptmr>> for more information.
 |======
 
 
+:sectnums!:
+===== _IO_XIP_EN_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **IO_XIP_EN** | _boolean_ | false
+3+| Implement the execute in place module (XIP) when _true_.
+See section <<_execute_in_place_module_xip>> for more information.
+|======
+
+
 
 <<<
 // ####################################################################################################################
@@ -1176,7 +1194,7 @@ Please note that all processor-internal components including the peripheral/IO d
 accessed from programs running in less-privileged user mode. For example, if the system relies on
 a periodic interrupt from the _MTIME_ timer unit, user-level programs could alter the _MTIME_
 configuration corrupting this interrupt. This kind of security issues can be compensated using the
-PMP system (see <<_machine_physical_memory_protection>>).
+PMP system (see <<_machine_physical_memory_protection_csrs>>).
 
 
 :sectnums:
@@ -1230,7 +1248,7 @@ and byte (not for instruction fetch) quantities (requiring an accordingly aligne
 [TIP]
 The following table shows the _default hardware-defined_ physical memory attributes of each main address space region.
 Additional user-defined attributes (for example certain read/write/execute rights for specific address space regions) can be
-provided using the RISC-V <<_machine_physical_memory_protection>>.
+provided using the RISC-V <<_machine_physical_memory_protection_csrs>>.
 
 [cols="^1,^2,^2,^3,^2"]
 [options="header",grid="rows"]
@@ -1289,7 +1307,11 @@ via the processor's bus interface to external components:
 
 * access to the processor-internal IMEM and processor-internal IMEM is implemented
 * access to the processor-internal DMEM and processor-internal DMEM is implemented
-* access to the bootloader ROM and beyond → addresses >= _BOOTROM_BASE_ (default 0xFFFF0000) will never be forwarded to the external memory interface
+* access to the bootloader ROM and beyond -> addresses >= _BOOTROM_BASE_ (default 0xFFFF0000) will never be forwarded to the external memory interface
+
+[NOTE]
+If the Execute In Place module (XIP) is implemented accesses map to this module are not forwarded to the
+external memory interface. See section <<_execute_in_place_module_xip>> for more information.
 
 If no (or not all) processor-internal memories are implemented, the according base addresses are mapped to external memories.
 For example, if the processor-internal IMEM is not implemented (<<_mem_int_imem_en>> = _false_), the processor will forward
@@ -1516,5 +1538,7 @@ include::soc_neoled.adoc[]
 include::soc_xirq.adoc[]
 
 include::soc_gptmr.adoc[]
+
+include::soc_xip.adoc[]
 
 include::soc_sysinfo.adoc[]

@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -60,7 +60,7 @@ extern "C" {
 enum NEORV32_CSR_enum {
   CSR_FFLAGS         = 0x001, /**< 0x001 - fflags (r/w): Floating-point accrued exception flags */
   CSR_FRM            = 0x002, /**< 0x002 - frm    (r/w): Floating-point dynamic rounding mode */
-  CSR_FCSR           = 0x003, /**< 0x003 - fcsr   (r/w): Floating-point control/staturs register (frm + fflags) */
+  CSR_FCSR           = 0x003, /**< 0x003 - fcsr   (r/w): Floating-point control/status register (frm + fflags) */
 
   CSR_MSTATUS        = 0x300, /**< 0x300 - mstatus    (r/w): Machine status register */
   CSR_MISA           = 0x301, /**< 0x301 - misa       (r/-): CPU ISA and extensions (read-only in NEORV32) */
@@ -827,6 +827,47 @@ enum NEORV32_SLINK_STATUS_enum {
 
 
 /**********************************************************************//**
+ * @name IO Device: Execute In Place Module (XIP)
+ **************************************************************************/
+/**@{*/
+/** XIP module prototype */
+typedef struct __attribute__((packed,aligned(4))) {
+	uint32_t CTRL;           /**< offset  0: control register (#NEORV32_XIP_CTRL_enum) */
+	const uint32_t reserved; /**< offset  4: reserved */
+	uint32_t DATA_LO;        /**< offset  8: SPI data register low */
+	uint32_t DATA_HI;        /**< offset 12: SPI data register high */
+} neorv32_xip_t;
+
+/** XIP module hardware access (#neorv32_xip_t) */
+#define NEORV32_XIP (*((volatile neorv32_xip_t*) (0xFFFFFF40UL)))
+
+/** XIP control/data register bits */
+enum NEORV32_XIP_CTRL_enum {
+  XIP_CTRL_EN             =  0, /**< XIP control register( 0) (r/w): XIP module enable */
+  XIP_CTRL_PRSC0          =  1, /**< XIP control register( 1) (r/w): Clock prescaler select bit 0 */
+  XIP_CTRL_PRSC1          =  2, /**< XIP control register( 2) (r/w): Clock prescaler select bit 1 */
+  XIP_CTRL_PRSC2          =  3, /**< XIP control register( 3) (r/w): Clock prescaler select bit 2 */
+  XIP_CTRL_CPOL           =  4, /**< XIP control register( 4) (r/w): SPI (idle) clock polarity */
+  XIP_CTRL_CPHA           =  5, /**< XIP control register( 5) (r/w): SPI clock phase */
+  XIP_CTRL_SPI_NBYTES_LSB =  6, /**< XIP control register( 6) (r/w): Number of bytes in SPI transmission, LSB */
+  XIP_CTRL_SPI_NBYTES_MSB =  9, /**< XIP control register( 9) (r/w): Number of bytes in SPI transmission, MSB */
+  XIP_CTRL_XIP_EN         = 10, /**< XIP control register(10) (r/w): XIP access enable */
+  XIP_CTRL_XIP_ABYTES_LSB = 11, /**< XIP control register(11) (r/w): Number XIP address bytes (minus 1), LSB */
+  XIP_CTRL_XIP_ABYTES_MSB = 12, /**< XIP control register(12) (r/w): Number XIP address bytes (minus 1), MSB */
+  XIP_CTRL_QSPI_EN        = 13, /**< XIP control register(13) (r/w): Enable QSPI mode */
+  XIP_CTRL_RD_CMD_LSB     = 14, /**< XIP control register(14) (r/w): SPI flash read command, LSB */
+  XIP_CTRL_RD_CMD_MSB     = 21, /**< XIP control register(21) (r/w): SPI flash read command, MSB */
+  XIP_CTRL_PAGE_LSB       = 22, /**< XIP control register(22) (r/w): XIP memory page, LSB */
+  XIP_CTRL_PAGE_MSB       = 25, /**< XIP control register(25) (r/w): XIP memory page, MSB */
+
+  XIP_CTRL_PHY_BUSY       = 29, /**< XIP control register(29) (r/-): SPI PHY is busy */
+  XIP_CTRL_XIP_READY      = 30, /**< XIP control register(30) (r/-): XIP access is ready (setup done) */
+  XIP_CTRL_XIP_BUSY       = 31  /**< XIP control register(31) (r/-): XIP access in progress */
+};
+/**@}*/
+
+
+/**********************************************************************//**
  * @name IO Device: General Purpose Timer (GPTMR)
  **************************************************************************/
 /**@{*/
@@ -866,8 +907,9 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 /** BUSKEEPER control/data register bits */
 enum NEORV32_BUSKEEPER_CTRL_enum {
-  BUSKEEPER_ERR_TYPE =  0, /**< BUSKEEPER control register(0)  (r/-): Bus error type: 0=device error, 1=access timeout */
-  BUSKEEPER_ERR_FLAG = 31  /**< BUSKEEPER control register(31) (r/c): Sticky error flag, clears after read or write access */
+  BUSKEEPER_ERR_TYPE_LSB =  0, /**< BUSKEEPER control register( 0) (r/-): Bus error type LSB: 0=device error, 1=access timeout */
+  BUSKEEPER_ERR_TYPE_MSB =  1, /**< BUSKEEPER control register( 1) (r/-): Bus error type MSB: 2=unexpected ACK, 3=unexpected ERR */
+  BUSKEEPER_ERR_FLAG     = 31  /**< BUSKEEPER control register(31) (r/c): Sticky error flag, clears after read or write access */
 };
 /**@}*/
 
@@ -1249,7 +1291,8 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_IO_UART1       = 26, /**< SYSINFO_FEATURES (26) (r/-): Secondary universal asynchronous receiver/transmitter 1 implemented when 1 (via IO_UART1_EN generic) */
   SYSINFO_SOC_IO_NEOLED      = 27, /**< SYSINFO_FEATURES (27) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
   SYSINFO_SOC_IO_XIRQ        = 28, /**< SYSINFO_FEATURES (28) (r/-): External interrupt controller implemented when 1 (via XIRQ_NUM_IO generic) */
-  SYSINFO_SOC_IO_GPTMR       = 29  /**< SYSINFO_FEATURES (29) (r/-): General purpose timer implemented when 1 (via IO_GPTMR_EN generic) */
+  SYSINFO_SOC_IO_GPTMR       = 29, /**< SYSINFO_FEATURES (29) (r/-): General purpose timer implemented when 1 (via IO_GPTMR_EN generic) */
+  SYSINFO_SOC_IO_XIP         = 30  /**< SYSINFO_FEATURES (30) (r/-): Execute in place module implemented when 1 (via IO_XIP_EN generic) */
 };
 
 /** NEORV32_SYSINFO.CACHE (r/-): Cache configuration */
@@ -1302,6 +1345,7 @@ enum NEORV32_SYSINFO_SOC_enum {
 #include "neorv32_twi.h"
 #include "neorv32_uart.h"
 #include "neorv32_wdt.h"
+#include "neorv32_xip.h"
 #include "neorv32_xirq.h"
 
 #ifdef __cplusplus

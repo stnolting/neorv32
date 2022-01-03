@@ -126,6 +126,9 @@
         <Source name="system_pll/system_pll.ipx" type="IPX_Module" type_short="IPX">
             <Options/>
         </Source>
+        <Source name="../../../rtl/core/neorv32_xip.vhd" type="VHDL" type_short="VHDL">
+            <Options lib="neorv32"/>
+        </Source>
         <Source name="neorv32_upduino_v3.pdc" type="Physical Constraints File" type_short="PDC">
             <Options/>
         </Source>

@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -110,7 +110,8 @@ entity neorv32_SystemTop_axi4lite is
     IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
     IO_NEOLED_EN                 : boolean := true;   -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
-    IO_GPTMR_EN                  : boolean := false   -- implement general purpose timer (GPTMR)?
+    IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
+    IO_XIP_EN                    : boolean := false   -- implement execute in place module (XIP)?
   );
   port (
     -- ------------------------------------------------------------
@@ -154,6 +155,11 @@ entity neorv32_SystemTop_axi4lite is
     -- ------------------------------------------------------------
     -- Processor IO --
     -- ------------------------------------------------------------
+    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
+    xip_csn_o     : out std_logic; -- chip-select, low-active
+    xip_clk_o     : out std_logic; -- serial clock
+    xip_sdi_i     : in  std_logic := 'L'; -- device data input
+    xip_sdo_o     : out std_logic; -- controller data output
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o        : out std_logic_vector(63 downto 0); -- parallel output
     gpio_i        : in  std_logic_vector(63 downto 0) := (others => '0'); -- parallel input
@@ -205,6 +211,11 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
   signal jtag_tdi_i_int  :std_ulogic;
   signal jtag_tdo_o_int  :std_ulogic;
   signal jtag_tms_i_int  :std_ulogic;
+  --
+  signal xip_csn_o_int   : std_ulogic;
+  signal xip_clk_o_int   : std_ulogic;
+  signal xip_sdi_i_int   : std_ulogic;
+  signal xip_sdo_o_int   : std_ulogic;
   --
   signal gpio_o_int      : std_ulogic_vector(63 downto 0);
   signal gpio_i_int      : std_ulogic_vector(63 downto 0);
@@ -343,7 +354,8 @@ begin
     IO_CFS_OUT_SIZE              => IO_CFS_OUT_SIZE,    -- size of CFS output conduit in bits
     IO_NEOLED_EN                 => IO_NEOLED_EN,       -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            => IO_NEOLED_TX_FIFO,  -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
-    IO_GPTMR_EN                  => IO_GPTMR_EN         -- implement general purpose timer (GPTMR)?
+    IO_GPTMR_EN                  => IO_GPTMR_EN,        -- implement general purpose timer (GPTMR)?
+    IO_XIP_EN                    => IO_XIP_EN           -- implement execute in place module (XIP)?
   )
   port map (
     -- Global control --
@@ -370,6 +382,11 @@ begin
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o     => open,            -- indicates an executed FENCE operation
     fencei_o    => open,            -- indicates an executed FENCEI operation
+    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
+    xip_csn_o   => xip_csn_o_int,   -- chip-select, low-active
+    xip_clk_o   => xip_clk_o_int,   -- serial clock
+    xip_sdi_i   => xip_sdi_i_int,   -- device data input
+    xip_sdo_o   => xip_sdo_o_int,   -- controller data output
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      => gpio_o_int,      -- parallel output
     gpio_i      => gpio_i_int,      -- parallel input
@@ -410,6 +427,11 @@ begin
   );
 
   -- type conversion --
+  xip_csn_o       <= std_logic(xip_csn_o_int);
+  xip_clk_o       <= std_logic(xip_clk_o_int);
+  xip_sdi_i_int   <= std_ulogic(xip_sdi_i);
+  xip_sdo_o       <= std_logic(xip_sdo_o_int);
+
   gpio_o          <= std_logic_vector(gpio_o_int);
   gpio_i_int      <= std_ulogic_vector(gpio_i);
 

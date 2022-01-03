@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -114,7 +114,8 @@ entity neorv32_ProcessorTop_stdlogic is
     IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
     IO_NEOLED_EN                 : boolean := true;   -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_GPTMR_EN                  : boolean := false   -- implement general purpose timer (GPTMR)?
+    IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
+    IO_XIP_EN                    : boolean := false   -- implement execute in place module (XIP)?
   );
   port (
     -- Global control --
@@ -141,6 +142,11 @@ entity neorv32_ProcessorTop_stdlogic is
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o        : out std_logic; -- indicates an executed FENCE operation
     fencei_o       : out std_logic; -- indicates an executed FENCEI operation
+    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
+    xip_csn_o      : out std_logic; -- chip-select, low-active
+    xip_clk_o      : out std_logic; -- serial clock
+    xip_sdi_i      : in  std_logic := 'L'; -- device data input
+    xip_sdo_o      : out std_logic; -- controller data output
     -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
     slink_tx_dat_o : out sdata_8x32r_t; -- output data
     slink_tx_val_o : out std_logic_vector(7 downto 0); -- valid output
@@ -219,6 +225,11 @@ architecture neorv32_ProcessorTop_stdlogic_rtl of neorv32_ProcessorTop_stdlogic 
   --
   signal fence_o_int     : std_ulogic;
   signal fencei_o_int    : std_ulogic;
+  --
+  signal xip_csn_o_int   : std_ulogic;
+  signal xip_clk_o_int   : std_ulogic;
+  signal xip_sdi_i_int   : std_ulogic;
+  signal xip_sdo_o_int   : std_ulogic;
   --
   signal slink_tx_dat_o_int : sdata_8x32_t;
   signal slink_tx_val_o_int : std_logic_vector(7 downto 0);
@@ -340,7 +351,8 @@ begin
     IO_CFS_IN_SIZE               => IO_CFS_IN_SIZE,     -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              => IO_CFS_OUT_SIZE,    -- size of CFS output conduit in bits
     IO_NEOLED_EN                 => IO_NEOLED_EN,       -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_GPTMR_EN                  => IO_GPTMR_EN         -- implement general purpose timer (GPTMR)?
+    IO_GPTMR_EN                  => IO_GPTMR_EN,        -- implement general purpose timer (GPTMR)?
+    IO_XIP_EN                    => IO_XIP_EN           -- implement execute in place module (XIP)?
   )
   port map (
     -- Global control --
@@ -367,6 +379,11 @@ begin
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o        => fence_o_int,     -- indicates an executed FENCE operation
     fencei_o       => fencei_o_int,    -- indicates an executed FENCEI operation
+    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
+    xip_csn_o      => xip_csn_o_int,   -- chip-select, low-active
+    xip_clk_o      => xip_clk_o_int,   -- serial clock
+    xip_sdi_i      => xip_sdi_i_int,   -- device data input
+    xip_sdo_o      => xip_sdo_o_int,   -- controller data output
     -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
     slink_tx_dat_o => slink_tx_dat_o_int, -- output data
     slink_tx_val_o => slink_tx_val_o_int, -- valid output
@@ -438,6 +455,11 @@ begin
 
   fence_o         <= std_logic(fence_o_int);
   fencei_o        <= std_logic(fencei_o_int);
+
+  xip_csn_o       <= std_logic(xip_csn_o_int);
+  xip_clk_o       <= std_logic(xip_clk_o_int);
+  xip_sdi_i_int   <= std_ulogic(xip_sdi_i);
+  xip_sdo_o       <= std_logic(xip_sdo_o_int);
 
   slink_tx_val_o     <= std_logic_vector(slink_tx_val_o_int);
   slink_tx_rdy_i_int <= std_ulogic_vector(slink_tx_rdy_i);

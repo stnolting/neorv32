@@ -79,6 +79,7 @@ files are currently part of the NEORV32 core library:
 | `neorv32_twi.c`    | `neorv32_twi.h`        | HW driver functions for the **TWI**
 | `neorv32_uart.c`   | `neorv32_uart.h`       | HW driver functions for the **UART0** and **UART1**
 | `neorv32_wdt.c`    | `neorv32_wdt.h`        | HW driver functions for the **WDT**
+| `neorv32_xip.c`    | `neorv32_xip.h`        | HW driver functions for the **XIP**
 | `neorv32_xirq.c`   | `neorv32_xirq.h`       | HW driver functions for the **XIRQ**
 |=======================
 
