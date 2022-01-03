@@ -1798,8 +1798,6 @@ package neorv32_package is
       -- Internal data memory --
       MEM_INT_DMEM_EN   : boolean; -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE : natural; -- size of processor-internal data memory in bytes
-      -- XIP Module --
-      XIP_ENABLE        : boolean; -- XIP module implemented
       -- Interface Configuration --
       BUS_TIMEOUT       : natural; -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
       PIPE_MODE         : boolean; -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
@@ -1824,8 +1822,9 @@ package neorv32_package is
       tmo_o      : out std_ulogic; -- transfer timeout
       priv_i     : in  std_ulogic_vector(01 downto 0); -- current CPU privilege level
       ext_o      : out std_ulogic; -- active external access
-      -- xip page --
-      xip_page_i : in  std_ulogic_vector(03 downto 0);
+      -- xip configuration --
+      xip_en_i   : in  std_ulogic; -- XIP module enabled
+      xip_page_i : in  std_ulogic_vector(03 downto 0); -- XIP memory page
       -- wishbone interface --
       wb_tag_o   : out std_ulogic_vector(02 downto 0); -- request tag
       wb_adr_o   : out std_ulogic_vector(31 downto 0); -- address
@@ -1992,6 +1991,7 @@ package neorv32_package is
       if_data_o   : out std_ulogic_vector(31 downto 0); -- data out
       if_ack_o    : out std_ulogic; -- transfer acknowledge
       -- status --
+      xip_en_o    : out std_ulogic; -- XIP enable
       xip_acc_o   : out std_ulogic; -- pending XIP access
       xip_page_o  : out std_ulogic_vector(03 downto 0); -- XIP page
       -- clock generator --

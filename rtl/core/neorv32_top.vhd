@@ -350,6 +350,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal ext_timeout : std_ulogic;
   signal ext_access  : std_ulogic;
   signal xip_access  : std_ulogic;
+  signal xip_enable  : std_ulogic;
   signal xip_page    : std_ulogic_vector(3 downto 0);
   signal debug_mode  : std_ulogic;
 
@@ -815,8 +816,6 @@ begin
       -- Internal data memory --
       MEM_INT_DMEM_EN   => MEM_INT_DMEM_EN,    -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE,  -- size of processor-internal data memory in bytes
-      -- XIP Module --
-      XIP_ENABLE        => IO_XIP_EN,          -- XIP module implemented
       -- Interface Configuration --
       BUS_TIMEOUT       => MEM_EXT_TIMEOUT,    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
       PIPE_MODE         => MEM_EXT_PIPE_MODE,  -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
@@ -841,8 +840,9 @@ begin
       tmo_o      => ext_timeout,                   -- transfer timeout
       priv_i     => p_bus.priv,                    -- current CPU privilege level
       ext_o      => ext_access,                    -- active external access
-      -- xip page --
-      xip_page_i => xip_page,
+      -- xip configuration --
+      xip_en_i   => xip_enable,                    -- XIP module enabled
+      xip_page_i => xip_page,                      -- XIP memory page
       -- wishbone interface --
       wb_tag_o   => wb_tag_o,                      -- request tag
       wb_adr_o   => wb_adr_o,                      -- address
@@ -897,6 +897,7 @@ begin
       if_data_o   => resp_bus(RESP_XIP_IF).rdata, -- data out
       if_ack_o    => resp_bus(RESP_XIP_IF).ack,   -- transfer acknowledge
       -- status --
+      xip_en_o    => xip_enable,                  -- XIP enable
       xip_acc_o   => xip_access,                  -- pending XIP access
       xip_page_o  => xip_page,                    -- XIP page
       -- clock generator --
@@ -917,6 +918,7 @@ begin
     resp_bus(RESP_XIP_CT) <= resp_bus_entry_terminate_c;
     resp_bus(RESP_XIP_IF) <= resp_bus_entry_terminate_c;
     --
+    xip_enable <= '0';
     xip_access <= '0';
     xip_page   <= (others => '0');
     xip_cg_en  <= '0';

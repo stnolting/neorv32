@@ -55,8 +55,6 @@ entity neorv32_wishbone is
     -- Internal data memory --
     MEM_INT_DMEM_EN   : boolean; -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE : natural; -- size of processor-internal data memory in bytes
-    -- XIP Module --
-    XIP_ENABLE        : boolean; -- XIP module implemented
     -- Interface Configuration --
     BUS_TIMEOUT       : natural; -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     PIPE_MODE         : boolean; -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
@@ -81,8 +79,9 @@ entity neorv32_wishbone is
     tmo_o      : out std_ulogic; -- transfer timeout
     priv_i     : in  std_ulogic_vector(01 downto 0); -- current CPU privilege level
     ext_o      : out std_ulogic; -- active external access
-    -- xip page --
-    xip_page_i : in  std_ulogic_vector(03 downto 0);
+    -- xip configuration --
+    xip_en_i   : in  std_ulogic; -- XIP module enabled
+    xip_page_i : in  std_ulogic_vector(03 downto 0); -- XIP memory page
     -- wishbone interface --
     wb_tag_o   : out std_ulogic_vector(02 downto 0); -- request tag
     wb_adr_o   : out std_ulogic_vector(31 downto 0); -- address
@@ -166,7 +165,7 @@ begin
   -- access to processor-internal BOOTROM or IO devices? --
   int_boot_acc <= '1' when (addr_i(31 downto 16) = boot_rom_base_c(31 downto 16)) else '0'; -- hacky!
   -- XIP access? --
-  xip_acc      <= '1' when (XIP_ENABLE = true) and (addr_i(31 downto 28) = xip_page_i) else '0';
+  xip_acc      <= '1' when (xip_en_i = '1') and (addr_i(31 downto 28) = xip_page_i) else '0';
   -- actual external bus access? --
   xbus_access  <= (not int_imem_acc) and (not int_dmem_acc) and (not int_boot_acc) and (not xip_acc);
 
