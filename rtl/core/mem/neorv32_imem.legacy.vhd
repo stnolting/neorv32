@@ -87,7 +87,7 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Using CYCLONE-2-optimized HDL style IMEM." severity note;
+  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Using legacy HDL style IMEM." severity note;
   assert not (IMEM_AS_IROM = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as ROM (" & natural'image(IMEM_SIZE) &
   " bytes), pre-initialized with application (" & natural'image(imem_app_size_c) & " bytes)." severity note;
   --
