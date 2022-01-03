@@ -63,6 +63,7 @@ entity neorv32_xip is
     if_data_o   : out std_ulogic_vector(31 downto 0); -- data out
     if_ack_o    : out std_ulogic; -- transfer acknowledge
     -- status --
+    xip_en_o    : out std_ulogic; -- XIP enable
     xip_acc_o   : out std_ulogic; -- pending XIP access
     xip_page_o  : out std_ulogic_vector(03 downto 0); -- XIP page
     -- clock generator --
@@ -101,21 +102,16 @@ architecture neorv32_xip_rtl of neorv32_xip is
   constant ctrl_xip_abytes0_c : natural := 11; -- r/w: XIP number of address bytes (0=1,1=2,2=3,3=4) - bit 0
   constant ctrl_xip_abytes1_c : natural := 12; -- r/w: XIP number of address bytes (0=1,1=2,2=3,3=4) - bit 1
   constant ctrl_qspi_en_c     : natural := 13; -- r/w: enable qSPI mode
-  constant ctrl_rd_cmd_lsb_c  : natural := 14; -- r/w: SPI flash read command - lsb
-  constant ctrl_rd_cmd_msb_c  : natural := 21; -- r/w: SPI flash read command - msb
+  constant ctrl_rd_cmd_lsb_c  : natural := 14; -- r/w: SPI flash read command - bit 0
+  constant ctrl_rd_cmd_msb_c  : natural := 21; -- r/w: SPI flash read command - bit 7
+  constant ctrl_page_lsb_c    : natural := 22; -- r/w: XIP memory page - bit 0
+  constant ctrl_page_msb_c    : natural := 25; -- r/w: XIP memory page - bit 3
   --
   constant ctrl_phy_busy_c    : natural := 29; -- r/-: SPI PHY is busy when set
-  constant ctrl_xip_ready_c   : natural := 30; -- r/-: XIP access is ready (setup completed)
+  constant ctrl_xip_ready_c   : natural := 30; -- r/-: XIP access is ready (initialization completed)
   constant ctrl_xip_busy_c    : natural := 31; -- r/-: XIP access in progress
   --
-  signal ctrl : std_ulogic_vector(21 downto 0);
-
-  -- Address mapping register --
-  type addr_map_t is record
-    base_addr : std_ulogic_vector(03 downto 00);
-    bit_mask  : std_ulogic_vector(19 downto 00);
-  end record;
-  signal addr_map : addr_map_t;
+  signal ctrl : std_ulogic_vector(25 downto 0);
 
   -- Direct SPI access registers --
   signal spi_data_lo : std_ulogic_vector(31 downto 0);
@@ -195,8 +191,6 @@ begin
       ctrl(ctrl_enable_c)     <= '0'; -- required
       ctrl(ctrl_xip_enable_c) <= '0'; -- required
       ctrl(ctrl_qspi_en_c)    <= '0'; -- required
-      addr_map.base_addr      <= "1111"; -- required
-      addr_map.bit_mask       <= (others => '-');
       spi_data_lo             <= (others => '-');
       spi_data_hi             <= (others => '-');
       spi_trigger             <= '-';
@@ -214,7 +208,7 @@ begin
       if (ct_wren = '1') then -- only full-word writes!
 
         -- control register --
-        if (ct_addr_i(3 downto 2) = xip_ctrl_addr_c(3 downto 2)) then
+        if (ct_addr = xip_ctrl_addr_c) then
           ctrl(ctrl_enable_c)                                <= ct_data_i(ctrl_enable_c);
           ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= ct_data_i(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);
           ctrl(ctrl_spi_cpol_c)                              <= ct_data_i(ctrl_spi_cpol_c);
@@ -224,21 +218,16 @@ begin
           ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) <= ct_data_i(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c);
           ctrl(ctrl_qspi_en_c)                               <= ct_data_i(ctrl_qspi_en_c);
           ctrl(ctrl_rd_cmd_msb_c downto ctrl_rd_cmd_lsb_c)   <= ct_data_i(ctrl_rd_cmd_msb_c downto ctrl_rd_cmd_lsb_c);
-        end if;
-
-        -- CIP address mapping --
-        if (ct_addr_i(3 downto 2) = xip_map_addr_c(3 downto 2)) then
-          addr_map.base_addr <= ct_data_i(31 downto 28);
-          addr_map.bit_mask  <= ct_data_i(27 downto 08);
+          ctrl(ctrl_page_msb_c downto ctrl_page_lsb_c)       <= ct_data_i(ctrl_page_msb_c downto ctrl_page_lsb_c);
         end if;
 
         -- SPI direct data access register lo --
-        if (ct_addr_i(3 downto 2) = xip_data_lo_addr_c(3 downto 2)) then
+        if (ct_addr = xip_data_lo_addr_c) then
           spi_data_lo <= ct_data_i;
         end if;
 
         -- SPI direct data access register hi --
-        if (ct_addr_i(3 downto 2) = xip_data_hi_addr_c(3 downto 2)) then
+        if (ct_addr = xip_data_hi_addr_c) then
           spi_data_hi <= ct_data_i;
           spi_trigger <= '1'; -- trigger direct SPI transaction
         end if;
@@ -247,7 +236,7 @@ begin
       -- read access --
       ct_data_o <= (others => '0');
       if (ct_rden = '1') then
-        case ct_addr_i(3 downto 2) is
+        case ct_addr(3 downto 2) is
           when "00" => -- 'xip_ctrl_addr_c' - control register
             ct_data_o(ctrl_enable_c)                                <= ctrl(ctrl_enable_c);
             ct_data_o(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);
@@ -258,14 +247,12 @@ begin
             ct_data_o(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) <= ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c);
             ct_data_o(ctrl_qspi_en_c)                               <= ctrl(ctrl_qspi_en_c);
             ct_data_o(ctrl_rd_cmd_msb_c downto ctrl_rd_cmd_lsb_c)   <= ctrl(ctrl_rd_cmd_msb_c downto ctrl_rd_cmd_lsb_c);
+            ct_data_o(ctrl_page_msb_c downto ctrl_page_lsb_c)       <= ctrl(ctrl_page_msb_c downto ctrl_page_lsb_c);
             --
             ct_data_o(ctrl_phy_busy_c)  <= phy_if.busy;
             ct_data_o(ctrl_xip_ready_c) <= arbiter.ready;
             ct_data_o(ctrl_xip_busy_c)  <= arbiter.busy;
-          when "01" => -- 'xip_map_addr_c' - XIP address mapping
-            ct_data_o(31 downto 28) <= addr_map.base_addr;
-            ct_data_o(27 downto 08) <= addr_map.bit_mask;
-          when "10" => -- 'xip_cmds_addr_c' - SPI flash commands
+          when "10" => -- 'xip_data_lo_addr_c' - SPI direct data access register lo
             ct_data_o <= phy_if.rdata;
           when others => -- unavailable (not implemented or write-only)
             ct_data_o <= (others => '0');
@@ -274,19 +261,20 @@ begin
     end if;
   end process ctrl_rw_access;
 
+  -- XIP enabled --
+  xip_en_o <= ctrl(ctrl_enable_c);
+
   -- XIP page output --
-  xip_page_o <= addr_map.base_addr;
+  xip_page_o <= ctrl(ctrl_page_msb_c downto ctrl_page_lsb_c);
 
 
   -- XIP Address Computation Logic ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  xip_access_logic: process(arbiter.addr, addr_map, ctrl)
+  xip_access_logic: process(arbiter.addr, ctrl)
     variable tmp_v : std_ulogic_vector(31 downto 0);
   begin
     tmp_v(31 downto 28) := "0000";
-    tmp_v(27 downto 08) := arbiter.addr(27 downto 08) and addr_map.bit_mask;
-    tmp_v(07 downto 01) := arbiter.addr(07 downto 01);
-    tmp_v(00) := '0'; -- always 16-bit aligned
+    tmp_v(27 downto 00) := arbiter.addr(27 downto 00);
     case ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) is
       when "00"   => xip_addr <= tmp_v(07 downto 0) & x"000000"; -- 1 address byte
       when "01"   => xip_addr <= tmp_v(15 downto 0) & x"0000";   -- 2 address bytes
@@ -313,7 +301,7 @@ begin
 
 
   -- FSM - combinatorial part --
-  arbiter_comb: process(arbiter, ctrl, xip_addr, phy_if, if_rden_i, if_addr_i, addr_map, spi_data_hi, spi_data_lo, spi_trigger)
+  arbiter_comb: process(arbiter, ctrl, xip_addr, phy_if, if_rden_i, if_addr_i, spi_data_hi, spi_data_lo, spi_trigger)
   begin
     -- arbiter defaults --
     arbiter.state_nxt <= arbiter.state;
@@ -366,7 +354,7 @@ begin
 
       when S_IDLE => -- XIP: wait for new bus request
       -- ------------------------------------------------------------
-        if (if_rden_i = '1') and (if_addr_i(31 downto 28) = addr_map.base_addr) then
+        if (if_rden_i = '1') and (if_addr_i(31 downto 28) = ctrl(ctrl_page_msb_c downto ctrl_page_lsb_c)) then
           arbiter.state_nxt <= S_TRIG;
         end if;
 
@@ -522,6 +510,7 @@ begin
 
 -- ----------------------------------------- --
 -- TODO: qSPI mode - enabled via 'cf_qspi_i' --
+-- requires bi-directional top ports         --
 -- ----------------------------------------- --
 
   -- Serial Interface Control Unit ----------------------------------------------------------

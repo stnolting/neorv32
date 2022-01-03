@@ -832,10 +832,10 @@ enum NEORV32_SLINK_STATUS_enum {
 /**@{*/
 /** XIP module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t CTRL;    /**< offset  0: control register (#NEORV32_XIP_CTRL_enum) */
-	uint32_t MAP;     /**< offset  4: address mapping register register (#NEORV32_XIP_MAP_enum) */
-	uint32_t DATA_LO; /**< offset  8: SPI data register low */
-	uint32_t DATA_HI; /**< offset 12: SPI data register high */
+	uint32_t CTRL;           /**< offset  0: control register (#NEORV32_XIP_CTRL_enum) */
+	const uint32_t reserved; /**< offset  4: reserved */
+	uint32_t DATA_LO;        /**< offset  8: SPI data register low */
+	uint32_t DATA_HI;        /**< offset 12: SPI data register high */
 } neorv32_xip_t;
 
 /** XIP module hardware access (#neorv32_xip_t) */
@@ -857,19 +857,12 @@ enum NEORV32_XIP_CTRL_enum {
   XIP_CTRL_QSPI_EN        = 13, /**< XIP control register(13) (r/w): Enable QSPI mode */
   XIP_CTRL_RD_CMD_LSB     = 14, /**< XIP control register(14) (r/w): SPI flash read command, LSB */
   XIP_CTRL_RD_CMD_MSB     = 21, /**< XIP control register(21) (r/w): SPI flash read command, MSB */
+  XIP_CTRL_PAGE_LSB       = 22, /**< XIP control register(22) (r/w): XIP memory page, LSB */
+  XIP_CTRL_PAGE_MSB       = 25, /**< XIP control register(25) (r/w): XIP memory page, MSB */
 
   XIP_CTRL_PHY_BUSY       = 29, /**< XIP control register(29) (r/-): SPI PHY is busy */
   XIP_CTRL_XIP_READY      = 30, /**< XIP control register(30) (r/-): XIP access is ready (setup done) */
   XIP_CTRL_XIP_BUSY       = 31  /**< XIP control register(31) (r/-): XIP access in progress */
-};
-
-/** XIP address mapping register bits */
-enum NEORV32_XIP_MAP_enum {
-  XIP_MAP_ADDR_MASK_LSB =  8, /**< XIP address mapping register( 8) (r/w): Address mask bit 8, LSB */
-  XIP_MAP_ADDR_MASK_MSB = 27, /**< XIP address mapping register(27) (r/w): Address mask bit 27, MSB */
-
-  XIP_MAP_PAGE_LSB      = 28, /**< XIP address mapping register(28) (r/w): 4-bit page select LSB */
-  XIP_MAP_PAGE_MSB      = 31  /**< XIP address mapping register(31) (r/w): 4-bit page select MSB */
 };
 /**@}*/
 

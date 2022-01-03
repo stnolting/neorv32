@@ -62,7 +62,7 @@ int neorv32_xip_available(void) {
 
 
 /**********************************************************************//**
- * Configure XIP module: configure basic SPI properties
+ * Configure XIP module: configure SPI properties.
  *
  * @warning This will reset the XIP module overriding the CTRL register.
  *
@@ -89,44 +89,25 @@ void neorv32_xip_init(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) 
 
 
 /**********************************************************************//**
- * Configure XIP address mapping.
- *
- * @warning This function overrides the MAP registers.
- *
- * @param[in] page Memory page (address bits 31:28) used for XIP accesses (0..15).
- * @param[in] addr_mask SPI flash address mask (address bits 27:8).
- * @return 0 if configuration ok, 1 if configuration error.
- **************************************************************************/
-int neorv32_xip_set_mapping(uint8_t page, uint32_t addr_mask) {
-
-  if (page > 15) { // 0x0 to 0xF
-    return 1;
-  }
-
-  addr_mask >>= 8; // remove the always-set bits
-
-  uint32_t map = 0;
-  map |= ((uint32_t)(page & 0x0F)) << XIP_MAP_PAGE_LSB;
-  map |= (addr_mask & 0x000FFFFF) << XIP_MAP_ADDR_MASK_LSB;
-
-  NEORV32_XIP.MAP = map;
-  return 0;
-}
-
-
-/**********************************************************************//**
- * Enable XIP mode (to allow CPU to _transparently_ fetch instructions)
+ * Enable XIP mode (to allow CPU to _transparently_ fetch instructions).
  *
  * @warning This function is blocking until the XIP mode is ready.
  *
  * @param[in] abytes Number of address bytes used to access the SPI flash (1,2,3,4).
+ * @param[in] page_base XIP memory page base address (top 4 address bits, 0..15).
  * @return 0 if XIP mode is running, 1 if configuration error.
  **************************************************************************/
-int neorv32_xip_start(uint8_t abytes) {
+int neorv32_xip_start(uint8_t abytes, uint32_t page_base) {
 
   if ((abytes < 1) || (abytes > 4)) {
     return 1;
   }
+
+  if (page_base & 0x0FFFFFFF) {
+    return 1;
+  }
+  page_base >>= 28;
+
 
   uint32_t ctrl = NEORV32_XIP.CTRL;
 
@@ -139,8 +120,12 @@ int neorv32_xip_start(uint8_t abytes) {
   ctrl &= ~(0xF << XIP_CTRL_SPI_NBYTES_LSB); // clear old configuration
   ctrl |= ((uint32_t)(abytes+1+4)) << XIP_CTRL_SPI_NBYTES_LSB; // set new configuration
 
+  // XIP memory page
+  ctrl &= ~(0xF << XIP_CTRL_PAGE_LSB); // clear old configuration
+  ctrl |= ((uint32_t)(page_base & 0xf)) << XIP_CTRL_PAGE_LSB; // set new configuration
+
   ctrl |= 1 << XIP_CTRL_XIP_EN; // enable XIP mode
-  
+
   NEORV32_XIP.CTRL = ctrl;
 
   // wait until XIP mode becomes ready

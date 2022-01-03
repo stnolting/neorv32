@@ -105,6 +105,7 @@ int main() {
     return 1;
   }
 
+
   // intro
   neorv32_uart0_printf("<< XIP Demo Program >>\n\n");
 
@@ -122,17 +123,10 @@ int main() {
     return 1;
   }
 
-  // set XIP address mapping
-  // * map the XIP flash to the address space starting at 0x20000000
-  // * set the flash's address range to 16 bit (2 address bytes) by using the bit mask
-  if (neorv32_xip_set_mapping(0x2, 0x0000FFFF)) {
-    neorv32_uart0_printf("Error! XIP address mapping configuration error!\n");
-    return 1;
-  }
-
   // configure and enable the actual XIP mode
   // * configure 2 address bytes send to the SPI flash for addressing
-  if (neorv32_xip_start(2)) {
+  // * map the XIP flash to the address space starting at 0x20000000
+  if (neorv32_xip_start(2, 0x20000000)) {
     neorv32_uart0_printf("Error! XIP mode configuration error!\n");
     return 1;
   }
@@ -143,7 +137,6 @@ int main() {
 
   return 0;
 }
-
 
 
 /**********************************************************************//**
@@ -174,6 +167,7 @@ int program_xip_flash(void) {
     data_byte >>= (3-(cnt & 3)) * 8;
     data_byte &= 0x000000FF;
 
+//DEBUGGING
 //neorv32_uart0_printf("Data byte %u: 0x%x\n", cnt, data_byte);
 
     // set write-enable latch
@@ -212,4 +206,3 @@ int program_xip_flash(void) {
 
   return error;
 }
-

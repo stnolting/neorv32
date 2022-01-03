@@ -409,6 +409,11 @@
               <description>SPI flash read command</description>
             </field>
             <field>
+              <name>XIP_CTRL_XIP_PAGE</name>
+              <bitRange>[25:22]</bitRange>
+              <description>XIP memory page</description>
+            </field>
+            <field>
               <name>XIP_CTRL_PHY_BUSY</name>
               <bitRange>[29:29]</bitRange>
               <access>read-only</access>
@@ -429,31 +434,14 @@
           </fields>
         </register>
         <register>
-          <name>MAP</name>
-          <description>Address mapping resgiters</description>
-          <addressOffset>0x04</addressOffset>
-          <fields>
-            <field>
-              <name>XIP_MAP_ADDR_MASK</name>
-              <bitRange>[27:8]</bitRange>
-              <description>XIP access address mask bits</description>
-            </field>
-            <field>
-              <name>XIP_MAP_PAGE</name>
-              <bitRange>[31:28]</bitRange>
-              <description>XIP access page select</description>
-            </field>
-          </fields>
-        </register>
-        <register>
           <name>DATA_LO</name>
           <description>Direct SPI access - data register low</description>
-          <addressOffset>0x0C</addressOffset>
+          <addressOffset>0x08</addressOffset>
         </register>
         <register>
           <name>DATA_HI</name>
           <description>Direct SPI access - data register high</description>
-          <addressOffset>0x10</addressOffset>
+          <addressOffset>0x0C</addressOffset>
         </register>
       </registers>
     </peripheral>
