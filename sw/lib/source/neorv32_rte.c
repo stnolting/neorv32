@@ -254,8 +254,8 @@ static void __neorv32_rte_debug_exc_handler(void) {
     register uint32_t bus_err = NEORV32_BUSKEEPER.CTRL;
     if (bus_err & (1<<BUSKEEPER_ERR_FLAG)) { // exception caused by bus system?
       switch ((bus_err & (3<<BUSKEEPER_ERR_TYPE_LSB)) & 0x03) {
-        case 0: neorv32_uart0_print(" [TIMEOUT_ERR]"); break;
-        case 1: neorv32_uart0_print(" [DEVICE_ERR]"); break;
+        case 0: neorv32_uart0_print(" [DEVICE_ERR]"); break;
+        case 1: neorv32_uart0_print(" [TIMEOUT_ERR]"); break;
         case 2: neorv32_uart0_print(" [UNEXPECTED_ACK]"); break;
         case 3: neorv32_uart0_print(" [UNEXPECTED_ERR]"); break;
         default: break;
