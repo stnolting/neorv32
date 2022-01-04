@@ -32,4 +32,5 @@ jobs:
 
       - name: '🚧 Run RISC-V Architecture Tests'
         uses: docker://ghcr.io/stnolting/neorv32/sim
-        run: ./do.py RunRISCVArchitectureTests -s ${{ matrix.suite }}
+        with:
+          args: ./do.py RunRISCVArchitectureTests -s ${{ matrix.suite }}
