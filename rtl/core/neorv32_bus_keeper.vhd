@@ -152,9 +152,10 @@ begin
       if (control.bus_err = '1') then -- sticky error flag
         err_flag <= '1';
         err_type <= control.err_type;
-      elsif ((wren or rden) = '1') then -- clear on read or write
-        err_flag <= '0';
-        err_type <= (others => '0');
+      else
+        if ((wren or rden) = '1') then -- clear on read or write acces
+          err_flag <= '0';
+        end if;
       end if;
     end if;
   end process rw_access;
