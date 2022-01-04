@@ -34,13 +34,13 @@ In case of a bus access fault exception application software can evaluate the Bu
 that an actual bus access fault has occurred. The bit is sticky once set and is automatically cleared when reading or
 writing the `NEORV32_BUSKEEPER.CTRL` register. The _BUSKEEPER_ERR_TYPE_ bits define the type of the bus fault:
 
-* _BUSKEEPER_ERR_TYPE_ = `00` - "Device Error": The bus access exception was cause by the memory-mapped device that
+* `00` - "Device Error": The bus access exception was cause by the memory-mapped device that
 has been accessed (the device asserted it's `err_o`).
-* _BUSKEEPER_ERR_TYPE_ = `01` - "Timeout Error": The bus access exception was caused by the Bus Keeper because the
+* `01` - "Timeout Error": The bus access exception was caused by the Bus Keeper because the
 accessed memory-mapped device did not respond within the access time window. Note that this error type can also be raised
 by the optional timeout feature of the <<_processor_external_memory_interface_wishbone_axi4_lite>>).
-* _BUSKEEPER_ERR_TYPE_ = `10` - "Unexpected ACK": There was an ACK signal received while there was no pending transfer.
-* _BUSKEEPER_ERR_TYPE_ = `11` - "Unexpected ERR": There was an ERR signal received while there was no pending transfer.
+* `10` - "Unexpected ACK": There was an ACK signal received while there was no pending transfer.
+* `11` - "Unexpected ERR": There was an ERR signal received while there was no pending transfer.
 
 [NOTE]
 Bus access fault exceptions are also raised if a physical memory protection rule is violated. In this case
@@ -65,7 +65,7 @@ at all.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.3+<| `0xffffff7C` .3+<| `NEORV32_BUSKEEPER.CTRL` <|`1:0`  _BUSKEEPER_ERR_TYPE_MSB_ : _BUSKEEPER_ERR_TYPE_LSB_  ^| r/- | Bus error type, valid if _BUSKEEPER_ERR_FLAG_
+.3+<| `0xffffff7C` .3+<| `NEORV32_BUSKEEPER.CTRL` <|`1:0` _BUSKEEPER_ERR_TYPE_MSB_ : _BUSKEEPER_ERR_TYPE_LSB_ ^| r/- | Bus error type, valid if _BUSKEEPER_ERR_FLAG_
                                                   <|`16` _BUSKEEPER_NULL_CHECK_EN_ ^| r/w <| Enable NULL address check when set
                                                   <|`31` _BUSKEEPER_ERR_FLAG_      ^| r/- <| Sticky error flag, clears after read or write access
 |=======================
