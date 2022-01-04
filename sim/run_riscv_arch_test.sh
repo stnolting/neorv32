@@ -33,6 +33,7 @@ export NEORV32_LOCAL_RTL=${NEORV32_LOCAL_RTL:-$(pwd)/work}
 
 rm -rf "$NEORV32_LOCAL_RTL"
 cp -r ../rtl "$NEORV32_LOCAL_RTL"
+rm -f $NEORV32_LOCAL_RTL/core/mem/*.legacy.vhd
 
 header "Starting RISC-V architecture tests"
 
