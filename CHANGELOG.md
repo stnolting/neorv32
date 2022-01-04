@@ -7,7 +7,7 @@ A list of all releases can be found [here](https://github.com/stnolting/neorv32/
 can be found [online at GitHub-pages](https://stnolting.github.io/neorv32).
 
 :information_source: Starting with version `1.5.7` this project uses [semantic versioning](https://semver.org) for official releases.
-The _hardware version identifier_ uses an additional custom version element (i.e. `MAJOR.MINOR.PATCH.individual`) to track individual changes.
+The _hardware version identifier_ uses an additional custom version element (i.e. `MAJOR.MINOR.PATCH.individual`) to track _individual_ changes.
 The identifier number is incremented with every core RTL modification and also by major framework modifications.
 
 :information_source: The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 8x4-bit BCD representation is used.
