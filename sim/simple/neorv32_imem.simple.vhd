@@ -60,6 +60,8 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal [SIM-only!] IMEM as ROM (" & natural'image(IMEM_SIZE) &
+  " bytes), pre-initialized with application (" & natural'image(application_init_image'length) & " bytes)." severity note;
   assert not (IMEM_AS_IROM = false) report "NEORV32 PROCESSOR CONFIG ERROR! Simulation-optimized IMEM can only be used as pre-initialized ROM!" severity error;
 
 
