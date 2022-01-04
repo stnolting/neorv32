@@ -173,12 +173,12 @@ int program_xip_flash(void) {
     // set write-enable latch
     // 1 byte command
     data.uint32[0] = 0; // irrelevant, TX packet is MSB-aligned
-    data.uint32[1] = 0x06 << 24;
+    data.uint32[1] = 0x06 << 24; // command: set write-enable latch
     error += neorv32_xip_spi_trans(1, &data.uint64);
 
     // write word
     // 1 byte command, 2 bytes address, 1 byte data
-    tmp = 0x02 << 24; // byte write command
+    tmp = 0x02 << 24; // command: byte write
     tmp |= (flash_addr & 0x0000FFFF) << 8; // address
     tmp |= data_byte << 0; // data byte
     data.uint32[0] = 0; // irrelevant, TX packet is MSB-aligned
