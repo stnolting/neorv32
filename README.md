@@ -59,10 +59,10 @@ setting up your NEORV32 setup!
 
 ### Project Key Features
 
-- [x] all-in-one package: [CPU](#3-NEORV32-CPU-Features) plus [SoC](#2-NEORV32-Processor-Features) plus [Software Framework & Tooling](#4-Software-Framework-and-Tooling)
+- [x] all-in-one package: **CPU** plus **SoC** plus **Software Framework & Tooling**
 - [x] completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
 - [x] be as small as possible while being as RISC-V-compliant as possible
-- [x] from zero to *printf("hello world!");* - completely open source and documented
+- [x] from zero to `printf("hello world!");` - completely open source and documented
 - [x] easy to use even for FPGA/RISC-V starters – intended to work *out of the box*
 
 
@@ -91,7 +91,7 @@ to allow a flexible customization according to your needs. Note that all modules
 * processor-internal data and instruction memories ([DMEM](https://stnolting.github.io/neorv32/#_data_memory_dmem) /
 [IMEM](https://stnolting.github.io/neorv32/#_instruction_memory_imem)) &
 cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruction_cache_icache))
-* bootloader ([BOOTLDROM](https://stnolting.github.io/neorv32/#_bootloader_rom_bootrom)) with serial user interface
+* pre-installed bootloader ([BOOTLDROM](https://stnolting.github.io/neorv32/#_bootloader_rom_bootrom)) with serial user interface
   * allows booting application code via UART or from external SPI flash
 
 **Timers**
@@ -105,7 +105,7 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 * standard serial interfaces
 ([UART](https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0),
 [SPI](https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi),
-[TWI / I²C](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi))
+[TWI](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi))
 * general purpose [GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio) and
 [PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)
 * smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly drive _NeoPixel(TM)_ LEDs
@@ -129,9 +129,7 @@ for tightly-coupled custom co-processor extensions
 * execute in place module ([XIP](https://stnolting.github.io/neorv32/#_execute_in_place_module_xip)) to directly execute code from SPI flash
 * _true random_ number generator ([TRNG](https://stnolting.github.io/neorv32/#_true_random_number_generator_trng))
 * on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) accessible via JTAG interface - implementing
-the [*Minimal RISC-V Debug Specification Version 0.13.2*](https://github.com/riscv/riscv-debug-spec)
-and compatible with *OpenOCD* and *gdb*
-* bus keeper to monitor the CPU's bus transactions ([BUSKEEPER](https://stnolting.github.io/neorv32/#_internal_bus_monitor_buskeeper))
+the "Minimal RISC-V Debug Specification Version 0.13.2" and compatible with **OpenOCD** + **gdb** and **Segger Embedded Studio**
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -155,12 +153,10 @@ SoC configurations. The latest utilization reports for those setups can be found
 
 ## 3. NEORV32 CPU Features
 
-The CPU (top entity: [`rtl/core/neorv32_cpu.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_cpu.vhd))
-implements the RISC-V 32-bit `rv32` ISA with optional extensions (see below). It is compatible to subsets of the
+The NEORV32 CPU implements the RISC-V 32-bit `rv32i` ISA with optional extensions (see below). It is compatible to subsets of the
 *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/master/docs/references/riscv-spec.pdf)
 and the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/master/docs/references/riscv-privileged.pdf).
-Compatibility is checked by passing the [official RISC-V architecture tests](https://github.com/riscv/riscv-arch-test)
-(see [`sim/README`](sim/README.md)).
+Compatibility is checked by passing the [official RISC-V architecture tests](https://github.com/riscv/riscv-arch-test).
 
 The core is a little-endian Von-Neumann machine implemented as multi-cycle architecture.
 However, the CPU's _front end_ (instruction fetch) and _back end_ (instruction execution) can work independently to increase performance.
@@ -215,10 +211,6 @@ using **Intel Quartus Prime Lite 20.1** ("balanced implementation, Slow 1200mV 0
 
 :information_source: An incremental list of CPU extension's hardware utilization can found in the
 [_Data Sheet: FPGA Implementation Results - CPU_](https://stnolting.github.io/neorv32/#_cpu).
-
-:information_source: The CPU and SoC provide advanced options to optimize for performance, area or energy.
-See [_User Guide: Application-Specific Processor Configuration_](https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration)
-for more information.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
