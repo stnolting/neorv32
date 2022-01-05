@@ -39,7 +39,7 @@ It is recommended to use the **NEORV32 Processor** as default top instance even 
 CPU. Simply disable all the processor-internal modules via the generics and you will get a "CPU
 wrapper" that provides a minimal CPU environment and an external bus interface (like AXI4). This
 setup also allows to further use the default bootloader and software framework. From this base you
-can start building your own SoC. Of course you can also use the CPU in it’s true stand-alone mode.
+can start building your own SoC. Of course you can also use the CPU in it's true stand-alone mode.
 
 [NOTE]
 This documentation assumes the reader is familiar with the official RISC-V "User" and "Privileged Architecture" specifications.
@@ -427,18 +427,18 @@ The official RISC-V specifications can be found here: https://github.com/riscv/r
 The NEORV32 `B` extension only implements the _basic bit-manipulation instructions_ (`Zbb`) subset
 and the _address generation instructions_ (`Zba`) subset yet.
 
-The `Zbb` sub-extension adds the following instruction:
+The `Zbb` sub-extension adds the following instructions:
 
-* `andn`, `orn`, `xnor`
-* `clz`, `ctz`, `cpop`
-* `max`, `maxu`, `min`, `minu`
-* `sext.b`, `sext.h`, `zext.h`
-* `rol`, `ror`, `rori`
-* `orc.b`, `rev8`
+* `andn` `orn` `xnor`
+* `clz` `ctz` `cpop`
+* `max` `maxu` `min` `minu`
+* `sext.b` `sext.h` `zext.h`
+* `rol` `ror` `rori`
+* `orc.b` `rev8`
 
-The `Zba` sub-extension adds the following instruction:
+The `Zba` sub-extension adds the following instructions:
 
-* `sh1add`, `sh2add`, `sh3add`
+* `sh1add` `sh2add` `sh3add`
 
 [TIP]
 By default, the bit-manipulation unit uses an _iterative_ approach to compute shift-related operations
@@ -459,8 +459,8 @@ The _compressed_ ISA extension provides 16-bit encodings of commonly used instru
 The `C` extension is available when the `CPU_EXTENSION_RISCV_C` configuration generic is _true_.
 In this case the following instructions are available:
 
-* `c.addi4spn`, `c.lw`, `c.sw`, `c.nop`, `c.addi`, `c.jal`, `c.li`, `c.addi16sp`, `c.lui`, `c.srli`, `c.srai` `c.andi`, `c.sub`,
-`c.xor`, `c.or`, `c.and`, `c.j`, `c.beqz`, `c.bnez`, `c.slli`, `c.lwsp`, `c.jr`, `c.mv`, `c.ebreak`, `c.jalr`, `c.add`, `c.swsp`
+* `c.addi4spn` `c.lw` `c.sw` `c.nop` `c.addi` `c.jal` `c.li` `c.addi16sp` `c.lui` `c.srli` `c.srai` `c.andi` `c.sub`
+`c.xor` `c.or` `c.and` `c.j` `c.beqz` `c.bnez` `c.slli` `c.lwsp` `c.jr` `c.mv` `c.ebreak` `c.jalr` `c.add` `c.swsp`
 
 [NOTE]
 When the compressed instructions extension is enabled, branches to an _unaligned_ and _uncompressed_ instruction require
@@ -476,7 +476,7 @@ decrease physical hardware requirements (for example block RAM). This extensions
 configuration generic is _true_. Accesses to registers beyond `x15` will raise and _illegal instruction exception_.
 This extension does not add any additional instructions or features.
 
-[IMPORTANT]
+[NOTE]
 Due to the reduced register file size an alternate toolchain ABI (**`ilp32e`**) is required.
 
 
@@ -486,22 +486,22 @@ The CPU always supports the complete `rv32i` base integer instruction set. This 
 regardless of the setting of the remaining exceptions. The base instruction set includes the following
 instructions:
 
-* immediate: `lui`, `auipc`
-* jumps: `jal`, `jalr`
-* branches: `beq`, `bne`, `blt`, `bge`, `bltu`, `bgeu`
-* memory: `lb`, `lh`, `lw`, `lbu`, `lhu`, `sb`, `sh`, `sw`
-* alu: `addi`, `slti`, `sltiu`, `xori`, `ori`, `andi`, `slli`, `srli`, `srai`, `add`, `sub`, `sll`, `slt`, `sltu`, `xor`, `srl`, `sra`, `or`, `and`
-* environment: `ecall`, `ebreak`, `fence`
+* immediate: `lui` `auipc`
+* jumps: `jal` `jalr`
+* branches: `beq` `bne` `blt` `bge` `bltu` `bgeu`
+* memory: `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`
+* alu: `addi` `slti` `sltiu` `xori` `ori` `andi` `slli` `srli` `srai` `add` `sub` `sll` `slt` `sltu` `xor` `srl` `sra` `or` `and`
+* environment: `ecall` `ebreak` `fence`
 
 [NOTE]
-In order to keep the hardware footprint low, the CPU's shift unit uses a bit-serial serial approach. Hence, shift operations
+In order to keep the hardware footprint low, the CPU's shift unit uses a bit-serial approach. Hence, shift operations
 take up to 32 cycles (plus overhead) depending on the actual shift amount. Alternatively, the shift operations can be processed
-completely in parallels by a fast (but large) barrel shifter when the `FAST_SHIFT_EN` generic is _true_. In that case, shift operations
+completely in parallel by a fast (but large) barrel shifter if the `FAST_SHIFT_EN` generic is _true_. In that case, shift operations
 complete within 2 cycles (plus overhead) regardless of the actual shift amount.
 
 [NOTE]
 Internally, the `fence` instruction does not perform any operation inside the CPU. It only sets the
-top’s `d_bus_fence_o` signal high for one cycle to inform the memory system a `fence` instruction has been
+top's `d_bus_fence_o` signal high for one cycle to inform the memory system a `fence` instruction has been
 executed. Any flags within the `fence` instruction word are ignore by the hardware.
 
 
@@ -511,8 +511,8 @@ Hardware-accelerated integer multiplication and division operations are availabl
 `CPU_EXTENSION_RISCV_M` configuration generic is _true_. In this case the following instructions are
 available:
 
-* multiplication: `mul`, `mulh`, `mulhsu`, `mulhu`
-* division: `div`, `divu`, `rem`, `remu`
+* multiplication: `mul` `mulh` `mulhsu` `mulhu`
+* division: `div` `divu` `rem` `remu`
 
 [NOTE]
 By default, multiplication and division operations are executed in a bit-serial approach.
@@ -528,7 +528,7 @@ of the `M` extensions and is intended for size-constrained setups that require h
 integer multiplications but not hardware-based divisions, which will be computed entirely in software.
 This extension requires only ~50% of the hardware utilization of the "full" `M` extension.
 
-* multiplication: `mul`, `mulh`, `mulhsu`, `mulhu`
+* multiplication: `mul` `mulh` `mulhsu` `mulhu`
 
 If `Zmmul` is enabled, executing any division instruction from the `M` ISA extension (`div`, `divu`, `rem`, `remu`)
 will raise an _illegal instruction exception_.
@@ -570,20 +570,20 @@ less hardware resources and features faster context changes. This also implies t
 register file-related load/store or move instructions.
 The official RISC-V specifications can be found here: https://github.com/riscv/riscv-zfinx
 
-[TIP]
+[NOTE]
 The NEORV32 floating-point unit used by the `Zfinx` extension is compatible to the _IEEE-754_ specifications.
 
 The `Zfinx` extensions only supports single-precision (`.s` instruction suffix), so it is a direct alternative
 to the `F` extension. The `Zfinx` extension is implemented when the `CPU_EXTENSION_RISCV_Zfinx` configuration
 generic is _true_. In this case the following instructions and CSRs are available:
 
-* conversion: `fcvt.s.w`, `fcvt.s.wu`, `fcvt.w.s`, `fcvt.wu.s`
-* comparison: `fmin.s`, `fmax.s`, `feq.s`, `flt.s`, `fle.s`
-* computational: `fadd.s`, `fsub.s`, `fmul.s`
-* sign-injection: `fsgnj.s`, `fsgnjn.s`, `fsgnjx.s`
+* conversion: `fcvt.s.w` `fcvt.s.wu` `fcvt.w.s` `fcvt.wu.s`
+* comparison: `fmin.s` `fmax.s` `feq.s` `flt.s` `fle.s`
+* computational: `fadd.s` `fsub.s` `fmul.s`
+* sign-injection: `fsgnj.s` `fsgnjn.s` `fsgnjx.s`
 * number classification: `fclass.s`
 
-* additional CSRs: `fcsr`, `frm`, `fflags`
+* additional CSRs: `fcsr` `frm` `fflags`
 
 [WARNING]
 Fused multiply-add instructions `f[n]m[add/sub].s` are not supported!
@@ -610,12 +610,12 @@ is implemented when the `CPU_EXTENSION_RISCV_Zicsr` configuration generic is _tr
 [IMPORTANT]
 If the `Zicsr` extension is disabled the CPU does not provide any _privileged architecture_ features at all!
 In order to provide the full set of privileged functions that are required to run more complex tasks like
-operating system and to allow a secure execution environment the `Zicsr` extension should always be enabled.
+operating system and to allow a secure execution environment the `Zicsr` extension should be always enabled.
 
 In this case the following instructions are available:
 
-* CSR access: `csrrw`, `csrrs`, `csrrc`, `csrrwi`, `csrrsi`, `csrrci`
-* environment: `mret`, `wfi`
+* CSR access: `csrrw` `csrrs` `csrrc` `csrrwi` `csrrsi` `csrrci`
+* environment: `mret` `wfi`
 
 [NOTE]
 If `rd=x0` for the `csrrw[i]` instructions there will be no actual read access to the according CSR.
@@ -824,12 +824,13 @@ In this document the following nomenclature regarding traps is used:
 Whenever an exception or interrupt is triggered, the CPU transfers control to the address stored in `mtvec`
 CSR. The cause of the according interrupt or exception can be determined via the content of `mcause`
 CSR. The address that reflects the current program counter when a trap was taken is stored to `mepc` CSR.
-Additional information regarding the cause of the trap can be retrieved from `mtval` CSR.
+Additional information regarding the cause of the trap can be retrieved from `mtval` CSR and the processor's
+<<_internal_bus_monitor_buskeeper>> (for memory access exceptions)
 
-The traps are prioritized. If several _exceptions_ occur at once only the one with highest priority is triggered
-while all remaining exceptions are ignored. If several _interrupts_ trigger at once, the one with highest priority
+The traps are prioritized. If several _synchronous exceptions_ occur at once only the one with highest priority is triggered
+while all remaining exceptions are ignored. If several _asynchronous exceptions_ (interrupts) trigger at once, the one with highest priority
 is serviced first while the remaining ones stay _pending_. After completing the interrupt handler the interrupt with
-the second highest priority will get serviced and so on until no further interrupt are pending.
+the second highest priority will get serviced and so on until no further interrupts are pending.
 
 .Interrupt Signal Requirements - Standard RISC-V Interrupts
 [IMPORTANT]
@@ -838,24 +839,24 @@ until it is explicitly acknowledged by the CPU software (for example by writing 
 
 .Interrupt Signal Requirements - Fast Interrupt Requests
 [IMPORTANT]
-The NEORV32-specific FIRQ request lines are triggered by a rising edge. Each request is buffered in the CPU control
+The NEORV32-specific FIRQ request lines are triggered by a one-shot high-level (i.e. rising edge). Each request is buffered in the CPU control
 unit until the channel is either disabled (by clearing the according `mie` CSR bit) or the request is explicitly cleared (by setting
 the according `mip` CSR bit).
 
 .Instruction Atomicity
 [NOTE]
-All instructions execute as atomic operations - interrupts can only trigger between two instructions.
-So if there is a permanent interrupt request, exactly one instruction from the interrupt program will be executed before
-a new interrupt handler can start.
+All instructions execute as atomic operations - interrupts can only trigger _between_ two instructions.
+So even if there is a permanent interrupt request, exactly one instruction from the interrupt program will be executed before
+another interrupt handler can start. This allows program progress even if there are permanent interrupt requests.
 
 
 :sectnums:
-==== Memory Access Exceptions**
+==== Memory Access Exceptions
 
 If a load operation causes any exception, the instruction's destination register is
 _not written_ at all. Load exceptions caused by a misalignment or a physical memory protection fault do not
-trigger a bus read-operation at all. Exceptions caused by a store address misalignment or a store physical
-memory protection fault do not trigger a bus write-operation at all.
+trigger a bus/memory read-operation at all. Vice versa, exceptions caused by a store address misalignment or a store physical
+memory protection fault do not trigger a bus/memory write-operation at all.
 
 
 :sectnums:
@@ -883,7 +884,7 @@ clear the MSB.
 
 The "Prio." column shows the priority of each trap. The highest priority is 1. The "`mcause`" column shows the
 cause ID of the according trap that is written to `mcause` CSR. The "[RISC-V]" columns show the interrupt/exception code value from the
-official RISC-V privileged architecture manual. The "[C]" names are defined by the NEORV32 core library (`sw/lib/include/neorv32.h`) and can
+official RISC-V privileged architecture manual. The "[C]" names are defined by the NEORV32 core library (the runtime environment _RTE_) and can
 be used in plain C code. The "`mepc`" and "`mtval`" columns show the value written to
 `mepc` and `mtval` CSRs when a trap is triggered:
 
@@ -936,7 +937,7 @@ The following table provides a summarized description of the actual events for t
 [cols="<3,<7"]
 [options="header",grid="rows"]
 |=======================
-| Trap ID | Triggered when ...
+| Trap ID [C] | Triggered when ...
 | _TRAP_CODE_I_MISALIGNED_ | fetching an 32-bit instruction word that is not 32-bit-aligned (_see note below!_)
 | _TRAP_CODE_I_ACCESS_     | bus timeout or bus error during instruction word fetch
 | _TRAP_CODE_I_ILLEGAL_    | trying to execute an invalid instruction word (malformed or not supported) or on a privilege violation
@@ -1004,7 +1005,7 @@ The following table shows the signals of the data and instruction interfaces see
 
 [NOTE]
 Currently, there a no pipelined or overlapping operations implemented within the same bus interface.
-So only a single transfer request can be "on the fly".
+So only a single transfer request can be "on the fly" (pending) at once.
 
 :sectnums:
 ===== Protocol
@@ -1108,14 +1109,14 @@ registers of the NEORV32 CPU as well as most register of the whole NEORV32 Proce
 dedicated hardware reset**. "Uncritical registers" in this context means that the initial value of these registers
 after power-up is not relevant for a defined CPU boot process.
 
-**Rational**
+**Rationale**
 
 A good example to illustrate the concept of uncritical registers is a pipelined processing engine. Each stage
 of the engine features an N-bit _data register_ and a 1-bit _status register_. The status register is set when the
 data in the according data register is valid. At the end of the pipeline the status register might trigger a write-back
 of the processing result to some kind of memory. The initial status of the data registers after power-up is
 irrelevant as long as the status registers are all reset to a defined value that indicates there is no valid data in
-the pipeline’s data register. Therefore, the pipeline data register do no require a dedicated reset as they do not
+the pipeline's data register. Therefore, the pipeline data register do no require a dedicated reset as they do not
 control the actual operation (in contrast to the status register). This makes the pipeline data registers from
 this example "uncritical registers".
 
@@ -1123,28 +1124,26 @@ this example "uncritical registers".
 
 In terms of the NEORV32 CPU, there are several pipeline registers, state machine registers and even status
 and control registers (CSRs) that do not require a defined initial state to ensure a correct boot process. The
-pipeline register will get initialized by the CPU’s internal state machines, which are initialized from the main
+pipeline register will get initialized by the CPU's internal state machines, which are initialized from the main
 control engine that actually features a defined reset. The initialization of most of the CPU's core CSRs (like
 interrupt control) is done by the software (to be more specific, this is done by the `crt0.S` start-up code).
 
 During the very early boot process (where `crt0.S` is running) there is no chance for undefined behavior due to
 the lack of dedicated hardware resets of certain CSRs. For example the machine interrupt-enable CSR (`mie`)
 does not provide a dedicated reset. The value after reset of this register is uncritical as interrupts cannot fire
-because the global interrupt enabled flag in the status register (`mstatsus(mie)`) provides a dedicated
-hardware reset setting it to low (globally disabling interrupts).
+because the global interrupt enabled flag in the status register (`mstatsus(mie)`) _do_ provide a dedicated
+hardware reset setting this bit to low (globally disabling interrupts).
 
 **Reset Configuration**
 
-Most CPU-internal register do feature an asynchronous reset in the VHDL code, but the "don't care" value
-(VHDL `'-'`) is used for initialization of the uncritical register, effectively generating a flip-flop without a
+Most CPU-internal register do provide an asynchronous reset in the VHDL code, but the "don't care" value
+(VHDL `'-'`) is used for initialization of all uncritical registers, effectively generating a flip-flop without a
 reset. However, certain applications or situations (like advanced gate-level / timing simulations) might
-require a more deterministic reset state. For this case, a defined reset level (reset-to-low) of all registers can
-be enabled via a constant in the main VHDL package file (`rtl/core/neorv32_package.vhd`):
+require a more deterministic reset state. For this case, a defined reset level (reset-to-low) of all CPU registers can
+be enabled ba enabling a constant in the main VHDL package file (`rtl/core/neorv32_package.vhd`):
 
 [source,vhdl]
 ----
 -- "critical" number of PMP regions --
-constant dedicated_reset_c : boolean := false; -- use dedicated hardware reset value
-for UNCRITICAL registers (FALSE=reset value is irrelevant (might simplify HW),
-default; TRUE=defined LOW reset value)
+constant dedicated_reset_c : boolean := false; -- use dedicated hardware reset value for UNCRITICAL registers (FALSE=reset value is irrelevant (might simplify HW), default; TRUE=defined LOW reset value)
 ----

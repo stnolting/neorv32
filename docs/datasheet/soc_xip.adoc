@@ -68,7 +68,7 @@ The flash's "read command", which initiates a read access, is defined by the _XI
 For most SPI flash memories this is `0x03` for normal SPI mode.
 
 [NOTE]
-Quad-SPI (QSPI) support, which is ~4x times faster, is planned for the future. 😉
+Quad-SPI (QSPI) support, which is about 4x times faster, is planned for the future. 😉
 
 
 **Direct SPI Access**

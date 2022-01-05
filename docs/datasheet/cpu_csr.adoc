@@ -473,13 +473,13 @@ The available physical memory protection logic is configured via the _PMP_NUM_RE
 _PMP_MIN_GRANULARITY_ top entity generics. _PMP_NUM_REGIONS_ defines the number of implemented
 protection regions and thus, the availability of the according `pmpcfg*` and `pmpaddr*` CSRs.
 
-[TIP]
+[NOTE]
 If trying to access an PMP-related CSR beyond _PMP_NUM_REGIONS_ **no illegal instruction
 exception** is triggered. The according CSRs are read-only (writes are ignored) and always return zero.
 
 [IMPORTANT]
-The RISC-V-compatible NEORV32 physical memory protection only implements the _NAPOT_
-(naturally aligned power-of-two region) mode with a minimal region granularity of 8 bytes.
+The RISC-V-compatible NEORV32 physical memory protection only implements the **NAPOT**
+(naturally aligned power-of-two region) mode yet with a minimal region granularity of 8 bytes.
 
 
 :sectnums!:
@@ -500,7 +500,7 @@ first PMP configuration entry) are implemented (all remaining bits are always ze
 [options="header",grid="rows"]
 |=======================
 | Bit | RISC-V name | R/W | Function
-| 7   | _L_ | r/w | lock bit, can be set - but not be cleared again (only via CPU reset)
+| 7   | _L_ | r/w | lock bit, can only be cleared by CPU reset
 | 6:5 | -   | r/- | reserved, read as zero
 | 4:3 | _A_ | r/w | mode configuration; only OFF (`00`) and NAPOT (`11`) are supported
 | 2   | _X_ | r/w | execute permission
@@ -515,9 +515,9 @@ first PMP configuration entry) are implemented (all remaining bits are always ze
 [cols="4,27,>7"]
 [frame="topbot",grid="none"]
 |======
-| 0x3b0 - 0x3ef| **Physical memory protection configuration registers** | `pmpaddr0` - `pmpaddr63`
+| 0x3b0 - 0x3ef| **Physical memory protection address registers** | `pmpaddr0` - `pmpaddr63`
 3+| Reset value: _UNDEFINED_
-3+| The `pmpaddr*` CSRs are compatible to the RISC-V specifications. They are used to configure the base
+3+| The `pmpaddr*` CSRs are compatible to the RISC-V specifications. They are used to configure the PMP region's base
 address and the region size.
 |======
 
@@ -611,7 +611,7 @@ instructions counter. The `instret[h]` CSR is a read-only shadowed copy of the `
 | 0xb80 | **Machine cycle counter - high word** | `mcycleh`
 3+| Reset value: _UNDEFINED_
 3+| The `mcycle[h]` CSR is compatible to the RISC-V specifications. It shows the lower/upper 32-bit of the 64-bit cycle
-counter. The `mcycle[h]` CSR can also be written when in machine mode and is copied to the `cycle[h]` CSR.
+counter. The `mcycle[h]` CSR can also be written when in machine mode and is mirrored to the `cycle[h]` CSR.
 |======
 
 
@@ -625,7 +625,7 @@ counter. The `mcycle[h]` CSR can also be written when in machine mode and is cop
 | 0xb82 | **Machine instructions-retired counter - high word** | `minstreth`
 3+| Reset value: _UNDEFINED_
 3+| The `minstret[h]` CSR is compatible to the RISC-V specifications. It shows the lower/upper 32-bit of the 64-bit retired
-instructions counter. The `minstret[h]` CSR also be written when in machine mode and is copied to the `instret[h]` CSR.
+instructions counter. The `minstret[h]` CSR also be written when in machine mode and is mirrored to the `instret[h]` CSR.
 |======
 
 

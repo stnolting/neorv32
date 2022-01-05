@@ -202,7 +202,6 @@ NEORV32_HOME ?= ../../..
 | _MABI_            | The default 32-bit integer ABI.
 | _USER_FLAGS_      | Additional flags that will be forwarded to the compiler tools
 | _NEORV32_HOME_    | Relative or absolute path to the NEORV32 project home folder. Adapt this if the makefile/project is not in the project's `sw/example folder`.
-| _COM_PORT_        | Default serial port for executable upload to bootloader.
 |=======================
 
 :sectnums:
@@ -385,7 +384,7 @@ For instance, this variable contains _-1_ if the main function returned with `re
 `__neorv32_crt0_after_main` function is irrelevant as there is no further "software instance" executed afterwards that can check this.
 However, the on-chip debugger could still evaluate the return value of the after-main handler.
 
-A simple `printf` can be used to inform the user when the application main function return
+A simple `printf` can be used to inform the user when the application's main function returns
 (this example assumes that UART0 has been already properly configured in the actual application):
 
 .After-main handler - example
