@@ -6,8 +6,8 @@ The latest release is [![release](https://img.shields.io/github/v/release/stnolt
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases). The most recent version of the *NEORV32 data sheet*
 can be found [online at GitHub-pages](https://stnolting.github.io/neorv32).
 
-:information_source: Starting with version `1.5.7` this project uses [semantic versioning](https://semver.org) syntax for official releases.
-The _hardware version identifier_ uses an additional custom version element (i.e. `MAJOR.MINOR.PATCH.individual`) to track individual changes.
+:information_source: Starting with version `1.5.7` this project uses [semantic versioning](https://semver.org) for official releases.
+The _hardware version identifier_ uses an additional custom version element (i.e. `MAJOR.MINOR.PATCH.individual`) to track _individual_ changes.
 The identifier number is incremented with every core RTL modification and also by major framework modifications.
 
 :information_source: The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 8x4-bit BCD representation is used.
@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 04.01.2022 | 1.6.5.4 | **BUSKEEPER** can now optionally check for NULL address accesses (address `0x00000000`), see [PR #247](https://github.com/stnolting/neorv32/pull/247) |
 | 02.01.2022 | 1.6.5.3 | :sparkles: **added Execute In Place (XIP) module** allowing code to be directly executed from an external SPI flash, see [PR #244](https://github.com/stnolting/neorv32/pull/244) |
 | 02.01.2022 | 1.6.5.2 | :bug: fixed minor bug in CPU's instruction fetch unit (only issue new instruction fetch request when the previous one has been completed) |
 | 16.12.2021 |[**:rocket:1.6.5**](https://github.com/stnolting/neorv32/releases/tag/v1.6.5) | **New release** |

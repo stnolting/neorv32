@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060503"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060504"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -1446,6 +1446,7 @@ package neorv32_package is
       addr_i     : in  std_ulogic_vector(31 downto 0); -- address
       rden_i     : in  std_ulogic; -- read enable
       wren_i     : in  std_ulogic; -- write enable
+      data_i     : in  std_ulogic_vector(31 downto 0); -- data in
       data_o     : out std_ulogic_vector(31 downto 0); -- data out
       ack_o      : out std_ulogic; -- transfer acknowledge
       err_o      : out std_ulogic; -- transfer error
