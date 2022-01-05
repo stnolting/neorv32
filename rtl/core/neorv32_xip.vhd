@@ -2,10 +2,10 @@
 -- # << NEORV32 - Execute In Place (XIP) Module >>                                                 #
 -- # ********************************************************************************************* #
 -- # This module allows the CPU to execute code (and read constant data) directly from an SPI      #
--- # flash memory. Two host ports are implemented: once for accessing the control and status       #
+-- # flash memory. Two host ports are implemented: one  for accessing the control and status       #
 -- # registers (mapped to the processor's IO space) and one for the actual instruction/data fetch. #
--- # The actual address mapping of the "fetch interface" is done by programming special control    #
--- # register bits.                                                                                #
+-- # The actual address space mapping of the "instruction/data interface" is done by programming   #
+-- # special control register bits.                                                                #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #

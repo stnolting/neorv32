@@ -504,44 +504,44 @@ begin
   )
   port map (
     -- global control --
-    clk_i          => clk_i,        -- global clock, rising edge
-    rstn_i         => sys_rstn,     -- global reset, low-active, async
-    sleep_o        => open,         -- cpu is in sleep mode when set
-    debug_o        => debug_mode,   -- cpu is in debug mode when set
+    clk_i         => clk_i,       -- global clock, rising edge
+    rstn_i        => sys_rstn,    -- global reset, low-active, async
+    sleep_o       => open,        -- cpu is in sleep mode when set
+    debug_o       => debug_mode,  -- cpu is in debug mode when set
     -- instruction bus interface --
-    i_bus_addr_o   => cpu_i.addr,   -- bus access address
-    i_bus_rdata_i  => cpu_i.rdata,  -- bus read data
-    i_bus_wdata_o  => cpu_i.wdata,  -- bus write data
-    i_bus_ben_o    => cpu_i.ben,    -- byte enable
-    i_bus_we_o     => cpu_i.we,     -- write enable
-    i_bus_re_o     => cpu_i.re,     -- read enable
-    i_bus_lock_o   => cpu_i.lock,   -- exclusive access request
-    i_bus_ack_i    => cpu_i.ack,    -- bus transfer acknowledge
-    i_bus_err_i    => cpu_i.err,    -- bus transfer error
-    i_bus_fence_o  => cpu_i.fence,  -- executed FENCEI operation
-    i_bus_priv_o   => cpu_i.priv,   -- privilege level
+    i_bus_addr_o  => cpu_i.addr,  -- bus access address
+    i_bus_rdata_i => cpu_i.rdata, -- bus read data
+    i_bus_wdata_o => cpu_i.wdata, -- bus write data
+    i_bus_ben_o   => cpu_i.ben,   -- byte enable
+    i_bus_we_o    => cpu_i.we,    -- write enable
+    i_bus_re_o    => cpu_i.re,    -- read enable
+    i_bus_lock_o  => cpu_i.lock,  -- exclusive access request
+    i_bus_ack_i   => cpu_i.ack,   -- bus transfer acknowledge
+    i_bus_err_i   => cpu_i.err,   -- bus transfer error
+    i_bus_fence_o => cpu_i.fence, -- executed FENCEI operation
+    i_bus_priv_o  => cpu_i.priv,  -- privilege level
     -- data bus interface --
-    d_bus_addr_o   => cpu_d.addr,   -- bus access address
-    d_bus_rdata_i  => cpu_d.rdata,  -- bus read data
-    d_bus_wdata_o  => cpu_d.wdata,  -- bus write data
-    d_bus_ben_o    => cpu_d.ben,    -- byte enable
-    d_bus_we_o     => cpu_d.we,     -- write enable
-    d_bus_re_o     => cpu_d.re,     -- read enable
-    d_bus_lock_o   => cpu_d.lock,   -- exclusive access request
-    d_bus_ack_i    => cpu_d.ack,    -- bus transfer acknowledge
-    d_bus_err_i    => cpu_d.err,    -- bus transfer error
-    d_bus_fence_o  => cpu_d.fence,  -- executed FENCE operation
-    d_bus_priv_o   => cpu_d.priv,   -- privilege level
+    d_bus_addr_o  => cpu_d.addr,  -- bus access address
+    d_bus_rdata_i => cpu_d.rdata, -- bus read data
+    d_bus_wdata_o => cpu_d.wdata, -- bus write data
+    d_bus_ben_o   => cpu_d.ben,   -- byte enable
+    d_bus_we_o    => cpu_d.we,    -- write enable
+    d_bus_re_o    => cpu_d.re,    -- read enable
+    d_bus_lock_o  => cpu_d.lock,  -- exclusive access request
+    d_bus_ack_i   => cpu_d.ack,   -- bus transfer acknowledge
+    d_bus_err_i   => cpu_d.err,   -- bus transfer error
+    d_bus_fence_o => cpu_d.fence, -- executed FENCE operation
+    d_bus_priv_o  => cpu_d.priv,  -- privilege level
     -- system time input from MTIME --
-    time_i         => mtime_time,   -- current system time
+    time_i        => mtime_time,  -- current system time
     -- non-maskable interrupt --
-    msw_irq_i      => msw_irq_i,    -- machine software interrupt
-    mext_irq_i     => mext_irq_i,   -- machine external interrupt request
-    mtime_irq_i    => mtime_irq,    -- machine timer interrupt
+    msw_irq_i     => msw_irq_i,   -- machine software interrupt
+    mext_irq_i    => mext_irq_i,  -- machine external interrupt request
+    mtime_irq_i   => mtime_irq,   -- machine timer interrupt
     -- fast interrupts (custom) --
-    firq_i         => fast_irq,     -- fast interrupt trigger
+    firq_i        => fast_irq,    -- fast interrupt trigger
     -- debug mode (halt) request --
-    db_halt_req_i  => dci_halt_req
+    db_halt_req_i => dci_halt_req
   );
 
   -- misc --
@@ -585,27 +585,27 @@ begin
     )
     port map (
       -- global control --
-      clk_i         => clk_i,          -- global clock, rising edge
-      rstn_i        => sys_rstn,       -- global reset, low-active, async
-      clear_i       => cpu_i.fence,    -- cache clear
+      clk_i        => clk_i,         -- global clock, rising edge
+      rstn_i       => sys_rstn,      -- global reset, low-active, async
+      clear_i      => cpu_i.fence,   -- cache clear
       -- host controller interface --
-      host_addr_i   => cpu_i.addr,     -- bus access address
-      host_rdata_o  => cpu_i.rdata,    -- bus read data
-      host_wdata_i  => cpu_i.wdata,    -- bus write data
-      host_ben_i    => cpu_i.ben,      -- byte enable
-      host_we_i     => cpu_i.we,       -- write enable
-      host_re_i     => cpu_i.re,       -- read enable
-      host_ack_o    => cpu_i.ack,      -- bus transfer acknowledge
-      host_err_o    => cpu_i.err,      -- bus transfer error
+      host_addr_i  => cpu_i.addr,    -- bus access address
+      host_rdata_o => cpu_i.rdata,   -- bus read data
+      host_wdata_i => cpu_i.wdata,   -- bus write data
+      host_ben_i   => cpu_i.ben,     -- byte enable
+      host_we_i    => cpu_i.we,      -- write enable
+      host_re_i    => cpu_i.re,      -- read enable
+      host_ack_o   => cpu_i.ack,     -- bus transfer acknowledge
+      host_err_o   => cpu_i.err,     -- bus transfer error
       -- peripheral bus interface --
-      bus_addr_o    => i_cache.addr,   -- bus access address
-      bus_rdata_i   => i_cache.rdata,  -- bus read data
-      bus_wdata_o   => i_cache.wdata,  -- bus write data
-      bus_ben_o     => i_cache.ben,    -- byte enable
-      bus_we_o      => i_cache.we,     -- write enable
-      bus_re_o      => i_cache.re,     -- read enable
-      bus_ack_i     => i_cache.ack,    -- bus transfer acknowledge
-      bus_err_i     => i_cache.err     -- bus transfer error
+      bus_addr_o   => i_cache.addr,  -- bus access address
+      bus_rdata_i  => i_cache.rdata, -- bus read data
+      bus_wdata_o  => i_cache.wdata, -- bus write data
+      bus_ben_o    => i_cache.ben,   -- byte enable
+      bus_we_o     => i_cache.we,    -- write enable
+      bus_re_o     => i_cache.re,    -- read enable
+      bus_ack_i    => i_cache.ack,   -- bus transfer acknowledge
+      bus_err_i    => i_cache.err    -- bus transfer error
     );
   end generate;
 
@@ -634,39 +634,39 @@ begin
   )
   port map (
     -- global control --
-    clk_i           => clk_i,          -- global clock, rising edge
-    rstn_i          => sys_rstn,       -- global reset, low-active, async
+    clk_i          => clk_i,         -- global clock, rising edge
+    rstn_i         => sys_rstn,      -- global reset, low-active, async
     -- controller interface a --
-    ca_bus_addr_i   => cpu_d.addr,     -- bus access address
-    ca_bus_rdata_o  => cpu_d.rdata,    -- bus read data
-    ca_bus_wdata_i  => cpu_d.wdata,    -- bus write data
-    ca_bus_ben_i    => cpu_d.ben,      -- byte enable
-    ca_bus_we_i     => cpu_d.we,       -- write enable
-    ca_bus_re_i     => cpu_d.re,       -- read enable
-    ca_bus_lock_i   => cpu_d.lock,     -- exclusive access request
-    ca_bus_ack_o    => cpu_d.ack,      -- bus transfer acknowledge
-    ca_bus_err_o    => cpu_d.err,      -- bus transfer error
+    ca_bus_addr_i  => cpu_d.addr,    -- bus access address
+    ca_bus_rdata_o => cpu_d.rdata,   -- bus read data
+    ca_bus_wdata_i => cpu_d.wdata,   -- bus write data
+    ca_bus_ben_i   => cpu_d.ben,     -- byte enable
+    ca_bus_we_i    => cpu_d.we,      -- write enable
+    ca_bus_re_i    => cpu_d.re,      -- read enable
+    ca_bus_lock_i  => cpu_d.lock,    -- exclusive access request
+    ca_bus_ack_o   => cpu_d.ack,     -- bus transfer acknowledge
+    ca_bus_err_o   => cpu_d.err,     -- bus transfer error
     -- controller interface b --
-    cb_bus_addr_i   => i_cache.addr,   -- bus access address
-    cb_bus_rdata_o  => i_cache.rdata,  -- bus read data
-    cb_bus_wdata_i  => i_cache.wdata,  -- bus write data
-    cb_bus_ben_i    => i_cache.ben,    -- byte enable
-    cb_bus_we_i     => i_cache.we,     -- write enable
-    cb_bus_re_i     => i_cache.re,     -- read enable
-    cb_bus_lock_i   => i_cache.lock,   -- exclusive access request
-    cb_bus_ack_o    => i_cache.ack,    -- bus transfer acknowledge
-    cb_bus_err_o    => i_cache.err,    -- bus transfer error
+    cb_bus_addr_i  => i_cache.addr,  -- bus access address
+    cb_bus_rdata_o => i_cache.rdata, -- bus read data
+    cb_bus_wdata_i => i_cache.wdata, -- bus write data
+    cb_bus_ben_i   => i_cache.ben,   -- byte enable
+    cb_bus_we_i    => i_cache.we,    -- write enable
+    cb_bus_re_i    => i_cache.re,    -- read enable
+    cb_bus_lock_i  => i_cache.lock,  -- exclusive access request
+    cb_bus_ack_o   => i_cache.ack,   -- bus transfer acknowledge
+    cb_bus_err_o   => i_cache.err,   -- bus transfer error
     -- peripheral bus --
-    p_bus_src_o     => p_bus.src,      -- access source: 0 = A (data), 1 = B (instructions)
-    p_bus_addr_o    => p_bus.addr,     -- bus access address
-    p_bus_rdata_i   => p_bus.rdata,    -- bus read data
-    p_bus_wdata_o   => p_bus.wdata,    -- bus write data
-    p_bus_ben_o     => p_bus.ben,      -- byte enable
-    p_bus_we_o      => p_bus.we,       -- write enable
-    p_bus_re_o      => p_bus.re,       -- read enable
-    p_bus_lock_o    => p_bus.lock,     -- exclusive access request
-    p_bus_ack_i     => p_bus.ack,      -- bus transfer acknowledge
-    p_bus_err_i     => bus_error       -- bus transfer error
+    p_bus_src_o    => p_bus.src,     -- access source: 0 = A (data), 1 = B (instructions)
+    p_bus_addr_o   => p_bus.addr,    -- bus access address
+    p_bus_rdata_i  => p_bus.rdata,   -- bus read data
+    p_bus_wdata_o  => p_bus.wdata,   -- bus write data
+    p_bus_ben_o    => p_bus.ben,     -- byte enable
+    p_bus_we_o     => p_bus.we,      -- write enable
+    p_bus_re_o     => p_bus.re,      -- read enable
+    p_bus_lock_o   => p_bus.lock,    -- exclusive access request
+    p_bus_ack_i    => p_bus.ack,     -- bus transfer acknowledge
+    p_bus_err_i    => bus_error      -- bus transfer error
   );
 
   -- current CPU privilege level --
