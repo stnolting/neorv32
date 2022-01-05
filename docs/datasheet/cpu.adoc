@@ -197,8 +197,9 @@ Check sub-01            ... OK
 Check sw-align-01       ... OK
 Check xor-01            ... OK
 Check xori-01           ... OK
+Check fence-01          ... OK
 --------------------------------
-OK: 38/38 RISCV_TARGET=neorv32 RISCV_DEVICE=I XLEN=32
+OK: 39/39 RISCV_TARGET=neorv32 RISCV_DEVICE=I XLEN=32
 ...................................
 
 .**RISC-V `rv32_m/M` Tests**

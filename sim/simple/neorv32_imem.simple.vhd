@@ -7,7 +7,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -60,6 +60,8 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal [SIM-only!] IMEM as ROM (" & natural'image(IMEM_SIZE) &
+  " bytes), pre-initialized with application (" & natural'image(application_init_image'length * 4) & " bytes)." severity note;
   assert not (IMEM_AS_IROM = false) report "NEORV32 PROCESSOR CONFIG ERROR! Simulation-optimized IMEM can only be used as pre-initialized ROM!" severity error;
 
 
@@ -72,18 +74,16 @@ begin
   -- Memory Access --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   imem_file_access: process(clk_i)
-    variable addr_v : integer;
+    variable addr_v : integer range 0 to (IMEM_SIZE/4)-1;
   begin
     if rising_edge(clk_i) then
-      rden  <= acc_en and rden_i;
-      ack_o <= acc_en and (rden_i or wren_i);
-      if (acc_en = '1') then -- reduce switching activity when not accessed
-        addr_v := to_integer(unsigned(addr));
-        if (addr_v > application_init_image'length) then
-          rdata <= (others => '0');
-        else
-          rdata <= application_init_image(addr_v);
-        end if;
+      rden   <= acc_en and rden_i;
+      ack_o  <= acc_en and (rden_i or wren_i);
+      addr_v := to_integer(unsigned(addr));
+      --
+      rdata <= (others => '0');
+      if (addr_v <= application_init_image'length) then
+        rdata <= application_init_image(addr_v);
       end if;
     end if;
   end process imem_file_access;
