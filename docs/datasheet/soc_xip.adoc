@@ -112,7 +112,7 @@ or modules attached to the external memory interface).
 
 Example: to map the XIP flash to the address space starting at `0x20000000` write a "2" (`0b0010`) to the _XIP_CTRL_XIP_PAGE_
 control register bits. Any access within `0x20000000 .. 0x2fffffff` will be forwarded to the XIP flash.
-Note that the SPI access address will wrap around.
+Note that the SPI access address might wrap around.
 
 
 **Using the XIP Mode**
@@ -142,7 +142,7 @@ to zero allowing a maximum **accessible** flash size of 256MB.
 
 After the SPI properties (including the amount of address bytes **and** the total amount of SPI transfer bytes)
 and XIP address mapping are configured, the actual XIP mode can be enabled by setting
-the control register's _XIP_CTRL_XIP_EN_ bit. This will enable the "transparent SPI access port" of the module and also
+the control register's _XIP_CTRL_XIP_EN_ bit. This will enable the "transparent SPI access port" of the module and thus,
 the _transparent_ conversion of access requests into proper SPI flash transmissions. Make sure _XIP_CTRL_SPI_CSEN_
 is also set so the module can actually select/enable the attached SPI flash.
 No more direct SPI accesses via `DATA_HI:DATA_LO` are possible when the XIP mode is enabled. However, the
@@ -152,10 +152,11 @@ XIP mode can be disabled at any time.
 If the XIP module is disabled (_XIP_CTRL_EN_ = `0`) any accesses to the programmed XIP memory segment are ignored
 by the module and might be forwarded to the processor's external memory interface (if implemented) or will cause a bus
 exception. If the XIP module is enabled (_XIP_CTRL_EN_ = `1`) but XIP mode is not enabled yet (_XIP_CTRL_XIP_EN_ = '0')
-any to the programmed XIP memory segment will raise a bus exception.
+any access to the programmed XIP memory segment will raise a bus exception.
 
-[NOTE]
-It is highly recommended to use the processor's instruction cache to hide some of the SPI protocol latency.
+[TIP]
+It is highly recommended to enable the <<_processor_internal_instruction_cache_icache>> to cover some
+of the SPI access latency.
 
 
 .XIP register map (`struct NEORV32_XIP`)
@@ -175,7 +176,7 @@ It is highly recommended to use the processor's instruction cache to hide some o
                                               <|`20:13` _XIP_CTRL_RD_CMD_MSB_ : _XIP_CTRL_RD_CMD_LSB_ ^| r/w <| Flash read command
                                               <|`24:21` _XIP_CTRL_XIP_PAGE_MSB_ : _XIP_CTRL_XIP_PAGE_LSB_ ^| r/w <| XIP memory page
                                               <|`25` _XIP_CTRL_SPI_CSEN_  ^| r/w <| Allow SPI chip-select to be actually asserted when set
-                                              <|`29:26` -                 ^| r/- <| _reserved_, read as zero
+                                              <|`29:26`                   ^| r/- <| _reserved_, read as zero
                                               <|`30` _XIP_CTRL_PHY_BUSY_  ^| r/- <| SPI PHY busy when set
                                               <|`31` _XIP_CTRL_XIP_BUSY_  ^| r/- <| XIP access in progress when set
 | `0xffffff44` | _reserved_            |`31:0` | r/- | _reserved_, read as zero
