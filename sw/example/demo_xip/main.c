@@ -109,11 +109,22 @@ int main() {
   // intro
   neorv32_uart0_printf("<< XIP Demo Program >>\n\n");
 
+
+  // warning if i-cache is not implemented
+  if ((NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_ICACHE)) == 0) {
+    neorv32_uart0_printf("WARNING! No instruction cache implemented. The XIP program will run awfully slow...\n");
+  }
+
+
   // reset XIP module and configure basic SPI properties
   // * 1/64 clock divider
   // * clock mode 0 (cpol = 0, cpha = 0)
   // * flash read command = 0x03
-  neorv32_xip_init(CLK_PRSC_64, 0, 0, 0x03);
+  // -> this function will also send 64 dummy clock cycles via the XIP's SPI port (with CS disabled)
+  if (neorv32_xip_init(CLK_PRSC_64, 0, 0, 0x03)) {
+    neorv32_uart0_printf("Error! XIP module setup error!\n");
+    return 1;
+  }
 
   // use a helper function to store a small example program to the XIP flash
   // NOTE: this (direct SPI access via the XIP module) has to be done before the actual XIP mode is enabled!
