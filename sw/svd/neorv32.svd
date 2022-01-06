@@ -399,31 +399,25 @@
               <description>Number of XIP address bytes (minus 1)</description>
             </field>
             <field>
-              <name>XIP_CTRL_QSPI_EN</name>
-              <bitRange>[13:13]</bitRange>
-              <description>QSPI mode enable</description>
-            </field>
-            <field>
               <name>XIP_CTRL_RD_CMD</name>
-              <bitRange>[21:14]</bitRange>
+              <bitRange>[20:13]</bitRange>
               <description>SPI flash read command</description>
             </field>
             <field>
               <name>XIP_CTRL_XIP_PAGE</name>
-              <bitRange>[25:22]</bitRange>
+              <bitRange>[24:21]</bitRange>
               <description>XIP memory page</description>
             </field>
             <field>
-              <name>XIP_CTRL_PHY_BUSY</name>
-              <bitRange>[29:29]</bitRange>
-              <access>read-only</access>
-              <description>SPI PHY busy</description>
+              <name>XIP_CTRL_SPI_CSEN</name>
+              <bitRange>[25:25]</bitRange>
+              <description>SPI chip-select enable</description>
             </field>
             <field>
-              <name>XIP_CTRL_XIP_READY</name>
+              <name>XIP_CTRL_PHY_BUSY</name>
               <bitRange>[30:30]</bitRange>
               <access>read-only</access>
-              <description>XIP access ready (setup done)</description>
+              <description>SPI PHY busy</description>
             </field>
             <field>
               <name>XIP_CTRL_XIP_BUSY</name>
