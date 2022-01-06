@@ -101,14 +101,13 @@ architecture neorv32_xip_rtl of neorv32_xip is
   constant ctrl_xip_enable_c  : natural := 10; -- r/w: XIP access mode enable
   constant ctrl_xip_abytes0_c : natural := 11; -- r/w: XIP number of address bytes (0=1,1=2,2=3,3=4) - bit 0
   constant ctrl_xip_abytes1_c : natural := 12; -- r/w: XIP number of address bytes (0=1,1=2,2=3,3=4) - bit 1
-  constant ctrl_qspi_en_c     : natural := 13; -- r/w: enable qSPI mode
-  constant ctrl_rd_cmd_lsb_c  : natural := 14; -- r/w: SPI flash read command - bit 0
-  constant ctrl_rd_cmd_msb_c  : natural := 21; -- r/w: SPI flash read command - bit 7
-  constant ctrl_page_lsb_c    : natural := 22; -- r/w: XIP memory page - bit 0
-  constant ctrl_page_msb_c    : natural := 25; -- r/w: XIP memory page - bit 3
+  constant ctrl_rd_cmd0_c     : natural := 13; -- r/w: SPI flash read command - bit 0
+  constant ctrl_rd_cmd7_c     : natural := 20; -- r/w: SPI flash read command - bit 7
+  constant ctrl_page0_c       : natural := 21; -- r/w: XIP memory page - bit 0
+  constant ctrl_page3_c       : natural := 24; -- r/w: XIP memory page - bit 3
+  constant ctrl_spi_csen_c    : natural := 25; -- r/w: SPI chip-select enabled
   --
-  constant ctrl_phy_busy_c    : natural := 29; -- r/-: SPI PHY is busy when set
-  constant ctrl_xip_ready_c   : natural := 30; -- r/-: XIP access is ready (initialization completed)
+  constant ctrl_phy_busy_c    : natural := 30; -- r/-: SPI PHY is busy when set
   constant ctrl_xip_busy_c    : natural := 31; -- r/-: XIP access in progress
   --
   signal ctrl : std_ulogic_vector(25 downto 0);
@@ -122,12 +121,11 @@ architecture neorv32_xip_rtl of neorv32_xip is
   signal xip_addr : std_ulogic_vector(31 downto 0);
 
   -- SPI access fetch arbiter --
-  type arbiter_state_t is (S_RESET, S_INIT_0, S_INIT_1, S_INIT_2, S_IDLE, S_TRIG, S_BUSY);
+  type arbiter_state_t is (S_DIRECT, S_IDLE, S_TRIG, S_BUSY);
   type arbiter_t is record
     state     : arbiter_state_t;
     state_nxt : arbiter_state_t;
     addr      : std_ulogic_vector(31 downto 0);
-    ready     : std_ulogic;
     busy      : std_ulogic;
   end record;
   signal arbiter : arbiter_t;
@@ -145,7 +143,6 @@ architecture neorv32_xip_rtl of neorv32_xip is
     cf_enable_i  : in  std_ulogic; -- module enable (reset if low)
     cf_cpha_i    : in  std_ulogic; -- clock phase
     cf_cpol_i    : in  std_ulogic; -- clock idle polarity
-    cf_qspi_i    : in  std_ulogic; -- qSPI mode enable
     -- operation control --
     op_start_i   : in  std_ulogic; -- trigger new transmission
     op_csen_i    : in  std_ulogic; -- actually enabled device for transmission
@@ -163,12 +160,10 @@ architecture neorv32_xip_rtl of neorv32_xip is
 
   -- PHY interface --
   type phy_if_t is record
-    start  : std_ulogic; -- trigger new transmission
-    csen   : std_ulogic; -- actually enabled device for transmission
-    busy   : std_ulogic; -- transmission in progress when set
-    nbytes : std_ulogic_vector(03 downto 0); -- actual number of bytes to transmit (1..9)
-    wdata  : std_ulogic_vector(71 downto 0); -- write data
-    rdata  : std_ulogic_vector(31 downto 0); -- read data
+    start : std_ulogic; -- trigger new transmission
+    busy  : std_ulogic; -- transmission in progress when set
+    wdata : std_ulogic_vector(71 downto 0); -- write data
+    rdata : std_ulogic_vector(31 downto 0); -- read data
   end record;
   signal phy_if : phy_if_t;
 
@@ -190,7 +185,6 @@ begin
       ctrl                    <= (others => '-');
       ctrl(ctrl_enable_c)     <= '0'; -- required
       ctrl(ctrl_xip_enable_c) <= '0'; -- required
-      ctrl(ctrl_qspi_en_c)    <= '0'; -- required
       spi_data_lo             <= (others => '-');
       spi_data_hi             <= (others => '-');
       spi_trigger             <= '-';
@@ -216,9 +210,9 @@ begin
           ctrl(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c) <= ct_data_i(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c);
           ctrl(ctrl_xip_enable_c)                            <= ct_data_i(ctrl_xip_enable_c);
           ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) <= ct_data_i(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c);
-          ctrl(ctrl_qspi_en_c)                               <= ct_data_i(ctrl_qspi_en_c);
-          ctrl(ctrl_rd_cmd_msb_c downto ctrl_rd_cmd_lsb_c)   <= ct_data_i(ctrl_rd_cmd_msb_c downto ctrl_rd_cmd_lsb_c);
-          ctrl(ctrl_page_msb_c downto ctrl_page_lsb_c)       <= ct_data_i(ctrl_page_msb_c downto ctrl_page_lsb_c);
+          ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c)         <= ct_data_i(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c);
+          ctrl(ctrl_page3_c downto ctrl_page0_c)             <= ct_data_i(ctrl_page3_c downto ctrl_page0_c);
+          ctrl(ctrl_spi_csen_c)                              <= ct_data_i(ctrl_spi_csen_c);
         end if;
 
         -- SPI direct data access register lo --
@@ -245,13 +239,12 @@ begin
             ct_data_o(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c) <= ctrl(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c);
             ct_data_o(ctrl_xip_enable_c)                            <= ctrl(ctrl_xip_enable_c);
             ct_data_o(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) <= ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c);
-            ct_data_o(ctrl_qspi_en_c)                               <= ctrl(ctrl_qspi_en_c);
-            ct_data_o(ctrl_rd_cmd_msb_c downto ctrl_rd_cmd_lsb_c)   <= ctrl(ctrl_rd_cmd_msb_c downto ctrl_rd_cmd_lsb_c);
-            ct_data_o(ctrl_page_msb_c downto ctrl_page_lsb_c)       <= ctrl(ctrl_page_msb_c downto ctrl_page_lsb_c);
+            ct_data_o(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c)         <= ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c);
+            ct_data_o(ctrl_page3_c downto ctrl_page0_c)             <= ctrl(ctrl_page3_c downto ctrl_page0_c);
+            ct_data_o(ctrl_spi_csen_c)                              <= ctrl(ctrl_spi_csen_c);
             --
-            ct_data_o(ctrl_phy_busy_c)  <= phy_if.busy;
-            ct_data_o(ctrl_xip_ready_c) <= arbiter.ready;
-            ct_data_o(ctrl_xip_busy_c)  <= arbiter.busy;
+            ct_data_o(ctrl_phy_busy_c) <= phy_if.busy;
+            ct_data_o(ctrl_xip_busy_c) <= arbiter.busy;
           when "10" => -- 'xip_data_lo_addr_c' - SPI direct data access register lo
             ct_data_o <= phy_if.rdata;
           when others => -- unavailable (not implemented or write-only)
@@ -265,7 +258,7 @@ begin
   xip_en_o <= ctrl(ctrl_enable_c);
 
   -- XIP page output --
-  xip_page_o <= ctrl(ctrl_page_msb_c downto ctrl_page_lsb_c);
+  xip_page_o <= ctrl(ctrl_page3_c downto ctrl_page0_c);
 
 
   -- XIP Address Computation Logic ----------------------------------------------------------
@@ -275,7 +268,7 @@ begin
   begin
     tmp_v(31 downto 28) := "0000";
     tmp_v(27 downto 00) := arbiter.addr(27 downto 00);
-    case ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) is
+    case ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) is -- shift address bits to be MSB-aligned
       when "00"   => xip_addr <= tmp_v(07 downto 0) & x"000000"; -- 1 address byte
       when "01"   => xip_addr <= tmp_v(15 downto 0) & x"0000";   -- 2 address bytes
       when "10"   => xip_addr <= tmp_v(23 downto 0) & x"00";     -- 3 address bytes
@@ -290,12 +283,11 @@ begin
   begin
     if rising_edge(clk_i) then
       if (ctrl(ctrl_enable_c) = '0') or (ctrl(ctrl_xip_enable_c) = '0') then -- sync reset
-        arbiter.state <= S_RESET;
-        arbiter.addr  <= (others => '-');
+        arbiter.state <= S_DIRECT;
       else
         arbiter.state <= arbiter.state_nxt;
-        arbiter.addr  <= if_addr_i;
       end if;
+      arbiter.addr <= if_addr_i; -- buffer address (reducing fan-out on CPU's address net)
     end if;
   end process arbiter_sync;
 
@@ -311,50 +303,21 @@ begin
     if_ack_o  <= '0';
 
     -- SPI PHY interface defaults --
-    phy_if.start  <= '0';
-    phy_if.csen   <= '1';
-    phy_if.nbytes <= ctrl(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c);
-    phy_if.wdata  <= ctrl(ctrl_rd_cmd_msb_c downto ctrl_rd_cmd_lsb_c) & xip_addr & x"00000000"; -- MSB-aligned: CMD + address + 32-bit zero data
+    phy_if.start <= '0';
+    phy_if.wdata <= ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c) & xip_addr & x"00000000"; -- MSB-aligned: CMD + address + 32-bit zero data
 
     -- fsm --
     case arbiter.state is
 
-      when S_RESET => -- XIP access offline: allow direct SPI access
+      when S_DIRECT => -- XIP access disabled: allow direct SPI access
       -- ------------------------------------------------------------
-        phy_if.csen       <= '1';
-        phy_if.start      <= spi_trigger;
         phy_if.wdata      <= spi_data_hi & spi_data_lo & x"00"; -- MSB-aligned data
-        arbiter.state_nxt <= S_INIT_0;
-
-
-      when S_INIT_0 => -- prepare SPI flash: send 72 dummy clocks, without CS
-      -- ------------------------------------------------------------
-        phy_if.csen       <= '0';
-        phy_if.nbytes     <= "1001"; -- 9 bytes
-        phy_if.wdata      <= (others => '0'); -- send zeros
-        phy_if.start      <= '1';
-        arbiter.state_nxt <= S_INIT_1;
-
-      when S_INIT_1 => -- prepare SPI flash: send 72 zero bits, with CS
-      -- ------------------------------------------------------------
-        phy_if.csen   <= '1';
-        phy_if.nbytes <= "1001"; -- 9 bytes
-        phy_if.wdata  <= (others => '0'); -- send zeros
-        if (phy_if.busy = '0') then
-          phy_if.start      <= '1';
-          arbiter.state_nxt <= S_INIT_2;
-        end if;
-
-      when S_INIT_2 => -- prepare SPI flash: wait for PHY to complete sending
-      -- ------------------------------------------------------------
-        if (phy_if.busy = '0') then
-          arbiter.state_nxt <= S_IDLE;
-        end if;
-
+        phy_if.start      <= spi_trigger;
+        arbiter.state_nxt <= S_IDLE;
 
       when S_IDLE => -- XIP: wait for new bus request
       -- ------------------------------------------------------------
-        if (if_rden_i = '1') and (if_addr_i(31 downto 28) = ctrl(ctrl_page_msb_c downto ctrl_page_lsb_c)) then
+        if (if_rden_i = '1') and (if_addr_i(31 downto 28) = ctrl(ctrl_page3_c downto ctrl_page0_c)) then
           arbiter.state_nxt <= S_TRIG;
         end if;
 
@@ -371,7 +334,6 @@ begin
           arbiter.state_nxt <= S_IDLE;
         end if;
 
-
       when others => -- undefined
       -- ------------------------------------------------------------
         arbiter.state_nxt <= S_IDLE;
@@ -380,8 +342,7 @@ begin
   end process arbiter_comb;
 
   -- arbiter status --
-  arbiter.ready <= '1' when (arbiter.state = S_IDLE) or (arbiter.state = S_TRIG) or (arbiter.state = S_BUSY) else '0';
-  arbiter.busy  <= '1' when (arbiter.state = S_TRIG) or (arbiter.state = S_BUSY) else '0'; -- actual XIP access in progress
+  arbiter.busy <= '1' when (arbiter.state = S_TRIG) or (arbiter.state = S_BUSY) else '0'; -- actual XIP access in progress
 
   -- status output --
   xip_acc_o <= arbiter.busy;
@@ -407,12 +368,11 @@ begin
     cf_enable_i  => ctrl(ctrl_enable_c),   -- module enable (reset if low)
     cf_cpha_i    => ctrl(ctrl_spi_cpha_c), -- clock phase
     cf_cpol_i    => ctrl(ctrl_spi_cpol_c), -- clock idle polarity
-    cf_qspi_i    => ctrl(ctrl_qspi_en_c),  -- qSPI mode enable
     -- operation control --
     op_start_i   => phy_if.start,          -- trigger new transmission
-    op_csen_i    => phy_if.csen,           -- actually enabled device for transmission
+    op_csen_i    => ctrl(ctrl_spi_csen_c), -- actually enabled device for transmission
     op_busy_o    => phy_if.busy,           -- transmission in progress when set
-    op_nbytes_i  => phy_if.nbytes,         -- actual number of bytes to transmit
+    op_nbytes_i  => ctrl(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c), -- actual number of bytes to transmit
     op_wdata_i   => phy_if.wdata,          -- write data
     op_rdata_o   => phy_if.rdata,          -- read data
     -- SPI interface --
@@ -480,7 +440,6 @@ entity neorv32_xip_phy is
     cf_enable_i  : in  std_ulogic; -- module enable (reset if low)
     cf_cpha_i    : in  std_ulogic; -- clock phase
     cf_cpol_i    : in  std_ulogic; -- clock idle polarity
-    cf_qspi_i    : in  std_ulogic; -- qSPI mode enable
     -- operation control --
     op_start_i   : in  std_ulogic; -- trigger new transmission
     op_csen_i    : in  std_ulogic; -- actually enabled device for transmission
@@ -499,7 +458,7 @@ end neorv32_xip_phy;
 architecture neorv32_xip_phy_rtl of neorv32_xip_phy is
 
   -- controller --
-  type ctrl_state_t is (S_IDLE, S_START, S_RTX_A, S_RTX_B, S_DONE, S_PAUSE);
+  type ctrl_state_t is (S_IDLE, S_START, S_RTX_A, S_RTX_B, S_DONE);
   type ctrl_t is record
     state   : ctrl_state_t;
     sreg    : std_ulogic_vector(71 downto 0); -- only the lowest 32-bit are used as RX data
@@ -511,11 +470,6 @@ architecture neorv32_xip_phy_rtl of neorv32_xip_phy is
 
 begin
 
--- ----------------------------------------- --
--- TODO: qSPI mode - enabled via 'cf_qspi_i' --
--- requires bi-directional top ports         --
--- ----------------------------------------- --
-
   -- Serial Interface Control Unit ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   control_unit: process(clk_i)
@@ -526,13 +480,14 @@ begin
         spi_csn_o    <= '1';
         --
         ctrl.state   <= S_IDLE;
+        ctrl.csen    <= '-';
         ctrl.sreg    <= (others => '-');
         ctrl.bitcnt  <= (others => '-');
-        ctrl.csen    <= '0';
-        ctrl.di_sync <= "00";
+        ctrl.di_sync <= (others => '-');
       else
         -- defaults --
         spi_clk_o    <= cf_cpol_i;
+        spi_csn_o    <= '1'; -- de-selected by default
         ctrl.di_sync <= ctrl.di_sync(0) & spi_data_i;
 
         -- fsm --
@@ -540,8 +495,7 @@ begin
 
           when S_IDLE => -- wait for new transmission trigger
           -- ------------------------------------------------------------
-            spi_csn_o   <= '1';
-            ctrl.bitcnt <= op_nbytes_i & "000";
+            ctrl.bitcnt <= op_nbytes_i & "000"; -- number of bytes
             ctrl.csen   <= op_csen_i;
             if (op_start_i = '1') then
               ctrl.sreg  <= op_wdata_i;
@@ -567,7 +521,7 @@ begin
           when S_RTX_B => -- second half of bit transmission
           -- ------------------------------------------------------------
             spi_csn_o <= not ctrl.csen;
-            spi_clk_o <= cf_cpha_i xnor cf_cpol_i;
+            spi_clk_o <= not (cf_cpha_i xor cf_cpol_i);
             if (spi_clk_en_i = '1') then
               ctrl.sreg <= ctrl.sreg(ctrl.sreg'left-1 downto 0) & ctrl.di_sync(1);
               if (or_reduce_f(ctrl.bitcnt) = '0') then -- all bits transferred?
@@ -581,19 +535,11 @@ begin
           -- ------------------------------------------------------------
             spi_csn_o <= not ctrl.csen;
             if (spi_clk_en_i = '1') then
-              ctrl.state <= S_PAUSE;
-            end if;
-
-          when S_PAUSE => -- inter-symbol delay
-          -- ------------------------------------------------------------
-            spi_csn_o <= '1';
-            if (spi_clk_en_i = '1') then
               ctrl.state <= S_IDLE;
             end if;
 
           when others => -- undefined
           -- ------------------------------------------------------------
-            spi_csn_o  <= '1';
             ctrl.state <= S_IDLE;
 
         end case;
