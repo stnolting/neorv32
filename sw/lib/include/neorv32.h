@@ -854,14 +854,13 @@ enum NEORV32_XIP_CTRL_enum {
   XIP_CTRL_XIP_EN         = 10, /**< XIP control register(10) (r/w): XIP access enable */
   XIP_CTRL_XIP_ABYTES_LSB = 11, /**< XIP control register(11) (r/w): Number XIP address bytes (minus 1), LSB */
   XIP_CTRL_XIP_ABYTES_MSB = 12, /**< XIP control register(12) (r/w): Number XIP address bytes (minus 1), MSB */
-  XIP_CTRL_QSPI_EN        = 13, /**< XIP control register(13) (r/w): Enable QSPI mode */
-  XIP_CTRL_RD_CMD_LSB     = 14, /**< XIP control register(14) (r/w): SPI flash read command, LSB */
-  XIP_CTRL_RD_CMD_MSB     = 21, /**< XIP control register(21) (r/w): SPI flash read command, MSB */
-  XIP_CTRL_PAGE_LSB       = 22, /**< XIP control register(22) (r/w): XIP memory page, LSB */
-  XIP_CTRL_PAGE_MSB       = 25, /**< XIP control register(25) (r/w): XIP memory page, MSB */
+  XIP_CTRL_RD_CMD_LSB     = 13, /**< XIP control register(13) (r/w): SPI flash read command, LSB */
+  XIP_CTRL_RD_CMD_MSB     = 20, /**< XIP control register(20) (r/w): SPI flash read command, MSB */
+  XIP_CTRL_PAGE_LSB       = 21, /**< XIP control register(21) (r/w): XIP memory page, LSB */
+  XIP_CTRL_PAGE_MSB       = 24, /**< XIP control register(24) (r/w): XIP memory page, MSB */
+  XIP_CTRL_SPI_CSEN       = 25, /**< XIP control register(25) (r/w): SPI chip-select enable */
 
-  XIP_CTRL_PHY_BUSY       = 29, /**< XIP control register(29) (r/-): SPI PHY is busy */
-  XIP_CTRL_XIP_READY      = 30, /**< XIP control register(30) (r/-): XIP access is ready (setup done) */
+  XIP_CTRL_PHY_BUSY       = 30, /**< XIP control register(20) (r/-): SPI PHY is busy */
   XIP_CTRL_XIP_BUSY       = 31  /**< XIP control register(31) (r/-): XIP access in progress */
 };
 /**@}*/

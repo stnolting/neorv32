@@ -46,7 +46,7 @@
 
 // prototypes
 int neorv32_xip_available(void);
-void neorv32_xip_init(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd);
+int neorv32_xip_init(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd);
 int neorv32_xip_start(uint8_t abytes, uint32_t page_base);
 int neorv32_xip_spi_trans(uint8_t nbytes, uint64_t *rtx_data);
 

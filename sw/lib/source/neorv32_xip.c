@@ -65,26 +65,45 @@ int neorv32_xip_available(void) {
  * Configure XIP module: configure SPI properties.
  *
  * @warning This will reset the XIP module overriding the CTRL register.
+ * @note This function will also send 64 dummy clocks via the SPI port (with chip-select disabled).
  *
  * @param[in] prsc SPI clock prescaler select (0..7).
  * @param[in] cpol SPI clock polarity (0/1).
  * @param[in] cpha SPI clock phase(0/1).
  * @param[in] rd_cmd SPI flash read command.
+ * @return 0 if configuration is OK, 1 if configuration error.
  **************************************************************************/
-void neorv32_xip_init(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) {
+int neorv32_xip_init(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) {
+
+  // configuration check
+  if ((prsc > 7) || (cpol > 1) || (cpha > 1)) {
+    return 1;
+  }
 
   // reset module
   NEORV32_XIP.CTRL = 0;
 
   uint32_t ctrl = 0;
 
-  ctrl |= 1 << XIP_CTRL_EN; // enable module
+  ctrl |= ((uint32_t)(1            )) << XIP_CTRL_EN; // enable module
   ctrl |= ((uint32_t)(prsc   & 0x07)) << XIP_CTRL_PRSC0;
   ctrl |= ((uint32_t)(cpol   & 0x01)) << XIP_CTRL_CPOL;
   ctrl |= ((uint32_t)(cpha   & 0x01)) << XIP_CTRL_CPHA;
+  ctrl |= ((uint32_t)(8            )) << XIP_CTRL_SPI_NBYTES_LSB; // set 8 bytes transfer size as default
   ctrl |= ((uint32_t)(rd_cmd & 0xff)) << XIP_CTRL_RD_CMD_LSB;
   
   NEORV32_XIP.CTRL = ctrl;
+
+  // send 64 dummy clocks
+  NEORV32_XIP.DATA_LO = 0;
+  NEORV32_XIP.DATA_HI = 0; // trigger SPI transfer
+
+  // wait for transfer to complete
+  while(NEORV32_XIP.CTRL & (1 << XIP_CTRL_PHY_BUSY));
+
+  NEORV32_XIP.CTRL |= 1 << XIP_CTRL_SPI_CSEN; // finally enable SPI chip-select
+
+  return 0;
 }
 
 
@@ -95,7 +114,7 @@ void neorv32_xip_init(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) 
  *
  * @param[in] abytes Number of address bytes used to access the SPI flash (1,2,3,4).
  * @param[in] page_base XIP memory page base address (top 4 address bits, 0..15).
- * @return 0 if XIP mode is running, 1 if configuration error.
+ * @return 0 if XIP configuration is OK, 1 if configuration error.
  **************************************************************************/
 int neorv32_xip_start(uint8_t abytes, uint32_t page_base) {
 
@@ -128,12 +147,7 @@ int neorv32_xip_start(uint8_t abytes, uint32_t page_base) {
 
   NEORV32_XIP.CTRL = ctrl;
 
-  // wait until XIP mode becomes ready
-  while(1) {
-    if (NEORV32_XIP.CTRL & (1 << XIP_CTRL_XIP_READY)) {
-      return 0;
-    }
-  }
+  return 0;
 }
 
 
