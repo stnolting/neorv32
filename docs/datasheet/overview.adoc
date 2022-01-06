@@ -278,10 +278,9 @@ This chapter shows _exemplary_ implementation results of the NEORV32 CPU and NEO
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| Hardware version: | `1.5.7.10`
-| Top entity:       | `rtl/core/neorv32_cpu.vhd`
-| FPGA:             | Intel Cyclone IV E `EP4CE22F17C6`
-| Toolchain:        | Quartus Prime 20.1.0
+| Top entity: | `rtl/core/neorv32_cpu.vhd`
+| FPGA:       | Intel Cyclone IV E `EP4CE22F17C6`
+| Toolchain:  | Quartus Prime 20.1.0
 |=======================
 
 [cols="<5,>1,>1,>1,>1,>1"]
@@ -312,10 +311,9 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| Hardware version: | `1.5.7.15`
-| Top entity:       | `rtl/core/neorv32_top.vhd`
-| FPGA:             | Intel Cyclone IV E `EP4CE22F17C6`
-| Toolchain:        | Quartus Prime 20.1.0
+| Top entity: | `rtl/core/neorv32_top.vhd`
+| FPGA:       | Intel Cyclone IV E `EP4CE22F17C6`
+| Toolchain:  | Quartus Prime 20.1.0
 |=======================
 
 .Hardware utilization by the processor modules (mandatory core modules in **bold**)
@@ -346,7 +344,7 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 | WISHBONE      | External memory interface                             | 114 | 110 |        0 |    0
 | XIRQ          | External interrupt controller (32 channels)           | 241 | 201 |        0 |    0
 | GPTMR         | General Purpose Timer                                 | 153 | 107 |        0 |    0
-| XIP           | Execute in place module                               | 344 | 269 |        0 |    0
+| XIP           | Execute in place module                               | 305 | 243 |        0 |    0
 |=======================
 
 
