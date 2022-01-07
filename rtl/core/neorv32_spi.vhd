@@ -112,7 +112,7 @@ architecture neorv32_spi_rtl of neorv32_spi is
     sreg     : std_ulogic_vector(31 downto 0);
     bitcnt   : std_ulogic_vector(05 downto 0);
     bytecnt  : std_ulogic_vector(02 downto 0);
-    sdi_sync : std_ulogic_vector(01 downto 0);
+    sdi_sync : std_ulogic;
   end record;
   signal rtx_engine : rtx_engine_t;
 
@@ -219,15 +219,7 @@ begin
   begin
     if rising_edge(clk_i) then
       -- input (sdi) synchronizer --
-      rtx_engine.sdi_sync <= rtx_engine.sdi_sync(0) & spi_sdi_i;
-
-      -- output (sdo) buffer --
-      case ctrl(ctrl_size1_c downto ctrl_size0_c) is
-        when "00"   => spi_sdo_o <= rtx_engine.sreg(07); -- 8-bit mode
-        when "01"   => spi_sdo_o <= rtx_engine.sreg(15); -- 16-bit mode
-        when "10"   => spi_sdo_o <= rtx_engine.sreg(23); -- 24-bit mode
-        when others => spi_sdo_o <= rtx_engine.sreg(31); -- 32-bit mode
-      end case;
+      rtx_engine.sdi_sync <= spi_sdi_i;
 
       -- defaults --
       spi_sck_o <= ctrl(ctrl_cpol_c);
@@ -263,7 +255,7 @@ begin
         -- ------------------------------------------------------------
           spi_sck_o <= ctrl(ctrl_cpha_c) xnor ctrl(ctrl_cpol_c);
           if (spi_clk_en = '1') then
-            rtx_engine.sreg <= rtx_engine.sreg(30 downto 0) & rtx_engine.sdi_sync(rtx_engine.sdi_sync'left);
+            rtx_engine.sreg <= rtx_engine.sreg(30 downto 0) & rtx_engine.sdi_sync;
             if (rtx_engine.bitcnt(5 downto 3) = rtx_engine.bytecnt) then -- all bits transferred?
               irq_o <= '1'; -- interrupt!
               rtx_engine.state(1 downto 0) <= "00"; -- transmission done
@@ -282,6 +274,17 @@ begin
 
   -- busy flag --
   rtx_engine.busy <= '0' when (rtx_engine.state(1 downto 0) = "00") else '1';
+
+  -- output bit select --
+  spi_output: process(ctrl, rtx_engine)
+  begin
+    case ctrl(ctrl_size1_c downto ctrl_size0_c) is
+      when "00"   => spi_sdo_o <= rtx_engine.sreg(07); -- 8-bit mode
+      when "01"   => spi_sdo_o <= rtx_engine.sreg(15); -- 16-bit mode
+      when "10"   => spi_sdo_o <= rtx_engine.sreg(23); -- 24-bit mode
+      when others => spi_sdo_o <= rtx_engine.sreg(31); -- 32-bit mode
+    end case;
+  end process spi_output;
 
 
 end neorv32_spi_rtl;
