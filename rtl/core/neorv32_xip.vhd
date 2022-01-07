@@ -106,11 +106,12 @@ architecture neorv32_xip_rtl of neorv32_xip is
   constant ctrl_page0_c       : natural := 21; -- r/w: XIP memory page - bit 0
   constant ctrl_page3_c       : natural := 24; -- r/w: XIP memory page - bit 3
   constant ctrl_spi_csen_c    : natural := 25; -- r/w: SPI chip-select enabled
+  constant ctrl_highspeed_c   : natural := 26; -- r/w: SPI high-speed mode enable (ignoring ctrl_spi_prsc)
   --
   constant ctrl_phy_busy_c    : natural := 30; -- r/-: SPI PHY is busy when set
   constant ctrl_xip_busy_c    : natural := 31; -- r/-: XIP access in progress
   --
-  signal ctrl : std_ulogic_vector(25 downto 0);
+  signal ctrl : std_ulogic_vector(26 downto 0);
 
   -- Direct SPI access registers --
   signal spi_data_lo : std_ulogic_vector(31 downto 0);
@@ -213,6 +214,7 @@ begin
           ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c)         <= ct_data_i(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c);
           ctrl(ctrl_page3_c downto ctrl_page0_c)             <= ct_data_i(ctrl_page3_c downto ctrl_page0_c);
           ctrl(ctrl_spi_csen_c)                              <= ct_data_i(ctrl_spi_csen_c);
+          ctrl(ctrl_highspeed_c)                             <= ct_data_i(ctrl_highspeed_c);
         end if;
 
         -- SPI direct data access register lo --
@@ -242,6 +244,7 @@ begin
             ct_data_o(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c)         <= ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c);
             ct_data_o(ctrl_page3_c downto ctrl_page0_c)             <= ctrl(ctrl_page3_c downto ctrl_page0_c);
             ct_data_o(ctrl_spi_csen_c)                              <= ctrl(ctrl_spi_csen_c);
+            ct_data_o(ctrl_highspeed_c)                             <= ctrl(ctrl_highspeed_c);
             --
             ct_data_o(ctrl_phy_busy_c) <= phy_if.busy;
             ct_data_o(ctrl_xip_busy_c) <= arbiter.busy;
@@ -354,7 +357,7 @@ begin
   clkgen_en_o <= ctrl(ctrl_enable_c);
 
   -- clock select --
-  spi_clk_en <= clkgen_i(to_integer(unsigned(ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c))));
+  spi_clk_en <= clkgen_i(to_integer(unsigned(ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)))) or ctrl(ctrl_highspeed_c);
 
 
   -- SPI Physical Interface -----------------------------------------------------------------
@@ -553,7 +556,7 @@ begin
   -- serial data output --
   spi_data_o <= ctrl.sreg(ctrl.sreg'left);
 
-  -- read data --
+  -- RX data --
   op_rdata_o <= ctrl.sreg(31 downto 0);
 
 
