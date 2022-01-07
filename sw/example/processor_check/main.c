@@ -1471,7 +1471,6 @@ int main() {
   }
   else {
     test_fail();
-    PRINT_STANDARD("answer: 0x%x", neorv32_cpu_csr_read(CSR_MCAUSE));
   }
 
   // restore original handler
@@ -1733,21 +1732,21 @@ int main() {
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
   PRINT_STANDARD("\n\n-- HPM reports LOW (%u HPMs available) --\n", num_hpm_cnts_global);
-  PRINT_STANDARD("#IR - Instr.:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET)); // = "HPM_0"
-//PRINT_STANDARD("#TM - Time:     %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_TIME));    // = "HPM_1"
-  PRINT_STANDARD("#CY - CLKs:     %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));   // = "HPM_2"
-  PRINT_STANDARD("#03 - Compr.:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));
-  PRINT_STANDARD("#04 - IF wait:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));
-  PRINT_STANDARD("#05 - II wait:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5));
-  PRINT_STANDARD("#06 - ALU wait: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6));
-  PRINT_STANDARD("#07 - Loads:    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7));
-  PRINT_STANDARD("#08 - Stores:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8));
-  PRINT_STANDARD("#09 - MEM wait: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9));
-  PRINT_STANDARD("#10 - Jumps:    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10));
-  PRINT_STANDARD("#11 - Branches: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11));
-  PRINT_STANDARD("#12 -  Taken:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER12));
-  PRINT_STANDARD("#13 - Traps:    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER13));
-  PRINT_STANDARD("#14 - Illegals: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER14));
+  PRINT_STANDARD("#IR Instr.:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET)); // = "HPM_0"
+//PRINT_STANDARD("#TM Time:     %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_TIME));    // = "HPM_1"
+  PRINT_STANDARD("#CY CLKs:     %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));   // = "HPM_2"
+  PRINT_STANDARD("#03 Compr.:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));
+  PRINT_STANDARD("#04 IF wait:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));
+  PRINT_STANDARD("#05 II wait:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5));
+  PRINT_STANDARD("#06 ALU wait: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6));
+  PRINT_STANDARD("#07 Loads:    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7));
+  PRINT_STANDARD("#08 Stores:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8));
+  PRINT_STANDARD("#09 MEM wait: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9));
+  PRINT_STANDARD("#10 Jumps:    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10));
+  PRINT_STANDARD("#11 Branches: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11));
+  PRINT_STANDARD("#12 - Taken:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER12));
+  PRINT_STANDARD("#13 Traps:    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER13));
+  PRINT_STANDARD("#14 Illegals: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER14));
 
 
   // ----------------------------------------------------------
