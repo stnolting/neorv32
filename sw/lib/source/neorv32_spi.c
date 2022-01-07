@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -107,6 +107,28 @@ void neorv32_spi_disable(void) {
 void neorv32_spi_enable(void) {
 
   NEORV32_SPI.CTRL |= ((uint32_t)(1 << SPI_CTRL_EN));
+}
+
+
+/**********************************************************************//**
+ * Enable high-speed SPI mode (running at half of the processor clock).
+ *
+ * @note High-speed SPI mode ignores the programmed clock prescaler configuration.
+ **************************************************************************/
+void neorv32_spi_highspeed_enable(void) {
+
+  NEORV32_SPI.CTRL |= 1 << SPI_CTRL_HIGHSPEED;
+}
+
+
+/**********************************************************************//**
+ * Disable high-speed SPI mode.
+ *
+ * @note High-speed SPI mode ignores the programmed clock prescaler configuration.
+ **************************************************************************/
+void neorv32_spi_highspeed_disable(void) {
+
+  NEORV32_SPI.CTRL &= ~(1 << SPI_CTRL_HIGHSPEED);
 }
 
 

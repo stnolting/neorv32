@@ -7,7 +7,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -73,27 +73,27 @@ architecture neorv32_spi_rtl of neorv32_spi is
   constant lo_abb_c : natural := index_size_f(spi_size_c); -- low address boundary bit
 
   -- control register --
-  constant ctrl_cs0_c   : natural :=  0; -- r/w: spi CS 0
-  constant ctrl_cs1_c   : natural :=  1; -- r/w: spi CS 1
-  constant ctrl_cs2_c   : natural :=  2; -- r/w: spi CS 2
-  constant ctrl_cs3_c   : natural :=  3; -- r/w: spi CS 3
-  constant ctrl_cs4_c   : natural :=  4; -- r/w: spi CS 4
-  constant ctrl_cs5_c   : natural :=  5; -- r/w: spi CS 5
-  constant ctrl_cs6_c   : natural :=  6; -- r/w: spi CS 6
-  constant ctrl_cs7_c   : natural :=  7; -- r/w: spi CS 7
+  constant ctrl_cs0_c       : natural :=  0; -- r/w: spi CS 0
+  constant ctrl_cs1_c       : natural :=  1; -- r/w: spi CS 1
+  constant ctrl_cs2_c       : natural :=  2; -- r/w: spi CS 2
+  constant ctrl_cs3_c       : natural :=  3; -- r/w: spi CS 3
+  constant ctrl_cs4_c       : natural :=  4; -- r/w: spi CS 4
+  constant ctrl_cs5_c       : natural :=  5; -- r/w: spi CS 5
+  constant ctrl_cs6_c       : natural :=  6; -- r/w: spi CS 6
+  constant ctrl_cs7_c       : natural :=  7; -- r/w: spi CS 7
+  constant ctrl_en_c        : natural :=  8; -- r/w: spi enable
+  constant ctrl_cpha_c      : natural :=  9; -- r/w: spi clock phase
+  constant ctrl_prsc0_c     : natural := 10; -- r/w: spi prescaler select bit 0
+  constant ctrl_prsc1_c     : natural := 11; -- r/w: spi prescaler select bit 1
+  constant ctrl_prsc2_c     : natural := 12; -- r/w: spi prescaler select bit 2
+  constant ctrl_size0_c     : natural := 13; -- r/w: data size lsb (00:  8-bit, 01: 16-bit)
+  constant ctrl_size1_c     : natural := 14; -- r/w: data size msb (10: 24-bit, 11: 32-bit)
+  constant ctrl_cpol_c      : natural := 15; -- r/w: spi clock polarity
+  constant ctrl_highspeed_c : natural := 16; -- r/w: spi high-speed mode enable (ignoring ctrl_prsc)
   --
-  constant ctrl_en_c    : natural :=  8; -- r/w: spi enable
-  constant ctrl_cpha_c  : natural :=  9; -- r/w: spi clock phase
-  constant ctrl_prsc0_c : natural := 10; -- r/w: spi prescaler select bit 0
-  constant ctrl_prsc1_c : natural := 11; -- r/w: spi prescaler select bit 1
-  constant ctrl_prsc2_c : natural := 12; -- r/w: spi prescaler select bit 2
-  constant ctrl_size0_c : natural := 13; -- r/w: data size lsb (00:  8-bit, 01: 16-bit)
-  constant ctrl_size1_c : natural := 14; -- r/w: data size msb (10: 24-bit, 11: 32-bit)
-  constant ctrl_cpol_c  : natural := 15; -- r/w: spi clock polarity
+  constant ctrl_busy_c      : natural := 31; -- r/-: spi transceiver is busy
   --
-  constant ctrl_busy_c  : natural := 31; -- r/-: spi transceiver is busy
-  --
-  signal ctrl : std_ulogic_vector(15 downto 0);
+  signal ctrl : std_ulogic_vector(16 downto 0);
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
@@ -137,23 +137,23 @@ begin
       -- write access --
       if (wren = '1') then
         if (addr = spi_ctrl_addr_c) then -- control register
-          ctrl(ctrl_cs0_c)   <= data_i(ctrl_cs0_c);
-          ctrl(ctrl_cs1_c)   <= data_i(ctrl_cs1_c);
-          ctrl(ctrl_cs2_c)   <= data_i(ctrl_cs2_c);
-          ctrl(ctrl_cs3_c)   <= data_i(ctrl_cs3_c);
-          ctrl(ctrl_cs4_c)   <= data_i(ctrl_cs4_c);
-          ctrl(ctrl_cs5_c)   <= data_i(ctrl_cs5_c);
-          ctrl(ctrl_cs6_c)   <= data_i(ctrl_cs6_c);
-          ctrl(ctrl_cs7_c)   <= data_i(ctrl_cs7_c);
-          --
-          ctrl(ctrl_en_c)    <= data_i(ctrl_en_c);
-          ctrl(ctrl_cpha_c)  <= data_i(ctrl_cpha_c);
-          ctrl(ctrl_prsc0_c) <= data_i(ctrl_prsc0_c);
-          ctrl(ctrl_prsc1_c) <= data_i(ctrl_prsc1_c);
-          ctrl(ctrl_prsc2_c) <= data_i(ctrl_prsc2_c);
-          ctrl(ctrl_size0_c) <= data_i(ctrl_size0_c);
-          ctrl(ctrl_size1_c) <= data_i(ctrl_size1_c);
-          ctrl(ctrl_cpol_c)  <= data_i(ctrl_cpol_c);
+          ctrl(ctrl_cs0_c)       <= data_i(ctrl_cs0_c);
+          ctrl(ctrl_cs1_c)       <= data_i(ctrl_cs1_c);
+          ctrl(ctrl_cs2_c)       <= data_i(ctrl_cs2_c);
+          ctrl(ctrl_cs3_c)       <= data_i(ctrl_cs3_c);
+          ctrl(ctrl_cs4_c)       <= data_i(ctrl_cs4_c);
+          ctrl(ctrl_cs5_c)       <= data_i(ctrl_cs5_c);
+          ctrl(ctrl_cs6_c)       <= data_i(ctrl_cs6_c);
+          ctrl(ctrl_cs7_c)       <= data_i(ctrl_cs7_c);
+          ctrl(ctrl_en_c)        <= data_i(ctrl_en_c);
+          ctrl(ctrl_cpha_c)      <= data_i(ctrl_cpha_c);
+          ctrl(ctrl_prsc0_c)     <= data_i(ctrl_prsc0_c);
+          ctrl(ctrl_prsc1_c)     <= data_i(ctrl_prsc1_c);
+          ctrl(ctrl_prsc2_c)     <= data_i(ctrl_prsc2_c);
+          ctrl(ctrl_size0_c)     <= data_i(ctrl_size0_c);
+          ctrl(ctrl_size1_c)     <= data_i(ctrl_size1_c);
+          ctrl(ctrl_cpol_c)      <= data_i(ctrl_cpol_c);
+          ctrl(ctrl_highspeed_c) <= data_i(ctrl_highspeed_c);
         end if;
       end if;
 
@@ -161,25 +161,25 @@ begin
       data_o <= (others => '0');
       if (rden = '1') then
         if (addr = spi_ctrl_addr_c) then -- control register
-          data_o(ctrl_cs0_c)   <= ctrl(ctrl_cs0_c);
-          data_o(ctrl_cs1_c)   <= ctrl(ctrl_cs1_c);
-          data_o(ctrl_cs2_c)   <= ctrl(ctrl_cs2_c);
-          data_o(ctrl_cs3_c)   <= ctrl(ctrl_cs3_c);
-          data_o(ctrl_cs4_c)   <= ctrl(ctrl_cs4_c);
-          data_o(ctrl_cs5_c)   <= ctrl(ctrl_cs5_c);
-          data_o(ctrl_cs6_c)   <= ctrl(ctrl_cs6_c);
-          data_o(ctrl_cs7_c)   <= ctrl(ctrl_cs7_c);
+          data_o(ctrl_cs0_c)       <= ctrl(ctrl_cs0_c);
+          data_o(ctrl_cs1_c)       <= ctrl(ctrl_cs1_c);
+          data_o(ctrl_cs2_c)       <= ctrl(ctrl_cs2_c);
+          data_o(ctrl_cs3_c)       <= ctrl(ctrl_cs3_c);
+          data_o(ctrl_cs4_c)       <= ctrl(ctrl_cs4_c);
+          data_o(ctrl_cs5_c)       <= ctrl(ctrl_cs5_c);
+          data_o(ctrl_cs6_c)       <= ctrl(ctrl_cs6_c);
+          data_o(ctrl_cs7_c)       <= ctrl(ctrl_cs7_c);
+          data_o(ctrl_en_c)        <= ctrl(ctrl_en_c);
+          data_o(ctrl_cpha_c)      <= ctrl(ctrl_cpha_c);
+          data_o(ctrl_prsc0_c)     <= ctrl(ctrl_prsc0_c);
+          data_o(ctrl_prsc1_c)     <= ctrl(ctrl_prsc1_c);
+          data_o(ctrl_prsc2_c)     <= ctrl(ctrl_prsc2_c);
+          data_o(ctrl_size0_c)     <= ctrl(ctrl_size0_c);
+          data_o(ctrl_size1_c)     <= ctrl(ctrl_size1_c);
+          data_o(ctrl_cpol_c)      <= ctrl(ctrl_cpol_c);
+          data_o(ctrl_highspeed_c) <= ctrl(ctrl_highspeed_c);
           --
-          data_o(ctrl_en_c)    <= ctrl(ctrl_en_c);
-          data_o(ctrl_cpha_c)  <= ctrl(ctrl_cpha_c);
-          data_o(ctrl_prsc0_c) <= ctrl(ctrl_prsc0_c);
-          data_o(ctrl_prsc1_c) <= ctrl(ctrl_prsc1_c);
-          data_o(ctrl_prsc2_c) <= ctrl(ctrl_prsc2_c);
-          data_o(ctrl_size0_c) <= ctrl(ctrl_size0_c);
-          data_o(ctrl_size1_c) <= ctrl(ctrl_size1_c);
-          data_o(ctrl_cpol_c)  <= ctrl(ctrl_cpol_c);
-          --
-          data_o(ctrl_busy_c)  <= rtx_engine.busy;
+          data_o(ctrl_busy_c)      <= rtx_engine.busy;
         else -- data register (spi_rtx_addr_c)
           data_o <= rtx_engine.sreg;
         end if;
@@ -197,7 +197,7 @@ begin
   -- Clock Selection ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   clkgen_en_o <= ctrl(ctrl_en_c); -- clock generator enable
-  spi_clk_en  <= clkgen_i(to_integer(unsigned(ctrl(ctrl_prsc2_c downto ctrl_prsc0_c)))); -- clock select
+  spi_clk_en  <= clkgen_i(to_integer(unsigned(ctrl(ctrl_prsc2_c downto ctrl_prsc0_c)))) or ctrl(ctrl_highspeed_c); -- clock select
 
 
   -- Transmission Data Size -----------------------------------------------------------------

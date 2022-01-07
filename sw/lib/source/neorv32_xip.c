@@ -152,6 +152,28 @@ int neorv32_xip_start(uint8_t abytes, uint32_t page_base) {
 
 
 /**********************************************************************//**
+ * Enable high-speed SPI mode (running at half of the processor clock).
+ *
+ * @note High-speed SPI mode ignores the programmed clock prescaler configuration.
+ **************************************************************************/
+void neorv32_xip_highspeed_enable(void) {
+
+  NEORV32_XIP.CTRL |= 1 << XIP_CTRL_HIGHSPEED;
+}
+
+
+/**********************************************************************//**
+ * Disable high-speed SPI mode.
+ *
+ * @note High-speed SPI mode ignores the programmed clock prescaler configuration.
+ **************************************************************************/
+void neorv32_xip_highspeed_disable(void) {
+
+  NEORV32_XIP.CTRL &= ~(1 << XIP_CTRL_HIGHSPEED);
+}
+
+
+/**********************************************************************//**
  * Direct SPI access to the XIP flash.
  *
  * @warning This function can only be used BEFORE the XIP-mode is activated!

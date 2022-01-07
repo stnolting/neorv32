@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060505"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060506"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -149,7 +149,7 @@ package neorv32_package is
   constant dm_sreg_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"fffff980";
 
   -- IO: Peripheral Devices ("IO") Area --
-  -- Control register(s) (including the device-enable) should be located at the base address of each device
+  -- Control register(s) (including the device-enable flag) should be located at the base address of each device
   constant io_base_c            : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffe00";
   constant io_size_c            : natural := 512; -- IO address space size in bytes, fixed!
 
