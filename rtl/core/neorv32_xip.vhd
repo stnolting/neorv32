@@ -463,7 +463,7 @@ architecture neorv32_xip_phy_rtl of neorv32_xip_phy is
     state   : ctrl_state_t;
     sreg    : std_ulogic_vector(71 downto 0); -- only the lowest 32-bit are used as RX data
     bitcnt  : std_ulogic_vector(06 downto 0);
-    di_sync : std_ulogic_vector(01 downto 0);
+    di_sync : std_ulogic;
     csen    : std_ulogic;
   end record;
   signal ctrl : ctrl_t;
@@ -483,12 +483,12 @@ begin
         ctrl.csen    <= '-';
         ctrl.sreg    <= (others => '-');
         ctrl.bitcnt  <= (others => '-');
-        ctrl.di_sync <= (others => '-');
+        ctrl.di_sync <= '-';
       else
         -- defaults --
         spi_clk_o    <= cf_cpol_i;
         spi_csn_o    <= '1'; -- de-selected by default
-        ctrl.di_sync <= ctrl.di_sync(0) & spi_data_i;
+        ctrl.di_sync <= spi_data_i;
 
         -- fsm --
         case ctrl.state is
@@ -523,7 +523,7 @@ begin
             spi_csn_o <= not ctrl.csen;
             spi_clk_o <= not (cf_cpha_i xor cf_cpol_i);
             if (spi_clk_en_i = '1') then
-              ctrl.sreg <= ctrl.sreg(ctrl.sreg'left-1 downto 0) & ctrl.di_sync(1);
+              ctrl.sreg <= ctrl.sreg(ctrl.sreg'left-1 downto 0) & ctrl.di_sync;
               if (or_reduce_f(ctrl.bitcnt) = '0') then -- all bits transferred?
                 ctrl.state <= S_DONE; -- transmission done
               else
