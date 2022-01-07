@@ -104,6 +104,12 @@ _**f~SPI~**_ = _f~main~[Hz]_ / (2 * `clock_prescaler`)
 
 Hence, the maximum SPI clock is f~main~ / 4.
 
+.High-Speed SPI mode
+[TIP]
+The module provides a "high-speed" SPI mode. In this mode the clock prescaler configuration (SPI_CTRL_PRSCx) is ignored
+and the SPI clock operates at f~main~ / 2 (half of the processor's main clock). High speed SPI mode is enabled by setting
+the control register's _SPI_CTRL_HIGHSPEED_ bit.
+
 
 **SPI Interrupt**
 
@@ -117,23 +123,24 @@ by setting the according `mip` CSR bit.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.18+<| `0xffffffa8` .18+<| `NEORV32_SPI.CTRL` <|`0` _SPI_CTRL_CS0_    ^| r/w .8+<| Direct chip-select 0..7; setting `spi_csn_o(x)` low when set
-                                              <|`1` _SPI_CTRL_CS1_    ^| r/w 
-                                              <|`2` _SPI_CTRL_CS2_    ^| r/w 
-                                              <|`3` _SPI_CTRL_CS3_    ^| r/w 
-                                              <|`4` _SPI_CTRL_CS4_    ^| r/w 
-                                              <|`5` _SPI_CTRL_CS5_    ^| r/w 
-                                              <|`6` _SPI_CTRL_CS6_    ^| r/w 
-                                              <|`7` _SPI_CTRL_CS7_    ^| r/w 
-                                              <|`8` _SPI_CTRL_EN_     ^| r/w <| SPI enable
-                                              <|`9` _SPI_CTRL_CPHA_   ^| r/w <| clock phase (`0`=sample RX on rising edge & update TX on falling edge; `1`=sample RX on falling edge & update TX on rising edge)
-                                              <|`10` _SPI_CTRL_PRSC0_ ^| r/w .3+| 3-bit clock prescaler select
-                                              <|`11` _SPI_CTRL_PRSC1_ ^| r/w
-                                              <|`12` _SPI_CTRL_PRSC2_ ^| r/w
-                                              <|`13` _SPI_CTRL_SIZE0_ ^| r/w .2+<| transfer size (`00`=8-bit, `01`=16-bit, `10`=24-bit, `11`=32-bit)
-                                              <|`14` _SPI_CTRL_SIZE1_ ^| r/w
-                                              <|`15` _SPI_CTRL_CPOL_  ^| r/w <| clock polarity
-                                              <|`16` .. `30`          ^| r/- <| _reserved, read as zero
-                                              <|`31` _SPI_CTRL_BUSY_  ^| r/- <| transmission in progress when set
+.19+<| `0xffffffa8` .19+<| `NEORV32_SPI.CTRL` <|`0` _SPI_CTRL_CS0_        ^| r/w .8+<| Direct chip-select 0..7; setting `spi_csn_o(x)` low when set
+                                              <|`1` _SPI_CTRL_CS1_        ^| r/w 
+                                              <|`2` _SPI_CTRL_CS2_        ^| r/w 
+                                              <|`3` _SPI_CTRL_CS3_        ^| r/w 
+                                              <|`4` _SPI_CTRL_CS4_        ^| r/w 
+                                              <|`5` _SPI_CTRL_CS5_        ^| r/w 
+                                              <|`6` _SPI_CTRL_CS6_        ^| r/w 
+                                              <|`7` _SPI_CTRL_CS7_        ^| r/w 
+                                              <|`8` _SPI_CTRL_EN_         ^| r/w <| SPI enable
+                                              <|`9` _SPI_CTRL_CPHA_       ^| r/w <| clock phase (`0`=sample RX on rising edge & update TX on falling edge; `1`=sample RX on falling edge & update TX on rising edge)
+                                              <|`10` _SPI_CTRL_PRSC0_     ^| r/w .3+| 3-bit clock prescaler select
+                                              <|`11` _SPI_CTRL_PRSC1_     ^| r/w
+                                              <|`12` _SPI_CTRL_PRSC2_     ^| r/w
+                                              <|`13` _SPI_CTRL_SIZE0_     ^| r/w .2+<| transfer size (`00`=8-bit, `01`=16-bit, `10`=24-bit, `11`=32-bit)
+                                              <|`14` _SPI_CTRL_SIZE1_     ^| r/w
+                                              <|`15` _SPI_CTRL_CPOL_      ^| r/w <| clock polarity
+                                              <|`16` _SPI_CTRL_HIGHSPEED_ ^| r/w <| enable SPI high-speed mode (ignoring _SPI_CTRL_PRSC_)
+                                              <|`17:30`                   ^| r/- <| _reserved, read as zero
+                                              <|`31` _SPI_CTRL_BUSY_      ^| r/- <| transmission in progress when set
 | `0xffffffac` | `NEORV32_SPI.DATA` |`31:0` | r/w | receive/transmit data, LSB-aligned
 |=======================

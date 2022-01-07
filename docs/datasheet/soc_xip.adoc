@@ -39,7 +39,10 @@ An example program for the XIP module is available in `sw/example/demo_xip`.
 
 [WARNING]
 Debugging XIP code execution using the on-chip debugger is constrained. The debugger cannot insert breakpoints
-(`ebreak` instructions) into XIP code as the XIP access is read-only. 
+(`ebreak` instructions) into XIP code as the XIP access is read-only.
+
+[NOTE]
+Quad-SPI (QSPI) support, which is about 4x times faster, is planned for the future. 😉
 
 
 **SPI Protocol**
@@ -64,11 +67,14 @@ _**f~XIP~**_ = _f~main~[Hz]_ / (2 * `clock_prescaler`)
 
 Hence, the maximum XIP clock speed is f~main~ / 4.
 
+.High-Speed SPI mode
+[TIP]
+The module provides a "high-speed" SPI mode. In this mode the clock prescaler configuration (_XIP_CTRL_PRSCx_) is ignored
+and the SPI clock operates at f~main~ / 2 (half of the processor's main clock). High speed SPI mode is enabled by setting
+the control register's _XIP_CTRL_HIGHSPEED_ bit.
+
 The flash's "read command", which initiates a read access, is defined by the _XIP_CTRL_RD_CMD_ control register bits.
 For most SPI flash memories this is `0x03` for normal SPI mode.
-
-[NOTE]
-Quad-SPI (QSPI) support, which is about 4x times faster, is planned for the future. 😉
 
 
 **Direct SPI Access**
@@ -137,6 +143,9 @@ control register bits. Note that the 72-bit transmission size is only available 
 size of the direct SPI accesses is limited to 64-bit.
 
 [NOTE]
+There is no _continuous read_ feature (i.e. a burst SPI transmission fetching several data words at once) implemented yet.
+
+[NOTE]
 When using four SPI flash address bytes, the most significant 4 bits of the address are always hardwired
 to zero allowing a maximum **accessible** flash size of 256MB.
 
@@ -164,7 +173,7 @@ of the SPI access latency.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.15+<| `0xffffff40` .15+<| `NEORV32_XIP.CTRL` <|`0`  _XIP_CTRL_EN_    ^| r/w <| XIP module enable
+.16+<| `0xffffff40` .16+<| `NEORV32_XIP.CTRL` <|`0`  _XIP_CTRL_EN_    ^| r/w <| XIP module enable
                                               <|`1`  _XIP_CTRL_PRSC0_ ^| r/w .3+| 3-bit SPI clock prescaler select
                                               <|`2`  _XIP_CTRL_PRSC1_ ^| r/w
                                               <|`3`  _XIP_CTRL_PRSC2_ ^| r/w
@@ -176,7 +185,8 @@ of the SPI access latency.
                                               <|`20:13` _XIP_CTRL_RD_CMD_MSB_ : _XIP_CTRL_RD_CMD_LSB_ ^| r/w <| Flash read command
                                               <|`24:21` _XIP_CTRL_XIP_PAGE_MSB_ : _XIP_CTRL_XIP_PAGE_LSB_ ^| r/w <| XIP memory page
                                               <|`25` _XIP_CTRL_SPI_CSEN_  ^| r/w <| Allow SPI chip-select to be actually asserted when set
-                                              <|`29:26`                   ^| r/- <| _reserved_, read as zero
+                                              <|`26` _XIP_CTRL_HIGHSPEED_ ^| r/w <| enable SPI high-speed mode (ignoring _XIP_CTRL_PRSC_)
+                                              <|`29:27`                   ^| r/- <| _reserved_, read as zero
                                               <|`30` _XIP_CTRL_PHY_BUSY_  ^| r/- <| SPI PHY busy when set
                                               <|`31` _XIP_CTRL_XIP_BUSY_  ^| r/- <| XIP access in progress when set
 | `0xffffff44` | _reserved_            |`31:0` | r/- | _reserved_, read as zero
