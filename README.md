@@ -315,6 +315,14 @@ This overview provides some *quick links* to the most important sections of the
 * [Citing](https://stnolting.github.io/neorv32/#_citing) - citing information
 * [Impressum](https://github.com/stnolting/neorv32/blob/master/docs/impressum.md) - imprint
 
+This is an open-source project that is free of charge. Use this project in any way you like
+(as long as it complies to the permissive [license](https://github.com/stnolting/neorv32/blob/master/LICENSE)).
+Please quote it appropriately. :+1:
+
+We (the community) and I highly appreciate _any_ kind of feedback! Feel free to start a new "show & tell"
+[discussion](https://github.com/stnolting/neorv32/discussions), write some lines on our [gitter channel](https://gitter.im/neorv32/community)
+or directly get in [contact](mailto:stnolting@gmail.com) with me.
+
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
