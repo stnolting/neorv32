@@ -149,11 +149,11 @@ begin
         data_o(ctrl_err_flag_c)                                <= err_flag;
       end if;
       --
-      if (control.bus_err = '1') then -- sticky error flag
+      if (err_flag = '0') and (control.bus_err = '1') then -- sticky error flag
         err_flag <= '1';
         err_type <= control.err_type;
       else
-        if ((wren or rden) = '1') then -- clear on read or write acces
+        if ((wren or rden) = '1') then -- clear on read or write access
           err_flag <= '0';
         end if;
       end if;
