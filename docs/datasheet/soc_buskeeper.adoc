@@ -43,8 +43,13 @@ by the optional timeout feature of the <<_processor_external_memory_interface_wi
 * `11` - "Unexpected ERR": There was an ERR signal received while there was no pending transfer.
 
 [NOTE]
-Bus access fault exceptions are also raised if a physical memory protection rule is violated. In this case
-the _BUSKEEPER_ERR_FLAG_ bit remains zero.
+The BUSKEEPER's _BUSKEEPER_ERR_TYPE_ bits are _sticky_. They will always show the cause of the last bus error
+until the error is _explicitly acknowledged_ by reading or writing the BUSKEEPER's control register.
+
+[NOTE]
+Bus access fault exceptions are also raised if a physical memory protection (PMP) rule is violated. In this case
+the _BUSKEEPER_ERR_FLAG_ bit remains zero (since the error signal is not triggered by the BUSKEEPER but by
+the CPU's PMP logic).
 
 
 **NULL Address Check**
