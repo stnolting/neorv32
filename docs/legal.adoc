@@ -8,7 +8,7 @@
 
 **BSD 3-Clause License**
 
-Copyright (c) 2021, Stephan Nolting. All rights reserved.
+Copyright (c) 2022, Stephan Nolting. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that
 the following conditions are met:
@@ -34,12 +34,11 @@ ARISING IN ANY WAY OUT OF
 
 ==========================
 **The NEORV32 RISC-V Processor** +
-Copyright (c) 2021, by Dipl.-Ing. Stephan Nolting. All rights reserved. +
+Copyright (c) 2022, by Dipl.-Ing. Stephan Nolting. All rights reserved. +
 HQ: https://github.com/stnolting/neorv32 +
 Contact: stnolting@gmail.com +
 _made in Hanover, Germany_
 ==========================
-
 
 <<<
 // ####################################################################################################################
@@ -54,9 +53,11 @@ _made in Hanover, Germany_
 * "iCE40", "UltraPlus" and "Radiant" are trademarks of Lattice Semiconductor Corporation.
 * "Windows" is a trademark of Microsoft Corporation.
 * "Tera Term" copyright by T. Teranishi.
-* Timing diagrams made with WaveDrom Editor.
 * "NeoPixel" is a trademark of Adafruit Industries.
-* Documentation made with `asciidoctor`.
+* Images/figures made with _Microsoft Power Point_.
+* Timing diagrams made with _WaveDrom Editor_.
+* Documentation proudly made with `asciidoctor`.
+* All further/unreferenced products belong to their according copyright holders.
 
 PDF icons from https://www.flaticon.com and made by
 link:https://www.freepik.com[Freepik], link:https://www.flaticon.com/authors/good-ware[Good Ware],
@@ -83,20 +84,24 @@ infringement of the law becomes known to us, we will immediately remove the link
 :sectnums!:
 === Citing
 
-If you are using the NEORV32 or parts of the project in some kind of publication, please cite it as follows:
+[NOTE]
+This is an open-source project that is free of charge. Use this project in any way you like
+(as long as it complies to the permissive license). Please quote it appropriately. 👍
 
 .Contributors ❤️
 [NOTE]
-Please add as many https://github.com/stnolting/neorv32/graphs/contributors[contributors] as possible to the `authors` field. +
+Please add as many https://github.com/stnolting/neorv32/graphs/contributors[contributors] as possible to the `author` field. +
 This project would not be where it is without them.
+
+If you are using the NEORV32 or parts of the project in some kind of publication, please cite it as follows:
 
 .BibTeX
 [source]
 ----
-@misc{nolting20,
+@misc{nolting22,
   author       = {Nolting, S. and ...},
   title        = {The NEORV32 RISC-V Processor},
-  year         = {2020},
+  year         = {2022},
   publisher    = {GitHub},
   journal      = {GitHub repository},
   howpublished = {\url{https://github.com/stnolting/neorv32}}
@@ -117,10 +122,9 @@ who helped improving this project! ❤️**
 
 https://riscv.org[RISC-V] - instruction sets want to be free!
 
+Continuous integration provided by https://github.com/features/actions[GitHub Actions] and powered by https://github.com/ghdl/ghdl[GHDL].
+
 
 === Impressum (Imprint)
 
 See https://github.com/stnolting/neorv32/blob/master/docs/impressum.md[`docs/impressum.md`].
-
-
-
