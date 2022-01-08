@@ -517,9 +517,9 @@
           <fields>
             <field>
               <name>BUSKEEPER_ERR_TYPE</name>
-              <bitRange>[1:0]</bitRange>
+              <bitRange>[0:0]</bitRange>
               <access>read-only</access>
-              <description>Bus error type: 0=device error, 1=access timeout, 2=unexpected ACK, 3=unexpected ERR</description>
+              <description>Bus error type: 0=device error, 1=access timeout</description>
             </field>
             <field>
               <name>BUSKEEPER_NULL_CHECK_EN</name>

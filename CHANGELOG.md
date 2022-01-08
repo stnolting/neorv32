@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 08.01.2022 | 1.6.5.7 | :bug: fixed bug in BUSKEEPER's error type logic (introduced in version `1.6.5.4`); removed "unexpected ERR/ACK" error codes; [PR #253](https://github.com/stnolting/neorv32/pull/253) |
 | 07.01.2022 | 1.6.5.6 | :sparkles: **XIP & SPI: added high-speed SPI mode** (SPI clocking at half of the processor clock), see [PR #251](https://github.com/stnolting/neorv32/pull/251) |
 | 06.01.2022 | 1.6.5.5 | :warning: optimized/reworked XIP (execute in place) module, see [PR #249](https://github.com/stnolting/neorv32/pull/249) |
 | 04.01.2022 | 1.6.5.4 | **BUSKEEPER** can now optionally check for NULL address accesses (address `0x00000000`), see [PR #247](https://github.com/stnolting/neorv32/pull/247) |

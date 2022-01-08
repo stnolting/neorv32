@@ -32,19 +32,18 @@ constant from the processor's VHDL package file (`rtl/neorv32_package.vhd`). The
 In case of a bus access fault exception application software can evaluate the Bus Keeper's control register
 `NEORV32_BUSKEEPER.CTRL` to retrieve further details of the bus exception. The _BUSKEEPER_ERR_FLAG_ bit indicates
 that an actual bus access fault has occurred. The bit is sticky once set and is automatically cleared when reading or
-writing the `NEORV32_BUSKEEPER.CTRL` register. The _BUSKEEPER_ERR_TYPE_ bits define the type of the bus fault:
+writing the `NEORV32_BUSKEEPER.CTRL` register. The _BUSKEEPER_ERR_TYPE_ bit defines the type of the bus fault:
 
-* `00` - "Device Error": The bus access exception was cause by the memory-mapped device that
+* `0` - "Device Error": The bus access exception was cause by the memory-mapped device that
 has been accessed (the device asserted it's `err_o`).
-* `01` - "Timeout Error": The bus access exception was caused by the Bus Keeper because the
+* `1` - "Timeout Error": The bus access exception was caused by the Bus Keeper because the
 accessed memory-mapped device did not respond within the access time window. Note that this error type can also be raised
 by the optional timeout feature of the <<_processor_external_memory_interface_wishbone_axi4_lite>>).
-* `10` - "Unexpected ACK": There was an ACK signal received while there was no pending transfer.
-* `11` - "Unexpected ERR": There was an ERR signal received while there was no pending transfer.
 
 [NOTE]
-Bus access fault exceptions are also raised if a physical memory protection rule is violated. In this case
-the _BUSKEEPER_ERR_FLAG_ bit remains zero.
+Bus access fault exceptions are also raised if a physical memory protection (PMP) rule is violated. In this case
+the _BUSKEEPER_ERR_FLAG_ bit remains zero (since the error signal is not triggered by the BUSKEEPER but by
+the CPU's PMP logic).
 
 
 **NULL Address Check**
@@ -53,6 +52,9 @@ The bus keeper can ensure that no accesses are permitted to NULL addresses (`add
 access often occur when using uninitialized pointers. If the _BUSKEEPER_NULL_CHECK_EN_ bit is set, any access to
 address zero (instruction fetch, load data, store data) will raise an according bus exception. This flag
 automatically clears on a hardware reset.
+
+If a NULL address access has been detected the _BUSKEEPER_ERR_FLAG_ flag is set and the _BUSKEEPER_ERR_TYPE_
+flag is cleared indicating a "Device Error".
 
 [NOTE]
 Address 0 is normally used by the IMEM and contains boot code instructions that are executed _once_ right after
@@ -65,7 +67,7 @@ at all.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.3+<| `0xffffff7C` .3+<| `NEORV32_BUSKEEPER.CTRL` <|`1:0` _BUSKEEPER_ERR_TYPE_MSB_ : _BUSKEEPER_ERR_TYPE_LSB_ ^| r/- | Bus error type, valid if _BUSKEEPER_ERR_FLAG_
+.3+<| `0xffffff7C` .3+<| `NEORV32_BUSKEEPER.CTRL` <|`0`  _BUSKEEPER_ERR_TYPE_      ^| r/- | Bus error type, valid if _BUSKEEPER_ERR_FLAG_
                                                   <|`16` _BUSKEEPER_NULL_CHECK_EN_ ^| r/w <| Enable NULL address check when set
                                                   <|`31` _BUSKEEPER_ERR_FLAG_      ^| r/- <| Sticky error flag, clears after read or write access
 |=======================
