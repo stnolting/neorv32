@@ -6,7 +6,7 @@ Dipl.-Ing. Stephan Nolting
 
 Hannover, Germany
 
-E-Mail: stnolting@gmail.com
+E-Mail: [stnolting@gmail.com](mailto:stnolting@gmail.com)
 
 ### Haftungsausschluss – Disclaimer
 
@@ -36,13 +36,15 @@ Dritter, die außerhalb unseres Verantwortungsbereichs liegen, würde eine Haftu
 nur bestehen, wenn wir von den Inhalten Kenntnis erlangen und es uns technisch möglich und zumutbar wäre, die Nutzung im
 Falle rechtswidriger Inhalte zu verhindern.
 
-Diese Haftungsausschlusserklärung gilt auch innerhalb des eigenen Internetauftrittes https://github.com/stnolting/neorv32
+Diese Haftungsausschlusserklärung gilt auch innerhalb des eigenen Internetauftrittes https://github.com/stnolting/neorv32 bzw.
+https://github.com/stnolting (sowie aller Unterseiten)
 gesetzten Links und Verweise von Fragestellern, Blogeinträgern, Gästen des Diskussionsforums. Für illegale, fehlerhafte
 oder unvollständige Inhalte und insbesondere für Schäden, die aus der Nutzung oder Nichtnutzung solcherart dargestellten
 Informationen entstehen, haftet allein der Diensteanbieter der Seite, auf welche verwiesen wurde, nicht derjenige,
 der über Links auf die jeweilige Veröffentlichung lediglich verweist.
 
 Werden uns Rechtsverletzungen bekannt, werden die externen Links durch uns unverzüglich entfernt.
+Kontaktieren Sie uns über [stnolting@gmail.com](mailto:stnolting@gmail.com).
 
 #### Urheberrecht
 
@@ -57,4 +59,4 @@ zu beachten. Die Inhalte Dritter werden als solche kenntlich gemacht. Sollten Si
 Urheberrechtsverletzung aufmerksam werden, bitten wir um einen entsprechenden Hinweis. Bei Bekanntwerden
 von Rechtsverletzungen werden wir derartige Inhalte unverzüglich entfernen.
 
-Dieses Impressum wurde freundlicherweise von jurarat.de zur Verfügung gestellt.
+Dieses Impressum wurde freundlicherweise von https://jurarat.de zur Verfügung gestellt.
