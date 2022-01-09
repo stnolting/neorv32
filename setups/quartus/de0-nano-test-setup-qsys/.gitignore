@@ -1,8 +1,0 @@
-/.qsys_edit
-/db
-/neorv32_test_qsys
-/*.sopcinfo
-/*.rpt
-/output_files
-/incremental_db
-/*.qws
