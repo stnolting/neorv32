@@ -155,6 +155,10 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 Privileged software can determine the actual CPU and processor configuration via the `misa` and the 
 <<_system_configuration_information_memory_sysinfo, SYSINFO>> registers.
 
+[TIP]
+Run a quick simulation using the provided simulation/GHDL scripts (https://stnolting.github.io/neorv32/ug/#_hello_world)
+to verify the configuration of the processor generics is valid.
+
 [NOTE]
 If optional modules (like CPU extensions or peripheral devices) are *not enabled* the according circuitry
 **will not be synthesized at all**. Hence, the disabled modules do not increase area and power requirements
@@ -1438,7 +1442,7 @@ total size of the module's occupied address space! The occupied address space
 has to be a power of two (minimum 4 bytes)! Address spaces must not overlap!
 
 [IMPORTANT]
-When accessing an IO device that hast not been implemented (via the according _IO_x_EN_ generic), a
+When accessing an IO device that hast not been implemented (via the according generic), a
 load/store access fault exception is triggered.
 
 [IMPORTANT]
@@ -1447,6 +1451,11 @@ The peripheral/IO devices can only be written in full-word mode (i.e. 32-bit). B
 Processor-internal memories as well as modules connected to the external memory interface can still
 be written with a byte-wide granularity.
 
+[NOTE]
+Most of the IO devices do not have a hardware reset. Instead, the devices are reset via software by
+writing zero to the unit's control register. A general software-based reset of all devices is done by the
+application start-up code `crt0.S`.
+
 [TIP]
 You should use the provided core software library to interact with the peripheral devices. This
 prevents incompatibilities with future versions, since the hardware driver functions handle all the
@@ -1454,11 +1463,6 @@ register and register bit accesses.
 
 [TIP]
 A CMSIS-SVD-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
-
-[TIP]
-Most of the IO devices do not have a hardware reset. Instead, the devices are reset via software by
-writing zero to the unit's control register. A general software-based reset of all devices is done by the
-application start-up code `crt0.S`.
 
 **Interrupts of Processor-Internal Modules**
 
@@ -1491,12 +1495,12 @@ available:
 * `r/-` registers / bits are read-only; any write access to them has no effect
 * `-/w` these registers / bits are write-only; they auto-clear in the next cycle and are always read as zero
 
-[TIP]
+[NOTE]
 Bits / registers that are not listed in the register map tables are not (yet) implemented. These registers
 / bits are always read as zero. A write access to them has no effect, but user programs should only
 write zero to them to keep compatible with future extension.
 
-[TIP]
+[NOTE]
 When writing to read-only registers, the access is nevertheless acknowledged, but no actual data is
 written. When reading data from a write-only register the result is undefined.
 
