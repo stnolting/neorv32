@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -55,6 +55,8 @@
 #define ADDR_UNALIGNED_2    (0x00000002)
 //** Unreachable word-aligned address */
 #define ADDR_UNREACHABLE    (IO_BASE_ADDRESS-4)
+//**Read-only word-aligned address */
+#define ADDR_READONLY       ((uint32_t)&NEORV32_SYSINFO.CLK)
 //** external memory base address */
 #define EXT_MEM_BASE        (0xF0000000)
 /**@}*/
@@ -651,10 +653,13 @@ int main() {
   PRINT_STANDARD("[%i] L_ACC (load bus access) EXC: ", cnt_test);
   cnt_test++;
 
+  tmp_a = (1 << BUSKEEPER_ERR_FLAG) | (1 << BUSKEEPER_ERR_TYPE);
+
   // load from unreachable aligned address
   neorv32_cpu_load_unsigned_word(ADDR_UNREACHABLE);
 
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) {
+  if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) && // load bus access error exception
+     (NEORV32_BUSKEEPER.CTRL = tmp_a)) { // buskeeper: error flag + timeout error
     test_ok();
   }
   else {
@@ -687,10 +692,13 @@ int main() {
   PRINT_STANDARD("[%i] S_ACC (store bus access) EXC: ", cnt_test);
   cnt_test++;
 
-  // store to unreachable aligned address
-  neorv32_cpu_store_unsigned_word(ADDR_UNREACHABLE, 0);
+  tmp_a = (1 << BUSKEEPER_ERR_FLAG) | (0 << BUSKEEPER_ERR_TYPE);
 
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) {
+  // store to unreachable aligned address
+  neorv32_cpu_store_unsigned_word(ADDR_READONLY, 0);
+
+  if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && // store bus access error exception
+      (NEORV32_BUSKEEPER.CTRL == tmp_a)) { // buskeeper: error flag + device error
     test_ok();
   }
   else {
