@@ -1,12 +1,12 @@
 -- #################################################################################################
 -- # << NEORV32 - Bus Switch >>                                                                    #
 -- # ********************************************************************************************* #
--- # Allows to access a single peripheral bus ("p_bus") by two controller busses. Controller port  #
--- # A ("ca_bus") has priority over controller port B ("cb_bus").                                  #
+-- # Allows to access a single peripheral bus ("p_bus") by two controller buses. Controller port A #
+-- # ("ca_bus") has priority over controller port B ("cb_bus").                                    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -49,39 +49,39 @@ entity neorv32_busswitch is
   );
   port (
     -- global control --
-    clk_i           : in  std_ulogic; -- global clock, rising edge
-    rstn_i          : in  std_ulogic; -- global reset, low-active, async
+    clk_i          : in  std_ulogic; -- global clock, rising edge
+    rstn_i         : in  std_ulogic; -- global reset, low-active, async
     -- controller interface a --
-    ca_bus_addr_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    ca_bus_rdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    ca_bus_wdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    ca_bus_ben_i    : in  std_ulogic_vector(03 downto 0); -- byte enable
-    ca_bus_we_i     : in  std_ulogic; -- write enable
-    ca_bus_re_i     : in  std_ulogic; -- read enable
-    ca_bus_lock_i   : in  std_ulogic; -- exclusive access request
-    ca_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
-    ca_bus_err_o    : out std_ulogic; -- bus transfer error
+    ca_bus_addr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    ca_bus_rdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    ca_bus_wdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    ca_bus_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
+    ca_bus_we_i    : in  std_ulogic; -- write enable
+    ca_bus_re_i    : in  std_ulogic; -- read enable
+    ca_bus_lock_i  : in  std_ulogic; -- exclusive access request
+    ca_bus_ack_o   : out std_ulogic; -- bus transfer acknowledge
+    ca_bus_err_o   : out std_ulogic; -- bus transfer error
     -- controller interface b --
-    cb_bus_addr_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    cb_bus_rdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    cb_bus_wdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    cb_bus_ben_i    : in  std_ulogic_vector(03 downto 0); -- byte enable
-    cb_bus_we_i     : in  std_ulogic; -- write enable
-    cb_bus_re_i     : in  std_ulogic; -- read enable
-    cb_bus_lock_i   : in  std_ulogic; -- exclusive access request
-    cb_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
-    cb_bus_err_o    : out std_ulogic; -- bus transfer error
+    cb_bus_addr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    cb_bus_rdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    cb_bus_wdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    cb_bus_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
+    cb_bus_we_i    : in  std_ulogic; -- write enable
+    cb_bus_re_i    : in  std_ulogic; -- read enable
+    cb_bus_lock_i  : in  std_ulogic; -- exclusive access request
+    cb_bus_ack_o   : out std_ulogic; -- bus transfer acknowledge
+    cb_bus_err_o   : out std_ulogic; -- bus transfer error
     -- peripheral bus --
-    p_bus_src_o     : out std_ulogic; -- access source: 0 = A, 1 = B
-    p_bus_addr_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    p_bus_rdata_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    p_bus_wdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    p_bus_ben_o     : out std_ulogic_vector(03 downto 0); -- byte enable
-    p_bus_we_o      : out std_ulogic; -- write enable
-    p_bus_re_o      : out std_ulogic; -- read enable
-    p_bus_lock_o    : out std_ulogic; -- exclusive access request
-    p_bus_ack_i     : in  std_ulogic; -- bus transfer acknowledge
-    p_bus_err_i     : in  std_ulogic  -- bus transfer error
+    p_bus_src_o    : out std_ulogic; -- access source: 0 = A, 1 = B
+    p_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    p_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    p_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    p_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+    p_bus_we_o     : out std_ulogic; -- write enable
+    p_bus_re_o     : out std_ulogic; -- read enable
+    p_bus_lock_o   : out std_ulogic; -- exclusive access request
+    p_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
+    p_bus_err_i    : in  std_ulogic  -- bus transfer error
   );
 end neorv32_busswitch;
 

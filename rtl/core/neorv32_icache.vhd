@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -50,27 +50,27 @@ entity neorv32_icache is
   );
   port (
     -- global control --
-    clk_i         : in  std_ulogic; -- global clock, rising edge
-    rstn_i        : in  std_ulogic; -- global reset, low-active, async
-    clear_i       : in  std_ulogic; -- cache clear
+    clk_i        : in  std_ulogic; -- global clock, rising edge
+    rstn_i       : in  std_ulogic; -- global reset, low-active, async
+    clear_i      : in  std_ulogic; -- cache clear
     -- host controller interface --
-    host_addr_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    host_rdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    host_wdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    host_ben_i    : in  std_ulogic_vector(03 downto 0); -- byte enable
-    host_we_i     : in  std_ulogic; -- write enable
-    host_re_i     : in  std_ulogic; -- read enable
-    host_ack_o    : out std_ulogic; -- bus transfer acknowledge
-    host_err_o    : out std_ulogic; -- bus transfer error
+    host_addr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    host_rdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    host_wdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    host_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
+    host_we_i    : in  std_ulogic; -- write enable
+    host_re_i    : in  std_ulogic; -- read enable
+    host_ack_o   : out std_ulogic; -- bus transfer acknowledge
+    host_err_o   : out std_ulogic; -- bus transfer error
     -- peripheral bus interface --
-    bus_addr_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    bus_rdata_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    bus_wdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    bus_ben_o     : out std_ulogic_vector(03 downto 0); -- byte enable
-    bus_we_o      : out std_ulogic; -- write enable
-    bus_re_o      : out std_ulogic; -- read enable
-    bus_ack_i     : in  std_ulogic; -- bus transfer acknowledge
-    bus_err_i     : in  std_ulogic  -- bus transfer error
+    bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+    bus_we_o     : out std_ulogic; -- write enable
+    bus_re_o     : out std_ulogic; -- read enable
+    bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
+    bus_err_i    : in  std_ulogic  -- bus transfer error
   );
 end neorv32_icache;
 
@@ -112,12 +112,9 @@ architecture neorv32_icache_rtl of neorv32_icache is
   -- cache interface --
   type cache_if_t is record
     clear           : std_ulogic; -- cache clear
-    --
     host_addr       : std_ulogic_vector(31 downto 0); -- cpu access address
     host_rdata      : std_ulogic_vector(31 downto 0); -- cpu read data
-    --
     hit             : std_ulogic; -- hit access
-    --
     ctrl_en         : std_ulogic; -- control access enable
     ctrl_addr       : std_ulogic_vector(31 downto 0); -- control access address
     ctrl_we         : std_ulogic; -- control write enable
@@ -136,10 +133,8 @@ architecture neorv32_icache_rtl of neorv32_icache is
     state_nxt     : ctrl_engine_state_t; -- next state
     addr_reg      : std_ulogic_vector(31 downto 0); -- address register for block download
     addr_reg_nxt  : std_ulogic_vector(31 downto 0);
-    --
     re_buf        : std_ulogic; -- read request buffer
     re_buf_nxt    : std_ulogic;
-    --
     clear_buf     : std_ulogic; -- clear request buffer
     clear_buf_nxt : std_ulogic;
   end record;
@@ -160,25 +155,18 @@ begin
 
   -- Control Engine FSM Sync ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- registers that REQUIRE a specific reset state --
-  ctrl_engine_fsm_sync_rst: process(rstn_i, clk_i)
+  ctrl_engine_fsm_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       ctrl.state     <= S_CACHE_CLEAR;
       ctrl.re_buf    <= '0';
       ctrl.clear_buf <= '0';
+      ctrl.addr_reg  <= (others => '-');
     elsif rising_edge(clk_i) then
       ctrl.state     <= ctrl.state_nxt;
       ctrl.re_buf    <= ctrl.re_buf_nxt;
       ctrl.clear_buf <= ctrl.clear_buf_nxt;
-    end if;
-  end process ctrl_engine_fsm_sync_rst;
-
-  -- registers that do not require a specific reset state --
-  ctrl_engine_fsm_sync: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      ctrl.addr_reg <= ctrl.addr_reg_nxt;
+      ctrl.addr_reg  <= ctrl.addr_reg_nxt;
     end if;
   end process ctrl_engine_fsm_sync;
 
@@ -302,28 +290,28 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_icache_memory_inst: neorv32_icache_memory
   generic map (
-    ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,     -- number of blocks (min 1), has to be a power of 2
-    ICACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE,     -- block size in bytes (min 4), has to be a power of 2
-    ICACHE_NUM_SETS   => ICACHE_NUM_SETS        -- associativity; 0=direct-mapped, 1=2-way set-associative
+    ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS, -- number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE, -- block size in bytes (min 4), has to be a power of 2
+    ICACHE_NUM_SETS   => ICACHE_NUM_SETS    -- associativity; 0=direct-mapped, 1=2-way set-associative
   )
   port map (
     -- global control --
-    clk_i            => clk_i,                -- global clock, rising edge
-    invalidate_i     => cache.clear,          -- invalidate whole cache
-    -- host cache access (read-only)          --
-    host_addr_i      => cache.host_addr,      -- access address
-    host_re_i        => host_re_i,            -- read enable
-    host_rdata_o     => cache.host_rdata,     -- read data
+    clk_i          => clk_i,                -- global clock, rising edge
+    invalidate_i   => cache.clear,          -- invalidate whole cache
+    -- host cache access (read-only) --
+    host_addr_i    => cache.host_addr,      -- access address
+    host_re_i      => host_re_i,            -- read enable
+    host_rdata_o   => cache.host_rdata,     -- read data
     -- access status (1 cycle delay to access) --
-    hit_o            => cache.hit,            -- hit access
+    hit_o          => cache.hit,            -- hit access
     -- ctrl cache access (write-only) --
-    ctrl_en_i        => cache.ctrl_en,        -- control interface enable
-    ctrl_addr_i      => cache.ctrl_addr,      -- access address
-    ctrl_we_i        => cache.ctrl_we,        -- write enable (full-word)
-    ctrl_wdata_i     => cache.ctrl_wdata,     -- write data
-    ctrl_tag_we_i    => cache.ctrl_tag_we,    -- write tag to selected block
-    ctrl_valid_i     => cache.ctrl_valid_we,  -- make selected block valid
-    ctrl_invalid_i   => cache.ctrl_invalid_we -- make selected block invalid
+    ctrl_en_i      => cache.ctrl_en,        -- control interface enable
+    ctrl_addr_i    => cache.ctrl_addr,      -- access address
+    ctrl_we_i      => cache.ctrl_we,        -- write enable (full-word)
+    ctrl_wdata_i   => cache.ctrl_wdata,     -- write data
+    ctrl_tag_we_i  => cache.ctrl_tag_we,    -- write tag to selected block
+    ctrl_valid_i   => cache.ctrl_valid_we,  -- make selected block valid
+    ctrl_invalid_i => cache.ctrl_invalid_we -- make selected block invalid
   );
 
 end neorv32_icache_rtl;
@@ -345,7 +333,7 @@ end neorv32_icache_rtl;
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2020, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -389,22 +377,22 @@ entity neorv32_icache_memory is
   );
   port (
     -- global control --
-    clk_i            : in  std_ulogic; -- global clock, rising edge
-    invalidate_i     : in  std_ulogic; -- invalidate whole cache
+    clk_i          : in  std_ulogic; -- global clock, rising edge
+    invalidate_i   : in  std_ulogic; -- invalidate whole cache
     -- host cache access (read-only) --
-    host_addr_i      : in  std_ulogic_vector(31 downto 0); -- access address
-    host_re_i        : in  std_ulogic; -- read enable
-    host_rdata_o     : out std_ulogic_vector(31 downto 0); -- read data
+    host_addr_i    : in  std_ulogic_vector(31 downto 0); -- access address
+    host_re_i      : in  std_ulogic; -- read enable
+    host_rdata_o   : out std_ulogic_vector(31 downto 0); -- read data
     -- access status (1 cycle delay to access) --
-    hit_o            : out std_ulogic; -- hit access
+    hit_o          : out std_ulogic; -- hit access
     -- ctrl cache access (write-only) --
-    ctrl_en_i        : in  std_ulogic; -- control interface enable
-    ctrl_addr_i      : in  std_ulogic_vector(31 downto 0); -- access address
-    ctrl_we_i        : in  std_ulogic; -- write enable (full-word)
-    ctrl_wdata_i     : in  std_ulogic_vector(31 downto 0); -- write data
-    ctrl_tag_we_i    : in  std_ulogic; -- write tag to selected block
-    ctrl_valid_i     : in  std_ulogic; -- make selected block valid
-    ctrl_invalid_i   : in  std_ulogic  -- make selected block invalid
+    ctrl_en_i      : in  std_ulogic; -- control interface enable
+    ctrl_addr_i    : in  std_ulogic_vector(31 downto 0); -- access address
+    ctrl_we_i      : in  std_ulogic; -- write enable (full-word)
+    ctrl_wdata_i   : in  std_ulogic_vector(31 downto 0); -- write data
+    ctrl_tag_we_i  : in  std_ulogic; -- write tag to selected block
+    ctrl_valid_i   : in  std_ulogic; -- make selected block valid
+    ctrl_invalid_i : in  std_ulogic  -- make selected block invalid
   );
 end neorv32_icache_memory;
 
@@ -413,7 +401,7 @@ architecture neorv32_icache_memory_rtl of neorv32_icache_memory is
   -- cache layout --
   constant cache_offset_size_c : natural := index_size_f(ICACHE_BLOCK_SIZE/4); -- offset addresses full 32-bit words
   constant cache_index_size_c  : natural := index_size_f(ICACHE_NUM_BLOCKS);
-  constant cache_tag_size_c    : natural := 32 - (cache_offset_size_c + cache_index_size_c + 2); -- 2 additonal bits for byte offset
+  constant cache_tag_size_c    : natural := 32 - (cache_offset_size_c + cache_index_size_c + 2); -- 2 additional bits for byte offset
   constant cache_entries_c     : natural := ICACHE_NUM_BLOCKS * (ICACHE_BLOCK_SIZE/4); -- number of 32-bit entries (per set)
 
   -- status flag memory --

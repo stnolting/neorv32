@@ -21,7 +21,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -182,7 +182,7 @@ begin
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zifencei, "_Zifencei", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx, "_Zfinx", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul, "_Zmmul", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_DEBUG, "_Debug", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_DEBUG, "_DEBUG", "") &
   ""
   severity note;
 
@@ -190,7 +190,7 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- hardware reset notifier --
-  assert not (dedicated_reset_c = false) report "NEORV32 CPU CONFIG NOTE: Implementing NO dedicated hardware reset for uncritical registers (default, might reduce area). Set package constant <dedicated_reset_c> = TRUE to configure a DEFINED reset value for all CPU registers." severity note;
+  assert not (dedicated_reset_c = false) report "NEORV32 CPU CONFIG NOTE: Implementing NO dedicated hardware reset for uncritical registers (default)." severity note;
   assert not (dedicated_reset_c = true)  report "NEORV32 CPU CONFIG NOTE: Implementing defined hardware reset for uncritical registers (non-default, reset-to-zero, might increase area)." severity note;
   assert not ((def_rst_val_c /= '-') and (def_rst_val_c /= '0')) report "NEORV32 CPU CONFIG ERROR! Invalid configuration of package <def_rst_val_c> constant (has to be '-' or '0')." severity error;
 
@@ -329,14 +329,14 @@ begin
   )
   port map (
     -- global control --
-    clk_i  => clk_i,              -- global clock, rising edge
-    ctrl_i => ctrl,               -- main control bus
+    clk_i  => clk_i,     -- global clock, rising edge
+    ctrl_i => ctrl,      -- main control bus
     -- data input --
-    mem_i  => mem_rdata,          -- memory read data
-    alu_i  => alu_res,            -- ALU result
+    mem_i  => mem_rdata, -- memory read data
+    alu_i  => alu_res,   -- ALU result
     -- data output --
-    rs1_o  => rs1,                -- operand 1
-    rs2_o  => rs2                 -- operand 2
+    rs1_o  => rs1,       -- operand 1
+    rs2_o  => rs2        -- operand 2
   );
 
 
@@ -355,23 +355,23 @@ begin
   )
   port map (
     -- global control --
-    clk_i       => clk_i,         -- global clock, rising edge
-    rstn_i      => rstn_i,        -- global reset, low-active, async
-    ctrl_i      => ctrl,          -- main control bus
+    clk_i       => clk_i,      -- global clock, rising edge
+    rstn_i      => rstn_i,     -- global reset, low-active, async
+    ctrl_i      => ctrl,       -- main control bus
     -- data input --
-    rs1_i       => rs1,           -- rf source 1
-    rs2_i       => rs2,           -- rf source 2
-    pc_i        => curr_pc,       -- current PC
-    pc2_i       => next_pc,       -- next PC
-    imm_i       => imm,           -- immediate
-    csr_i       => csr_rdata,     -- CSR read data
+    rs1_i       => rs1,        -- rf source 1
+    rs2_i       => rs2,        -- rf source 2
+    pc_i        => curr_pc,    -- current PC
+    pc2_i       => next_pc,    -- next PC
+    imm_i       => imm,        -- immediate
+    csr_i       => csr_rdata,  -- CSR read data
     -- data output --
-    cmp_o       => comparator,    -- comparator status
-    res_o       => alu_res,       -- ALU result
-    add_o       => alu_add,       -- address computation result
-    fpu_flags_o => fpu_flags,     -- FPU exception flags
+    cmp_o       => comparator, -- comparator status
+    res_o       => alu_res,    -- ALU result
+    add_o       => alu_add,    -- address computation result
+    fpu_flags_o => fpu_flags,  -- FPU exception flags
     -- status --
-    idone_o     => alu_idone      -- iterative processing units done?
+    idone_o     => alu_idone   -- iterative processing units done?
   );
 
 
@@ -387,53 +387,53 @@ begin
   )
   port map (
     -- global control --
-    clk_i          => clk_i,          -- global clock, rising edge
-    rstn_i         => rstn_i,         -- global reset, low-active, async
-    ctrl_i         => ctrl,           -- main control bus
+    clk_i          => clk_i,         -- global clock, rising edge
+    rstn_i         => rstn_i,        -- global reset, low-active, async
+    ctrl_i         => ctrl,          -- main control bus
     -- cpu instruction fetch interface --
-    fetch_pc_i     => fetch_pc,       -- PC for instruction fetch
-    instr_o        => instr,          -- instruction
-    i_wait_o       => bus_i_wait,     -- wait for fetch to complete
+    fetch_pc_i     => fetch_pc,      -- PC for instruction fetch
+    instr_o        => instr,         -- instruction
+    i_wait_o       => bus_i_wait,    -- wait for fetch to complete
     --
-    ma_instr_o     => ma_instr,       -- misaligned instruction address
-    be_instr_o     => be_instr,       -- bus error on instruction access
+    ma_instr_o     => ma_instr,      -- misaligned instruction address
+    be_instr_o     => be_instr,      -- bus error on instruction access
     -- cpu data access interface --
-    addr_i         => alu_add,        -- ALU.add result -> access address
-    wdata_i        => rs2,            -- write data
-    rdata_o        => mem_rdata,      -- read data
-    mar_o          => mar,            -- current memory address register
-    d_wait_o       => bus_d_wait,     -- wait for access to complete
+    addr_i         => alu_add,       -- ALU.add result -> access address
+    wdata_i        => rs2,           -- write data
+    rdata_o        => mem_rdata,     -- read data
+    mar_o          => mar,           -- current memory address register
+    d_wait_o       => bus_d_wait,    -- wait for access to complete
     --
-    excl_state_o   => excl_state,     -- atomic/exclusive access status
-    ma_load_o      => ma_load,        -- misaligned load data address
-    ma_store_o     => ma_store,       -- misaligned store data address
-    be_load_o      => be_load,        -- bus error on load data access
-    be_store_o     => be_store,       -- bus error on store data access
+    excl_state_o   => excl_state,    -- atomic/exclusive access status
+    ma_load_o      => ma_load,       -- misaligned load data address
+    ma_store_o     => ma_store,      -- misaligned store data address
+    be_load_o      => be_load,       -- bus error on load data access
+    be_store_o     => be_store,      -- bus error on store data access
     -- physical memory protection --
-    pmp_addr_i     => pmp_addr,       -- addresses
-    pmp_ctrl_i     => pmp_ctrl,       -- configurations
+    pmp_addr_i     => pmp_addr,      -- addresses
+    pmp_ctrl_i     => pmp_ctrl,      -- configurations
     -- instruction bus --
-    i_bus_addr_o   => i_bus_addr_o,   -- bus access address
-    i_bus_rdata_i  => i_bus_rdata_i,  -- bus read data
-    i_bus_wdata_o  => i_bus_wdata_o,  -- bus write data
-    i_bus_ben_o    => i_bus_ben_o,    -- byte enable
-    i_bus_we_o     => i_bus_we_o,     -- write enable
-    i_bus_re_o     => i_bus_re_o,     -- read enable
-    i_bus_lock_o   => i_bus_lock_o,   -- exclusive access request
-    i_bus_ack_i    => i_bus_ack_i,    -- bus transfer acknowledge
-    i_bus_err_i    => i_bus_err_i,    -- bus transfer error
-    i_bus_fence_o  => i_bus_fence_o,  -- fence operation
+    i_bus_addr_o   => i_bus_addr_o,  -- bus access address
+    i_bus_rdata_i  => i_bus_rdata_i, -- bus read data
+    i_bus_wdata_o  => i_bus_wdata_o, -- bus write data
+    i_bus_ben_o    => i_bus_ben_o,   -- byte enable
+    i_bus_we_o     => i_bus_we_o,    -- write enable
+    i_bus_re_o     => i_bus_re_o,    -- read enable
+    i_bus_lock_o   => i_bus_lock_o,  -- exclusive access request
+    i_bus_ack_i    => i_bus_ack_i,   -- bus transfer acknowledge
+    i_bus_err_i    => i_bus_err_i,   -- bus transfer error
+    i_bus_fence_o  => i_bus_fence_o, -- fence operation
     -- data bus --
-    d_bus_addr_o   => d_bus_addr_o,   -- bus access address
-    d_bus_rdata_i  => d_bus_rdata_i,  -- bus read data
-    d_bus_wdata_o  => d_bus_wdata_o,  -- bus write data
-    d_bus_ben_o    => d_bus_ben_o,    -- byte enable
-    d_bus_we_o     => d_bus_we_o,     -- write enable
-    d_bus_re_o     => d_bus_re_o,     -- read enable
-    d_bus_lock_o   => d_bus_lock_o,   -- exclusive access request
-    d_bus_ack_i    => d_bus_ack_i,    -- bus transfer acknowledge
-    d_bus_err_i    => d_bus_err_i,    -- bus transfer error
-    d_bus_fence_o  => d_bus_fence_o   -- fence operation
+    d_bus_addr_o   => d_bus_addr_o,  -- bus access address
+    d_bus_rdata_i  => d_bus_rdata_i, -- bus read data
+    d_bus_wdata_o  => d_bus_wdata_o, -- bus write data
+    d_bus_ben_o    => d_bus_ben_o,   -- byte enable
+    d_bus_we_o     => d_bus_we_o,    -- write enable
+    d_bus_re_o     => d_bus_re_o,    -- read enable
+    d_bus_lock_o   => d_bus_lock_o,  -- exclusive access request
+    d_bus_ack_i    => d_bus_ack_i,   -- bus transfer acknowledge
+    d_bus_err_i    => d_bus_err_i,   -- bus transfer error
+    d_bus_fence_o  => d_bus_fence_o  -- fence operation
   );
 
   -- current privilege level --

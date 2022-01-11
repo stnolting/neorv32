@@ -724,7 +724,7 @@ begin
         execute_engine.i_reg_last <= execute_engine.i_reg;
       end if;
 
-      -- next PC --
+      -- next PC logic --
       case execute_engine.state is
         when TRAP_ENTER => -- ENTERING trap environment
           if (CPU_EXTENSION_RISCV_DEBUG = false) then -- normal trapping
@@ -2404,8 +2404,8 @@ begin
 
   -- counter event trigger - RISC-V-specific --
   cnt_event(hpmcnt_event_cy_c)      <= not execute_engine.sleep; -- active cycle
-  cnt_event(hpmcnt_event_never_c)   <= '0'; -- undefined (never)
-  cnt_event(hpmcnt_event_ir_c)      <= '1' when (execute_engine.state = EXECUTE) else '0'; -- retired instruction
+  cnt_event(hpmcnt_event_never_c)   <= '0'; -- "never"
+  cnt_event(hpmcnt_event_ir_c)      <= '1' when (execute_engine.state = EXECUTE) else '0'; -- (any) retired instruction
 
   -- counter event trigger - custom / NEORV32-specific --
   cnt_event(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)      and (execute_engine.is_ci = '1')             else '0'; -- retired compressed instruction

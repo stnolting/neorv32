@@ -5,7 +5,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -51,53 +51,53 @@ entity neorv32_cpu_bus is
   );
   port (
     -- global control --
-    clk_i          : in  std_ulogic; -- global clock, rising edge
-    rstn_i         : in  std_ulogic := '0'; -- global reset, low-active, async
-    ctrl_i         : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+    clk_i         : in  std_ulogic; -- global clock, rising edge
+    rstn_i        : in  std_ulogic := '0'; -- global reset, low-active, async
+    ctrl_i        : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     -- cpu instruction fetch interface --
-    fetch_pc_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
-    instr_o        : out std_ulogic_vector(data_width_c-1 downto 0); -- instruction
-    i_wait_o       : out std_ulogic; -- wait for fetch to complete
+    fetch_pc_i    : in  std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
+    instr_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- instruction
+    i_wait_o      : out std_ulogic; -- wait for fetch to complete
     --
-    ma_instr_o     : out std_ulogic; -- misaligned instruction address
-    be_instr_o     : out std_ulogic; -- bus error on instruction access
+    ma_instr_o    : out std_ulogic; -- misaligned instruction address
+    be_instr_o    : out std_ulogic; -- bus error on instruction access
     -- cpu data access interface --
-    addr_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU result -> access address
-    wdata_i        : in  std_ulogic_vector(data_width_c-1 downto 0); -- write data
-    rdata_o        : out std_ulogic_vector(data_width_c-1 downto 0); -- read data
-    mar_o          : out std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
-    d_wait_o       : out std_ulogic; -- wait for access to complete
+    addr_i        : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU result -> access address
+    wdata_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- write data
+    rdata_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- read data
+    mar_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
+    d_wait_o      : out std_ulogic; -- wait for access to complete
     --
-    excl_state_o   : out std_ulogic; -- atomic/exclusive access status
-    ma_load_o      : out std_ulogic; -- misaligned load data address
-    ma_store_o     : out std_ulogic; -- misaligned store data address
-    be_load_o      : out std_ulogic; -- bus error on load data access
-    be_store_o     : out std_ulogic; -- bus error on store data access
+    excl_state_o  : out std_ulogic; -- atomic/exclusive access status
+    ma_load_o     : out std_ulogic; -- misaligned load data address
+    ma_store_o    : out std_ulogic; -- misaligned store data address
+    be_load_o     : out std_ulogic; -- bus error on load data access
+    be_store_o    : out std_ulogic; -- bus error on store data access
     -- physical memory protection --
-    pmp_addr_i     : in  pmp_addr_if_t; -- addresses
-    pmp_ctrl_i     : in  pmp_ctrl_if_t; -- configs
+    pmp_addr_i    : in  pmp_addr_if_t; -- addresses
+    pmp_ctrl_i    : in  pmp_ctrl_if_t; -- configs
     -- instruction bus --
-    i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    i_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-    i_bus_we_o     : out std_ulogic; -- write enable
-    i_bus_re_o     : out std_ulogic; -- read enable
-    i_bus_lock_o   : out std_ulogic; -- exclusive access request
-    i_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
-    i_bus_err_i    : in  std_ulogic; -- bus transfer error
-    i_bus_fence_o  : out std_ulogic; -- fence operation
+    i_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    i_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    i_bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    i_bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
+    i_bus_we_o    : out std_ulogic; -- write enable
+    i_bus_re_o    : out std_ulogic; -- read enable
+    i_bus_lock_o  : out std_ulogic; -- exclusive access request
+    i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
+    i_bus_err_i   : in  std_ulogic; -- bus transfer error
+    i_bus_fence_o : out std_ulogic; -- fence operation
     -- data bus --
-    d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    d_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-    d_bus_we_o     : out std_ulogic; -- write enable
-    d_bus_re_o     : out std_ulogic; -- read enable
-    d_bus_lock_o   : out std_ulogic; -- exclusive access request
-    d_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
-    d_bus_err_i    : in  std_ulogic; -- bus transfer error
-    d_bus_fence_o  : out std_ulogic  -- fence operation
+    d_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    d_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    d_bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    d_bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
+    d_bus_we_o    : out std_ulogic; -- write enable
+    d_bus_re_o    : out std_ulogic; -- read enable
+    d_bus_lock_o  : out std_ulogic; -- exclusive access request
+    d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
+    d_bus_err_i   : in  std_ulogic; -- bus transfer error
+    d_bus_fence_o : out std_ulogic  -- fence operation
   );
 end neorv32_cpu_bus;
 

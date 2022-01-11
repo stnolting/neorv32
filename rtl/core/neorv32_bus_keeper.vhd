@@ -174,18 +174,16 @@ begin
       -- access monitor: IDLE --
       if (control.pending = '0') then
         control.timeout <= std_ulogic_vector(to_unsigned(max_proc_int_response_time_c, index_size_f(max_proc_int_response_time_c)+1));
-        if ((bus_rden_i = '1') or (bus_wren_i = '1')) and (null_check = '0') then
+        if (bus_rden_i = '1') or (bus_wren_i = '1') then
           control.pending <= '1';
-        end if;
-        --
-        if ((bus_rden_i = '1') or (bus_wren_i = '1')) and (null_check = '1') then -- invalid access to NULL address
-          control.err_type <= err_device_c; -- device error
-          control.bus_err  <= '1';
+          if (null_check = '1') then -- invalid access to NULL address
+            control.bus_err <= '1';
+          end if;
         end if;
       -- access monitor: PENDING --
       else
         control.timeout <= std_ulogic_vector(unsigned(control.timeout) - 1); -- countdown timer
-        if (bus_err_i = '1') then -- error termination by bus system
+        if (bus_err_i = '1') or (control.bus_err = '1') then -- error termination by bus system
           control.err_type <= err_device_c; -- device error
           control.bus_err  <= '1';
           control.pending  <= '0';

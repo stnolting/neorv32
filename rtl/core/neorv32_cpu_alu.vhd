@@ -5,7 +5,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -240,16 +240,16 @@ begin
   )
   port map (
     -- global control --
-    clk_i   => clk_i,           -- global clock, rising edge
-    rstn_i  => rstn_i,          -- global reset, low-active, async
-    ctrl_i  => ctrl_i,          -- main control bus
-    start_i => cp_start(0),     -- trigger operation
+    clk_i   => clk_i,        -- global clock, rising edge
+    rstn_i  => rstn_i,       -- global reset, low-active, async
+    ctrl_i  => ctrl_i,       -- main control bus
+    start_i => cp_start(0),  -- trigger operation
     -- data input --
-    rs1_i   => rs1_i,           -- rf source 1
+    rs1_i   => rs1_i,        -- rf source 1
     shamt_i => opb(index_size_f(data_width_c)-1 downto 0), -- shift amount
     -- result and status --
-    res_o   => cp_result(0),    -- operation result
-    valid_o => cp_valid(0)      -- data output valid
+    res_o   => cp_result(0), -- operation result
+    valid_o => cp_valid(0)   -- data output valid
   );
 
 
@@ -264,16 +264,16 @@ begin
     )
     port map (
       -- global control --
-      clk_i   => clk_i,         -- global clock, rising edge
-      rstn_i  => rstn_i,        -- global reset, low-active, async
-      ctrl_i  => ctrl_i,        -- main control bus
-      start_i => cp_start(1),   -- trigger operation
+      clk_i   => clk_i,        -- global clock, rising edge
+      rstn_i  => rstn_i,       -- global reset, low-active, async
+      ctrl_i  => ctrl_i,       -- main control bus
+      start_i => cp_start(1),  -- trigger operation
       -- data input --
-      rs1_i   => rs1_i,         -- rf source 1
-      rs2_i   => rs2_i,         -- rf source 2
+      rs1_i   => rs1_i,        -- rf source 1
+      rs2_i   => rs2_i,        -- rf source 2
       -- result and status --
-      res_o   => cp_result(1),  -- operation result
-      valid_o => cp_valid(1)    -- data output valid
+      res_o   => cp_result(1), -- operation result
+      valid_o => cp_valid(1)   -- data output valid
     );
   end generate;
 
