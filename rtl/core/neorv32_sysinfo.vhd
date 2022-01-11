@@ -99,8 +99,10 @@ entity neorv32_sysinfo is
     clk_i  : in  std_ulogic; -- global clock line
     addr_i : in  std_ulogic_vector(31 downto 0); -- address
     rden_i : in  std_ulogic; -- read enable
+    wren_i : in  std_ulogic; -- write enable
     data_o : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o  : out std_ulogic  -- transfer acknowledge
+    ack_o  : out std_ulogic; -- transfer acknowledge
+    err_o  : out std_ulogic  -- transfer error
   );
 end neorv32_sysinfo;
 
@@ -111,10 +113,10 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant lo_abb_c : natural := index_size_f(sysinfo_size_c); -- low address boundary bit
 
   -- access control --
-  signal acc_en    : std_ulogic; -- module access enable
-  signal addr      : std_ulogic_vector(31 downto 0);
-  signal rden      : std_ulogic;
-  signal info_addr : std_ulogic_vector(02 downto 0);
+  signal acc_en : std_ulogic; -- module access enable
+  signal rden   : std_ulogic;
+  signal wren   : std_ulogic;
+  signal iaddr  : std_ulogic_vector(02 downto 0);
 
   -- system information ROM --
   type info_mem_t is array (0 to 7) of std_ulogic_vector(31 downto 0);
@@ -124,15 +126,14 @@ begin
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en    <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = sysinfo_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  rden      <= acc_en and rden_i; -- valid read access
-  addr      <= sysinfo_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  info_addr <= addr(index_size_f(sysinfo_size_c)-1 downto 2);
+  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = sysinfo_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  rden   <= acc_en and rden_i; -- read access
+  wren   <= acc_en and wren_i; -- write access
+  iaddr  <= addr_i(index_size_f(sysinfo_size_c)-1 downto 2);
 
 
   -- Construct Info ROM ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
   -- SYSINFO(0): Processor (primary) clock frequency --
   sysinfo_mem(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
 
@@ -218,9 +219,10 @@ begin
   begin
     if rising_edge(clk_i) then
       ack_o  <= rden;
+      err_o  <= wren;
       data_o <= (others => '0');
       if (rden = '1') then
-        data_o <= sysinfo_mem(to_integer(unsigned(info_addr)));
+        data_o <= sysinfo_mem(to_integer(unsigned(iaddr)));
       end if;
     end if;
   end process read_access;
