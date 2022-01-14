@@ -15,25 +15,25 @@
 | CPU interrupts:          | none                         | 
 |=======================
 
+Implementation of the processor-internal instruction memory is enabled via the processor's
+_MEM_INT_IMEM_EN_ generic. The size in bytes is defined via the _MEM_INT_IMEM_SIZE_ generic. If the
+IMEM is implemented, the memory is mapped into the instruction memory space and located right at the
+beginning of the instruction memory space (default `ispace_base_c` = 0x00000000).
+
+By default the IMEM is implemented as true RAM so the content can be modified during run time. This is
+required when using a bootloader that can update the content of the IMEM at any time. If you do not need
+the bootloader anymore - since your application development has completed and you want the program to
+permanently reside in the internal instruction memory - the IMEM is automatically implemented as _pre-intialized_
+ROM when the processor-internal bootloader is disabled (_INT_BOOTLOADER_EN_ = _false_).
+
+When the IMEM is implemented as ROM, it will be initialized during synthesis (actually, by the bitstream)
+with the actual application program image. The compiler toolchain will generate a VHDL initialization
+file `rtl/core/neorv32_application_image.vhd`, which is automatically inserted into the IMEM. If
+the IMEM is implemented as RAM (default), the memory will **not be initialized at all**.
+
 [NOTE]
 The actual IMEM is split into two design files: a plain entity definition (`neorv32_imem.entity.vhd`) and the actual
 architecture definition (`mem/neorv32_imem.default.vhd`). This **default architecture** provides a _generic_ and
 _platform independent_ memory design that (should) infers embedded memory block. You can replace/modify the architecture
 source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
 and/or timing.
-
-Implementation of the processor-internal instruction memory is enabled via the processor's
-_MEM_INT_IMEM_EN_ generic. The size in bytes is defined via the _MEM_INT_IMEM_SIZE_ generic. If the
-IMEM is implemented, the memory is mapped into the instruction memory space and located right at the
-beginning of the instruction memory space (default `ispace_base_c` = 0x00000000).
-
-By default, the IMEM is implemented as RAM, so the content can be modified during run time. This is
-required when using a bootloader that can update the content of the IMEM at any time. If you do not need
-the bootloader anymore - since your application development has completed and you want the program to
-permanently reside in the internal instruction memory - the IMEM is automatically implemented as _pre-intialized_
-ROM when the processor-internal bootloader is disabled (_INT_BOOTLOADER_EN_ = _false_).
-
-When the IMEM is implemented as ROM, it will be initialized during synthesis with the actual application
-program image. The compiler toolchain will generate a VHDL initialization
-file `rtl/core/neorv32_application_image.vhd`, which is automatically inserted into the IMEM. If
-the IMEM is implemented as RAM (default), the memory will **not be initialized** at all.

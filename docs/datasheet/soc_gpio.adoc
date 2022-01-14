@@ -14,18 +14,17 @@
 | CPU interrupts:          | none |
 |=======================
 
-**Theory of Operation**
-
 The general purpose parallel IO port unit provides a simple 64-bit parallel input port and a 64-bit parallel
 output port. These ports can be used chip-externally (for example to drive status LEDs, connect buttons, etc.)
-or system-internally to provide control signals for other IP modules. The component is disabled for
-implementation when the _IO_GPIO_EN_ generic is set _false_. In this case GPIO output port is tied to all-zero.
+or chip-internally to provide control signals for other IP modules. The component is disabled for
+implementation when the _IO_GPIO_EN_ generic is set _false_. In this case the GPIO output port `gpio_o` is tied to all-zero.
 
 .Access atomicity
 [NOTE]
 The GPIO modules uses two memory-mapped registers (each 32-bit) each for accessing the input and
 output signals. Since the CPU can only process 32-bit "at once" updating the entire output cannot
 be performed within a single clock cycle.
+
 
 .GPIO unit register map (`struct NEORV32_GPIO`)
 [cols="<2,<2,^1,^1,<6"]

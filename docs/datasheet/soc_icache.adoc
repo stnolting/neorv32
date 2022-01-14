@@ -15,20 +15,9 @@
 | CPU interrupts:          | none             | 
 |=======================
 
-[NOTE]
-The default `neorv32_icache.vhd` HDL source file provides a _generic_ memory design that infers embedded
-memory. You might need to replace/modify the source file in order to use platform-specific features
-(like advanced memory resources) or to improve technology mapping and/or timing.
-
-The processor features an optional cache for instructions to compensate memories with high latency. The
-cache is directly connected to the CPU's instruction fetch interface and provides a full-transparent buffering
-of instruction fetch accesses to the entire 4GB address space.
-
-[IMPORTANT]
-The instruction cache is intended to accelerate instruction fetch via the external memory interface.
-Since all processor-internal memories provide an access latency of one cycle (by default), caching
-internal memories does not bring any performance gain. However, it _might_ reduce traffic on the
-processor-internal bus.
+The processor features an optional cache for instructions to improve performance when using memories with high
+access latencies. The cache is directly connected to the CPU's instruction fetch interface and provides
+full-transparent buffering of instruction fetch accesses to the entire address space.
 
 The cache is implemented if the _ICACHE_EN_ generic is true. The size of the cache memory is defined via
 _ICACHE_BLOCK_SIZE_ (the size of a single cache block/page/line in bytes; has to be a power of two and >=
@@ -36,20 +25,33 @@ _ICACHE_BLOCK_SIZE_ (the size of a single cache block/page/line in bytes; has to
 the actual cache associativity _ICACHE_ASSOCIATIVITY_ (number of sets; 1 = direct-mapped, 2 = 2-way set-associative,
 has to be a power of two and >= 1).
 
-If the cache associativity (_ICACHE_ASSOCIATIVITY_) is > 1 the LRU replacement policy (least recently
+If the cache associativity (_ICACHE_ASSOCIATIVITY_) is greater than 1 the LRU replacement policy (least recently
 used) is used.
 
-[TIP]
-Keep the features of the targeted FPGA's memory resources (block RAM) in mind when configuring
+.Cache Memory HDL
+[NOTE]
+The default `neorv32_icache.vhd` HDL source file provides a _generic_ memory design that infers embedded
+memory. You might need to replace/modify the source file in order to use platform-specific features
+(like advanced memory resources) or to improve technology mapping and/or timing. Also, keep the features
+of the targeted FPGA's memory resources (block RAM) in mind when configuring
 the cache size/layout to maximize and optimize resource utilization.
 
+.Caching Internal Memories
+[NOTE]
+The instruction cache is intended to accelerate instruction fetches from _processor-external_ memories.
+Since all processor-internal memories provide an access latency of one cycle (by default), caching
+internal memories does not bring a relevant performance gain. However, it will slightly reduce traffic on the
+processor-internal bus.
+
+.Manual Cache Clear/Reload
+[NOTE]
 By executing the `ifence.i` instruction (`Zifencei` CPU extension) the cache is cleared and a reload from
-main memory is forced. Among other things, this allows to implement self-modifying code.
+main memory is triggered. Among other things this allows to implement self-modifying code.
 
 **Bus Access Fault Handling**
 
-The cache always loads a complete cache block (_ICACHE_BLOCK_SIZE_ bytes) aligned to the size of a cache
-block if a miss is detected. If any of the accessed addresses within a single block do not successfully
-acknowledge (i.e. issuing an error signal or timing out) the whole cache block is invalidate and any access to
-an address within this cache block will also raise an instruction fetch bus error fault exception.
+The cache always loads a complete cache block (_ICACHE_BLOCK_SIZE_ bytes) aligned to it's size every time a
+cache miss is detected. If any of the accessed addresses within a single block do not successfully
+acknowledge the transfer (i.e. issuing an error signal or timing out) the whole cache block is invalidated and
+any access to an address within this cache block will raise an instruction fetch bus error exception.
 
