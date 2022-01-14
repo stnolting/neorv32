@@ -1000,11 +1000,11 @@ begin
       data_i => p_bus.wdata,               -- data in
       data_o => resp_bus(RESP_GPIO).rdata, -- data out
       ack_o  => resp_bus(RESP_GPIO).ack,   -- transfer acknowledge
+      err_o  => resp_bus(RESP_GPIO).err,   -- transfer error
       -- parallel io --
       gpio_o => gpio_o,
       gpio_i => gpio_i
     );
-    resp_bus(RESP_GPIO).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_gpio_inst_false:
