@@ -14,22 +14,23 @@
 | CPU interrupts:          | `MTI` | machine timer interrupt (see <<_processor_interrupts>>)
 |=======================
 
-**Theory of Operation**
-
-The MTIME machine system timer implements the memory-mapped MTIME timer from the official RISC-V
-specifications. This unit features a 64-bit system timer incremented with the primary processor clock.
-The current system time can also be obtained using the `time[h]` CSRs and is made available for processor-external
-use via the top's `mtime_o` signal.
-
-[NOTE]
-If the processor-internal **MTIME unit is NOT implemented**, the top's `mtime_i` input signal is used to update the `time[h]` CSRs
-and the `MTI` machine timer CPU interrupt (`MTI`) is directly connected to the top's `mtime_irq_i` input.
+The MTIME module implements the memory-mapped MTIME machine timer from the official RISC-V
+specifications. This module features a 64-bit system timer incrementing with the primary processor clock.
+Besides accessing the MTIME register via memory operation the current system time can also be obtained using
+the `time[h]` CSRs. Furthermore, the current system time is made available for processor-external
+usage via the top's `mtime_o` signal.
 
 The 64-bit system time can be accessed via the `TIME_LO` and `TIME_HI` memory-mapped registers (read/write) and also via
-the CPU's `time[h]` CSRs (read-only). A 64-bit time compare register - accessible via memory-mapped `TIMECMP_LO` and `TIMECMP_HI`
-registers - is used to configure an interrupt to the CPU. The interrupt is triggered
-whenever `TIME` (high & low part) >= `TIMECMP` (high & low part) and is directly forwarded to the CPU's `MTI` interrupt.
-The interrupt remain active (=pending) until `TIME` < `TIMECMP` (either by modifying `TIME` or `TIMECMP`).
+the CPU's `time[h]` CSRs (read-only). A 64-bit time compare register - accessible via the memory-mapped `TIMECMP_LO` and `TIMECMP_HI`
+registers - is used to configure the CPU's MTI (machine timer interrupt). The interrupt is triggered
+whenever `TIME` (high & low part) is greater than or equal to `TIMECMP` (high & low part).
+The interrupt remain active (=pending) until `TIME` becomes less `TIMECMP` again (either by modifying `TIME` or `TIMECMP`).
+
+[NOTE]
+If the processor-internal **MTIME module is NOT implemented**, the top's `mtime_i` input signal is used to update the `time[h]` CSRs
+and the `MTI` machine timer CPU interrupt (`MTI`) is directly connected to the top's `mtime_irq_i` input. The `mtime_o` signal
+is hardwired to zero in this case.
+
 
 .MTIME register map (`struct NEORV32_MTIME`)
 [cols="<3,<3,^1,^1,<6"]

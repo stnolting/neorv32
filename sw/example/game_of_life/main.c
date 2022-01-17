@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file game_of_life/main.c
  * @author Stephan Nolting
- * @brief Simple blinking LED demo program using the lowest 8 bits of the GPIO.output port.
+ * @brief Conway's game of life in a UART terminal.
  **************************************************************************/
 
 #include <neorv32.h>

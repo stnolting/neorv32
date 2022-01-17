@@ -1165,8 +1165,8 @@ enum NEORV32_WDT_CTRL_enum {
 /**@{*/
 /** GPIO module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	const uint32_t INPUT_LO;  /**< offset 0:  parallel input port lower 32-bit */
-	const uint32_t INPUT_HI;  /**< offset 4:  parallel input port upper 32-bit */
+	const uint32_t INPUT_LO;  /**< offset 0:  parallel input port lower 32-bit, read-only */
+	const uint32_t INPUT_HI;  /**< offset 4:  parallel input port upper 32-bit, read-only */
 	uint32_t       OUTPUT_LO; /**< offset 8:  parallel output port lower 32-bit */
 	uint32_t       OUTPUT_HI; /**< offset 12: parallel output port upper 32-bit */
 } neorv32_gpio_t;
@@ -1234,7 +1234,7 @@ enum NEORV32_NEOLED_CTRL_enum {
  * @name IO Device: System Configuration Information Memory (SYSINFO)
  **************************************************************************/
 /**@{*/
-/** SYSINFO module prototype */
+/** SYSINFO module prototype - whole module is read-only */
 typedef struct __attribute__((packed,aligned(4))) {
 	const uint32_t CLK;         /**< offset 0:  clock speed in Hz */
 	const uint32_t CPU;         /**< offset 4:  CPU core features (#NEORV32_SYSINFO_CPU_enum) */

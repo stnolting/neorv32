@@ -35,7 +35,7 @@ Special focus is paid on **execution safety** to provide defined and predictable
 Therefore, the CPU ensures that all memory access are acknowledged and no invalid/malformed instructions
 are executed. Whenever an unexpected situation occurs the application code is informed via precise and resumable hardware exceptions.
 
-:thinking: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
+:interrobang: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
 
 :books: For detailed information take a look at the [NEORV32 documentation](https://stnolting.github.io/neorv32/) (online at GitHub-pages).
 
@@ -80,9 +80,8 @@ setting up your NEORV32 setup!
 
 ## 2. NEORV32 Processor Features
 
-The NEORV32 Processor (top entity: [`rtl/core/neorv32_top.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd))
-provides a full-featured SoC build around the NEORV32 CPU. It is highly configurable via generics
-to allow a flexible customization according to your needs. Note that all modules listed below are _optional_.
+The NEORV32 Processor provides a full-featured microcontroller-like SoC build around the NEORV32 CPU. It is highly configurable
+via generics to allow a flexible customization according to your needs. Note that all modules listed below are _optional_.
 
 **Memory**
 
@@ -106,7 +105,7 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 [TWI](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi))
 * general purpose [GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio) and
 [PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)
-* smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly drive _NeoPixel(TM)_ LEDs
+* smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly control NeoPixel(TM) LEDs
 
 **SoC Connectivity**
 
@@ -119,15 +118,15 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
   * AXI4-Stream compatible
 * external interrupt controller with up to 32 channels
 ([XIRQ](https://stnolting.github.io/neorv32/#_external_interrupt_controller_xirq))
-* custom functions subsystem ([CFS](https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs))
-for tightly-coupled custom co-processor extensions
 
 **Advanced**
 
-* execute in place module ([XIP](https://stnolting.github.io/neorv32/#_execute_in_place_module_xip)) to directly execute code from SPI flash
-* _true random_ number generator ([TRNG](https://stnolting.github.io/neorv32/#_true_random_number_generator_trng))
 * on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) accessible via JTAG interface - implementing
 the "Minimal RISC-V Debug Specification Version 0.13.2" and compatible with **OpenOCD** + **gdb** and **Segger Embedded Studio**
+* _true random_ number generator ([TRNG](https://stnolting.github.io/neorv32/#_true_random_number_generator_trng))
+* execute in place module ([XIP](https://stnolting.github.io/neorv32/#_execute_in_place_module_xip)) to directly execute code from SPI flash
+* custom functions subsystem ([CFS](https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs))
+for tightly-coupled custom co-processor extensions and interfaces
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -201,7 +200,7 @@ upstream gcc support. To circumvent this, the NEORV32 software framework provide
 Implementation results for _exemplary_ CPU configuration generated for an **Intel Cyclone IV EP4CE22F17C6N FPGA**
 using **Intel Quartus Prime Lite 20.1** ("balanced implementation, Slow 1200mV 0C Model").
 
-| CPU Configuration (version [1.5.7.10](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs (9-bit) | f_max |
+| CPU Configuration (version [1.5.7.10](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs | f_max |
 |:------------------------|:----:|:----:|:----:|:-:|:-------:|
 | `rv32i`                 |  806 |  359 | 1024 | 0 | 125 MHz |
 | `rv32i_Zicsr_Zicntr`    | 1729 |  813 | 1024 | 0 | 124 MHz |
@@ -306,7 +305,7 @@ This overview provides some *quick links* to the most important sections of the
 
 ### :copyright: Legal
 
-[![license](https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat-square)](https://github.com/stnolting/neorv32/blob/master/LICENSE)
+[![license](https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat)](https://github.com/stnolting/neorv32/blob/master/LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg)](https://doi.org/10.5281/zenodo.5018888)
 
 * [Overview](https://stnolting.github.io/neorv32/#_legal) - license, disclaimer, limitation of liability for external links, proprietary notice, ...
