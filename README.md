@@ -82,9 +82,8 @@ setting up your NEORV32 setup!
 
 ## 2. NEORV32 Processor Features
 
-The NEORV32 Processor (top entity: [`rtl/core/neorv32_top.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_top.vhd))
-provides a full-featured SoC build around the NEORV32 CPU. It is highly configurable via generics
-to allow a flexible customization according to your needs. Note that all modules listed below are _optional_.
+The NEORV32 Processor provides a full-featured microcontroller-like SoC build around the NEORV32 CPU. It is highly configurable
+via generics to allow a flexible customization according to your needs. Note that all modules listed below are _optional_.
 
 **Memory**
 
@@ -108,7 +107,7 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 [TWI](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi))
 * general purpose [GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio) and
 [PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)
-* smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly drive _NeoPixel(TM)_ LEDs
+* smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly control NeoPixel(TM) LEDs
 
 **SoC Connectivity**
 
