@@ -167,9 +167,6 @@ neorv32                - Project home folder
 │├system_integration   - System wrappers for advanced connectivity
 │└test_setups          - Minimal test setup "SoCs" used in the User Guide
 │
-├setups                - Example setups for various FPGAs, boards and toolchains
-│└...
-│
 ├sim                   - Simulation files (see User Guide)
 │
 └sw                    - Software framework
@@ -347,7 +344,7 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 :sectnums:
 ==== Exemplary Setups
 
-Check out the `setups` folder (@GitHub: https://github.com/stnolting/neorv32/tree/master/setups),
+Check out the `neorv32-setups` repository (@GitHub: https://github.com/stnolting/neorv32-setups),
 which provides several demo setups for various FPGA boards and toolchains.
 
 
