@@ -27,7 +27,8 @@
 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/master/docs/figures/neorv32_processor.png)
 
-The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** that is based on the RISC-V NEORV32 CPU.
+The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** that is based on the
+[RISC-V](https://riscv.org/) NEORV32 CPU.
 The project is intended as auxiliary processor in larger SoC designs or as *ready-to-go* stand-alone
 custom microcontroller that even fits into a Lattice iCE40 UltraPlus 5k low-power FPGA running at 24 MHz.
 
@@ -70,8 +71,8 @@ setting up your NEORV32 setup!
 
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
 [![GitHub Pages](https://img.shields.io/website.svg?label=stnolting.github.io%2Fneorv32&longCache=true&style=flat-square&url=http%3A%2F%2Fstnolting.github.io%2Fneorv32%2Findex.html&logo=GitHub)](https://stnolting.github.io/neorv32)
-[![Documentation](https://img.shields.io/github/workflow/status/stnolting/neorv32/Documentation/master?longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3ADocumentation)
 \
+[![Documentation](https://img.shields.io/github/workflow/status/stnolting/neorv32/Documentation/master?longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3ADocumentation)
 [![riscv-arch-test](https://img.shields.io/github/workflow/status/stnolting/neorv32/riscv-arch-test/master?longCache=true&style=flat-square&label=riscv-arch-test&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3Ariscv-arch-test)
 [![Processor](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor/master?longCache=true&style=flat-square&label=Processor&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor)
 
@@ -189,8 +190,8 @@ documentation section). Note that the `X` extension is always enabled.
 [[`PMP`](https://stnolting.github.io/neorv32/#_pmp_physical_memory_protection)]
 [[`DEBUG`](https://stnolting.github.io/neorv32/#_cpu_debug_mode)]**
 
-:warning: The `B`, `Zfinx` and `Zmmul` RISC-V extensions are frozen but not officially ratified yet. Hence, there is no
-upstream gcc support. To circumvent this, the NEORV32 software framework provides _intrinsic libraries_ for these extensions.
+:warning: The `B`, `Zfinx` and `Zmmul` RISC-V are officially ratified but there is no
+upstream gcc support yet. To circumvent this, the NEORV32 software framework provides _intrinsic libraries_ for these extensions.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -244,7 +245,7 @@ The following table shows the performance results (scores and average CPI) for _
 * runtime environment for handling traps
 * several [example programs](https://github.com/stnolting/neorv32/tree/master/sw/example) to get started including CoreMark, FreeRTOS and Conway's Game of Life
 * doxygen-based documentation, available on [GitHub pages](https://stnolting.github.io/neorv32/sw/files.html)
-* supports implementation using open source tooling (GHDL, Yosys and nextpnr; in the future: "Verilog-to-Routing") - both, software and hardware can be
+* supports implementation using open source tooling ([GHDL](https://github.com/ghdl/ghdl), Yosys, nextpnr, ...) - both, software and hardware can be
 developed and debugged with open source tooling
 * [continuous integration](https://github.com/stnolting/neorv32/actions) is available for:
   * allowing users to see the expected execution/output of the tools
@@ -316,18 +317,9 @@ This is an open-source project that is free of charge. Use this project in any w
 (as long as it complies to the permissive [license](https://github.com/stnolting/neorv32/blob/master/LICENSE)).
 Please quote it appropriately. :+1:
 
-We (the community) and I highly appreciate _any_ kind of feedback! Feel free to start a new "show & tell"
-[discussion](https://github.com/stnolting/neorv32/discussions), write some lines on our [gitter channel](https://gitter.im/neorv32/community)
-or directly get in [contact](mailto:stnolting@gmail.com) with me.
-
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
-
-## Acknowledgements
+---------------------------------------
 
 **A big shout-out goes to the community and all the [contributors](https://github.com/stnolting/neorv32/graphs/contributors), who helped improving this project! :heart:**
-
-[RISC-V](https://riscv.org/) - Instruction Sets Want To Be Free!
-
-Continuous integration provided by [:octocat: GitHub Actions](https://github.com/features/actions) and powered by [GHDL](https://github.com/ghdl/ghdl).
