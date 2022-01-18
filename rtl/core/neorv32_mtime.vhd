@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -104,6 +104,9 @@ begin
   wr_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
+      -- bus handshake --
+      ack_o <= rden or wren;
+
       -- mtimecmp --
       if (wren = '1') then
         if (addr = mtime_cmp_lo_addr_c) then
@@ -114,10 +117,18 @@ begin
         end if;
       end if;
 
-      -- mtime access buffer --
---    wdata_buf   <= data_i; -- not required, CPU wdata (=data_i) is stable until transfer is acknowledged
-      mtime_lo_we <= wren and bool_to_ulogic_f(boolean(addr = mtime_time_lo_addr_c));
-      mtime_hi_we <= wren and bool_to_ulogic_f(boolean(addr = mtime_time_hi_addr_c));
+      -- mtime write access buffer --
+      if (wren = '1') and (addr = mtime_time_lo_addr_c) then
+        mtime_lo_we <= '1';
+      else
+        mtime_lo_we <= '0';
+      end if;
+      --
+      if (wren = '1') and (addr = mtime_time_hi_addr_c) then
+        mtime_hi_we <= '1';
+      else
+        mtime_hi_we <= '0';
+      end if;
 
       -- mtime low --
       if (mtime_lo_we = '1') then -- write access
@@ -145,14 +156,13 @@ begin
   rd_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o  <= rden or wren;
       data_o <= (others => '0'); -- default
       if (rden = '1') then
         case addr(3 downto 2) is
-          when "00"   => data_o <= mtime_lo; -- mtime LOW
-          when "01"   => data_o <= mtime_hi; -- mtime HIGH
-          when "10"   => data_o <= mtimecmp_lo; -- mtimecmp LOW
-          when others => data_o <= mtimecmp_hi; -- mtimecmp HIGH
+          when "00"   => data_o <= mtime_lo; -- mtime low
+          when "01"   => data_o <= mtime_hi; -- mtime high
+          when "10"   => data_o <= mtimecmp_lo; -- mtimecmp low
+          when others => data_o <= mtimecmp_hi; -- mtimecmp high
         end case;
       end if;
     end if;

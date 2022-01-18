@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -96,8 +96,8 @@ begin
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fifo.re <= re_i when (FIFO_SAFE = false) else (re_i and fifo.avail); -- read only if data available
-  fifo.we <= we_i when (FIFO_SAFE = false) else (we_i and fifo.free); -- write only if space left
+  fifo.re <= re_i when (FIFO_SAFE = false) else (re_i and fifo.avail); -- SAFE = read only if data available
+  fifo.we <= we_i when (FIFO_SAFE = false) else (we_i and fifo.free); -- SAFE = write only if space left
 
 
   -- FIFO Control ---------------------------------------------------------------------------
@@ -163,7 +163,7 @@ begin
     end if;
   end process fifo_memory_write;
 
-  -- asynchronous read --
+  -- "asynchronous" read --
   fifo_read_async:
   if (FIFO_RSYNC = false) generate
     rdata_o <= fifo.datas when (FIFO_DEPTH = 1) else fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
