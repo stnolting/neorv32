@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 18.01.2022 | 1.6.6.2 | :warning: moved `setups` folder to new [neorv32-setups](https://github.com/stnolting/neorv32-setups) repository, [PR #254](https://github.com/stnolting/neorv32/pull/254) |
 | 18.01.2022 | 1.6.6.1 | minor **MTIME** VHDL code clean-up; minor logic optimization of **CPU's bus unit** |
 | 17.01.2022 |[**:rocket:1.6.6**](https://github.com/stnolting/neorv32/releases/tag/v1.6.6) | **New release** |
 | 14.01.2022 | 1.6.5.9 | **GPIO** module: write accesses to the GPIO module's "input" registers will now raise a bus exception; [PR #255](https://github.com/stnolting/neorv32/pull/255) |
