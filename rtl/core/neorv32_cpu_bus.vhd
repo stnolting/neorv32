@@ -193,24 +193,26 @@ begin
     end if;
   end process mem_adr_reg;
 
-  -- read-back for exception controller --
+  -- address read-back for exception controller --
   mar_o <= mar;
 
   -- alignment check --
   misaligned_d_check: process(mar, ctrl_i)
   begin
-    -- check data access --
-    d_misaligned <= '0'; -- default
     case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is -- data size
       when "00" => -- byte
         d_misaligned <= '0';
       when "01" => -- half-word
         if (mar(0) /= '0') then
           d_misaligned <= '1';
+        else
+          d_misaligned <= '0';
         end if;
       when others => -- word
         if (mar(1 downto 0) /= "00") then
           d_misaligned <= '1';
+        else
+          d_misaligned <= '0';
         end if;
     end case;
   end process misaligned_d_check;
@@ -234,10 +236,10 @@ begin
   begin
     case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is -- data size
       when "00" => -- byte
-        d_bus_wdata(07 downto 00) <= mdo(07 downto 00);
-        d_bus_wdata(15 downto 08) <= mdo(07 downto 00);
-        d_bus_wdata(23 downto 16) <= mdo(07 downto 00);
-        d_bus_wdata(31 downto 24) <= mdo(07 downto 00);
+        d_bus_wdata(07 downto 00) <= mdo(7 downto 0);
+        d_bus_wdata(15 downto 08) <= mdo(7 downto 0);
+        d_bus_wdata(23 downto 16) <= mdo(7 downto 0);
+        d_bus_wdata(31 downto 24) <= mdo(7 downto 0);
         case mar(1 downto 0) is
           when "00"   => d_bus_ben <= "0001";
           when "01"   => d_bus_ben <= "0010";
@@ -245,8 +247,8 @@ begin
           when others => d_bus_ben <= "1000";
         end case;
       when "01" => -- half-word
-        d_bus_wdata(31 downto 16) <= mdo(15 downto 00);
-        d_bus_wdata(15 downto 00) <= mdo(15 downto 00);
+        d_bus_wdata(31 downto 16) <= mdo(15 downto 0);
+        d_bus_wdata(15 downto 00) <= mdo(15 downto 0);
         if (mar(1) = '0') then
           d_bus_ben <= "0011"; -- low half-word
         else
@@ -274,26 +276,25 @@ begin
 
   -- input data alignment and sign extension --
   read_align: process(mdi, mar, ctrl_i)
-    variable byte_in_v  : std_ulogic_vector(07 downto 0); 
-    variable hword_in_v : std_ulogic_vector(15 downto 0);
+    variable shifted_data_v : std_ulogic_vector(31 downto 0);
   begin
-    -- sub-word input --
+    -- align input word --
     case mar(1 downto 0) is
-      when "00"   => byte_in_v := mdi(07 downto 00); hword_in_v := mdi(15 downto 00); -- byte 0 / half-word 0
-      when "01"   => byte_in_v := mdi(15 downto 08); hword_in_v := mdi(15 downto 00); -- byte 1 / half-word 0
-      when "10"   => byte_in_v := mdi(23 downto 16); hword_in_v := mdi(31 downto 16); -- byte 2 / half-word 1
-      when others => byte_in_v := mdi(31 downto 24); hword_in_v := mdi(31 downto 16); -- byte 3 / half-word 1
+      when "00"   => shifted_data_v :=             mdi(31 downto 00);
+      when "01"   => shifted_data_v := x"00" &     mdi(31 downto 08);
+      when "10"   => shifted_data_v := x"0000" &   mdi(31 downto 16);
+      when others => shifted_data_v := x"000000" & mdi(31 downto 24);
     end case;
-    -- actual data size --
+    -- actual data size and sign-extension --
     case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is
       when "00" => -- byte
-        rdata_align(31 downto 08) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and byte_in_v(7))); -- sign extension
-        rdata_align(07 downto 00) <= byte_in_v;
+        rdata_align(31 downto 08) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and shifted_data_v(7))); -- sign extension
+        rdata_align(07 downto 00) <= shifted_data_v(07 downto 00);
       when "01" => -- half-word
-        rdata_align(31 downto 16) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and hword_in_v(15))); -- sign extension
-        rdata_align(15 downto 00) <= hword_in_v; -- high half-word
+        rdata_align(31 downto 16) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and shifted_data_v(15))); -- sign extension
+        rdata_align(15 downto 00) <= shifted_data_v(15 downto 00); -- high half-word
       when others => -- word
-        rdata_align <= mdi; -- full word
+        rdata_align <= shifted_data_v; -- full word
     end case;
   end process read_align;
 
@@ -407,7 +408,7 @@ begin
         i_arbiter.rd_req    <= ctrl_i(ctrl_bus_if_c);
         i_arbiter.err_align <= i_misaligned;
         i_arbiter.err_bus   <= '0';
-      else -- in progres
+      else -- in progress
         i_arbiter.err_align <= (i_arbiter.err_align or i_misaligned) and (not ctrl_i(ctrl_bus_ierr_ack_c));
         i_arbiter.err_bus   <= (i_arbiter.err_bus or i_bus_err_i or if_pmp_fault) and (not ctrl_i(ctrl_bus_ierr_ack_c));
         if ((i_bus_ack_i = '1') and (i_bus_err_i = '0')) or (ctrl_i(ctrl_bus_ierr_ack_c) = '1') then -- wait for normal termination / CPU abort
