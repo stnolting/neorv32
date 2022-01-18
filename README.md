@@ -42,7 +42,7 @@ are executed. Whenever an unexpected situation occurs the application code is in
 :label: The project's change log is available in [`CHANGELOG.md`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 To see the changes between _official releases_ visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-:package: [Exemplary setups](https://github.com/stnolting/neorv32/tree/master/setups) targeting
+:package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) targeting
 various FPGA boards and toolchains to get you started.
 
 :kite: Supported by upstream [Zephyr OS](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) and FreeRTOS.
@@ -74,8 +74,6 @@ setting up your NEORV32 setup!
 \
 [![riscv-arch-test](https://img.shields.io/github/workflow/status/stnolting/neorv32/riscv-arch-test/master?longCache=true&style=flat-square&label=riscv-arch-test&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3Ariscv-arch-test)
 [![Processor](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor/master?longCache=true&style=flat-square&label=Processor&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor)
-[![Implementation](https://img.shields.io/github/workflow/status/stnolting/neorv32/Implementation/master?longCache=true&style=flat-square&label=Implementation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AImplementation)
-[![Windows](https://img.shields.io/github/workflow/status/stnolting/neorv32/Windows/master?longCache=true&style=flat-square&label=Windows&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AWindows)
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -141,10 +139,10 @@ Section [_FPGA Implementation Results - Processor Modules_](https://stnolting.gi
 of the online datasheet shows the resource utilization of each optional processor module to allow an
 estimation of the actual setup's hardware requirements.
 
-The [`setups`](https://github.com/stnolting/neorv32/tree/master/setups) folder provides exemplary FPGA
+:bulb: The [`neorv32-setups`](https://github.com/stnolting/neorv32-setups) repository provides exemplary FPGA
 setups targeting various FPGA boards and toolchains. These setups also provide resource utilization reports for different
 SoC configurations. The latest utilization reports for those setups can be found in the report of the
-[Implementation Workflow](https://github.com/stnolting/neorv32/actions/workflows/Implementation.yml).
+[Implementation Workflow](https://github.com/stnolting/neorv32-setups/actions/workflows/Implementation.yml).
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 

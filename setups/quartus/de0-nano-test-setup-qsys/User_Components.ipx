@@ -1,3 +1,0 @@
-<library>
-	<path path="../neorv32_qsys_component/**/*" />
-</library>
