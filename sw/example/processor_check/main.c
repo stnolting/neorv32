@@ -562,15 +562,15 @@ int main() {
 
   cnt_test++;
 
-  // illegal 32-bit instruction (malformed SUB)
+  // illegal 32-bit instruction (malformed SRA)
   asm volatile (".align 4 \n"
-                ".word 0x80000033");
+                ".word 0xC0000033");
 
   // make sure this has cause an illegal exception
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
     // make sure this is really the instruction that caused the exception
     // -> for illegal instructions MTVAL contains the faulting instruction word
-    if (neorv32_cpu_csr_read(CSR_MTVAL) == 0x80000033) {
+    if (neorv32_cpu_csr_read(CSR_MTVAL) == 0xC0000033) {
       test_ok();
     }
     else {
