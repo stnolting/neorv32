@@ -1,4 +1,4 @@
-# NEORV32 Software Framework
+# Software Framework
 
 This folder provides the core of the NEORV32 software framework.
 This is a short description of the main folders.

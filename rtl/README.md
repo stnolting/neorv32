@@ -1,4 +1,4 @@
-## VHDL Source Folders
+## HArdware RTL Sources
 
 
 ### [`core`](https://github.com/stnolting/neorv32/tree/master/rtl/core)
