@@ -219,8 +219,9 @@ The NEORV32 CPU is based on a two-stages pipeline architecture (fetch and execut
 The average CPI (cycles per instruction) depends on the instruction mix of a specific applications and also on the
 available CPU extensions.
 
-The following table shows the performance results (scores and average CPI) for _exemplary_ CPU configurations executing
-2000 iterations of the [CoreMark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) CPU benchmark.
+The following table shows the performance results (scores and average CPI) for exemplary CPU configurations executing
+2000 iterations of the [CoreMark](https://github.com/stnolting/neorv32/blob/master/sw/example/coremark) CPU benchmark
+(using plain rv32i built-in libraries only!).
 
 | CPU Configuration (version [1.5.7.10](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)) | CoreMark Score | CoreMarks/MHz | Average CPI |
 |:------------------------------------------------|:-----:|:----------:|:--------:|
