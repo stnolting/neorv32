@@ -39,6 +39,10 @@ Executable (neorv32_exe.bin) size in bytes:
 3188
 ----
 
+[NOTE]
+Make sure the size of the `text` segment (3176 bytes here) does not overflow the size of the processor's
+IMEM (if used at all) - otherwise there will be an error during synthesis or during bootloader upload.
+
 [start=5]
 . That's it. The `exe` target has created the actual executable `neorv32_exe.bin` in the current folder
 that is ready to be uploaded to the processor.
