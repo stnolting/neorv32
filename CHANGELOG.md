@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 21.01.2022 | 1.6.6.3 | reworked **CPU's instruction issue engine** (area optimization: ~100 LUTs less on an Intel Cyclone IV), [PR #256](https://github.com/stnolting/neorv32/pull/256); minor CPU control unit code clean-ups and logic optimizations |
 | 18.01.2022 | 1.6.6.2 | :warning: moved `setups` folder to new [neorv32-setups](https://github.com/stnolting/neorv32-setups) repository, [PR #254](https://github.com/stnolting/neorv32/pull/254) |
 | 18.01.2022 | 1.6.6.1 | minor **MTIME** VHDL code clean-up; minor logic optimization of **CPU's bus unit** |
 | 17.01.2022 |[**:rocket:1.6.6**](https://github.com/stnolting/neorv32/releases/tag/v1.6.6) | **New release** |
