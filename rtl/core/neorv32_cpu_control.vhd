@@ -426,30 +426,24 @@ begin
     ipb.clear <= fetch_engine.restart; -- clear instruction buffer while being reset
 
     -- state machine --
-    case fetch_engine.state is
+    if (fetch_engine.state = IFETCH_REQUEST) then -- IFETCH_REQUEST: request new 32-bit-aligned instruction word
+    -- ------------------------------------------------------------
+      if (ipb.free = '1') and (fetch_engine.restart = '0') then -- free entry in buffer AND no reset request?
+        bus_fast_ir            <= '1'; -- fast instruction fetch request
+        fetch_engine.state_nxt <= IFETCH_ISSUE;
+      end if;
+      fetch_engine.restart_nxt <= '0';
 
-      when IFETCH_REQUEST => -- request new 32-bit-aligned instruction word
-      -- ------------------------------------------------------------
-        if (ipb.free = '1') and (fetch_engine.restart = '0') then -- free entry in buffer AND no reset request?
-          bus_fast_ir            <= '1'; -- fast instruction fetch request
-          fetch_engine.state_nxt <= IFETCH_ISSUE;
-        end if;
-        fetch_engine.restart_nxt <= '0';
-
-      when IFETCH_ISSUE => -- store instruction data to prefetch buffer
-      -- ------------------------------------------------------------
-        fetch_engine.bus_err_ack <= be_instr_i or ma_instr_i; -- ACK bus/alignment errors
-        if (bus_i_wait_i = '0') or (be_instr_i = '1') or (ma_instr_i = '1') then -- wait for bus response
-          fetch_engine.pc_nxt    <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
-          ipb.we                 <= not fetch_engine.restart; -- write to IPB if not being reset
-          fetch_engine.state_nxt <= IFETCH_REQUEST;
-        end if;
-
-      when others => -- undefined
-      -- ------------------------------------------------------------
+    else -- IFETCH_ISSUE: store instruction data to prefetch buffer
+    -- ------------------------------------------------------------
+      fetch_engine.bus_err_ack <= be_instr_i or ma_instr_i; -- ACK bus/alignment errors
+      if (bus_i_wait_i = '0') or (be_instr_i = '1') or (ma_instr_i = '1') then -- wait for bus response
+        fetch_engine.pc_nxt    <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
+        ipb.we                 <= not fetch_engine.restart; -- write to IPB if not being reset
         fetch_engine.state_nxt <= IFETCH_REQUEST;
+      end if;
 
-    end case;
+    end if;
   end process fetch_engine_fsm_comb;
 
 
@@ -492,8 +486,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   issue_engine_fsm_sync: process(rstn_i, clk_i)
   begin
-    if (rstn_i = '0') then
-      issue_engine.align   <= CPU_BOOT_ADDR(1); -- 32- or 16-bit boundary
+    if (rstn_i = '0') then -- always start aligned after reset
+      issue_engine.align   <= '0';
       issue_engine.realign <= '0';
       issue_engine.buf     <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
@@ -676,10 +670,8 @@ begin
         execute_engine.branch_taken <= not cmp_i(cmp_equal_c);
       when funct3_blt_c | funct3_bltu_c => -- branch if less (signed/unsigned)
         execute_engine.branch_taken <= cmp_i(cmp_less_c);
-      when funct3_bge_c | funct3_bgeu_c => -- branch if greater or equal (signed/unsigned)
+      when others => -- branch if greater or equal (signed/unsigned), invalid funct3 are checked by illegal instr. logic
         execute_engine.branch_taken <= not cmp_i(cmp_less_c);
-      when others => -- invalid
-        execute_engine.branch_taken <= '0';
     end case;
   end process branch_check;
 
@@ -1265,7 +1257,7 @@ begin
 
 
 -- ****************************************************************************************************************************
--- Illegal Instruction / CSR Access Check
+-- Illegal Instruction and CSR Access Check
 -- ****************************************************************************************************************************
 
   -- CSR Access Check -----------------------------------------------------------------------
@@ -1720,7 +1712,6 @@ begin
     elsif (trap_ctrl.exc_buf(exception_laccess_c) = '1') then
       trap_ctrl.cause_nxt <= trap_lbe_c;
 
-
     -- ----------------------------------------------------------------------------------------
     -- (re-)enter debug mode requests: basically, these are standard traps that have some
     -- special handling - they have the highest INTERRUPT priority in order to go to debug when requested
@@ -1739,12 +1730,9 @@ begin
     elsif (trap_ctrl.irq_buf(interrupt_db_step_c) = '1') then
       trap_ctrl.cause_nxt <= trap_db_step_c;
 
-
     -- ----------------------------------------------------------------------------------------
-    -- the following traps are caused by *asynchronous* exceptions (= interrupts)
+    -- custom FAST interrupts (*asynchronous* exceptions)
     -- ----------------------------------------------------------------------------------------
-
-    -- custom FAST interrupt requests --
 
     -- interrupt: 1.16 fast interrupt channel 0 --
     elsif (trap_ctrl.irq_buf(interrupt_firq_0_c) = '1') then
@@ -1810,8 +1798,9 @@ begin
     elsif (trap_ctrl.irq_buf(interrupt_firq_15_c) = '1') then
       trap_ctrl.cause_nxt <= trap_firq15_c;
 
-
-    -- standard RISC-V interrupts --
+    -- ----------------------------------------------------------------------------------------
+    -- standard RISC-V interrupts (*asynchronous* exceptions)
+    -- ----------------------------------------------------------------------------------------
 
     -- interrupt: 1.11 machine external interrupt --
     elsif (trap_ctrl.irq_buf(interrupt_mext_irq_c) = '1') then
@@ -1836,20 +1825,19 @@ begin
   -- Control and Status Registers - Write Data ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_write_data: process(execute_engine.i_reg, csr.rdata, rs1_i)
-    variable csr_operand_v : std_ulogic_vector(data_width_c-1 downto 0);
+    variable csr_imm_v : std_ulogic_vector(data_width_c-1 downto 0);
   begin
-    -- CSR operand source --
-    if (execute_engine.i_reg(instr_funct3_msb_c) = '1') then -- immediate
-      csr_operand_v := (others => '0');
-      csr_operand_v(4 downto 0) := execute_engine.i_reg(19 downto 15); -- uimm5
-    else -- register
-      csr_operand_v := rs1_i;
-    end if;
-    -- tiny ALU for CSR write operations --
-    case execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c) is
-      when "10"   => csr.wdata <= csr.rdata or csr_operand_v; -- CSRRS(I)
-      when "11"   => csr.wdata <= csr.rdata and (not csr_operand_v); -- CSRRC(I)
-      when others => csr.wdata <= csr_operand_v; -- CSRRW(I)
+    -- tiny ALU to compute CSR write data --
+    csr_imm_v := (others => '0');
+    csr_imm_v(4 downto 0) := execute_engine.i_reg(19 downto 15); -- uimm5
+    case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+      when funct3_csrrw_c  => csr.wdata <= rs1_i;
+      when funct3_csrrs_c  => csr.wdata <= csr.rdata or rs1_i;
+      when funct3_csrrc_c  => csr.wdata <= csr.rdata and (not rs1_i);
+      when funct3_csrrwi_c => csr.wdata <= csr_imm_v;
+      when funct3_csrrsi_c => csr.wdata <= csr.rdata or csr_imm_v;
+      when funct3_csrrci_c => csr.wdata <= csr.rdata and (not csr_imm_v);
+      when others          => csr.wdata <= rs1_i; -- undefined
     end case;
   end process csr_write_data;
 
@@ -1859,8 +1847,8 @@ begin
   csr_write_access: process(rstn_i, clk_i)
     variable cause_v : std_ulogic_vector(6 downto 0);
   begin
-    -- NOTE: If <dedicated_reset_c> = true then <def_rst_val_c> evaluates to '-'. Register that reset to <def_rst_val_c> do
-    -- NOT actually have a real reset by default (def_rst_val_c = '-') and have to be explicitly initialized by software!
+    -- NOTE: If <dedicated_reset_c> = true then <def_rst_val_c> evaluates to '-'. Registers that reset to <def_rst_val_c>
+    -- do NOT actually have a real reset by default and have to be explicitly initialized by software!
     -- see: https://forums.xilinx.com/t5/General-Technical-Discussion/quot-Don-t-care-quot-reset-value/td-p/412845
     if (rstn_i = '0') then
       csr.we                <= '0';
