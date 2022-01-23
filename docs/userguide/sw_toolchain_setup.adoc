@@ -71,7 +71,7 @@ already done so): make sure to add the _binaries_ folder (`bin`) of your toolcha
 
 [source,bash]
 ----
-$ export PATH:$PATH:/opt/riscv/bin
+$ export PATH=$PATH:/opt/riscv/bin
 ----
 
 You should add this command to your `.bashrc` (if you are using bash) to automatically add the RISC-V
