@@ -686,6 +686,8 @@ begin
     rdata_v := (others => '0');
     ack_v   := '0';
     err_v   := '0';
+    -- OR all module's response signals: only the module that is actually
+    -- been accessed is allowed to set it's bus output signals
     for i in resp_bus'range loop
       rdata_v := rdata_v or resp_bus(i).rdata; -- read data
       ack_v   := ack_v   or resp_bus(i).ack;   -- acknowledge
@@ -940,8 +942,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   io_acc  <= '1' when (p_bus.addr(data_width_c-1 downto index_size_f(io_size_c)) = io_base_c(data_width_c-1 downto index_size_f(io_size_c))) else '0';
   io_rden <= io_acc and p_bus.re and (not p_bus.src); -- PMA: no_execute for IO region
-  -- the default NEORV32 peripheral/IO devices in the IO area can only be written in word mode (reduces HW complexity)
-  io_wren <= io_acc and p_bus.we and and_reduce_f(p_bus.ben) and (not p_bus.src); -- PMA: write32 only, no_execute for IO region
+  io_wren <= io_acc and p_bus.we and and_reduce_f(p_bus.ben); -- only full-word write accesses are allowed (reduces HW complexity)
 
 
   -- Custom Functions Subsystem (CFS) -------------------------------------------------------
@@ -1580,6 +1581,7 @@ begin
       dmi_resp_data_o  => dmi.resp_data,
       dmi_resp_err_o   => dmi.resp_err,             -- 0=ok, 1=error
       -- CPU bus access --
+      cpu_debug_i      => debug_mode,               -- CPU is in debug mode
       cpu_addr_i       => p_bus.addr,               -- address
       cpu_rden_i       => p_bus.re,                 -- read enable
       cpu_wren_i       => p_bus.we,                 -- write enable

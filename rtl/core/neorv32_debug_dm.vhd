@@ -19,7 +19,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -72,6 +72,7 @@ entity neorv32_debug_dm is
     dmi_resp_data_o  : out std_ulogic_vector(31 downto 0);
     dmi_resp_err_o   : out std_ulogic; -- 0=ok, 1=error
     -- CPU bus access --
+    cpu_debug_i      : in  std_ulogic; -- CPU is in debug mode
     cpu_addr_i       : in  std_ulogic_vector(31 downto 0); -- address
     cpu_rden_i       : in  std_ulogic; -- read enable
     cpu_wren_i       : in  std_ulogic; -- write enable
@@ -240,14 +241,14 @@ begin
   begin
     if rising_edge(clk_i) then
       if (dm_reg.dmcontrol_dmactive = '0') or (dmi_rstn_i = '0') then -- DM reset / DM disabled
-        dm_ctrl.state        <= CMD_IDLE;
-        dm_ctrl.ldsw_progbuf <= (others => '-');
-        dci.execute_req      <= '0';
-        dm_ctrl.pbuf_en      <= '-';
+        dm_ctrl.state           <= CMD_IDLE;
+        dm_ctrl.ldsw_progbuf    <= (others => '-');
+        dci.execute_req         <= '0';
+        dm_ctrl.pbuf_en         <= '-';
         --
-        dm_ctrl.illegal_cmd   <= '-';
-        dm_ctrl.illegal_state <= '-';
-        dm_ctrl.cmderr        <= "000";
+        dm_ctrl.illegal_cmd     <= '-';
+        dm_ctrl.illegal_state   <= '-';
+        dm_ctrl.cmderr          <= "000";
         --
         dm_ctrl.hart_reset      <= '0';
         dm_ctrl.hart_halted     <= '0';
@@ -668,8 +669,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   acc_en <= '1' when (cpu_addr_i(hi_abb_c downto lo_abb_c) = dm_base_c(hi_abb_c downto lo_abb_c)) else '0';
   maddr  <= cpu_addr_i(lo_abb_c-1 downto lo_abb_c-2); -- (sub-)module select address
-  rden   <= acc_en and cpu_rden_i;
-  wren   <= acc_en and cpu_wren_i;
+  rden   <= acc_en and cpu_debug_i and cpu_rden_i; -- allow access only when in debug mode
+  wren   <= acc_en and cpu_debug_i and cpu_wren_i; -- allow access only when in debug mode
 
 
   -- Write Access ---------------------------------------------------------------------------

@@ -64,7 +64,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060604"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060605"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -1114,44 +1114,44 @@ package neorv32_package is
     );
     port (
       -- global control --
-      clk_i          : in  std_ulogic; -- global clock, rising edge
-      rstn_i         : in  std_ulogic; -- global reset, low-active, async
-      sleep_o        : out std_ulogic; -- cpu is in sleep mode when set
-      debug_o        : out std_ulogic; -- cpu is in debug mode when set
+      clk_i         : in  std_ulogic; -- global clock, rising edge
+      rstn_i        : in  std_ulogic; -- global reset, low-active, async
+      sleep_o       : out std_ulogic; -- cpu is in sleep mode when set
+      debug_o       : out std_ulogic; -- cpu is in debug mode when set
       -- instruction bus interface --
-      i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-      i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-      i_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-      i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-      i_bus_we_o     : out std_ulogic; -- write enable
-      i_bus_re_o     : out std_ulogic; -- read enable
-      i_bus_lock_o   : out std_ulogic; -- exclusive access request
-      i_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
-      i_bus_err_i    : in  std_ulogic; -- bus transfer error
-      i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
-      i_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
+      i_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+      i_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+      i_bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+      i_bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
+      i_bus_we_o    : out std_ulogic; -- write enable
+      i_bus_re_o    : out std_ulogic; -- read enable
+      i_bus_lock_o  : out std_ulogic; -- exclusive access request
+      i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
+      i_bus_err_i   : in  std_ulogic; -- bus transfer error
+      i_bus_fence_o : out std_ulogic; -- executed FENCEI operation
+      i_bus_priv_o  : out std_ulogic_vector(1 downto 0); -- privilege level
       -- data bus interface --
-      d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-      d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-      d_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-      d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-      d_bus_we_o     : out std_ulogic; -- write enable
-      d_bus_re_o     : out std_ulogic; -- read enable
-      d_bus_lock_o   : out std_ulogic; -- exclusive access request
-      d_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
-      d_bus_err_i    : in  std_ulogic; -- bus transfer error
-      d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
-      d_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
+      d_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+      d_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+      d_bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+      d_bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
+      d_bus_we_o    : out std_ulogic; -- write enable
+      d_bus_re_o    : out std_ulogic; -- read enable
+      d_bus_lock_o  : out std_ulogic; -- exclusive access request
+      d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
+      d_bus_err_i   : in  std_ulogic; -- bus transfer error
+      d_bus_fence_o : out std_ulogic; -- executed FENCE operation
+      d_bus_priv_o  : out std_ulogic_vector(1 downto 0); -- privilege level
       -- system time input from MTIME --
-      time_i         : in  std_ulogic_vector(63 downto 0); -- current system time
+      time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
       -- interrupts (risc-v compliant) --
-      msw_irq_i      : in  std_ulogic; -- machine software interrupt
-      mext_irq_i     : in  std_ulogic; -- machine external interrupt
-      mtime_irq_i    : in  std_ulogic; -- machine timer interrupt
+      msw_irq_i     : in  std_ulogic; -- machine software interrupt
+      mext_irq_i    : in  std_ulogic; -- machine external interrupt
+      mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
       -- fast interrupts (custom) --
-      firq_i         : in  std_ulogic_vector(15 downto 0);
+      firq_i        : in  std_ulogic_vector(15 downto 0);
       -- debug mode (halt) request --
-      db_halt_req_i  : in  std_ulogic
+      db_halt_req_i : in  std_ulogic
     );
   end component;
 
@@ -2119,6 +2119,7 @@ package neorv32_package is
       dmi_resp_data_o  : out std_ulogic_vector(31 downto 0);
       dmi_resp_err_o   : out std_ulogic; -- 0=ok, 1=error
       -- CPU bus access --
+      cpu_debug_i      : in  std_ulogic; -- CPU is in debug mode
       cpu_addr_i       : in  std_ulogic_vector(31 downto 0); -- address
       cpu_rden_i       : in  std_ulogic; -- read enable
       cpu_wren_i       : in  std_ulogic; -- write enable
