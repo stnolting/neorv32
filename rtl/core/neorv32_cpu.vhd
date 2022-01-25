@@ -91,44 +91,44 @@ entity neorv32_cpu is
   );
   port (
     -- global control --
-    clk_i          : in  std_ulogic; -- global clock, rising edge
-    rstn_i         : in  std_ulogic; -- global reset, low-active, async
-    sleep_o        : out std_ulogic; -- cpu is in sleep mode when set
-    debug_o        : out std_ulogic; -- cpu is in debug mode when set
+    clk_i         : in  std_ulogic; -- global clock, rising edge
+    rstn_i        : in  std_ulogic; -- global reset, low-active, async
+    sleep_o       : out std_ulogic; -- cpu is in sleep mode when set
+    debug_o       : out std_ulogic; -- cpu is in debug mode when set
     -- instruction bus interface --
-    i_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    i_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    i_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    i_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-    i_bus_we_o     : out std_ulogic; -- write enable
-    i_bus_re_o     : out std_ulogic; -- read enable
-    i_bus_lock_o   : out std_ulogic; -- exclusive access request
-    i_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
-    i_bus_err_i    : in  std_ulogic; -- bus transfer error
-    i_bus_fence_o  : out std_ulogic; -- executed FENCEI operation
-    i_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
+    i_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    i_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    i_bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    i_bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
+    i_bus_we_o    : out std_ulogic; -- write enable
+    i_bus_re_o    : out std_ulogic; -- read enable
+    i_bus_lock_o  : out std_ulogic; -- exclusive access request
+    i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
+    i_bus_err_i   : in  std_ulogic; -- bus transfer error
+    i_bus_fence_o : out std_ulogic; -- executed FENCEI operation
+    i_bus_priv_o  : out std_ulogic_vector(1 downto 0); -- privilege level
     -- data bus interface --
-    d_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    d_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    d_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    d_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-    d_bus_we_o     : out std_ulogic; -- write enable
-    d_bus_re_o     : out std_ulogic; -- read enable
-    d_bus_lock_o   : out std_ulogic; -- exclusive access request
-    d_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
-    d_bus_err_i    : in  std_ulogic; -- bus transfer error
-    d_bus_fence_o  : out std_ulogic; -- executed FENCE operation
-    d_bus_priv_o   : out std_ulogic_vector(1 downto 0); -- privilege level
+    d_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    d_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    d_bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    d_bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
+    d_bus_we_o    : out std_ulogic; -- write enable
+    d_bus_re_o    : out std_ulogic; -- read enable
+    d_bus_lock_o  : out std_ulogic; -- exclusive access request
+    d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
+    d_bus_err_i   : in  std_ulogic; -- bus transfer error
+    d_bus_fence_o : out std_ulogic; -- executed FENCE operation
+    d_bus_priv_o  : out std_ulogic_vector(1 downto 0); -- privilege level
     -- system time input from MTIME --
-    time_i         : in  std_ulogic_vector(63 downto 0); -- current system time
+    time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
     -- interrupts (risc-v compliant) --
-    msw_irq_i      : in  std_ulogic;-- machine software interrupt
-    mext_irq_i     : in  std_ulogic;-- machine external interrupt
-    mtime_irq_i    : in  std_ulogic;-- machine timer interrupt
+    msw_irq_i     : in  std_ulogic;-- machine software interrupt
+    mext_irq_i    : in  std_ulogic;-- machine external interrupt
+    mtime_irq_i   : in  std_ulogic;-- machine timer interrupt
     -- fast interrupts (custom) --
-    firq_i         : in  std_ulogic_vector(15 downto 0);
+    firq_i        : in  std_ulogic_vector(15 downto 0);
     -- debug mode (halt) request --
-    db_halt_req_i  : in  std_ulogic
+    db_halt_req_i : in  std_ulogic
   );
 end neorv32_cpu;
 
@@ -390,53 +390,53 @@ begin
   )
   port map (
     -- global control --
-    clk_i          => clk_i,         -- global clock, rising edge
-    rstn_i         => rstn_i,        -- global reset, low-active, async
-    ctrl_i         => ctrl,          -- main control bus
+    clk_i         => clk_i,         -- global clock, rising edge
+    rstn_i        => rstn_i,        -- global reset, low-active, async
+    ctrl_i        => ctrl,          -- main control bus
     -- cpu instruction fetch interface --
-    fetch_pc_i     => fetch_pc,      -- PC for instruction fetch
-    instr_o        => instr,         -- instruction
-    i_wait_o       => bus_i_wait,    -- wait for fetch to complete
+    fetch_pc_i    => fetch_pc,      -- PC for instruction fetch
+    instr_o       => instr,         -- instruction
+    i_wait_o      => bus_i_wait,    -- wait for fetch to complete
     --
-    ma_instr_o     => ma_instr,      -- misaligned instruction address
-    be_instr_o     => be_instr,      -- bus error on instruction access
+    ma_instr_o    => ma_instr,      -- misaligned instruction address
+    be_instr_o    => be_instr,      -- bus error on instruction access
     -- cpu data access interface --
-    addr_i         => alu_add,       -- ALU.add result -> access address
-    wdata_i        => rs2,           -- write data
-    rdata_o        => mem_rdata,     -- read data
-    mar_o          => mar,           -- current memory address register
-    d_wait_o       => bus_d_wait,    -- wait for access to complete
+    addr_i        => alu_add,       -- ALU.add result -> access address
+    wdata_i       => rs2,           -- write data
+    rdata_o       => mem_rdata,     -- read data
+    mar_o         => mar,           -- current memory address register
+    d_wait_o      => bus_d_wait,    -- wait for access to complete
     --
-    excl_state_o   => excl_state,    -- atomic/exclusive access status
-    ma_load_o      => ma_load,       -- misaligned load data address
-    ma_store_o     => ma_store,      -- misaligned store data address
-    be_load_o      => be_load,       -- bus error on load data access
-    be_store_o     => be_store,      -- bus error on store data access
+    excl_state_o  => excl_state,    -- atomic/exclusive access status
+    ma_load_o     => ma_load,       -- misaligned load data address
+    ma_store_o    => ma_store,      -- misaligned store data address
+    be_load_o     => be_load,       -- bus error on load data access
+    be_store_o    => be_store,      -- bus error on store data access
     -- physical memory protection --
-    pmp_addr_i     => pmp_addr,      -- addresses
-    pmp_ctrl_i     => pmp_ctrl,      -- configurations
+    pmp_addr_i    => pmp_addr,      -- addresses
+    pmp_ctrl_i    => pmp_ctrl,      -- configurations
     -- instruction bus --
-    i_bus_addr_o   => i_bus_addr_o,  -- bus access address
-    i_bus_rdata_i  => i_bus_rdata_i, -- bus read data
-    i_bus_wdata_o  => i_bus_wdata_o, -- bus write data
-    i_bus_ben_o    => i_bus_ben_o,   -- byte enable
-    i_bus_we_o     => i_bus_we_o,    -- write enable
-    i_bus_re_o     => i_bus_re_o,    -- read enable
-    i_bus_lock_o   => i_bus_lock_o,  -- exclusive access request
-    i_bus_ack_i    => i_bus_ack_i,   -- bus transfer acknowledge
-    i_bus_err_i    => i_bus_err_i,   -- bus transfer error
-    i_bus_fence_o  => i_bus_fence_o, -- fence operation
+    i_bus_addr_o  => i_bus_addr_o,  -- bus access address
+    i_bus_rdata_i => i_bus_rdata_i, -- bus read data
+    i_bus_wdata_o => i_bus_wdata_o, -- bus write data
+    i_bus_ben_o   => i_bus_ben_o,   -- byte enable
+    i_bus_we_o    => i_bus_we_o,    -- write enable
+    i_bus_re_o    => i_bus_re_o,    -- read enable
+    i_bus_lock_o  => i_bus_lock_o,  -- exclusive access request
+    i_bus_ack_i   => i_bus_ack_i,   -- bus transfer acknowledge
+    i_bus_err_i   => i_bus_err_i,   -- bus transfer error
+    i_bus_fence_o => i_bus_fence_o, -- fence operation
     -- data bus --
-    d_bus_addr_o   => d_bus_addr_o,  -- bus access address
-    d_bus_rdata_i  => d_bus_rdata_i, -- bus read data
-    d_bus_wdata_o  => d_bus_wdata_o, -- bus write data
-    d_bus_ben_o    => d_bus_ben_o,   -- byte enable
-    d_bus_we_o     => d_bus_we_o,    -- write enable
-    d_bus_re_o     => d_bus_re_o,    -- read enable
-    d_bus_lock_o   => d_bus_lock_o,  -- exclusive access request
-    d_bus_ack_i    => d_bus_ack_i,   -- bus transfer acknowledge
-    d_bus_err_i    => d_bus_err_i,   -- bus transfer error
-    d_bus_fence_o  => d_bus_fence_o  -- fence operation
+    d_bus_addr_o  => d_bus_addr_o,  -- bus access address
+    d_bus_rdata_i => d_bus_rdata_i, -- bus read data
+    d_bus_wdata_o => d_bus_wdata_o, -- bus write data
+    d_bus_ben_o   => d_bus_ben_o,   -- byte enable
+    d_bus_we_o    => d_bus_we_o,    -- write enable
+    d_bus_re_o    => d_bus_re_o,    -- read enable
+    d_bus_lock_o  => d_bus_lock_o,  -- exclusive access request
+    d_bus_ack_i   => d_bus_ack_i,   -- bus transfer acknowledge
+    d_bus_err_i   => d_bus_err_i,   -- bus transfer error
+    d_bus_fence_o => d_bus_fence_o  -- fence operation
   );
 
   -- current privilege level --
