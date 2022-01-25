@@ -43,7 +43,7 @@ are executed. Whenever an unexpected situation occurs the application code is in
 :label: The project's change log is available in [`CHANGELOG.md`](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md).
 To see the changes between _official releases_ visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-:package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) targeting
+:package: [**Exemplary setups**](https://github.com/stnolting/neorv32-setups) targeting
 various FPGA boards and toolchains to get you started.
 
 :kite: Supported by upstream [Zephyr OS](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) and FreeRTOS.
