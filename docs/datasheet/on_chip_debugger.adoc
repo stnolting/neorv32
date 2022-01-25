@@ -434,6 +434,12 @@ From the CPU's point of view, the DM behaves as a memory-mapped peripheral that 
 * a data buffer to transfer data between the processor and the debugger host
 * a status register to communicate debugging requests
 
+.DM Register Access
+[IMPORTANT]
+All memory-mapped registers of the DM can only be accessed by the CPU if it is actually _in_ debug mode.
+Hence, the DM registers are not "visible" for normal CPU operations.
+Any access outside of debug mode will raise a bus error exception.
+
 .Park Loop Code Sources
 [NOTE]
 The assembly sources of the **park loop code** are available in `sw/ocd-firmware/park_loop.S`. Please note, that these
