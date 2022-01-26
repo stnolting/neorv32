@@ -188,17 +188,17 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction decoding helper logic --
   type decode_aux_t is record
-    is_atomic_lr    : std_ulogic;
-    is_atomic_sc    : std_ulogic;
-    is_float_op     : std_ulogic;
-    sys_env_cmd     : std_ulogic_vector(11 downto 0);
-    is_m_mul        : std_ulogic;
-    is_m_div        : std_ulogic;
-    is_bitmanip_imm : std_ulogic;
-    is_bitmanip_reg : std_ulogic;
-    rs1_zero        : std_ulogic;
-    rs2_zero        : std_ulogic;
-    rd_zero         : std_ulogic;
+    is_a_lr     : std_ulogic;
+    is_a_sc     : std_ulogic;
+    is_f_op     : std_ulogic;
+    sys_env_cmd : std_ulogic_vector(11 downto 0);
+    is_m_mul    : std_ulogic;
+    is_m_div    : std_ulogic;
+    is_b_imm    : std_ulogic;
+    is_b_reg    : std_ulogic;
+    rs1_zero    : std_ulogic;
+    rs2_zero    : std_ulogic;
+    rd_zero     : std_ulogic;
   end record;
   signal decode_aux : decode_aux_t;
 
@@ -810,21 +810,21 @@ begin
     variable sys_env_cmd_mask_v : std_ulogic_vector(11 downto 0);
   begin
     -- defaults --
-    decode_aux.is_atomic_lr    <= '0';
-    decode_aux.is_atomic_sc    <= '0';
-    decode_aux.is_float_op     <= '0';
-    decode_aux.is_m_mul        <= '0';
-    decode_aux.is_m_div        <= '0';
-    decode_aux.is_bitmanip_imm <= '0';
-    decode_aux.is_bitmanip_reg <= '0';
-    decode_aux.rs1_zero        <= '0';
-    decode_aux.rs2_zero        <= '0';
-    decode_aux.rd_zero         <= '0';
+    decode_aux.is_a_lr  <= '0';
+    decode_aux.is_a_sc  <= '0';
+    decode_aux.is_f_op  <= '0';
+    decode_aux.is_m_mul <= '0';
+    decode_aux.is_m_div <= '0';
+    decode_aux.is_b_imm <= '0';
+    decode_aux.is_b_reg <= '0';
+    decode_aux.rs1_zero <= '0';
+    decode_aux.rs2_zero <= '0';
+    decode_aux.rd_zero  <= '0';
 
     -- is atomic load-reservate/store-conditional? --
     if (CPU_EXTENSION_RISCV_A = true) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') then -- valid atomic sub-opcode
-      decode_aux.is_atomic_lr <= not execute_engine.i_reg(instr_funct5_lsb_c);
-      decode_aux.is_atomic_sc <=     execute_engine.i_reg(instr_funct5_lsb_c);
+      decode_aux.is_a_lr <= not execute_engine.i_reg(instr_funct5_lsb_c);
+      decode_aux.is_a_sc <=     execute_engine.i_reg(instr_funct5_lsb_c);
     end if;
 
     -- is BITMANIP instruction? --
@@ -841,13 +841,21 @@ begin
        ) or
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- RORI
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00111")) or -- ORCB
-       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "11000")) then -- REV8
-      decode_aux.is_bitmanip_imm <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B); -- BITMANIP implemented at all?
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- REV8
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BCLRI
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- BEXTI
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BINVI
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) then -- BSETI
+      decode_aux.is_b_imm <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B); -- BITMANIP implemented at all?
     end if;
     -- register operation --
     if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.i_reg(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- ROR / ROL
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.i_reg(instr_funct3_msb_c) = '1')) or -- MIN[U] / MAX[U]
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")) or -- ZEXTH
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BCLR
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- BEXT
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BINV
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BSET
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100000") and
         (
          (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "111") or -- ANDN
@@ -862,7 +870,7 @@ begin
          (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "110")    -- SH3ADD
         )
        ) then
-      decode_aux.is_bitmanip_reg <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B); -- BITMANIP implemented at all?
+      decode_aux.is_b_reg <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B); -- BITMANIP implemented at all?
     end if;
 
     -- floating-point operations (Zfinx) --
@@ -874,7 +882,7 @@ begin
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "10100") and (execute_engine.i_reg(instr_funct3_msb_c) = '0')) or -- FEQ.S / FLT.S / FLE.S
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11010") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c+1) = "0000")) or -- FCVT.S.W*
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11000") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c+1) = "0000")) then -- FCVT.W*.S
-      decode_aux.is_float_op <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- FPU implemented at all?
+      decode_aux.is_f_op <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- FPU implemented at all?
     end if;
 
     -- system/environment instructions --
@@ -943,7 +951,7 @@ begin
       ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1); -- unsigned branches? (BLTU, BGEU)
     end if;
     -- atomic store-conditional instruction (evaluate lock status) --
-    ctrl_nxt(ctrl_bus_ch_lock_c) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A) and decode_aux.is_atomic_sc;
+    ctrl_nxt(ctrl_bus_ch_lock_c) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A) and decode_aux.is_a_sc;
 
 
     -- state machine --
@@ -1041,8 +1049,8 @@ begin
               execute_engine.state_nxt                           <= ALU_WAIT;
             -- co-processor BIT-MANIPULATION operation (multi-cycle) --
             elsif (CPU_EXTENSION_RISCV_B = true) and
-                  (((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_bitmanip_reg = '1')) or -- register operation
-                   ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_bitmanip_imm = '1'))) then -- immediate operation
+                  (((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_b_reg = '1')) or -- register operation
+                   ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_b_imm = '1'))) then -- immediate operation
               ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_bitmanip_c; -- use BITMANIP CP
               ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_copro_c;
               execute_engine.state_nxt                           <= ALU_WAIT;
@@ -1175,7 +1183,7 @@ begin
       when ALU_WAIT => -- wait for multi-cycle ALU operation (co-processor) to finish
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_copro_c;
-        if (alu_idone_i = '1') or (trap_ctrl.exc_buf(exception_iillegal_c) = '1') then -- completed or exception
+        if (alu_idone_i = '1') then -- wait for completion (even if there is an illegal instruction exception to prevent faulty CP op. in background)
           ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
           execute_engine.state_nxt  <= DISPATCH;
         end if;
@@ -1201,11 +1209,11 @@ begin
 
       when LOADSTORE_0 => -- trigger memory request
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_lock_c) <= decode_aux.is_atomic_lr; -- atomic.LR: set lock
-        if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_atomic_lr = '1') then -- normal load or atomic load-reservate
+        ctrl_nxt(ctrl_bus_lock_c) <= decode_aux.is_a_lr; -- atomic.LR: set lock
+        if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_a_lr = '1') then -- normal load or atomic load-reservate
           ctrl_nxt(ctrl_bus_rd_c) <= '1'; -- read request
         else -- store
-          if (decode_aux.is_atomic_sc = '0') or (CPU_EXTENSION_RISCV_A = false) then -- (normal) write request
+          if (decode_aux.is_a_sc = '0') or (CPU_EXTENSION_RISCV_A = false) then -- (normal) write request
             ctrl_nxt(ctrl_bus_wr_c) <= '1';
           else -- evaluate lock state
             ctrl_nxt(ctrl_bus_wr_c) <= excl_state_i; -- write request if lock is still ok
@@ -1230,12 +1238,12 @@ begin
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           -- data write-back --
           if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or -- normal load
-             (decode_aux.is_atomic_lr = '1') or -- atomic load-reservate
-             (decode_aux.is_atomic_sc = '1') then -- atomic store-conditional
+             (decode_aux.is_a_lr = '1') or -- atomic load-reservate
+             (decode_aux.is_a_sc = '1') then -- atomic store-conditional
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1';
           end if;
           -- remove atomic lock if this is NOT the LR.W instruction used to SET the lock --
-          if (decode_aux.is_atomic_lr = '0') then -- execute and evaluate atomic store-conditional
+          if (decode_aux.is_a_lr = '0') then -- execute and evaluate atomic store-conditional
             ctrl_nxt(ctrl_bus_de_lock_c) <= '1';
           end if;
           execute_engine.state_nxt <= DISPATCH;
@@ -1395,7 +1403,7 @@ begin
             illegal_instruction <= '0';
           elsif (CPU_EXTENSION_RISCV_M = true) and (decode_aux.is_m_div = '1') then -- valid DIV instruction?
             illegal_instruction <= '0';
-          elsif (CPU_EXTENSION_RISCV_B = true) and (decode_aux.is_bitmanip_reg = '1') then -- valid BITMANIP instruction?
+          elsif (CPU_EXTENSION_RISCV_B = true) and (decode_aux.is_b_reg = '1') then -- valid BITMANIP instruction?
             illegal_instruction <= '0';
           else
             illegal_instruction <= '1';
@@ -1416,7 +1424,7 @@ begin
              ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) and -- shift right
               ((execute_engine.i_reg(instr_funct7_msb_c-2 downto instr_funct7_lsb_c) = "00000") and (execute_engine.i_reg(instr_funct7_msb_c) = '0'))) then -- valid base ALUI instruction?
             illegal_instruction <= '0';
-          elsif (CPU_EXTENSION_RISCV_B = true) and (decode_aux.is_bitmanip_imm = '1') then -- valid BITMANIP immediate instruction?
+          elsif (CPU_EXTENSION_RISCV_B = true) and (decode_aux.is_b_imm = '1') then -- valid BITMANIP immediate instruction?
             illegal_instruction <= '0';
           else
             illegal_instruction <= '1';
@@ -1537,7 +1545,7 @@ begin
         -- ------------------------------------------------------------
           if (CPU_EXTENSION_RISCV_Zfinx = true) and -- F extension implemented
              (execute_engine.i_reg(instr_funct7_lsb_c+1 downto instr_funct7_lsb_c) = float_single_c) and -- single-precision operations only
-             (decode_aux.is_float_op = '1') then -- is correct/supported floating-point instruction
+             (decode_aux.is_f_op = '1') then -- is correct/supported floating-point instruction
             illegal_instruction <= '0';
           else
             illegal_instruction <= '1';

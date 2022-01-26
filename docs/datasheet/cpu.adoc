@@ -271,8 +271,8 @@ However, these instructions are sufficient to emulate all further atomic memory 
 
 .Bit-Manipulation ISA Extension
 [IMPORTANT]
-The NEORV32 `B` extension only implements the _basic bit-manipulation instructions_ (`Zbb`) subset
-and the _address generation instructions_ (`Zba`) subset yet.
+The NEORV32 `B` extension only implements the _basic bit-manipulation instructions_ (`Zbb`) subset,
+the _address generation instructions_ (`Zba`) subset and the _single-bit instructions_ (`Zbs`) subset yet.
 
 
 
@@ -424,8 +424,8 @@ The `B` ISA extension adds instructions for bit-manipulation operations. This ex
 The official RISC-V specifications can be found here: https://github.com/riscv/riscv-bitmanip
 
 [IMPORTANT]
-The NEORV32 `B` extension only implements the _basic bit-manipulation instructions_ (`Zbb`) subset
-and the _address generation instructions_ (`Zba`) subset yet.
+The NEORV32 `B` extension only implements the _basic bit-manipulation instructions_ (`Zbb`) subset,
+the _address generation instructions_ (`Zba`) subset and the _single-bit instructions_ (`Zbs`) subset yet.
 
 The `Zbb` sub-extension adds the following instructions:
 
@@ -440,6 +440,13 @@ The `Zba` sub-extension adds the following instructions:
 
 * `sh1add` `sh2add` `sh3add`
 
+The `Zbs` sub-extension adds the following instructions:
+
+* `bclr` `bclri`
+* `bext` `bexti`
+* `bext` `binvi`
+* `bset` `bseti`
+
 [TIP]
 By default, the bit-manipulation unit uses an _iterative_ approach to compute shift-related operations
 like `clz` and `rol`. To increase performance (at the cost of additional hardware resources) the 
@@ -447,10 +454,10 @@ like `clz` and `rol`. To increase performance (at the cost of additional hardwar
 shift-related `B` instructions.
 
 [WARNING]
-The `B` extension is frozen but not officially ratified yet. There is no
-software support for this extension in the upstream GCC RISC-V port yet. However, an
+The `B` extension is frozen and officially ratified. However, there is no
+software support for this extension in the upstream GCC RISC-V port yet. An
 intrinsic library is provided to utilize the provided `B` extension features from C-language
-code (see `sw/example/bitmanip_test`).
+code (see `sw/example/bitmanip_test`) to circumvent this.
 
 
 ==== **`C`** - Compressed Instructions
@@ -795,7 +802,7 @@ configurations are presented in <<_cpu_performance>>.
 | Bit-manipulation - shifts | `B(Zbb)` | `clz` `ctz` | 3 + 0..32
 | Bit-manipulation - shifts | `B(Zbb)` | `cpop` | 3 + 32
 | Bit-manipulation - shifts | `B(Zbb)` | `rol` `ror` `rori` | 3 + SA
-| Bit-manipulation - single-bit | `B(Zbs)` | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]` | 3
+| Bit-manipulation - single-bit  | `B(Zbs)` | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]` | 3
 | Bit-manipulation - shifted-add | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 3
 |=======================
 
