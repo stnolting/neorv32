@@ -232,7 +232,7 @@ begin
   end process mem_do_reg;
 
   -- byte enable and output data alignment --
-  byte_enable: process(mar, mdo, ctrl_i)
+  write_align: process(mar, mdo, ctrl_i)
   begin
     case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is -- data size
       when "00" => -- byte
@@ -258,7 +258,7 @@ begin
         d_bus_wdata <= mdo;
         d_bus_ben   <= "1111"; -- full word
     end case;
-  end process byte_enable;
+  end process write_align;
 
 
   -- Data Interface: Read Data --------------------------------------------------------------
@@ -320,8 +320,7 @@ begin
         d_arbiter.err_bus   <= '0';
       else -- in progress
         d_arbiter.err_align <= (d_arbiter.err_align or d_misaligned) and (not ctrl_i(ctrl_bus_derr_ack_c));
-        d_arbiter.err_bus   <= (d_arbiter.err_bus or d_bus_err_i or (st_pmp_fault and d_arbiter.wr_req) or (ld_pmp_fault and d_arbiter.rd_req)) and
-                               (not ctrl_i(ctrl_bus_derr_ack_c));
+        d_arbiter.err_bus   <= (d_arbiter.err_bus or d_bus_err_i or (st_pmp_fault and d_arbiter.wr_req) or (ld_pmp_fault and d_arbiter.rd_req)) and (not ctrl_i(ctrl_bus_derr_ack_c));
         if ((d_bus_ack_i = '1') and (d_bus_err_i = '0')) or (ctrl_i(ctrl_bus_derr_ack_c) = '1') then -- wait for normal termination / CPU abort
           d_arbiter.wr_req <= '0';
           d_arbiter.rd_req <= '0';
