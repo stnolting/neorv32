@@ -111,8 +111,12 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   constant op_bext_c    : natural := 19;
   constant op_binv_c    : natural := 20;
   constant op_bset_c    : natural := 21;
+  -- Zbc - carry-less multiplication --
+  constant op_clmul_c   : natural := 22;
+  constant op_clmulh_c  : natural := 23;
+  constant op_clmulr_c  : natural := 24;
   --
-  constant op_width_c   : natural := 22;
+  constant op_width_c   : natural := 25;
 
   -- controller --
   type ctrl_state_t is (S_IDLE, S_START_SHIFT, S_BUSY_SHIFT);
@@ -156,11 +160,11 @@ begin
   -- Sub-Extension Configuration ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert false report
-  "NEORV32 CPU: Implementing bit-manipulation (B) sub-extensions: " &
-  cond_sel_string_f(zba_en_c, "Zba", "") &
-  cond_sel_string_f(zbb_en_c, "Zbb", "") &
-  cond_sel_string_f(zbc_en_c, "Zbc", "") &
-  cond_sel_string_f(zbs_en_c, "Zbs", "") &
+  "NEORV32 CPU: Implementing bit-manipulation (B) sub-extensions " &
+  cond_sel_string_f(zba_en_c, "Zba ", "") &
+  cond_sel_string_f(zbb_en_c, "Zbb ", "") &
+  cond_sel_string_f(zbc_en_c, "Zbc ", "") &
+  cond_sel_string_f(zbs_en_c, "Zbs ", "") &
   ""
   severity note;
 
@@ -175,8 +179,8 @@ begin
   cmd(op_orn_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "10") else '0';
   cmd(op_xnor_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "00") else '0';
   --
-  cmd(op_max_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_1_c) = '1') else '0';
-  cmd(op_min_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_1_c) = '0') else '0';
+  cmd(op_max_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_1_c) = "11") else '0';
+  cmd(op_min_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_1_c) = "10") else '0';
   cmd(op_zexth_c)  <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '0') else '0';
   --
   cmd(op_orcb_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "101") else '0';
@@ -200,6 +204,11 @@ begin
   cmd(op_bext_c)   <= '1' when (zbs_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '1') else '0';
   cmd(op_binv_c)   <= '1' when (zbs_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
   cmd(op_bset_c)   <= '1' when (zbs_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
+
+  -- Zbc - Carry-less multiplication instructions --
+  cmd(op_clmul_c)  <= '1' when (zbc_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
+  cmd(op_clmulh_c) <= '1' when (zbc_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
+  cmd(op_clmulr_c) <= '1' when (zbc_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
 
 
   -- Co-Processor Controller ----------------------------------------------------------------
@@ -385,7 +394,7 @@ begin
       when "01"   => opb_v := rs1_reg(rs1_reg'left-1 downto 0) & '0';   -- << 1
       when "10"   => opb_v := rs1_reg(rs1_reg'left-2 downto 0) & "00";  -- << 2
       when "11"   => opb_v := rs1_reg(rs1_reg'left-3 downto 0) & "000"; -- << 3
-      when others => opb_v := rs1_reg(rs1_reg'left-1 downto 0) & '0';   -- undefined
+      when others => opb_v := (others => '-'); -- undefined
     end case;
     adder_core <= std_ulogic_vector(unsigned(rs2_reg) + unsigned(opb_v));
   end process shift_adder;
@@ -455,6 +464,11 @@ begin
   res_int(op_binv_c) <= rs1_reg xor one_hot_core;
   res_int(op_bset_c) <= rs1_reg or one_hot_core;
 
+  -- carry-less multiplication instructions --
+  res_int(op_clmul_c)  <= (others => '0'); -- FIXME/TODO
+  res_int(op_clmulh_c) <= (others => '0'); -- FIXME/TODO
+  res_int(op_clmulr_c) <= (others => '0'); -- FIXME/TODO
+
 
   -- Output Selector ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -482,6 +496,10 @@ begin
   res_out(op_bext_c) <= res_int(op_bext_c) when (cmd_buf(op_bext_c) = '1') else (others => '0');
   res_out(op_binv_c) <= res_int(op_binv_c) when (cmd_buf(op_binv_c) = '1') else (others => '0');
   res_out(op_bset_c) <= res_int(op_bset_c) when (cmd_buf(op_bset_c) = '1') else (others => '0');
+  --
+  res_out(op_clmul_c)  <= res_int(op_clmul_c)  when (cmd_buf(op_clmul_c) = '1')  else (others => '0');
+  res_out(op_clmulh_c) <= res_int(op_clmulh_c) when (cmd_buf(op_clmulh_c) = '1') else (others => '0');
+  res_out(op_clmulr_c) <= res_int(op_clmulr_c) when (cmd_buf(op_clmulr_c) = '1') else (others => '0');
 
 
   -- Output Gate ----------------------------------------------------------------------------
@@ -500,7 +518,8 @@ begin
                  res_out(op_ror_c)    or res_out(op_rol_c)   or
                  res_out(op_orcb_c)   or res_out(op_rev8_c)  or
                  res_out(op_sh1add_c) or -- res_out(op_sh2add_c) and res_out(op_sh3add_c) are unused here
-                 res_out(op_bclr_c)   or res_out(op_bext_c)  or res_out(op_binv_c)  or res_out(op_bset_c);
+                 res_out(op_bclr_c)   or res_out(op_bext_c)  or res_out(op_binv_c)  or res_out(op_bset_c) or
+                 res_out(op_clmul_c)  or res_out(op_clmulh_c) or res_out(op_clmulr_c);
       end if;
     end if;
   end process output_gate;
