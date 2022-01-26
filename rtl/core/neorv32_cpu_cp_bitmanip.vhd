@@ -4,15 +4,16 @@
 -- # The bit manipulation unit is implemented as co-processor that has a processing latency of 1   #
 -- # cycle for logic/arithmetic operations and 3+shamt (=shift amount) cycles for shift(-related)  #
 -- # operations. Use the FAST_SHIFT_EN option to reduce shift-related instruction's latency to a   #
--- # fixed value of 3 cycles latency (using barrel shifters).                                      #
+-- # fixed value of 3 cycles (using barrel shifters).                                              #
 -- #                                                                                               #
--- # Supported sub-extensions (Zb*):                                                               #
--- # - Zba: Address generation instructions                                                        #
+-- # Supported B sub-extensions (Zb*):                                                             #
+-- # - Zba: Address-generation instructions                                                        #
 -- # - Zbb: Basic bit-manipulation instructions                                                    #
+-- # - Zbs: Single-bit instructions                                                                #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -74,37 +75,44 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   -- Sub-extension configuration --
   constant zbb_en_c : boolean := true;
   constant zba_en_c : boolean := true;
+  constant zbc_en_c : boolean := false; -- FIXME/TODO
+  constant zbs_en_c : boolean := true;
   -- --------------------------- --
 
-  -- commands: Zbb - logic with negate --
+  -- Zbb - logic with negate --
   constant op_andn_c    : natural := 0;
   constant op_orn_c     : natural := 1;
   constant op_xnor_c    : natural := 2;
-  -- commands: Zbb - count leading/trailing zero bits --
+  -- Zbb - count leading/trailing zero bits --
   constant op_clz_c     : natural := 3;
   constant op_ctz_c     : natural := 4;
-  -- commands: Zbb - count population --
+  -- Zbb - count population --
   constant op_cpop_c    : natural := 5;
-  -- commands: Zbb - integer minimum/maximum --
+  -- Zbb - integer minimum/maximum --
   constant op_max_c     : natural := 6; -- signed/unsigned
   constant op_min_c     : natural := 7; -- signed/unsigned
-  -- commands: Zbb - sign- and zero-extension --
+  -- Zbb - sign- and zero-extension --
   constant op_sextb_c   : natural := 8;
   constant op_sexth_c   : natural := 9;
   constant op_zexth_c   : natural := 10;
-  -- commands: Zbb - bitwise rotation --
+  -- Zbb - bitwise rotation --
   constant op_rol_c     : natural := 11;
   constant op_ror_c     : natural := 12; -- rori
-  -- commands: Zbb - or-combine --
+  -- Zbb - or-combine --
   constant op_orcb_c    : natural := 13;
-  -- commands: Zbb - byte-reverse --
+  -- Zbb - byte-reverse --
   constant op_rev8_c    : natural := 14;
-  -- commands: Zba - shifted add --
+  -- Zba - shifted-add --
   constant op_sh1add_c  : natural := 15;
   constant op_sh2add_c  : natural := 16;
   constant op_sh3add_c  : natural := 17;
+  -- Zbs - single-bit operations --
+  constant op_bclr_c    : natural := 18;
+  constant op_bext_c    : natural := 19;
+  constant op_binv_c    : natural := 20;
+  constant op_bset_c    : natural := 21;
   --
-  constant op_width_c   : natural := 18;
+  constant op_width_c   : natural := 22;
 
   -- controller --
   type ctrl_state_t is (S_IDLE, S_START_SHIFT, S_BUSY_SHIFT);
@@ -140,33 +148,38 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   -- shifted-add unit --
   signal adder_core : std_ulogic_vector(data_width_c-1 downto 0);
 
+  -- one-hot shifter --
+  signal one_hot_core : std_ulogic_vector(data_width_c-1 downto 0);
+
 begin
 
   -- Sub-Extension Configuration ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert false report
-  "Implementing bit-manipulation (B) sub-extensions: " &
-  cond_sel_string_f(zbb_en_c, "Zbb", "") &
+  "NEORV32 CPU: Implementing bit-manipulation (B) sub-extensions: " &
   cond_sel_string_f(zba_en_c, "Zba", "") &
+  cond_sel_string_f(zbb_en_c, "Zbb", "") &
+  cond_sel_string_f(zbc_en_c, "Zbc", "") &
+  cond_sel_string_f(zbs_en_c, "Zbs", "") &
   ""
   severity note;
 
 
   -- Instruction Decoding (One-Hot) ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- a minimal decoding logic is used here -> just to distinguish between B.Zbb instructions
-  -- a more specific decoding and instruction check is done by the CPU control unit
+  -- a minimal decoding logic is used here just to distinguish between the different B instruction
+  -- a more precise decoding and valid-instruction check is done by the CPU control unit
 
   -- Zbb - Basic bit-manipulation instructions --
-  cmd(op_andn_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "11") else '0';
-  cmd(op_orn_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "10") else '0';
-  cmd(op_xnor_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "00") else '0';
+  cmd(op_andn_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "11") else '0';
+  cmd(op_orn_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "10") else '0';
+  cmd(op_xnor_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "00") else '0';
   --
   cmd(op_max_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_1_c) = '1') else '0';
   cmd(op_min_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_1_c) = '0') else '0';
   cmd(op_zexth_c)  <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '0') else '0';
   --
-  cmd(op_orcb_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') else '0';
+  cmd(op_orcb_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "101") else '0';
   --
   cmd(op_clz_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "000") else '0';
   cmd(op_ctz_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "001") else '0';
@@ -175,12 +188,18 @@ begin
   cmd(op_sexth_c)  <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "101") else '0';
   cmd(op_rol_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "001") and (ctrl_i(ctrl_ir_opcode7_5_c) = '1') else '0';
   cmd(op_ror_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "101") else '0';
-  cmd(op_rev8_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') else '0';
+  cmd(op_rev8_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "101") else '0';
 
   -- Zba - Address generation instructions --
   cmd(op_sh1add_c) <= '1' when (zba_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_1_c) = "01") else '0';
   cmd(op_sh2add_c) <= '1' when (zba_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_1_c) = "10") else '0';
   cmd(op_sh3add_c) <= '1' when (zba_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_1_c) = "11") else '0';
+
+  -- Zbs - Single-bit instructions --
+  cmd(op_bclr_c)   <= '1' when (zbs_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
+  cmd(op_bext_c)   <= '1' when (zbs_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '1') else '0';
+  cmd(op_binv_c)   <= '1' when (zbs_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
+  cmd(op_bset_c)   <= '1' when (zbs_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
 
 
   -- Co-Processor Controller ----------------------------------------------------------------
@@ -372,6 +391,17 @@ begin
   end process shift_adder;
 
 
+  -- One-Hot Generator Core -----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  shift_one_hot: process(sha_reg)
+  begin
+    one_hot_core <= (others => '0');
+    if (zbs_en_c = true) then
+      one_hot_core(to_integer(unsigned(sha_reg))) <= '1';
+    end if;
+  end process shift_one_hot;
+
+
   -- Operation Results ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- logic with negate --
@@ -418,6 +448,13 @@ begin
   res_int(op_sh2add_c) <= (others => '0'); -- unused/redundant
   res_int(op_sh3add_c) <= (others => '0'); -- unused/redundant
 
+  -- single-bit instructions --
+  res_int(op_bclr_c) <= rs1_reg and (not one_hot_core);
+  res_int(op_bext_c)(data_width_c-1 downto 1) <= (others => '0');
+  res_int(op_bext_c)(0) <= or_reduce_f(rs1_reg and one_hot_core);
+  res_int(op_binv_c) <= rs1_reg xor one_hot_core;
+  res_int(op_bset_c) <= rs1_reg or one_hot_core;
+
 
   -- Output Selector ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -440,6 +477,11 @@ begin
   res_out(op_sh1add_c) <= res_int(op_sh1add_c) when ((cmd_buf(op_sh1add_c) or cmd_buf(op_sh2add_c) or cmd_buf(op_sh3add_c))  = '1') else (others => '0');
   res_out(op_sh2add_c) <= (others => '0'); -- unused/redundant
   res_out(op_sh3add_c) <= (others => '0'); -- unused/redundant
+  --
+  res_out(op_bclr_c) <= res_int(op_bclr_c) when (cmd_buf(op_bclr_c) = '1') else (others => '0');
+  res_out(op_bext_c) <= res_int(op_bext_c) when (cmd_buf(op_bext_c) = '1') else (others => '0');
+  res_out(op_binv_c) <= res_int(op_binv_c) when (cmd_buf(op_binv_c) = '1') else (others => '0');
+  res_out(op_bset_c) <= res_int(op_bset_c) when (cmd_buf(op_bset_c) = '1') else (others => '0');
 
 
   -- Output Gate ----------------------------------------------------------------------------
@@ -451,13 +493,14 @@ begin
     elsif rising_edge(clk_i) then
       res_o <= (others => '0');
       if (valid = '1') then
-        res_o <= res_out(op_andn_c)  or res_out(op_orn_c)   or res_out(op_xnor_c) or
-                 res_out(op_clz_c)   or res_out(op_cpop_c)  or -- res_out(op_ctz_c) is unused here
-                 res_out(op_min_c)   or -- res_out(op_max_c) is unused here
-                 res_out(op_sextb_c) or res_out(op_sexth_c) or res_out(op_zexth_c) or
-                 res_out(op_ror_c)   or res_out(op_rol_c)   or
-                 res_out(op_orcb_c)  or res_out(op_rev8_c)  or
-                 res_out(op_sh1add_c); -- res_out(op_sh2add_c) and res_out(op_sh3add_c) are unused here
+        res_o <= res_out(op_andn_c)   or res_out(op_orn_c)   or res_out(op_xnor_c)  or
+                 res_out(op_clz_c)    or res_out(op_cpop_c)  or -- res_out(op_ctz_c) is unused here
+                 res_out(op_min_c)    or -- res_out(op_max_c) is unused here
+                 res_out(op_sextb_c)  or res_out(op_sexth_c) or res_out(op_zexth_c) or
+                 res_out(op_ror_c)    or res_out(op_rol_c)   or
+                 res_out(op_orcb_c)   or res_out(op_rev8_c)  or
+                 res_out(op_sh1add_c) or -- res_out(op_sh2add_c) and res_out(op_sh3add_c) are unused here
+                 res_out(op_bclr_c)   or res_out(op_bext_c)  or res_out(op_binv_c)  or res_out(op_bset_c);
       end if;
     end if;
   end process output_gate;
