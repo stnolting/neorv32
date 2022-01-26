@@ -6,7 +6,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -527,6 +527,264 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sh3add(uint32_t 
 }
 
 
+// ================================================================================================
+// Zbs - Single-bit instructions
+// ================================================================================================
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation BCLR (bit-clear) [B.Zbs]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Operand 1 with bit cleared indexed by operand_2(4:0).
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bclr(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
+  // bclr a0, a0, a1
+  CUSTOM_INSTR_R2_TYPE(0b0100100, a1, a0, 0b001, a0, 0b0110011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation BCLRI (bit-clear) by 20 positions. [B.Zbs]
+ * @warning Fixed shift amount (20) for now.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @return Operand 1 with bit cleared at position 20.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bclri20(uint32_t rs1) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
+
+  // bclri a0, a0, 20
+  CUSTOM_INSTR_R1_TYPE(0b0100100, 0b10100, a0, 0b001, a0, 0b0010011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation BEXT (bit-extract) [B.Zbs]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Extract bit from Operand 1 indexed by operand_2(4:0).
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bext(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
+  // bext a0, a0, a1
+  CUSTOM_INSTR_R2_TYPE(0b0100100, a1, a0, 0b101, a0, 0b0110011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation BEXTI (bit-extract) by 20 positions. [B.Zbs]
+ * @warning Fixed shift amount (20) for now.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @return Extract bit from Operand 1 at position 20.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bexti20(uint32_t rs1) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
+
+  // bexti a0, a0, 20
+  CUSTOM_INSTR_R1_TYPE(0b0100100, 0b10100, a0, 0b101, a0, 0b0010011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation BINV (bit-invert) [B.Zbs]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Invert bit from Operand 1 indexed by operand_2(4:0).
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_binv(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
+  // binv a0, a0, a1
+  CUSTOM_INSTR_R2_TYPE(0b0110100, a1, a0, 0b001, a0, 0b0110011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation BINVI (bit-invert) by 20 positions. [B.Zbs]
+ * @warning Fixed shift amount (20) for now.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @return Invert bit from Operand 1 at position 20.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_binvi20(uint32_t rs1) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
+
+  // binvi a0, a0, 20
+  CUSTOM_INSTR_R1_TYPE(0b0110100, 0b10100, a0, 0b001, a0, 0b0010011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation BSET (bit-set) [B.Zbs]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return set bit from Operand 1 indexed by operand_2(4:0).
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bset(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
+  // bset a0, a0, a1
+  CUSTOM_INSTR_R2_TYPE(0b0010100, a1, a0, 0b001, a0, 0b0110011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation BSETI (bit-set) by 20 positions. [B.Zbs]
+ * @warning Fixed shift amount (20) for now.
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @return Set bit from Operand 1 at position 20.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bseti20(uint32_t rs1) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a));
+
+  // bseti a0, a0, 20
+  CUSTOM_INSTR_R1_TYPE(0b0010100, 0b10100, a0, 0b001, a0, 0b0010011);
+
+  return result;
+}
+
+
+// ================================================================================================
+// Zbc - Carry-less multiplication instructions
+// ================================================================================================
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation CLMUL (carry-less multiplication, low-part) [B.Zbc]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Carry-less product, low part.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_clmul(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
+  // clmul a0, a0, a1
+  CUSTOM_INSTR_R2_TYPE(0b0000101, a1, a0, 0b001, a0, 0b0110011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation CLMULH (carry-less multiplication, high-part) [B.Zbc]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Carry-less product, high part.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_clmulh(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
+  // clmulh a0, a0, a1
+  CUSTOM_INSTR_R2_TYPE(0b0000101, a1, a0, 0b011, a0, 0b0110011);
+
+  return result;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation CLMULR (carry-less multiplication, reversed) [B.Zbc]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 2 (a0).
+ * @return Carry-less product, low part, reversed.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_clmulr(uint32_t rs1, uint32_t rs2) {
+
+  register uint32_t result __asm__ ("a0");
+  register uint32_t tmp_a  __asm__ ("a0") = rs1;
+  register uint32_t tmp_b  __asm__ ("a1") = rs2;
+
+  // dummy instruction to prevent GCC "constprop" optimization
+  asm volatile ("" : [output] "=r" (result) : [input_i] "r" (tmp_a), [input_j] "r" (tmp_b));
+
+  // clmulr a0, a0, a1
+  CUSTOM_INSTR_R2_TYPE(0b0000101, a1, a0, 0b010, a0, 0b0110011);
+
+  return result;
+}
+
 
 // ################################################################################################
 // Emulation functions
@@ -899,5 +1157,178 @@ uint32_t riscv_emulate_sh3add(uint32_t rs1, uint32_t rs2) {
   return rs2 + (rs1 << 3);
 }
 
+
+// ================================================================================================
+// Zbs - Single-bit instructions
+// ================================================================================================
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation BCLR (bit-clear) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 1 (a0).
+ * @return Operand 1 with cleared bit indexed by operand_2(4:0).
+ **************************************************************************/
+uint32_t riscv_emulate_bclr(uint32_t rs1, uint32_t rs2) {
+
+  uint32_t shamt = rs2 & 0x1f;
+  uint32_t tmp = 1 << shamt;
+
+  return rs1 & (~tmp);
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation BEXT (bit-extract) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 1 (a0).
+ * @return Extract bit from operand 1 indexed by operand_2(4:0).
+ **************************************************************************/
+uint32_t riscv_emulate_bext(uint32_t rs1, uint32_t rs2) {
+
+  uint32_t shamt = rs2 & 0x1f;
+  uint32_t tmp = rs1 >> shamt;
+
+  return tmp & 1;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation BINV (bit-invert) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 1 (a0).
+ * @return Invert bit from operand 1 indexed by operand_2(4:0).
+ **************************************************************************/
+uint32_t riscv_emulate_binv(uint32_t rs1, uint32_t rs2) {
+
+  uint32_t shamt = rs2 & 0x1f;
+  uint32_t tmp = 1 << shamt;
+
+  return rs1 ^ tmp;
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation BSET (bit-set) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 1 (a0).
+ * @return Set bit from operand 1 indexed by operand_2(4:0).
+ **************************************************************************/
+uint32_t riscv_emulate_bset(uint32_t rs1, uint32_t rs2) {
+
+  uint32_t shamt = rs2 & 0x1f;
+  uint32_t tmp = 1 << shamt;
+
+  return rs1 | tmp;
+}
+
+
+// ================================================================================================
+// Zbc - Carry-less multiplication instructions
+// ================================================================================================
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation CLMUL (carry-less multiply, low-part) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 1 (a0).
+ * @return Carry-less multiplication product, low part
+ **************************************************************************/
+uint32_t riscv_emulate_clmul(uint32_t rs1, uint32_t rs2) {
+
+  uint32_t i;
+  uint64_t tmp;
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } res;
+
+  res.uint64 = 0;
+  for (i=0; i<32; i++) {
+    if ((rs2 >> i) & 1) {
+      tmp = (uint64_t)rs1;
+      tmp = tmp << i;
+      res.uint64 = res.uint64 ^ tmp;
+    }
+  }
+
+  return res.uint32[0];
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation CLMULH (carry-less multiply, high-part) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 1 (a0).
+ * @return Carry-less multiplication product, high part
+ **************************************************************************/
+uint32_t riscv_emulate_clmulh(uint32_t rs1, uint32_t rs2) {
+
+  uint32_t i;
+  uint64_t tmp;
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } res;
+
+  res.uint64 = 0;
+  for (i=0; i<32; i++) {
+    if ((rs2 >> i) & 1) {
+      tmp = (uint64_t)rs1;
+      tmp = tmp << i;
+      res.uint64 = res.uint64 ^ tmp;
+    }
+  }
+
+  return res.uint32[1];
+}
+
+
+/**********************************************************************//**
+ * Intrinsic: Bit manipulation CLMUR (carry-less multiply, reversed) [emulation]
+ *
+ * @param[in] rs1 Source operand 1 (a0).
+ * @param[in] rs2 Source operand 1 (a0).
+ * @return Carry-less multiplication product, low part, reversed
+ **************************************************************************/
+uint32_t riscv_emulate_clmulr(uint32_t rs1, uint32_t rs2) {
+
+  uint32_t i;
+  uint64_t tmp;
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/2];
+  } res;
+
+  // bit-reversal of input operands
+  uint32_t rs1_rev = 0, rs2_rev = 0;
+  for (i=0; i<32; i++) {
+    if ((rs1 >> i) & 1) {
+      rs1_rev |= 1;
+    }
+    rs1_rev <<= 1;
+    if ((rs2 >> i) & 1) {
+      rs2_rev |= 1;
+    }
+    rs2_rev <<= 1;
+  }
+
+  res.uint64 = 0;
+  for (i=0; i<32; i++) {
+    if ((rs2_rev >> i) & 1) {
+      tmp = (uint64_t)rs1_rev;
+      tmp = tmp << i;
+      res.uint64 = res.uint64 ^ tmp;
+    }
+  }
+
+  return res.uint32[0];
+}
 
 #endif // neorv32_b_extension_intrinsics_h
