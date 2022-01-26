@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -143,7 +143,7 @@ void neorv32_gpio_port_set(uint64_t port_data) {
 
   union {
     uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/2];
+    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
   } data;
 
   data.uint64 = port_data;
@@ -161,7 +161,7 @@ uint64_t neorv32_gpio_port_get(void) {
 
   union {
     uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/2];
+    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
   } data;
 
   data.uint32[0] = NEORV32_GPIO.INPUT_LO;

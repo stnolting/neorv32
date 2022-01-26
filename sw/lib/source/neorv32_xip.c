@@ -197,7 +197,7 @@ int neorv32_xip_spi_trans(uint8_t nbytes, uint64_t *rtx_data) {
 
   union {
     uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/2];
+    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
   } data;
 
   data.uint64 = *rtx_data;
