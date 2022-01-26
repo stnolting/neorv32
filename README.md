@@ -190,8 +190,9 @@ documentation section). Note that the `X` extension is always enabled.
 [[`PMP`](https://stnolting.github.io/neorv32/#_pmp_physical_memory_protection)]
 [[`DEBUG`](https://stnolting.github.io/neorv32/#_cpu_debug_mode)]**
 
-:warning: The `B`, `Zfinx` and `Zmmul` RISC-V are officially ratified but there is no
-upstream gcc support yet. To circumvent this, the NEORV32 software framework provides _intrinsic libraries_ for these extensions.
+:warning: The `B`, `Zfinx` and `Zmmul` RISC-V are frozen and officially ratified but there is no
+upstream gcc support yet. To circumvent this, the NEORV32 software framework provides _intrinsic libraries_ for the
+`B` and `Zfinx` extensions.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
