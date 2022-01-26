@@ -1105,19 +1105,6 @@ begin
             end if;
 
 
-          when opcode_syscsr_c => -- system/csr access
-          -- ------------------------------------------------------------
-            if (CPU_EXTENSION_RISCV_Zicsr = true) then
-              if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system/environment
-                execute_engine.state_nxt <= SYS_ENV;
-              else -- CSR access
-                execute_engine.state_nxt <= CSR_ACCESS;
-              end if;
-            else
-              execute_engine.state_nxt <= SYS_WAIT;
-            end if;
-
-
           when opcode_fop_c => -- floating-point operations
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zfinx = true) then
@@ -1129,14 +1116,22 @@ begin
             end if;
 
 
-          when others => -- illegal opcode
+          when others => -- system/csr access OR illegal opcode - nothing bad (= no commits) will happen here if there is an illegal opcode
           -- ------------------------------------------------------------
-            execute_engine.state_nxt <= SYS_WAIT;
+            if (CPU_EXTENSION_RISCV_Zicsr = true) then
+              if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system/environment
+                execute_engine.state_nxt <= SYS_ENV;
+              else -- CSR access
+                execute_engine.state_nxt <= CSR_ACCESS;
+              end if;
+            else
+              execute_engine.state_nxt <= SYS_WAIT;
+            end if;
 
         end case;
 
 
-      when SYS_ENV => -- system environment operation - execution
+      when SYS_ENV => -- system environment operation - no action if illegal instruction
       -- ------------------------------------------------------------
         execute_engine.state_nxt <= SYS_WAIT; -- default
         if (trap_ctrl.exc_buf(exception_iillegal_c) = '0') then -- no illegal instruction
@@ -1152,8 +1147,7 @@ begin
                 NULL; -- executed as NOP (and raise illegal instruction exception)
               end if;
             when funct12_wfi_c => -- WFI
-              if (CPU_EXTENSION_RISCV_DEBUG = true) and
-                ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) then -- act as NOP when in debug-mode or during single-stepping
+              if (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) then -- NOP when in debug-mode or during single-stepping
                 NULL; -- executed as NOP
               else
                 execute_engine.sleep_nxt <= '1'; -- go to sleep mode
@@ -1163,7 +1157,7 @@ begin
         end if;
 
 
-      when CSR_ACCESS => -- read & write status and control register (CSR)
+      when CSR_ACCESS => -- read & write status and control register (CSR) - no read/write if illegal instruction
       -- ------------------------------------------------------------
         -- CSR write access --
         if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
@@ -1383,7 +1377,7 @@ begin
         -- ------------------------------------------------------------
           illegal_instruction <= '0';
           -- illegal E-CPU register? --
-          illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and execute_engine.i_reg(instr_rd_msb_c);
+          illegal_register <= execute_engine.i_reg(instr_rd_msb_c);
 
         when opcode_alu_c => -- check ALU.funct3 & ALU.funct7
         -- ------------------------------------------------------------
@@ -1407,7 +1401,7 @@ begin
             illegal_instruction <= '1';
           end if;
           -- illegal E-CPU register? --
-          illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and (execute_engine.i_reg(instr_rd_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rs2_msb_c));
+          illegal_register <= execute_engine.i_reg(instr_rd_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rs2_msb_c);
 
         when opcode_alui_c => -- check ALUI.funct7
         -- ------------------------------------------------------------
@@ -1428,7 +1422,7 @@ begin
             illegal_instruction <= '1';
           end if;
           -- illegal E-CPU register? --
-          illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and (execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c));
+          illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
 
         when opcode_load_c => -- check LOAD.funct3
         -- ------------------------------------------------------------
@@ -1442,7 +1436,7 @@ begin
             illegal_instruction <= '1';
           end if;
           -- illegal E-CPU register? --
-          illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and (execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c));
+          illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
 
         when opcode_store_c => -- check STORE.funct3
         -- ------------------------------------------------------------
@@ -1454,7 +1448,7 @@ begin
             illegal_instruction <= '1';
           end if;
           -- illegal E-CPU register? --
-          illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and (execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c));
+          illegal_register <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c);
 
         when opcode_atomic_c => -- atomic instructions
         -- ------------------------------------------------------------
@@ -1462,11 +1456,11 @@ begin
             if (execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c) = "00010") then -- LR
               illegal_instruction <= '0';
               -- illegal E-CPU register? --
-              illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and (execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c));
+              illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
             elsif (execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c) = "00011") then -- SC
               illegal_instruction <= '0';
               -- illegal E-CPU register? --
-              illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and (execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rd_msb_c));
+              illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
             else
               illegal_instruction <= '1';
             end if;
@@ -1487,7 +1481,7 @@ begin
             illegal_instruction <= '1';
           end if;
           -- illegal E-CPU register? --
-          illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and (execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c));
+          illegal_register <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c);
 
         when opcode_jalr_c => -- check JALR.funct3
         -- ------------------------------------------------------------
@@ -1497,7 +1491,7 @@ begin
             illegal_instruction <= '1';
           end if;
           -- illegal E-CPU register? --
-          illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and (execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c));
+          illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
 
         when opcode_fence_c => -- check FENCE.funct3
         -- ------------------------------------------------------------
@@ -1507,8 +1501,7 @@ begin
           else
             illegal_instruction <= '1';
           end if;
-          -- illegal E-CPU register? --
-          illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and (execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c));
+          -- NOTE: ignore all remaining bit fields here
 
         when opcode_syscsr_c => -- check system instructions
         -- ------------------------------------------------------------
@@ -1522,14 +1515,12 @@ begin
              (csr_acc_valid = '1') then -- valid CSR access?
             illegal_instruction <= '0';
             -- illegal E-CPU register? --
-            if (CPU_EXTENSION_RISCV_E = true) then
-              if (execute_engine.i_reg(instr_funct3_msb_c) = '0') then -- reg-reg CSR
-                illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
-              else -- reg-imm CSR
-                illegal_register <= execute_engine.i_reg(instr_rd_msb_c);
-              end if;
+            if (execute_engine.i_reg(instr_funct3_msb_c) = '0') then -- reg-reg CSR
+              illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
+            else -- reg-imm CSR
+              illegal_register <= execute_engine.i_reg(instr_rd_msb_c);
             end if;
-          -- ecall, ebreak, mret, wfi, dret --
+          -- system: ecall, ebreak, mret, wfi, dret --
           elsif (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "000") and
                 (decode_aux.rs1_zero = '1') and (decode_aux.rd_zero = '1') and
                 ((execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ecall_c)  or -- ECALL
@@ -1553,7 +1544,7 @@ begin
           end if;
           -- illegal E-CPU register? --
           -- FIXME: rs2 is not checked!
-          illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and (execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c));
+          illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
 
         when others => -- undefined instruction -> illegal!
         -- ------------------------------------------------------------
@@ -1569,7 +1560,10 @@ begin
   end process illegal_instruction_check;
 
   -- any illegal condition? --
-  trap_ctrl.instr_il <= illegal_instruction or illegal_opcode_lsbs or illegal_register or illegal_compressed;
+  trap_ctrl.instr_il <= illegal_opcode_lsbs or -- illegal opcode MSB bits
+                        illegal_instruction or -- illegal instruction format/layout
+                        (bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and illegal_register) or -- illegal register access in E extension
+                        illegal_compressed; -- illegal compressed instruction
 
 
 -- ****************************************************************************************************************************
@@ -1658,12 +1652,6 @@ begin
   -- -------------------------------------------------------------------------------------------
   trap_priority: process(trap_ctrl)
   begin
-    -- defaults --
-    trap_ctrl.cause_nxt <= (others => '0');
-
-    -- NOTE: Synchronous exceptions (from trap_ctrl.exc_buf) have higher priority than asynchronous
-    -- exceptions (from trap_ctrl.irq_buf).
-
     -- ----------------------------------------------------------------------------------------
     -- the following traps are caused by *synchronous* exceptions; we do not need a
     -- specific acknowledge mask since only _one_ exception (the one with highest priority)
@@ -1718,15 +1706,15 @@ begin
     -- even if other IRQs are pending right now
     -- ----------------------------------------------------------------------------------------
 
-    -- break instruction --
+    -- break instruction (sync) --
     elsif (trap_ctrl.exc_buf(exception_db_break_c) = '1') then
       trap_ctrl.cause_nxt <= trap_db_break_c;
 
-    -- external halt request --
+    -- external halt request (async) --
     elsif (trap_ctrl.irq_buf(interrupt_db_halt_c) = '1') then
       trap_ctrl.cause_nxt <= trap_db_halt_c;
 
-    -- single stepping --
+    -- single stepping (async) --
     elsif (trap_ctrl.irq_buf(interrupt_db_step_c) = '1') then
       trap_ctrl.cause_nxt <= trap_db_step_c;
 
@@ -1811,7 +1799,7 @@ begin
       trap_ctrl.cause_nxt <= trap_msi_c;
 
     -- interrupt: 1.7 machine timer interrupt --
-    elsif (trap_ctrl.irq_buf(interrupt_mtime_irq_c) = '1') then
+    else--if (trap_ctrl.irq_buf(interrupt_mtime_irq_c) = '1') then -- last condition, so NO IF required
       trap_ctrl.cause_nxt <= trap_mti_c;
 
     end if;
@@ -1837,7 +1825,7 @@ begin
       when funct3_csrrwi_c => csr.wdata <= csr_imm_v;
       when funct3_csrrsi_c => csr.wdata <= csr.rdata or csr_imm_v;
       when funct3_csrrci_c => csr.wdata <= csr.rdata and (not csr_imm_v);
-      when others          => csr.wdata <= rs1_i; -- undefined
+      when others          => csr.wdata <= (others => '-'); -- undefined
     end case;
   end process csr_write_data;
 

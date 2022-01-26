@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 26.01.2022 | 1.6.6.6 | minor logic optimizations in **CPU control unit** |
 | 25.01.2022 | 1.6.6.5 | :lock: **on-chip debugger:** the memory-mapped registers of the debug module (DM) are only accessible/visible when the CPU is actually in debug mode; any access outside of debug mode will now raise a bus exception |
 | 22.01.2022 | 1.6.6.4 | minor logic optimizations in **CPU control unit**, minor improvement of critical path |
 | 21.01.2022 | 1.6.6.3 | reworked **CPU's instruction issue engine** (area optimization: ~100 LUTs less on an Intel Cyclone IV), [PR #256](https://github.com/stnolting/neorv32/pull/256); minor CPU control unit code clean-ups and logic optimizations |
