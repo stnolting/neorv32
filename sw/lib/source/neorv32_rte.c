@@ -323,7 +323,7 @@ void neorv32_rte_print_hw_config(void) {
   else {
     neorv32_uart0_printf("unknown");
   }
-  
+
   // CPU extensions
   neorv32_uart0_printf("\nISA extensions:    ");
   tmp = neorv32_cpu_csr_read(CSR_MISA);
@@ -358,10 +358,12 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<SYSINFO_CPU_ZXSCNT)) {
     neorv32_uart0_printf("Zxscnt(!) ");
   }
-
   if (tmp & (1<<SYSINFO_CPU_DEBUGMODE)) {
     neorv32_uart0_printf("Debug ");
   }
+
+  // CPU extension options
+  neorv32_uart0_printf("\nISA ext. options:  ");
   if (tmp & (1<<SYSINFO_CPU_FASTMUL)) {
     neorv32_uart0_printf("FAST_MUL ");
   }
@@ -582,10 +584,8 @@ void neorv32_rte_print_credits(void) {
     return; // cannot output anything if UART0 is not implemented
   }
 
-  neorv32_uart0_print("The NEORV32 RISC-V Processor\n"
-                      "(c) 2021, Stephan Nolting\n"
-                      "BSD 3-Clause License\n"
-                      "https://github.com/stnolting/neorv32\n\n");
+  neorv32_uart0_print("The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32\n"
+                      "(c) 2022 by Stephan Nolting, BSD 3-Clause License\n\n");
 }
 
 
@@ -648,7 +648,7 @@ void neorv32_rte_print_license(void) {
   "\n"
   "BSD 3-Clause License\n"
   "\n"
-  "Copyright (c) 2021, Stephan Nolting. All rights reserved.\n"
+  "Copyright (c) 2022, Stephan Nolting. All rights reserved.\n"
   "\n"
   "Redistribution and use in source and binary forms, with or without modification, are\n"
   "permitted provided that the following conditions are met:\n"
