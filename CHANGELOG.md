@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 26.01.2022 | 1.6.6.7 | :sparkles: added HW support for RISC-V bit-manipulation (`B`) **single-bit instructions `Zbs`** sub-extension; added test cases and intrinsics; see [PR #259](https://github.com/stnolting/neorv32/pull/259) |
 | 26.01.2022 | 1.6.6.6 | minor logic optimizations in **CPU control unit** |
 | 25.01.2022 | 1.6.6.5 | :lock: **on-chip debugger:** the memory-mapped registers of the debug module (DM) are only accessible/visible when the CPU is actually in debug mode; any access outside of debug mode will now raise a bus exception |
 | 22.01.2022 | 1.6.6.4 | minor logic optimizations in **CPU control unit**, minor improvement of critical path |
