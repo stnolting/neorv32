@@ -1245,7 +1245,7 @@ uint32_t riscv_emulate_clmul(uint32_t rs1, uint32_t rs2) {
   uint64_t tmp;
   union {
     uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/2];
+    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
   } res;
 
   res.uint64 = 0;
@@ -1274,7 +1274,7 @@ uint32_t riscv_emulate_clmulh(uint32_t rs1, uint32_t rs2) {
   uint64_t tmp;
   union {
     uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/2];
+    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
   } res;
 
   res.uint64 = 0;
@@ -1303,20 +1303,20 @@ uint32_t riscv_emulate_clmulr(uint32_t rs1, uint32_t rs2) {
   uint64_t tmp;
   union {
     uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/2];
+    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
   } res;
 
   // bit-reversal of input operands
   uint32_t rs1_rev = 0, rs2_rev = 0;
   for (i=0; i<32; i++) {
+    rs1_rev <<= 1;
     if ((rs1 >> i) & 1) {
       rs1_rev |= 1;
     }
-    rs1_rev <<= 1;
+    rs2_rev <<= 1;
     if ((rs2 >> i) & 1) {
       rs2_rev |= 1;
     }
-    rs2_rev <<= 1;
   }
 
   res.uint64 = 0;
@@ -1328,7 +1328,17 @@ uint32_t riscv_emulate_clmulr(uint32_t rs1, uint32_t rs2) {
     }
   }
 
-  return res.uint32[0];
+  // bit-reversal of result
+  uint32_t result = 0;
+  for (i=0; i<32; i++) {
+    result <<= 1;
+    if ((res.uint32[0] >> i) & 1) {
+      result |= 1;
+    }
+  }
+
+  return result;
 }
+
 
 #endif // neorv32_b_extension_intrinsics_h
