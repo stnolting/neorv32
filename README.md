@@ -207,7 +207,7 @@ using **Intel Quartus Prime Lite 20.1** ("balanced implementation, Slow 1200mV 0
 | `rv32i_Zicsr_Zicntr`    | 1729 |  813 | 1024 | 0 | 124 MHz |
 | `rv32imac_Zicsr_Zicntr` | 2511 | 1074 | 1024 | 0 | 124 MHz |
 
-:information_source: An incremental list of CPU extension's hardware utilization can found in the
+:bulb: An incremental list of CPU extension's hardware utilization can found in the
 [_Data Sheet: FPGA Implementation Results - CPU_](https://stnolting.github.io/neorv32/#_cpu).
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
@@ -229,7 +229,7 @@ The following table shows the performance results (scores and average CPI) for e
 | _medium_ (`rv32imc_Zicsr`)                      | 62.50 | **0.6250** | **5.34** |
 | _performance_ (`rv32imc_Zicsr` + perf. options) | 95.23 | **0.9523** | **3.54** |
 
-:information_source: More information regarding the CPU performance can be found in the
+:bulb: More information regarding the CPU performance can be found in the
 [_Data Sheet: CPU Performance_](https://stnolting.github.io/neorv32/#_cpu_performance).
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
