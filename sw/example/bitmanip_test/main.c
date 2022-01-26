@@ -495,13 +495,12 @@ int main() {
   neorv32_uart0_printf("Zbc - Carry-less multiplication instructions\n");
   neorv32_uart0_printf("--------------------------------------------\n");
 
-  neorv32_uart0_printf("\nWARNING: The NEORV32 CPU hardware does NOT support the Zbc extension yet!");
-  neorv32_uart0_printf("\n         Hence, illegal instruction exceptions should be triggered here.\n");
+  neorv32_uart0_printf("n\NOTE: The emulation functions will take quite some time to execute.\n");
 
   // CLMUL
   neorv32_uart0_printf("\nCLMUL:\n");
   err_cnt = 0;
-  for (i=0;i<1; i++) {
+  for (i=0;i<num_tests; i++) {
     opa = xorshift32();
     opb = xorshift32();
     res_sw = riscv_emulate_clmul(opa, opb);
@@ -513,7 +512,7 @@ int main() {
   // CLMULH
   neorv32_uart0_printf("\nCLMULH:\n");
   err_cnt = 0;
-  for (i=0;i<1; i++) {
+  for (i=0;i<num_tests; i++) {
     opa = xorshift32();
     opb = xorshift32();
     res_sw = riscv_emulate_clmulh(opa, opb);
@@ -525,7 +524,7 @@ int main() {
   // CLMULR
   neorv32_uart0_printf("\nCLMULR:\n");
   err_cnt = 0;
-  for (i=0;i<1; i++) {
+  for (i=0;i<num_tests; i++) {
     opa = xorshift32();
     opb = xorshift32();
     res_sw = riscv_emulate_clmulr(opa, opb);
