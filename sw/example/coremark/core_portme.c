@@ -225,7 +225,7 @@ portable_fini(core_portable *p)
   // show executed instructions, required cycles and resulting average CPI
   union {
     uint64_t uint64;
-    uint32_t  uint32[sizeof(uint64_t)/2];
+    uint32_t  uint32[sizeof(uint64_t)/sizeof(uint32_t)];
   } exe_instructions, exe_time;
 
   exe_time.uint64 = (uint64_t)get_time();

@@ -168,7 +168,7 @@ int program_xip_flash(void) {
 
   union {
     uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/2];
+    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
   } data;
 
   while (1) {
