@@ -51,13 +51,13 @@
 #define BAUD_RATE      (19200)
 //** Number of test cases for each instruction */
 #define NUM_TEST_CASES (1000000)
-//** Enable Zbb tests */
+//** Enable Zbb tests when 1 */
 #define ENABLE_ZBB     (1)
-//** Enable Zba tests */
+//** Enable Zba tests when 1 */
 #define ENABLE_ZBA     (1)
-//** Enable Zbs tests */
+//** Enable Zbs tests when 1 */
 #define ENABLE_ZBS     (1)
-//** Enable Zbc tests */
+//** Enable Zbc tests when 1 */
 #define ENABLE_ZBC     (1)
 /**@}*/
 
@@ -495,7 +495,7 @@ int main() {
   neorv32_uart0_printf("Zbc - Carry-less multiplication instructions\n");
   neorv32_uart0_printf("--------------------------------------------\n");
 
-  neorv32_uart0_printf("n\NOTE: The emulation functions will take quite some time to execute.\n");
+  neorv32_uart0_printf("\nNOTE: The emulation functions will take quite some time to execute.\n");
 
   // CLMUL
   neorv32_uart0_printf("\nCLMUL:\n");
