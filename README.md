@@ -170,7 +170,7 @@ instruction, breakpoint, environment calls).
 ### Available ISA Extensions
 
 Currently, the following _optional_ RISC-V-compatible ISA extensions are implemented (linked to the according
-documentation section). Note that the `X` extension is always enabled.
+documentation section).
 
 **RV32
 [[`I`](https://stnolting.github.io/neorv32/#_i_base_integer_isa)/
