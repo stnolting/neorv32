@@ -106,6 +106,8 @@ package neorv32_package is
   function cond_sel_stdulogic_f(cond : boolean; val_t : std_ulogic; val_f : std_ulogic) return std_ulogic;
   function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string;
   function bool_to_ulogic_f(cond : boolean) return std_ulogic;
+  function bin_to_gray_f(input : std_ulogic_vector) return std_ulogic_vector;
+  function gray_to_bin_f(input : std_ulogic_vector) return std_ulogic_vector;
   function or_reduce_f(a : std_ulogic_vector) return std_ulogic;
   function and_reduce_f(a : std_ulogic_vector) return std_ulogic;
   function xor_reduce_f(a : std_ulogic_vector) return std_ulogic;
@@ -2245,6 +2247,30 @@ package body neorv32_package is
       return '0';
     end if;
   end function bool_to_ulogic_f;
+
+  -- Function: Convert binary to gray -------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function bin_to_gray_f(input : std_ulogic_vector) return std_ulogic_vector is
+    variable tmp_v : std_ulogic_vector(input'range);
+  begin
+    tmp_v(input'length-1) := input(input'length-1); -- keep MSB
+    for i in input'length-2 downto 0 loop
+      tmp_v(i) := input(i) xor input(i+1);
+    end loop; -- i
+    return tmp_v;
+  end function bin_to_gray_f;
+
+  -- Function: Convert gray to binary -------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function gray_to_bin_f(input : std_ulogic_vector) return std_ulogic_vector is
+    variable tmp_v : std_ulogic_vector(input'range);
+  begin
+    tmp_v(input'length-1) := input(input'length-1); -- keep MSB
+    for i in input'length-2 downto 0 loop
+      tmp_v(i) := tmp_v(i+1) xor input(i);
+    end loop; -- i
+    return tmp_v;
+  end function gray_to_bin_f;
 
   -- Function: OR-reduce all bits -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
