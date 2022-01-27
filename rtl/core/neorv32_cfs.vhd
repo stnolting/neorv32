@@ -244,15 +244,16 @@ begin
 
   -- CFS Function Core ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- This is where the actual functionality can be implemented.
-  -- In this example we are just implementing four r/w registers that invert any value written to them.
 
+  -- This is where the actual functionality can be implemented.
+  -- The logic below is just a very simple example that transforms data
+  -- from an inpout register into data in an output register.
   cfs_core_logic: process(cfs_reg_wr)
   begin
-    cfs_reg_rd(0) <= not cfs_reg_wr(0);
-    cfs_reg_rd(1) <= not cfs_reg_wr(1);
-    cfs_reg_rd(2) <= not cfs_reg_wr(2);
-    cfs_reg_rd(3) <= not cfs_reg_wr(3);
+    cfs_reg_rd(0) <= bin_to_gray_f(cfs_reg_wr(0)); -- convert binary to gray code
+    cfs_reg_rd(1) <= gray_to_bin_f(cfs_reg_wr(1)); -- convert gray to binary code
+    cfs_reg_rd(2) <= bit_rev_f(cfs_reg_wr(2)); -- bit reversal
+    cfs_reg_rd(3) <= bswap32_f(cfs_reg_wr(3)); -- byte swap (endianness conversion)
   end process cfs_core_logic;
 
 
