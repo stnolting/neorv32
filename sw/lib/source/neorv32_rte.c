@@ -363,7 +363,7 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   // CPU extension options
-  neorv32_uart0_printf("\nISA ext. options:  ");
+  neorv32_uart0_printf("\nExtension options: ");
   if (tmp & (1<<SYSINFO_CPU_FASTMUL)) {
     neorv32_uart0_printf("FAST_MUL ");
   }
