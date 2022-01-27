@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 27.01.2022 | 1.6.6.9 | reworked **CFS** "user" logic; added CFS demo program; see [PR #261](https://github.com/stnolting/neorv32/pull/261) |
 | 27.01.2022 | 1.6.6.8 | :sparkles: added support for RISC-V bit-manipulation (`B`) **carry-less multiplication instructions `Zbc`** sub-extension; added test cases and intrinsics; the NEORV32 bit-manipulation ISA extension (`B`) now fully complies to the RISC-V specs. v0.93; see [PR #260](https://github.com/stnolting/neorv32/pull/260) |
 | 26.01.2022 | 1.6.6.7 | :sparkles: added support for RISC-V bit-manipulation (`B`) **single-bit instructions `Zbs`** sub-extension; added test cases and intrinsics; see [PR #259](https://github.com/stnolting/neorv32/pull/259) |
 | 26.01.2022 | 1.6.6.6 | minor logic optimizations in **CPU control unit** |
