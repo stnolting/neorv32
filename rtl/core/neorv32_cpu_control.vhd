@@ -856,6 +856,9 @@ begin
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- BEXT
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BINV
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BSET
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- CLMUL
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "011")) or -- CLMULH
+       ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010")) or -- CLMULR
        ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100000") and
         (
          (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "111") or -- ANDN
