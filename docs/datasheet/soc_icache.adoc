@@ -48,6 +48,11 @@ processor-internal bus.
 By executing the `ifence.i` instruction (`Zifencei` CPU extension) the cache is cleared and a reload from
 main memory is triggered. Among other things this allows to implement self-modifying code.
 
+.Retrieve Cache Configuration from Software
+[TIP]
+Software can retrieve the cache configuration from the <<_sysinfo_cache_configuration>> register.
+
+
 **Bus Access Fault Handling**
 
 The cache always loads a complete cache block (_ICACHE_BLOCK_SIZE_ bytes) aligned to it's size every time a
