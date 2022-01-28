@@ -48,6 +48,7 @@ entity neorv32_cpu_alu is
     CPU_EXTENSION_RISCV_M     : boolean; -- implement mul/div extension?
     CPU_EXTENSION_RISCV_Zmmul : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zfinx : boolean; -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zxcfu : boolean; -- implement custom (instr.) functions unit?
     -- Extension Options --
     FAST_MUL_EN               : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN             : boolean  -- use barrel shifter for shift operations
@@ -334,10 +335,31 @@ begin
   end generate;
 
 
-  -- Co-Processor 4: Reserved ---------------------------------------------------------------
+  -- Co-Processor 4: Custom (Instructions) Functions Unit -----------------------------------
   -- -------------------------------------------------------------------------------------------
-  cp_result(4) <= (others => '0');
-  cp_valid(4)  <= '0';
+  neorv32_cpu_cp_cfu_inst_true:
+  if (CPU_EXTENSION_RISCV_Zxcfu = true) generate
+    neorv32_cpu_cp_cfu_inst: neorv32_cpu_cp_cfu
+    port map (
+      -- global control --
+      clk_i   => clk_i,        -- global clock, rising edge
+      rstn_i  => rstn_i,       -- global reset, low-active, async
+      ctrl_i  => ctrl_i,       -- main control bus
+      start_i => cp_start(4),  -- trigger operation
+      -- data input --
+      rs1_i   => rs1_i,        -- rf source 1
+      rs2_i   => rs2_i,        -- rf source 2
+      -- result and status --
+      res_o   => cp_result(4), -- operation result
+      valid_o => cp_valid(4)   -- data output valid
+    );
+  end generate;
+
+  neorv32_cpu_cp_cfu_inst_false:
+  if (CPU_EXTENSION_RISCV_Zxcfu = false) generate
+    cp_result(4) <= (others => '0');
+    cp_valid(4)  <= '0';
+  end generate;
 
 
   -- Co-Processor 5: Reserved ---------------------------------------------------------------
