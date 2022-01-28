@@ -399,6 +399,18 @@ cannot be used together with the `M` extension. See section <<_zmmul_integer_mul
 |======
 
 
+:sectnums!:
+===== _CPU_EXTENSION_RISCV_Zxcfu_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CPU_EXTENSION_RISCV_Zxcfu** | _boolean_ | false
+3+| NEORV32-specific "custom RISC-V" ISA extensions: Implement the <<_custom_functions_unit_cfu>> for user-defined
+custom instruction when _true_. See section <<_zxcfu_custom_instructions_extension_cfu>> for more information.
+|======
+
+
 // ####################################################################################################################
 :sectnums:
 ==== Extension Options
