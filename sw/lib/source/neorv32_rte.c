@@ -355,6 +355,9 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<SYSINFO_CPU_ZFINX)) {
     neorv32_uart0_printf("Zfinx ");
   }
+  if (tmp & (1<<SYSINFO_CPU_ZXCFU)) {
+    neorv32_uart0_printf("Zxcfu ");
+  }
   if (tmp & (1<<SYSINFO_CPU_ZXSCNT)) {
     neorv32_uart0_printf("Zxscnt(!) ");
   }
