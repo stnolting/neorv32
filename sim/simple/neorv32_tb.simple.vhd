@@ -187,6 +187,7 @@ begin
     CPU_EXTENSION_RISCV_Zihpm    => true,          -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei,  -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    => false,         -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zxcfu    => true,          -- implement custom (instr.) functions unit?
     -- Extension Options --
     FAST_MUL_EN                  => false,         -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => false,         -- use barrel shifter for shift operations
