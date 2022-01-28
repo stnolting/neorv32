@@ -91,18 +91,17 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
 
   -- co-processor arbiter and interface --
   type cp_ctrl_t is record
-    cmd     : std_ulogic;
-    cmd_ff  : std_ulogic;
-    start   : std_ulogic;
-    busy    : std_ulogic;
-    timeout : std_ulogic_vector(9 downto 0);
+    cmd    : std_ulogic;
+    cmd_ff : std_ulogic;
+    start  : std_ulogic;
   end record;
   signal cp_ctrl : cp_ctrl_t;
 
   -- co-processor interface --
-  signal cp_start  : std_ulogic_vector(3 downto 0); -- trigger co-processor i
-  signal cp_valid  : std_ulogic_vector(3 downto 0); -- co-processor i done
+  type cp_data_if_t  is array (0 to 7)  of std_ulogic_vector(data_width_c-1 downto 0);
   signal cp_result : cp_data_if_t; -- co-processor result
+  signal cp_start  : std_ulogic_vector(7 downto 0); -- trigger co-processor i
+  signal cp_valid  : std_ulogic_vector(7 downto 0); -- co-processor i done
 
 begin
 
@@ -182,36 +181,21 @@ begin
 
 
   -- **************************************************************************************************************************
-  -- Co-Processors
+  -- CPU Co-Processors
   -- **************************************************************************************************************************
+
+  -- Co-Processor Interface --
+  -- Co-processor "valid" signal has to be asserted (for one cycle) one cycle before asserting output data
+  -- Co-processor "output data" has to be always zero unless co-processor was explicitly triggered
 
   -- Co-Processor Arbiter -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- Interface:
-  -- Co-processor "valid" signal has to be asserted (for one cycle) one cycle before asserting output data
-  -- Co-processor "output data" has to be always zero unless co-processor was explicitly triggered
   cp_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      cp_ctrl.cmd_ff  <= '0';
-      cp_ctrl.busy    <= '0';
-      cp_ctrl.timeout <= (others => '0');
+      cp_ctrl.cmd_ff <= '0';
     elsif rising_edge(clk_i) then
       cp_ctrl.cmd_ff <= cp_ctrl.cmd;
-      -- timeout counter --
-      if (cp_ctrl.start = '1') then
-        cp_ctrl.busy <= '1';
-      elsif (or_reduce_f(cp_valid) = '1') then
-        cp_ctrl.busy <= '0';
-      end if;
-      if (cp_ctrl.busy = '1') and (cp_timeout_en_c = true) then
-        cp_ctrl.timeout <= std_ulogic_vector(unsigned(cp_ctrl.timeout) + 1);
-      else
-        cp_ctrl.timeout <= (others => '0');
-      end if;
-      if (cp_ctrl.timeout(cp_ctrl.timeout'left) = '1') and (cp_timeout_en_c = true) then -- timeout
-        assert false report "NEORV32 CPU CO-PROCESSOR TIMEOUT ERROR!" severity warning;
-      end if;
     end if;
   end process cp_arbiter;
 
@@ -219,17 +203,21 @@ begin
   cp_ctrl.cmd   <= '1' when (ctrl_i(ctrl_alu_func1_c downto ctrl_alu_func0_c) = alu_func_copro_c) else '0';
   cp_ctrl.start <= '1' when (cp_ctrl.cmd = '1') and (cp_ctrl.cmd_ff = '0') else '0';
 
-  -- co-processor select / star trigger --
-  cp_start(0) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "00") else '0';
-  cp_start(1) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "01") else '0';
-  cp_start(2) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "10") else '0';
-  cp_start(3) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "11") else '0';
+  -- co-processor select / start trigger --
+  cp_start(0) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "000") else '0';
+  cp_start(1) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "001") else '0';
+  cp_start(2) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "010") else '0';
+  cp_start(3) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "011") else '0';
+  cp_start(4) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "100") else '0';
+  cp_start(5) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "101") else '0';
+  cp_start(6) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "110") else '0';
+  cp_start(7) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "111") else '0';
 
   -- co-processor operation done? --
   idone_o <= or_reduce_f(cp_valid);
 
   -- co-processor result - only the *actually selected* co-processor may output data != 0 --
-  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3);
+  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5) or cp_result(6) or cp_result(7);
 
 
   -- Co-Processor 0: Shifter (CPU Core ISA) --------------------------------------------------
@@ -280,7 +268,7 @@ begin
   neorv32_cpu_cp_muldiv_inst_false:
   if (CPU_EXTENSION_RISCV_M = false) and (CPU_EXTENSION_RISCV_Zmmul = false) generate
     cp_result(1) <= (others => '0');
-    cp_valid(1)  <= cp_start(1); -- to make sure CPU does not get stalled if there is an accidental access
+    cp_valid(1)  <= '0';
   end generate;
 
 
@@ -312,7 +300,7 @@ begin
   neorv32_cpu_cp_bitmanip_inst_false:
   if (CPU_EXTENSION_RISCV_B = false) generate
     cp_result(2) <= (others => '0');
-    cp_valid(2)  <= cp_start(2); -- to make sure CPU does not get stalled if there is an accidental access
+    cp_valid(2)  <= '0';
   end generate;
 
 
@@ -342,8 +330,32 @@ begin
   if (CPU_EXTENSION_RISCV_Zfinx = false) generate
     cp_result(3) <= (others => '0');
     fpu_flags_o  <= (others => '0');
-    cp_valid(3)  <= cp_start(3); -- to make sure CPU does not get stalled if there is an accidental access
+    cp_valid(3)  <= '0';
   end generate;
+
+
+  -- Co-Processor 4: Reserved ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  cp_result(4) <= (others => '0');
+  cp_valid(4)  <= '0';
+
+
+  -- Co-Processor 5: Reserved ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  cp_result(5) <= (others => '0');
+  cp_valid(5)  <= '0';
+
+
+  -- Co-Processor 6: Reserved ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  cp_result(6) <= (others => '0');
+  cp_valid(6)  <= '0';
+
+
+  -- Co-Processor 7: Reserved ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  cp_result(7) <= (others => '0');
+  cp_valid(7)  <= '0';
 
 
 end neorv32_cpu_cpu_rtl;
