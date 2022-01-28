@@ -54,6 +54,7 @@ include::rationale.adoc[]
 * **NEORV32 CPU**: 32-bit `rv32i` RISC-V CPU
 ** RISC-V compatibility: passes the official architecture tests
 ** base architecture + privileged architecture (optional) + ISA extensions (optional)
+** option to add custom RISC-V instructions (as custom ISA etxtension)
 ** rich set of customization options (ISA extensions, design goal: performance / area (/ energy), ...)
 ** aims to support <<_full_virtualization>> capabilities (CPU _and_ SoC) to increase execution safety
 ** official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]
@@ -143,6 +144,7 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 ├neorv32_cpu.vhd                 - NEORV32 CPU top entity
 │├neorv32_cpu_alu.vhd            - Arithmetic/logic unit
 ││├neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
+││├neorv32_cpu_cp_cfu.vhd        - Custom functions (instruction) co-processor (Zxcfu ext.)
 ││├neorv32_cpu_cp_fpu.vhd        - Floating-point co-processor (Zfinx ext.)
 ││├neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M extension)
 ││└neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor
