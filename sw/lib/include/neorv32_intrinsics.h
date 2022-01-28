@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -35,132 +35,233 @@
 
 /**********************************************************************//**
  * @file neorv32_intrinsics.h
- * @author Stephan Nolting
+ * @author Stephan Nolting, SaxonSoc contributors, Google-CFU
  * @brief Helper functions and macros for custom "intrinsics" / instructions.
  **************************************************************************/
 
 #ifndef neorv32_intrinsics_h
 #define neorv32_intrinsics_h
 
+
+// ****************************************************************************************************************************
+// Custom Instruction Intrinsics
+// Derived from https://github.com/google/CFU-Playground/blob/dfe5c2b75a4540dab62baef1b12fd03bfa78425e/third_party/SaxonSoc/riscv.h
+// Original license header:
+//
+//   From https://github.com/SpinalHDL/SaxonSoc/blob/dev-0.1/software/standalone/driver/riscv.h
+//
+//   Copyright (c) 2019 SaxonSoc contributors
+//
+//   MIT License: https://github.com/SpinalHDL/SaxonSoc/blob/dev-0.1/LICENSE
+//
+// LICENSE:
+//  MIT License
+//  
+//  Copyright (c) 2019 SaxonSoc contributors
+//  
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//  
+//  The above copyright notice and this permission notice shall be included in all
+//  copies or substantial portions of the Software.
+//  
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//  SOFTWARE.
+// ****************************************************************************************************************************
+
 /**********************************************************************//**
- * @name Custom instructions / intrinsics helper macros
+ * @name Custom Instruction Intrinsics
+ * @note Copied from https://github.com/google/CFU-Playground/blob/dfe5c2b75a4540dab62baef1b12fd03bfa78425e/third_party/SaxonSoc/riscv.h
+ *       Original license header:
+ * // From https://github.com/SpinalHDL/SaxonSoc/blob/dev-0.1/software/standalone/driver/riscv.h
+ * //
+ * // Copyright (c) 2019 SaxonSoc contributors
+ * //
+ * // MIT License: https://github.com/SpinalHDL/SaxonSoc/blob/dev-0.1/LICENSE
  **************************************************************************/
 /**@{*/
+asm(".set regnum_x0  ,  0");
+asm(".set regnum_x1  ,  1");
+asm(".set regnum_x2  ,  2");
+asm(".set regnum_x3  ,  3");
+asm(".set regnum_x4  ,  4");
+asm(".set regnum_x5  ,  5");
+asm(".set regnum_x6  ,  6");
+asm(".set regnum_x7  ,  7");
+asm(".set regnum_x8  ,  8");
+asm(".set regnum_x9  ,  9");
+asm(".set regnum_x10 , 10");
+asm(".set regnum_x11 , 11");
+asm(".set regnum_x12 , 12");
+asm(".set regnum_x13 , 13");
+asm(".set regnum_x14 , 14");
+asm(".set regnum_x15 , 15");
+asm(".set regnum_x16 , 16");
+asm(".set regnum_x17 , 17");
+asm(".set regnum_x18 , 18");
+asm(".set regnum_x19 , 19");
+asm(".set regnum_x20 , 20");
+asm(".set regnum_x21 , 21");
+asm(".set regnum_x22 , 22");
+asm(".set regnum_x23 , 23");
+asm(".set regnum_x24 , 24");
+asm(".set regnum_x25 , 25");
+asm(".set regnum_x26 , 26");
+asm(".set regnum_x27 , 27");
+asm(".set regnum_x28 , 28");
+asm(".set regnum_x29 , 29");
+asm(".set regnum_x30 , 30");
+asm(".set regnum_x31 , 31");
 
-//** Selection helper macro */
-#define STR1(x) #x
-//** Selection helper macro 2 */
-#define STR(x) STR1(x)
-
-//** Register address converter */
-#define GET_REG_ADDR(x) REG_ADDR_##x
-
-#define REG_ADDR_x0   0 /**< register  0 */
-#define REG_ADDR_x1   1 /**< register  1 */
-#define REG_ADDR_x2   2 /**< register  2 */
-#define REG_ADDR_x3   3 /**< register  3 */
-#define REG_ADDR_x4   4 /**< register  4 */
-#define REG_ADDR_x5   5 /**< register  5 */
-#define REG_ADDR_x6   6 /**< register  6 */
-#define REG_ADDR_x7   7 /**< register  7 */
-#define REG_ADDR_x8   8 /**< register  8 */
-#define REG_ADDR_x9   9 /**< register  9 */
-#define REG_ADDR_x10 10 /**< register 10 */
-#define REG_ADDR_x11 11 /**< register 11 */
-#define REG_ADDR_x12 12 /**< register 12 */
-#define REG_ADDR_x13 13 /**< register 13 */
-#define REG_ADDR_x14 14 /**< register 14 */
-#define REG_ADDR_x15 15 /**< register 15 */
-#define REG_ADDR_x16 16 /**< register 16 */
-#define REG_ADDR_x17 17 /**< register 17 */
-#define REG_ADDR_x18 18 /**< register 18 */
-#define REG_ADDR_x19 19 /**< register 19 */
-#define REG_ADDR_x20 20 /**< register 20 */
-#define REG_ADDR_x21 21 /**< register 21 */
-#define REG_ADDR_x22 22 /**< register 22 */
-#define REG_ADDR_x23 23 /**< register 23 */
-#define REG_ADDR_x24 24 /**< register 24 */
-#define REG_ADDR_x25 25 /**< register 25 */
-#define REG_ADDR_x26 26 /**< register 26 */
-#define REG_ADDR_x27 27 /**< register 27 */
-#define REG_ADDR_x28 28 /**< register 28 */
-#define REG_ADDR_x29 29 /**< register 29 */
-#define REG_ADDR_x30 30 /**< register 30 */
-#define REG_ADDR_x31 31 /**< register 31 */
-#define REG_ADDR_zero 0 /**< register  0 - according to calling convention */
-#define REG_ADDR_ra   1 /**< register  1 - according to calling convention */
-#define REG_ADDR_sp   2 /**< register  2 - according to calling convention */
-#define REG_ADDR_gp   3 /**< register  3 - according to calling convention */
-#define REG_ADDR_tp   4 /**< register  4 - according to calling convention */
-#define REG_ADDR_t0   5 /**< register  5 - according to calling convention */
-#define REG_ADDR_t1   6 /**< register  6 - according to calling convention */
-#define REG_ADDR_t2   7 /**< register  7 - according to calling convention */
-#define REG_ADDR_s0   8 /**< register  8 - according to calling convention */
-#define REG_ADDR_s1   9 /**< register  9 - according to calling convention */
-#define REG_ADDR_a0  10 /**< register 10 - according to calling convention */
-#define REG_ADDR_a1  11 /**< register 11 - according to calling convention */
-#define REG_ADDR_a2  12 /**< register 12 - according to calling convention */
-#define REG_ADDR_a3  13 /**< register 13 - according to calling convention */
-#define REG_ADDR_a4  14 /**< register 14 - according to calling convention */
-#define REG_ADDR_a5  15 /**< register 15 - according to calling convention */
-#define REG_ADDR_a6  16 /**< register 16 - according to calling convention */
-#define REG_ADDR_a7  17 /**< register 17 - according to calling convention */
-#define REG_ADDR_s2  18 /**< register 18 - according to calling convention */
-#define REG_ADDR_s3  19 /**< register 19 - according to calling convention */
-#define REG_ADDR_s4  20 /**< register 20 - according to calling convention */
-#define REG_ADDR_s5  21 /**< register 21 - according to calling convention */
-#define REG_ADDR_s6  22 /**< register 22 - according to calling convention */
-#define REG_ADDR_s7  23 /**< register 23 - according to calling convention */
-#define REG_ADDR_s8  24 /**< register 24 - according to calling convention */
-#define REG_ADDR_s9  25 /**< register 25 - according to calling convention */
-#define REG_ADDR_s10 26 /**< register 26 - according to calling convention */
-#define REG_ADDR_s11 27 /**< register 27 - according to calling convention */
-#define REG_ADDR_t3  28 /**< register 28 - according to calling convention */
-#define REG_ADDR_t4  29 /**< register 29 - according to calling convention */
-#define REG_ADDR_t5  30 /**< register 30 - according to calling convention */
-#define REG_ADDR_t6  31 /**< register 31 - according to calling convention */
-
-//** Construct instruction word (32-bit) for R2-type instruction */
-#define CMD_WORD_R2_TYPE(funct7, rs2, rs1, funct3, rd, opcode) \
-  ( (opcode & 0x7f) <<  0 ) + \
-  ( (rd     & 0x1f) <<  7 ) + \
-  ( (funct3 & 0x1f) << 12 ) + \
-  ( (rs1    & 0x1f) << 15 ) + \
-  ( (rs2    & 0x1f) << 20 ) + \
-  ( (funct7 & 0x7f) << 25 )
-
-//** Construct instruction word (32-bit) for R3-type instruction */
-#define CMD_WORD_R3_TYPE(rs3, rs2, rs1, funct3, rd, opcode) \
-  ( (opcode & 0x7f) <<  0 ) + \
-  ( (rd     & 0x1f) <<  7 ) + \
-  ( (funct3 & 0x1f) << 12 ) + \
-  ( (rs1    & 0x1f) << 15 ) + \
-  ( (rs2    & 0x1f) << 20 ) + \
-  ( (rs3    & 0x1f) << 27 )
-
-//** Construct instruction word (32-bit) for I-type instruction */
-#define CMD_WORD_I_TYPE(imm12, rs1_f5, funct3, rd, opcode) \
-  ( (opcode & 0x7f)  <<  0 ) + \
-  ( (rd     & 0x1f)  <<  7 ) + \
-  ( (funct3 & 0x1f)  << 12 ) + \
-  ( (rs1_f5 & 0x1f)  << 15 ) + \
-  ( (imm12  & 0xfff) << 20 )
-
-//** Construct custom R3-type instruction (4 registers, funct3, opcode) */
-#define CUSTOM_INSTR_R3_TYPE(rs3, rs2, rs1, funct3, rd, opcode) \
-  asm volatile (".word " STR(CMD_WORD_R3_TYPE(GET_REG_ADDR(rs3), GET_REG_ADDR(rs2), GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
-
-//** Construct custom R2-type instruction (3 registers, funct3, funct7, opcode) */
-#define CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, funct3, rd, opcode) \
-  asm volatile (".word " STR(CMD_WORD_R2_TYPE(funct7, GET_REG_ADDR(rs2), GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
-
-//** Construct custom R1-type instruction (2 registers, funct3, funct7, funct5, opcode) */
-#define CUSTOM_INSTR_R1_TYPE(funct7, funct5, rs1, funct3, rd, opcode) \
-  asm volatile (".word " STR(CMD_WORD_R2_TYPE(funct7, funct5, GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
-  
-//** Construct custom I-type instruction (2 registers, funct3, imm12, opcode) */
-#define CUSTOM_INSTR_I_TYPE(imm12, rs1, funct3, rd, opcode) \
-  asm volatile (".word " STR(CMD_WORD_I_TYPE(imm12, GET_REG_ADDR(rs1), funct3, GET_REG_ADDR(rd), opcode))"\n");
+asm(".set regnum_zero,  0");
+asm(".set regnum_ra  ,  1");
+asm(".set regnum_sp  ,  2");
+asm(".set regnum_gp  ,  3");
+asm(".set regnum_tp  ,  4");
+asm(".set regnum_t0  ,  5");
+asm(".set regnum_t1  ,  6");
+asm(".set regnum_t2  ,  7");
+asm(".set regnum_s0  ,  8");
+asm(".set regnum_s1  ,  9");
+asm(".set regnum_a0  , 10");
+asm(".set regnum_a1  , 11");
+asm(".set regnum_a2  , 12");
+asm(".set regnum_a3  , 13");
+asm(".set regnum_a4  , 14");
+asm(".set regnum_a5  , 15");
+asm(".set regnum_a6  , 16");
+asm(".set regnum_a7  , 17");
+asm(".set regnum_s2  , 18");
+asm(".set regnum_s3  , 19");
+asm(".set regnum_s4  , 20");
+asm(".set regnum_s5  , 21");
+asm(".set regnum_s6  , 22");
+asm(".set regnum_s7  , 23");
+asm(".set regnum_s8  , 24");
+asm(".set regnum_s9  , 25");
+asm(".set regnum_s10 , 26");
+asm(".set regnum_s11 , 27");
+asm(".set regnum_t3  , 28");
+asm(".set regnum_t4  , 29");
+asm(".set regnum_t5  , 30");
+asm(".set regnum_t6  , 31");
 /**@}*/
+
+
+/**********************************************************************//**
+ * @name Custom instruction R1-type format
+ **************************************************************************/
+#define CUSTOM_INSTR_R1_TYPE(funct7, funct5, rs1, funct3, opcode) \
+({                                                                \
+    register uint32_t __return;                                   \
+    asm volatile (                                                \
+      ""                                                          \
+      : [output] "=r" (__return)                                  \
+      : [input_i] "r" (rs1)                                       \
+    );                                                            \
+    asm volatile(                                                 \
+      ".word (                                                    \
+        (((" #funct7 ") & 0x7f) << 25) |                          \
+        (((" #funct5 ") & 0x1f) << 20) |                          \
+        ((( regnum_%1 ) & 0x1f) << 15) |                          \
+        (((" #funct3 ") & 0x07) << 12) |                          \
+        ((( regnum_%0 ) & 0x1f) <<  7) |                          \
+        (((" #opcode ") & 0x7f) <<  0)                            \
+      );"                                                         \
+      : [rd] "=r" (__return)                                      \
+      : "r" (rs1)                                                 \
+    );                                                            \
+    __return;                                                     \
+})
+
+
+/**********************************************************************//**
+ * @name Custom instruction R2-type format
+ **************************************************************************/
+#define CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, funct3, opcode) \
+({                                                             \
+    register uint32_t __return;                                \
+    asm volatile (                                             \
+      ""                                                       \
+      : [output] "=r" (__return)                               \
+      : [input_i] "r" (rs1), [input_j] "r" (rs2)               \
+    );                                                         \
+    asm volatile (                                             \
+      ".word (                                                 \
+        (((" #funct7 ") & 0x7f) << 25) |                       \
+        ((( regnum_%2 ) & 0x1f) << 20) |                       \
+        ((( regnum_%1 ) & 0x1f) << 15) |                       \
+        (((" #funct3 ") & 0x07) << 12) |                       \
+        ((( regnum_%0 ) & 0x1f) <<  7) |                       \
+        (((" #opcode ") & 0x7f) <<  0)                         \
+      );"                                                      \
+      : [rd] "=r" (__return)                                   \
+      : "r" (rs1), "r" (rs2)                                   \
+    );                                                         \
+    __return;                                                  \
+})
+
+
+/**********************************************************************//**
+ * @name Custom instruction R3-type format
+ **************************************************************************/
+#define CUSTOM_INSTR_R3_TYPE(rs3, rs2, rs1, funct3, opcode) \
+({                                                          \
+    register uint32_t __return;                             \
+    asm volatile (                                          \
+      ""                                                    \
+      : [output] "=r" (__return)                            \
+      : [input_i] "r" (rs1), [input_j] "r" (rs2), [input_k] "r" (rs3) \
+    );                                                      \
+    asm volatile (                                          \
+      ".word (                                              \
+        ((( regnum_%3 ) & 0x1f) << 25) |                    \
+        ((( regnum_%2 ) & 0x1f) << 20) |                    \
+        ((( regnum_%1 ) & 0x1f) << 15) |                    \
+        (((" #funct3 ") & 0x07) << 12) |                    \
+        ((( regnum_%0 ) & 0x1f) <<  7) |                    \
+        (((" #opcode ") & 0x7f) <<  0)                      \
+      );"                                                   \
+      : [rd] "=r" (__return)                                \
+      : "r" (rs1), "r" (rs2), "r" (rs3)                     \
+    );                                                      \
+    __return;                                               \
+})
+
+
+/**********************************************************************//**
+ * @name Custom instruction I-type format
+ **************************************************************************/
+#define CUSTOM_INSTR_I_TYPE(imm12, rs1, funct3, opcode) \
+({                                                      \
+    register uint32_t __return;                         \
+    asm volatile (                                      \
+      ""                                                \
+      : [output] "=r" (__return)                        \
+      : [input_i] "r" (rs1)                             \
+    );                                                  \
+    asm volatile (                                      \
+      ".word (                                          \
+        (((" #imm12 ")  & 0xfff) << 20) |               \
+        ((( regnum_%1 ) &  0x1f) << 15) |               \
+        (((" #funct3 ") &  0x07) << 12) |               \
+        ((( regnum_%0 ) &  0x1f) <<  7) |               \
+        (((" #opcode ") &  0x7f) <<  0)                 \
+      );"                                               \
+      : [rd] "=r" (__return)                            \
+      : "r" (rs1)                                       \
+    );                                                  \
+    __return;                                           \
+})
+
 
 #endif // neorv32_intrinsics_h
