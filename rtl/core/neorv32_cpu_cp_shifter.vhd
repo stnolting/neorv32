@@ -7,7 +7,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -97,7 +97,7 @@ begin
         shifter.busy_ff <= shifter.busy;
         if (start_i = '1') then
           shifter.busy <= '1';
-        elsif (shifter.done = '1') then
+        elsif (shifter.done = '1') or (ctrl_i(ctrl_trap_c) = '1') then -- abort on trap
           shifter.busy <= '0';
         end if;
         --

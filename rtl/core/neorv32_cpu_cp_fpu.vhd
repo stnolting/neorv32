@@ -19,7 +19,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -384,7 +384,7 @@ begin
 
         when S_BUSY => -- operation in progress (multi-cycle)
         -- -----------------------------------------------------------
-          if (fu_core_done = '1') then -- processing done?
+          if (fu_core_done = '1') or (ctrl_i(ctrl_trap_c) = '1') then -- processing done? abort if trap
             ctrl_engine.valid <= '1';
             ctrl_engine.state <= S_IDLE;
           end if;

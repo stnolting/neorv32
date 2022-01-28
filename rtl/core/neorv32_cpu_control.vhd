@@ -1186,7 +1186,8 @@ begin
       when ALU_WAIT => -- wait for multi-cycle ALU operation (co-processor) to finish
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_copro_c;
-        if (alu_idone_i = '1') then -- wait for completion (even if there is an illegal instruction exception to prevent faulty CP op. in background)
+        -- wait for completion or abort on illegal instruction exception (the co-processor will also terminate operations)
+        if (alu_idone_i = '1') or (trap_ctrl.exc_buf(exception_iillegal_c) = '1') then
           ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
           execute_engine.state_nxt  <= DISPATCH;
         end if;
