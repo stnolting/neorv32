@@ -154,6 +154,9 @@ asm(".set regnum_t3  , 28");
 asm(".set regnum_t4  , 29");
 asm(".set regnum_t5  , 30");
 asm(".set regnum_t6  , 31");
+
+asm(".set RISCV_OPCODE_CUSTOM0 , 0b0001011");
+asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
 /**@}*/
 
 
