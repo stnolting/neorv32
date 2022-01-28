@@ -10,7 +10,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -174,7 +174,7 @@ begin
 
         when PROCESSING =>
           cnt <= std_ulogic_vector(unsigned(cnt) - 1);
-          if (cnt = "00000") then
+          if (cnt = "00000") or (ctrl_i(ctrl_trap_c) = '1') then -- abort on trap
             valid_o <= '1';
             state   <= FINALIZE;
           end if;
