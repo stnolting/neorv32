@@ -226,8 +226,8 @@ asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
     asm volatile (                                          \
       ""                                                    \
       : [output] "=r" (__return)                            \
-      : [input_i] "r" (rs1)                                 \
-        [input_j] "r" (rs2)                                 \
+      : [input_i] "r" (rs1),                                \
+        [input_j] "r" (rs2),                                \
         [input_k] "r" (rs3)                                 \
     );                                                      \
     asm volatile (                                          \
