@@ -1,7 +1,7 @@
 :sectnums:
 == NEORV32 Central Processing Unit (CPU)
 
-image::riscv_logo.png[width=350,align=center]
+image::neorv32_cpu_block.png[width=600,align=center]
 
 **Key Features**
 
