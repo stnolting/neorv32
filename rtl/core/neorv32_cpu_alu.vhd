@@ -1,7 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - Arithmetical/Logical Unit >>                                                     #
 -- # ********************************************************************************************* #
--- # Main data and address ALU and co-processor interface/arbiter.                                 #
+-- # Main data/address ALU and ALU co-processor (= multi-cycle function units).                    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -335,7 +335,7 @@ begin
   end generate;
 
 
-  -- Co-Processor 4: Custom (Instructions) Functions Unit -----------------------------------
+  -- Co-Processor 4: Custom (Instructions) Functions Unit ('Zxcfu' Extension) ---------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_cfu_inst_true:
   if (CPU_EXTENSION_RISCV_Zxcfu = true) generate

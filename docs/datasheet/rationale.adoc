@@ -31,6 +31,8 @@ co-processors and even user-defined instructions.
 
 **Why RISC-V?**
 
+image::riscv_logo.png[width=250,align=left]
+
 [quote, RISC-V International, https://riscv.org/about/]
 ____
 RISC-V is a free and open ISA enabling a new era of processor innovation through open standard collaboration.
