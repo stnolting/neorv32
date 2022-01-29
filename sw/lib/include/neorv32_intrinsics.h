@@ -155,6 +155,7 @@ asm(".set regnum_t4  , 29");
 asm(".set regnum_t5  , 30");
 asm(".set regnum_t6  , 31");
 
+/** Official RISC-V opcodes for custom extensions (CUSTOM0, CUSTOM1) */
 asm(".set RISCV_OPCODE_CUSTOM0 , 0b0001011");
 asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
 /**@}*/
@@ -196,7 +197,8 @@ asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
     asm volatile (                                             \
       ""                                                       \
       : [output] "=r" (__return)                               \
-      : [input_i] "r" (rs1), [input_j] "r" (rs2)               \
+      : [input_i] "r" (rs1),                                   \
+        [input_j] "r" (rs2)                                    \
     );                                                         \
     asm volatile (                                             \
       ".word (                                                 \
@@ -208,7 +210,8 @@ asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
         (((" #opcode ") & 0x7f) <<  0)                         \
       );"                                                      \
       : [rd] "=r" (__return)                                   \
-      : "r" (rs1), "r" (rs2)                                   \
+      : "r" (rs1),                                             \
+        "r" (rs2)                                              \
     );                                                         \
     __return;                                                  \
 })
@@ -223,7 +226,9 @@ asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
     asm volatile (                                          \
       ""                                                    \
       : [output] "=r" (__return)                            \
-      : [input_i] "r" (rs1), [input_j] "r" (rs2), [input_k] "r" (rs3) \
+      : [input_i] "r" (rs1)                                 \
+        [input_j] "r" (rs2)                                 \
+        [input_k] "r" (rs3)                                 \
     );                                                      \
     asm volatile (                                          \
       ".word (                                              \
@@ -235,7 +240,9 @@ asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
         (((" #opcode ") & 0x7f) <<  0)                      \
       );"                                                   \
       : [rd] "=r" (__return)                                \
-      : "r" (rs1), "r" (rs2), "r" (rs3)                     \
+      : "r" (rs1),                                          \
+        "r" (rs2),                                          \
+        "r" (rs3)                                           \
     );                                                      \
     __return;                                               \
 })

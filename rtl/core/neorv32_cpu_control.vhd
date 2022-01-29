@@ -1128,7 +1128,7 @@ begin
             end if;
 
 
-          when opcode_cust0_c => -- CFU: custom instructions
+          when opcode_cust0_c => -- CFU: custom RISC-V instructions (CUSTOM0 OPCODE space)
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zxcfu = true) then
               ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_cfu_c; -- trigger CFU CP
@@ -1200,7 +1200,7 @@ begin
         ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_copro_c;
         -- wait for completion or abort on illegal instruction exception (the co-processor will also terminate operations)
         if (alu_idone_i = '1') or (trap_ctrl.exc_buf(exception_iillegal_c) = '1') then
-          ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
+          ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back (won't happen in case of an illegal instruction)
           execute_engine.state_nxt  <= DISPATCH;
         end if;
 
