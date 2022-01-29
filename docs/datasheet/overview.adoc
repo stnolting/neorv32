@@ -54,7 +54,7 @@ include::rationale.adoc[]
 * **NEORV32 CPU**: 32-bit `rv32i` RISC-V CPU
 ** RISC-V compatibility: passes the official architecture tests
 ** base architecture + privileged architecture (optional) + ISA extensions (optional)
-** option to add custom RISC-V instructions (as custom ISA etxtension)
+** option to add custom RISC-V instructions (as custom ISA extension)
 ** rich set of customization options (ISA extensions, design goal: performance / area (/ energy), ...)
 ** aims to support <<_full_virtualization>> capabilities (CPU _and_ SoC) to increase execution safety
 ** official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]
@@ -78,6 +78,21 @@ include::rationale.adoc[]
 [TIP]
 For more in-depth details regarding the feature provided by he hardware see the according sections:
 <<_neorv32_central_processing_unit_cpu>> and <<_neorv32_processor_soc>>.
+
+**Extensibility and Customization**
+
+The NEORV32 processor was designed to ease customization and extensibility and provides several options for adding
+application-specific custom hardware modules and accelerators. The three most common options for adding custom
+on-chip modules are listed below.
+
+* <<_processor_external_memory_interface_wishbone_axi4_lite>> for processor-external modules
+* <<_custom_functions_subsystem_cfs>> for tightly-coupled processor-internal co-processors
+* <<_custom_functions_unit_cfu>> for custom instructions
+
+[TIP]
+A more detailed comparison can be found in section
+https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules[Adding Custom Hardware Modules]
+of the user guide.
 
 
 <<<
