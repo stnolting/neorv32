@@ -63,24 +63,25 @@ files are currently part of the NEORV32 core library:
 [options="header",grid="rows"]
 |=======================
 | C source file | C header file | Description
-| -                  | `neorv32.h`            | main NEORV32 definitions and library file
-| `neorv32_cfs.c`    | `neorv32_cfs.h`        | HW driver (stub)footnote:[This driver file only represents a stub, since the real CFS drivers are defined by the actual CFS implementation.] functions for the custom functions subsystem
-| `neorv32_cpu.c`    | `neorv32_cpu.h`        | HW driver functions for the NEORV32 **CPU**
-| `neorv32_gpio.c`   | `neorv32_gpio.h`       | HW driver functions for the **GPIO**
-| `neorv32_gptmr.c`  | `neorv32_gptmr.h`      | HW driver functions for the **GPTRM**
-| -                  | `neorv32_intrinsics.h` | macros for (custom) intrinsics/instructions
-| `neorv32_mtime.c`  | `neorv32_mtime.h`      | HW driver functions for the **MTIME**
-| `neorv32_neoled.c` | `neorv32_neoled.h`     | HW driver functions for the **NEOLED**
-| `neorv32_pwm.c`    | `neorv32_pwm.h`        | HW driver functions for the **PWM**
-| `neorv32_rte.c`    | `neorv32_rte.h`        | NEORV32 **runtime environment** and helpers
-| `neorv32_slink.c`  | `neorv32_slink.h`      | HW driver functions for the **SLINK**
-| `neorv32_spi.c`    | `neorv32_spi.h`        | HW driver functions for the **SPI**
-| `neorv32_trng.c`   | `neorv32_trng.h`       | HW driver functions for the **TRNG**
-| `neorv32_twi.c`    | `neorv32_twi.h`        | HW driver functions for the **TWI**
-| `neorv32_uart.c`   | `neorv32_uart.h`       | HW driver functions for the **UART0** and **UART1**
-| `neorv32_wdt.c`    | `neorv32_wdt.h`        | HW driver functions for the **WDT**
-| `neorv32_xip.c`    | `neorv32_xip.h`        | HW driver functions for the **XIP**
-| `neorv32_xirq.c`   | `neorv32_xirq.h`       | HW driver functions for the **XIRQ**
+| -                   | `neorv32.h`            | main NEORV32 definitions and library file
+| `neorv32_cfs.c`     | `neorv32_cfs.h`        | HW driver (stub)footnote:[This driver file only represents a stub, since the real CFS drivers are defined by the actual CFS implementation.] functions for the custom functions subsystem
+| `neorv32_cpu.c`     | `neorv32_cpu.h`        | HW driver functions for the NEORV32 **CPU**
+| `neorv32_cpu_cfu.c` | `neorv32_cpu_cfu.h`    | HW driver functions for the NEORV32 **CFU** (custom instructions)
+| `neorv32_gpio.c`    | `neorv32_gpio.h`       | HW driver functions for the **GPIO**
+| `neorv32_gptmr.c`   | `neorv32_gptmr.h`      | HW driver functions for the **GPTRM**
+| -                   | `neorv32_intrinsics.h` | macros for (custom) intrinsics/instructions
+| `neorv32_mtime.c`   | `neorv32_mtime.h`      | HW driver functions for the **MTIME**
+| `neorv32_neoled.c`  | `neorv32_neoled.h`     | HW driver functions for the **NEOLED**
+| `neorv32_pwm.c`     | `neorv32_pwm.h`        | HW driver functions for the **PWM**
+| `neorv32_rte.c`     | `neorv32_rte.h`        | NEORV32 **runtime environment** and helpers
+| `neorv32_slink.c`   | `neorv32_slink.h`      | HW driver functions for the **SLINK**
+| `neorv32_spi.c`     | `neorv32_spi.h`        | HW driver functions for the **SPI**
+| `neorv32_trng.c`    | `neorv32_trng.h`       | HW driver functions for the **TRNG**
+| `neorv32_twi.c`     | `neorv32_twi.h`        | HW driver functions for the **TWI**
+| `neorv32_uart.c`    | `neorv32_uart.h`       | HW driver functions for the **UART0** and **UART1**
+| `neorv32_wdt.c`     | `neorv32_wdt.h`        | HW driver functions for the **WDT**
+| `neorv32_xip.c`     | `neorv32_xip.h`        | HW driver functions for the **XIP**
+| `neorv32_xirq.c`    | `neorv32_xirq.h`       | HW driver functions for the **XIRQ**
 |=======================
 
 .Documentation
