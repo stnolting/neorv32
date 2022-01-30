@@ -36,6 +36,10 @@ and customize whole SoC architectures and even include pre-defined IP libraries.
 .Example AXI SoC using Xilinx Vivado
 image::neorv32_axi_soc.png[]
 
+Custom hardware modules attached to the processor's bus interface have no limitations regarding their functionality.
+User-defined interfaces (like DDR memory access) can be implemented and the hardware module can operate completely
+independent of the CPU.
+
 The bus interface uses a memory-mapped approach. All data transfers are handled by simple load/store operations since the
 external bus interface is mapped into the processor's https://stnolting.github.io/neorv32/#_address_space[address space].
 This allows a very simple still high-bandwidth communications. However, high bus traffic may increase access latencies.
@@ -47,6 +51,8 @@ The https://stnolting.github.io/neorv32/#_stream_link_interface_slink[Stream Lin
 point-to-point, unidirectional and parallel data interface that can be used to transfer _streaming_ data. In
 contrast to the external bus interface, the streaming interface does not provide any kind of advanced control,
 so it can be seen as "constant address bursts" where data is transmitted _sequentially_ (no random accesses).
+While the CPU needs to "feed" the stream link interfaces with data (and read back incoming data), the actual
+processor-external processing of the data run independently of the CPU.
 
 The stream link interface provides less protocol overhead and less latency than the bus interface. Furthermore,
 FIFOs can be be configured to each direction (RX/TX) to allow more CPU-independent operation.
@@ -61,6 +67,9 @@ The basic idea of this subsystem is to provide a convenient, simple and flexible
 concentrate on implementing the actual design logic rather than taking care of the communication between the
 CPU/software and the design logic. Note that the CFS does not have direct access to memory. All data (and control
 instruction) have to be send by the CPU.
+
+The use-cases for the CFS include medium-scale hardware accelerators that need to be tightly-coupled to the CPU.
+Potential use cases could be DSP modules like CORDIC, cryptographic accelerators or custom interfaces (like IIS).
 
 
 === Custom Functions Unit
@@ -87,13 +96,14 @@ chip-internal extension options:
 [options="header",grid="rows"]
 |=======================
 |                                 | Custom Functions Unit | Custom Functions Subsystem | Stream Link Interface  | External Bus Interface
-| **HW complexity/size**          | low/small             | medium                     | unlimited              | unlimited
-| **CPU-independent operation**   | no                    | mostly                     | no                     | completely
-| **CPU interface**               | inside CPU pipeline   | memory-mapped              | memory-mapped          | memory-mapped
+| **SoC location**                | CPU-internal          | processor-internal         | processor-external     | processor-external
+| **HW complexity/size**          | small                 | medium                     | unlimited              | unlimited
+| **CPU-independent operation**   | no                    | partly                     | partly                 | completely
+| **CPU interface**               | register-file access  | memory-mapped              | memory-mapped          | memory-mapped
 | **Low-level CPU access scheme** | custom instructions   | load/store                 | load/store             | load/store
-| **Random access**               | yes                   | yes                        | sequential             | yes
+| **Random access**               | -                     | yes                        | no, only sequential    | yes
 | **Access latency**              | minimal               | low                        | low                    | medium to high
 | **External IO interfaces**      | no                    | yes, but limited           | yes                    | yes
-| **Interrupt capable**           | no                    | yes                        | yes                    | yes
+| **Interrupt-capable**           | no                    | yes                        | yes                    | user-defined
 |=======================
 
