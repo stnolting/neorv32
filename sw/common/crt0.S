@@ -3,7 +3,7 @@
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
-/* # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     # */
+/* # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     # */
 /* #                                                                                               # */
 /* # Redistribution and use in source and binary forms, with or without modification, are          # */
 /* # permitted provided that the following conditions are met:                                     # */
@@ -32,7 +32,7 @@
 /* # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting # */
 /* ################################################################################################# */
 
-.file	"crt0.S"
+.file "crt0.S"
 .section .text.boot
 .balign 4
 .global _start
@@ -199,13 +199,13 @@ __crt0_main_entry:
 // call "after main" handler (if there is any) if main really returns
 // ************************************************************************************************
 __crt0_main_aftermath:
-  csrw  mscratch, a0                 // copy main's return code in mscratch for debugger
+  csrw mscratch, a0                  // copy main's return code to mscratch for debugger
 
 #ifndef make_bootloader              // after_main handler not supported for bootloader
   .weak __neorv32_crt0_after_main
   la   ra, __neorv32_crt0_after_main
   beqz ra, __crt0_main_aftermath_end // check if an aftermath handler has been specified
-  jalr ra                            // execute handler, main's return code in a0
+  jalr ra                            // execute handler with main's return code in a0
 #endif
 
 
@@ -226,9 +226,9 @@ __crt0_main_aftermath_end_loop:
 .balign 4
 __crt0_dummy_trap_handler:
 
-  addi	sp,   sp, -8
-  sw	  x8,   0(sp)
-  sw	  x9,   4(sp)
+  addi  sp,   sp, -8
+  sw    x8,   0(sp)
+  sw    x9,   4(sp)
 
   csrr  x8,   mcause
   blt   x8,   zero, __crt0_dummy_trap_handler_irq  // skip mepc modification if interrupt
