@@ -58,7 +58,7 @@ void gptmr_firq_handler(void);
 /**********************************************************************//**
  * This program blinks an LED at GPIO.output(0) at 1Hz using the general purpose timer interrupt.
  *
- * @note This program requires the GPTMR unit to be synthesized.
+ * @note This program requires the GPTMR unit to be synthesized (and UART0 and GPIO).
  *
  * @return Should not return;
  **************************************************************************/
@@ -73,7 +73,7 @@ int main() {
 
   // check if GPTMR unit is implemented at all
   if (neorv32_gptmr_available() == 0) {
-    neorv32_uart0_print("General purpose timer not implemented!\n");
+    neorv32_uart0_print("ERROR! General purpose timer not implemented!\n");
     return 1;
   }
 
@@ -90,7 +90,7 @@ int main() {
   neorv32_rte_exception_install(GPTMR_RTE_ID, gptmr_firq_handler);
 
   // configure timer for 1Hz ticks in continuous mode (with clock divisor = 8)
-  neorv32_gptmr_setup(CLK_PRSC_8, 1, NEORV32_SYSINFO.CLK / 8);
+  neorv32_gptmr_setup(CLK_PRSC_8, 1, NEORV32_SYSINFO.CLK / (8 * 2));
 
   // enable interrupt
   neorv32_cpu_irq_enable(GPTMR_FIRQ_ENABLE); // enable GPTMR FIRQ channel
