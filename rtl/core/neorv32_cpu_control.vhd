@@ -67,6 +67,7 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
     -- Extension Options --
     CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
@@ -1127,6 +1128,17 @@ begin
             end if;
 
 
+          when opcode_cust0_c => -- CFU: custom RISC-V instructions (CUSTOM0 OPCODE space)
+          -- ------------------------------------------------------------
+            if (CPU_EXTENSION_RISCV_Zxcfu = true) then
+              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_cfu_c; -- trigger CFU CP
+              ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_copro_c;
+              execute_engine.state_nxt <= ALU_WAIT;
+            else
+              execute_engine.state_nxt <= SYS_WAIT;
+            end if;
+
+
           when others => -- system/csr access OR illegal opcode - nothing bad (= no commits) will happen here if there is an illegal opcode
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zicsr = true) then
@@ -1188,7 +1200,7 @@ begin
         ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_copro_c;
         -- wait for completion or abort on illegal instruction exception (the co-processor will also terminate operations)
         if (alu_idone_i = '1') or (trap_ctrl.exc_buf(exception_iillegal_c) = '1') then
-          ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
+          ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back (won't happen in case of an illegal instruction)
           execute_engine.state_nxt  <= DISPATCH;
         end if;
 
@@ -1556,7 +1568,17 @@ begin
           end if;
           -- illegal E-CPU register? --
           -- FIXME: rs2 is not checked!
-          illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
+          illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx) and (execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c));
+
+        when opcode_cust0_c => -- CFU: custom instructions
+        -- ------------------------------------------------------------
+          if (CPU_EXTENSION_RISCV_Zxcfu = true) then -- CFU extension implemented
+            illegal_instruction <= '0';
+          else
+            illegal_instruction <= '1';
+          end if;
+          -- illegal E-CPU register? --
+          illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu) and (execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c));
 
         when others => -- undefined instruction -> illegal!
         -- ------------------------------------------------------------

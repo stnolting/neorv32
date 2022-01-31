@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32: neorv32_cfs.c - Custom Functions Subsystem (CFS) HW Driver (stub) >>              #
+// # << NEORV32: neorv32_cfu.h - CPU Core - CFU Co-Processor Hardware Driver >>                    #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -34,32 +34,38 @@
 
 
 /**********************************************************************//**
- * @file neorv32_cfs.c
+ * @file neorv32_cpu_cfu.h
  * @author Stephan Nolting
- * @brief Custom Functions Subsystem (CFS) HW driver source file.
- *
- * @warning There are no "real" CFS driver functions available here, because these functions are defined by the actual hardware.
- * @warning Hence, the CFS designer has to provide the actual driver functions.
- *
- * @note These functions should only be used if the CFS was synthesized (IO_CFS_EN = true).
+ * @brief CPU Core custom functions unit HW driver header file.
  **************************************************************************/
 
-#include "neorv32.h"
-#include "neorv32_cfs.h"
+#ifndef neorv32_cpu_cfu_h
+#define neorv32_cpu_cfu_h
+
+// prototypes
+int neorv32_cpu_cfu_available(void);
 
 
 /**********************************************************************//**
- * Check if custom functions subsystem was synthesized.
- *
- * @return 0 if CFS was not synthesized, 1 if CFS is available.
+ * @name CFU custom instructions (intrinsic)
  **************************************************************************/
-int neorv32_cfs_available(void) {
+/**@{*/
+/** CFU custom instruction 0 (funct3 = 000) */
+#define neorv32_cfu_cmd0(funct7, rs1, rs2) CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, 0, RISCV_OPCODE_CUSTOM0)
+/** CFU custom instruction 1 (funct3 = 001) */
+#define neorv32_cfu_cmd1(funct7, rs1, rs2) CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, 1, RISCV_OPCODE_CUSTOM0)
+/** CFU custom instruction 2 (funct3 = 010) */
+#define neorv32_cfu_cmd2(funct7, rs1, rs2) CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, 2, RISCV_OPCODE_CUSTOM0)
+/** CFU custom instruction 3 (funct3 = 011) */
+#define neorv32_cfu_cmd3(funct7, rs1, rs2) CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, 3, RISCV_OPCODE_CUSTOM0)
+/** CFU custom instruction 4 (funct3 = 100) */
+#define neorv32_cfu_cmd4(funct7, rs1, rs2) CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, 4, RISCV_OPCODE_CUSTOM0)
+/** CFU custom instruction 5 (funct3 = 101) */
+#define neorv32_cfu_cmd5(funct7, rs1, rs2) CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, 5, RISCV_OPCODE_CUSTOM0)
+/** CFU custom instruction 6 (funct3 = 110) */
+#define neorv32_cfu_cmd6(funct7, rs1, rs2) CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, 6, RISCV_OPCODE_CUSTOM0)
+/** CFU custom instruction 7 (funct3 = 111) */
+#define neorv32_cfu_cmd7(funct7, rs1, rs2) CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, 7, RISCV_OPCODE_CUSTOM0)
+/**@}*/
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_CFS)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
-}
-
+#endif // neorv32_cpu_cfu_h

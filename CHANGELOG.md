@@ -26,6 +26,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 30.01.2022 | 1.6.7.1 | :sparkles: added **`Zxcfu` ISA extension for user-defined custom RISC-V instructions**; see [PR #264](https://github.com/stnolting/neorv32/pull/264) |
 | 28.01.2022 |[**:rocket:1.6.7**](https://github.com/stnolting/neorv32/releases/tag/v1.6.7) | **New release** |
 | 28.01.2022 | 1.6.6.10 | :bug: fixed bug in **bit-manipulation co-processor**: decoding collision between `cpop` and `rol` instructions; :bug: fixed bug in co-processor arbitration when an illegal instruction is detected; added four additional (yet unused) **CPU** co-processor slots; [PR #262](https://github.com/stnolting/neorv32/pull/262) |
 | 27.01.2022 | 1.6.6.9 | reworked **CFS** "user" logic; added CFS demo program; see [PR #261](https://github.com/stnolting/neorv32/pull/261) |

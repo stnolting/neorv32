@@ -35,7 +35,11 @@ dedicated hardware accelerators for en-/decryption (AES), signal processing (FFT
 (CNNs) as well as custom IO systems like fast memory interfaces (DDR) and mass storage (SDIO), networking (CAN)
 or real-time data transport (I2S).
 
-[INFO]
+[TIP]
+If you like to implement _custom instructions_ that are executed right within the CPU's ALU
+see the <<_zxcfu_custom_instructions_extension_cfu>> and the according <<_custom_functions_unit_cfu>>.
+
+[TIP]
 Take a look at the template CFS VHDL source file (`rtl/core/neorv32_cfs.vhd`). The file is highly
 commented to illustrate all aspects that are relevant for implementing custom CFS-based co-processor designs.
 

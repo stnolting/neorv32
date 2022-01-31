@@ -1,7 +1,7 @@
 :sectnums:
 == NEORV32 Central Processing Unit (CPU)
 
-image::riscv_logo.png[width=350,align=center]
+image::neorv32_cpu_block.png[width=600,align=center]
 
 **Key Features**
 
@@ -20,6 +20,7 @@ image::riscv_logo.png[width=350,align=center]
 ** `Zihpm` - hardware performance monitors
 ** `Zifencei` - instruction stream synchronization
 ** `Zmmul` - integer multiplication hardware
+** `Zxcfu` - custom instructions extension
 ** `PMP` - physical memory protection
 ** `Debug` - debug mode
 * Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications - passes the official RISC-V Architecture Tests (v2+)
@@ -684,6 +685,30 @@ high for one cycle to inform the memory system (like the i-cache to perform a fl
 Any additional flags within the `fence.i` instruction word are ignore by the hardware.
 
 
+==== **`Zxcfu`** Custom Instructions Extension (CFU)
+
+The `Zxcfu` presents a NEORV32-specific _custom RISC-V_ ISA extension (`Z` = sub-extension, `x` = platform-specific
+custom extension, `cfu` = name of the custom extension). When enabled via the `CPU_EXTENSION_RISCV_Zxcfu` configuration
+generic, this ISA extensions adds the <<_custom_functions_unit_cfu>> to the CPU core. The CFU is a module that is
+allows to add **custom RISC-V instructions** to the processor core.
+
+The CPU is implemented as ALU co-processor and is integrated right into the CPU's pipeline providing minimal data
+transfer latency as it has direct access to the core's register file. Up to 1024 custom instructions can be
+implemented within the CFU. These instructions are mapped to an OPCODE space that has been explicitly reserved by
+the RISC-V spec for custom extensions.
+
+Software can utilize the custom instructions by using _intrinsic functions_, which are inline assembly functions that
+behave like "regular" C functions.
+
+[TIP]
+For more information regarding the CFU see section <<_custom_functions_unit_cfu>>.
+
+[TIP]
+The CFU / `Zxcfu` ISA extension is intended for application-specific _instructions_.
+If you like to add more complex accelerators or interfaces that can also operate independently of
+the CPU take a look at the memory-mapped <<_custom_functions_subsystem_cfs>>.
+
+
 ==== **`PMP`** Physical Memory Protection
 
 The NEORV32 physical memory protection (PMP) is compatible to the RISC-V PMP specifications. It can be used
@@ -796,6 +821,7 @@ configurations are presented in <<_cpu_performance>>.
 | Bit-manipulation - single-bit  | `B(Zbs)` | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]` | 3
 | Bit-manipulation - shifted-add | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 3
 | Bit-manipulation - carry-less multiply | `B(Zbc)` | `clmul` `clmulh` `clmulr` | 3 + 32
+| CFU: custom instructions | `Zxcfu` | - | min. 4
 |=======================
 
 [NOTE]
@@ -1146,3 +1172,9 @@ be enabled ba enabling a constant in the main VHDL package file (`rtl/core/neorv
 -- "critical" number of PMP regions --
 constant dedicated_reset_c : boolean := false; -- use dedicated hardware reset value for UNCRITICAL registers (FALSE=reset value is irrelevant (might simplify HW), default; TRUE=defined LOW reset value)
 ----
+
+
+<<<
+// ####################################################################################################################
+
+include::cpu_cfu.adoc[]

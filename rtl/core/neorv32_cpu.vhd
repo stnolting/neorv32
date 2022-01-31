@@ -5,6 +5,7 @@
 -- # * neorv32_cpu.vhd                   - CPU top entity                                          #
 -- #   * neorv32_cpu_alu.vhd             - Arithmetic/logic unit                                   #
 -- #     * neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor                           #
+-- #     * neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor                        #
 -- #     * neorv32_cpu_cp_fpu.vhd        - Single-precision FPU co-processor                       #
 -- #     * neorv32_cpu_cp_muldiv.vhd     - Integer multiplier/divider co-processor                 #
 -- #     * neorv32_cpu_cp_shifter.vhd    - Base ISA shifter unit                                   #
@@ -76,6 +77,7 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
     -- Extension Options --
     FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
@@ -182,6 +184,7 @@ begin
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zifencei, "_Zifencei", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx, "_Zfinx", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul, "_Zmmul", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu, "_Zxcfu", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_DEBUG, "_DEBUG", "") &
   ""
   severity note;
@@ -225,6 +228,9 @@ begin
   -- Mul-extension --
   assert not ((CPU_EXTENSION_RISCV_Zmmul = true) and (CPU_EXTENSION_RISCV_M = true)) report "NEORV32 CPU CONFIG ERROR! <M> and <Zmmul> extensions cannot co-exist!" severity error;
 
+  -- Custom Functions Unit --
+  assert not (CPU_EXTENSION_RISCV_Zxcfu = true) report "NEORV32 CPU CONFIG NOTE: Implementing Custom Functions Unit (CFU) as <Zxcfu> ISA extension." severity note;
+
   -- Debug mode --
   assert not ((CPU_EXTENSION_RISCV_DEBUG = true) and (CPU_EXTENSION_RISCV_Zicsr = false)) report "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
   assert not ((CPU_EXTENSION_RISCV_DEBUG = true) and (CPU_EXTENSION_RISCV_Zifencei = false)) report "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zifencei> extension to be enabled." severity error;
@@ -257,6 +263,7 @@ begin
     CPU_EXTENSION_RISCV_Zihpm    => CPU_EXTENSION_RISCV_Zihpm,    -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    => CPU_EXTENSION_RISCV_Zmmul,    -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zxcfu    => CPU_EXTENSION_RISCV_Zxcfu,    -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_DEBUG    => CPU_EXTENSION_RISCV_DEBUG,    -- implement CPU debug mode?
     -- Extension Options --
     CPU_CNT_WIDTH                => CPU_CNT_WIDTH,                -- total width of CPU cycle and instret counters (0..64)
@@ -349,6 +356,7 @@ begin
     CPU_EXTENSION_RISCV_M     => CPU_EXTENSION_RISCV_M,     -- implement mul/div extension?
     CPU_EXTENSION_RISCV_Zmmul => CPU_EXTENSION_RISCV_Zmmul, -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zfinx => CPU_EXTENSION_RISCV_Zfinx, -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zxcfu => CPU_EXTENSION_RISCV_Zxcfu, -- implement custom (instr.) functions unit?
     -- Extension Options --
     FAST_MUL_EN               => FAST_MUL_EN,               -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN             => FAST_SHIFT_EN              -- use barrel shifter for shift operations

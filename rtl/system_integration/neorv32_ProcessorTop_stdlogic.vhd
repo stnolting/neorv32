@@ -59,6 +59,8 @@ entity neorv32_ProcessorTop_stdlogic is
     CPU_EXTENSION_RISCV_Zicntr   : boolean := true;   -- implement base counters?
     CPU_EXTENSION_RISCV_Zihpm    : boolean := false;  -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zmmul    : boolean := false;  -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zxcfu    : boolean := false;  -- implement custom (instr.) functions unit?
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
@@ -296,6 +298,8 @@ begin
     CPU_EXTENSION_RISCV_Zicntr   => CPU_EXTENSION_RISCV_Zicntr,   -- implement base counters?
     CPU_EXTENSION_RISCV_Zihpm    => CPU_EXTENSION_RISCV_Zihpm,    -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zmmul    => CPU_EXTENSION_RISCV_Zmmul,    -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zxcfu    => CPU_EXTENSION_RISCV_Zxcfu,    -- implement custom (instr.) functions unit?
     -- Extension Options --
     FAST_MUL_EN                  => FAST_MUL_EN,        -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,      -- use barrel shifter for shift operations

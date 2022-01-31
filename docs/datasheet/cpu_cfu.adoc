@@ -1,0 +1,154 @@
+<<<
+:sectnums:
+=== Custom Functions Unit (CFU)
+
+The Custom Functions Unit is the central part of the <<_zxcfu_custom_instructions_extension_cfu>> and represents
+the actual hardware module, which is used to implement _custom RISC-V instructions_. The concept of the NEORV32
+CFU has been highly inspired by https://github.com/google/CFU-Playground[google's CFU-Playground].
+
+The CFU is intended for operations that are inefficient in terms of performance, latency, energy consumption or
+program memory requirements when implemented in pure software. Some potential application fields and exemplary
+use-cases might include:
+
+* **AI:** sub-word / vector / SIMD operations like adding all four bytes of a 32-bit data word
+* **Cryptographic:** bit substitution and permutation
+* **Communication:** conversions like binary to gray-code
+* **Image processing:** look-up-tables for color space transformations
+* implementing instructions from other RISC-V ISA extensions that are not yet supported by the NEORV32
+
+[NOTE]
+The CFU is not intended for complex and autonomous functional units that implement complete accelerators
+like block-based AES de-/encoding). Such accelerator can be implemented within the <<_custom_functions_subsystem_cfs>>.
+A comparison of all chip-internal hardware extension options is provided in the user guide section
+https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules[Adding Custom Hardware Modules].
+
+
+:sectnums:
+==== Custom CFU Instructions - General
+
+The custom instruction utilize a specific instruction space that has been explicitly reserved for user-defined
+extensions by the RISC-V specifications ("_Guaranteed Non-Standard Encoding Space_"). The NEORV32 CFU uses the
+_CUSTOM0_ opcode to identify custom instructions. The binary encoding of this opcode is `0001011`.
+
+The custom instructions processed by the CFU use the 32-bit **R2-type** RISC-V instruction format, which consists
+of six bit-fields:
+
+* `funct7`: 7-bit immediate
+* `rs2`: address of second source register
+* `rs1`: address of first source register
+* `funct3`: 3-bit immediate
+* `rd`: address of destination register
+* `opcode`: always `0001011` to identify custom instructions
+
+.CFU instruction format (RISC-V R2-type)
+image::cfu_r2type_instruction.png[align=center]
+
+[NOTE]
+Obviously, all bit-fields including the immediates have to be static at compile time.
+
+.Custom Instructions - Exceptions
+[NOTE]
+The CPU control logic can only check the _CUSTOM0_ opcode of the custom instructions to check if the
+instruction word is valid. It cannot check the `funct3` and `funct7` bit-fields since they are
+implementation-defined. Hence, a custom CFU instruction can never raise an illegal instruction exception.
+However, custom will raise an illegal instruction exception if the CFU is not enabled/implemented
+(i.e. `Zxcfu` ISA extension is not enabled).
+
+The CFU operates on the two source operands and return the processing result to the destination register.
+The actual instruction to be performed can be defined by using the `funct7` and `funct3` bit fields.
+These immediate bit-fields can also be used to pass additional data to the CFU like offsets, look-up-tables
+addresses or shift-amounts. However, the actual functionality is completely user-defined.
+
+
+:sectnums:
+==== Using Custom Instructions in Software
+
+The custom instructions provided by the CFU are included into plain C code by using **intrinsics**. Intrinsics
+behave like "normal" functions but under the hood they are a set of macros that hide the complexity of inline assembly.
+Using such intrinsics removes the need to modify the compiler, built-in libraries and the assembler when including custom
+instructions.
+
+The NEORV32 software framework provides 8 pre-defined custom instructions macros, which are defined in
+`sw/lib/include/neorv32_cpu_cfu.h`. Each intrinsic provides an implicit definition of the instruction word's
+`funct3` bit-field:
+
+.CFU instruction prototypes
+[source,c]
+----
+neorv32_cfu_cmd0(funct7, rs1, rs2) // funct3 = 000
+neorv32_cfu_cmd1(funct7, rs1, rs2) // funct3 = 001
+neorv32_cfu_cmd2(funct7, rs1, rs2) // funct3 = 010
+neorv32_cfu_cmd3(funct7, rs1, rs2) // funct3 = 011
+neorv32_cfu_cmd4(funct7, rs1, rs2) // funct3 = 100
+neorv32_cfu_cmd5(funct7, rs1, rs2) // funct3 = 101
+neorv32_cfu_cmd6(funct7, rs1, rs2) // funct3 = 110
+neorv32_cfu_cmd7(funct7, rs1, rs2) // funct3 = 111
+----
+
+Each intrinsic functions always returns a 32-bit value (the processing result). Furthermore, 
+each intrinsic function requires three arguments:
+
+* `funct7` - 7-bit immediate
+* `rs2` - source operand 2, 32-bit
+* `rs1` - source operand 1, 32-bit
+
+The `funct7` bit-field is used to pass a 7-bit literal to the CFU. The `rs1` and `rs2` arguments to pass the
+actual data to the CFU. These arguments can be populated with variables or literals. The following example
+show how to pass arguments when executing `neorv32_cfu_cmd6`: `funct7` is set to all-zero, `rs1` is given
+the literal _2751_ and `rs2` is given a variable that contains the return value from `some_function()`.
+
+.CFU instruction usage example
+[source,c]
+----
+uint32_t opb = some_function();
+uint32_t res = neorv32_cfu_cmd6(0b0000000, 2751, opb);
+----
+
+.CFU Example Program
+[TIP]
+There is a simple example program for the CFU, which shows how to use the _default_ CFU hardware module.
+The example program is located in `sw/example/demo_cfu`.
+
+
+:sectnums:
+==== Custom Instructions Hardware
+
+The actual functionality of the CFU's custom instruction is defined by the logic in the CFU itself.
+It is the responsibility of the designer to implement this logic within the CFU hardware module
+`rtl/core/neorv32_cpu_cp_cfu.vhd`.
+
+The CFU hardware module receives the data from instruction word's immediate bit-fields and also
+the operation data, which is fetched from the CPU's register file. 
+
+.CFU instruction data passing example
+[source,c]
+----
+uint32_t opb = 0x12345678;
+uint32_t res = neorv32_cfu_cmd6(0b0100111, 0x00cafe00, opb);
+----
+
+In this example the CFU hardware module receives the two source operands as 32-bit signal
+and the immediate values as 7-bit and 3-bit signals:
+
+* `rs1_i` (32-bit) contains the data from the `rs1` register (here = `0x00cafe00`)
+* `rs2_i` (32-bit) contains the data from the `rs2` register (here = 0x12345678)
+* `control.funct3` (3-bit) contains the immediate value from the `funct3` bit-field (here = `0b110`; "cmd6")
+* `control.funct7` (7-bit) contains the immediate value from the `funct7` bit-field (here = `0b0100111`)
+
+The CFU executes the according instruction (for example this is selected by the `control.funct3` signal)
+and provides the operation result in the 32-bit `control.result` signal. The processing can be entirely
+combinatorial, so the result is available at the end of the current clock cycle. Processing can also
+take several clock cycles and may also include internal states and memories. As soon as the CFU has
+completed operations it sets the `control.done` signal high.
+
+.CFU Hardware Example & More Details
+[TIP]
+The default CFU module already implement some exemplary instructions that are used for illustration
+by the CFU example program. See the CFU's VHDL source file (`rtl/core/neorv32_cpu_cp_cfu.vhd`), which
+is highly commented to explain the available signals and the handshake with the CPU pipeline.
+
+.CFU Execution Time
+[NOTE]
+The CFU is not required to finish processing within a bound time.
+However, the designer should keep in mind that the CPU is **stalled** until the CFU has finished processing.
+This also means the CPU cannot react to pending interrupts. Nevertheless, interrupt requests will still be queued.

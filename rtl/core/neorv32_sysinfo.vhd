@@ -54,6 +54,7 @@ entity neorv32_sysinfo is
     CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
     -- Extension Options --
     FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
@@ -141,8 +142,9 @@ begin
   sysinfo_mem(1)(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr
   sysinfo_mem(1)(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei
   sysinfo_mem(1)(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul
+  sysinfo_mem(1)(03) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);    -- Zxcfu
   --
-  sysinfo_mem(1)(04 downto 03) <= (others => '0'); -- reserved
+  sysinfo_mem(1)(04) <= '0'; -- reserved
   --
   sysinfo_mem(1)(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx ("F-alternative")
   sysinfo_mem(1)(06) <= bool_to_ulogic_f(boolean(CPU_CNT_WIDTH /= 64)); -- reduced-size CPU counters (Zxscnt)

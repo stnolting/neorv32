@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32: neorv32_cfs.c - Custom Functions Subsystem (CFS) HW Driver (stub) >>              #
+// # << NEORV32: neorv32_cfu.c - CPU Core - CFU Co-Processor Hardware Driver >>                    #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -34,32 +34,27 @@
 
 
 /**********************************************************************//**
- * @file neorv32_cfs.c
+ * @file neorv32_cpu_cfu.c
  * @author Stephan Nolting
- * @brief Custom Functions Subsystem (CFS) HW driver source file.
- *
- * @warning There are no "real" CFS driver functions available here, because these functions are defined by the actual hardware.
- * @warning Hence, the CFS designer has to provide the actual driver functions.
- *
- * @note These functions should only be used if the CFS was synthesized (IO_CFS_EN = true).
+ * @brief CPU Core custom functions unit HW driver source file.
  **************************************************************************/
 
 #include "neorv32.h"
-#include "neorv32_cfs.h"
+#include "neorv32_cpu_cfu.h"
 
 
 /**********************************************************************//**
- * Check if custom functions subsystem was synthesized.
+ * Check if custom functions unit was synthesized.
  *
- * @return 0 if CFS was not synthesized, 1 if CFS is available.
+ * @return 0 if CFU was not synthesized, 1 if CFU is available.
  **************************************************************************/
-int neorv32_cfs_available(void) {
+int neorv32_cpu_cfu_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_CFS)) {
+  // this is an ISA extension - not a SoC module
+  if (NEORV32_SYSINFO.CPU & (1 << SYSINFO_CPU_ZXCFU)) {
     return 1;
   }
   else {
     return 0;
   }
 }
-

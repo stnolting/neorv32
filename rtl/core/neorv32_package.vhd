@@ -63,7 +63,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060700"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060701"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -454,6 +454,9 @@ package neorv32_package is
   constant opcode_atomic_c : std_ulogic_vector(6 downto 0) := "0101111"; -- atomic operations (A extension)
   -- floating point operations (Zfinx-only) (F/D/H/Q) --
   constant opcode_fop_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single operand instruction
+  -- official "custom0/1" RISC-V opcodes - free for custom instructions --
+  constant opcode_cust0_c  : std_ulogic_vector(6 downto 0) := "0001011"; -- custom instructions 0
+--constant opcode_cust1_c  : std_ulogic_vector(6 downto 0) := "0101011"; -- custom instructions 1
 
   -- RISC-V Funct3 --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -780,7 +783,7 @@ package neorv32_package is
   constant cp_sel_muldiv_c   : std_ulogic_vector(2 downto 0) := "001"; -- CP1: multiplication/division operations ('M' extensions)
   constant cp_sel_bitmanip_c : std_ulogic_vector(2 downto 0) := "010"; -- CP2: bit manipulation ('B' extensions)
   constant cp_sel_fpu_c      : std_ulogic_vector(2 downto 0) := "011"; -- CP3: floating-point unit ('Zfinx' extension)
---constant cp_sel_res0_c     : std_ulogic_vector(2 downto 0) := "100"; -- CP4: reserved
+  constant cp_sel_cfu_c      : std_ulogic_vector(2 downto 0) := "100"; -- CP4: custom instructions CFU ('Zxcfu' extension)
 --constant cp_sel_res1_c     : std_ulogic_vector(2 downto 0) := "101"; -- CP5: reserved
 --constant cp_sel_res2_c     : std_ulogic_vector(2 downto 0) := "110"; -- CP6: reserved
 --constant cp_sel_res3_c     : std_ulogic_vector(2 downto 0) := "111"; -- CP7: reserved
@@ -945,6 +948,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zihpm    : boolean := false;  -- implement hardware performance monitors?
       CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean := false;  -- implement multiply-only M sub-extension?
+      CPU_EXTENSION_RISCV_Zxcfu    : boolean := false;  -- implement custom (instr.) functions unit?
       -- Extension Options --
       FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
@@ -1104,6 +1108,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
       CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
+      CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
       CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
       -- Extension Options --
       FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
@@ -1181,6 +1186,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
       CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
+      CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
       CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
       -- Extension Options --
       CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
@@ -1267,6 +1273,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_M     : boolean; -- implement mul/div extension?
       CPU_EXTENSION_RISCV_Zmmul : boolean; -- implement multiply-only M sub-extension?
       CPU_EXTENSION_RISCV_Zfinx : boolean; -- implement 32-bit floating-point extension (using INT reg!)
+      CPU_EXTENSION_RISCV_Zxcfu : boolean; -- implement custom (instr.) functions unit?
       -- Extension Options --
       FAST_MUL_EN               : boolean; -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN             : boolean  -- use barrel shifter for shift operations
@@ -1376,6 +1383,24 @@ package neorv32_package is
       res_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
       fflags_o : out std_ulogic_vector(4 downto 0); -- exception flags
       valid_o  : out std_ulogic -- data output valid
+    );
+  end component;
+
+  -- Component: CPU Co-Processor Custom (Instr.) Functions Unit ('Zxcfu' extension) ---------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_cpu_cp_cfu
+    port (
+      -- global control --
+      clk_i   : in  std_ulogic; -- global clock, rising edge
+      rstn_i  : in  std_ulogic; -- global reset, low-active, async
+      ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      start_i : in  std_ulogic; -- trigger operation
+      -- data input --
+      rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
+      rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
+      -- result and status --
+      res_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
+      valid_o : out std_ulogic -- data output valid
     );
   end component;
 
@@ -2026,6 +2051,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
       CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
+      CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
       CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
       -- Extension Options --
       FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
