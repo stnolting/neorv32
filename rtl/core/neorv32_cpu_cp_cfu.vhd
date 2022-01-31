@@ -175,7 +175,7 @@ begin
     -- The actual function to-be-executed is selected by the "funct3" bit-field of the custom instruction.
     case control.funct3 is
       when "000"  => control.result <= bin_to_gray_f(rs1_i); -- funct3 = "000": convert rs1 from binary to gray
-      when "001"  => control.result <= gray_to_bin_f(rs1_i); -- funct3 = "001": convert rs1 from gay to binary
+      when "001"  => control.result <= gray_to_bin_f(rs1_i); -- funct3 = "001": convert rs1 from gray to binary
       when "010"  => control.result <= bit_rev_f(rs1_i);     -- funct3 = "010": bit-reversal of rs1
       when "011"  => control.result <= rs1_i xnor rs2_i;     -- funct3 = "011": XNOR input operands
       when others => control.result <= (others => '0');      -- not implemented, set to zero

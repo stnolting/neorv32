@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32: neorv32_cfu.h - CPU Core - CFU Co-Processor Hardware Driver >>                    #
+// # << NEORV32: neorv32_cfu.c - CPU Core - CFU Co-Processor Hardware Driver >>                    #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
