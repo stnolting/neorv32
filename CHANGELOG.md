@@ -10,9 +10,15 @@ can be found [online at GitHub-pages](https://stnolting.github.io/neorv32).
 The _hardware version identifier_ uses an additional custom version element (i.e. `MAJOR.MINOR.PATCH.individual`) to track _individual_ changes.
 The identifier number is incremented with every core RTL modification and also by major framework modifications.
 
-:information_source: The processor can determine its version from the `mimpid` CSR (at CSR address 0xf13). A 8x4-bit BCD representation is used.
-Leading zeros are optional. Example: `CSR(mimpid) = 0x01040312 => 01.04.03.12 = Version 01.04.03.12 = v1.4.3.12`. The version number is globally
-defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/neorv32_package.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
+:information_source: The processor can determine its version from the `mimpid` CSR.
+A 8x4-bit BCD representation is used. Leading zeros are optional. Example:
+
+```
+mimpid (@0xf13) = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
+```
+
+The version number is globally defined by the `hw_version_c` constant in the main VHDL package file
+[`rtl/core/neorv32_package.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
 
 
 ### Version History
@@ -26,6 +32,7 @@ defined by the `hw_version_c` constant in the main VHDL package file [`rtl/core/
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 31.01.2022 | 1.6.7.2 | :bug: fixed minor bug in **bootloader'd MTIME handling** (bootloader crashed if `Zicntr` ISA extension not enabled), fixed minor issues in MTIME and `time` CSRs handling; added MTIME example program; see [PR #267](https://github.com/stnolting/neorv32/pull/267) |
 | 30.01.2022 | 1.6.7.1 | :sparkles: added **`Zxcfu` ISA extension for user-defined custom RISC-V instructions**; see [PR #264](https://github.com/stnolting/neorv32/pull/264) |
 | 28.01.2022 |[**:rocket:1.6.7**](https://github.com/stnolting/neorv32/releases/tag/v1.6.7) | **New release** |
 | 28.01.2022 | 1.6.6.10 | :bug: fixed bug in **bit-manipulation co-processor**: decoding collision between `cpop` and `rol` instructions; :bug: fixed bug in co-processor arbitration when an illegal instruction is detected; added four additional (yet unused) **CPU** co-processor slots; [PR #262](https://github.com/stnolting/neorv32/pull/262) |
