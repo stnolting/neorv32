@@ -46,20 +46,12 @@
 /**********************************************************************//**
  * Unavailable extensions warning.
  **************************************************************************/
-#if defined __riscv_f || (__riscv_flen == 32)
-  #warning Single-precision floating-point extension <F/Zfinx> is WORK-IN-PROGRESS and there is NO NATIVE SUPPORT BY THE COMPILER yet!
-#endif
-
 #if defined __riscv_d || (__riscv_flen == 64)
   #error Double-precision floating-point extension <D/Zdinx> is NOT supported!
 #endif
 
 #if (__riscv_xlen > 32)
   #error Only 32-bit <rv32> is supported!
-#endif
-
-#ifdef __riscv_b
-  #warning Bit-manipulation extension <B> is still experimental (non-ratified) and does not support all <Zb*> subsets yet.
 #endif
 
 #ifdef __riscv_fdiv
@@ -273,8 +265,8 @@ uint64_t neorv32_cpu_get_systime(void) {
 /**********************************************************************//**
  * Delay function using busy wait.
  *
- * @note This function uses the time CSRs (from int./ext. MTIME). A simple ASM loop
- * is used as fall back if system timer is not advancing (no MTIME available).
+ * @note This function uses MTIME as time base. A simple ASM loop
+ * is used as fall back if system timer is not implemented.
  *
  * @warning Delay time might be less precise if M extensions is not available
  * (especially if MTIME unit is not available).
@@ -286,15 +278,16 @@ void neorv32_cpu_delay_ms(uint32_t time_ms) {
   uint32_t clock = NEORV32_SYSINFO.CLK; // clock ticks per second
   clock = clock / 1000; // clock ticks per ms
 
-  uint64_t wait_cycles = ((uint64_t)clock) * ((uint64_t)time_ms);
+  register uint64_t wait_cycles = ((uint64_t)clock) * ((uint64_t)time_ms);
+  register uint64_t tmp = 0;
 
-  register uint64_t tmp = neorv32_cpu_get_systime();
-  if (neorv32_cpu_get_systime() > tmp) { // system time advancing (MTIME available and running)?
+  // MTIME available?
+  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
 
     // use MTIME machine timer
-    tmp += wait_cycles;
+    tmp = neorv32_mtime_get_time() + wait_cycles;
     while(1) {
-      if (neorv32_cpu_get_systime() >= tmp) {
+      if (neorv32_mtime_get_time() >= tmp) {
         break;
       }
     }
@@ -304,7 +297,7 @@ void neorv32_cpu_delay_ms(uint32_t time_ms) {
     // warning! not really precise (especially if M extensions is not available)!
 
     const uint32_t loop_cycles_c = 16; // clock cycles per iteration of the ASM loop
-    uint32_t iterations = (uint32_t)(wait_cycles / loop_cycles_c);
+    register uint32_t iterations = (uint32_t)(wait_cycles / loop_cycles_c); // M (div) extension would be nice here!
 
     asm volatile (" .balign 4                                        \n" // make sure this is 32-bit aligned
                   " __neorv32_cpu_delay_ms_start:                    \n"
