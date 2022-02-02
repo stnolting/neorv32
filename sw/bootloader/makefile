@@ -5,7 +5,7 @@
 # ********************************************************************************************* #
 # BSD 3-Clause License                                                                          #
 #                                                                                               #
-# Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+# Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 #                                                                                               #
 # Redistribution and use in source and binary forms, with or without modification, are          #
 # permitted provided that the following conditions are met:                                     #
@@ -36,5 +36,12 @@
 
 # Modify this variable to fit your NEORV32 setup (neorv32 home folder)
 NEORV32_HOME ?= ../..
+
+# Set ISA to minimal rv32i to allow bootloader to run on any processor ISA configuration
+MARCH=rv32i
+
+# Enable link-time-optimization and add debug symbols
+USER_FLAGS="-flto"
+USER_FLAGS+="-g"
 
 include $(NEORV32_HOME)/sw/common/common.mk
