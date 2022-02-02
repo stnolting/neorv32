@@ -560,6 +560,9 @@ If something goes wrong during bootloader operation, an error code is shown. In 
 stalls, a bell command and one of the following error codes are send to the terminal, the bootloader status
 LED is permanently activated and the system must be manually reset.
 
+[TIP]
+In many cases the error source is just _temporary_ (like some HF spike during an UART upload). Just try again.
+
 [cols="<2,<13"]
 [grid="rows"]
 |=======================
