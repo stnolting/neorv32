@@ -689,7 +689,7 @@ Any additional flags within the `fence.i` instruction word are ignore by the har
 
 The `Zxcfu` presents a NEORV32-specific _custom RISC-V_ ISA extension (`Z` = sub-extension, `x` = platform-specific
 custom extension, `cfu` = name of the custom extension). When enabled via the `CPU_EXTENSION_RISCV_Zxcfu` configuration
-generic, this ISA extensions adds the <<_custom_functions_unit_cfu>> to the CPU core. The CFU is a module that is
+generic, this ISA extensions adds the <<_custom_functions_unit_cfu>> to the CPU core. The CFU is a module that
 allows to add **custom RISC-V instructions** to the processor core.
 
 The CPU is implemented as ALU co-processor and is integrated right into the CPU's pipeline providing minimal data
