@@ -371,7 +371,7 @@ int main(void) {
 #if (AUTO_BOOT_TIMEOUT != 0)
   if (neorv32_mtime_available()) {
 
-    PRINT_TEXT("\n\nAutoboot in "xstr(AUTO_BOOT_TIMEOUT)"s. Press key to abort.\n");
+    PRINT_TEXT("\n\nAutoboot in "xstr(AUTO_BOOT_TIMEOUT)"s. Press any key to abort.\n");
     uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTO_BOOT_TIMEOUT * NEORV32_SYSINFO.CLK);
 
     while(1){
@@ -437,6 +437,9 @@ int main(void) {
       else {
         start_app();
       }
+    }
+    else if (c == '?') {
+      PRINT_TEXT("(c) by Stephan Nolting\nhttps://github.com/stnolting/neorv32");
     }
     else { // unknown command
       PRINT_TEXT("Invalid CMD");
