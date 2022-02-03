@@ -120,6 +120,14 @@ Example: to map the XIP flash to the address space starting at `0x20000000` writ
 control register bits. Any access within `0x20000000 .. 0x2fffffff` will be forwarded to the XIP flash.
 Note that the SPI access address might wrap around.
 
+.Using the FPGA Bitstream Flash also for XIP
+[TIP]
+You can also use the FPGA's bitstream SPI flash for storing XIP programs. To prevent overriding the bitstream,
+a certain offset needs to be added to the executable (which might require linker script modifications).
+To execute the program stored in the SPI flash simply jump to the according base address. For example
+if the executable starts at flash offset `0x8000` and the XIP flash is mapped to the base address `0x20000000`
+then add the offset to the base address and use that as jump/call destination (=`0x20008000`).
+
 
 **Using the XIP Mode**
 
