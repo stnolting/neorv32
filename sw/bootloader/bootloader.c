@@ -144,6 +144,16 @@ enum ERROR_CODES {
   ERROR_FLASH     = 3  /**< 3: SPI flash access error */
 };
 
+/**********************************************************************//**
+ * Error messages
+ **************************************************************************/
+const char error_message[4][24] = {
+  "exe signature fail",
+  "exceeding IMEM capacity",
+  "checksum fail",
+  "SPI flash access failed"
+};
+
 
 /**********************************************************************//**
  * SPI flash commands
@@ -170,7 +180,7 @@ enum NEORV32_EXECUTABLE {
 
 
 /**********************************************************************//**
- * Valid executable identification signature.
+ * Valid executable identification signature
  **************************************************************************/
 #define EXE_SIGNATURE 0x4788CAFE
 
@@ -371,7 +381,7 @@ int main(void) {
 #if (AUTO_BOOT_TIMEOUT != 0)
   if (neorv32_mtime_available()) {
 
-    PRINT_TEXT("\n\nAutoboot in "xstr(AUTO_BOOT_TIMEOUT)"s. Press key to abort.\n");
+    PRINT_TEXT("\n\nAutoboot in "xstr(AUTO_BOOT_TIMEOUT)"s. Press any key to abort.\n");
     uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTO_BOOT_TIMEOUT * NEORV32_SYSINFO.CLK);
 
     while(1){
@@ -437,6 +447,9 @@ int main(void) {
       else {
         start_app();
       }
+    }
+    else if (c == '?') {
+      PRINT_TEXT("(c) by Stephan Nolting\nhttps://github.com/stnolting/neorv32");
     }
     else { // unknown command
       PRINT_TEXT("Invalid CMD");
@@ -518,13 +531,13 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
     register uint32_t epc = neorv32_cpu_csr_read(CSR_MEPC);
 #if (UART_EN != 0)
     if (neorv32_uart0_available()) {
-      PRINT_TEXT("\n[ERR ");
+      PRINT_TEXT("\n[ERROR - Unexpected exception! mcause=");
       PRINT_XNUM(cause); // MCAUSE
-      PRINT_PUTC(' ');
+      PRINT_TEXT(" mepc=");
       PRINT_XNUM(epc); // MEPC
-      PRINT_PUTC(' ');
+      PRINT_TEXT(" mtval=");
       PRINT_XNUM(neorv32_cpu_csr_read(CSR_MTVAL)); // MTVAL
-      PRINT_TEXT("]\n");
+      PRINT_TEXT("] trying to resume...\n");
     }
 #endif
     neorv32_cpu_csr_write(CSR_MEPC, epc + 4); // advance to next instruction
@@ -699,12 +712,15 @@ uint32_t get_exe_word(int src, uint32_t addr) {
 /**********************************************************************//**
  * Output system error ID and stall.
  *
- * @param[in] err_code Error code. See #ERROR_CODES.
+ * @param[in] err_code Error code. See #ERROR_CODES and #error_message.
  **************************************************************************/
 void system_error(uint8_t err_code) {
 
   PRINT_TEXT("\a\nERROR_"); // output error code with annoying bell sound
   PRINT_PUTC('0' + ((char)err_code));
+  PRINT_PUTC(':');
+  PRINT_PUTC(' ');
+  PRINT_TEXT(error_message[err_code]);
 
   neorv32_cpu_dint(); // deactivate IRQs
 #if (STATUS_LED_EN != 0)
