@@ -4,6 +4,17 @@
 To make actual use of the NEORV32 processor, the project comes with a complete software eco-system. This
 ecosystem is based on the RISC-V port of the GCC GNU Compiler Collection and consists of the following elementary parts:
 
+* <<_compiler_toolchain>>
+* <<_core_libraries>>
+* <<_application_makefile>>
+* <<_executable_image_format>>
+** <<_start_up_code_crt0>>
+* <<_bootloader>>
+* <<_neorv32_runtime_environment>>
+
+A summarizing list of the most important elements of the software framework and their according
+files and folders is shown below:
+
 [cols="<6,<4"]
 [grid="none"]
 |=======================
@@ -15,8 +26,7 @@ ecosystem is based on the RISC-V port of the GCC GNU Compiler Collection and con
 | Default bootloader | `sw/bootloader/bootloader.c`
 |=======================
 
-Last but not least, the NEORV32 ecosystem provides some example programs for testing the hardware, for
-illustrating the usage of peripherals and for general getting in touch with the project (`sw/example`).
+
 
 // ####################################################################################################################
 :sectnums:
@@ -401,302 +411,11 @@ int __neorv32_crt0_after_main(int32_t return_code) {
 
 <<<
 // ####################################################################################################################
-:sectnums:
-=== Bootloader
 
-[NOTE]
-This section refers to the **default** bootloader from the repository. The bootloader can be customized
-to target application-specific scenarios. See User Guide section
-https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader[Customizing the Internal Bootloader]
-for more information.
-
-The NEORV32 bootloader (source code `sw/bootloader/bootloader.c`) provides an optional build-in firmware that
-allows to upload new application executables without the need to re-synthesize the FPGA's bitstream.
-A UART connection is used to provide a simple text-based user interface that allows to upload executables.
-
-Furthermore, the bootloader provides options to program executable to a processor-external SPI flash.
-An "auto boot" feature can optionally fetch this executable
-right after reset if there is no user interaction via UART. This allows to build processor setup with
-non-volatile application storage, which can still be updated at any time.
-
-The bootloader is implemented if the <<_int_bootloader_en>> generic is _true_ (default). This will automatically
-select the CPU's <<_indirect_boot>> boot configuration.
-
-.Hardware Requirements for the _Default_ NEORV32 Bootloader
-[IMPORTANT]
-**REQUIRED**: The bootloader requires the privileged architecture CPU extension
-(<<_zicsr_control_and_status_register_access_privileged_architecture>>)
-and at least 512 bytes of data memory (processor-internal DMEM or external DMEM). +
- +
-**RECOMMENDED**: For user interaction via UART (like uploading executables) the primary UART
-(<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>) has to be implemented.
-Without UART0 the auto-boot via SPI is still supported but the bootloader should be customized
-(see User Guide) for this purpose. +
- +
-**RECOMMENDED**: The default bootloader uses bit 0 of the GPIO controller's
-(<<_general_purpose_input_and_output_port_gpio>>) output port to drive a high-active "heart beat" status LED. +
- +
-**RECOMMENDED**: The MTIME machine timer (<<_machine_system_timer_mtime>> generic is _true_) is used to control
-blinking of the status LED and also to automatically trigger the auto-boot sequence. +
- +
-**OPTIONAL**: The SPI controller (<<_serial_peripheral_interface_controller_spi>>) is required
-to store/load executable from external flash (for the auto boot feature).
-
-To interact with the bootloader, connect the primary UART (UART0) signals (`uart0_txd_o` and
-`uart0_rxd_o`) of the processor's top entity via a serial port (-adapter) to your computer (hardware flow control is
-not used so the according interface signals can be ignored.), configure your
-terminal program using the following settings and perform a reset of the processor.
-
-Terminal console settings (`19200-8-N-1`):
-
-* 19200 Baud
-* 8 data bits
-* no parity bit
-* 1 stop bit
-* newline on `\r\n` (carriage return, newline)
-* no transfer protocol / control flow protocol - just raw bytes
-
-[IMPORTANT]
-_Any_ terminal program that can connect to a serial port should work. However, make sure the program
-can transfer data in _raw_ byte mode without any protocol overhead around it. Some terminal programs struggle with
-transmitting files larger than 4kB (see https://github.com/stnolting/neorv32/pull/215). Try a different program
-if uploading a binary does not work.
-
-The bootloader uses the LSB of the top entity's `gpio_o` output port as high-active **status LED** (all other
-output pin are set to low level). After reset, this LED will start blinking at ~2Hz and the
-following intro screen should show up in your terminal:
-
-[source]
-----
-<< NEORV32 Bootloader >>
-
-BLDV: Feb  3 2022
-HWV:  0x01060703
-CLK:  0x05f5e100
-MISA: 0x40901107
-CPU:  0xc00006ab
-SOC:  0x7b7f402f
-IMEM: 0x00004000 bytes @ 0x00000000
-DMEM: 0x00002000 bytes @ 0x80000000
-
-Autoboot in 8s. Press any key to abort.
-----
-
-This start-up screen also gives some brief information about the bootloader and several system configuration parameters:
-
-[cols="<2,<15"]
-[grid="none"]
-|=======================
-| `BLDV` | Bootloader version (built date).
-| `HWV`  | Processor hardware version (from the `mimpid` CSR) in BCD format (example: `0x01040606` = v1.4.6.6).
-| `CLK`  | Processor clock speed in Hz (via the SYSINFO module, from the _CLOCK_FREQUENCY_ generic).
-| `MISA` | CPU extensions (from the `misa` CSR).
-| `CPU`  | CPU sub-extensions (via the `CPU` register in the SYSINFO module)
-| `SOC`  | Processor configuration (via the `SOC` register in the SYSINFO module / from the IO_* and MEM_* configuration generics).
-| `IMEM` | IMEM memory base address and size in byte (from the _MEM_INT_IMEM_SIZE_ generic).
-| `DMEM` | DMEM memory base address and size in byte (from the _MEM_INT_DMEM_SIZE_ generic).
-|=======================
-
-Now you have 8 seconds to press _any_ key. Otherwise, the bootloader starts the <<_auto_boot_sequence>>. When
-you press any key within the 8 seconds, the actual bootloader user console starts:
-
-[source]
-----
-<< NEORV32 Bootloader >>
-
-BLDV: Feb  3 2022
-HWV:  0x01060703
-CLK:  0x05f5e100
-MISA: 0x40901107
-CPU:  0xc00006ab
-SOC:  0x7b7f402f
-IMEM: 0x00004000 bytes @ 0x00000000
-DMEM: 0x00002000 bytes @ 0x80000000
-
-Autoboot in 8s. Press any key to abort.
-Aborted. <1>
-
-Available commands:
- h: Help
- r: Restart
- u: Upload
- s: Store to flash
- l: Load from flash
- e: Execute
-CMD:>
-----
-<1> Auto boot sequence aborted due to user console input.
-
-The auto boot countdown is stopped and the bootloader's user console is ready to receive one of the following commands:
-
-* `h`: Show the help text (again)
-* `r`: Restart the bootloader and the auto-boot sequence
-* `u`: Upload new program executable (`neorv32_exe.bin`) via UART into the instruction memory
-* `s`: Store executable to SPI flash at `spi_csn_o(0)` (little-endian byte order)
-* `l`: Load executable from SPI flash at `spi_csn_o(0)` (little-endian byte order)
-* `e`: Start the application, which is currently stored in the instruction memory (IMEM)
-
-A new executable can be uploaded via UART by executing the `u` command. After that, the executable can be directly
-executed via the `e` command. To store the recently uploaded executable to an attached SPI flash press `s`. To
-directly load an executable from the SPI flash press `l`. The bootloader and the auto-boot sequence can be
-manually restarted via the `r` command.
-
-[TIP]
-The CPU is in machine level privilege mode after reset. When the bootloader boots an application,
-this application is also started in machine level privilege mode.
-
-[TIP]
-For detailed information on using an SPI flash for application storage see User Guide section
-https://stnolting.github.io/neorv32/ug/#_programming_an_external_spi_flash_via_the_bootloader[Programming an External SPI Flash via the Bootloader].
-
-
-:sectnums:
-==== Auto Boot Sequence
-
-When you reset the NEORV32 processor, the bootloader waits 8 seconds for a UART console input before it
-starts the automatic boot sequence. This sequence tries to fetch a valid boot image from the external SPI
-flash, connected to SPI chip select `spi_csn_o(0)`. If a valid boot image is found that can be successfully
-transferred into the instruction memory, it is automatically started. If no SPI flash is detected or if there
-is no valid boot image found, and error code will be shown.
-
-
-:sectnums:
-==== Bootloader Error Codes
-
-If something goes wrong during bootloader operation, an error code and a short message is shown. In this case the processor
-stalls,, the bootloader status LED is permanently activated and the processor must be reset manually.
-
-[TIP]
-In many cases the error source is just _temporary_ (like some HF spike during an UART upload). Just try again.
-
-[cols="<2,<8"]
-[grid="rows"]
-|=======================
-| **`ERROR_0`** | If you try to transfer an invalid executable (via UART or from the external SPI flash), this error message shows up. There might be a transfer protocol configuration error in the terminal program. Also, if no SPI flash was found during an auto-boot attempt, this message will be displayed.
-| **`ERROR_1`** | Your program is way too big for the internal processor’s instructions memory. Increase the memory size or reduce your application code.
-| **`ERROR_2`** | This indicates a checksum error. Something went wrong during the transfer of the program image (upload via UART or loading from the external SPI flash). If the error was caused by a UART upload, just try it again. When the error was generated during a flash access, the stored image might be corrupted.
-| **`ERROR_3`** | This error occurs if the attached SPI flash cannot be accessed. Make sure you have the right type of flash and that it is properly connected to the NEORV32 SPI port using chip select #0.
-| **`ERROR - Unexpected exception!`** | The bootloader encountered an exception during operation. This might be caused when it tries to access peripherals that were not implemented during synthesis. Example: executing commands `l` or `s` (SPI flash operations) without the SPI module beeing implemented.
-|=======================
-
+include::software_bootloader.adoc[]
 
 
 <<<
 // ####################################################################################################################
-:sectnums:
-=== NEORV32 Runtime Environment
 
-The NEORV32 provides a minimal runtime environment (RTE) that takes care of a stable
-and _safe_ execution environment by handling _all_ traps (including interrupts).
-
-[NOTE]
-Using the RTE is **optional**. The RTE provides a simple and comfortable way of delegating traps while making sure that all traps (even though they are not
-explicitly used by the application) are handled correctly. Performance-optimized applications or embedded operating systems should not use the RTE for delegating traps.
-
-When execution enters the application's `main` function, the actual runtime environment is responsible for catching all implemented exceptions
-and interrupts. To activate the NEORV32 RTE execute the following function:
-
-[source,c]
-----
-void neorv32_rte_setup(void);
-----
-
-This setup initializes the `mtvec` CSR, which provides the base entry point for all trap
-handlers. The address stored to this register reflects the first-level exception handler provided by the
-NEORV32 RTE. Whenever an exception or interrupt is triggered, this first-level handler is called.
-
-The first-level handler performs a complete context save, analyzes the source of the exception/interrupt and
-calls the according second-level exception handler, which actually takes care of the exception/interrupt
-handling. For this, the RTE manages a private look-up table to store the addresses of the according trap
-handlers.
-
-After the initial setup of the RTE, each entry in the trap handler's look-up table is initialized with a debug
-handler, that outputs detailed hardware information via the **primary UART (UART0)** when triggered. This
-is intended as a fall-back for debugging or for accidentally-triggered exceptions/interrupts.
-For instance, an illegal instruction exception caught by the RTE debug handler might look like this in the UART0 output:
-
-[source]
-----
-<RTE> Illegal instruction @ PC=0x000002d6, MTVAL=0x00001537 </RTE>
-----
-
-For bus access faults the RTE also outputs the error code from the <<_internal_bus_monitor_buskeeper>>
-to show the cause of the access fault. Two example are shown below.
-
-[source]
-----
-<RTE> Load access fault [TIMEOUT_ERR] @ PC=0x00000150, MTVAL=0xFFFFFF70 </RTE>
-<RTE> Store access fault [DEVICE_ERR] @ PC=0x00000162, MTVAL=0xF0000000 </RTE>
-----
-
-To install the **actual application's trap handlers** the NEORV32 RTE provides functions for installing and
-un-installing trap handler for each implemented exception/interrupt source.
-
-[source,c]
-----
-int neorv32_rte_exception_install(uint8_t id, void (*handler)(void));
-----
-
-[cols="<5,<12"]
-[options="header",grid="rows"]
-|=======================
-| ID name [C] | Description / trap causing entry
-| `RTE_TRAP_I_MISALIGNED` | instruction address misaligned
-| `RTE_TRAP_I_ACCESS`     | instruction (bus) access fault
-| `RTE_TRAP_I_ILLEGAL`    | illegal instruction
-| `RTE_TRAP_BREAKPOINT`   | breakpoint (`ebreak` instruction)
-| `RTE_TRAP_L_MISALIGNED` | load address misaligned
-| `RTE_TRAP_L_ACCESS`     | load (bus) access fault
-| `RTE_TRAP_S_MISALIGNED` | store address misaligned
-| `RTE_TRAP_S_ACCESS`     | store (bus) access fault
-| `RTE_TRAP_MENV_CALL`    | environment call from machine mode (`ecall` instruction)
-| `RTE_TRAP_UENV_CALL`    | environment call from user mode (`ecall` instruction)
-| `RTE_TRAP_MTI`          | machine timer interrupt
-| `RTE_TRAP_MEI`          | machine external interrupt
-| `RTE_TRAP_MSI`          | machine software interrupt
-| `RTE_TRAP_FIRQ_0` : `RTE_TRAP_FIRQ_15` | fast interrupt channel 0..15
-|=======================
-
-When installing a custom handler function for any of these exception/interrupts, make sure the function uses
-**no attributes** (especially no interrupt attribute!), has no arguments and no return value like in the following
-example:
-
-[source,c]
-----
-void handler_xyz(void) {
-
-  // handle exception/interrupt...
-}
-----
-
-[WARNING]
-Do NOT use the `((interrupt))` attribute for the application exception handler functions! This
-will place an `mret` instruction to the end of it making it impossible to return to the first-level
-exception handler of the RTE, which will cause stack corruption.
-
-Example: Installation of the MTIME interrupt handler:
-
-[source,c]
-----
-neorv32_rte_exception_install(EXC_MTI, handler_xyz);
-----
-
-To remove a previously installed exception handler call the according un-install function from the NEORV32
-runtime environment. This will replace the previously installed handler by the initial debug handler, so even
-un-installed exceptions and interrupts are further captured.
-
-[source,c]
-----
-int neorv32_rte_exception_uninstall(uint8_t id);
-----
-
-Example: Removing the MTIME interrupt handler:
-
-[source,c]
-----
-neorv32_rte_exception_uninstall(EXC_MTI);
-----
-
-[TIP]
-More information regarding the NEORV32 runtime environment can be found in the doxygen
-software documentation (also available online at https://stnolting.github.io/neorv32/sw/files.html[GitHub pages]).
+include::software_rte.adoc[]
