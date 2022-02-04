@@ -4,6 +4,17 @@
 To make actual use of the NEORV32 processor, the project comes with a complete software eco-system. This
 ecosystem is based on the RISC-V port of the GCC GNU Compiler Collection and consists of the following elementary parts:
 
+* <<_compiler_toolchain>>
+* <<_core_libraries>>
+* <<_application_makefile>>
+* <<_executable_image_format>>
+** <<_start_up_code_crt0>>
+* <<_bootloader>>
+* <<_neorv32_runtime_environment>>
+
+A summarizing list of the most important elements of the software framework and their according
+files and folders is shown below:
+
 [cols="<6,<4"]
 [grid="none"]
 |=======================
@@ -14,10 +25,6 @@ ecosystem is based on the RISC-V port of the GCC GNU Compiler Collection and con
 | Auxiliary tool for generating NEORV32 executables | `sw/image_gen/`
 | Default bootloader | `sw/bootloader/bootloader.c`
 |=======================
-
-Last but not least, the NEORV32 ecosystem provides some example programs for testing the hardware, for
-illustrating the usage of peripherals and for general getting in touch with the project (`sw/example`).
-
 
 
 
