@@ -38,5 +38,5 @@ _platform independent_ memory design that (should) infers embedded memory block.
 source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
 and/or timing.
 
-[IMPORTANT]
+[NOTE]
 If the IMEM is implemented as true ROM any write attempt to it will raise a _store access fault_ exception.
