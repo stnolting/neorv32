@@ -748,9 +748,9 @@ begin
       addr_i => p_bus.addr,                -- address
       data_i => p_bus.wdata,               -- data in
       data_o => resp_bus(RESP_IMEM).rdata, -- data out
-      ack_o  => resp_bus(RESP_IMEM).ack    -- transfer acknowledge
+      ack_o  => resp_bus(RESP_IMEM).ack,   -- transfer acknowledge
+      err_o  => resp_bus(RESP_IMEM).err    -- transfer error
     );
-    resp_bus(RESP_IMEM).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_int_imem_inst_false:
