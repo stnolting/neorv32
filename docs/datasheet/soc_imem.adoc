@@ -11,7 +11,7 @@
 | Top entity port:         | none                         | 
 | Configuration generics:  | _MEM_INT_IMEM_EN_            | implement processor-internal IMEM when _true_
 |                          | _MEM_INT_IMEM_SIZE_          | IMEM size in bytes
-|                          | _INT_BOOTLOADER_EN_          | use internal bootloader when _true_ (implements IMEM as _uninitialized_ RAM)
+|                          | _INT_BOOTLOADER_EN_          | use internal bootloader when _true_ (implements IMEM as _uninitialized_ RAM, otherwise the IMEM is implemented an _pre-intialized_ ROM)
 | CPU interrupts:          | none                         | 
 |=======================
 
@@ -37,3 +37,6 @@ architecture definition (`mem/neorv32_imem.default.vhd`). This **default archite
 _platform independent_ memory design that (should) infers embedded memory block. You can replace/modify the architecture
 source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
 and/or timing.
+
+[IMPORTANT]
+If the IMEM is implemented as true ROM any write attempt to it will raise a _store access fault_ exception.
