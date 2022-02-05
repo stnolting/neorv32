@@ -798,11 +798,12 @@ begin
     port map (
       clk_i  => clk_i,                        -- global clock line
       rden_i => p_bus.re,                     -- read enable
+      wren_i => p_bus.we,                     -- write enable
       addr_i => p_bus.addr,                   -- address
       data_o => resp_bus(RESP_BOOTROM).rdata, -- data out
-      ack_o  => resp_bus(RESP_BOOTROM).ack    -- transfer acknowledge
+      ack_o  => resp_bus(RESP_BOOTROM).ack,   -- transfer acknowledge
+      err_o  => resp_bus(RESP_BOOTROM).err    -- transfer error
     );
-    resp_bus(RESP_BOOTROM).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_boot_rom_inst_false:

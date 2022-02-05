@@ -1632,9 +1632,11 @@ package neorv32_package is
     port (
       clk_i  : in  std_ulogic; -- global clock line
       rden_i : in  std_ulogic; -- read enable
+      wren_i : in  std_ulogic; -- write enable
       addr_i : in  std_ulogic_vector(31 downto 0); -- address
       data_o : out std_ulogic_vector(31 downto 0); -- data out
-      ack_o  : out std_ulogic -- transfer acknowledge
+      ack_o  : out std_ulogic; -- transfer acknowledge
+      err_o  : out std_ulogic  -- transfer error
     );
   end component;
 
