@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -125,6 +125,7 @@ begin
   begin
     if rising_edge(clk_i) then
       rden  <= acc_en and rden_i;
+      err_o <= '0';
       ack_o <= acc_en and (rden_i or wren_i);
     end if;
   end process bus_feedback;

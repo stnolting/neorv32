@@ -78,7 +78,8 @@ begin
   begin
     if rising_edge(clk_i) then
       rden   <= acc_en and rden_i;
-      ack_o  <= acc_en and (rden_i or wren_i);
+      ack_o  <= acc_en and rden_i;
+      err_o  <= acc_en and wren_i;
       addr_v := to_integer(unsigned(addr));
       --
       rdata <= (others => '0');
