@@ -30,6 +30,9 @@ The bootloader memory is _read-only_ and is automatically initialized with the b
 determined via synthesis and expanded to the next power of two. For example, if the bootloader code requires
 10kB of storage, a ROM with 16kB will be generated. The maximum size must not exceed 32kB.
 
+[NOTE]
+Any write access to the BOOTROM will raise a _store access fault_ exception.
+
 .Bootloader - Software
 [TIP]
 See section <<_bootloader>> for more information regarding the actual bootloader software/executable itself.
