@@ -256,7 +256,7 @@ can be found in section <<_instruction_sets_and_extensions>>.
 
 .Read-Only "Read-Write" CSRs
 [IMPORTANT]
-The `misa` and `mtval` CSRs in the NEORV32 are _read-only_.
+The <<_misa>> and <<_mtval>> CSRs in the NEORV32 are _read-only_.
 Any machine-mode write access to them is ignored and will _not_ cause any exceptions or side-effects to maintain
 RISC-V compatibility.
 
@@ -551,12 +551,12 @@ Any kind of privilege rights violation will raise an exception to allow full vir
 
 ==== **`X`** - NEORV32-Specific (Custom) Extensions
 
-The NEORV32-specific extensions are always enabled and are indicated by the set `X` bit in the `misa` CSR.
+The NEORV32-specific extensions are always enabled and are indicated by the set `X` bit in the <<_misa>> CSR.
 
 The most important points of the NEORV32-specific extensions are:
 * The CPU provides 16 _fast interrupt_ interrupts (`FIRQ)`, which are controlled via custom bits in the `mie`
-and `mip` CSR. This extension is mapped to CSR bits, that are available for custom use (according to the
-RISC-V specs). Also, custom trap codes for `mcause` are implemented.
+and <<_mip>> CSR. This extension is mapped to CSR bits, that are available for custom use (according to the
+RISC-V specs). Also, custom trap codes for <<_mcause>> are implemented.
 * All undefined/unimplemented/malformed/illegal instructions do raise an illegal instruction exception (see <<_full_virtualization>>).
 
 
@@ -624,7 +624,7 @@ However, access privileges are still enforced so these instruction variants _do_
 [NOTE]
 The "wait for interrupt instruction" `wfi` acts like a sleep command. When executed, the CPU is
 halted until a valid interrupt request occurs. To wake up again, the according interrupt source has to
-be enabled via the `mie` CSR and the global interrupt enable flag in `mstatus` has to be set.
+be enabled via the <<_mie>> CSR and the global interrupt enable flag in <<_mstatus>> has to be set.
 The `wfi` instruction may also be executed in user-mode without causing an exception as <<_mstatus>> bit
 `TW` (timeout wait) is _hardwired_ to zero.
 
@@ -660,12 +660,12 @@ Depending on the configuration the following additional CSR are available:
 * event configuration: `mhpmevent*` (3..31, depending on `HPM_NUM_CNTS`)
 
 [IMPORTANT]
-The HPM counter CSR can only be accessed in machine-mode. Hence, the according `mcounteren` CSR bits
+The HPM counter CSR can only be accessed in machine-mode. Hence, the according <<_mcounteren>> CSR bits
 are always zero and read-only. Any access from less-privileged modes will raise an illegal instruction
 exception.
 
 [TIP]
-Auto-increment of the HPMs can be individually deactivated via the `mcountinhibit` CSR.
+Auto-increment of the HPMs can be individually deactivated via the <<_mcountinhibit>> CSR.
 
 [TIP]
 For a list of all HPM-related CSRs and all provided event configurations
@@ -846,10 +846,10 @@ In this document the following nomenclature regarding traps is used:
 * _exceptions_ = synchronous exceptions
 * _traps_ = exceptions + interrupts (synchronous or asynchronous exceptions)
 
-Whenever an exception or interrupt is triggered, the CPU transfers control to the address stored in `mtvec`
-CSR. The cause of the according interrupt or exception can be determined via the content of `mcause`
-CSR. The address that reflects the current program counter when a trap was taken is stored to `mepc` CSR.
-Additional information regarding the cause of the trap can be retrieved from `mtval` CSR and the processor's
+Whenever an exception or interrupt is triggered, the CPU transfers control to the address stored in <<_mtvec>>
+CSR. The cause of the according interrupt or exception can be determined via the content of <<_mcause>>
+CSR. The address that reflects the current program counter when a trap was taken is stored to <<_mepc>> CSR.
+Additional information regarding the cause of the trap can be retrieved from <<_mtval>> CSR and the processor's
 <<_internal_bus_monitor_buskeeper>> (for memory access exceptions)
 
 The traps are prioritized. If several _synchronous exceptions_ occur at once only the one with highest priority is triggered
@@ -865,8 +865,8 @@ until it is explicitly acknowledged by the CPU software (for example by writing 
 .Interrupt Signal Requirements - Fast Interrupt Requests
 [IMPORTANT]
 The NEORV32-specific FIRQ request lines are triggered by a one-shot high-level (i.e. rising edge). Each request is buffered in the CPU control
-unit until the channel is either disabled (by clearing the according `mie` CSR bit) or the request is explicitly cleared (by setting
-the according `mip` CSR bit).
+unit until the channel is either disabled (by clearing the according <<_mie>> CSR bit) or the request is explicitly cleared (by setting
+the according <<_mip>> CSR bit).
 
 .Instruction Atomicity
 [NOTE]
@@ -888,8 +888,8 @@ memory protection fault do not trigger a bus/memory write-operation at all.
 ==== Custom Fast Interrupt Request Lines
 
 As a custom extension, the NEORV32 CPU features 16 fast interrupt request (FIRQ) lines via the `firq_i` CPU top
-entity signals. These interrupts have custom configuration and status flags in the `mie` and `mip` CSRs and also
-provide custom trap codes in `mcause`. These FIRQs are reserved for NEORV32 processor-internal usage only.
+entity signals. These interrupts have custom configuration and status flags in the <<_mie>> and <<_mip>> CSRs and also
+provide custom trap codes in <<_mcause>>. These FIRQs are reserved for NEORV32 processor-internal usage only.
 
 
 
@@ -902,16 +902,16 @@ The following table shows all traps that are currently supported by the NEORV32 
 and the CSR side-effects. A more detailed description of the actual trap triggering events is provided in a further table.
 
 [NOTE]
-_Asynchronous exceptions_ (= interrupts) set the MSB of `mcause` while _synchronous exception_ (= "software exception")
+_Asynchronous exceptions_ (= interrupts) set the MSB of <<_mcause>> while _synchronous exception_ (= "software exception")
 clear the MSB.
 
 **Table Annotations**
 
 The "Prio." column shows the priority of each trap. The highest priority is 1. The "`mcause`" column shows the
-cause ID of the according trap that is written to `mcause` CSR. The "[RISC-V]" columns show the interrupt/exception code value from the
+cause ID of the according trap that is written to <<_mcause>> CSR. The "[RISC-V]" columns show the interrupt/exception code value from the
 official RISC-V privileged architecture manual. The "[C]" names are defined by the NEORV32 core library (the runtime environment _RTE_) and can
 be used in plain C code. The "`mepc`" and "`mtval`" columns show the value written to
-`mepc` and `mtval` CSRs when a trap is triggered:
+<<_mepc>> and <<_mtval>> CSRs when a trap is triggered:
 
 * _I-PC_ - address of interrupted instruction (instruction has not been execute/completed yet)
 * _B-ADR_- bad memory access address that cause the trap
@@ -1154,7 +1154,7 @@ control engine that actually features a defined reset. The initialization of mos
 interrupt control) is done by the software (to be more specific, this is done by the `crt0.S` start-up code).
 
 During the very early boot process (where `crt0.S` is running) there is no chance for undefined behavior due to
-the lack of dedicated hardware resets of certain CSRs. For example the machine interrupt-enable CSR (`mie`)
+the lack of dedicated hardware resets of certain CSRs. For example the machine interrupt-enable CSR <<_mie>>
 does not provide a dedicated reset. The value after reset of this register is uncritical as interrupts cannot fire
 because the global interrupt enabled flag in the status register (`mstatsus(mie)`) _do_ provide a dedicated
 hardware reset setting this bit to low (globally disabling interrupts).
@@ -1165,7 +1165,7 @@ Most CPU-internal register do provide an asynchronous reset in the VHDL code, bu
 (VHDL `'-'`) is used for initialization of all uncritical registers, effectively generating a flip-flop without a
 reset. However, certain applications or situations (like advanced gate-level / timing simulations) might
 require a more deterministic reset state. For this case, a defined reset level (reset-to-low) of all CPU registers can
-be enabled ba enabling a constant in the main VHDL package file (`rtl/core/neorv32_package.vhd`):
+be enabled by enabling a constant in the main VHDL package file (`rtl/core/neorv32_package.vhd`):
 
 [source,vhdl]
 ----
