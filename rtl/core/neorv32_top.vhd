@@ -206,8 +206,8 @@ entity neorv32_top is
     spi_csn_o      : out std_ulogic_vector(07 downto 0); -- chip-select
 
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_io     : inout std_logic := 'U'; -- twi serial data line
-    twi_scl_io     : inout std_logic := 'U'; -- twi serial clock line
+    twi_sda_io     : inout std_logic; -- twi serial data line
+    twi_scl_io     : inout std_logic; -- twi serial clock line
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          : out std_ulogic_vector(59 downto 0); -- pwm channels

@@ -63,7 +63,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060704"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060705"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -1066,8 +1066,8 @@ package neorv32_package is
       spi_sdi_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
       spi_csn_o      : out std_ulogic_vector(07 downto 0); -- SPI CS
       -- TWI (available if IO_TWI_EN = true) --
-      twi_sda_io     : inout std_logic := 'U'; -- twi serial data line
-      twi_scl_io     : inout std_logic := 'U'; -- twi serial clock line
+      twi_sda_io     : inout std_logic; -- twi serial data line
+      twi_scl_io     : inout std_logic; -- twi serial clock line
       -- PWM (available if IO_PWM_NUM_CH > 0) --
       pwm_o          : out std_ulogic_vector(59 downto 0); -- pwm channels
       -- Custom Functions Subsystem IO --
