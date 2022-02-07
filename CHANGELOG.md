@@ -32,6 +32,7 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 07.02.2022 | 1.6.7.5 | removed default values for bi-directional top entity ports `twi_sda_io` and `twi_scl_io` |
 | 05.02.2022 | 1.6.7.4 | added `err_o` signal to **IMEM** module; if the IMEM is implemented as true ROM any write attempt will raise a _store access fault_ exception (with a `[DEVICE_ERR]` error); see [PR #273](https://github.com/stnolting/neorv32/pull/273) |
 | 03.02.2022 | 1.6.7.3 | using `LTO` (link-time-optimization) option for **bootloader**; improved bootloader user console; see [PR #268](https://github.com/stnolting/neorv32/pull/268) |
 | 31.01.2022 | 1.6.7.2 | :bug: fixed minor bug in **bootloader'd MTIME handling** (bootloader crashed if `Zicntr` ISA extension not enabled), fixed minor issues in MTIME and `time` CSRs handling; added MTIME example program; see [PR #267](https://github.com/stnolting/neorv32/pull/267) |
