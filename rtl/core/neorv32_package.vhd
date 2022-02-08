@@ -44,8 +44,9 @@ package neorv32_package is
   constant ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- default instruction memory address space base address
   constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
 
-  -- CPU core --
-  constant dedicated_reset_c : boolean := false; -- use dedicated hardware reset value for UNCRITICAL registers (FALSE=reset value is irrelevant (might simplify HW), default; TRUE=defined LOW reset value)
+  -- use dedicated hardware reset value for UNCRITICAL registers --
+  -- FALSE=reset value is irrelevant (might simplify HW), default; TRUE=defined LOW reset value
+  constant dedicated_reset_c : boolean := false;
 
   -- "critical" number of implemented PMP regions --
   -- if more PMP regions (> pmp_num_regions_critical_c) are defined, another register stage is automatically inserted into the memory interfaces
@@ -53,7 +54,8 @@ package neorv32_package is
   constant pmp_num_regions_critical_c : natural := 8; -- default=8
 
   -- "response time window" for processor-internal modules --
-  constant max_proc_int_response_time_c : natural := 15; -- cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception (min 2)
+  -- = cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception (min 2)
+  constant max_proc_int_response_time_c : natural := 15;
 
   -- jtag tap - identifier --
   constant jtag_tap_idcode_version_c : std_ulogic_vector(03 downto 0) := x"0"; -- version
@@ -63,7 +65,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060705"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060706"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -82,8 +84,8 @@ package neorv32_package is
 
   -- External Interface Types ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  type sdata_8x32_t  is array (0 to 7)  of std_ulogic_vector(31 downto 0);
-  type sdata_8x32r_t is array (0 to 7)  of std_logic_vector(31 downto 0); -- resolved type
+  type sdata_8x32_t  is array (0 to 7) of std_ulogic_vector(31 downto 0);
+  type sdata_8x32r_t is array (0 to 7) of std_logic_vector(31 downto 0); -- resolved type
 
   -- Internal Interface Types ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
