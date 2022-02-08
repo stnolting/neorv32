@@ -127,4 +127,4 @@ Continuous integration provided by https://github.com/features/actions[GitHub Ac
 
 === Impressum (Imprint)
 
-See https://github.com/stnolting/neorv32/blob/master/docs/impressum.md[`docs/impressum.md`].
+See https://github.com/stnolting/neorv32/blob/main/docs/impressum.md[`docs/impressum.md`].

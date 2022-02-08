@@ -27,7 +27,7 @@ your FPGA/board.
 Note that this might require adaption of the NEORV32 linker script.
 
 
-### [`neorv32_test_setup_approm.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/test_setups/neorv32_test_setup_approm.vhd)
+### [`neorv32_test_setup_approm.vhd`](https://github.com/stnolting/neorv32/blob/main/rtl/test_setups/neorv32_test_setup_approm.vhd)
 
 This setup configures a `rv32imc_Zicsr` CPU with 16kB IMEM (as pre-initialized ROM),
 8kB DMEM and includes the GPIO module to drive 8 external signals (`gpio_o`)
@@ -39,7 +39,7 @@ processor-internal IMEM during synthesis.
 :books: See User Guide section [_Installing an Executable Directly Into Memory_](https://stnolting.github.io/neorv32/ug/#_installing_an_executable_directly_into_memory).
 
 
-### [`neorv32_test_setup_bootloader.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/test_setups/neorv32_test_setup_bootloader.vhd)
+### [`neorv32_test_setup_bootloader.vhd`](https://github.com/stnolting/neorv32/blob/main/rtl/test_setups/neorv32_test_setup_bootloader.vhd)
 
 This setup configures a `rv32imc_Zicsr` CPU with 16kB IMEM (as RAM), 8kB DMEM
 and includes the GPIO module to drive 8 external signals (`gpio_o`), the MTIME

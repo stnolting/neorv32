@@ -18,7 +18,7 @@ All results only show the integer parts.
 
 ### Exemplary Output
 
-Output generated for processor HW version [v1.5.9.1](https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md)
+Output generated for processor HW version [v1.5.9.1](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)
 using performance-optimized configuration options.
 
 ```

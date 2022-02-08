@@ -12,7 +12,7 @@ If you want to use a more sophisticated pre-defined setup to start with, check o
 `setups` folder, which provides example setups for various FPGA, boards and toolchains.
 
 The NEORV32 project features two minimalistic pre-configured test setups in
-https://github.com/stnolting/neorv32/blob/master/rtl/test_setups[`rtl/test_setups`].
+https://github.com/stnolting/neorv32/blob/main/rtl/test_setups[`rtl/test_setups`].
 Both test setups only implement very basic processor and CPU features.
 The main difference between the two setups is the processor boot concept - so how to get a software executable
 _into_ the processor:

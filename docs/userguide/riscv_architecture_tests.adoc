@@ -8,5 +8,5 @@ The NEORV32 Processor passes the according tests provided by the official RISC-V
 All files required for executing the test framework on a simulated instance of the processor (including port
 files) are located in the `sw/isa-test` folder of the NEORV32 repository. The test framework is executed via the
 `sim/run_riscv_arch_test.sh` script. Take a look at the provided `sim/README.md`
-(https://github.com/stnolting/neorv32/tree/master/sim[online at GitHub])
+(https://github.com/stnolting/neorv32/tree/main/sim[online at GitHub])
 file for more information on how to run the tests and how testing is conducted in detail.

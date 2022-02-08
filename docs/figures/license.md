@@ -1,6 +1,6 @@
 # :copyright:
 
-Figures are own work if not otherwise stated. License: https://github.com/stnolting/neorv32/blob/master/LICENSE
+Figures are own work if not otherwise stated. License: https://github.com/stnolting/neorv32/blob/main/LICENSE
 
 No copyright infringement intended.
 

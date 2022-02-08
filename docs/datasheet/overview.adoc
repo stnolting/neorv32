@@ -22,7 +22,7 @@ default toolchain (https://github.com/stnolting/riscv-gcc-prebuilt[prebuilt tool
 [TIP]
 Check out the processor's **https://stnolting.github.io/neorv32/ug[online User Guide]**
 that provides hands-on tutorials to get you started.
-The project's change log is available in https://github.com/stnolting/neorv32/blob/master/CHANGELOG.md[CHANGELOG.md]
+The project's change log is available in https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md[CHANGELOG.md]
 in the root directory of the NEORV32 repository. Please also check out the <<_legal>> section.
 
 
