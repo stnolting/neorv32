@@ -5,14 +5,14 @@ name: Processor
 on:
   push:
     branches:
-    - master
+    - main
     paths:
     - 'rtl/**'
     - 'sw/**'
     - 'sim/**'
   pull_request:
     branches:
-    - master
+    - main
     paths:
     - 'rtl/**'
     - 'sw/**'
