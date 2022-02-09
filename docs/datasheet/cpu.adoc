@@ -22,7 +22,7 @@ image::neorv32_cpu_block.png[width=600,align=center]
 ** `Zmmul` - integer multiplication hardware
 ** `Zxcfu` - custom instructions extension
 ** `PMP` - physical memory protection
-** `Debug` - debug mode
+** `Debug` - debug mode (part of the on.chip debugger) including hardware trigger module
 * Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications - passes the official RISC-V Architecture Tests (v2+)
 * Official RISC-V open-source architecture ID
 * Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 _fast_ interrupts
