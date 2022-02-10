@@ -645,12 +645,13 @@ It is always implemented when the CPU debug mode / the on-chip debugger is imple
 
 [IMPORTANT]
 The trigger module only provides a single trigger of _instruction address match_ type. This trigger will fire
-**after** the instruction at the specief address has been executed.
+**after** the instruction at the specific address has been executed.
 
 The trigger module only provides a single trigger supporting only the "instruction address match" type. This limitation
 is granted by the RISC-V specs. and is sufficient to **debug code executed from read-only memory (ROM)**.
 "Normal" _software_ breakpoints (using gdb's `b`/`break` command) are implemented by temporarily replacing the according
-instruction word by a BREAK instruction. This is not possible when debugging code that is executed from read-only memory.
+instruction word by a BREAK instruction. This is not possible when debugging code that is executed from read-only memory
+(for example when debugging programs that are executed via the <<_execute_in_place_module_xip>>).
 Therefore, the NEORV32 trigger module provides a single "instruction address match" trigger to enter debug mode when
 executing the instruction at a specific address. These "hardware-assisted breakpoints" are used by gdb's `hb`/`hbreak` command.
 
