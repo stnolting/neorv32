@@ -37,10 +37,6 @@ configuration registers.
 [TIP]
 An example program for the XIP module is available in `sw/example/demo_xip`.
 
-[WARNING]
-Debugging XIP code execution using the on-chip debugger is constrained. The debugger cannot insert breakpoints
-(`ebreak` instructions) into XIP code as the XIP access is read-only.
-
 [NOTE]
 Quad-SPI (QSPI) support, which is about 4x times faster, is planned for the future. 😉
 

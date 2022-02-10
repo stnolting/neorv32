@@ -3,38 +3,33 @@
 == On-Chip Debugger (OCD)
 
 The NEORV32 Processor features an _on-chip debugger_ (OCD) implementing **execution-based debugging** that is compatible
-to the **Minimal RISC-V Debug Specification Version 0.13.2**.
-Please refer to this spec for in-deep information.
+to the **Minimal RISC-V Debug Specification Version 0.13.2**. Please refer to this spec for in-deep information.
 A copy of the specification is available in `docs/references/riscv-debug-release.pdf`.
+
 The NEORV32 OCD provides the following key features:
 
-* JTAG test access port
+* JTAG access port
 * run-control of the CPU: halting, single-stepping and resuming
 * executing arbitrary programs during debugging
-* accessing core registers (direct access to GPRs, indirect access to CSRs via program buffer)
-* indirect access to the whole processor address space (via program buffer))
-* compatible to the https://github.com/riscv/riscv-openocd[RISC-V port of OpenOCD];
-  pre-built binaries can be obtained for example from https://www.sifive.com/software[SiFive]
+* accessing core registers
+* indirect access to the whole processor address space (via program buffer)
+* trigger module for hardware breakpoints
+* compatible with upstream OpenOCD
 
 .OCD Security Note
-[IMPORTANT]
+[NOTE]
 Access via the OCD is _always authenticated_ (`dmstatus.authenticated` == `1`). Hence, the
 _whole system_ can always be accessed via the on-chip debugger. Currently, there is no option
 to disable the OCD via software. The OCD can only be disabled by disabling implementation
 (setting _ON_CHIP_DEBUGGER_EN_ generic to _false_).
 
-[NOTE]
-The OCD requires additional resources for implementation and _might_ also increase the critical path resulting in less
-performance. If the OCD is not really required for the _final_ implementation, it can be disabled and thus,
-discarded from implementation. In this case all circuitry of the debugger is completely removed (no impact
-on area, energy or timing at all).
-
+.Hands-On Tutorial
 [TIP]
-A simple example on how to use NEORV32 on-chip debugger in combination with `OpenOCD` and `gdb`
+A simple example on how to use NEORV32 on-chip debugger in combination with OpenOCD and the GNU debugger
 is shown in section https://stnolting.github.io/neorv32/ug/#_debugging_using_the_on_chip_debugger[Debugging using the On-Chip Debugger]
 of the User Guide.
 
-The NEORV32 on-chip debugger complex is based on three hardware modules:
+The NEORV32 on-chip debugger complex is based on four hardware modules:
 
 .NEORV32 on-chip debugger complex
 image::neorv32_ocd_complex.png[align=center]
@@ -51,6 +46,8 @@ image::neorv32_ocd_complex.png[align=center]
 . CPU <<_cpu_debug_mode>> extension (part of`rtl/core/neorv32_cpu_control.vhd`):
   This extension provides the "debug execution mode" which executes the "park loop" code from the DM.
   The mode also provides additional CSRs.
+. (CPU <<_trigger_module>> (also part of`rtl/core/neorv32_cpu_control.vhd`):
+  This module provides a single _hardware_ breakpoint, which allows to debug code executed from ROM.)
 
 **Theory of Operation**
 
@@ -306,7 +303,7 @@ read-only. Writing '1' to these bits/fields will be ignored.
 | 23:20 | `nscratch`    | `0001`, number of `dscratch*` CPU registers = 1
 | 19:17 | _reserved_    | reserved; always zero
 | 16    | `dataccess`   | `0`, the `data` registers are shadowed in the hart's address space
-| 15:12 | `datasize`    | `0001`, number of 32-bit words in the address space dedicated to shadowing the `data` registers = 1
+| 15:12 | `datasize`    | `0001`, number of 32-bit words in the address space dedicated to shadowing the `data` registers (1 register)
 | 11:0  | `dataaddr`    | = `dm_data_base_c(11:0)`, signed base address of `data` words (see address map in <<_dm_cpu_access>>)
 |=======================
 
@@ -363,7 +360,7 @@ The NEORV32 DM only supports **Access Register** abstract commands. These comman
 hart's GPRs (abstract command register index `0x1000` - `0x101f`).
 
 .`command` - abstract command register - "access register" commands only
-[cols="^1,^2,<8"]
+[cols="^1,^2,^1,<8"]
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [RISC-V]      | R/W | Description / required value
@@ -373,7 +370,7 @@ hart's GPRs (abstract command register index `0x1000` - `0x101f`).
 | 21    | `aarpostincrement` | -/w | `0`, post-increment is not supported
 | 18    | `postexec`         | -/w | if set the program buffer is executed _after_ the command
 | 17    | `transfer`         | -/w | if set the operation in `write` is conducted
-| 16    | `write`            | -/w | `1`: copy `data0` to `[regno]`; `0` copy `[regno]` to `data0`
+| 16    | `write`            | -/w | `1`: copy `data0` to `[regno]`, `0`: copy `[regno]` to `data0`
 | 15:0  | `regno`            | -/w | GPR-access only; has to be `0x1000` - `0x101f`
 |=======================
 
@@ -409,7 +406,7 @@ hart's GPRs (abstract command register index `0x1000` - `0x101f`).
 | 0x20 | **Program buffer 0** | `progbuf0`
 | 0x21 | **Program buffer 1** | `progbuf1`
 3+| Reset value: `NOP`-instruction
-3+| General purpose program buffer for the DM.
+3+| General purpose program buffer (two entries) for the DM.
 |======
 
 
@@ -502,64 +499,55 @@ acknowledges the according request.
 :sectnums:
 === CPU Debug Mode
 
-The NEORV32 CPU Debug Mode `DB` (part of `rtl/core/neorv32_cpu_control.vhd`) is compatible to the "Minimal RISC-V Debug Specification 0.13.2".
+The NEORV32 CPU Debug Mode `DB` or `DEBUG` (part of `rtl/core/neorv32_cpu_control.vhd`) is compatible to the
+"Minimal RISC-V Debug Specification 0.13.2".
 It is enabled/implemented by setting the CPU generic _CPU_EXTENSION_RISCV_DEBUG_ to "true" (done by setting processor
 generic _ON_CHIP_DEBUGGER_EN_).
-It provides a new operation mode called "debug mode".
-When enabled, three additional CSRs are available (section <<_cpu_debug_mode_csrs>>) and also the "return from debug mode"
-instruction `dret` is available when the CPU is "in" debug mode.
+It provides a new operation mode called "debug mode". When enabled, three additional CSRs are available
+(section <<_cpu_debug_mode_csrs>>) and the "return from debug mode" instruction `dret` are available.
 
 [IMPORTANT]
 The CPU _debug mode_ requires the `Zicsr` and `Zifencei` CPU extension to be implemented (top generics _CPU_EXTENSION_RISCV_Zicsr_
 and _CPU_EXTENSION_RISCV_Zifencei_ = true).
 
-.Hardware Watchpoints and Breakpoints
-[NOTE]
-The NEORV32 CPU _debug mode_ does not provide a hardware "trigger module" (which is optional in the RISC-V debug spec). However, gdb
-provides a native _emulation_ for code (breakpoints using `break` instruction) and data (polling data watchpoints in automated
-single-stepping) triggers.
-
 The CPU debug-mode is entered when one of the following events appear:
 
 [start=1]
-. executing `ebreak` instruction (when `dcsr.ebreakm` is set and in machine mode OR when `dcsr.ebreaku` is set and in user mode)
+. executing the `ebreak` instruction (when in machine-mode and `dcsr.ebreakm` is set OR when in user-mode and `dcsr.ebreaku` is set)
 . debug halt request from external DM (via CPU signal `db_halt_req_i`, high-active, triggering on rising-edge)
 . finished executing of a single instruction while in single-step debugging mode (enabled via `dcsr.step`)
+. hardware trigger by the <<_trigger_module>>
 
-From a hardware point of view, these "entry conditions" are special synchronous (`ebreak` instruction) or asynchronous
-(single-stepping "interrupt"; halt request "interrupt") traps, that are handled invisibly by the control logic.
+From a hardware point of view, these "entry conditions" are special synchronous (e.g. `ebreak` instruction) and asynchronous
+(e.g. halt request "interrupt") traps, that are handled invisibly by the control logic.
 
-.WFI instruction
-[WARNING]
-The wait-for-interrupt instruction `wfi` puts the CPU into sleep mode. The CPU will resume normale operation
-when at least one interrupt source becomes pending (= at least one bit in `mip` CSR is set).
-However, the CPU will _also resume_ from sleep mode if there is a halt request from the debug module (DM).
+**Whenever the CPU enters debug-mode it performs the following operations:**
 
-Whenever the CPU **enters debug-mode** it performs the following operations:
-
-* move `pc` to `dpcs`
+* wake-up CPU if it was send to sleep mode by the `wfi` instruction
+* move `pc` to `dpc`
 * copy the hart's current privilege level to `dcsr.prv`
 * set `dcrs.cause` according to the cause why debug mode is entered
 * **no update** of `mtval`, `mcause`, `mtval` and `mstatus` CSRs
-* load the address configured via the CPU _CPU_DEBUG_ADDR_ generic to the `pc` to jump to "debugger park loop" code in the debug module (DM)
+* load the address configured via the CPU's _CPU_DEBUG_ADDR_ generic to the `pc` to jump to the "debugger park loop" code stored in the debug module (DM)
 
-When the CPU **is in debug-mode** the following things are important:
+**When the CPU is in debug-mode the following things are important:**
 
 * while in debug mode, the CPU executes the parking loop and the program buffer provided by the DM if requested
-* effective CPU privilege level is `machine` mode, any PMP configuration is bypassed
+* effective CPU privilege level is `machine` mode, any active physical memory protection (PMP) configuration is bypassed
 * the `wfi` instruction acts as a `nop` (also during single-stepping)
 * if an exception occurs:
 ** if the exception was caused by any debug-mode entry action the CPU jumps to the _normal entry point_
    (= _CPU_DEBUG_ADDR_) of the park loop again (for example when executing `ebreak` _in_ debug-mode)
 ** for all other exception sources the CPU jumps to the _exception entry point_ ( = _CPU_DEBUG_ADDR_ + 4)
-   to signal an exception to the DM and restarts the park loop again afterwards
+   to signal an exception to the DM; the CPU restarts the park loop again afterwards
 * interrupts are disabled; however, they will remain pending and will get executed after the CPU has left debug mode
 * if the DM makes a resume request, the park loop exits and the CPU leaves debug mode (executing `dret`)
 
 Debug mode is left either by executing the `dret` instruction footnote:[`dret` should only be executed _inside_ the debugger
 "park loop" code (-> code ROM in the debug module (DM).)] (_in_ debug mode) or by performing
 a hardware reset of the CPU. Executing `dret` outside of debug mode will raise an illegal instruction exception.
-Whenever the CPU **leaves debug mode** the following things happen:
+
+**Whenever the CPU leaves debug mode it performs the following operations:**
 
 * set the hart's current privilege level according to `dcsr.prv`
 * restore `pc` from `dpcs`
@@ -587,32 +575,39 @@ is raised.
 [frame="topbot",grid="none"]
 |======
 | 0x7b0 | **Debug control and status register** | `dcsr`
-3+| Reset value: 0x00000000
+3+| Reset value: 0x40000000
 3+| The `dcsr` CSR is compatible to the RISC-V debug spec. It is used to configure debug mode and provides additional status information.
 The following bits are implemented. The reaming bits are read-only and always read as zero.
 |======
 
-.Debug control and status register bits
+.Debug control and status register `dcsr` bits
 [cols="^1,^2,^1,<8"]
 [options="header",grid="rows"]
 |=======================
-| Bit   | Name [RISC-V] | R/W | Event
-| 31:28 | `xdebugver` | r/- | always `0100` - indicates external debug support exists
-| 27:16 | -           | r/- | _reserved_, read as zero
-| 15    | `ebereakm`  | r/w | `ebreak` instructions in `machine` mode will _enter_ debug mode when set
-| 14    | [line-through]#`ebereakh`# | r/- | `0` - hypervisor mode not supported
-| 13    | [line-through]#`ebereaks`# | r/- | `0` - supervisor mode not supported
-| 12    | `ebereaku`  | r/w | `ebreak` instructions in `user` mode will _enter_ debug mode when set
-| 11    | [line-through]#`stepie`#    | r/- | `0` - IRQs are disabled during single-stepping
-| 10    | [line-through]#`stopcount`# | r/- | `0` - counters increment as usual
-| 9     | [line-through]#`stoptime`#  | r/- | `0` - timers increment as usual
-| 8:6   | `cause`     | r/- | cause identifier - why debug mode was entered
-| 5     | -           | r/- | _reserved_, read as zero
-| 4     | [line-through]#`mprven`# | r/- | `0` - `mstatus.mprv` is ignored when in debug mode
-| 3     | [line-through]#`nmip`#   | r/- | `0` - non-maskable interrupt is pending
-| 2     | `step`      | r/w | enable single-stepping when set
-| 1:0   | `prv`       | r/w | CPU privilege level before/after debug mode
+| Bit   | Name [RISC-V] | R/W | Description
+| 31:28 | `xdebugver`   | r/- | `0100` - indicates external debug support exists
+| 27:16 | -             | r/- | `000000000000` - _reserved_
+| 15    | `ebereakm`    | r/w | `ebreak` instructions in `machine` mode will _enter_ debug mode when set
+| 14    | `ebereakh`    | r/- | `0` - hypervisor mode not supported
+| 13    | `ebereaks`    | r/- | `0` - supervisor mode not supported
+| 12    | `ebereaku`    | r/w | `ebreak` instructions in `user` mode will _enter_ debug mode when set
+| 11    | `stepie`      | r/- | `0` - IRQs are disabled during single-stepping
+| 10    | `stopcount`   | r/- | `0` - counters increment as usual
+| 9     | `stoptime`    | r/- | `0` - timers increment as usual
+| 8:6   | `cause`       | r/- | cause identifier - why debug mode was entered (see below)
+| 5     | -             | r/- | `0` - _reserved_
+| 4     | `mprven`      | r/- | `0` - `mstatus.mprv` is ignored when in debug mode
+| 3     | `nmip`        | r/- | `0` - non-maskable interrupt is pending
+| 2     | `step`        | r/w | enable single-stepping when set
+| 1:0   | `prv`         | r/w | CPU privilege level before/after debug mode
 |=======================
+
+Cause codes in `dcsr.cause` (highest priority first):
+
+* `010` - trigger by hardware <<_trigger_module>>
+* `001` - executed EBREAK instruction
+* `011` - external halt request (from DM)
+* `100` - return from single-stepping
 
 
 :sectnums!:
@@ -639,4 +634,153 @@ debug mode is entered. The `dret` instruction will return to `dpc` by moving `dp
 3+| The `dscratch0` CSR is compatible to the RISC-V debug spec. It provides a general purpose debug mode-only scratch register.
 |======
 
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Trigger Module
+
+The NEORV32 trigger module implements a subset of the features described in the "RISC-V Debug Specification / Trigger Module".
+It is always implemented when the CPU debug mode / the on-chip debugger is implemented.
+
+[IMPORTANT]
+The trigger module only provides a single trigger of _instruction address match_ type. This trigger will fire
+**after** the instruction at the specific address has been executed.
+
+The trigger module only provides a single trigger supporting only the "instruction address match" type. This limitation
+is granted by the RISC-V specs. and is sufficient to **debug code executed from read-only memory (ROM)**.
+"Normal" _software_ breakpoints (using gdb's `b`/`break` command) are implemented by temporarily replacing the according
+instruction word by a BREAK instruction. This is not possible when debugging code that is executed from read-only memory
+(for example when debugging programs that are executed via the <<_execute_in_place_module_xip>>).
+Therefore, the NEORV32 trigger module provides a single "instruction address match" trigger to enter debug mode when
+executing the instruction at a specific address. These "hardware-assisted breakpoints" are used by gdb's `hb`/`hbreak` command.
+
+
+:sectnums:
+==== Trigger Module CSRs
+
+The trigger module provides 8 additional CSRs, which accessible in debug mode and also in machine-mode. Since the
+trigger module does not support _native mode_ writes from machine-mode software to those CSRs are ignored.
+Hence, the CSRs of this module are only relevant for the debugger.
+
+
+:sectnums!:
+===== **`tselect`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x7a0 | **Trigger select register** | `tselect`
+3+| Reset value: 0x00000000
+3+| This CSR is hardwired to zero indicating there is only one trigger available. Any write access is ignored.
+|======
+
+
+:sectnums!:
+===== **`tdata1`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x7a1 | **Trigger data register 1 / match control register** | `tdata1` / `mcontrol`
+3+| Reset value: 0x28041048
+3+| This CSR is used to configure the address match trigger. Only one bit is writable, the remaining bits are hardwired (see table below).
+Write attempts to the hardwired bits are ignored.
+|======
+
+.Match control CSR (`tdata1`) bits
+[cols="^1,^2,^1,<8"]
+[options="header",grid="rows"]
+|=======================
+| Bit   | Name [RISC-V] | R/W | Description
+| 31:28 | `type`        | r/- | `0010` - address match trigger
+| 27    | `dmode`       | r/- | `1` - only debug-mode can write to the `tdata*` CSRs
+| 26:21 | `maskmax`     | r/- | `000000` - only exact values
+| 20    | `hit`         | r/- | `0` - feature not supported
+| 19    | `select`      | r/- | `0` - fire trigger on address match
+| 18    | `timing`      | r/- | `1` - trigger **after** executing the triggering instruction
+| 17:16 | `sizelo`      | r/- | `00` - match against an access of any size
+| 15:12 | `action`      | r/- | `0001` - enter debug mode on trigger fire
+| 11    | `chain`       | r/- | `0` - chaining is not supported - there is only one trigger
+| 10:6  | `match`       | r/- | `0000` - only full-address match
+| 6     | `m`           | r/- | `1` - trigger enabled when in machine-mode
+| 5     | `h`           | r/- | `0` - hypervisor-mode not supported
+| 4     | `s`           | r/- | `0` - supervisor-mode not supported
+| 3     | `u`           | r/- | trigger enabled when in user-mode, set when `U` ISA extension is enabled
+| 2     | `exe`         | r/w | set to enable trigger
+| 1     | `store`       | r/- | `0` - store address/data matching not supported
+| 0     | `load`        | r/- | `0` - load address/data matching not supported
+|=======================
+
+
+:sectnums!:
+===== **`tdata2`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x7a2 | **Trigger data register 2** | `tdata2`
+3+| Reset value: _UNDEFINED_
+3+| Since only the "address match trigger" type is supported, this r/w CSR is used to store the address of the triggering instruction.
+|======
+
+
+:sectnums!:
+===== **`tdata3`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x7a3 | **Trigger data register 3** | `tdata3`
+3+| Reset value: 0x00000000
+3+| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
+|======
+
+
+:sectnums!:
+===== **`tinfo`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x7a4 | **Trigger information register** | `tinfo`
+3+| Reset value: 0x00000004
+3+| This CSR is hardwired to "4" indicating there is only an "address match trigger" available. Any write access is ignored.
+|======
+
+
+:sectnums!:
+===== **`tcontrol`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x7a5 | **Trigger control register** | `tcontrol`
+3+| Reset value: 0x00000000
+3+| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
+|======
+
+
+:sectnums!:
+===== **`mcontext`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x7a8 | **Machine context register** | `mcontext`
+3+| Reset value: 0x00000000
+3+| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
+|======
+
+
+:sectnums!:
+===== **`scontext`**
+
+[cols="4,27,>7"]
+[frame="topbot",grid="none"]
+|======
+| 0x7aa | **Supervisor context register** | `scontext`
+3+| Reset value: 0x00000000
+3+| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
+|======
 

@@ -4,27 +4,27 @@
 
 The NEORV32 on-chip debugger allows _online_ in-system debugging via an external JTAG access port from a
 host machine. The general flow is independent of the host machine's operating system. However, this tutorial uses
-Windows and Linux (Ubuntu on Windows) in parallel.
-
-[TIP]
-See datasheet section https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd[On Chip Debugger (OCD)]
-for more information.
+Windows and Linux (Ubuntu on Windows / WSL) in parallel running the upstream version of OpenOCD and the
+RISC-V _GNU debugger_ `gdb`.
 
 [NOTE]
-This tutorial uses `gdb` to **directly upload an executable** to the processor. If you are using the default
-processor setup _with_ internal instruction memory (IMEM) make sure it is implemented as RAM
-(_INT_BOOTLOADER_EN_ generic = true).
+See datasheet section https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd[On Chip Debugger (OCD)]
+for more information regarding the actual hardware.
 
-[IMPORTANT]
+[NOTE]
 The on-chip debugger is only implemented if the _ON_CHIP_DEBUGGER_EN_ generic is set _true_. Furthermore, it requires
-the `Zicsr` and `Zifencei` CPU extension to be implemented (top generics _CPU_EXTENSION_RISCV_Zicsr_
-and _CPU_EXTENSION_RISCV_Zifencei_ = true).
+the `Zicsr` and `Zifencei` CPU extension to be implemented (top generics _CPU_EXTENSION_RISCV_Zicsr_ = _true_
+and _CPU_EXTENSION_RISCV_Zifencei_ = _true_).
 
 
 :sectnums:
 === Hardware Requirements
 
-Make sure the on-chip debugger of your NEORV32 setups is implemented (_ON_CHIP_DEBUGGER_EN_ generic = true).
+Make sure the on-chip debugger of your NEORV32 setup is implemented (_ON_CHIP_DEBUGGER_EN_ generic = true). This
+tutorial uses `gdb` to **directly upload an executable** to the processor. If you are using the default
+processor setup _with_ internal instruction memory (IMEM) make sure it is implemented as RAM
+(_INT_BOOTLOADER_EN_ generic = true).
+
 Connect a JTAG adapter to the NEORV32 `jtag_*` interface signals. If you do not have a full-scale JTAG adapter, you can
 also use a FTDI-based adapter like the "FT2232H-56Q Mini Module", which is a simple and inexpensive FTDI breakout board.
 
@@ -41,19 +41,18 @@ also use a FTDI-based adapter like the "FT2232H-56Q Mini Module", which is a sim
 |=======================
 
 [TIP]
-The low-active JTAG _test reset_ (TRST) signals is _optional_ as a reset can also be triggered via the TAP controller.
-If TRST is not used make sure to pull the signal _high_.
+The low-active JTAG tap reset `jtag_trst_i` signals is _optional_ as a reset can also be triggered via the TAP controller
+issuing special commands. If `jtag_trst_i` is not connected make sure to pull the signal _high_.
 
 
 :sectnums:
 === OpenOCD
 
-The NEORV32 on-chip debugger can be accessed using the https://github.com/riscv/riscv-openocd[RISC-V port of OpenOCD].
-Prebuilt binaries can be obtained - for example - from https://www.sifive.com/software[SiFive]. A pre-configured
-OpenOCD configuration file (`sw/openocd/openocd_neorv32.cfg`) is available that allows easy access to the NEORV32 CPU.
+The NEORV32 on-chip debugger can be accessed using the upstream version of OpenOCD. A pre-configured OpenOCD configuration
+file is provided (`sw/openocd/openocd_neorv32.cfg`) that allows an easy access to the NEORV32 CPU.
 
 [NOTE]
-You might need to adapt `ftdi_vid_pid`, `ftdi_channel` and `ftdi_layout_init` in `sw/openocd/openocd_neorv32.cfg`
+You might need to adapt `ftdi vid_pid`, `ftdi channel` and `ftdi layout_init` in `sw/openocd/openocd_neorv32.cfg`
 according to your interface chip and your operating system.
 
 [TIP]
@@ -62,29 +61,31 @@ the clock requirements noted in https://stnolting.github.io/neorv32/#_debug_modu
 
 To access the processor using OpenOCD, open a terminal and start OpenOCD with the pre-configured configuration file.
 
-.Connecting via OpenOCD (on Windows)
+.Connecting via OpenOCD (on Windows) using the default `openocd_neorv32.cfg` script
 [source, bash]
 --------------------------
 N:\Projects\neorv32\sw\openocd>openocd -f openocd_neorv32.cfg
-Open On-Chip Debugger 0.11.0-rc1+dev (SiFive OpenOCD 0.10.0-2020.12.1)
+Open On-Chip Debugger 0.11.0 (2021-11-18) [https://github.com/sysprogs/openocd]
 Licensed under GNU GPL v2
-For bug reports:
-        https://github.com/sifive/freedom-tools/issues
-1
-Info : Listening on port 6666 for tcl connections
-Info : Listening on port 4444 for telnet connections
+libusb1 09e75e98b4d9ea7909e8837b7a3f00dda4589dc3
+For bug reports, read
+        http://openocd.org/doc/doxygen/bugs.html
 Info : clock speed 1000 kHz
 Info : JTAG tap: neorv32.cpu tap/device found: 0x0cafe001 (mfg: 0x000 (<invalid>), part: 0xcafe, ver: 0x0)
 Info : datacount=1 progbufsize=2
 Info : Disabling abstract command reads from CSRs.
 Info : Examined RISC-V core; found 1 harts
-Info :  hart 0: XLEN=32, misa=0x40801105
+Info :  hart 0: XLEN=32, misa=0x40901107
 Info : starting gdb server for neorv32.cpu.0 on 3333
 Info : Listening on port 3333 for gdb connections
+Target HALTED.
+Ready for remote connections.
+Info : Listening on port 6666 for tcl connections
+Info : Listening on port 4444 for telnet connections
 --------------------------
 
 OpenOCD has successfully connected to the NEORV32 on-chip debugger and has examined the CPU (showing the content of
-the `misa` CSRs). Now you can use `gdb` to connect via port 3333.
+the `misa` CSRs). The processor is halted and OpenOCD waits fot `gdb` to connect via port 3333.
 
 
 :sectnums:
@@ -106,7 +107,7 @@ Navigate to `sw/example/blink_led` and compile the application:
 .Adding debug symbols to the executable
 [NOTE]
 `USER_FLAGS+=-g` passes the `-g` flag to the compiler so it adds debug information/symbols
-to the generated ELF file. This is optional but will provide more sophisticated information for debugging
+to the generated ELF file. This is optional but will provide more sophisticated debugging information
 (like source file line numbers).
 
 This will generate an ELF file `main.elf` that contains all the symbols required for debugging.
@@ -176,7 +177,7 @@ and halting the CPU right before executing the `blink_led` application.
 
 
 :sectnums:
-==== Breakpoint Example
+==== Software Breakpoints
 
 The following steps are just a small showcase that illustrate a simple debugging scheme.
 
@@ -204,22 +205,26 @@ at hexadecimal `690` in this example. Add this address as _breakpoint_ to GDB.
 The address might be different if you use a different version of the software framework or
 if different ISA options are configured.
 
-.Adding a GDB breakpoint
+.Adding a GDB software breakpoint
 [source, bash]
 --------------------------
-(gdb) b * 0x690
+(gdb) b * 0x690 <1>
 Breakpoint 1 at 0x690
 --------------------------
+<1> `b` is an alias for `break`, which adds a _software_ breakpoint.
 
-.How do breakpoints work?
+.How do _software_ breakpoints work?
 [TIP]
-The NEORV32 on-chip debugger does not provide any hardware breakpoints (RISC-V "trigger modules") that compare an address like the PC
-with a predefined value. Instead, gdb will modify the actual executable in IMEM: the actual instruction at the address
-of the specified breakpoint is replaced by a `break` / `c.break` instruction. Whenever execution reaches this instruction, debug mode is
-re-entered and the debugger restores the original instruction at this address to maintain original program behavior.
+Software breakpoints are used for debugging programs that are accessed from read/write memory (RAM) like IMEM. The debugger
+temporarily replaces the instruction word of the instruction, where the breakpoint shall be inserted, by a `ebreak` / `c.ebreak`
+instruction. Whenever execution reaches this instruction, debug mode is entered and the debugger restores the original
+instruction at this address to maintain original program behavior. +
+ +
+When debugging programs executed from ROM _hardware-assisted_ breakpoints using the core's trigger module have to be used.
+See section <<_hardware_breakpoints>> for more information. 
 
 Now execute `c` (= continue). The CPU will resume operation until it hits the break-point.
-By this we can "step" from increment to increment.
+By this we can move from one counter increment to another.
 
 .Iterating from breakpoint to breakpoint
 [source, bash]
@@ -236,3 +241,31 @@ Breakpoint 1, 0x00000690 in neorv32_cpu_delay_ms ()
 (gdb) c
 Continuing.
 --------------------------
+
+.BREAK instructions in your program code
+[TIP]
+If your original application code uses the BREAK instruction (for example for some OS calls/signaling) this
+instruction will cause an enter to debug mode when executed. These situation cannot be continued using gdb's
+`c` command and have to be "stepped-over" using the single-step command `s`.
+
+
+:sectnums:
+==== Hardware Breakpoints
+
+Hardware-assisted breakpoints using the CPU's trigger module are required when debugging code that is executed from
+read-only memory (ROM) as GDB cannot temporarily replace instructions by BREAK instructions.
+
+From a user point of view hardware breakpoints behave like software breakpoints. GDB provides a command to setup
+a hardware-assisted breakpoint:
+
+.Adding a GDB hardware breakpoint
+[source, bash]
+--------------------------
+(gdb) hb * 0x690 <1>
+Breakpoint 1 at 0x690
+--------------------------
+<1> `hb` is an alias for `hbreak`, which adds a _hardware_ breakpoint.
+
+[NOTE]
+The CPU's trigger module only provides a single _instruction address match_ type trigger. Hence, only
+a single `hb` hardware-assisted breakpoint can be used.

@@ -194,6 +194,19 @@ enum NEORV32_CSR_enum {
   CSR_PMPADDR62      = 0x3ee, /**< 0x3ee - pmpaddr62 (r/w): Physical memory protection address register 62 */
   CSR_PMPADDR63      = 0x3ef, /**< 0x3ef - pmpaddr63 (r/w): Physical memory protection address register 63 */
 
+  CSR_TSELECT        = 0x7a0, /**< 0x7a0 - tselect  (r/(w)): Trigger select */
+  CSR_TDATA1         = 0x7a1, /**< 0x7a1 - tdata1   (r/(w)): Trigger data register 0 */
+  CSR_TDATA2         = 0x7a2, /**< 0x7a2 - tdata2   (r/(w)): Trigger data register 1 */
+  CSR_TDATA3         = 0x7a3, /**< 0x7a3 - tdata3   (r/(w)): Trigger data register 2 */
+  CSR_TINFO          = 0x7a4, /**< 0x7a4 - tinfo    (r/(w)): Trigger info */
+  CSR_TCONTROL       = 0x7a5, /**< 0x7a5 - tcontrol (r/(w)): Trigger control */
+  CSR_MCONTEXT       = 0x7a8, /**< 0x7a8 - mcontext (r/(w)): Machine context register */
+  CSR_SCONTEXT       = 0x7aa, /**< 0x7aa - scontext (r/(w)): Supervisor context register */
+
+//CSR_DCSR           = 0x7b0, /**< 0x7b0 - dcsr     (-/-): Debug status and control register */
+//CSR_DPC            = 0x7b1, /**< 0x7b1 - dpc      (-/-): Debug program counter */
+//CSR_DSCRATCHC      = 0x7b2, /**< 0x7b2 - dscratch (-/-): Debug scratch register */
+
   CSR_MCYCLE         = 0xb00, /**< 0xb00 - mcycle   (r/w): Machine cycle counter low word */
   CSR_MINSTRET       = 0xb02, /**< 0xb02 - minstret (r/w): Machine instructions-retired counter low word */
 

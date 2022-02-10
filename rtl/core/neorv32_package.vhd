@@ -65,7 +65,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060706"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060707"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -692,6 +692,16 @@ package neorv32_package is
   constant csr_pmpaddr61_c      : std_ulogic_vector(11 downto 0) := x"3ed";
   constant csr_pmpaddr62_c      : std_ulogic_vector(11 downto 0) := x"3ee";
   constant csr_pmpaddr63_c      : std_ulogic_vector(11 downto 0) := x"3ef";
+  -- trigger module registers --
+  constant csr_class_trigger_c  : std_ulogic_vector(07 downto 0) := x"7a"; -- trigger registers
+  constant csr_tselect_c        : std_ulogic_vector(11 downto 0) := x"7a0";
+  constant csr_tdata1_c         : std_ulogic_vector(11 downto 0) := x"7a1";
+  constant csr_tdata2_c         : std_ulogic_vector(11 downto 0) := x"7a2";
+  constant csr_tdata3_c         : std_ulogic_vector(11 downto 0) := x"7a3";
+  constant csr_tinfo_c          : std_ulogic_vector(11 downto 0) := x"7a4";
+  constant csr_tcontrol_c       : std_ulogic_vector(11 downto 0) := x"7a5";
+  constant csr_mcontext_c       : std_ulogic_vector(11 downto 0) := x"7a8";
+  constant csr_scontext_c       : std_ulogic_vector(11 downto 0) := x"7aa";
   -- debug mode registers --
   constant csr_class_debug_c    : std_ulogic_vector(09 downto 0) := x"7b" & "00"; -- debug registers
   constant csr_dcsr_c           : std_ulogic_vector(11 downto 0) := x"7b0";
@@ -844,7 +854,8 @@ package neorv32_package is
   constant trap_firq14_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11110"; -- 1.30: fast interrupt 14
   constant trap_firq15_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11111"; -- 1.31: fast interrupt 15
   -- entering debug mode - cause --
-  constant trap_db_break_c : std_ulogic_vector(6 downto 0) := "0" & "1" & "00010"; -- break instruction (sync / EXCEPTION)
+  constant trap_db_break_c : std_ulogic_vector(6 downto 0) := "0" & "1" & "00001"; -- break instruction (sync / EXCEPTION)
+  constant trap_db_hw_c    : std_ulogic_vector(6 downto 0) := "0" & "1" & "00010"; -- hardware trigger (sync / EXCEPTION)
   constant trap_db_halt_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00011"; -- external halt request (async / IRQ)
   constant trap_db_step_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00100"; -- single-stepping (async / IRQ)
 
@@ -863,8 +874,9 @@ package neorv32_package is
   constant exception_laccess_c   : natural :=  9; -- load access fault
   -- for debug mode only --
   constant exception_db_break_c  : natural := 10; -- enter debug mode via ebreak instruction ("sync EXCEPTION")
+  constant exception_db_hw_c     : natural := 11; -- enter debug mode via hw trigger ("sync EXCEPTION")
   --
-  constant exception_width_c     : natural := 11; -- length of this list in bits
+  constant exception_width_c     : natural := 12; -- length of this list in bits
   -- interrupt source bits --
   constant interrupt_msw_irq_c   : natural :=  0; -- machine software interrupt
   constant interrupt_mtime_irq_c : natural :=  1; -- machine timer interrupt
