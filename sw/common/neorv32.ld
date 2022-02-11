@@ -75,7 +75,7 @@ SECTIONS
   /* start section on WORD boundary */
   . = ALIGN(4);
 
-  /* default heap site: we can use up to 1/4 of available data memory (RAM) by default */
+  /* default heap size: we can use up to 1/4 of available data memory (RAM) by default */
   /* WARNING! the heap will collide with the stack if allocating too much memory! */
   __heap_size = DEFINED(__heap_size) ? __heap_size : LENGTH(ram) / 4;
 
