@@ -101,7 +101,6 @@ The documentation is automatically built and deployed to GitHub pages by the CI 
 
 
 
-
 <<<
 // ####################################################################################################################
 :sectnums:
@@ -282,19 +281,16 @@ MEMORY
 ----
 
 Each memory section provides a _base address_ `ORIGIN` and a _size_ `LENGTH`. The base address and size of the `iodev` section is
-fixed and must not be altered. The base addresses and sizes of the `ram` and `rom` regions correspond to the total available instruction
-and data memory address space (see section <<_address_space_layout>>).
+fixed and should not be altered. The base addresses and sizes of the `ram` and `rom` regions correspond to the total available instruction
+and data memory address space (see section <<_address_space_layout>>) as defined in `rtl/core/neorv32_package.vhd`.
 
 [IMPORTANT]
-`ORIGIN` of the `ram` section has to be always identical to the processor's `dspace_base_c` hardware configuration. Additionally,
+`ORIGIN` of the `ram` section has to be always identical to the processor's `dspace_base_c` hardware configuration. +
+ +
 `ORIGIN` of the `rom` section has to be always identical to the processor's `ispace_base_c` hardware configuration.
 
-The sizes of `ram` section has to be equal to the size of the **physical available data instruction memory**. For example, if the processor
-setup only uses processor-internal DMEM (<<_mem_int_dmem_en>> = _true_ and no external data memory attached) the `LENGTH` parameter of
-this memory section has to be equal to the size configured by the <<_mem_int_dmem_size>> generic.
-
 The sizes of `rom` section is a little bit more complicated. The default linker script configuration assumes a _maximum_ of 2GB _logical_
-memory space, which is also the default configuration of the processor's hardware instruction memory address space. This size _does not_ have
+memory space, which is also the default configuration of the processor's hardware instruction memory address space. This size does not have
 to reflect the _actual_ physical size of the instruction memory (internal IMEM and/or processor-external memory). It just provides a maximum
 limit. When uploading new executable via the bootloader, the bootloader itself checks if sufficient _physical_ instruction memory is available.
 If a new executable is embedded right into the internal-IMEM the synthesis tool will check, if the configured instruction memory size
@@ -308,8 +304,8 @@ The `ram` region also uses a conditional assignment (via the `make_bootloader` s
 (`make_bootloader` symbol is set) the generated bootloader will only use the _first_ 512 bytes of the data address space. This is
 a fall-back to ensure the bootloader can operate independently of the actual _physical_ data memory size.
 
-The linker maps all the regions from the compiled object files into four final sections: `.text`, `.rodata`, `.data` and `.bss`.
-These four regions contain everything required for the application to run:
+The linker maps all the regions from the compiled object files into five final sections: `.text`, `.rodata`, `.data`, `.bss` and `.heap`.
+These regions contain everything required for the application to run:
 
 .Linker memory regions
 [cols="<1,<9"]
@@ -320,11 +316,43 @@ These four regions contain everything required for the application to run:
 | `.rodata` | Constants (like strings) from the application; also the initial data for initialized variables.
 | `.data`   | This section is required for the address generation of fixed (= global) variables only.
 | `.bss`    | This section is required for the address generation of dynamic memory constructs only.
+| `.heap`   | This section is required for the address generation of dynamic memory constructs only.
 |=======================
 
-The `.text` and `.rodata` sections are mapped to processor's instruction memory space and the `.data` and
-`.bss` sections are mapped to the processor's data memory space. Finally, the `.text`, `.rodata` and `.data`
+The `.text` and `.rodata` sections are mapped to processor's instruction memory space and the `.data`,
+`.bss` and `heap` sections are mapped to the processor's data memory space. Finally, the `.text`, `.rodata` and `.data`
 sections are extracted and concatenated into a single file `main.bin`.
+
+
+:sectnums:
+==== RAM Layout
+
+The default NEORV32 linker script uses all of the defined RAM (linker script memory section `ram`) to create four areas.
+Note that depending on the application some areas might not be existent at all.
+
+.Default RAM Layout
+image::ram_layout.png[400]
+
+[start=1]
+. **Constant data (`.data`)**: The constant data section is placed right at the beginning of the RAM. For example, this section
+contains _explicitly initialized_ global variables. This section is initialized by the executable.
+. **Dynamic data (`.bss`)**: The constant data section is followed by the dynamic data section, which contains _uninitialized_ data
+like global variables without explicit initialization. This section is cleared by the start-up code `crt0.S`.
+. **Heap (`.heap`)**: The heap is used for dynamic memory that is managed by functions like `malloc()` and `free()`. The heap
+grows upwards. This section is not initialized at all.
+. **Stack**: The stack starts at the very end of the RAM at address `ORIGIN(ram) + LENGTH(ram) - 4`. The stack grows downwards.
+
+There is _no explicit limit_ for the maximum stack size as this is hard to check. However, a physical memory protection rule could
+be used to configure a maximum size by adding a "protection area" between stack and heap (a PMP region without any access rights).
+
+The maximum size of the heap is defined by the linker script's `__heap_size` symbol. This symbol can be overridden at any time.
+By default, the maximum heap size is 1/4 of the total RAM size.
+
+.Heap-Stack Collisions
+[WARNING]
+Take care when using dynamic memory to avoid collision of the heap and stack memory areas. There is no compile-time protection
+mechanism available as the actual heap and stack size are defined by _runtime_ data. Also beware of fragmentation when
+using dynamic memory allocation.
 
 
 :sectnums:
@@ -409,10 +437,12 @@ int __neorv32_crt0_after_main(int32_t return_code) {
 ----
 
 
+
 <<<
 // ####################################################################################################################
 
 include::software_bootloader.adoc[]
+
 
 
 <<<
