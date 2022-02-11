@@ -3,7 +3,7 @@
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
-/* # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     # */
+/* # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     # */
 /* #                                                                                               # */
 /* # Redistribution and use in source and binary forms, with or without modification, are          # */
 /* # permitted provided that the following conditions are met:                                     # */
@@ -74,6 +74,10 @@ SECTIONS
 {
   /* start section on WORD boundary */
   . = ALIGN(4);
+
+  /* default heap size: we can use up to 1/4 of available data memory (RAM) by default */
+  /* WARNING! the heap will collide with the stack if allocating too much memory! */
+  __heap_size = DEFINED(__heap_size) ? __heap_size : LENGTH(ram) / 4;
 
 
   /* Actual instructions */
@@ -178,8 +182,8 @@ SECTIONS
     *(.srodata.cst16) *(.srodata.cst8) *(.srodata.cst4) *(.srodata.cst2) *(.srodata .srodata.*)
     *(.sdata .sdata.* .gnu.linkonce.s.*)
 
-     PROVIDE_HIDDEN (__tdata_start = .);
-     *(.tdata .tdata.* .gnu.linkonce.td.*)
+    PROVIDE_HIDDEN (__tdata_start = .);
+    *(.tdata .tdata.* .gnu.linkonce.td.*)
 
 
     /* finish section on WORD boundary */
@@ -187,6 +191,8 @@ SECTIONS
 
     _edata = .; PROVIDE (edata = .);
     . = .;
+    __DATA_END__ = .;
+    __global_pointer$ = __DATA_END__ + 0x800;
 
   } > ram AT > rom
 
@@ -194,7 +200,8 @@ SECTIONS
   /* zero/non-initialized read/write data placed in RAM */
   .bss (NOLOAD):
   {
-    __bss_start = .;
+    . = ALIGN(4);
+    __BSS_START__ = .;
     *(.dynsbss)
     *(.sbss .sbss.* .gnu.linkonce.sb.*)
     *(.sbss2 .sbss2.* .gnu.linkonce.sb2.*)
@@ -215,10 +222,18 @@ SECTIONS
        pad the .data section.  */
     . = ALIGN(. != 0 ? 32 / 8 : 1);
 
-    . = ALIGN(32 / 8);
+    . = ALIGN(4);
     __BSS_END__ = .;
-    __global_pointer$ = MIN(__SDATA_BEGIN__ + 0x800, MAX(__DATA_BEGIN__ + 0x800, __BSS_END__ - 0x800));
     _end = .; PROVIDE (end = .);
+  } > ram
+
+
+  /* heap for dynamic memory allocation (use carefully!) */
+  .heap :
+  {
+    PROVIDE(__heap_start = .);
+    . = __heap_size;
+    PROVIDE(__heap_end = .);
   } > ram
 
 
@@ -299,7 +314,7 @@ SECTIONS
   PROVIDE(__ctr0_imem_begin          = ORIGIN(rom));
   PROVIDE(__ctr0_dmem_begin          = ORIGIN(ram));
   PROVIDE(__crt0_stack_begin         = (ORIGIN(ram) + LENGTH(ram)) - 4);
-  PROVIDE(__crt0_bss_start           = __bss_start);
+  PROVIDE(__crt0_bss_start           = __BSS_START__);
   PROVIDE(__crt0_bss_end             = __BSS_END__);
   PROVIDE(__crt0_copy_data_src_begin = __etext + SIZEOF(.rodata));
   PROVIDE(__crt0_copy_data_dst_begin = __DATA_BEGIN__);
