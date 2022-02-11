@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -52,6 +52,7 @@
 // Private functions
 static void __neorv32_uart_itoa(uint32_t x, char *res) __attribute__((unused)); // GCC: do not output a warning when this variable is unused
 static void __neorv32_uart_tohex(uint32_t x, char *res) __attribute__((unused)); // GCC: do not output a warning when this variable is unused
+static void __neorv32_uart_touppercase(uint32_t len, char *ptr) __attribute__((unused)); // GCC: do not output a warning when this variable is unused
 /// \endcond
 
 
@@ -97,6 +98,7 @@ void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
 
   // raw clock prescaler
 #ifndef make_bootloader
+  // use div instructions
   i = (uint16_t)(clock / (2*baudrate));
 #else
   // division via repeated subtraction (minimal size, only for bootloader)
@@ -324,9 +326,11 @@ void neorv32_uart0_print(const char *s) {
  * <TABLE>
  * <TR><TD>%s</TD><TD>String (array of chars, zero-terminated)</TD></TR>
  * <TR><TD>%c</TD><TD>Single char</TD></TR>
- * <TR><TD>%i</TD><TD>32-bit signed number, printed as decimal</TD></TR>
+ * <TR><TD>%d/%i</TD><TD>32-bit signed number, printed as decimal</TD></TR>
  * <TR><TD>%u</TD><TD>32-bit unsigned number, printed as decimal</TD></TR>
- * <TR><TD>%x</TD><TD>32-bit number, printed as 8-char hexadecimal</TD></TR>
+ * <TR><TD>%x</TD><TD>32-bit number, printed as 8-char hexadecimal - lower-case</TD></TR>
+ * <TR><TD>%X</TD><TD>32-bit number, printed as 8-char hexadecimal - upper-case</TD></TR>
+ * <TR><TD>%p</TD><TD>32-bit pointer, printed as 8-char hexadecimal - lower-case</TD></TR>
  * </TABLE>
  **************************************************************************/
 void neorv32_uart0_printf(const char *format, ...) {
@@ -348,6 +352,7 @@ void neorv32_uart0_printf(const char *format, ...) {
           neorv32_uart0_putc((char)va_arg(a, int));
           break;
         case 'i': // 32-bit signed
+        case 'd':
           n = (int32_t)va_arg(a, int32_t);
           if (n < 0) {
             n = -n;
@@ -361,7 +366,12 @@ void neorv32_uart0_printf(const char *format, ...) {
           neorv32_uart0_print(string_buf);
           break;
         case 'x': // 32-bit hexadecimal
+        case 'p':
+        case 'X':
           __neorv32_uart_tohex(va_arg(a, uint32_t), string_buf);
+          if (c == 'X') {
+            __neorv32_uart_touppercase(11, string_buf);
+          }
           neorv32_uart0_print(string_buf);
           break;
         default: // unsupported format
@@ -465,7 +475,7 @@ void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
   uint8_t p = 0; // initial prsc = CLK/2
 
   // raw clock prescaler
-#ifdef make_bootloader
+#ifndef make_bootloader
   // use div instructions
   i = (uint16_t)(clock / (2*baudrate));
 #else
@@ -691,9 +701,11 @@ void neorv32_uart1_print(const char *s) {
  * <TABLE>
  * <TR><TD>%s</TD><TD>String (array of chars, zero-terminated)</TD></TR>
  * <TR><TD>%c</TD><TD>Single char</TD></TR>
- * <TR><TD>%i</TD><TD>32-bit signed number, printed as decimal</TD></TR>
+ * <TR><TD>%d/%i</TD><TD>32-bit signed number, printed as decimal</TD></TR>
  * <TR><TD>%u</TD><TD>32-bit unsigned number, printed as decimal</TD></TR>
- * <TR><TD>%x</TD><TD>32-bit number, printed as 8-char hexadecimal</TD></TR>
+ * <TR><TD>%x</TD><TD>32-bit number, printed as 8-char hexadecimal - lower-case</TD></TR>
+ * <TR><TD>%X</TD><TD>32-bit number, printed as 8-char hexadecimal - upper-case</TD></TR>
+ * <TR><TD>%p</TD><TD>32-bit pointer, printed as 8-char hexadecimal - lower-case</TD></TR>
  * </TABLE>
  **************************************************************************/
 void neorv32_uart1_printf(const char *format, ...) {
@@ -715,6 +727,7 @@ void neorv32_uart1_printf(const char *format, ...) {
           neorv32_uart1_putc((char)va_arg(a, int));
           break;
         case 'i': // 32-bit signed
+        case 'd':
           n = (int32_t)va_arg(a, int32_t);
           if (n < 0) {
             n = -n;
@@ -728,7 +741,12 @@ void neorv32_uart1_printf(const char *format, ...) {
           neorv32_uart1_print(string_buf);
           break;
         case 'x': // 32-bit hexadecimal
+        case 'p':
+        case 'X':
           __neorv32_uart_tohex(va_arg(a, uint32_t), string_buf);
+          if (c == 'X') {
+            __neorv32_uart_touppercase(11, string_buf);
+          }
           neorv32_uart1_print(string_buf);
           break;
         default: // unsupported format
@@ -852,4 +870,25 @@ static void __neorv32_uart_tohex(uint32_t x, char *res) {
   }
 
   res[8] = '\0'; // terminate result string
+}
+
+
+/**********************************************************************//**
+ * Private function to cast a string to UPPERCASE.
+ *
+ * @param[in] len Total length of input string.
+ * @param[in,out] ptr Pointer for input/output string.
+ **************************************************************************/
+static void __neorv32_uart_touppercase(uint32_t len, char *ptr) {
+
+  char tmp;
+
+  while (len > 0) {
+    tmp = *ptr;
+    if ((tmp >= 'a') && (tmp <= 'z')) {
+      *ptr = tmp - 32;
+    }
+    ptr++;
+    len--;
+  }
 }
