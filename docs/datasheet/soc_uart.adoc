@@ -30,10 +30,12 @@ independently.
 The UART features two memory-mapped registers `CTRL` and `DATA`, which are used for configuration, status
 check and data transfer.
 
+.Standard Console(s)
 [NOTE]
-Please note that ALL default example programs and software libraries of the NEORV32 software
+Please note that _all_ default example programs and software libraries of the NEORV32 software
 framework (including the bootloader and the runtime environment) use the primary UART
-(_UART0_) as default user console interface.
+(_UART0_) as default user console interface. Furthermore, UART0 is used to implement all the standard
+input, output and error consoles (`STDIN`, `STDOUT` and `STDERR`).
 
 
 **Theory of Operation**
