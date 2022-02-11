@@ -21,7 +21,8 @@
  * Original source file: https://github.com/openhwgroup/cv32e40p/blob/master/example_tb/core/custom/syscalls.c
  * Original license: SOLDERPAD HARDWARE LICENSE version 0.51
  *
- * Modified for the NEORV32 RISC-V Processor
+ * Modified for the NEORV32 RISC-V Processor by Stephan Nolting
+ * UART0 (if available) is used to output STDOUT data
  */
 
 #include <sys/stat.h>
