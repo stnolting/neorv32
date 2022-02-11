@@ -691,11 +691,6 @@ begin
   execute_engine_fsm_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      -- registers that DO require a specific reset state --
-      execute_engine.pc         <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00"; -- 32-bit aligned!
-      execute_engine.state      <= SYS_WAIT;
-      execute_engine.sleep      <= '0';
-      execute_engine.branched   <= '1'; -- reset is a branch from "somewhere"
       -- no dedicated RESET required --
       execute_engine.state_prev <= SYS_WAIT; -- actual reset value is not relevant
       execute_engine.i_reg      <= (others => def_rst_val_c);
@@ -705,6 +700,11 @@ begin
       execute_engine.i_reg_last <= (others => def_rst_val_c);
       execute_engine.next_pc    <= (others => def_rst_val_c);
       ctrl                      <= (others => def_rst_val_c);
+      -- registers that DO require a specific reset state --
+      execute_engine.pc         <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00"; -- 32-bit aligned!
+      execute_engine.state      <= SYS_WAIT;
+      execute_engine.sleep      <= '0';
+      execute_engine.branched   <= '1'; -- reset is a branch from "somewhere"
       ctrl(ctrl_bus_rd_c)       <= '0';
       ctrl(ctrl_bus_wr_c)       <= '0';
     elsif rising_edge(clk_i) then
