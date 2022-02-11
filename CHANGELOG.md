@@ -25,6 +25,7 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 * :bug: = bug-fix
 * :sparkles: = new feature
+* :test_tube: = new (experimental) feature
 * :warning: = (major) change that might impact compatibility with previous versions
 * :lock: = security issue
 * :rocket: = release
@@ -32,11 +33,12 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 11.02.2022 | 1.6.7.8 | :test_tube: added newlib's system calls (stubs) and linker script symbols for heap memory to support **dynamic memory allocation**; see [PR #275](https://github.com/stnolting/neorv32/pull/275) |
 | 10.02.2022 | 1.6.7.7 | :sparkles: added **RISC-V hardware trigger module** to CPU - allows to set _hardware breakpoints_ (via gdb's `hb`/`hbreak` command) to debug code from ROM; see [PR #274](https://github.com/stnolting/neorv32/pull/274); :bug: minor bug fix in `ebreak` instruction's `dcsr.cause` value (was 0b010 but has to be 0b001) |
 | 08.02.2022 | 1.6.7.6 | :warning: renamed default branch of repository to `main` |
 | 07.02.2022 | 1.6.7.5 | removed default values for bi-directional top entity ports `twi_sda_io` and `twi_scl_io` |
 | 05.02.2022 | 1.6.7.4 | added `err_o` signal to **IMEM** module; if the IMEM is implemented as true ROM any write attempt will raise a _store access fault_ exception (with a `[DEVICE_ERR]` error); see [PR #273](https://github.com/stnolting/neorv32/pull/273) |
-| 03.02.2022 | 1.6.7.3 | using `LTO` (link-time-optimization) option for **bootloader**; improved bootloader user console; see [PR #268](https://github.com/stnolting/neorv32/pull/268) |
+| 03.02.2022 | 1.6.7.3 | :test_tube: using `LTO` (link-time-optimization) option for **bootloader**; improved bootloader user console; see [PR #268](https://github.com/stnolting/neorv32/pull/268) |
 | 31.01.2022 | 1.6.7.2 | :bug: fixed minor bug in **bootloader's MTIME handling** (bootloader crashed if `Zicntr` ISA extension not enabled), fixed minor issues in MTIME and `time` CSRs handling; added MTIME example program; see [PR #267](https://github.com/stnolting/neorv32/pull/267) |
 | 30.01.2022 | 1.6.7.1 | :sparkles: added **`Zxcfu` ISA extension for user-defined custom RISC-V instructions**; see [PR #264](https://github.com/stnolting/neorv32/pull/264) |
 | 28.01.2022 |[**:rocket:1.6.7**](https://github.com/stnolting/neorv32/releases/tag/v1.6.7) | **New release** |
