@@ -17,13 +17,16 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-/*
- * Original source file: https://github.com/openhwgroup/cv32e40p/blob/master/example_tb/core/custom/syscalls.c
- * Original license: SOLDERPAD HARDWARE LICENSE version 0.51
+/**********************************************************************//**
+ * @file syscalls.c
+ * @author Modified for the NEORV32 RISC-V Processor by Stephan Nolting
+ * @brief Newlib system calls
  *
- * Modified for the NEORV32 RISC-V Processor by Stephan Nolting
- * UART0 (if available) is used to output STDOUT data
- */
+ * @warning UART0 (if available) is used to read/write STDOUT data
+ *
+ * @note Original source file: https://github.com/openhwgroup/cv32e40p/blob/master/example_tb/core/custom/syscalls.c
+ * @note Original license: SOLDERPAD HARDWARE LICENSE version 0.51
+ **************************************************************************/
 
 #include <sys/stat.h>
 #include <sys/timeb.h>
@@ -33,6 +36,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <neorv32.h>
+
 #undef errno
 extern int errno;
 
@@ -209,7 +213,19 @@ int _openat(int dirfd, const char *name, int flags, int mode)
 
 ssize_t _read(int file, void *ptr, size_t len)
 {
-    return 0;
+    int read_cnt = 0;
+
+    if (neorv32_uart0_available()) {
+      char *char_ptr;
+      char_ptr = (char *)ptr;
+      while (len > 0) {
+        *char_ptr++ = (char)neorv32_uart0_getc();
+        read_cnt++;
+        len--;
+      }
+    }
+
+    return read_cnt;
 }
 
 int _stat(const char *file, struct stat *st)
