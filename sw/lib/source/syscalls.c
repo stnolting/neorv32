@@ -276,7 +276,6 @@ ssize_t _write(int file, const void *ptr, size_t len)
     //while (ptr != eptr)
     //    *(volatile int *)STDOUT_REG = *(char *)(ptr++);
     if (neorv32_uart0_available()) {
-      neorv32_uart0_print("<syscalls.c> write: ");
       while (ptr != eptr) {
         neorv32_uart0_putc(*(char *)(ptr++));
       }
