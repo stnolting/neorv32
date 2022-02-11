@@ -1184,6 +1184,11 @@ internal _bootloader memory_ (BOOTLDROM).
 .NEORV32 processor - address space (default configuration)
 image::address_space.png[900]
 
+.RAM Layout - Usage of the Data Address Space
+[TIP]
+The actual usage of the data address space by the software/executables (stack, heap, ...) is
+illustrated in section <<_ram_layout>>.
+
 
 :sectnums:
 ==== CPU Data and Instruction Access
