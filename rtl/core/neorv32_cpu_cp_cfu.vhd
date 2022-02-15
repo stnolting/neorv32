@@ -1,13 +1,13 @@
 -- #################################################################################################
 -- # << NEORV32 - CPU Co-Processor: Custom (Instructions) Functions Unit >>                        #
 -- # ********************************************************************************************* #
--- # Intended for user-defined custom instructions (R2-type format only).                          #
--- # See the CPU's documentation for more information.                                             #
+-- # Intended for user-defined custom RISC-V instructions (R2-type format only). See the CPU's     #
+-- # documentation for more information.                                                           #
 -- #                                                                                               #
 -- # NOTE: Take a look at the "software-counterpart" of this CFU example in 'sw/example/demo_cfu'. #
 -- #                                                                                               #
--- # NOTE: This is a very early and very exemplary implementation of the custom functions unit.    #
--- #       Hence, it is not yet optimized for minimal interface latency.                           #
+-- # TODO: Maybe turn this into a wrapper for CFU-playground templates.                            #
+-- #       -> https://github.com/google/CFU-Playground                                             #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -83,8 +83,8 @@ begin
   cfu_control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      res_o <= (others => '0');
       control.busy <= '0';
-      res_o        <= (others => '0');
     elsif rising_edge(clk_i) then
       res_o <= (others => '0'); -- default
       if (control.busy = '0') then -- idle
@@ -93,7 +93,7 @@ begin
         end if;
       else -- busy
         if (control.done = '1') or (ctrl_i(ctrl_trap_c) = '1') then -- processing done? abort if trap
-          res_o        <= control.result;
+          res_o <= control.result; -- actual output for only one cycle
           control.busy <= '0';
         end if;
       end if;
@@ -155,9 +155,9 @@ begin
   -- Control
   -- -------------------------------------------------------------------------------------------
   -- > rstn_i       (input,  1-bit): asynchronous reset, low-active
-  -- > clk_i        (input,  1-bit): main clock
+  -- > clk_i        (input,  1-bit): main clock, triggering on rising edge
   -- > start_i      (input,  1-bit): operation trigger (start processing, high for one cycle)
-  -- > control.done (output, 1-bit): set high when the processing is done
+  -- > control.done (output, 1-bit): set high when processing is done
   --
   -- For pure-combinatorial instructions (without internal state) a subset of those signals is sufficient; see the minimal
   -- example below. If the CFU shall also include states (like memories, registers or "buffers") the start_i signal can be
