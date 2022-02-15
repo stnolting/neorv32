@@ -226,7 +226,7 @@ available CPU extensions.
 
 The following table shows the performance results (scores and average CPI) for exemplary CPU configurations executing
 2000 iterations of the [CoreMark](https://github.com/stnolting/neorv32/blob/main/sw/example/coremark) CPU benchmark
-(using plain rv32i built-in libraries only!).
+(using plain GCC10 rv32i built-in libraries only!).
 
 | CPU Configuration (version [1.5.7.10](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | CoreMark Score | CoreMarks/MHz | Average CPI |
 |:------------------------------------------------|:-----:|:----------:|:--------:|
