@@ -542,6 +542,9 @@ From a hardware point of view, these "entry conditions" are special synchronous 
    to signal an exception to the DM; the CPU restarts the park loop again afterwards
 * interrupts are disabled; however, they will remain pending and will get executed after the CPU has left debug mode
 * if the DM makes a resume request, the park loop exits and the CPU leaves debug mode (executing `dret`)
+* the standard counters <<_machine_counter_and_timer_csrs>> `[m]cycle[h]` and `[m]instret[h]` are stopped; note that the
+<<_machine_system_timer_mtime>> keep running as well as it's shadowed copies in the `[m]time[h]` CSRs
+* all <<_hardware_performance_monitors_hpm_csrs>> are stopped
 
 Debug mode is left either by executing the `dret` instruction footnote:[`dret` should only be executed _inside_ the debugger
 "park loop" code (-> code ROM in the debug module (DM).)] (_in_ debug mode) or by performing
@@ -592,7 +595,7 @@ The following bits are implemented. The reaming bits are read-only and always re
 | 13    | `ebereaks`    | r/- | `0` - supervisor mode not supported
 | 12    | `ebereaku`    | r/w | `ebreak` instructions in `user` mode will _enter_ debug mode when set
 | 11    | `stepie`      | r/- | `0` - IRQs are disabled during single-stepping
-| 10    | `stopcount`   | r/- | `0` - counters increment as usual
+| 10    | `stopcount`   | r/- | `1` - standard counters and HPMs are stopped when in debug mode
 | 9     | `stoptime`    | r/- | `0` - timers increment as usual
 | 8:6   | `cause`       | r/- | cause identifier - why debug mode was entered (see below)
 | 5     | -             | r/- | `0` - _reserved_

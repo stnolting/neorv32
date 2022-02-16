@@ -557,6 +557,11 @@ the <<_mxisa>> CSR. +
 If _CPU_CNT_WIDTH_ is 0, the <<_cycleh>> and <<_instreth>> / <<_mcycleh>> and <<_minstreth>> CSRs are hardwired to zero
 and any write access to them is ignored.
 
+.Counter Increment During Debugging
+[NOTE]
+The `[m]cycle[h]` and `[m]instret[h]` counters do not increment when the CPU is in debug mode.
+See section <<_cpu_debug_mode>> for more information.
+
 
 :sectnums!:
 ===== **`cycle[h]`**
@@ -659,6 +664,12 @@ The total counter width of the HPMs can be configured before synthesis via the <
 The total LSB-aligned HPM counter size (low word CSR + high word CSR) is defined via the
 <<_hpm_num_cnts>> generic (0..64-bit). If <<_hpm_num_cnts>> is less than 64, all unused MSB-aligned
 bits are hardwired to zero.
+
+
+.Counter Increment During Debugging
+[NOTE]
+All HPM counters do not increment when the CPU is in debug mode.
+See section <<_cpu_debug_mode>> for more information.
 
 
 :sectnums!:
