@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -123,7 +123,7 @@ int main() {
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
   // check if Zfinx extension is implemented at all
-  if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_ZFINX)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZFINX)) == 0) {
     neorv32_uart0_print("Error! <Zfinx> extension not synthesized!\n");
     return 1;
   }
