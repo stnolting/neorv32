@@ -34,6 +34,9 @@ Keep in mind that - for instance - a toolchain build with `--with-arch=rv32imc` 
 compressed (`C`) and `mul`/`div` instructions (`M`)! Hence, this code cannot be executed (without
 emulation) on an architecture without these extensions!
 
+[IMPORTANT]
+Make sure to use "newlib" as C standard library as the NEORV32 has no native support for Linus-like operating systems.
+
 
 :sectnums:
 === Downloading and Installing a Prebuilt Toolchain
