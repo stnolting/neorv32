@@ -33,6 +33,7 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 16.02.2022 | 1.6.7.9 | :warning: **added custom `mxisa` CSR replacing SYSINFO's `NEORV32_SYSINFO.CPU` memory-mapped register**: bit-positions remain but names and the actual access mechanism (CSR vs. memory-mapped) have changed! see [PR #276](https://github.com/stnolting/neorv32/pull/276) |
 | 11.02.2022 | 1.6.7.8 | :test_tube: added newlib's system calls (stubs) and linker script symbols for heap memory to support **dynamic memory allocation**  (e.g. `malloc`) and even **standard IO functions** like `printf`; see [PR #275](https://github.com/stnolting/neorv32/pull/275) |
 | 10.02.2022 | 1.6.7.7 | :sparkles: added **RISC-V hardware trigger module** to CPU - allows to set _hardware breakpoints_ (via gdb's `hb`/`hbreak` command) to debug code from ROM; see [PR #274](https://github.com/stnolting/neorv32/pull/274); :bug: minor bug fix in `ebreak` instruction's `dcsr.cause` value (was 0b010 but has to be 0b001) |
 | 08.02.2022 | 1.6.7.6 | :warning: renamed default branch of repository to `main` |
