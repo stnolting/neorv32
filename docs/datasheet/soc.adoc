@@ -148,12 +148,13 @@ value printed in light gray.
 The NEORV32 generics allow to configure the system according to your needs. The generics are
 used to control implementation of certain CPU extensions and peripheral modules and even allow to
 optimize the system for certain design goals like minimal area or maximum performance. +
-**More information can be found in the user guides' section
-https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration[Application-Specific Processor Configuration]**.
+ +
+More information can be found in the user guides' section
+https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration[Application-Specific Processor Configuration].
 
 [TIP]
-Privileged software can determine the actual CPU and processor configuration via the <<_misa>> and the 
-<<_system_configuration_information_memory_sysinfo, SYSINFO>> registers.
+Privileged software can determine the actual CPU and processor configuration via the <<_misa>> and <<_mxisa>> CSRs (CPU) 
+and the <<_system_configuration_information_memory_sysinfo, SYSINFO>> (processor) memory-mapped registers.
 
 [TIP]
 Run a quick simulation using the provided simulation/GHDL scripts (https://stnolting.github.io/neorv32/ug/#_hello_world)
@@ -240,10 +241,11 @@ See chapter <<_on_chip_debugger_ocd>> for more information.
 :sectnums:
 ==== RISC-V CPU Extensions
 
+.Discovering ISA Extensions
 [TIP]
 See section <<_instruction_sets_and_extensions>> for more information. The configuration of the RISC-V _main_ ISA extensions
-(like `M`) can be determined via the <<_misa>> CSR. The configuration of ISA _sub-extensions_ (like `Zicsr`) and _extension options_
-can be determined via memory-mapped registers of the <<_system_configuration_information_memory_sysinfo>> module.
+(like `M`) can be determined via the <<_misa>> CSR. The configuration of ISA _sub-extensions_ (like `Zicsr`) and _tuning options_
+can be determined via the NEORV32-specific <<_mxisa>> CSR.
 
 
 :sectnums!:
@@ -356,7 +358,6 @@ See section <<_zicsr_control_and_status_register_access_privileged_architecture>
 |======
 | **CPU_EXTENSION_RISCV_Zicntr** | _boolean_ | true
 3+| Implement the basic CPU <<_machine_counter_and_timer_csrs>> (`time[h]`, `[m]cycle[h]`, `[m]instret[h]`) when true.
-Enabling this extension will set the  _SYSINFO_CPU_ZICNTR_ flag in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 See section <<_zicntr_cpu_base_counters>> for more information.
 |======
 
@@ -369,7 +370,6 @@ See section <<_zicntr_cpu_base_counters>> for more information.
 |======
 | **CPU_EXTENSION_RISCV_Zihpm** | _boolean_ | false
 3+| Implement hardware performance monitor CSRs when true.
-Enabling this extension will set the  _SYSINFO_CPU_ZIHPM_ flag in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
 See section <<_zihpm_hardware_performance_monitors>> for more information.
 |======
 
@@ -413,8 +413,9 @@ custom instruction when _true_. See section <<_zxcfu_custom_instructions_extensi
 
 // ####################################################################################################################
 :sectnums:
-==== Extension Options
+==== Tuning Options
 
+These are generics to fine-tune certain ISA extensions and CPU features.
 See section <<_instruction_sets_and_extensions>> for more information.
 
 
@@ -490,8 +491,7 @@ See section <<_pmp_physical_memory_protection>> for more information.
 |======
 | **PMP_NUM_REGIONS** | _natural_ | 0
 3+| Total number of implemented protections regions (0..64). If this generics is zero no physical memory
-protection logic will be implemented at all. Setting <<_pmp_num_regions>>_ > 0 will set the _SYSINFO_CPU_PMP_ flag
-in the `CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register.
+protection logic will be implemented at all.
 |======
 
 

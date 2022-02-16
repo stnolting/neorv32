@@ -90,20 +90,20 @@ address space.
 :sectnums:
 === Full Virtualization
 
-Just like the RISC-V ISA the NEORV32 aims to provide _maximum virtualization_ capabilities on CPU _and_ SoC level to
+Just like the RISC-V ISA the NEORV32 aims to provide _maximum virtualization_ capabilities on CPU and SoC level to
 allow a high standard of **execution safety**. The CPU supports **all** traps specified by the official RISC-V specifications.
 footnote:[If the `Zicsr` CPU extension is enabled (implementing the full set of the privileged architecture).]
-Thus, the CPU provides defined hardware fall-backs via traps for any expected and unexpected situation (e.g. executing an
-malformed instruction word or accessing a not-allocated memory address). For any kind of trap the core is always in a
+Thus, the CPU provides defined hardware fall-backs via traps for any expected and unexpected situation (e.g. executing a
+malformed instruction or accessing a non-allocated memory address). For any kind of trap the core is always in a
 defined and fully synchronized state throughout the whole architecture (i.e. there are no out-of-order operations that
-might have to reverted). This allows predictable execution behavior at any time improving overall _execution safety_.
+might have to be reverted). This allows a defined and predictable execution behavior at any time improving overall execution safety.
 
 **Execution Safety - NEORV32 Virtualization Features**
 
 * Due to the acknowledged memory accesses the CPU is _always_ sync with the memory system
 (i.e. there is no speculative execution / no out-of-order states).
 * The CPU supports _all_ RISC-V compatible bus exceptions including access exceptions, which are triggered if an
-accessed address does not respond or encounters an internal error during access.
+accessed address does not respond or encounters an internal device error during access.
 * Accessed memory addresses (plain memory, but also memory-mapped devices) need to respond within a fixed time
 window. Otherwise a bus access exception is raised.
 * The RISC-V specs. state that executing an malformed instruction results in unpredictable behavior. As an additional
@@ -371,21 +371,21 @@ The basic NEORV32 is a RISC-V `rv32i` architecture that provides several _option
 see the the _RISC-V Instruction Set Manual - Volume I: Unprivileged ISA_ and _The RISC-V Instruction Set Manual
 Volume II: Privileged Architecture_, which are available in the projects `docs/references` folder.
 
+.Discovering ISA Extensions
 [TIP]
-The CPU can discover available ISA extensions via the <<_misa>> CSR and the
-`CPU` <<_system_configuration_information_memory_sysinfo, SYSINFO>> register
-or by executing an instruction and checking for an _illegal instruction exception_.
-
-[NOTE]
+The CPU can discover available ISA extensions via the <<_misa>> & <<_mxisa>> CSRs
+or by executing an instruction and checking for an _illegal instruction exception_
+(-> <<_full_virtualization>>). +
+ +
 Executing an instruction from an extension that is not supported yet or that is currently not enabled
-(via the according top entity generic) will raise an _illegal instruction_ exception.
+(via the according top entity generic) will raise an illegal instruction exception.
 
 
 ==== **`A`** - Atomic Memory Access
 
 Atomic memory access instructions allow more sophisticated memory operations like implementing semaphores and mutexes.
 The RICS-C specs. defines a specific _atomic_ extension that provides instructions for atomic memory accesses. The `A`
-ISA extension is enabled if the `CPU_EXTENSION_RISCV_A` configuration generic is _true_.
+ISA extension is enabled if the <<_cpu_extension_riscv_a>> configuration generic is _true_.
 In this case the following additional instructions are available:
 
 * `lr.w`: load-reservate
@@ -415,7 +415,7 @@ information can be found in sections <<_bus_interface>> and <<_processor_externa
 ==== **`B`** - Bit-Manipulation Operations
 
 The `B` ISA extension adds instructions for bit-manipulation operations. This extension is enabled if the
-`CPU_EXTENSION_RISCV_B` configuration generic is _true_.
+<<_cpu_extension_riscv_b>> configuration generic is _true_.
 The official RISC-V specifications can be found here: https://github.com/riscv/riscv-bitmanip
 A copy of the spec is also available in `docs/references`.
 
@@ -455,7 +455,7 @@ code (see `sw/example/bitmanip_test`) to circumvent this.
 ==== **`C`** - Compressed Instructions
 
 The _compressed_ ISA extension provides 16-bit encodings of commonly used instructions to reduce code space size.
-The `C` extension is available when the `CPU_EXTENSION_RISCV_C` configuration generic is _true_.
+The `C` extension is available when the <<_cpu_extension_riscv_c>> configuration generic is _true_.
 In this case the following instructions are available:
 
 * `c.addi4spn` `c.lw` `c.sw` `c.nop` `c.addi` `c.jal` `c.li` `c.addi16sp` `c.lui` `c.srli` `c.srai` `c.andi` `c.sub`
@@ -471,7 +471,7 @@ again by forcing a 32-bit alignment of branch target addresses. By default, this
 ==== **`E`** - Embedded CPU
 
 The embedded CPU extensions reduces the size of the general purpose register file from 32 entries to 16 entries to
-decrease physical hardware requirements (for example block RAM). This extensions is enabled when the `CPU_EXTENSION_RISCV_E`
+decrease physical hardware requirements (for example block RAM). This extensions is enabled when the <<_cpu_extension_riscv_e>>
 configuration generic is _true_. Accesses to registers beyond `x15` will raise and _illegal instruction exception_.
 This extension does not add any additional instructions or features.
 
@@ -507,7 +507,7 @@ executed. Any flags within the `fence` instruction word are ignore by the hardwa
 ==== **`M`** - Integer Multiplication and Division
 
 Hardware-accelerated integer multiplication and division operations are available when the
-`CPU_EXTENSION_RISCV_M` configuration generic is _true_. In this case the following instructions are
+<<_cpu_extension_riscv_m>> configuration generic is _true_. In this case the following instructions are
 available:
 
 * multiplication: `mul` `mulh` `mulhsu` `mulhu`
@@ -526,6 +526,7 @@ This is a _sub-extension_ of the `M` ISA extension. It implements the multiplica
 of the `M` extensions and is intended for size-constrained setups that require hardware-based
 integer multiplications but not hardware-based divisions, which will be computed entirely in software.
 This extension requires only ~50% of the hardware utilization of the "full" `M` extension.
+It is implemented if the <<_cpu_extension_riscv_zmmul>> configuration generic is _true_.
 
 * multiplication: `mul` `mulh` `mulhsu` `mulhu`
 
@@ -543,10 +544,10 @@ using a `rv32im` machine architecture and setting the `-mno-div` compiler flag
 ==== **`U`** - Less-Privileged User Mode
 
 In addition to the basic (and highest-privileged) machine-mode, the _user-mode_ ISA extensions adds a second less-privileged
-operation mode. It is implemented if the `CPU_EXTENSION_RISCV_U` configuration generic is _true_.
+operation mode. It is implemented if the <<_cpu_extension_riscv_u>> configuration generic is _true_.
 Code executed in user-mode cannot access machine-mode CSRs. Furthermore, user-mode access to the address space (like
 peripheral/IO devices) can be constrained via the physical memory protection (_PMP_).
-Any kind of privilege rights violation will raise an exception to allow full virtualization.
+Any kind of privilege rights violation will raise an exception to allow <<_full_virtualization>>.
 
 
 ==== **`X`** - NEORV32-Specific (Custom) Extensions
@@ -558,6 +559,7 @@ The most important points of the NEORV32-specific extensions are:
 and <<_mip>> CSR. This extension is mapped to CSR bits, that are available for custom use (according to the
 RISC-V specs). Also, custom trap codes for <<_mcause>> are implemented.
 * All undefined/unimplemented/malformed/illegal instructions do raise an illegal instruction exception (see <<_full_virtualization>>).
+* There are <<_neorv32_specific_csrs>>.
 
 
 ==== **`Zfinx`** Single-Precision Floating-Point Operations
@@ -573,7 +575,7 @@ The official RISC-V specifications can be found here: https://github.com/riscv/r
 The NEORV32 floating-point unit used by the `Zfinx` extension is compatible to the _IEEE-754_ specifications.
 
 The `Zfinx` extensions only supports single-precision (`.s` instruction suffix), so it is a direct alternative
-to the `F` extension. The `Zfinx` extension is implemented when the `CPU_EXTENSION_RISCV_Zfinx` configuration
+to the `F` extension. The `Zfinx` extension is implemented when the <<_cpu_extension_riscv_zfinx>> configuration
 generic is _true_. In this case the following instructions and CSRs are available:
 
 * conversion: `fcvt.s.w` `fcvt.s.wu` `fcvt.w.s` `fcvt.wu.s`
@@ -582,7 +584,7 @@ generic is _true_. In this case the following instructions and CSRs are availabl
 * sign-injection: `fsgnj.s` `fsgnjn.s` `fsgnjx.s`
 * number classification: `fclass.s`
 
-* additional CSRs: `fcsr` `frm` `fflags`
+* additional CSRs: <<_fcsr>>, <<_frm>>, <<_fflags>>
 
 [WARNING]
 Fused multiply-add instructions `f[n]m[add/sub].s` are not supported!
@@ -604,7 +606,7 @@ code (see `sw/example/floating_point_test`).
 ==== **`Zicsr`** Control and Status Register Access / Privileged Architecture
 
 The CSR access instructions as well as the exception and interrupt system (= the privileged architecture)
-is implemented when the `CPU_EXTENSION_RISCV_Zicsr` configuration generic is _true_.
+is implemented when the <<_cpu_extension_riscv_zicsr>> configuration generic is _true_.
 
 [IMPORTANT]
 If the `Zicsr` extension is disabled the CPU does not provide any _privileged architecture_ features at all!
@@ -649,7 +651,7 @@ If `Zicntr` is disabled, all accesses to the according counter CSRs will raise a
 In additions to the base cycle, instructions-retired and time counters the NEORV32 CPU provides
 up to 29 hardware performance monitors (HPM 3..31), which can be used to benchmark applications. Each HPM consists of an
 N-bit wide counter (split in a high-word 32-bit CSR and a low-word 32-bit CSR), where N is defined via the top's
-`HPM_CNT_WIDTH` generic (0..64-bit) and a corresponding event configuration CSR. The event configuration
+<<_hpm_cnt_width>> generic (0..64-bit) and a corresponding event configuration CSR. The event configuration
 CSR defines the architectural events that lead to an increment of the associated HPM counter.
 
 The HPM counters are available if the `Zihpm` ISA extensions is enabled via the <<_cpu_extension_riscv_zihpm>> generic.
@@ -674,7 +676,7 @@ see section <<_hardware_performance_monitors_hpm>>.
 
 ==== **`Zifencei`** Instruction Stream Synchronization
 
-The `Zifencei` CPU extension is implemented if the `CPU_EXTENSION_RISCV_Zifencei` configuration
+The `Zifencei` CPU extension is implemented if the <<_cpu_extension_riscv_zifencei>> configuration
 generic is _true_. It allows manual synchronization of the instruction stream via the following instruction:
 
 * `fence.i`
@@ -688,7 +690,7 @@ Any additional flags within the `fence.i` instruction word are ignore by the har
 ==== **`Zxcfu`** Custom Instructions Extension (CFU)
 
 The `Zxcfu` presents a NEORV32-specific _custom RISC-V_ ISA extension (`Z` = sub-extension, `x` = platform-specific
-custom extension, `cfu` = name of the custom extension). When enabled via the `CPU_EXTENSION_RISCV_Zxcfu` configuration
+custom extension, `cfu` = name of the custom extension). When enabled via the <<_cpu_extension_riscv_zxcfu>> configuration
 generic, this ISA extensions adds the <<_custom_functions_unit_cfu>> to the CPU core. The CFU is a module that
 allows to add **custom RISC-V instructions** to the processor core.
 
