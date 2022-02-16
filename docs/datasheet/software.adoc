@@ -1,13 +1,16 @@
 :sectnums:
 == Software Framework
 
-To make actual use of the NEORV32 processor, the project comes with a complete software eco-system. This
+To make actual use of the NEORV32 processor, the project comes with a complete software ecosystem. This
 ecosystem is based on the RISC-V port of the GCC GNU Compiler Collection and consists of the following elementary parts:
 
 * <<_compiler_toolchain>>
 * <<_core_libraries>>
 * <<_application_makefile>>
 * <<_executable_image_format>>
+** <<_linker_script>>
+** <<_ram_layout>>
+** <<_c_standard_library>>
 ** <<_start_up_code_crt0>>
 * <<_bootloader>>
 * <<_neorv32_runtime_environment>>
@@ -18,13 +21,21 @@ files and folders is shown below:
 [cols="<6,<4"]
 [grid="none"]
 |=======================
-| Application/bootloader start-up code | `sw/common/crt0.S`
-| Application/bootloader linker script | `sw/common/neorv32.ld`
-| Core hardware driver libraries | `sw/lib/include/` & `sw/lib/source/`
-| Central makefile | `sw/common/common.mk`
-| Auxiliary tool for generating NEORV32 executables | `sw/image_gen/`
-| Default bootloader | `sw/bootloader/bootloader.c`
+| Application start-up code               | `sw/common/crt0.S`
+| Application linker script               | `sw/common/neorv32.ld`
+| Core hardware driver libraries ("HAL")  | `sw/lib/include/` & `sw/lib/source/`
+| Central application makefile            | `sw/common/common.mk`
+| Tool for generating NEORV32 executables | `sw/image_gen/`
+| Default bootloader                      | `sw/bootloader/bootloader.c`
+| Example programs                        | `sw/example`
 |=======================
+
+.Software Documentation
+[TIP]
+All core libraries and example programs are highly documented using **Doxygen**.
+See section <<Building the Software Framework Documentation>>.
+The documentation is automatically built and deployed to GitHub pages and is available online
+at https://stnolting.github.io/neorv32/sw/files.html .
 
 
 
@@ -35,12 +46,16 @@ files and folders is shown below:
 The toolchain for this project is based on the free RISC-V GCC-port. You can find the compiler sources and
 build instructions on the official RISC-V GNU toolchain GitHub page: https://github.com/riscv/riscv-gnutoolchain.
 
-The NEORV32 implements a 32-bit base integer architecture (`rv32i`) and a 32-bit integer and soft-float ABI
-(ilp32), so make sure you build an according toolchain.
+The NEORV32 implements a 32-bit RISC-V architecture and uses a 32-bit integer and soft-float ABI by default.
+Make sure the toolchain / toolchain build is configured accordingly.
+
+* MARCH = `rv32i`
+* MABI = `ilp32`
 
 Alternatively, you can download my prebuilt `rv32i/e` toolchains for 64-bit x86 Linux from: https://github.com/stnolting/riscv-gcc-prebuilt
 
-The default toolchain prefix used by the project's makefiles is (can be changed in the makefiles): **`riscv32-unknown-elf`**
+The default toolchain prefix used by the project's makefiles is **`riscv32-unknown-elf`**, which can be changes
+using makefile flags at any time.
 
 [TIP]
 More information regarding the toolchain (building from scratch or downloading the prebuilt ones)
@@ -53,37 +68,31 @@ can be found in the user guides' section https://stnolting.github.io/neorv32/ug/
 :sectnums:
 === Core Libraries
 
-The NEORV32 project provides a set of C libraries that allows an easy usage of the processor/CPU features.
-Just include the main NEORV32 library file in your application's source file(s):
+The NEORV32 project provides a set of C libraries that allows an easy usage of the processor/CPU features
+(also called "HAL" - hardware abstraction layer). All driver and runtime-related files are located in
+`sw/lib`. These are automatically included and linked by adding the following _include statement_:
 
 [source,c]
 ----
-#include <neorv32.h>
+#include <neorv32.h> // add NEORV32 HAL and runtime libraries
 ----
-
-[TIP]
-A CMSIS-SVD-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
-
-Together with the makefile, this will automatically include all the processor's header files located in
-`sw/lib/include` into your application. The actual source files of the core libraries are located in
-`sw/lib/source` and are automatically included into the source list of your software project. The following
-files are currently part of the NEORV32 core library:
 
 [cols="<3,<4,<8"]
 [options="header",grid="rows"]
 |=======================
 | C source file | C header file | Description
 | -                   | `neorv32.h`            | main NEORV32 definitions and library file
-| `neorv32_cfs.c`     | `neorv32_cfs.h`        | HW driver (stub)footnote:[This driver file only represents a stub, since the real CFS drivers are defined by the actual CFS implementation.] functions for the custom functions subsystem
+| `neorv32_cfs.c`     | `neorv32_cfs.h`        | HW driver (stubs) functions for the custom functions subsystem
+footnote:[This driver file only represents a stub, since the real CFS drivers are defined by the actual CFS implementation.]
 | `neorv32_cpu.c`     | `neorv32_cpu.h`        | HW driver functions for the NEORV32 **CPU**
 | `neorv32_cpu_cfu.c` | `neorv32_cpu_cfu.h`    | HW driver functions for the NEORV32 **CFU** (custom instructions)
 | `neorv32_gpio.c`    | `neorv32_gpio.h`       | HW driver functions for the **GPIO**
 | `neorv32_gptmr.c`   | `neorv32_gptmr.h`      | HW driver functions for the **GPTRM**
-| -                   | `neorv32_intrinsics.h` | macros for (custom) intrinsics/instructions
+| -                   | `neorv32_intrinsics.h` | macros for custom intrinsics & instructions
 | `neorv32_mtime.c`   | `neorv32_mtime.h`      | HW driver functions for the **MTIME**
 | `neorv32_neoled.c`  | `neorv32_neoled.h`     | HW driver functions for the **NEOLED**
 | `neorv32_pwm.c`     | `neorv32_pwm.h`        | HW driver functions for the **PWM**
-| `neorv32_rte.c`     | `neorv32_rte.h`        | NEORV32 **runtime environment** and helpers
+| `neorv32_rte.c`     | `neorv32_rte.h`        | NEORV32 **runtime environment** and helper functions
 | `neorv32_slink.c`   | `neorv32_slink.h`      | HW driver functions for the **SLINK**
 | `neorv32_spi.c`     | `neorv32_spi.h`        | HW driver functions for the **SPI**
 | `neorv32_trng.c`    | `neorv32_trng.h`       | HW driver functions for the **TRNG**
@@ -92,12 +101,12 @@ files are currently part of the NEORV32 core library:
 | `neorv32_wdt.c`     | `neorv32_wdt.h`        | HW driver functions for the **WDT**
 | `neorv32_xip.c`     | `neorv32_xip.h`        | HW driver functions for the **XIP**
 | `neorv32_xirq.c`    | `neorv32_xirq.h`       | HW driver functions for the **XIRQ**
+| `syscalls.c`        | -                      | newlib system calls
 |=======================
 
-.Documentation
 [TIP]
-All core library software sources are highly documented using _doxygen_. See section <<Building the Software Framework Documentation>>.
-The documentation is automatically built and deployed to GitHub pages by the CI workflow (:https://stnolting.github.io/neorv32/sw/files.html).
+A CMSIS-SVD-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
+`sw/lib/include`. Currently, the following library files are available:
 
 
 
@@ -107,17 +116,17 @@ The documentation is automatically built and deployed to GitHub pages by the CI 
 === Application Makefile
 
 Application compilation is based on a single, centralized **GNU makefiles** `sw/common/common.mk`. Each project in the
-`sw/example` folder features a makefile that just includes this central makefile. When creating a new project, copy an existing project folder or
-at least the makefile to your new project folder. I suggest to create new projects also in `sw/example` to keep
-the file dependencies. Of course, these dependencies can be manually configured via makefiles variables
-when your project is located somewhere else.
+`sw/example` folder features a makefile that just includes this central makefile. When creating a new project copy an
+existing project folder or at least the makefile to the new project folder. It is suggested to create new projects also
+in `sw/example` to keep the file dependencies. However, these dependencies can be manually configured via makefiles
+variables when the new project is located somewhere else.
 
 [NOTE]
-Before you can use the makefiles, you need to install the RISC-V GCC toolchain. Also, you have to add the
-installation folder of the compiler to your system's `PATH` variable. More information can be found in
+Before the makefile can be used to compile applications, the RISC-V GCC toolchain needs to be installed. Furthermore,
+the `bin` folder of the compiler needs to be added to the system's `PATH` variable. More information can be found in
 https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup[User Guide: Software Toolchain Setup].
 
-The makefile is invoked by simply executing make in your console:
+The makefile is invoked by simply executing `make` in the console. For example:
 
 [source,bash]
 ----
@@ -166,14 +175,16 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
 :sectnums:
 ==== Configuration
 
-The compilation flow is configured via variables right at the beginning of the **central**
+The compilation flow is configured via variables right at the beginning of the central
 makefile (`sw/common/common.mk`):
 
 [TIP]
-The makefile configuration variables can be (re-)defined directly when invoking the makefile. For
-example via `$ make MARCH=rv32ic clean_all exe`. You can also make project-specific definitions
-of all variables inside the project's actual makefile (e.g., `sw/example/blink_led/makefile`).
+The makefile configuration variables can be overridden or extended directly when invoking the makefile. For
+example `$ make MARCH=rv32ic clean_all exe` overrides the default `MARCH` variable definitions.
+Permanent modifications/definitions can be made in the project-local makefile
+(e.g., `sw/example/blink_led/makefile`).
 
+.Default Makefile Configuration
 [source,makefile]
 ----
 # *****************************************************************************
@@ -200,37 +211,42 @@ NEORV32_HOME ?= ../../..
 # *****************************************************************************
 ----
 
+.Variables Description
 [cols="<3,<10"]
 [grid="none"]
 |=======================
-| _APP_SRC_         | The source files of the application (`*.c`, `*.cpp`, `*.S` and `*.s` files are allowed; file of these types in the project folder are automatically added via wildcards). Additional files can be added; separated by white spaces
-| _APP_INC_         | Include file folders; separated by white spaces; must be defined with `-I` prefix
-| _ASM_INC_         | Include file folders that are used only for the assembly source files (`*.S`/`*.s`).
-| _EFFORT_          | Optimization level, optimize for size (`-Os`) is default; legal values: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`
-| _RISCV_PREFIX_    | The toolchain prefix to be used; follows the naming convention "architecture-vendor-output-"
-| _MARCH_           | The targeted RISC-V architecture/ISA. Only `rv32` is supported by the NEORV32. Enable compiler support of optional CPU extension by adding the according extension letter (e.g. `rv32im` for _M_ CPU extension). See https://stnolting.github.io/neorv32/ug/#_enabling_risc_v_cpu_extensions[User Guide: Enabling RISC-V CPU Extensions] for more information.
-| _MABI_            | The default 32-bit integer ABI.
-| _USER_FLAGS_      | Additional flags that will be forwarded to the compiler tools
-| _NEORV32_HOME_    | Relative or absolute path to the NEORV32 project home folder. Adapt this if the makefile/project is not in the project's `sw/example folder`.
+| `APP_SRC`      | The source files of the application (`*.c`, `*.cpp`, `*.S` and `*.s` files are allowed;
+files of these types in the project folder are automatically added via wild cards). Additional files can be added separated by white spaces
+| `APP_INC`      | Include file folders; separated by white spaces; must be defined with `-I` prefix
+| `ASM_INC`      | Include file folders that are used only for the assembly source files (`*.S`/`*.s`).
+| `EFFORT`       | Optimization level, optimize for size (`-Os`) is default; legal values: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Ofast`, ...
+| `RISCV_PREFIX` | The toolchain prefix to be used; follows the triplet naming convention `[architecture]-[host_system]-[output]-...`
+| `MARCH`        | The targeted RISC-V architecture/ISA; enable compiler support of optional CPU extension by adding the according extension
+name (e.g. `rv32im` for `M` CPU extension; see https://stnolting.github.io/neorv32/ug/#_enabling_risc_v_cpu_extensions[User Guide: Enabling RISC-V CPU Extensions]
+for more information
+| `MABI`         | Application binary interface (default: 32-bit integer ABI `ilp32`)
+| `USER_FLAGS`   | Additional flags that will be forwarded to the compiler tools
+| `NEORV32_HOME` | Relative or absolute path to the NEORV32 project home folder; adapt this if the makefile/project is not in the project's
+default `sw/example` folder
 |=======================
 
 :sectnums:
 ==== Default Compiler Flags
 
 The following default compiler flags are used for compiling an application. These flags are defined via the
-`CC_OPTS` variable. Custom flags can be appended via the `USER_FLAGS` variable to the `CC_OPTS` variable.
+`CC_OPTS` variable. Custom flags can be _appended_ to it using the `USER_FLAGS` variable.
 
 [cols="<3,<9"]
 [grid="none"]
 |=======================
-| `-Wall` | Enable all compiler warnings.
-| `-ffunction-sections` | Put functions and data segment in independent sections. This allows a code optimization as dead code and unused data can be easily removed.
-| `-nostartfiles` | Do not use the default start code. The makefiles use the NEORV32-specific start-up code instead (`sw/common/crt0.S`).
-| `-Wl,--gc-sections` | Make the linker perform dead code elimination.
-| `-lm` | Include/link with `math.h`.
-| `-lc` | Search for the standard C library when linking.
-| `-lgcc` | Make sure we have no unresolved references to internal GCC library subroutines.
-| `-mno-fdiv` | Use built-in software functions for floating-point divisions and square roots (since the according instructions are not supported yet).
+| `-Wall`                  | Enable all compiler warnings.
+| `-ffunction-sections`    | Put functions and data segment in independent sections. This allows a code optimization as dead code and unused data can be easily removed.
+| `-nostartfiles`          | Do not use the default start code. Instead, use the NEORV32-specific start-up code (`sw/common/crt0.S`).
+| `-Wl,--gc-sections`      | Make the linker perform dead code elimination.
+| `-lm`                    | Include/link with `math.h`.
+| `-lc`                    | Search for the standard C library when linking.
+| `-lgcc`                  | Make sure we have no unresolved references to internal GCC library subroutines.
+| `-mno-fdiv`              | Use built-in software functions for floating-point divisions and square roots (since the according instructions are not supported yet).
 | `-falign-functions=4` .4+| Force a 32-bit alignment of functions and labels (branch/jump/call targets). This increases performance as it simplifies instruction fetch when using the C extension. As a drawback this will also slightly increase the program code.
 | `-falign-labels=4`
 | `-falign-loops=4`
@@ -353,6 +369,34 @@ By default, the maximum heap size is 1/4 of the total RAM size.
 Take care when using dynamic memory to avoid collision of the heap and stack memory areas. There is no compile-time protection
 mechanism available as the actual heap and stack size are defined by _runtime_ data. Also beware of fragmentation when
 using dynamic memory allocation.
+
+
+:sectnums:
+==== C Standard Library
+
+The NEORV32 is a processor for _embedded_ applications. Hence, it is not capable of running desktop OSs like Linux
+(at least not without emulation). Hence, the software framework relies on a "bare-metal" setup that uses **newlib**
+as default C standard library.
+
+.RTOS Support
+[NOTE]
+The NEORV32 CPU and processor **do support** embedded RTOS like FreeRTOS and Zephyr. See the User guide section
+https://stnolting.github.io/neorv32/ug/#_zephyr_rtos_support[Zephyr RTOS Support] and
+https://stnolting.github.io/neorv32/ug/#_freertos_support[FreeRTOS Support]
+for more information.
+
+Newlib provides stubs for common "system calls" (like file handling and standard input/output) that are used by other
+C libraries like `stdio`. These stubs are available in `sw/source/syscalls.c` and were adapted for the NEORV32 processor.
+
+.Standard Console(s)
+[NOTE]
+<<_primary_universal_asynchronous_receiver_and_transmitter_uart0, UART0>>
+is used to implement all the standard input, output and error consoles (`STDIN`, `STDOUT` and `STDERR`).
+
+.Newlib Test/Demo Program
+[TIP]
+A simple test and demo program, which uses some of newlib's core functions (like `malloc`/`free` and `read`/`write`)
+is available in `sw/example_newlib_demo`
 
 
 :sectnums:
