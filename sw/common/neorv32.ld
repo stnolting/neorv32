@@ -86,15 +86,7 @@ SECTIONS
     PROVIDE(__text_start = .);
     PROVIDE(__textstart = .);
 
-    PROVIDE_HIDDEN (__rela_iplt_start = .);
-    *(.rela.iplt)
-    PROVIDE_HIDDEN (__rela_iplt_end = .);
-
-    *(.rela.plt)
-
     KEEP(*(.text.boot)); /* keep start-up code at the beginning of rom */
-
-    KEEP (*(SORT_NONE(.init)))
 
     *(.text.unlikely .text.*_unlikely .text.unlikely.*)
     *(.text.exit .text.exit.*)
@@ -104,33 +96,6 @@ SECTIONS
     *(.text .stub .text.* .gnu.linkonce.t.*)
     /* .gnu.warning sections are handled specially by elf.em.  */
     *(.gnu.warning)
-
-    KEEP (*(SORT_NONE(.fini)))
-
-    /* gcc uses crtbegin.o to find the start of
-       the constructors, so we make sure it is
-       first.  Because this is a wildcard, it
-       doesn't matter if the user does not
-       actually link against crtbegin.o; the
-       linker won't look for a file to match a
-       wildcard.  The wildcard also means that it
-       doesn't matter which directory crtbegin.o
-       is in.  */
-    KEEP (*crtbegin.o(.ctors))
-    KEEP (*crtbegin?.o(.ctors))
-    /* We don't want to include the .ctor section from
-       the crtend.o file until after the sorted ctors.
-       The .ctor section from the crtend file contains the
-       end of ctors marker and it must be last */
-    KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .ctors))
-    KEEP (*(SORT(.ctors.*)))
-    KEEP (*(.ctors))
-
-    KEEP (*crtbegin.o(.dtors))
-    KEEP (*crtbegin?.o(.dtors))
-    KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .dtors))
-    KEEP (*(SORT(.dtors.*)))
-    KEEP (*(.dtors))
 
     /* finish section on WORD boundary */
     . = ALIGN(4);
