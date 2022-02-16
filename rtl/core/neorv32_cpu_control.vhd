@@ -2339,7 +2339,8 @@ begin
         csr.mcycle_ovfl(0) <= csr.mcycle_nxt(csr.mcycle_nxt'left) and (not csr.mcountinhibit_cy);
         if (csr.we = '1') and (csr.addr = csr_mcycle_c) then -- write access
           csr.mcycle(cpu_cnt_lo_width_c-1 downto 0) <= csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
-        elsif (csr.mcountinhibit_cy = '0') and (cnt_event(hpmcnt_event_cy_c) = '1') then -- non-inhibited automatic update
+        elsif (csr.mcountinhibit_cy = '0') and (cnt_event(hpmcnt_event_cy_c) = '1') and -- non-inhibited automatic update
+              (debug_ctrl.running = '0') and (debug_ctrl.pending = '0') then -- not entering/in debug mode
           csr.mcycle(cpu_cnt_lo_width_c-1 downto 0) <= csr.mcycle_nxt(cpu_cnt_lo_width_c-1 downto 0);
         end if;
       else
@@ -2364,7 +2365,8 @@ begin
         csr.minstret_ovfl(0) <= csr.minstret_nxt(csr.minstret_nxt'left) and (not csr.mcountinhibit_ir);
         if (csr.we = '1') and (csr.addr = csr_minstret_c) then -- write access
           csr.minstret(cpu_cnt_lo_width_c-1 downto 0) <= csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
-        elsif (csr.mcountinhibit_ir = '0') and (cnt_event(hpmcnt_event_ir_c) = '1') then -- non-inhibited automatic update
+        elsif (csr.mcountinhibit_ir = '0') and (cnt_event(hpmcnt_event_ir_c) = '1') and -- non-inhibited automatic update
+              (debug_ctrl.running = '0') and (debug_ctrl.pending = '0') then -- not entering/in debug mode
           csr.minstret(cpu_cnt_lo_width_c-1 downto 0) <= csr.minstret_nxt(cpu_cnt_lo_width_c-1 downto 0);
         end if;
       else
@@ -2458,7 +2460,11 @@ begin
       hpmcnt_trigger <= (others => '0'); -- default
       if (HPM_NUM_CNTS /= 0) then
         for i in 0 to HPM_NUM_CNTS-1 loop
-          hpmcnt_trigger(i) <= or_reduce_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0));
+          if (debug_ctrl.running = '1') or (debug_ctrl.pending = '1') then
+            hpmcnt_trigger(i) <= '0'; -- do not increment HPM counters when entering/in debug mode
+          else
+            hpmcnt_trigger(i) <= or_reduce_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0));
+          end if;
         end loop; -- i
       end if;
     end if;
@@ -2907,7 +2913,7 @@ begin
   csr.dcsr_rd(13)           <= '0'; -- ebreaks: supervisor mode not implemented
   csr.dcsr_rd(12)           <= csr.dcsr_ebreaku when (CPU_EXTENSION_RISCV_U = true) else '0'; -- ebreaku: what happens on ebreak in u-mode? (normal trap OR debug-enter)
   csr.dcsr_rd(11)           <= '0'; -- stepie: interrupts are disabled during single-stepping
-  csr.dcsr_rd(10)           <= '0'; -- stopcount: counters increment as usual
+  csr.dcsr_rd(10)           <= '1'; -- stopcount: standard counters and HPMs are stopped when in debug mode
   csr.dcsr_rd(09)           <= '0'; -- stoptime: timers increment as usual
   csr.dcsr_rd(08 downto 06) <= csr.dcsr_cause; -- debug mode entry cause
   csr.dcsr_rd(05)           <= '0'; -- reserved
