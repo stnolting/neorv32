@@ -340,7 +340,7 @@ void __attribute__((naked)) neorv32_cpu_goto_user_mode(void) {
 uint32_t neorv32_cpu_pmp_get_num_regions(void) {
 
   // PMP implemented at all?
-  if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_PMP)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_PMP)) == 0) {
     return 0;
   }
 
@@ -605,7 +605,7 @@ static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data) {
 uint32_t neorv32_cpu_hpm_get_counters(void) {
 
   // HPMs implemented at all?
-  if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_ZIHPM)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIHPM)) == 0) {
     return 0;
   }
 
@@ -688,7 +688,7 @@ uint32_t neorv32_cpu_hpm_get_counters(void) {
 uint32_t neorv32_cpu_hpm_get_size(void) {
 
   // HPMs implemented at all?
-  if ((NEORV32_SYSINFO.CPU & (1<<SYSINFO_CPU_ZIHPM)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIHPM)) == 0) {
     return 0;
   }
 
