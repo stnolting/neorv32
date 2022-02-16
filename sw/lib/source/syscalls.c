@@ -22,10 +22,11 @@
  * @author Modified for the NEORV32 RISC-V Processor by Stephan Nolting
  * @brief Newlib system calls
  *
- * @warning UART0 (if available) is used to read/write STDOUT data
+ * @warning UART0 (if available) is used to read/write console data (STDIN, STDOUT, STDERR, ...).
  *
  * @note Original source file: https://github.com/openhwgroup/cv32e40p/blob/master/example_tb/core/custom/syscalls.c
  * @note Original license: SOLDERPAD HARDWARE LICENSE version 0.51
+ * @note More information was derived from: https://interrupt.memfault.com/blog/boostrapping-libc-with-newlib#implementing-newlib
  **************************************************************************/
 
 #include <sys/stat.h>
@@ -39,15 +40,6 @@
 
 #undef errno
 extern int errno;
-
-// /* write to this reg for outputting strings */
-// #define STDOUT_REG 0x10000000 - use NEORV32.UART0 for output
-// /* write test result of program to this reg */
-// #define RESULT_REG 0x20000000
-// /* write exit value of program to this reg */
-// #define EXIT_REG 0x20000004 - use NEORV32.UART0 for output
-
-#define STDOUT_FILENO 1
 
 /* It turns out that older newlib versions use different symbol names which goes
  * against newlib recommendations. Anyway this is fixed in later version.
@@ -64,9 +56,6 @@ extern int errno;
 
 void unimplemented_syscall()
 {
-  // const char *p = "Unimplemented system call called!\n";
-  // while (*p)
-  //     *(volatile int *)STDOUT_REG = *(p++);
   if (neorv32_uart0_available()) {
     neorv32_uart0_print("<syscalls.c> Unimplemented system call called!\n");
   }
@@ -115,11 +104,12 @@ int _execve(const char *name, char *const argv[], char *const env[])
 
 void _exit(int exit_status)
 {
-    //*(volatile int *)EXIT_REG = exit_status;
+    // output exit status via UART0 (if available) and put core into endless sleep mode
     if (neorv32_uart0_available()) {
-      neorv32_uart0_printf("<syscalls.c> Exit status: %i\n", (int32_t)exit_status);
+      neorv32_uart0_printf("<syscalls.c> Exit status %i, shutting down core\n", (int32_t)exit_status);
     }
-    asm volatile("wfi");
+    asm volatile("csrci mstatus, 8\n" // disable interrupts
+                 "wfi");              // go to sleep mode
     while(1);
 }
 
@@ -137,10 +127,8 @@ int _fork(void)
 
 int _fstat(int file, struct stat *st)
 {
-    st->st_mode = S_IFCHR;
+    st->st_mode = S_IFCHR; // all files are "character special files"
     return 0;
-    // errno = -ENOSYS;
-    // return -1;
 }
 
 int _fstatat(int dirfd, const char *file, struct stat *st, int flags)
@@ -215,6 +203,7 @@ ssize_t _read(int file, void *ptr, size_t len)
 {
     int read_cnt = 0;
 
+    // read everything (STDIN, ...) from NEORV32.UART0 (if available)
     if (neorv32_uart0_available()) {
       char *char_ptr;
       char_ptr = (char *)ptr;
@@ -267,20 +256,17 @@ int _wait(int *status)
 
 ssize_t _write(int file, const void *ptr, size_t len)
 {
-    if (file != STDOUT_FILENO) {
-        errno = ENOSYS;
-        return -1;
-    }
-
+    // write everything (STDOUT, STDERR, ...) to NEORV32.UART0 (if available)
     const void *eptr = ptr + len;
-    //while (ptr != eptr)
-    //    *(volatile int *)STDOUT_REG = *(char *)(ptr++);
     if (neorv32_uart0_available()) {
       while (ptr != eptr) {
         neorv32_uart0_putc(*(char *)(ptr++));
       }
+      return len;
     }
-    return len;
+    else {
+      return (size_t)0; // nothing sent
+    }
 }
 
 extern char __heap_start[];
