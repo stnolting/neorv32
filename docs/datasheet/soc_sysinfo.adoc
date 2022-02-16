@@ -32,35 +32,13 @@ will signal a "DEVICE ERROR" in this case.
 |=======================
 | Address | Name [C] | Function
 | `0xffffffe0` | `NEORV32_SYSINFO.CLK`         | clock speed in Hz (via top's <<_clock_frequency>> generic)
-| `0xffffffe4` | `NEORV32_SYSINFO.CPU`         | specific CPU configuration (see <<_sysinfo_cpu_configuration>>)
+| `0xffffffe4` | -                             | _reserved_, read as zero
 | `0xffffffe8` | `NEORV32_SYSINFO.SOC`         | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
 | `0xffffffec` | `NEORV32_SYSINFO.CACHE`       | cache configuration information (see <<_sysinfo_cache_configuration>>)
 | `0xfffffff0` | `NEORV32_SYSINFO.ISPACE_BASE` | instruction address space base (via package's `ispace_base_c` constant)
 | `0xfffffff4` | `NEORV32_SYSINFO.IMEM_SIZE`   | internal IMEM size in bytes (via top's <<_mem_int_imem_size>> generic)
 | `0xfffffff8` | `NEORV32_SYSINFO.DSPACE_BASE` | data address space base (via package's `sdspace_base_c` constant)
 | `0xfffffffc` | `NEORV32_SYSINFO.DMEM_SIZE`   | internal DMEM size in bytes (via top's <<_mem_int_dmem_size>> generic)
-|=======================
-
-
-===== SYSINFO - CPU Configuration
-
-._SYSINFO_CPU_ bits
-[cols="^1,<10,<11"]
-[options="header",grid="all"]
-|=======================
-| Bit | Name [C] | Function
-| `0`  | _SYSINFO_CPU_ZICSR_     | `Zicsr` extension (`I` sub-extension) available when set (via top's <<_cpu_extension_riscv_zicsr>> generic)
-| `1`  | _SYSINFO_CPU_ZIFENCEI_  | `Zifencei` extension (`I` sub-extension) available when set (via top's <<_cpu_extension_riscv_zifencei>> generic)
-| `2`  | _SYSINFO_CPU_ZMMUL_     | `Zmmul` extension (`M` sub-extension) available when set (via top's <<_cpu_extension_riscv_zmmul>> generic)
-| `3`  | _SYSINFO_CPU_ZXCFU_     | `Zxcfu` extension (custom functions unit for custom instructions) available when set (via top's <<_cpu_extension_riscv_zxcfu>> generic)
-| `5`  | _SYSINFO_CPU_ZFINX_     | `Zfinx` extension (`F` sub-/alternative-extension) available when set (via top's <<_cpu_extension_riscv_zfinx>> generic)
-| `6`  | _SYSINFO_CPU_ZXSCNT_    | Custom extension - _Small_ CPU counters: `[m]cycle` & `[m]instret` CSRs have less than 64-bit when set (via top's <<_cpu_cnt_width>> generic)
-| `7`  | _SYSINFO_CPU_ZXNOCNT_   | Custom extension - _NO_ CPU counters: `[m]cycle` & `[m]instret` CSRs are NOT available at all when set (via top's <<_cpu_cnt_width>> generic)
-| `8`  | _SYSINFO_CPU_PMP_       | `PMP` (physical memory protection) extension available when set (via top's <<_pmp_num_regions>> generic)
-| `9`  | _SYSINFO_CPU_HPM_       | `HPM` (hardware performance monitors) extension available when set (via top's <<_cpu_extension_riscv_zihpm>> generic)
-| `10` | _SYSINFO_CPU_DEBUGMODE_ | RISC-V CPU `debug_mode` available when set (via top's <<_on_chip_debugger_en>> generic)
-| `30  | _SYSINFO_CPU_FASTMUL_   | fast multiplication available when set (via top's <<_fast_mul_en>> generic)
-| `31` | _SYSINFO_CPU_FASTSHIFT_ | fast shifts available when set (via top's <<_fast_shift_en>> generic)
 |=======================
 
 

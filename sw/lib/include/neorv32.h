@@ -52,6 +52,8 @@ extern "C" {
 #include <stdint.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 
 /**********************************************************************//**
@@ -285,7 +287,9 @@ enum NEORV32_CSR_enum {
   CSR_MARCHID        = 0xf12, /**< 0xf12 - marchid    (r/-): Architecture ID */
   CSR_MIMPID         = 0xf13, /**< 0xf13 - mimpid     (r/-): Implementation ID/version */
   CSR_MHARTID        = 0xf14, /**< 0xf14 - mhartid    (r/-): Hardware thread ID (always 0) */
-  CSR_MCONFIGPTR     = 0xf15  /**< 0xf15 - mconfigptr (r/-): Machine configuration pointer register */
+  CSR_MCONFIGPTR     = 0xf15, /**< 0xf15 - mconfigptr (r/-): Machine configuration pointer register */
+
+  CSR_MXISA          = 0xfc0  /**< 0xfc0 - xisa (r/-): NEORV32-specific machine "extended CPU ISA and extensions" */
 };
 
 
@@ -419,6 +423,29 @@ enum NEORV32_CSR_MISA_enum {
   CSR_MISA_X      = 23, /**< CPU misa CSR (23): X: Non-standard CPU extension available (r/-) */
   CSR_MISA_MXL_LO = 30, /**< CPU misa CSR (30): MXL.lo: CPU data width (r/-) */
   CSR_MISA_MXL_HI = 31  /**< CPU misa CSR (31): MXL.Hi: CPU data width (r/-) */
+};
+
+
+/**********************************************************************//**
+ * CPU <b>mxisa</b> CSR (r/-): Machine _extended_ instruction set extensions (NEORV32-spec.)
+ **************************************************************************/
+enum NEORV32_CSR_XISA_enum {
+  // ISA (sub-)extensions
+  CSR_MXISA_ZICSR     =  0, /**< CPU mxisa CSR  (0): privileged architecture (r/-)*/
+  CSR_MXISA_ZIFENCEI  =  1, /**< CPU mxisa CSR  (1): instruction stream sync (r/-)*/
+  CSR_MXISA_ZMMUL     =  2, /**< CPU mxisa CSR  (2): hardware mul/div (r/-)*/
+  CSR_MXISA_ZXCFU     =  3, /**< CPU mxisa CSR  (3): custom RISC-V instructions (r/-)*/
+
+  CSR_MXISA_ZFINX     =  5, /**< CPU mxisa CSR  (5): FPU using x registers, "F-alternative" (r/-)*/
+  CSR_MXISA_ZXSCNT    =  6, /**< CPU mxisa CSR  (6): reduced-size CPU counters (from Zicntr) (r/-)*/ 
+  CSR_MXISA_ZICNTR    =  7, /**< CPU mxisa CSR  (7): base instructions, cycle and time CSRs (r/-)*/
+  CSR_MXISA_PMP       =  8, /**< CPU mxisa CSR  (8): physical memory protection (also "Smpmp") (r/-)*/
+  CSR_MXISA_ZIHPM     =  9, /**< CPU mxisa CSR  (9): hardware performance monitors (r/-)*/
+  CSR_MXISA_DEBUGMODE = 10, /**< CPU mxisa CSR (10): RISC-V debug mode (r/-)*/
+
+  // Tuning options
+  CSR_MXISA_FASTMUL   = 30, /**< CPU mxisa CSR (30): DSP-based multiplication (M extensions only) (r/-)*/ 
+  CSR_MXISA_FASTSHIFT = 31  /**< CPU mxisa CSR (31): parallel logic for shifts (barrel shifters) (r/-)*/
 };
 
 
@@ -1250,7 +1277,7 @@ enum NEORV32_NEOLED_CTRL_enum {
 /** SYSINFO module prototype - whole module is read-only */
 typedef struct __attribute__((packed,aligned(4))) {
 	const uint32_t CLK;         /**< offset 0:  clock speed in Hz */
-	const uint32_t CPU;         /**< offset 4:  CPU core features (#NEORV32_SYSINFO_CPU_enum) */
+	const uint32_t reserved;    /**< offset 4:  reserved */
 	const uint32_t SOC;         /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
 	const uint32_t CACHE;       /**< offset 12: cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
 	const uint32_t ISPACE_BASE; /**< offset 16: instruction memory address space base */
@@ -1261,24 +1288,6 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 /** SYSINFO module hardware access (#neorv32_sysinfo_t) */
 #define NEORV32_SYSINFO (*((volatile neorv32_sysinfo_t*) (0xFFFFFFE0UL)))
-
-/** NEORV32_SYSINFO.CPU (r/-): Implemented CPU sub-extensions/features */
-enum NEORV32_SYSINFO_CPU_enum {
-  SYSINFO_CPU_ZICSR     =  0, /**< SYSINFO_CPU (0): Zicsr extension (I sub-extension) available when set (r/-) */
-  SYSINFO_CPU_ZIFENCEI  =  1, /**< SYSINFO_CPU (1): Zifencei extension (I sub-extension) available when set (r/-) */
-  SYSINFO_CPU_ZMMUL     =  2, /**< SYSINFO_CPU (2): Zmmul extension (M sub-extension) available when set (r/-) */
-  SYSINFO_CPU_ZXCFU     =  3, /**< SYSINFO_CPU (3): Zxcfu extension (custom functions unit for custom instructions) available when set (r/-) */
-
-  SYSINFO_CPU_ZFINX     =  5, /**< SYSINFO_CPU (5): Zfinx extension (F sub-/alternative-extension) available when set (r/-) */
-  SYSINFO_CPU_ZXSCNT    =  6, /**< SYSINFO_CPU (6): Custom extension - Small CPU counters: "cycle" & "instret" CSRs have less than 64-bit when set (r/-) */
-  SYSINFO_CPU_ZICNTR    =  7, /**< SYSINFO_CPU (7): Basic CPU counters available when set (r/-) */
-  SYSINFO_CPU_PMP       =  8, /**< SYSINFO_CPU (8): PMP (physical memory protection) extension available when set (r/-) */
-  SYSINFO_CPU_ZIHPM     =  9, /**< SYSINFO_CPU (9): HPM (hardware performance monitors) extension available when set (r/-) */
-  SYSINFO_CPU_DEBUGMODE = 10, /**< SYSINFO_CPU (10): RISC-V CPU debug mode available when set (r/-) */
-
-  SYSINFO_CPU_FASTMUL   = 30, /**< SYSINFO_CPU (30): fast multiplications (via FAST_MUL_EN generic) available when set (r/-) */
-  SYSINFO_CPU_FASTSHIFT = 31  /**< SYSINFO_CPU (31): fast shifts (via FAST_SHIFT_EN generic) available when set (r/-) */
-};
 
 /** NEORV32_SYSINFO.SOC (r/-): Implemented processor devices/features */
 enum NEORV32_SYSINFO_SOC_enum {

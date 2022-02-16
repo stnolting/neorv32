@@ -67,14 +67,13 @@ following intro screen should show up in your terminal:
 ----
 << NEORV32 Bootloader >>
 
-BLDV: Feb  3 2022
-HWV:  0x01060703
+BLDV: Feb 16 2022
+HWV:  0x01060709
 CLK:  0x05f5e100
-MISA: 0x40901107
-CPU:  0xc00006ab
+ISA:  0x40901107 + 0xc000068b
 SOC:  0x7b7f402f
-IMEM: 0x00004000 bytes @ 0x00000000
-DMEM: 0x00002000 bytes @ 0x80000000
+IMEM: 0x00008000 bytes @0x00000000
+DMEM: 0x00004000 bytes @0x80000000
 
 Autoboot in 8s. Press any key to abort.
 ----
@@ -85,13 +84,12 @@ This start-up screen also gives some brief information about the bootloader and 
 [grid="none"]
 |=======================
 | `BLDV` | Bootloader version (built date).
-| `HWV`  | Processor hardware version (from the `mimpid` CSR) in BCD format (example: `0x01040606` = v1.4.6.6).
-| `CLK`  | Processor clock speed in Hz (via the SYSINFO module, from the _CLOCK_FREQUENCY_ generic).
-| `MISA` | CPU extensions (from the `misa` CSR).
-| `CPU`  | CPU sub-extensions (via the `CPU` register in the SYSINFO module)
-| `SOC`  | Processor configuration (via the `SOC` register in the SYSINFO module / from the IO_* and MEM_* configuration generics).
-| `IMEM` | IMEM memory base address and size in byte (from the _MEM_INT_IMEM_SIZE_ generic).
-| `DMEM` | DMEM memory base address and size in byte (from the _MEM_INT_DMEM_SIZE_ generic).
+| `HWV`  | Processor hardware version (the <<_mimpid>> CSR); in BCD format; example: `0x01040606` = v1.4.6.6).
+| `CLK`  | Processor clock speed in Hz (via the `CLK` register from <<_system_configuration_information_memory_sysinfo>>; defined by the <<_clock_frequency>> generic).
+| `ISA`  | CPU extensions (<<_misa>> CSR + <<_mxisa>> CSR).
+| `SOC`  | Processor configuration (via the `SOC` register from the <<_system_configuration_information_memory_sysinfo>>; defined by the `IO_*` and `MEM_*` configuration generics).
+| `IMEM` | IMEM memory base address and size in byte (via the `IMEM_SIZE` and `ISPACE_BASE` registers from the <<_system_configuration_information_memory_sysinfo>>; defined by the <<_mem_int_imem_size>> generic).
+| `DMEM` | DMEM memory base address and size in byte (via the `DMEM_SIZE` and `DSPACE_BASE` registers from the <<_system_configuration_information_memory_sysinfo>>; defined by the <<_mem_int_dmem_size>> generic).
 |=======================
 
 Now you have 8 seconds to press _any_ key. Otherwise, the bootloader starts the <<_auto_boot_sequence>>. When
@@ -101,14 +99,13 @@ you press any key within the 8 seconds, the actual bootloader user console start
 ----
 << NEORV32 Bootloader >>
 
-BLDV: Feb  3 2022
-HWV:  0x01060703
+BLDV: Feb 16 2022
+HWV:  0x01060709
 CLK:  0x05f5e100
-MISA: 0x40901107
-CPU:  0xc00006ab
+ISA:  0x40901107 + 0xc000068b
 SOC:  0x7b7f402f
-IMEM: 0x00004000 bytes @ 0x00000000
-DMEM: 0x00002000 bytes @ 0x80000000
+IMEM: 0x00008000 bytes @0x00000000
+DMEM: 0x00004000 bytes @0x80000000
 
 Autoboot in 8s. Press any key to abort.
 Aborted. <1>

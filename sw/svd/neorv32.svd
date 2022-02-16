@@ -1208,25 +1208,6 @@
           <access>read-only</access>
         </register>
         <register>
-          <name>CPU</name>
-          <description>CPU core features</description>
-          <addressOffset>0x04</addressOffset>
-          <access>read-only</access>
-          <fields>
-            <field><name>SYSINFO_CPU_ZICSR</name><bitRange>[0:0]</bitRange><description>Zicsr extension (I sub-extension) available when set</description></field>
-            <field><name>SYSINFO_CPU_ZIFENCEI</name><bitRange>[1:1]</bitRange><description>Zifencei extension (I sub-extension) available when set</description></field>
-            <field><name>SYSINFO_CPU_ZMMUL</name><bitRange>[2:2]</bitRange><description>Zmmul extension (M sub-extension) available when set</description></field>
-            <field><name>SYSINFO_CPU_ZFINX</name><bitRange>[5:5]</bitRange><description>Zfinx extension (F sub-/alternative-extension) available when set</description></field>
-            <field><name>SYSINFO_CPU_ZXSCNT</name><bitRange>[6:6]</bitRange><description>Custom extension - Small CPU counters</description></field>
-            <field><name>SYSINFO_CPU_ZICNTR</name><bitRange>[7:7]</bitRange><description>Basic CPU counters available when set</description></field>
-            <field><name>SYSINFO_CPU_PMP</name><bitRange>[8:8]</bitRange><description>PMP (physical memory protection) extension available when set</description></field>
-            <field><name>SYSINFO_CPU_ZIHPM</name><bitRange>[9:9]</bitRange><description>HPM (hardware performance monitors) extension available when set</description></field>
-            <field><name>SYSINFO_CPU_DEBUGMODE</name><bitRange>[10:10]</bitRange><description>RISC-V CPU debug mode available when set</description></field>
-            <field><name>SYSINFO_CPU_FASTMUL</name><bitRange>[30:30]</bitRange><description>fast multiplications (via FAST_MUL_EN generic) available when set</description></field>
-            <field><name>SYSINFO_CPU_FASTSHIFT</name><bitRange>[31:31]</bitRange><description>fast shifts (via FAST_SHIFT_EN generic) available when set</description></field>
-          </fields>
-        </register>
-        <register>
           <name>SOC</name>
           <description>SoC features</description>
           <addressOffset>0x08</addressOffset>

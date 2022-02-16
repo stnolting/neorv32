@@ -336,41 +336,41 @@ void neorv32_rte_print_hw_config(void) {
   }
   
   // Z* CPU extensions
-  tmp = NEORV32_SYSINFO.CPU;
-  if (tmp & (1<<SYSINFO_CPU_ZICSR)) {
+  tmp = neorv32_cpu_csr_read(CSR_MXISA);
+  if (tmp & (1<<CSR_MXISA_ZICSR)) {
     neorv32_uart0_printf("Zicsr ");
   }
-  if (tmp & (1<<SYSINFO_CPU_ZICNTR)) {
+  if (tmp & (1<<CSR_MXISA_ZICNTR)) {
     neorv32_uart0_printf("Zicntr ");
   }
-  if (tmp & (1<<SYSINFO_CPU_ZIHPM)) {
+  if (tmp & (1<<CSR_MXISA_ZIHPM)) {
     neorv32_uart0_printf("Zihpm ");
   }
-  if (tmp & (1<<SYSINFO_CPU_ZIFENCEI)) {
+  if (tmp & (1<<CSR_MXISA_ZIFENCEI)) {
     neorv32_uart0_printf("Zifencei ");
   }
-  if (tmp & (1<<SYSINFO_CPU_ZMMUL)) {
+  if (tmp & (1<<CSR_MXISA_ZMMUL)) {
     neorv32_uart0_printf("Zmmul ");
   }
-  if (tmp & (1<<SYSINFO_CPU_ZFINX)) {
+  if (tmp & (1<<CSR_MXISA_ZFINX)) {
     neorv32_uart0_printf("Zfinx ");
   }
-  if (tmp & (1<<SYSINFO_CPU_ZXCFU)) {
+  if (tmp & (1<<CSR_MXISA_ZXCFU)) {
     neorv32_uart0_printf("Zxcfu ");
   }
-  if (tmp & (1<<SYSINFO_CPU_ZXSCNT)) {
+  if (tmp & (1<<CSR_MXISA_ZXSCNT)) {
     neorv32_uart0_printf("Zxscnt(!) ");
   }
-  if (tmp & (1<<SYSINFO_CPU_DEBUGMODE)) {
-    neorv32_uart0_printf("Debug ");
+  if (tmp & (1<<CSR_MXISA_DEBUGMODE)) {
+    neorv32_uart0_printf("DebugMode ");
   }
 
   // CPU extension options
   neorv32_uart0_printf("\nExtension options: ");
-  if (tmp & (1<<SYSINFO_CPU_FASTMUL)) {
+  if (tmp & (1<<CSR_MXISA_FASTMUL)) {
     neorv32_uart0_printf("FAST_MUL ");
   }
-  if (tmp & (1<<SYSINFO_CPU_FASTSHIFT)) {
+  if (tmp & (1<<CSR_MXISA_FASTSHIFT)) {
     neorv32_uart0_printf("FAST_SHIFT ");
   }
 

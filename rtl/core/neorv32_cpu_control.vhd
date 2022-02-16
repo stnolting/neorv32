@@ -70,7 +70,9 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
-    -- Extension Options --
+    -- Tuning Options --
+    FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
     CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
     CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2
     -- Physical memory protection (PMP) --
@@ -1317,8 +1319,8 @@ begin
         -- Machine-level code should read-back those CSRs after writing them to realize they are read-only.
         csr_acc_valid <= csr.priv_m_mode; -- M-mode only 
 
-      -- machine information registers, read-only --
-      when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mconfigptr_c =>
+      -- machine information registers & NEORV32-specific registers, read-only --
+      when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mconfigptr_c | csr_mxisa_c =>
         csr_acc_valid <= (not csr_wacc_v) and csr.priv_m_mode; -- M-mode only, read-only
 
       -- user-mode registers --
@@ -1371,7 +1373,7 @@ begin
 
       -- trigger module CSRs --
       when csr_tselect_c | csr_tdata1_c | csr_tdata2_c | csr_tdata3_c | csr_tinfo_c | csr_tcontrol_c | csr_mcontext_c | csr_scontext_c =>
-        -- access in debug-mode or M-mode (M-mode: write are ignored as DMODE is hardwired to 1)
+        -- access in debug-mode or M-mode (M-mode: writes are ignored as DMODE is hardwired to 1)
         csr_acc_valid <= (debug_ctrl.running or csr.priv_m_mode) and bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG);
 
       -- undefined / not implemented --
@@ -2793,6 +2795,27 @@ begin
 --        when csr_tcontrol_c => if (CPU_EXTENSION_RISCV_DEBUG = true) then csr.rdata <= (others => '0'); else NULL; end if; -- tcontrol (r/w): implemented but always zero
 --        when csr_mcontext_c => if (CPU_EXTENSION_RISCV_DEBUG = true) then csr.rdata <= (others => '0'); else NULL; end if; -- mcontext (r/w): implemented but always zero
 --        when csr_scontext_c => if (CPU_EXTENSION_RISCV_DEBUG = true) then csr.rdata <= (others => '0'); else NULL; end if; -- scontext (r/w): implemented but always zero
+
+          -- NEORV32-specific (RISC-V "custom") read-only CSRs --
+          -- --------------------------------------------------------------------
+          -- machine extended ISA extensions information --
+          when csr_mxisa_c =>
+            -- ISA (sub-)extensions --
+            csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr: privileged architecture (!!!)
+            csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei: instruction stream sync.
+            csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul: mul/div
+            csr.rdata(03) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);    -- Zxcfu: custom RISC-V instructions
+            csr.rdata(04) <= '0'; -- reserved
+            csr.rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx: FPU using x registers, "F-alternative"
+            csr.rdata(06) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and
+                             bool_to_ulogic_f(boolean(CPU_CNT_WIDTH /= 64)); -- Zxscnt: reduced-size CPU counters (from Zicntr)
+            csr.rdata(07) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr);   -- Zicntr: base instructions, cycle and time CSRs
+            csr.rdata(08) <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- PMP: physical memory protection (Zspmp)
+            csr.rdata(09) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm);    -- Zihpm: hardware performance monitors
+            csr.rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG);    -- RISC-V debug mode
+            -- ISA options --
+            csr.rdata(30) <= bool_to_ulogic_f(FAST_MUL_EN);                  -- DSP-based multiplication (M extensions only)
+            csr.rdata(31) <= bool_to_ulogic_f(FAST_SHIFT_EN);                -- parallel logic for shifts (barrel shifters)
 
           -- undefined/unavailable --
           -- --------------------------------------------------------------------
