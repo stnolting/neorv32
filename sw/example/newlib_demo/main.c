@@ -90,21 +90,37 @@ int main() {
 
   char *char_buffer; // pointer for dynamic memory allocation
 
-  neorv32_uart0_printf("<MALLOC> test...\n");
+  neorv32_uart0_printf("<malloc> test... ");
   char_buffer = (char *) malloc(4 * sizeof(char)); // 4 bytes
+  neorv32_uart0_printf("ok\n");
 
-  neorv32_uart0_printf("<READ> test... (waiting for 4 chars via UART0)\n");
-  read((int)STDIN_FILENO, char_buffer, 4 * sizeof(char)); // get 4 chars from "STDIN" (UART0.RX)
+  // do not test read & write in simulation as there would be no UART RX input
+  if (NEORV32_SYSINFO.SOC & (1<<SYSINFO_SOC_IS_SIM)) {
+    neorv32_uart0_printf("Skipping <read> & <write> tests as this seems to be a simulation.\n");
+  }
+  else {
+    neorv32_uart0_printf("<read> test (waiting for 4 chars via UART0)... ");
+    read((int)STDIN_FILENO, char_buffer, 4 * sizeof(char)); // get 4 chars from "STDIN" (UART0.RX)
+    neorv32_uart0_printf("ok\n");
 
-  neorv32_uart0_printf("<WRITE> test... (outputting the chars you have send)\n");
-  write((int)STDOUT_FILENO, char_buffer, 4 * sizeof(char)); // send 4 chars to "STDOUT" (UART0.TX)
-  neorv32_uart0_printf("\n");
+    neorv32_uart0_printf("<write> test to 'STDOUT'... (outputting the chars you have send)\n");
+    write((int)STDOUT_FILENO, char_buffer, 4 * sizeof(char)); // send 4 chars to "STDOUT" (UART0.TX)
+    neorv32_uart0_printf("\nok\n");
 
-  neorv32_uart0_printf("<FREE> test...\n");
+    neorv32_uart0_printf("<write> test to 'STDERR'... (outputting the chars you have send)\n");
+    write((int)STDERR_FILENO, char_buffer, 4 * sizeof(char)); // send 4 chars to "STDERR" (UART0.TX)
+    neorv32_uart0_printf("\nok\n");
+  }
+
+  neorv32_uart0_printf("<free> test... ");
   free(char_buffer);
+  neorv32_uart0_printf("ok\n");
 
 
-  neorv32_uart0_printf("<EXIT> test...\n");
+  // NOTE: exit is highly oversized as it also includes clean-up functions (destructors), which
+  // is not required for bare-metal or RTOS applications... better use the simple 'return' or even better
+  // make sure main never returns. however, let's test that 'exit' works.
+  neorv32_uart0_printf("<exit> test...");
   exit(0);
 
   return 0; // should never be reached
@@ -114,8 +130,6 @@ int main() {
 /**********************************************************************//**
  * "after-main" handler that is executed after the application's
  * main function returns (called by crt0.S start-up code)
- *
- * @note This function should be never executed as we are leaving "main" via "exit" and not "return".
  **************************************************************************/
 int __neorv32_crt0_after_main(int32_t return_code) {
 
