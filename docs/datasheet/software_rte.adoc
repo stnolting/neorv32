@@ -17,6 +17,9 @@ traps to application-specific handlers while making sure that all traps (even th
 by the application) are handled correctly. Performance-optimized applications or embedded operating systems should
 not use the RTE for delegating traps.
 
+[NOTE]
+For the **C standard runtime library** see section <<c_standard_library>>.
+
 
 ==== RTE Operation
 
