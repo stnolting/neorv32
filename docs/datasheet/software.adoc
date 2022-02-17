@@ -374,6 +374,12 @@ using dynamic memory allocation.
 :sectnums:
 ==== C Standard Library
 
+.Constructors and Deconstructors
+[IMPORTANT]
+The NEORV32 processor is an embedded system intended for running bare-metal or RTOS applications. To simplify this setup
+explicit constructors and deconstructors are not supported by default. However, a minimal "deconstructor-alike" support is
+provided by the <<_after_main_handler>>.
+
 The NEORV32 is a processor for _embedded_ applications. Hence, it is not capable of running desktop OSs like Linux
 (at least not without emulation). Hence, the software framework relies on a "bare-metal" setup that uses **newlib**
 as default C standard library.
@@ -467,19 +473,19 @@ For instance, this variable contains _-1_ if the main function returned with `re
 `__neorv32_crt0_after_main` function is irrelevant as there is no further "software instance" executed afterwards that can check this.
 However, the on-chip debugger could still evaluate the return value of the after-main handler.
 
-A simple `printf` can be used to inform the user when the application's main function returns
+A simple UARt output can be used to inform the user when the application's main function returns
 (this example assumes that UART0 has been already properly configured in the actual application):
 
-.After-main handler - example
+.After-main handler - simple example
 [source,c]
 ----
 int __neorv32_crt0_after_main(int32_t return_code) {
 
-  neorv32_uart0_printf("Main returned with code: %i\n", return_code);
+  neorv32_uart0_printf("\n<RTE> main function returned with exit code %i. </RTE>\n", return_code); <1>
   return 0;
 }
 ----
-
+<1> Use `<RTE>` here to make clear this is a message comes from the runtime environment.
 
 
 <<<

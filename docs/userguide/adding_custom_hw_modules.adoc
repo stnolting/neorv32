@@ -7,6 +7,13 @@ The processor provides several predefined options to add application-specific cu
 A <<_comparative_summary>> is given at the end of this section.
 
 
+.Debugging/Testing Custom Hardware Modules
+[TIP]
+Custom hardware IP modules connected via the external bus interface or integrated as CFU can be debugged "in-system" using the
+"bus explorer" example program (`sw/example_bus_explorer`). This program provides an interactive console (via UART0)
+that allows to perform arbitrary read and write access from/to any memory-mapped register.
+
+
 === Standard (_External_) Interfaces
 
 The processor already provides a set of standard interfaces that are intended to connect _chip-external_ devices.
