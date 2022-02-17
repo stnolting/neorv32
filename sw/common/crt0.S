@@ -33,9 +33,10 @@
 /* ################################################################################################# */
 
 .file "crt0.S"
-.section .text.boot
+.section .text.crt0
 .balign 4
 .global _start
+.global __crt0_main_exit
 
 
 _start:
@@ -139,11 +140,11 @@ __crt0_reg_file_clear:
 // ************************************************************************************************
 // Reset/deactivate IO/peripheral devices
 // Devices, that are not implemented, will cause a store bus access fault
-// which is captured (but actually ignored) by the dummy trap handler.
+// that is catched (but not further processed) by the dummy trap handler.
 // ************************************************************************************************
 __crt0_reset_io:
-  la   x8,   __ctr0_io_space_begin         // start of processor-internal IO region
-  la   x9,   __ctr0_io_space_end           // end of processor-internal IO region
+  la   x8,   __crt0_io_space_begin         // start of processor-internal IO region
+  la   x9,   __crt0_io_space_end           // end of processor-internal IO region
 
 __crt0_reset_io_loop:
   sw   zero, 0(x8)
@@ -168,7 +169,7 @@ __crt0_clear_bss_loop_end:
 
 
 // ************************************************************************************************
-// Copy initialized .data section from ROM to RAM (byte-wise) using linker script symbols
+// Copy initialized .data section from ROM to RAM (byte-wise)
 // ************************************************************************************************
 __crt0_copy_data:
   la   x11, __crt0_copy_data_src_begin        // start of data area (copy source)
@@ -190,38 +191,43 @@ __crt0_copy_data_loop_end:
 // Setup arguments and call main function
 // ************************************************************************************************
 __crt0_main_entry:
-  addi x10, zero, 0 // a0 = argc = 0
-  addi x11, zero, 0 // a1 = argv = 0
-  jal  ra,  main    // call actual app's main function, this "should" not return
+  addi a0,  zero, 0                  // a0 = argc = 0
+  addi a1,  zero, 0                  // a1 = argv = 0
+  jal  ra,  main                     // call actual app's main function, this "should" not return
+
+__crt0_main_exit:                    // main's "return" and "exit" will arrive here
+  csrw mscratch, a0                  // backup main's return code to mscratch (for debugger)
 
 
 // ************************************************************************************************
 // call "after main" handler (if there is any) if main really returns
 // ************************************************************************************************
-__crt0_main_aftermath:
-  csrw mscratch, a0                  // copy main's return code to mscratch for debugger
-
 #ifndef make_bootloader              // after_main handler not supported for bootloader
+
+__crt0_main_aftermath:
   .weak __neorv32_crt0_after_main
   la   ra, __neorv32_crt0_after_main
   beqz ra, __crt0_main_aftermath_end // check if an aftermath handler has been specified
-  jalr ra                            // execute handler with main's return code in a0
+  jalr ra                            // execute handler with main's return code still in a0
+
+__crt0_main_aftermath_end:
+
 #endif
 
 
 // ************************************************************************************************
 // go to endless sleep mode
 // ************************************************************************************************
-__crt0_main_aftermath_end:
-  csrci mstatus, 8                   // mstatus: disable global IRQs (mstatus.mie)
-__crt0_main_aftermath_end_loop:
-  wfi                                // try to go to sleep mode
-  j __crt0_main_aftermath_end_loop   // endless loop
+__crt0_shutdown:
+  csrci mstatus, 8                   // disable global IRQs (clear mstatus.mie)
+__crt0_shutdown_loop:
+  wfi                                // go to sleep mode
+  j __crt0_shutdown_loop             // endless loop
 
 
 // ************************************************************************************************
 // dummy trap handler (for exceptions & IRQs during very early boot stage)
-// does nothing but tries to move on to next instruction
+// does nothing but trying to move on to the next instruction
 // ************************************************************************************************
 .balign 4
 __crt0_dummy_trap_handler:
