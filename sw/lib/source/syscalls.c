@@ -41,6 +41,9 @@
 #undef errno
 extern int errno;
 
+// defined in sw/common/crt0.S
+extern const volatile unsigned int __crt0_main_exit;
+
 /* It turns out that older newlib versions use different symbol names which goes
  * against newlib recommendations. Anyway this is fixed in later version.
  */
@@ -104,13 +107,11 @@ int _execve(const char *name, char *const argv[], char *const env[])
 
 void _exit(int exit_status)
 {
-    // output exit status via UART0 (if available) and put core into endless sleep mode
-    if (neorv32_uart0_available()) {
-      neorv32_uart0_printf("<syscalls.c> Exit status %i, shutting down core\n", (int32_t)exit_status);
-    }
-    asm volatile("csrci mstatus, 8\n" // disable interrupts
-                 "wfi");              // go to sleep mode
-    while(1);
+    // jump to crt0's shutdown code
+    asm volatile ("la t0, __crt0_main_exit \n"
+                  "jr t0                   \n");
+
+    while(1); // will never be reached
 }
 
 int _faccessat(int dirfd, const char *file, int mode, int flags)
