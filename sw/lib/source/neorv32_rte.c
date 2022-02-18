@@ -388,7 +388,7 @@ void neorv32_rte_print_hw_config(void) {
   // Memory configuration
   neorv32_uart0_printf("\n=== << Memory System >> ===\n");
 
-  neorv32_uart0_printf("Boot Config.:        Boot ");
+  neorv32_uart0_printf("Boot configuration:  Boot ");
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_BOOTLOADER)) {
     neorv32_uart0_printf("via Bootloader\n");
   }
@@ -458,7 +458,7 @@ void neorv32_rte_print_hw_config(void) {
 
   neorv32_uart0_printf("Ext. bus interface:  ");
   __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_EXT));
-  neorv32_uart0_printf("Ext. bus Endianness: ");
+  neorv32_uart0_printf("Ext. bus endianness: ");
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_EXT_ENDIAN)) {
     neorv32_uart0_printf("big\n");
   }

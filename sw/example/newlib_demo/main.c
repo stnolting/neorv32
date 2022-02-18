@@ -55,7 +55,7 @@
 /**********************************************************************//**
  * Main function: Check some of newlib's core functions.
  *
- * @note This program requires UART.
+ * @note This program requires UART0.
  *
  * @return 0 if execution was successful
  **************************************************************************/
