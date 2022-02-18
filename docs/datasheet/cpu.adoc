@@ -5,8 +5,8 @@ image::neorv32_cpu_block.png[width=600,align=center]
 
 **Key Features**
 
-* 32-bit multi-cycle in-order `rv32` RISC-V CPU
-* Optional RISC-V extensions:
+* 32-bit little-endian, multi-cycle, in-order `rv32` RISC-V CPU
+* Available <<_instruction_sets_and_extensions>>:
 ** `A` - atomic memory access operations
 ** `B` - bit-manipulation instructions
 ** `C` - 16-bit compressed instructions
@@ -22,18 +22,15 @@ image::neorv32_cpu_block.png[width=600,align=center]
 ** `Zmmul` - integer multiplication hardware
 ** `Zxcfu` - custom instructions extension
 ** `PMP` - physical memory protection
-** `Debug` - debug mode (part of the on.chip debugger) including hardware trigger module
-* Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications - passes the official RISC-V Architecture Tests (v2+)
+** `Debug` - <<_cpu_debug_mode>> (part of the on.chip debugger) including hardware <<_trigger_module>>
+* <<_risc_v_compatibility>>: Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications - passes the official RISC-V Architecture Tests (v2+)
 * Official RISC-V open-source architecture ID
-* Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 _fast_ interrupts
-* Supports _all_ of the machine-level traps from the RISC-V specifications (including bus access exceptions and all unimplemented/illegal/malformed instructions)
+* Supports _all_ of the machine-level <<_traps_exceptions_and_interrupts>> from the RISC-V specifications (including bus access exceptions and all unimplemented/illegal/malformed instructions)
 ** This is a special aspect on _execution safety_ by <<_full_virtualization>>
+** Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 custom _fast_ interrupts
 * Optional physical memory configuration (PMP), compatible to the RISC-V specifications
 * Optional hardware performance monitors (HPM) for application benchmarking
-* Separated interfaces for instruction fetch and data access (merged into a single processor bus))
-* little-endian byte order
-* Configurable hardware reset
-* No hardware support of unaligned data/instruction accesses - they will trigger an exception.
+* Separated <<_bus_interface>>s for instruction fetch and data access
 
 [NOTE]
 It is recommended to use the **NEORV32 Processor** as default top instance even if you only want to use the actual
@@ -251,14 +248,13 @@ OK: 1/1 RISCV_TARGET=neorv32 RISCV_DEVICE=Zifencei XLEN=32
 :sectnums:
 ==== RISC-V Incompatibility Issues and Limitations
 
-This list shows the currently identified issues regarding full RISC-V-compatibility. More specific information
-can be found in section <<_instruction_sets_and_extensions>>.
+This list shows the currently identified issues regarding full RISC-V-compatibility.
 
 .Read-Only "Read-Write" CSRs
 [IMPORTANT]
 The <<_misa>> and <<_mtval>> CSRs in the NEORV32 are _read-only_.
-Any machine-mode write access to them is ignored and will _not_ cause any exceptions or side-effects to maintain
-RISC-V compatibility.
+Any machine-mode write access to them is ignored and will _not_ cause any exceptions or
+side-effects to maintain RISC-V compatibility.
 
 .Physical Memory Protection
 [IMPORTANT]
@@ -269,6 +265,12 @@ only supports the modes _OFF_ and _NAPOT_ yet and a minimal granularity of 8 byt
 [IMPORTANT]
 The `A` CPU extension only implements the `lr.w` and `sc.w` instructions yet.
 However, these instructions are sufficient to emulate all further atomic memory operations.
+
+.No HW-Support of Misaligned Memory Accesses
+[WARNING]
+The CPU does not support the resolution of unaligned memory access by the hardware. This is not a
+RISC-V-compatibility issue but an important thing to know. Any kind of unaligned memory access
+will raise an exception to allow a software-based emulation.
 
 
 <<<
@@ -284,14 +286,14 @@ direction seen from the CPU.
 [cols="<2,^1,^1,<6"]
 [options="header", grid="rows"]
 |=======================
-| Signal           | Width | Dir.   | Function
+| Signal           | Width | Dir. | Description
 4+^| **Global Signals**
 | `clk_i`          |     1 | in  | global clock line, all registers triggering on rising edge
 | `rstn_i`         |     1 | in  | global reset, low-active
 | `sleep_o`        |     1 | out | CPU is in sleep mode when set
 | `debug_o`        |     1 | out | CPU is in debug mode when set
-4+^| **Instruction Bus Interface (<<_bus_interface>>)**
-| `i_bus_addr_o`   |    32 | out | destination address
+4+^| **Instruction <<_bus_interface>>**
+| `i_bus_addr_o`   |    32 | out | access address
 | `i_bus_rdata_i`  |    32 | in  | read data
 | `i_bus_wdata_o`  |    32 | out | write data (always zero)
 | `i_bus_ben_o`    |     4 | out | byte enable
@@ -300,10 +302,10 @@ direction seen from the CPU.
 | `i_bus_lock_o`   |     1 | out | exclusive access request (always zero)
 | `i_bus_ack_i`    |     1 | in  | bus transfer acknowledge from accessed peripheral
 | `i_bus_err_i`    |     1 | in  | bus transfer terminate from accessed peripheral
-| `i_bus_fence_o`  |     1 | out | indicates an executed _fence.i_ instruction
+| `i_bus_fence_o`  |     1 | out | indicates an executed `fence.i` instruction
 | `i_bus_priv_o`   |     2 | out | current CPU privilege level
-4+^| **Data Bus Interface (<<_bus_interface>>)**
-| `d_bus_addr_o`   |    32 | out | destination address
+4+^| **Data <<_bus_interface>>**
+| `d_bus_addr_o`   |    32 | out | access address
 | `d_bus_rdata_i`  |    32 | in  | read data
 | `d_bus_wdata_o`  |    32 | out | write data
 | `d_bus_ben_o`    |     4 | out | byte enable
@@ -312,15 +314,15 @@ direction seen from the CPU.
 | `d_bus_lock_o`   |     1 | out | exclusive access request
 | `d_bus_ack_i`    |     1 | in  | bus transfer acknowledge from accessed peripheral
 | `d_bus_err_i`    |     1 | in  | bus transfer terminate from accessed peripheral
-| `d_bus_fence_o`  |     1 | out | indicates an executed _fence_ instruction
+| `d_bus_fence_o`  |     1 | out | indicates an executed `fence` instruction
 | `d_bus_priv_o`   |     2 | out | current CPU privilege level
-4+^| **System Time (see <<_timeh>> CSR)**
-| `time_i`         |    64 | in  | system time input (from MTIME)
+4+^| **System Time (for <<_timeh>> CSR)**
+| `time_i`         |    64 | in  | system time input from <<_machine_system_timer_mtime>>
 4+^| **Interrupts, RISC-V-compatible (<<_traps_exceptions_and_interrupts>>)**
 | `msw_irq_i`      |     1 | in  | RISC-V machine software interrupt
 | `mext_irq_i`     |     1 | in  | RISC-V machine external interrupt
 | `mtime_irq_i`    |     1 | in  | RISC-V machine timer interrupt
-4+^| **Fast Interrupts, NEORV32-specific (<<_traps_exceptions_and_interrupts>>)**
+4+^| **Interrupts, NEORV32-specific (<<_traps_exceptions_and_interrupts>>)**
 | `firq_i`         |    16 | in  | fast interrupt request signals
 4+^| **Enter Debug Mode Request (<<_on_chip_debugger_ocd>>)**
 | `db_halt_req_i`  |     1 | in  | request CPU to halt and enter debug mode
@@ -339,7 +341,7 @@ The _specific_ generics are listed below.
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **CPU_BOOT_ADDR** | _std_ulogic_vector(31 downto 0)_ | -
+| **CPU_BOOT_ADDR** | _std_ulogic_vector(31 downto 0)_ | _no default value_
 3+| This address defines the reset address at which the CPU starts fetching instructions after reset. In terms of the NEORV32 processor, this
 generic is configured with the base address of the bootloader ROM (default) or with the base address of the processor-internal instruction
 memory (IMEM) if the bootloader is disabled (_INT_BOOTLOADER_EN_ = _false_). See section <<_address_space>> for more information.
@@ -348,7 +350,7 @@ memory (IMEM) if the bootloader is disabled (_INT_BOOTLOADER_EN_ = _false_). See
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **CPU_DEBUG_ADDR** | _std_ulogic_vector(31 downto 0)_ | -
+| **CPU_DEBUG_ADDR** | _std_ulogic_vector(31 downto 0)_ | _no default value_
 3+| This address defines the entry address for the "execution based" on-chip debugger. By default, this generic is configured with the base address
 of the debugger memory. See section <<_on_chip_debugger_ocd>> for more information.
 |======
@@ -356,7 +358,7 @@ of the debugger memory. See section <<_on_chip_debugger_ocd>> for more informati
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **CPU_EXTENSION_RISCV_DEBUG** | _boolean_ | -
+| **CPU_EXTENSION_RISCV_DEBUG** | _boolean_ | _no default value_
 3+| Implement RISC-V-compatible "debug" CPU operation mode. See section <<_cpu_debug_mode>> for more information.
 |======
 
@@ -789,41 +791,43 @@ configurations are presented in <<_cpu_performance>>.
 [options="header", grid="rows"]
 |=======================
 | Class | ISA | Instruction(s) | Execution cycles
-| ALU           | `I/E` | `addi` `slti` `sltiu` `xori` `ori` `andi` `add` `sub` `slt` `sltu` `xor` `or` `and` `lui` `auipc` | 2
-| ALU           | `C`   | `c.addi4spn` `c.nop` `c.addi` `c.li` `c.addi16sp` `c.lui` `c.andi` `c.sub` `c.xor` `c.or` `c.and` `c.add` `c.mv` | 2
-| ALU           | `I/E` | `slli` `srli` `srai` `sll` `srl` `sra` | 3 + SAfootnote:[Shift amount.]/4 + SA%4; FAST_SHIFTfootnote:[Barrel shift when `FAST_SHIFT_EN` is enabled.]: 4; TINY_SHIFTfootnote:[Serial shift when `TINY_SHIFT_EN` is enabled.]: 2..32
-| ALU           | `C`   | `c.srli` `c.srai` `c.slli` | 3 + SAfootnote:[Shift amount (0..31).]; FAST_SHIFTfootnote:[Barrel shifter when `FAST_SHIFT_EN` is enabled.]:
-| Branches      | `I/E` | `beq` `bne` `blt` `bge` `bltu` `bgeu` | Taken: 5 + MLfootnote:[Memory latency.]; Not taken: 3
-| Branches      | `C`   | `c.beqz` `c.bnez`                     | Taken: 5 + MLfootnote:[Memory latency.]; Not taken: 3
-| Jumps / Calls | `I/E` | `jal` `jalr`                  | 4 + ML
-| Jumps / Calls | `C`   | `c.jal` `c.j` `c.jr` `c.jalr` | 4 + ML
-| Memory access | `I/E` | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw` | 4 + ML
-| Memory access | `C`   | `c.lw` `c.sw` `c.lwsp` `c.swsp`           | 4 + ML
-| Memory access | `A`   | `lr.w` `sc.w`                             | 4 + ML
-| Multiplication | `M`  | `mul` `mulh` `mulhsu` `mulhu` | 2+32+2; FAST_MULfootnote:[DSP-based multiplication; enabled via `FAST_MUL_EN`.]: 4
-| Division       | `M`  | `div` `divu` `rem` `remu`     | 2+32+2
-| CSR access | `Zicsr` | `csrrw` `csrrs` `csrrc` `csrrwi` `csrrsi` `csrrci` | 4
-| System | `I/E`+`Zicsr` | `ecall` `ebreak` | 4
-| System | `I/E` | `fence` | 3
-| System | `C`+`Zicsr` | `c.break` | 4
-| System | `Zicsr` | `mret` `wfi` | 5
-| System | `Zifencei` | `fence.i` | 3 + ML
+| ALU            | `I/E` | `addi` `slti` `sltiu` `xori` `ori` `andi` `add` `sub` `slt` `sltu` `xor` `or` `and` `lui` `auipc` | 2
+| ALU            | `C`   | `c.addi4spn` `c.nop` `c.addi` `c.li` `c.addi16sp` `c.lui` `c.andi` `c.sub` `c.xor` `c.or` `c.and` `c.add` `c.mv` | 2
+| ALU            | `I/E` | `slli` `srli` `srai` `sll` `srl` `sra` | 3 + SAfootnote:[Shift amount.]/4 + SA%4; FAST_SHIFTfootnote:[Barrel shift when `FAST_SHIFT_EN` is enabled.]: 4; TINY_SHIFTfootnote:[Serial shift when `TINY_SHIFT_EN` is enabled.]: 2..32
+| ALU            | `C`   | `c.srli` `c.srai` `c.slli` | 3 + SAfootnote:[Shift amount (0..31).]; FAST_SHIFTfootnote:[Barrel shifter when `FAST_SHIFT_EN` is enabled.]:
+| Branches       | `I/E` | `beq` `bne` `blt` `bge` `bltu` `bgeu` | Taken: 5 + MLfootnote:[Memory latency.]; Not taken: 3
+| Branches       | `C`   | `c.beqz` `c.bnez`                     | Taken: 5 + MLfootnote:[Memory latency.]; Not taken: 3
+| Jumps / Calls  | `I/E` | `jal` `jalr`                  | 4 + ML
+| Jumps / Calls  | `C`   | `c.jal` `c.j` `c.jr` `c.jalr` | 4 + ML
+| Memory access  | `I/E` | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw` | 4 + ML
+| Memory access  | `C`   | `c.lw` `c.sw` `c.lwsp` `c.swsp`           | 4 + ML
+| Memory access  | `A`   | `lr.w` `sc.w`                             | 4 + ML
+| Multiplication | `M`   | `mul` `mulh` `mulhsu` `mulhu` | 2+32+2; FAST_MULfootnote:[DSP-based multiplication; enabled via `FAST_MUL_EN`.]: 4
+| Division       | `M`   | `div` `divu` `rem` `remu`     | 2+32+2
+| CSR access     | `Zicsr`     | `csrrw` `csrrs` `csrrc` `csrrwi` `csrrsi` `csrrci` | 3
+| System         | `I/E`       | `fence` | 3
+| System         | `Zicsr`     | `ecall` `ebreak` | 3
+| System         | `Zicsr`+`C` | `c.break` | 3
+| System         | `Zicsr`     | `mret` `wfi` | 6
+| System         | `Zifencei`  | `fence.i` | 3 + ML
 | Floating-point - artihmetic | `Zfinx` | `fadd.s` | 110
 | Floating-point - artihmetic | `Zfinx` | `fsub.s` | 112
 | Floating-point - artihmetic | `Zfinx` | `fmul.s` | 22
-| Floating-point - compare | `Zfinx` | `fmin.s` `fmax.s` `feq.s` `flt.s` `fle.s` | 13
-| Floating-point - misc | `Zfinx` | `fsgnj.s` `fsgnjn.s` `fsgnjx.s` `fclass.s` | 12
+| Floating-point - compare    | `Zfinx` | `fmin.s` `fmax.s` `feq.s` `flt.s` `fle.s` | 13
+| Floating-point - misc       | `Zfinx` | `fsgnj.s` `fsgnjn.s` `fsgnjx.s` `fclass.s` | 12
 | Floating-point - conversion | `Zfinx` | `fcvt.w.s` `fcvt.wu.s` | 47
 | Floating-point - conversion | `Zfinx` | `fcvt.s.w` `fcvt.s.wu` | 48
-| Bit-manipulation - arithmetic/logic | `B(Zbb)` | `sext.b` `sext.h` `min` `minu` `max` `maxu` `andn` `orn` `xnor` `zext`(pack) `rev8`(grevi) `orc.b`(gorci) | 3
-| Bit-manipulation - arithmetic/logic | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 3
-| Bit-manipulation - shifts | `B(Zbb)` | `clz` `ctz` | 3 + 0..32
-| Bit-manipulation - shifts | `B(Zbb)` | `cpop` | 3 + 32
-| Bit-manipulation - shifts | `B(Zbb)` | `rol` `ror` `rori` | 3 + SA
-| Bit-manipulation - single-bit  | `B(Zbs)` | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]` | 3
-| Bit-manipulation - shifted-add | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 3
+| Bit-manipulation - arithmetic/logic    | `B(Zbb)` | `sext.b` `sext.h` `min` `minu` `max` `maxu` `andn` `orn` `xnor` `zext`(pack) `rev8`(grevi) `orc.b`(gorci) | 3
+| Bit-manipulation - arithmetic/logic    | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 3
+| Bit-manipulation - shifts              | `B(Zbb)` | `clz` `ctz` | 3 + 0..32
+| Bit-manipulation - shifts              | `B(Zbb)` | `cpop` | 3 + 32
+| Bit-manipulation - shifts              | `B(Zbb)` | `rol` `ror` `rori` | 3 + SA
+| Bit-manipulation - single-bit          | `B(Zbs)` | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]` | 3
+| Bit-manipulation - shifted-add         | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 3
 | Bit-manipulation - carry-less multiply | `B(Zbc)` | `clmul` `clmulh` `clmulr` | 3 + 32
-| CFU: custom instructions | `Zxcfu` | - | min. 4
+| Custom instructions (CFU) | `Zxcfu` | - | min. 4
+| | | | 
+| _Illegal instructions_    | `Zicsr` | - | 2
 |=======================
 
 [NOTE]
@@ -878,7 +882,7 @@ another interrupt handler can start. This allows program progress even if there 
 
 
 :sectnums:
-==== Memory Access Exceptions
+===== Memory Access Exceptions
 
 If a load operation causes any exception, the instruction's destination register is
 _not written_ at all. Load exceptions caused by a misalignment or a physical memory protection fault do not
@@ -887,18 +891,15 @@ memory protection fault do not trigger a bus/memory write-operation at all.
 
 
 :sectnums:
-==== Custom Fast Interrupt Request Lines
+===== Custom Fast Interrupt Request Lines
 
 As a custom extension, the NEORV32 CPU features 16 fast interrupt request (FIRQ) lines via the `firq_i` CPU top
 entity signals. These interrupts have custom configuration and status flags in the <<_mie>> and <<_mip>> CSRs and also
 provide custom trap codes in <<_mcause>>. These FIRQs are reserved for NEORV32 processor-internal usage only.
 
 
-
-<<<
-// ####################################################################################################################
 :sectnums:
-==== NEORV32 Trap Listing
+===== NEORV32 Trap Listing
 
 The following table shows all traps that are currently supported by the NEORV32 CPU. It also shows the prioritization
 and the CSR side-effects. A more detailed description of the actual trap triggering events is provided in a further table.
