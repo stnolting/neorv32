@@ -167,6 +167,7 @@ begin
     end case;
   end process alu_core;
 
+
   -- ALU Function Select --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   alu_function_mux: process(ctrl_i, alu_res, pc2_i, csr_i, cp_res)

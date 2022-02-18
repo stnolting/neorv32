@@ -104,7 +104,7 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   signal acc_en : std_ulogic; -- module access enable
   signal rden   : std_ulogic;
   signal wren   : std_ulogic;
-  signal iaddr  : std_ulogic_vector(02 downto 0);
+  signal addr   : std_ulogic_vector(2 downto 0);
 
   -- system information ROM --
   type info_mem_t is array (0 to 7) of std_ulogic_vector(31 downto 0);
@@ -117,7 +117,7 @@ begin
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = sysinfo_base_c(hi_abb_c downto lo_abb_c)) else '0';
   rden   <= acc_en and rden_i; -- read access
   wren   <= acc_en and wren_i; -- write access
-  iaddr  <= addr_i(index_size_f(sysinfo_size_c)-1 downto 2);
+  addr   <= addr_i(index_size_f(sysinfo_size_c)-1 downto 2);
 
 
   -- Construct Info ROM ---------------------------------------------------------------------
@@ -190,11 +190,12 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o  <= rden;
-      err_o  <= wren;
-      data_o <= (others => '0');
+      ack_o <= rden;
+      err_o <= wren; -- read-only!
       if (rden = '1') then
-        data_o <= sysinfo_mem(to_integer(unsigned(iaddr)));
+        data_o <= sysinfo_mem(to_integer(unsigned(addr)));
+      else
+        data_o <= (others => '0');
       end if;
     end if;
   end process read_access;
