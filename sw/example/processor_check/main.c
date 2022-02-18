@@ -223,6 +223,13 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Test fence instructions (just make sure CPU does not crash)
+  // ----------------------------------------------------------
+  asm volatile ("fence");
+  asm volatile ("fence.i");
+
+
+  // ----------------------------------------------------------
   // Test performance counter: setup as many events and counter as feasible
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
@@ -417,7 +424,7 @@ int main() {
   // External memory interface test
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] External memory access (@ 0x%x): ", cnt_test, (uint32_t)EXT_MEM_BASE);
+  PRINT_STANDARD("[%i] Ext. memory access (@ 0x%x): ", cnt_test, (uint32_t)EXT_MEM_BASE);
 
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_EXT)) {
     cnt_test++;
@@ -456,7 +463,7 @@ int main() {
   // Illegal CSR access (CSR not implemented)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] Non-existent CSR access: ", cnt_test);
+  PRINT_STANDARD("[%i] Non-existent CSR: ", cnt_test);
 
   cnt_test++;
 
@@ -474,7 +481,7 @@ int main() {
   // Write-access to read-only CSR
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] Read-only CSR write access: ", cnt_test);
+  PRINT_STANDARD("[%i] Read-only CSR write: ", cnt_test);
 
   cnt_test++;
 
@@ -614,7 +621,7 @@ int main() {
   // Breakpoint instruction
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] BREAK (break instr.) EXC: ", cnt_test);
+  PRINT_STANDARD("[%i] BREAK ('ebreak') EXC: ", cnt_test);
   cnt_test++;
 
   asm volatile("EBREAK");
@@ -710,10 +717,10 @@ int main() {
   // Environment call from M-mode
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] ENVCALL (ecall instr.) from M-mode EXC: ", cnt_test);
+  PRINT_STANDARD("[%i] ENVCALL ('ecall') from M-mode EXC: ", cnt_test);
   cnt_test++;
 
-  asm volatile("ECALL");
+  asm volatile("ecall");
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MENV_CALL) {
     test_ok();
@@ -727,14 +734,14 @@ int main() {
   // Environment call from U-mode
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] ENVCALL (ecall instr.) from U-mode EXC: ", cnt_test);
+  PRINT_STANDARD("[%i] ENVCALL ('ecall') from U-mode EXC: ", cnt_test);
 
   cnt_test++;
 
   // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
   neorv32_cpu_goto_user_mode();
   {
-    asm volatile("ECALL");
+    asm volatile("ecall");
   }
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_UENV_CALL) {
