@@ -44,7 +44,7 @@ package neorv32_package is
   constant ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- default instruction memory address space base address
   constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
 
-  -- use dedicated hardware reset value for UNCRITICAL registers --
+  -- use dedicated hardware reset value for UNCRITICAL CPU registers --
   -- FALSE=reset value is irrelevant (might simplify HW), default; TRUE=defined LOW reset value
   constant dedicated_reset_c : boolean := false;
 
@@ -65,7 +65,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060800"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060801"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -496,7 +496,7 @@ package neorv32_package is
   constant funct3_csrrsi_c : std_ulogic_vector(2 downto 0) := "110"; -- csr read & set bit immediate
   constant funct3_csrrci_c : std_ulogic_vector(2 downto 0) := "111"; -- csr read & clear bit immediate
   -- fence --
-  constant funct3_fence_c  : std_ulogic_vector(2 downto 0) := "000"; -- fence - order IO/memory access (->NOP)
+  constant funct3_fence_c  : std_ulogic_vector(2 downto 0) := "000"; -- fence - order IO/memory access
   constant funct3_fencei_c : std_ulogic_vector(2 downto 0) := "001"; -- fencei - instruction stream sync
 
   -- RISC-V Funct12 -------------------------------------------------------------------------
