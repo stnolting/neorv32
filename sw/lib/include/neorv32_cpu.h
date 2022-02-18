@@ -161,9 +161,8 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_reservate_word(
   asm volatile ("lw %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
 #endif
 
-  return (uint32_t)reg_data;
+  return reg_data;
 }
-
 
 
 /**********************************************************************//**
@@ -181,7 +180,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_word(u
 
   asm volatile ("lw %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
 
-  return (uint32_t)reg_data;
+  return reg_data;
 }
 
 
@@ -196,11 +195,30 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_word(u
 inline uint16_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_half(uint32_t addr) {
 
   register uint32_t reg_addr = addr;
-  register uint32_t reg_data;
+  register uint16_t reg_data;
 
   asm volatile ("lhu %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
 
-  return (uint16_t)reg_data;
+  return reg_data;
+}
+
+
+/**********************************************************************//**
+ * Load signed half-word from address space.
+ *
+ * @note An unaligned access address will raise an alignment exception.
+ *
+ * @param[in] addr Address (32-bit).
+ * @return Read data half-word (16-bit).
+ **************************************************************************/
+inline int16_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_half(uint32_t addr) {
+
+  register uint32_t reg_addr = addr;
+  register int16_t reg_data;
+
+  asm volatile ("lh %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
+
+  return reg_data;
 }
 
 
@@ -213,11 +231,28 @@ inline uint16_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_half(u
 inline uint8_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_byte(uint32_t addr) {
 
   register uint32_t reg_addr = addr;
-  register uint32_t reg_data;
+  register uint8_t reg_data;
 
   asm volatile ("lbu %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
 
-  return (uint8_t)reg_data;
+  return reg_data;
+}
+
+
+/**********************************************************************//**
+ * Load signed byte from address space.
+ *
+ * @param[in] addr Address (32-bit).
+ * @return Read data byte (8-bit).
+ **************************************************************************/
+inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byte(uint32_t addr) {
+
+  register uint32_t reg_addr = addr;
+  register int8_t reg_data;
+
+  asm volatile ("lb %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
+
+  return reg_data;
 }
 
 
