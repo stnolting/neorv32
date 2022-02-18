@@ -128,7 +128,7 @@ int neorv32_rte_exception_uninstall(uint8_t id) {
  *
  * @warning When using the the RTE, this function is the ONLY function that can use the 'interrupt' attribute!
  **************************************************************************/
-static void __attribute__((__interrupt__)) __attribute__((aligned(4)))  __neorv32_rte_core(void) {
+static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32_rte_core(void) {
 
   register uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
   neorv32_cpu_csr_write(CSR_MSCRATCH, rte_mepc); // store for later
@@ -138,8 +138,7 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(4)))  __neorv3
   if (((int32_t)rte_mcause) >= 0) { // modify pc only if not interrupt (MSB cleared)
 
     // get low half word of faulting instruction
-    register uint32_t rte_trap_inst;
-    asm volatile ("lh %[result], 0(%[input_i])" : [result] "=r" (rte_trap_inst) : [input_i] "r" (rte_mepc));
+    register uint32_t rte_trap_inst = neorv32_cpu_load_unsigned_half(rte_mepc);
 
     if ((rte_trap_inst & 3) == 3) { // faulting instruction is uncompressed instruction
       rte_mepc += 4;
