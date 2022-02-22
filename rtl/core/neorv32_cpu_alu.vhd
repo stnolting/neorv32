@@ -90,14 +90,6 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal alu_res    : std_ulogic_vector(data_width_c-1 downto 0);
   signal cp_res     : std_ulogic_vector(data_width_c-1 downto 0);
 
-  -- co-processor arbiter and interface --
-  type cp_ctrl_t is record
-    cmd    : std_ulogic;
-    cmd_ff : std_ulogic;
-    start  : std_ulogic;
-  end record;
-  signal cp_ctrl : cp_ctrl_t;
-
   -- co-processor interface --
   type cp_data_if_t  is array (0 to 7)  of std_ulogic_vector(data_width_c-1 downto 0);
   signal cp_result : cp_data_if_t; -- co-processor result
@@ -186,43 +178,22 @@ begin
   -- CPU Co-Processors
   -- **************************************************************************************************************************
 
-  -- Co-Processor Interface --
-  -- Co-processor "valid" signal has to be asserted (for one cycle) one cycle before asserting output data
-  -- Co-processor "output data" has to be always zero unless co-processor was explicitly triggered
-
-  -- Co-Processor Arbiter -------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  cp_arbiter: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      cp_ctrl.cmd_ff <= '0';
-    elsif rising_edge(clk_i) then
-      cp_ctrl.cmd_ff <= cp_ctrl.cmd;
-    end if;
-  end process cp_arbiter;
-
-  -- is co-processor operation? --
-  cp_ctrl.cmd   <= '1' when (ctrl_i(ctrl_alu_func1_c downto ctrl_alu_func0_c) = alu_func_copro_c) else '0';
-  cp_ctrl.start <= '1' when (cp_ctrl.cmd = '1') and (cp_ctrl.cmd_ff = '0') else '0';
-
   -- co-processor select / start trigger --
-  cp_start(0) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "000") else '0';
-  cp_start(1) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "001") else '0';
-  cp_start(2) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "010") else '0';
-  cp_start(3) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "011") else '0';
-  cp_start(4) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "100") else '0';
-  cp_start(5) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "101") else '0';
-  cp_start(6) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "110") else '0';
-  cp_start(7) <= '1' when (cp_ctrl.start = '1') and (ctrl_i(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) = "111") else '0';
+  -- > "cp_start" is high for one cycle to trigger operation of the according co-processor
+  cp_start(7 downto 0) <= ctrl_i(ctrl_cp_trig7_c downto ctrl_cp_trig0_c);
 
   -- co-processor operation done? --
-  idone_o <= or_reduce_f(cp_valid);
+  -- > "cp_valid" signal has to be set (for one cycle) one cycle before output data (cp_result) is valid
+  idone_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or
+             cp_valid(4) or cp_valid(5) or cp_valid(6) or cp_valid(7);
 
-  -- co-processor result - only the *actually selected* co-processor may output data != 0 --
-  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5) or cp_result(6) or cp_result(7);
+  -- co-processor result --
+  -- > "cp_result" data has to be always zero unless co-processor was actually triggered
+  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or
+            cp_result(4) or cp_result(5) or cp_result(6) or cp_result(7);
 
 
-  -- Co-Processor 0: Shifter (CPU Core ISA) --------------------------------------------------
+  -- Co-Processor 0: Shifter Unit (CPU Base ISA) --------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_shifter_inst: neorv32_cpu_cp_shifter
   generic map (
@@ -243,7 +214,7 @@ begin
   );
 
 
-  -- Co-Processor 1: Integer Multiplication/Division ('M' Extension) ------------------------
+  -- Co-Processor 1: Integer Multiplication/Division Unit ('M' Extension) -------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_muldiv_inst_true:
   if (CPU_EXTENSION_RISCV_M = true) or (CPU_EXTENSION_RISCV_Zmmul = true) generate

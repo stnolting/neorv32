@@ -630,7 +630,7 @@ begin
     if (rstn_i = '0') then
       imm_o <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
-      -- default: I-immediate: ALU-immediate, loads, jump-and-link with registers
+      -- default: I-immediate: ALU-immediate, loads, jump-and-link with register
       imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
       imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
       imm_o(04 downto 01) <= execute_engine.i_reg(24 downto 21);
@@ -1054,27 +1054,23 @@ begin
             -- co-processor MULDIV operation (multi-cycle) --
             if ((CPU_EXTENSION_RISCV_M = true) and ((decode_aux.is_m_mul = '1') or (decode_aux.is_m_div = '1'))) or -- MUL/DIV
                ((CPU_EXTENSION_RISCV_Zmmul = true) and (decode_aux.is_m_mul = '1')) then -- MUL
-              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- use MULDIV CP
-              ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_copro_c;
-              execute_engine.state_nxt                           <= ALU_WAIT;
+              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- trigger MULDIV CP
+              execute_engine.state_nxt <= ALU_WAIT;
             -- co-processor BIT-MANIPULATION operation (multi-cycle) --
             elsif (CPU_EXTENSION_RISCV_B = true) and
                   (((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_b_reg = '1')) or -- register operation
                    ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_b_imm = '1'))) then -- immediate operation
-              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_bitmanip_c; -- use BITMANIP CP
-              ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_copro_c;
-              execute_engine.state_nxt                           <= ALU_WAIT;
+              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_bitmanip_c; -- trigger BITMANIP CP
+              execute_engine.state_nxt <= ALU_WAIT;
             -- co-processor SHIFT operation (multi-cycle) --
             elsif (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or
                   (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) then
-              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_shifter_c; -- use SHIFTER CP (only relevant for shift operations)
-              ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_copro_c;
-              execute_engine.state_nxt                           <= ALU_WAIT;
+              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_shifter_c; -- trigger SHIFTER CP
+              execute_engine.state_nxt <= ALU_WAIT;
             -- ALU CORE operation (single-cycle) --
             else
-              ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_core_c;
-              ctrl_nxt(ctrl_rf_wb_en_c)                          <= '1'; -- valid RF write-back
-              execute_engine.state_nxt                           <= DISPATCH;
+              ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
+              execute_engine.state_nxt  <= DISPATCH;
             end if;
 
 
@@ -1127,7 +1123,6 @@ begin
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zfinx = true) then
               ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_fpu_c; -- trigger FPU CP
-              ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_copro_c;
               execute_engine.state_nxt <= ALU_WAIT;
             else
               execute_engine.state_nxt <= DISPATCH;
@@ -1138,7 +1133,6 @@ begin
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zxcfu = true) then
               ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_cfu_c; -- trigger CFU CP
-              ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_copro_c;
               execute_engine.state_nxt <= ALU_WAIT;
             else
               execute_engine.state_nxt <= DISPATCH;
@@ -1201,7 +1195,7 @@ begin
         execute_engine.state_nxt  <= DISPATCH;
 
 
-      when ALU_WAIT => -- wait for multi-cycle ALU operation (co-processor) to finish
+      when ALU_WAIT => -- wait for multi-cycle ALU operation (ALU co-processor) to finish
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_alu_func1_c downto ctrl_alu_func0_c) <= alu_func_copro_c;
         -- wait for completion or abort on illegal instruction exception (the co-processor will also terminate operations)

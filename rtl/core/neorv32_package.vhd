@@ -65,7 +65,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060801"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060802"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -322,7 +322,7 @@ package neorv32_package is
   -- Main CPU Control Bus -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- register file --
-  constant ctrl_rf_in_mux_c     : natural :=  0; -- input source select lsb (0=MEM, 1=ALU)
+  constant ctrl_rf_wb_en_c      : natural :=  0; -- write back enable
   constant ctrl_rf_rs1_adr0_c   : natural :=  1; -- source register 1 address bit 0
   constant ctrl_rf_rs1_adr1_c   : natural :=  2; -- source register 1 address bit 1
   constant ctrl_rf_rs1_adr2_c   : natural :=  3; -- source register 1 address bit 2
@@ -338,7 +338,7 @@ package neorv32_package is
   constant ctrl_rf_rd_adr2_c    : natural := 13; -- destination register address bit 2
   constant ctrl_rf_rd_adr3_c    : natural := 14; -- destination register address bit 3
   constant ctrl_rf_rd_adr4_c    : natural := 15; -- destination register address bit 4
-  constant ctrl_rf_wb_en_c      : natural := 16; -- write back enable
+  constant ctrl_rf_in_mux_c     : natural := 16; -- input source select (0=MEM, 1=ALU)
   -- alu --
   constant ctrl_alu_op0_c       : natural := 17; -- ALU operation select bit 0
   constant ctrl_alu_op1_c       : natural := 18; -- ALU operation select bit 1
@@ -369,41 +369,48 @@ package neorv32_package is
   constant ctrl_bus_lock_c      : natural := 42; -- make atomic/exclusive access lock
   constant ctrl_bus_de_lock_c   : natural := 43; -- remove atomic/exclusive access 
   constant ctrl_bus_ch_lock_c   : natural := 44; -- evaluate atomic/exclusive lock (SC operation)
-  -- co-processors --
-  constant ctrl_cp_id_lsb_c     : natural := 45; -- cp select ID lsb
-  constant ctrl_cp_id_hsb_c     : natural := 46; -- cp select ID "half" significant bit
-  constant ctrl_cp_id_msb_c     : natural := 47; -- cp select ID msb
-  -- instruction's control blocks (used by cpu co-processors) --
-  constant ctrl_ir_funct3_0_c   : natural := 48; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 49; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 50; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 51; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 52; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 53; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 54; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 55; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 56; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 57; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 58; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 59; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 60; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 61; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 62; -- funct12 bit 11
-  constant ctrl_ir_opcode7_0_c  : natural := 63; -- opcode7 bit 0
-  constant ctrl_ir_opcode7_1_c  : natural := 64; -- opcode7 bit 1
-  constant ctrl_ir_opcode7_2_c  : natural := 65; -- opcode7 bit 2
-  constant ctrl_ir_opcode7_3_c  : natural := 66; -- opcode7 bit 3
-  constant ctrl_ir_opcode7_4_c  : natural := 67; -- opcode7 bit 4
-  constant ctrl_ir_opcode7_5_c  : natural := 68; -- opcode7 bit 5
-  constant ctrl_ir_opcode7_6_c  : natural := 69; -- opcode7 bit 6
-  -- CPU status --
-  constant ctrl_priv_lvl_lsb_c  : natural := 70; -- privilege level lsb
-  constant ctrl_priv_lvl_msb_c  : natural := 71; -- privilege level msb
-  constant ctrl_sleep_c         : natural := 72; -- set when CPU is in sleep mode
-  constant ctrl_trap_c          : natural := 73; -- set when CPU is entering trap execution
-  constant ctrl_debug_running_c : natural := 74; -- CPU is in debug mode when set
+  -- alu co-processors --
+  constant ctrl_cp_id_lsb_c     : natural := 46; -- cp select ID lsb [ALIAS]
+  constant ctrl_cp_trig0_c      : natural := 46; -- trigger CP0
+  constant ctrl_cp_trig1_c      : natural := 47; -- trigger CP1
+  constant ctrl_cp_trig2_c      : natural := 48; -- trigger CP2
+  constant ctrl_cp_trig3_c      : natural := 49; -- trigger CP3
+  constant ctrl_cp_trig4_c      : natural := 50; -- trigger CP4
+  constant ctrl_cp_trig5_c      : natural := 51; -- trigger CP5
+  constant ctrl_cp_trig6_c      : natural := 52; -- trigger CP6
+  constant ctrl_cp_trig7_c      : natural := 53; -- trigger CP7
+  constant ctrl_cp_id_msb_c     : natural := 53; -- cp select ID msb [ALIAS]
+  -- instruction word control blocks (used by cpu co-processors) --
+  constant ctrl_ir_funct3_0_c   : natural := 54; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 55; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 56; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 57; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 58; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 59; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 60; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 61; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 62; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 63; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 64; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 65; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 66; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 67; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 68; -- funct12 bit 11
+  constant ctrl_ir_opcode7_0_c  : natural := 69; -- opcode7 bit 0
+  constant ctrl_ir_opcode7_1_c  : natural := 70; -- opcode7 bit 1
+  constant ctrl_ir_opcode7_2_c  : natural := 71; -- opcode7 bit 2
+  constant ctrl_ir_opcode7_3_c  : natural := 72; -- opcode7 bit 3
+  constant ctrl_ir_opcode7_4_c  : natural := 73; -- opcode7 bit 4
+  constant ctrl_ir_opcode7_5_c  : natural := 74; -- opcode7 bit 5
+  constant ctrl_ir_opcode7_6_c  : natural := 75; -- opcode7 bit 6
+  -- cpu status --
+  constant ctrl_priv_lvl_lsb_c  : natural := 76; -- privilege level lsb
+  constant ctrl_priv_lvl_msb_c  : natural := 77; -- privilege level msb
+  constant ctrl_sleep_c         : natural := 78; -- set when CPU is in sleep mode
+  constant ctrl_trap_c          : natural := 79; -- set when CPU is entering trap execution
+  constant ctrl_debug_running_c : natural := 80; -- set when CPU is in debug mode
   -- control bus size --
-  constant ctrl_width_c         : natural := 75; -- control bus size
+  constant ctrl_width_c         : natural := 81; -- control bus size
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -790,19 +797,19 @@ package neorv32_package is
   constant csr_mconfigptr_c     : std_ulogic_vector(11 downto 0) := x"f15";
 
   -- <<< NEORV32-specific (custom) read-only CSRs >>> ---
-  -- machine extended ISA extensionss information --
+  -- machine extended ISA extensions information --
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
 
-  -- CPU Co-Processor IDs -------------------------------------------------------------------
+  -- CPU Co-Processor IDs (one-hot!) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant cp_sel_shifter_c  : std_ulogic_vector(2 downto 0) := "000"; -- CP0: shift operations (base ISA)
-  constant cp_sel_muldiv_c   : std_ulogic_vector(2 downto 0) := "001"; -- CP1: multiplication/division operations ('M' extensions)
-  constant cp_sel_bitmanip_c : std_ulogic_vector(2 downto 0) := "010"; -- CP2: bit manipulation ('B' extensions)
-  constant cp_sel_fpu_c      : std_ulogic_vector(2 downto 0) := "011"; -- CP3: floating-point unit ('Zfinx' extension)
-  constant cp_sel_cfu_c      : std_ulogic_vector(2 downto 0) := "100"; -- CP4: custom instructions CFU ('Zxcfu' extension)
---constant cp_sel_res1_c     : std_ulogic_vector(2 downto 0) := "101"; -- CP5: reserved
---constant cp_sel_res2_c     : std_ulogic_vector(2 downto 0) := "110"; -- CP6: reserved
---constant cp_sel_res3_c     : std_ulogic_vector(2 downto 0) := "111"; -- CP7: reserved
+  constant cp_sel_shifter_c  : std_ulogic_vector(7 downto 0) := "00000001"; -- CP0: shift operations (base ISA)
+  constant cp_sel_muldiv_c   : std_ulogic_vector(7 downto 0) := "00000010"; -- CP1: multiplication/division operations ('M' extensions)
+  constant cp_sel_bitmanip_c : std_ulogic_vector(7 downto 0) := "00000100"; -- CP2: bit manipulation ('B' extensions)
+  constant cp_sel_fpu_c      : std_ulogic_vector(7 downto 0) := "00001000"; -- CP3: floating-point unit ('Zfinx' extension)
+  constant cp_sel_cfu_c      : std_ulogic_vector(7 downto 0) := "00010000"; -- CP4: custom instructions CFU ('Zxcfu' extension)
+--constant cp_sel_res5_c     : std_ulogic_vector(7 downto 0) := "00100000"; -- CP5: reserved
+--constant cp_sel_res6_c     : std_ulogic_vector(7 downto 0) := "01000000"; -- CP6: reserved
+--constant cp_sel_res7_c     : std_ulogic_vector(7 downto 0) := "10000000"; -- CP7: reserved
 
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
