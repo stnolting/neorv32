@@ -1,12 +1,11 @@
 -- #################################################################################################
 -- # << NEORV32 - CPU Co-Processor: Integer Multiplier/Divider Unit (RISC-V "M" Extension) >>      #
 -- # ********************************************************************************************* #
--- # Multiplier and Divider unit. Implements the RISC-V M CPU extension.                           #
+-- # Multiplier and Divider unit. Implements the RISC-V M & Zmmul CPU extensions.                  #
 -- #                                                                                               #
--- # Multiplier core (signed/unsigned) uses classical serial algorithm. Unit latency: 31+3 cycles  #
--- # Divider core (unsigned) uses classical serial algorithm. Unit latency: 32+4 cycles            #
--- #                                                                                               #
+-- # Multiplier core (signed/unsigned) uses classical serial algorithm. Latency = 31+3 cycles.     #
 -- # Multiplications can be mapped to DSP blocks (faster!) when FAST_MUL_EN = true.                #
+-- # Divider core (unsigned-only) uses classical serial algorithm. latency = 32+4 cycles.          #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -90,7 +89,6 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   signal div_opy       : std_ulogic_vector(data_width_c-1 downto 0);
   signal rs1_is_signed : std_ulogic;
   signal rs2_is_signed : std_ulogic;
-  signal opy_is_zero   : std_ulogic;
   signal div_res_corr  : std_ulogic;
   signal out_en        : std_ulogic;
 
@@ -125,7 +123,6 @@ begin
       out_en       <= '0';
       valid_o      <= '0';
       div_res_corr <= def_rst_val_c;
-      opy_is_zero  <= def_rst_val_c;
     elsif rising_edge(clk_i) then
       -- defaults --
       start_div <= '0';
@@ -153,23 +150,20 @@ begin
           end if;
 
         when DIV_PREPROCESS =>
-          -- check relevant input signs --
-          if (cp_op = cp_op_div_c) then -- result sign compensation for div?
-            div_res_corr <= rs1_i(rs1_i'left) xor rs2_i(rs2_i'left);
-          elsif (cp_op = cp_op_rem_c) then -- result sign compensation for rem?
+          -- check relevant input signs for result sign compensation --
+          if (cp_op = cp_op_div_c) then -- signed div operation
+            div_res_corr <= (rs1_i(rs1_i'left) xor rs2_i(rs2_i'left)) and or_reduce_f(rs2_i); -- different signs AND rs2 not zero
+          elsif (cp_op = cp_op_rem_c) then -- signed rem operation
             div_res_corr <= rs1_i(rs1_i'left);
           else
             div_res_corr <= '0';
           end if;
-          -- divide by zero? --
-          opy_is_zero <= not or_reduce_f(rs2_i); -- set if rs2 = 0
           -- abs(rs2) --
           if ((rs2_i(rs2_i'left) and rs2_is_signed) = '1') then -- signed division?
             div_opy <= std_ulogic_vector(0 - unsigned(rs2_i)); -- make positive
           else
             div_opy <= rs2_i;
           end if;
-          --
           state <= PROCESSING;
 
         when PROCESSING =>
@@ -297,23 +291,26 @@ begin
     div_sub <= std_ulogic_vector(unsigned('0' & remainder(30 downto 0) & quotient(31)) - unsigned('0' & div_opy));
 
     -- result sign compensation --
-    div_sign_comp_in <= quotient when (cp_op = cp_op_div_c) else remainder;
+    div_sign_comp_in <= quotient when (cp_op = cp_op_div_c) or (cp_op = cp_op_divu_c) else remainder;
     div_sign_comp    <= std_ulogic_vector(0 - unsigned(div_sign_comp_in));
-    div_res          <= div_sign_comp when (div_res_corr = '1') and (opy_is_zero = '0') else div_sign_comp_in;
+    div_res          <= div_sign_comp when (div_res_corr = '1') else div_sign_comp_in;
   end generate;
 
   -- no divider --
   divider_core_serial_none:
   if (DIVISION_EN = false) generate
-    remainder <= (others => '0');
-    quotient  <= (others => '0');
-    div_res   <= (others => '0');
+    remainder        <= (others => '0');
+    quotient         <= (others => '0');
+    div_sub          <= (others => '0');
+    div_sign_comp_in <= (others => '0');
+    div_sign_comp    <= (others => '0');
+    div_res          <= (others => '0');
   end generate;
 
 
   -- Data Output ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  operation_result: process(out_en, cp_op_ff, mul_product, div_res, quotient, opy_is_zero, rs1_i, remainder)
+  operation_result: process(out_en, cp_op_ff, mul_product, div_res, div_sign_comp_in)
   begin
     if (out_en = '1') then
       case cp_op_ff is
@@ -321,18 +318,10 @@ begin
           res_o <= mul_product(31 downto 00);
         when cp_op_mulh_c | cp_op_mulhsu_c | cp_op_mulhu_c =>
           res_o <= mul_product(63 downto 32);
-        when cp_op_div_c =>
+        when cp_op_div_c | cp_op_rem_c =>
           res_o <= div_res;
-        when cp_op_divu_c =>
-          res_o <= quotient;
-        when cp_op_rem_c =>
-          if (opy_is_zero = '0') then
-            res_o <= div_res;
-          else
-            res_o <= rs1_i;
-          end if;
-        when others => -- cp_op_remu_c
-          res_o <= remainder;
+        when others => -- cp_op_divu_c | cp_op_remu_c
+          res_o <= div_sign_comp_in;
       end case;
     else
       res_o <= (others => '0');
