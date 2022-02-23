@@ -150,7 +150,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pc          : std_ulogic_vector(data_width_c-1 downto 0);
     pc_nxt      : std_ulogic_vector(data_width_c-1 downto 0);
     reset       : std_ulogic;
-    bus_err_ack : std_ulogic;
   end record;
   signal fetch_engine : fetch_engine_t;
 
@@ -429,7 +428,6 @@ begin
     bus_fast_ir              <= '0';
     fetch_engine.state_nxt   <= fetch_engine.state;
     fetch_engine.pc_nxt      <= fetch_engine.pc;
-    fetch_engine.bus_err_ack <= '0';
     fetch_engine.restart_nxt <= fetch_engine.restart;
 
     -- instruction prefetch buffer defaults --
@@ -447,7 +445,6 @@ begin
 
     else -- IFETCH_ISSUE: store instruction data to prefetch buffer
     -- ------------------------------------------------------------
-      fetch_engine.bus_err_ack <= be_instr_i or ma_instr_i; -- ACK bus/alignment errors
       if (bus_i_wait_i = '0') or (be_instr_i = '1') or (ma_instr_i = '1') then -- wait for bus response
         fetch_engine.pc_nxt    <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
         ipb.we                 <= not fetch_engine.restart; -- write to IPB if not being reset
@@ -794,9 +791,6 @@ begin
     ctrl_o(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= execute_engine.i_reg(instr_rd_msb_c  downto instr_rd_lsb_c);
     -- instruction fetch request --
     ctrl_o(ctrl_bus_if_c) <= bus_fast_ir;
-    -- bus error control --
-    ctrl_o(ctrl_bus_ierr_ack_c) <= fetch_engine.bus_err_ack; -- instruction fetch bus access error ACK
-    ctrl_o(ctrl_bus_derr_ack_c) <= trap_ctrl.env_start_ack; -- data access bus error access ACK
     -- memory access size / sign --
     ctrl_o(ctrl_bus_unsigned_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
     ctrl_o(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c); -- mem transfer size

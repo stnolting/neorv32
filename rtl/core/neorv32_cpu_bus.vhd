@@ -196,27 +196,6 @@ begin
   -- address read-back for exception controller --
   mar_o <= mar;
 
-  -- alignment check --
-  misaligned_d_check: process(mar, ctrl_i)
-  begin
-    case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is -- data size
-      when "00" => -- byte
-        d_misaligned <= '0';
-      when "01" => -- half-word
-        if (mar(0) /= '0') then
-          d_misaligned <= '1';
-        else
-          d_misaligned <= '0';
-        end if;
-      when others => -- word
-        if (mar(1 downto 0) /= "00") then
-          d_misaligned <= '1';
-        else
-          d_misaligned <= '0';
-        end if;
-    end case;
-  end process misaligned_d_check;
-
 
   -- Data Interface: Write Data -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -304,6 +283,7 @@ begin
 
   -- Data Access Arbiter --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- controlled by pipeline BACK-end --
   data_access_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -316,12 +296,14 @@ begin
       if (d_arbiter.wr_req = '0') and (d_arbiter.rd_req = '0') then -- idle
         d_arbiter.wr_req    <= ctrl_i(ctrl_bus_wr_c);
         d_arbiter.rd_req    <= ctrl_i(ctrl_bus_rd_c);
-        d_arbiter.err_align <= d_misaligned;
+        d_arbiter.err_align <= '0';
         d_arbiter.err_bus   <= '0';
-      else -- in progress
-        d_arbiter.err_align <= (d_arbiter.err_align or d_misaligned) and (not ctrl_i(ctrl_bus_derr_ack_c));
-        d_arbiter.err_bus   <= (d_arbiter.err_bus or d_bus_err_i or (st_pmp_fault and d_arbiter.wr_req) or (ld_pmp_fault and d_arbiter.rd_req)) and (not ctrl_i(ctrl_bus_derr_ack_c));
-        if ((d_bus_ack_i = '1') and (d_bus_err_i = '0')) or (ctrl_i(ctrl_bus_derr_ack_c) = '1') then -- wait for normal termination / CPU abort
+      else -- in progress, accumulate error
+        d_arbiter.err_align <= d_arbiter.err_align or d_misaligned;
+        d_arbiter.err_bus   <= d_arbiter.err_bus or d_bus_err_i or (st_pmp_fault and d_arbiter.wr_req) or (ld_pmp_fault and d_arbiter.rd_req);
+        if (d_bus_ack_i = '1') or (ctrl_i(ctrl_trap_c) = '1') then -- wait for ACK or TRAP
+          -- > do not abort directly when an error has been detected - wait until the trap environment
+          -- > has started (ctrl_i(ctrl_trap_c)) to make sure the error signals are evaluated BEFORE d_wait_o clears
           d_arbiter.wr_req <= '0';
           d_arbiter.rd_req <= '0';
         end if;
@@ -348,6 +330,27 @@ begin
   d_bus_re_o    <= d_bus_re_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else d_bus_re;
   d_bus_fence_o <= ctrl_i(ctrl_bus_fence_c);
   d_bus_rdata   <= d_bus_rdata_i;
+
+  -- check data access address alignment --
+  misaligned_d_check: process(mar, ctrl_i)
+  begin
+    case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is -- data size
+      when "00" => -- byte
+        d_misaligned <= '0';
+      when "01" => -- half-word
+        if (mar(0) /= '0') then
+          d_misaligned <= '1';
+        else
+          d_misaligned <= '0';
+        end if;
+      when others => -- word
+        if (mar(1 downto 0) /= "00") then
+          d_misaligned <= '1';
+        else
+          d_misaligned <= '0';
+        end if;
+    end case;
+  end process misaligned_d_check;
 
   -- additional register stage for control signals if using PMP_NUM_REGIONS > pmp_num_regions_critical_c --
   pmp_dbus_buffer: process(rstn_i, clk_i)
@@ -395,6 +398,7 @@ begin
 
   -- Instruction Fetch Arbiter --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- controlled by pipeline FRONT-end --
   ifetch_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -405,12 +409,12 @@ begin
       -- instruction fetch request --
       if (i_arbiter.rd_req = '0') then -- idle
         i_arbiter.rd_req    <= ctrl_i(ctrl_bus_if_c);
-        i_arbiter.err_align <= i_misaligned;
+        i_arbiter.err_align <= '0';
         i_arbiter.err_bus   <= '0';
-      else -- in progress
-        i_arbiter.err_align <= (i_arbiter.err_align or i_misaligned) and (not ctrl_i(ctrl_bus_ierr_ack_c));
-        i_arbiter.err_bus   <= (i_arbiter.err_bus or i_bus_err_i or if_pmp_fault) and (not ctrl_i(ctrl_bus_ierr_ack_c));
-        if ((i_bus_ack_i = '1') and (i_bus_err_i = '0')) or (ctrl_i(ctrl_bus_ierr_ack_c) = '1') then -- wait for normal termination / CPU abort
+      else -- in progress, accumulate errors
+        i_arbiter.err_align <= i_arbiter.err_align or i_misaligned;
+        i_arbiter.err_bus   <= i_arbiter.err_bus or i_bus_err_i or if_pmp_fault;
+        if (i_bus_ack_i = '1') or (i_arbiter.err_align = '1') or (i_arbiter.err_bus = '1') then -- wait for ACK or ERROR
           i_arbiter.rd_req <= '0';
         end if;
       end if;
