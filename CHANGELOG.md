@@ -33,12 +33,13 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 23.02.2022 | 1.6.8.2 | CPU logic optimizations (less area): simplified CPU co-processor interface; minor optimization of bus unit access arbiters; optimized `M` extension's (mul/div co-processor) divider unit |
 | 18.02.2022 | 1.6.8.1 | minor CPU control logic optimizations: simplified execute engine; faster execution of SYSTEM instructions (one cycle less) |
 | 17.02.2022 |[**:rocket:1.6.8**](https://github.com/stnolting/neorv32/releases/tag/v1.6.8) | **New release** |
 | 17.02.2022 | 1.6.7.10 | hardwired `dcsr.stopcount` to `1`: all standard counters (`[m]cycle[h]` and `[m]instret[h]`, but **NOT** `[m]time[h]`!!) and all hardware performance monitor (HPM) counters are _stopped_ when the CPU is in debug mode; [PR #277](https://github.com/stnolting/neorv32/pull/277) |
 | 16.02.2022 | 1.6.7.9 | :warning: **added custom `mxisa` CSR replacing SYSINFO's `NEORV32_SYSINFO.CPU` memory-mapped register**: bit-positions remain but names and the actual access mechanism (CSR vs. memory-mapped) have changed! see [PR #276](https://github.com/stnolting/neorv32/pull/276) |
 | 11.02.2022 | 1.6.7.8 | :test_tube: added newlib's system calls (stubs) and linker script symbols for heap memory to support **dynamic memory allocation**  (e.g. `malloc`) and even **standard IO functions** like `printf`; see [PR #275](https://github.com/stnolting/neorv32/pull/275) |
-| 10.02.2022 | 1.6.7.7 | :sparkles: added **RISC-V hardware trigger module** to CPU - allows to set _hardware breakpoints_ (via gdb's `hb`/`hbreak` command) to debug code from ROM; see [PR #274](https://github.com/stnolting/neorv32/pull/274); :bug: minor bug fix in `ebreak` instruction's `dcsr.cause` value (was 0b010 but has to be 0b001) |
+| 10.02.2022 | 1.6.7.7 | :test_tube: added **RISC-V hardware trigger module** to CPU - allows to set _hardware breakpoints_ (via gdb's `hb`/`hbreak` command) to debug code from ROM; see [PR #274](https://github.com/stnolting/neorv32/pull/274); :bug: minor bug fix in `ebreak` instruction's `dcsr.cause` value (was 0b010 but has to be 0b001) |
 | 08.02.2022 | 1.6.7.6 | :warning: renamed default branch of repository to `main` |
 | 07.02.2022 | 1.6.7.5 | removed default values for bi-directional top entity ports `twi_sda_io` and `twi_scl_io` |
 | 05.02.2022 | 1.6.7.4 | added `err_o` signal to **IMEM** module; if the IMEM is implemented as true ROM any write attempt will raise a _store access fault_ exception (with a `[DEVICE_ERR]` error); see [PR #273](https://github.com/stnolting/neorv32/pull/273) |
