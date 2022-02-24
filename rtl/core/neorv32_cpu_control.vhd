@@ -291,7 +291,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mie_mtie          : std_ulogic; -- mie.MEIE: machine timer interrupt enable (R/W)
     mie_firqe         : std_ulogic_vector(15 downto 0); -- mie.firq*e: fast interrupt enabled (R/W)
     --
-    mip_clr           : std_ulogic_vector(15 downto 0); -- clear pending FIRQ
+    mip_nclr          : std_ulogic_vector(15 downto 0); -- clear pending FIRQ (active-low)
     --
     mcounteren_cy     : std_ulogic; -- mcounteren.cy: allow cycle[h] access from user-mode
     mcounteren_tm     : std_ulogic; -- mcounteren.tm: allow time[h] access from user-mode
@@ -1638,7 +1638,7 @@ begin
         trap_ctrl.irq_buf(interrupt_mtime_irq_c) <= csr.mie_mtie and mtime_irq_i;
 
         -- interrupt *queue*: NEORV32-specific fast interrupts (FIRQ) - require manual ACK/clear --
-        trap_ctrl.irq_buf(interrupt_firq_15_c downto interrupt_firq_0_c) <= (trap_ctrl.irq_buf(interrupt_firq_15_c downto interrupt_firq_0_c) or (csr.mie_firqe and firq_i)) and (not csr.mip_clr);
+        trap_ctrl.irq_buf(interrupt_firq_15_c downto interrupt_firq_0_c) <= (trap_ctrl.irq_buf(interrupt_firq_15_c downto interrupt_firq_0_c) or (csr.mie_firqe and firq_i)) and csr.mip_nclr;
 
         -- trap environment control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler
@@ -1873,7 +1873,7 @@ begin
       csr.mepc              <= (others => def_rst_val_c);
       csr.mcause            <= (others => def_rst_val_c);
       csr.mtval             <= (others => def_rst_val_c);
-      csr.mip_clr           <= (others => def_rst_val_c);
+      csr.mip_nclr          <= (others => def_rst_val_c);
       --
       csr.pmpcfg            <= (others => (others => '0'));
       csr.pmpaddr           <= (others => (others => def_rst_val_c));
@@ -1907,7 +1907,7 @@ begin
       csr.we <= csr.we_nxt;
 
       -- defaults --
-      csr.mip_clr <= (others => '0');
+      csr.mip_nclr <= (others => '1'); -- active low
 
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
         -- --------------------------------------------------------------------------------
@@ -1983,7 +1983,7 @@ begin
             end if;
             -- R/W: mip - machine interrupt pending --
             if (csr.addr(3 downto 0) = csr_mip_c(3 downto 0)) then
-              csr.mip_clr <= csr.wdata(31 downto 16);
+              csr.mip_nclr <= csr.wdata(31 downto 16); -- set low to clear according bit
             end if;
           end if;
 
