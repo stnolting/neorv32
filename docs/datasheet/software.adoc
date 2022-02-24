@@ -445,44 +445,48 @@ and placed right before the actual application code so it gets executed right af
 The `crt0.S` start-up performs the following operations:
 
 [start=1]
-. Initialize all integer registers `x1 - x31` (or jsut `x1 - x15` when using the `E` CPU extension) to a defined value.
-. Initialize the global pointer `gp` and the stack pointer `sp` according to the `.data` segment layout provided by the linker script.
-. Initialize all CPU core CSRs and also install a default "dummy" trap handler for _all_ traps. This handler catches all traps during the early boot phase.
-. Clear IO area: Write zero to all memory-mapped registers within the IO region (`iodev` section). If certain devices have not been implemented, a bus access fault exception will occur. This exception is captured by the dummy trap handler.
+. Initialize all integer registers `x1 - x31` (or just `x1 - x15` when using the `E` CPU extension) to a defined value.
+. Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
+. Initialize all CPU core CSRs and also install a default "dummy" trap handler for _all_ traps. This handler catches all traps
+during the early boot phase.
+. All interrupt sources are disabled and all pending interrupts are cleared.
+. Clear all counter CSRs and stop auto-increment.
+. Clear IO area: Write zero to all memory-mapped registers within the IO region (`iodev` section). If certain devices have not
+been implemented, a bus access fault exception will occur. This exception is captured by the dummy trap handler.
 . Clear the `.bss` section defined by the linker script.
 . Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
 . Call the application's `main` function (with _no_ arguments: `argc` = `argv` = 0).
-. If the `main` function returns `crt0` can call an "after-main handler" (see below)
-. If there is no after-main handler or after returning from the after-main handler the processor goes to an endless sleep mode (using a simple loop or via the `wfi` instruction if available).
+. If the main function returns...
+** the return value is copied to the <<_mscratch>> CSR to allow inspection by the on-chip debugger.
+** an optional <<_after_main_handler>> is called (if defined at all).
+** the last step the CPU does is entering endless sleep mode (using the `wfi` instruction).
 
 :sectnums:
 ===== After-Main Handler
 
-If the application's `main()` function actually returns, an _after main handler_ can be executed. This handler can be a normal function
-since the C runtime is still available when executed. If this handler uses any kind of peripheral/IO modules make sure these are
-already initialized within the application or you have to initialize them _inside_ the handler.
+If the application's `main()` function actually returns, an _after main handler_ can be executed. This handler is a "normal" function
+as the C runtime is still available when executed. If this handler uses any kind of peripheral/IO modules make sure these are
+already initialized within the application. Otherwise you have to initialize them _inside_ the handler.
 
 .After-main handler - function prototype
 [source,c]
 ----
-int __neorv32_crt0_after_main(int32_t return_code);
+void __neorv32_crt0_after_main(int32_t return_code);
 ----
 
 The function has exactly one argument (`return_code`) that provides the _return value_ of the application's main function.
-For instance, this variable contains _-1_ if the main function returned with `return -1;`. The return value of the
-`__neorv32_crt0_after_main` function is irrelevant as there is no further "software instance" executed afterwards that can check this.
-However, the on-chip debugger could still evaluate the return value of the after-main handler.
+For instance, this variable contains `-1` if the main function returned with `return -1;`. The after-main handler itself does
+not provide a return value.
 
-A simple UARt output can be used to inform the user when the application's main function returns
+A simple UART output can be used to inform the user when the application's main function returns
 (this example assumes that UART0 has been already properly configured in the actual application):
 
 .After-main handler - simple example
 [source,c]
 ----
-int __neorv32_crt0_after_main(int32_t return_code) {
+void __neorv32_crt0_after_main(int32_t return_code) {
 
   neorv32_uart0_printf("\n<RTE> main function returned with exit code %i. </RTE>\n", return_code); <1>
-  return 0;
 }
 ----
 <1> Use `<RTE>` here to make clear this is a message comes from the runtime environment.

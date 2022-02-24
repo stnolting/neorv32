@@ -70,22 +70,20 @@ __crt0_pointer_init:
 // ************************************************************************************************
 __crt0_cpu_csr_init:
 
-  la   x10,   __crt0_dummy_trap_handler // configure early trap handler
+  la   x10,   __crt0_dummy_trap_handler // configure early-boot trap handler
   csrw mtvec, x10
   csrw mepc,  x10                       // just to init mepc
 
   csrw mstatus, zero                    // disable global IRQ
+  csrw mie,     zero                    // absolutely no interrupt sources, thanks
+  csrw mip,     zero                    // clear all pending interrupts
 
-  csrw mie, zero                        // absolutely no interrupts sources, thanks
-
+  csrw 0x320,      zero                 // stop all counters; use "mcountinhibit" literal address for lagacy toolchain compatibility
   csrw mcounteren, zero                 // no access from less-privileged modes to counter CSRs
 
-  li   x11,   ~5                        // stop all counters except for [m]cycle[h] and [m]instret[h]
-  csrw 0x320, x11                       // = mcountinhibit (literal address for lagacy toolchain compatibility)
-
-  csrw mcycle,    zero                  // reset cycle counters
+  csrw mcycle,    zero                  // reset cycle counter
   csrw mcycleh,   zero
-  csrw minstret,  zero                  // reset instruction counters
+  csrw minstret,  zero                  // reset instructions-retired counter
   csrw minstreth, zero
 
 
@@ -107,8 +105,8 @@ __crt0_reg_file_clear:
 //addi x11, x0, 0 // implicitly initialized within crt0
 //addi x12, x0, 0 // implicitly initialized within crt0
 //addi x13, x0, 0 // implicitly initialized within crt0
-  addi x14, x0, 0
-  addi x15, x0, 0
+//addi x14, x0, 0 // implicitly initialized within crt0
+//addi x15, x0, 0 // implicitly initialized within crt0
 
 
 // ************************************************************************************************
@@ -175,13 +173,13 @@ __crt0_copy_data_loop_end:
 // Clear .bss section (byte-wise)
 // ************************************************************************************************
 __crt0_clear_bss:
-  la   x11,  __crt0_bss_start
-  la   x12,  __crt0_bss_end
+  la   x14,  __crt0_bss_start
+  la   x15,  __crt0_bss_end
 
 __crt0_clear_bss_loop:
-  bge  x11,  x12, __crt0_clear_bss_loop_end
-  sb   zero, 0(x11)
-  addi x11,  x11, 1
+  bge  x14,  x15, __crt0_clear_bss_loop_end
+  sb   zero, 0(x14)
+  addi x14,  x14, 1
   j    __crt0_clear_bss_loop
 
 __crt0_clear_bss_loop_end:
@@ -220,9 +218,8 @@ __crt0_main_aftermath_end:
 // ************************************************************************************************
 __crt0_shutdown:
   csrci mstatus, 8                   // disable global IRQs (clear mstatus.mie)
-__crt0_shutdown_loop:
   wfi                                // go to sleep mode
-  j __crt0_shutdown_loop             // endless loop
+  j __crt0_shutdown                  // endless loop
 
 
 // ************************************************************************************************
