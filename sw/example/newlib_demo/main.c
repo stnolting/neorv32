@@ -131,9 +131,7 @@ int main() {
  * "after-main" handler that is executed after the application's
  * main function returns (called by crt0.S start-up code)
  **************************************************************************/
-int __neorv32_crt0_after_main(int32_t return_code) {
+void __neorv32_crt0_after_main(int32_t return_code) {
 
   neorv32_uart0_printf("\n<RTE> main function returned with exit code %i. </RTE>\n", return_code);
-
-  return 0;
 }

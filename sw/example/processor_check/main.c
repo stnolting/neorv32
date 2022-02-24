@@ -1855,7 +1855,7 @@ void test_fail(void) {
  * main function returns (called by crt0.S start-up code): Output minimal
  * test report to physical UART
  **************************************************************************/
-int __neorv32_crt0_after_main(int32_t return_code) {
+void __neorv32_crt0_after_main(int32_t return_code) {
 
   // make sure sim mode is disabled and UARTs are actually enabled
   NEORV32_UART0.CTRL |=  (1 << UART_CTRL_EN);
@@ -1864,6 +1864,4 @@ int __neorv32_crt0_after_main(int32_t return_code) {
 
   // minimal result report
   PRINT_CRITICAL("%u/%u\n", (uint32_t)return_code, (uint32_t)cnt_test);
-
-  return 0;
 }

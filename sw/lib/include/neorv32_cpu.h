@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -63,9 +63,8 @@ uint32_t neorv32_cpu_hpm_get_size(void);
  * Prototype for "after-main handler". This function is called if main() returns.
  *
  * @param[in] return_code Return value of main() function.
- * @return Return value is irrelevant (there is no one left to check for it...).
  **************************************************************************/
-extern int __neorv32_crt0_after_main(int32_t return_code) __attribute__ ((weak));
+extern void __attribute__ ((weak)) __neorv32_crt0_after_main(int32_t return_code);
 
 
 /**********************************************************************//**
