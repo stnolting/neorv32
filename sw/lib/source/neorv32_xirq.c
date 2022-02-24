@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -238,7 +238,7 @@ static void __attribute__((aligned(16))) __neorv32_xirq_core(void) {
   uint32_t mask = 1 << src;
   NEORV32_XIRQ.IPR = ~mask; // clear current pending interrupt
 
-  neorv32_cpu_csr_write(CSR_MIP, 1 << XIRQ_FIRQ_PENDING); // acknowledge XIRQ FIRQ
+  neorv32_cpu_csr_write(CSR_MIP, ~(1 << XIRQ_FIRQ_PENDING)); // acknowledge XIRQ FIRQ
 
   NEORV32_XIRQ.SCR = 0; // acknowledge current XIRQ interrupt source
 
