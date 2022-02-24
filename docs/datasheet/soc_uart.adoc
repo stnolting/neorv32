@@ -129,8 +129,8 @@ the RX FIFO _becomes_ at least half-full (-> _UART_CTRL_RX_HALF_ sets).
 in the TX FIFO _becomes_ free (-> _UART_CTRL_TX_FULL_ clears). If _UART_CTRL_TX_IRQ_ is `1` the TX interrupt goes pending
 when the RX FIFO _becomes_ less than half-full (-> _UART_CTRL_TX_HALF_ clears).
 
-Once the RX or TX interrupt has become pending, it has to be explicitly cleared again by setting the
-according `mip` CSR bit.
+Once the RX or TX interrupt has become pending, it has to be explicitly cleared again by
+writing zero to the according <<_mip>> CSR bit.
 
 
 **Simulation Mode**

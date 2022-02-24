@@ -74,8 +74,8 @@ _**f~SCL~**_ = _f~main~[Hz]_ / (4 * `clock_prescaler`)
 
 The SPI module provides a single interrupt to signal "operation done" to the CPU. Whenever the TWI
 module completes the current operation (generate stop condition, generate start conditions or transfer byte),
-the interrupt is triggered. Once triggered, the interrupt has to be explicitly cleared again by setting the according
-`mip` CSR bit.
+the interrupt is triggered. Once triggered, the interrupt has to be explicitly cleared again by
+writing zero to the according <<_mip>> CSR bit.
 
 
 .TWI register map (`struct NEORV32_TWI`)

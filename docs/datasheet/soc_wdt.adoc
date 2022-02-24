@@ -9,7 +9,7 @@
 | Software driver file(s): | neorv32_wdt.c |
 |                          | neorv32_wdt.h |
 | Top entity port:         | none | 
-| Configuration generics:  | _IO_WDT_EN_ | implement GPIO port when _true_
+| Configuration generics:  | _IO_WDT_EN_ | implement watchdog when _true_
 | CPU interrupts:          | fast IRQ channel 0 | watchdog timer overflow (see <<_processor_interrupts>>)
 |=======================
 
@@ -46,7 +46,7 @@ IRQ, when set the WDT will cause a system reset. The configured action can also 
 any time by setting the _WDT_CTRL_FORCE_ bit. The watchdog is reset by setting the _WDT_CTRL_RESET_ bit.
 
 A watchdog interrupt can only occur if the watchdog is enabled and interrupt mode is enabled.
-A triggered interrupt has to be cleared again by setting the according `mip` CSR bit.
+A triggered interrupt has to be cleared again by writing zero to the according <<_mip>> CSR bit.
 
 The cause of the last action of the watchdog can be determined via the _WDT_CTRL_RCAUSE_ flag. If this flag is
 zero, the processor has been reset via the external reset signal. If this flag is set the last system reset was
