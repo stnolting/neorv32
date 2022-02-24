@@ -18,7 +18,7 @@ header:
   border-width: 1
   recto:
     left:
-      content: '*The NEORV32 Processor*'
+      content: '*The NEORV32 RISC-V Processor*'
     right:
       content: '*Visit on https://github.com/stnolting/neorv32[GitHub]*'
   verso:

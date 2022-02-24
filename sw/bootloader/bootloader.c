@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file bootloader.c
  * @author Stephan Nolting
- * @brief NEORV32 bootloader.
+ * @brief Default NEORV32 bootloader.
  **************************************************************************/
 
 // Libraries
