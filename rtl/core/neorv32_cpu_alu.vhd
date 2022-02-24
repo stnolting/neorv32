@@ -62,9 +62,7 @@ entity neorv32_cpu_alu is
     rs1_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
     rs2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
     pc_i        : in  std_ulogic_vector(data_width_c-1 downto 0); -- current PC
-    pc2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- next PC
     imm_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
-    csr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
     -- data output --
     cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
     res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
@@ -87,12 +85,11 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
 
   -- results --
   signal addsub_res : std_ulogic_vector(data_width_c downto 0);
-  signal alu_res    : std_ulogic_vector(data_width_c-1 downto 0);
   signal cp_res     : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- co-processor interface --
   type cp_data_if_t  is array (0 to 7)  of std_ulogic_vector(data_width_c-1 downto 0);
-  signal cp_result : cp_data_if_t; -- co-processor result
+  signal cp_result : cp_data_if_t; -- co-processor i result
   signal cp_start  : std_ulogic_vector(7 downto 0); -- trigger co-processor i
   signal cp_valid  : std_ulogic_vector(7 downto 0); -- co-processor i done
 
@@ -144,38 +141,24 @@ begin
 
   -- ALU Operation Select -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  alu_core: process(ctrl_i, addsub_res, rs1_i, opb)
+  alu_core: process(ctrl_i, addsub_res, cp_res, rs1_i, opb)
   begin
     case ctrl_i(ctrl_alu_op2_c downto ctrl_alu_op0_c) is
-      when alu_op_add_c  => alu_res <= addsub_res(data_width_c-1 downto 0); -- (default)
-      when alu_op_sub_c  => alu_res <= addsub_res(data_width_c-1 downto 0);
---    when alu_op_mova_c => alu_res <= rs1_i; -- FIXME
-      when alu_op_slt_c  => alu_res <= (others => '0'); alu_res(0) <= addsub_res(addsub_res'left); -- => carry/borrow
-      when alu_op_movb_c => alu_res <= opb;
-      when alu_op_xor_c  => alu_res <= rs1_i xor opb; -- only rs1 required for logic ops (opa would also contain pc)
-      when alu_op_or_c   => alu_res <= rs1_i or  opb;
-      when alu_op_and_c  => alu_res <= rs1_i and opb;
-      when others        => alu_res <= addsub_res(data_width_c-1 downto 0);
+      when alu_op_add_c  => res_o <= addsub_res(data_width_c-1 downto 0); -- default
+      when alu_op_sub_c  => res_o <= addsub_res(data_width_c-1 downto 0);
+      when alu_op_cp_c   => res_o <= cp_res;
+      when alu_op_slt_c  => res_o <= (others => '0'); res_o(0) <= addsub_res(addsub_res'left); -- carry/borrow
+      when alu_op_movb_c => res_o <= opb;
+      when alu_op_xor_c  => res_o <= rs1_i xor opb; -- only rs1 required for logic ops (opa would also contain pc)
+      when alu_op_or_c   => res_o <= rs1_i or  opb;
+      when alu_op_and_c  => res_o <= rs1_i and opb;
+      when others        => res_o <= addsub_res(data_width_c-1 downto 0);
     end case;
   end process alu_core;
 
 
-  -- ALU Function Select --------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  alu_function_mux: process(ctrl_i, alu_res, pc2_i, csr_i, cp_res)
-  begin
-    case ctrl_i(ctrl_alu_func1_c downto ctrl_alu_func0_c) is
-      when alu_func_core_c  => res_o <= alu_res; -- (default)
-      when alu_func_nxpc_c  => res_o <= pc2_i;
-      when alu_func_csrr_c  => res_o <= csr_i;
-      when alu_func_copro_c => res_o <= cp_res;
-      when others           => res_o <= alu_res; -- undefined
-    end case;
-  end process alu_function_mux;
-
-
   -- **************************************************************************************************************************
-  -- CPU Co-Processors
+  -- ALU Co-Processors
   -- **************************************************************************************************************************
 
   -- co-processor select / start trigger --

@@ -203,16 +203,16 @@ upstream gcc support yet. To circumvent this, the NEORV32 software framework pro
 
 ### FPGA Implementation Results - CPU
 
-Implementation results for _exemplary_ CPU configuration generated for an **Intel Cyclone IV EP4CE22F17C6N FPGA**
-using **Intel Quartus Prime Lite 20.1** ("balanced implementation, Slow 1200mV 0C Model").
+Implementation results for _exemplary_ CPU configuration generated for an **Intel Cyclone IV E** `EP4CE22F17C6` FPGA
+using **Intel Quartus Prime Lite 21.1** (no timing constrains, _balanced optimization_, f_max from _Slow 1200mV 0C Model_).
 
-| CPU Configuration (version [1.5.7.10](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs | f_max |
+| CPU Configuration (version [1.6.8.3](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs | f_max |
 |:------------------------|:----:|:----:|:----:|:-:|:-------:|
-| `rv32i`                 |  806 |  359 | 1024 | 0 | 125 MHz |
-| `rv32i_Zicsr_Zicntr`    | 1729 |  813 | 1024 | 0 | 124 MHz |
-| `rv32imac_Zicsr_Zicntr` | 2511 | 1074 | 1024 | 0 | 124 MHz |
+| `rv32i_Zicsr`           | 1425 |  673 | 1024 | 0 | 118 MHz |
+| `rv32i_Zicsr_Zicntr`    | 1778 |  803 | 1024 | 0 | 118 MHz |
+| `rv32imac_Zicsr_Zicntr` | 2453 |  994 | 1024 | 0 | 118 MHz |   
 
-:bulb: An incremental list of CPU extension's hardware utilization can found in the
+:bulb: An incremental list of the CPUs ISA extension's hardware utilization can found in the
 [_Data Sheet: FPGA Implementation Results - CPU_](https://stnolting.github.io/neorv32/#_cpu).
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]

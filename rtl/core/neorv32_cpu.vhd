@@ -341,8 +341,10 @@ begin
     clk_i  => clk_i,     -- global clock, rising edge
     ctrl_i => ctrl,      -- main control bus
     -- data input --
-    mem_i  => mem_rdata, -- memory read data
     alu_i  => alu_res,   -- ALU result
+    mem_i  => mem_rdata, -- memory read data
+    csr_i  => csr_rdata, -- CSR read data
+    pc2_i  => next_pc,   -- next PC
     -- data output --
     rs1_o  => rs1,       -- operand 1
     rs2_o  => rs2        -- operand 2
@@ -372,9 +374,7 @@ begin
     rs1_i       => rs1,        -- rf source 1
     rs2_i       => rs2,        -- rf source 2
     pc_i        => curr_pc,    -- current PC
-    pc2_i       => next_pc,    -- next PC
     imm_i       => imm,        -- immediate
-    csr_i       => csr_rdata,  -- CSR read data
     -- data output --
     cmp_o       => comparator, -- comparator status
     res_o       => alu_res,    -- ALU result

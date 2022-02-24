@@ -33,6 +33,7 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 24.02.2022 | 1.6.8.3 | reworked CPU's data path (use a few _wide_ multiplexers instead of many small ones); [PR #279](https://github.com/stnolting/neorv32/pull/279) |
 | 23.02.2022 | 1.6.8.2 | CPU logic optimizations (less area): simplified CPU co-processor interface; minor optimization of bus unit access arbiters; optimized `M` extension's (mul/div co-processor) divider unit |
 | 18.02.2022 | 1.6.8.1 | minor CPU control logic optimizations: simplified execute engine; faster execution of SYSTEM instructions (one cycle less) |
 | 17.02.2022 |[**:rocket:1.6.8**](https://github.com/stnolting/neorv32/releases/tag/v1.6.8) | **New release** |
