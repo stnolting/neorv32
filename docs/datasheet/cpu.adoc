@@ -557,9 +557,9 @@ Any kind of privilege rights violation will raise an exception to allow <<_full_
 The NEORV32-specific extensions are always enabled and are indicated by the set `X` bit in the <<_misa>> CSR.
 
 The most important points of the NEORV32-specific extensions are:
-* The CPU provides 16 _fast interrupt_ interrupts (`FIRQ)`, which are controlled via custom bits in the `mie`
-and <<_mip>> CSR. This extension is mapped to CSR bits, that are available for custom use (according to the
-RISC-V specs). Also, custom trap codes for <<_mcause>> are implemented.
+* The CPU provides 16 _fast interrupt_ interrupts (`FIRQ`), which are controlled via custom bits in the <<_mie>>
+and <<_mip>> CSRs. These extensions are mapped to CSR bits, that are available for custom use according to the
+RISC-V specs. Also, custom trap codes for <<_mcause>> are implemented.
 * All undefined/unimplemented/malformed/illegal instructions do raise an illegal instruction exception (see <<_full_virtualization>>).
 * There are <<_neorv32_specific_csrs>>.
 
@@ -871,8 +871,8 @@ until it is explicitly acknowledged by the CPU software (for example by writing 
 .Interrupt Signal Requirements - Fast Interrupt Requests
 [IMPORTANT]
 The NEORV32-specific FIRQ request lines are triggered by a one-shot high-level (i.e. rising edge). Each request is buffered in the CPU control
-unit until the channel is either disabled (by clearing the according <<_mie>> CSR bit) or the request is explicitly cleared (by setting
-the according <<_mip>> CSR bit).
+unit until the channel is either disabled (by clearing the according <<_mie>> CSR bit) or the request is explicitly cleared (by writing
+zero to the according <<_mip>> CSR bit).
 
 .Instruction Atomicity
 [NOTE]
@@ -1043,6 +1043,7 @@ completed when the accessed peripheral/memory either sets the `*_bus_ack_i` sign
 An error indicated by the `*_bus_err_i` signal will raise the according "instruction bus access fault" or
 "load/store bus access fault" exception.
 
+
 **Minimal Response Latency**
 
 The transfer can be completed directly in the same cycle as it was initiated (via the `*_bus_re_o` or `*_bus_we_o`
@@ -1050,12 +1051,14 @@ signal) if the peripheral sets `*_bus_ack_i` or `*_bus_err_i` high for one cycle
 critical path such "asynchronous" completion should be avoided. The default NEORV32 processor-internal modules provide
 exactly **one cycle delay** between initiation and completion of transfers.
 
+
 **Maximal Response Latency**
 
 Processor-internal peripherals or memories do not have to respond within one cycle after a bus request has been initiated.
 However, the bus transaction has to be completed (= acknowledged) within a certain **response time window**. This time window
 is defined by the global `max_proc_int_response_time_c` constant (default = 15 cycles; processor's VHDL package file `rtl/neorv32_package.vhd`).
-It defines the maximum number of cycles after which an _unacknowledged_ (`*_bus_ack_i` or `*_bus_err_i` both not set) processor-internal bus
+It defines the maximum number of cycles after which an _unacknowledged_ (`*_bus_ack_i` or `*_bus_err_i` signal from the **processor-internal bus**
+both not set) processor-internal bus
 transfer will time out and raises a **bus fault exception**. The <<_internal_bus_monitor_buskeeper>> keeps track of all _internal_ bus
 transactions to enforce this time window.
 
@@ -1063,6 +1066,13 @@ If any bus operations times out (for example when accessing "address space holes
 error to the CPU that will raise the according instruction fetch or data access bus exception.
 Note that **the bus keeper does not track external accesses via the external memory bus interface**. However,
 the external memory bus interface also provides an _optional_ bus timeout (see section <<_processor_external_memory_interface_wishbone_axi4_lite>>).
+
+.Interface Response
+[NOTE]
+Please note that any CPU access via the data or instruction interface has to be terminated either by asserting the
+CPU's *_bus_ack_i` or `*_bus_err_i` signal. Otherwise the CPU will be stalled permanently. The BUSKEEPER ensures that
+any kind of access is always properly terminated.
+
 
 **Exemplary Bus Accesses**
 
@@ -1075,6 +1085,7 @@ a| image::cpu_interface_write_long.png[write,300,150]
 | Read access | Write access
 |=======================
 
+
 **Write Access**
 
 For a write access, the access address (`bus_addr_o`), the data to be written (`bus_wdata_o`) and the byte
@@ -1082,6 +1093,7 @@ enable signals (`bus_ben_o`) are set when bus_we_o goes high. These three signal
 transaction is completed. In the example the accessed peripheral cannot answer directly in the next
 cycle after issuing. Here, the transaction is successful and the peripheral sets the `bus_ack_i` signal several
 cycles after issuing.
+
 
 **Read Access**
 
@@ -1091,11 +1103,13 @@ directly in the next cycle after issuing. The peripheral hast to apply the read 
 the bus transaction is completed (here, the transaction is successful and the peripheral sets the `bus_ack_i`
 signal).
 
+
 **Access Boundaries**
 
 The instruction interface will always access memory on word (= 32-bit) boundaries even if fetching
 compressed (16-bit) instructions. The data interface can access memory on byte (= 8-bit), half-word (= 16-
 bit) and word (= 32-bit) boundaries.
+
 
 **Exclusive (Atomic) Access**
 
@@ -1122,6 +1136,7 @@ The CPU-internal exclusive access lock is broken if at least one of the situatio
 For more information regarding the SoC-level behavior and requirements of atomic operations see
 section <<_processor_external_memory_interface_wishbone_axi4_lite>>.
 
+
 **Memory Barriers**
 
 Whenever the CPU executes a _fence_ instruction, the according interface signal is set high for one cycle
@@ -1140,6 +1155,7 @@ registers of the NEORV32 CPU as well as most register of the whole NEORV32 Proce
 dedicated hardware reset**. "Uncritical registers" in this context means that the initial value of these registers
 after power-up is not relevant for a defined CPU boot process.
 
+
 **Rationale**
 
 A good example to illustrate the concept of uncritical registers is a pipelined processing engine. Each stage
@@ -1150,6 +1166,7 @@ irrelevant as long as the status registers are all reset to a defined value that
 the pipeline's data register. Therefore, the pipeline data register do no require a dedicated reset as they do not
 control the actual operation (in contrast to the status register). This makes the pipeline data registers from
 this example "uncritical registers".
+
 
 **NEORV32 CPU Reset**
 
@@ -1164,6 +1181,7 @@ the lack of dedicated hardware resets of certain CSRs. For example the machine i
 does not provide a dedicated reset. The value after reset of this register is uncritical as interrupts cannot fire
 because the global interrupt enabled flag in the status register (`mstatsus(mie)`) _do_ provide a dedicated
 hardware reset setting this bit to low (globally disabling interrupts).
+
 
 **Reset Configuration**
 

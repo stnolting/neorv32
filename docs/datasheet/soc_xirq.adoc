@@ -43,8 +43,8 @@ This priority assignment is fixed and cannot be altered by software.
 The CPU can use the ID from `SCR` to service IRQ according to their priority. To acknowledge the according
 interrupt the CPU can write `1 << SCR` to `IPR`.
 
-In order to clear a pending FIRQ interrupt from the external interrupt controller again, the according `mip` CSR bit has
-to be set. Additionally, the XIRQ interrupt has to be acknowledged by writing _any_
+In order to clear a pending FIRQ interrupt from the external interrupt controller again, the according <<_mip>> CSR bit has
+to be cleared. Additionally, the XIRQ interrupt has to be acknowledged by writing _any_
 value to the interrupt source register `SRC`.
 
 [NOTE]

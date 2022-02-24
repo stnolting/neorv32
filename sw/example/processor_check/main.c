@@ -1804,7 +1804,7 @@ void sim_irq_trigger(uint32_t sel) {
 void global_trap_handler(void) {
 
   // clear all pending FIRQs
-  neorv32_cpu_csr_write(CSR_MIP, -1);
+  neorv32_cpu_csr_write(CSR_MIP, 0);
 
   // hack: always come back in MACHINE MODE
   register uint32_t mask = (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L);

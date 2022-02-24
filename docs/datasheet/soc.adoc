@@ -1101,7 +1101,7 @@ specifications. However, bare-metal system can also repurpose these interrupts. 
 .Trigger type
 [IMPORTANT]
 The fast interrupt request channels become pending after being triggering by **a rising edge**. A pending FIRQ has to
-be explicitly cleared by setting the according <<_mip>> CSR bit.
+be explicitly cleared by writing zero to the according <<_mip>> CSR bit.
 
 
 :sectnums:
@@ -1160,7 +1160,7 @@ the according FIRQ priority; 0 = highest, 15 = lowest):
 .Trigger type
 [IMPORTANT]
 The fast interrupt request channels become pending after being triggering by **a rising edge**. A pending FIRQ has to
-be explicitly cleared by setting the according <<_mip>> CSR bit.
+be explicitly cleared by writing zero to the according <<_mip>> CSR bit.
 
 
 

@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -475,7 +475,7 @@ void slink_write(void) {
  **************************************************************************/
 void slink_rx_firq_handler(void) {
 
-  neorv32_cpu_csr_write(CSR_MIP, 1 << SLINK_RX_FIRQ_PENDING); // ACK interrupt
+  neorv32_cpu_csr_write(CSR_MIP, ~(1 << SLINK_RX_FIRQ_PENDING)); // ACK interrupt
   neorv32_uart0_printf("\n<SLINK_RX_IRQ>\n");
 }
 
@@ -485,7 +485,7 @@ void slink_rx_firq_handler(void) {
  **************************************************************************/
 void slink_tx_firq_handler(void) {
 
-  neorv32_cpu_csr_write(CSR_MIP, 1 << SLINK_TX_FIRQ_PENDING); // ACK interrupt
+  neorv32_cpu_csr_write(CSR_MIP, ~(1 << SLINK_TX_FIRQ_PENDING)); // ACK interrupt
   neorv32_uart0_printf("\n<SLINK_TX_IRQ>\n");
 }
 

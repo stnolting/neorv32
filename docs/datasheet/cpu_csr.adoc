@@ -450,8 +450,8 @@ The NEORV32 `mtval` CSR is read-only. However, a write access will _NOT_ raise a
 3+| The `mip` CSR is compatible to the RISC-V specifications and also provides custom extensions. It shows currently _pending_ interrupts.
 The bits for the standard RISC-V interrupts are read-only. Hence, these interrupts cannot be cleared using the `mip` register and must
 be cleared/acknowledged within the according interrupt-generating device.
-The upper 16 bits represent the status of the CPU's fast interrupt request lines (FIRQ). Once triggered, these _have to be cleared_ again by setting
-the according `mip` bit in the interrupt handler routine to clear the current interrupt request.
+The upper 16 bits represent the status of the CPU's fast interrupt request lines (FIRQ). Once triggered, these bit have to be cleared manually by
+writing zero to the according `mip` bits (in the interrupt handler routine) to clear the current interrupt request.
 |=======================
 
 .Machine interrupt pending register
@@ -459,11 +459,16 @@ the according `mip` bit in the interrupt handler routine to clear the current in
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 31:16 | _CSR_MIP_FIRQ15P_ : _CSR_MIP_FIRQ0P_ | r/w | fast interrupt channel 15..0 pending; cleared request by writing 1
+| 31:16 | _CSR_MIP_FIRQ15P_ : _CSR_MIP_FIRQ0P_ | r/c | fast interrupt channel 15..0 pending; cleared request by writing 1
 | 11    | _CSR_MIP_MEIP_                       | r/- | machine _external_ interrupt pending; _cleared by user-defined mechanism_
 | 7     | _CSR_MIP_MTIP_                       | r/- | machine _timer_ interrupt pending; cleared by incrementing MTIME's time compare register
 | 3     | _CSR_MIP_MSIP_                       | r/- | machine _software_ interrupt pending; _cleared by user-defined mechanism_
 |=======================
+
+.FIRQ Channel Mapping
+[TIP]
+See section <<_neorv32_specific_fast_interrupt_requests>> for the mapping of the FIRQ channels and the according
+interrupt-triggering processor module.
 
 
 <<<

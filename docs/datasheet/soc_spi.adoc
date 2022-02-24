@@ -115,7 +115,7 @@ the control register's _SPI_CTRL_HIGHSPEED_ bit.
 
 The SPI module provides a single interrupt to signal "transmission done" to the CPU. Whenever the SPI
 module completes the current transfer operation, the interrupt is triggered and has to be explicitly cleared again
-by setting the according `mip` CSR bit.
+by writing zero to the according <<_mip>> CSR bit.
 
 
 .SPI register map (`struct NEORV32_SPI`)

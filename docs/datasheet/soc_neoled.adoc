@@ -173,8 +173,8 @@ If _NEOLED_CTRL_IRQ_CONF_ is cleared, an interrupt is generated whenever the TX 
 In this case software can write up to _IO_NEOLED_TX_FIFO_/2 new data words to `DATA` without checking the FIFO
 status flags. If _NEOLED_CTRL_IRQ_CONF_ is set, an interrupt is generated whenever the TX FIFO _becomes_ empty.
 
-One the NEOLED interrupt has been triggered and became pending, it has to explicitly cleared again by setting the
-according `mip` CSR bit.
+One the NEOLED interrupt has been triggered and became pending, it has to explicitly cleared again by
+writing zero to according <<_mip>> CSR bit.
 
 [NOTE]
 The _NEOLED_CTRL_IRQ_CONF_ is hardwired to one if _IO_NEOLED_TX_FIFO_ = 1 (-> IRQ if FIFO is empty).
