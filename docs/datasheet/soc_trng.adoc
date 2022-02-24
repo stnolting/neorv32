@@ -21,7 +21,7 @@ Instead of using a pseudo RNG like a LFSR, the TRNG uses a simple, straight-forw
 oscillator concept as physical entropy source. Hence, voltage, thermal and also semiconductor manufacturing
 fluctuations are used to provide a true physical entropy source.
 
-The TRNG is based on the neoTRNG[https://github.com/stnolting/neoTRNG], which is a "spin-off project" of the
+The TRNG is based on the _neoTRNG_, which is a "spin-off project" of the
 NEORV32 processor. The TRNG uses the default neoTRNG configuration, which showed very good results in the
 `dieharder` battery of random number tests. More detailed information about the neoTRNG, it's architecture and a
 detailed evaluation of the random number quality can be found it it's repository: https://github.com/stnolting/neoTRNG
