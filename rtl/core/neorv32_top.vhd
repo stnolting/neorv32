@@ -964,7 +964,7 @@ begin
       rstn_i      => sys_rstn,                 -- global reset line, low-active, use as async
       addr_i      => p_bus.addr,               -- address
       rden_i      => io_rden,                  -- read enable
-      wren_i      => io_wren,                  -- byte write enable
+      wren_i      => io_wren,                  -- word write enable
       data_i      => p_bus.wdata,              -- data in
       data_o      => resp_bus(RESP_CFS).rdata, -- data out
       ack_o       => resp_bus(RESP_CFS).ack,   -- transfer acknowledge

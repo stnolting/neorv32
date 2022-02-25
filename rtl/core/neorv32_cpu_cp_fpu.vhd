@@ -507,7 +507,7 @@ begin
   min_max_select: process(fpu_operands, comp_less_ff, fu_compare, ctrl_i)
     variable cond_v : std_ulogic_vector(2 downto 0);
   begin
-    -- comparison restul - check for special cases: -0 is less than +0
+    -- comparison result - check for special cases: -0 is less than +0
     if ((fpu_operands.rs1_class(fp_class_neg_zero_c) = '1') and (fpu_operands.rs2_class(fp_class_pos_zero_c) = '1')) then
       cond_v(0) := ctrl_i(ctrl_ir_funct3_0_c);
     elsif ((fpu_operands.rs1_class(fp_class_pos_zero_c) = '1') and (fpu_operands.rs2_class(fp_class_neg_zero_c) = '1')) then
@@ -516,7 +516,7 @@ begin
       cond_v(0) := comp_less_ff xnor ctrl_i(ctrl_ir_funct3_0_c); -- min/max select
     end if;
 
-    -- nmumber NaN check --
+    -- number NaN check --
     cond_v(2) := fpu_operands.rs1_class(fp_class_snan_c) or fpu_operands.rs1_class(fp_class_qnan_c);
     cond_v(1) := fpu_operands.rs2_class(fp_class_snan_c) or fpu_operands.rs2_class(fp_class_qnan_c);
 
