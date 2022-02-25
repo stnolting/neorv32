@@ -20,10 +20,10 @@
 **Theory of Operation**
 
 The custom functions subsystem is meant for implementing custom and application-specific logic.
-The CFS provides up to 32x 32-bit memory-mapped
+The CFS provides up to 32x 32-bit memory-mapped read/write
 registers (`REG`, see register map below) that can be accessed by the CPU via normal load/store operations.
 The actual functionality of these register has to be defined by the hardware designer. Furthermore, the CFS
-provides two IO conduits to implement custom module- or chip-external interfaces.
+provides two IO conduits to implement custom on-chip or off-chip interfaces.
 
 In contrast to connecting custom hardware accelerators via external memory interfaces (like SPI or the processor's
 external bus interface), the CFS provide a convenient, low-latency and tightly-coupled extension and
@@ -47,13 +47,14 @@ commented to illustrate all aspects that are relevant for implementing custom CF
 **CFS Software Access**
 
 The CFS memory-mapped registers can be accessed by software using the provided C-language aliases (see
-register map table below). Note that all interface registers provide 32-bit access data of type `uint32_t`.
+register map table below). Note that all interface registers are declared as 32-bit words of type `uint32_t`.
 
+.CFS Software Access Example
 [source,c]
 ----
 // C-code CFS usage example
 NEORV32_CFS.REG[0] = (uint32_t)some_data_array(i); // write to CFS register 0
-uint32_t temp = NEORV32_CFS.REG[20]; // read from CFS register 20
+int temp = (int)NEORV32_CFS.REG[20]; // read from CFS register 20
 ----
 
 [TIP]

@@ -1453,21 +1453,25 @@ address _0xFFFFFE00_. A region of 512 bytes is reserved for this devices. Hence,
 accessed using a memory-mapped scheme. A special linker script as well as the NEORV32 core software
 library abstract the specific memory layout for the user.
 
+.Address Space Mapping
 [IMPORTANT]
 The base address of each component/module has to be aligned to the
 total size of the module's occupied address space! The occupied address space
 has to be a power of two (minimum 4 bytes)! Address spaces must not overlap!
 
+.Full-Word Write Accesses Only
 [IMPORTANT]
-When accessing an IO device that hast not been implemented (via the according generic), a
-load/store access fault exception is triggered.
-
-[IMPORTANT]
-The peripheral/IO devices can only be written in full-word mode (i.e. 32-bit). Byte or half-word
+All peripheral/IO devices can only be written in full-word mode (i.e. 32-bit). Byte or half-word
 (8/16-bit) writes will trigger a store access fault exception. Read accesses are not size constrained.
 Processor-internal memories as well as modules connected to the external memory interface can still
 be written with a byte-wide granularity.
 
+.Unimplemented Modules
+[NOTE]
+When accessing an IO device that hast not been implemented (via the according generic), a
+load/store access fault exception is triggered.
+
+.Hardware Reset
 [NOTE]
 Most of the IO devices do not have a hardware reset. Instead, the devices are reset via software by
 writing zero to the unit's control register. A general software-based reset of all devices is done by the
