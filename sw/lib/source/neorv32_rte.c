@@ -377,7 +377,7 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\nPMP:               ");
   uint32_t pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
   if (pmp_num_regions != 0)  {
-    neorv32_uart0_printf("%u regions, %u bytes minimal granularity\n", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
+    neorv32_uart0_printf("%u regions, %u bytes minimal granularity, OFF/TOR modes only\n", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
   }
   else {
     neorv32_uart0_printf("not implemented\n");
