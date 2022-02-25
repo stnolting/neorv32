@@ -101,8 +101,11 @@ uint32_t num_hpm_cnts_global = 0;
 /// XIRQ trap handler acknowledge
 uint32_t xirq_trap_handler_ack = 0;
 
+/// Variable to test store accesses
+volatile uint32_t store_access_addr[2];
+
 /// Variable to test atomic accesses
-uint32_t atomic_access_addr;
+volatile uint32_t atomic_access_addr;
 
 
 /**********************************************************************//**
@@ -369,20 +372,20 @@ int main() {
   tmp_a &= ~(1<<CSR_MCOUNTEREN_CY); // clear access right
   neorv32_cpu_csr_write(CSR_MCOUNTEREN, tmp_a);
 
-  neorv32_cpu_csr_write(CSR_CYCLE, 1); // make sure CSR is != 0 for this test
+  neorv32_cpu_csr_write(CSR_CYCLEH, 1); // make sure CSR is != 0 for this test
 
   // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
   neorv32_cpu_goto_user_mode();
   {
     // access to cycle CSR is no longer allowed
-    asm volatile (" mv      %[result], zero  \n" // initialize with zero
-                  " rdcycle %[result]          " // read CSR_CYCLE, is not allowed and should not alter [result]
+    asm volatile (" li       %[result], 0xcc11aa22  \n" // initialize
+                  " rdcycleh %[result]                " // read CSR_CYCLE, is not allowed and should not alter [result]
                   : [result] "=r" (tmp_a) : );
   }
 
   // make sure there was an illegal instruction trap
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) &&
-      (tmp_a == 0)) { // destination register not altered
+      (tmp_a == 0xcc11aa22)) { // destination register not altered
     test_ok();
   }
   else {
@@ -639,13 +642,13 @@ int main() {
   cnt_test++;
 
   // load from unaligned address
-  asm volatile ("li %[da], 0xcafe0000 \n" // initialize destination register with known value
+  asm volatile ("li %[da], 0xcafe1230 \n" // initialize destination register with known value
                 "lw %[da], 0(%[ad])     " // must not update destination register to to exception
                 : [da] "=r" (tmp_b) : [ad] "r" (ADDR_UNALIGNED_1));
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_MISALIGNED) &&
       (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNALIGNED_1) &&
-      (tmp_b == 0xcafe0000)) { // make sure dest. reg is not updated
+      (tmp_b == 0xcafe1230)) { // make sure dest. reg is not updated
     test_ok();
   }
   else {
@@ -663,13 +666,13 @@ int main() {
   tmp_a = (1 << BUSKEEPER_ERR_FLAG) | (1 << BUSKEEPER_ERR_TYPE);
 
   // load from unreachable aligned address
-  asm volatile ("li %[da], 0xcafe0000 \n" // initialize destination register with known value
+  asm volatile ("li %[da], 0xcafe1230 \n" // initialize destination register with known value
                 "lw %[da], 0(%[ad])     " // must not update destination register to to exception
                 : [da] "=r" (tmp_b) : [ad] "r" (ADDR_UNREACHABLE));
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) && // load bus access error exception
       (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNREACHABLE) &&
-      (tmp_b == 0xcafe0000) && // make sure dest. reg is not updated
+      (tmp_b == 0xcafe1230) && // make sure dest. reg is not updated
       (NEORV32_BUSKEEPER.CTRL = tmp_a)) { // buskeeper: error flag + timeout error
     test_ok();
   }
@@ -685,11 +688,19 @@ int main() {
   PRINT_STANDARD("[%i] S_ALIGN (store align) EXC: ", cnt_test);
   cnt_test++;
 
+  // initialize test variable
+  store_access_addr[0] = 0x11223344;
+  store_access_addr[1] = 0x55667788;
+  tmp_a = (uint32_t)(&store_access_addr[0]);
+  tmp_a += 2; // make word-unaligned
+
   // store to unaligned address
-  neorv32_cpu_store_unsigned_word(ADDR_UNALIGNED_2, 0);
+  neorv32_cpu_store_unsigned_word(tmp_a, 0);
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_MISALIGNED) &&
-      (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNALIGNED_2)) {
+      (neorv32_cpu_csr_read(CSR_MTVAL) == tmp_a) &&
+      (store_access_addr[0] == 0x11223344) &&
+      (store_access_addr[1] == 0x55667788)) { // make sure memory was not altered
     test_ok();
   }
   else {
@@ -1786,7 +1797,7 @@ int main() {
 
 
 /**********************************************************************//**
- * Simulation-based function to trigger CPU interrupts (MSI, MEI, FIRQ4..7).
+ * Simulation-based function to trigger CPU interrupts (MSI, MEI).
  *
  * @param[in] sel IRQ select mask (bit positions according to #NEORV32_CSR_MIE_enum).
  **************************************************************************/
