@@ -1,7 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - Bus Switch >>                                                                    #
 -- # ********************************************************************************************* #
--- # Allows to access a single peripheral bus ("p_bus") by two controller buses. Controller port A #
+-- # Allows to access a single peripheral bus ("p_bus") by two controller ports. Controller port A #
 -- # ("ca_bus") has priority over controller port B ("cb_bus").                                    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
@@ -99,7 +99,7 @@ architecture neorv32_busswitch_rtl of neorv32_busswitch is
   signal p_bus_we,   p_bus_re   : std_ulogic;
 
   -- access arbiter --
-  type arbiter_state_t is (IDLE, BUSY, RETIRE, BUSY_SWITCHED, RETIRE_SWITCHED);
+  type arbiter_state_t is (IDLE, A_BUSY, A_RETIRE, B_BUSY, B_RETIRE);
   type arbiter_t is record
     state     : arbiter_state_t;
     state_nxt : arbiter_state_t;
@@ -111,39 +111,27 @@ architecture neorv32_busswitch_rtl of neorv32_busswitch is
 
 begin
 
-  -- Access Buffer --------------------------------------------------------------------------
+  -- Access Arbiter -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  access_buffer: process(rstn_i, clk_i)
+  arbiter_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      arbiter.state <= IDLE;
       ca_rd_req_buf <= '0';
       ca_wr_req_buf <= '0';
       cb_rd_req_buf <= '0';
       cb_wr_req_buf <= '0';
     elsif rising_edge(clk_i) then
-
+      -- arbiter --
+      arbiter.state <= arbiter.state_nxt;
       -- controller A requests --
-      if (ca_rd_req_buf = '0') and (ca_wr_req_buf = '0') then -- idle
-        ca_rd_req_buf <= ca_bus_re_i;
-        ca_wr_req_buf <= ca_bus_we_i;
-      elsif (ca_bus_err = '1') or -- error termination
-            (ca_bus_ack = '1') then -- normal termination
-        ca_rd_req_buf <= '0';
-        ca_wr_req_buf <= '0';
-      end if;
-
+      ca_rd_req_buf <= (ca_rd_req_buf or ca_bus_re_i) and (not (ca_bus_err or ca_bus_ack));
+      ca_wr_req_buf <= (ca_wr_req_buf or ca_bus_we_i) and (not (ca_bus_err or ca_bus_ack)) and (not bool_to_ulogic_f(PORT_CA_READ_ONLY));
       -- controller B requests --
-      if (cb_rd_req_buf = '0') and (cb_wr_req_buf = '0') then
-        cb_rd_req_buf <= cb_bus_re_i;
-        cb_wr_req_buf <= cb_bus_we_i;
-      elsif (cb_bus_err = '1') or -- error termination
-            (cb_bus_ack = '1') then -- normal termination
-        cb_rd_req_buf <= '0';
-        cb_wr_req_buf <= '0';
-      end if;
-
+      cb_rd_req_buf <= (cb_rd_req_buf or cb_bus_re_i) and (not (cb_bus_err or cb_bus_ack));
+      cb_wr_req_buf <= (cb_wr_req_buf or cb_bus_we_i) and (not (cb_bus_err or cb_bus_ack)) and (not bool_to_ulogic_f(PORT_CB_READ_ONLY));
     end if;
-  end process access_buffer;
+  end process arbiter_sync;
 
   -- any current requests? --
   ca_req_current <= (ca_bus_re_i or ca_bus_we_i) when (PORT_CA_READ_ONLY = false) else ca_bus_re_i;
@@ -154,19 +142,7 @@ begin
   cb_req_buffered <= (cb_rd_req_buf or cb_wr_req_buf) when (PORT_CB_READ_ONLY = false) else cb_rd_req_buf;
 
 
-  -- Access Arbiter Sync --------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  arbiter_sync: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      arbiter.state <= IDLE;
-    elsif rising_edge(clk_i) then
-      arbiter.state <= arbiter.state_nxt;
-    end if;
-  end process arbiter_sync;
-
-
-  -- Peripheral Bus Arbiter -----------------------------------------------------------------
+  -- Bus Arbiter ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   arbiter_comb: process(arbiter, ca_req_current, cb_req_current, ca_req_buffered, cb_req_buffered,
                         ca_rd_req_buf, ca_wr_req_buf, cb_rd_req_buf, cb_wr_req_buf, p_bus_ack_i, p_bus_err_i)
@@ -180,64 +156,53 @@ begin
     -- state machine --
     case arbiter.state is
 
-      when IDLE => -- Controller a has full bus access
+      when IDLE => -- port A or B access
       -- ------------------------------------------------------------
-        p_bus_src_o <= '0'; -- access from port A
-        if (ca_req_current = '1') then -- current request?
-          arbiter.bus_sel   <= '0';
-          arbiter.state_nxt <= BUSY;
-        elsif (ca_req_buffered = '1') then -- buffered request?
-          arbiter.bus_sel   <= '0';
-          arbiter.state_nxt <= RETIRE;
-        elsif (cb_req_current = '1') then -- current request from controller b?
-          arbiter.bus_sel   <= '1';
-          arbiter.state_nxt <= BUSY_SWITCHED;
-        elsif (cb_req_buffered = '1') then -- buffered request from controller b?
-          arbiter.bus_sel   <= '1';
-          arbiter.state_nxt <= RETIRE_SWITCHED;
+        if (ca_req_current = '1') then -- current request from controller A?
+          arbiter.bus_sel   <= '0'; -- access from port A
+          arbiter.state_nxt <= A_BUSY;
+        elsif (ca_req_buffered = '1') then -- buffered request from controller A?
+          arbiter.bus_sel   <= '0'; -- access from port A
+          arbiter.state_nxt <= A_RETIRE;
+        elsif (cb_req_current = '1') then -- buffered request from controller B?
+          arbiter.bus_sel   <= '1'; -- access from port B
+          arbiter.state_nxt <= B_BUSY;
+        elsif (cb_req_buffered = '1') then -- current request from controller B?
+          arbiter.bus_sel   <= '1'; -- access from port B
+          arbiter.state_nxt <= B_RETIRE;
         end if;
 
-      when BUSY => -- transaction in progress
+      when A_BUSY => -- port A pending access
       -- ------------------------------------------------------------
-        p_bus_src_o     <= '0'; -- access from port A
-        arbiter.bus_sel <= '0';
-        if (p_bus_err_i = '1') or -- error termination
-           (p_bus_ack_i = '1') then -- normal termination
+        arbiter.bus_sel <= '0'; -- access from port A
+        if (p_bus_err_i = '1') or (p_bus_ack_i = '1') then -- termination
           arbiter.state_nxt <= IDLE;
         end if;
 
-      when RETIRE => -- retire pending access
+      when A_RETIRE => -- port A trigger buffered access
       -- ------------------------------------------------------------
-        p_bus_src_o     <= '0'; -- access from port A
-        arbiter.bus_sel <= '0';
-        if (PORT_CA_READ_ONLY = false) then
-          arbiter.we_trig <= ca_wr_req_buf;
-        end if;
+        arbiter.bus_sel   <= '0'; -- access from port A
+        arbiter.we_trig   <= ca_wr_req_buf;
         arbiter.re_trig   <= ca_rd_req_buf;
-        arbiter.state_nxt <= BUSY;
+        arbiter.state_nxt <= A_BUSY;
 
-      when BUSY_SWITCHED => -- switched transaction in progress
+      when B_BUSY => -- port B pending access
       -- ------------------------------------------------------------
-        p_bus_src_o     <= '1'; -- access from port B
-        arbiter.bus_sel <= '1';
-        if (p_bus_err_i = '1') or -- error termination
-           (p_bus_ack_i = '1') then -- normal termination
+        arbiter.bus_sel <= '1'; -- access from port B
+        if (p_bus_err_i = '1') or (p_bus_ack_i = '1') then -- termination
           if (ca_req_buffered = '1') or (ca_req_current = '1') then -- any request from A?
-            arbiter.state_nxt <= RETIRE;
+            arbiter.state_nxt <= A_RETIRE;
           else
             arbiter.state_nxt <= IDLE;
           end if;
         end if;
 
-      when RETIRE_SWITCHED => -- retire pending switched access
+      when B_RETIRE => -- port B trigger buffered access
       -- ------------------------------------------------------------
-        p_bus_src_o     <= '1'; -- access from port B
-        arbiter.bus_sel <= '1';
-        if (PORT_CB_READ_ONLY = false) then
-          arbiter.we_trig <= cb_wr_req_buf;
-        end if;
+        arbiter.bus_sel   <= '1'; -- access from port B
+        arbiter.we_trig   <= cb_wr_req_buf;
         arbiter.re_trig   <= cb_rd_req_buf;
-        arbiter.state_nxt <= BUSY_SWITCHED;
+        arbiter.state_nxt <= B_BUSY;
 
     end case;
   end process arbiter_comb;
@@ -246,15 +211,18 @@ begin
   -- Peripheral Bus Switch ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   p_bus_addr_o   <= ca_bus_addr_i   when (arbiter.bus_sel = '0')    else cb_bus_addr_i;
-  p_bus_wdata_o  <= cb_bus_wdata_i  when (PORT_CA_READ_ONLY = true) else ca_bus_wdata_i when (PORT_CB_READ_ONLY = true) else
+  p_bus_wdata_o  <= cb_bus_wdata_i  when (PORT_CA_READ_ONLY = true) else
+                    ca_bus_wdata_i  when (PORT_CB_READ_ONLY = true) else
                     ca_bus_wdata_i  when (arbiter.bus_sel = '0')    else cb_bus_wdata_i;
-  p_bus_ben_o    <= cb_bus_ben_i    when (PORT_CA_READ_ONLY = true) else ca_bus_ben_i   when (PORT_CB_READ_ONLY = true) else
+  p_bus_ben_o    <= cb_bus_ben_i    when (PORT_CA_READ_ONLY = true) else
+                    ca_bus_ben_i    when (PORT_CB_READ_ONLY = true) else
                     ca_bus_ben_i    when (arbiter.bus_sel = '0')    else cb_bus_ben_i;
   p_bus_we       <= ca_bus_we_i     when (arbiter.bus_sel = '0')    else cb_bus_we_i;
   p_bus_re       <= ca_bus_re_i     when (arbiter.bus_sel = '0')    else cb_bus_re_i;
   p_bus_we_o     <= (p_bus_we or arbiter.we_trig);
   p_bus_re_o     <= (p_bus_re or arbiter.re_trig);
   p_bus_lock_o   <= ca_bus_lock_i or cb_bus_lock_i;
+  p_bus_src_o    <= arbiter.bus_sel;
 
   ca_bus_rdata_o <= p_bus_rdata_i;
   cb_bus_rdata_o <= p_bus_rdata_i;
