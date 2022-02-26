@@ -476,17 +476,13 @@ interrupt-triggering processor module.
 :sectnums:
 ==== Machine Physical Memory Protection CSRs
 
-The available physical memory protection logic is configured via the _PMP_NUM_REGIONS_ and
-_PMP_MIN_GRANULARITY_ top entity generics. _PMP_NUM_REGIONS_ defines the number of implemented
+The available physical memory protection logic is configured via the <<_pmp_num_regions>> and
+<<_pmp_min_granularity>> top entity generics. <<_pmp_num_regions>> defines the number of implemented
 protection regions and thus, the availability of the according `pmpcfg*` and `pmpaddr*` CSRs.
 
 [NOTE]
-If trying to access an PMP-related CSR beyond _PMP_NUM_REGIONS_ **no illegal instruction
+If trying to access an PMP-related CSR beyond <<_pmp_num_regions>> **no illegal instruction
 exception** is triggered. The according CSRs are read-only (writes are ignored) and always return zero.
-
-[IMPORTANT]
-The RISC-V-compatible NEORV32 physical memory protection only implements the **NAPOT**
-(naturally aligned power-of-two region) mode yet with a minimal region granularity of 8 bytes.
 
 
 :sectnums!:
@@ -498,7 +494,8 @@ The RISC-V-compatible NEORV32 physical memory protection only implements the **N
 | 0x3a0 - 0x3af| **Physical memory protection configuration registers** | `pmpcfg0` - `pmpcfg15`
 3+| Reset value: _0x00000000_
 3+| The `pmpcfg*` CSRs are compatible to the RISC-V specifications. They are used to configure the protected
-regions, where each `pmpcfg*` CSR provides configuration bits for four regions. The following bits (for the
+regions, where each `pmpcfg*` CSR provides configuration bits for four regions. The actual number of available
+`pmpcfg` CSRs and CSR entries is defined by the <<_pmp_num_regions>> generic. The following bits (for the
 first PMP configuration entry) are implemented (all remaining bits are always zero and are read-only):
 |=======================
 
@@ -507,12 +504,12 @@ first PMP configuration entry) are implemented (all remaining bits are always ze
 [options="header",grid="rows"]
 |=======================
 | Bit | RISC-V name | R/W | Function
-| 7   | _L_ | r/w | lock bit, can only be cleared by CPU reset
-| 6:5 | -   | r/- | reserved, read as zero
-| 4:3 | _A_ | r/w | mode configuration; only OFF (`00`) and NAPOT (`11`) are supported
-| 2   | _X_ | r/w | execute permission
-| 1   | _W_ | r/w | write permission
-| 0   | _R_ | r/w | read permission
+| 7   | `L` | r/w | lock bit, also enforces access rights in machine-mode, can only be cleared by CPU reset
+| 6:5 |  -  | r/- | reserved, read as zero
+| 4:3 | `A` | r/w | mode configuration; only **OFF** (`00`) and **TOR** (`01`) are supported
+| 2   | `X` | r/w | execute permission
+| 1   | `W` | r/w | write permission
+| 0   | `R` | r/w | read permission
 |=======================
 
 
@@ -525,11 +522,12 @@ first PMP configuration entry) are implemented (all remaining bits are always ze
 | 0x3b0 - 0x3ef| **Physical memory protection address registers** | `pmpaddr0` - `pmpaddr63`
 3+| Reset value: _UNDEFINED_
 3+| The `pmpaddr*` CSRs are compatible to the RISC-V specifications. They are used to configure the PMP region's base
-address and the region size.
+address and the region size. Note that the the two LSBs (`1:0`) of each `pmpaddr` register are hardwired to zero. Hence, the minimal
+region size is 4 bytes. The actual number of available `pmpaddr` CSRs is defined by the <<_pmp_num_regions>> generic.
 |=======================
 
 [NOTE]
-When configuring PMP make sure to set `pmpaddr*` before activating the according region via
+When configuring the PMP make sure to set `pmpaddr*` before activating the according region via
 `pmpcfg*`. When changing the PMP configuration, deactivate the according region via `pmpcfg*`
 before modifying `pmpaddr*`.
 

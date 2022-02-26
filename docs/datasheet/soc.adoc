@@ -501,8 +501,9 @@ protection logic will be implemented at all.
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **PMP_MIN_GRANULARITY** | _natural_ | 64*1024
-3+| Minimal region granularity in bytes. Has to be a power of two. Has to be at least 8 bytes.
+| **PMP_MIN_GRANULARITY** | _natural_ | 4
+3+| Minimal region granularity in bytes. Has to be a power of two and has to be at least 4 bytes. A larger granularity
+will reduce hardware utilization and impact on critical path.
 |======
 
 
