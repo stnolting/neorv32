@@ -479,6 +479,7 @@ interrupt-triggering processor module.
 The available physical memory protection logic is configured via the <<_pmp_num_regions>> and
 <<_pmp_min_granularity>> top entity generics. <<_pmp_num_regions>> defines the number of implemented
 protection regions and thus, the availability of the according `pmpcfg*` and `pmpaddr*` CSRs.
+See section <<_pmp_physical_memory_protection>> for more information.
 
 [NOTE]
 If trying to access an PMP-related CSR beyond <<_pmp_num_regions>> **no illegal instruction
