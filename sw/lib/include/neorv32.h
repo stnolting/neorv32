@@ -474,21 +474,24 @@ enum NEORV32_HPMCNT_EVENT_enum {
 
 
 /**********************************************************************//**
- * CPU <b>pmpcfg</b> PMP configuration attributed
+ * CPU <b>pmpcfg</b> PMP configuration attributes (CSR entry 0)
  **************************************************************************/
 enum NEORV32_PMPCFG_ATTRIBUTES_enum {
   PMPCFG_R     = 0, /**< CPU pmpcfg attribute (0): Read */
   PMPCFG_W     = 1, /**< CPU pmpcfg attribute (1): Write */
   PMPCFG_X     = 2, /**< CPU pmpcfg attribute (2): Execute */
-  PMPCFG_A_LSB = 3, /**< CPU pmpcfg attribute (3): Mode LSB */
-  PMPCFG_A_MSB = 4, /**< CPU pmpcfg attribute (4): Mode MSB */
+  PMPCFG_A_LSB = 3, /**< CPU pmpcfg attribute (3): Mode LSB #NEORV32_PMP_MODES_enum */
+  PMPCFG_A_MSB = 4, /**< CPU pmpcfg attribute (4): Mode MSB #NEORV32_PMP_MODES_enum */
   PMPCFG_L     = 7  /**< CPU pmpcfg attribute (7): Locked */
 };
 
 /**********************************************************************//**
  * PMP modes
  **************************************************************************/
-#define PMPCFG_MODE_NAPOT 3
+enum NEORV32_PMP_MODES_enum {
+  PMP_OFF = 0, /**< '00': entry disabled */
+  PMP_TOR = 1  /**< '01': TOR mode (top of region) */
+};
 
 
 /**********************************************************************//**
@@ -947,9 +950,8 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 /** BUSKEEPER control/data register bits */
 enum NEORV32_BUSKEEPER_CTRL_enum {
-  BUSKEEPER_ERR_TYPE      =  0, /**< BUSKEEPER control register( 0) (r/-): Bus error type: 0=device error, 1=access timeout */
-  BUSKEEPER_NULL_CHECK_EN = 16, /**< BUSKEEPER control register(16) (r/w): Enable NULL address check */
-  BUSKEEPER_ERR_FLAG      = 31  /**< BUSKEEPER control register(31) (r/-): Sticky error flag, clears after read or write access */
+  BUSKEEPER_ERR_TYPE =  0, /**< BUSKEEPER control register( 0) (r/-): Bus error type: 0=device error, 1=access timeout */
+  BUSKEEPER_ERR_FLAG = 31  /**< BUSKEEPER control register(31) (r/-): Sticky error flag, clears after read or write access */
 };
 /**@}*/
 
