@@ -522,11 +522,6 @@
               <description>Bus error type: 0=device error, 1=access timeout</description>
             </field>
             <field>
-              <name>BUSKEEPER_NULL_CHECK_EN</name>
-              <bitRange>[16:16]</bitRange>
-              <description>Enable NULL address check when set</description>
-            </field>
-            <field>
               <name>BUSKEEPER_ERR_FLAG</name>
               <bitRange>[31:31]</bitRange>
               <description>Sticky error flag, clears after read or write access</description>
