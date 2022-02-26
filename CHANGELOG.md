@@ -33,6 +33,7 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 26.02.2022 | 1.6.8.6 | :warning: :lock: **reworked Physical Memory Protection (PMP)**: replacing `NAPOT` mode by `TOR` mode and fixing several minor PMP CSR-access bugs; :warning: removed **BUSKEEPER's NULL address check** (introduced in version `1.6.5.4`) - use a single PMP entry instead; see [PR #281](https://github.com/stnolting/neorv32/pull/281) |
 | 25.02.2022 | 1.6.8.5 | minor BUSMUX (bus multiplexer for CPU's instruction and data buses) and CPU control edits (pipeline front-end) |
 | 24.02.2022 | 1.6.8.4 | :bug: **fixed bug in `mip` CSR** (introduced in version `1.6.4.6` with [#236](https://github.com/stnolting/neorv32/pull/236)): to clear/ack a pending interrupt software needs to **clear** the according `mip` bit; see [PR #280](https://github.com/stnolting/neorv32/pull/280) |
 | 24.02.2022 | 1.6.8.3 | reworked CPU's data path (use a few _wide_ multiplexers instead of many small ones); [PR #279](https://github.com/stnolting/neorv32/pull/279) |
