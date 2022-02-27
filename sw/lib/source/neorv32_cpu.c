@@ -344,13 +344,12 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
     return 0;
   }
 
-  uint32_t i = 0;
-
   // try setting R bit in all PMPCFG CSRs
   const uint32_t mask = 0x01010101;
-  for (i=0; i<16; i++) {
-    __neorv32_cpu_pmp_cfg_write(i, mask);
-  }
+  __neorv32_cpu_pmp_cfg_write(0, mask);
+  __neorv32_cpu_pmp_cfg_write(1, mask);
+  __neorv32_cpu_pmp_cfg_write(2, mask);
+  __neorv32_cpu_pmp_cfg_write(3, mask);
 
   // sum up all written ones (only available PMPCFG* CSRs/entries will return =! 0)
   union {
@@ -359,9 +358,10 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
   } cnt;
 
   cnt.uint32 = 0;
-  for (i=0; i<16; i++) {
-    cnt.uint32 += __neorv32_cpu_pmp_cfg_read(i) & mask;
-  }
+  cnt.uint32 += __neorv32_cpu_pmp_cfg_read(0) & mask;
+  cnt.uint32 += __neorv32_cpu_pmp_cfg_read(1) & mask;
+  cnt.uint32 += __neorv32_cpu_pmp_cfg_read(2) & mask;
+  cnt.uint32 += __neorv32_cpu_pmp_cfg_read(3) & mask;
 
   // sum up bytes
   uint32_t num_regions = 0;
@@ -421,12 +421,12 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
  **************************************************************************/
 int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint8_t config) {
 
-  if ((index > 63) || ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_PMP)) == 0)) {
+  if ((index > 15) || ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_PMP)) == 0)) {
     return 1;
   }
 
   // set base address
-  switch(index & 63) {
+  switch(index & 0xf) {
     case 0:  neorv32_cpu_csr_write(CSR_PMPADDR0,  base); break;
     case 1:  neorv32_cpu_csr_write(CSR_PMPADDR1,  base); break;
     case 2:  neorv32_cpu_csr_write(CSR_PMPADDR2,  base); break;
@@ -443,54 +443,6 @@ int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint8_t conf
     case 13: neorv32_cpu_csr_write(CSR_PMPADDR13, base); break;
     case 14: neorv32_cpu_csr_write(CSR_PMPADDR14, base); break;
     case 15: neorv32_cpu_csr_write(CSR_PMPADDR15, base); break;
-    case 16: neorv32_cpu_csr_write(CSR_PMPADDR16, base); break;
-    case 17: neorv32_cpu_csr_write(CSR_PMPADDR17, base); break;
-    case 18: neorv32_cpu_csr_write(CSR_PMPADDR18, base); break;
-    case 19: neorv32_cpu_csr_write(CSR_PMPADDR19, base); break;
-    case 20: neorv32_cpu_csr_write(CSR_PMPADDR20, base); break;
-    case 21: neorv32_cpu_csr_write(CSR_PMPADDR21, base); break;
-    case 22: neorv32_cpu_csr_write(CSR_PMPADDR22, base); break;
-    case 23: neorv32_cpu_csr_write(CSR_PMPADDR23, base); break;
-    case 24: neorv32_cpu_csr_write(CSR_PMPADDR24, base); break;
-    case 25: neorv32_cpu_csr_write(CSR_PMPADDR25, base); break;
-    case 26: neorv32_cpu_csr_write(CSR_PMPADDR26, base); break;
-    case 27: neorv32_cpu_csr_write(CSR_PMPADDR27, base); break;
-    case 28: neorv32_cpu_csr_write(CSR_PMPADDR28, base); break;
-    case 29: neorv32_cpu_csr_write(CSR_PMPADDR29, base); break;
-    case 30: neorv32_cpu_csr_write(CSR_PMPADDR30, base); break;
-    case 31: neorv32_cpu_csr_write(CSR_PMPADDR31, base); break;
-    case 32: neorv32_cpu_csr_write(CSR_PMPADDR32, base); break;
-    case 33: neorv32_cpu_csr_write(CSR_PMPADDR33, base); break;
-    case 34: neorv32_cpu_csr_write(CSR_PMPADDR34, base); break;
-    case 35: neorv32_cpu_csr_write(CSR_PMPADDR35, base); break;
-    case 36: neorv32_cpu_csr_write(CSR_PMPADDR36, base); break;
-    case 37: neorv32_cpu_csr_write(CSR_PMPADDR37, base); break;
-    case 38: neorv32_cpu_csr_write(CSR_PMPADDR38, base); break;
-    case 39: neorv32_cpu_csr_write(CSR_PMPADDR39, base); break;
-    case 40: neorv32_cpu_csr_write(CSR_PMPADDR40, base); break;
-    case 41: neorv32_cpu_csr_write(CSR_PMPADDR41, base); break;
-    case 42: neorv32_cpu_csr_write(CSR_PMPADDR42, base); break;
-    case 43: neorv32_cpu_csr_write(CSR_PMPADDR43, base); break;
-    case 44: neorv32_cpu_csr_write(CSR_PMPADDR44, base); break;
-    case 45: neorv32_cpu_csr_write(CSR_PMPADDR45, base); break;
-    case 46: neorv32_cpu_csr_write(CSR_PMPADDR46, base); break;
-    case 47: neorv32_cpu_csr_write(CSR_PMPADDR47, base); break;
-    case 48: neorv32_cpu_csr_write(CSR_PMPADDR48, base); break;
-    case 49: neorv32_cpu_csr_write(CSR_PMPADDR49, base); break;
-    case 50: neorv32_cpu_csr_write(CSR_PMPADDR50, base); break;
-    case 51: neorv32_cpu_csr_write(CSR_PMPADDR51, base); break;
-    case 52: neorv32_cpu_csr_write(CSR_PMPADDR52, base); break;
-    case 53: neorv32_cpu_csr_write(CSR_PMPADDR53, base); break;
-    case 54: neorv32_cpu_csr_write(CSR_PMPADDR54, base); break;
-    case 55: neorv32_cpu_csr_write(CSR_PMPADDR55, base); break;
-    case 56: neorv32_cpu_csr_write(CSR_PMPADDR56, base); break;
-    case 57: neorv32_cpu_csr_write(CSR_PMPADDR57, base); break;
-    case 58: neorv32_cpu_csr_write(CSR_PMPADDR58, base); break;
-    case 59: neorv32_cpu_csr_write(CSR_PMPADDR59, base); break;
-    case 60: neorv32_cpu_csr_write(CSR_PMPADDR60, base); break;
-    case 61: neorv32_cpu_csr_write(CSR_PMPADDR61, base); break;
-    case 62: neorv32_cpu_csr_write(CSR_PMPADDR62, base); break;
-    case 63: neorv32_cpu_csr_write(CSR_PMPADDR63, base); break;
     default: break;
   }
 
@@ -531,23 +483,11 @@ int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint8_t conf
 static uint32_t __neorv32_cpu_pmp_cfg_read(uint32_t index) {
 
   uint32_t tmp = 0;
-  switch(index & 15) {
-    case 0:  tmp = neorv32_cpu_csr_read(CSR_PMPCFG0);  break;
-    case 1:  tmp = neorv32_cpu_csr_read(CSR_PMPCFG1);  break;
-    case 2:  tmp = neorv32_cpu_csr_read(CSR_PMPCFG2);  break;
-    case 3:  tmp = neorv32_cpu_csr_read(CSR_PMPCFG3);  break;
-    case 4:  tmp = neorv32_cpu_csr_read(CSR_PMPCFG4);  break;
-    case 5:  tmp = neorv32_cpu_csr_read(CSR_PMPCFG5);  break;
-    case 6:  tmp = neorv32_cpu_csr_read(CSR_PMPCFG6);  break;
-    case 7:  tmp = neorv32_cpu_csr_read(CSR_PMPCFG7);  break;
-    case 8:  tmp = neorv32_cpu_csr_read(CSR_PMPCFG8);  break;
-    case 9:  tmp = neorv32_cpu_csr_read(CSR_PMPCFG9);  break;
-    case 10: tmp = neorv32_cpu_csr_read(CSR_PMPCFG10); break;
-    case 11: tmp = neorv32_cpu_csr_read(CSR_PMPCFG11); break;
-    case 12: tmp = neorv32_cpu_csr_read(CSR_PMPCFG12); break;
-    case 13: tmp = neorv32_cpu_csr_read(CSR_PMPCFG13); break;
-    case 14: tmp = neorv32_cpu_csr_read(CSR_PMPCFG14); break;
-    case 15: tmp = neorv32_cpu_csr_read(CSR_PMPCFG15); break;
+  switch(index & 3) {
+    case 0: tmp = neorv32_cpu_csr_read(CSR_PMPCFG0); break;
+    case 1: tmp = neorv32_cpu_csr_read(CSR_PMPCFG1); break;
+    case 2: tmp = neorv32_cpu_csr_read(CSR_PMPCFG2); break;
+    case 3: tmp = neorv32_cpu_csr_read(CSR_PMPCFG3); break;
     default: break;
   }
 
@@ -556,32 +496,20 @@ static uint32_t __neorv32_cpu_pmp_cfg_read(uint32_t index) {
 
 
 /**********************************************************************//**
- * Internal helper function: Write PMP configuration register 0..15
+ * Internal helper function: Write PMP configuration register 0..4
  *
  * @warning This function requires the PMP CPU extension.
  *
- * @param[in] index PMP CFG configuration register ID (0..15).
+ * @param[in] index PMP CFG configuration register ID (0..4).
  * @param[in] data PMP CFG write data.
  **************************************************************************/
 static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data) {
 
-  switch(index & 15) {
-    case 0:  neorv32_cpu_csr_write(CSR_PMPCFG0,  data); break;
-    case 1:  neorv32_cpu_csr_write(CSR_PMPCFG1,  data); break;
-    case 2:  neorv32_cpu_csr_write(CSR_PMPCFG2,  data); break;
-    case 3:  neorv32_cpu_csr_write(CSR_PMPCFG3,  data); break;
-    case 4:  neorv32_cpu_csr_write(CSR_PMPCFG4,  data); break;
-    case 5:  neorv32_cpu_csr_write(CSR_PMPCFG5,  data); break;
-    case 6:  neorv32_cpu_csr_write(CSR_PMPCFG6,  data); break;
-    case 7:  neorv32_cpu_csr_write(CSR_PMPCFG7,  data); break;
-    case 8:  neorv32_cpu_csr_write(CSR_PMPCFG8,  data); break;
-    case 9:  neorv32_cpu_csr_write(CSR_PMPCFG9,  data); break;
-    case 10: neorv32_cpu_csr_write(CSR_PMPCFG10, data); break;
-    case 11: neorv32_cpu_csr_write(CSR_PMPCFG11, data); break;
-    case 12: neorv32_cpu_csr_write(CSR_PMPCFG12, data); break;
-    case 13: neorv32_cpu_csr_write(CSR_PMPCFG13, data); break;
-    case 14: neorv32_cpu_csr_write(CSR_PMPCFG14, data); break;
-    case 15: neorv32_cpu_csr_write(CSR_PMPCFG15, data); break;
+  switch(index & 3) {
+    case 0: neorv32_cpu_csr_write(CSR_PMPCFG0, data); break;
+    case 1: neorv32_cpu_csr_write(CSR_PMPCFG1, data); break;
+    case 2: neorv32_cpu_csr_write(CSR_PMPCFG2, data); break;
+    case 3: neorv32_cpu_csr_write(CSR_PMPCFG3, data); break;
     default: break;
   }
 }
