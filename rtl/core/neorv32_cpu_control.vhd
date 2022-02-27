@@ -76,7 +76,7 @@ entity neorv32_cpu_control is
     CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
     CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2
     -- Physical memory protection (PMP) --
-    PMP_NUM_REGIONS              : natural; -- number of regions (0..64)
+    PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
     PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..29)
@@ -266,15 +266,15 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- RISC-V control and status registers (CSRs) --
   type pmp_ctrl_t     is array (0 to 15) of std_ulogic_vector(7 downto 0);
+  type pmp_ctrl_rd_t  is array (0 to 03) of std_ulogic_vector(data_width_c-1 downto 0);
   type pmp_addr_t     is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY));
-  type pmp_ctrl_rd_t  is array (0 to 15) of std_ulogic_vector(31 downto 0);
-  type pmp_addr_rd_t  is array (0 to 63) of std_ulogic_vector(data_width_c-1 downto 0);
+  type pmp_addr_rd_t  is array (0 to 15) of std_ulogic_vector(data_width_c-1 downto 0);
   type mhpmevent_t    is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
   type mhpmevent_rd_t is array (0 to 28) of std_ulogic_vector(data_width_c-1 downto 0);
-  type mhpmcnt_t      is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(31 downto 0);
-  type mhpmcnt_nxt_t  is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(32 downto 0);
+  type mhpmcnt_t      is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(data_width_c-1 downto 0);
+  type mhpmcnt_nxt_t  is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(data_width_c downto 0);
   type mhpmcnt_ovfl_t is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(0 downto 0);
-  type mhpmcnt_rd_t   is array (0 to 29) of std_ulogic_vector(31 downto 0);
+  type mhpmcnt_rd_t   is array (0 to 29) of std_ulogic_vector(data_width_c-1 downto 0);
   type csr_t is record
     addr              : std_ulogic_vector(11 downto 0); -- csr address
     we                : std_ulogic; -- csr write enable
@@ -316,14 +316,14 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     --
     mscratch          : std_ulogic_vector(data_width_c-1 downto 0); -- mscratch: scratch register (R/W)
     --
-    mcycle            : std_ulogic_vector(31 downto 0); -- mcycle (R/W)
-    mcycle_nxt        : std_ulogic_vector(32 downto 0);
+    mcycle            : std_ulogic_vector(data_width_c-1 downto 0); -- mcycle (R/W)
+    mcycle_nxt        : std_ulogic_vector(data_width_c downto 0);
     mcycle_ovfl       : std_ulogic_vector(00 downto 0); -- counter low-to-high-word overflow
-    mcycleh           : std_ulogic_vector(31 downto 0); -- mcycleh (R/W)
-    minstret          : std_ulogic_vector(31 downto 0); -- minstret (R/W)
-    minstret_nxt      : std_ulogic_vector(32 downto 0);
+    mcycleh           : std_ulogic_vector(data_width_c-1 downto 0); -- mcycleh (R/W)
+    minstret          : std_ulogic_vector(data_width_c-1 downto 0); -- minstret (R/W)
+    minstret_nxt      : std_ulogic_vector(data_width_c downto 0);
     minstret_ovfl     : std_ulogic_vector(00 downto 0); -- counter low-to-high-word overflow
-    minstreth         : std_ulogic_vector(31 downto 0); -- minstreth (R/W)
+    minstreth         : std_ulogic_vector(data_width_c-1 downto 0); -- minstreth (R/W)
     --
     mhpmcounter       : mhpmcnt_t; -- mhpmcounter* (R/W), plus carry bit
     mhpmcounter_nxt   : mhpmcnt_nxt_t;
@@ -1306,14 +1306,7 @@ begin
       -- physical memory protection (PMP) --
       when csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  | csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  | -- address
            csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c | csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c |
-           csr_pmpaddr16_c | csr_pmpaddr17_c | csr_pmpaddr18_c | csr_pmpaddr19_c | csr_pmpaddr20_c | csr_pmpaddr21_c | csr_pmpaddr22_c | csr_pmpaddr23_c |
-           csr_pmpaddr24_c | csr_pmpaddr25_c | csr_pmpaddr26_c | csr_pmpaddr27_c | csr_pmpaddr28_c | csr_pmpaddr29_c | csr_pmpaddr30_c | csr_pmpaddr31_c |
-           csr_pmpaddr32_c | csr_pmpaddr33_c | csr_pmpaddr34_c | csr_pmpaddr35_c | csr_pmpaddr36_c | csr_pmpaddr37_c | csr_pmpaddr38_c | csr_pmpaddr39_c |
-           csr_pmpaddr40_c | csr_pmpaddr41_c | csr_pmpaddr42_c | csr_pmpaddr43_c | csr_pmpaddr44_c | csr_pmpaddr45_c | csr_pmpaddr46_c | csr_pmpaddr47_c |
-           csr_pmpaddr48_c | csr_pmpaddr49_c | csr_pmpaddr50_c | csr_pmpaddr51_c | csr_pmpaddr52_c | csr_pmpaddr53_c | csr_pmpaddr54_c | csr_pmpaddr55_c |
-           csr_pmpaddr56_c | csr_pmpaddr57_c | csr_pmpaddr58_c | csr_pmpaddr59_c | csr_pmpaddr60_c | csr_pmpaddr61_c | csr_pmpaddr62_c | csr_pmpaddr63_c |
-           csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c   | csr_pmpcfg4_c   | csr_pmpcfg5_c   | csr_pmpcfg6_c   | csr_pmpcfg7_c   | -- configuration
-           csr_pmpcfg8_c   | csr_pmpcfg9_c   | csr_pmpcfg10_c  | csr_pmpcfg11_c  | csr_pmpcfg12_c  | csr_pmpcfg13_c  | csr_pmpcfg14_c  | csr_pmpcfg15_c =>
+           csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c => -- configuration
         csr_acc_valid <= csr.priv_m_mode and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- M-mode only
 
       -- hardware performance monitors (HPM) --
@@ -1990,9 +1983,9 @@ begin
           -- physical memory protection: R/W: pmpcfg* - PMP configuration registers --
           -- --------------------------------------------------------------------
           if (PMP_NUM_REGIONS > 0) then
-            if (csr.addr(11 downto 4) = csr_class_pmpcfg_c) then -- pmp configuration CSR class
-              for i in 0 to (PMP_NUM_REGIONS/4)-1 loop -- 4 entries per CSR
-                if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
+            if (csr.addr(11 downto 2) = csr_class_pmpcfg_c) then -- pmp configuration CSR class
+              for i in 0 to 3 loop -- 3 pmpcfg CSRs
+                if (csr.addr(1 downto 0) = std_ulogic_vector(to_unsigned(i, 2))) then
                   for j in 0 to 3 loop -- 4 entries per CSR
                     if (csr.pmpcfg(i*4+j)(7) = '0') then -- unlocked pmpcfg entry
                       csr.pmpcfg(i*4+j)(0) <= csr.wdata(j*8+0); -- R - read
@@ -2013,10 +2006,9 @@ begin
           -- physical memory protection: R/W: pmpaddr* - PMP address registers --
           -- --------------------------------------------------------------------
           if (PMP_NUM_REGIONS > 0) then
-            if (csr.addr(11 downto 4) =  csr_pmpaddr0_c(11 downto 4)) or (csr.addr(11 downto 4) = csr_pmpaddr16_c(11 downto 4)) or
-               (csr.addr(11 downto 4) = csr_pmpaddr32_c(11 downto 4)) or (csr.addr(11 downto 4) = csr_pmpaddr48_c(11 downto 4)) then 
+            if (csr.addr(11 downto 4) = csr_class_pmpaddr_c) then 
               for i in 0 to PMP_NUM_REGIONS-1 loop
-                if (csr.addr(6 downto 0) = std_ulogic_vector(unsigned(csr_pmpaddr0_c(6 downto 0)) + i)) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
+                if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
                   csr.pmpaddr(i) <= csr.wdata(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY));
                 end if;
               end loop; -- i (PMP regions)
@@ -2277,15 +2269,13 @@ begin
         pmp_ctrl_o(i)    <= csr.pmpcfg(i);
         pmpcf_v(i)       := csr.pmpcfg(i);
       end loop; -- i
-      for i in 0 to 15 loop -- pack to 32-bit words
+      for i in 0 to 3 loop -- pack to 32-bit words
         csr.pmpcfg_rd(i)(07 downto 00) <= pmpcf_v(i*4+0);
         csr.pmpcfg_rd(i)(15 downto 08) <= pmpcf_v(i*4+1);
         csr.pmpcfg_rd(i)(23 downto 16) <= pmpcf_v(i*4+2);
         csr.pmpcfg_rd(i)(31 downto 24) <= pmpcf_v(i*4+3);
       end loop; -- i
     end if;
-    
-        
   end process pmp_output;
 
 
@@ -2368,22 +2358,10 @@ begin
 
           -- physical memory protection - configuration (r/w) --
           -- --------------------------------------------------------------------
-          when csr_pmpcfg0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata <= csr.pmpcfg_rd(00); else NULL; end if;
-          when csr_pmpcfg1_c  => if (PMP_NUM_REGIONS > 03) then csr.rdata <= csr.pmpcfg_rd(01); else NULL; end if;
-          when csr_pmpcfg2_c  => if (PMP_NUM_REGIONS > 07) then csr.rdata <= csr.pmpcfg_rd(02); else NULL; end if;
-          when csr_pmpcfg3_c  => if (PMP_NUM_REGIONS > 11) then csr.rdata <= csr.pmpcfg_rd(03); else NULL; end if;
-          when csr_pmpcfg4_c  => if (PMP_NUM_REGIONS > 15) then csr.rdata <= csr.pmpcfg_rd(04); else NULL; end if;
-          when csr_pmpcfg5_c  => if (PMP_NUM_REGIONS > 19) then csr.rdata <= csr.pmpcfg_rd(05); else NULL; end if;
-          when csr_pmpcfg6_c  => if (PMP_NUM_REGIONS > 23) then csr.rdata <= csr.pmpcfg_rd(06); else NULL; end if;
-          when csr_pmpcfg7_c  => if (PMP_NUM_REGIONS > 27) then csr.rdata <= csr.pmpcfg_rd(07); else NULL; end if;
-          when csr_pmpcfg8_c  => if (PMP_NUM_REGIONS > 31) then csr.rdata <= csr.pmpcfg_rd(08); else NULL; end if;
-          when csr_pmpcfg9_c  => if (PMP_NUM_REGIONS > 35) then csr.rdata <= csr.pmpcfg_rd(09); else NULL; end if;
-          when csr_pmpcfg10_c => if (PMP_NUM_REGIONS > 39) then csr.rdata <= csr.pmpcfg_rd(10); else NULL; end if;
-          when csr_pmpcfg11_c => if (PMP_NUM_REGIONS > 43) then csr.rdata <= csr.pmpcfg_rd(11); else NULL; end if;
-          when csr_pmpcfg12_c => if (PMP_NUM_REGIONS > 47) then csr.rdata <= csr.pmpcfg_rd(12); else NULL; end if;
-          when csr_pmpcfg13_c => if (PMP_NUM_REGIONS > 51) then csr.rdata <= csr.pmpcfg_rd(13); else NULL; end if;
-          when csr_pmpcfg14_c => if (PMP_NUM_REGIONS > 55) then csr.rdata <= csr.pmpcfg_rd(14); else NULL; end if;
-          when csr_pmpcfg15_c => if (PMP_NUM_REGIONS > 59) then csr.rdata <= csr.pmpcfg_rd(15); else NULL; end if;
+          when csr_pmpcfg0_c => if (PMP_NUM_REGIONS > 00) then csr.rdata <= csr.pmpcfg_rd(00); else NULL; end if;
+          when csr_pmpcfg1_c => if (PMP_NUM_REGIONS > 03) then csr.rdata <= csr.pmpcfg_rd(01); else NULL; end if;
+          when csr_pmpcfg2_c => if (PMP_NUM_REGIONS > 07) then csr.rdata <= csr.pmpcfg_rd(02); else NULL; end if;
+          when csr_pmpcfg3_c => if (PMP_NUM_REGIONS > 11) then csr.rdata <= csr.pmpcfg_rd(03); else NULL; end if;
 
           -- physical memory protection - addresses (r/w) --
           -- --------------------------------------------------------------------
@@ -2403,54 +2381,6 @@ begin
           when csr_pmpaddr13_c => if (PMP_NUM_REGIONS > 13) then csr.rdata <= csr.pmpaddr_rd(13); else NULL; end if;
           when csr_pmpaddr14_c => if (PMP_NUM_REGIONS > 14) then csr.rdata <= csr.pmpaddr_rd(14); else NULL; end if;
           when csr_pmpaddr15_c => if (PMP_NUM_REGIONS > 15) then csr.rdata <= csr.pmpaddr_rd(15); else NULL; end if;
-          when csr_pmpaddr16_c => if (PMP_NUM_REGIONS > 16) then csr.rdata <= csr.pmpaddr_rd(16); else NULL; end if;
-          when csr_pmpaddr17_c => if (PMP_NUM_REGIONS > 17) then csr.rdata <= csr.pmpaddr_rd(17); else NULL; end if;
-          when csr_pmpaddr18_c => if (PMP_NUM_REGIONS > 18) then csr.rdata <= csr.pmpaddr_rd(18); else NULL; end if;
-          when csr_pmpaddr19_c => if (PMP_NUM_REGIONS > 19) then csr.rdata <= csr.pmpaddr_rd(19); else NULL; end if;
-          when csr_pmpaddr20_c => if (PMP_NUM_REGIONS > 20) then csr.rdata <= csr.pmpaddr_rd(20); else NULL; end if;
-          when csr_pmpaddr21_c => if (PMP_NUM_REGIONS > 21) then csr.rdata <= csr.pmpaddr_rd(21); else NULL; end if;
-          when csr_pmpaddr22_c => if (PMP_NUM_REGIONS > 22) then csr.rdata <= csr.pmpaddr_rd(22); else NULL; end if;
-          when csr_pmpaddr23_c => if (PMP_NUM_REGIONS > 23) then csr.rdata <= csr.pmpaddr_rd(23); else NULL; end if;
-          when csr_pmpaddr24_c => if (PMP_NUM_REGIONS > 24) then csr.rdata <= csr.pmpaddr_rd(24); else NULL; end if;
-          when csr_pmpaddr25_c => if (PMP_NUM_REGIONS > 25) then csr.rdata <= csr.pmpaddr_rd(25); else NULL; end if;
-          when csr_pmpaddr26_c => if (PMP_NUM_REGIONS > 26) then csr.rdata <= csr.pmpaddr_rd(26); else NULL; end if;
-          when csr_pmpaddr27_c => if (PMP_NUM_REGIONS > 27) then csr.rdata <= csr.pmpaddr_rd(27); else NULL; end if;
-          when csr_pmpaddr28_c => if (PMP_NUM_REGIONS > 28) then csr.rdata <= csr.pmpaddr_rd(28); else NULL; end if;
-          when csr_pmpaddr29_c => if (PMP_NUM_REGIONS > 29) then csr.rdata <= csr.pmpaddr_rd(29); else NULL; end if;
-          when csr_pmpaddr30_c => if (PMP_NUM_REGIONS > 30) then csr.rdata <= csr.pmpaddr_rd(30); else NULL; end if;
-          when csr_pmpaddr31_c => if (PMP_NUM_REGIONS > 31) then csr.rdata <= csr.pmpaddr_rd(31); else NULL; end if;
-          when csr_pmpaddr32_c => if (PMP_NUM_REGIONS > 32) then csr.rdata <= csr.pmpaddr_rd(32); else NULL; end if;
-          when csr_pmpaddr33_c => if (PMP_NUM_REGIONS > 33) then csr.rdata <= csr.pmpaddr_rd(33); else NULL; end if;
-          when csr_pmpaddr34_c => if (PMP_NUM_REGIONS > 34) then csr.rdata <= csr.pmpaddr_rd(34); else NULL; end if;
-          when csr_pmpaddr35_c => if (PMP_NUM_REGIONS > 35) then csr.rdata <= csr.pmpaddr_rd(35); else NULL; end if;
-          when csr_pmpaddr36_c => if (PMP_NUM_REGIONS > 36) then csr.rdata <= csr.pmpaddr_rd(36); else NULL; end if;
-          when csr_pmpaddr37_c => if (PMP_NUM_REGIONS > 37) then csr.rdata <= csr.pmpaddr_rd(37); else NULL; end if;
-          when csr_pmpaddr38_c => if (PMP_NUM_REGIONS > 38) then csr.rdata <= csr.pmpaddr_rd(38); else NULL; end if;
-          when csr_pmpaddr39_c => if (PMP_NUM_REGIONS > 39) then csr.rdata <= csr.pmpaddr_rd(39); else NULL; end if;
-          when csr_pmpaddr40_c => if (PMP_NUM_REGIONS > 40) then csr.rdata <= csr.pmpaddr_rd(40); else NULL; end if;
-          when csr_pmpaddr41_c => if (PMP_NUM_REGIONS > 41) then csr.rdata <= csr.pmpaddr_rd(41); else NULL; end if;
-          when csr_pmpaddr42_c => if (PMP_NUM_REGIONS > 42) then csr.rdata <= csr.pmpaddr_rd(42); else NULL; end if;
-          when csr_pmpaddr43_c => if (PMP_NUM_REGIONS > 43) then csr.rdata <= csr.pmpaddr_rd(43); else NULL; end if;
-          when csr_pmpaddr44_c => if (PMP_NUM_REGIONS > 44) then csr.rdata <= csr.pmpaddr_rd(44); else NULL; end if;
-          when csr_pmpaddr45_c => if (PMP_NUM_REGIONS > 45) then csr.rdata <= csr.pmpaddr_rd(45); else NULL; end if;
-          when csr_pmpaddr46_c => if (PMP_NUM_REGIONS > 46) then csr.rdata <= csr.pmpaddr_rd(46); else NULL; end if;
-          when csr_pmpaddr47_c => if (PMP_NUM_REGIONS > 47) then csr.rdata <= csr.pmpaddr_rd(47); else NULL; end if;
-          when csr_pmpaddr48_c => if (PMP_NUM_REGIONS > 48) then csr.rdata <= csr.pmpaddr_rd(48); else NULL; end if;
-          when csr_pmpaddr49_c => if (PMP_NUM_REGIONS > 49) then csr.rdata <= csr.pmpaddr_rd(49); else NULL; end if;
-          when csr_pmpaddr50_c => if (PMP_NUM_REGIONS > 50) then csr.rdata <= csr.pmpaddr_rd(50); else NULL; end if;
-          when csr_pmpaddr51_c => if (PMP_NUM_REGIONS > 51) then csr.rdata <= csr.pmpaddr_rd(51); else NULL; end if;
-          when csr_pmpaddr52_c => if (PMP_NUM_REGIONS > 52) then csr.rdata <= csr.pmpaddr_rd(52); else NULL; end if;
-          when csr_pmpaddr53_c => if (PMP_NUM_REGIONS > 53) then csr.rdata <= csr.pmpaddr_rd(53); else NULL; end if;
-          when csr_pmpaddr54_c => if (PMP_NUM_REGIONS > 54) then csr.rdata <= csr.pmpaddr_rd(54); else NULL; end if;
-          when csr_pmpaddr55_c => if (PMP_NUM_REGIONS > 55) then csr.rdata <= csr.pmpaddr_rd(55); else NULL; end if;
-          when csr_pmpaddr56_c => if (PMP_NUM_REGIONS > 56) then csr.rdata <= csr.pmpaddr_rd(56); else NULL; end if;
-          when csr_pmpaddr57_c => if (PMP_NUM_REGIONS > 57) then csr.rdata <= csr.pmpaddr_rd(57); else NULL; end if;
-          when csr_pmpaddr58_c => if (PMP_NUM_REGIONS > 58) then csr.rdata <= csr.pmpaddr_rd(58); else NULL; end if;
-          when csr_pmpaddr59_c => if (PMP_NUM_REGIONS > 59) then csr.rdata <= csr.pmpaddr_rd(59); else NULL; end if;
-          when csr_pmpaddr60_c => if (PMP_NUM_REGIONS > 60) then csr.rdata <= csr.pmpaddr_rd(60); else NULL; end if;
-          when csr_pmpaddr61_c => if (PMP_NUM_REGIONS > 61) then csr.rdata <= csr.pmpaddr_rd(61); else NULL; end if;
-          when csr_pmpaddr62_c => if (PMP_NUM_REGIONS > 62) then csr.rdata <= csr.pmpaddr_rd(62); else NULL; end if;
-          when csr_pmpaddr63_c => if (PMP_NUM_REGIONS > 63) then csr.rdata <= csr.pmpaddr_rd(63); else NULL; end if;
 
           -- machine counter setup --
           -- --------------------------------------------------------------------

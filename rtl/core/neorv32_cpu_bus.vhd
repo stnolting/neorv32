@@ -46,7 +46,7 @@ entity neorv32_cpu_bus is
     CPU_EXTENSION_RISCV_A : boolean; -- implement atomic extension?
     CPU_EXTENSION_RISCV_C : boolean; -- implement compressed extension?
     -- Physical memory protection (PMP) --
-    PMP_NUM_REGIONS       : natural; -- number of regions (0..64)
+    PMP_NUM_REGIONS       : natural; -- number of regions (0..16)
     PMP_MIN_GRANULARITY   : natural  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   );
   port (
@@ -147,7 +147,6 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   signal exclusive_lock_status : std_ulogic_vector(data_width_c-1 downto 0); -- read data
 
   -- physical memory protection --
-  type pmp_addr_t is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-1 downto 0);
   type pmp_t is record
     i_match  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for instruction interface
     d_match  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for data interface
@@ -472,6 +471,9 @@ begin
   -- check access type and permissions --
   pmp_check_permission: process(pmp, pmp_ctrl_i, ctrl_i)
   begin
+    pmp.if_fault <= (others => '0');
+    pmp.ld_fault <= (others => '0');
+    pmp.st_fault <= (others => '0');
     for i in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
       if ((ctrl_i(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c) = priv_mode_u_c) or (pmp_ctrl_i(i)(pmp_cfg_l_c) = '1')) and -- user mode or LOCKED
          (pmp_ctrl_i(i)(pmp_cfg_ah_c downto pmp_cfg_al_c) = pmp_tor_mode_c) and -- active entry
@@ -479,10 +481,6 @@ begin
         pmp.if_fault(i) <= pmp.i_match(i) and (not pmp_ctrl_i(i)(pmp_cfg_x_c)); -- fetch access match no execute permission
         pmp.ld_fault(i) <= pmp.d_match(i) and (not pmp_ctrl_i(i)(pmp_cfg_r_c)); -- load access match no read permission
         pmp.st_fault(i) <= pmp.d_match(i) and (not pmp_ctrl_i(i)(pmp_cfg_w_c)); -- store access match no write permission
-      else
-        pmp.if_fault(i) <= '0';
-        pmp.ld_fault(i) <= '0';
-        pmp.st_fault(i) <= '0';
       end if;
     end loop; -- i
   end process pmp_check_permission;
