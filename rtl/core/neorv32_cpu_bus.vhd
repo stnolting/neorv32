@@ -46,8 +46,8 @@ entity neorv32_cpu_bus is
     CPU_EXTENSION_RISCV_A : boolean; -- implement atomic extension?
     CPU_EXTENSION_RISCV_C : boolean; -- implement compressed extension?
     -- Physical memory protection (PMP) --
-    PMP_NUM_REGIONS       : natural; -- number of regions (0..64)
-    PMP_MIN_GRANULARITY   : natural  -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    PMP_NUM_REGIONS       : natural; -- number of regions (0..16)
+    PMP_MIN_GRANULARITY   : natural  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   );
   port (
     -- global control --
@@ -105,12 +105,9 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
 
   -- PMP modes --
   constant pmp_off_mode_c   : std_ulogic_vector(1 downto 0) := "00"; -- null region (disabled)
---constant pmp_tor_mode_c   : std_ulogic_vector(1 downto 0) := "01"; -- top of range
+  constant pmp_tor_mode_c   : std_ulogic_vector(1 downto 0) := "01"; -- top of range
 --constant pmp_na4_mode_c   : std_ulogic_vector(1 downto 0) := "10"; -- naturally aligned four-byte region
-  constant pmp_napot_mode_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (>= 8 bytes)
-
-  -- PMP granularity --
-  constant pmp_g_c : natural := index_size_f(PMP_MIN_GRANULARITY);
+--constant pmp_napot_mode_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (>= 8 bytes)
 
   -- PMP configuration register bits --
   constant pmp_cfg_r_c  : natural := 0; -- read permit
@@ -120,6 +117,9 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   constant pmp_cfg_ah_c : natural := 4; -- mode bit high
   --
   constant pmp_cfg_l_c  : natural := 7; -- locked entry
+
+  -- PMP minimal granularity --
+  constant pmp_lsb_c : natural := index_size_f(PMP_MIN_GRANULARITY);
 
   -- data interface registers --
   signal mar, mdo, mdi : std_ulogic_vector(data_width_c-1 downto 0);
@@ -147,17 +147,12 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   signal exclusive_lock_status : std_ulogic_vector(data_width_c-1 downto 0); -- read data
 
   -- physical memory protection --
-  type pmp_addr_t is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-1 downto 0);
   type pmp_t is record
-    addr_mask     : pmp_addr_t;
-    region_base   : pmp_addr_t; -- region config base address
-    region_i_addr : pmp_addr_t; -- masked instruction access base address for comparator
-    region_d_addr : pmp_addr_t; -- masked data access base address for comparator
-    i_match       : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for instruction interface
-    d_match       : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for data interface
-    if_fault      : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for fetch operation
-    ld_fault      : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for load operation
-    st_fault      : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for store operation
+    i_match  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for instruction interface
+    d_match  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for data interface
+    if_fault : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for fetch operation
+    ld_fault : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for load operation
+    st_fault : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for store operation
   end record;
   signal pmp : pmp_t;
 
@@ -457,52 +452,38 @@ begin
 
   -- Physical Memory Protection (PMP) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- compute address masks (ITERATIVE!!!) --
-  pmp_masks: process(rstn_i, clk_i)
+  -- check access address region --
+  pmp_check_address: process(pmp_addr_i, fetch_pc_i, mar)
   begin
-    if (rstn_i = '0') then
-      pmp.addr_mask <= (others => (others => def_rst_val_c));
-    elsif rising_edge(clk_i) then -- address mask computation (not the actual address check!) has a latency of max +32 cycles
-      for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
-        pmp.addr_mask(r) <= (others => '0');
-        for i in pmp_g_c to data_width_c-1 loop
-          pmp.addr_mask(r)(i) <= pmp.addr_mask(r)(i-1) or (not pmp_addr_i(r)(i-1));
-        end loop; -- i
-      end loop; -- r
-    end if;
-  end process pmp_masks;
+    for i in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
+      if (i = 0) then -- use ZERO as bottom boundary and current entry as top boundary for first entry
+        pmp.i_match(i) <= bool_to_ulogic_f(unsigned(fetch_pc_i(data_width_c-1 downto pmp_lsb_c)) < unsigned(pmp_addr_i(0)(data_width_c-1 downto pmp_lsb_c)));
+        pmp.d_match(i) <= bool_to_ulogic_f(unsigned(mar(data_width_c-1 downto pmp_lsb_c))        < unsigned(pmp_addr_i(0)(data_width_c-1 downto pmp_lsb_c)));
+      else -- use previous entry as bottom boundary and current entry as top boundary
+        pmp.i_match(i) <= bool_to_ulogic_f((unsigned(pmp_addr_i(i-1)(data_width_c-1 downto pmp_lsb_c)) <= unsigned(fetch_pc_i(data_width_c-1 downto pmp_lsb_c))) and
+                                           (unsigned(fetch_pc_i(data_width_c-1 downto pmp_lsb_c))      <  unsigned(pmp_addr_i(i)(data_width_c-1 downto pmp_lsb_c))));
+        pmp.d_match(i) <= bool_to_ulogic_f((unsigned(pmp_addr_i(i-1)(data_width_c-1 downto pmp_lsb_c)) <= unsigned(mar(data_width_c-1 downto pmp_lsb_c))) and
+                                           (unsigned(mar(data_width_c-1 downto pmp_lsb_c))             <  unsigned(pmp_addr_i(i)(data_width_c-1 downto pmp_lsb_c))));
+      end if;
+    end loop; -- i
+  end process pmp_check_address;
 
-
-  -- address access check --
-  pmp_address_check:
-  for r in 0 to PMP_NUM_REGIONS-1 generate -- iterate over all regions
-    pmp.region_i_addr(r) <= fetch_pc_i                             and pmp.addr_mask(r);
-    pmp.region_d_addr(r) <= mar                                    and pmp.addr_mask(r);
-    pmp.region_base(r)   <= pmp_addr_i(r)(data_width_c+1 downto 2) and pmp.addr_mask(r);
-    --
-    pmp.i_match(r) <= '1' when (pmp.region_i_addr(r)(data_width_c-1 downto pmp_g_c) = pmp.region_base(r)(data_width_c-1 downto pmp_g_c)) else '0';
-    pmp.d_match(r) <= '1' when (pmp.region_d_addr(r)(data_width_c-1 downto pmp_g_c) = pmp.region_base(r)(data_width_c-1 downto pmp_g_c)) else '0';
-  end generate; -- r
-
-
-  -- check access type and region's permissions --
+  -- check access type and permissions --
   pmp_check_permission: process(pmp, pmp_ctrl_i, ctrl_i)
   begin
-    for r in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
-      if ((ctrl_i(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c) = priv_mode_u_c) or (pmp_ctrl_i(r)(pmp_cfg_l_c) = '1')) and -- user privilege level or locked pmp entry -> enforce permissions also for machine mode
-         (pmp_ctrl_i(r)(pmp_cfg_ah_c downto pmp_cfg_al_c) /= pmp_off_mode_c) and -- active entry
+    pmp.if_fault <= (others => '0');
+    pmp.ld_fault <= (others => '0');
+    pmp.st_fault <= (others => '0');
+    for i in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
+      if ((ctrl_i(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c) = priv_mode_u_c) or (pmp_ctrl_i(i)(pmp_cfg_l_c) = '1')) and -- user mode or LOCKED
+         (pmp_ctrl_i(i)(pmp_cfg_ah_c downto pmp_cfg_al_c) = pmp_tor_mode_c) and -- active entry
          (ctrl_i(ctrl_debug_running_c) = '0') then -- disable PMP checks when in debug mode
-        pmp.if_fault(r) <= pmp.i_match(r) and (not pmp_ctrl_i(r)(pmp_cfg_x_c)); -- fetch access match no execute permission
-        pmp.ld_fault(r) <= pmp.d_match(r) and (not pmp_ctrl_i(r)(pmp_cfg_r_c)); -- load access match no read permission
-        pmp.st_fault(r) <= pmp.d_match(r) and (not pmp_ctrl_i(r)(pmp_cfg_w_c)); -- store access match no write permission
-      else
-        pmp.if_fault(r) <= '0';
-        pmp.ld_fault(r) <= '0';
-        pmp.st_fault(r) <= '0';
+        pmp.if_fault(i) <= pmp.i_match(i) and (not pmp_ctrl_i(i)(pmp_cfg_x_c)); -- fetch access match no execute permission
+        pmp.ld_fault(i) <= pmp.d_match(i) and (not pmp_ctrl_i(i)(pmp_cfg_r_c)); -- load access match no read permission
+        pmp.st_fault(i) <= pmp.d_match(i) and (not pmp_ctrl_i(i)(pmp_cfg_w_c)); -- store access match no write permission
       end if;
-    end loop; -- r
+    end loop; -- i
   end process pmp_check_permission;
-
 
   -- final PMP access fault signals --
   if_pmp_fault <= or_reduce_f(pmp.if_fault) when (PMP_NUM_REGIONS > 0) else '0';

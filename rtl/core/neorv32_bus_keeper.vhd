@@ -74,11 +74,8 @@ architecture neorv32_bus_keeper_rtl of neorv32_bus_keeper is
   constant lo_abb_c : natural := index_size_f(buskeeper_size_c); -- low address boundary bit
 
   -- Control register --
-  constant ctrl_err_type_c     : natural :=  0; -- r/-: error type LSB: 0=device error, 1=access timeout
-  constant ctrl_nul_check_en_c : natural := 16; -- r/w: enable NULL address check
-  constant ctrl_err_flag_c     : natural := 31; -- r/c: bus error encountered, sticky; cleared by writing zero
-  --
-  signal ctrl_null_check_en : std_ulogic;
+  constant ctrl_err_type_c : natural :=  0; -- r/-: error type LSB: 0=device error, 1=access timeout
+  constant ctrl_err_flag_c : natural := 31; -- r/c: bus error encountered, sticky; cleared by writing zero
 
   -- error codes --
   constant err_device_c  : std_ulogic := '0'; -- device access error
@@ -87,9 +84,6 @@ architecture neorv32_bus_keeper_rtl of neorv32_bus_keeper is
   -- sticky error flags --
   signal err_flag : std_ulogic;
   signal err_type : std_ulogic;
-
-  -- NULL address check --
-  signal null_check : std_ulogic;
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
@@ -124,26 +118,19 @@ begin
   rw_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ack_o              <= '-';
-      data_o             <= (others => '-');
-      ctrl_null_check_en <= '0'; -- required
-      err_flag           <= '0'; -- required
-      err_type           <= '0';
+      ack_o    <= '-';
+      data_o   <= (others => '-');
+      err_flag <= '0'; -- required
+      err_type <= '0';
     elsif rising_edge(clk_i) then
       -- bus handshake --
       ack_o <= wren or rden;
 
-      -- write access --
-      if (wren = '1') then
-        ctrl_null_check_en <= data_i(ctrl_nul_check_en_c);
-      end if;
-
       -- read access --
       data_o <= (others => '0');
       if (rden = '1') then
-        data_o(ctrl_err_type_c)     <= err_type;
-        data_o(ctrl_nul_check_en_c) <= ctrl_null_check_en;
-        data_o(ctrl_err_flag_c)     <= err_flag;
+        data_o(ctrl_err_type_c) <= err_type;
+        data_o(ctrl_err_flag_c) <= err_flag;
       end if;
       --
       if (control.bus_err = '1') then -- sticky error flag
@@ -176,14 +163,11 @@ begin
         control.timeout <= std_ulogic_vector(to_unsigned(max_proc_int_response_time_c, index_size_f(max_proc_int_response_time_c)+1));
         if (bus_rden_i = '1') or (bus_wren_i = '1') then
           control.pending <= '1';
-          if (null_check = '1') then -- invalid access to NULL address
-            control.bus_err <= '1';
-          end if;
         end if;
       -- access monitor: PENDING --
       else
         control.timeout <= std_ulogic_vector(unsigned(control.timeout) - 1); -- countdown timer
-        if (bus_err_i = '1') or (control.bus_err = '1') then -- error termination by bus system
+        if (bus_err_i = '1') then -- error termination by bus system
           control.err_type <= err_device_c; -- device error
           control.bus_err  <= '1';
           control.pending  <= '0';
@@ -200,9 +184,6 @@ begin
       end if;
     end if;
   end process keeper_control;
-
-  -- NULL address check --
-  null_check <= '1' when (ctrl_null_check_en = '1') and (or_reduce_f(addr_i) = '0') else '0';
 
   -- signal bus error to CPU --
   err_o <= control.bus_err;

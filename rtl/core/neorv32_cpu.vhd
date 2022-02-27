@@ -85,8 +85,8 @@ entity neorv32_cpu is
     CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
     CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS              : natural; -- number of regions (0..64)
-    PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
+    PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..29)
     HPM_CNT_WIDTH                : natural  -- total size of HPM counters (0..64)
@@ -185,7 +185,7 @@ begin
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx, "_Zfinx", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul, "_Zmmul", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu, "_Zxcfu", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_DEBUG, "_DEBUG", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_DEBUG, "_DebugMode", "") &
   ""
   severity note;
 
@@ -213,11 +213,10 @@ begin
   -- Instruction prefetch buffer size --
   assert not (is_power_of_two_f(CPU_IPB_ENTRIES) = false) report "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <CPU_IPB_ENTRIES> has to be a power of two." severity error;
 
-  -- PMP regions check --
-  assert not (PMP_NUM_REGIONS > 64) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out of valid range (0..64)." severity error;
-  -- PMP granularity --
+  -- PMP check --
+  assert not (PMP_NUM_REGIONS > 16) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out of valid range (0..16)." severity error;
   assert not ((is_power_of_two_f(PMP_MIN_GRANULARITY) = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be a power of two." severity error;
-  assert not ((PMP_MIN_GRANULARITY < 8) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be >= 8 bytes." severity error;
+  assert not ((PMP_MIN_GRANULARITY < 4) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be >= 4 bytes." severity error;
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
   -- HPM counters check --
@@ -271,8 +270,8 @@ begin
     CPU_CNT_WIDTH                => CPU_CNT_WIDTH,                -- total width of CPU cycle and instret counters (0..64)
     CPU_IPB_ENTRIES              => CPU_IPB_ENTRIES,              -- entries is instruction prefetch buffer, has to be a power of 2
     -- Physical memory protection (PMP) --
-    PMP_NUM_REGIONS              => PMP_NUM_REGIONS,              -- number of regions (0..64)
-    PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY,          -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    PMP_NUM_REGIONS              => PMP_NUM_REGIONS,              -- number of regions (0..16)
+    PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY,          -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 => HPM_NUM_CNTS,                 -- number of implemented HPM counters (0..29)
     HPM_CNT_WIDTH                => HPM_CNT_WIDTH                 -- total size of HPM counters
@@ -392,8 +391,8 @@ begin
     CPU_EXTENSION_RISCV_A => CPU_EXTENSION_RISCV_A, -- implement atomic extension?
     CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
     -- Physical memory protection (PMP) --
-    PMP_NUM_REGIONS       => PMP_NUM_REGIONS,       -- number of regions (0..64)
-    PMP_MIN_GRANULARITY   => PMP_MIN_GRANULARITY    -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+    PMP_NUM_REGIONS       => PMP_NUM_REGIONS,       -- number of regions (0..16)
+    PMP_MIN_GRANULARITY   => PMP_MIN_GRANULARITY    -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   )
   port map (
     -- global control --

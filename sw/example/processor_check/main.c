@@ -107,6 +107,9 @@ volatile uint32_t store_access_addr[2];
 /// Variable to test atomic accesses
 volatile uint32_t atomic_access_addr;
 
+/// Variable to test PMP
+volatile uint32_t pmp_access_addr;
+
 
 /**********************************************************************//**
  * High-level CPU/processor test program.
@@ -1512,32 +1515,29 @@ int main() {
   // ----------------------------------------------------------
   // Test physical memory protection
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] PMP - Physical memory protection: ", cnt_test);
+  PRINT_STANDARD("[%i] PMP:\n", cnt_test);
 
-  // check if PMP is implemented
-  if (neorv32_cpu_pmp_get_num_regions() != 0)  {
+  // check if PMP is implemented (two regions are required for these tests)
+  if (neorv32_cpu_pmp_get_num_regions() > 1)  {
 
     // Create PMP protected region
     // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
     cnt_test++;
 
-    // find out minimal region size (granularity)
-    tmp_b = neorv32_cpu_pmp_get_granularity();
-
-    tmp_a = NEORV32_SYSINFO.DSPACE_BASE; // base address of protected region
-    PRINT_STANDARD("Creating protected page (NAPOT, [!X,!W,!R], %u bytes) @ 0x%x: ", tmp_b, tmp_a);
+    tmp_a = (uint32_t)(&pmp_access_addr); // base address of protected region
+    tmp_b = PMP_TOR << PMPCFG_A_LSB; // enable region, but absolutely no access rights
 
     // configure
-    int pmp_return = neorv32_cpu_pmp_configure_region(0, tmp_a, tmp_b, PMPCFG_MODE_NAPOT << PMPCFG_A_LSB); // NAPOT, NO read/write/execute permissions
-
-    if ((pmp_return == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+    int pmp_res = 0;
+    PRINT_STANDARD("Setup region 0 OFF [ -, -, -] @ 0x%x\n", tmp_a);
+    pmp_res += neorv32_cpu_pmp_configure_region(0, tmp_a, 0);
+    PRINT_STANDARD("Setup region 1 TOR [!X,!W,!R] @ 0x%x ", tmp_a+4);
+    pmp_res += neorv32_cpu_pmp_configure_region(1, tmp_a+4, tmp_b);
+    if ((pmp_res == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
       test_ok();
     }
     else {
-      if (neorv32_cpu_csr_read(CSR_PMPCFG0) & 0x80) {
-      PRINT_CRITICAL("%c[1m<Entry LOCKED!> %c[0m\n", 27, 27);
-      }
       test_fail();
     }
 
@@ -1554,15 +1554,11 @@ int main() {
     }
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ACCESS) {
-      // switch back to machine mode (if not already)
-      asm volatile ("ecall");
-
+      asm volatile ("ecall"); // switch back to machine mode (if not already)
       test_ok();
     }
     else {
-      // switch back to machine mode (if not already)
-      asm volatile ("ecall");
-
+      asm volatile ("ecall"); // switch back to machine mode (if not already)
       test_fail();
     }
 

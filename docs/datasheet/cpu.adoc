@@ -258,8 +258,9 @@ side-effects to maintain RISC-V compatibility.
 
 .Physical Memory Protection
 [IMPORTANT]
-The physical memory protection (see section <<_machine_physical_memory_protection_csrs>>)
-only supports the modes _OFF_ and _NAPOT_ yet and a minimal granularity of 8 bytes per region.
+The RISC-V-compatible NEORV32 <<_machine_physical_memory_protection_csrs>> only implements the **TOR**
+(top of region) mode and only up to 16 PMP regions. Furthermore, the <<_pmpcfg>>'s
+_lock bits_ only lock the according PMP entry and not the entries below.
 
 .Atomic Memory Operations
 [IMPORTANT]
@@ -715,62 +716,60 @@ the CPU take a look at the memory-mapped <<_custom_functions_subsystem_cfs>>.
 
 ==== **`PMP`** Physical Memory Protection
 
-The NEORV32 physical memory protection (PMP) is compatible to the RISC-V PMP specifications. It can be used
-to constrain memory read/write/execute rights for each available privilege level.
+The NEORV32 physical memory protection (PMP) provides an elementary memory protection mechanism that can be used
+to constrain read, write and execute rights of arbitrary memory regions. The PMP is compatible
+to the _RISC-V Privileged Architecture Specifications_. For detailed information see the according spec.'s sections.
 
-The NEORV32 PMP only supports _NAPOT_ mode yet and a minimal region size (granularity) of 8 bytes. Larger
-minimal sizes can be configured via the top `PMP_MIN_GRANULARITY` generic to reduce hardware requirements.
-The physical memory protection system is implemented when the `PMP_NUM_REGIONS` configuration generic is >0.
-In this case the following additional CSRs are available:
+[IMPORTANT]
+The NEORV32 PMP only supports **TOR** (top of region) mode, which basically is a "base-and-bound" concept, and only
+up to 16 PMP regions.
 
-* `pmpcfg*` (0..15, depending on configuration): PMP configuration registers
-* `pmpaddr*` (0..63, depending on configuration): PMP address registers
+The physical memory protection logic is implemented if the <<_pmp_num_regions>> configuration generic is greater
+than zero. This generic also defines the total number of available configurable protection
+regions. The minimal granularity of a protected region is defined by the <<_pmp_min_granularity>> generic. Larger
+granularity will reduce hardware complexity but will also decrease granularity as the minimal region sizes increases.
+The default value is 4 bytes, which allows a minimal region size of 4 bytes.
 
+If implemented the PMP provides the following additional CSRs:
+
+* <<_pmpcfg>> 0..3 (depending on configuration): PMP configuration registers, 4 entries per CSR
+* <<_pmpaddr>> 0..15 (depending on configuration): PMP address registers
+
+
+**Operation Summary**
+
+Any CPU access address (from the instruction fetch or data access interface) is tested if it matches _any_
+of the specified PMP regions. If there is a match, the configured access rights are enforced:
+
+* a write access (store) will fail if no **write** attribute is set
+* a read access (load) will fail if no **read** attribute is set
+* an instruction fetch access will fail if no **execute** attribute is set
+
+If an access to a protected region does not have the according access rights it will raise the according
+instruction/load/store _bus access fault_ exception.
+
+By default, all PMP checks are enforced for user-mode only. However, PMP rules can also be enforced for
+machine-mode when the according PMP region has the "LOCK" bit set. This will also prevent any write access
+to according region's PMP CSRs until the CPU is reset.
+
+.PMP Example Program
 [TIP]
-See section <<_machine_physical_memory_protection_csrs>> for more information regarding the PMP CSRs.
+A simple PMP example program can be found in `sw/example/demo_pmp`.
 
-The actual number of regions and the minimal region granularity are defined via the top entity
-`PMP_MIN_GRANULARITY` and `PMP_NUM_REGIONS` generics. `PMP_MIN_GRANULARITY` defines the minimal available
-granularity of each region in bytes. `PMP_NUM_REGIONS` defines the total number of implemented regions and thus, the
-number of available `pmpcfg*` and `pmpaddr*` CSRs.
 
-When implementing more PMP regions that a _certain critical limit_ *an additional register stage
-is automatically inserted* into the CPU's memory interfaces to reduce critical path length. Unfortunately, this will also
-increase the latency of instruction fetches and data access by +1 cycle.
+**Impact on Critical Path**
 
-The critical limit can be adapted for custom use by a constant from the main VHDL package file
-(`rtl/core/neorv32_package.vhd`). The default value is 8:
+When implementing more PMP regions that a "_certain critical limit_" an **additional register stage** is automatically
+inserted into the CPU's memory interfaces to keep impact on the critical path as short as minimal as possible.
+Unfortunately, this will also increase the latency of instruction fetches and data access by one cycle.
+The _critical limit_ can be modified by a constant from the main VHDL package file
+(`rtl/core/neorv32_package.vhd`, default value = 8):
 
 [source,vhdl]
 ----
 -- "critical" number of PMP regions --
 constant pmp_num_regions_critical_c : natural := 8;
 ----
-
-**Operation**
-
-Any CPU memory access address (from the instruction fetch or data access interface) is tested if it is accessing _any_
-of the specified  PMP regions(configured via `pmpaddr*` and enabled via `pmpcfg*`). If an
-address matches one of these regions, the configured access rights (attributes in `pmpcfg*`) are enforced:
-
-* a write access (store) will fail if no write attribute is set
-* a read access (load) will fail if no read attribute is set
-* an instruction fetch access will fail if no execute attribute is set
-
-If an access to a protected region does not have the according access rights it will raise the according
-instruction/load/store _access fault_ exception.
-
-By default, all PMP checks are enforced for user-level programs only. If you wish to enforce the physical
-memory protection also for machine-level programs you need to set the _locked bit_ in the according
-`pmpcfg*` configuration CSR.
-
-[IMPORTANT]
-After updating the address configuration registers `pmpaddr*` the system requires up to 33 cycles for
-internal (iterative) computations before the configuration becomes valid.
-
-[NOTE]
-For more information regarding RISC-V physical memory protection see the official _The RISC-V
-Instruction Set Manual - Volume II: Privileged Architecture_ specifications.
 
 
 

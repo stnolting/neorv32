@@ -65,7 +65,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060805"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060806"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -89,8 +89,8 @@ package neorv32_package is
 
   -- Internal Interface Types ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  type pmp_ctrl_if_t is array (0 to 63) of std_ulogic_vector(07 downto 0);
-  type pmp_addr_if_t is array (0 to 63) of std_ulogic_vector(33 downto 0);
+  type pmp_ctrl_if_t is array (0 to 15) of std_ulogic_vector(07 downto 0);
+  type pmp_addr_if_t is array (0 to 15) of std_ulogic_vector(31 downto 0);
 
   -- Internal Memory Types Configuration Types ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -614,24 +614,13 @@ package neorv32_package is
   constant csr_mtval_c          : std_ulogic_vector(11 downto 0) := x"343";
   constant csr_mip_c            : std_ulogic_vector(11 downto 0) := x"344";
   -- physical memory protection - configuration --
-  constant csr_class_pmpcfg_c   : std_ulogic_vector(07 downto 0) := x"3a"; -- pmp configuration
+  constant csr_class_pmpcfg_c   : std_ulogic_vector(09 downto 0) := x"3a" & "00"; -- pmp configuration
   constant csr_pmpcfg0_c        : std_ulogic_vector(11 downto 0) := x"3a0";
   constant csr_pmpcfg1_c        : std_ulogic_vector(11 downto 0) := x"3a1";
   constant csr_pmpcfg2_c        : std_ulogic_vector(11 downto 0) := x"3a2";
   constant csr_pmpcfg3_c        : std_ulogic_vector(11 downto 0) := x"3a3";
-  constant csr_pmpcfg4_c        : std_ulogic_vector(11 downto 0) := x"3a4";
-  constant csr_pmpcfg5_c        : std_ulogic_vector(11 downto 0) := x"3a5";
-  constant csr_pmpcfg6_c        : std_ulogic_vector(11 downto 0) := x"3a6";
-  constant csr_pmpcfg7_c        : std_ulogic_vector(11 downto 0) := x"3a7";
-  constant csr_pmpcfg8_c        : std_ulogic_vector(11 downto 0) := x"3a8";
-  constant csr_pmpcfg9_c        : std_ulogic_vector(11 downto 0) := x"3a9";
-  constant csr_pmpcfg10_c       : std_ulogic_vector(11 downto 0) := x"3aa";
-  constant csr_pmpcfg11_c       : std_ulogic_vector(11 downto 0) := x"3ab";
-  constant csr_pmpcfg12_c       : std_ulogic_vector(11 downto 0) := x"3ac";
-  constant csr_pmpcfg13_c       : std_ulogic_vector(11 downto 0) := x"3ad";
-  constant csr_pmpcfg14_c       : std_ulogic_vector(11 downto 0) := x"3ae";
-  constant csr_pmpcfg15_c       : std_ulogic_vector(11 downto 0) := x"3af";
   -- physical memory protection - address --
+  constant csr_class_pmpaddr_c  : std_ulogic_vector(07 downto 0) := x"3b"; -- pmp address
   constant csr_pmpaddr0_c       : std_ulogic_vector(11 downto 0) := x"3b0";
   constant csr_pmpaddr1_c       : std_ulogic_vector(11 downto 0) := x"3b1";
   constant csr_pmpaddr2_c       : std_ulogic_vector(11 downto 0) := x"3b2";
@@ -648,54 +637,6 @@ package neorv32_package is
   constant csr_pmpaddr13_c      : std_ulogic_vector(11 downto 0) := x"3bd";
   constant csr_pmpaddr14_c      : std_ulogic_vector(11 downto 0) := x"3be";
   constant csr_pmpaddr15_c      : std_ulogic_vector(11 downto 0) := x"3bf";
-  constant csr_pmpaddr16_c      : std_ulogic_vector(11 downto 0) := x"3c0";
-  constant csr_pmpaddr17_c      : std_ulogic_vector(11 downto 0) := x"3c1";
-  constant csr_pmpaddr18_c      : std_ulogic_vector(11 downto 0) := x"3c2";
-  constant csr_pmpaddr19_c      : std_ulogic_vector(11 downto 0) := x"3c3";
-  constant csr_pmpaddr20_c      : std_ulogic_vector(11 downto 0) := x"3c4";
-  constant csr_pmpaddr21_c      : std_ulogic_vector(11 downto 0) := x"3c5";
-  constant csr_pmpaddr22_c      : std_ulogic_vector(11 downto 0) := x"3c6";
-  constant csr_pmpaddr23_c      : std_ulogic_vector(11 downto 0) := x"3c7";
-  constant csr_pmpaddr24_c      : std_ulogic_vector(11 downto 0) := x"3c8";
-  constant csr_pmpaddr25_c      : std_ulogic_vector(11 downto 0) := x"3c9";
-  constant csr_pmpaddr26_c      : std_ulogic_vector(11 downto 0) := x"3ca";
-  constant csr_pmpaddr27_c      : std_ulogic_vector(11 downto 0) := x"3cb";
-  constant csr_pmpaddr28_c      : std_ulogic_vector(11 downto 0) := x"3cc";
-  constant csr_pmpaddr29_c      : std_ulogic_vector(11 downto 0) := x"3cd";
-  constant csr_pmpaddr30_c      : std_ulogic_vector(11 downto 0) := x"3ce";
-  constant csr_pmpaddr31_c      : std_ulogic_vector(11 downto 0) := x"3cf";
-  constant csr_pmpaddr32_c      : std_ulogic_vector(11 downto 0) := x"3d0";
-  constant csr_pmpaddr33_c      : std_ulogic_vector(11 downto 0) := x"3d1";
-  constant csr_pmpaddr34_c      : std_ulogic_vector(11 downto 0) := x"3d2";
-  constant csr_pmpaddr35_c      : std_ulogic_vector(11 downto 0) := x"3d3";
-  constant csr_pmpaddr36_c      : std_ulogic_vector(11 downto 0) := x"3d4";
-  constant csr_pmpaddr37_c      : std_ulogic_vector(11 downto 0) := x"3d5";
-  constant csr_pmpaddr38_c      : std_ulogic_vector(11 downto 0) := x"3d6";
-  constant csr_pmpaddr39_c      : std_ulogic_vector(11 downto 0) := x"3d7";
-  constant csr_pmpaddr40_c      : std_ulogic_vector(11 downto 0) := x"3d8";
-  constant csr_pmpaddr41_c      : std_ulogic_vector(11 downto 0) := x"3d9";
-  constant csr_pmpaddr42_c      : std_ulogic_vector(11 downto 0) := x"3da";
-  constant csr_pmpaddr43_c      : std_ulogic_vector(11 downto 0) := x"3db";
-  constant csr_pmpaddr44_c      : std_ulogic_vector(11 downto 0) := x"3dc";
-  constant csr_pmpaddr45_c      : std_ulogic_vector(11 downto 0) := x"3dd";
-  constant csr_pmpaddr46_c      : std_ulogic_vector(11 downto 0) := x"3de";
-  constant csr_pmpaddr47_c      : std_ulogic_vector(11 downto 0) := x"3df";
-  constant csr_pmpaddr48_c      : std_ulogic_vector(11 downto 0) := x"3e0";
-  constant csr_pmpaddr49_c      : std_ulogic_vector(11 downto 0) := x"3e1";
-  constant csr_pmpaddr50_c      : std_ulogic_vector(11 downto 0) := x"3e2";
-  constant csr_pmpaddr51_c      : std_ulogic_vector(11 downto 0) := x"3e3";
-  constant csr_pmpaddr52_c      : std_ulogic_vector(11 downto 0) := x"3e4";
-  constant csr_pmpaddr53_c      : std_ulogic_vector(11 downto 0) := x"3e5";
-  constant csr_pmpaddr54_c      : std_ulogic_vector(11 downto 0) := x"3e6";
-  constant csr_pmpaddr55_c      : std_ulogic_vector(11 downto 0) := x"3e7";
-  constant csr_pmpaddr56_c      : std_ulogic_vector(11 downto 0) := x"3e8";
-  constant csr_pmpaddr57_c      : std_ulogic_vector(11 downto 0) := x"3e9";
-  constant csr_pmpaddr58_c      : std_ulogic_vector(11 downto 0) := x"3ea";
-  constant csr_pmpaddr59_c      : std_ulogic_vector(11 downto 0) := x"3eb";
-  constant csr_pmpaddr60_c      : std_ulogic_vector(11 downto 0) := x"3ec";
-  constant csr_pmpaddr61_c      : std_ulogic_vector(11 downto 0) := x"3ed";
-  constant csr_pmpaddr62_c      : std_ulogic_vector(11 downto 0) := x"3ee";
-  constant csr_pmpaddr63_c      : std_ulogic_vector(11 downto 0) := x"3ef";
   -- trigger module registers --
   constant csr_class_trigger_c  : std_ulogic_vector(07 downto 0) := x"7a"; -- trigger registers
   constant csr_tselect_c        : std_ulogic_vector(11 downto 0) := x"7a0";
@@ -986,8 +927,8 @@ package neorv32_package is
       CPU_CNT_WIDTH                : natural := 64;     -- total width of CPU cycle and instret counters (0..64)
       CPU_IPB_ENTRIES              : natural := 2;      -- entries is instruction prefetch buffer, has to be a power of 2
       -- Physical Memory Protection (PMP) --
-      PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..64)
-      PMP_MIN_GRANULARITY          : natural := 64*1024; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+      PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..16)
+      PMP_MIN_GRANULARITY          : natural := 4;      -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS                 : natural := 0;      -- number of implemented HPM counters (0..29)
       HPM_CNT_WIDTH                : natural := 40;     -- total size of HPM counters (0..64)
@@ -1147,8 +1088,8 @@ package neorv32_package is
       CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
       CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2
       -- Physical Memory Protection (PMP) --
-      PMP_NUM_REGIONS              : natural; -- number of regions (0..64)
-      PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+      PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
+      PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..29)
       HPM_CNT_WIDTH                : natural  -- total size of HPM counters (0..64)
@@ -1225,8 +1166,8 @@ package neorv32_package is
       CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
       CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2
       -- Physical memory protection (PMP) --
-      PMP_NUM_REGIONS              : natural; -- number of regions (0..64)
-      PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+      PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
+      PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..29)
       HPM_CNT_WIDTH                : natural  -- total size of HPM counters (0..64)
@@ -1444,8 +1385,8 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_A : boolean; -- implement atomic extension?
       CPU_EXTENSION_RISCV_C : boolean; -- implement compressed extension?
       -- Physical memory protection (PMP) --
-      PMP_NUM_REGIONS       : natural; -- number of regions (0..64)
-      PMP_MIN_GRANULARITY   : natural  -- minimal region granularity in bytes, has to be a power of 2, min 8 bytes
+      PMP_NUM_REGIONS       : natural; -- number of regions (0..16)
+      PMP_MIN_GRANULARITY   : natural  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     );
     port (
       -- global control --
@@ -2081,7 +2022,7 @@ package neorv32_package is
       CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
       INT_BOOTLOADER_EN    : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
       -- Physical memory protection (PMP) --
-      PMP_NUM_REGIONS      : natural; -- number of regions (0..64)
+      PMP_NUM_REGIONS      : natural; -- number of regions (0..16)
       -- Internal Instruction memory --
       MEM_INT_IMEM_EN      : boolean; -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE    : natural; -- size of processor-internal instruction memory in bytes

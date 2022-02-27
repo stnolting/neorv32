@@ -54,7 +54,7 @@ void neorv32_cpu_delay_ms(uint32_t time_ms);
 void __attribute__((naked)) neorv32_cpu_goto_user_mode(void);
 uint32_t neorv32_cpu_pmp_get_num_regions(void);
 uint32_t neorv32_cpu_pmp_get_granularity(void);
-int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint32_t size, uint8_t config);
+int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint8_t config);
 uint32_t neorv32_cpu_hpm_get_counters(void);
 uint32_t neorv32_cpu_hpm_get_size(void);
 
