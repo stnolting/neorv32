@@ -259,7 +259,7 @@ side-effects to maintain RISC-V compatibility.
 .Physical Memory Protection
 [IMPORTANT]
 The RISC-V-compatible NEORV32 <<_machine_physical_memory_protection_csrs>> only implements the **TOR**
-(top of region) mode yet with a minimal region granularity of 4 bytes. Furthermore, the <<_pmpcfg>>'s
+(top of region) mode and only up to 16 PMP regions. Furthermore, the <<_pmpcfg>>'s
 _lock bits_ only lock the according PMP entry and not the entries below.
 
 .Atomic Memory Operations
@@ -721,18 +721,19 @@ to constrain read, write and execute rights of arbitrary memory regions. The PMP
 to the _RISC-V Privileged Architecture Specifications_. For detailed information see the according spec.'s sections.
 
 [IMPORTANT]
-The NEORV32 PMP only supports **TOR** (top of region) mode, which basically is a "base-and-bound" concept.
+The NEORV32 PMP only supports **TOR** (top of region) mode, which basically is a "base-and-bound" concept, and only
+up to 16 PMP regions.
 
-The physical memory protection system is implemented when the <<_pmp_num_regions>> configuration generic is greater
-than zero implanting at least one protection region. This generic also defines the number of configurable protection
+The physical memory protection logic is implemented if the <<_pmp_num_regions>> configuration generic is greater
+than zero. This generic also defines the total number of available configurable protection
 regions. The minimal granularity of a protected region is defined by the <<_pmp_min_granularity>> generic. Larger
 granularity will reduce hardware complexity but will also decrease granularity as the minimal region sizes increases.
 The default value is 4 bytes, which allows a minimal region size of 4 bytes.
 
 If implemented the PMP provides the following additional CSRs:
 
-* <<_pmpcfg>> 0..15 (depending on configuration): PMP configuration registers, 4 entries per CSR
-* <<_pmpaddr>> 0..63 (depending on configuration): PMP address registers
+* <<_pmpcfg>> 0..3 (depending on configuration): PMP configuration registers, 4 entries per CSR
+* <<_pmpaddr>> 0..15 (depending on configuration): PMP address registers
 
 
 **Operation Summary**

@@ -490,7 +490,7 @@ See section <<_pmp_physical_memory_protection>> for more information.
 [frame="all",grid="none"]
 |======
 | **PMP_NUM_REGIONS** | _natural_ | 0
-3+| Total number of implemented protections regions (0..64). If this generics is zero no physical memory
+3+| Total number of implemented protection regions (0..16). If this generics is zero no physical memory
 protection logic will be implemented at all.
 |======
 
@@ -503,7 +503,7 @@ protection logic will be implemented at all.
 |======
 | **PMP_MIN_GRANULARITY** | _natural_ | 4
 3+| Minimal region granularity in bytes. Has to be a power of two and has to be at least 4 bytes. A larger granularity
-will reduce hardware utilization and impact on critical path.
+will reduce hardware utilization and impact on critical path but will also reduce the minimal region size.
 |======
 
 
