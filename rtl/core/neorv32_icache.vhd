@@ -53,6 +53,7 @@ entity neorv32_icache is
     clk_i        : in  std_ulogic; -- global clock, rising edge
     rstn_i       : in  std_ulogic; -- global reset, low-active, async
     clear_i      : in  std_ulogic; -- cache clear
+    miss_o       : out std_ulogic; -- cache miss
     -- host controller interface --
     host_addr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     host_rdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -284,6 +285,9 @@ begin
 
     end case;
   end process ctrl_engine_fsm_comb;
+
+  -- signal cache miss to CPU --
+  miss_o <= '1' when (ctrl.state = S_CACHE_MISS) else '0';
 
 
 	-- Cache Memory ---------------------------------------------------------------------------
