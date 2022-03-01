@@ -690,13 +690,9 @@ See section <<_cpu_debug_mode>> for more information.
 the architectural events that cause the according `mhpmcounter*[h]` counters to increment. All available events are
 listed in the table below. If more than one event is selected, the according counter will increment if any of
 the enabled events is observed (logical OR). Note that the counter will only increment by 1 step per clock
-cycle even if more than one event is observed. If the CPU is in sleep mode, no HPM counter will increment
+cycle even if more than one event is observed. If the CPU is in sleep or debug mode, no HPM counter will increment
 at all.
 |=======================
-
-The available hardware performance logic is configured via the _HPM_NUM_CNTS_ top entity generic.
-_HPM_NUM_CNTS_ defines the number of implemented performance monitors and thus, the availability of the
-according `mhpmcounter*[h]` and `mhpmevent*` CSRs.
 
 .HPM event selector
 [cols="^1,<3,^1,<5"]
@@ -705,18 +701,18 @@ according `mhpmcounter*[h]` and `mhpmevent*` CSRs.
 | Bit | Name [C]               | R/W | Event
 | 0   | _HPMCNT_EVENT_CY_      | r/w | active clock cycle (not in sleep)
 | 1   | -                      | r/- | _not implemented, always read as zero_
-| 2   | _HPMCNT_EVENT_IR_      | r/w | retired instruction
+| 2   | _HPMCNT_EVENT_IR_      | r/w | retired instruction (compressed or uncompressed)
 | 3   | _HPMCNT_EVENT_CIR_     | r/w | retired compressed instruction
 | 4   | _HPMCNT_EVENT_WAIT_IF_ | r/w | instruction fetch memory wait cycle (if more than 1 cycle memory latency)
 | 5   | _HPMCNT_EVENT_WAIT_II_ | r/w | instruction issue pipeline wait cycle (if more than 1 cycle latency), caused by pipelines flushes (like taken branches)
 | 6   | _HPMCNT_EVENT_WAIT_MC_ | r/w | multi-cycle ALU operation wait cycle
-| 7   | _HPMCNT_EVENT_LOAD_    | r/w | load operation
-| 8   | _HPMCNT_EVENT_STORE_   | r/w | store operation
+| 7   | _HPMCNT_EVENT_LOAD_    | r/w | memory data load operation
+| 8   | _HPMCNT_EVENT_STORE_   | r/w | memory data store operation
 | 9   | _HPMCNT_EVENT_WAIT_LS_ | r/w | load/store memory wait cycle (if more than 1 cycle memory latency)
 | 10  | _HPMCNT_EVENT_JUMP_    | r/w | unconditional jump
 | 11  | _HPMCNT_EVENT_BRANCH_  | r/w | conditional branch (taken or not taken)
 | 12  | _HPMCNT_EVENT_TBRANCH_ | r/w | taken conditional branch
-| 13  | _HPMCNT_EVENT_TRAP_    | r/w | entered trap
+| 13  | _HPMCNT_EVENT_TRAP_    | r/w | entered trap (synchronous exception or interrupt)
 | 14  | _HPMCNT_EVENT_ILLEGAL_ | r/w | illegal instruction exception
 |=======================
 

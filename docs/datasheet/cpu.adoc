@@ -518,9 +518,14 @@ available:
 
 [NOTE]
 By default, multiplication and division operations are executed in a bit-serial approach.
-Alternatively, the multiplier core can be implemented using DSP blocks if the `FAST_MUL_EN`
+Alternatively, the multiplier core can be implemented using DSP blocks if the <<_fast_mul_en>>
 generic is _true_ allowing faster execution. Multiplications and divisions
 always require a fixed amount of cycles to complete - regardless of the input operands.
+
+[NOTE]
+Regardless of the setting of the <<_fast_mul_en>> generic
+multiplication and division instructions operate _independently_ of the input operands.
+Hence, there is **no early completion** of multiply by one/zero and divide by zero operations.
 
 
 ==== **`Zmmul`** - Integer Multiplication
