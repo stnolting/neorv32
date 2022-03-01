@@ -65,7 +65,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060806"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060807"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -820,46 +820,46 @@ package neorv32_package is
   -- CPU Control Exception System -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- exception source bits --
-  constant exception_iaccess_c   : natural :=  0; -- instruction access fault
-  constant exception_iillegal_c  : natural :=  1; -- illegal instruction
-  constant exception_ialign_c    : natural :=  2; -- instruction address misaligned
-  constant exception_m_envcall_c : natural :=  3; -- ENV call from m-mode
-  constant exception_u_envcall_c : natural :=  4; -- ENV call from u-mode
-  constant exception_break_c     : natural :=  5; -- breakpoint
-  constant exception_salign_c    : natural :=  6; -- store address misaligned
-  constant exception_lalign_c    : natural :=  7; -- load address misaligned
-  constant exception_saccess_c   : natural :=  8; -- store access fault
-  constant exception_laccess_c   : natural :=  9; -- load access fault
+  constant exc_iaccess_c   : natural :=  0; -- instruction access fault
+  constant exc_iillegal_c  : natural :=  1; -- illegal instruction
+  constant exc_ialign_c    : natural :=  2; -- instruction address misaligned
+  constant exc_m_envcall_c : natural :=  3; -- ENV call from m-mode
+  constant exc_u_envcall_c : natural :=  4; -- ENV call from u-mode
+  constant exc_break_c     : natural :=  5; -- breakpoint
+  constant exc_salign_c    : natural :=  6; -- store address misaligned
+  constant exc_lalign_c    : natural :=  7; -- load address misaligned
+  constant exc_saccess_c   : natural :=  8; -- store access fault
+  constant exc_laccess_c   : natural :=  9; -- load access fault
   -- for debug mode only --
-  constant exception_db_break_c  : natural := 10; -- enter debug mode via ebreak instruction ("sync EXCEPTION")
-  constant exception_db_hw_c     : natural := 11; -- enter debug mode via hw trigger ("sync EXCEPTION")
+  constant exc_db_break_c  : natural := 10; -- enter debug mode via ebreak instruction ("sync EXCEPTION")
+  constant exc_db_hw_c     : natural := 11; -- enter debug mode via hw trigger ("sync EXCEPTION")
   --
-  constant exception_width_c     : natural := 12; -- length of this list in bits
+  constant exc_width_c     : natural := 12; -- length of this list in bits
   -- interrupt source bits --
-  constant interrupt_msw_irq_c   : natural :=  0; -- machine software interrupt
-  constant interrupt_mtime_irq_c : natural :=  1; -- machine timer interrupt
-  constant interrupt_mext_irq_c  : natural :=  2; -- machine external interrupt
-  constant interrupt_firq_0_c    : natural :=  3; -- fast interrupt channel 0
-  constant interrupt_firq_1_c    : natural :=  4; -- fast interrupt channel 1
-  constant interrupt_firq_2_c    : natural :=  5; -- fast interrupt channel 2
-  constant interrupt_firq_3_c    : natural :=  6; -- fast interrupt channel 3
-  constant interrupt_firq_4_c    : natural :=  7; -- fast interrupt channel 4
-  constant interrupt_firq_5_c    : natural :=  8; -- fast interrupt channel 5
-  constant interrupt_firq_6_c    : natural :=  9; -- fast interrupt channel 6
-  constant interrupt_firq_7_c    : natural := 10; -- fast interrupt channel 7
-  constant interrupt_firq_8_c    : natural := 11; -- fast interrupt channel 8
-  constant interrupt_firq_9_c    : natural := 12; -- fast interrupt channel 9
-  constant interrupt_firq_10_c   : natural := 13; -- fast interrupt channel 10
-  constant interrupt_firq_11_c   : natural := 14; -- fast interrupt channel 11
-  constant interrupt_firq_12_c   : natural := 15; -- fast interrupt channel 12
-  constant interrupt_firq_13_c   : natural := 16; -- fast interrupt channel 13
-  constant interrupt_firq_14_c   : natural := 17; -- fast interrupt channel 14
-  constant interrupt_firq_15_c   : natural := 18; -- fast interrupt channel 15
+  constant irq_msw_irq_c   : natural :=  0; -- machine software interrupt
+  constant irq_mtime_irq_c : natural :=  1; -- machine timer interrupt
+  constant irq_mext_irq_c  : natural :=  2; -- machine external interrupt
+  constant irq_firq_0_c    : natural :=  3; -- fast interrupt channel 0
+  constant irq_firq_1_c    : natural :=  4; -- fast interrupt channel 1
+  constant irq_firq_2_c    : natural :=  5; -- fast interrupt channel 2
+  constant irq_firq_3_c    : natural :=  6; -- fast interrupt channel 3
+  constant irq_firq_4_c    : natural :=  7; -- fast interrupt channel 4
+  constant irq_firq_5_c    : natural :=  8; -- fast interrupt channel 5
+  constant irq_firq_6_c    : natural :=  9; -- fast interrupt channel 6
+  constant irq_firq_7_c    : natural := 10; -- fast interrupt channel 7
+  constant irq_firq_8_c    : natural := 11; -- fast interrupt channel 8
+  constant irq_firq_9_c    : natural := 12; -- fast interrupt channel 9
+  constant irq_firq_10_c   : natural := 13; -- fast interrupt channel 10
+  constant irq_firq_11_c   : natural := 14; -- fast interrupt channel 11
+  constant irq_firq_12_c   : natural := 15; -- fast interrupt channel 12
+  constant irq_firq_13_c   : natural := 16; -- fast interrupt channel 13
+  constant irq_firq_14_c   : natural := 17; -- fast interrupt channel 14
+  constant irq_firq_15_c   : natural := 18; -- fast interrupt channel 15
   -- for debug mode only --
-  constant interrupt_db_halt_c   : natural := 19; -- enter debug mode via external halt request ("async IRQ")
-  constant interrupt_db_step_c   : natural := 20; -- enter debug mode via single-stepping ("async IRQ")
+  constant irq_db_halt_c   : natural := 19; -- enter debug mode via external halt request ("async IRQ")
+  constant irq_db_step_c   : natural := 20; -- enter debug mode via single-stepping ("async IRQ")
   --
-  constant interrupt_width_c     : natural := 21; -- length of this list in bits
+  constant irq_width_c     : natural := 21; -- length of this list in bits
 
   -- CPU Privilege Modes --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1479,6 +1479,7 @@ package neorv32_package is
       clk_i        : in  std_ulogic; -- global clock, rising edge
       rstn_i       : in  std_ulogic; -- global reset, low-active, async
       clear_i      : in  std_ulogic; -- cache clear
+      miss_o       : out std_ulogic; -- cache miss
       -- host controller interface --
       host_addr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
       host_rdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data

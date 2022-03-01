@@ -681,7 +681,7 @@ begin
       -- Data buffer --
       if (dci.data_we = '1') then -- DM write access
         data_buf <= dci.wdata;
-      elsif (acc_en = '1') and (maddr = "10") and (wren = '1') then -- BUS write access
+      elsif (maddr = "10") and (wren = '1') then -- BUS write access
         data_buf <= cpu_data_i;
       end if;
       -- Control and Status Register --
@@ -689,7 +689,7 @@ begin
       dci.resume_ack    <= '0';
       dci.execute_ack   <= '0';
       dci.exception_ack <= '0';
-      if (acc_en = '1') and (maddr = "11") and (wren = '1') then
+      if (maddr = "11") and (wren = '1') then
         dci.halt_ack      <= cpu_data_i(sreg_halt_ack_c);
         dci.resume_ack    <= cpu_data_i(sreg_resume_ack_c);
         dci.execute_ack   <= cpu_data_i(sreg_execute_ack_c);

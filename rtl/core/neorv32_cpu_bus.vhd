@@ -475,7 +475,7 @@ begin
     pmp.ld_fault <= (others => '0');
     pmp.st_fault <= (others => '0');
     for i in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
-      if ((ctrl_i(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c) = priv_mode_u_c) or (pmp_ctrl_i(i)(pmp_cfg_l_c) = '1')) and -- user mode or LOCKED
+      if ((ctrl_i(ctrl_priv_lvl_msb_c downto ctrl_priv_lvl_lsb_c) = priv_mode_u_c) or (pmp_ctrl_i(i)(pmp_cfg_l_c) = '1')) and -- enforce if user-mode or LOCKED
          (pmp_ctrl_i(i)(pmp_cfg_ah_c downto pmp_cfg_al_c) = pmp_tor_mode_c) and -- active entry
          (ctrl_i(ctrl_debug_running_c) = '0') then -- disable PMP checks when in debug mode
         pmp.if_fault(i) <= pmp.i_match(i) and (not pmp_ctrl_i(i)(pmp_cfg_x_c)); -- fetch access match no execute permission

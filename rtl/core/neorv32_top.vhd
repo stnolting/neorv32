@@ -437,27 +437,26 @@ begin
   begin
     if (sys_rstn = '0') then
       clk_gen_en_ff <= '-';
-      clk_div       <= (others => '0'); -- reset required
       clk_div_ff    <= (others => '-');
-      clk_gen       <= (others => '-');
+      clk_div       <= (others => '0'); -- reset required
     elsif rising_edge(clk_i) then
       clk_gen_en_ff <= or_reduce_f(clk_gen_en);
-      -- actual clock generator --
-      if (clk_gen_en_ff = '1') then
+      clk_div_ff    <= clk_div;
+      if (clk_gen_en_ff = '1') then -- actual clock generator
         clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
       end if;
-      -- clock enables: rising edge detectors --
-      clk_div_ff <= clk_div;
-      clk_gen(clk_div2_c)    <= clk_div(0)  and (not clk_div_ff(0));  -- CLK/2
-      clk_gen(clk_div4_c)    <= clk_div(1)  and (not clk_div_ff(1));  -- CLK/4
-      clk_gen(clk_div8_c)    <= clk_div(2)  and (not clk_div_ff(2));  -- CLK/8
-      clk_gen(clk_div64_c)   <= clk_div(5)  and (not clk_div_ff(5));  -- CLK/64
-      clk_gen(clk_div128_c)  <= clk_div(6)  and (not clk_div_ff(6));  -- CLK/128
-      clk_gen(clk_div1024_c) <= clk_div(9)  and (not clk_div_ff(9));  -- CLK/1024
-      clk_gen(clk_div2048_c) <= clk_div(10) and (not clk_div_ff(10)); -- CLK/2048
-      clk_gen(clk_div4096_c) <= clk_div(11) and (not clk_div_ff(11)); -- CLK/4096
     end if;
   end process clock_generator;
+
+  -- clock enables: rising edge detectors --
+  clk_gen(clk_div2_c)    <= clk_div(0)  and (not clk_div_ff(0));  -- CLK/2
+  clk_gen(clk_div4_c)    <= clk_div(1)  and (not clk_div_ff(1));  -- CLK/4
+  clk_gen(clk_div8_c)    <= clk_div(2)  and (not clk_div_ff(2));  -- CLK/8
+  clk_gen(clk_div64_c)   <= clk_div(5)  and (not clk_div_ff(5));  -- CLK/64
+  clk_gen(clk_div128_c)  <= clk_div(6)  and (not clk_div_ff(6));  -- CLK/128
+  clk_gen(clk_div1024_c) <= clk_div(9)  and (not clk_div_ff(9));  -- CLK/1024
+  clk_gen(clk_div2048_c) <= clk_div(10) and (not clk_div_ff(10)); -- CLK/2048
+  clk_gen(clk_div4096_c) <= clk_div(11) and (not clk_div_ff(11)); -- CLK/4096
 
   -- fresh clocks anyone? --
   clk_gen_en(0) <= wdt_cg_en;
@@ -592,6 +591,7 @@ begin
       clk_i        => clk_i,         -- global clock, rising edge
       rstn_i       => sys_rstn,      -- global reset, low-active, async
       clear_i      => cpu_i.fence,   -- cache clear
+      miss_o       => open,          -- cache miss
       -- host controller interface --
       host_addr_i  => cpu_i.addr,    -- bus access address
       host_rdata_o => cpu_i.rdata,   -- bus read data
