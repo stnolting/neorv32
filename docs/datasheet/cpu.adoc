@@ -557,6 +557,10 @@ Code executed in user-mode cannot access machine-mode CSRs. Furthermore, user-mo
 peripheral/IO devices) can be constrained via the physical memory protection (_PMP_).
 Any kind of privilege rights violation will raise an exception to allow <<_full_virtualization>>.
 
+Additional CSRs:
+
+* <<_mcounteren>> - machine counter enable to constrain user-mode access to timer/counter CSRs
+
 
 ==== **`X`** - NEORV32-Specific (Custom) Extensions
 
@@ -592,7 +596,11 @@ generic is _true_. In this case the following instructions and CSRs are availabl
 * sign-injection: `fsgnj.s` `fsgnjn.s` `fsgnjx.s`
 * number classification: `fclass.s`
 
-* additional CSRs: <<_fcsr>>, <<_frm>>, <<_fflags>>
+Additional CSRs:
+
+* <<_fcsr>> - FPU control register
+* <<_frm>> - rounding mode control
+* <<_fflags>> - FPU status flags
 
 [WARNING]
 Fused multiply-add instructions `f[n]m[add/sub].s` are not supported!
@@ -647,11 +655,16 @@ counters. This extensions is stated is _mandatory_ by the RISC-V spec. However, 
 these counters. Section <<_machine_counter_and_timer_csrs>> shows a list of all `Zicntr`-related CSRs.
 These are available if the `Zicntr` ISA extensions is enabled via the <<_cpu_extension_riscv_zicntr>> generic.
 
+Additional CSRs:
+
+* <<_cycleh>>, <<_mcycleh>> - cycle counter
+* <<_instreth>>, <<_minstreth>> - instructions-retired counter
+* <<_timeh>> - system _wall-clock_ time
+
 [NOTE]
 Disabling the `Zicntr` extension does not remove the `time[h]`-driving MTIME unit.
 
 If `Zicntr` is disabled, all accesses to the according counter CSRs will raise an illegal instruction exception.
-
 
 
 ==== **`Zihpm`** Hardware Performance Monitors
@@ -663,23 +676,20 @@ N-bit wide counter (split in a high-word 32-bit CSR and a low-word 32-bit CSR), 
 CSR defines the architectural events that lead to an increment of the associated HPM counter.
 
 The HPM counters are available if the `Zihpm` ISA extensions is enabled via the <<_cpu_extension_riscv_zihpm>> generic.
+The actual number of implemented HPM counters is defined by the <<_hpm_num_cnts>> generic.
 
-Depending on the configuration the following additional CSR are available:
+Additional CSRs:
 
-* counters: `mhpmcounter*[h]` (3..31, depending on `HPM_NUM_CNTS`)
-* event configuration: `mhpmevent*` (3..31, depending on `HPM_NUM_CNTS`)
+* <<_mhpmevent>> 3..31 (depending on <<_hpm_num_cnts>>) - event configuration CSRs
+* <<_mhpmcounterh>> 3..31 (depending on <<_hpm_num_cnts>>) - counter CSRs
 
 [IMPORTANT]
-The HPM counter CSR can only be accessed in machine-mode. Hence, the according <<_mcounteren>> CSR bits
+The HPM counter CSRs can only be accessed in machine-mode. Hence, the according <<_mcounteren>> CSR bits
 are always zero and read-only. Any access from less-privileged modes will raise an illegal instruction
 exception.
 
 [TIP]
-Auto-increment of the HPMs can be individually deactivated via the <<_mcountinhibit>> CSR.
-
-[TIP]
-For a list of all HPM-related CSRs and all provided event configurations
-see section <<_hardware_performance_monitors_hpm>>.
+Auto-increment of the HPMs can be deactivated individually via the <<_mcountinhibit>> CSR.
 
 
 ==== **`Zifencei`** Instruction Stream Synchronization
@@ -737,8 +747,8 @@ The default value is 4 bytes, which allows a minimal region size of 4 bytes.
 
 If implemented the PMP provides the following additional CSRs:
 
-* <<_pmpcfg>> 0..3 (depending on configuration): PMP configuration registers, 4 entries per CSR
-* <<_pmpaddr>> 0..15 (depending on configuration): PMP address registers
+* <<_pmpcfg>> 0..3 (depending on configuration) - PMP configuration registers, 4 entries per CSR
+* <<_pmpaddr>> 0..15 (depending on configuration) - PMP address registers
 
 
 **Operation Summary**
@@ -775,6 +785,10 @@ The _critical limit_ can be modified by a constant from the main VHDL package fi
 -- "critical" number of PMP regions --
 constant pmp_num_regions_critical_c : natural := 8;
 ----
+
+[TIP]
+Reducing the minimal PMP region size / granularity via the <<_pmp_min_granularity>> to entity generic
+will also reduce hardware utilization and impact on critical path.
 
 
 
