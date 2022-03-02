@@ -272,7 +272,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- RISC-V control and status registers (CSRs) --
   type pmp_ctrl_t     is array (0 to 15) of std_ulogic_vector(7 downto 0);
   type pmp_ctrl_rd_t  is array (0 to 03) of std_ulogic_vector(data_width_c-1 downto 0);
-  type pmp_addr_t     is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY));
+  type pmp_addr_t     is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
   type pmp_addr_rd_t  is array (0 to 15) of std_ulogic_vector(data_width_c-1 downto 0);
   type mhpmevent_t    is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
   type mhpmevent_rd_t is array (0 to 28) of std_ulogic_vector(data_width_c-1 downto 0);
@@ -339,7 +339,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     --
     pmpcfg            : pmp_ctrl_t; -- physical memory protection - configuration registers
     pmpcfg_rd         : pmp_ctrl_rd_t; -- configuration read data
-    pmpaddr           : pmp_addr_t; -- physical memory protection - address registers
+    pmpaddr           : pmp_addr_t; -- physical memory protection - address registers (bits 33:2 of PHYSICAL address)
     pmpaddr_rd        : pmp_addr_rd_t; -- address read data
     --
     frm               : std_ulogic_vector(02 downto 0); -- frm (R/W): FPU rounding mode
@@ -2008,7 +2008,7 @@ begin
             if (csr.addr(11 downto 4) = csr_class_pmpaddr_c) then 
               for i in 0 to PMP_NUM_REGIONS-1 loop
                 if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
-                  csr.pmpaddr(i) <= csr.wdata(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY));
+                  csr.pmpaddr(i) <= csr.wdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
                 end if;
               end loop; -- i (PMP regions)
             end if;
@@ -2205,8 +2205,8 @@ begin
     csr.pmpcfg_rd  <= (others => (others => '0'));
     if (PMP_NUM_REGIONS /= 0) then
       for i in 0 to PMP_NUM_REGIONS-1 loop
-        pmp_addr_o(i)(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY))     <= csr.pmpaddr(i);
-        csr.pmpaddr_rd(i)(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY)) <= csr.pmpaddr(i);
+        pmp_addr_o(i)(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY))       <= csr.pmpaddr(i); -- physical address
+        csr.pmpaddr_rd(i)(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(i);
         pmp_ctrl_o(i)    <= csr.pmpcfg(i);
         pmpcf_v(i)       := csr.pmpcfg(i);
       end loop; -- i

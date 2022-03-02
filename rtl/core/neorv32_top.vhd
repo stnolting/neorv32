@@ -944,7 +944,7 @@ begin
   -- IO Access? -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   io_acc  <= '1' when (p_bus.addr(data_width_c-1 downto index_size_f(io_size_c)) = io_base_c(data_width_c-1 downto index_size_f(io_size_c))) else '0';
-  io_rden <= io_acc and p_bus.re and (not p_bus.src); -- PMA: no_execute for IO region
+  io_rden <= io_acc and p_bus.re;
   io_wren <= io_acc and p_bus.we and and_reduce_f(p_bus.ben); -- only full-word write accesses are allowed (reduces HW complexity)
 
 
