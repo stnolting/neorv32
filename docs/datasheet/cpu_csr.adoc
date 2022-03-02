@@ -478,19 +478,19 @@ interrupt-triggering processor module.
 
 The available physical memory protection logic is configured via the <<_pmp_num_regions>> and
 <<_pmp_min_granularity>> top entity generics. <<_pmp_num_regions>> defines the number of implemented
-protection regions and thus, the availability of the according `pmpcfg*` and `pmpaddr*` CSRs.
+protection regions and thus, the implementation of the available _PMP entries_. Each PMP entry consists of an
+8-bit `pmpcfg` CSR entry and a complete `pmpaddr*` CSR.
 See section <<_pmp_physical_memory_protection>> for more information.
 
 [NOTE]
-
 If trying to access an PMP-related CSR beyond <<_pmp_num_regions>> **no illegal instruction
 exception** is triggered. The according CSRs are read-only (writes are ignored) and always return zero.
-However, any access beyond `pmpcfg3` or `pmpaddr15` (if <<_pmp_num_regions>> is 16, which is the maximum
-value) will raise an illegal instruction exception.
+However, any access beyond `pmpcfg3` or `pmpaddr15`, which are the last physically implemented registers if
+<<_pmp_num_regions>> == 16, will raise an illegal instruction exception as these CSRs are not implemented at all.
 
 
 :sectnums!:
-===== **`neorv32_cpu_pmp_get_num_regions`**
+===== **`pmpcfg`**
 
 [cols="4,27,>7"]
 [frame="topbot",grid="none"]
@@ -502,7 +502,7 @@ regions, where each `pmpcfg*` CSR provides configuration bits for four regions (
 The actual number of available `pmpcfg` CSRs and CSR entries is defined by the <<_pmp_num_regions>> generic.
 |=======================
 
-.Physical memory protection configuration register entry (1 out of 4)
+.Physical memory protection configuration register layout (1 entry out of 4)
 [cols="^1,^3,^1,<11"]
 [options="header",grid="rows"]
 |=======================
@@ -515,6 +515,9 @@ The actual number of available `pmpcfg` CSRs and CSR entries is defined by the <
 | 0   | `R` | r/w | read permission
 |=======================
 
+[WARNING]
+Setting the lock bit `L` **only locks the according PMP entry** and not the PMP entries below!
+
 
 :sectnums!:
 ===== **`pmpaddr`**
@@ -524,9 +527,18 @@ The actual number of available `pmpcfg` CSRs and CSR entries is defined by the <
 |=======================
 | 0x3b0 - 0x3bf| **Physical memory protection address registers** | `pmpaddr0` - `pmpaddr15`
 3+| Reset value: _UNDEFINED_
-3+| The `pmpaddr*` CSRs are compatible to the RISC-V specifications. They are used to configure the PMP region's base
-address and the region size. Note that the the two LSBs (`1:0`) of each `pmpaddr` register are hardwired to zero. Hence, the minimal
-region size is 4 bytes. The actual number of available `pmpaddr` CSRs is defined by the <<_pmp_num_regions>> generic.
+3+| The `pmpaddr*` CSRs are compatible to the RISC-V specifications. They are used to configure bits 33:2 of the PMP region's
+physical memory address. The actual number of available `pmpaddr` CSRs is defined by the <<_pmp_num_regions>> generic.
+|=======================
+
+.Physical memory protection address register layout
+[cols="^6,^3,<7"]
+[options="header",grid="rows"]
+|=======================
+| Bit                                | R/W | Function
+| 31:30                              | r/- | Hardwired to zero
+| 29 : _log2(PMP_MIN_GRANULARITY)-2_ | r/w | Bits 31 downto _log2(PMP_MIN_GRANULARITY)_ of the region's address
+| _log2(PMP_MIN_GRANULARITY)-2_ : 0  | r/- | Hardwired to zero
 |=======================
 
 [NOTE]
