@@ -172,8 +172,8 @@ instruction, breakpoint, environment calls).
 
 ### Available ISA Extensions
 
-Currently, the following _optional_ RISC-V-compatible ISA extensions are implemented (linked to the according
-documentation section).
+The following _optional_ RISC-V-compatible and NEORV32-specific ISA extensions are available (linked to the according
+documentation section):
 
 **RV32
 [[`I`](https://stnolting.github.io/neorv32/#_i_base_integer_isa)/
@@ -224,7 +224,7 @@ The NEORV32 CPU is based on a two-stages pipeline architecture (fetch and execut
 The average CPI (cycles per instruction) depends on the instruction mix of a specific applications and also on the
 available CPU extensions.
 
-The following table shows the performance results (scores and average CPI) for exemplary CPU configurations executing
+The following table shows the performance results (scores and average CPI) for exemplary CPU configurations (no caches) executing
 2000 iterations of the [CoreMark](https://github.com/stnolting/neorv32/blob/main/sw/example/coremark) CPU benchmark
 (using plain GCC10 rv32i built-in libraries only!).
 
