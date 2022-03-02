@@ -380,7 +380,7 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
  * @warning This function overrides PMPCFG0[0] and PMPADDR0 CSRs!
  * @note This function requires the PMP CPU extension.
  *
- * @return Returns minimal region size in bytes.
+ * @return Returns minimal region size in bytes. Returns zero on error.
  **************************************************************************/
 uint32_t neorv32_cpu_pmp_get_granularity(void) {
 
@@ -390,19 +390,25 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
   }
 
   neorv32_cpu_csr_write(CSR_PMPCFG0, neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xffffff00); // disable entry 0
-  neorv32_cpu_csr_write(CSR_PMPADDR0, 0xffffffff); // try to set all bits
+  neorv32_cpu_csr_write(CSR_PMPADDR0, -1UL); // try to set all bits
   uint32_t tmp = neorv32_cpu_csr_read(CSR_PMPADDR0);
 
-  // find least significant set bit
-  uint32_t i;
-  uint32_t mask = 0b100;
-  for (i=2; i<32; i++) {
-    if ((tmp & mask) == 0) {
-      break;
-    }
+  // no bits set at all -> fail
+  if (tmp == 0) {
+    return 0;
   }
 
-  return mask;
+  // count trailing zeros
+  uint32_t i = 2;
+  while(1) {
+    if (tmp & 1) {
+      break;
+    }
+    tmp >>= 1;
+    i++;
+  }
+
+  return 1<<i;
 }
 
 
@@ -426,6 +432,7 @@ int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint8_t conf
   }
 
   // set base address
+  base = base >> 2;
   switch(index & 0xf) {
     case 0:  neorv32_cpu_csr_write(CSR_PMPADDR0,  base); break;
     case 1:  neorv32_cpu_csr_write(CSR_PMPADDR1,  base); break;
