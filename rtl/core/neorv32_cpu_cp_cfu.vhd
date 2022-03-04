@@ -77,9 +77,12 @@ architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
 
 begin
 
+-- ****************************************************************************************************************************
+-- This controller is required to handle the CPU/pipeline interface. Do not modify!
+-- ****************************************************************************************************************************
+
   -- CFU Controller -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- This controller is required to handle the CPU/pipeline interface. Do not modify!
   cfu_control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -109,18 +112,20 @@ begin
 
 
 -- ****************************************************************************************************************************
--- Actual CFU user logic - Add your custom logic below
+-- Actual CFU user logic - ADD YOUR CUSTOM LOGIC BELOW
 -- ****************************************************************************************************************************
 
+  -- ----------------------------------------------------------------------------------------
+  -- CFU Instruction Format
+  -- ----------------------------------------------------------------------------------------
   -- The CFU only supports the R2-type RISC-V instruction format. This format consists of two source registers (rs1 and rs2),
   -- a destination register (rd) and two "immediate" bit-fields (funct7 and funct3). It is up to the user to decide which
   -- of these fields are actually used by the CFU logic.
-  --
-  -- The user logic of the CFU has access to the following pre-defined signals:
-  --
-  -- -------------------------------------------------------------------------------------------
+
+
+  -- ----------------------------------------------------------------------------------------
   -- Input Operands
-  -- -------------------------------------------------------------------------------------------
+  -- ----------------------------------------------------------------------------------------
   -- > rs1_i          (input, 32-bit): source register 1
   -- > rs2_i          (input, 32-bit): source register 2
   -- > control.funct3 (input,  3-bit): 3-bit function select / immediate, driven by instruction word's funct3 bit field
@@ -134,26 +139,28 @@ begin
   -- static already at compile time. These immediates can be used to select the actual function to be executed or they
   -- can be used as immediates for certain operations (like shift amounts, addresses or offsets).
   --
-  -- [NOTE]: rs1_i and rs2_i are directly driven by the register file (block RAM). It is recommended to buffer these signals
-  -- using CFU-internal registers before using them for computations as the rs1 and rs2 nets need to drive a lot of logic
-  -- in the CPU.
+  -- [NOTE] rs1_i and rs2_i are directly driven by the register file (block RAM). For complex CFU designs it is recommended
+  --        to buffer these signals using CFU-internal registers before using them for computations as the rs1 and rs2 nets
+  --        need to drive a lot of logic in the CPU. Obviously, this will increase the CFU latency by one cycle.
   --
-  -- [NOTE]: It is not possible for the CFU and it's according instruction words to cause any kind of exception. The CPU
-  -- control logic only verifies the custom instructions OPCODE and checks if the CFU is implemented at all. No combination
-  -- of funct7 and funct3 will cause an exception.
-  --
-  -- -------------------------------------------------------------------------------------------
-  -- Result output
-  -- -------------------------------------------------------------------------------------------
+  -- [NOTE] It is not possible for the CFU and it's according instruction words to cause any kind of exception. The CPU
+  --        control logic only verifies the custom instructions OPCODE and checks if the CFU is implemented at all. No
+  --        combinations of funct7 and funct3 will cause an exception.
+
+
+  -- ----------------------------------------------------------------------------------------
+  -- Result Output
+  -- ----------------------------------------------------------------------------------------
   -- > control.result (output, 32-bit): processing result
   --
   -- When the CFU has finished computation, the data in the control.result signal will be written to the CPU's register
   -- file. The destination register is addressed by the rd bit-field in the instruction. The CFU result output is
   -- registered in the CFU controller (see above) so do not worry too much about increasing the CPU's critical path. ;)
-  --
-  -- -------------------------------------------------------------------------------------------
+
+
+  -- ----------------------------------------------------------------------------------------
   -- Control
-  -- -------------------------------------------------------------------------------------------
+  -- ----------------------------------------------------------------------------------------
   -- > rstn_i       (input,  1-bit): asynchronous reset, low-active
   -- > clk_i        (input,  1-bit): main clock, triggering on rising edge
   -- > start_i      (input,  1-bit): operation trigger (start processing, high for one cycle)
@@ -162,9 +169,10 @@ begin
   -- For pure-combinatorial instructions (without internal state) a subset of those signals is sufficient; see the minimal
   -- example below. If the CFU shall also include states (like memories, registers or "buffers") the start_i signal can be
   -- used to trigger a new CFU operation. As soon as all internal computations have completed, the control.done signal has
-  -- to be set to indicate completion. This will write the result data (control.result) to the CPU register file.
+  -- to be set to indicate completion. This will finish CFU operation and will write the processing result (control.result)
+  -- to the CPU register file.
   --
-  -- [IMPORTANT]: The control.done *has to be set at some time*, otherwise the CPU will be halted forever.
+  -- [NOTE] The control.done **has to be set at some time**, otherwise the CPU will get stalled forever.
 
 
   -- User Logic Example ---------------------------------------------------------------------
