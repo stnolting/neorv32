@@ -340,6 +340,12 @@ exception is raised. NOTE: If the `U` ISA extension is not enabled this CSR does
 | 0     | _CSR_MCOUNTEREN_CY_ | r/w | User-level code is allowed to read `instret[h]` CSRs when set
 |=======================
 
+.HPM Access
+[NOTE]
+Bits 3 to 31 are used to control user-level access to the <<_hardware_performance_monitors_hpm_csrs>>. In the NEORV32
+CPU these bits are hardwired to zero. Hence, user-level software cannot access the HPMs. Accordingly, the
+`pmcounter*[h]` CSRs are **not** implemented and any access will raise an illegal instruction exception.
+
 
 :sectnums!:
 ===== **`mstatush`**
@@ -352,11 +358,6 @@ exception is raised. NOTE: If the `U` ISA extension is not enabled this CSR does
 3+| The `mstatush` CSR is compatible to the RISC-V specifications. In combination with <<_mstatus>> it shows additional
 execution state information. The NEORV32 `mstatush` CSR is read-only and all bits are hardwired to zero.
 |=======================
-
-[NOTE]
-The NEORV32 `mstatush` CSR is not a physical register. All write access are ignored and all read accesses will always
-return zero. However, any access will not raise an illegal instruction exception. The CSR address is implemented
-in order to comply with the RISC-V privilege architecture specs.
 
 
 
@@ -671,7 +672,7 @@ not hardwired to zero.
 If trying to access an HPM-related CSR beyond <<_hpm_num_cnts>> **no illegal instruction exception is
 triggered**. The according CSRs are read-only (writes are ignored) and always return zero.
 
-[IMPORTANT]
+[NOTE]
 The HPM system only allows machine-mode access. Hence, `hpmcounter*[h]` CSR are not implemented
 and any access (even) from machine mode will raise an exception. Furthermore, the according bits of <<_mcounteren>>
 used to configure user-mode access to `hpmcounter*[h]` are hard-wired to zero.

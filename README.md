@@ -156,7 +156,7 @@ can be found in the assets of the [Implementation Workflow](https://github.com/s
 
 The NEORV32 CPU implements the RISC-V 32-bit `rv32i` ISA with optional extensions (see below). It is compatible to subsets of the
 *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-spec.pdf)
-and the *Privileged Architecture Specification* [(Version 1.12-draft)](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf).
+and the *Privileged Architecture Specification* [(Version 1.12)](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf).
 Compatibility is checked by passing the [official RISC-V architecture tests](https://github.com/riscv/riscv-arch-test).
 
 The core is a little-endian Von-Neumann machine implemented as multi-cycle architecture.

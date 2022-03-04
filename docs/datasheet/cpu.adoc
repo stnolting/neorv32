@@ -6,6 +6,7 @@ image::neorv32_cpu_block.png[width=600,align=center]
 **Key Features**
 
 * 32-bit little-endian, multi-cycle, in-order `rv32` RISC-V CPU
+* Compatible to the RISC-V. **Privileged Architecture - Machine ISA Version 1.12** specifications
 * Available <<_instruction_sets_and_extensions>>:
 ** `A` - atomic memory access operations
 ** `B` - bit-manipulation instructions
