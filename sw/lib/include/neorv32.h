@@ -147,7 +147,7 @@ enum NEORV32_CSR_enum {
 
 //CSR_DCSR           = 0x7b0, /**< 0x7b0 - dcsr     (-/-): Debug status and control register */
 //CSR_DPC            = 0x7b1, /**< 0x7b1 - dpc      (-/-): Debug program counter */
-//CSR_DSCRATCHC      = 0x7b2, /**< 0x7b2 - dscratch (-/-): Debug scratch register */
+//CSR_DSCRATCH       = 0x7b2, /**< 0x7b2 - dscratch (-/-): Debug scratch register */
 
   CSR_MCYCLE         = 0xb00, /**< 0xb00 - mcycle   (r/w): Machine cycle counter low word */
   CSR_MINSTRET       = 0xb02, /**< 0xb02 - minstret (r/w): Machine instructions-retired counter low word */
@@ -229,7 +229,7 @@ enum NEORV32_CSR_enum {
   CSR_MHARTID        = 0xf14, /**< 0xf14 - mhartid    (r/-): Hardware thread ID (always 0) */
   CSR_MCONFIGPTR     = 0xf15, /**< 0xf15 - mconfigptr (r/-): Machine configuration pointer register */
 
-  CSR_MXISA          = 0xfc0  /**< 0xfc0 - xisa (r/-): NEORV32-specific machine "extended CPU ISA and extensions" */
+  CSR_MXISA          = 0xfc0  /**< 0xfc0 - mxisa (r/-): NEORV32-specific machine "extended CPU ISA and extensions" */
 };
 
 
