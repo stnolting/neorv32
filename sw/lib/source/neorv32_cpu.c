@@ -614,18 +614,20 @@ uint32_t neorv32_cpu_hpm_get_counters(void) {
  **************************************************************************/
 uint32_t neorv32_cpu_hpm_get_size(void) {
 
+  uint32_t tmp, size, i;
+
   // HPMs implemented at all?
   if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIHPM)) == 0) {
     return 0;
   }
 
-  // inhibt auto-update
-  asm volatile ("csrwi %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTINHIBIT_HPM3));
+  // inhibit auto-update of HPM counter3
+  tmp = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT);
+  tmp |= 1 << CSR_MCOUNTINHIBIT_HPM3;
+  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, tmp);
 
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0xffffffff);
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER3H, 0xffffffff);
-
-  uint32_t tmp, size, i;
 
   if (neorv32_cpu_csr_read(CSR_MHPMCOUNTER3H) == 0) {
     size = 0;
