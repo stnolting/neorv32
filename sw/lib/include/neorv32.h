@@ -145,6 +145,7 @@ enum NEORV32_CSR_enum {
   CSR_MCONTEXT       = 0x7a8, /**< 0x7a8 - mcontext (r/(w)): Machine context register */
   CSR_SCONTEXT       = 0x7aa, /**< 0x7aa - scontext (r/(w)): Supervisor context register */
 
+  /* not accessible by m-mode software */
 //CSR_DCSR           = 0x7b0, /**< 0x7b0 - dcsr     (-/-): Debug status and control register */
 //CSR_DPC            = 0x7b1, /**< 0x7b1 - dpc      (-/-): Debug program counter */
 //CSR_DSCRATCH       = 0x7b2, /**< 0x7b2 - dscratch (-/-): Debug scratch register */
@@ -219,9 +220,71 @@ enum NEORV32_CSR_enum {
   CSR_TIME           = 0xc01, /**< 0xc01 - time    (r/-): Timer low word (from MTIME.TIME_LO) */
   CSR_INSTRET        = 0xc02, /**< 0xc02 - instret (r/-): Instructions-retired counter low word (from MINSTRET) */
 
+  /* not implemented */
+//CSR_HPMCOUNTER3    = 0xc03, /**< 0xc03 - hpmcounter3  (r/-): User hardware performance monitor 3  counter low word */
+//CSR_HPMCOUNTER4    = 0xc04, /**< 0xc04 - hpmcounter4  (r/-): User hardware performance monitor 4  counter low word */
+//CSR_HPMCOUNTER5    = 0xc05, /**< 0xc05 - hpmcounter5  (r/-): User hardware performance monitor 5  counter low word */
+//CSR_HPMCOUNTER6    = 0xc06, /**< 0xc06 - hpmcounter6  (r/-): User hardware performance monitor 6  counter low word */
+//CSR_HPMCOUNTER7    = 0xc07, /**< 0xc07 - hpmcounter7  (r/-): User hardware performance monitor 7  counter low word */
+//CSR_HPMCOUNTER8    = 0xc08, /**< 0xc08 - hpmcounter8  (r/-): User hardware performance monitor 8  counter low word */
+//CSR_HPMCOUNTER9    = 0xc09, /**< 0xc09 - hpmcounter9  (r/-): User hardware performance monitor 9  counter low word */
+//CSR_HPMCOUNTER10   = 0xc0a, /**< 0xc0a - hpmcounter10 (r/-): User hardware performance monitor 10 counter low word */
+//CSR_HPMCOUNTER11   = 0xc0b, /**< 0xc0b - hpmcounter11 (r/-): User hardware performance monitor 11 counter low word */
+//CSR_HPMCOUNTER12   = 0xc0c, /**< 0xc0c - hpmcounter12 (r/-): User hardware performance monitor 12 counter low word */
+//CSR_HPMCOUNTER13   = 0xc0d, /**< 0xc0d - hpmcounter13 (r/-): User hardware performance monitor 13 counter low word */
+//CSR_HPMCOUNTER14   = 0xc0e, /**< 0xc0e - hpmcounter14 (r/-): User hardware performance monitor 14 counter low word */
+//CSR_HPMCOUNTER15   = 0xc0f, /**< 0xc0f - hpmcounter15 (r/-): User hardware performance monitor 15 counter low word */
+//CSR_HPMCOUNTER16   = 0xc10, /**< 0xc10 - hpmcounter16 (r/-): User hardware performance monitor 16 counter low word */
+//CSR_HPMCOUNTER17   = 0xc11, /**< 0xc11 - hpmcounter17 (r/-): User hardware performance monitor 17 counter low word */
+//CSR_HPMCOUNTER18   = 0xc12, /**< 0xc12 - hpmcounter18 (r/-): User hardware performance monitor 18 counter low word */
+//CSR_HPMCOUNTER19   = 0xc13, /**< 0xc13 - hpmcounter19 (r/-): User hardware performance monitor 19 counter low word */
+//CSR_HPMCOUNTER20   = 0xc14, /**< 0xc14 - hpmcounter20 (r/-): User hardware performance monitor 20 counter low word */
+//CSR_HPMCOUNTER21   = 0xc15, /**< 0xc15 - hpmcounter21 (r/-): User hardware performance monitor 21 counter low word */
+//CSR_HPMCOUNTER22   = 0xc16, /**< 0xc16 - hpmcounter22 (r/-): User hardware performance monitor 22 counter low word */
+//CSR_HPMCOUNTER23   = 0xc17, /**< 0xc17 - hpmcounter23 (r/-): User hardware performance monitor 23 counter low word */
+//CSR_HPMCOUNTER24   = 0xc18, /**< 0xc18 - hpmcounter24 (r/-): User hardware performance monitor 24 counter low word */
+//CSR_HPMCOUNTER25   = 0xc19, /**< 0xc19 - hpmcounter25 (r/-): User hardware performance monitor 25 counter low word */
+//CSR_HPMCOUNTER26   = 0xc1a, /**< 0xc1a - hpmcounter26 (r/-): User hardware performance monitor 26 counter low word */
+//CSR_HPMCOUNTER27   = 0xc1b, /**< 0xc1b - hpmcounter27 (r/-): User hardware performance monitor 27 counter low word */
+//CSR_HPMCOUNTER28   = 0xc1c, /**< 0xc1c - hpmcounter28 (r/-): User hardware performance monitor 28 counter low word */
+//CSR_HPMCOUNTER29   = 0xc1d, /**< 0xc1d - hpmcounter29 (r/-): User hardware performance monitor 29 counter low word */
+//CSR_HPMCOUNTER30   = 0xc1e, /**< 0xc1e - hpmcounter30 (r/-): User hardware performance monitor 30 counter low word */
+//CSR_HPMCOUNTER31   = 0xc1f, /**< 0xc1f - hpmcounter31 (r/-): User hardware performance monitor 31 counter low word */
+
   CSR_CYCLEH         = 0xc80, /**< 0xc80 - cycleh   (r/-): Cycle counter high word (from MCYCLEH) */
   CSR_TIMEH          = 0xc81, /**< 0xc81 - timeh    (r/-): Timer high word (from MTIME.TIME_HI) */
   CSR_INSTRETH       = 0xc82, /**< 0xc82 - instreth (r/-): Instructions-retired counter high word (from MINSTRETH) */
+
+  /* not implemented */
+//CSR_HPMCOUNTER3H   = 0xc83, /**< 0xc83 - hpmcounter3h  (r/-): User hardware performance monitor 3  counter high word */
+//CSR_HPMCOUNTER4H   = 0xc84, /**< 0xc84 - hpmcounter4h  (r/-): User hardware performance monitor 4  counter high word */
+//CSR_HPMCOUNTER5H   = 0xc85, /**< 0xc85 - hpmcounter5h  (r/-): User hardware performance monitor 5  counter high word */
+//CSR_HPMCOUNTER6H   = 0xc86, /**< 0xc86 - hpmcounter6h  (r/-): User hardware performance monitor 6  counter high word */
+//CSR_HPMCOUNTER7H   = 0xc87, /**< 0xc87 - hpmcounter7h  (r/-): User hardware performance monitor 7  counter high word */
+//CSR_HPMCOUNTER8H   = 0xc88, /**< 0xc88 - hpmcounter8h  (r/-): User hardware performance monitor 8  counter high word */
+//CSR_HPMCOUNTER9H   = 0xc89, /**< 0xc89 - hpmcounter9h  (r/-): User hardware performance monitor 9  counter high word */
+//CSR_HPMCOUNTER10H  = 0xc8a, /**< 0xc8a - hpmcounter10h (r/-): User hardware performance monitor 10 counter high word */
+//CSR_HPMCOUNTER11H  = 0xc8b, /**< 0xc8b - hpmcounter11h (r/-): User hardware performance monitor 11 counter high word */
+//CSR_HPMCOUNTER12H  = 0xc8c, /**< 0xc8c - hpmcounter12h (r/-): User hardware performance monitor 12 counter high word */
+//CSR_HPMCOUNTER13H  = 0xc8d, /**< 0xc8d - hpmcounter13h (r/-): User hardware performance monitor 13 counter high word */
+//CSR_HPMCOUNTER14H  = 0xc8e, /**< 0xc8e - hpmcounter14h (r/-): User hardware performance monitor 14 counter high word */
+//CSR_HPMCOUNTER15H  = 0xc8f, /**< 0xc8f - hpmcounter15h (r/-): User hardware performance monitor 15 counter high word */
+//CSR_HPMCOUNTER16H  = 0xc90, /**< 0xc90 - hpmcounter16h (r/-): User hardware performance monitor 16 counter high word */
+//CSR_HPMCOUNTER17H  = 0xc91, /**< 0xc91 - hpmcounter17h (r/-): User hardware performance monitor 17 counter high word */
+//CSR_HPMCOUNTER18H  = 0xc92, /**< 0xc92 - hpmcounter18h (r/-): User hardware performance monitor 18 counter high word */
+//CSR_HPMCOUNTER19H  = 0xc93, /**< 0xc93 - hpmcounter19h (r/-): User hardware performance monitor 19 counter high word */
+//CSR_HPMCOUNTER20H  = 0xc94, /**< 0xc94 - hpmcounter20h (r/-): User hardware performance monitor 20 counter high word */
+//CSR_HPMCOUNTER21H  = 0xc95, /**< 0xc95 - hpmcounter21h (r/-): User hardware performance monitor 21 counter high word */
+//CSR_HPMCOUNTER22H  = 0xc96, /**< 0xc96 - hpmcounter22h (r/-): User hardware performance monitor 22 counter high word */
+//CSR_HPMCOUNTER23H  = 0xc97, /**< 0xc97 - hpmcounter23h (r/-): User hardware performance monitor 23 counter high word */
+//CSR_HPMCOUNTER24H  = 0xc98, /**< 0xc98 - hpmcounter24h (r/-): User hardware performance monitor 24 counter high word */
+//CSR_HPMCOUNTER25H  = 0xc99, /**< 0xc99 - hpmcounter25h (r/-): User hardware performance monitor 25 counter high word */
+//CSR_HPMCOUNTER26H  = 0xc9a, /**< 0xc9a - hpmcounter26h (r/-): User hardware performance monitor 26 counter high word */
+//CSR_HPMCOUNTER27H  = 0xc9b, /**< 0xc9b - hpmcounter27h (r/-): User hardware performance monitor 27 counter high word */
+//CSR_HPMCOUNTER28H  = 0xc9c, /**< 0xc9c - hpmcounter28h (r/-): User hardware performance monitor 28 counter high word */
+//CSR_HPMCOUNTER29H  = 0xc9d, /**< 0xc9d - hpmcounter29h (r/-): User hardware performance monitor 29 counter high word */
+//CSR_HPMCOUNTER30H  = 0xc9e, /**< 0xc9e - hpmcounter30h (r/-): User hardware performance monitor 30 counter high word */
+//CSR_HPMCOUNTER31H  = 0xc9f, /**< 0xc9f - hpmcounter31h (r/-): User hardware performance monitor 31 counter high word */
 
   CSR_MVENDORID      = 0xf11, /**< 0xf11 - mvendorid  (r/-): Vendor ID */
   CSR_MARCHID        = 0xf12, /**< 0xf12 - marchid    (r/-): Architecture ID */
@@ -240,7 +303,8 @@ enum NEORV32_CSR_MSTATUS_enum {
   CSR_MSTATUS_MIE   =  3, /**< CPU mstatus CSR  (3): MIE - Machine interrupt enable bit (r/w) */
   CSR_MSTATUS_MPIE  =  7, /**< CPU mstatus CSR  (7): MPIE - Machine previous interrupt enable bit (r/w) */
   CSR_MSTATUS_MPP_L = 11, /**< CPU mstatus CSR (11): MPP_L - Machine previous privilege mode bit low (r/w) */
-  CSR_MSTATUS_MPP_H = 12  /**< CPU mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
+  CSR_MSTATUS_MPP_H = 12, /**< CPU mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
+  CSR_MSTATUS_TW    = 21  /**< CPU mstatus CSR (21): TW - Disallow execution of wfi instruction in user mode when set (r/w) */
 };
 
 
