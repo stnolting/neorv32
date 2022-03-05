@@ -19,11 +19,8 @@ and processor features, a bootloader, a runtime environment and several example 
 of the CoreMark MCU benchmark and the official RISC-V architecture test suite. RISC-V GCC is used as
 default toolchain (https://github.com/stnolting/riscv-gcc-prebuilt[prebuilt toolchains are also provided]).
 
-[TIP]
 Check out the processor's **https://stnolting.github.io/neorv32/ug[online User Guide]**
 that provides hands-on tutorials to get you started.
-The project's change log is available in https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md[CHANGELOG.md]
-in the root directory of the NEORV32 repository. Please also check out the <<_legal>> section.
 
 
 **Structure**
@@ -33,7 +30,22 @@ in the root directory of the NEORV32 repository. Please also check out the <<_le
 . <<_neorv32_central_processing_unit_cpu>>
 . <<_software_framework>>
 . <<_on_chip_debugger_ocd>>
+. <<_legal>>
 
+
+**Annotations**
+
+[WARNING]
+Warning
+
+[IMPORTANT]
+Important
+
+[NOTE]
+Note
+
+[TIP]
+Tip
 
 
 <<<
