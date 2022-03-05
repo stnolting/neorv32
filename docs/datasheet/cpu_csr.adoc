@@ -510,7 +510,7 @@ The actual number of available `pmpcfg` CSRs and CSR entries is defined by the <
 |=======================
 | Bit | Name [C] | R/W | Function
 | 7   | _PMPCFG_L_     | r/w | **L**: Lock bit, prevents further write accesses, also enforces access rights in machine-mode, can only be cleared by CPU reset
-| 6:5 | -              | r/- | reserved, read as zero
+| 6:5 | -              | r/- | _reserved_, read as zero
 | 4   | _PMPCFG_A_MSB_ | r/- .2+<| **A**: Mode configuration; only **OFF** (`00`) and **TOR** (`01`) modes are supported, any other value will map back to OFF/TOR
 as the MSB is hardwired to zero
 | 3   | _PMPCFG_A_LSB_ | r/w 

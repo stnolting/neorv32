@@ -1870,7 +1870,7 @@ begin
       --
       csr.mstatus_mie       <= '0';
       csr.mstatus_mpie      <= '0';
-      csr.mstatus_mpp       <= (others => '0');
+      csr.mstatus_mpp       <= priv_mode_m_c;
       csr.mstatus_tw        <= '0';
       csr.privilege         <= priv_mode_m_c; -- start in MACHINE mode
       csr.mie_msie          <= def_rst_val_c;
