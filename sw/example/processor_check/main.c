@@ -82,6 +82,7 @@
 
 
 // Prototypes
+void __attribute__((naked)) goto_user_mode(void);
 void sim_irq_trigger(uint32_t sel);
 void global_trap_handler(void);
 void xirq_trap_handler0(void);
@@ -378,7 +379,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_CYCLEH, 1); // make sure CSR is != 0 for this test
 
   // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-  neorv32_cpu_goto_user_mode();
+  goto_user_mode();
   {
     // access to cycle CSR is no longer allowed
     asm volatile (" li       %[result], 0xcc11aa22  \n" // initialize
@@ -410,7 +411,7 @@ int main() {
   cnt_test++;
 
   // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-  neorv32_cpu_goto_user_mode();
+  goto_user_mode();
   {
     asm volatile ("mret");
   }
@@ -759,7 +760,7 @@ int main() {
   cnt_test++;
 
   // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-  neorv32_cpu_goto_user_mode();
+  goto_user_mode();
   {
     asm volatile("ecall");
   }
@@ -1435,7 +1436,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test WFI ("sleep") instructions, wakeup via MTIME
+  // Test WFI ("sleep") instruction (executed in user mode), wakeup via MTIME
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   PRINT_STANDARD("[%i] WFI (sleep instruction, wake-up via MTIME): ", cnt_test);
@@ -1448,8 +1449,14 @@ int main() {
   // enable mtime interrupt
   neorv32_cpu_irq_enable(CSR_MIE_MTIE);
 
-  // put CPU into sleep mode
-  asm volatile ("wfi");
+  // clear mstatus.TW to allow execution of WFI also in user-mode
+  neorv32_cpu_csr_write(CSR_MSTATUS, neorv32_cpu_csr_read(CSR_MSTATUS) & ~(1<<CSR_MSTATUS_TW));
+
+  // put CPU into sleep mode (from user mode)
+  goto_user_mode();
+  {
+    asm volatile ("wfi");
+  }
 
   // no more mtime interrupts
   neorv32_cpu_irq_disable(CSR_MIE_MTIE);
@@ -1472,7 +1479,7 @@ int main() {
   cnt_test++;
 
   // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-  neorv32_cpu_goto_user_mode();
+  goto_user_mode();
   {
     // access to misa not allowed for user-level programs
     tmp_a = neorv32_cpu_csr_read(CSR_MISA);
@@ -1548,7 +1555,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a)); // call address to execute -> should fail
     }
@@ -1569,7 +1576,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       asm volatile ("li %[da], 0xcafe0000 \n" // initialize destination register with known value
                     "lw %[da], 0(%[ad])     " // must not update destination register to to exception
@@ -1597,7 +1604,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       neorv32_cpu_store_unsigned_word(tmp_a, 0); // store access -> should fail
     }
@@ -1789,6 +1796,24 @@ int main() {
   }
 
   return (int)cnt_fail; // return error counter for after-main handler
+}
+
+
+
+/**********************************************************************//**
+ * Switch from privilege mode MACHINE to privilege mode USER.
+ *
+ * @warning This function requires the U extension to be implemented.
+ **************************************************************************/
+void __attribute__((naked)) goto_user_mode(void) {
+
+  // make sure to use NO registers in here! -> naked
+
+  asm volatile ("csrw mepc, ra           \n" // move return address to mepc so we can return using "mret". also, we can now use ra as temp register
+                "li ra, %[input_imm]     \n" // bit mask to clear the two MPP bits
+                "csrrc zero, mstatus, ra \n" // clear MPP bits -> MPP=u-mode
+                "mret                    \n" // return and switch to user mode
+                :  : [input_imm] "i" ((1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L)));
 }
 
 
