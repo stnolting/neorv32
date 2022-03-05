@@ -197,17 +197,16 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction decoding helper logic --
   type decode_aux_t is record
-    is_a_lr     : std_ulogic;
-    is_a_sc     : std_ulogic;
-    is_f_op     : std_ulogic;
-    sys_env_cmd : std_ulogic_vector(11 downto 0);
-    is_m_mul    : std_ulogic;
-    is_m_div    : std_ulogic;
-    is_b_imm    : std_ulogic;
-    is_b_reg    : std_ulogic;
-    rs1_zero    : std_ulogic;
-    rs2_zero    : std_ulogic;
-    rd_zero     : std_ulogic;
+    is_a_lr  : std_ulogic;
+    is_a_sc  : std_ulogic;
+    is_f_op  : std_ulogic;
+    is_m_mul : std_ulogic;
+    is_m_div : std_ulogic;
+    is_b_imm : std_ulogic;
+    is_b_reg : std_ulogic;
+    rs1_zero : std_ulogic;
+    rs2_zero : std_ulogic;
+    rd_zero  : std_ulogic;
   end record;
   signal decode_aux : decode_aux_t;
 
@@ -891,10 +890,6 @@ begin
       decode_aux.is_f_op <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- FPU implemented at all?
     end if;
 
-    -- system/environment instructions --
-    decode_aux.sys_env_cmd <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) and -- set unused bits to always-zero
-                              (funct12_ecall_c or funct12_ebreak_c or funct12_mret_c or funct12_wfi_c or funct12_dret_c); -- by summing-up set bits
-
     -- integer MUL (M/Zmmul) / DIV (M) operation --
     if (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and
        (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000001") then
@@ -1129,7 +1124,7 @@ begin
             end if;
 
 
-          when others => -- system/csr access OR illegal opcode - nothing bad (= no commits) will happen here if there is an illegal opcode
+          when others => -- system/csr access OR illegal opcode
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zicsr = true) then
               if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system/environment
@@ -1144,29 +1139,30 @@ begin
         end case;
 
 
-      when SYS_ENV => -- system environment operation - no action if illegal instruction
+      when SYS_ENV => -- system environment operation
       -- ------------------------------------------------------------
-        execute_engine.state_nxt <= DISPATCH; -- default
-        if (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- no illegal instruction
-          case decode_aux.sys_env_cmd is -- use a simplified input here (with hardwired zeros)
-            when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ECALL
-            when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- EBREAK
-            when funct12_mret_c   => execute_engine.state_nxt <= TRAP_EXIT; -- MRET
-            when funct12_dret_c   => -- DRET
-              if (CPU_EXTENSION_RISCV_DEBUG = true) then
-                execute_engine.state_nxt <= TRAP_EXIT;
-                debug_ctrl.dret <= '1';
-              else
-                NULL; -- executed as NOP (will raise illegal instruction exception)
-              end if;
-            when funct12_wfi_c => -- WFI
-              if (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) then -- NOP when in debug-mode or during single-stepping
-                NULL; -- executed as NOP
-              else
-                execute_engine.sleep_nxt <= '1'; -- go to sleep mode (if WFI did not raise an exception because of mstatus.TW)
-              end if;
-            when others => NULL; -- undefined, executed as NOP (will raise illegal instruction exception)
-          end case;
+        -- MRET / DRET --
+        if (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_mret_c) then
+          execute_engine.state_nxt <= TRAP_EXIT; -- mret
+        elsif (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_dret_c) and
+              (CPU_EXTENSION_RISCV_DEBUG = true) then
+          debug_ctrl.dret          <= '1';
+          execute_engine.state_nxt <= TRAP_EXIT; -- dret
+        else
+          execute_engine.state_nxt <= DISPATCH; -- default
+        end if;
+        -- ECALL / EBREAK --
+        if ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c+1) = funct12_ecall_c(11 downto 1))) then
+          if (execute_engine.i_reg(instr_funct12_lsb_c) = funct12_ecall_c(0)) then
+            trap_ctrl.env_call <= '1'; -- ecall
+          else
+            trap_ctrl.break_point <= '1'; -- ebreak
+          end if;
+        end if;
+        -- WFI --
+        if (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_wfi_c) and
+           ((CPU_EXTENSION_RISCV_DEBUG = false) or ((debug_ctrl.running = '0') and (csr.dcsr_step = '0'))) then
+          execute_engine.sleep_nxt <= '1'; -- not executed (NOP) when in debug-mode or during single-stepping
         end if;
 
 
