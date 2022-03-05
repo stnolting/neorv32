@@ -220,9 +220,10 @@ The following bits are implemented (all remaining bits are always zero and are r
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 12:11 | _CSR_MSTATUS_MPP_H_ : _CSR_MSTATUS_MPP_L_ | r/w | Previous machine privilege level, 11 = machine (M) level, 00 = user (U) level
-| 7     | _CSR_MSTATUS_MPIE_ | r/w | Previous machine global interrupt enable flag state
-| 3     | _CSR_MSTATUS_MIE_  | r/w | Machine global interrupt enable flag
+| 21    | _CSR_MSTATUS_TW_   | r/w | **TW**: Disallows execution of `wfi` instruction in user mode when set; hardwired to zero if user-mode not implemented
+| 12:11 | _CSR_MSTATUS_MPP_H_ : _CSR_MSTATUS_MPP_L_ | r/w | **MPP*: Previous machine privilege level, 11 = machine (M) level, 00 = user (U) level
+| 7     | _CSR_MSTATUS_MPIE_ | r/w | **MPIE**: Previous machine global interrupt enable flag state
+| 3     | _CSR_MSTATUS_MIE_  | r/w | **MIE**: Machine global interrupt enable flag
 |=======================
 
 When entering an exception/interrupt, the `MIE` flag is copied to `MPIE` and cleared afterwards. When leaving
@@ -251,14 +252,14 @@ CSR is simply ignored and will _NOT_ cause an illegal instruction exception.
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 31:30 | _CSR_MISA_MXL_HI_EXT_ : _CSR_MISA_MXL_LO_EXT_ | r/- | 32-bit architecture indicator (always _01_)
-| 23    | _CSR_MISA_X_EXT_ | r/- | `X` extension bit is always set to indicate custom non-standard extensions
-| 20    | _CSR_MISA_U_EXT_ | r/- | `U` CPU extension (user mode) available, set when _CPU_EXTENSION_RISCV_U_ enabled
-| 12    | _CSR_MISA_M_EXT_ | r/- | `M` CPU extension (mul/div) available, set when _CPU_EXTENSION_RISCV_M_ enabled
-| 8     | _CSR_MISA_I_EXT_ | r/- | `I` CPU base ISA, cleared when _CPU_EXTENSION_RISCV_E_ enabled
-| 4     | _CSR_MISA_E_EXT_ | r/- | `E` CPU extension (embedded) available, set when _CPU_EXTENSION_RISCV_E_ enabled
-| 2     | _CSR_MISA_C_EXT_ | r/- | `C` CPU extension (compressed instruction) available, set when _CPU_EXTENSION_RISCV_C_ enabled
-| 0     | _CSR_MISA_A_EXT_ | r/- | `A` CPU extension (atomic memory access) available, set when _CPU_EXTENSION_RISCV_A_ enabled
+| 31:30 | _CSR_MISA_MXL_HI_EXT_ : _CSR_MISA_MXL_LO_EXT_ | r/- | **MXL**: 32-bit architecture indicator (always _01_)
+| 23    | _CSR_MISA_X_EXT_ | r/- | **X**: extension bit is always set to indicate custom non-standard extensions
+| 20    | _CSR_MISA_U_EXT_ | r/- | **U**: CPU extension (user mode) available, set when _CPU_EXTENSION_RISCV_U_ enabled
+| 12    | _CSR_MISA_M_EXT_ | r/- | **M**: CPU extension (mul/div) available, set when _CPU_EXTENSION_RISCV_M_ enabled
+| 8     | _CSR_MISA_I_EXT_ | r/- | **I**: CPU base ISA, cleared when _CPU_EXTENSION_RISCV_E_ enabled
+| 4     | _CSR_MISA_E_EXT_ | r/- | **E**: CPU extension (embedded) available, set when _CPU_EXTENSION_RISCV_E_ enabled
+| 2     | _CSR_MISA_C_EXT_ | r/- | **C**: CPU extension (compressed instruction) available, set when _CPU_EXTENSION_RISCV_C_ enabled
+| 0     | _CSR_MISA_A_EXT_ | r/- | **A**: CPU extension (atomic memory access) available, set when _CPU_EXTENSION_RISCV_A_ enabled
 |=======================
 
 [TIP]
@@ -286,9 +287,9 @@ globally enabled via the `CSR_MSTATUS_MIE` flag of the `mstatus` CSR. The follow
 |=======================
 | Bit   | Name [C] | R/W | Function
 | 31:16 | _CSR_MIE_FIRQ15E_ : _CSR_MIE_FIRQ0E_ | r/w | Fast interrupt channel 15..0 enable
-| 11    | _CSR_MIE_MEIE_ | r/w | Machine _external_ interrupt enable
-| 7     | _CSR_MIE_MTIE_ | r/w | Machine _timer_ interrupt enable (from _MTIME_)
-| 3     | _CSR_MIE_MSIE_ | r/w | Machine _software_ interrupt enable
+| 11    | _CSR_MIE_MEIE_ | r/w | **MEIE**: Machine _external_ interrupt enable
+| 7     | _CSR_MIE_MTIE_ | r/w | **MTIE**: Machine _timer_ interrupt enable (from _MTIME_)
+| 3     | _CSR_MIE_MSIE_ | r/w | **MSIE**: Machine _software_ interrupt enable
 |=======================
 
 
@@ -310,8 +311,8 @@ source. The lowest two bits of this register are always zero and cannot be modif
 [options="header",grid="rows"]
 |=======================
 | Bit  | R/W | Function
-| 31:2 | r/w | 4-byte aligned base address of trap base handler
-| 1:0  | r/- | Always zero
+| 31:2 | r/w | **BASE**: 4-byte aligned base address of trap base handler
+| 1:0  | r/- | **MODE**: Always zero; BASE defined entry for _all_ traps
 |=======================
 
 
@@ -335,9 +336,9 @@ exception is raised. NOTE: If the `U` ISA extension is not enabled this CSR does
 |=======================
 | Bit   | Name [C] | R/W | Function
 | 31:3  | `0`                 | r/- | Always zero: user-level code is **not** allowed to read HPM counters
-| 2     | _CSR_MCOUNTEREN_IR_ | r/w | User-level code is allowed to read `cycle[h]` CSRs when set
-| 1     | _CSR_MCOUNTEREN_TM_ | r/w | User-level code is allowed to read `time[h]` CSRs when set
-| 0     | _CSR_MCOUNTEREN_CY_ | r/w | User-level code is allowed to read `instret[h]` CSRs when set
+| 2     | _CSR_MCOUNTEREN_IR_ | r/w | **IR**: User-level code is allowed to read `cycle[h]` CSRs when set
+| 1     | _CSR_MCOUNTEREN_TM_ | r/w | **TM**: User-level code is allowed to read `time[h]` CSRs when set
+| 0     | _CSR_MCOUNTEREN_CY_ | r/w | **CY**: User-level code is allowed to read `instret[h]` CSRs when set
 |=======================
 
 .HPM Access
@@ -407,9 +408,9 @@ interrupt) this register provides the address of the next not-yet-executed instr
 [options="header",grid="rows"]
 |=======================
 | Bit  | R/W | Function
-| 31   | r/w | `1` if the trap is caused by an interrupt (`0` if the trap is caused by an exception)
+| 31   | r/w | **Interrupt**: `1` if the trap is caused by an interrupt (`0` if the trap is caused by an exception)
 | 30:5 | r/- | _Reserved_, read as zero
-| 4:0  | r/w | Trap ID, see <<_neorv32_trap_listing>>
+| 4:0  | r/w | **Trap ID**: see <<_neorv32_trap_listing>>
 |=======================
 
 :sectnums!:
@@ -460,10 +461,10 @@ writing zero to the according `mip` bits (in the interrupt handler routine) to c
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 31:16 | _CSR_MIP_FIRQ15P_ : _CSR_MIP_FIRQ0P_ | r/c | fast interrupt channel 15..0 pending; cleared request by writing 1
-| 11    | _CSR_MIP_MEIP_                       | r/- | machine _external_ interrupt pending; _cleared by user-defined mechanism_
-| 7     | _CSR_MIP_MTIP_                       | r/- | machine _timer_ interrupt pending; cleared by incrementing MTIME's time compare register
-| 3     | _CSR_MIP_MSIP_                       | r/- | machine _software_ interrupt pending; _cleared by user-defined mechanism_
+| 31:16 | _CSR_MIP_FIRQ15P_ : _CSR_MIP_FIRQ0P_ | r/c | **FIRQxP**: Fast interrupt channel 15..0 pending; cleared request by writing 1
+| 11    | _CSR_MIP_MEIP_                       | r/- | **MEIP**: Machine _external_ interrupt pending; _cleared by user-defined mechanism_
+| 7     | _CSR_MIP_MTIP_                       | r/- | **MTIP**: Machine _timer_ interrupt pending; cleared by incrementing MTIME's time compare register
+| 3     | _CSR_MIP_MSIP_                       | r/- | **MSIP**: Machine _software_ interrupt pending; _cleared by user-defined mechanism_
 |=======================
 
 .FIRQ Channel Mapping
@@ -507,13 +508,15 @@ The actual number of available `pmpcfg` CSRs and CSR entries is defined by the <
 [cols="^1,^3,^1,<11"]
 [options="header",grid="rows"]
 |=======================
-| Bit | RISC-V name | R/W | Function
-| 7   | `L` | r/w | lock bit, prevents further write accesses, also enforces access rights in machine-mode, can only be cleared by CPU reset
-| 6:5 |  -  | r/- | reserved, read as zero
-| 4:3 | `A` | r/w | mode configuration; only **OFF** (`00`) and **TOR** (`01`) modes are supported, any other value will map back to OFF/TOR
-| 2   | `X` | r/w | execute permission
-| 1   | `W` | r/w | write permission
-| 0   | `R` | r/w | read permission
+| Bit | Name [C] | R/W | Function
+| 7   | _PMPCFG_L_     | r/w | **L**: Lock bit, prevents further write accesses, also enforces access rights in machine-mode, can only be cleared by CPU reset
+| 6:5 | -              | r/- | reserved, read as zero
+| 4   | _PMPCFG_A_MSB_ | r/- .2+<| **A**: Mode configuration; only **OFF** (`00`) and **TOR** (`01`) modes are supported, any other value will map back to OFF/TOR
+as the MSB is hardwired to zero
+| 3   | _PMPCFG_A_LSB_ | r/w 
+| 2   | _PMPCFG_X_     | r/w | **X**: Execute permission
+| 1   | _PMPCFG_W_     | r/w | **W**: Write permission
+| 0   | _PMPCFG_R_     | r/w | **R**: Read permission
 |=======================
 
 [WARNING]
@@ -769,9 +772,9 @@ always zero and are read-only).
 [options="header",grid="rows"]
 |=======================
 | Bit  | Name [C] | R/W | Event
-| 0    | _CSR_MCOUNTINHIBIT_IR_ | r/w | the `[m]instret[h]` CSRs will auto-increment with each committed instruction when set
-| 2    | _CSR_MCOUNTINHIBIT_IR_ | r/w | the `[m]cycle[h]` CSRs will auto-increment with each clock cycle (if CPU is not in sleep state) when set
-| 3:31 | _CSR_MCOUNTINHIBIT_HPM3_ _: _CSR_MCOUNTINHIBIT_HPM31_ | r/w | the `mhpmcount*[h]` CSRs will auto-increment according to the configured `mhpmevent*` selector
+| 0    | _CSR_MCOUNTINHIBIT_IR_ | r/w | **IR**: The `[m]instret[h]` CSRs will auto-increment with each committed instruction when set
+| 2    | _CSR_MCOUNTINHIBIT_CY_ | r/w | **CY**: The `[m]cycle[h]` CSRs will auto-increment with each clock cycle (if CPU is not in sleep state) when set
+| 3:31 | _CSR_MCOUNTINHIBIT_HPM3_ : _CSR_MCOUNTINHIBIT_HPM31_ | r/w | **HPMx**: The `mhpmcount*[h]` CSRs will auto-increment according to the configured `mhpmevent*` selector
 |=======================
 
 
