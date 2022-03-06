@@ -3,6 +3,16 @@
 
 image::neorv32_cpu_block.png[width=600,align=center]
 
+**Section Structure**
+
+* <<_architecture>>, <<_full_virtualization>> and <<_risc_v_compatibility>>
+* <<_cpu_top_entity_signals>> and <<_cpu_top_entity_generics>>
+* <<_instruction_sets_and_extensions>>, <<_custom_functions_unit_cfu>> and <<_instruction_timing>>
+* <<_control_and_status_registers_csrs>>
+* <<_traps_exceptions_and_interrupts>>
+* <<_bus_interface>>
+
+
 **Key Features**
 
 * 32-bit little-endian, multi-cycle, in-order `rv32` RISC-V CPU
@@ -260,8 +270,9 @@ side-effects to maintain RISC-V compatibility.
 .Physical Memory Protection
 [IMPORTANT]
 The RISC-V-compatible NEORV32 <<_machine_physical_memory_protection_csrs>> only implements the **TOR**
-(top of region) mode and only up to 16 PMP regions. Furthermore, the <<_pmpcfg>>'s
-_lock bits_ only lock the according PMP entry and not the entries below.
+(top of region) mode and only up to 16 PMP regions. Furthermore, the <<_pmpcfg>>'s _lock bits_ only lock
+the according PMP entry and not the entries below. All region rules are checked in parallel **without**
+prioritization so for identical memory regions the most restrictive PMP rule will be enforced.
 
 .Atomic Memory Operations
 [IMPORTANT]
@@ -640,13 +651,15 @@ If `rd=x0` for the `csrrw[i]` instructions there will be no actual read access t
 However, access privileges are still enforced so these instruction variants _do_ cause side-effects
 (the RISC-V spec. state that these combinations "_shall_ not cause any side-effects").
 
-[NOTE]
-The "wait for interrupt instruction" `wfi` acts like a sleep command. When executed, the CPU is
-halted until a valid interrupt request occurs. To wake up again, the according interrupt source has to
-be enabled via the <<_mie>> CSR and the global interrupt enable flag in <<_mstatus>> has to be set.
-The `wfi` instruction may also be executed in user-mode without causing an exception as <<_mstatus>> bit
-`TW` (timeout wait) is _hardwired_ to zero.
+** `wfi` Instruction **
 
+The "wait for interrupt instruction" `wfi` acts like a sleep command. When executed, the CPU is
+halted until a valid interrupt request occurs. To wake up again, at least one interrupt source has to
+be enabled via the <<_mie>> CSR and the global interrupt enable flag in <<_mstatus>> has to be set.
+
+If the <<_mstatus>> `TW` bis is cleared the `wfi` instruction is also allowed to execute when in user-mode.
+This is always the case if user-mode is not implemented. If the `TW` bit is set the execution of `wfi` in
+user-mode will raise an illegal instruction exception.
 
 
 ==== **`Zicntr`** CPU Base Counters
@@ -768,6 +781,11 @@ By default, all PMP checks are enforced for user-mode only. However, PMP rules c
 machine-mode when the according PMP region has the "LOCK" bit set. This will also prevent any write access
 to according region's PMP CSRs until the CPU is reset.
 
+.Rule Prioritization
+[IMPORTANT]
+All rules are checked in parallel **without** prioritization so for identical memory regions the most restrictive
+PMP rule will be enforced.
+
 .PMP Example Program
 [TIP]
 A simple PMP example program can be found in `sw/example/demo_pmp`.
@@ -791,6 +809,11 @@ constant pmp_num_regions_critical_c : natural := 8;
 Reducing the minimal PMP region size / granularity via the <<_pmp_min_granularity>> to entity generic
 will also reduce hardware utilization and impact on critical path.
 
+
+<<<
+// ####################################################################################################################
+
+include::cpu_cfu.adoc[]
 
 
 <<<
@@ -1216,9 +1239,3 @@ be enabled by enabling a constant in the main VHDL package file (`rtl/core/neorv
 -- FALSE=reset value is irrelevant (might simplify HW), default; TRUE=defined LOW reset value
 constant dedicated_reset_c : boolean := false;
 ----
-
-
-<<<
-// ####################################################################################################################
-
-include::cpu_cfu.adoc[]

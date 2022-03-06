@@ -313,23 +313,6 @@ void neorv32_cpu_delay_ms(uint32_t time_ms) {
 
 
 /**********************************************************************//**
- * Switch from privilege mode MACHINE to privilege mode USER.
- *
- * @warning This function requires the U extension to be implemented.
- **************************************************************************/
-void __attribute__((naked)) neorv32_cpu_goto_user_mode(void) {
-
-  // make sure to use NO registers in here! -> naked
-
-  asm volatile ("csrw mepc, ra           \n" // move return address to mepc so we can return using "mret". also, we can now use ra as general purpose register in here
-                "li ra, %[input_imm]     \n" // bit mask to clear the two MPP bits
-                "csrrc zero, mstatus, ra \n" // clear MPP bits -> MPP=u-mode
-                "mret                    \n" // return and switch to user mode
-                :  : [input_imm] "i" ((1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L)));
-}
-
-
-/**********************************************************************//**
  * Physical memory protection (PMP): Get number of available regions.
  *
  * @warning This function overrides all available PMPCFG* CSRs!

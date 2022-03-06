@@ -74,7 +74,7 @@ __crt0_cpu_csr_init:
   csrw mtvec, x10
   csrw mepc,  x10                       // just to init mepc
 
-  csrw mstatus, zero                    // disable global IRQ
+  csrw mstatus, zero                    // clear all control flags, also disable global IRQ
   csrw mie,     zero                    // absolutely no interrupt sources, thanks
   csrw mip,     zero                    // clear all pending interrupts
 
@@ -219,7 +219,7 @@ __crt0_main_aftermath_end:
 __crt0_shutdown:
   csrci mstatus, 8                   // disable global IRQs (clear mstatus.mie)
   wfi                                // go to sleep mode
-  j __crt0_shutdown                  // endless loop
+  j .                                // endless loop
 
 
 // ************************************************************************************************
