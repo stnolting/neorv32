@@ -608,6 +608,8 @@ generic is _true_. In this case the following instructions and CSRs are availabl
 * sign-injection: `fsgnj.s` `fsgnjn.s` `fsgnjx.s`
 * number classification: `fclass.s`
 
+* compressed instructions: `c.flw` `c.flwsp` `c.fsw` `c.fswsp`
+
 Additional CSRs:
 
 * <<_fcsr>> - FPU control register

@@ -65,7 +65,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060809"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060810"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -1610,6 +1610,9 @@ package neorv32_package is
   -- Component: CPU Compressed Instructions De-Compressor -----------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_decompressor
+    generic (
+      FPU_ENABLE : boolean -- floating-point instruction enabled
+    );
     port (
       -- instruction input --
       ci_instr16_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction input
