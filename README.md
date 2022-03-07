@@ -124,8 +124,7 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 **Advanced**
 
 * on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) accessible via JTAG interface - compliant to
-the "Minimal RISC-V Debug Specification Version 0.13.2" and compatible with **OpenOCD** + **gdb** and **Segger Embedded Studio**;
-includes RISC-V _hardware trigger module_
+the "Minimal RISC-V Debug Specification Version 0.13.2" and compatible with **OpenOCD** + **gdb** and **Segger Embedded Studio**
 * _true random_ number generator ([TRNG](https://stnolting.github.io/neorv32/#_true_random_number_generator_trng))
 * execute in place module ([XIP](https://stnolting.github.io/neorv32/#_execute_in_place_module_xip)) to directly execute code from SPI flash
 * custom functions subsystem ([CFS](https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs))
@@ -328,4 +327,4 @@ Please quote it appropriately. :+1:
 
 ---------------------------------------
 
-**A big shout-out goes to the community and all the [contributors](https://github.com/stnolting/neorv32/graphs/contributors), who helped improving this project! :heart:**
+**:heart: A big shout-out goes to the community and all the [contributors](https://github.com/stnolting/neorv32/graphs/contributors), who helped improving this project!**
