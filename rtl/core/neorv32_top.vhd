@@ -280,7 +280,7 @@ architecture neorv32_top_rtl of neorv32_top is
     ack   : std_ulogic; -- bus transfer acknowledge
     err   : std_ulogic; -- bus transfer error
     fence : std_ulogic; -- fence(i) instruction executed
-    priv  : std_ulogic_vector(1 downto 0); -- current privilege level
+    priv  : std_ulogic; -- current privilege level
     src   : std_ulogic; -- access source (1=instruction fetch, 0=data access)
     lock  : std_ulogic; -- exclusive access request
   end record;

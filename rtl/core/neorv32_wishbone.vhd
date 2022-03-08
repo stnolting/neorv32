@@ -77,7 +77,7 @@ entity neorv32_wishbone is
     ack_o      : out std_ulogic; -- transfer acknowledge
     err_o      : out std_ulogic; -- transfer error
     tmo_o      : out std_ulogic; -- transfer timeout
-    priv_i     : in  std_ulogic_vector(01 downto 0); -- current CPU privilege level
+    priv_i     : in  std_ulogic; -- current CPU privilege level
     ext_o      : out std_ulogic; -- active external access
     -- xip configuration --
     xip_en_i   : in  std_ulogic; -- XIP module enabled
@@ -125,7 +125,7 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
     timeout  : std_ulogic_vector(index_size_f(BUS_TIMEOUT) downto 0);
     src      : std_ulogic;
     lock     : std_ulogic;
-    priv     : std_ulogic_vector(01 downto 0);
+    priv     : std_ulogic;
   end record;
   signal ctrl    : ctrl_t;
   signal stb_int : std_ulogic;
@@ -188,7 +188,7 @@ begin
       ctrl.tmo      <= def_rst_val_c;
       ctrl.src      <= def_rst_val_c;
       ctrl.lock     <= def_rst_val_c;
-      ctrl.priv     <= (others => def_rst_val_c);
+      ctrl.priv     <= def_rst_val_c;
     elsif rising_edge(clk_i) then
       -- defaults --
       ctrl.state_ff <= ctrl.state;

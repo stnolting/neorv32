@@ -65,7 +65,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060810"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060811"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -401,13 +401,12 @@ package neorv32_package is
   constant ctrl_ir_opcode7_5_c  : natural := 70; -- opcode7 bit 5
   constant ctrl_ir_opcode7_6_c  : natural := 71; -- opcode7 bit 6
   -- cpu status --
-  constant ctrl_priv_lvl_lsb_c  : natural := 72; -- privilege level lsb
-  constant ctrl_priv_lvl_msb_c  : natural := 73; -- privilege level msb
-  constant ctrl_sleep_c         : natural := 74; -- set when CPU is in sleep mode
-  constant ctrl_trap_c          : natural := 75; -- set when CPU is entering trap execution
-  constant ctrl_debug_running_c : natural := 76; -- set when CPU is in debug mode
+  constant ctrl_priv_mode_c     : natural := 72; -- effective privilege mode
+  constant ctrl_sleep_c         : natural := 73; -- set when CPU is in sleep mode
+  constant ctrl_trap_c          : natural := 74; -- set when CPU is entering trap execution
+  constant ctrl_debug_running_c : natural := 75; -- set when CPU is in debug mode
   -- control bus size --
-  constant ctrl_width_c         : natural := 77; -- control bus size
+  constant ctrl_width_c         : natural := 76; -- control bus size
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -924,8 +923,8 @@ package neorv32_package is
 
   -- CPU Privilege Modes --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant priv_mode_m_c : std_ulogic_vector(1 downto 0) := "11"; -- machine mode
-  constant priv_mode_u_c : std_ulogic_vector(1 downto 0) := "00"; -- user mode
+  constant priv_mode_m_c : std_ulogic := '1'; -- machine mode
+  constant priv_mode_u_c : std_ulogic := '0'; -- user mode
 
   -- HPM Event System -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1172,7 +1171,7 @@ package neorv32_package is
       i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
       i_bus_err_i   : in  std_ulogic; -- bus transfer error
       i_bus_fence_o : out std_ulogic; -- executed FENCEI operation
-      i_bus_priv_o  : out std_ulogic_vector(1 downto 0); -- privilege level
+      i_bus_priv_o  : out std_ulogic; -- privilege level
       -- data bus interface --
       d_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
       d_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -1184,7 +1183,7 @@ package neorv32_package is
       d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
       d_bus_err_i   : in  std_ulogic; -- bus transfer error
       d_bus_fence_o : out std_ulogic; -- executed FENCE operation
-      d_bus_priv_o  : out std_ulogic_vector(1 downto 0); -- privilege level
+      d_bus_priv_o  : out std_ulogic; -- privilege level
       -- system time input from MTIME --
       time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
       -- interrupts (risc-v compliant) --
@@ -1894,7 +1893,7 @@ package neorv32_package is
       ack_o      : out std_ulogic; -- transfer acknowledge
       err_o      : out std_ulogic; -- transfer error
       tmo_o      : out std_ulogic; -- transfer timeout
-      priv_i     : in  std_ulogic_vector(01 downto 0); -- current CPU privilege level
+      priv_i     : in  std_ulogic; -- current CPU privilege level
       ext_o      : out std_ulogic; -- active external access
       -- xip configuration --
       xip_en_i   : in  std_ulogic; -- XIP module enabled
