@@ -87,6 +87,11 @@ int main() {
 
   neorv32_uart0_printf("newlib version %i.%i\n\n", (int32_t)__NEWLIB__, (int32_t)__NEWLIB_MINOR__);
 
+  neorv32_uart0_printf("<rand> test... ");
+  srand(neorv32_cpu_csr_read(CSR_CYCLE)); // set random seed
+  neorv32_uart0_printf("%i, %i, %i, %i ", rand() % 100, rand() % 100, rand() % 100, rand() % 100);
+  neorv32_uart0_printf("ok\n");
+
 
   char *char_buffer; // pointer for dynamic memory allocation
 
@@ -133,5 +138,5 @@ int main() {
  **************************************************************************/
 void __neorv32_crt0_after_main(int32_t return_code) {
 
-  neorv32_uart0_printf("\n<RTE> main function returned with exit code %i. </RTE>\n", return_code);
+  neorv32_uart0_printf("\n<RTE> main function returned with exit code %i </RTE>\n", return_code);
 }
