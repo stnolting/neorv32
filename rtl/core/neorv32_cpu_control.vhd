@@ -205,7 +205,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     is_b_imm : std_ulogic;
     is_b_reg : std_ulogic;
     rs1_zero : std_ulogic;
-    rs2_zero : std_ulogic;
     rd_zero  : std_ulogic;
   end record;
   signal decode_aux : decode_aux_t;
@@ -619,12 +618,10 @@ begin
 
   -- Immediate Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  imm_gen: process(rstn_i, clk_i)
+  imm_gen: process(clk_i)
     variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
-    if (rstn_i = '0') then
-      imm_o <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       -- default: I-immediate: ALU-immediate, loads, jump-and-link with register
       imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
       imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
@@ -821,7 +818,6 @@ begin
     decode_aux.is_b_imm <= '0';
     decode_aux.is_b_reg <= '0';
     decode_aux.rs1_zero <= '0';
-    decode_aux.rs2_zero <= '0';
     decode_aux.rd_zero  <= '0';
 
     -- is atomic load-reservate/store-conditional? --
@@ -905,9 +901,8 @@ begin
       end if;
     end if;
 
-    -- register address checks --
+    -- register/uimm5 checks --
     decode_aux.rs1_zero <= not or_reduce_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c));
-    decode_aux.rs2_zero <= not or_reduce_f(execute_engine.i_reg(instr_rs2_msb_c downto instr_rs2_lsb_c));
     decode_aux.rd_zero  <= not or_reduce_f(execute_engine.i_reg(instr_rd_msb_c  downto instr_rd_lsb_c));
   end process decode_helper;
 
@@ -1180,10 +1175,9 @@ begin
       -- ------------------------------------------------------------
         -- CSR write access [invalid CSR instructions are already checked by the illegal instruction logic] --
         if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) then -- CSRRW(I)
-          csr.we_nxt <= '1'; -- always write CSR
-        else -- CSRRS(I) / CSRRC(I)
-          csr.we_nxt <= not decode_aux.rs1_zero; -- write CSR if rs1/imm5 is NOT zero
+           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRW(I); always write CSR
+           (decode_aux.rs1_zero = '0') then -- CSRRS(I) / CSRRC(I): write CSR if rs1/imm5 is NOT zero
+          csr.we_nxt <= '1';
         end if;
         -- register file write back --
         ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_csr_c;
@@ -1278,11 +1272,12 @@ begin
     variable csr_wacc_v : std_ulogic; -- actual CSR write
   begin
     -- is this CSR instruction really going to write to a CSR? --
-    if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
-       (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) then
-      csr_wacc_v := '1'; -- always write CSR
-    else -- clear/set
-      csr_wacc_v := not decode_aux.rs1_zero; -- write if rs1/uimm5 != 0
+    if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or -- always write CSR
+       (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- always write CSR
+       (decode_aux.rs1_zero = '0') then -- clear/set: write CSR if rs1/imm5 is NOT zero
+      csr_wacc_v := '1';
+    else
+      csr_wacc_v := '0';
     end if;
 
     -- check CSR access --
@@ -1346,7 +1341,7 @@ begin
 --      csr_acc_valid <= '0'; -- >>> NOT IMPLEMENTED <<<
 
       -- user-level counters/timers (read-only) --
-      when csr_cycle_c | csr_cycleh_c | csr_instret_c | csr_instreth_c | csr_time_c | csr_timeh_c =>
+      when csr_cycle_c | csr_cycleh_c | csr_time_c | csr_timeh_c | csr_instret_c | csr_instreth_c =>
         case csr.addr(1 downto 0) is
           when "00"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.privilege_eff or csr.mcounteren_cy); -- cyle[h]: M-mode, U-mode if authorized, implemented at all, read-only
           when "01"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.privilege_eff or csr.mcounteren_tm); -- time[h]: M-mode, U-mode if authorized, implemented at all, read-only
@@ -1828,15 +1823,15 @@ begin
     -- standard RISC-V interrupts (*asynchronous* exceptions)
     -- ----------------------------------------------------------------------------------------
 
-    -- interrupt: 1.11 machine external interrupt --
+    -- interrupt: 1.11 machine external interrupt (MEI) --
     elsif (trap_ctrl.irq_buf(irq_mext_irq_c) = '1') then
       trap_ctrl.cause_nxt <= trap_mei_c;
 
-    -- interrupt: 1.3 machine SW interrupt --
+    -- interrupt: 1.3 machine SW interrupt (MSI) --
     elsif (trap_ctrl.irq_buf(irq_msw_irq_c) = '1') then
       trap_ctrl.cause_nxt <= trap_msi_c;
 
-    -- interrupt: 1.7 machine timer interrupt --
+    -- interrupt: 1.7 machine timer interrupt (MTI) --
     else--if (trap_ctrl.irq_buf(irq_mtime_irq_c) = '1') then -- last condition, so NO IF required
       trap_ctrl.cause_nxt <= trap_mti_c;
 
@@ -2044,7 +2039,7 @@ begin
             if (csr.addr(4 downto 0) = csr_mcountinhibit_c(4 downto 0)) then
               csr.mcountinhibit_cy <= csr.wdata(0); -- enable auto-increment of [m]cycle[h] counter
               csr.mcountinhibit_ir <= csr.wdata(2); -- enable auto-increment of [m]instret[h] counter
-              if (HPM_NUM_CNTS > 0) then -- any HPMs available?
+              if (HPM_NUM_CNTS > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then -- any HPMs available?
                 csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- enable auto-increment of [m]hpmcounter*[h] counter
               end if;
             end if;
@@ -2208,9 +2203,8 @@ begin
     end if;
   end process csr_write_access;
 
-  -- current (effective) privilege mode --
-  csr.privilege_eff <= priv_mode_m_c when (CPU_EXTENSION_RISCV_U = false) or -- we are always in M mode if user-mode is not implemented
-                                          ((CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) else csr.privilege; -- effective privilege mode is M when in debug mode
+  -- effective privilege mode is M when in debug mode --
+  csr.privilege_eff <= priv_mode_m_c when (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') else csr.privilege;
 
   -- PMP output to bus unit --
   pmp_output:
@@ -2346,7 +2340,7 @@ begin
           when csr_mcountinhibit_c => -- mcountinhibit (r/w): machine counter-inhibit register
             csr.rdata(0) <= csr.mcountinhibit_cy; -- enable auto-increment of [m]cycle[h] counter
             csr.rdata(2) <= csr.mcountinhibit_ir; -- enable auto-increment of [m]instret[h] counter
-            if (HPM_NUM_CNTS > 0) then -- any HPMs available?
+            if (HPM_NUM_CNTS > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then -- any HPMs available?
               csr.rdata(csr.mcountinhibit_hpm'left+3 downto 3) <= csr.mcountinhibit_hpm; -- enable auto-increment of [m]hpmcounterx[h] counter
             end if;
 
@@ -2658,11 +2652,9 @@ begin
 
   -- Hardware Performance Monitor - Counter Event Control -----------------------------------
   -- -------------------------------------------------------------------------------------------
-  hpmcnt_ctrl: process(rstn_i, clk_i)
+  hpmcnt_ctrl: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      hpmcnt_trigger <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       -- enable selected triggers by ANDing actual events and according CSR configuration bits --
       -- OR everything to see if counter should increment --
       hpmcnt_trigger <= (others => '0'); -- default
