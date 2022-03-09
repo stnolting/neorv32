@@ -33,6 +33,7 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 09.03.2022 | 1.6.8.12 | CPU core: minor code clean-up |
 | 08.03.2022 | 1.6.8.11 | clean-up of CPU's privilege mode logic |
 | 07.03.2022 | 1.6.8.10 | added compressed floating-point instructions (`Zfinx` ISA extensions); minor optimization of compressed instruction decoding logic |
 | 05.03.2022 | 1.6.8.9 | CPU core: minor optimizations, code clean-ups and edits; :sparkles: added RISC-V `mstatus.TW` bit to allow/disallow execution of `wfi` instruction in user mode; [PR #285](https://github.com/stnolting/neorv32/pull/285) |
