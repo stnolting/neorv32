@@ -54,7 +54,7 @@ This allows a very simple still high-bandwidth communications. However, high bus
 
 === Stream Link Interface
 
-The https://stnolting.github.io/neorv32/#_stream_link_interface_slink[Stream Link Interface (SLINK)] provides a
+The link:++https://stnolting.github.io/neorv32/#_stream_link_interface_slink++[Stream Link Interface (SLINK)] provides a
 point-to-point, unidirectional and parallel data interface that can be used to transfer _streaming_ data. In
 contrast to the external bus interface, the streaming interface does not provide any kind of advanced control,
 so it can be seen as "constant address bursts" where data is transmitted _sequentially_ (no random accesses).
