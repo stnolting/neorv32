@@ -2130,16 +2130,14 @@ begin
 
               -- trap value --
               cause_v := trap_ctrl.cause;
-              cause_v(5) := '0'; -- bit 5 is always zero here (= normal trapping), so we do not need to check that again
+              cause_v(5) := '0'; -- bit 5 is always zero here (= normal trapping / no debug-mode-entry), so we do not need to check that again
               case cause_v is
                 when trap_ima_c | trap_iba_c => -- misaligned instruction address OR instruction access error
                   csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction
-                when trap_brk_c => -- breakpoint
-                  csr.mtval <= execute_engine.pc_last(data_width_c-1 downto 1) & '0'; -- address of breakpoint instruction
                 when trap_lma_c | trap_lbe_c | trap_sma_c | trap_sbe_c => -- misaligned load/store address OR load/store access error
                   csr.mtval <= mar_i; -- faulting data access address
                 when trap_iil_c => -- illegal instruction
-                  csr.mtval <= execute_engine.i_reg_last; -- faulting instruction itself
+                  csr.mtval <= execute_engine.i_reg_last; -- faulting instruction word (decompressed if C-instruction)
                 when others => -- everything else including all interrupts
                   csr.mtval <= (others => '0');
               end case;
