@@ -113,17 +113,15 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 
 * 32-bit external bus interface, Wishbone b4 compatible
 ([WISHBONE](https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite))
-  * [wrapper](https://github.com/stnolting/neorv32/blob/main/rtl/system_integration/neorv32_SystemTop_axi4lite.vhd) for AXI4-Lite host interface
-  * [wrapper](https://github.com/stnolting/neorv32/blob/main/rtl/system_integration/neorv32_SystemTop_AvalonMM.vhd) for Avalon-MM host interface
+  * [wrappers](https://github.com/stnolting/neorv32/blob/main/rtl/system_integration) for AXI4-Lite and Avalon-MM host interfaces
 * 32-bit stream link interface with up to 8 independent RX and TX links
-([SLINK](https://stnolting.github.io/neorv32/#_stream_link_interface_slink))
-  * AXI4-Stream compatible
+([SLINK](https://stnolting.github.io/neorv32/#_stream_link_interface_slink)) - AXI4-Stream compatible
 * external interrupt controller with up to 32 channels
 ([XIRQ](https://stnolting.github.io/neorv32/#_external_interrupt_controller_xirq))
 
 **Advanced**
 
-* on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) accessible via JTAG interface - compliant to
+* JTAG-accessible on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) - compliant to
 the "Minimal RISC-V Debug Specification Version 0.13.2" and compatible with **OpenOCD** + **gdb** and **Segger Embedded Studio**
 * _true random_ number generator ([TRNG](https://stnolting.github.io/neorv32/#_true_random_number_generator_trng))
 * execute in place module ([XIP](https://stnolting.github.io/neorv32/#_execute_in_place_module_xip)) to directly execute code from SPI flash
@@ -316,7 +314,6 @@ This overview provides some *quick links* to the most important sections of the
 
 * [Overview](https://stnolting.github.io/neorv32/#_legal) - license, disclaimer, limitation of liability for external links, proprietary notice, ...
 * [Citing](https://stnolting.github.io/neorv32/#_citing) - citing information
-* [Impressum](https://github.com/stnolting/neorv32/blob/main/docs/impressum.md) - imprint
 
 This is an open-source project that is free of charge. Use this project in any way you like
 (as long as it complies to the permissive [license](https://github.com/stnolting/neorv32/blob/main/LICENSE)).
