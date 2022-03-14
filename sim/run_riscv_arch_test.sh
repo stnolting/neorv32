@@ -16,8 +16,8 @@ RISCV_PREFIX="${RISCV_PREFIX:-riscv32-unknown-elf-}"
 header "Checking RISC-V GCC toolchain"
 "$RISCV_PREFIX"gcc -v
 
-#header "Checking 'riscv-arch-test' GitHub repository (submodule)"
-#git submodule update --remote
+header "Checking 'riscv-arch-test' GitHub repository (submodule)"
+git submodule update --init
 
 header "Copying neorv32 test-target into riscv-arch-test framework"
 (
