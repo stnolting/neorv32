@@ -16,8 +16,8 @@ RISCV_PREFIX="${RISCV_PREFIX:-riscv32-unknown-elf-}"
 header "Checking RISC-V GCC toolchain"
 "$RISCV_PREFIX"gcc -v
 
-header "Checking 'riscv-arch-test' GitHub repository (submodule)"
-git submodule update --init
+#header "Checking 'riscv-arch-test' GitHub repository (submodule)"
+#git submodule update --remote
 
 header "Copying neorv32 test-target into riscv-arch-test framework"
 (
@@ -25,6 +25,8 @@ header "Copying neorv32 test-target into riscv-arch-test framework"
   target_device='riscv-arch-test/riscv-target/neorv32'
   if [ -d "$target_device" ]; then rm -rf "$target_device"; fi
   cp -vr port-neorv32 "$target_device"
+  cp -f port-neorv32/riscv-test-suite/rv32i_m/C/references/* riscv-arch-test/riscv-test-suite/rv32i_m/C/references
+  cp -f port-neorv32/riscv-test-suite/rv32i_m/privilege/references/* riscv-arch-test/riscv-test-suite/rv32i_m/privilege/references 
 )
 
 header "Making local copy of NEORV32 'rtl' and 'sim' folders"
@@ -40,7 +42,10 @@ header "Starting RISC-V architecture tests"
 ./simple/ghdl.setup.sh
 
 # work in progress FIXME
-printf "\n\e[1;33mWARNING! 'I/jal-01' test is currently disabled (GHDL simulation issue)! \e[0m\n\n"
+printf "\n\e[1;33m[WARNING] 'I/jal-01' test is currently disabled (GHDL simulation issue)! \e[0m\n\n"
+printf "\n\e[1;33m[WARNING] Overwriting default 'C/cebreak' and 'privilege/ebreak' test references! \e[0m\n\n"
+sleep 4
+
 
 makeArgs="-C $(pwd)/../sw/isa-test/riscv-arch-test NEORV32_ROOT=$(pwd)/.. XLEN=32 RISCV_TARGET=neorv32"
 makeTargets='clean build run verify'

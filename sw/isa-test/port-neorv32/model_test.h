@@ -2,6 +2,10 @@
 
 // Modified by Stephan Nolting for the NEORV32 Processor
 
+// override CODE_REL_TVAL_MSK to avoid PC adjustment for SW breakpoints (break instructions)
+#define CODE_REL_TVAL_MSK 0xC008 << (REGWIDTH*8-16)
+
+
 #ifndef _COMPLIANCE_MODEL_H
 #define _COMPLIANCE_MODEL_H
 
