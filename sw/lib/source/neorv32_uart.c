@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_uart.c
- * @author Stephan Nolting
  * @brief Universal asynchronous receiver/transmitter (UART0/UART1) HW driver source file.
  *
  * @warning UART0 (primary UART) is used as default user console interface for all NEORV32 software framework/library functions.

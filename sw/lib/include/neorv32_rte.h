@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_rte.h
- * @author Stephan Nolting
  * @brief NEORV32 Runtime Environment.
  **************************************************************************/
 
@@ -96,6 +95,6 @@ void neorv32_rte_print_logo(void);
 void neorv32_rte_print_license(void);
 
 uint32_t neorv32_rte_get_compiler_isa(void);
-int neorv32_rte_check_isa(int silent);
+int      neorv32_rte_check_isa(int silent);
 
 #endif // neorv32_rte_h

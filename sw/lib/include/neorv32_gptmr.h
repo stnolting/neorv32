@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_gptmr.h
- * @author Stephan Nolting
  * @brief General purpose timer (GPTMR) HW driver header file.
  *
  * @note These functions should only be used if the GPTMR unit was synthesized (IO_GPTMR_EN = true).
@@ -45,7 +44,7 @@
 #define neorv32_gptmr_h
 
 // prototypes
-int neorv32_gptmr_available(void);
+int  neorv32_gptmr_available(void);
 void neorv32_gptmr_setup(uint8_t prsc, uint8_t mode, uint32_t threshold);
 void neorv32_gptmr_disable(void);
 void neorv32_gptmr_enable(void);

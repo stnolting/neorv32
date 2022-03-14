@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_wdt.c
- * @author Stephan Nolting
  * @brief Watchdog Timer (WDT) HW driver source file.
  *
  * @note These functions should only be used if the WDT unit was synthesized (IO_WDT_EN = true).

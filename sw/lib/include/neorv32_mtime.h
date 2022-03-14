@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_mtime.h
- * @author Stephan Nolting
  * @brief Machine System Timer (MTIME) HW driver header file.
  *
  * @note These functions should only be used if the MTIME unit was synthesized (IO_MTIME_EN = true).
@@ -45,10 +44,10 @@
 #define neorv32_mtime_h
 
 // prototypes
-int neorv32_mtime_available(void);
-void neorv32_mtime_set_time(uint64_t time);
+int      neorv32_mtime_available(void);
+void     neorv32_mtime_set_time(uint64_t time);
 uint64_t neorv32_mtime_get_time(void);
-void neorv32_mtime_set_timecmp(uint64_t timecmp);
+void     neorv32_mtime_set_timecmp(uint64_t timecmp);
 uint64_t neorv32_mtime_get_timecmp(void);
 
 #endif // neorv32_mtime_h

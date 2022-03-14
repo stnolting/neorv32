@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_gpio.h
- * @author Stephan Nolting
  * @brief General purpose input/output port unit (GPIO) HW driver header file.
  *
  * @note These functions should only be used if the GPIO unit was synthesized (IO_GPIO_EN = true).

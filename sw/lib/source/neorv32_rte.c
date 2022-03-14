@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_rte.c
- * @author Stephan Nolting
  * @brief NEORV32 Runtime Environment.
  **************************************************************************/
 
@@ -746,7 +745,6 @@ int neorv32_rte_check_isa(int silent) {
   // mask hardware features that are not used by software
   uint32_t check = misa_hw & misa_sw;
 
-  //
   if (check == misa_sw) {
     return 0;
   }

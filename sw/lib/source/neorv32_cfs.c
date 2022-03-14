@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_cfs.c
- * @author Stephan Nolting
  * @brief Custom Functions Subsystem (CFS) HW driver source file.
  *
  * @warning There are no "real" CFS driver functions available here, because these functions are defined by the actual hardware.

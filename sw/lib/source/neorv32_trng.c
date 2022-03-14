@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_trng.c
- * @author Stephan Nolting
  * @brief True Random Number Generator (TRNG) HW driver source file.
  *
  * @note These functions should only be used if the TRNG unit was synthesized (IO_TRNG_EN = true).

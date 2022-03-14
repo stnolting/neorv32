@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_twi.h
- * @author Stephan Nolting
  * @brief Two-Wire Interface Controller (TWI) HW driver header file.
  *
  * @note These functions should only be used if the TWI unit was synthesized (IO_TWI_EN = true).
@@ -45,17 +44,17 @@
 #define neorv32_twi_h
 
 // prototypes
-int neorv32_twi_available(void);
-void neorv32_twi_setup(uint8_t prsc);
-void neorv32_twi_disable(void);
-void neorv32_twi_enable(void);
-void neorv32_twi_mack_enable(void);
-void neorv32_twi_mack_disable(void);
-int neorv32_twi_busy(void);
-int neorv32_twi_start_trans(uint8_t a);
-int neorv32_twi_trans(uint8_t d);
+int     neorv32_twi_available(void);
+void    neorv32_twi_setup(uint8_t prsc);
+void    neorv32_twi_disable(void);
+void    neorv32_twi_enable(void);
+void    neorv32_twi_mack_enable(void);
+void    neorv32_twi_mack_disable(void);
+int     neorv32_twi_busy(void);
+int     neorv32_twi_start_trans(uint8_t a);
+int     neorv32_twi_trans(uint8_t d);
 uint8_t neorv32_twi_get_data(void);
-void neorv32_twi_generate_stop(void);
-void neorv32_twi_generate_start(void);
+void    neorv32_twi_generate_stop(void);
+void    neorv32_twi_generate_start(void);
 
 #endif // neorv32_twi_h

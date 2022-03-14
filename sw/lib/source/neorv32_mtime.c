@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_mtime.c
- * @author Stephan Nolting
  * @brief Machine System Timer (MTIME) HW driver source file.
  *
  * @note These functions should only be used if the MTIME unit was synthesized (IO_MTIME_EN = true).

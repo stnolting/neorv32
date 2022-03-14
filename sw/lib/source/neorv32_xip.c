@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_xip.c
- * @author Stephan Nolting
  * @brief Execute in place module (XIP) HW driver source file.
  *
  * @note These functions should only be used if the XIP module was synthesized (IO_XIP_EN = true).

@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_wdt.h
- * @author Stephan Nolting
  * @brief Watchdog Timer (WDT) HW driver header file.
  *
  * @note These functions should only be used if the WDT unit was synthesized (IO_WDT_EN = true).
@@ -45,11 +44,11 @@
 #define neorv32_wdt_h
 
 // prototypes
-int neorv32_wdt_available(void);
+int  neorv32_wdt_available(void);
 void neorv32_wdt_setup(uint8_t prsc, uint8_t mode, uint8_t lock);
-int neorv32_wdt_disable(void);
+int  neorv32_wdt_disable(void);
 void neorv32_wdt_reset(void);
-int neorv32_wdt_get_cause(void);
+int  neorv32_wdt_get_cause(void);
 void neorv32_wdt_force(void);
 
 #endif // neorv32_wdt_h

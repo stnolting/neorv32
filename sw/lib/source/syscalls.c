@@ -19,7 +19,6 @@
 
 /**********************************************************************//**
  * @file syscalls.c
- * @author Modified for the NEORV32 RISC-V Processor by Stephan Nolting
  * @brief Newlib system calls
  *
  * @warning UART0 (if available) is used to read/write console data (STDIN, STDOUT, STDERR, ...).

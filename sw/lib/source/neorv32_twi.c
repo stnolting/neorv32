@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_twi.c
- * @author Stephan Nolting
  * @brief Two-Wire Interface Controller (TWI) HW driver source file.
  *
  * @note These functions should only be used if the TWI unit was synthesized (IO_TWI_EN = true).

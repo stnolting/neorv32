@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_neoled.c
- * @author Stephan Nolting
  * @brief Smart LED Interface (NEOLED) HW driver source file.
  *
  * @note These functions should only be used if the NEOLED unit was synthesized (IO_NEOLED_EN = true).

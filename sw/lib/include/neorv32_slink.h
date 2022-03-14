@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_slink.h
- * @author Stephan Nolting
  * @brief Stream Link Interface HW driver header file.
  **************************************************************************/
 
@@ -43,35 +42,35 @@
 #define neorv32_slink_h
 
 // prototypes
-int neorv32_slink_available(void);
+int  neorv32_slink_available(void);
 void neorv32_slink_enable(void);
 void neorv32_slink_disable(void);
 void neorv32_slink_rx_irq_config(int link_id, int irq_en, int irq_type);
 void neorv32_slink_tx_irq_config(int link_id, int irq_en, int irq_type);
-int neorv32_slink_get_rx_num(void);
-int neorv32_slink_get_tx_num(void);
-int neorv32_slink_get_rx_depth(void);
-int neorv32_slink_get_tx_depth(void);
-int neorv32_slink_check_rx_half_full(int link_id);
-int neorv32_slink_check_tx_half_full(int link_id);
+int  neorv32_slink_get_rx_num(void);
+int  neorv32_slink_get_tx_num(void);
+int  neorv32_slink_get_rx_depth(void);
+int  neorv32_slink_get_tx_depth(void);
+int  neorv32_slink_check_rx_half_full(int link_id);
+int  neorv32_slink_check_tx_half_full(int link_id);
 // non-blocking transmit
-int neorv32_slink_tx0_nonblocking(uint32_t tx_data);
-int neorv32_slink_tx1_nonblocking(uint32_t tx_data);
-int neorv32_slink_tx2_nonblocking(uint32_t tx_data);
-int neorv32_slink_tx3_nonblocking(uint32_t tx_data);
-int neorv32_slink_tx4_nonblocking(uint32_t tx_data);
-int neorv32_slink_tx5_nonblocking(uint32_t tx_data);
-int neorv32_slink_tx6_nonblocking(uint32_t tx_data);
-int neorv32_slink_tx7_nonblocking(uint32_t tx_data);
+int  neorv32_slink_tx0_nonblocking(uint32_t tx_data);
+int  neorv32_slink_tx1_nonblocking(uint32_t tx_data);
+int  neorv32_slink_tx2_nonblocking(uint32_t tx_data);
+int  neorv32_slink_tx3_nonblocking(uint32_t tx_data);
+int  neorv32_slink_tx4_nonblocking(uint32_t tx_data);
+int  neorv32_slink_tx5_nonblocking(uint32_t tx_data);
+int  neorv32_slink_tx6_nonblocking(uint32_t tx_data);
+int  neorv32_slink_tx7_nonblocking(uint32_t tx_data);
 // non-blocking receive
-int neorv32_slink_rx0_nonblocking(uint32_t *rx_data);
-int neorv32_slink_rx1_nonblocking(uint32_t *rx_data);
-int neorv32_slink_rx2_nonblocking(uint32_t *rx_data);
-int neorv32_slink_rx3_nonblocking(uint32_t *rx_data);
-int neorv32_slink_rx4_nonblocking(uint32_t *rx_data);
-int neorv32_slink_rx5_nonblocking(uint32_t *rx_data);
-int neorv32_slink_rx6_nonblocking(uint32_t *rx_data);
-int neorv32_slink_rx7_nonblocking(uint32_t *rx_data);
+int  neorv32_slink_rx0_nonblocking(uint32_t *rx_data);
+int  neorv32_slink_rx1_nonblocking(uint32_t *rx_data);
+int  neorv32_slink_rx2_nonblocking(uint32_t *rx_data);
+int  neorv32_slink_rx3_nonblocking(uint32_t *rx_data);
+int  neorv32_slink_rx4_nonblocking(uint32_t *rx_data);
+int  neorv32_slink_rx5_nonblocking(uint32_t *rx_data);
+int  neorv32_slink_rx6_nonblocking(uint32_t *rx_data);
+int  neorv32_slink_rx7_nonblocking(uint32_t *rx_data);
 
 
 /**********************************************************************//**

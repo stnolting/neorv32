@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_xirq.c
- * @author Stephan Nolting
  * @brief External Interrupt controller HW driver source file.
  **************************************************************************/
 

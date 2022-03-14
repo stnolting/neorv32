@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_pwm.c
- * @author Stephan Nolting
  * @brief Pulse-Width Modulation Controller (PWM) HW driver source file.
  *
  * @note These functions should only be used if the PWM unit was synthesized (IO_PWM_EN = true).

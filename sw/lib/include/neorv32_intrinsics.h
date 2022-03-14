@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_intrinsics.h
- * @author Stephan Nolting, SaxonSoc contributors, Google-CFU
  * @brief Helper functions and macros for custom "intrinsics" / instructions.
  **************************************************************************/
 

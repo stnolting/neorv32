@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_spi.c
- * @author Stephan Nolting
  * @brief Serial peripheral interface controller (SPI) HW driver source file.
  *
  * @note These functions should only be used if the SPI unit was synthesized (IO_SPI_EN = true).

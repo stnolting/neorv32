@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_cpu_cfu.c
- * @author Stephan Nolting
  * @brief CPU Core custom functions unit HW driver source file.
  **************************************************************************/
 

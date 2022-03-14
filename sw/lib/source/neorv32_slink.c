@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_slink.c
- * @author Stephan Nolting
  * @brief Stream Link Interface HW driver source file.
  **************************************************************************/
 

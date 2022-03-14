@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_pwm.h
- * @author Stephan Nolting
  * @brief Pulse-Width Modulation Controller (PWM) HW driver header file.
  *
  * @note These functions should only be used if the PWM unit was synthesized (IO_PWM_EN = true).
@@ -45,12 +44,12 @@
 #define neorv32_pwm_h
 
 // prototypes
-int neorv32_pwm_available(void);
-void neorv32_pwm_setup(uint8_t prsc);
-void neorv32_pwm_disable(void);
-void neorv32_pwm_enable(void);
-int neorv32_pmw_get_num_channels(void);
-void neorv32_pwm_set(uint8_t channel, uint8_t duty);
+int     neorv32_pwm_available(void);
+void    neorv32_pwm_setup(uint8_t prsc);
+void    neorv32_pwm_disable(void);
+void    neorv32_pwm_enable(void);
+int     neorv32_pmw_get_num_channels(void);
+void    neorv32_pwm_set(uint8_t channel, uint8_t duty);
 uint8_t neorv32_pwm_get(uint8_t channel);
 
 #endif // neorv32_pwm_h

@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_cpu_cfu.h
- * @author Stephan Nolting
  * @brief CPU Core custom functions unit HW driver header file.
  **************************************************************************/
 
@@ -47,7 +46,7 @@ int neorv32_cpu_cfu_available(void);
 
 
 /**********************************************************************//**
- * @name CFU custom instructions (intrinsic)
+ * @name CFU custom instructions ("intrinsics")
  **************************************************************************/
 /**@{*/
 /** CFU custom instruction 0 (funct3 = 000) */

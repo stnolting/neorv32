@@ -35,7 +35,6 @@
 
 /**********************************************************************//**
  * @file neorv32_neoled.h
- * @author Stephan Nolting
  * @brief Smart LED Interface (NEOLED) HW driver header file.
  *
  * @note These functions should only be used if the NEOLED unit was synthesized (IO_NEOLED_EN = true).
@@ -45,15 +44,15 @@
 #define neorv32_neoled_h
 
 // prototypes
-int  neorv32_neoled_available(void);
-void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero, uint32_t t_high_one);
-void neorv32_neoled_setup_ws2812(void);
-void neorv32_neoled_set_mode(uint32_t mode);
-void neorv32_neoled_strobe_blocking(void);
-void neorv32_neoled_strobe_nonblocking(void);
-void neorv32_neoled_enable(void);
-void neorv32_neoled_disable(void);
-void neorv32_neoled_write_blocking(uint32_t data);
+int      neorv32_neoled_available(void);
+void     neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero, uint32_t t_high_one);
+void     neorv32_neoled_setup_ws2812(void);
+void     neorv32_neoled_set_mode(uint32_t mode);
+void     neorv32_neoled_strobe_blocking(void);
+void     neorv32_neoled_strobe_nonblocking(void);
+void     neorv32_neoled_enable(void);
+void     neorv32_neoled_disable(void);
+void     neorv32_neoled_write_blocking(uint32_t data);
 uint32_t neorv32_neoled_get_buffer_size(void);
 
 
