@@ -1376,17 +1376,19 @@ Basically, the processor is a SoC consisting of the NEORV32 CPU, peripheral/IO d
 memories, an external memory interface and a bus infrastructure to interconnect all units. Additionally, the
 system implements an internal reset generator and a global clock generator/divider.
 
+
 **Internal Reset Generator**
 
+[IMPORTANT]
 Most processor-internal modules - except for the CPU and the watchdog timer - do not have a dedicated
 reset signal. However, all devices can be reset by software by clearing the corresponding unit's control
 register. The automatically included application start-up code (`crt0.S`) will perform a software-reset of all
 modules to ensure a clean system reset state.
 
-The hardware reset signal of the processor can either be
-triggered via the external reset pin (`rstn_i`, low-active) or by the internal watchdog timer (if implemented).
-Before the external reset signal is applied to the system, it is extended to have a minimal duration of eight
-clock cycles.
+The hardware reset signal of the processor can either be triggered via the external reset pin (`rstn_i`, low-active),
+by the internal watchdog timer (if implemented) or by the on-chip debugger. The external reset signal `rstn_i`
+is extended to be active for at least 4 cycles when triggered.
+
 
 **Internal Clock Divider**
 
@@ -1409,6 +1411,7 @@ from the top entity's `clk_i` signal.
 | Prescaler bits:  | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
 | Resulting clock: | _f/2_   | _f/4_   | _f/8_   | _f/64_  | _f/128_ | _f/1024_| _f/2048_| _f/4096_
 |=======================
+
 
 **Peripheral / IO Devices**
 
@@ -1449,11 +1452,13 @@ register and register bit accesses.
 [TIP]
 A CMSIS-SVD-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
 
+
 **Interrupts of Processor-Internal Modules**
 
 Most peripheral/IO devices provide some kind of interrupt (for example to signal available incoming data). These
 interrupts are entirely mapped to the CPU's <<_custom_fast_interrupt_request_lines>>. Note that all these
 interrupt lines are high-active and are permanently triggered until the IRQ-causing condition is resolved.
+
 
 **Nomenclature for the Peripheral / IO Devices Listing**
 
