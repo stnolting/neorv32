@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -198,7 +198,7 @@ end neorv32_trng_rtl;
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -389,14 +389,18 @@ begin
         ctrl.sreg <= ctrl.sreg(ctrl.sreg'left-1 downto 0) & deb.data;
       end if;
 
+      -- data valid? --
+      if (ctrl.cnt = "000") and (ctrl.run = '1') and (deb.valid = '1') then
+        valid_o <= '1';
+      else
+        valid_o <= '0';
+      end if;
+
     end if;
   end process control_unit;
 
   -- random byte output --
   data_o <= ctrl.sreg;
-
-  -- data valid? --
-  valid_o <= '1' when (ctrl.cnt = "000") and (ctrl.run = '1') else '0';
 
 
 end neoTRNG_rtl;
